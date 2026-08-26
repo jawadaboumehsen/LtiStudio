@@ -1,0 +1,13 @@
+{
+  "extraKnownMarketplaces": {
+    "lti-designsystem-plugins": {
+      "source": {
+        "source": "directory",
+        "path": "core/designsystem/plugins"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "kmp-liquid-glass@lti-designsystem-plugins": true
+  }
+}

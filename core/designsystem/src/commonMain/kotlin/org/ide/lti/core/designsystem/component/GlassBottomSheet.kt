@@ -1,0 +1,397 @@
+﻿package org.ide.lti.core.designsystem.component
+
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
+import com.kyant.capsule.ContinuousCapsule
+import com.kyant.capsule.ContinuousRoundedRectangle
+import com.kashif_e.backdrop.Backdrop
+import com.kashif_e.backdrop.BackdropEffectScope
+import com.kashif_e.backdrop.effects.blur
+import com.kashif_e.backdrop.effects.colorControls
+import com.kashif_e.backdrop.effects.lens
+import org.ide.lti.core.designsystem.theme.GlassTheme
+
+/**
+ * Bottom sheet glass effect stack — frosted/heavy, per the kmp-liquid-glass skill's guidance
+ * for sheets and modal overlays.
+ */
+val GlassBottomSheetEffects: BackdropEffectScope.() -> Unit = {
+    colorControls(saturation = 1.5f)
+    blur(16.dp.toPx())
+    lens(24.dp.toPx(), 40.dp.toPx(), depthEffect = true)
+}
+
+/**
+ * State for managing the bottom sheet visibility and animations.
+ *
+ * @param initialValue The initial state of the bottom sheet
+ */
+@Stable
+class GlassBottomSheetState(
+    initialValue: GlassBottomSheetValue = GlassBottomSheetValue.Collapsed
+) {
+    /**
+     * The current value of the bottom sheet.
+     */
+    var currentValue by mutableStateOf(initialValue)
+        private set
+
+    /**
+     * The current offset of the bottom sheet in pixels (0 = fully expanded).
+     */
+    var offsetY by mutableFloatStateOf(0f)
+        internal set
+
+    /**
+     * Whether the bottom sheet is currently visible (expanded or expanding).
+     */
+    val isVisible: Boolean
+        get() = currentValue != GlassBottomSheetValue.Collapsed
+
+    /**
+     * Expand the bottom sheet with animation.
+     */
+    suspend fun expand() {
+        currentValue = GlassBottomSheetValue.Expanded
+    }
+
+    /**
+     * Collapse the bottom sheet with animation.
+     */
+    suspend fun collapse() {
+        currentValue = GlassBottomSheetValue.Collapsed
+    }
+
+    /**
+     * Toggle the bottom sheet state.
+     */
+    suspend fun toggle() {
+        if (currentValue == GlassBottomSheetValue.Expanded) {
+            collapse()
+        } else {
+            expand()
+        }
+    }
+}
+
+/**
+ * Possible values for the bottom sheet state.
+ */
+enum class GlassBottomSheetValue {
+    /**
+     * The bottom sheet is collapsed (hidden).
+     */
+    Collapsed,
+
+    /**
+     * The bottom sheet is expanded (visible).
+     */
+    Expanded
+}
+
+/**
+ * Remembers a [GlassBottomSheetState] across recompositions.
+ */
+@Composable
+fun rememberGlassBottomSheetState(
+    initialValue: GlassBottomSheetValue = GlassBottomSheetValue.Collapsed
+): GlassBottomSheetState {
+    return remember { GlassBottomSheetState(initialValue) }
+}
+
+/**
+ * A bottom sheet with glass morphism effects and drag-to-dismiss functionality.
+ *
+ * The bottom sheet slides up from the bottom of the screen with smooth animations
+ * and can be dismissed by dragging down. It features a glass background with
+ * configurable blur and transparency effects.
+ *
+ * @param state The state object controlling the bottom sheet visibility
+ * @param onDismissRequest Callback invoked when the user dismisses the sheet
+ * @param modifier Modifier for the bottom sheet container
+ * @param backdrop Optional shared backdrop for glass effects
+ * @param preset Effect preset to use (defaults to GlassMorphism.Standard)
+ * @param shape Shape of the bottom sheet
+ * @param scrimColor Color of the scrim overlay when sheet is open
+ * @param dismissThreshold Fraction of sheet height to trigger dismiss (0.0 - 1.0)
+ * @param content The content to display in the bottom sheet
+ */
+@Composable
+fun GlassBottomSheet(
+    state: GlassBottomSheetState,
+    onDismissRequest: () -> Unit,
+    modifier: Modifier = Modifier,
+    backdrop: Backdrop? = null,
+    effects: BackdropEffectScope.() -> Unit = GlassBottomSheetEffects,
+    // Exception to the module-wide capsule shape: this sheet is anchored flush to the bottom
+    // edge, so only the top corners can round — a full capsule would detach its bottom edge
+    // from the screen with visible rounded gaps.
+    shape: Shape = ContinuousRoundedRectangle(topStart = 16.dp, topEnd = 16.dp, bottomEnd = 0.dp, bottomStart = 0.dp),
+    scrimColor: Color = Color.Black.copy(alpha = 0.6f),
+    dismissThreshold: Float = 0.3f,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    val scope = rememberCoroutineScope()
+    val glassColors = GlassTheme.colors
+
+    // Animation for slide in/out
+    val targetOffsetY = if (state.currentValue == GlassBottomSheetValue.Expanded) 0f else 1f
+    val animatedOffsetY by animateFloatAsState(
+        targetValue = targetOffsetY,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "bottomSheetOffset"
+    )
+
+    // Scrim alpha animation
+    val scrimAlpha by animateFloatAsState(
+        targetValue = if (state.currentValue == GlassBottomSheetValue.Expanded) 1f else 0f,
+        animationSpec = tween(durationMillis = 300),
+        label = "scrimAlpha"
+    )
+
+    // Only render when visible or animating out
+    if (state.currentValue != GlassBottomSheetValue.Collapsed || scrimAlpha > 0f) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Scrim background
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(scrimColor)
+                    .alpha(scrimAlpha)
+                    .pointerInput(Unit) {
+                        detectVerticalDragGestures { _, _ ->
+                            // Intercept clicks on scrim
+                        }
+                    }
+            )
+
+            // Bottom sheet content
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.BottomCenter)
+                    .graphicsLayer {
+                        // Apply slide animation
+                        val offset = animatedOffsetY * size.height + state.offsetY
+                        translationY = offset
+                    }
+                    .then(modifier)
+            ) {
+                GlassSurface(
+                    shape = shape,
+                    effects = effects,
+                    backdrop = backdrop,
+                    surfaceColor = glassColors.glassSurface,
+                    tint = glassColors.glassTint,
+                    borderColor = glassColors.glassBorder
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .pointerInput(Unit) {
+                                var dragStartY = 0f
+                                var initialOffsetY = 0f
+
+                                detectVerticalDragGestures(
+                                    onDragStart = { offset ->
+                                        dragStartY = offset.y
+                                        initialOffsetY = state.offsetY
+                                    },
+                                    onDragEnd = {
+                                        // Check if drag threshold exceeded
+                                        val sheetHeight = size.height.toFloat()
+                                        val dragDistance = state.offsetY - initialOffsetY
+                                        val dragFraction = dragDistance / sheetHeight
+
+                                        if (dragFraction > dismissThreshold) {
+                                            // Dismiss the sheet
+                                            scope.launch {
+                                                state.collapse()
+                                                onDismissRequest()
+                                            }
+                                        } else {
+                                            // Snap back to expanded
+                                            scope.launch {
+                                                // Animate back to 0
+                                                animate(
+                                                    initialValue = state.offsetY,
+                                                    targetValue = 0f,
+                                                    animationSpec = spring()
+                                                ) { value, _ ->
+                                                    state.offsetY = value
+                                                }
+                                            }
+                                        }
+                                    },
+                                    onVerticalDrag = { change, dragAmount ->
+                                        change.consume()
+                                        // Only allow dragging down (positive offset)
+                                        val newOffset = state.offsetY + dragAmount
+                                        state.offsetY = maxOf(0f, newOffset)
+                                    }
+                                )
+                            }
+                    ) {
+                        // Drag handle
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 12.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .width(32.dp)
+                                    .height(4.dp)
+                                    .background(
+                                        color = glassColors.onGlassMuted,
+                                        shape = ContinuousCapsule
+                                    )
+                            )
+                        }
+
+                        // User content
+                        content()
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Convenience composable for a simple glass bottom sheet with header.
+ *
+ * @param visible Whether the bottom sheet is visible
+ * @param onDismissRequest Callback when sheet is dismissed
+ * @param title Optional title text for the header
+ * @param headerContent Optional custom header content
+ * @param backdrop Optional shared backdrop
+ * @param preset Effect preset (defaults to GlassMorphism.Standard)
+ * @param content The main content of the bottom sheet
+ */
+@Composable
+fun GlassBottomSheetScaffold(
+    visible: Boolean,
+    onDismissRequest: () -> Unit,
+    modifier: Modifier = Modifier,
+    title: String? = null,
+    headerContent: (@Composable RowScope.() -> Unit)? = null,
+    backdrop: Backdrop? = null,
+    effects: BackdropEffectScope.() -> Unit = GlassBottomSheetEffects,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    val state = rememberGlassBottomSheetState(
+        initialValue = if (visible) {
+            GlassBottomSheetValue.Expanded
+        } else {
+            GlassBottomSheetValue.Collapsed
+        }
+    )
+
+    // Sync state with visible parameter
+    LaunchedEffect(visible) {
+        if (visible) {
+            state.expand()
+        } else {
+            state.collapse()
+        }
+    }
+
+    GlassBottomSheet(
+        state = state,
+        onDismissRequest = onDismissRequest,
+        backdrop = backdrop,
+        effects = effects,
+        modifier = modifier
+    ) {
+        // Header
+        if (title != null || headerContent != null) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (title != null) {
+                    androidx.compose.material3.Text(
+                        title,
+                        style = MaterialTheme.typography.titleLarge,
+                        color = GlassTheme.colors.onGlass
+                    )
+                }
+
+                headerContent?.invoke(this)
+            }
+        }
+
+        // Content
+        content()
+    }
+}
+
+/**
+ * Example usage of GlassBottomSheet with common patterns.
+ */
+@Composable
+fun GlassBottomSheetExample() {
+    var showSheet by remember { mutableStateOf(false) }
+
+    Column(Modifier.fillMaxSize().padding(16.dp)) {
+        GlassButton(onClick = { showSheet = true }) {
+            androidx.compose.material3.Text("Show Bottom Sheet")
+        }
+    }
+
+    GlassBottomSheetScaffold(
+        visible = showSheet,
+        onDismissRequest = { showSheet = false },
+        title = "Glass Bottom Sheet"
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            androidx.compose.material3.Text(
+                "This is a bottom sheet with glass morphism effects.",
+                style = MaterialTheme.typography.bodyLarge,
+                color = GlassTheme.colors.onGlass
+            )
+
+            androidx.compose.material3.Text(
+                "Drag down to dismiss, or tap outside.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = GlassTheme.colors.onGlassSecondary
+            )
+
+            Spacer(Modifier.height(8.dp))
+
+            GlassPrimaryButton(
+                onClick = { showSheet = false },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                androidx.compose.material3.Text("Close")
+            }
+        }
+    }
+}

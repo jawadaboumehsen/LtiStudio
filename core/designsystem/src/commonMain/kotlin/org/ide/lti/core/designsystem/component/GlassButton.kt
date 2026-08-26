@@ -1,0 +1,321 @@
+﻿/*
+ * Copyright 2025 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
+package org.ide.lti.core.designsystem.component
+
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.ProvideTextStyle
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.isSpecified
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.util.fastCoerceAtMost
+import androidx.compose.ui.util.lerp
+import com.kyant.capsule.ContinuousCapsule
+import com.kashif_e.backdrop.Backdrop
+import com.kashif_e.backdrop.BackdropEffectScope
+import com.kashif_e.backdrop.drawBackdrop
+import com.kashif_e.backdrop.effects.blur
+import com.kashif_e.backdrop.effects.lens
+import com.kashif_e.backdrop.effects.vibrancy
+import com.kashif_e.backdrop.highlight.Highlight
+import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.utils.InteractiveHighlight
+import kotlin.math.abs
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.tanh
+
+/**
+ * Button glass effect stack — crisp/glossy, per the kmp-liquid-glass skill's guidance for
+ * buttons, toggles, and tab bars: light blur + tight lens + vibrancy.
+ */
+val GlassButtonEffects: BackdropEffectScope.() -> Unit = {
+    vibrancy()
+    blur(2.dp.toPx())
+    lens(12.dp.toPx(), 24.dp.toPx())
+}
+
+/**
+ * Button style variants.
+ */
+enum class GlassButtonVariant {
+    Primary,
+    Secondary,
+    Standard,
+    Text
+}
+
+/**
+ * Default values for GlassButton.
+ */
+object GlassButtonDefaults {
+    val ContentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
+    val MinWidth = 64.dp
+    val MinHeight = 40.dp
+    val TextStyle = TextStyle(
+        fontSize = 14.sp,
+        fontWeight = FontWeight.Medium,
+        letterSpacing = 0.1.sp
+    )
+}
+
+/**
+ * Glass button component with interactive lighting and GPU-accelerated backdrop effects.
+ */
+@Composable
+fun GlassButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    shape: Shape = ContinuousCapsule,
+    variant: GlassButtonVariant = GlassButtonVariant.Standard,
+    effects: BackdropEffectScope.() -> Unit = GlassButtonEffects,
+    backdrop: Backdrop? = null,
+    minWidth: Dp = GlassButtonDefaults.MinWidth,
+    minHeight: Dp = GlassButtonDefaults.MinHeight,
+    contentPadding: PaddingValues = GlassButtonDefaults.ContentPadding,
+    interactive: Boolean = true,
+    content: @Composable RowScope.() -> Unit
+) {
+    val glassColors = GlassTheme.colors
+    val effectsEnabled = GlassTheme.effectsEnabled
+    val actualBackdrop = backdrop ?: GlassTheme.backdrop
+
+    val animationScope = rememberCoroutineScope()
+    val interactiveHighlight = if (interactive) {
+        remember(animationScope) {
+            InteractiveHighlight(animationScope)
+        }
+    } else {
+        null
+    }
+
+    val (surfaceColor, tint, contentColor) = when (variant) {
+        GlassButtonVariant.Primary -> Triple(
+            glassColors.glassSurfaceElevated,
+            glassColors.glassAccent.copy(alpha = 0.2f),
+            glassColors.onGlass
+        )
+        GlassButtonVariant.Secondary -> Triple(
+            glassColors.glassSurface,
+            glassColors.glassTintSecondary,
+            glassColors.onGlass
+        )
+        GlassButtonVariant.Standard -> Triple(
+            glassColors.glassSurface,
+            glassColors.glassTint,
+            glassColors.onGlass
+        )
+        GlassButtonVariant.Text -> Triple(
+            Color.Transparent,
+            Color.Transparent,
+            glassColors.onGlass
+        )
+    }
+
+    val finalContentColor = if (enabled) contentColor else glassColors.onGlassMuted
+
+    Row(
+        modifier = modifier
+            .defaultMinSize(minWidth = minWidth, minHeight = minHeight)
+            .then(
+                if (effectsEnabled && variant != GlassButtonVariant.Text && actualBackdrop != null) {
+                    Modifier.drawBackdrop(
+                        backdrop = actualBackdrop,
+                        shape = { shape },
+                        effects = effects,
+                        highlight = { Highlight.Plain },
+                        layerBlock = if (interactiveHighlight != null) {
+                            {
+                                val width = size.width
+                                val height = size.height
+
+                                val progress = interactiveHighlight.pressProgress
+                                val scale = lerp(1f, 1f + 4f.dp.toPx() / size.height, progress)
+
+                                val maxOffset = size.minDimension
+                                val initialDerivative = 0.05f
+                                val offset = interactiveHighlight.offset
+                                translationX = (maxOffset * tanh((initialDerivative * offset.x / maxOffset).toDouble())).toFloat()
+                                translationY = (maxOffset * tanh((initialDerivative * offset.y / maxOffset).toDouble())).toFloat()
+
+                                val maxDragScale = 4f.dp.toPx() / size.height
+                                val offsetAngle = atan2(offset.y.toDouble(), offset.x.toDouble()).toFloat()
+                                scaleX =
+                                    scale +
+                                            maxDragScale * abs(cos(offsetAngle) * offset.x / size.maxDimension) *
+                                            (width / height).fastCoerceAtMost(1f)
+                                scaleY =
+                                    scale +
+                                            maxDragScale * abs(sin(offsetAngle) * offset.y / size.maxDimension) *
+                                            (height / width).fastCoerceAtMost(1f)
+                            }
+                        } else null,
+                        onDrawSurface = {
+                            if (surfaceColor.isSpecified && surfaceColor != Color.Transparent) {
+                                drawRect(surfaceColor)
+                            }
+                            if (tint.isSpecified && tint != Color.Transparent) {
+                                drawRect(tint, blendMode = BlendMode.Hue)
+                                drawRect(tint.copy(alpha = tint.alpha * 0.5f))
+                            }
+                            if (!enabled) {
+                                drawRect(Color.Black.copy(alpha = 0.4f))
+                            }
+                        }
+                    )
+                } else {
+                    Modifier
+                }
+            )
+            .clickable(
+                enabled = enabled,
+                interactionSource = null,
+                indication = if (interactiveHighlight != null) null else LocalIndication.current,
+                role = Role.Button,
+                onClick = onClick
+            )
+            .then(
+                if (interactiveHighlight != null) {
+                    Modifier
+                        .then(interactiveHighlight.modifier)
+                        .then(interactiveHighlight.gestureModifier)
+                } else {
+                    Modifier
+                }
+            )
+            .padding(contentPadding),
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        CompositionLocalProvider(LocalContentColor provides finalContentColor) {
+            ProvideTextStyle(GlassButtonDefaults.TextStyle) {
+                content()
+            }
+        }
+    }
+}
+
+/**
+ * Convenience composable for a primary glass button.
+ */
+@Composable
+fun GlassPrimaryButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    content: @Composable RowScope.() -> Unit
+) {
+    GlassButton(
+        onClick = onClick,
+        modifier = modifier,
+        enabled = enabled,
+        variant = GlassButtonVariant.Primary,
+        content = content
+    )
+}
+
+/**
+ * Convenience composable for a text-only glass button.
+ */
+@Composable
+fun GlassTextButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    content: @Composable RowScope.() -> Unit
+) {
+    GlassButton(
+        onClick = onClick,
+        modifier = modifier,
+        enabled = enabled,
+        variant = GlassButtonVariant.Text,
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+        content = content
+    )
+}
+
+/**
+ * Glass icon button component optimized for toolbars.
+ */
+@Composable
+fun GlassIconButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    size: Dp = 40.dp,
+    shape: Shape = ContinuousCapsule,
+    effects: BackdropEffectScope.() -> Unit = GlassButtonEffects,
+    backdrop: Backdrop? = null,
+    checked: Boolean? = null,
+    selected: Boolean = checked ?: false,
+    enabled: Boolean = true,
+    content: @Composable () -> Unit
+) {
+    GlassButton(
+        onClick = onClick,
+        modifier = modifier.size(size),
+        shape = shape,
+        effects = effects,
+        backdrop = backdrop,
+        minWidth = size,
+        minHeight = size,
+        contentPadding = PaddingValues(0.dp),
+        enabled = enabled,
+    ) {
+        content()
+    }
+}
+
+/**
+ * Glass icon toggle button.
+ */
+@Composable
+fun GlassIconToggleButton(
+    selected: Boolean,
+    onSelectedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    size: Dp = 40.dp,
+    shape: Shape = ContinuousCapsule,
+    enabled: Boolean = true,
+    content: @Composable () -> Unit
+) {
+    GlassIconButton(
+        onClick = { onSelectedChange(!selected) },
+        modifier = modifier,
+        size = size,
+        shape = shape,
+        selected = selected,
+        enabled = enabled,
+        content = content
+    )
+}

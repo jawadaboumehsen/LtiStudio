@@ -1,0 +1,350 @@
+﻿/*
+ * Copyright 2025 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
+package org.ide.lti.core.designsystem.component
+
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTag
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.kyant.capsule.ContinuousRoundedRectangle
+import com.kashif_e.backdrop.Backdrop
+import com.kashif_e.backdrop.BackdropEffectScope
+import com.kashif_e.backdrop.effects.blur
+import com.kashif_e.backdrop.effects.lens
+import com.kashif_e.backdrop.effects.vibrancy
+import org.ide.lti.core.designsystem.icon.AppIcons
+import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.utils.nonLetterColorVisualTransformation
+import org.ide.lti.core.designsystem.utils.tabNavigation
+
+/**
+ * Text field glass effect stack — subtle, per the kmp-liquid-glass skill's guidance for
+ * inputs that shouldn't distract from typed content.
+ */
+val GlassTextFieldEffects: BackdropEffectScope.() -> Unit = {
+    vibrancy()
+    blur(2.dp.toPx())
+    lens(8.dp.toPx(), 16.dp.toPx())
+}
+
+/**
+ * Glass text field component with focus animations.
+ */
+@Composable
+fun GlassTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    readOnly: Boolean = false,
+    textStyle: TextStyle = LocalTextStyle.current,
+    label: String? = null,
+    placeholder: String? = null,
+    helperText: String? = null,
+    errorText: String? = null,
+    leadingIcon: (@Composable () -> Unit)? = null,
+    trailingIcon: (@Composable () -> Unit)? = null,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
+    singleLine: Boolean = true,
+    maxLines: Int = 1,
+    effects: BackdropEffectScope.() -> Unit = GlassTextFieldEffects,
+    backdrop: Backdrop? = null,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() }
+) {
+    val isFocused by interactionSource.collectIsFocusedAsState()
+    val isError = errorText != null
+
+    val animatedBorderWidth by animateDpAsState(
+        targetValue = if (isFocused) 2.dp else 1.dp,
+        animationSpec = tween(150)
+    )
+
+    val animatedBorderColor by animateColorAsState(
+        targetValue = when {
+            isError -> MaterialTheme.colorScheme.error
+            isFocused -> GlassTheme.colors.glassBorderHighlight
+            else -> GlassTheme.colors.glassBorder
+        },
+        animationSpec = tween(150)
+    )
+
+    Column(modifier = modifier) {
+        if (label != null) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodySmall,
+                color = if (isError) MaterialTheme.colorScheme.error else GlassTheme.colors.onGlassSecondary,
+                modifier = Modifier.padding(bottom = 4.dp, start = 4.dp)
+            )
+        }
+
+        GlassSurface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = ContinuousRoundedRectangle(12.dp),
+            effects = effects,
+            backdrop = backdrop,
+            borderColor = animatedBorderColor
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (leadingIcon != null) {
+                    Box(modifier = Modifier.padding(end = 12.dp)) {
+                        leadingIcon()
+                    }
+                }
+
+                Box(modifier = Modifier.weight(1f)) {
+                    if (value.isEmpty() && placeholder != null) {
+                        Text(
+                            text = placeholder,
+                            style = textStyle,
+                            color = GlassTheme.colors.onGlassMuted
+                        )
+                    }
+
+                    BasicTextField(
+                        value = value,
+                        onValueChange = onValueChange,
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = enabled,
+                        readOnly = readOnly,
+                        textStyle = textStyle.copy(color = GlassTheme.colors.onGlass),
+                        visualTransformation = visualTransformation,
+                        keyboardOptions = keyboardOptions,
+                        keyboardActions = keyboardActions,
+                        singleLine = singleLine,
+                        maxLines = maxLines,
+                        interactionSource = interactionSource,
+                        cursorBrush = SolidColor(GlassTheme.colors.glassAccent)
+                    )
+                }
+
+                if (trailingIcon != null) {
+                    Box(modifier = Modifier.padding(start = 12.dp)) {
+                        trailingIcon()
+                    }
+                }
+            }
+        }
+
+        val message = errorText ?: helperText
+        if (message != null) {
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodySmall,
+                color = if (isError) MaterialTheme.colorScheme.error else GlassTheme.colors.onGlassMuted,
+                modifier = Modifier.padding(top = 4.dp, start = 4.dp)
+            )
+        }
+    }
+}
+
+/**
+ * Secure password input with glass styling and visibility toggle.
+ */
+@Composable
+fun GlassPasswordField(
+    label: String,
+    value: String,
+    showPassword: Boolean,
+    showPasswordChange: (Boolean) -> Unit,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    readOnly: Boolean = false,
+    singleLine: Boolean = true,
+    hint: String? = null,
+    showPasswordTestTag: String? = null,
+    autoFocus: Boolean = false,
+    keyboardType: KeyboardType = KeyboardType.Password,
+    imeAction: ImeAction = ImeAction.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
+) {
+    val focusRequester = remember { FocusRequester() }
+    GlassTextField(
+        modifier = modifier
+            .tabNavigation()
+            .focusRequester(focusRequester),
+        label = label,
+        value = value,
+        onValueChange = onValueChange,
+        visualTransformation = when {
+            !showPassword -> PasswordVisualTransformation()
+            readOnly -> nonLetterColorVisualTransformation()
+            else -> VisualTransformation.None
+        },
+        singleLine = singleLine,
+        readOnly = readOnly,
+        keyboardOptions = KeyboardOptions(
+            keyboardType = keyboardType,
+            imeAction = imeAction,
+        ),
+        keyboardActions = keyboardActions,
+        errorText = hint,
+        trailingIcon = {
+            IconButton(
+                onClick = { showPasswordChange(!showPassword) },
+            ) {
+                val imageVector = if (showPassword) {
+                    AppIcons.OutlinedVisibilityOff
+                } else {
+                    AppIcons.OutlinedVisibility
+                }
+
+                Icon(
+                    modifier = Modifier.semantics { showPasswordTestTag?.let { testTag = it } },
+                    imageVector = imageVector,
+                    contentDescription = "togglePassword",
+                )
+            }
+        },
+    )
+}
+
+/**
+ * OTP / PIN input field with glass styling.
+ */
+@Composable
+fun GlassOtpTextField(
+    onOtpTextCorrectlyEntered: () -> Unit,
+    modifier: Modifier = Modifier,
+    realOtp: String = "",
+    otpCount: Int = 4,
+) {
+    var otpText by remember { mutableStateOf("") }
+    var isError by remember { mutableStateOf(false) }
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        BasicTextField(
+            value = TextFieldValue(otpText, selection = TextRange(otpText.length)),
+            onValueChange = {
+                otpText = it.text
+                isError = false
+                if (otpText.length == otpCount) {
+                    if (otpText != realOtp) {
+                        isError = true
+                    } else {
+                        onOtpTextCorrectlyEntered()
+                    }
+                }
+            },
+            keyboardActions = KeyboardActions(
+                onDone = {
+                    if (otpText != realOtp) {
+                        isError = true
+                    } else {
+                        onOtpTextCorrectlyEntered()
+                    }
+                },
+            ),
+            keyboardOptions = KeyboardOptions.Default.copy(
+                keyboardType = KeyboardType.Number,
+                imeAction = ImeAction.Done,
+            ),
+            decorationBox = {
+                Row(horizontalArrangement = Arrangement.Center) {
+                    repeat(otpCount) { index ->
+                        val char = if (index >= otpText.length) "" else otpText[index].toString()
+                        val filled = char.isNotEmpty()
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .padding(4.dp)
+                                .glassEffect(
+                                    shape = ContinuousRoundedRectangle(8.dp),
+                                    effects = { vibrancy(); blur(2.dp.toPx()) },
+                                    tint = if (filled) GlassTheme.colors.glassTint else Color.Unspecified,
+                                )
+                                .glassBorder(
+                                    color = if (filled) {
+                                        GlassTheme.colors.glassBorderHighlight
+                                    } else {
+                                        GlassTheme.colors.glassBorder
+                                    },
+                                    width = 1.dp,
+                                    shape = ContinuousRoundedRectangle(8.dp),
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = char,
+                                style = MaterialTheme.typography.titleMedium,
+                                color = GlassTheme.colors.onGlass,
+                            )
+                        }
+                    }
+                }
+            },
+        )
+        if (isError) {
+            Text(
+                text = "Invalid OTP",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+        }
+    }
+}

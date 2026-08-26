@@ -1,0 +1,23 @@
+{
+  "name": "lti-designsystem-plugins",
+  "owner": {
+    "name": "Kashif-E",
+    "url": "https://github.com/Kashif-E"
+  },
+  "metadata": {
+    "description": "Local marketplace for design-system plugins bundled with LtiRomGui.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "kmp-liquid-glass",
+      "source": "./kmp-liquid-glass",
+      "description": "Build iOS-style liquid glass / frosted glass UI components in Compose Multiplatform using the io.github.kashif-mehmood-km:backdrop library. Provides recipes for cards, buttons, dialogs, tab bars, toggles, magnifiers, progressive blur, SDF shaders, and more — across Android, iOS, Desktop, and Web.",
+      "category": "ui",
+      "tags": ["compose-multiplatform", "kmp", "liquid-glass", "frosted-glass", "ios", "ui-components"],
+      "homepage": "https://github.com/Kashif-E/KMPLiquidGlass",
+      "repository": "https://github.com/Kashif-E/KMPLiquidGlass",
+      "license": "Apache-2.0"
+    }
+  ]
+}
