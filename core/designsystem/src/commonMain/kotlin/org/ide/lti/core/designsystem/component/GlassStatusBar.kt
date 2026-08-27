@@ -112,6 +112,11 @@ fun GlassStatusBar(
                     modifier = Modifier
                         .clip(RoundedCornerShape(CornerRadius.ExtraSmall))
                         .background(glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Elevated))
+                        .border(
+                            StrokeWidth.Hairline,
+                            glassColors.glassBorder,
+                            RoundedCornerShape(CornerRadius.ExtraSmall)
+                        )
                         .padding(horizontal = Spacing.Compact, vertical = Spacing.ExtraExtraSmall)
                 ) {
                     Box(

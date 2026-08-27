@@ -92,6 +92,13 @@ fun GlassTab(
         else -> glassColors.onGlassMuted
     }
 
+    val borderColor = when {
+        selected && isHovered -> glassColors.glassBorderHighlight
+        selected -> glassColors.glassBorder
+        isHovered -> glassColors.glassBorder.copy(alpha = AlphaTokens.Border)
+        else -> glassColors.glassBorder.copy(alpha = AlphaTokens.Disabled)
+    }
+
     Tab(
         text = {
             Text(
@@ -113,6 +120,11 @@ fun GlassTab(
                 shape = tabShape,
                 surfaceColor = surfaceColor,
                 tintColor = tintColor,
+            )
+            .border(
+                width = StrokeWidth.Hairline,
+                color = borderColor,
+                shape = tabShape,
             )
             .onPointerEvent(PointerEventType.Enter) { isHovered = true }
             .onPointerEvent(PointerEventType.Exit) { isHovered = false }

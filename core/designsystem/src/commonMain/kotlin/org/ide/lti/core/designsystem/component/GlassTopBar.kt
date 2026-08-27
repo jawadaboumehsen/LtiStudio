@@ -509,6 +509,7 @@ private fun SegmentedToggleButton(
 
     val (surfaceColor, tintColor) = resolveSegmentedToggleColors(isActive, isHovered, glassColors)
     val iconTint = resolveSegmentedToggleIconTint(isActive, isHovered, glassColors)
+    val borderColor = resolveSegmentedToggleBorderColor(isActive, isHovered, glassColors)
 
     Box(
         modifier = modifier
@@ -521,6 +522,13 @@ private fun SegmentedToggleButton(
                 shape = buttonShape,
                 surfaceColor = surfaceColor,
                 tintColor = tintColor,
+            )
+            .then(
+                if (borderColor != Color.Transparent) {
+                    Modifier.border(width = StrokeWidth.Hairline, color = borderColor, shape = buttonShape)
+                } else {
+                    Modifier
+                }
             )
             .onPointerEvent(PointerEventType.Enter) { isHovered = true }
             .onPointerEvent(PointerEventType.Exit) { isHovered = false }
@@ -546,9 +554,20 @@ private fun resolveSegmentedToggleColors(
     isHovered: Boolean,
     glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme,
 ): Pair<Color, Color> {
-    val surfaceColor = if (isActive || isHovered) glassColors.glassSurfaceElevated else Color.Transparent
+    val surfaceColor = if (isActive || isHovered) glassColors.glassSurfaceElevated else glassColors.glassSurface
     val tintColor = if (isActive) glassColors.glassAccent.copy(alpha = AlphaTokens.Hover) else Color.Transparent
     return surfaceColor to tintColor
+}
+
+private fun resolveSegmentedToggleBorderColor(
+    isActive: Boolean,
+    isHovered: Boolean,
+    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme,
+): Color = when {
+    isActive && isHovered -> glassColors.glassBorderHighlight
+    isActive -> glassColors.glassBorder
+    isHovered -> glassColors.glassBorder.copy(alpha = AlphaTokens.Border)
+    else -> Color.Transparent
 }
 
 private fun resolveSegmentedToggleIconTint(
@@ -613,6 +632,11 @@ private fun GlassTopBarIconButton(
     val actualBackdrop = backdrop ?: GlassTheme.backdrop
     val buttonShape = CircleShape
 
+    val borderColor by animateColorAsState(
+        targetValue = if (isHovered) glassColors.glassBorderHighlight else glassColors.glassBorder,
+        animationSpec = tween(MotionDuration.Fast)
+    )
+
     Box(
         modifier = modifier
             .size(ComponentSize.TopBarButtonSize)
@@ -622,9 +646,10 @@ private fun GlassTopBarIconButton(
                 effectsEnabled = effectsEnabled,
                 backdrop = actualBackdrop,
                 shape = buttonShape,
-                surfaceColor = if (isHovered) glassColors.glassSurfaceElevated else Color.Transparent,
+                surfaceColor = if (isHovered) glassColors.glassSurfaceElevated else glassColors.glassSurface,
                 tintColor = Color.Transparent,
             )
+            .border(width = StrokeWidth.Hairline, color = borderColor, shape = buttonShape)
             .onPointerEvent(PointerEventType.Enter) { isHovered = true }
             .onPointerEvent(PointerEventType.Exit) { isHovered = false }
             .clickable(
