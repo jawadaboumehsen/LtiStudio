@@ -395,6 +395,23 @@ exceptions:
       - "RuntimeException"
       - "Throwable"
 
+lti-design-system:
+  active: true
+  NoRawColorLiteral:
+    active: true
+    excludes: ["**/theme/**"]
+  NoRawAlphaLiteral:
+    active: true
+    excludes: ["**/theme/**"]
+  NoRawDimensionLiteral:
+    active: true
+    excludes: ["**/theme/**"]
+  NoRawMotionLiteral:
+    active: true
+    excludes: ["**/theme/**"]
+  NoBackdropEffectImport:
+    active: true
+
 naming:
   active: true
   BooleanPropertyNaming:

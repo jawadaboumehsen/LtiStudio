@@ -14,6 +14,10 @@ import org.gradle.kotlin.dsl.named
  * @see Detekt
  */
 internal fun Project.configureDetekt(extension: DetektExtension) = extension.apply {
+    source.setFrom(files("src"))
+    baseline = rootProject.file(
+        "config/detekt/baseline/${project.path.replace(":", "-").removePrefix("-")}.xml",
+    )
     tasks.named<Detekt>("detekt") {
         jvmTarget = "17"
         reports {
@@ -27,5 +31,6 @@ internal fun Project.configureDetekt(extension: DetektExtension) = extension.app
     dependencies {
         "detektPlugins"(libs.findLibrary("detekt-formatting").get())
         "detektPlugins"(libs.findLibrary("twitter-detekt-compose").get())
+        "detektPlugins"(project(":detekt-rules"))
     }
 }
