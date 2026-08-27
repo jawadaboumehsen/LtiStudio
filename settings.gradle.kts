@@ -35,6 +35,7 @@ rootProject.name = "LtiRomGui"
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
+include(":detekt-rules")
 include(":backdrop")
 include(":lti-shared")
 include(":lti-desktop")
