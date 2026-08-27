@@ -26,12 +26,16 @@ class AIServiceImpl : AIService {
 
         return flow {
             // TODO: Call actual AI API
-            emit("This is a placeholder AI response. ")
-            emit("Integration with LLM API pending. ")
-            emit("\n\nYou said: $message")
+            val responsePart1 = "This is a placeholder AI response. "
+            val responsePart2 = "Integration with LLM API pending. "
+            val responsePart3 = "\n\nYou said: $message"
 
-            val response = history.lastOrNull()?.content ?: ""
-            history.add(Message(MessageRole.ASSISTANT, response))
+            emit(responsePart1)
+            emit(responsePart2)
+            emit(responsePart3)
+
+            val fullResponse = responsePart1 + responsePart2 + responsePart3
+            history.add(Message(MessageRole.ASSISTANT, fullResponse))
         }
     }
 

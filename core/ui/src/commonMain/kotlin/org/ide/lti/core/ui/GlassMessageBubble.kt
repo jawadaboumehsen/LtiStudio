@@ -40,6 +40,7 @@ import kotlinx.datetime.toLocalDateTime
 import org.ide.lti.core.designsystem.component.GlassIconButton
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 
@@ -91,6 +92,11 @@ fun GlassMessageBubble(
                 Column {
                     // Message content with selection support
                     SelectionContainer {
+                        Text(
+                            text = content,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = GlassTheme.colors.onGlass,
+                        )
                     }
 
                     // Copy button (visible on hover)

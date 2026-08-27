@@ -84,9 +84,9 @@ class WorkspaceManager(
      * Open a workspace by path.
      */
     suspend fun openWorkspaceByPath(path: String): Result<Workspace> {
-        // TODO: Create workspace from path if it doesn't exist
         val workspaceId = path.hashCode().toString()
-        val name = path.substringAfterLast('/')
+        val normalized = path.trimEnd('/', '\\')
+        val name = normalized.substringAfterLast('/').substringAfterLast('\\').ifEmpty { path }
 
         val workspace = Workspace(
             id = workspaceId,
