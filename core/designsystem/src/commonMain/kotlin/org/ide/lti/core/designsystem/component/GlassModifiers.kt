@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2025 Mifos Initiative
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -29,7 +29,11 @@ import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import com.kashif_e.backdrop.drawBackdrop
 import com.kashif_e.backdrop.effects.*
 import com.kashif_e.backdrop.highlight.Highlight
+import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.StrokeWidth
 
 /**
  * Applies glass morphism effect to any composable.
@@ -66,7 +70,7 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 @Composable
 fun Modifier.glassEffect(
     backdrop: Backdrop? = null,
-    shape: Shape = ContinuousRoundedRectangle(16.dp),
+    shape: Shape = ContinuousRoundedRectangle(CornerRadius.Medium),
     surfaceColor: Color = Color.Unspecified,
     tint: Color = Color.Unspecified,
     effects: BackdropEffectScope.() -> Unit = StandardGlassEffects
@@ -150,8 +154,8 @@ fun Modifier.glassBackground(
 @Composable
 fun Modifier.glassBorder(
     color: Color? = null,
-    width: Dp = 1.dp,
-    shape: Shape = ContinuousRoundedRectangle(16.dp)
+    width: Dp = StrokeWidth.Standard,
+    shape: Shape = ContinuousRoundedRectangle(CornerRadius.Medium)
 ): Modifier {
     val glassColors = GlassTheme.colors
     val finalColor = color ?: glassColors.glassBorder
@@ -218,11 +222,12 @@ fun Modifier.glassInteractive(
 @Composable
 fun Modifier.glassScrim(
     backdrop: Backdrop? = null,
-    blurRadius: Dp = 16.dp,
-    surfaceColor: Color = Color.Black.copy(alpha = 0.3f)
+    blurRadius: Dp = Spacing.Medium,
+    surfaceColor: Color = Color.Unspecified
 ): Modifier {
     val actualBackdrop = backdrop ?: GlassTheme.backdrop ?: rememberLayerBackdrop()
     val effectsEnabled = GlassTheme.effectsEnabled
+    val resolvedSurfaceColor = if (surfaceColor.isSpecified) surfaceColor else GlassTheme.colors.glassShadow.copy(alpha = AlphaTokens.Scrim)
 
     return if (effectsEnabled) {
         this.drawBackdrop(
@@ -234,12 +239,12 @@ fun Modifier.glassScrim(
             },
             highlight = { Highlight.Plain },
             onDrawSurface = {
-                drawRect(surfaceColor)
+                drawRect(resolvedSurfaceColor)
             }
         )
     } else {
         this.drawBehind {
-            drawRect(surfaceColor)
+            drawRect(resolvedSurfaceColor)
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2025 Mifos Initiative
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -32,6 +32,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.kyant.capsule.ContinuousCapsule
+import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.IconSize
+import org.ide.lti.core.designsystem.theme.Spacing
 
 @Composable
 fun GlassTab(
@@ -51,7 +54,7 @@ fun GlassTab(
         modifier = modifier
             .clip(ContinuousCapsule)
             .background(if (selected) selectedColor else unselectedColor)
-            .padding(horizontal = 20.dp),
+            .padding(horizontal = Spacing.TabHorizontal),
     )
 }
 
@@ -69,11 +72,11 @@ fun GlassTabItem(
 ) {
     Row(
         modifier = modifier
-            .height(32.dp)
+            .height(ComponentSize.TabItemHeight)
             .clip(MaterialTheme.shapes.small)
             .clickable(onClick = onSelect)
             .background(if (selected) MaterialTheme.colorScheme.surfaceVariant else Color.Transparent)
-            .padding(horizontal = 12.dp, vertical = 6.dp),
+            .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Compact),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -88,13 +91,13 @@ fun GlassTabItem(
             IconButton(
                 onClick = onClose,
                 modifier = Modifier
-                    .size(16.dp)
-                    .padding(start = 4.dp),
+                    .size(IconSize.Medium)
+                    .padding(start = Spacing.ExtraSmall),
             ) {
                 Icon(
                     imageVector = Icons.Default.Close,
                     contentDescription = "Close tab",
-                    modifier = Modifier.size(12.dp),
+                    modifier = Modifier.size(IconSize.Small),
                 )
             }
         }
@@ -117,8 +120,8 @@ fun GlassTabBar(
     val activeIndex = if (selectedIndex != 0) selectedIndex else selectedTabIndex
     Row(
         modifier = modifier
-            .height(36.dp)
-            .padding(horizontal = 8.dp, vertical = 2.dp),
+            .height(ComponentSize.TabBarHeight)
+            .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraExtraSmall),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {

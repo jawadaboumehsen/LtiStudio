@@ -1,4 +1,4 @@
-﻿package org.ide.lti.core.designsystem.component
+package org.ide.lti.core.designsystem.component
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastCoerceIn
 import androidx.compose.ui.util.lerp
+
 import kotlinx.coroutines.flow.collectLatest
 import com.kyant.capsule.ContinuousCapsule
 import com.kashif_e.backdrop.Backdrop
@@ -42,6 +43,11 @@ import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.highlight.Highlight
 import com.kashif_e.backdrop.shadow.InnerShadow
 import com.kashif_e.backdrop.shadow.Shadow
+import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.ToggleColors
 import org.ide.lti.core.designsystem.utils.DampedDragAnimation
 
 @Composable
@@ -52,16 +58,15 @@ fun GlassToggle(
     modifier: Modifier = Modifier
 ) {
     val isLightTheme = !isSystemInDarkTheme()
+    val glassColors = GlassTheme.colors
     val accentColor =
-        if (isLightTheme) Color(0xFF34C759)
-        else Color(0xFF30D158)
-    val trackColor =
-        if (isLightTheme) Color(0xFF787878).copy(0.2f)
-        else Color(0xFF787880).copy(0.36f)
+        if (isLightTheme) ToggleColors.ActiveLight
+        else ToggleColors.ActiveDark
+    val trackColor = glassColors.glassBorder
 
     val density = LocalDensity.current
     val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
-    val dragWidth = with(density) { 20f.dp.toPx() }
+    val dragWidth = with(density) { ComponentSize.ToggleDragWidth.toPx() }
     val animationScope = rememberCoroutineScope()
     var didDrag by remember { mutableStateOf(false) }
     var fraction by remember { mutableFloatStateOf(if (selected()) 1f else 0f) }
@@ -126,14 +131,14 @@ fun GlassToggle(
                     val fraction = dampedDragAnimation.value
                     drawRect(lerp(trackColor, accentColor, fraction))
                 }
-                .size(64f.dp, 28f.dp)
+                .size(ComponentSize.ToggleTrackWidth, ComponentSize.ToggleTrackHeight)
         )
 
         Box(
             Modifier
                 .graphicsLayer {
                     val fraction = dampedDragAnimation.value
-                    val padding = 2f.dp.toPx()
+                    val padding = Spacing.ExtraExtraSmall.toPx()
                     translationX =
                         if (isLtr) lerp(padding, padding + dragWidth, fraction)
                         else lerp(-padding, -(padding + dragWidth), fraction)
@@ -174,14 +179,14 @@ fun GlassToggle(
                     },
                     shadow = {
                         Shadow(
-                            radius = 4f.dp,
-                            color = Color.Black.copy(alpha = 0.05f)
+                            radius = Spacing.ExtraSmall,
+                            color = glassColors.glassShadow.copy(alpha = AlphaTokens.Faint)
                         )
                     },
                     innerShadow = {
                         val progress = dampedDragAnimation.pressProgress
                         InnerShadow(
-                            radius = 4f.dp * progress,
+                            radius = Spacing.ExtraSmall * progress,
                             alpha = progress
                         )
                     },
@@ -194,10 +199,10 @@ fun GlassToggle(
                     },
                     onDrawSurface = {
                         val progress = dampedDragAnimation.pressProgress
-                        drawRect(Color.White.copy(alpha = 1f - progress))
+                        drawRect(glassColors.onGlass.copy(alpha = 1f - progress))
                     }
                 )
-                .size(40f.dp, 24f.dp)
+                .size(ComponentSize.ToggleThumbWidth, ComponentSize.ToggleThumbHeight)
         )
     }
 }

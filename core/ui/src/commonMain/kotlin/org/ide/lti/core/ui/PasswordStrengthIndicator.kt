@@ -38,7 +38,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
+import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.LtiTheme
+import org.ide.lti.core.designsystem.theme.PasswordStrengthColors
+import org.ide.lti.core.designsystem.theme.Spacing
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Suppress("LongMethod", "CyclomaticComplexMethod", "MagicNumber")
@@ -65,10 +69,10 @@ fun PasswordStrengthIndicator(
         PasswordStrengthState.NONE -> MaterialTheme.colorScheme.error
         PasswordStrengthState.WEAK_1 -> MaterialTheme.colorScheme.error
         PasswordStrengthState.WEAK_2 -> MaterialTheme.colorScheme.error
-        PasswordStrengthState.WEAK_3 -> weakColor
+        PasswordStrengthState.WEAK_3 -> PasswordStrengthColors.Weak
         PasswordStrengthState.GOOD -> MaterialTheme.colorScheme.primary
-        PasswordStrengthState.STRONG -> strongColor
-        PasswordStrengthState.VERY_STRONG -> Color.Magenta
+        PasswordStrengthState.STRONG -> PasswordStrengthColors.Strong
+        PasswordStrengthState.VERY_STRONG -> PasswordStrengthColors.VeryStrong
     }
     val animatedIndicatorColor by animateColorAsState(
         targetValue = indicatorColor,
@@ -89,7 +93,7 @@ fun PasswordStrengthIndicator(
         Box(
             Modifier
                 .fillMaxWidth()
-                .height(4.dp)
+                .height(ComponentSize.ProgressBarHeight)
                 .background(MaterialTheme.colorScheme.surfaceContainerHigh),
         ) {
             Box(
@@ -105,7 +109,7 @@ fun PasswordStrengthIndicator(
                     },
             )
         }
-        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(Spacing.ExtraSmall))
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -134,7 +138,7 @@ private fun MinimumCharacterCount(
 ) {
     val characterCountColor by animateColorAsState(
         targetValue = if (minimumRequirementMet) {
-            strongColor
+            PasswordStrengthColors.Strong
         } else {
             MaterialTheme.colorScheme.surfaceDim
         },
@@ -156,10 +160,10 @@ private fun MinimumCharacterCount(
                 imageVector = it,
                 contentDescription = null,
                 tint = characterCountColor,
-                modifier = Modifier.size(12.dp),
+                modifier = Modifier.size(IconSize.Small),
             )
         }
-        Spacer(modifier = Modifier.width(2.dp))
+        Spacer(modifier = Modifier.width(Spacing.ExtraExtraSmall))
         Text(
             text = "$minimumCharacterCount characters",
             color = characterCountColor,
@@ -177,9 +181,6 @@ enum class PasswordStrengthState {
     STRONG,
     VERY_STRONG,
 }
-
-private val strongColor = Color(0xFF41B06D)
-private val weakColor = Color(0xFF8B6609)
 
 @Preview
 @Composable

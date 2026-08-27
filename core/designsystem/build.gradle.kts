@@ -41,6 +41,7 @@ kotlin {
             api(libs.back.handler)
             api(libs.window.size)
             api("top.ltfan.capsule:capsule:1.0.0")
+            api("com.materialkolor:material-kolor:5.0.0")
             api(libs.kermit.logging)
         }
     }
@@ -55,5 +56,6 @@ compose.resources {
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>().configureEach {
     compilerOptions {
         freeCompilerArgs.add("-Xcontext-receivers")
+        freeCompilerArgs.add("-Xskip-metadata-version-check")
     }
 }

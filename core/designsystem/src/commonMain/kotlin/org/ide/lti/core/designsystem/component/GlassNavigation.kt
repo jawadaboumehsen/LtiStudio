@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2024 Mifos Initiative
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -27,6 +27,7 @@ import com.kashif_e.backdrop.BackdropEffectScope
 import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.vibrancy
 import org.ide.lti.core.designsystem.icon.AppIcons
+import org.ide.lti.core.designsystem.theme.Elevation
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -94,7 +95,7 @@ fun GlassNavigationBar(
         // (rounding here would leave gaps against the window's real edge).
         modifier = modifier.glassEffect(shape = RectangleShape, effects = GlassDockedBarEffects),
         containerColor = Color.Transparent,
-        tonalElevation = 0.dp,
+        tonalElevation = Elevation.None,
         content = content,
     )
 }

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2025 Mifos Initiative
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -58,6 +58,8 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
+import org.ide.lti.core.designsystem.theme.GlassLayoutColors
+import org.ide.lti.core.designsystem.theme.PreviewSampleColors
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -84,9 +86,13 @@ import com.kashif_e.backdrop.drawBackdrop
 import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
-import org.ide.lti.core.designsystem.component.GlassCard
-import org.ide.lti.core.designsystem.component.GlassIconButton
+import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.CornerRadius as ThemeCornerRadius
+import org.ide.lti.core.designsystem.theme.Elevation
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /**
@@ -540,48 +546,48 @@ data class GlassLayoutAppearance(
  */
 object LtiLayoutDefaults {
     /** Height of the top application bar */
-    val TopBarHeight = 44.dp
+    val TopBarHeight = ComponentSize.TopBarHeight
 
     /** Height of the bottom status bar */
-    val StatusBarHeight = 22.dp
+    val StatusBarHeight = ComponentSize.StatusBarHeight
 
     /** Padding around each glass panel */
-    val PanelPadding = 4.dp
+    val PanelPadding = Spacing.PanelPadding
 
     /** Corner radius for glass panel cards */
-    val PanelCornerRadius = 12.dp
+    val PanelCornerRadius = ThemeCornerRadius.Panel
 
     /** Width of drag dividers (hit target) */
-    val DividerWidth = 8.dp
+    val DividerWidth = ComponentSize.DividerWidth
 
     /** Width of divider visual line in normal state */
-    val DividerLineWidthNormal = 1.dp
+    val DividerLineWidthNormal = StrokeWidth.Standard
 
     /** Width of divider visual line when active (hovered/dragging) */
-    val DividerLineWidthActive = 3.dp
+    val DividerLineWidthActive = StrokeWidth.Active
 
     /** Top padding for toggle button overlay */
-    val ToggleButtonTopPadding = 48.dp
+    val ToggleButtonTopPadding = ComponentSize.ToggleButtonTopPadding
 
     /** End padding for toggle button overlay */
-    val ToggleButtonEndPadding = 8.dp
+    val ToggleButtonEndPadding = ComponentSize.ToggleButtonEndPadding
 
     /** Spacing between toggle buttons */
-    val ToggleButtonSpacing = 4.dp
+    val ToggleButtonSpacing = ComponentSize.ToggleButtonSpacing
 
     // ==================== PANEL SIZE CONSTRAINTS ====================
 
     /** Minimum width for side panels to prevent over-shrinking */
-    val MinPanelWidth = 180.dp
+    val MinPanelWidth = ComponentSize.MinPanelWidth
 
     /** Maximum width for side panels to prevent over-expanding */
-    val MaxPanelWidth = 600.dp
+    val MaxPanelWidth = ComponentSize.MaxPanelWidth
 
     /** Minimum height for bottom panel */
-    val MinPanelHeight = 100.dp
+    val MinPanelHeight = ComponentSize.MinPanelHeight
 
     /** Maximum height for bottom panel */
-    val MaxPanelHeight = 600.dp
+    val MaxPanelHeight = ComponentSize.MaxPanelHeight
 
     // ==================== VISUAL POLISH ====================
 
@@ -601,10 +607,10 @@ object LtiLayoutDefaults {
     }
 
     /** Elevation for panel shadows */
-    val PanelElevation = 8.dp
+    val PanelElevation = Elevation.Panel
 
     /** Shadow color for depth */
-    val PanelShadowColor = Color.Black.copy(alpha = 0.15f)
+    val PanelShadowColor = GlassLayoutColors.PanelShadow
 }
 
 /**
@@ -753,7 +759,7 @@ private fun GlassDragDivider(
     val normalColor = if (appearance.dividerColor.isSpecified) {
         appearance.dividerColor
     } else {
-        colors.glassBorder.copy(alpha = 0.3f)
+        colors.glassBorder.copy(alpha = AlphaTokens.Muted)
     }
     val activeColor = if (appearance.dividerActiveColor.isSpecified) {
         appearance.dividerActiveColor
@@ -824,15 +830,15 @@ private fun GlassDragDivider(
                             .drawBehind {
                                 // Subtle glow effect on hover
                                 drawRoundRect(
-                                    color = activeColor.copy(alpha = 0.15f),
-                                    cornerRadius = CornerRadius(50.dp.toPx()),
+                                    color = activeColor.copy(alpha = AlphaTokens.Glow),
+                                    cornerRadius = CornerRadius(ThemeCornerRadius.Pill.toPx()),
                                     size = size.copy(
-                                        width = size.width + 8.dp.toPx(),
-                                        height = size.height + 8.dp.toPx()
+                                        width = size.width + Spacing.Small.toPx(),
+                                        height = size.height + Spacing.Small.toPx()
                                     ),
                                     topLeft = androidx.compose.ui.geometry.Offset(
-                                        x = -4.dp.toPx(),
-                                        y = -4.dp.toPx()
+                                        x = -Spacing.ExtraSmall.toPx(),
+                                        y = -Spacing.ExtraSmall.toPx()
                                     )
                                 )
                             }
@@ -849,16 +855,16 @@ private fun GlassDragDivider(
                                     val gradient = when (orientation) {
                                         DividerOrientation.Vertical -> Brush.verticalGradient(
                                             colors = listOf(
-                                                activeColor.copy(alpha = 0.3f),
-                                                activeColor.copy(alpha = 0.6f),
-                                                activeColor.copy(alpha = 0.3f)
+                                                activeColor.copy(alpha = AlphaTokens.Muted),
+                                                activeColor.copy(alpha = AlphaTokens.Prominent),
+                                                activeColor.copy(alpha = AlphaTokens.Muted)
                                             )
                                         )
                                         DividerOrientation.Horizontal -> Brush.horizontalGradient(
                                             colors = listOf(
-                                                activeColor.copy(alpha = 0.3f),
-                                                activeColor.copy(alpha = 0.6f),
-                                                activeColor.copy(alpha = 0.3f)
+                                                activeColor.copy(alpha = AlphaTokens.Muted),
+                                                activeColor.copy(alpha = AlphaTokens.Prominent),
+                                                activeColor.copy(alpha = AlphaTokens.Muted)
                                             )
                                         )
                                     }
@@ -889,10 +895,10 @@ fun PreviewGlassLayout() {
     MaterialTheme {
         GlassLayout(
             state = state,
-            leftPanel = { SamplePanel("FILE EXPLORER", Color(0xFF2196F3)) },
-            mainContent = { SamplePanel("CODE EDITOR", Color(0xFF9C27B0)) },
-            bottomPanel = { SamplePanel("TERMINAL", Color(0xFFFF9800)) },
-            rightPanel = { SamplePanel("PROPERTIES", Color(0xFF4CAF50)) }
+            leftPanel = { SamplePanel("FILE EXPLORER", PreviewSampleColors.Blue) },
+            mainContent = { SamplePanel("CODE EDITOR", PreviewSampleColors.Purple) },
+            bottomPanel = { SamplePanel("TERMINAL", PreviewSampleColors.Orange) },
+            rightPanel = { SamplePanel("PROPERTIES", PreviewSampleColors.Green) }
         )
     }
 }
@@ -1133,8 +1139,8 @@ fun SamplePanel(title: String, color: Color) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(color.copy(alpha = 0.15f))
-            .padding(16.dp),
+            .background(color.copy(alpha = AlphaTokens.Glow))
+            .padding(Spacing.Medium),
         contentAlignment = Alignment.Center
     ) {
         androidx.compose.material3.Text(

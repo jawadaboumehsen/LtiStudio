@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2025 Mifos Initiative
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -33,7 +33,13 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kashif_e.backdrop.effects.blur
+import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.IconSize
+import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.StrokeWidth
 
 /**
  * Line ending types for status bar display
@@ -63,14 +69,14 @@ fun GlassStatusBar(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(24.dp)
-            .background(glassColors.glassSurface.copy(alpha = 0.4f))
+            .height(ComponentSize.StatusBarHeightAlt)
+            .background(glassColors.glassSurface.copy(alpha = AlphaTokens.Medium))
             .border(
-                width = 0.5.dp,
-                color = glassColors.glassBorder.copy(alpha = 0.5f),
+                width = StrokeWidth.Hairline,
+                color = glassColors.glassBorder.copy(alpha = AlphaTokens.Border),
                 shape = RectangleShape
             )
-            .padding(horizontal = 12.dp),
+            .padding(horizontal = Spacing.SmallMedium),
         contentAlignment = Alignment.Center
     ) {
         Row(
@@ -80,21 +86,21 @@ fun GlassStatusBar(
         ) {
             // LEFT SECTION: Git Branch & Workspace State
             Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.MediumSmall),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 // Git Branch Pill
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.Five),
                     modifier = Modifier
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(glassColors.glassSurfaceElevated.copy(alpha = 0.5f))
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                        .clip(RoundedCornerShape(CornerRadius.ExtraSmall))
+                        .background(glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Elevated))
+                        .padding(horizontal = Spacing.Compact, vertical = Spacing.ExtraExtraSmall)
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(6.dp)
+                            .size(IconSize.Indicator)
                             .clip(CircleShape)
                             .background(glassColors.glassAccent)
                     )
@@ -124,7 +130,7 @@ fun GlassStatusBar(
 
             // RIGHT SECTION: Editor & Encoding State
             Row(
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Fourteen),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 cursorPosition?.let { (line, col) ->

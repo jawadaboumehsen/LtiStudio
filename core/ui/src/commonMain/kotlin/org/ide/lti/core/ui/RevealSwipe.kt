@@ -68,6 +68,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import org.ide.lti.core.designsystem.theme.ComponentSize
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 
@@ -94,7 +95,7 @@ fun RevealSwipe(
     ) -> Unit,
     coroutineScope: CoroutineScope = rememberCoroutineScope(),
     state: RevealState = rememberRevealState(
-        maxRevealDp = 75.dp,
+        maxRevealDp = ComponentSize.MaxRevealDp,
         directions = setOf(
             RevealDirection.StartToEnd,
             RevealDirection.EndToStart,
@@ -284,7 +285,7 @@ fun BaseRevealSwipe(
         content: @Composable ColumnScope.() -> Unit,
     ) -> Unit,
     state: RevealState = rememberRevealState(
-        maxRevealDp = 75.dp,
+        maxRevealDp = ComponentSize.MaxRevealDp,
         directions = setOf(
             RevealDirection.StartToEnd,
             RevealDirection.EndToStart,
@@ -503,7 +504,7 @@ enum class RevealValue {
  */
 @Composable
 fun rememberRevealState(
-    maxRevealDp: Dp = 75.dp,
+    maxRevealDp: Dp = ComponentSize.MaxRevealDp,
     directions: Set<RevealDirection> = setOf(
         RevealDirection.StartToEnd,
         RevealDirection.EndToStart,
@@ -523,7 +524,7 @@ fun rememberRevealState(
             density = density,
             initialValue = initialValue,
             positionalThreshold = positionalThreshold,
-            velocityThreshold = velocityThreshold ?: { with(density) { 100.dp.toPx() } },
+            velocityThreshold = velocityThreshold ?: { with(density) { ComponentSize.VelocityThreshold.toPx() } },
             snapAnimationSpec = snapAnimationSpec,
             decayAnimationSpec = decayAnimationSpec,
             confirmValueChange = confirmValueChange,
@@ -533,7 +534,7 @@ fun rememberRevealState(
 
 @OptIn(ExperimentalFoundationApi::class)
 data class RevealState(
-    val maxRevealDp: Dp = 75.dp,
+    val maxRevealDp: Dp = ComponentSize.MaxRevealDp,
     val directions: Set<RevealDirection>,
     private val density: Density,
     private val initialValue: RevealValue = RevealValue.Default,
@@ -560,7 +561,7 @@ data class RevealState(
             }
         },
         positionalThreshold = positionalThreshold,
-        velocityThreshold = velocityThreshold ?: { with(density) { 10.dp.toPx() } },
+        velocityThreshold = velocityThreshold ?: { with(density) { ComponentSize.DefaultVelocityThreshold.toPx() } },
         snapAnimationSpec = snapAnimationSpec,
         decayAnimationSpec = decayAnimationSpec,
         confirmValueChange = confirmValueChange,

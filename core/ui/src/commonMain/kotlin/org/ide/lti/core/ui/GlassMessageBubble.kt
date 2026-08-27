@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2025 Mifos Initiative
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -41,6 +41,9 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.ide.lti.core.designsystem.icon.AppIcons
+import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.IconSize
+import org.ide.lti.core.designsystem.theme.Spacing
 
 /**
  * Message role enum for chat messages.
@@ -85,7 +88,7 @@ fun GlassMessageBubble(
             // Message bubble with hover effect
             Box(
                 modifier = Modifier
-                    .padding(12.dp)
+                    .padding(Spacing.SmallMedium)
                     .then(
                         if (showCopyButton) {
                             Modifier
@@ -104,19 +107,19 @@ fun GlassMessageBubble(
                     // Copy button (visible on hover)
                     if (showCopyButton && showCopy) {
                         Row(
-                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                            modifier = Modifier.fillMaxWidth().padding(top = Spacing.Small),
                             horizontalArrangement = Arrangement.End,
                         ) {
                             IconButton(
                                 onClick = {
                                     clipboardManager.setText(AnnotatedString(content))
                                 },
-                                modifier = Modifier.width(24.dp).height(24.dp),
+                                modifier = Modifier.width(ComponentSize.PanelHeaderAction).height(ComponentSize.PanelHeaderAction),
                             ) {
                                 Icon(
                                     imageVector = AppIcons.ContentCopy,
                                     contentDescription = "Copy",
-                                    modifier = Modifier.width(16.dp).height(16.dp),
+                                    modifier = Modifier.width(IconSize.Medium).height(IconSize.Medium),
                                 )
                             }
                         }
@@ -128,7 +131,7 @@ fun GlassMessageBubble(
             Text(
                 text = formatTimestamp(timestamp),
                 style = MaterialTheme.typography.labelSmall,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                modifier = Modifier.padding(horizontal = Spacing.SmallMedium, vertical = Spacing.ExtraSmall),
             )
         }
     }
@@ -144,7 +147,7 @@ private fun LtiMessageContent(
 ) {
     // Simple code block detection using string splits
     if (content.contains("```")) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
             val parts = content.split("```")
             parts.forEachIndexed { index, part ->
                 if (index % 2 == 0) {
@@ -192,7 +195,7 @@ private fun LtiCodeBlock(
 //                ideSurfaceElevated.copy(alpha = 0.5f),
 //                RoundedCornerShape(8.dp),
 //            )
-            .padding(12.dp),
+            .padding(Spacing.SmallMedium),
     ) {
         Text(
             text = code,

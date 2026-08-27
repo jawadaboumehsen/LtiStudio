@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2024 Mifos Initiative
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.ide.lti.core.designsystem.component.GlassTab
+import org.ide.lti.core.designsystem.theme.Spacing
 
 @Suppress("MultipleEmitters")
 @Composable
@@ -31,7 +32,7 @@ fun GlassScrollableTabRow(
     containerColor: Color = MaterialTheme.colorScheme.primaryContainer,
     selectedContentColor: Color = MaterialTheme.colorScheme.primary,
     unselectedContentColor: Color = MaterialTheme.colorScheme.primaryContainer,
-    edgePadding: Dp = 8.dp,
+    edgePadding: Dp = Spacing.Small,
 ) {
     val scope = rememberCoroutineScope()
 

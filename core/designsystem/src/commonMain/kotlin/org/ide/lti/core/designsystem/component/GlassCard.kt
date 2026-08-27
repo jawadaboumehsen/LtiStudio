@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2025 Mifos Initiative
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -23,6 +23,8 @@ import com.kashif_e.backdrop.BackdropEffectScope
 import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
+import org.ide.lti.core.designsystem.theme.CornerRadius
+import org.ide.lti.core.designsystem.theme.Spacing
 
 /**
  * Card glass effect stack, straight from the kmp-liquid-glass skill's "Glass card" recipe:
@@ -67,13 +69,13 @@ val GlassCardEffects: BackdropEffectScope.() -> Unit = {
 @Composable
 fun GlassCard(
     modifier: Modifier = Modifier,
-    shape: Shape = ContinuousRoundedRectangle(16.dp),
+    shape: Shape = ContinuousRoundedRectangle(CornerRadius.Card),
     effects: BackdropEffectScope.() -> Unit = GlassCardEffects,
     backdrop: Backdrop? = null,
     surfaceColor: Color = Color.Unspecified,
     tint: Color = Color.Unspecified,
     borderColor: Color = Color.Unspecified,
-    contentPadding: Dp = 1.dp,
+    contentPadding: Dp = Spacing.Hairline,
     content: @Composable () -> Unit
 ) {
     GlassSurface(

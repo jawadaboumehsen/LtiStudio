@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2025 Mifos Initiative
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -40,6 +40,10 @@ import com.kashif_e.backdrop.BackdropEffectScope
 import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
+import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.CornerRadius
+import org.ide.lti.core.designsystem.theme.IconSize
+import org.ide.lti.core.designsystem.theme.Spacing
 
 /**
  * Sidebar/panel glass effect stack, per the kmp-liquid-glass skill's "moderate effect for
@@ -58,17 +62,17 @@ val GlassPanelEffects: BackdropEffectScope.() -> Unit = {
 fun GlassPanel(
     modifier: Modifier = Modifier,
     width: Dp? = null,
-    shape: Shape = ContinuousRoundedRectangle(12.dp),
+    shape: Shape = ContinuousRoundedRectangle(CornerRadius.Panel),
     effects: BackdropEffectScope.() -> Unit = GlassPanelEffects,
     backdrop: Backdrop? = null,
     surfaceColor: Color = Color.Unspecified,
     tint: Color = Color.Unspecified,
     borderColor: Color = Color.Unspecified,
-    contentPadding: Dp = 8.dp,
+    contentPadding: Dp = Spacing.PanelPadding,
     content: @Composable () -> Unit,
 ) {
     val panelModifier = modifier
-        .then(if (width != null && width > 0.dp) Modifier.width(width) else Modifier)
+        .then(if (width != null && width > Spacing.None) Modifier.width(width) else Modifier)
         .fillMaxHeight()
 
     GlassSurface(
@@ -99,7 +103,7 @@ fun GlassPanelHeader(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+            .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Small),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -111,7 +115,7 @@ fun GlassPanelHeader(
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    modifier = Modifier.padding(end = 8.dp)
+                    modifier = Modifier.padding(end = Spacing.Small)
                 )
             }
             Text(
@@ -135,12 +139,12 @@ fun GlassPanelHeaderAction(
 ) {
     IconButton(
         onClick = onClick,
-        modifier = modifier.size(24.dp),
+        modifier = modifier.size(ComponentSize.PanelHeaderAction),
     ) {
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
-            modifier = Modifier.size(16.dp),
+            modifier = Modifier.size(IconSize.Medium),
         )
     }
 }

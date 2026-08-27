@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2025 Mifos Initiative
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -43,7 +43,9 @@ import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.colorControls
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.highlight.Highlight
+import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.Spacing
 
 /**
  * Frosted (heavy) glass effect stack for modal surfaces, per the kmp-liquid-glass skill's
@@ -70,7 +72,7 @@ fun GlassDialog(
     title: String? = null,
     confirmButton: @Composable () -> Unit,
     dismissButton: (@Composable () -> Unit)? = null,
-    shape: Shape = ContinuousRoundedRectangle(16.dp),
+    shape: Shape = ContinuousRoundedRectangle(CornerRadius.Dialog),
     effects: BackdropEffectScope.() -> Unit = GlassDialogEffects(!isSystemInDarkTheme()),
     backdrop: Backdrop? = null,
     properties: DialogProperties = DialogProperties(),
@@ -83,7 +85,7 @@ fun GlassDialog(
         GlassSurface(
             modifier = modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(Spacing.Medium),
             shape = shape,
             effects = effects,
             backdrop = backdrop,
@@ -92,7 +94,7 @@ fun GlassDialog(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(24.dp),
+                    .padding(Spacing.DialogPadding),
             ) {
                 if (title != null) {
                     Text(
@@ -100,14 +102,14 @@ fun GlassDialog(
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.SemiBold,
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(Spacing.Medium))
                 }
 
                 ProvideTextStyle(MaterialTheme.typography.bodyMedium) {
                     content()
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(Spacing.DialogPadding))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -116,7 +118,7 @@ fun GlassDialog(
                 ) {
                     if (dismissButton != null) {
                         dismissButton()
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(Spacing.Small))
                     }
                     confirmButton()
                 }
@@ -151,24 +153,24 @@ fun GlassLoadingDialog(
                 ),
             ) {
                 GlassSurface(
-                    shape = ContinuousRoundedRectangle(28.dp),
+                    shape = ContinuousRoundedRectangle(CornerRadius.ExtraLarge),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(24.dp),
+                        .padding(Spacing.DialogPadding),
                     effects = GlassDialogEffects(!isSystemInDarkTheme()),
                     highlight = { Highlight.Plain },
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(24.dp),
+                            .padding(Spacing.DialogPadding),
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Text(
                             text = "Loading..",
                             style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier.padding(bottom = 16.dp)
+                            modifier = Modifier.padding(bottom = Spacing.Medium)
                         )
                         CircularProgressIndicator()
                     }

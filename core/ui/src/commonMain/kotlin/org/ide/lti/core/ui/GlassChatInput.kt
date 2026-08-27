@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2025 Mifos Initiative
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -33,6 +33,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.ide.lti.core.designsystem.icon.AppIcons
+import org.ide.lti.core.designsystem.theme.Spacing
 
 /**
  * Lti chat input field with send button.
@@ -69,7 +70,7 @@ fun GlassChatInput(
 //                    ideInputBackground,
 //                    RoundedCornerShape(8.dp),
 //                )
-                .padding(12.dp)
+                .padding(Spacing.SmallMedium)
                 .onKeyEvent { keyEvent ->
                     if (keyEvent.key == Key.Enter && inputText.isNotBlank()) {
                         onSendMessage(inputText)
@@ -91,7 +92,7 @@ fun GlassChatInput(
             },
         )
 
-        Spacer(modifier = Modifier.width(8.dp))
+        Spacer(modifier = Modifier.width(Spacing.Small))
 
         IconButton(
             onClick = {

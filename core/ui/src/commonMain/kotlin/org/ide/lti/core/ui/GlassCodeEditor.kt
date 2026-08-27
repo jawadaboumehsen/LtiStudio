@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2025 Mifos Initiative
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -25,6 +25,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.ide.lti.core.designsystem.theme.Spacing
 
 /**
  * Lti code editor component with line numbers and syntax highlighting support.
@@ -48,14 +49,14 @@ fun GlassCodeEditor(
 
     Box(
         modifier = modifier
-            .padding(16.dp),
+            .padding(Spacing.Medium),
     ) {
         Row(modifier = Modifier.fillMaxSize()) {
             // Line numbers
             if (showLineNumbers) {
                 Column(
                     modifier = Modifier
-                        .padding(end = 12.dp)
+                        .padding(end = Spacing.SmallMedium)
                         .verticalScroll(verticalScrollState),
                 ) {
                     val lineCount = content.count { it == '\n' } + 1
@@ -67,7 +68,7 @@ fun GlassCodeEditor(
                                 fontSize = 14.sp,
 //                                color = ideTextSecondary.copy(alpha = 0.5f),
                             ),
-                            modifier = Modifier.padding(vertical = 2.dp),
+                            modifier = Modifier.padding(vertical = Spacing.ExtraExtraSmall),
                         )
                     }
                 }
@@ -89,7 +90,7 @@ fun GlassCodeEditor(
                     .fillMaxSize()
                     .verticalScroll(verticalScrollState)
                     .horizontalScroll(horizontalScrollState)
-                    .padding(vertical = 2.dp),
+                    .padding(vertical = Spacing.ExtraExtraSmall),
             )
         }
     }

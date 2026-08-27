@@ -1,4 +1,4 @@
-﻿package org.ide.lti.core.designsystem.component
+package org.ide.lti.core.designsystem.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -44,6 +44,10 @@ import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.highlight.Highlight
 import com.kashif_e.backdrop.shadow.InnerShadow
 import com.kashif_e.backdrop.shadow.Shadow
+import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.utils.DampedDragAnimation
 
 @Composable
@@ -55,13 +59,9 @@ fun GlassSlider(
     backdrop: Backdrop,
     modifier: Modifier = Modifier
 ) {
-    val isLightTheme = !isSystemInDarkTheme()
-    val accentColor =
-        if (isLightTheme) Color(0xFF0088FF)
-        else Color(0xFF0091FF)
-    val trackColor =
-        if (isLightTheme) Color(0xFF787878).copy(0.2f)
-        else Color(0xFF787880).copy(0.36f)
+    val glassColors = GlassTheme.colors
+    val accentColor = glassColors.glassAccent
+    val trackColor = glassColors.glassBorder
 
     val trackBackdrop = rememberLayerBackdrop()
 
@@ -125,7 +125,7 @@ fun GlassSlider(
                             onValueChange(targetValue)
                         }
                     }
-                    .height(6f.dp)
+                    .height(ComponentSize.SliderTrackHeight)
                     .fillMaxWidth()
             )
 
@@ -133,7 +133,7 @@ fun GlassSlider(
                 Modifier
                     .clip(ContinuousCapsule)
                     .background(accentColor)
-                    .height(6f.dp)
+                    .height(ComponentSize.SliderTrackHeight)
                     .layout { measurable, constraints ->
                         val placeable = measurable.measure(constraints)
                         val width = (constraints.maxWidth * dampedDragAnimation.progress).fastRoundToInt()
@@ -184,14 +184,14 @@ fun GlassSlider(
                     },
                     shadow = {
                         Shadow(
-                            radius = 4f.dp,
-                            color = Color.Black.copy(alpha = 0.05f)
+                            radius = Spacing.ExtraSmall,
+                            color = glassColors.glassShadow.copy(alpha = AlphaTokens.Faint)
                         )
                     },
                     innerShadow = {
                         val progress = dampedDragAnimation.pressProgress
                         InnerShadow(
-                            radius = 4f.dp * progress,
+                            radius = Spacing.ExtraSmall * progress,
                             alpha = progress
                         )
                     },
@@ -204,10 +204,10 @@ fun GlassSlider(
                     },
                     onDrawSurface = {
                         val progress = dampedDragAnimation.pressProgress
-                        drawRect(Color.White.copy(alpha = 1f - progress))
+                        drawRect(glassColors.onGlass.copy(alpha = 1f - progress))
                     }
                 )
-                .size(40f.dp, 24f.dp)
+                .size(ComponentSize.SliderThumbWidth, ComponentSize.SliderThumbHeight)
         )
     }
 }

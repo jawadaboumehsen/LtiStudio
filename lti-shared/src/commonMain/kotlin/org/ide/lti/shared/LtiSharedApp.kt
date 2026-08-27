@@ -12,6 +12,7 @@ package org.ide.lti.shared
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -22,6 +23,7 @@ import com.kashif_e.backdrop.backdrops.layerBackdrop
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import org.ide.lti.core.data.utils.NetworkMonitor
 import org.ide.lti.core.data.utils.TimeZoneMonitor
+import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.feature.workspace.WORKSPACE_ROUTE
 import org.ide.lti.shared.navigation.RootNavGraph
@@ -50,22 +52,27 @@ private fun SharedApp(
     val backdrop = rememberLayerBackdrop()
 
     LtiTheme(sharedBackdrop = backdrop) {
+        val colorScheme = MaterialTheme.colorScheme
+
         Box(modifier = modifier.fillMaxSize()) {
-            // Luminous Multi-Point Cosmic Aurora Backdrop for Liquid Glass Refraction
+            // Luminous Multi-Point Cosmic Aurora Backdrop for Liquid Glass Refraction.
+            // Every color here comes from the dynamically-generated Material scheme
+            // (one scheme for dark, one for light - both derived from LtiSeedColor), not
+            // from bespoke hex constants, so it stays in sync with the app's single seed color.
             Canvas(
                 modifier = Modifier
                     .layerBackdrop(backdrop)
                     .fillMaxSize()
             ) {
-                // 1. Deep space base
-                drawRect(Color(0xFF060911))
+                // 1. Deep space / page base
+                drawRect(colorScheme.background)
 
-                // 2. Luminous Electric Cyan / Azure Nebula (Top-Center)
+                // 2. Primary nebula (Top-Center)
                 drawRect(
                     brush = Brush.radialGradient(
                         colors = listOf(
-                            Color(0xFF0284C7).copy(alpha = 0.55f),
-                            Color(0xFF0369A1).copy(alpha = 0.35f),
+                            colorScheme.primary.copy(alpha = AlphaTokens.Strong),
+                            colorScheme.primaryContainer.copy(alpha = AlphaTokens.Ambient),
                             Color.Transparent
                         ),
                         center = Offset(size.width * 0.40f, size.height * 0.15f),
@@ -73,12 +80,12 @@ private fun SharedApp(
                     )
                 )
 
-                // 3. Royal Indigo / Purple Aurora Glow (Top-Right)
+                // 3. Secondary aurora glow (Top-Right)
                 drawRect(
                     brush = Brush.radialGradient(
                         colors = listOf(
-                            Color(0xFF6366F1).copy(alpha = 0.45f),
-                            Color(0xFF4338CA).copy(alpha = 0.25f),
+                            colorScheme.secondary.copy(alpha = AlphaTokens.Soft),
+                            colorScheme.secondaryContainer.copy(alpha = AlphaTokens.Faded),
                             Color.Transparent
                         ),
                         center = Offset(size.width * 0.85f, size.height * 0.20f),
@@ -86,12 +93,12 @@ private fun SharedApp(
                     )
                 )
 
-                // 4. Vibrant Teal / Emerald Shimmer (Bottom-Left)
+                // 4. Tertiary shimmer (Bottom-Left)
                 drawRect(
                     brush = Brush.radialGradient(
                         colors = listOf(
-                            Color(0xFF0D9488).copy(alpha = 0.35f),
-                            Color(0xFF042F2E).copy(alpha = 0.20f),
+                            colorScheme.tertiary.copy(alpha = AlphaTokens.Ambient),
+                            colorScheme.tertiaryContainer.copy(alpha = AlphaTokens.Hover),
                             Color.Transparent
                         ),
                         center = Offset(size.width * 0.15f, size.height * 0.85f),
@@ -99,11 +106,11 @@ private fun SharedApp(
                     )
                 )
 
-                // 5. Deep Magenta Accent (Bottom-Right)
+                // 5. Inverse-primary accent (Bottom-Right)
                 drawRect(
                     brush = Brush.radialGradient(
                         colors = listOf(
-                            Color(0xFF701A75).copy(alpha = 0.25f),
+                            colorScheme.inversePrimary.copy(alpha = AlphaTokens.Faded),
                             Color.Transparent
                         ),
                         center = Offset(size.width * 0.90f, size.height * 0.90f),
@@ -115,9 +122,9 @@ private fun SharedApp(
                 drawRect(
                     brush = Brush.verticalGradient(
                         colors = listOf(
-                            Color(0xFF060911).copy(alpha = 0.3f),
+                            colorScheme.scrim.copy(alpha = AlphaTokens.Scrim),
                             Color.Transparent,
-                            Color(0xFF060911).copy(alpha = 0.5f)
+                            colorScheme.scrim.copy(alpha = AlphaTokens.Half)
                         )
                     )
                 )

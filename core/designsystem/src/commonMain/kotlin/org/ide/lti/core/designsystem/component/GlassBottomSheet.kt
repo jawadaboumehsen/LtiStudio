@@ -1,4 +1,4 @@
-﻿package org.ide.lti.core.designsystem.component
+package org.ide.lti.core.designsystem.component
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
@@ -12,6 +12,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -23,7 +24,10 @@ import com.kashif_e.backdrop.BackdropEffectScope
 import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.colorControls
 import com.kashif_e.backdrop.effects.lens
+import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.Spacing
 
 /**
  * Bottom sheet glass effect stack — frosted/heavy, per the kmp-liquid-glass skill's guidance
@@ -140,13 +144,14 @@ fun GlassBottomSheet(
     // Exception to the module-wide capsule shape: this sheet is anchored flush to the bottom
     // edge, so only the top corners can round — a full capsule would detach its bottom edge
     // from the screen with visible rounded gaps.
-    shape: Shape = ContinuousRoundedRectangle(topStart = 16.dp, topEnd = 16.dp, bottomEnd = 0.dp, bottomStart = 0.dp),
-    scrimColor: Color = Color.Black.copy(alpha = 0.6f),
+    shape: Shape = ContinuousRoundedRectangle(topStart = CornerRadius.Medium, topEnd = CornerRadius.Medium, bottomEnd = CornerRadius.None, bottomStart = CornerRadius.None),
+    scrimColor: Color = Color.Unspecified,
     dismissThreshold: Float = 0.3f,
     content: @Composable ColumnScope.() -> Unit
 ) {
     val scope = rememberCoroutineScope()
     val glassColors = GlassTheme.colors
+    val resolvedScrimColor = if (scrimColor.isSpecified) scrimColor else glassColors.glassShadow
 
     // Animation for slide in/out
     val targetOffsetY = if (state.currentValue == GlassBottomSheetValue.Expanded) 0f else 1f
@@ -173,7 +178,7 @@ fun GlassBottomSheet(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(scrimColor)
+                    .background(resolvedScrimColor)
                     .alpha(scrimAlpha)
                     .pointerInput(Unit) {
                         detectVerticalDragGestures { _, _ ->
@@ -253,13 +258,13 @@ fun GlassBottomSheet(
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 12.dp),
+                                .padding(vertical = Spacing.SmallMedium),
                             contentAlignment = Alignment.Center
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .width(32.dp)
-                                    .height(4.dp)
+                                    .width(ComponentSize.DragHandleWidth)
+                                    .height(ComponentSize.DragHandleHeight)
                                     .background(
                                         color = glassColors.onGlassMuted,
                                         shape = ContinuousCapsule
@@ -327,7 +332,7 @@ fun GlassBottomSheetScaffold(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -355,7 +360,7 @@ fun GlassBottomSheetScaffold(
 fun GlassBottomSheetExample() {
     var showSheet by remember { mutableStateOf(false) }
 
-    Column(Modifier.fillMaxSize().padding(16.dp)) {
+    Column(Modifier.fillMaxSize().padding(Spacing.Medium)) {
         GlassButton(onClick = { showSheet = true }) {
             androidx.compose.material3.Text("Show Bottom Sheet")
         }
@@ -369,8 +374,8 @@ fun GlassBottomSheetExample() {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(Spacing.Medium),
+            verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium)
         ) {
             androidx.compose.material3.Text(
                 "This is a bottom sheet with glass morphism effects.",
@@ -384,7 +389,7 @@ fun GlassBottomSheetExample() {
                 color = GlassTheme.colors.onGlassSecondary
             )
 
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(Spacing.Small))
 
             GlassPrimaryButton(
                 onClick = { showSheet = false },

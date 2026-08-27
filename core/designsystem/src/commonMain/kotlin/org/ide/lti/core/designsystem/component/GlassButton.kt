@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2025 Mifos Initiative
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -47,7 +47,10 @@ import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
 import com.kashif_e.backdrop.highlight.Highlight
+import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.utils.InteractiveHighlight
 import kotlin.math.abs
 import kotlin.math.atan2
@@ -79,9 +82,9 @@ enum class GlassButtonVariant {
  * Default values for GlassButton.
  */
 object GlassButtonDefaults {
-    val ContentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
-    val MinWidth = 64.dp
-    val MinHeight = 40.dp
+    val ContentPadding = PaddingValues(horizontal = Spacing.ExtraLarge, vertical = Spacing.SmallMedium)
+    val MinWidth = ComponentSize.ButtonMinWidth
+    val MinHeight = ComponentSize.ButtonMinHeight
     val TextStyle = TextStyle(
         fontSize = 14.sp,
         fontWeight = FontWeight.Medium,
@@ -123,7 +126,7 @@ fun GlassButton(
     val (surfaceColor, tint, contentColor) = when (variant) {
         GlassButtonVariant.Primary -> Triple(
             glassColors.glassSurfaceElevated,
-            glassColors.glassAccent.copy(alpha = 0.2f),
+            glassColors.glassAccent.copy(alpha = AlphaTokens.Hover),
             glassColors.onGlass
         )
         GlassButtonVariant.Secondary -> Triple(
@@ -161,7 +164,7 @@ fun GlassButton(
                                 val height = size.height
 
                                 val progress = interactiveHighlight.pressProgress
-                                val scale = lerp(1f, 1f + 4f.dp.toPx() / size.height, progress)
+                                val scale = lerp(1f, 1f + Spacing.ExtraSmall.toPx() / size.height, progress)
 
                                 val maxOffset = size.minDimension
                                 val initialDerivative = 0.05f
@@ -169,7 +172,7 @@ fun GlassButton(
                                 translationX = (maxOffset * tanh((initialDerivative * offset.x / maxOffset).toDouble())).toFloat()
                                 translationY = (maxOffset * tanh((initialDerivative * offset.y / maxOffset).toDouble())).toFloat()
 
-                                val maxDragScale = 4f.dp.toPx() / size.height
+                                val maxDragScale = Spacing.ExtraSmall.toPx() / size.height
                                 val offsetAngle = atan2(offset.y.toDouble(), offset.x.toDouble()).toFloat()
                                 scaleX =
                                     scale +
@@ -187,10 +190,10 @@ fun GlassButton(
                             }
                             if (tint.isSpecified && tint != Color.Transparent) {
                                 drawRect(tint, blendMode = BlendMode.Hue)
-                                drawRect(tint.copy(alpha = tint.alpha * 0.5f))
+                                drawRect(tint.copy(alpha = tint.alpha * AlphaTokens.Half))
                             }
                             if (!enabled) {
-                                drawRect(Color.Black.copy(alpha = 0.4f))
+                                drawRect(glassColors.glassShadow.copy(alpha = AlphaTokens.Disabled))
                             }
                         }
                     )
@@ -215,7 +218,7 @@ fun GlassButton(
                 }
             )
             .padding(contentPadding),
-        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.Small, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically
     ) {
         CompositionLocalProvider(LocalContentColor provides finalContentColor) {
@@ -260,7 +263,7 @@ fun GlassTextButton(
         modifier = modifier,
         enabled = enabled,
         variant = GlassButtonVariant.Text,
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+        contentPadding = PaddingValues(horizontal = Spacing.Medium, vertical = Spacing.Small),
         content = content
     )
 }
@@ -272,7 +275,7 @@ fun GlassTextButton(
 fun GlassIconButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    size: Dp = 40.dp,
+    size: Dp = ComponentSize.IconButtonSize,
     shape: Shape = ContinuousCapsule,
     effects: BackdropEffectScope.() -> Unit = GlassButtonEffects,
     backdrop: Backdrop? = null,
@@ -289,7 +292,7 @@ fun GlassIconButton(
         backdrop = backdrop,
         minWidth = size,
         minHeight = size,
-        contentPadding = PaddingValues(0.dp),
+        contentPadding = PaddingValues(Spacing.None),
         enabled = enabled,
     ) {
         content()
@@ -304,7 +307,7 @@ fun GlassIconToggleButton(
     selected: Boolean,
     onSelectedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
-    size: Dp = 40.dp,
+    size: Dp = ComponentSize.IconButtonSize,
     shape: Shape = ContinuousCapsule,
     enabled: Boolean = true,
     content: @Composable () -> Unit

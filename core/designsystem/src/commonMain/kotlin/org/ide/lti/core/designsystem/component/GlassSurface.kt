@@ -26,6 +26,7 @@ import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
 import com.kashif_e.backdrop.highlight.Highlight
+import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassTheme
 
 /**
@@ -55,7 +56,7 @@ val StandardGlassEffects: BackdropEffectScope.() -> Unit = {
 @Composable
 fun GlassSurface(
     modifier: Modifier = Modifier,
-    shape: Shape = ContinuousRoundedRectangle(16.dp),
+    shape: Shape = ContinuousRoundedRectangle(CornerRadius.Medium),
     backdrop: Backdrop? = null,
     surfaceColor: Color = Color.Unspecified,
     tint: Color = Color.Unspecified,

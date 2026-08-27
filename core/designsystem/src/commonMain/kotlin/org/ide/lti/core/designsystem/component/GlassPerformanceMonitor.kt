@@ -1,4 +1,4 @@
-﻿package org.ide.lti.core.designsystem.component
+package org.ide.lti.core.designsystem.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -13,7 +13,11 @@ import androidx.compose.ui.unit.dp
 import com.kashif_e.backdrop.effects.blur
 import com.kyant.capsule.ContinuousCapsule
 import kotlinx.coroutines.delay
+import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.PerformanceMonitorColors
+import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.StrokeWidth
 import kotlin.math.roundToInt
 import kotlin.system.measureTimeMillis
 
@@ -84,10 +88,10 @@ data class GlassPerformanceMetrics(
      */
     val performanceColor: Color
         get() = when (performanceRating) {
-            3 -> Color(0xFF4EC9B0) // Green
-            2 -> Color(0xFFCE9178) // Orange
-            1 -> Color(0xFFD7BA7D) // Yellow
-            else -> Color(0xFFF48771) // Red
+            3 -> PerformanceMonitorColors.Good
+            2 -> PerformanceMonitorColors.Degraded
+            1 -> PerformanceMonitorColors.Warning
+            else -> PerformanceMonitorColors.Bad
         }
 }
 
@@ -218,7 +222,7 @@ fun GlassPerformanceMonitor(
     ) {
         PerformanceOverlay(
             metrics = metrics,
-            modifier = modifier.padding(16.dp)
+            modifier = modifier.padding(Spacing.Medium)
         )
     }
 }
@@ -232,12 +236,12 @@ private fun PerformanceOverlay(
     modifier: Modifier = Modifier
 ) {
     GlassCard(
-        modifier = modifier.width(220.dp),
-        contentPadding = 12.dp,
+        modifier = modifier.width(ComponentSize.PerformanceMonitorWidth),
+        contentPadding = Spacing.SmallMedium,
         // Lean stack (blur only) — this overlay redraws every frame, so keep it cheap.
         effects = { blur(2.dp.toPx()) }
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
             // Title
             Text(
                 "Glass Performance",
@@ -317,7 +321,7 @@ private fun PerformanceOverlay(
                     style = MaterialTheme.typography.bodySmall.copy(
                         fontFamily = FontFamily.Monospace
                     ),
-                    color = if (metrics.droppedFrames > 0) Color(0xFFF48771) else Color(0xFF4EC9B0)
+                    color = if (metrics.droppedFrames > 0) PerformanceMonitorColors.Bad else PerformanceMonitorColors.Good
                 )
             }
 
@@ -325,7 +329,7 @@ private fun PerformanceOverlay(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(1.dp)
+                    .height(StrokeWidth.Standard)
                     .background(GlassTheme.colors.glassBorder)
             )
 
@@ -409,7 +413,7 @@ private fun PerformanceOverlay(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(4.dp)
+                    .height(ComponentSize.ProgressBarHeight)
                     .background(
                         color = metrics.performanceColor,
                         shape = ContinuousCapsule
@@ -439,8 +443,8 @@ fun GlassPerformanceMonitorExample() {
     Box(Modifier.fillMaxSize()) {
         // Your app content
         Column(
-            modifier = Modifier.fillMaxSize().padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.fillMaxSize().padding(Spacing.Medium),
+            verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium)
         ) {
             GlassButton(onClick = { showMonitor = !showMonitor }) {
                 Text(if (showMonitor) "Hide Monitor" else "Show Monitor")

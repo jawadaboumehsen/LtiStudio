@@ -40,6 +40,7 @@ import org.ide.lti.core.designsystem.component.GlassPanelHeader
 import org.ide.lti.core.designsystem.component.GlassPanelHeaderAction
 import org.ide.lti.core.designsystem.component.GlassTabBar
 import org.ide.lti.core.designsystem.icon.AppIcons
+import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.ui.GlassCodeEditor
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -173,7 +174,7 @@ private fun EmptyEditorView() {
                 modifier = Modifier
                     .width(320.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(glassColors.glassSurfaceElevated.copy(alpha = 0.4f))
+                    .background(glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Disabled))
                     .border(0.5.dp, glassColors.glassBorder, RoundedCornerShape(8.dp))
                     .padding(16.dp)
             ) {

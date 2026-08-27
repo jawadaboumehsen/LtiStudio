@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2025 Mifos Initiative
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -18,6 +18,7 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
+import com.materialkolor.rememberDynamicColorScheme
 
 /**
  * Composition local for the glass color scheme.
@@ -68,20 +69,28 @@ object GlassTheme {
 @Composable
 fun LtiTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    glassColors: GlassColorScheme = if (darkTheme) DarkGlassColorScheme else LightGlassColorScheme,
+    glassColors: GlassColorScheme? = null,
     effectsEnabled: Boolean = true,
-    materialColorScheme: ColorScheme = if (darkTheme) darkScheme else lightScheme,
+    materialColorScheme: ColorScheme? = null,
     sharedBackdrop: Backdrop? = null,
     content: @Composable () -> Unit,
 ) {
+    val colorScheme = materialColorScheme ?: rememberDynamicColorScheme(
+        seedColor = LtiSeedColor,
+        isDark = darkTheme,
+    )
+    val resolvedGlassColors = glassColors ?: rememberDynamicGlassColorScheme(
+        colorScheme = colorScheme,
+        isDark = darkTheme,
+    )
     val backdrop = sharedBackdrop ?: rememberLayerBackdrop()
 
     MaterialTheme(
-        colorScheme = materialColorScheme,
+        colorScheme = colorScheme,
         typography = appTypography(),
     ) {
         CompositionLocalProvider(
-            LocalGlassColors provides glassColors,
+            LocalGlassColors provides resolvedGlassColors,
             LocalGlassBackdrop provides backdrop,
             LocalGlassEffectsEnabled provides effectsEnabled,
             content = content

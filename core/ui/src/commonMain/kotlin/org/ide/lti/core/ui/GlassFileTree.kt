@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2025 Mifos Initiative
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -30,6 +30,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.ide.lti.core.designsystem.icon.AppIcons
+import org.ide.lti.core.designsystem.theme.IconSize
+import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.model.filesystem.FileNode
 import org.ide.lti.core.model.filesystem.FileType
 
@@ -82,10 +84,10 @@ private fun GlassFileTreeItem(
                 .fillMaxWidth()
                 .clickable { onNodeClick(node) }
                 .padding(
-                    start = (16 * level).dp + 8.dp,
-                    top = 4.dp,
-                    bottom = 4.dp,
-                    end = 8.dp,
+                    start = Spacing.Medium * level + Spacing.Small,
+                    top = Spacing.ExtraSmall,
+                    bottom = Spacing.ExtraSmall,
+                    end = Spacing.Small,
                 ),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Start,
@@ -99,11 +101,11 @@ private fun GlassFileTreeItem(
                         AppIcons.KeyboardArrowRight
                     },
                     contentDescription = null,
-                    modifier = Modifier.size(16.dp),
+                    modifier = Modifier.size(IconSize.Medium),
                 )
-                Spacer(modifier = Modifier.width(4.dp))
+                Spacer(modifier = Modifier.width(Spacing.ExtraSmall))
             } else {
-                Spacer(modifier = Modifier.width(20.dp))
+                Spacer(modifier = Modifier.width(Spacing.TabHorizontal))
             }
 
             // File/folder icon
@@ -112,7 +114,7 @@ private fun GlassFileTreeItem(
                 isExpanded = node.path in expandedNodes,
             )
 
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(Spacing.Small))
 
             // File/folder name
             Text(
@@ -157,6 +159,6 @@ private fun LtiFileIcon(
     Icon(
         imageVector = icon,
         contentDescription = null,
-        modifier = Modifier.size(16.dp),
+        modifier = Modifier.size(IconSize.Medium),
     )
 }

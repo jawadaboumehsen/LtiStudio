@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2025 Mifos Initiative
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -66,7 +66,11 @@ import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
 import org.ide.lti.core.designsystem.icon.AppIcons
+import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.utils.nonLetterColorVisualTransformation
 import org.ide.lti.core.designsystem.utils.tabNavigation
 
@@ -110,7 +114,7 @@ fun GlassTextField(
     val isError = errorText != null
 
     val animatedBorderWidth by animateDpAsState(
-        targetValue = if (isFocused) 2.dp else 1.dp,
+        targetValue = if (isFocused) StrokeWidth.Focused else StrokeWidth.Standard,
         animationSpec = tween(150)
     )
 
@@ -129,13 +133,13 @@ fun GlassTextField(
                 text = label,
                 style = MaterialTheme.typography.bodySmall,
                 color = if (isError) MaterialTheme.colorScheme.error else GlassTheme.colors.onGlassSecondary,
-                modifier = Modifier.padding(bottom = 4.dp, start = 4.dp)
+                modifier = Modifier.padding(bottom = Spacing.ExtraSmall, start = Spacing.ExtraSmall)
             )
         }
 
         GlassSurface(
             modifier = Modifier.fillMaxWidth(),
-            shape = ContinuousRoundedRectangle(12.dp),
+            shape = ContinuousRoundedRectangle(CornerRadius.Medium),
             effects = effects,
             backdrop = backdrop,
             borderColor = animatedBorderColor
@@ -143,11 +147,11 @@ fun GlassTextField(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (leadingIcon != null) {
-                    Box(modifier = Modifier.padding(end = 12.dp)) {
+                    Box(modifier = Modifier.padding(end = Spacing.SmallMedium)) {
                         leadingIcon()
                     }
                 }
@@ -179,7 +183,7 @@ fun GlassTextField(
                 }
 
                 if (trailingIcon != null) {
-                    Box(modifier = Modifier.padding(start = 12.dp)) {
+                    Box(modifier = Modifier.padding(start = Spacing.SmallMedium)) {
                         trailingIcon()
                     }
                 }
@@ -192,7 +196,7 @@ fun GlassTextField(
                 text = message,
                 style = MaterialTheme.typography.bodySmall,
                 color = if (isError) MaterialTheme.colorScheme.error else GlassTheme.colors.onGlassMuted,
-                modifier = Modifier.padding(top = 4.dp, start = 4.dp)
+                modifier = Modifier.padding(top = Spacing.ExtraSmall, start = Spacing.ExtraSmall)
             )
         }
     }
@@ -274,7 +278,7 @@ fun GlassOtpTextField(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(16.dp),
+            .padding(Spacing.Medium),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         BasicTextField(
@@ -310,10 +314,10 @@ fun GlassOtpTextField(
                         val filled = char.isNotEmpty()
                         Box(
                             modifier = Modifier
-                                .size(48.dp)
-                                .padding(4.dp)
+                                .size(ComponentSize.OtpBoxSize)
+                                .padding(Spacing.ExtraSmall)
                                 .glassEffect(
-                                    shape = ContinuousRoundedRectangle(8.dp),
+                                    shape = ContinuousRoundedRectangle(CornerRadius.Small),
                                     effects = { vibrancy(); blur(2.dp.toPx()) },
                                     tint = if (filled) GlassTheme.colors.glassTint else Color.Unspecified,
                                 )
@@ -323,8 +327,8 @@ fun GlassOtpTextField(
                                     } else {
                                         GlassTheme.colors.glassBorder
                                     },
-                                    width = 1.dp,
-                                    shape = ContinuousRoundedRectangle(8.dp),
+                                    width = StrokeWidth.Standard,
+                                    shape = ContinuousRoundedRectangle(CornerRadius.Small),
                                 ),
                             contentAlignment = Alignment.Center
                         ) {
@@ -343,7 +347,7 @@ fun GlassOtpTextField(
                 text = "Invalid OTP",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(top = 8.dp)
+                modifier = Modifier.padding(top = Spacing.Small)
             )
         }
     }

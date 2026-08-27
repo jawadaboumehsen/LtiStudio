@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2024 Mifos Initiative
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -34,7 +34,10 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.StrokeWidth
 
 /**
  * Modern Liquid Glass Action Chip / Tag with subtle hover feedback.
@@ -66,9 +69,9 @@ fun GlassSmallChip(
 
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(100.dp))
+            .clip(RoundedCornerShape(CornerRadius.Pill))
             .background(backgroundColor)
-            .border(0.5.dp, borderColor, RoundedCornerShape(100.dp))
+            .border(StrokeWidth.Hairline, borderColor, RoundedCornerShape(CornerRadius.Pill))
             .onPointerEvent(PointerEventType.Enter) { isHovered = true }
             .onPointerEvent(PointerEventType.Exit) { isHovered = false }
             .clickable(
@@ -76,7 +79,7 @@ fun GlassSmallChip(
                 indication = null,
                 onClick = onClick,
             )
-            .padding(horizontal = 12.dp, vertical = 6.dp),
+            .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Compact),
         contentAlignment = Alignment.Center
     ) {
         Text(

@@ -1,4 +1,4 @@
-﻿package org.ide.lti.core.designsystem.component
+package org.ide.lti.core.designsystem.component
 
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
@@ -25,6 +25,8 @@ import com.kashif_e.backdrop.drawBackdrop
 import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
+import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.utils.InteractiveHighlight
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import kotlin.math.abs
@@ -67,7 +69,7 @@ fun GlassIcon(
                         val height = size.height
 
                         val progress = interactiveHighlight.pressProgress
-                        val scale = lerp(1f, 1f + 4f.dp.toPx() / size.height, progress)
+                        val scale = lerp(1f, 1f + Spacing.ExtraSmall.toPx() / size.height, progress)
 
                         val maxOffset = size.minDimension
                         val initialDerivative = 0.05f
@@ -75,7 +77,7 @@ fun GlassIcon(
                         translationX = maxOffset * tanh(initialDerivative * offset.x / maxOffset)
                         translationY = maxOffset * tanh(initialDerivative * offset.y / maxOffset)
 
-                        val maxDragScale = 4f.dp.toPx() / size.height
+                        val maxDragScale = Spacing.ExtraSmall.toPx() / size.height
                         val offsetAngle = atan2(offset.y, offset.x)
                         scaleX =
                             scale +
@@ -92,7 +94,7 @@ fun GlassIcon(
                 onDrawSurface = {
                     if (tint.isSpecified) {
                         drawRect(tint, blendMode = BlendMode.Hue)
-                        drawRect(tint.copy(alpha = 0.75f))
+                        drawRect(tint.copy(alpha = AlphaTokens.IconTint))
                     }
                     if (surfaceColor.isSpecified) {
                         drawRect(surfaceColor)

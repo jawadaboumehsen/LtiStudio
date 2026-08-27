@@ -64,8 +64,16 @@ import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
 import com.kashif_e.backdrop.highlight.Highlight
 import org.ide.lti.core.designsystem.icon.AppIcons
+import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.BrandColors
+import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.LtiTheme
+import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.WindowControlColors
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /**
@@ -122,12 +130,12 @@ fun GlassTopBar(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(44.dp)
+            .height(ComponentSize.TopBarHeight)
             .then(
                 if (effectsEnabled && actualBackdrop != null) {
                     Modifier.drawBackdrop(
                         backdrop = actualBackdrop,
-                        shape = { RoundedCornerShape(0.dp) },
+                        shape = { RoundedCornerShape(CornerRadius.None) },
                         effects = {
                             vibrancy()
                             blur(4.dp.toPx())
@@ -143,38 +151,38 @@ fun GlassTopBar(
                 }
             )
             .border(
-                width = 0.5.dp,
-                color = glassColors.glassBorder.copy(alpha = 0.5f),
-                shape = RoundedCornerShape(0.dp)
+                width = StrokeWidth.Hairline,
+                color = glassColors.glassBorder.copy(alpha = AlphaTokens.Border),
+                shape = RoundedCornerShape(CornerRadius.None)
             )
-            .padding(horizontal = 10.dp),
+            .padding(horizontal = Spacing.MediumSmall),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
         // ==========================================
         // 1. LEFT: Brand & Navigation Section
         // ==========================================
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Compact)
         ) {
             // Brand Logo with gradient glow
             Box(
                 modifier = Modifier
-                    .size(28.dp)
-                    .clip(RoundedCornerShape(8.dp))
+                    .size(ComponentSize.LogoBadgeSize)
+                    .clip(RoundedCornerShape(CornerRadius.Small))
                     .background(
                         Brush.linearGradient(
                             listOf(
                                 glassColors.glassAccent,
-                                Color(0xFF00E5FF)
+                                BrandColors.LogoGradientEnd
                             )
                         )
                     )
                     .border(
-                        0.5.dp,
-                        Color.White.copy(alpha = 0.4f),
-                        RoundedCornerShape(8.dp)
+                        StrokeWidth.Hairline,
+                        glassColors.glassBorder.copy(alpha = AlphaTokens.Disabled),
+                        RoundedCornerShape(CornerRadius.Small)
                     ),
                 contentAlignment = Alignment.Center,
             ) {
@@ -182,7 +190,7 @@ fun GlassTopBar(
                     text = "L",
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = glassColors.onGlass
                 )
             }
 
@@ -196,8 +204,8 @@ fun GlassTopBar(
             // App Title & Workspace Breadcrumb
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                modifier = Modifier.padding(start = 4.dp)
+                horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                modifier = Modifier.padding(start = Spacing.ExtraSmall)
             ) {
                 Text(
                     text = title,
@@ -214,10 +222,10 @@ fun GlassTopBar(
                     )
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(glassColors.glassSurfaceElevated.copy(alpha = 0.5f))
-                            .border(0.5.dp, glassColors.glassBorder, RoundedCornerShape(6.dp))
-                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                            .clip(RoundedCornerShape(CornerRadius.Compact))
+                            .background(glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Elevated))
+                            .border(StrokeWidth.Hairline, glassColors.glassBorder, RoundedCornerShape(CornerRadius.Compact))
+                            .padding(horizontal = Spacing.Compact, vertical = Spacing.ExtraExtraSmall)
                     ) {
                         Text(
                             text = workspaceName,
@@ -237,7 +245,7 @@ fun GlassTopBar(
         LiquidSearchCapsule(
             onClick = onSearchClick,
             backdrop = actualBackdrop,
-            modifier = Modifier.widthIn(min = 160.dp, max = 280.dp)
+            modifier = Modifier.widthIn(min = ComponentSize.SearchCapsuleMinWidth, max = ComponentSize.SearchCapsuleMaxWidth)
         )
 
         Spacer(modifier = Modifier.weight(1f))
@@ -247,8 +255,8 @@ fun GlassTopBar(
         // ==========================================
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            modifier = Modifier.padding(end = 6.dp)
+            horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+            modifier = Modifier.padding(end = Spacing.Compact)
         ) {
             // Segmented Layout Mode Toggle
             SegmentedPanelLayoutToggle(
@@ -277,9 +285,9 @@ fun GlassTopBar(
             // Divider before window controls
             Box(
                 modifier = Modifier
-                    .padding(horizontal = 2.dp)
-                    .width(1.dp)
-                    .height(18.dp)
+                    .padding(horizontal = Spacing.ExtraExtraSmall)
+                    .width(StrokeWidth.Standard)
+                    .height(ComponentSize.TopBarDividerHeight)
                     .background(glassColors.glassBorder)
             )
 
@@ -319,14 +327,14 @@ private fun LiquidSearchCapsule(
 
     Row(
         modifier = modifier
-            .height(28.dp)
+            .height(ComponentSize.SearchCapsuleHeight)
             .scale(scale)
-            .clip(RoundedCornerShape(100.dp))
+            .clip(RoundedCornerShape(CornerRadius.Pill))
             .then(
                 if (effectsEnabled && backdrop != null) {
                     Modifier.drawBackdrop(
                         backdrop = backdrop,
-                        shape = { RoundedCornerShape(100.dp) },
+                        shape = { RoundedCornerShape(CornerRadius.Pill) },
                         effects = {
                             vibrancy()
                             blur(2.dp.toPx())
@@ -343,7 +351,7 @@ private fun LiquidSearchCapsule(
                     Modifier.background(glassColors.glassSurface)
                 }
             )
-            .border(width = 0.5.dp, color = borderColor, shape = RoundedCornerShape(100.dp))
+            .border(width = StrokeWidth.Hairline, color = borderColor, shape = RoundedCornerShape(CornerRadius.Pill))
             .onPointerEvent(PointerEventType.Enter) { isHovered = true }
             .onPointerEvent(PointerEventType.Exit) { isHovered = false }
             .clickable(
@@ -351,14 +359,14 @@ private fun LiquidSearchCapsule(
                 indication = null,
                 onClick = onClick,
             )
-            .padding(horizontal = 10.dp),
+            .padding(horizontal = Spacing.MediumSmall),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(Spacing.Small)
     ) {
         Icon(
             imageVector = AppIcons.Search,
             contentDescription = "Search",
-            modifier = Modifier.size(14.dp),
+            modifier = Modifier.size(IconSize.Search),
             tint = if (isHovered) glassColors.glassAccent else glassColors.onGlassMuted
         )
 
@@ -373,10 +381,10 @@ private fun LiquidSearchCapsule(
         // Shortcut pill badge
         Box(
             modifier = Modifier
-                .clip(RoundedCornerShape(4.dp))
+                .clip(RoundedCornerShape(CornerRadius.ExtraSmall))
                 .background(glassColors.glassSurfaceElevated)
-                .border(0.5.dp, glassColors.glassBorder, RoundedCornerShape(4.dp))
-                .padding(horizontal = 6.dp, vertical = 2.dp)
+                .border(StrokeWidth.Hairline, glassColors.glassBorder, RoundedCornerShape(CornerRadius.ExtraSmall))
+                .padding(horizontal = Spacing.Compact, vertical = Spacing.ExtraExtraSmall)
         ) {
             Text(
                 text = "Ctrl+P",
@@ -407,12 +415,12 @@ private fun SegmentedPanelLayoutToggle(
 
     Row(
         modifier = modifier
-            .height(28.dp)
-            .clip(RoundedCornerShape(8.dp))
+            .height(ComponentSize.SegmentedToggleHeight)
+            .clip(RoundedCornerShape(CornerRadius.Small))
             .background(glassColors.glassSurface)
-            .border(0.5.dp, glassColors.glassBorder, RoundedCornerShape(8.dp))
-            .padding(2.dp),
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
+            .border(StrokeWidth.Hairline, glassColors.glassBorder, RoundedCornerShape(CornerRadius.Small))
+            .padding(Spacing.ExtraExtraSmall),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // Left Panel Toggle (File Explorer)
@@ -457,15 +465,15 @@ private fun SegmentedToggleButton(
     val glassColors = GlassTheme.colors
 
     val bgModifier = when {
-        isActive -> Modifier.background(glassColors.glassAccent.copy(alpha = 0.2f))
+        isActive -> Modifier.background(glassColors.glassAccent.copy(alpha = AlphaTokens.Hover))
         isHovered -> Modifier.background(glassColors.glassSurfaceElevated)
         else -> Modifier
     }
 
     Box(
         modifier = modifier
-            .size(24.dp)
-            .clip(RoundedCornerShape(6.dp))
+            .size(ComponentSize.SegmentedButtonSize)
+            .clip(RoundedCornerShape(CornerRadius.Compact))
             .then(bgModifier)
             .onPointerEvent(PointerEventType.Enter) { isHovered = true }
             .onPointerEvent(PointerEventType.Exit) { isHovered = false }
@@ -479,7 +487,7 @@ private fun SegmentedToggleButton(
         Icon(
             painter = icon,
             contentDescription = contentDescription,
-            modifier = Modifier.size(15.dp),
+            modifier = Modifier.size(IconSize.Segmented),
             tint = when {
                 isActive -> glassColors.glassAccent
                 isHovered -> glassColors.onGlass
@@ -505,7 +513,7 @@ private fun GlassTopBarIconButton(
 
     Box(
         modifier = modifier
-            .size(28.dp)
+            .size(ComponentSize.TopBarButtonSize)
             .clip(CircleShape)
             .background(if (isHovered) glassColors.glassSurfaceElevated else Color.Transparent)
             .onPointerEvent(PointerEventType.Enter) { isHovered = true }
@@ -520,7 +528,7 @@ private fun GlassTopBarIconButton(
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
-            modifier = Modifier.size(16.dp),
+            modifier = Modifier.size(IconSize.Medium),
             tint = if (isHovered) glassColors.onGlass else glassColors.onGlassSecondary,
         )
     }
@@ -538,7 +546,7 @@ private fun DesktopWindowControls(
 ) {
     Row(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         WindowControlButton(
@@ -578,21 +586,21 @@ private fun WindowControlButton(
     val glassColors = GlassTheme.colors
 
     val backgroundColor = when {
-        isCloseButton && isHovered -> Color(0xFFE81123)
+        isCloseButton && isHovered -> WindowControlColors.CloseHover
         isHovered -> glassColors.glassSurfaceElevated
         else -> Color.Transparent
     }
 
     val iconTint = when {
-        isCloseButton && isHovered -> Color.White
+        isCloseButton && isHovered -> glassColors.onGlass
         isHovered -> glassColors.onGlass
         else -> glassColors.onGlassMuted
     }
 
     Box(
         modifier = modifier
-            .size(width = 36.dp, height = 28.dp)
-            .clip(RoundedCornerShape(4.dp))
+            .size(width = ComponentSize.WindowControlWidth, height = ComponentSize.WindowControlHeight)
+            .clip(RoundedCornerShape(CornerRadius.ExtraSmall))
             .background(backgroundColor)
             .onPointerEvent(PointerEventType.Enter) { isHovered = true }
             .onPointerEvent(PointerEventType.Exit) { isHovered = false }
@@ -606,7 +614,7 @@ private fun WindowControlButton(
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
-            modifier = Modifier.size(13.dp),
+            modifier = Modifier.size(IconSize.WindowControl),
             tint = iconTint,
         )
     }
