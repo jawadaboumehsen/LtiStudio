@@ -37,6 +37,9 @@ class ExplorerViewModel(
     private val _expandedNodes = MutableStateFlow<Set<String>>(emptySet())
     val expandedNodes: StateFlow<Set<String>> = _expandedNodes.asStateFlow()
 
+    private val _selectedFile = MutableStateFlow<FileNode?>(null)
+    val selectedFile: StateFlow<FileNode?> = _selectedFile.asStateFlow()
+
     init {
         observeWorkspaceAndWatchFiles()
     }
@@ -89,6 +92,7 @@ class ExplorerViewModel(
     }
 
     fun onFileSelected(fileNode: FileNode) {
+        _selectedFile.value = fileNode
         // TODO: Open file in editor
         // Will be implemented when editor feature is created
     }

@@ -17,7 +17,6 @@ import org.ide.lti.feature.workspace.panels.ai.AIAssistantPanel
 import org.ide.lti.feature.workspace.panels.editor.EditorPanel
 import org.ide.lti.feature.workspace.panels.explorer.ExplorerPanel
 import org.ide.lti.feature.workspace.panels.terminal.TerminalPanel
-import org.koin.compose.viewmodel.koinViewModel
 
 /**
  * Main workspace screen with complete glass theme integration.
@@ -35,7 +34,6 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun WorkspaceScreen(
     modifier: Modifier = Modifier,
-    viewModel: WorkspaceViewModel = koinViewModel(),
 ) {
     val ltiLayoutState = rememberLtiLayoutState()
 

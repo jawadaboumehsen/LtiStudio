@@ -151,22 +151,31 @@ class EditorViewModel(
     }
 
     private fun detectLanguage(fileName: String): String {
-        return when (fileName.substringAfterLast('.', "")) {
-            "kt", "kts" -> "kotlin"
-            "java" -> "java"
-            "js", "jsx" -> "javascript"
-            "ts", "tsx" -> "typescript"
-            "py" -> "python"
-            "rs" -> "rust"
-            "go" -> "go"
-            "md" -> "markdown"
-            "json" -> "json"
-            "xml" -> "xml"
-            "yaml", "yml" -> "yaml"
-            "html", "htm" -> "html"
-            "css" -> "css"
-            "gradle" -> "gradle"
-            else -> "text"
-        }
+        val extension = fileName.substringAfterLast('.', "")
+        return EXTENSION_TO_LANGUAGE[extension] ?: "text"
+    }
+
+    private companion object {
+        private val EXTENSION_TO_LANGUAGE = mapOf(
+            "kt" to "kotlin",
+            "kts" to "kotlin",
+            "java" to "java",
+            "js" to "javascript",
+            "jsx" to "javascript",
+            "ts" to "typescript",
+            "tsx" to "typescript",
+            "py" to "python",
+            "rs" to "rust",
+            "go" to "go",
+            "md" to "markdown",
+            "json" to "json",
+            "xml" to "xml",
+            "yaml" to "yaml",
+            "yml" to "yaml",
+            "html" to "html",
+            "htm" to "html",
+            "css" to "css",
+            "gradle" to "gradle",
+        )
     }
 }

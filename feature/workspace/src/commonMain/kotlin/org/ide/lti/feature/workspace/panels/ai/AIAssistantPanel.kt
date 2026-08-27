@@ -223,7 +223,10 @@ private fun ChatView(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         CircularProgressIndicator(
-                            modifier = Modifier.padding(end = Spacing.Small).width(IconSize.Medium).height(IconSize.Medium),
+                            modifier = Modifier
+                                .padding(end = Spacing.Small)
+                                .width(IconSize.Medium)
+                                .height(IconSize.Medium),
                             strokeWidth = StrokeWidth.Focused,
                         )
                         Text(

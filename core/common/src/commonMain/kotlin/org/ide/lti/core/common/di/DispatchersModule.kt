@@ -17,12 +17,6 @@ import org.koin.core.module.Module
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
-enum class AppDispatchers {
-    Default,
-    IO,
-    Unconfined,
-}
-
 val DispatchersModule = module {
     includes(ioDispatcherModule)
     single<CoroutineDispatcher>(named(AppDispatchers.Default.name)) { Dispatchers.Default }

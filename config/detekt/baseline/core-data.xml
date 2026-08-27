@@ -1,9 +1,5 @@
 <?xml version="1.0" ?>
 <SmellBaseline>
   <ManuallySuppressedIssues></ManuallySuppressedIssues>
-  <CurrentIssues>
-    <ID>CyclomaticComplexMethod:DesktopFileSystemRepository.kt$DesktopFileSystemRepository$override fun watchDirectory(path: String): Flow&lt;FileSystemEvent&gt;</ID>
-    <ID>LoopWithTooManyJumpStatements:DesktopFileSystemRepository.kt$DesktopFileSystemRepository$while</ID>
-    <ID>MaxLineLength:DesktopFileSystemRepository.kt$DesktopFileSystemRepository$val fullPath = if (dir != null &amp;&amp; filename.isNotEmpty()) dir.resolve(filename).toString() else filename</ID>
-  </CurrentIssues>
+  <CurrentIssues></CurrentIssues>
 </SmellBaseline>

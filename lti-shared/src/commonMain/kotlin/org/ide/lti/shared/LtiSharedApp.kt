@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2024 Mifos Initiative
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -31,9 +31,9 @@ import org.koin.compose.koinInject
 
 @Composable
 fun LtiSharedApp(
+    modifier: Modifier = Modifier,
     networkMonitor: NetworkMonitor = koinInject(),
     timeZoneMonitor: TimeZoneMonitor = koinInject(),
-    modifier: Modifier = Modifier,
 ) {
     SharedApp(
         networkMonitor = networkMonitor,

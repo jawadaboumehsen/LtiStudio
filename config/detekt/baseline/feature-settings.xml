@@ -1,9 +1,5 @@
 <?xml version="1.0" ?>
 <SmellBaseline>
   <ManuallySuppressedIssues></ManuallySuppressedIssues>
-  <CurrentIssues>
-    <ID>ModifierWithoutDefault:NotificationScreen.kt$modifier</ID>
-    <ID>UnusedParameter:NotificationScreen.kt$modifier: Modifier</ID>
-    <ID>UnusedParameter:NotificationScreen.kt$onBackClick: () -&gt; Unit</ID>
-  </CurrentIssues>
+  <CurrentIssues></CurrentIssues>
 </SmellBaseline>

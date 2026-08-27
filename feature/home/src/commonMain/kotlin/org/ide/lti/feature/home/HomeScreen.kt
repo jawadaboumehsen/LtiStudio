@@ -35,7 +35,7 @@ internal fun HomeScreen(modifier: Modifier = Modifier) {
 }
 
 @Composable
-internal fun HomeScreenContent(modifier: Modifier) {
+internal fun HomeScreenContent(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier,
         contentAlignment = Alignment.Center,

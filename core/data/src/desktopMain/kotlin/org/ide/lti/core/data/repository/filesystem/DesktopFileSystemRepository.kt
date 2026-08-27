@@ -20,8 +20,13 @@ import okio.Path.Companion.toPath
 import org.ide.lti.core.model.filesystem.FileNode
 import org.ide.lti.core.model.filesystem.FileType
 import java.nio.file.FileSystems
+import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardWatchEventKinds
+import java.nio.file.WatchEvent
+import java.nio.file.WatchKey
+import java.nio.file.WatchService
 
 /**
  * Desktop/JVM implementation of FileSystemRepository using Okio.
@@ -104,15 +109,46 @@ class DesktopFileSystemRepository : FileSystemRepository {
     }
 
     override fun watchDirectory(path: String): Flow<FileSystemEvent> = callbackFlow {
-        val watchService = try {
+        val watchService = createWatchService()
+        val dir = registerDirectory(path, watchService)
+
+        val job = launch(Dispatchers.IO) {
+            if (watchService == null) return@launch
+            var keepWatching = true
+            while (isActive && keepWatching) {
+                val key = try {
+                    watchService.take()
+                } catch (_: Exception) {
+                    null
+                } ?: break
+
+                processWatchEvents(key, dir) { trySend(it) }
+                keepWatching = key.reset()
+            }
+        }
+
+        awaitClose {
+            job.cancel()
+            try {
+                watchService?.close()
+            } catch (_: Exception) {
+            }
+        }
+    }
+
+    private fun createWatchService(): WatchService? {
+        return try {
             FileSystems.getDefault().newWatchService()
         } catch (_: Exception) {
             null
         }
+    }
 
-        val dir = try {
+    private fun registerDirectory(path: String, watchService: WatchService?): Path? {
+        if (watchService == null) return null
+        return try {
             val p = Paths.get(path)
-            if (java.nio.file.Files.exists(p)) {
+            if (Files.exists(p)) {
                 p.register(
                     watchService,
                     StandardWatchEventKinds.ENTRY_CREATE,
@@ -124,36 +160,34 @@ class DesktopFileSystemRepository : FileSystemRepository {
         } catch (_: Exception) {
             null
         }
+    }
 
-        val job = launch(Dispatchers.IO) {
-            while (isActive && watchService != null) {
-                val key = try {
-                    watchService.take()
-                } catch (_: Exception) {
-                    break
-                }
-                for (event in key.pollEvents()) {
-                    val kind = event.kind()
-                    val filename = event.context()?.toString() ?: ""
-                    val fullPath = if (dir != null && filename.isNotEmpty()) dir.resolve(filename).toString() else filename
-                    when (kind) {
-                        StandardWatchEventKinds.ENTRY_CREATE -> trySend(FileSystemEvent.FileCreated(fullPath))
-                        StandardWatchEventKinds.ENTRY_MODIFY -> trySend(FileSystemEvent.FileModified(fullPath))
-                        StandardWatchEventKinds.ENTRY_DELETE -> trySend(FileSystemEvent.FileDeleted(fullPath))
-                    }
-                }
-                if (!key.reset()) {
-                    break
-                }
-            }
+    private fun processWatchEvents(
+        key: WatchKey,
+        dir: Path?,
+        onEvent: (FileSystemEvent) -> Unit,
+    ) {
+        for (event in key.pollEvents()) {
+            toFileSystemEvent(event.kind(), dir, event.context())?.let(onEvent)
         }
+    }
 
-        awaitClose {
-            job.cancel()
-            try {
-                watchService?.close()
-            } catch (_: Exception) {
-            }
+    private fun toFileSystemEvent(
+        kind: WatchEvent.Kind<*>,
+        dir: Path?,
+        context: Any?,
+    ): FileSystemEvent? {
+        val filename = context?.toString() ?: ""
+        val fullPath = if (dir != null && filename.isNotEmpty()) {
+            dir.resolve(filename).toString()
+        } else {
+            filename
+        }
+        return when (kind) {
+            StandardWatchEventKinds.ENTRY_CREATE -> FileSystemEvent.FileCreated(fullPath)
+            StandardWatchEventKinds.ENTRY_MODIFY -> FileSystemEvent.FileModified(fullPath)
+            StandardWatchEventKinds.ENTRY_DELETE -> FileSystemEvent.FileDeleted(fullPath)
+            else -> null
         }
     }
 }

@@ -1,13 +1,5 @@
 <?xml version="1.0" ?>
 <SmellBaseline>
   <ManuallySuppressedIssues></ManuallySuppressedIssues>
-  <CurrentIssues>
-    <ID>CyclomaticComplexMethod:EditorViewModel.kt$EditorViewModel$private fun detectLanguage(fileName: String): String</ID>
-    <ID>MaxLineLength:AIAssistantPanel.kt$modifier = Modifier.padding(end = Spacing.Small).width(IconSize.Medium).height(IconSize.Medium)</ID>
-    <ID>NewLineAtEndOfFile:EditorPanel.kt$org.ide.lti.feature.workspace.panels.editor.EditorPanel.kt</ID>
-    <ID>NewLineAtEndOfFile:ExplorerPanel.kt$org.ide.lti.feature.workspace.panels.explorer.ExplorerPanel.kt</ID>
-    <ID>NewLineAtEndOfFile:TerminalPanel.kt$org.ide.lti.feature.workspace.panels.terminal.TerminalPanel.kt</ID>
-    <ID>UnusedParameter:ExplorerViewModel.kt$ExplorerViewModel$fileNode: FileNode</ID>
-    <ID>UnusedParameter:WorkspaceScreen.kt$viewModel: WorkspaceViewModel = koinViewModel()</ID>
-  </CurrentIssues>
+  <CurrentIssues></CurrentIssues>
 </SmellBaseline>

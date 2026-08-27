@@ -38,9 +38,11 @@ class TerminalManager {
     }
 
     fun executeCommand(sessionId: String, command: String): Flow<String> {
+        val session = _sessions.value.find { it.id == sessionId }
         // TODO: Implement actual command execution using PTY
         return flow {
-            emit("$ $command\n")
+            val prefix = session?.let { "${it.name}$ " } ?: "$ "
+            emit("$prefix$command\n")
             emit("Command executed (placeholder)\n")
         }
     }
