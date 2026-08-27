@@ -227,12 +227,17 @@ private fun GlassTopBarLeftSection(
             )
         }
 
-        GlassTopBarIconButton(
-            icon = AppIcons.Menu,
-            contentDescription = "Main Menu",
+        GlassIconButton(
             onClick = onMenuClick,
+            size = ComponentSize.TopBarButtonSize,
             backdrop = backdrop,
-        )
+        ) {
+            Icon(
+                imageVector = AppIcons.Menu,
+                contentDescription = "Main Menu",
+                modifier = Modifier.size(IconSize.Medium),
+            )
+        }
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -302,22 +307,31 @@ private fun GlassTopBarRightSection(
             onClickLeftPanelIcon = onClickLeftPanelIcon,
             onClickMiddleDownPanelIcon = onClickMiddleDownPanelIcon,
             onClickRightPanelIcon = onClickRightPanelIcon,
-            backdrop = backdrop,
         )
 
-        GlassTopBarIconButton(
-            icon = AppIcons.OutlinedNotifications,
-            contentDescription = "Notifications",
+        GlassIconButton(
             onClick = onNotificationsClick,
+            size = ComponentSize.TopBarButtonSize,
             backdrop = backdrop,
-        )
+        ) {
+            Icon(
+                imageVector = AppIcons.OutlinedNotifications,
+                contentDescription = "Notifications",
+                modifier = Modifier.size(IconSize.Medium),
+            )
+        }
 
-        GlassTopBarIconButton(
-            icon = AppIcons.SettingsOutlined,
-            contentDescription = "Settings",
+        GlassIconButton(
             onClick = onSettingsClick,
+            size = ComponentSize.TopBarButtonSize,
             backdrop = backdrop,
-        )
+        ) {
+            Icon(
+                imageVector = AppIcons.SettingsOutlined,
+                contentDescription = "Settings",
+                modifier = Modifier.size(IconSize.Medium),
+            )
+        }
 
         Box(
             modifier = Modifier
@@ -445,7 +459,6 @@ private fun SegmentedPanelLayoutToggle(
     onClickMiddleDownPanelIcon: () -> Unit,
     onClickRightPanelIcon: () -> Unit,
     modifier: Modifier = Modifier,
-    backdrop: Backdrop? = null,
 ) {
     val glassColors = GlassTheme.colors
 
@@ -460,212 +473,49 @@ private fun SegmentedPanelLayoutToggle(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // Left Panel Toggle (File Explorer)
-        SegmentedToggleButton(
-            icon = AppIcons.leftPanelPainterResource(),
-            contentDescription = "Toggle Left Panel (Files)",
-            isActive = isLeftPanelVisible,
-            onClick = onClickLeftPanelIcon,
-            backdrop = backdrop,
-        )
+        GlassIconToggleButton(
+            selected = isLeftPanelVisible,
+            onSelectedChange = { onClickLeftPanelIcon() },
+            size = ComponentSize.SegmentedButtonSize,
+            shape = RoundedCornerShape(CornerRadius.Compact),
+        ) {
+            Icon(
+                painter = AppIcons.leftPanelPainterResource(),
+                contentDescription = "Toggle Left Panel (Files)",
+                modifier = Modifier.size(IconSize.Segmented),
+                tint = if (isLeftPanelVisible) glassColors.glassAccent else glassColors.onGlassMuted,
+            )
+        }
 
         // Middle Down Panel Toggle (Terminal/Output)
-        SegmentedToggleButton(
-            icon = AppIcons.bottomPanelPainterResource(),
-            contentDescription = "Toggle Bottom Panel (Terminal)",
-            isActive = isMiddleDownPanelVisible,
-            onClick = onClickMiddleDownPanelIcon,
-            backdrop = backdrop,
-        )
+        GlassIconToggleButton(
+            selected = isMiddleDownPanelVisible,
+            onSelectedChange = { onClickMiddleDownPanelIcon() },
+            size = ComponentSize.SegmentedButtonSize,
+            shape = RoundedCornerShape(CornerRadius.Compact),
+        ) {
+            Icon(
+                painter = AppIcons.bottomPanelPainterResource(),
+                contentDescription = "Toggle Bottom Panel (Terminal)",
+                modifier = Modifier.size(IconSize.Segmented),
+                tint = if (isMiddleDownPanelVisible) glassColors.glassAccent else glassColors.onGlassMuted,
+            )
+        }
 
         // Right Panel Toggle (AI Assistant)
-        SegmentedToggleButton(
-            icon = AppIcons.rightPanelPainterResource(),
-            contentDescription = "Toggle Right Panel (AI Assistant)",
-            isActive = isRightPanelVisible,
-            onClick = onClickRightPanelIcon,
-            backdrop = backdrop,
-        )
-    }
-}
-
-/**
- * Individual toggle button inside the segmented panel layout control with real glass effect.
- */
-@OptIn(ExperimentalComposeUiApi::class)
-@Composable
-private fun SegmentedToggleButton(
-    icon: Painter,
-    contentDescription: String,
-    isActive: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    backdrop: Backdrop? = null,
-) {
-    var isHovered by remember { mutableStateOf(false) }
-    val glassColors = GlassTheme.colors
-    val effectsEnabled = GlassTheme.effectsEnabled
-    val actualBackdrop = backdrop ?: GlassTheme.backdrop
-    val buttonShape = RoundedCornerShape(CornerRadius.Compact)
-
-    val (surfaceColor, tintColor) = resolveSegmentedToggleColors(isActive, isHovered, glassColors)
-    val iconTint = resolveSegmentedToggleIconTint(isActive, isHovered, glassColors)
-    val borderColor = resolveSegmentedToggleBorderColor(isActive, isHovered, glassColors)
-
-    Box(
-        modifier = modifier
-            .size(ComponentSize.SegmentedButtonSize)
-            .clip(buttonShape)
-            .segmentedToggleSurface(
-                isHovered = isHovered,
-                effectsEnabled = effectsEnabled,
-                backdrop = actualBackdrop,
-                shape = buttonShape,
-                surfaceColor = surfaceColor,
-                tintColor = tintColor,
+        GlassIconToggleButton(
+            selected = isRightPanelVisible,
+            onSelectedChange = { onClickRightPanelIcon() },
+            size = ComponentSize.SegmentedButtonSize,
+            shape = RoundedCornerShape(CornerRadius.Compact),
+        ) {
+            Icon(
+                painter = AppIcons.rightPanelPainterResource(),
+                contentDescription = "Toggle Right Panel (AI Assistant)",
+                modifier = Modifier.size(IconSize.Segmented),
+                tint = if (isRightPanelVisible) glassColors.glassAccent else glassColors.onGlassMuted,
             )
-            .then(
-                if (borderColor != Color.Transparent) {
-                    Modifier.border(width = StrokeWidth.Hairline, color = borderColor, shape = buttonShape)
-                } else {
-                    Modifier
-                }
-            )
-            .onPointerEvent(PointerEventType.Enter) { isHovered = true }
-            .onPointerEvent(PointerEventType.Exit) { isHovered = false }
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                role = Role.Button,
-                onClick = onClick,
-            ),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            painter = icon,
-            contentDescription = contentDescription,
-            modifier = Modifier.size(IconSize.Segmented),
-            tint = iconTint,
-        )
-    }
-}
-
-private fun resolveSegmentedToggleColors(
-    isActive: Boolean,
-    isHovered: Boolean,
-    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme,
-): Pair<Color, Color> {
-    val surfaceColor = if (isActive || isHovered) glassColors.glassSurfaceElevated else glassColors.glassSurface
-    val tintColor = if (isActive) glassColors.glassAccent.copy(alpha = AlphaTokens.Hover) else Color.Transparent
-    return surfaceColor to tintColor
-}
-
-private fun resolveSegmentedToggleBorderColor(
-    isActive: Boolean,
-    isHovered: Boolean,
-    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme,
-): Color = when {
-    isActive && isHovered -> glassColors.glassBorderHighlight
-    isActive -> glassColors.glassBorder
-    isHovered -> glassColors.glassBorder.copy(alpha = AlphaTokens.Border)
-    else -> Color.Transparent
-}
-
-private fun resolveSegmentedToggleIconTint(
-    isActive: Boolean,
-    isHovered: Boolean,
-    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme,
-): Color = when {
-    isActive -> glassColors.glassAccent
-    isHovered -> glassColors.onGlass
-    else -> glassColors.onGlassMuted
-}
-
-private fun Modifier.segmentedToggleSurface(
-    isHovered: Boolean,
-    effectsEnabled: Boolean,
-    backdrop: Backdrop?,
-    shape: Shape,
-    surfaceColor: Color,
-    tintColor: Color,
-): Modifier {
-    return if (effectsEnabled && backdrop != null) {
-        this.drawBackdrop(
-            backdrop = backdrop,
-            shape = { shape },
-            effects = {
-                vibrancy()
-                blur(BackdropBlur.Subtle.toPx())
-                lens(LensRefraction.Button.height.toPx(), LensRefraction.Button.amount.toPx())
-            },
-            highlight = { if (isHovered) Highlight.Ambient else Highlight.Plain },
-            onDrawSurface = {
-                if (surfaceColor != Color.Transparent) {
-                    drawRect(surfaceColor)
-                }
-                if (tintColor != Color.Transparent) {
-                    drawRect(tintColor)
-                }
-            }
-        )
-    } else {
-        this.background(surfaceColor).then(
-            if (tintColor != Color.Transparent) Modifier.background(tintColor) else Modifier
-        )
-    }
-}
-
-/**
- * Clean Liquid Glass Top Bar Icon Button with real backdrop effects on hover.
- */
-@OptIn(ExperimentalComposeUiApi::class)
-@Composable
-private fun GlassTopBarIconButton(
-    icon: ImageVector,
-    contentDescription: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    backdrop: Backdrop? = null,
-) {
-    var isHovered by remember { mutableStateOf(false) }
-    val glassColors = GlassTheme.colors
-    val effectsEnabled = GlassTheme.effectsEnabled
-    val actualBackdrop = backdrop ?: GlassTheme.backdrop
-    val buttonShape = CircleShape
-
-    val borderColor by animateColorAsState(
-        targetValue = if (isHovered) glassColors.glassBorderHighlight else glassColors.glassBorder,
-        animationSpec = tween(MotionDuration.Fast)
-    )
-
-    Box(
-        modifier = modifier
-            .size(ComponentSize.TopBarButtonSize)
-            .clip(buttonShape)
-            .segmentedToggleSurface(
-                isHovered = isHovered,
-                effectsEnabled = effectsEnabled,
-                backdrop = actualBackdrop,
-                shape = buttonShape,
-                surfaceColor = if (isHovered) glassColors.glassSurfaceElevated else glassColors.glassSurface,
-                tintColor = Color.Transparent,
-            )
-            .border(width = StrokeWidth.Hairline, color = borderColor, shape = buttonShape)
-            .onPointerEvent(PointerEventType.Enter) { isHovered = true }
-            .onPointerEvent(PointerEventType.Exit) { isHovered = false }
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                role = Role.Button,
-                onClick = onClick,
-            ),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = contentDescription,
-            modifier = Modifier.size(IconSize.Medium),
-            tint = if (isHovered) glassColors.onGlass else glassColors.onGlassSecondary,
-        )
+        }
     }
 }
 

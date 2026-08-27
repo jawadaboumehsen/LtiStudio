@@ -191,55 +191,18 @@ fun GlassTabItem(
         )
 
         if (onClose != null) {
-            GlassTabCloseButton(
-                selected = selected,
-                onClose = onClose,
-            )
-        }
-    }
-}
-
-@OptIn(ExperimentalComposeUiApi::class)
-@Composable
-private fun GlassTabCloseButton(
-    selected: Boolean,
-    onClose: () -> Unit,
-) {
-    var isCloseHovered by remember { mutableStateOf(false) }
-    val glassColors = GlassTheme.colors
-    val closeIconTint = when {
-        isCloseHovered -> glassColors.onGlass
-        selected -> glassColors.onGlassSecondary
-        else -> glassColors.onGlassMuted
-    }
-
-    Box(
-        modifier = Modifier
-            .size(IconSize.Medium)
-            .clip(RoundedCornerShape(CornerRadius.ExtraSmall))
-            .then(
-                if (isCloseHovered) {
-                    Modifier.background(glassColors.glassSurfaceElevated)
-                } else {
-                    Modifier
-                }
-            )
-            .onPointerEvent(PointerEventType.Enter) { isCloseHovered = true }
-            .onPointerEvent(PointerEventType.Exit) { isCloseHovered = false }
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                role = Role.Button,
+            GlassIconButton(
                 onClick = onClose,
-            ),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            imageVector = Icons.Default.Close,
-            contentDescription = "Close tab",
-            modifier = Modifier.size(IconSize.Small),
-            tint = closeIconTint,
-        )
+                size = IconSize.Medium,
+                shape = RoundedCornerShape(CornerRadius.ExtraSmall),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Close tab",
+                    modifier = Modifier.size(IconSize.Small),
+                )
+            }
+        }
     }
 }
 
