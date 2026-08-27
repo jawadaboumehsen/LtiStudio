@@ -48,9 +48,9 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 @Suppress("LongMethod", "CyclomaticComplexMethod", "MagicNumber")
 @Composable
 fun PasswordStrengthIndicator(
-    modifier: Modifier = Modifier,
     state: PasswordStrengthState,
     currentCharacterCount: Int,
+    modifier: Modifier = Modifier,
     minimumCharacterCount: Int? = null,
 ) {
     val widthPercent by animateFloatAsState(
@@ -132,9 +132,9 @@ fun PasswordStrengthIndicator(
 
 @Composable
 private fun MinimumCharacterCount(
-    modifier: Modifier = Modifier,
     minimumRequirementMet: Boolean,
     minimumCharacterCount: Int,
+    modifier: Modifier = Modifier,
 ) {
     val characterCountColor by animateColorAsState(
         targetValue = if (minimumRequirementMet) {

@@ -76,24 +76,24 @@ import kotlin.math.roundToInt
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun RevealSwipe(
-    modifier: Modifier = Modifier,
-    enableSwipe: Boolean = true,
-    onContentClick: (() -> Unit)? = null,
-    onContentLongClick: ((DpOffset) -> Unit)? = null,
     backgroundStartActionLabel: String?,
-    onBackgroundStartClick: () -> Boolean = { true },
     backgroundEndActionLabel: String?,
-    onBackgroundEndClick: () -> Boolean = { true },
-    closeOnContentClick: Boolean = true,
-    closeOnBackgroundClick: Boolean = true,
     shape: CornerBasedShape,
-    alphaEasing: Easing = MotionEasing.EmphasizedDecelerate,
     backgroundCardStartColor: Color,
     backgroundCardEndColor: Color,
     card: @Composable BoxScope.(
         shape: Shape,
         content: @Composable ColumnScope.() -> Unit,
     ) -> Unit,
+    modifier: Modifier = Modifier,
+    enableSwipe: Boolean = true,
+    onContentClick: (() -> Unit)? = null,
+    onContentLongClick: ((DpOffset) -> Unit)? = null,
+    onBackgroundStartClick: () -> Boolean = { true },
+    onBackgroundEndClick: () -> Boolean = { true },
+    closeOnContentClick: Boolean = true,
+    closeOnBackgroundClick: Boolean = true,
+    alphaEasing: Easing = MotionEasing.EmphasizedDecelerate,
     coroutineScope: CoroutineScope = rememberCoroutineScope(),
     state: RevealState = rememberRevealState(
         maxRevealDp = ComponentSize.MaxRevealDp,
@@ -136,10 +136,11 @@ fun RevealSwipe(
         }
     }
 
-    val hapticFeedback = LocalHapticFeedback.current
-    var pressOffset by remember { mutableStateOf(DpOffset.Zero) }
-
     BaseRevealSwipe(
+        shape = shape,
+        backgroundCardStartColor = backgroundCardStartColor,
+        backgroundCardEndColor = backgroundCardEndColor,
+        card = card,
         modifier = modifier.semantics {
             customActions = buildList {
                 backgroundStartActionLabel?.let {
@@ -162,11 +163,7 @@ fun RevealSwipe(
         },
         enableSwipe = enableSwipe,
         animateBackgroundCardColor = enableSwipe,
-        shape = shape,
         alphaEasing = alphaEasing,
-        backgroundCardStartColor = backgroundCardStartColor,
-        backgroundCardEndColor = backgroundCardEndColor,
-        card = card,
         state = state,
         hiddenContentEnd = {
             Box(
@@ -192,99 +189,113 @@ fun RevealSwipe(
                 hiddenContentStart()
             }
         },
-        content = {
-            val clickableModifier = when {
-                onContentClick != null && !closeOnContentClick -> {
-                    Modifier.combinedClickable(
-                        onClick = onContentClick,
-                        onLongClick = {
-                            onContentLongClick?.let {
-                                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                                it.invoke(pressOffset)
-                            }
-                        },
-                    )
-                }
-
-                onContentClick == null && closeOnContentClick -> {
-                    // if no onContentClick handler passed, add click handler with no indication to enable close on content click
-                    Modifier.combinedClickable(
-                        onClick = closeOnContentClickHandler,
-                        onLongClick = {
-                            onContentLongClick?.let {
-                                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                                it.invoke(pressOffset)
-                            }
-                        },
-                        indication = null,
-                        interactionSource = remember { MutableInteractionSource() },
-                    )
-                }
-
-                onContentClick != null && closeOnContentClick -> {
-                    // decide based on state:
-                    // 1. if open, just close without indication
-                    // 2. if closed, call click handler
-                    Modifier.combinedClickable(
-                        onClick =
-                        {
-                            val isOpen =
-                                state.anchoredDraggableState.targetValue != RevealValue.Default
-                            // if open, just close. No click event.
-                            if (isOpen) {
-                                closeOnContentClickHandler()
-                            } else {
-                                onContentClick()
-                            }
-                        },
-                        onLongClick = {
-                            onContentLongClick?.let {
-                                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                                it.invoke(pressOffset)
-                            }
-                        },
-                        // no indication if just closing
-                        indication = if (state.anchoredDraggableState.targetValue != RevealValue.Default) null else LocalIndication.current,
-                        interactionSource = remember { MutableInteractionSource() },
-                    )
-                }
-
-                else -> Modifier
-            }
-
-            Box(
-                modifier = clickableModifier.pointerInput(true) {
-                    kotlinx.coroutines.coroutineScope {
-                        awaitEachGesture {
-                            val down = awaitFirstDown()
-                            pressOffset = DpOffset(
-                                down.position.x.toDp(),
-                                down.position.y.toDp(),
-                            )
-                        }
-                    }
-                },
-            ) {
-                content(it)
-            }
+        content = { itemShape ->
+            RevealSwipeContent(
+                state = state,
+                onContentClick = onContentClick,
+                onContentLongClick = onContentLongClick,
+                closeOnContentClick = closeOnContentClick,
+                closeOnContentClickHandler = closeOnContentClickHandler,
+                shape = itemShape,
+                content = content,
+            )
         },
     )
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
+private fun RevealSwipeContent(
+    state: RevealState,
+    onContentClick: (() -> Unit)?,
+    onContentLongClick: ((DpOffset) -> Unit)?,
+    closeOnContentClick: Boolean,
+    closeOnContentClickHandler: () -> Unit,
+    shape: Shape,
+    content: @Composable (Shape) -> Unit,
+) {
+    val hapticFeedback = LocalHapticFeedback.current
+    var pressOffset by remember { mutableStateOf(DpOffset.Zero) }
+    val isRevealed = state.anchoredDraggableState.targetValue != RevealValue.Default
+
+    val onLongClickAction: (() -> Unit)? = onContentLongClick?.let { longClickHandler ->
+        {
+            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+            longClickHandler.invoke(pressOffset)
+        }
+    }
+
+    val clickableModifier = when {
+        onContentClick != null && !closeOnContentClick -> {
+            Modifier.combinedClickable(
+                onClick = onContentClick,
+                onLongClick = onLongClickAction,
+            )
+        }
+
+        onContentClick == null && closeOnContentClick -> {
+            // If no onContentClick handler passed,
+            // add click handler with no indication to enable close on content click
+            Modifier.combinedClickable(
+                onClick = closeOnContentClickHandler,
+                onLongClick = onLongClickAction,
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() },
+            )
+        }
+
+        onContentClick != null && closeOnContentClick -> {
+            // Decide based on state:
+            // 1. If open, just close without indication
+            // 2. If closed, call click handler
+            Modifier.combinedClickable(
+                onClick = {
+                    if (isRevealed) {
+                        closeOnContentClickHandler()
+                    } else {
+                        onContentClick()
+                    }
+                },
+                onLongClick = onLongClickAction,
+                indication = if (isRevealed) null else LocalIndication.current,
+                interactionSource = remember { MutableInteractionSource() },
+            )
+        }
+
+        else -> Modifier
+    }
+
+    Box(
+        modifier = clickableModifier.pointerInput(Unit) {
+            kotlinx.coroutines.coroutineScope {
+                awaitEachGesture {
+                    val down = awaitFirstDown()
+                    pressOffset = DpOffset(
+                        down.position.x.toDp(),
+                        down.position.y.toDp(),
+                    )
+                }
+            }
+        },
+    ) {
+        content(shape)
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
 fun BaseRevealSwipe(
-    modifier: Modifier = Modifier,
-    enableSwipe: Boolean = true,
-    animateBackgroundCardColor: Boolean = true,
     shape: CornerBasedShape,
-    alphaEasing: Easing = MotionEasing.EmphasizedDecelerate,
     backgroundCardStartColor: Color,
     backgroundCardEndColor: Color,
     card: @Composable BoxScope.(
         shape: Shape,
         content: @Composable ColumnScope.() -> Unit,
     ) -> Unit,
+    modifier: Modifier = Modifier,
+    enableSwipe: Boolean = true,
+    animateBackgroundCardColor: Boolean = true,
+    alphaEasing: Easing = MotionEasing.EmphasizedDecelerate,
     state: RevealState = rememberRevealState(
         maxRevealDp = ComponentSize.MaxRevealDp,
         directions = setOf(

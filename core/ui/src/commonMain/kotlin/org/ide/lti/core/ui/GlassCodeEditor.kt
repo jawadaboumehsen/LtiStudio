@@ -23,7 +23,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.ide.lti.core.designsystem.theme.Spacing
 
@@ -60,7 +59,7 @@ fun GlassCodeEditor(
                         .verticalScroll(verticalScrollState),
                 ) {
                     val lineCount = content.count { it == '\n' } + 1
-                    (1..lineCount).forEach { lineNumber ->
+                    for (lineNumber in 1..lineCount) {
                         Text(
                             text = lineNumber.toString().padStart(4),
                             style = TextStyle(

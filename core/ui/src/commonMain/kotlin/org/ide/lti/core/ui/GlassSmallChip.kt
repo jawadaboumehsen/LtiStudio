@@ -29,10 +29,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassTheme
@@ -86,9 +84,9 @@ fun GlassSmallChip(
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall.copy(
-                fontSize = 11.5.sp
+                fontSize = 11.5.sp,
             ),
-            color = textColor
+            color = textColor,
         )
     }
 }

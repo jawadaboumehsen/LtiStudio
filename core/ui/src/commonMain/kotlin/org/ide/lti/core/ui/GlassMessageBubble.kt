@@ -30,13 +30,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.unit.dp
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -44,15 +41,6 @@ import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
-
-/**
- * Message role enum for chat messages.
- */
-enum class LtiMessageRole {
-    USER,
-    ASSISTANT,
-    SYSTEM,
-}
 
 /**
  * Lti message bubble component for displaying chat messages.
@@ -114,7 +102,9 @@ fun GlassMessageBubble(
                                 onClick = {
                                     clipboardManager.setText(AnnotatedString(content))
                                 },
-                                modifier = Modifier.width(ComponentSize.PanelHeaderAction).height(ComponentSize.PanelHeaderAction),
+                                modifier = Modifier
+                                    .width(ComponentSize.PanelHeaderAction)
+                                    .height(ComponentSize.PanelHeaderAction),
                             ) {
                                 Icon(
                                     imageVector = AppIcons.ContentCopy,
@@ -134,76 +124,6 @@ fun GlassMessageBubble(
                 modifier = Modifier.padding(horizontal = Spacing.SmallMedium, vertical = Spacing.ExtraSmall),
             )
         }
-    }
-}
-
-/**
- * Message content component that handles code blocks and regular text.
- */
-@Composable
-private fun LtiMessageContent(
-    content: String,
-    textColor: Color,
-) {
-    // Simple code block detection using string splits
-    if (content.contains("```")) {
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-            val parts = content.split("```")
-            parts.forEachIndexed { index, part ->
-                if (index % 2 == 0) {
-                    // Regular text
-                    if (part.isNotBlank()) {
-                        Text(
-                            text = part.trim(),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = textColor,
-                        )
-                    }
-                } else {
-                    // Code block
-                    if (part.isNotBlank()) {
-                        LtiCodeBlock(
-                            code = part.trim(),
-                            textColor = textColor,
-                        )
-                    }
-                }
-            }
-        }
-    } else {
-        // Regular text
-        Text(
-            text = content,
-            style = MaterialTheme.typography.bodyMedium,
-            color = textColor,
-        )
-    }
-}
-
-/**
- * Code block component for displaying code snippets.
- */
-@Composable
-private fun LtiCodeBlock(
-    code: String,
-    textColor: Color,
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-//            .background(
-//                ideSurfaceElevated.copy(alpha = 0.5f),
-//                RoundedCornerShape(8.dp),
-//            )
-            .padding(Spacing.SmallMedium),
-    ) {
-        Text(
-            text = code,
-            style = MaterialTheme.typography.bodySmall.copy(
-                fontFamily = FontFamily.Monospace,
-            ),
-            color = textColor,
-        )
     }
 }
 
