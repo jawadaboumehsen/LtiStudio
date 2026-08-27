@@ -27,9 +27,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import org.ide.lti.core.designsystem.icon.AppIcons
+import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.model.filesystem.FileNode
@@ -78,11 +79,16 @@ private fun GlassFileTreeItem(
     onNodeClick: (FileNode) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val glassColors = GlassTheme.colors
+
     Column(modifier = modifier) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { onNodeClick(node) }
+                .clickable(
+                    role = Role.Button,
+                    onClick = { onNodeClick(node) },
+                )
                 .padding(
                     start = Spacing.Medium * level + Spacing.Small,
                     top = Spacing.ExtraSmall,
@@ -102,6 +108,7 @@ private fun GlassFileTreeItem(
                     },
                     contentDescription = null,
                     modifier = Modifier.size(IconSize.Medium),
+                    tint = glassColors.onGlassMuted,
                 )
                 Spacer(modifier = Modifier.width(Spacing.ExtraSmall))
             } else {
@@ -120,6 +127,7 @@ private fun GlassFileTreeItem(
             Text(
                 text = node.name,
                 style = MaterialTheme.typography.bodyMedium,
+                color = if (node.type == FileType.DIRECTORY) glassColors.onGlass else glassColors.onGlassSecondary,
                 fontWeight = if (node.type == FileType.DIRECTORY) {
                     FontWeight.Medium
                 } else {
@@ -150,15 +158,23 @@ private fun LtiFileIcon(
     fileType: FileType,
     isExpanded: Boolean = false,
 ) {
+    val glassColors = GlassTheme.colors
     val icon = when (fileType) {
         FileType.DIRECTORY -> if (isExpanded) AppIcons.FolderOpen else AppIcons.Folder
         FileType.FILE -> AppIcons.File
         FileType.SYMLINK -> AppIcons.Link
     }
 
+    val tint = when (fileType) {
+        FileType.DIRECTORY -> glassColors.glassAccent
+        FileType.FILE -> glassColors.onGlassSecondary
+        FileType.SYMLINK -> glassColors.onGlassMuted
+    }
+
     Icon(
         imageVector = icon,
         contentDescription = null,
         modifier = Modifier.size(IconSize.Medium),
+        tint = tint,
     )
 }

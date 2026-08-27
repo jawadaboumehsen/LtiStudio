@@ -28,14 +28,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kashif_e.backdrop.Backdrop
+import com.kashif_e.backdrop.drawBackdrop
+import com.kashif_e.backdrop.effects.blur
+import com.kashif_e.backdrop.effects.lens
+import com.kashif_e.backdrop.effects.vibrancy
+import com.kashif_e.backdrop.highlight.Highlight
 import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
+import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 
@@ -52,18 +58,39 @@ fun GlassStatusBar(
     encoding: String = "UTF-8",
     lineEnding: LineEnding = LineEnding.LF,
     fileType: String? = null,
+    backdrop: Backdrop? = null,
 ) {
+    val actualBackdrop = backdrop ?: GlassTheme.backdrop
     val glassColors = GlassTheme.colors
+    val effectsEnabled = GlassTheme.effectsEnabled
 
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(ComponentSize.StatusBarHeightAlt)
-            .background(glassColors.glassSurface.copy(alpha = AlphaTokens.Medium))
+            .then(
+                if (effectsEnabled && actualBackdrop != null) {
+                    Modifier.drawBackdrop(
+                        backdrop = actualBackdrop,
+                        shape = { RoundedCornerShape(CornerRadius.None) },
+                        effects = {
+                            vibrancy()
+                            blur(BackdropBlur.TopBar.toPx())
+                            lens(LensRefraction.TopBar.height.toPx(), LensRefraction.TopBar.amount.toPx())
+                        },
+                        highlight = { Highlight.Plain },
+                        onDrawSurface = {
+                            drawRect(glassColors.glassSurface)
+                        }
+                    )
+                } else {
+                    Modifier.background(glassColors.glassSurface.copy(alpha = AlphaTokens.Medium))
+                }
+            )
             .border(
                 width = StrokeWidth.Hairline,
                 color = glassColors.glassBorder.copy(alpha = AlphaTokens.Border),
-                shape = RectangleShape
+                shape = RoundedCornerShape(CornerRadius.None)
             )
             .padding(horizontal = Spacing.SmallMedium),
         contentAlignment = Alignment.Center

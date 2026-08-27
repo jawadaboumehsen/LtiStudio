@@ -21,9 +21,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.sp
+import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 
 /**
@@ -45,6 +47,7 @@ fun GlassCodeEditor(
 ) {
     val verticalScrollState = rememberScrollState()
     val horizontalScrollState = rememberScrollState()
+    val glassColors = GlassTheme.colors
 
     Box(
         modifier = modifier
@@ -65,7 +68,7 @@ fun GlassCodeEditor(
                             style = TextStyle(
                                 fontFamily = FontFamily.Monospace,
                                 fontSize = 14.sp,
-//                                color = ideTextSecondary.copy(alpha = 0.5f),
+                                color = glassColors.onGlassSecondary,
                             ),
                             modifier = Modifier.padding(vertical = Spacing.ExtraExtraSmall),
                         )
@@ -80,10 +83,10 @@ fun GlassCodeEditor(
                 textStyle = TextStyle(
                     fontFamily = FontFamily.Monospace,
                     fontSize = 14.sp,
-//                    color = ideTextPrimary,
+                    color = glassColors.onGlass,
                     lineHeight = 20.sp,
                 ),
-//                cursorBrush = SolidColor(ideBluePrimary),
+                cursorBrush = SolidColor(glassColors.glassAccent),
                 readOnly = readOnly,
                 modifier = Modifier
                     .fillMaxSize()
