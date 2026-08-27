@@ -91,6 +91,8 @@ import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius as ThemeCornerRadius
 import org.ide.lti.core.designsystem.theme.Elevation
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.MotionDuration
+import org.ide.lti.core.designsystem.theme.MotionEasing
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -634,8 +636,8 @@ private object LtiLayoutAnimations {
      * Uses Material Design's standard easing (0.4, 0.0, 0.2, 1.0) for smooth acceleration.
      */
     val PanelFade = tween<Float>(
-        durationMillis = 300,  // Reduced from 400ms for snappier feel
-        easing = CubicBezierEasing(0.4f, 0.0f, 0.2f, 1.0f)  // Custom professional easing
+        durationMillis = MotionDuration.Standard,  // Reduced from 400ms for snappier feel
+        easing = MotionEasing.Standard  // Custom professional easing
     )
 
     /**
@@ -652,7 +654,7 @@ private object LtiLayoutAnimations {
      * Quick but smooth for responsive feel during drag interactions.
      */
     val PanelResize = tween<androidx.compose.ui.unit.IntSize>(
-        durationMillis = 200,
+        durationMillis = MotionDuration.Moderate,
         easing = FastOutSlowInEasing
     )
 
@@ -747,7 +749,7 @@ private fun GlassDragDivider(
         animationSpec = if (isDragging) {
             snap()  // Instant update during drag
         } else {
-            tween(durationMillis = 150)  // Smooth fade on hover
+            tween(durationMillis = MotionDuration.Fast)  // Smooth fade on hover
         }
     )
 

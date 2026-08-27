@@ -68,6 +68,8 @@ import com.kashif_e.backdrop.shadow.Shadow
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.MotionSpring
+import org.ide.lti.core.designsystem.theme.MotionThreshold
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.utils.DampedDragAnimation
 import org.ide.lti.core.designsystem.utils.InteractiveHighlight
@@ -166,7 +168,7 @@ fun GlassBottomTabs(
                 animationScope = animationScope,
                 initialValue = selectedTabIndex().toFloat(),
                 valueRange = 0f..(tabsCount - 1).toFloat(),
-                visibilityThreshold = 0.001f,
+                visibilityThreshold = MotionThreshold.Fine,
                 initialScale = 1f,
                 pressedScale = 78f / 56f,
                 onDragStarted = {},
@@ -175,7 +177,14 @@ fun GlassBottomTabs(
                     currentIndex = targetIndex
                     animateToValue(targetIndex.toFloat())
                     animationScope.launch {
-                        offsetAnimation.animateTo(0f, spring(1f, 300f, 0.5f))
+                        offsetAnimation.animateTo(
+                            0f,
+                            spring(
+                                dampingRatio = MotionSpring.DampingRatioNoBouncy,
+                                stiffness = MotionSpring.StiffnessInteractive,
+                                visibilityThreshold = MotionThreshold.Offset,
+                            )
+                        )
                     }
                 },
                 onDrag = { _, dragAmount ->

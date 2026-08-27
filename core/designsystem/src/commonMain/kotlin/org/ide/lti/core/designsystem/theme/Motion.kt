@@ -1,0 +1,64 @@
+/*
+ * Copyright 2025 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
+package org.ide.lti.core.designsystem.theme
+
+import androidx.compose.animation.core.CubicBezierEasing
+
+/**
+ * Centralized duration tokens (in milliseconds) for transitions, fades, hover
+ * effects, and animations across the design system.
+ */
+object MotionDuration {
+    /** Fast transition for hover states, scale, and micro-interactions (150ms). */
+    const val Fast: Int = 150
+
+    /** Moderate transition for panel resizes and layout adjustments (200ms). */
+    const val Moderate: Int = 200
+
+    /** Standard transition for modal fades, scrims, and screen transitions (300ms). */
+    const val Standard: Int = 300
+}
+
+/**
+ * Centralized spring physics tokens (damping ratio, stiffness) for fluid,
+ * interactive liquid-glass gestures and animations.
+ */
+object MotionSpring {
+    /** Custom interactive stiffness for direct-manipulation gestures (300f). */
+    const val StiffnessInteractive: Float = 300f
+
+    /** Medium bouncy damping ratio for interactive feedback (0.5f). */
+    const val DampingRatioMediumBouncy: Float = 0.5f
+
+    /** Critical damping ratio with no bounce/overshoot (1.0f). */
+    const val DampingRatioNoBouncy: Float = 1.0f
+}
+
+/**
+ * Centralized easing curve tokens for non-linear animation acceleration and deceleration.
+ */
+object MotionEasing {
+    /** Standard easing curve (0.4, 0.0, 0.2, 1.0) for smooth acceleration/deceleration. */
+    val Standard: CubicBezierEasing = CubicBezierEasing(0.4f, 0.0f, 0.2f, 1.0f)
+
+    /** Emphasized decelerate curve (0.4, 0.4, 0.17, 0.9) for reveal and swipe transitions. */
+    val EmphasizedDecelerate: CubicBezierEasing = CubicBezierEasing(0.4f, 0.4f, 0.17f, 0.9f)
+}
+
+/**
+ * Centralized visibility threshold tokens for animatable property convergence.
+ */
+object MotionThreshold {
+    /** Fine precision threshold for sub-pixel and normalized progress animations (0.001f). */
+    const val Fine: Float = 0.001f
+
+    /** Offset threshold for positional and drag animations (0.5f). */
+    const val Offset: Float = 0.5f
+}

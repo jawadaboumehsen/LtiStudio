@@ -1,4 +1,4 @@
-﻿package org.ide.lti.core.designsystem.utils
+package org.ide.lti.core.designsystem.utils
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.VectorConverter
@@ -13,6 +13,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import org.ide.lti.core.designsystem.theme.MotionSpring
+import org.ide.lti.core.designsystem.theme.MotionThreshold
 
 class InteractiveHighlight(
     val animationScope: CoroutineScope,
@@ -20,12 +22,12 @@ class InteractiveHighlight(
 ) {
 
     private val pressProgressAnimationSpec =
-        spring(0.5f, 300f, 0.001f)
+        spring(MotionSpring.DampingRatioMediumBouncy, MotionSpring.StiffnessInteractive, MotionThreshold.Fine)
     private val positionAnimationSpec =
-        spring(0.5f, 300f, Offset.VisibilityThreshold)
+        spring(MotionSpring.DampingRatioMediumBouncy, MotionSpring.StiffnessInteractive, Offset.VisibilityThreshold)
 
     private val pressProgressAnimation =
-        Animatable(0f, 0.001f)
+        Animatable(0f, MotionThreshold.Fine)
     private val positionAnimation =
         Animatable(Offset.Zero, Offset.VectorConverter, Offset.VisibilityThreshold)
 

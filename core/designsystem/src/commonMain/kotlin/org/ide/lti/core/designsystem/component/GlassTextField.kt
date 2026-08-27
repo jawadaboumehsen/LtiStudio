@@ -69,6 +69,7 @@ import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.MotionDuration
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.utils.nonLetterColorVisualTransformation
@@ -115,7 +116,7 @@ fun GlassTextField(
 
     val animatedBorderWidth by animateDpAsState(
         targetValue = if (isFocused) StrokeWidth.Focused else StrokeWidth.Standard,
-        animationSpec = tween(150)
+        animationSpec = tween(MotionDuration.Fast)
     )
 
     val animatedBorderColor by animateColorAsState(
@@ -124,7 +125,7 @@ fun GlassTextField(
             isFocused -> GlassTheme.colors.glassBorderHighlight
             else -> GlassTheme.colors.glassBorder
         },
-        animationSpec = tween(150)
+        animationSpec = tween(MotionDuration.Fast)
     )
 
     Column(modifier = modifier) {

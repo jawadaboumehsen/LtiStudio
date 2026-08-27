@@ -71,6 +71,7 @@ import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.LtiTheme
+import org.ide.lti.core.designsystem.theme.MotionDuration
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.WindowControlColors
@@ -317,12 +318,12 @@ private fun LiquidSearchCapsule(
 
     val borderColor by animateColorAsState(
         targetValue = if (isHovered) glassColors.glassBorderHighlight else glassColors.glassBorder,
-        animationSpec = tween(150)
+        animationSpec = tween(MotionDuration.Fast)
     )
 
     val scale by animateFloatAsState(
         targetValue = if (isHovered) 1.01f else 1f,
-        animationSpec = tween(150)
+        animationSpec = tween(MotionDuration.Fast)
     )
 
     Row(

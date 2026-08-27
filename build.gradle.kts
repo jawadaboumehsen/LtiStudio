@@ -38,8 +38,8 @@ allprojects {
 }
 
 /**
- * Fails the build when UI code hardcodes colors/dimensions/alpha values that bypass the
- * centralized design-system tokens (core/designsystem theme/Color.kt, Dimens.kt, Alpha.kt),
+ * Fails the build when UI code hardcodes colors/dimensions/alpha/motion values that bypass the
+ * centralized design-system tokens (core/designsystem theme/Color.kt, Dimens.kt, Alpha.kt, Motion.kt),
  * when a feature/app module hand-rolls a glass component directly from backdrop effect
  * primitives instead of composing an existing core:designsystem/core:ui component, or when a
  * token constant is defined but never referenced anywhere.
@@ -133,6 +133,47 @@ tasks.register("verifyDesignSystemGuardrails") {
             }
         }
 
+        // ---- 1c. Motion bypass scan: everywhere UI code lives, excluding the theme/ package ----
+        // ---- itself. Motion tokens are fully centralized, so this applies repo-wide.         ----
+        val motionScanRoots = listOf(
+            File(root, "core/designsystem/src"),
+            File(root, "core/ui/src"),
+            File(root, "feature"),
+            File(root, "lti-shared/src"),
+            File(root, "lti-desktop/src"),
+        )
+
+        motionScanRoots.forEach { scanRoot ->
+            ktFiles(scanRoot).forEach { file ->
+                val path = file.absolutePath.replace('\\', '/')
+                if (path.contains("/theme/")) return@forEach
+                file.readLines().forEachIndexed { idx, rawLine ->
+                    if (isCommentOrImport(rawLine)) return@forEachIndexed
+                    val line = rawLine.trim()
+                    if (Regex("""durationMillis\s*=\s*[0-9]""").containsMatchIn(line)) {
+                        violations += "${file.relativeTo(root).path}:${idx + 1}: raw durationMillis literal " +
+                            "bypasses theme/Motion.kt (MotionDuration). [$line]"
+                    }
+                    if (Regex("""\btween\s*\(\s*[0-9]""").containsMatchIn(line)) {
+                        violations += "${file.relativeTo(root).path}:${idx + 1}: raw tween duration literal " +
+                            "bypasses theme/Motion.kt (MotionDuration). [$line]"
+                    }
+                    if (Regex("""\bspring\s*\(\s*[0-9]""").containsMatchIn(line)) {
+                        violations += "${file.relativeTo(root).path}:${idx + 1}: raw spring numeric literal " +
+                            "bypasses theme/Motion.kt (MotionSpring). [$line]"
+                    }
+                    if (Regex("""\b(?:dampingRatio|stiffness)\s*=\s*[0-9]""").containsMatchIn(line)) {
+                        violations += "${file.relativeTo(root).path}:${idx + 1}: raw spring parameter literal " +
+                            "bypasses theme/Motion.kt (MotionSpring). [$line]"
+                    }
+                    if (Regex("""\bCubicBezierEasing\s*\(\s*[0-9]""").containsMatchIn(line)) {
+                        violations += "${file.relativeTo(root).path}:${idx + 1}: raw CubicBezierEasing literal " +
+                            "bypasses theme/Motion.kt (MotionEasing). [$line]"
+                    }
+                }
+            }
+        }
+
         // ---- 2. Component-boundary scan: feature/*, lti-shared, lti-desktop must not hand-roll ----
         // ---- glass components directly from backdrop effect primitives.                        ----
         val boundaryScanRoots = listOf(
@@ -165,10 +206,10 @@ tasks.register("verifyDesignSystemGuardrails") {
             }
         }
 
-        // ---- 3. Unused-token scan: every named constant in Color.kt/Dimens.kt/Alpha.kt must be ----
+        // ---- 3. Unused-token scan: every named constant in Color.kt/Dimens.kt/Alpha.kt/Motion.kt must be ----
         // ---- referenced somewhere outside its own declaring file.                               ----
         val themeDir = File(root, "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme")
-        val tokenFiles = listOf("Color.kt", "Dimens.kt", "Alpha.kt").map { File(themeDir, it) }
+        val tokenFiles = listOf("Color.kt", "Dimens.kt", "Alpha.kt", "Motion.kt").map { File(themeDir, it) }
 
         val allSearchRoots = listOf(
             File(root, "core"),

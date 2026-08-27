@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.MotionDuration
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 
@@ -54,17 +55,17 @@ fun GlassSmallChip(
 
     val backgroundColor by animateColorAsState(
         targetValue = if (isHovered) glassColors.glassSurfaceElevated else glassColors.glassSurface,
-        animationSpec = tween(150)
+        animationSpec = tween(MotionDuration.Fast)
     )
 
     val borderColor by animateColorAsState(
         targetValue = if (isHovered) glassColors.glassBorderHighlight else glassColors.glassBorder,
-        animationSpec = tween(150)
+        animationSpec = tween(MotionDuration.Fast)
     )
 
     val textColor by animateColorAsState(
         targetValue = if (isHovered) glassColors.onGlass else glassColors.onGlassSecondary,
-        animationSpec = tween(150)
+        animationSpec = tween(MotionDuration.Fast)
     )
 
     Box(

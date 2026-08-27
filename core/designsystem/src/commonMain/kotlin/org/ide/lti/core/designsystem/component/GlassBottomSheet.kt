@@ -27,6 +27,7 @@ import com.kashif_e.backdrop.effects.lens
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.MotionDuration
 import org.ide.lti.core.designsystem.theme.Spacing
 
 /**
@@ -167,7 +168,7 @@ fun GlassBottomSheet(
     // Scrim alpha animation
     val scrimAlpha by animateFloatAsState(
         targetValue = if (state.currentValue == GlassBottomSheetValue.Expanded) 1f else 0f,
-        animationSpec = tween(durationMillis = 300),
+        animationSpec = tween(durationMillis = MotionDuration.Standard),
         label = "scrimAlpha"
     )
 

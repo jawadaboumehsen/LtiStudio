@@ -69,6 +69,7 @@ import androidx.compose.ui.util.lerp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.MotionEasing
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 
@@ -86,7 +87,7 @@ fun RevealSwipe(
     closeOnContentClick: Boolean = true,
     closeOnBackgroundClick: Boolean = true,
     shape: CornerBasedShape,
-    alphaEasing: Easing = CubicBezierEasing(0.4f, 0.4f, 0.17f, 0.9f),
+    alphaEasing: Easing = MotionEasing.EmphasizedDecelerate,
     backgroundCardStartColor: Color,
     backgroundCardEndColor: Color,
     card: @Composable BoxScope.(
@@ -277,7 +278,7 @@ fun BaseRevealSwipe(
     enableSwipe: Boolean = true,
     animateBackgroundCardColor: Boolean = true,
     shape: CornerBasedShape,
-    alphaEasing: Easing = CubicBezierEasing(0.4f, 0.4f, 0.17f, 0.9f),
+    alphaEasing: Easing = MotionEasing.EmphasizedDecelerate,
     backgroundCardStartColor: Color,
     backgroundCardEndColor: Color,
     card: @Composable BoxScope.(
