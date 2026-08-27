@@ -22,6 +22,7 @@ import com.kashif_e.backdrop.BackdropEffectScope
 import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
+import com.kashif_e.backdrop.shadow.Shadow
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.LensRefraction
@@ -76,7 +77,8 @@ fun GlassCard(
     surfaceColor: Color = Color.Unspecified,
     tint: Color = Color.Unspecified,
     borderColor: Color = Color.Unspecified,
-    contentPadding: Dp = Spacing.Hairline,
+    contentPadding: Dp = Spacing.Medium,
+    shadow: (() -> Shadow?)? = null,
     content: @Composable () -> Unit
 ) {
     GlassSurface(
@@ -86,7 +88,8 @@ fun GlassCard(
         backdrop = backdrop,
         surfaceColor = surfaceColor,
         tint = tint,
-        borderColor = borderColor
+        borderColor = borderColor,
+        shadow = shadow
     ) {
         Box(modifier = Modifier.padding(contentPadding)) {
             content()

@@ -87,6 +87,7 @@ import com.kashif_e.backdrop.drawBackdrop
 import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
+import com.kashif_e.backdrop.shadow.Shadow
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize
@@ -351,7 +352,17 @@ private fun GlassLeftPanel(
                         contentDescription = "Left panel: $stateDesc"
                     },
                 shape = shape,
-                effects = LtiLayoutDefaults.EnhancedPanelEffects
+                effects = if (state.isDragging) {
+                    LtiLayoutDefaults.DragOptimizedEffects
+                } else {
+                    LtiLayoutDefaults.EnhancedPanelEffects
+                },
+                shadow = {
+                    Shadow(
+                        radius = LtiLayoutDefaults.PanelElevation,
+                        color = LtiLayoutDefaults.PanelShadowColor
+                    )
+                }
             ) {
                 content()
             }
@@ -398,7 +409,17 @@ private fun RowScope.GlassCenterColumn(
                     contentDescription = "Main content panel"
                 },
             shape = shape,
-            effects = LtiLayoutDefaults.EnhancedPanelEffects
+            effects = if (state.isDragging) {
+                LtiLayoutDefaults.DragOptimizedEffects
+            } else {
+                LtiLayoutDefaults.EnhancedPanelEffects
+            },
+            shadow = {
+                Shadow(
+                    radius = LtiLayoutDefaults.PanelElevation,
+                    color = LtiLayoutDefaults.PanelShadowColor
+                )
+            }
         ) {
             mainContent()
         }
@@ -438,7 +459,17 @@ private fun RowScope.GlassCenterColumn(
                             contentDescription = "Bottom panel: $stateDesc"
                         },
                     shape = shape,
-                    effects = LtiLayoutDefaults.EnhancedPanelEffects
+                    effects = if (state.isDragging) {
+                        LtiLayoutDefaults.DragOptimizedEffects
+                    } else {
+                        LtiLayoutDefaults.EnhancedPanelEffects
+                    },
+                    shadow = {
+                        Shadow(
+                            radius = LtiLayoutDefaults.PanelElevation,
+                            color = LtiLayoutDefaults.PanelShadowColor
+                        )
+                    }
                 ) {
                     bottomPanel()
                 }
@@ -489,7 +520,17 @@ private fun GlassRightPanel(
                         contentDescription = "Right panel: $stateDesc"
                     },
                 shape = shape,
-                effects = LtiLayoutDefaults.EnhancedPanelEffects
+                effects = if (state.isDragging) {
+                    LtiLayoutDefaults.DragOptimizedEffects
+                } else {
+                    LtiLayoutDefaults.EnhancedPanelEffects
+                },
+                shadow = {
+                    Shadow(
+                        radius = LtiLayoutDefaults.PanelElevation,
+                        color = LtiLayoutDefaults.PanelShadowColor
+                    )
+                }
             ) {
                 content()
             }

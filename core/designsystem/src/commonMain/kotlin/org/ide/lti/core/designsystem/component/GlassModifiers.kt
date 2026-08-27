@@ -235,8 +235,8 @@ fun Modifier.glassScrim(
             backdrop = actualBackdrop,
             shape = { androidx.compose.ui.graphics.RectangleShape },
             effects = {
-                blur(blurRadius.toPx())
                 vibrancy()
+                blur(blurRadius.toPx())
             },
             highlight = { Highlight.Plain },
             onDrawSurface = {

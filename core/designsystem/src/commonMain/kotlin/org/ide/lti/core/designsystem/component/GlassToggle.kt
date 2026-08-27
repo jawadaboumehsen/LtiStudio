@@ -1,8 +1,11 @@
 package org.ide.lti.core.designsystem.component
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -20,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.Role
@@ -52,6 +56,7 @@ import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.ToggleColors
 import org.ide.lti.core.designsystem.utils.DampedDragAnimation
 
+@Suppress("LongMethod")
 @Composable
 fun GlassToggle(
     selected: () -> Boolean,
@@ -59,7 +64,7 @@ fun GlassToggle(
     backdrop: Backdrop,
     modifier: Modifier = Modifier
 ) {
-    val isLightTheme = !isSystemInDarkTheme()
+    val isLightTheme = MaterialTheme.colorScheme.surface.luminance() > 0.5f
     val glassColors = GlassTheme.colors
     val accentColor =
         if (isLightTheme) ToggleColors.ActiveLight
@@ -122,7 +127,14 @@ fun GlassToggle(
     val trackBackdrop = rememberLayerBackdrop()
 
     Box(
-        modifier,
+        modifier = modifier
+            .toggleable(
+                value = selected(),
+                onValueChange = onSelect,
+                role = Role.Switch,
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ),
         contentAlignment = Alignment.CenterStart
     ) {
         Box(
@@ -144,9 +156,6 @@ fun GlassToggle(
                     translationX =
                         if (isLtr) lerp(padding, padding + dragWidth, fraction)
                         else lerp(-padding, -(padding + dragWidth), fraction)
-                }
-                .semantics {
-                    role = Role.Switch
                 }
                 .then(dampedDragAnimation.modifier)
                 .drawBackdrop(

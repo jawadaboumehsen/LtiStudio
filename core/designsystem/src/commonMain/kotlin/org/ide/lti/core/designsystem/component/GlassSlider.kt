@@ -2,7 +2,6 @@ package org.ide.lti.core.designsystem.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -25,6 +24,10 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.progressBarRangeInfo
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastCoerceIn
 import androidx.compose.ui.util.fastRoundToInt
@@ -51,6 +54,7 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.utils.DampedDragAnimation
 
+@Suppress("LongMethod")
 @Composable
 fun GlassSlider(
     value: () -> Float,
@@ -67,7 +71,23 @@ fun GlassSlider(
     val trackBackdrop = rememberLayerBackdrop()
 
     BoxWithConstraints(
-        modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .semantics {
+                progressBarRangeInfo = ProgressBarRangeInfo(
+                    current = value(),
+                    range = valueRange
+                )
+                setProgress { target ->
+                    val coerced = target.coerceIn(valueRange)
+                    if (coerced != value()) {
+                        onValueChange(coerced)
+                        true
+                    } else {
+                        false
+                    }
+                }
+            },
         contentAlignment = Alignment.CenterStart
     ) {
         val trackWidth = constraints.maxWidth

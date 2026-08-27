@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
@@ -30,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.window.Dialog
@@ -80,7 +80,7 @@ fun GlassDialog(
     title: String? = null,
     dismissButton: (@Composable () -> Unit)? = null,
     shape: Shape = ContinuousRoundedRectangle(CornerRadius.Dialog),
-    effects: BackdropEffectScope.() -> Unit = glassDialogEffects(!isSystemInDarkTheme()),
+    effects: BackdropEffectScope.() -> Unit = glassDialogEffects(MaterialTheme.colorScheme.surface.luminance() > 0.5f),
     backdrop: Backdrop? = null,
     properties: DialogProperties = DialogProperties(),
     content: @Composable () -> Unit,
@@ -108,6 +108,7 @@ fun GlassDialog(
                         text = title,
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.SemiBold,
+                        color = GlassTheme.colors.onGlass,
                     )
                     Spacer(modifier = Modifier.height(Spacing.Medium))
                 }
@@ -165,7 +166,7 @@ fun GlassLoadingDialog(
                     modifier = modifier
                         .fillMaxWidth()
                         .padding(Spacing.DialogPadding),
-                    effects = glassDialogEffects(!isSystemInDarkTheme()),
+                    effects = glassDialogEffects(MaterialTheme.colorScheme.surface.luminance() > 0.5f),
                     highlight = { Highlight.Plain },
                 ) {
                     Column(
@@ -178,6 +179,7 @@ fun GlassLoadingDialog(
                         Text(
                             text = "Loading..",
                             style = MaterialTheme.typography.titleMedium,
+                            color = GlassTheme.colors.onGlass,
                             modifier = Modifier.padding(bottom = Spacing.Medium)
                         )
                         CircularProgressIndicator()

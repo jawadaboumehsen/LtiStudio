@@ -6,7 +6,9 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -215,9 +217,14 @@ fun GlassBottomSheet(
                     .fillMaxSize()
                     .background(resolvedScrimColor)
                     .alpha(scrimAlpha)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onDismissRequest
+                    )
                     .pointerInput(Unit) {
                         detectVerticalDragGestures { _, _ ->
-                            // Intercept clicks on scrim
+                            // Intercept drag gestures on scrim
                         }
                     }
             )

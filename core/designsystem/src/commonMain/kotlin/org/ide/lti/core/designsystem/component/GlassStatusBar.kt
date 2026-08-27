@@ -124,7 +124,7 @@ fun GlassStatusBar(
             ) {
                 cursorPosition?.let { (line, col) ->
                     Text(
-                        text = "Ln , Col ",
+                        text = "Ln $line, Col $col",
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
                         color = glassColors.onGlassSecondary
                     )

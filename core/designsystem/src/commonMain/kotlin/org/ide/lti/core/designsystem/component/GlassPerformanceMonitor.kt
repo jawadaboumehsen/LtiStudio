@@ -19,13 +19,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import com.kashif_e.backdrop.effects.blur
 import com.kyant.capsule.ContinuousCapsule
-import kotlinx.coroutines.delay
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
@@ -33,7 +33,6 @@ import org.ide.lti.core.designsystem.theme.PerformanceMonitorColors
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import kotlin.math.roundToInt
-import kotlin.system.measureTimeMillis
 
 /**
  * Performance metrics for glass rendering.
@@ -211,22 +210,24 @@ fun GlassPerformanceMonitor(
     // Simulate frame rendering and collect metrics
     var metrics by remember { mutableStateOf(GlassPerformanceMetrics()) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(collector) {
+        var lastFrameNanos = 0L
         while (true) {
-            val frameTime = measureTimeMillis {
-                // Simulate frame work
-                delay(1)
+            withFrameNanos { frameTimeNanos ->
+                if (lastFrameNanos > 0L) {
+                    val frameDurationNanos = frameTimeNanos - lastFrameNanos
+                    val frameDurationMs = frameDurationNanos / 1_000_000L
+                    collector.recordFrame(frameDurationMs)
+                }
+                lastFrameNanos = frameTimeNanos
             }
-
-            collector.recordFrame(frameTime)
             metrics = collector.computeMetrics(
-                shaderCacheSize = 0, // Shader caching disabled - compiles directly
+                // Estimated counters: SkSL RuntimeEffect shaders on Skia/Desktop are compiled
+                // per-effect on demand and backdrop layers are scoped locally without a global count registry.
+                shaderCacheSize = 0,
                 activeBackdrops = 1,
                 componentsRendered = componentsRendered.value
             )
-
-            // Update ~30 times per second to avoid performance overhead
-            delay(33)
         }
     }
 

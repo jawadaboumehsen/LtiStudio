@@ -9,6 +9,8 @@
  */
 package org.ide.lti.core.designsystem.component
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -25,10 +27,12 @@ import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
 import com.kashif_e.backdrop.highlight.Highlight
+import com.kashif_e.backdrop.shadow.Shadow
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LensRefraction
+import org.ide.lti.core.designsystem.theme.StrokeWidth
 
 /**
  * Default glass effect stack ("Standard" look): vibrancy + moderate blur + lens refraction.
@@ -64,6 +68,7 @@ fun GlassSurface(
     borderColor: Color = Color.Unspecified,
     effects: BackdropEffectScope.() -> Unit = StandardGlassEffects,
     highlight: () -> Highlight? = { Highlight.Plain },
+    shadow: (() -> Shadow?)? = null,
     content: @Composable () -> Unit
 ) {
     val glassColors = GlassTheme.colors
@@ -74,6 +79,15 @@ fun GlassSurface(
     val finalTint = if (tint.isSpecified) tint else glassColors.glassTint
     val finalBorderColor = if (borderColor.isSpecified) borderColor else Color.Unspecified
 
+    val borderModifier = if (finalBorderColor.isSpecified) {
+        Modifier.border(
+            border = BorderStroke(StrokeWidth.Standard, finalBorderColor),
+            shape = shape
+        )
+    } else {
+        Modifier
+    }
+
     Box(
         modifier = modifier
             .drawBackdrop(
@@ -81,19 +95,16 @@ fun GlassSurface(
                 shape = { shape },
                 effects = { if (effectsEnabled) effects() },
                 highlight = highlight,
+                shadow = shadow,
                 onDrawSurface = {
                     drawRect(finalSurfaceColor)
 
                     if (finalTint.isSpecified && finalTint.alpha > 0f) {
                         drawRect(finalTint, blendMode = BlendMode.SrcOver)
                     }
-
-                    if (finalBorderColor.isSpecified) {
-                        // Border will be drawn by the backdrop system if supported
-                        // For now, just overlay surface with border color at edges
-                    }
                 }
             )
+            .then(borderModifier)
     ) {
         content()
     }
