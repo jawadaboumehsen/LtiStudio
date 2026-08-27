@@ -10,6 +10,7 @@
 package org.ide.lti.core.designsystem.component
 
 import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
@@ -52,6 +53,7 @@ import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.utils.InteractiveHighlight
 import kotlin.math.abs
 import kotlin.math.atan2
@@ -126,6 +128,7 @@ fun GlassButton(
 
     val (surfaceColor, tint, contentColor) = resolveButtonColors(variant, glassColors)
     val finalContentColor = if (enabled) contentColor else glassColors.onGlassMuted
+    val borderColor = resolveButtonBorderColor(variant, glassColors)
 
     Row(
         modifier = modifier
@@ -151,6 +154,13 @@ fun GlassButton(
                             )
                         }
                     )
+                } else {
+                    Modifier
+                }
+            )
+            .then(
+                if (borderColor != Color.Transparent) {
+                    Modifier.border(width = StrokeWidth.Hairline, color = borderColor, shape = shape)
                 } else {
                     Modifier
                 }
@@ -207,6 +217,16 @@ private fun resolveButtonColors(
         Color.Transparent,
         glassColors.onGlass
     )
+}
+
+private fun resolveButtonBorderColor(
+    variant: GlassButtonVariant,
+    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme
+): Color = when (variant) {
+    GlassButtonVariant.Primary -> glassColors.glassBorderHighlight
+    GlassButtonVariant.Secondary -> glassColors.glassBorder
+    GlassButtonVariant.Standard -> glassColors.glassBorder
+    GlassButtonVariant.Text -> Color.Transparent
 }
 
 private fun androidx.compose.ui.graphics.GraphicsLayerScope.applyButtonInteractiveTransform(
