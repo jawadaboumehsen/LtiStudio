@@ -13,10 +13,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,9 +30,11 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.ide.lti.core.designsystem.component.GlassIconButton
 import org.ide.lti.core.designsystem.icon.AppIcons
+import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 
 /**
@@ -62,14 +64,9 @@ fun GlassChatInput(
             textStyle = TextStyle(
                 fontSize = 14.sp,
             ),
-//            cursorBrush = SolidColor(ideBluePrimary),
             enabled = enabled,
             modifier = Modifier
                 .weight(1f)
-//                .background(
-//                    ideInputBackground,
-//                    RoundedCornerShape(8.dp),
-//                )
                 .padding(Spacing.SmallMedium)
                 .onKeyEvent { keyEvent ->
                     if (keyEvent.key == Key.Enter && inputText.isNotBlank()) {
@@ -85,7 +82,6 @@ fun GlassChatInput(
                     Text(
                         text = placeholder,
                         style = MaterialTheme.typography.bodyMedium,
-//                        color = ideTextSecondary.copy(alpha = 0.5f),
                     )
                 }
                 innerTextField()
@@ -94,7 +90,7 @@ fun GlassChatInput(
 
         Spacer(modifier = Modifier.width(Spacing.Small))
 
-        IconButton(
+        GlassIconButton(
             onClick = {
                 if (inputText.isNotBlank()) {
                     onSendMessage(inputText)
@@ -102,15 +98,12 @@ fun GlassChatInput(
                 }
             },
             enabled = enabled && inputText.isNotBlank(),
+            size = ComponentSize.IconButtonSize,
         ) {
             Icon(
                 imageVector = AppIcons.Send,
                 contentDescription = "Send",
-//                tint = if (enabled && inputText.isNotBlank()) {
-//                    ideBluePrimary
-//                } else {
-//                    ideTextSecondary.copy(alpha = 0.3f)
-//                },
+                modifier = Modifier.size(IconSize.Medium),
             )
         }
     }

@@ -9,8 +9,6 @@
  */
 package org.ide.lti.feature.workspace.panels.explorer
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,7 +20,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,17 +27,17 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.GlassButton
+import org.ide.lti.core.designsystem.component.GlassIconButton
 import org.ide.lti.core.designsystem.component.GlassPanelContainer
 import org.ide.lti.core.designsystem.component.GlassPanelHeader
+import org.ide.lti.core.designsystem.component.GlassPanelHeaderAction
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.model.filesystem.FileType
 import org.ide.lti.core.ui.GlassFileTree
 import org.koin.compose.viewmodel.koinViewModel
@@ -60,17 +57,11 @@ fun ExplorerPanel(
             GlassPanelHeader(
                 title = "Explorer",
                 actions = {
-                    IconButton(
+                    GlassPanelHeaderAction(
+                        icon = AppIcons.Refresh,
+                        contentDescription = "Refresh",
                         onClick = { viewModel.refresh() },
-                        modifier = Modifier.size(ComponentSize.PanelHeaderAction)
-                    ) {
-                        Icon(
-                            imageVector = AppIcons.Refresh,
-                            contentDescription = "Refresh",
-                            tint = glassColors.onGlassSecondary,
-                            modifier = Modifier.size(IconSize.Medium)
-                        )
-                    }
+                    )
                 },
             )
         },
@@ -113,13 +104,10 @@ fun ExplorerPanel(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        IconButton(
+                        GlassIconButton(
                             onClick = { viewModel.openFolder() },
-                            modifier = Modifier
-                                .size(ComponentSize.EmptyStateBadgeSize)
-                                .clip(CircleShape)
-                                .background(glassColors.glassSurfaceElevated)
-                                .border(StrokeWidth.Hairline, glassColors.glassBorder, CircleShape)
+                            size = ComponentSize.EmptyStateBadgeSize,
+                            shape = CircleShape,
                         ) {
                             Icon(
                                 imageVector = AppIcons.FolderOpen,

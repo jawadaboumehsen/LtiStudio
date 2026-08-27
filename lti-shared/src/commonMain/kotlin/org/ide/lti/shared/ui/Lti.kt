@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration.Indefinite
@@ -48,6 +47,7 @@ import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hierarchy
 import org.ide.lti.core.data.utils.NetworkMonitor
 import org.ide.lti.core.data.utils.TimeZoneMonitor
+import org.ide.lti.core.designsystem.component.GlassIconButton
 import org.ide.lti.core.designsystem.component.GlassNavigationBar
 import org.ide.lti.core.designsystem.component.GlassNavigationBarItem
 import org.ide.lti.core.designsystem.component.GlassNavigationRail
@@ -171,7 +171,7 @@ private fun LtiBar(
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
                         ) {
-                            IconButton(
+                            GlassIconButton(
                                 onClick = onNavigateToNotification,
                             ) {
                                 Icon(
@@ -180,7 +180,7 @@ private fun LtiBar(
                                 )
                             }
 
-                            IconButton(
+                            GlassIconButton(
                                 onClick = onNavigateToSettings,
                             ) {
                                 Icon(
@@ -192,7 +192,7 @@ private fun LtiBar(
                     }
 
                     TopLevelDestination.PROFILE -> {
-                        IconButton(
+                        GlassIconButton(
                             onClick = onNavigateToEditProfile,
                         ) {
                             Icon(

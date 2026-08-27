@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -137,10 +136,13 @@ fun GlassPanelHeaderAction(
     contentDescription: String?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    backdrop: Backdrop? = null,
 ) {
-    IconButton(
+    GlassIconButton(
         onClick = onClick,
-        modifier = modifier.size(ComponentSize.PanelHeaderAction),
+        modifier = modifier,
+        size = ComponentSize.PanelHeaderAction,
+        backdrop = backdrop,
     ) {
         Icon(
             imageVector = icon,

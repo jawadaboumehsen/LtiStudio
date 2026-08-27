@@ -16,10 +16,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -37,6 +37,7 @@ import androidx.compose.ui.text.AnnotatedString
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import org.ide.lti.core.designsystem.component.GlassIconButton
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.IconSize
@@ -98,18 +99,16 @@ fun GlassMessageBubble(
                             modifier = Modifier.fillMaxWidth().padding(top = Spacing.Small),
                             horizontalArrangement = Arrangement.End,
                         ) {
-                            IconButton(
+                            GlassIconButton(
                                 onClick = {
                                     clipboardManager.setText(AnnotatedString(content))
                                 },
-                                modifier = Modifier
-                                    .width(ComponentSize.PanelHeaderAction)
-                                    .height(ComponentSize.PanelHeaderAction),
+                                size = ComponentSize.PanelHeaderAction,
                             ) {
                                 Icon(
                                     imageVector = AppIcons.ContentCopy,
                                     contentDescription = "Copy",
-                                    modifier = Modifier.width(IconSize.Medium).height(IconSize.Medium),
+                                    modifier = Modifier.size(IconSize.Medium),
                                 )
                             }
                         }
