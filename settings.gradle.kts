@@ -55,3 +55,5 @@ include(":feature:profile")
 include(":feature:settings")
 include(":feature:setup")
 include(":feature:workspace")
+
+include(":catalog")

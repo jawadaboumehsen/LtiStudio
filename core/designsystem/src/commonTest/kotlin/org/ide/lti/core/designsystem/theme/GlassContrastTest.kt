@@ -108,39 +108,8 @@ class GlassContrastTest {
     }
 
     companion object {
-        /**
-         * Linearizes an sRGB channel value in the range [0.0, 1.0] per WCAG 2.x specifications.
-         */
-        fun linearize(channel: Float): Double {
-            val c = channel.toDouble()
-            return if (c <= 0.03928) {
-                c / 12.92
-            } else {
-                ((c + 0.055) / 1.055).pow(2.4)
-            }
-        }
-
-        /**
-         * Computes the WCAG 2.x relative luminance of a [Color].
-         * L = 0.2126 * R_lin + 0.7152 * G_lin + 0.0722 * B_lin
-         */
-        fun relativeLuminance(color: Color): Double {
-            val rLin = linearize(color.red)
-            val gLin = linearize(color.green)
-            val bLin = linearize(color.blue)
-            return 0.2126 * rLin + 0.7152 * gLin + 0.0722 * bLin
-        }
-
-        /**
-         * Computes the WCAG 2.x contrast ratio between two colors.
-         * Contrast Ratio = (L_lighter + 0.05) / (L_darker + 0.05)
-         */
-        fun contrastRatio(color1: Color, color2: Color): Double {
-            val lum1 = relativeLuminance(color1)
-            val lum2 = relativeLuminance(color2)
-            val lighter = max(lum1, lum2)
-            val darker = min(lum1, lum2)
-            return (lighter + 0.05) / (darker + 0.05)
-        }
+        fun linearize(channel: Float): Double = ColorContrast.linearize(channel)
+        fun relativeLuminance(color: Color): Double = ColorContrast.relativeLuminance(color)
+        fun contrastRatio(color1: Color, color2: Color): Double = ColorContrast.contrastRatio(color1, color2)
     }
 }

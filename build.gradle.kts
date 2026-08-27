@@ -69,6 +69,7 @@ tasks.register("verifyDesignSystemGuardrails") {
             File(root, "feature"),
             File(root, "lti-shared/src"),
             File(root, "lti-desktop/src"),
+            File(root, "catalog/src"),
         )
         val effectFnMarkers = listOf(
             "blur(", "lens(", "vibrancy(", "colorControls(", "exposureAdjustment(",
@@ -102,6 +103,7 @@ tasks.register("verifyDesignSystemGuardrails") {
             File(root, "feature"),
             File(root, "lti-shared/src"),
             File(root, "lti-desktop/src"),
+            File(root, "catalog/src"),
         )
 
         dimensionScanRoots.forEach { scanRoot ->
@@ -141,6 +143,7 @@ tasks.register("verifyDesignSystemGuardrails") {
             File(root, "feature"),
             File(root, "lti-shared/src"),
             File(root, "lti-desktop/src"),
+            File(root, "catalog/src"),
         )
 
         motionScanRoots.forEach { scanRoot ->
@@ -180,6 +183,7 @@ tasks.register("verifyDesignSystemGuardrails") {
             File(root, "feature"),
             File(root, "lti-shared/src"),
             File(root, "lti-desktop/src"),
+            File(root, "catalog/src"),
         )
         val forbiddenImportPrefixes = listOf(
             "import com.kashif_e.backdrop.effects.",
@@ -216,6 +220,7 @@ tasks.register("verifyDesignSystemGuardrails") {
             File(root, "feature"),
             File(root, "lti-shared"),
             File(root, "lti-desktop"),
+            File(root, "catalog"),
         )
         val allSourceContents: Map<String, String> = allSearchRoots
             .flatMap { ktFiles(it) }

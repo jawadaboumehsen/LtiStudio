@@ -44,6 +44,10 @@ kotlin {
             api("com.materialkolor:material-kolor:5.0.0")
             api(libs.kermit.logging)
         }
+        desktopTest.dependencies {
+            implementation(compose.desktop.uiTestJUnit4)
+            implementation(compose.desktop.currentOs)
+        }
     }
 }
 
@@ -64,6 +68,14 @@ tasks.withType<Test>().configureEach {
     testLogging {
         events("passed", "skipped", "failed", "standardOut", "standardError")
         showStandardStreams = true
+    }
+    // Forward -PupdateScreenshots=true / -DupdateScreenshots=true to the forked test JVM -
+    // neither a Gradle project property nor a `-D` on the Gradle CLI reaches the test worker
+    // process on its own, only environment variables do by default.
+    val updateScreenshots = (project.findProperty("updateScreenshots") as String?)
+        ?: System.getProperty("updateScreenshots")
+    if (updateScreenshots != null) {
+        systemProperty("updateScreenshots", updateScreenshots)
     }
 }
 
