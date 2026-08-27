@@ -1,6 +1,7 @@
 package org.ide.lti.core.designsystem.component
 
 import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
@@ -24,10 +25,13 @@ import com.kashif_e.backdrop.drawBackdrop
 import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
+import com.kashif_e.backdrop.highlight.Highlight
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BackdropBlur
+import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.utils.InteractiveHighlight
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import kotlin.math.abs
@@ -47,6 +51,7 @@ fun GlassIcon(
     icon: @Composable () -> Unit
 ) {
     val animationScope = rememberCoroutineScope()
+    val glassColors = GlassTheme.colors
 
     val interactiveHighlight = remember(animationScope) {
         InteractiveHighlight(
@@ -64,6 +69,7 @@ fun GlassIcon(
                     blur(BackdropBlur.Button.toPx())
                     lens(LensRefraction.Button.height.toPx(), LensRefraction.Button.amount.toPx())
                 },
+                highlight = { Highlight.Plain },
                 layerBlock = if (isInteractive) {
                     {
                         val width = size.width
@@ -93,15 +99,14 @@ fun GlassIcon(
                     null
                 },
                 onDrawSurface = {
+                    drawRect(if (surfaceColor.isSpecified) surfaceColor else glassColors.glassSurface)
                     if (tint.isSpecified) {
                         drawRect(tint, blendMode = BlendMode.Hue)
                         drawRect(tint.copy(alpha = AlphaTokens.IconTint))
                     }
-                    if (surfaceColor.isSpecified) {
-                        drawRect(surfaceColor)
-                    }
                 }
             )
+            .border(width = StrokeWidth.Hairline, color = glassColors.glassBorder, shape = ContinuousCapsule)
             .clickable(
                 interactionSource = null,
                 indication = if (isInteractive) null else LocalIndication.current,

@@ -12,6 +12,7 @@ package org.ide.lti.core.designsystem.component
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseOut
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -72,6 +73,7 @@ import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.MotionSpring
 import org.ide.lti.core.designsystem.theme.MotionThreshold
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.utils.DampedDragAnimation
 import org.ide.lti.core.designsystem.utils.InteractiveHighlight
 import kotlinx.coroutines.flow.collectLatest
@@ -288,6 +290,7 @@ private fun GlassBottomTabBarBackground(
                 },
                 onDrawSurface = { drawRect(containerColor) }
             )
+            .border(width = StrokeWidth.Hairline, color = GlassTheme.colors.glassBorder, shape = ContinuousCapsule)
             .then(interactiveHighlight.modifier)
             .height(ComponentSize.BottomTabsHeight)
             .fillMaxWidth()

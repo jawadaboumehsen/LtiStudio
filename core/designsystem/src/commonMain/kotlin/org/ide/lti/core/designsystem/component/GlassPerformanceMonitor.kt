@@ -253,6 +253,7 @@ private fun PerformanceOverlay(
     GlassCard(
         modifier = modifier.width(ComponentSize.PerformanceMonitorWidth),
         contentPadding = Spacing.SmallMedium,
+        borderColor = GlassTheme.colors.glassBorder,
         // Lean stack (blur only) — this overlay redraws every frame, so keep it cheap.
         effects = { blur(BackdropBlur.Subtle.toPx()) }
     ) {
