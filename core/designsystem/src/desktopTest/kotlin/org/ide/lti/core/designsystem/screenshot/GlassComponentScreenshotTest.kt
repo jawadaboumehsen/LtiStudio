@@ -46,6 +46,7 @@ import org.ide.lti.core.designsystem.component.GlassSurface
 import org.ide.lti.core.designsystem.component.GlassTextButton
 import org.ide.lti.core.designsystem.component.GlassTextField
 import org.ide.lti.core.designsystem.component.GlassToggle
+import org.ide.lti.core.designsystem.component.GlassTopBar
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ColorContrast
@@ -323,6 +324,35 @@ class GlassComponentScreenshotTest {
 
         val image = onRoot().captureToImage()
         ScreenshotTestHelper.assertMatchesBaseline("glass_color_scheme_swatches", image)
+    }
+
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun testGlassTopBar() = runDesktopComposeUiTest(width = 800, height = 100) {
+        setContent {
+            val backdrop = rememberLayerBackdrop()
+            LtiTheme(darkTheme = true) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(GlassTheme.colors.glassSurface)
+                        .padding(Spacing.Small),
+                    contentAlignment = Alignment.Center
+                ) {
+                    GlassTopBar(
+                        title = "LtiRom",
+                        workspaceName = "Workspace",
+                        isLeftPanelVisible = true,
+                        isMiddleDownPanelVisible = true,
+                        isRightPanelVisible = false,
+                        backdrop = backdrop,
+                    )
+                }
+            }
+        }
+
+        val image = onRoot().captureToImage()
+        ScreenshotTestHelper.assertMatchesBaseline("glass_top_bar", image)
     }
 
     @Composable

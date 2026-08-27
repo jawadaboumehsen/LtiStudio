@@ -192,10 +192,10 @@ tasks.register("verifyDesignSystemGuardrails") {
             }
         }
 
-        // ---- 3. Unused-token scan: every named constant in Color.kt/Dimens.kt/Alpha.kt/Motion.kt must be ----
+        // ---- 3. Unused-token scan: every named constant in Color.kt/Dimens.kt/Alpha.kt/Motion.kt/Backdrop.kt must be ----
         // ---- referenced somewhere outside its own declaring file.                               ----
         val themeDir = File(root, "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme")
-        val tokenFiles = listOf("Color.kt", "Dimens.kt", "Alpha.kt", "Motion.kt").map { File(themeDir, it) }
+        val tokenFiles = listOf("Color.kt", "Dimens.kt", "Alpha.kt", "Motion.kt", "Backdrop.kt").map { File(themeDir, it) }
 
         val allSearchRoots = listOf(
             File(root, "core"),
@@ -211,9 +211,18 @@ tasks.register("verifyDesignSystemGuardrails") {
         tokenFiles.forEach { tf ->
             if (!tf.exists()) return@forEach
             var currentObject: String? = null
+            var currentEnclosingClass: String? = null
             tf.readLines().forEach { rawLine ->
                 val line = rawLine.trim()
-                Regex("""^object\s+(\w+)""").find(line)?.let { currentObject = it.groupValues[1] }
+                Regex("""^(?:data\s+class|class|sealed\s+class|abstract\s+class|interface)\s+(\w+)""").find(line)?.let {
+                    currentEnclosingClass = it.groupValues[1]
+                }
+                Regex("""^object\s+(\w+)""").find(line)?.let {
+                    currentObject = it.groupValues[1]
+                }
+                if (Regex("""^companion\s+object\b""").containsMatchIn(line)) {
+                    currentObject = currentEnclosingClass
+                }
                 val obj = currentObject
                 if (obj != null) {
                     Regex("""^(?:val|const val)\s+(\w+)\s*[:=]""").find(line)?.let { m ->

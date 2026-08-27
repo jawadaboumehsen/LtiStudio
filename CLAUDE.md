@@ -10,7 +10,7 @@ Add to `core:designsystem` when:
 - Something every feature might need
 
 Examples:
-- Glass color scheme and design tokens (`Color.kt`, `Alpha.kt`, `Dimens.kt`, `Motion.kt`, `Type.kt`)
+- Glass color scheme and design tokens (`Color.kt`, `Alpha.kt`, `Dimens.kt`, `Motion.kt`, `Type.kt`, `Backdrop.kt`)
 - Base glass surfaces and containers (`GlassSurface.kt`, `GlassCard.kt`, `GlassPanel.kt`)
 - Interactive glass controls (`GlassButton.kt`, `GlassTextField.kt`, `GlassSlider.kt`, `GlassToggle.kt`)
 - Layout scaffolding (`GlassLayout.kt`, `GlassTopBar.kt`, `GlassStatusBar.kt`, `GlassBottomSheet.kt`)
@@ -82,12 +82,12 @@ All opacity values are centralized in `AlphaTokens` (no raw float literals in UI
 ### 3. Dimension Tokens (`Dimens.kt`)
 
 All layout metrics are centralized in `Dimens.kt`:
-- `Spacing`: `None` (0dp), `Hairline` (1dp), `ExtraSmall` (2dp), `Compact` (3dp), `Small` (4dp), `Five` (5dp), `SmallMedium` (8dp), `Medium` (16dp), `Large` (20dp), `ExtraLarge` (24dp), `PanelPadding` (12dp), `DialogPadding` (24dp), etc.
-- `CornerRadius`: `None` (0dp), `Small` (8dp), `Medium` (12dp), `Card` (12dp), `Large` (16dp), `Panel` (16dp), `Dialog` (28dp), `ExtraLarge` (28dp), `Full` (9999dp).
-- `ComponentSize`: `ButtonMinWidth` (64dp), `ButtonMinHeight` (36dp), `IconButtonSize` (40dp), `TopBarHeight` (40dp), `StatusBarHeight` (22dp), `DragHandleWidth` (32dp), `DragHandleHeight` (4dp), `PerformanceMonitorWidth` (200dp), etc.
-- `StrokeWidth`: `Standard` (1dp), `Focused` (2dp), `Thick` (3dp), `Divider` (1dp).
-- `IconSize`: `Small` (16dp), `Medium` (20dp), `Large` (24dp), `ExtraLarge` (32dp).
-- `Elevation`: `None` (0dp), `Subtle` (2dp), `Raised` (4dp), `Elevated` (8dp), `Modal` (16dp).
+- `Spacing`: `None` (0dp), `Hairline` (1dp), `ExtraExtraSmall` (2dp), `ExtraSmall` (4dp), `Five` (5dp), `Compact` (6dp), `Small` (8dp), `MediumSmall` (10dp), `SmallMedium` (12dp), `Fourteen` (14dp), `Medium` (16dp), `Large` (20dp), `ExtraLarge` (24dp), `ExtraExtraLarge` (32dp), `DialogPadding` (24dp), `PanelPadding` (8dp), `TabHorizontal` (20dp).
+- `CornerRadius`: `None` (0dp), `ExtraSmall` (4dp), `Compact` (6dp), `Small` (6dp), `MediumSmall` (8dp), `Medium` (12dp), `ExtraLarge` (28dp), `Pill` (50dp), `Card` (16dp), `Dialog` (16dp), `Panel` (12dp).
+- `ComponentSize`: `TopBarHeight` (44dp), `StatusBarHeight` (22dp), `StatusBarHeightAlt` (24dp), `BottomTabsHeight` (64dp), `BottomTabItemHeight` (56dp), `ButtonMinWidth` (64dp), `ButtonMinHeight` (40dp), `IconButtonSize` (40dp), `TopBarButtonSize` (28dp), `LogoBadgeSize` (28dp), `SearchCapsuleHeight` (28dp), `SearchCapsuleMinWidth` (160dp), `SearchCapsuleMaxWidth` (280dp), `SegmentedToggleHeight` (28dp), `SegmentedButtonSize` (24dp), `TopBarDividerHeight` (18dp), `WindowControlWidth` (36dp), `WindowControlHeight` (28dp), `PanelHeaderAction` (24dp), `TabBarHeight` (36dp), `TabItemHeight` (32dp), `OtpBoxSize` (48dp), `ToggleTrackWidth` (64dp), `ToggleTrackHeight` (28dp), `ToggleThumbWidth` (40dp), `ToggleThumbHeight` (24dp), `ToggleDragWidth` (20dp), `SliderTrackHeight` (6dp), `SliderThumbWidth` (40dp), `SliderThumbHeight` (24dp), `DragHandleWidth` (32dp), `DragHandleHeight` (4dp), `ProgressBarHeight` (4dp), `PerformanceMonitorWidth` (220dp), `MinPanelWidth` (180dp), `MaxPanelWidth` (600dp), `MinPanelHeight` (100dp), `MaxPanelHeight` (600dp), `ToggleButtonTopPadding` (48dp), `ToggleButtonEndPadding` (8dp), `ToggleButtonSpacing` (4dp), `DividerWidth` (8dp), `MaxRevealDp` (75dp), `VelocityThreshold` (100dp), `DefaultVelocityThreshold` (10dp), `SetupSidebarWidth` (240dp), `ActionCardHeight` (120dp), `EmptyStateBadgeSize` (56dp), `SpinnerSize` (28dp), `ShortcutHelpWidth` (320dp), `StatusDotSize` (8dp), `ActiveIndicatorWidth` (64dp), `ActiveIndicatorHeight` (32dp).
+- `StrokeWidth`: `Hairline` (0.5dp), `Standard` (1dp), `Focused` (2dp), `Active` (3dp).
+- `IconSize`: `Indicator` (6dp), `Small` (12dp), `WindowControl` (13dp), `Search` (14dp), `Segmented` (15dp), `Medium` (16dp), `Large` (24dp), `ExtraLarge` (28dp), `ActionCard` (32dp), `Avatar` (80dp).
+- `Elevation`: `None` (0dp), `Raised` (4dp), `Panel` (8dp).
 
 ### 4. Motion & Animation Tokens (`Motion.kt`)
 
@@ -97,11 +97,19 @@ All animation durations, physics, and easing curves are centralized in `Motion.k
 - `MotionEasing`: `Standard` (`CubicBezierEasing(0.4f, 0.0f, 0.2f, 1.0f)`), `EmphasizedDecelerate` (`CubicBezierEasing(0.4f, 0.4f, 0.17f, 0.9f)`).
 - `MotionThreshold`: `Fine` (0.001f), `Offset` (0.5f).
 
-### 5. Typography (`Type.kt`)
+### 5. Backdrop Tokens (`Backdrop.kt`)
 
-- `appTypography()`: Material 3 `Typography` configured with Inter (UI text) and JetBrains Mono (code, status bar, monospace data).
+All blur radii, lens refraction profiles, saturation, and brightness tokens are centralized in `Backdrop.kt`:
+- `BackdropBlur`: `Subtle` (2dp), `Standard` (4dp), `Panel` (6dp), plus semantic aliases: `Button` (2dp), `TextField` (2dp), `SearchCapsule` (2dp), `TopBar` (4dp), `Minimap` (4dp), `Card` (8dp), `BottomTabs` (8dp), `Slider` (8dp), `Toggle` (8dp), `DialogDark` (8dp), `DialogLight` (16dp), `BottomSheet` (16dp), `Scrim` (16dp).
+- `LensRefraction`: `Minimap` (2dp, 4dp), `TopBar` (4dp, 8dp), `Toggle` (5dp, 10dp), `TextField` (8dp, 16dp), `Slider` / `TabSpotlight` (10dp, 14dp), `Button` / `Panel` (12dp, 24dp), `Card` (16dp, 24dp), `Surface` (16dp, 32dp), `BottomTabs` (24dp, 24dp), `BottomSheet` (24dp, 40dp), `Dialog` (24dp, 48dp).
+- `BackdropSaturation`: `Vibrant` (1.5f).
+- `BackdropBrightness`: `DialogLight` (0.2f), `DialogDark` (0.0f).
 
-### 6. Theme Setup (`Theme.kt`)
+### 6. Typography (`Type.kt`)
+
+- `appTypography()`: Material 3 `Typography` configured with the unified Outfit font family across multiple weights (Black, Bold, SemiBold, Medium, Normal, Light, Thin, ExtraLight, ExtraBold).
+
+### 7. Theme Setup (`Theme.kt`)
 
 The unified entry point for styling is `LtiTheme`:
 ```kotlin
@@ -129,7 +137,7 @@ fun LtiTheme(
   - `GlassTheme.backdrop`: active shared `Backdrop?`
 - `ProvideGlassColors(colors)`: helper to override glass color scheme for a composable subtree.
 
-### 7. Design System Guardrails & Detekt Enforcement
+### 8. Design System Guardrails & Detekt Enforcement
 
 To prevent design system drift and ensure strict token adherence, two automated enforcement layers are active:
 

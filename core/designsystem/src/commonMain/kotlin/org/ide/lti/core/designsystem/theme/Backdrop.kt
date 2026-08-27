@@ -25,22 +25,12 @@ object BackdropBlur {
     /** Moderate blur for side panels and docked navigation bars (6dp). */
     val Panel: Dp = 6.dp
 
-    /** Prominent blur for cards, bottom tabs, interactive controls, and dark dialogs (8dp). */
-    val Prominent: Dp = 8.dp
-
-    /** Heavy/frosted blur for bottom sheets, light dialogs, and scrim overlays (16dp). */
-    val Heavy: Dp = 16.dp
-
     // Semantic aliases
-    val Whisper: Dp = 2.dp
     val Button: Dp = 2.dp
     val TextField: Dp = 2.dp
     val SearchCapsule: Dp = 2.dp
-    val PerformanceOverlay: Dp = 2.dp
     val TopBar: Dp = 4.dp
     val Minimap: Dp = 4.dp
-    val Navigation: Dp = 6.dp
-    val DockedBar: Dp = 6.dp
     val Card: Dp = 8.dp
     val BottomTabs: Dp = 8.dp
     val Slider: Dp = 8.dp
@@ -50,8 +40,6 @@ object BackdropBlur {
     val BottomSheet: Dp = 16.dp
     val Scrim: Dp = 16.dp
 }
-
-typealias BlurRadius = BackdropBlur
 
 /**
  * Paired refraction height and displacement amount tokens for backdrop lens distortion.
@@ -82,7 +70,6 @@ data class LensRefraction(
 
         /** Standard interactive refraction for buttons, action icons, and side panels (12dp, 24dp). */
         val Button: LensRefraction = LensRefraction(12.dp, 24.dp)
-        val Icon: LensRefraction = LensRefraction(12.dp, 24.dp)
         val Panel: LensRefraction = LensRefraction(12.dp, 24.dp)
 
         /** Medium refraction for content cards and containers (16dp, 24dp). */
@@ -90,7 +77,6 @@ data class LensRefraction(
 
         /** Canonical refraction for standard glass surfaces (16dp, 32dp). */
         val Surface: LensRefraction = LensRefraction(16.dp, 32.dp)
-        val Standard: LensRefraction = LensRefraction(16.dp, 32.dp)
 
         /** Symmetrical refraction for bottom tab bar containers (24dp, 24dp). */
         val BottomTabs: LensRefraction = LensRefraction(24.dp, 24.dp)
@@ -107,9 +93,6 @@ data class LensRefraction(
  * Centralized saturation boost tokens for backdrop color adjustments.
  */
 object BackdropSaturation {
-    /** Default unadjusted saturation (1.0f). */
-    const val Normal: Float = 1.0f
-
     /** Vibrant saturation boost for frosted modal sheets and dialogs (1.5f). */
     const val Vibrant: Float = 1.5f
 }
@@ -118,9 +101,6 @@ object BackdropSaturation {
  * Centralized brightness adjustment tokens for backdrop color adjustments.
  */
 object BackdropBrightness {
-    /** Default unadjusted brightness (0.0f). */
-    const val Normal: Float = 0.0f
-
     /** Lifted brightness for light-theme modal dialog frosted backdrops (0.2f). */
     const val DialogLight: Float = 0.2f
 

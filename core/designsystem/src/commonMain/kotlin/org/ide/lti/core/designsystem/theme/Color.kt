@@ -40,13 +40,7 @@ data class GlassColorScheme(
     val glassShadow: Color,
     val glassAccent: Color,
     val focusRing: Color,
-) {
-    companion object {
-        fun defaultDark(): GlassColorScheme = DarkGlassColorScheme
-        fun defaultLight(): GlassColorScheme = LightGlassColorScheme
-        fun vibrant(): GlassColorScheme = DarkGlassColorScheme
-    }
-}
+)
 
 /**
  * Derives a [GlassColorScheme] from a generated [ColorScheme] and theme mode.
@@ -120,8 +114,6 @@ val LightGlassColorScheme: GlassColorScheme
         colorScheme = dynamicColorScheme(seedColor = LtiSeedColor, isDark = false),
         isDark = false,
     )
-
-fun GlassColorScheme.surfaceWithTint(): Color = glassSurface
 
 /**
  * Centralized token colors for window control buttons (e.g. native Windows close hover).
