@@ -123,29 +123,7 @@ fun GlassButton(
         null
     }
 
-    val (surfaceColor, tint, contentColor) = when (variant) {
-        GlassButtonVariant.Primary -> Triple(
-            glassColors.glassSurfaceElevated,
-            glassColors.glassAccent.copy(alpha = AlphaTokens.Hover),
-            glassColors.onGlass
-        )
-        GlassButtonVariant.Secondary -> Triple(
-            glassColors.glassSurface,
-            glassColors.glassTintSecondary,
-            glassColors.onGlass
-        )
-        GlassButtonVariant.Standard -> Triple(
-            glassColors.glassSurface,
-            glassColors.glassTint,
-            glassColors.onGlass
-        )
-        GlassButtonVariant.Text -> Triple(
-            Color.Transparent,
-            Color.Transparent,
-            glassColors.onGlass
-        )
-    }
-
+    val (surfaceColor, tint, contentColor) = resolveButtonColors(variant, glassColors)
     val finalContentColor = if (enabled) contentColor else glassColors.onGlassMuted
 
     Row(
@@ -160,41 +138,16 @@ fun GlassButton(
                         highlight = { Highlight.Plain },
                         layerBlock = if (interactiveHighlight != null) {
                             {
-                                val width = size.width
-                                val height = size.height
-
-                                val progress = interactiveHighlight.pressProgress
-                                val scale = lerp(1f, 1f + Spacing.ExtraSmall.toPx() / size.height, progress)
-
-                                val maxOffset = size.minDimension
-                                val initialDerivative = 0.05f
-                                val offset = interactiveHighlight.offset
-                                translationX = (maxOffset * tanh((initialDerivative * offset.x / maxOffset).toDouble())).toFloat()
-                                translationY = (maxOffset * tanh((initialDerivative * offset.y / maxOffset).toDouble())).toFloat()
-
-                                val maxDragScale = Spacing.ExtraSmall.toPx() / size.height
-                                val offsetAngle = atan2(offset.y.toDouble(), offset.x.toDouble()).toFloat()
-                                scaleX =
-                                    scale +
-                                            maxDragScale * abs(cos(offsetAngle) * offset.x / size.maxDimension) *
-                                            (width / height).fastCoerceAtMost(1f)
-                                scaleY =
-                                    scale +
-                                            maxDragScale * abs(sin(offsetAngle) * offset.y / size.maxDimension) *
-                                            (height / width).fastCoerceAtMost(1f)
+                                applyButtonInteractiveTransform(interactiveHighlight)
                             }
                         } else null,
                         onDrawSurface = {
-                            if (surfaceColor.isSpecified && surfaceColor != Color.Transparent) {
-                                drawRect(surfaceColor)
-                            }
-                            if (tint.isSpecified && tint != Color.Transparent) {
-                                drawRect(tint, blendMode = BlendMode.Hue)
-                                drawRect(tint.copy(alpha = tint.alpha * AlphaTokens.Half))
-                            }
-                            if (!enabled) {
-                                drawRect(glassColors.glassShadow.copy(alpha = AlphaTokens.Disabled))
-                            }
+                            drawButtonSurface(
+                                surfaceColor = surfaceColor,
+                                tint = tint,
+                                enabled = enabled,
+                                glassShadowColor = glassColors.glassShadow
+                            )
                         }
                     )
                 } else {
@@ -226,6 +179,77 @@ fun GlassButton(
                 content()
             }
         }
+    }
+}
+
+private fun resolveButtonColors(
+    variant: GlassButtonVariant,
+    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme
+): Triple<Color, Color, Color> = when (variant) {
+    GlassButtonVariant.Primary -> Triple(
+        glassColors.glassSurfaceElevated,
+        glassColors.glassAccent.copy(alpha = AlphaTokens.Hover),
+        glassColors.onGlass
+    )
+    GlassButtonVariant.Secondary -> Triple(
+        glassColors.glassSurface,
+        glassColors.glassTintSecondary,
+        glassColors.onGlass
+    )
+    GlassButtonVariant.Standard -> Triple(
+        glassColors.glassSurface,
+        glassColors.glassTint,
+        glassColors.onGlass
+    )
+    GlassButtonVariant.Text -> Triple(
+        Color.Transparent,
+        Color.Transparent,
+        glassColors.onGlass
+    )
+}
+
+private fun androidx.compose.ui.graphics.GraphicsLayerScope.applyButtonInteractiveTransform(
+    interactiveHighlight: InteractiveHighlight
+) {
+    val width = size.width
+    val height = size.height
+
+    val progress = interactiveHighlight.pressProgress
+    val scale = lerp(1f, 1f + Spacing.ExtraSmall.toPx() / size.height, progress)
+
+    val maxOffset = size.minDimension
+    val initialDerivative = 0.05f
+    val offset = interactiveHighlight.offset
+    val tx = maxOffset * tanh((initialDerivative * offset.x / maxOffset).toDouble())
+    val ty = maxOffset * tanh((initialDerivative * offset.y / maxOffset).toDouble())
+    translationX = tx.toFloat()
+    translationY = ty.toFloat()
+
+    val maxDragScale = Spacing.ExtraSmall.toPx() / size.height
+    val offsetAngle = atan2(offset.y.toDouble(), offset.x.toDouble()).toFloat()
+    scaleX = scale +
+        maxDragScale * abs(cos(offsetAngle) * offset.x / size.maxDimension) *
+        (width / height).fastCoerceAtMost(1f)
+    scaleY = scale +
+        maxDragScale * abs(sin(offsetAngle) * offset.y / size.maxDimension) *
+        (height / width).fastCoerceAtMost(1f)
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawButtonSurface(
+    surfaceColor: Color,
+    tint: Color,
+    enabled: Boolean,
+    glassShadowColor: Color
+) {
+    if (surfaceColor.isSpecified && surfaceColor != Color.Transparent) {
+        drawRect(surfaceColor)
+    }
+    if (tint.isSpecified && tint != Color.Transparent) {
+        drawRect(tint, blendMode = BlendMode.Hue)
+        drawRect(tint.copy(alpha = tint.alpha * AlphaTokens.Half))
+    }
+    if (!enabled) {
+        drawRect(glassShadowColor.copy(alpha = AlphaTokens.Disabled))
     }
 }
 
@@ -294,6 +318,7 @@ fun GlassIconButton(
         minHeight = size,
         contentPadding = PaddingValues(Spacing.None),
         enabled = enabled,
+        variant = if (selected) GlassButtonVariant.Primary else GlassButtonVariant.Standard
     ) {
         content()
     }

@@ -12,8 +12,8 @@ package org.ide.lti.core.designsystem.component
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
@@ -21,13 +21,13 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import com.kyant.capsule.ContinuousRoundedRectangle
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.BackdropEffectScope
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import com.kashif_e.backdrop.drawBackdrop
-import com.kashif_e.backdrop.effects.*
+import com.kashif_e.backdrop.effects.blur
+import com.kashif_e.backdrop.effects.vibrancy
 import com.kashif_e.backdrop.highlight.Highlight
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.CornerRadius
@@ -67,14 +67,13 @@ import org.ide.lti.core.designsystem.theme.StrokeWidth
  * }
  * ```
  */
-@Composable
 fun Modifier.glassEffect(
     backdrop: Backdrop? = null,
     shape: Shape = ContinuousRoundedRectangle(CornerRadius.Medium),
     surfaceColor: Color = Color.Unspecified,
     tint: Color = Color.Unspecified,
     effects: BackdropEffectScope.() -> Unit = StandardGlassEffects
-): Modifier {
+): Modifier = composed {
     val glassColors = GlassTheme.colors
     val effectsEnabled = GlassTheme.effectsEnabled
     val actualBackdrop = backdrop ?: GlassTheme.backdrop ?: rememberLayerBackdrop()
@@ -82,7 +81,7 @@ fun Modifier.glassEffect(
     val finalSurfaceColor = if (surfaceColor.isSpecified) surfaceColor else glassColors.glassSurface
     val finalTint = if (tint.isSpecified) tint else glassColors.glassTint
 
-    return if (effectsEnabled) {
+    if (effectsEnabled) {
         this.drawBackdrop(
             backdrop = actualBackdrop,
             shape = { shape },
@@ -120,14 +119,13 @@ fun Modifier.glassEffect(
  * }
  * ```
  */
-@Composable
 fun Modifier.glassBackground(
     color: Color = Color.Unspecified
-): Modifier {
+): Modifier = composed {
     val glassColors = GlassTheme.colors
     val finalColor = if (color.isSpecified) color else glassColors.glassSurface
 
-    return this.drawBehind {
+    this.drawBehind {
         drawRect(finalColor)
     }
 }
@@ -151,16 +149,15 @@ fun Modifier.glassBackground(
  * }
  * ```
  */
-@Composable
 fun Modifier.glassBorder(
     color: Color? = null,
     width: Dp = StrokeWidth.Standard,
     shape: Shape = ContinuousRoundedRectangle(CornerRadius.Medium)
-): Modifier {
+): Modifier = composed {
     val glassColors = GlassTheme.colors
     val finalColor = color ?: glassColors.glassBorder
 
-    return this.border(
+    this.border(
         border = BorderStroke(width, finalColor),
         shape = shape
     )
@@ -219,17 +216,20 @@ fun Modifier.glassInteractive(
  * }
  * ```
  */
-@Composable
 fun Modifier.glassScrim(
     backdrop: Backdrop? = null,
     blurRadius: Dp = Spacing.Medium,
     surfaceColor: Color = Color.Unspecified
-): Modifier {
+): Modifier = composed {
     val actualBackdrop = backdrop ?: GlassTheme.backdrop ?: rememberLayerBackdrop()
     val effectsEnabled = GlassTheme.effectsEnabled
-    val resolvedSurfaceColor = if (surfaceColor.isSpecified) surfaceColor else GlassTheme.colors.glassShadow.copy(alpha = AlphaTokens.Scrim)
+    val resolvedSurfaceColor = if (surfaceColor.isSpecified) {
+        surfaceColor
+    } else {
+        GlassTheme.colors.glassShadow.copy(alpha = AlphaTokens.Scrim)
+    }
 
-    return if (effectsEnabled) {
+    if (effectsEnabled) {
         this.drawBackdrop(
             backdrop = actualBackdrop,
             shape = { androidx.compose.ui.graphics.RectangleShape },

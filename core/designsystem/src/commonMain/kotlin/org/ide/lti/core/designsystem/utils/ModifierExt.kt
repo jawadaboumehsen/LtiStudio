@@ -9,9 +9,9 @@
  */
 package org.ide.lti.core.designsystem.utils
 
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -22,10 +22,9 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalFocusManager
 
 @Stable
-@Composable
-fun Modifier.tabNavigation(): Modifier {
+fun Modifier.tabNavigation(): Modifier = composed {
     val focusManager = LocalFocusManager.current
-    return onPreviewKeyEvent { keyEvent ->
+    onPreviewKeyEvent { keyEvent ->
         if (keyEvent.key == Key.Tab && keyEvent.type == KeyEventType.KeyDown) {
             focusManager.moveFocus(
                 if (keyEvent.isShiftPressed) {

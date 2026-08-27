@@ -13,7 +13,6 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseOut
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -134,7 +133,6 @@ fun GlassBottomTabs(
     onTabSelected: ((index: Int) -> Unit)? = null,
     tabs: @Composable RowScope.() -> Unit
 ) {
-    val isLightTheme = !isSystemInDarkTheme()
     val glassColors = GlassTheme.colors
     val accentColor = glassColors.glassAccent
     val containerColor = glassColors.glassSurfaceElevated
@@ -223,113 +221,179 @@ fun GlassBottomTabs(
         }
 
         // Layer 1 — empty glass bar (the visible frosted pill).
+        GlassBottomTabBarBackground(
+            backdrop = backdrop,
+            containerColor = containerColor,
+            panelOffset = panelOffset,
+            drag = drag,
+            interactiveHighlight = interactiveHighlight,
+            tabs = tabs
+        )
+
+        // Layer 2 — invisible "tinted" row, exported as tabsBackdrop.
+        GlassBottomTabTintedRow(
+            backdrop = backdrop,
+            tabsBackdrop = tabsBackdrop,
+            containerColor = containerColor,
+            accentColor = accentColor,
+            panelOffset = panelOffset,
+            drag = drag,
+            interactiveHighlight = interactiveHighlight,
+            tabs = tabs
+        )
+
+        // Layer 3 — the spotlight pill, sampling wallpaper + tabsBackdrop.
+        GlassBottomTabSpotlight(
+            backdrop = backdrop,
+            tabsBackdrop = tabsBackdrop,
+            tabsCount = tabsCount,
+            tabWidth = tabWidth,
+            panelOffset = panelOffset,
+            isLtr = isLtr,
+            drag = drag,
+            interactiveHighlight = interactiveHighlight
+        )
+    }
+}
+
+@Composable
+private fun GlassBottomTabBarBackground(
+    backdrop: Backdrop,
+    containerColor: Color,
+    panelOffset: Float,
+    drag: DampedDragAnimation,
+    interactiveHighlight: InteractiveHighlight,
+    tabs: @Composable RowScope.() -> Unit
+) {
+    Row(
+        Modifier
+            .graphicsLayer { translationX = panelOffset }
+            .drawBackdrop(
+                backdrop = backdrop,
+                shape = { ContinuousCapsule },
+                effects = {
+                    vibrancy()
+                    blur(8f.dp.toPx())
+                    lens(24f.dp.toPx(), 24f.dp.toPx())
+                },
+                layerBlock = {
+                    val p = drag.pressProgress
+                    val s = lerp(1f, 1f + Spacing.Medium.toPx() / size.width, p)
+                    scaleX = s
+                    scaleY = s
+                },
+                onDrawSurface = { drawRect(containerColor) }
+            )
+            .then(interactiveHighlight.modifier)
+            .height(ComponentSize.BottomTabsHeight)
+            .fillMaxWidth()
+            .padding(Spacing.ExtraSmall),
+        verticalAlignment = Alignment.CenterVertically,
+        content = tabs
+    )
+}
+
+@Composable
+private fun GlassBottomTabTintedRow(
+    backdrop: Backdrop,
+    tabsBackdrop: com.kashif_e.backdrop.backdrops.LayerBackdrop,
+    containerColor: Color,
+    accentColor: Color,
+    panelOffset: Float,
+    drag: DampedDragAnimation,
+    interactiveHighlight: InteractiveHighlight,
+    tabs: @Composable RowScope.() -> Unit
+) {
+    CompositionLocalProvider(
+        LocalGlassBottomTabScale provides { lerp(1f, 1.2f, drag.pressProgress) }
+    ) {
         Row(
             Modifier
+                .clearAndSetSemantics {}
+                .alpha(0f)
+                .layerBackdrop(tabsBackdrop)
                 .graphicsLayer { translationX = panelOffset }
                 .drawBackdrop(
                     backdrop = backdrop,
                     shape = { ContinuousCapsule },
                     effects = {
+                        val p = drag.pressProgress
                         vibrancy()
                         blur(8f.dp.toPx())
-                        lens(24f.dp.toPx(), 24f.dp.toPx())
-                    },
-                    layerBlock = {
-                        val p = drag.pressProgress
-                        val s = lerp(1f, 1f + Spacing.Medium.toPx() / size.width, p)
-                        scaleX = s
-                        scaleY = s
-                    },
-                    onDrawSurface = { drawRect(containerColor) }
-                )
-                .then(interactiveHighlight.modifier)
-                .height(ComponentSize.BottomTabsHeight)
-                .fillMaxWidth()
-                .padding(Spacing.ExtraSmall),
-            verticalAlignment = Alignment.CenterVertically,
-            content = tabs
-        )
-
-        // Layer 2 — invisible "tinted" row, exported as tabsBackdrop.
-        CompositionLocalProvider(
-            LocalGlassBottomTabScale provides { lerp(1f, 1.2f, drag.pressProgress) }
-        ) {
-            Row(
-                Modifier
-                    .clearAndSetSemantics {}
-                    .alpha(0f)
-                    .layerBackdrop(tabsBackdrop)
-                    .graphicsLayer { translationX = panelOffset }
-                    .drawBackdrop(
-                        backdrop = backdrop,
-                        shape = { ContinuousCapsule },
-                        effects = {
-                            val p = drag.pressProgress
-                            vibrancy()
-                            blur(8f.dp.toPx())
-                            lens(24f.dp.toPx() * p, 24f.dp.toPx() * p)
-                        },
-                        highlight = {
-                            val p = drag.pressProgress
-                            Highlight.Default.copy(alpha = p)
-                        },
-                        onDrawSurface = { drawRect(containerColor) }
-                    )
-                    .then(interactiveHighlight.modifier)
-                    .height(ComponentSize.BottomTabItemHeight)
-                    .fillMaxWidth()
-                    .padding(horizontal = Spacing.ExtraSmall)
-                    .graphicsLayer(colorFilter = ColorFilter.tint(accentColor)),
-                verticalAlignment = Alignment.CenterVertically,
-                content = tabs
-            )
-        }
-
-        // Layer 3 — the spotlight pill, sampling wallpaper + tabsBackdrop.
-        Box(
-            Modifier
-                .padding(horizontal = Spacing.ExtraSmall)
-                .graphicsLayer {
-                    translationX =
-                        if (isLtr) drag.value * tabWidth + panelOffset
-                        else size.width - (drag.value + 1f) * tabWidth + panelOffset
-                }
-                .then(interactiveHighlight.gestureModifier)
-                .then(drag.modifier)
-                .drawBackdrop(
-                    backdrop = rememberCombinedBackdrop(backdrop, tabsBackdrop),
-                    shape = { ContinuousCapsule },
-                    effects = {
-                        val p = drag.pressProgress
-                        lens(10f.dp.toPx() * p, 14f.dp.toPx() * p, chromaticAberration = true)
+                        lens(24f.dp.toPx() * p, 24f.dp.toPx() * p)
                     },
                     highlight = {
                         val p = drag.pressProgress
                         Highlight.Default.copy(alpha = p)
                     },
-                    shadow = { Shadow(alpha = drag.pressProgress) },
-                    innerShadow = {
-                        val p = drag.pressProgress
-                        InnerShadow(radius = Elevation.Panel * p, alpha = p)
-                    },
-                    layerBlock = {
-                        scaleX = drag.scaleX
-                        scaleY = drag.scaleY
-                        val v = drag.velocity / 10f
-                        scaleX /= 1f - (v * 0.75f).fastCoerceIn(-0.2f, 0.2f)
-                        scaleY *= 1f - (v * 0.25f).fastCoerceIn(-0.2f, 0.2f)
-                    },
-                    onDrawSurface = {
-                        val p = drag.pressProgress
-                        drawRect(
-                            glassColors.onGlass.copy(alpha = AlphaTokens.Subtle),
-                            alpha = 1f - p
-                        )
-                        drawRect(glassColors.glassShadow.copy(alpha = AlphaTokens.UltraFaint * p))
-                    }
+                    onDrawSurface = { drawRect(containerColor) }
                 )
+                .then(interactiveHighlight.modifier)
                 .height(ComponentSize.BottomTabItemHeight)
-                .fillMaxWidth(1f / tabsCount)
+                .fillMaxWidth()
+                .padding(horizontal = Spacing.ExtraSmall)
+                .graphicsLayer(colorFilter = ColorFilter.tint(accentColor)),
+            verticalAlignment = Alignment.CenterVertically,
+            content = tabs
         )
     }
+}
+
+@Composable
+private fun GlassBottomTabSpotlight(
+    backdrop: Backdrop,
+    tabsBackdrop: com.kashif_e.backdrop.backdrops.LayerBackdrop,
+    tabsCount: Int,
+    tabWidth: Float,
+    panelOffset: Float,
+    isLtr: Boolean,
+    drag: DampedDragAnimation,
+    interactiveHighlight: InteractiveHighlight
+) {
+    val glassColors = GlassTheme.colors
+    Box(
+        Modifier
+            .padding(horizontal = Spacing.ExtraSmall)
+            .graphicsLayer {
+                translationX =
+                    if (isLtr) drag.value * tabWidth + panelOffset
+                    else size.width - (drag.value + 1f) * tabWidth + panelOffset
+            }
+            .then(interactiveHighlight.gestureModifier)
+            .then(drag.modifier)
+            .drawBackdrop(
+                backdrop = rememberCombinedBackdrop(backdrop, tabsBackdrop),
+                shape = { ContinuousCapsule },
+                effects = {
+                    val p = drag.pressProgress
+                    lens(10f.dp.toPx() * p, 14f.dp.toPx() * p, chromaticAberration = true)
+                },
+                highlight = {
+                    val p = drag.pressProgress
+                    Highlight.Default.copy(alpha = p)
+                },
+                shadow = { Shadow(alpha = drag.pressProgress) },
+                innerShadow = {
+                    val p = drag.pressProgress
+                    InnerShadow(radius = Elevation.Panel * p, alpha = p)
+                },
+                layerBlock = {
+                    scaleX = drag.scaleX
+                    scaleY = drag.scaleY
+                    val v = drag.velocity / 10f
+                    scaleX /= 1f - (v * 0.75f).fastCoerceIn(-0.2f, 0.2f)
+                    scaleY *= 1f - (v * 0.25f).fastCoerceIn(-0.2f, 0.2f)
+                },
+                onDrawSurface = {
+                    val p = drag.pressProgress
+                    drawRect(
+                        glassColors.onGlass.copy(alpha = AlphaTokens.Subtle),
+                        alpha = 1f - p
+                    )
+                    drawRect(glassColors.glassShadow.copy(alpha = AlphaTokens.UltraFaint * p))
+                }
+            )
+            .height(ComponentSize.BottomTabItemHeight)
+            .fillMaxWidth(1f / tabsCount)
+    )
 }

@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -32,7 +31,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.kashif_e.backdrop.effects.blur
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius
@@ -42,19 +40,11 @@ import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 
 /**
- * Line ending types for status bar display
- */
-enum class LineEnding(val displayName: String) {
-    LF("LF"),
-    CRLF("CRLF"),
-    CR("CR"),
-}
-
-/**
  * Modern IDE Liquid Glass Status Bar.
  */
 @Composable
 fun GlassStatusBar(
+    modifier: Modifier = Modifier,
     branchName: String = "main",
     filePath: String? = null,
     module: String? = null,
@@ -62,7 +52,6 @@ fun GlassStatusBar(
     encoding: String = "UTF-8",
     lineEnding: LineEnding = LineEnding.LF,
     fileType: String? = null,
-    modifier: Modifier = Modifier,
 ) {
     val glassColors = GlassTheme.colors
 

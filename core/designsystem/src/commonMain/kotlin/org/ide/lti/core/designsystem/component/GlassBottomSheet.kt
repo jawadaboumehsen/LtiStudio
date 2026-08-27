@@ -1,11 +1,34 @@
 package org.ide.lti.core.designsystem.component
 
-import androidx.compose.animation.core.*
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animate
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -145,7 +168,12 @@ fun GlassBottomSheet(
     // Exception to the module-wide capsule shape: this sheet is anchored flush to the bottom
     // edge, so only the top corners can round — a full capsule would detach its bottom edge
     // from the screen with visible rounded gaps.
-    shape: Shape = ContinuousRoundedRectangle(topStart = CornerRadius.Medium, topEnd = CornerRadius.Medium, bottomEnd = CornerRadius.None, bottomStart = CornerRadius.None),
+    shape: Shape = ContinuousRoundedRectangle(
+        topStart = CornerRadius.Medium,
+        topEnd = CornerRadius.Medium,
+        bottomEnd = CornerRadius.None,
+        bottomStart = CornerRadius.None
+    ),
     scrimColor: Color = Color.Unspecified,
     dismissThreshold: Float = 0.3f,
     content: @Composable ColumnScope.() -> Unit
@@ -358,45 +386,49 @@ fun GlassBottomSheetScaffold(
  * Example usage of GlassBottomSheet with common patterns.
  */
 @Composable
-fun GlassBottomSheetExample() {
+fun GlassBottomSheetExample(
+    modifier: Modifier = Modifier,
+) {
     var showSheet by remember { mutableStateOf(false) }
 
-    Column(Modifier.fillMaxSize().padding(Spacing.Medium)) {
-        GlassButton(onClick = { showSheet = true }) {
-            androidx.compose.material3.Text("Show Bottom Sheet")
+    Box(modifier = modifier.fillMaxSize()) {
+        Column(Modifier.fillMaxSize().padding(Spacing.Medium)) {
+            GlassButton(onClick = { showSheet = true }) {
+                androidx.compose.material3.Text("Show Bottom Sheet")
+            }
         }
-    }
 
-    GlassBottomSheetScaffold(
-        visible = showSheet,
-        onDismissRequest = { showSheet = false },
-        title = "Glass Bottom Sheet"
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(Spacing.Medium),
-            verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium)
+        GlassBottomSheetScaffold(
+            visible = showSheet,
+            onDismissRequest = { showSheet = false },
+            title = "Glass Bottom Sheet"
         ) {
-            androidx.compose.material3.Text(
-                "This is a bottom sheet with glass morphism effects.",
-                style = MaterialTheme.typography.bodyLarge,
-                color = GlassTheme.colors.onGlass
-            )
-
-            androidx.compose.material3.Text(
-                "Drag down to dismiss, or tap outside.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = GlassTheme.colors.onGlassSecondary
-            )
-
-            Spacer(Modifier.height(Spacing.Small))
-
-            GlassPrimaryButton(
-                onClick = { showSheet = false },
-                modifier = Modifier.fillMaxWidth()
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(Spacing.Medium),
+                verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium)
             ) {
-                androidx.compose.material3.Text("Close")
+                androidx.compose.material3.Text(
+                    "This is a bottom sheet with glass morphism effects.",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = GlassTheme.colors.onGlass
+                )
+
+                androidx.compose.material3.Text(
+                    "Drag down to dismiss, or tap outside.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = GlassTheme.colors.onGlassSecondary
+                )
+
+                Spacer(Modifier.height(Spacing.Small))
+
+                GlassPrimaryButton(
+                    onClick = { showSheet = false },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    androidx.compose.material3.Text("Close")
+                }
             }
         }
     }

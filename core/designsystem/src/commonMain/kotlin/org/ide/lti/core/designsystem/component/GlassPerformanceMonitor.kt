@@ -1,10 +1,24 @@
 package org.ide.lti.core.designsystem.component
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -179,16 +193,16 @@ class GlassPerformanceCollector {
  * corners of the screen.
  *
  * @param visible Whether the monitor is visible
+ * @param modifier Modifier for the monitor overlay
  * @param position Position on screen (TopStart, TopEnd, BottomStart, BottomEnd)
  * @param collector The performance collector instance
- * @param modifier Modifier for the monitor overlay
  */
 @Composable
 fun GlassPerformanceMonitor(
     visible: Boolean,
+    modifier: Modifier = Modifier,
     position: MonitorPosition = MonitorPosition.TopEnd,
-    collector: GlassPerformanceCollector = remember { GlassPerformanceCollector() },
-    modifier: Modifier = Modifier
+    collector: GlassPerformanceCollector = remember { GlassPerformanceCollector() }
 ) {
     if (!visible) return
 
@@ -249,81 +263,34 @@ private fun PerformanceOverlay(
                 color = GlassTheme.colors.onGlass
             )
 
-            // FPS indicator
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    "FPS",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = GlassTheme.colors.onGlassSecondary
-                )
-                Text(
-                    "${metrics.fps.roundToInt()}",
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        fontFamily = FontFamily.Monospace
-                    ),
-                    color = metrics.performanceColor
-                )
-            }
+            MetricRow(
+                label = "FPS",
+                value = "${metrics.fps.roundToInt()}",
+                valueColor = metrics.performanceColor
+            )
 
-            // Frame time
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    "Frame Time",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = GlassTheme.colors.onGlassSecondary
-                )
-                Text(
-                    "${metrics.avgFrameTimeMs.roundToInt()}ms",
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        fontFamily = FontFamily.Monospace
-                    ),
-                    color = GlassTheme.colors.onGlass
-                )
-            }
+            MetricRow(
+                label = "Frame Time",
+                value = "${metrics.avgFrameTimeMs.roundToInt()}ms",
+                valueColor = GlassTheme.colors.onGlass
+            )
 
-            // Min/Max frame times
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    "Min / Max",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = GlassTheme.colors.onGlassSecondary
-                )
-                Text(
-                    "${metrics.minFrameTimeMs.roundToInt()} / ${metrics.maxFrameTimeMs.roundToInt()}ms",
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        fontFamily = FontFamily.Monospace
-                    ),
-                    color = GlassTheme.colors.onGlassSecondary
-                )
-            }
+            MetricRow(
+                label = "Min / Max",
+                value = "${metrics.minFrameTimeMs.roundToInt()} / ${metrics.maxFrameTimeMs.roundToInt()}ms",
+                valueColor = GlassTheme.colors.onGlassSecondary
+            )
 
-            // Dropped frames
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    "Dropped",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = GlassTheme.colors.onGlassSecondary
-                )
-                Text(
-                    "${metrics.droppedFrames}",
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        fontFamily = FontFamily.Monospace
-                    ),
-                    color = if (metrics.droppedFrames > 0) PerformanceMonitorColors.Bad else PerformanceMonitorColors.Good
-                )
+            val droppedColor = if (metrics.droppedFrames > 0) {
+                PerformanceMonitorColors.Bad
+            } else {
+                PerformanceMonitorColors.Good
             }
+            MetricRow(
+                label = "Dropped",
+                value = "${metrics.droppedFrames}",
+                valueColor = droppedColor
+            )
 
             // Divider
             Box(
@@ -333,81 +300,29 @@ private fun PerformanceOverlay(
                     .background(GlassTheme.colors.glassBorder)
             )
 
-            // Shader cache
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    "Shader Cache",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = GlassTheme.colors.onGlassSecondary
-                )
-                Text(
-                    "${metrics.shaderCacheSize}",
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        fontFamily = FontFamily.Monospace
-                    ),
-                    color = GlassTheme.colors.onGlass
-                )
-            }
+            MetricRow(
+                label = "Shader Cache",
+                value = "${metrics.shaderCacheSize}",
+                valueColor = GlassTheme.colors.onGlass
+            )
 
-            // Backdrops
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    "Backdrops",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = GlassTheme.colors.onGlassSecondary
-                )
-                Text(
-                    "${metrics.activeBackdrops}",
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        fontFamily = FontFamily.Monospace
-                    ),
-                    color = GlassTheme.colors.onGlass
-                )
-            }
+            MetricRow(
+                label = "Backdrops",
+                value = "${metrics.activeBackdrops}",
+                valueColor = GlassTheme.colors.onGlass
+            )
 
-            // Components
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    "Components",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = GlassTheme.colors.onGlassSecondary
-                )
-                Text(
-                    "${metrics.componentsRendered}",
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        fontFamily = FontFamily.Monospace
-                    ),
-                    color = GlassTheme.colors.onGlass
-                )
-            }
+            MetricRow(
+                label = "Components",
+                value = "${metrics.componentsRendered}",
+                valueColor = GlassTheme.colors.onGlass
+            )
 
-            // Memory estimate
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    "Memory",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = GlassTheme.colors.onGlassSecondary
-                )
-                Text(
-                    "${metrics.memoryUsageKB} KB",
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        fontFamily = FontFamily.Monospace
-                    ),
-                    color = GlassTheme.colors.onGlass
-                )
-            }
+            MetricRow(
+                label = "Memory",
+                value = "${metrics.memoryUsageKB} KB",
+                valueColor = GlassTheme.colors.onGlass
+            )
 
             // Performance rating indicator
             Box(
@@ -420,6 +335,31 @@ private fun PerformanceOverlay(
                     )
             )
         }
+    }
+}
+
+@Composable
+private fun MetricRow(
+    label: String,
+    value: String,
+    valueColor: Color = GlassTheme.colors.onGlass
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.bodySmall,
+            color = GlassTheme.colors.onGlassSecondary
+        )
+        Text(
+            value,
+            style = MaterialTheme.typography.bodySmall.copy(
+                fontFamily = FontFamily.Monospace
+            ),
+            color = valueColor
+        )
     }
 }
 
@@ -437,10 +377,12 @@ enum class MonitorPosition(val alignment: Alignment) {
  * Example usage of GlassPerformanceMonitor.
  */
 @Composable
-fun GlassPerformanceMonitorExample() {
+fun GlassPerformanceMonitorExample(
+    modifier: Modifier = Modifier,
+) {
     var showMonitor by remember { mutableStateOf(true) }
 
-    Box(Modifier.fillMaxSize()) {
+    Box(modifier = modifier.fillMaxSize()) {
         // Your app content
         Column(
             modifier = Modifier.fillMaxSize().padding(Spacing.Medium),

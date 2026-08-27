@@ -10,7 +10,6 @@
 package org.ide.lti.core.designsystem.component
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
@@ -37,6 +36,7 @@ import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -113,11 +113,6 @@ fun GlassTextField(
 ) {
     val isFocused by interactionSource.collectIsFocusedAsState()
     val isError = errorText != null
-
-    val animatedBorderWidth by animateDpAsState(
-        targetValue = if (isFocused) StrokeWidth.Focused else StrokeWidth.Standard,
-        animationSpec = tween(MotionDuration.Fast)
-    )
 
     val animatedBorderColor by animateColorAsState(
         targetValue = when {
@@ -224,6 +219,11 @@ fun GlassPasswordField(
     keyboardActions: KeyboardActions = KeyboardActions.Default,
 ) {
     val focusRequester = remember { FocusRequester() }
+    LaunchedEffect(autoFocus) {
+        if (autoFocus) {
+            focusRequester.requestFocus()
+        }
+    }
     GlassTextField(
         modifier = modifier
             .tabNavigation()

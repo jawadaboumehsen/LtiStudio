@@ -67,8 +67,8 @@ fun GlassTabItem(
     title: String,
     selected: Boolean,
     onSelect: () -> Unit,
-    onClose: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
+    onClose: (() -> Unit)? = null,
 ) {
     Row(
         modifier = modifier
@@ -110,10 +110,10 @@ fun GlassTabItem(
 @Composable
 fun GlassTabBar(
     tabs: List<String>,
-    selectedIndex: Int = 0,
-    selectedTabIndex: Int = selectedIndex,
     onTabSelected: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    selectedIndex: Int = 0,
+    selectedTabIndex: Int = selectedIndex,
     onTabClosed: ((Int) -> Unit)? = null,
     actions: (@Composable () -> Unit)? = null,
 ) {

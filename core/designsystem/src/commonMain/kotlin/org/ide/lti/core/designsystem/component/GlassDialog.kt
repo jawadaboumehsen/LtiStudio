@@ -53,7 +53,7 @@ import org.ide.lti.core.designsystem.theme.Spacing
  * Branches by theme — light mode needs more brightness lift and a heavier blur to read as a
  * bright frosted panel over content; dark mode needs neither.
  */
-fun GlassDialogEffects(isLightTheme: Boolean): BackdropEffectScope.() -> Unit = {
+fun glassDialogEffects(isLightTheme: Boolean): BackdropEffectScope.() -> Unit = {
     colorControls(
         brightness = if (isLightTheme) 0.2f else 0f,
         saturation = 1.5f
@@ -68,12 +68,12 @@ fun GlassDialogEffects(isLightTheme: Boolean): BackdropEffectScope.() -> Unit = 
 @Composable
 fun GlassDialog(
     onDismissRequest: () -> Unit,
+    confirmButton: @Composable () -> Unit,
     modifier: Modifier = Modifier,
     title: String? = null,
-    confirmButton: @Composable () -> Unit,
     dismissButton: (@Composable () -> Unit)? = null,
     shape: Shape = ContinuousRoundedRectangle(CornerRadius.Dialog),
-    effects: BackdropEffectScope.() -> Unit = GlassDialogEffects(!isSystemInDarkTheme()),
+    effects: BackdropEffectScope.() -> Unit = glassDialogEffects(!isSystemInDarkTheme()),
     backdrop: Backdrop? = null,
     properties: DialogProperties = DialogProperties(),
     content: @Composable () -> Unit,
@@ -141,6 +141,7 @@ sealed class LoadingDialogState {
 @Composable
 fun GlassLoadingDialog(
     visibilityState: LoadingDialogState,
+    modifier: Modifier = Modifier,
 ) {
     when (visibilityState) {
         is LoadingDialogState.Hidden -> Unit
@@ -154,10 +155,10 @@ fun GlassLoadingDialog(
             ) {
                 GlassSurface(
                     shape = ContinuousRoundedRectangle(CornerRadius.ExtraLarge),
-                    modifier = Modifier
+                    modifier = modifier
                         .fillMaxWidth()
                         .padding(Spacing.DialogPadding),
-                    effects = GlassDialogEffects(!isSystemInDarkTheme()),
+                    effects = glassDialogEffects(!isSystemInDarkTheme()),
                     highlight = { Highlight.Plain },
                 ) {
                     Column(

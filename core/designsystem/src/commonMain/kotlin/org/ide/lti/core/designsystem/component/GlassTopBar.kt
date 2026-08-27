@@ -40,7 +40,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -78,17 +77,6 @@ import org.ide.lti.core.designsystem.theme.WindowControlColors
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /**
- * State container for desktop window control actions.
- */
-data class WindowControlActions(
-    val onMinimize: () -> Unit = {},
-    val onMaximize: () -> Unit = {},
-    val onClose: () -> Unit = {},
-)
-
-val LocalWindowControlActions = staticCompositionLocalOf { WindowControlActions() }
-
-/**
  * Professional IDE Liquid Glass Top App Bar.
  *
  * Implements Apple-inspired Liquid Glass effects using the backdrop engine:
@@ -101,6 +89,7 @@ val LocalWindowControlActions = staticCompositionLocalOf { WindowControlActions(
  */
 @Composable
 fun GlassTopBar(
+    modifier: Modifier = Modifier,
     title: String = "LtiRom",
     workspaceName: String? = "Workspace",
     onMenuClick: () -> Unit = {},
@@ -117,7 +106,6 @@ fun GlassTopBar(
     onClickMiddleDownPanelIcon: () -> Unit = {},
     onClickRightPanelIcon: () -> Unit = {},
     backdrop: Backdrop? = null,
-    modifier: Modifier = Modifier,
 ) {
     val actualBackdrop = backdrop ?: GlassTheme.backdrop
     val glassColors = GlassTheme.colors
@@ -160,145 +148,179 @@ fun GlassTopBar(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
-        // ==========================================
-        // 1. LEFT: Brand & Navigation Section
-        // ==========================================
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.Compact)
-        ) {
-            // Brand Logo with gradient glow
-            Box(
-                modifier = Modifier
-                    .size(ComponentSize.LogoBadgeSize)
-                    .clip(RoundedCornerShape(CornerRadius.Small))
-                    .background(
-                        Brush.linearGradient(
-                            listOf(
-                                glassColors.glassAccent,
-                                BrandColors.LogoGradientEnd
-                            )
-                        )
-                    )
-                    .border(
-                        StrokeWidth.Hairline,
-                        glassColors.glassBorder.copy(alpha = AlphaTokens.Disabled),
-                        RoundedCornerShape(CornerRadius.Small)
-                    ),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = "L",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = glassColors.onGlass
-                )
-            }
-
-            // Menu Hamburger
-            GlassTopBarIconButton(
-                icon = AppIcons.Menu,
-                contentDescription = "Main Menu",
-                onClick = onMenuClick,
-            )
-
-            // App Title & Workspace Breadcrumb
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-                modifier = Modifier.padding(start = Spacing.ExtraSmall)
-            ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = glassColors.onGlass,
-                )
-
-                if (workspaceName != null) {
-                    Text(
-                        text = "/",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = glassColors.onGlassMuted,
-                    )
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(CornerRadius.Compact))
-                            .background(glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Elevated))
-                            .border(StrokeWidth.Hairline, glassColors.glassBorder, RoundedCornerShape(CornerRadius.Compact))
-                            .padding(horizontal = Spacing.Compact, vertical = Spacing.ExtraExtraSmall)
-                    ) {
-                        Text(
-                            text = workspaceName,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = glassColors.onGlassSecondary,
-                        )
-                    }
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        // ==========================================
-        // 2. CENTER: Liquid Glass Search Capsule
-        // ==========================================
-        LiquidSearchCapsule(
-            onClick = onSearchClick,
-            backdrop = actualBackdrop,
-            modifier = Modifier.widthIn(min = ComponentSize.SearchCapsuleMinWidth, max = ComponentSize.SearchCapsuleMaxWidth)
+        GlassTopBarLeftSection(
+            title = title,
+            workspaceName = workspaceName,
+            onMenuClick = onMenuClick
         )
 
         Spacer(modifier = Modifier.weight(1f))
 
-        // ==========================================
-        // 3. RIGHT: Panel Toggles, Actions, Window Controls
-        // ==========================================
+        LiquidSearchCapsule(
+            onClick = onSearchClick,
+            backdrop = actualBackdrop,
+            modifier = Modifier.widthIn(
+                min = ComponentSize.SearchCapsuleMinWidth,
+                max = ComponentSize.SearchCapsuleMaxWidth
+            )
+        )
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        GlassTopBarRightSection(
+            isLeftPanelVisible = isLeftPanelVisible,
+            isMiddleDownPanelVisible = isMiddleDownPanelVisible,
+            isRightPanelVisible = isRightPanelVisible,
+            onClickLeftPanelIcon = onClickLeftPanelIcon,
+            onClickMiddleDownPanelIcon = onClickMiddleDownPanelIcon,
+            onClickRightPanelIcon = onClickRightPanelIcon,
+            onNotificationsClick = onNotificationsClick,
+            onSettingsClick = onSettingsClick,
+            effectiveMinimize = effectiveMinimize,
+            effectiveMaximize = effectiveMaximize,
+            effectiveClose = effectiveClose
+        )
+    }
+}
+
+@Composable
+private fun GlassTopBarLeftSection(
+    title: String,
+    workspaceName: String?,
+    onMenuClick: () -> Unit
+) {
+    val glassColors = GlassTheme.colors
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.Compact)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(ComponentSize.LogoBadgeSize)
+                .clip(RoundedCornerShape(CornerRadius.Small))
+                .background(
+                    Brush.linearGradient(
+                        listOf(
+                            glassColors.glassAccent,
+                            BrandColors.LogoGradientEnd
+                        )
+                    )
+                )
+                .border(
+                    StrokeWidth.Hairline,
+                    glassColors.glassBorder.copy(alpha = AlphaTokens.Disabled),
+                    RoundedCornerShape(CornerRadius.Small)
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = "L",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = glassColors.onGlass
+            )
+        }
+
+        GlassTopBarIconButton(
+            icon = AppIcons.Menu,
+            contentDescription = "Main Menu",
+            onClick = onMenuClick,
+        )
+
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-            modifier = Modifier.padding(end = Spacing.Compact)
+            modifier = Modifier.padding(start = Spacing.ExtraSmall)
         ) {
-            // Segmented Layout Mode Toggle
-            SegmentedPanelLayoutToggle(
-                isLeftPanelVisible = isLeftPanelVisible,
-                isMiddleDownPanelVisible = isMiddleDownPanelVisible,
-                isRightPanelVisible = isRightPanelVisible,
-                onClickLeftPanelIcon = onClickLeftPanelIcon,
-                onClickMiddleDownPanelIcon = onClickMiddleDownPanelIcon,
-                onClickRightPanelIcon = onClickRightPanelIcon,
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = glassColors.onGlass,
             )
 
-            // Notifications button
-            GlassTopBarIconButton(
-                icon = AppIcons.OutlinedNotifications,
-                contentDescription = "Notifications",
-                onClick = onNotificationsClick,
-            )
-
-            // Settings button
-            GlassTopBarIconButton(
-                icon = AppIcons.SettingsOutlined,
-                contentDescription = "Settings",
-                onClick = onSettingsClick,
-            )
-
-            // Divider before window controls
-            Box(
-                modifier = Modifier
-                    .padding(horizontal = Spacing.ExtraExtraSmall)
-                    .width(StrokeWidth.Standard)
-                    .height(ComponentSize.TopBarDividerHeight)
-                    .background(glassColors.glassBorder)
-            )
-
-            // Desktop Window Controls (Minimize, Maximize, Close)
-            DesktopWindowControls(
-                onMinimize = effectiveMinimize,
-                onMaximize = effectiveMaximize,
-                onClose = effectiveClose,
-            )
+            if (workspaceName != null) {
+                Text(
+                    text = "/",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = glassColors.onGlassMuted,
+                )
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(CornerRadius.Compact))
+                        .background(glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Elevated))
+                        .border(
+                            StrokeWidth.Hairline,
+                            glassColors.glassBorder,
+                            RoundedCornerShape(CornerRadius.Compact)
+                        )
+                        .padding(horizontal = Spacing.Compact, vertical = Spacing.ExtraExtraSmall)
+                ) {
+                    Text(
+                        text = workspaceName,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = glassColors.onGlassSecondary,
+                    )
+                }
+            }
         }
+    }
+}
+
+@Composable
+private fun GlassTopBarRightSection(
+    isLeftPanelVisible: Boolean,
+    isMiddleDownPanelVisible: Boolean,
+    isRightPanelVisible: Boolean,
+    onClickLeftPanelIcon: () -> Unit,
+    onClickMiddleDownPanelIcon: () -> Unit,
+    onClickRightPanelIcon: () -> Unit,
+    onNotificationsClick: () -> Unit,
+    onSettingsClick: () -> Unit,
+    effectiveMinimize: () -> Unit,
+    effectiveMaximize: () -> Unit,
+    effectiveClose: () -> Unit
+) {
+    val glassColors = GlassTheme.colors
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+        modifier = Modifier.padding(end = Spacing.Compact)
+    ) {
+        SegmentedPanelLayoutToggle(
+            isLeftPanelVisible = isLeftPanelVisible,
+            isMiddleDownPanelVisible = isMiddleDownPanelVisible,
+            isRightPanelVisible = isRightPanelVisible,
+            onClickLeftPanelIcon = onClickLeftPanelIcon,
+            onClickMiddleDownPanelIcon = onClickMiddleDownPanelIcon,
+            onClickRightPanelIcon = onClickRightPanelIcon,
+        )
+
+        GlassTopBarIconButton(
+            icon = AppIcons.OutlinedNotifications,
+            contentDescription = "Notifications",
+            onClick = onNotificationsClick,
+        )
+
+        GlassTopBarIconButton(
+            icon = AppIcons.SettingsOutlined,
+            contentDescription = "Settings",
+            onClick = onSettingsClick,
+        )
+
+        Box(
+            modifier = Modifier
+                .padding(horizontal = Spacing.ExtraExtraSmall)
+                .width(StrokeWidth.Standard)
+                .height(ComponentSize.TopBarDividerHeight)
+                .background(glassColors.glassBorder)
+        )
+
+        DesktopWindowControls(
+            onMinimize = effectiveMinimize,
+            onMaximize = effectiveMaximize,
+            onClose = effectiveClose,
+        )
     }
 }
 

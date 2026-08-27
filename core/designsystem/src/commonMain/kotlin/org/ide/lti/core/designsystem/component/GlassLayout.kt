@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -58,6 +59,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Shape
 import org.ide.lti.core.designsystem.theme.GlassLayoutColors
 import org.ide.lti.core.designsystem.theme.PreviewSampleColors
 import androidx.compose.ui.graphics.graphicsLayer
@@ -204,7 +206,6 @@ fun GlassLayout(
 ) {
     val density = LocalDensity.current
 
-
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -213,7 +214,7 @@ fun GlassLayout(
                 contentDescription = "LtiRomGui IDE Layout with resizable panels"
             }
     ) {
-//         Top Bar - Fixed height
+        // Top Bar - Fixed height
         Box(
             modifier = Modifier
                 .height(LtiLayoutDefaults.TopBarHeight)
@@ -229,17 +230,12 @@ fun GlassLayout(
                 .fillMaxWidth()
         ) {
             Row(modifier = Modifier.fillMaxSize()) {
-                // NO CACHING - create shape directly
-                // A literal capsule doesn't work here: these panels hold arbitrary-height
-                // content, and radius = min(width, height) / 2 turns them into giant blobs.
-                // Continuous/squircle corners at a normal radius instead.
                 val panelShape = ContinuousRoundedRectangle(appearance.panelCornerRadius)
 
-                // Phase 1: Conditional animation - instant during drag for 1:1 tracking, spring after for smoothness
                 val animatedLeftWeight by animateFloatAsState(
                     targetValue = state.leftWeight,
                     animationSpec = if (state.isDragging) {
-                        snap()  // Instant update during drag
+                        snap()
                     } else {
                         spring(
                             dampingRatio = Spring.DampingRatioLowBouncy,
@@ -252,7 +248,7 @@ fun GlassLayout(
                 val animatedRightWeight by animateFloatAsState(
                     targetValue = state.rightWeight,
                     animationSpec = if (state.isDragging) {
-                        snap()  // Instant update during drag
+                        snap()
                     } else {
                         spring(
                             dampingRatio = Spring.DampingRatioLowBouncy,
@@ -265,7 +261,7 @@ fun GlassLayout(
                 val animatedBottomWeight by animateFloatAsState(
                     targetValue = state.bottomWeight,
                     animationSpec = if (state.isDragging) {
-                        snap()  // Instant update during drag
+                        snap()
                     } else {
                         spring(
                             dampingRatio = Spring.DampingRatioLowBouncy,
@@ -275,167 +271,37 @@ fun GlassLayout(
                     label = "bottomWeight"
                 )
 
-                // Calculate actual widths based on weights with min/max constraints
-                // NO CACHING - compute directly
                 val availableWidth = with(density) { state.containerSize.width.toDp() }
                 val leftPanelWidth = (availableWidth * animatedLeftWeight)
                     .coerceIn(LtiLayoutDefaults.MinPanelWidth, LtiLayoutDefaults.MaxPanelWidth)
                 val rightPanelWidth = (availableWidth * animatedRightWeight)
                     .coerceIn(LtiLayoutDefaults.MinPanelWidth, LtiLayoutDefaults.MaxPanelWidth)
 
-                // ==================== LEFT PANEL ====================
-                AnimatedVisibility(
-                    visible = state.showLeft,
-                    enter = expandHorizontally(
-                        expandFrom = Alignment.Start,
-                        animationSpec = LtiLayoutAnimations.PanelExpandSpring
-                    ) + fadeIn(animationSpec = LtiLayoutAnimations.PanelFade),
-                    exit = shrinkHorizontally(
-                        shrinkTowards = Alignment.Start,
-                        animationSpec = LtiLayoutAnimations.PanelExpandSpring
-                    ) + fadeOut(animationSpec = LtiLayoutAnimations.PanelFade)
-                ) {
-                    Row {
-                        GlassCard(
-                            modifier = Modifier
-                                .width(leftPanelWidth)
-                                .fillMaxHeight()
-                                .padding(appearance.panelPadding)
-                                .semantics {
-                                    contentDescription = "Left panel: ${if (state.showLeft) "visible" else "hidden"}"
-                                },
-                            shape = panelShape,
-                            effects = LtiLayoutDefaults.EnhancedPanelEffects
-                        ) {
-                            leftPanel()
-                        }
+                GlassLeftPanel(
+                    state = state,
+                    width = leftPanelWidth,
+                    shape = panelShape,
+                    appearance = appearance,
+                    content = leftPanel
+                )
 
-                        GlassDragDivider(
-                            orientation = DividerOrientation.Vertical,
-                            appearance = appearance,
-                            onDragStart = { state.onLeftDragStart() },
-                            onDrag = { dragDelta ->
-                                // Keep everything in pixels for accurate 1:1 tracking
-                                val containerWidth = state.containerSize.width.toFloat()
-                                val weightDelta = dragDelta / containerWidth
-                                state.onLeftDrag(weightDelta)
-                            },
-                            onDragEnd = { state.onLeftDragEnd() }
-                        )
-                    }
-                }
+                GlassCenterColumn(
+                    state = state,
+                    density = density,
+                    animatedBottomWeight = animatedBottomWeight,
+                    shape = panelShape,
+                    appearance = appearance,
+                    mainContent = mainContent,
+                    bottomPanel = bottomPanel
+                )
 
-                // ==================== CENTER COLUMN (MAIN + BOTTOM) ====================
-                Column(modifier = Modifier.weight(1f)) {
-                    // Calculate actual heights based on weights with min/max constraints
-                    // NO CACHING - compute directly
-                    val totalFixedHeight = LtiLayoutDefaults.TopBarHeight + LtiLayoutDefaults.StatusBarHeight
-                    val availableHeight = with(density) {
-                        (state.containerSize.height - totalFixedHeight.toPx()).toDp()
-                    }
-                    val bottomPanelHeight = (availableHeight * animatedBottomWeight)
-                        .coerceIn(LtiLayoutDefaults.MinPanelHeight, LtiLayoutDefaults.MaxPanelHeight)
-
-                    // Main Content with Glass
-                    GlassCard(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth()
-                            .padding(appearance.panelPadding)
-                            .semantics {
-                                contentDescription = "Main content panel"
-                            },
-                        shape = panelShape,
-                        effects = LtiLayoutDefaults.EnhancedPanelEffects
-                    ) {
-                        mainContent()
-                    }
-
-                    // Bottom Panel
-                    AnimatedVisibility(
-                        visible = state.showBottom,
-                        enter = expandVertically(
-                            expandFrom = Alignment.Top,
-                            animationSpec = LtiLayoutAnimations.PanelExpandSpring
-                        ) + fadeIn(animationSpec = LtiLayoutAnimations.PanelFade),
-                        exit = shrinkVertically(
-                            shrinkTowards = Alignment.Top,
-                            animationSpec = LtiLayoutAnimations.PanelExpandSpring
-                        ) + fadeOut(animationSpec = LtiLayoutAnimations.PanelFade)
-                    ) {
-                        Column {
-                            GlassDragDivider(
-                                orientation = DividerOrientation.Horizontal,
-                                appearance = appearance,
-                                onDragStart = { state.onBottomDragStart() },
-                                onDrag = { dragDelta ->
-                                    // Keep everything in pixels for accurate 1:1 tracking
-                                    val totalFixedHeightPx = with(density) { totalFixedHeight.toPx() }
-                                    val containerHeight = (state.containerSize.height - totalFixedHeightPx).toFloat()
-                                    val weightDelta = -dragDelta / containerHeight
-                                    state.onBottomDrag(weightDelta)
-                                },
-                                onDragEnd = { state.onBottomDragEnd() }
-                            )
-
-                            GlassCard(
-                                modifier = Modifier
-                                    .height(bottomPanelHeight)
-                                    .fillMaxWidth()
-                                    .padding(appearance.panelPadding)
-                                    .semantics {
-                                        contentDescription = "Bottom panel: ${if (state.showBottom) "visible" else "hidden"}"
-                                    },
-                                shape = panelShape,
-                                effects = LtiLayoutDefaults.EnhancedPanelEffects
-                            ) {
-                                bottomPanel()
-                            }
-                        }
-                    }
-                }
-
-                // ==================== RIGHT PANEL ====================
-                AnimatedVisibility(
-                    visible = state.showRight,
-                    enter = expandHorizontally(
-                        expandFrom = Alignment.End,
-                        animationSpec = LtiLayoutAnimations.PanelExpandSpring
-                    ) + fadeIn(animationSpec = LtiLayoutAnimations.PanelFade),
-                    exit = shrinkHorizontally(
-                        shrinkTowards = Alignment.End,
-                        animationSpec = LtiLayoutAnimations.PanelExpandSpring
-                    ) + fadeOut(animationSpec = LtiLayoutAnimations.PanelFade)
-                ) {
-                    Row {
-                        GlassDragDivider(
-                            orientation = DividerOrientation.Vertical,
-                            appearance = appearance,
-                            onDragStart = { state.onRightDragStart() },
-                            onDrag = { dragDelta ->
-                                // Keep everything in pixels for accurate 1:1 tracking
-                                val containerWidth = state.containerSize.width.toFloat()
-                                val weightDelta = -dragDelta / containerWidth
-                                state.onRightDrag(weightDelta)
-                            },
-                            onDragEnd = { state.onRightDragEnd() }
-                        )
-
-                        GlassCard(
-                            modifier = Modifier
-                                .width(rightPanelWidth)
-                                .fillMaxHeight()
-                                .padding(appearance.panelPadding)
-                                .semantics {
-                                    contentDescription = "Right panel: ${if (state.showRight) "visible" else "hidden"}"
-                                },
-                            shape = panelShape,
-                            effects = LtiLayoutDefaults.EnhancedPanelEffects
-                        ) {
-                            rightPanel()
-                        }
-                    }
-                }
+                GlassRightPanel(
+                    state = state,
+                    width = rightPanelWidth,
+                    shape = panelShape,
+                    appearance = appearance,
+                    content = rightPanel
+                )
             }
         }
 
@@ -449,67 +315,246 @@ fun GlassLayout(
         }
     }
 
-    // ==================== GLASS TOGGLE BUTTONS OVERLAY ====================
     if (showToggleButtons) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.TopEnd
-        ) {
-            Row(
-                modifier = Modifier.padding(
-                    top = LtiLayoutDefaults.ToggleButtonTopPadding,
-                    end = LtiLayoutDefaults.ToggleButtonEndPadding
-                ),
-                horizontalArrangement = Arrangement.spacedBy(LtiLayoutDefaults.ToggleButtonSpacing)
+        GlassToggleButtonsOverlay(state = state)
+    }
+}
+
+@Composable
+private fun GlassLeftPanel(
+    state: LtiLayoutState,
+    width: Dp,
+    shape: Shape,
+    appearance: GlassLayoutAppearance,
+    content: @Composable () -> Unit
+) {
+    AnimatedVisibility(
+        visible = state.showLeft,
+        enter = expandHorizontally(
+            expandFrom = Alignment.Start,
+            animationSpec = LtiLayoutAnimations.PanelExpandSpring
+        ) + fadeIn(animationSpec = LtiLayoutAnimations.PanelFade),
+        exit = shrinkHorizontally(
+            shrinkTowards = Alignment.Start,
+            animationSpec = LtiLayoutAnimations.PanelExpandSpring
+        ) + fadeOut(animationSpec = LtiLayoutAnimations.PanelFade)
+    ) {
+        Row {
+            GlassCard(
+                modifier = Modifier
+                    .width(width)
+                    .fillMaxHeight()
+                    .padding(appearance.panelPadding)
+                    .semantics {
+                        val stateDesc = if (state.showLeft) "visible" else "hidden"
+                        contentDescription = "Left panel: $stateDesc"
+                    },
+                shape = shape,
+                effects = LtiLayoutDefaults.EnhancedPanelEffects
             ) {
-                // Left Panel Toggle
-                AnimatedToggleButton(
-                    onClick = { state.toggleLeft() },
-                    selected = state.showLeft
-                ) {
-                    Icon(
-                        imageVector = if (state.showLeft) Icons.Default.Close else Icons.Default.Menu,
-                        contentDescription = if (state.showLeft) {
-                            "Hide left panel"
-                        } else {
-                            "Show left panel"
-                        }
-                    )
-                }
+                content()
+            }
 
-                // Bottom Panel Toggle
-                AnimatedToggleButton(
-                    onClick = { state.toggleBottom() },
-                    selected = state.showBottom
-                ) {
-                    Icon(
-                        imageVector = if (state.showBottom) {
-                            Icons.Default.KeyboardArrowDown
-                        } else {
-                            Icons.Default.KeyboardArrowUp
+            GlassDragDivider(
+                orientation = DividerOrientation.Vertical,
+                appearance = appearance,
+                onDragStart = { state.onLeftDragStart() },
+                onDrag = { dragDelta ->
+                    val containerWidth = state.containerSize.width.toFloat()
+                    val weightDelta = dragDelta / containerWidth
+                    state.onLeftDrag(weightDelta)
+                },
+                onDragEnd = { state.onLeftDragEnd() }
+            )
+        }
+    }
+}
+
+@Composable
+private fun RowScope.GlassCenterColumn(
+    state: LtiLayoutState,
+    density: androidx.compose.ui.unit.Density,
+    animatedBottomWeight: Float,
+    shape: Shape,
+    appearance: GlassLayoutAppearance,
+    mainContent: @Composable () -> Unit,
+    bottomPanel: @Composable () -> Unit
+) {
+    Column(modifier = Modifier.weight(1f)) {
+        val totalFixedHeight = LtiLayoutDefaults.TopBarHeight + LtiLayoutDefaults.StatusBarHeight
+        val availableHeight = with(density) {
+            (state.containerSize.height - totalFixedHeight.toPx()).toDp()
+        }
+        val bottomPanelHeight = (availableHeight * animatedBottomWeight)
+            .coerceIn(LtiLayoutDefaults.MinPanelHeight, LtiLayoutDefaults.MaxPanelHeight)
+
+        GlassCard(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .padding(appearance.panelPadding)
+                .semantics {
+                    contentDescription = "Main content panel"
+                },
+            shape = shape,
+            effects = LtiLayoutDefaults.EnhancedPanelEffects
+        ) {
+            mainContent()
+        }
+
+        AnimatedVisibility(
+            visible = state.showBottom,
+            enter = expandVertically(
+                expandFrom = Alignment.Top,
+                animationSpec = LtiLayoutAnimations.PanelExpandSpring
+            ) + fadeIn(animationSpec = LtiLayoutAnimations.PanelFade),
+            exit = shrinkVertically(
+                shrinkTowards = Alignment.Top,
+                animationSpec = LtiLayoutAnimations.PanelExpandSpring
+            ) + fadeOut(animationSpec = LtiLayoutAnimations.PanelFade)
+        ) {
+            Column {
+                GlassDragDivider(
+                    orientation = DividerOrientation.Horizontal,
+                    appearance = appearance,
+                    onDragStart = { state.onBottomDragStart() },
+                    onDrag = { dragDelta ->
+                        val totalFixedHeightPx = with(density) { totalFixedHeight.toPx() }
+                        val containerHeight = (state.containerSize.height - totalFixedHeightPx).toFloat()
+                        val weightDelta = -dragDelta / containerHeight
+                        state.onBottomDrag(weightDelta)
+                    },
+                    onDragEnd = { state.onBottomDragEnd() }
+                )
+
+                GlassCard(
+                    modifier = Modifier
+                        .height(bottomPanelHeight)
+                        .fillMaxWidth()
+                        .padding(appearance.panelPadding)
+                        .semantics {
+                            val stateDesc = if (state.showBottom) "visible" else "hidden"
+                            contentDescription = "Bottom panel: $stateDesc"
                         },
-                        contentDescription = if (state.showBottom) {
-                            "Hide bottom panel"
-                        } else {
-                            "Show bottom panel"
-                        }
-                    )
-                }
-
-                // Right Panel Toggle
-                AnimatedToggleButton(
-                    onClick = { state.toggleRight() },
-                    selected = state.showRight
+                    shape = shape,
+                    effects = LtiLayoutDefaults.EnhancedPanelEffects
                 ) {
-                    Icon(
-                        imageVector = if (state.showRight) Icons.Default.Close else Icons.Default.Settings,
-                        contentDescription = if (state.showRight) {
-                            "Hide right panel"
-                        } else {
-                            "Show right panel"
-                        }
-                    )
+                    bottomPanel()
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun GlassRightPanel(
+    state: LtiLayoutState,
+    width: Dp,
+    shape: Shape,
+    appearance: GlassLayoutAppearance,
+    content: @Composable () -> Unit
+) {
+    AnimatedVisibility(
+        visible = state.showRight,
+        enter = expandHorizontally(
+            expandFrom = Alignment.End,
+            animationSpec = LtiLayoutAnimations.PanelExpandSpring
+        ) + fadeIn(animationSpec = LtiLayoutAnimations.PanelFade),
+        exit = shrinkHorizontally(
+            shrinkTowards = Alignment.End,
+            animationSpec = LtiLayoutAnimations.PanelExpandSpring
+        ) + fadeOut(animationSpec = LtiLayoutAnimations.PanelFade)
+    ) {
+        Row {
+            GlassDragDivider(
+                orientation = DividerOrientation.Vertical,
+                appearance = appearance,
+                onDragStart = { state.onRightDragStart() },
+                onDrag = { dragDelta ->
+                    val containerWidth = state.containerSize.width.toFloat()
+                    val weightDelta = -dragDelta / containerWidth
+                    state.onRightDrag(weightDelta)
+                },
+                onDragEnd = { state.onRightDragEnd() }
+            )
+
+            GlassCard(
+                modifier = Modifier
+                    .width(width)
+                    .fillMaxHeight()
+                    .padding(appearance.panelPadding)
+                    .semantics {
+                        val stateDesc = if (state.showRight) "visible" else "hidden"
+                        contentDescription = "Right panel: $stateDesc"
+                    },
+                shape = shape,
+                effects = LtiLayoutDefaults.EnhancedPanelEffects
+            ) {
+                content()
+            }
+        }
+    }
+}
+
+@Composable
+private fun GlassToggleButtonsOverlay(
+    state: LtiLayoutState
+) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.TopEnd
+    ) {
+        Row(
+            modifier = Modifier.padding(
+                top = LtiLayoutDefaults.ToggleButtonTopPadding,
+                end = LtiLayoutDefaults.ToggleButtonEndPadding
+            ),
+            horizontalArrangement = Arrangement.spacedBy(LtiLayoutDefaults.ToggleButtonSpacing)
+        ) {
+            AnimatedToggleButton(
+                onClick = { state.toggleLeft() },
+                selected = state.showLeft
+            ) {
+                Icon(
+                    imageVector = if (state.showLeft) Icons.Default.Close else Icons.Default.Menu,
+                    contentDescription = if (state.showLeft) {
+                        "Hide left panel"
+                    } else {
+                        "Show left panel"
+                    }
+                )
+            }
+
+            AnimatedToggleButton(
+                onClick = { state.toggleBottom() },
+                selected = state.showBottom
+            ) {
+                Icon(
+                    imageVector = if (state.showBottom) {
+                        Icons.Default.KeyboardArrowDown
+                    } else {
+                        Icons.Default.KeyboardArrowUp
+                    },
+                    contentDescription = if (state.showBottom) {
+                        "Hide bottom panel"
+                    } else {
+                        "Show bottom panel"
+                    }
+                )
+            }
+
+            AnimatedToggleButton(
+                onClick = { state.toggleRight() },
+                selected = state.showRight
+            ) {
+                Icon(
+                    imageVector = if (state.showRight) Icons.Default.Close else Icons.Default.Settings,
+                    contentDescription = if (state.showRight) {
+                        "Hide right panel"
+                    } else {
+                        "Show right panel"
+                    }
+                )
             }
         }
     }
@@ -733,15 +778,13 @@ private enum class DividerOrientation {
 private fun GlassDragDivider(
     orientation: DividerOrientation,
     appearance: GlassLayoutAppearance,
-    backdrop: com.kashif_e.backdrop.Backdrop? = null,
     onDragStart: () -> Unit,
     onDrag: (Float) -> Unit,
+    backdrop: com.kashif_e.backdrop.Backdrop? = null,
     onDragEnd: () -> Unit
 ) {
     var isHovered by remember { mutableStateOf(false) }
     var isDragging by remember { mutableStateOf(false) }
-
-    val isActive = isDragging || isHovered
 
     // Instant alpha during drag for 1:1 mouse tracking, smooth fade on hover
     val alpha by animateFloatAsState(
@@ -769,20 +812,7 @@ private fun GlassDragDivider(
         colors.glassAccent
     }
 
-    // Determine cursor and dimensions based on orientation
-    // Use fixed maximum size for line to prevent layout shifts
-    val (cursor, sizeModifier, lineModifier) = when (orientation) {
-        DividerOrientation.Vertical -> Triple(
-            PointerIcon(Cursor(Cursor.E_RESIZE_CURSOR)),
-            Modifier.width(appearance.dividerWidth).fillMaxHeight(),
-            Modifier.width(LtiLayoutDefaults.DividerLineWidthActive).fillMaxHeight()
-        )
-        DividerOrientation.Horizontal -> Triple(
-            PointerIcon(Cursor(Cursor.N_RESIZE_CURSOR)),
-            Modifier.height(appearance.dividerWidth).fillMaxWidth(),
-            Modifier.height(LtiLayoutDefaults.DividerLineWidthActive).fillMaxWidth()
-        )
-    }
+    val (cursor, sizeModifier, lineModifier) = getDividerModifiers(orientation, appearance)
 
     Box(
         modifier = sizeModifier
@@ -813,7 +843,8 @@ private fun GlassDragDivider(
                 }
             }
             .semantics {
-                contentDescription = "Resize divider: ${if (isDragging) "dragging" else if (isHovered) "hovered" else "idle"}"
+                val stateDesc = if (isDragging) "dragging" else if (isHovered) "hovered" else "idle"
+                contentDescription = "Resize divider: $stateDesc"
             },
         contentAlignment = Alignment.Center
     ) {
@@ -823,63 +854,87 @@ private fun GlassDragDivider(
                 .alpha(alpha)
                 .clip(ContinuousCapsule)
                 .then(
-                    if (isDragging) {
-                        // Fast path: solid color during drag for 60 FPS
-                        Modifier.background(activeColor)
-                    } else if (isHovered) {
-                        // Glass effects only on hover (not dragging)
-                        Modifier
-                            .drawBehind {
-                                // Subtle glow effect on hover
-                                drawRoundRect(
-                                    color = activeColor.copy(alpha = AlphaTokens.Glow),
-                                    cornerRadius = CornerRadius(ThemeCornerRadius.Pill.toPx()),
-                                    size = size.copy(
-                                        width = size.width + Spacing.Small.toPx(),
-                                        height = size.height + Spacing.Small.toPx()
-                                    ),
-                                    topLeft = androidx.compose.ui.geometry.Offset(
-                                        x = -Spacing.ExtraSmall.toPx(),
-                                        y = -Spacing.ExtraSmall.toPx()
-                                    )
-                                )
-                            }
-                            .drawBackdrop(
-                                backdrop = actualBackdrop,
-                                shape = { ContinuousCapsule },
-                                effects = {
-                                    // Subtle glass effects for hover
-                                    blur(4f.dp.toPx())
-                                    lens(2f.dp.toPx(), 4f.dp.toPx())
-                                },
-                                onDrawSurface = {
-                                    // Draw gradient for hover state
-                                    val gradient = when (orientation) {
-                                        DividerOrientation.Vertical -> Brush.verticalGradient(
-                                            colors = listOf(
-                                                activeColor.copy(alpha = AlphaTokens.Muted),
-                                                activeColor.copy(alpha = AlphaTokens.Prominent),
-                                                activeColor.copy(alpha = AlphaTokens.Muted)
-                                            )
-                                        )
-                                        DividerOrientation.Horizontal -> Brush.horizontalGradient(
-                                            colors = listOf(
-                                                activeColor.copy(alpha = AlphaTokens.Muted),
-                                                activeColor.copy(alpha = AlphaTokens.Prominent),
-                                                activeColor.copy(alpha = AlphaTokens.Muted)
-                                            )
-                                        )
-                                    }
-                                    drawRect(gradient)
-                                }
-                            )
-                    } else {
-                        // Normal state: simple solid color
-                        Modifier.background(normalColor)
-                    }
+                    getDividerBackgroundModifier(
+                        isDragging = isDragging,
+                        isHovered = isHovered,
+                        activeColor = activeColor,
+                        normalColor = normalColor,
+                        actualBackdrop = actualBackdrop,
+                        orientation = orientation
+                    )
                 )
         )
     }
+}
+
+private fun getDividerModifiers(
+    orientation: DividerOrientation,
+    appearance: GlassLayoutAppearance
+): Triple<PointerIcon, Modifier, Modifier> = when (orientation) {
+    DividerOrientation.Vertical -> Triple(
+        PointerIcon(Cursor(Cursor.E_RESIZE_CURSOR)),
+        Modifier.width(appearance.dividerWidth).fillMaxHeight(),
+        Modifier.width(LtiLayoutDefaults.DividerLineWidthActive).fillMaxHeight()
+    )
+    DividerOrientation.Horizontal -> Triple(
+        PointerIcon(Cursor(Cursor.N_RESIZE_CURSOR)),
+        Modifier.height(appearance.dividerWidth).fillMaxWidth(),
+        Modifier.height(LtiLayoutDefaults.DividerLineWidthActive).fillMaxWidth()
+    )
+}
+
+private fun getDividerBackgroundModifier(
+    isDragging: Boolean,
+    isHovered: Boolean,
+    activeColor: Color,
+    normalColor: Color,
+    actualBackdrop: com.kashif_e.backdrop.Backdrop,
+    orientation: DividerOrientation
+): Modifier = when {
+    isDragging -> Modifier.background(activeColor)
+    isHovered -> Modifier
+        .drawBehind {
+            drawRoundRect(
+                color = activeColor.copy(alpha = AlphaTokens.Glow),
+                cornerRadius = CornerRadius(ThemeCornerRadius.Pill.toPx()),
+                size = size.copy(
+                    width = size.width + Spacing.Small.toPx(),
+                    height = size.height + Spacing.Small.toPx()
+                ),
+                topLeft = Offset(
+                    x = -Spacing.ExtraSmall.toPx(),
+                    y = -Spacing.ExtraSmall.toPx()
+                )
+            )
+        }
+        .drawBackdrop(
+            backdrop = actualBackdrop,
+            shape = { ContinuousCapsule },
+            effects = {
+                blur(4f.dp.toPx())
+                lens(2f.dp.toPx(), 4f.dp.toPx())
+            },
+            onDrawSurface = {
+                val gradient = when (orientation) {
+                    DividerOrientation.Vertical -> Brush.verticalGradient(
+                        colors = listOf(
+                            activeColor.copy(alpha = AlphaTokens.Muted),
+                            activeColor.copy(alpha = AlphaTokens.Prominent),
+                            activeColor.copy(alpha = AlphaTokens.Muted)
+                        )
+                    )
+                    DividerOrientation.Horizontal -> Brush.horizontalGradient(
+                        colors = listOf(
+                            activeColor.copy(alpha = AlphaTokens.Muted),
+                            activeColor.copy(alpha = AlphaTokens.Prominent),
+                            activeColor.copy(alpha = AlphaTokens.Muted)
+                        )
+                    )
+                }
+                drawRect(gradient)
+            }
+        )
+    else -> Modifier.background(normalColor)
 }
 
 // ==================== PREVIEW ====================
@@ -1137,9 +1192,13 @@ fun rememberLtiLayoutState(
 }
 
 @Composable
-fun SamplePanel(title: String, color: Color) {
+fun SamplePanel(
+    title: String,
+    color: Color,
+    modifier: Modifier = Modifier,
+) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .background(color.copy(alpha = AlphaTokens.Glow))
             .padding(Spacing.Medium),
