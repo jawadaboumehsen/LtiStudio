@@ -9,6 +9,8 @@
  */
 package org.ide.lti.core.designsystem.component
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -24,14 +26,20 @@ import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.isSpecified
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -52,6 +60,7 @@ import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LensRefraction
+import org.ide.lti.core.designsystem.theme.MotionDuration
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.utils.InteractiveHighlight
@@ -98,6 +107,7 @@ object GlassButtonDefaults {
 /**
  * Glass button component with interactive lighting and GPU-accelerated backdrop effects.
  */
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun GlassButton(
     onClick: () -> Unit,
@@ -116,6 +126,7 @@ fun GlassButton(
     val glassColors = GlassTheme.colors
     val effectsEnabled = GlassTheme.effectsEnabled
     val actualBackdrop = backdrop ?: GlassTheme.backdrop
+    var isHovered by remember { mutableStateOf(false) }
 
     val animationScope = rememberCoroutineScope()
     val interactiveHighlight = if (interactive) {
@@ -126,9 +137,18 @@ fun GlassButton(
         null
     }
 
-    val (surfaceColor, tint, contentColor) = resolveButtonColors(variant, glassColors)
+    val (baseSurfaceColor, tint, contentColor) = resolveButtonColors(variant, glassColors)
     val finalContentColor = if (enabled) contentColor else glassColors.onGlassMuted
-    val borderColor = resolveButtonBorderColor(variant, glassColors)
+    val baseBorderColor = resolveButtonBorderColor(variant, glassColors)
+
+    val surfaceColor by animateColorAsState(
+        targetValue = resolveHoverSurfaceColor(isHovered, variant, baseSurfaceColor, glassColors),
+        animationSpec = tween(MotionDuration.Fast)
+    )
+    val borderColor by animateColorAsState(
+        targetValue = resolveHoverBorderColor(isHovered, baseBorderColor, glassColors),
+        animationSpec = tween(MotionDuration.Fast)
+    )
 
     Row(
         modifier = modifier
@@ -139,7 +159,7 @@ fun GlassButton(
                         backdrop = actualBackdrop,
                         shape = { shape },
                         effects = effects,
-                        highlight = { Highlight.Plain },
+                        highlight = { if (isHovered) Highlight.Ambient else Highlight.Plain },
                         layerBlock = if (interactiveHighlight != null) {
                             {
                                 applyButtonInteractiveTransform(interactiveHighlight)
@@ -165,6 +185,8 @@ fun GlassButton(
                     Modifier
                 }
             )
+            .onPointerEvent(PointerEventType.Enter) { isHovered = true }
+            .onPointerEvent(PointerEventType.Exit) { isHovered = false }
             .clickable(
                 enabled = enabled,
                 interactionSource = null,
@@ -227,6 +249,27 @@ private fun resolveButtonBorderColor(
     GlassButtonVariant.Secondary -> glassColors.glassBorder
     GlassButtonVariant.Standard -> glassColors.glassBorder
     GlassButtonVariant.Text -> Color.Transparent
+}
+
+private fun resolveHoverSurfaceColor(
+    isHovered: Boolean,
+    variant: GlassButtonVariant,
+    baseSurfaceColor: Color,
+    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme
+): Color = if (isHovered && variant != GlassButtonVariant.Text) {
+    glassColors.glassSurfaceElevated
+} else {
+    baseSurfaceColor
+}
+
+private fun resolveHoverBorderColor(
+    isHovered: Boolean,
+    baseBorderColor: Color,
+    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme
+): Color = if (isHovered && baseBorderColor != Color.Transparent) {
+    glassColors.glassBorderHighlight
+} else {
+    baseBorderColor
 }
 
 private fun androidx.compose.ui.graphics.GraphicsLayerScope.applyButtonInteractiveTransform(
