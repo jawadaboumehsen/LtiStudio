@@ -515,7 +515,6 @@ private fun SegmentedToggleButton(
             .size(ComponentSize.SegmentedButtonSize)
             .clip(buttonShape)
             .segmentedToggleSurface(
-                isActive = isActive,
                 isHovered = isHovered,
                 effectsEnabled = effectsEnabled,
                 backdrop = actualBackdrop,
@@ -563,7 +562,6 @@ private fun resolveSegmentedToggleIconTint(
 }
 
 private fun Modifier.segmentedToggleSurface(
-    isActive: Boolean,
     isHovered: Boolean,
     effectsEnabled: Boolean,
     backdrop: Backdrop?,
@@ -571,9 +569,6 @@ private fun Modifier.segmentedToggleSurface(
     surfaceColor: Color,
     tintColor: Color,
 ): Modifier {
-    val isHighlighted = isActive || isHovered
-    if (!isHighlighted) return this
-
     return if (effectsEnabled && backdrop != null) {
         this.drawBackdrop(
             backdrop = backdrop,
@@ -623,7 +618,6 @@ private fun GlassTopBarIconButton(
             .size(ComponentSize.TopBarButtonSize)
             .clip(buttonShape)
             .segmentedToggleSurface(
-                isActive = false,
                 isHovered = isHovered,
                 effectsEnabled = effectsEnabled,
                 backdrop = actualBackdrop,

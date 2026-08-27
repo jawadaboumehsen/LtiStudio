@@ -107,7 +107,6 @@ fun GlassTab(
         modifier = modifier
             .clip(tabShape)
             .tabGlassSurface(
-                isSelected = selected,
                 isHovered = isHovered,
                 effectsEnabled = effectsEnabled,
                 backdrop = actualBackdrop,
@@ -147,7 +146,6 @@ fun GlassTabItem(
             .height(ComponentSize.TabItemHeight)
             .clip(tabShape)
             .tabGlassSurface(
-                isSelected = selected,
                 isHovered = isHovered,
                 effectsEnabled = effectsEnabled,
                 backdrop = actualBackdrop,
@@ -304,7 +302,6 @@ fun GlassTabBar(
 }
 
 private fun Modifier.tabGlassSurface(
-    isSelected: Boolean,
     isHovered: Boolean,
     effectsEnabled: Boolean,
     backdrop: Backdrop?,
@@ -312,9 +309,6 @@ private fun Modifier.tabGlassSurface(
     surfaceColor: Color,
     tintColor: Color,
 ): Modifier {
-    val isHighlighted = isSelected || isHovered
-    if (!isHighlighted) return this
-
     return if (effectsEnabled && backdrop != null) {
         this.drawBackdrop(
             backdrop = backdrop,
