@@ -146,5 +146,6 @@ object ComponentSize {
  */
 object Elevation {
     val None: Dp = 0.dp
+    val Raised: Dp = 4.dp
     val Panel: Dp = 8.dp
 }

@@ -45,6 +45,7 @@ import com.kashif_e.backdrop.shadow.InnerShadow
 import com.kashif_e.backdrop.shadow.Shadow
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.Elevation
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.ToggleColors
@@ -179,14 +180,14 @@ fun GlassToggle(
                     },
                     shadow = {
                         Shadow(
-                            radius = Spacing.ExtraSmall,
+                            radius = Elevation.Raised,
                             color = glassColors.glassShadow.copy(alpha = AlphaTokens.Faint)
                         )
                     },
                     innerShadow = {
                         val progress = dampedDragAnimation.pressProgress
                         InnerShadow(
-                            radius = Spacing.ExtraSmall * progress,
+                            radius = Elevation.Raised * progress,
                             alpha = progress
                         )
                     },

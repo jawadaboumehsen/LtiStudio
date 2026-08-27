@@ -67,6 +67,7 @@ import com.kashif_e.backdrop.shadow.InnerShadow
 import com.kashif_e.backdrop.shadow.Shadow
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.Elevation
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.MotionSpring
 import org.ide.lti.core.designsystem.theme.MotionThreshold
@@ -309,7 +310,7 @@ fun GlassBottomTabs(
                     shadow = { Shadow(alpha = drag.pressProgress) },
                     innerShadow = {
                         val p = drag.pressProgress
-                        InnerShadow(radius = Spacing.Small * p, alpha = p)
+                        InnerShadow(radius = Elevation.Panel * p, alpha = p)
                     },
                     layerBlock = {
                         scaleX = drag.scaleX
