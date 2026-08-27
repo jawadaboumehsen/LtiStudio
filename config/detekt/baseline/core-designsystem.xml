@@ -1,0 +1,71 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues></ManuallySuppressedIssues>
+  <CurrentIssues>
+    <ID>ComposableParamOrder:GlassDialog.kt$GlassDialog</ID>
+    <ID>ComposableParamOrder:GlassLayout.kt$GlassDragDivider</ID>
+    <ID>ComposableParamOrder:GlassPerformanceMonitor.kt$GlassPerformanceMonitor</ID>
+    <ID>ComposableParamOrder:GlassStatusBar.kt$GlassStatusBar</ID>
+    <ID>ComposableParamOrder:GlassTabBar.kt$GlassTabBar</ID>
+    <ID>ComposableParamOrder:GlassTabBar.kt$GlassTabItem</ID>
+    <ID>ComposableParamOrder:GlassTopBar.kt$GlassTopBar</ID>
+    <ID>CyclomaticComplexMethod:GlassButton.kt$@Composable fun GlassButton( onClick: () -&gt; Unit, modifier: Modifier = Modifier, enabled: Boolean = true, shape: Shape = ContinuousCapsule, variant: GlassButtonVariant = GlassButtonVariant.Standard, effects: BackdropEffectScope.() -&gt; Unit = GlassButtonEffects, backdrop: Backdrop? = null, minWidth: Dp = GlassButtonDefaults.MinWidth, minHeight: Dp = GlassButtonDefaults.MinHeight, contentPadding: PaddingValues = GlassButtonDefaults.ContentPadding, interactive: Boolean = true, content: @Composable RowScope.() -&gt; Unit )</ID>
+    <ID>CyclomaticComplexMethod:GlassLayout.kt$@OptIn(ExperimentalComposeUiApi::class) @Composable fun GlassLayout( state: LtiLayoutState, leftPanel: @Composable () -&gt; Unit, mainContent: @Composable () -&gt; Unit, bottomPanel: @Composable () -&gt; Unit, rightPanel: @Composable () -&gt; Unit, modifier: Modifier = Modifier, topBar: @Composable () -&gt; Unit = { GlassTopBar( isLeftPanelVisible = state.showLeft, isRightPanelVisible = state.showRight, isMiddleDownPanelVisible = state.showBottom, onClickLeftPanelIcon = { state.toggleLeft() }, onClickRightPanelIcon = { state.toggleRight() }, onClickMiddleDownPanelIcon = { state.toggleBottom() }, ) }, statusBar: @Composable () -&gt; Unit = { GlassStatusBar() }, showToggleButtons: Boolean = false, appearance: GlassLayoutAppearance = GlassLayoutAppearance.Default )</ID>
+    <ID>CyclomaticComplexMethod:GlassLayout.kt$@OptIn(ExperimentalComposeUiApi::class) @Composable private fun GlassDragDivider( orientation: DividerOrientation, appearance: GlassLayoutAppearance, backdrop: com.kashif_e.backdrop.Backdrop? = null, onDragStart: () -&gt; Unit, onDrag: (Float) -&gt; Unit, onDragEnd: () -&gt; Unit )</ID>
+    <ID>FunctionNaming:GlassDialog.kt$fun GlassDialogEffects(isLightTheme: Boolean): BackdropEffectScope.() -&gt; Unit</ID>
+    <ID>LongMethod:GlassBottomTabs.kt$@Composable fun GlassBottomTabs( selectedTabIndex: () -&gt; Int, tabsCount: Int, backdrop: Backdrop, modifier: Modifier = Modifier, onTabSelected: ((index: Int) -&gt; Unit)? = null, tabs: @Composable RowScope.() -&gt; Unit )</ID>
+    <ID>LongMethod:GlassLayout.kt$@OptIn(ExperimentalComposeUiApi::class) @Composable fun GlassLayout( state: LtiLayoutState, leftPanel: @Composable () -&gt; Unit, mainContent: @Composable () -&gt; Unit, bottomPanel: @Composable () -&gt; Unit, rightPanel: @Composable () -&gt; Unit, modifier: Modifier = Modifier, topBar: @Composable () -&gt; Unit = { GlassTopBar( isLeftPanelVisible = state.showLeft, isRightPanelVisible = state.showRight, isMiddleDownPanelVisible = state.showBottom, onClickLeftPanelIcon = { state.toggleLeft() }, onClickRightPanelIcon = { state.toggleRight() }, onClickMiddleDownPanelIcon = { state.toggleBottom() }, ) }, statusBar: @Composable () -&gt; Unit = { GlassStatusBar() }, showToggleButtons: Boolean = false, appearance: GlassLayoutAppearance = GlassLayoutAppearance.Default )</ID>
+    <ID>LongMethod:GlassPerformanceMonitor.kt$@Composable private fun PerformanceOverlay( metrics: GlassPerformanceMetrics, modifier: Modifier = Modifier )</ID>
+    <ID>LongMethod:GlassTopBar.kt$@Composable fun GlassTopBar( title: String = "LtiRom", workspaceName: String? = "Workspace", onMenuClick: () -&gt; Unit = {}, onSearchClick: () -&gt; Unit = {}, onNotificationsClick: () -&gt; Unit = {}, onSettingsClick: () -&gt; Unit = {}, onWindowMinimize: (() -&gt; Unit)? = null, onWindowMaximize: (() -&gt; Unit)? = null, onWindowClose: (() -&gt; Unit)? = null, isLeftPanelVisible: Boolean = true, isRightPanelVisible: Boolean = true, isMiddleDownPanelVisible: Boolean = true, onClickLeftPanelIcon: () -&gt; Unit = {}, onClickMiddleDownPanelIcon: () -&gt; Unit = {}, onClickRightPanelIcon: () -&gt; Unit = {}, backdrop: Backdrop? = null, modifier: Modifier = Modifier, )</ID>
+    <ID>LongParameterList:GlassTextField.kt$( value: String, onValueChange: (String) -&gt; Unit, modifier: Modifier = Modifier, enabled: Boolean = true, readOnly: Boolean = false, textStyle: TextStyle = LocalTextStyle.current, label: String? = null, placeholder: String? = null, helperText: String? = null, errorText: String? = null, leadingIcon: (@Composable () -&gt; Unit)? = null, trailingIcon: (@Composable () -&gt; Unit)? = null, visualTransformation: VisualTransformation = VisualTransformation.None, keyboardOptions: KeyboardOptions = KeyboardOptions.Default, keyboardActions: KeyboardActions = KeyboardActions.Default, singleLine: Boolean = true, maxLines: Int = 1, effects: BackdropEffectScope.() -&gt; Unit = GlassTextFieldEffects, backdrop: Backdrop? = null, interactionSource: MutableInteractionSource = remember { MutableInteractionSource() } )</ID>
+    <ID>MatchingDeclarationName:Alpha.kt$AlphaTokens</ID>
+    <ID>MatchingDeclarationName:GlassStatusBar.kt$LineEnding</ID>
+    <ID>MatchingDeclarationName:GlassTopBar.kt$WindowControlActions</ID>
+    <ID>MaxLineLength:GlassBottomSheet.kt$shape: Shape = ContinuousRoundedRectangle(topStart = CornerRadius.Medium, topEnd = CornerRadius.Medium, bottomEnd = CornerRadius.None, bottomStart = CornerRadius.None)</ID>
+    <ID>MaxLineLength:GlassButton.kt$translationX = (maxOffset * tanh((initialDerivative * offset.x / maxOffset).toDouble())).toFloat()</ID>
+    <ID>MaxLineLength:GlassButton.kt$translationY = (maxOffset * tanh((initialDerivative * offset.y / maxOffset).toDouble())).toFloat()</ID>
+    <ID>MaxLineLength:GlassLayout.kt$contentDescription = "Bottom panel: ${if (state.showBottom) "visible" else "hidden"}"</ID>
+    <ID>MaxLineLength:GlassLayout.kt$contentDescription = "Resize divider: ${if (isDragging) "dragging" else if (isHovered) "hovered" else "idle"}"</ID>
+    <ID>MaxLineLength:GlassModifiers.kt$val resolvedSurfaceColor = if (surfaceColor.isSpecified) surfaceColor else GlassTheme.colors.glassShadow.copy(alpha = AlphaTokens.Scrim)</ID>
+    <ID>MaxLineLength:GlassPerformanceMonitor.kt$color = if (metrics.droppedFrames &gt; 0) PerformanceMonitorColors.Bad else PerformanceMonitorColors.Good</ID>
+    <ID>MaxLineLength:GlassTopBar.kt$.</ID>
+    <ID>MaxLineLength:GlassTopBar.kt$modifier = Modifier.widthIn(min = ComponentSize.SearchCapsuleMinWidth, max = ComponentSize.SearchCapsuleMaxWidth)</ID>
+    <ID>ModifierComposable:GlassModifiers.kt$glassBackground</ID>
+    <ID>ModifierComposable:GlassModifiers.kt$glassBorder</ID>
+    <ID>ModifierComposable:GlassModifiers.kt$glassEffect</ID>
+    <ID>ModifierComposable:GlassModifiers.kt$glassScrim</ID>
+    <ID>ModifierComposable:ModifierExt.kt$tabNavigation</ID>
+    <ID>ModifierMissing:GlassBottomSheet.kt$GlassBottomSheetExample</ID>
+    <ID>ModifierMissing:GlassDialog.kt$GlassLoadingDialog</ID>
+    <ID>ModifierMissing:GlassLayout.kt$SamplePanel</ID>
+    <ID>ModifierMissing:GlassPerformanceMonitor.kt$GlassPerformanceMonitorExample</ID>
+    <ID>MultipleEmitters:GlassBottomSheet.kt$GlassBottomSheetExample</ID>
+    <ID>NewLineAtEndOfFile:Color.kt$org.ide.lti.core.designsystem.theme.Color.kt</ID>
+    <ID>NewLineAtEndOfFile:DampedDragAnimation.kt$.DampedDragAnimation.kt</ID>
+    <ID>NewLineAtEndOfFile:DragGestureInspector.kt$.DragGestureInspector.kt</ID>
+    <ID>NewLineAtEndOfFile:GlassButton.kt$org.ide.lti.core.designsystem.component.GlassButton.kt</ID>
+    <ID>NewLineAtEndOfFile:GlassDialog.kt$org.ide.lti.core.designsystem.component.GlassDialog.kt</ID>
+    <ID>NewLineAtEndOfFile:GlassLayout.kt$org.ide.lti.core.designsystem.component.GlassLayout.kt</ID>
+    <ID>NewLineAtEndOfFile:GlassModifiers.kt$org.ide.lti.core.designsystem.component.GlassModifiers.kt</ID>
+    <ID>NewLineAtEndOfFile:GlassPanel.kt$org.ide.lti.core.designsystem.component.GlassPanel.kt</ID>
+    <ID>NewLineAtEndOfFile:GlassStatusBar.kt$org.ide.lti.core.designsystem.component.GlassStatusBar.kt</ID>
+    <ID>NewLineAtEndOfFile:GlassTabBar.kt$org.ide.lti.core.designsystem.component.GlassTabBar.kt</ID>
+    <ID>NewLineAtEndOfFile:GlassTextField.kt$org.ide.lti.core.designsystem.component.GlassTextField.kt</ID>
+    <ID>NewLineAtEndOfFile:GlassTopBar.kt$org.ide.lti.core.designsystem.component.GlassTopBar.kt</ID>
+    <ID>NewLineAtEndOfFile:InteractiveHighlight.kt$org.ide.lti.core.designsystem.utils.InteractiveHighlight.kt</ID>
+    <ID>NewLineAtEndOfFile:Theme.kt$org.ide.lti.core.designsystem.theme.Theme.kt</ID>
+    <ID>ReturnCount:DragGestureInspector.kt$private suspend inline fun AwaitPointerEventScope.awaitDragOrUp( pointerId: PointerId ): PointerInputChange?</ID>
+    <ID>ReturnCount:DragGestureInspector.kt$private suspend inline fun AwaitPointerEventScope.drag( pointerId: PointerId, onDrag: (PointerInputChange) -&gt; Unit ): PointerInputChange?</ID>
+    <ID>UnusedParameter:GlassButton.kt$selected: Boolean = checked ?: false</ID>
+    <ID>UnusedParameter:GlassTextField.kt$autoFocus: Boolean = false</ID>
+    <ID>UnusedPrivateProperty:GlassBottomTabs.kt$val isLightTheme = !isSystemInDarkTheme()</ID>
+    <ID>UnusedPrivateProperty:GlassLayout.kt$val isActive = isDragging || isHovered</ID>
+    <ID>UnusedPrivateProperty:GlassTextField.kt$val animatedBorderWidth by animateDpAsState( targetValue = if (isFocused) StrokeWidth.Focused else StrokeWidth.Standard, animationSpec = tween(MotionDuration.Fast) )</ID>
+    <ID>WildcardImport:GlassBottomSheet.kt$import androidx.compose.animation.core.*</ID>
+    <ID>WildcardImport:GlassBottomSheet.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:GlassBottomSheet.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:GlassModifiers.kt$import com.kashif_e.backdrop.effects.*</ID>
+    <ID>WildcardImport:GlassPerformanceMonitor.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:GlassPerformanceMonitor.kt$import androidx.compose.runtime.*</ID>
+  </CurrentIssues>
+</SmellBaseline>

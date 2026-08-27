@@ -1,0 +1,10 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues></ManuallySuppressedIssues>
+  <CurrentIssues>
+    <ID>ComposableParamOrder:LtiSharedApp.kt$LtiSharedApp</ID>
+    <ID>FunctionNaming:LtiSharedApp.kt$@Composable fun LtiSharedApp( networkMonitor: NetworkMonitor = koinInject(), timeZoneMonitor: TimeZoneMonitor = koinInject(), modifier: Modifier = Modifier, )</ID>
+    <ID>FunctionNaming:LtiSharedApp.kt$@Composable private fun SharedApp( networkMonitor: NetworkMonitor, timeZoneMonitor: TimeZoneMonitor, modifier: Modifier = Modifier, )</ID>
+    <ID>NewLineAtEndOfFile:LtiSharedApp.kt$.LtiSharedApp.kt</ID>
+  </CurrentIssues>
+</SmellBaseline>
