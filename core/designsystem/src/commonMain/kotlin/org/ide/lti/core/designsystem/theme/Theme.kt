@@ -42,6 +42,13 @@ val LocalGlassEffectsEnabled = staticCompositionLocalOf {
 }
 
 /**
+ * Composition local for whether reduced motion is requested.
+ */
+val LocalReducedMotion = staticCompositionLocalOf {
+    false
+}
+
+/**
  * Accessor object for glass theme values anywhere in the composable hierarchy.
  */
 object GlassTheme {
@@ -54,6 +61,11 @@ object GlassTheme {
         @Composable
         @ReadOnlyComposable
         get() = LocalGlassEffectsEnabled.current
+
+    val reducedMotion: Boolean
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalReducedMotion.current
 
     val backdrop: Backdrop?
         @Composable
@@ -71,6 +83,7 @@ fun LtiTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     glassColors: GlassColorScheme? = null,
     effectsEnabled: Boolean = true,
+    reducedMotion: Boolean = false,
     materialColorScheme: ColorScheme? = null,
     sharedBackdrop: Backdrop? = null,
     content: @Composable () -> Unit,
@@ -93,6 +106,7 @@ fun LtiTheme(
             LocalGlassColors provides resolvedGlassColors,
             LocalGlassBackdrop provides backdrop,
             LocalGlassEffectsEnabled provides effectsEnabled,
+            LocalReducedMotion provides reducedMotion,
             content = content
         )
     }

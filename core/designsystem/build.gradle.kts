@@ -59,3 +59,15 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>().con
         freeCompilerArgs.add("-Xskip-metadata-version-check")
     }
 }
+
+tasks.withType<Test>().configureEach {
+    testLogging {
+        events("passed", "skipped", "failed", "standardOut", "standardError")
+        showStandardStreams = true
+    }
+}
+
+tasks.register("test") {
+    dependsOn("desktopTest")
+}
+

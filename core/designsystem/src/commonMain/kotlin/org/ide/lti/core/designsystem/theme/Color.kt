@@ -38,7 +38,8 @@ data class GlassColorScheme(
     val onGlassMuted: Color,
     val glassHighlight: Color,
     val glassShadow: Color,
-    val glassAccent: Color
+    val glassAccent: Color,
+    val focusRing: Color,
 ) {
     companion object {
         fun defaultDark(): GlassColorScheme = DarkGlassColorScheme
@@ -68,6 +69,7 @@ fun dynamicGlassColorScheme(
             glassHighlight = colorScheme.primary.copy(alpha = 0.40f),
             glassShadow = colorScheme.scrim.copy(alpha = 0.60f),
             glassAccent = colorScheme.primary,
+            focusRing = colorScheme.primary,
         )
     } else {
         GlassColorScheme(
@@ -83,6 +85,7 @@ fun dynamicGlassColorScheme(
             glassHighlight = colorScheme.primary.copy(alpha = 0.30f),
             glassShadow = colorScheme.scrim.copy(alpha = 0.15f),
             glassAccent = colorScheme.primary,
+            focusRing = colorScheme.primary,
         )
     }
 }
