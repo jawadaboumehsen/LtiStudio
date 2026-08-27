@@ -7,7 +7,7 @@
  *
  * See See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
  */
-package org.ide.lti.core.data.repository.workspace
+package org.ide.lti.core.domain.repository.workspace
 
 import kotlinx.coroutines.flow.Flow
 import org.ide.lti.core.model.workspace.RecentProject

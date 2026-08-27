@@ -10,7 +10,7 @@
 package org.ide.lti.core.data.di
 
 import org.ide.lti.core.data.repository.filesystem.DesktopFileSystemRepository
-import org.ide.lti.core.data.repository.filesystem.FileSystemRepository
+import org.ide.lti.core.domain.repository.filesystem.FileSystemRepository
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module

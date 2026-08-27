@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import org.ide.lti.core.data.repository.filesystem.FileSystemRepository
+import org.ide.lti.core.domain.repository.filesystem.FileSystemRepository
 import org.ide.lti.core.domain.workspace.WorkspaceManager
 import org.ide.lti.core.model.filesystem.FileNode
 

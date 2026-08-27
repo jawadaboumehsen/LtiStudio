@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import org.ide.lti.core.data.repository.filesystem.FileSystemRepository
+import org.ide.lti.core.domain.repository.filesystem.FileSystemRepository
 
 data class EditorFile(
     val path: String,

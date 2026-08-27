@@ -9,10 +9,10 @@
  */
 package org.ide.lti.core.data.di
 
-import org.ide.lti.core.data.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.data.repository.workspace.WorkspaceRepositoryImpl
 import org.ide.lti.core.data.utils.NetworkMonitor
 import org.ide.lti.core.data.utils.TimeZoneMonitor
+import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module

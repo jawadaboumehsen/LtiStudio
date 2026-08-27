@@ -17,6 +17,8 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import okio.FileSystem
 import okio.Path.Companion.toPath
+import org.ide.lti.core.domain.repository.filesystem.FileSystemEvent
+import org.ide.lti.core.domain.repository.filesystem.FileSystemRepository
 import org.ide.lti.core.model.filesystem.FileNode
 import org.ide.lti.core.model.filesystem.FileType
 import java.nio.file.FileSystems
