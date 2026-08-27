@@ -23,10 +23,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.unit.dp
 import com.kashif_e.backdrop.effects.blur
 import com.kyant.capsule.ContinuousCapsule
 import kotlinx.coroutines.delay
+import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.PerformanceMonitorColors
@@ -253,7 +253,7 @@ private fun PerformanceOverlay(
         modifier = modifier.width(ComponentSize.PerformanceMonitorWidth),
         contentPadding = Spacing.SmallMedium,
         // Lean stack (blur only) — this overlay redraws every frame, so keep it cheap.
-        effects = { blur(2.dp.toPx()) }
+        effects = { blur(BackdropBlur.Subtle.toPx()) }
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
             // Title

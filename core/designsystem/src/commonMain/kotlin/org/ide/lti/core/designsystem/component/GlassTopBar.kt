@@ -54,7 +54,6 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.drawBackdrop
@@ -64,11 +63,13 @@ import com.kashif_e.backdrop.effects.vibrancy
 import com.kashif_e.backdrop.highlight.Highlight
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.BrandColors
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
+import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.MotionDuration
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -127,8 +128,8 @@ fun GlassTopBar(
                         shape = { RoundedCornerShape(CornerRadius.None) },
                         effects = {
                             vibrancy()
-                            blur(4.dp.toPx())
-                            lens(4.dp.toPx(), 8.dp.toPx())
+                            blur(BackdropBlur.TopBar.toPx())
+                            lens(LensRefraction.TopBar.height.toPx(), LensRefraction.TopBar.amount.toPx())
                         },
                         highlight = { Highlight.Plain },
                         onDrawSurface = {
@@ -360,8 +361,8 @@ private fun LiquidSearchCapsule(
                         shape = { RoundedCornerShape(CornerRadius.Pill) },
                         effects = {
                             vibrancy()
-                            blur(2.dp.toPx())
-                            lens(4.dp.toPx(), 8.dp.toPx())
+                            blur(BackdropBlur.SearchCapsule.toPx())
+                            lens(LensRefraction.TopBar.height.toPx(), LensRefraction.TopBar.amount.toPx())
                         },
                         highlight = { if (isHovered) Highlight.Ambient else Highlight.Plain },
                         onDrawSurface = {

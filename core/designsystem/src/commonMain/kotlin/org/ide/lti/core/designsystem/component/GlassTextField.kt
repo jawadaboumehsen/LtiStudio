@@ -57,7 +57,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kyant.capsule.ContinuousRoundedRectangle
 import com.kashif_e.backdrop.Backdrop
@@ -66,9 +65,11 @@ import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
 import org.ide.lti.core.designsystem.icon.AppIcons
+import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.MotionDuration
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
@@ -81,8 +82,8 @@ import org.ide.lti.core.designsystem.utils.tabNavigation
  */
 val GlassTextFieldEffects: BackdropEffectScope.() -> Unit = {
     vibrancy()
-    blur(2.dp.toPx())
-    lens(8.dp.toPx(), 16.dp.toPx())
+    blur(BackdropBlur.TextField.toPx())
+    lens(LensRefraction.TextField.height.toPx(), LensRefraction.TextField.amount.toPx())
 }
 
 /**
@@ -319,7 +320,7 @@ fun GlassOtpTextField(
                                 .padding(Spacing.ExtraSmall)
                                 .glassEffect(
                                     shape = ContinuousRoundedRectangle(CornerRadius.Small),
-                                    effects = { vibrancy(); blur(2.dp.toPx()) },
+                                    effects = { vibrancy(); blur(BackdropBlur.TextField.toPx()) },
                                     tint = if (filled) GlassTheme.colors.glassTint else Color.Unspecified,
                                 )
                                 .glassBorder(

@@ -38,7 +38,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import com.kyant.capsule.ContinuousCapsule
 import com.kyant.capsule.ContinuousRoundedRectangle
@@ -47,9 +46,12 @@ import com.kashif_e.backdrop.BackdropEffectScope
 import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.colorControls
 import com.kashif_e.backdrop.effects.lens
+import org.ide.lti.core.designsystem.theme.BackdropBlur
+import org.ide.lti.core.designsystem.theme.BackdropSaturation
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.MotionDuration
 import org.ide.lti.core.designsystem.theme.Spacing
 
@@ -58,9 +60,13 @@ import org.ide.lti.core.designsystem.theme.Spacing
  * for sheets and modal overlays.
  */
 val GlassBottomSheetEffects: BackdropEffectScope.() -> Unit = {
-    colorControls(saturation = 1.5f)
-    blur(16.dp.toPx())
-    lens(24.dp.toPx(), 40.dp.toPx(), depthEffect = true)
+    colorControls(saturation = BackdropSaturation.Vibrant)
+    blur(BackdropBlur.BottomSheet.toPx())
+    lens(
+        LensRefraction.BottomSheet.height.toPx(),
+        LensRefraction.BottomSheet.amount.toPx(),
+        depthEffect = true
+    )
 }
 
 /**

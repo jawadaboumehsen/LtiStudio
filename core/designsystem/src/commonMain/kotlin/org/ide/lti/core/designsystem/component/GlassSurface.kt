@@ -16,7 +16,6 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.isSpecified
-import androidx.compose.ui.unit.dp
 import com.kyant.capsule.ContinuousRoundedRectangle
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.BackdropEffectScope
@@ -26,8 +25,10 @@ import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
 import com.kashif_e.backdrop.highlight.Highlight
+import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.LensRefraction
 
 /**
  * Default glass effect stack ("Standard" look): vibrancy + moderate blur + lens refraction.
@@ -35,8 +36,8 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
  */
 val StandardGlassEffects: BackdropEffectScope.() -> Unit = {
     vibrancy()
-    blur(4.dp.toPx())
-    lens(16.dp.toPx(), 32.dp.toPx())
+    blur(BackdropBlur.Standard.toPx())
+    lens(LensRefraction.Surface.height.toPx(), LensRefraction.Surface.amount.toPx())
 }
 
 /**

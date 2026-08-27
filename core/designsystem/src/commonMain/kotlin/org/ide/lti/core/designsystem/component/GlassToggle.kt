@@ -26,7 +26,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastCoerceIn
 import androidx.compose.ui.util.lerp
 
@@ -44,9 +43,11 @@ import com.kashif_e.backdrop.highlight.Highlight
 import com.kashif_e.backdrop.shadow.InnerShadow
 import com.kashif_e.backdrop.shadow.Shadow
 import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.Elevation
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.ToggleColors
 import org.ide.lti.core.designsystem.utils.DampedDragAnimation
@@ -163,10 +164,10 @@ fun GlassToggle(
                     shape = { ContinuousCapsule },
                     effects = {
                         val progress = dampedDragAnimation.pressProgress
-                        blur(8f.dp.toPx() * (1f - progress))
+                        blur(BackdropBlur.Toggle.toPx() * (1f - progress))
                         lens(
-                            5f.dp.toPx() * progress,
-                            10f.dp.toPx() * progress,
+                            LensRefraction.Toggle.height.toPx() * progress,
+                            LensRefraction.Toggle.amount.toPx() * progress,
                             chromaticAberration = true
                         )
                     },

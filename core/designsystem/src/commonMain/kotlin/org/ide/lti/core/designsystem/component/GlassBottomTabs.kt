@@ -48,7 +48,6 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastCoerceIn
 import androidx.compose.ui.util.fastRoundToInt
 import androidx.compose.ui.util.lerp
@@ -65,9 +64,11 @@ import com.kashif_e.backdrop.highlight.Highlight
 import com.kashif_e.backdrop.shadow.InnerShadow
 import com.kashif_e.backdrop.shadow.Shadow
 import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.Elevation
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.MotionSpring
 import org.ide.lti.core.designsystem.theme.MotionThreshold
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -273,8 +274,11 @@ private fun GlassBottomTabBarBackground(
                 shape = { ContinuousCapsule },
                 effects = {
                     vibrancy()
-                    blur(8f.dp.toPx())
-                    lens(24f.dp.toPx(), 24f.dp.toPx())
+                    blur(BackdropBlur.BottomTabs.toPx())
+                    lens(
+                        LensRefraction.BottomTabs.height.toPx(),
+                        LensRefraction.BottomTabs.amount.toPx()
+                    )
                 },
                 layerBlock = {
                     val p = drag.pressProgress
@@ -319,8 +323,11 @@ private fun GlassBottomTabTintedRow(
                     effects = {
                         val p = drag.pressProgress
                         vibrancy()
-                        blur(8f.dp.toPx())
-                        lens(24f.dp.toPx() * p, 24f.dp.toPx() * p)
+                        blur(BackdropBlur.BottomTabs.toPx())
+                        lens(
+                            LensRefraction.BottomTabs.height.toPx() * p,
+                            LensRefraction.BottomTabs.amount.toPx() * p
+                        )
                     },
                     highlight = {
                         val p = drag.pressProgress
@@ -366,7 +373,11 @@ private fun GlassBottomTabSpotlight(
                 shape = { ContinuousCapsule },
                 effects = {
                     val p = drag.pressProgress
-                    lens(10f.dp.toPx() * p, 14f.dp.toPx() * p, chromaticAberration = true)
+                    lens(
+                        LensRefraction.TabSpotlight.height.toPx() * p,
+                        LensRefraction.TabSpotlight.amount.toPx() * p,
+                        chromaticAberration = true
+                    )
                 },
                 highlight = {
                     val p = drag.pressProgress

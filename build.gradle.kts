@@ -71,10 +71,6 @@ tasks.register("verifyDesignSystemGuardrails") {
             File(root, "lti-desktop/src"),
             File(root, "catalog/src"),
         )
-        val effectFnMarkers = listOf(
-            "blur(", "lens(", "vibrancy(", "colorControls(", "exposureAdjustment(",
-            "gammaAdjustment(", "opacity(", "colorFilter(",
-        )
 
         colorAlphaScanRoots.forEach { scanRoot ->
             ktFiles(scanRoot).forEach { file ->
@@ -110,24 +106,10 @@ tasks.register("verifyDesignSystemGuardrails") {
             ktFiles(scanRoot).forEach { file ->
                 val path = file.absolutePath.replace('\\', '/')
                 if (path.contains("/theme/")) return@forEach
-                // Tracks whether we're still inside an effect-tuning call (e.g. a multi-line
-                // `lens(\n    10f.dp.toPx(),\n    14f.dp.toPx(),\n)`) whose opening line matched
-                // an effectFnMarkers entry but whose arguments spill onto later lines.
-                var effectCallDepth = 0
                 file.readLines().forEachIndexed { idx, rawLine ->
                     if (isCommentOrImport(rawLine)) return@forEachIndexed
                     val line = rawLine.trim()
-                    val netParens = line.count { it == '(' } - line.count { it == ')' }
-                    val hasEffectMarker = effectFnMarkers.any { line.contains(it) }
-                    val inEffectContext = hasEffectMarker || effectCallDepth > 0
-
-                    if (hasEffectMarker && effectCallDepth == 0) {
-                        effectCallDepth = maxOf(netParens, 0)
-                    } else if (effectCallDepth > 0) {
-                        effectCallDepth = maxOf(effectCallDepth + netParens, 0)
-                    }
-
-                    if (Regex("""\d+f?\.dp\b""").containsMatchIn(line) && !inEffectContext) {
+                    if (Regex("""\d+f?\.dp\b""").containsMatchIn(line)) {
                         violations += "${file.relativeTo(root).path}:${idx + 1}: raw dp literal " +
                             "bypasses theme/Dimens.kt. [$line]"
                     }

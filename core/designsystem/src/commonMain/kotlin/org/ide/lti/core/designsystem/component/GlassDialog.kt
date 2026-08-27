@@ -32,7 +32,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.kyant.capsule.ContinuousRoundedRectangle
@@ -43,8 +42,12 @@ import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.colorControls
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.highlight.Highlight
+import org.ide.lti.core.designsystem.theme.BackdropBlur
+import org.ide.lti.core.designsystem.theme.BackdropBrightness
+import org.ide.lti.core.designsystem.theme.BackdropSaturation
 import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.Spacing
 
 /**
@@ -55,11 +58,15 @@ import org.ide.lti.core.designsystem.theme.Spacing
  */
 fun glassDialogEffects(isLightTheme: Boolean): BackdropEffectScope.() -> Unit = {
     colorControls(
-        brightness = if (isLightTheme) 0.2f else 0f,
-        saturation = 1.5f
+        brightness = if (isLightTheme) BackdropBrightness.DialogLight else BackdropBrightness.DialogDark,
+        saturation = BackdropSaturation.Vibrant
     )
-    blur(if (isLightTheme) 16.dp.toPx() else 8.dp.toPx())
-    lens(24.dp.toPx(), 48.dp.toPx(), depthEffect = true)
+    blur(if (isLightTheme) BackdropBlur.DialogLight.toPx() else BackdropBlur.DialogDark.toPx())
+    lens(
+        LensRefraction.Dialog.height.toPx(),
+        LensRefraction.Dialog.amount.toPx(),
+        depthEffect = true
+    )
 }
 
 /**

@@ -78,7 +78,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import java.awt.Cursor
 import com.kashif_e.backdrop.BackdropEffectScope
 import com.kyant.capsule.ContinuousCapsule
@@ -89,10 +88,12 @@ import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
 import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius as ThemeCornerRadius
 import org.ide.lti.core.designsystem.theme.Elevation
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.MotionDuration
 import org.ide.lti.core.designsystem.theme.MotionEasing
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -641,8 +642,8 @@ object LtiLayoutDefaults {
     /** Enhanced glass effect stack for professional panel appearance (subtle, per skill's Toolbar/Subtle guidance). */
     val EnhancedPanelEffects: BackdropEffectScope.() -> Unit = {
         vibrancy()
-        blur(2.dp.toPx())
-        lens(8.dp.toPx(), 16.dp.toPx())
+        blur(BackdropBlur.Subtle.toPx())
+        lens(LensRefraction.TextField.height.toPx(), LensRefraction.TextField.amount.toPx())
     }
 
     /**
@@ -650,7 +651,7 @@ object LtiLayoutDefaults {
      * Reduces GPU load during continuous resizing for smooth 60 FPS.
      */
     val DragOptimizedEffects: BackdropEffectScope.() -> Unit = {
-        blur(2.dp.toPx())
+        blur(BackdropBlur.Subtle.toPx())
     }
 
     /** Elevation for panel shadows */
@@ -911,8 +912,8 @@ private fun getDividerBackgroundModifier(
             backdrop = actualBackdrop,
             shape = { ContinuousCapsule },
             effects = {
-                blur(4f.dp.toPx())
-                lens(2f.dp.toPx(), 4f.dp.toPx())
+                blur(BackdropBlur.Minimap.toPx())
+                lens(LensRefraction.Minimap.height.toPx(), LensRefraction.Minimap.amount.toPx())
             },
             onDrawSurface = {
                 val gradient = when (orientation) {

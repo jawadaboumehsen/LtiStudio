@@ -33,16 +33,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import com.kyant.capsule.ContinuousRoundedRectangle
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.BackdropEffectScope
 import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
+import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.IconSize
+import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.Spacing
 
 /**
@@ -51,8 +52,8 @@ import org.ide.lti.core.designsystem.theme.Spacing
  */
 val GlassPanelEffects: BackdropEffectScope.() -> Unit = {
     vibrancy()
-    blur(6.dp.toPx())
-    lens(12.dp.toPx(), 24.dp.toPx())
+    blur(BackdropBlur.Panel.toPx())
+    lens(LensRefraction.Panel.height.toPx(), LensRefraction.Panel.amount.toPx())
 }
 
 /**

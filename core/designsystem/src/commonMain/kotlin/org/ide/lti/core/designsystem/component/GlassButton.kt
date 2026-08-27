@@ -35,7 +35,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastCoerceAtMost
 import androidx.compose.ui.util.lerp
@@ -48,8 +47,10 @@ import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
 import com.kashif_e.backdrop.highlight.Highlight
 import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.utils.InteractiveHighlight
 import kotlin.math.abs
@@ -64,8 +65,8 @@ import kotlin.math.tanh
  */
 val GlassButtonEffects: BackdropEffectScope.() -> Unit = {
     vibrancy()
-    blur(2.dp.toPx())
-    lens(12.dp.toPx(), 24.dp.toPx())
+    blur(BackdropBlur.Button.toPx())
+    lens(LensRefraction.Button.height.toPx(), LensRefraction.Button.amount.toPx())
 }
 
 /**

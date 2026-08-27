@@ -30,6 +30,7 @@ import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.vibrancy
 import com.kashif_e.backdrop.highlight.Highlight
 import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -218,7 +219,7 @@ fun Modifier.glassInteractive(
  */
 fun Modifier.glassScrim(
     backdrop: Backdrop? = null,
-    blurRadius: Dp = Spacing.Medium,
+    blurRadius: Dp = BackdropBlur.Scrim,
     surfaceColor: Color = Color.Unspecified
 ): Modifier = composed {
     val actualBackdrop = backdrop ?: GlassTheme.backdrop ?: rememberLayerBackdrop()

@@ -22,11 +22,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.unit.dp
 import com.kashif_e.backdrop.BackdropEffectScope
 import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.vibrancy
 import org.ide.lti.core.designsystem.icon.AppIcons
+import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.Elevation
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -38,7 +38,7 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
  */
 private val GlassDockedBarEffects: BackdropEffectScope.() -> Unit = {
     vibrancy()
-    blur(6.dp.toPx())
+    blur(BackdropBlur.Panel.toPx())
 }
 
 /**

@@ -15,7 +15,6 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastCoerceAtMost
 import androidx.compose.ui.util.lerp
 import com.kyant.capsule.ContinuousCapsule
@@ -26,6 +25,8 @@ import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
 import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.BackdropBlur
+import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.utils.InteractiveHighlight
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -60,8 +61,8 @@ fun GlassIcon(
                 shape = { ContinuousCapsule },
                 effects = {
                     vibrancy()
-                    blur(2f.dp.toPx())
-                    lens(12f.dp.toPx(), 24f.dp.toPx())
+                    blur(BackdropBlur.Button.toPx())
+                    lens(LensRefraction.Button.height.toPx(), LensRefraction.Button.amount.toPx())
                 },
                 layerBlock = if (isInteractive) {
                     {
