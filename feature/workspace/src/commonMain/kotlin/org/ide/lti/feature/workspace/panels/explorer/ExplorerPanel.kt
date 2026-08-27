@@ -32,12 +32,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import org.ide.lti.core.designsystem.component.GlassButton
 import org.ide.lti.core.designsystem.component.GlassPanelContainer
 import org.ide.lti.core.designsystem.component.GlassPanelHeader
 import org.ide.lti.core.designsystem.icon.AppIcons
+import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.IconSize
+import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.model.filesystem.FileType
 import org.ide.lti.core.ui.GlassFileTree
 import org.koin.compose.viewmodel.koinViewModel
@@ -59,13 +62,13 @@ fun ExplorerPanel(
                 actions = {
                     IconButton(
                         onClick = { viewModel.refresh() },
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(ComponentSize.PanelHeaderAction)
                     ) {
                         Icon(
                             imageVector = AppIcons.Refresh,
                             contentDescription = "Refresh",
                             tint = glassColors.onGlassSecondary,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(IconSize.Medium)
                         )
                     }
                 },
@@ -80,7 +83,7 @@ fun ExplorerPanel(
                 ) {
                     CircularProgressIndicator(
                         color = glassColors.glassAccent,
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(ComponentSize.SpinnerSize)
                     )
                 }
             }
@@ -103,7 +106,7 @@ fun ExplorerPanel(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(16.dp),
+                        .padding(Spacing.Medium),
                     contentAlignment = Alignment.Center,
                 ) {
                     Column(
@@ -113,20 +116,20 @@ fun ExplorerPanel(
                         IconButton(
                             onClick = { viewModel.openFolder() },
                             modifier = Modifier
-                                .size(56.dp)
+                                .size(ComponentSize.EmptyStateBadgeSize)
                                 .clip(CircleShape)
                                 .background(glassColors.glassSurfaceElevated)
-                                .border(0.5.dp, glassColors.glassBorder, CircleShape)
+                                .border(StrokeWidth.Hairline, glassColors.glassBorder, CircleShape)
                         ) {
                             Icon(
                                 imageVector = AppIcons.FolderOpen,
                                 contentDescription = "Open Folder",
                                 tint = glassColors.glassAccent,
-                                modifier = Modifier.size(28.dp)
+                                modifier = Modifier.size(IconSize.ExtraLarge)
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(Spacing.Medium))
 
                         Text(
                             text = "No Workspace Selected",
@@ -135,13 +138,13 @@ fun ExplorerPanel(
                             fontWeight = FontWeight.SemiBold
                         )
 
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(Spacing.Small))
 
                         Text(
                             text = "Open a directory to explore files",
                             color = glassColors.onGlassMuted,
                             style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(bottom = 16.dp)
+                            modifier = Modifier.padding(bottom = Spacing.Medium)
                         )
 
                         GlassButton(

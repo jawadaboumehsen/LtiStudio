@@ -27,7 +27,9 @@ object Spacing {
     val SmallMedium: Dp = 12.dp
     val Fourteen: Dp = 14.dp
     val Medium: Dp = 16.dp
+    val Large: Dp = 20.dp
     val ExtraLarge: Dp = 24.dp
+    val ExtraExtraLarge: Dp = 32.dp
 
     // Semantic aliases
     val DialogPadding: Dp = 24.dp
@@ -43,6 +45,7 @@ object CornerRadius {
     val ExtraSmall: Dp = 4.dp
     val Compact: Dp = 6.dp
     val Small: Dp = 6.dp
+    val MediumSmall: Dp = 8.dp
     val Medium: Dp = 12.dp
     val ExtraLarge: Dp = 28.dp
     val Pill: Dp = 50.dp
@@ -63,6 +66,10 @@ object IconSize {
     val Search: Dp = 14.dp
     val Segmented: Dp = 15.dp
     val Medium: Dp = 16.dp
+    val Large: Dp = 24.dp
+    val ExtraLarge: Dp = 28.dp
+    val ActionCard: Dp = 32.dp
+    val Avatar: Dp = 80.dp
 }
 
 /**
@@ -124,6 +131,14 @@ object ComponentSize {
     val MaxRevealDp: Dp = 75.dp
     val VelocityThreshold: Dp = 100.dp
     val DefaultVelocityThreshold: Dp = 10.dp
+    val SetupSidebarWidth: Dp = 240.dp
+    val ActionCardHeight: Dp = 120.dp
+    val EmptyStateBadgeSize: Dp = 56.dp
+    val SpinnerSize: Dp = 28.dp
+    val ShortcutHelpWidth: Dp = 320.dp
+    val StatusDotSize: Dp = 8.dp
+    val ActiveIndicatorWidth: Dp = 64.dp
+    val ActiveIndicatorHeight: Dp = 32.dp
 }
 
 /**

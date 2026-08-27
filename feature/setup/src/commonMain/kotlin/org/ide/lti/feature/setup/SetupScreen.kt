@@ -37,11 +37,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import org.ide.lti.core.designsystem.component.GlassButton
 import org.ide.lti.core.designsystem.component.GlassCard
 import org.ide.lti.core.designsystem.component.GlassPanel
+import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.IconSize
+import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.core.model.workspace.Workspace
 import org.koin.compose.viewmodel.koinViewModel
@@ -58,8 +61,8 @@ fun SetupScreen(
     Row(modifier = modifier.fillMaxSize()) {
         // Left Sidebar with glass
         GlassPanel(
-            width = 240.dp,
-            shape = RoundedCornerShape(0.dp),
+            width = ComponentSize.SetupSidebarWidth,
+            shape = RoundedCornerShape(CornerRadius.None),
             modifier = Modifier.fillMaxHeight(),
         ) {
             SetupSidebar(
@@ -74,7 +77,7 @@ fun SetupScreen(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight()
-                .padding(32.dp),
+                .padding(Spacing.ExtraExtraLarge),
         ) {
             Text(
                 text = "Workspaces",
@@ -83,12 +86,12 @@ fun SetupScreen(
                 color = GlassTheme.colors.onGlass,
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(Spacing.ExtraLarge))
 
             // Action Cards
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
             ) {
                 ActionCard(
                     title = "Open...",
@@ -110,7 +113,7 @@ fun SetupScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(Spacing.ExtraExtraLarge))
 
             // Recent Projects
             if (recentProjects.isNotEmpty()) {
@@ -121,10 +124,10 @@ fun SetupScreen(
                     color = GlassTheme.colors.onGlass,
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(Spacing.Medium))
 
                 LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.Small),
                 ) {
                     items(recentProjects) { project ->
                         RecentProjectCard(
@@ -145,7 +148,7 @@ private fun SetupSidebar(
     onNavigateToConnections: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.padding(8.dp)) {
+    Column(modifier = modifier.padding(Spacing.PanelPadding)) {
         SidebarItem(
             label = "Workspaces",
             isSelected = selectedTab == "workspaces",
@@ -157,15 +160,15 @@ private fun SetupSidebar(
             onClick = onNavigateToConnections,
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(Spacing.Medium))
         HorizontalDivider(color = GlassTheme.colors.glassBorder)
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(Spacing.Small))
 
         Text(
             text = "COLLABORATION",
             style = MaterialTheme.typography.labelSmall,
             color = GlassTheme.colors.onGlassSecondary,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            modifier = Modifier.padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Small),
         )
 
         SidebarItem(
@@ -208,9 +211,9 @@ private fun ActionCard(
 ) {
     GlassCard(
         modifier = modifier
-            .height(120.dp)
+            .height(ComponentSize.ActionCardHeight)
             .clickable(onClick = onClick),
-        contentPadding = 16.dp,
+        contentPadding = Spacing.Medium,
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -220,10 +223,10 @@ private fun ActionCard(
             Icon(
                 imageVector = icon,
                 contentDescription = title,
-                modifier = Modifier.size(32.dp),
+                modifier = Modifier.size(IconSize.ActionCard),
                 tint = GlassTheme.colors.glassAccent,
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(Spacing.Small))
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodyMedium,
@@ -243,7 +246,7 @@ private fun RecentProjectCard(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        contentPadding = 16.dp,
+        contentPadding = Spacing.Medium,
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -252,10 +255,10 @@ private fun RecentProjectCard(
             Icon(
                 imageVector = Icons.Default.Folder,
                 contentDescription = null,
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(IconSize.Large),
                 tint = GlassTheme.colors.glassAccent,
             )
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(Spacing.SmallMedium))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = project.name,

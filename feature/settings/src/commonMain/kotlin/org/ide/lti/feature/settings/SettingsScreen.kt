@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2025 Mifos Initiative
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -34,11 +34,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import org.ide.lti.core.designsystem.component.GlassCard
 import org.ide.lti.core.designsystem.component.GlassIconButton
 import org.ide.lti.core.designsystem.component.GlassIconToggleButton
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.Spacing
 
 @Composable
 internal fun SettingsScreen(
@@ -56,7 +56,7 @@ internal fun SettingsScreenContent(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.padding(24.dp)) {
+    Column(modifier = modifier.padding(Spacing.ExtraLarge)) {
         // Header with back button
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -64,7 +64,7 @@ internal fun SettingsScreenContent(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 GlassIconButton(onClick = onBackClick) {
@@ -80,14 +80,14 @@ internal fun SettingsScreenContent(
             }
         }
 
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(Spacing.ExtraLarge))
 
         // Settings sections
         GlassCard(
-            contentPadding = 16.dp,
+            contentPadding = Spacing.Medium,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
                 Text(
                     "Appearance",
                     style = MaterialTheme.typography.titleMedium,
@@ -109,13 +109,13 @@ internal fun SettingsScreenContent(
             }
         }
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(Spacing.Medium))
 
         GlassCard(
-            contentPadding = 16.dp,
+            contentPadding = Spacing.Medium,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
                 Text(
                     "Notifications",
                     style = MaterialTheme.typography.titleMedium,
@@ -148,7 +148,7 @@ private fun SettingsItem(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.weight(1f),
         ) {

@@ -94,12 +94,14 @@ tasks.register("verifyDesignSystemGuardrails") {
             }
         }
 
-        // ---- 1b. Dimension bypass scan: core:designsystem + core:ui only for now. The rest of the ----
-        // ---- repo (feature/*, lti-shared, lti-desktop) still has pre-existing raw dp literals     ----
-        // ---- that haven't been centralized yet - widen this once that cleanup lands.              ----
+        // ---- 1b. Dimension bypass scan: everywhere UI code lives, excluding the theme/ package ----
+        // ---- itself. Dimensions are fully centralized, so this applies repo-wide.              ----
         val dimensionScanRoots = listOf(
             File(root, "core/designsystem/src"),
             File(root, "core/ui/src"),
+            File(root, "feature"),
+            File(root, "lti-shared/src"),
+            File(root, "lti-desktop/src"),
         )
 
         dimensionScanRoots.forEach { scanRoot ->

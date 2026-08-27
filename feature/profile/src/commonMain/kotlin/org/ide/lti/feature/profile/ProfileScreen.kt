@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2025 Mifos Initiative
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -29,10 +29,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import org.ide.lti.core.designsystem.component.GlassButton
 import org.ide.lti.core.designsystem.component.GlassCard
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.IconSize
+import org.ide.lti.core.designsystem.theme.Spacing
 
 @Composable
 internal fun ProfileScreen(modifier: Modifier = Modifier) {
@@ -48,19 +49,19 @@ internal fun ProfileScreenContent(modifier: Modifier) {
         contentAlignment = Alignment.Center,
     ) {
         GlassCard(
-            contentPadding = 32.dp,
-            modifier = Modifier.padding(24.dp),
+            contentPadding = Spacing.ExtraExtraLarge,
+            modifier = Modifier.padding(Spacing.ExtraLarge),
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(20.dp),
+                verticalArrangement = Arrangement.spacedBy(Spacing.Large),
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 // Profile icon
                 Icon(
                     Icons.Default.Person,
                     contentDescription = "Profile",
-                    modifier = Modifier.size(80.dp),
+                    modifier = Modifier.size(IconSize.Avatar),
                     tint = GlassTheme.colors.glassAccent,
                 )
 
@@ -71,7 +72,7 @@ internal fun ProfileScreenContent(modifier: Modifier) {
                     color = GlassTheme.colors.onGlass,
                 )
 
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(Spacing.Small))
 
                 // Profile info
                 ProfileInfo(
@@ -86,7 +87,7 @@ internal fun ProfileScreenContent(modifier: Modifier) {
                     value = "developer@lti.com",
                 )
 
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(Spacing.Medium))
 
                 GlassButton(
                     onClick = { /* Edit profile */ },
@@ -108,7 +109,7 @@ private fun ProfileInfo(
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(

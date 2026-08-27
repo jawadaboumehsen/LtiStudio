@@ -36,18 +36,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import org.ide.lti.core.designsystem.component.GlassButton
 import org.ide.lti.core.designsystem.component.GlassPanelContainer
 import org.ide.lti.core.designsystem.component.GlassPanelHeader
 import org.ide.lti.core.designsystem.component.GlassPanelHeaderAction
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.IconSize
+import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.model.ai.MessageRole
 import org.ide.lti.core.ui.GlassChatInput
 import org.ide.lti.core.ui.GlassMessageBubble
-import org.ide.lti.core.ui.LtiMessageRole
 import org.ide.lti.core.ui.GlassSmallChip
+import org.ide.lti.core.ui.LtiMessageRole
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -121,7 +123,7 @@ private fun EmptyAIChatView(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(Spacing.Medium),
     ) {
         Box(
             modifier = Modifier
@@ -131,7 +133,7 @@ private fun EmptyAIChatView(
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
             ) {
                 Text(
                     text = "AI Assistant",
@@ -145,7 +147,7 @@ private fun EmptyAIChatView(
                     color = GlassTheme.colors.onGlassSecondary,
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(Spacing.Small))
 
                 // Quick action suggestions
                 Text(
@@ -156,9 +158,9 @@ private fun EmptyAIChatView(
                 )
 
                 FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small, Alignment.CenterHorizontally),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+                    modifier = Modifier.padding(horizontal = Spacing.Medium),
                 ) {
                     quickActions.forEach { action ->
                         GlassSmallChip(
@@ -193,7 +195,7 @@ private fun ChatView(
         }
     }
 
-    Column(modifier = modifier.padding(16.dp)) {
+    Column(modifier = modifier.padding(Spacing.Medium)) {
         // Messages list
         LazyColumn(
             state = listState,
@@ -211,18 +213,18 @@ private fun ChatView(
                     },
                     timestamp = message.timestamp,
                 )
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(Spacing.SmallMedium))
             }
 
             if (isGenerating) {
                 item {
                     Row(
-                        modifier = Modifier.padding(vertical = 8.dp),
+                        modifier = Modifier.padding(vertical = Spacing.Small),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         CircularProgressIndicator(
-                            modifier = Modifier.padding(end = 8.dp).width(16.dp).height(16.dp),
-                            strokeWidth = 2.dp,
+                            modifier = Modifier.padding(end = Spacing.Small).width(IconSize.Medium).height(IconSize.Medium),
+                            strokeWidth = StrokeWidth.Focused,
                         )
                         Text(
                             text = "Generating...",
@@ -234,9 +236,9 @@ private fun ChatView(
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(Spacing.Small))
         HorizontalDivider()
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(Spacing.Small))
 
         // Input field
         GlassChatInput(
@@ -261,7 +263,7 @@ private fun ErrorView(
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodyMedium,
             )
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(Spacing.Medium))
             GlassButton(onClick = onRetry) {
                 Text("Retry")
             }

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2025 Mifos Initiative
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -32,11 +32,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.ide.lti.core.designsystem.component.GlassPanelContainer
 import org.ide.lti.core.designsystem.component.GlassPanelHeader
+import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.Spacing
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -72,15 +73,15 @@ private fun EmptyTerminalView() {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(Spacing.Medium),
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small)
             ) {
                 Box(
                     modifier = Modifier
-                        .size(8.dp)
+                        .size(ComponentSize.StatusDotSize)
                         .clip(CircleShape)
                         .background(glassColors.glassAccent)
                 )
@@ -92,7 +93,7 @@ private fun EmptyTerminalView() {
                 )
             }
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(Spacing.ExtraSmall))
 
             Text(
                 text = "$ lti --status ready",

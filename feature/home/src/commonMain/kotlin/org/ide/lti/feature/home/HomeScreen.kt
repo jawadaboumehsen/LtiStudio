@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2025 Mifos Initiative
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -22,10 +22,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import org.ide.lti.core.designsystem.component.GlassButton
 import org.ide.lti.core.designsystem.component.GlassCard
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.Spacing
 
 @Composable
 internal fun HomeScreen(modifier: Modifier = Modifier) {
@@ -41,12 +41,12 @@ internal fun HomeScreenContent(modifier: Modifier) {
         contentAlignment = Alignment.Center,
     ) {
         GlassCard(
-            contentPadding = 32.dp,
-            modifier = Modifier.padding(24.dp),
+            contentPadding = Spacing.ExtraExtraLarge,
+            modifier = Modifier.padding(Spacing.ExtraLarge),
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
             ) {
                 Text(
                     text = "Welcome to LtiRomGui",
@@ -61,7 +61,7 @@ internal fun HomeScreenContent(modifier: Modifier) {
                     color = GlassTheme.colors.onGlassSecondary,
                 )
 
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(Spacing.Small))
 
                 GlassButton(onClick = { /* Navigate to workspace */ }) {
                     Text("Open Workspace")

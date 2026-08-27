@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2024 Mifos Initiative
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -43,7 +43,6 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -54,6 +53,8 @@ import org.ide.lti.core.designsystem.component.GlassNavigationBarItem
 import org.ide.lti.core.designsystem.component.GlassNavigationRail
 import org.ide.lti.core.designsystem.component.GlassNavigationRailItem
 import org.ide.lti.core.designsystem.icon.AppIcons
+import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.feature.settings.navigateToNotification
 import org.ide.lti.feature.settings.navigateToSettings
 import org.ide.lti.shared.generated.resources.Res
@@ -168,7 +169,7 @@ private fun LtiBar(
                 when (destination) {
                     TopLevelDestination.HOME -> {
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
                         ) {
                             IconButton(
                                 onClick = onNavigateToNotification,
@@ -289,15 +290,15 @@ private fun Modifier.notificationDot(): Modifier =
             drawContent()
             drawCircle(
                 tertiaryColor,
-                radius = 5.dp.toPx(),
+                radius = Spacing.Five.toPx(),
                 // This is based on the dimensions of the NavigationBar's "indicator pill";
                 // however, its parameters are private, so we must depend on them implicitly
                 // (NavigationBarTokens.ActiveIndicatorWidth = 64.dp)
                 center =
                 center +
                     Offset(
-                        64.dp.toPx() * .45f,
-                        32.dp.toPx() * -.45f - 6.dp.toPx(),
+                        ComponentSize.ActiveIndicatorWidth.toPx() * .45f,
+                        ComponentSize.ActiveIndicatorHeight.toPx() * -.45f - Spacing.Compact.toPx(),
                     ),
             )
         }
