@@ -126,6 +126,7 @@ fun GlassMessageBubble(
             Text(
                 text = formatTimestamp(timestamp),
                 style = MaterialTheme.typography.labelSmall,
+                color = GlassTheme.colors.onGlassMuted,
                 modifier = Modifier.padding(horizontal = Spacing.SmallMedium, vertical = Spacing.ExtraSmall),
             )
         }

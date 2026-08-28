@@ -41,6 +41,7 @@ import com.kashif_e.backdrop.effects.vibrancy
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius
+import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -115,12 +116,14 @@ fun GlassPanelHeader(
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
+                    tint = GlassTheme.colors.onGlassSecondary,
                     modifier = Modifier.padding(end = Spacing.Small)
                 )
             }
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleSmall,
+                color = GlassTheme.colors.onGlass,
             )
         }
         actions?.invoke()
