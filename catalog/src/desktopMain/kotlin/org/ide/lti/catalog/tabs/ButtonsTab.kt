@@ -23,9 +23,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -263,6 +265,8 @@ fun SectionContainer(
         Text(title, style = MaterialTheme.typography.titleMedium, color = GlassTheme.colors.onGlass)
         Text(description, style = MaterialTheme.typography.bodySmall, color = GlassTheme.colors.onGlassSecondary)
         Spacer(Modifier.height(Spacing.Small))
-        content()
+        CompositionLocalProvider(LocalContentColor provides GlassTheme.colors.onGlass) {
+            content()
+        }
     }
 }

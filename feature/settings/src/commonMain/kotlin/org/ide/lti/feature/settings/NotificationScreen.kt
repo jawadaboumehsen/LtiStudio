@@ -96,6 +96,7 @@ fun NotificationScreenContent(
                             imageVector = AppIcons.ArrowBack,
                             contentDescription = "Back",
                             tint = GlassTheme.colors.onGlass,
+                            modifier = Modifier.size(IconSize.Medium),
                         )
                     }
 

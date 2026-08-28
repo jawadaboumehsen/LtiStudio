@@ -150,7 +150,7 @@ private fun EmptyAIChatView(
                         .background(glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Faint))
                         .border(
                             StrokeWidth.Hairline,
-                            glassColors.glassBorder.copy(alpha = AlphaTokens.Border),
+                            glassColors.glassBorder,
                             CircleShape,
                         ),
                     contentAlignment = Alignment.Center,

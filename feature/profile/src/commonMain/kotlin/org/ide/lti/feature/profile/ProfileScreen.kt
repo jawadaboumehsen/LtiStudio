@@ -125,7 +125,7 @@ fun ProfileScreenContent(
                         .background(GlassTheme.colors.glassSurfaceElevated.copy(alpha = AlphaTokens.Faint))
                         .border(
                             StrokeWidth.Hairline,
-                            GlassTheme.colors.glassBorder.copy(alpha = AlphaTokens.Border),
+                            GlassTheme.colors.glassBorder,
                             RoundedCornerShape(CornerRadius.Medium),
                         )
                         .padding(Spacing.CardPadding),

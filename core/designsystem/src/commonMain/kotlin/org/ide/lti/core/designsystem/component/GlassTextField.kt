@@ -69,6 +69,7 @@ import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.MotionDuration
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -258,7 +259,9 @@ fun GlassPasswordField(
                 }
 
                 Icon(
-                    modifier = Modifier.semantics { showPasswordTestTag?.let { testTag = it } },
+                    modifier = Modifier
+                        .size(IconSize.Medium)
+                        .semantics { showPasswordTestTag?.let { testTag = it } },
                     imageVector = imageVector,
                     contentDescription = "togglePassword",
                     tint = GlassTheme.colors.onGlassSecondary,

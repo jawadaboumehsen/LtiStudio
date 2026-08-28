@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
@@ -38,6 +39,7 @@ import org.ide.lti.core.designsystem.component.GlassTextField
 import org.ide.lti.core.designsystem.component.GlassToggle
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 
 @Composable
@@ -75,7 +77,7 @@ fun InputsTab() {
                     label = "Workspace Name",
                     placeholder = "Enter workspace name",
                     leadingIcon = {
-                        Icon(AppIcons.Folder, contentDescription = null, tint = GlassTheme.colors.onGlassSecondary)
+                        Icon(AppIcons.Folder, contentDescription = null, tint = GlassTheme.colors.onGlassSecondary, modifier = Modifier.size(IconSize.Medium))
                     },
                     helperText = "Alphanumeric characters and hyphens only"
                 )
@@ -86,7 +88,7 @@ fun InputsTab() {
                     label = "Email Address",
                     placeholder = "developer@domain.com",
                     leadingIcon = {
-                        Icon(AppIcons.OutlinedInfo, contentDescription = null, tint = GlassTheme.colors.onGlassSecondary)
+                        Icon(AppIcons.OutlinedInfo, contentDescription = null, tint = GlassTheme.colors.onGlassSecondary, modifier = Modifier.size(IconSize.Medium))
                     }
                 )
 
@@ -96,7 +98,7 @@ fun InputsTab() {
                     label = "Verification Token",
                     errorText = "Invalid signature token. Please regenerate.",
                     leadingIcon = {
-                        Icon(AppIcons.OutlinedLock, contentDescription = null, tint = GlassTheme.colors.glassAccent)
+                        Icon(AppIcons.OutlinedLock, contentDescription = null, tint = GlassTheme.colors.glassAccent, modifier = Modifier.size(IconSize.Medium))
                     }
                 )
             }

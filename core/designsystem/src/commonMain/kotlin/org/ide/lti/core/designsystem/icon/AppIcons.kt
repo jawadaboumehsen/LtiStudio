@@ -85,8 +85,10 @@ import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material.icons.rounded.Wallet
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import org.ide.lti.core.designsystem.generated.resources.Res
@@ -94,6 +96,7 @@ import org.ide.lti.core.designsystem.generated.resources.bottomPanel
 import org.ide.lti.core.designsystem.generated.resources.leftPanel_1
 import org.ide.lti.core.designsystem.generated.resources.rightPanel
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.IconSize
 import org.jetbrains.compose.resources.painterResource
 
 
@@ -179,6 +182,7 @@ object AppIcons {
             painter = painterResource(Res.drawable.rightPanel),
             contentDescription = "Right Panel",
             tint = GlassTheme.colors.onGlass,
+            modifier = Modifier.size(IconSize.Segmented),
         )
     }
 
@@ -189,6 +193,7 @@ object AppIcons {
             painter = painterResource(Res.drawable.leftPanel_1),
             contentDescription = "Left Panel",
             tint = GlassTheme.colors.onGlass,
+            modifier = Modifier.size(IconSize.Segmented),
         )
     }
 
@@ -199,6 +204,7 @@ object AppIcons {
             painter = painterResource(Res.drawable.bottomPanel),
             contentDescription = "Bottom Panel",
             tint = GlassTheme.colors.onGlass,
+            modifier = Modifier.size(IconSize.Segmented),
         )
     }
     val bottomPanelPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.bottomPanel) }

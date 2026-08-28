@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -54,6 +55,7 @@ import org.ide.lti.core.designsystem.component.GlassNavigationRail
 import org.ide.lti.core.designsystem.component.GlassNavigationRailItem
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.feature.settings.navigateToNotification
 import org.ide.lti.feature.settings.navigateToSettings
@@ -177,6 +179,7 @@ private fun LtiBar(
                                 Icon(
                                     imageVector = AppIcons.OutlinedNotifications,
                                     contentDescription = "view notification",
+                                    modifier = Modifier.size(IconSize.Medium),
                                 )
                             }
 
@@ -186,6 +189,7 @@ private fun LtiBar(
                                 Icon(
                                     imageVector = AppIcons.SettingsOutlined,
                                     contentDescription = "view settings",
+                                    modifier = Modifier.size(IconSize.Medium),
                                 )
                             }
                         }
@@ -198,6 +202,7 @@ private fun LtiBar(
                             Icon(
                                 imageVector = AppIcons.Edit2,
                                 contentDescription = "Edit Profile",
+                                modifier = Modifier.size(IconSize.Medium),
                             )
                         }
                     }

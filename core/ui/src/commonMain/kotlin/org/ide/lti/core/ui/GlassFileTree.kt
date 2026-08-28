@@ -56,7 +56,7 @@ fun GlassFileTree(
     ) {
         // Render root node's children
         rootNode.children?.let { children ->
-            items(children) { node ->
+            items(children, key = { it.path }) { node ->
                 GlassFileTreeItem(
                     node = node,
                     level = 0,

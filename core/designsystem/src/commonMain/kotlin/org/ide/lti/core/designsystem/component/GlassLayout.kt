@@ -94,6 +94,7 @@ import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius as ThemeCornerRadius
 import org.ide.lti.core.designsystem.theme.Elevation
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.MotionDuration
 import org.ide.lti.core.designsystem.theme.MotionEasing
@@ -595,7 +596,8 @@ private fun GlassToggleButtonsOverlay(
                         "Hide left panel"
                     } else {
                         "Show left panel"
-                    }
+                    },
+                    modifier = Modifier.size(IconSize.Medium),
                 )
             }
 
@@ -613,7 +615,8 @@ private fun GlassToggleButtonsOverlay(
                         "Hide bottom panel"
                     } else {
                         "Show bottom panel"
-                    }
+                    },
+                    modifier = Modifier.size(IconSize.Medium),
                 )
             }
 
@@ -627,7 +630,8 @@ private fun GlassToggleButtonsOverlay(
                         "Hide right panel"
                     } else {
                         "Show right panel"
-                    }
+                    },
+                    modifier = Modifier.size(IconSize.Medium),
                 )
             }
         }

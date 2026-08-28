@@ -175,7 +175,7 @@ fun SetupScreenContent(
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
                 ) {
-                    items(recentProjects) { project ->
+                    items(recentProjects, key = { it.workspaceId }) { project ->
                         RecentProjectCard(
                             project = project,
                             onClick = { onRecentProjectClick(project) },
