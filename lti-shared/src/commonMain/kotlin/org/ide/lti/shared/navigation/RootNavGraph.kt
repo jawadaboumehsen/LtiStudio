@@ -17,6 +17,10 @@ import androidx.navigation.compose.composable
 import org.ide.lti.core.data.utils.NetworkMonitor
 import org.ide.lti.core.data.utils.TimeZoneMonitor
 import org.ide.lti.feature.setup.setupScreen
+import org.ide.lti.feature.settings.navigateToNotification
+import org.ide.lti.feature.settings.navigateToSettings
+import org.ide.lti.feature.settings.notificationScreen
+import org.ide.lti.feature.settings.settingsScreen
 import org.ide.lti.feature.workspace.workspaceScreen
 import org.ide.lti.shared.ui.Lti
 
@@ -46,7 +50,18 @@ internal fun RootNavGraph(
         )
 
         // Workspace Screen (4-panel IDE layout)
-        workspaceScreen()
+        workspaceScreen(
+            onOpenSettings = { navHostController.navigateToSettings() },
+            onOpenNotifications = { navHostController.navigateToNotification() },
+        )
+
+        // Settings & Notifications (reachable from the workspace top bar)
+        settingsScreen(
+            onBackClick = { navHostController.popBackStack() },
+        )
+        notificationScreen(
+            onBackClick = { navHostController.popBackStack() },
+        )
 
         // Legacy main screen (kept for reference)
         composable(LtiNavGraph.MAIN_GRAPH) {

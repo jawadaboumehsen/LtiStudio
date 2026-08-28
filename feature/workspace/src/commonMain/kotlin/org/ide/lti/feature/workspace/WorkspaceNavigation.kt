@@ -20,8 +20,14 @@ fun NavController.navigateToWorkspace(navOptions: NavOptions? = null) {
     navigate(WORKSPACE_ROUTE, navOptions)
 }
 
-fun NavGraphBuilder.workspaceScreen() {
+fun NavGraphBuilder.workspaceScreen(
+    onOpenSettings: () -> Unit = {},
+    onOpenNotifications: () -> Unit = {},
+) {
     composable(route = WORKSPACE_ROUTE) {
-        WorkspaceScreen()
+        WorkspaceScreen(
+            onOpenSettings = onOpenSettings,
+            onOpenNotifications = onOpenNotifications,
+        )
     }
 }

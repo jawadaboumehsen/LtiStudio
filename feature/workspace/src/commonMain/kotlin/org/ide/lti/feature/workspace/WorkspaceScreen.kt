@@ -12,6 +12,7 @@ package org.ide.lti.feature.workspace
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import org.ide.lti.core.designsystem.component.GlassLayout
+import org.ide.lti.core.designsystem.component.GlassTopBar
 import org.ide.lti.core.designsystem.component.rememberLtiLayoutState
 import org.ide.lti.feature.workspace.panels.ai.AIAssistantPanel
 import org.ide.lti.feature.workspace.panels.editor.EditorPanel
@@ -34,6 +35,8 @@ import org.ide.lti.feature.workspace.panels.terminal.TerminalPanel
 @Composable
 fun WorkspaceScreen(
     modifier: Modifier = Modifier,
+    onOpenSettings: () -> Unit = {},
+    onOpenNotifications: () -> Unit = {},
 ) {
     val ltiLayoutState = rememberLtiLayoutState()
 
@@ -44,5 +47,17 @@ fun WorkspaceScreen(
         mainContent = { EditorPanel() },
         bottomPanel = { TerminalPanel() },
         rightPanel = { AIAssistantPanel() },
+        topBar = {
+            GlassTopBar(
+                isLeftPanelVisible = ltiLayoutState.showLeft,
+                isRightPanelVisible = ltiLayoutState.showRight,
+                isMiddleDownPanelVisible = ltiLayoutState.showBottom,
+                onClickLeftPanelIcon = { ltiLayoutState.toggleLeft() },
+                onClickRightPanelIcon = { ltiLayoutState.toggleRight() },
+                onClickMiddleDownPanelIcon = { ltiLayoutState.toggleBottom() },
+                onNotificationsClick = onOpenNotifications,
+                onSettingsClick = onOpenSettings,
+            )
+        },
     )
 }
