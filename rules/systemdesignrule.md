@@ -9,6 +9,10 @@ bug reaching the running app. Every rule below maps to a real incident, not a hy
 If you are an agent about to edit theme/design-system code: read this file, then make your change,
 then re-read the "Before you finish" checklist at the bottom.
 
+This file covers *correctness* (colors, contrast, spacing — bugs a screenshot diff catches). For
+*performance* rules (recomposition, allocation, phase discipline — regressions a screenshot diff
+can't catch since the pixels are identical), see [`rules/jetpackcomposerule.md`](jetpackcomposerule.md).
+
 ---
 
 ## Rule 1: Every component that renders a `Text`/`Icon` inside a content lambda MUST make

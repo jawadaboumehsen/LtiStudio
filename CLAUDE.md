@@ -40,7 +40,8 @@ Examples:
 > component must make `LocalContentColor` resolve to something other than black, and the
 > design-system guardrails/Detekt rules do NOT catch a color/size parameter being omitted entirely
 > (only a wrong literal). This section (`CLAUDE.md`) is the token/component API catalog;
-> `rules/systemdesignrule.md` is the "don't repeat this bug" companion.
+> `rules/systemdesignrule.md` is the "don't repeat this bug" companion. For recomposition/allocation
+> performance rules (not correctness), see `rules/jetpackcomposerule.md`.
 
 LtiRom Studio uses a professional IDE design built around a centralized token system in `core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/`.
 
