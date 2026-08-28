@@ -40,6 +40,8 @@ import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import org.ide.lti.core.designsystem.component.GlassButton
 import org.ide.lti.core.designsystem.component.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.GlassCard
+import org.ide.lti.core.designsystem.component.GlassPanelContainer
+import org.ide.lti.core.designsystem.component.GlassPanelHeader
 import org.ide.lti.core.designsystem.component.GlassPrimaryButton
 import org.ide.lti.core.designsystem.component.GlassSlider
 import org.ide.lti.core.designsystem.component.GlassSurface
@@ -151,6 +153,50 @@ class GlassComponentScreenshotTest {
 
         val image = onRoot().captureToImage()
         ScreenshotTestHelper.assertMatchesBaseline("glass_card", image)
+    }
+
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun testGlassPanelContainer() = runDesktopComposeUiTest(width = 320, height = 260) {
+        setContent {
+            LtiTheme(darkTheme = true) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(GlassTheme.colors.glassSurface)
+                        .padding(Spacing.Large),
+                    contentAlignment = Alignment.Center
+                ) {
+                    // Mirrors the real production wrapping in GlassLayout.kt's GlassLeftPanel:
+                    // a GlassPanelContainer nested inside a real glass GlassCard ancestor.
+                    // Regression coverage for GlassPanelContainer's Surface() defaulting to an
+                    // opaque theme color and painting over the ancestor's backdrop.
+                    GlassCard(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = Spacing.None,
+                    ) {
+                        GlassPanelContainer(
+                            modifier = Modifier.fillMaxSize(),
+                            header = {
+                                GlassPanelHeader(
+                                    title = "EXPLORER",
+                                )
+                            },
+                        ) {
+                            Text(
+                                text = "Panel content should stay translucent, not opaque.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = GlassTheme.colors.onGlassSecondary,
+                                modifier = Modifier.padding(Spacing.SmallMedium),
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        val image = onRoot().captureToImage()
+        ScreenshotTestHelper.assertMatchesBaseline("glass_panel_container", image)
     }
 
     @OptIn(ExperimentalTestApi::class)

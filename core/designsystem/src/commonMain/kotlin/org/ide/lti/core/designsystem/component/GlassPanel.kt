@@ -161,7 +161,10 @@ fun GlassPanelContainer(
     header: (@Composable () -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
-    Surface(modifier = modifier) {
+    Surface(
+        modifier = modifier,
+        color = Color.Transparent,
+    ) {
         Column(modifier = Modifier.fillMaxSize()) {
             header?.invoke()
             content()
