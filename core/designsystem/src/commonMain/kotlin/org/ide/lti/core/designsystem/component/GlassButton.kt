@@ -230,7 +230,7 @@ private fun resolveButtonColors(
 ): Triple<Color, Color, Color> = when (variant) {
     GlassButtonVariant.Primary -> Triple(
         glassColors.glassSurfaceElevated,
-        glassColors.glassAccent.copy(alpha = AlphaTokens.Hover),
+        glassColors.glassAccent.copy(alpha = AlphaTokens.PrimaryButtonTint),
         glassColors.onGlass
     )
     GlassButtonVariant.Secondary -> Triple(

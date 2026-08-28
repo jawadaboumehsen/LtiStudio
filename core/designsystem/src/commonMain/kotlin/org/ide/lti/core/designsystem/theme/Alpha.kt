@@ -61,6 +61,13 @@ object AlphaTokens {
     const val Strong: Float = 0.55f
 
     /**
+     * Dedicated tint opacity for [GlassPrimaryButton] and primary glass action surfaces.
+     * Ensures the brand accent color (cyan) reads prominently and unmistakably as the primary CTA
+     * over translucent glass surfaces without washing out or hiding backdrop blur (85%).
+     */
+    const val PrimaryButtonTint: Float = 0.85f
+
+    /**
      * Fill opacity multiplier for GlassButton's surface layer, applied on top of the shared
      * glassSurface/glassSurfaceElevated tokens' own alpha. Buttons are wide, mostly-flat pills
      * where the lens refraction shader only distorts a thin band near the edges (see
