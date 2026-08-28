@@ -131,11 +131,12 @@ fun RowScope.GlassBottomTab(
 fun GlassBottomTabs(
     selectedTabIndex: () -> Int,
     tabsCount: Int,
-    backdrop: Backdrop,
     modifier: Modifier = Modifier,
+    backdrop: Backdrop? = null,
     onTabSelected: ((index: Int) -> Unit)? = null,
     tabs: @Composable RowScope.() -> Unit
 ) {
+    val actualBackdrop = backdrop ?: GlassTheme.backdrop ?: rememberLayerBackdrop()
     val glassColors = GlassTheme.colors
     val accentColor = glassColors.glassAccent
     val containerColor = glassColors.glassSurfaceElevated
@@ -225,7 +226,7 @@ fun GlassBottomTabs(
 
         // Layer 1 — empty glass bar (the visible frosted pill).
         GlassBottomTabBarBackground(
-            backdrop = backdrop,
+            backdrop = actualBackdrop,
             containerColor = containerColor,
             panelOffset = panelOffset,
             drag = drag,
@@ -235,7 +236,7 @@ fun GlassBottomTabs(
 
         // Layer 2 — invisible "tinted" row, exported as tabsBackdrop.
         GlassBottomTabTintedRow(
-            backdrop = backdrop,
+            backdrop = actualBackdrop,
             tabsBackdrop = tabsBackdrop,
             containerColor = containerColor,
             accentColor = accentColor,
@@ -247,7 +248,7 @@ fun GlassBottomTabs(
 
         // Layer 3 — the spotlight pill, sampling wallpaper + tabsBackdrop.
         GlassBottomTabSpotlight(
-            backdrop = backdrop,
+            backdrop = actualBackdrop,
             tabsBackdrop = tabsBackdrop,
             tabsCount = tabsCount,
             tabWidth = tabWidth,

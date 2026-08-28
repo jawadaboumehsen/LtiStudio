@@ -64,11 +64,7 @@ import org.ide.lti.core.designsystem.theme.MotionDuration
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.utils.InteractiveHighlight
-import kotlin.math.abs
-import kotlin.math.atan2
-import kotlin.math.cos
-import kotlin.math.sin
-import kotlin.math.tanh
+import org.ide.lti.core.designsystem.utils.applyInteractiveHighlightTransform
 
 /**
  * Button glass effect stack — crisp/glossy, per the kmp-liquid-glass skill's guidance for
@@ -162,7 +158,7 @@ fun GlassButton(
                         highlight = { if (isHovered) Highlight.Ambient else Highlight.Plain },
                         layerBlock = if (interactiveHighlight != null) {
                             {
-                                applyButtonInteractiveTransform(interactiveHighlight)
+                                applyInteractiveHighlightTransform(interactiveHighlight)
                             }
                         } else null,
                         onDrawSurface = {
@@ -272,32 +268,6 @@ private fun resolveHoverBorderColor(
     baseBorderColor
 }
 
-private fun androidx.compose.ui.graphics.GraphicsLayerScope.applyButtonInteractiveTransform(
-    interactiveHighlight: InteractiveHighlight
-) {
-    val width = size.width
-    val height = size.height
-
-    val progress = interactiveHighlight.pressProgress
-    val scale = lerp(1f, 1f + Spacing.ExtraSmall.toPx() / size.height, progress)
-
-    val maxOffset = size.minDimension
-    val initialDerivative = 0.05f
-    val offset = interactiveHighlight.offset
-    val tx = maxOffset * tanh((initialDerivative * offset.x / maxOffset).toDouble())
-    val ty = maxOffset * tanh((initialDerivative * offset.y / maxOffset).toDouble())
-    translationX = tx.toFloat()
-    translationY = ty.toFloat()
-
-    val maxDragScale = Spacing.ExtraSmall.toPx() / size.height
-    val offsetAngle = atan2(offset.y.toDouble(), offset.x.toDouble()).toFloat()
-    scaleX = scale +
-        maxDragScale * abs(cos(offsetAngle) * offset.x / size.maxDimension) *
-        (width / height).fastCoerceAtMost(1f)
-    scaleY = scale +
-        maxDragScale * abs(sin(offsetAngle) * offset.y / size.maxDimension) *
-        (height / width).fastCoerceAtMost(1f)
-}
 
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawButtonSurface(
     surfaceColor: Color,

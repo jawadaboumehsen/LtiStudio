@@ -15,6 +15,15 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.ide.lti.core.designsystem.theme.MotionSpring
 import org.ide.lti.core.designsystem.theme.MotionThreshold
+import androidx.compose.ui.graphics.GraphicsLayerScope
+import androidx.compose.ui.util.fastCoerceAtMost
+import androidx.compose.ui.util.lerp
+import org.ide.lti.core.designsystem.theme.Spacing
+import kotlin.math.abs
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.tanh
 
 class InteractiveHighlight(
     val animationScope: CoroutineScope,
@@ -74,4 +83,34 @@ class InteractiveHighlight(
                 animationScope.launch { positionAnimation.snapTo(change.position) }
             }
         }
+}
+
+/**
+ * Applies physical squash-and-stretch and drag damping to a graphics layer during press/drag interactions.
+ */
+fun GraphicsLayerScope.applyInteractiveHighlightTransform(
+    interactiveHighlight: InteractiveHighlight
+) {
+    val width = size.width
+    val height = size.height
+
+    val progress = interactiveHighlight.pressProgress
+    val scale = lerp(1f, 1f + Spacing.ExtraSmall.toPx() / size.height, progress)
+
+    val maxOffset = size.minDimension
+    val initialDerivative = 0.05f
+    val offset = interactiveHighlight.offset
+    val tx = maxOffset * tanh((initialDerivative * offset.x / maxOffset).toDouble())
+    val ty = maxOffset * tanh((initialDerivative * offset.y / maxOffset).toDouble())
+    translationX = tx.toFloat()
+    translationY = ty.toFloat()
+
+    val maxDragScale = Spacing.ExtraSmall.toPx() / size.height
+    val offsetAngle = atan2(offset.y.toDouble(), offset.x.toDouble()).toFloat()
+    scaleX = scale +
+        maxDragScale * abs(cos(offsetAngle) * offset.x / size.maxDimension) *
+        (width / height).fastCoerceAtMost(1f)
+    scaleY = scale +
+        maxDragScale * abs(sin(offsetAngle) * offset.y / size.maxDimension) *
+        (height / width).fastCoerceAtMost(1f)
 }

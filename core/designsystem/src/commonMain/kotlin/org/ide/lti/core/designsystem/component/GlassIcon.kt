@@ -16,8 +16,6 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.util.fastCoerceAtMost
-import androidx.compose.ui.util.lerp
 import com.kyant.capsule.ContinuousCapsule
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
@@ -30,21 +28,16 @@ import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LensRefraction
-import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.utils.InteractiveHighlight
+import org.ide.lti.core.designsystem.utils.applyInteractiveHighlightTransform
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import kotlin.math.abs
-import kotlin.math.atan2
-import kotlin.math.cos
-import kotlin.math.sin
-import kotlin.math.tanh
 
 @Composable
 fun GlassIcon(
     onClick: () -> Unit,
-    backdrop: Backdrop,
     modifier: Modifier = Modifier,
+    backdrop: Backdrop? = null,
     isInteractive: Boolean = true,
     tint: Color = Color.Unspecified,
     surfaceColor: Color = Color.Unspecified,
@@ -52,6 +45,7 @@ fun GlassIcon(
 ) {
     val animationScope = rememberCoroutineScope()
     val glassColors = GlassTheme.colors
+    val actualBackdrop = backdrop ?: GlassTheme.backdrop ?: rememberLayerBackdrop()
 
     val interactiveHighlight = remember(animationScope) {
         InteractiveHighlight(
@@ -62,7 +56,7 @@ fun GlassIcon(
     Box(
         modifier = modifier
             .drawBackdrop(
-                backdrop = backdrop,
+                backdrop = actualBackdrop,
                 shape = { ContinuousCapsule },
                 effects = {
                     vibrancy()
@@ -72,28 +66,7 @@ fun GlassIcon(
                 highlight = { Highlight.Plain },
                 layerBlock = if (isInteractive) {
                     {
-                        val width = size.width
-                        val height = size.height
-
-                        val progress = interactiveHighlight.pressProgress
-                        val scale = lerp(1f, 1f + Spacing.ExtraSmall.toPx() / size.height, progress)
-
-                        val maxOffset = size.minDimension
-                        val initialDerivative = 0.05f
-                        val offset = interactiveHighlight.offset
-                        translationX = maxOffset * tanh(initialDerivative * offset.x / maxOffset)
-                        translationY = maxOffset * tanh(initialDerivative * offset.y / maxOffset)
-
-                        val maxDragScale = Spacing.ExtraSmall.toPx() / size.height
-                        val offsetAngle = atan2(offset.y, offset.x)
-                        scaleX =
-                            scale +
-                                    maxDragScale * abs(cos(offsetAngle) * offset.x / size.maxDimension) *
-                                    (width / height).fastCoerceAtMost(1f)
-                        scaleY =
-                            scale +
-                                    maxDragScale * abs(sin(offsetAngle) * offset.y / size.maxDimension) *
-                                    (height / width).fastCoerceAtMost(1f)
+                        applyInteractiveHighlightTransform(interactiveHighlight)
                     }
                 } else {
                     null

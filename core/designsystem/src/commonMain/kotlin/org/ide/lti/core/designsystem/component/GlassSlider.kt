@@ -61,9 +61,10 @@ fun GlassSlider(
     onValueChange: (Float) -> Unit,
     valueRange: ClosedFloatingPointRange<Float>,
     visibilityThreshold: Float,
-    backdrop: Backdrop,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    backdrop: Backdrop? = null,
 ) {
+    val actualBackdrop = backdrop ?: GlassTheme.backdrop ?: rememberLayerBackdrop()
     val glassColors = GlassTheme.colors
     val accentColor = glassColors.glassAccent
     val trackColor = glassColors.glassBorder
@@ -175,7 +176,7 @@ fun GlassSlider(
                 .then(dampedDragAnimation.modifier)
                 .drawBackdrop(
                     backdrop = rememberCombinedBackdrop(
-                        backdrop,
+                        actualBackdrop,
                         rememberBackdrop(trackBackdrop) { drawBackdrop ->
                             val progress = dampedDragAnimation.pressProgress
                             val scaleX = lerp(2f / 3f, 1f, progress)

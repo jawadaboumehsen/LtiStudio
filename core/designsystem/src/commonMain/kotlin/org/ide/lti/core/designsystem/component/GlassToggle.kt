@@ -61,9 +61,10 @@ import org.ide.lti.core.designsystem.utils.DampedDragAnimation
 fun GlassToggle(
     selected: () -> Boolean,
     onSelect: (Boolean) -> Unit,
-    backdrop: Backdrop,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    backdrop: Backdrop? = null,
 ) {
+    val actualBackdrop = backdrop ?: GlassTheme.backdrop ?: rememberLayerBackdrop()
     val isLightTheme = MaterialTheme.colorScheme.surface.luminance() > 0.5f
     val glassColors = GlassTheme.colors
     val accentColor =
@@ -160,7 +161,7 @@ fun GlassToggle(
                 .then(dampedDragAnimation.modifier)
                 .drawBackdrop(
                     backdrop = rememberCombinedBackdrop(
-                        backdrop,
+                        actualBackdrop,
                         rememberBackdrop(trackBackdrop) { drawBackdrop ->
                             val progress = dampedDragAnimation.pressProgress
                             val scaleX = lerp(2f / 3f, 0.75f, progress)

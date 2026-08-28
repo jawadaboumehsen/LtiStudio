@@ -150,6 +150,7 @@ sealed class LoadingDialogState {
 fun GlassLoadingDialog(
     visibilityState: LoadingDialogState,
     modifier: Modifier = Modifier,
+    backdrop: Backdrop? = null,
 ) {
     when (visibilityState) {
         is LoadingDialogState.Hidden -> Unit
@@ -167,6 +168,7 @@ fun GlassLoadingDialog(
                         .fillMaxWidth()
                         .padding(Spacing.DialogPadding),
                     effects = glassDialogEffects(MaterialTheme.colorScheme.surface.luminance() > 0.5f),
+                    backdrop = backdrop,
                     highlight = { Highlight.Plain },
                 ) {
                     Column(
