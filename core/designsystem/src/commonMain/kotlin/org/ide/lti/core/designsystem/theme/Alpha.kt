@@ -59,4 +59,13 @@ object AlphaTokens {
 
     /** Strong opacity for a gradient glow's brightest core (55%). */
     const val Strong: Float = 0.55f
+
+    /**
+     * Fill opacity multiplier for GlassButton's surface layer, applied on top of the shared
+     * glassSurface/glassSurfaceElevated tokens' own alpha. Buttons are wide, mostly-flat pills
+     * where the lens refraction shader only distorts a thin band near the edges (see
+     * backdrop/effects/Lens.kt) — the working full-surface blur underneath needs a translucent
+     * fill, not a near-opaque one, or it gets painted over and the glass reads as flat (35%).
+     */
+    const val ButtonFill: Float = 0.35f
 }

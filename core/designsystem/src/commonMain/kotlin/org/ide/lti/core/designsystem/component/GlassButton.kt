@@ -68,12 +68,25 @@ import org.ide.lti.core.designsystem.utils.applyInteractiveHighlightTransform
 
 /**
  * Button glass effect stack — crisp/glossy, per the kmp-liquid-glass skill's guidance for
- * buttons, toggles, and tab bars: light blur + tight lens + vibrancy.
+ * buttons, toggles, and tab bars: light blur + tight lens + vibrancy. Tuned for compact,
+ * icon-sized surfaces (GlassIconButton, GlassIconToggleButton) where this radius reads clearly.
  */
 val GlassButtonEffects: BackdropEffectScope.() -> Unit = {
     vibrancy()
     blur(BackdropBlur.Button.toPx())
     lens(LensRefraction.Button.height.toPx(), LensRefraction.Button.amount.toPx())
+}
+
+/**
+ * Pill-button glass effect stack — scaled up from [GlassButtonEffects] so the lens refraction
+ * stays visible across the wider surface of a text-labeled action button; the icon-tier radius
+ * reads as flat once stretched across a full pill. Default for GlassButton/GlassPrimaryButton/
+ * GlassTextButton.
+ */
+val GlassButtonPillEffects: BackdropEffectScope.() -> Unit = {
+    vibrancy()
+    blur(BackdropBlur.ButtonPill.toPx())
+    lens(LensRefraction.ButtonPill.height.toPx(), LensRefraction.ButtonPill.amount.toPx())
 }
 
 /**
@@ -111,7 +124,7 @@ fun GlassButton(
     enabled: Boolean = true,
     shape: Shape = ContinuousCapsule,
     variant: GlassButtonVariant = GlassButtonVariant.Standard,
-    effects: BackdropEffectScope.() -> Unit = GlassButtonEffects,
+    effects: BackdropEffectScope.() -> Unit = GlassButtonPillEffects,
     backdrop: Backdrop? = null,
     minWidth: Dp = GlassButtonDefaults.MinWidth,
     minHeight: Dp = GlassButtonDefaults.MinHeight,
@@ -276,7 +289,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawButtonSurface(
     glassShadowColor: Color
 ) {
     if (surfaceColor.isSpecified && surfaceColor != Color.Transparent) {
-        drawRect(surfaceColor)
+        drawRect(surfaceColor.copy(alpha = surfaceColor.alpha * AlphaTokens.ButtonFill))
     }
     if (tint.isSpecified && tint != Color.Transparent) {
         drawRect(tint, blendMode = BlendMode.Hue)

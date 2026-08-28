@@ -31,6 +31,10 @@ object BackdropBlur {
     val SearchCapsule: Dp = 2.dp
     val TopBar: Dp = 4.dp
     val Minimap: Dp = 4.dp
+
+    /** Scaled-up blur for wide, text-labeled pill buttons (GlassButton), where the icon-tier
+     * [Button] radius reads as flat/imperceptible once stretched across the larger surface. */
+    val ButtonPill: Dp = 4.dp
     val Card: Dp = 8.dp
     val BottomTabs: Dp = 8.dp
     val Slider: Dp = 8.dp
@@ -77,6 +81,11 @@ data class LensRefraction(
 
         /** Canonical refraction for standard glass surfaces (16dp, 32dp). */
         val Surface: LensRefraction = LensRefraction(16.dp, 32.dp)
+
+        /** Scaled-up refraction for wide, text-labeled pill buttons (GlassButton), matching
+         * [Surface] so the lens effect stays visible across the wider button surface instead of
+         * the icon-tier [Button] radius that reads as flat once stretched across a pill. */
+        val ButtonPill: LensRefraction = Surface
 
         /** Symmetrical refraction for bottom tab bar containers (24dp, 24dp). */
         val BottomTabs: LensRefraction = LensRefraction(24.dp, 24.dp)
