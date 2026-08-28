@@ -144,7 +144,7 @@ fun GlassTopBar(
             )
             .border(
                 width = StrokeWidth.Hairline,
-                color = glassColors.glassBorder.copy(alpha = AlphaTokens.Border),
+                color = glassColors.glassBorder,
                 shape = RoundedCornerShape(CornerRadius.None)
             )
             .padding(horizontal = Spacing.MediumSmall),
