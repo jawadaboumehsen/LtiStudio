@@ -26,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
@@ -34,6 +35,7 @@ import androidx.compose.ui.unit.sp
 import org.ide.lti.core.designsystem.component.GlassIconButton
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 
@@ -63,7 +65,9 @@ fun GlassChatInput(
             onValueChange = { inputText = it },
             textStyle = TextStyle(
                 fontSize = 14.sp,
+                color = GlassTheme.colors.onGlass,
             ),
+            cursorBrush = SolidColor(GlassTheme.colors.glassAccent),
             enabled = enabled,
             modifier = Modifier
                 .weight(1f)
@@ -82,6 +86,7 @@ fun GlassChatInput(
                     Text(
                         text = placeholder,
                         style = MaterialTheme.typography.bodyMedium,
+                        color = GlassTheme.colors.onGlassMuted,
                     )
                 }
                 innerTextField()
