@@ -72,11 +72,11 @@ fun ProfileScreenContent(
             modifier = Modifier
                 .widthIn(max = ComponentSize.ModalCardMaxWidth)
                 .fillMaxWidth()
-                .padding(Spacing.ExtraLarge),
+                .padding(horizontal = Spacing.ScreenHorizontal, vertical = Spacing.ScreenVertical),
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(Spacing.Large),
+                verticalArrangement = Arrangement.spacedBy(Spacing.SectionGap),
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 // Profile Avatar Container
@@ -128,7 +128,7 @@ fun ProfileScreenContent(
                             GlassTheme.colors.glassBorder.copy(alpha = AlphaTokens.Border),
                             RoundedCornerShape(CornerRadius.Medium),
                         )
-                        .padding(Spacing.Medium),
+                        .padding(Spacing.CardPadding),
                     verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
                 ) {
                     ProfileInfoRow(

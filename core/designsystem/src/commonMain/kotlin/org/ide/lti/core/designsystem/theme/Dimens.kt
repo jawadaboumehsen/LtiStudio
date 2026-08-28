@@ -35,6 +35,10 @@ object Spacing {
     val DialogPadding: Dp = 24.dp
     val PanelPadding: Dp = 8.dp
     val TabHorizontal: Dp = 20.dp
+    val ScreenHorizontal: Dp = 28.dp
+    val ScreenVertical: Dp = 28.dp
+    val SectionGap: Dp = 24.dp
+    val CardPadding: Dp = 20.dp
 }
 
 /**
@@ -47,13 +51,13 @@ object CornerRadius {
     val Small: Dp = 6.dp
     val MediumSmall: Dp = 8.dp
     val Medium: Dp = 12.dp
-    val ExtraLarge: Dp = 28.dp
+    val ExtraLarge: Dp = 32.dp
     val Pill: Dp = 50.dp
 
     // Semantic aliases
-    val Card: Dp = 16.dp
-    val Dialog: Dp = 16.dp
-    val Panel: Dp = 12.dp
+    val Card: Dp = 26.dp
+    val Dialog: Dp = 28.dp
+    val Panel: Dp = 16.dp
 }
 
 /**

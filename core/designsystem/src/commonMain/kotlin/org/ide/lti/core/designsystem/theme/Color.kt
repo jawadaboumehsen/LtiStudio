@@ -18,10 +18,10 @@ import com.materialkolor.dynamicColorScheme
 
 /**
  * Brand seed color used to dynamically generate the Material3 color scheme and glass palette.
- * Light Blue (#4FA8FF) - paired with an AMOLED true-black dark surface base (see
- * [DarkGlassColorScheme]'s `isAmoled = true`), in the style of Samsung One UI's dark theme.
+ * Saturated Azure Blue (#0B84FF) - paired with an AMOLED true-black dark surface base (see
+ * [DarkGlassColorScheme]'s `isAmoled = true`), matching Samsung One UI's signature punchy blue accent.
  */
-val LtiSeedColor = Color(0xFF4FA8FF)
+val LtiSeedColor = Color(0xFF0B84FF)
 
 /**
  * Glass color scheme definition for translucent UI surfaces.

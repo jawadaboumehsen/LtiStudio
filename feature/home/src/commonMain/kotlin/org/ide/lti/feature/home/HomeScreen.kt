@@ -67,11 +67,11 @@ fun HomeScreenContent(
             modifier = Modifier
                 .widthIn(max = ComponentSize.ModalCardMaxWidth)
                 .fillMaxWidth()
-                .padding(Spacing.ExtraLarge),
+                .padding(horizontal = Spacing.ScreenHorizontal, vertical = Spacing.ScreenVertical),
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+                verticalArrangement = Arrangement.spacedBy(Spacing.SectionGap),
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Box(

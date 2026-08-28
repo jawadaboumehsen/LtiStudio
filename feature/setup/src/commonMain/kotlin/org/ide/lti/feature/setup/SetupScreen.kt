@@ -110,7 +110,7 @@ fun SetupScreenContent(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight()
-                .padding(Spacing.ExtraExtraLarge),
+                .padding(horizontal = Spacing.ScreenHorizontal, vertical = Spacing.ScreenVertical),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
                 Text(
@@ -126,12 +126,12 @@ fun SetupScreenContent(
                 )
             }
 
-            Spacer(modifier = Modifier.height(Spacing.ExtraLarge))
+            Spacer(modifier = Modifier.height(Spacing.SectionGap))
 
             // Action Cards with distinct semantic icons
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.CardPadding),
             ) {
                 ActionCard(
                     title = "Open Folder...",
@@ -159,7 +159,7 @@ fun SetupScreenContent(
                 )
             }
 
-            Spacer(modifier = Modifier.height(Spacing.ExtraExtraLarge))
+            Spacer(modifier = Modifier.height(Spacing.ScreenVertical))
 
             // Recent Projects Section
             Text(
@@ -186,7 +186,7 @@ fun SetupScreenContent(
                 // Empty state card
                 GlassCard(
                     modifier = Modifier.fillMaxWidth(),
-                    contentPadding = Spacing.ExtraLarge,
+                    contentPadding = Spacing.CardPadding,
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),

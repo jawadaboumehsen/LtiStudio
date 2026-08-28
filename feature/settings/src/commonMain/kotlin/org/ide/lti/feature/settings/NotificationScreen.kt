@@ -78,8 +78,8 @@ fun NotificationScreenContent(
             modifier = Modifier
                 .widthIn(max = ComponentSize.SettingsMaxWidth)
                 .fillMaxWidth()
-                .padding(Spacing.ExtraLarge),
-            verticalArrangement = Arrangement.spacedBy(Spacing.Large),
+                .padding(horizontal = Spacing.ScreenHorizontal, vertical = Spacing.ScreenVertical),
+            verticalArrangement = Arrangement.spacedBy(Spacing.SectionGap),
         ) {
             // Header
             Row(
@@ -125,7 +125,7 @@ fun NotificationScreenContent(
                     Column(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+                        verticalArrangement = Arrangement.spacedBy(Spacing.CardPadding),
                     ) {
                         Box(
                             modifier = Modifier
@@ -182,7 +182,7 @@ private fun NotificationCard(
 ) {
     GlassCard(
         modifier = modifier.fillMaxWidth(),
-        contentPadding = Spacing.Medium,
+        contentPadding = Spacing.CardPadding,
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),

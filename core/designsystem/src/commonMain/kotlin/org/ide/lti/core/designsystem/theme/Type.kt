@@ -69,23 +69,23 @@ internal fun appTypography() = Typography(
     ),
     headlineLarge = TextStyle(
         fontFamily = fontFamily(),
-        fontWeight = FontWeight.Normal,
+        fontWeight = FontWeight.Bold,
+        fontSize = 34.sp,
+        lineHeight = 42.sp,
+        letterSpacing = (-0.25).sp,
+    ),
+    headlineMedium = TextStyle(
+        fontFamily = fontFamily(),
+        fontWeight = FontWeight.Bold,
         fontSize = 32.sp,
         lineHeight = 40.sp,
         letterSpacing = 0.sp,
     ),
-    headlineMedium = TextStyle(
-        fontFamily = fontFamily(),
-        fontWeight = FontWeight.Normal,
-        fontSize = 28.sp,
-        lineHeight = 36.sp,
-        letterSpacing = 0.sp,
-    ),
     headlineSmall = TextStyle(
         fontFamily = fontFamily(),
-        fontWeight = FontWeight.Normal,
-        fontSize = 24.sp,
-        lineHeight = 32.sp,
+        fontWeight = FontWeight.Bold,
+        fontSize = 26.sp,
+        lineHeight = 34.sp,
         letterSpacing = 0.sp,
         lineHeightStyle = LineHeightStyle(
             alignment = LineHeightStyle.Alignment.Bottom,
@@ -94,9 +94,9 @@ internal fun appTypography() = Typography(
     ),
     titleLarge = TextStyle(
         fontFamily = fontFamily(),
-        fontWeight = FontWeight.SemiBold,
+        fontWeight = FontWeight.Bold,
         fontSize = 24.sp,
-        lineHeight = 30.24.sp,
+        lineHeight = 32.sp,
     ),
     titleMedium = TextStyle(
         fontFamily = fontFamily(),

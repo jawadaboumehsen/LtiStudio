@@ -81,9 +81,9 @@ fun SettingsScreenContent(
             modifier = Modifier
                 .widthIn(max = ComponentSize.SettingsMaxWidth)
                 .fillMaxWidth()
-                .padding(Spacing.ExtraLarge)
+                .padding(horizontal = Spacing.ScreenHorizontal, vertical = Spacing.ScreenVertical)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(Spacing.Large),
+            verticalArrangement = Arrangement.spacedBy(Spacing.SectionGap),
         ) {
             // Header with back button
             Row(
@@ -111,10 +111,10 @@ fun SettingsScreenContent(
 
             // Appearance Section
             GlassCard(
-                contentPadding = Spacing.Large,
+                contentPadding = Spacing.CardPadding,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.CardPadding)) {
                     Text(
                         text = "Appearance",
                         style = MaterialTheme.typography.titleMedium,
@@ -159,10 +159,10 @@ fun SettingsScreenContent(
 
             // Notifications Section
             GlassCard(
-                contentPadding = Spacing.Large,
+                contentPadding = Spacing.CardPadding,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.CardPadding)) {
                     Text(
                         text = "Notifications",
                         style = MaterialTheme.typography.titleMedium,
