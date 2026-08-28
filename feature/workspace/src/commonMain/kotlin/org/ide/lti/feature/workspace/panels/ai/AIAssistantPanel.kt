@@ -46,6 +46,7 @@ import org.ide.lti.core.designsystem.component.GlassButton
 import org.ide.lti.core.designsystem.component.GlassPanelContainer
 import org.ide.lti.core.designsystem.component.GlassPanelHeader
 import org.ide.lti.core.designsystem.component.GlassPanelHeaderAction
+import org.ide.lti.core.designsystem.component.GlassPrimaryButton
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
@@ -287,7 +288,7 @@ private fun ErrorView(
                 style = MaterialTheme.typography.bodyMedium,
             )
             Spacer(modifier = Modifier.height(Spacing.Medium))
-            GlassButton(onClick = onRetry) {
+            GlassPrimaryButton(onClick = onRetry) {
                 Text("Retry")
             }
         }

@@ -139,6 +139,8 @@ object ComponentSize {
     val StatusDotSize: Dp = 8.dp
     val ActiveIndicatorWidth: Dp = 64.dp
     val ActiveIndicatorHeight: Dp = 32.dp
+    val ModalCardMaxWidth: Dp = 440.dp
+    val SettingsMaxWidth: Dp = 760.dp
 }
 
 /**
