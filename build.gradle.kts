@@ -54,7 +54,14 @@ tasks.register("verifyDesignSystemGuardrails") {
         val violations = mutableListOf<String>()
 
         fun ktFiles(dir: File): List<File> =
-            if (dir.exists()) dir.walkTopDown().filter { it.isFile && it.extension == "kt" }.toList() else emptyList()
+            if (dir.exists()) {
+                dir.walkTopDown()
+                    .onEnter { it.name != "build" }
+                    .filter { it.isFile && it.extension == "kt" }
+                    .toList()
+            } else {
+                emptyList()
+            }
 
         fun isCommentOrImport(line: String): Boolean {
             val t = line.trim()
@@ -187,6 +194,53 @@ tasks.register("verifyDesignSystemGuardrails") {
                         violations += "${file.relativeTo(root).path}:${idx + 1}: this module may not build " +
                             "glass components directly from backdrop effect primitives - compose an " +
                             "existing core:designsystem/core:ui component instead. [$line]"
+                    }
+                }
+            }
+        }
+
+        // ---- 2b. Material3-substitution scan: feature/*, lti-shared, lti-desktop, catalog must use the ----
+        // ---- Glass equivalent instead of importing a raw Material3 component that has one.           ----
+        val forbiddenMaterial3Import = mapOf(
+            "import androidx.compose.material3.Button" to "GlassButton/GlassPrimaryButton",
+            "import androidx.compose.material3.OutlinedButton" to "GlassButton",
+            "import androidx.compose.material3.TextButton" to "GlassTextButton",
+            "import androidx.compose.material3.ElevatedButton" to "GlassButton",
+            "import androidx.compose.material3.FilledTonalButton" to "GlassButton",
+            "import androidx.compose.material3.IconButton" to "GlassIconButton",
+            "import androidx.compose.material3.FilledIconButton" to "GlassIconButton",
+            "import androidx.compose.material3.OutlinedIconButton" to "GlassIconButton",
+            "import androidx.compose.material3.IconToggleButton" to "GlassIconToggleButton",
+            "import androidx.compose.material3.FilledIconToggleButton" to "GlassIconToggleButton",
+            "import androidx.compose.material3.TextField" to "GlassTextField",
+            "import androidx.compose.material3.OutlinedTextField" to "GlassTextField",
+            "import androidx.compose.material3.Switch" to "GlassToggle",
+            "import androidx.compose.material3.Slider" to "GlassSlider",
+            "import androidx.compose.material3.RangeSlider" to "GlassSlider",
+            "import androidx.compose.material3.AlertDialog" to "GlassDialog",
+            "import androidx.compose.material3.Card" to "GlassCard",
+            "import androidx.compose.material3.ElevatedCard" to "GlassCard",
+            "import androidx.compose.material3.OutlinedCard" to "GlassCard",
+            "import androidx.compose.material3.NavigationBar" to "GlassNavigationBar",
+            "import androidx.compose.material3.NavigationBarItem" to "GlassNavigationBarItem",
+            "import androidx.compose.material3.NavigationRail" to "GlassNavigationRail",
+            "import androidx.compose.material3.NavigationRailItem" to "GlassNavigationRailItem",
+            "import androidx.compose.material3.Tab" to "GlassTab/GlassTabBar",
+            "import androidx.compose.material3.TabRow" to "GlassTabBar",
+            "import androidx.compose.material3.ScrollableTabRow" to "GlassScrollableTabRow",
+            "import androidx.compose.material3.ModalBottomSheet" to "GlassBottomSheet",
+            "import androidx.compose.material3.BottomSheetScaffold" to "GlassBottomSheetScaffold",
+        )
+
+        boundaryScanRoots.forEach { scanRoot ->
+            ktFiles(scanRoot).forEach { file ->
+                file.readLines().forEachIndexed { idx, rawLine ->
+                    val line = rawLine.trim()
+                    val glassEquivalent = forbiddenMaterial3Import[line]
+                    if (glassEquivalent != null) {
+                        violations += "${file.relativeTo(root).path}:${idx + 1}: this module may not import " +
+                            "a raw Material3 component that has a design-system equivalent - use " +
+                            "$glassEquivalent instead. [$line]"
                     }
                 }
             }

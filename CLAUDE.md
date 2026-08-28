@@ -146,6 +146,12 @@ To prevent design system drift and ensure strict token adherence, two automated 
    - Scans UI code outside `theme/` for raw `Color(0x...)` and `alpha = 0.x` literals.
    - Scans UI code outside `theme/` for raw `.dp` / `Dp(...)` dimension literals.
    - Verifies that raw `com.kashif_e.backdrop.effects.*` imports are not used outside `core:designsystem`.
+   - Verifies that `feature/*`, `lti-shared`, `lti-desktop`, and `catalog` do not import a raw Material3
+     component that has a Glass equivalent (e.g. `material3.Button`, `TextField`, `Switch`, `Slider`,
+     `Card`, `IconButton`, `AlertDialog`, `NavigationBar`/`NavigationRail`, `Tab`/`TabRow`,
+     `ModalBottomSheet`) — use the corresponding `Glass*` component from `core:designsystem`/`core:ui`
+     instead. Primitives with no styled container of their own (`Text`, `Icon`, `MaterialTheme`) are
+     not restricted.
 
 2. **Custom Detekt Rule Set (`:detekt-rules`):**
    - Configured in `config/detekt/detekt.yml` under `lti-design-system:`.
