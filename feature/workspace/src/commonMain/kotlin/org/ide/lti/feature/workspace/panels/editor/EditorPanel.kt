@@ -56,13 +56,18 @@ fun EditorPanel(
     viewModel: EditorViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val isWorkspaceOpen by viewModel.isWorkspaceOpen.collectAsState()
 
     GlassPanelContainer(
         modifier = modifier,
     ) {
         when (val state = uiState) {
             is EditorUiState.Empty -> {
-                EmptyEditorView()
+                if (isWorkspaceOpen) {
+                    EmptyEditorView()
+                } else {
+                    NoWorkspaceEditorView()
+                }
             }
 
             is EditorUiState.Loaded -> {
@@ -120,6 +125,58 @@ fun EditorPanel(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun NoWorkspaceEditorView() {
+    val glassColors = GlassTheme.colors
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(Spacing.Large),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(ComponentSize.EmptyStateBadgeSize)
+                    .clip(CircleShape)
+                    .background(glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Faint))
+                    .border(
+                        StrokeWidth.Hairline,
+                        glassColors.glassBorder.copy(alpha = AlphaTokens.Border),
+                        CircleShape,
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = AppIcons.File,
+                    contentDescription = null,
+                    tint = glassColors.onGlassMuted,
+                    modifier = Modifier.size(IconSize.ExtraLarge),
+                )
+            }
+
+            Spacer(modifier = Modifier.height(Spacing.Medium))
+
+            Text(
+                text = "Welcome to LtiRom",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Medium,
+                color = glassColors.onGlassSecondary,
+            )
+
+            Spacer(modifier = Modifier.height(Spacing.ExtraSmall))
+
+            Text(
+                text = "Open a folder in the Explorer to begin editing",
+                style = MaterialTheme.typography.bodySmall,
+                color = glassColors.onGlassMuted,
+            )
         }
     }
 }

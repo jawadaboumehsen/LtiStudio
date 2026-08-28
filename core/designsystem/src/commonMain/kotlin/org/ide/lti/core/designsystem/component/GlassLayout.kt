@@ -1002,7 +1002,6 @@ fun PreviewGlassLayout() {
     }
 }
 
-
 /**
  * State holder for GlassLayout
  * Manages all panel sizes, visibility, and drag behavior
@@ -1012,6 +1011,9 @@ class GlassLayoutState(
     initialLeftWeight: Float = 0.2f,
     initialRightWeight: Float = 0.25f,
     initialBottomWeight: Float = 0.3f,
+    val initialShowLeft: Boolean = true,
+    val initialShowRight: Boolean = true,
+    val initialShowBottom: Boolean = false,
     val minLeftWeight: Float = 0.15f,
     val minRightWeight: Float = 0.2f,
     val minBottomWeight: Float = 0.1f,
@@ -1031,11 +1033,11 @@ class GlassLayoutState(
     var bottomWeight by mutableStateOf(initialBottomWeight)
         private set
 
-    var showLeft by mutableStateOf(true)
+    var showLeft by mutableStateOf(initialShowLeft)
         private set
-    var showRight by mutableStateOf(true)
+    var showRight by mutableStateOf(initialShowRight)
         private set
-    var showBottom by mutableStateOf(true)
+    var showBottom by mutableStateOf(initialShowBottom)
         private set
 
     private var leftWasAtMinBeforeDrag by mutableStateOf(false)
@@ -1189,9 +1191,9 @@ class GlassLayoutState(
         leftWeight = _initialLeftWeight
         rightWeight = _initialRightWeight
         bottomWeight = _initialBottomWeight
-        showLeft = true
-        showRight = true
-        showBottom = true
+        showLeft = initialShowLeft
+        showRight = initialShowRight
+        showBottom = initialShowBottom
         leftWasAtMinBeforeDrag = false
         rightWasAtMinBeforeDrag = false
         bottomWasAtMinBeforeDrag = false
@@ -1211,6 +1213,9 @@ fun rememberLtiLayoutState(
     initialLeftWeight: Float = 0.2f,
     initialRightWeight: Float = 0.25f,
     initialBottomWeight: Float = 0.3f,
+    initialShowLeft: Boolean = true,
+    initialShowRight: Boolean = true,
+    initialShowBottom: Boolean = false,
     minLeftWeight: Float = 0.15f,
     minRightWeight: Float = 0.2f,
     minBottomWeight: Float = 0.1f,
@@ -1223,6 +1228,9 @@ fun rememberLtiLayoutState(
         initialLeftWeight = initialLeftWeight,
         initialRightWeight = initialRightWeight,
         initialBottomWeight = initialBottomWeight,
+        initialShowLeft = initialShowLeft,
+        initialShowRight = initialShowRight,
+        initialShowBottom = initialShowBottom,
         minLeftWeight = minLeftWeight,
         minRightWeight = minRightWeight,
         minBottomWeight = minBottomWeight,

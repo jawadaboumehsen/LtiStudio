@@ -28,11 +28,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import org.ide.lti.core.designsystem.component.GlassButton
 import org.ide.lti.core.designsystem.component.GlassIconButton
 import org.ide.lti.core.designsystem.component.GlassPanelContainer
 import org.ide.lti.core.designsystem.component.GlassPanelHeader
 import org.ide.lti.core.designsystem.component.GlassPanelHeaderAction
+import org.ide.lti.core.designsystem.component.GlassPrimaryButton
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
@@ -135,7 +135,7 @@ fun ExplorerPanel(
                             modifier = Modifier.padding(bottom = Spacing.Medium)
                         )
 
-                        GlassButton(
+                        GlassPrimaryButton(
                             onClick = { viewModel.openFolder() }
                         ) {
                             Text(text = "Open Folder")

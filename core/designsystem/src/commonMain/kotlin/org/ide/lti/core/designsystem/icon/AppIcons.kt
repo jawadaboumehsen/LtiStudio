@@ -75,6 +75,7 @@ import androidx.compose.material.icons.outlined.Wallet
 import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Contacts
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Info
@@ -160,6 +161,7 @@ object AppIcons {
     val Clear = Icons.Default.Clear
     val Refresh = Icons.Default.Refresh
     val KeyboardArrowRight = Icons.Default.KeyboardArrowRight
+    val Sparkles = Icons.Rounded.AutoAwesome
 
     // File system icons
     val Folder = Icons.Default.Folder

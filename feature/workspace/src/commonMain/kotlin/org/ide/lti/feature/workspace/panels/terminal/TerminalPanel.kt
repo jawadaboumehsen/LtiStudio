@@ -10,7 +10,6 @@
 package org.ide.lti.feature.workspace.panels.terminal
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,7 +19,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -32,7 +30,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
 import org.ide.lti.core.designsystem.component.GlassPanelContainer
 import org.ide.lti.core.designsystem.component.GlassPanelHeader
 import org.ide.lti.core.designsystem.theme.ComponentSize
@@ -67,42 +64,52 @@ fun TerminalPanel(
 private fun EmptyTerminalView() {
     val glassColors = GlassTheme.colors
     Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
+        contentAlignment = Alignment.TopStart,
     ) {
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-            modifier = Modifier.padding(Spacing.Medium),
+            verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+            horizontalAlignment = Alignment.Start,
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.Small)
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
             ) {
                 Box(
                     modifier = Modifier
                         .size(ComponentSize.StatusDotSize)
                         .clip(CircleShape)
-                        .background(glassColors.glassAccent)
+                        .background(glassColors.glassAccent),
                 )
                 Text(
-                    text = "Integrated Terminal",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Medium,
-                    color = glassColors.onGlass,
+                    text = "lti-terminal",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = glassColors.onGlassMuted,
                 )
             }
 
-            Spacer(modifier = Modifier.height(Spacing.ExtraSmall))
-
-            Text(
-                text = "$ lti --status ready",
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 11.sp
-                ),
-                color = glassColors.onGlassMuted,
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+            ) {
+                Text(
+                    text = "$",
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                    ),
+                    color = glassColors.glassAccent,
+                )
+                Text(
+                    text = "lti --status ready",
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        fontFamily = FontFamily.Monospace,
+                    ),
+                    color = glassColors.onGlassSecondary,
+                )
+            }
         }
     }
 }
