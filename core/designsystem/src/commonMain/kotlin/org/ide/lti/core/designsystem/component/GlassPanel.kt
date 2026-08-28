@@ -117,8 +117,9 @@ fun GlassPanelHeader(
                     imageVector = icon,
                     contentDescription = null,
                     tint = GlassTheme.colors.onGlassSecondary,
-                    modifier = Modifier.padding(end = Spacing.Small)
+                    modifier = Modifier.size(IconSize.Medium)
                 )
+                Spacer(modifier = Modifier.width(Spacing.Small))
             }
             Text(
                 text = title,

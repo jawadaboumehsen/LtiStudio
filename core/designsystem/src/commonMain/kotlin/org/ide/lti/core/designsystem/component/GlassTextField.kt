@@ -129,7 +129,7 @@ fun GlassTextField(
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodySmall,
-                color = if (isError) MaterialTheme.colorScheme.error else GlassTheme.colors.onGlassSecondary,
+                color = resolveLabelColor(isError = isError, enabled = enabled),
                 modifier = Modifier.padding(bottom = Spacing.ExtraSmall, start = Spacing.ExtraSmall)
             )
         }
@@ -168,7 +168,9 @@ fun GlassTextField(
                         modifier = Modifier.fillMaxWidth(),
                         enabled = enabled,
                         readOnly = readOnly,
-                        textStyle = textStyle.copy(color = GlassTheme.colors.onGlass),
+                        textStyle = textStyle.copy(
+                            color = if (enabled) GlassTheme.colors.onGlass else GlassTheme.colors.onGlassMuted
+                        ),
                         visualTransformation = visualTransformation,
                         keyboardOptions = keyboardOptions,
                         keyboardActions = keyboardActions,
@@ -354,4 +356,11 @@ fun GlassOtpTextField(
             )
         }
     }
+}
+
+@Composable
+private fun resolveLabelColor(isError: Boolean, enabled: Boolean): Color = when {
+    isError -> MaterialTheme.colorScheme.error
+    !enabled -> GlassTheme.colors.onGlassMuted
+    else -> GlassTheme.colors.onGlassSecondary
 }

@@ -11,6 +11,7 @@ package org.ide.lti.core.designsystem.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -108,6 +109,7 @@ fun LtiTheme(
             LocalGlassBackdrop provides backdrop,
             LocalGlassEffectsEnabled provides effectsEnabled,
             LocalReducedMotion provides reducedMotion,
+            LocalContentColor provides resolvedGlassColors.onGlass,
             content = content
         )
     }
@@ -123,6 +125,7 @@ fun ProvideGlassColors(
 ) {
     CompositionLocalProvider(
         LocalGlassColors provides colors,
+        LocalContentColor provides colors.onGlass,
         content = content
     )
 }

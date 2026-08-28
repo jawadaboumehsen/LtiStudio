@@ -184,7 +184,9 @@ fun GlassLoadingDialog(
                             color = GlassTheme.colors.onGlass,
                             modifier = Modifier.padding(bottom = Spacing.Medium)
                         )
-                        CircularProgressIndicator()
+                        CircularProgressIndicator(
+                            color = GlassTheme.colors.glassAccent,
+                        )
                     }
                 }
             }

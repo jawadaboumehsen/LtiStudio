@@ -244,6 +244,7 @@ private fun ChatView(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         CircularProgressIndicator(
+                            color = GlassTheme.colors.glassAccent,
                             modifier = Modifier
                                 .padding(end = Spacing.Small)
                                 .width(IconSize.Medium)
@@ -261,7 +262,10 @@ private fun ChatView(
         }
 
         Spacer(modifier = Modifier.height(Spacing.Small))
-        HorizontalDivider()
+        HorizontalDivider(
+            color = GlassTheme.colors.glassBorder.copy(alpha = AlphaTokens.Faint),
+            thickness = StrokeWidth.Hairline,
+        )
         Spacer(modifier = Modifier.height(Spacing.Small))
 
         // Input field

@@ -65,7 +65,7 @@ fun GlassChatInput(
             onValueChange = { inputText = it },
             textStyle = TextStyle(
                 fontSize = 14.sp,
-                color = GlassTheme.colors.onGlass,
+                color = if (enabled) GlassTheme.colors.onGlass else GlassTheme.colors.onGlassMuted,
             ),
             cursorBrush = SolidColor(GlassTheme.colors.glassAccent),
             enabled = enabled,
