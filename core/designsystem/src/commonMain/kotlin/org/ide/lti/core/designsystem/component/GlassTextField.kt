@@ -259,6 +259,7 @@ fun GlassPasswordField(
                     modifier = Modifier.semantics { showPasswordTestTag?.let { testTag = it } },
                     imageVector = imageVector,
                     contentDescription = "togglePassword",
+                    tint = GlassTheme.colors.onGlassSecondary,
                 )
             }
         },

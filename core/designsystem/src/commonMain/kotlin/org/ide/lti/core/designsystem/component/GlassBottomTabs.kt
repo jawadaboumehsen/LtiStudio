@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -92,6 +93,7 @@ fun RowScope.GlassBottomTab(
     content: @Composable ColumnScope.() -> Unit
 ) {
     val scale = LocalGlassBottomTabScale.current
+    val glassColors = GlassTheme.colors
     Column(
         modifier
             .clip(ContinuousCapsule)
@@ -110,7 +112,11 @@ fun RowScope.GlassBottomTab(
             },
         verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
-        content = content
+        content = {
+            CompositionLocalProvider(LocalContentColor provides glassColors.onGlass) {
+                content()
+            }
+        }
     )
 }
 

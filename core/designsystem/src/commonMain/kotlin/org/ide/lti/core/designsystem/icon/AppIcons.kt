@@ -93,6 +93,7 @@ import org.ide.lti.core.designsystem.generated.resources.Res
 import org.ide.lti.core.designsystem.generated.resources.bottomPanel
 import org.ide.lti.core.designsystem.generated.resources.leftPanel_1
 import org.ide.lti.core.designsystem.generated.resources.rightPanel
+import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.jetbrains.compose.resources.painterResource
 
 
@@ -176,7 +177,8 @@ object AppIcons {
     val rightPanel: @Composable () -> Unit = {
         Icon(
             painter = painterResource(Res.drawable.rightPanel),
-            contentDescription = "Right Panel"
+            contentDescription = "Right Panel",
+            tint = GlassTheme.colors.onGlass,
         )
     }
 
@@ -185,7 +187,8 @@ object AppIcons {
     val leftPanel: @Composable () -> Unit = {
         Icon(
             painter = painterResource(Res.drawable.leftPanel_1),
-            contentDescription = "Left Panel"
+            contentDescription = "Left Panel",
+            tint = GlassTheme.colors.onGlass,
         )
     }
 
@@ -194,7 +197,8 @@ object AppIcons {
     val bottomPanel: @Composable () -> Unit = {
         Icon(
             painter = painterResource(Res.drawable.bottomPanel),
-            contentDescription = "Bottom Panel"
+            contentDescription = "Bottom Panel",
+            tint = GlassTheme.colors.onGlass,
         )
     }
     val bottomPanelPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.bottomPanel) }

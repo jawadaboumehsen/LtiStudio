@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -41,11 +43,13 @@ fun GlassIcon(
     isInteractive: Boolean = true,
     tint: Color = Color.Unspecified,
     surfaceColor: Color = Color.Unspecified,
+    contentColor: Color = Color.Unspecified,
     icon: @Composable () -> Unit
 ) {
     val animationScope = rememberCoroutineScope()
     val glassColors = GlassTheme.colors
     val actualBackdrop = backdrop ?: GlassTheme.backdrop ?: rememberLayerBackdrop()
+    val finalContentColor = if (contentColor.isSpecified) contentColor else glassColors.onGlass
 
     val interactiveHighlight = remember(animationScope) {
         InteractiveHighlight(
@@ -97,7 +101,9 @@ fun GlassIcon(
             ),
         contentAlignment = Alignment.Center
     ) {
-        icon()
+        CompositionLocalProvider(LocalContentColor provides finalContentColor) {
+            icon()
+        }
     }
 }
 
