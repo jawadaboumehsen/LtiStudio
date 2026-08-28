@@ -10,6 +10,7 @@
 package org.ide.lti.core.data.di
 
 import org.ide.lti.core.data.repository.workspace.WorkspaceRepositoryImpl
+import org.ide.lti.core.data.settings.AppSettingsState
 import org.ide.lti.core.data.utils.NetworkMonitor
 import org.ide.lti.core.data.utils.TimeZoneMonitor
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
@@ -22,6 +23,7 @@ val DataModule = module {
     single<PlatformDependentDataModule> { getPlatformDataModule }
     single<NetworkMonitor> { getPlatformDataModule.networkMonitor }
     single<TimeZoneMonitor> { getPlatformDataModule.timeZoneMonitor }
+    single { AppSettingsState() }
 
     // Repositories
     singleOf(::WorkspaceRepositoryImpl) { bind<WorkspaceRepository>() }

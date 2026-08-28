@@ -41,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import org.ide.lti.core.data.settings.AppSettingsState
 import org.ide.lti.core.designsystem.component.GlassCard
 import org.ide.lti.core.designsystem.component.GlassIconButton
 import org.ide.lti.core.designsystem.component.GlassToggle
@@ -52,15 +53,18 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.koin.compose.koinInject
 
 @Composable
 fun SettingsScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
+    appSettingsState: AppSettingsState = koinInject(),
 ) {
     SettingsScreenContent(
         modifier = modifier.fillMaxSize(),
         onBackClick = onBackClick,
+        appSettingsState = appSettingsState,
     )
 }
 
@@ -68,10 +72,9 @@ fun SettingsScreen(
 fun SettingsScreenContent(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
+    appSettingsState: AppSettingsState = koinInject(),
 ) {
-    var darkModeEnabled by remember { mutableStateOf(true) }
     var pushEnabled by remember { mutableStateOf(true) }
-    var fluidAnimationsEnabled by remember { mutableStateOf(true) }
 
     Box(
         modifier = modifier.fillMaxSize(),
@@ -126,8 +129,8 @@ fun SettingsScreenContent(
                         icon = AppIcons.Sparkles,
                         title = "Dark Mode",
                         description = "AMOLED true-black surfaces with light-blue accents",
-                        checked = darkModeEnabled,
-                        onCheckedChange = { darkModeEnabled = it },
+                        checked = appSettingsState.isDarkTheme,
+                        onCheckedChange = { appSettingsState.isDarkTheme = it },
                     )
 
                     HorizontalDivider(
@@ -139,8 +142,8 @@ fun SettingsScreenContent(
                         icon = AppIcons.LayoutSplit,
                         title = "Fluid Glass Effects",
                         description = "GPU-accelerated lens refraction and vibrancy",
-                        checked = fluidAnimationsEnabled,
-                        onCheckedChange = { fluidAnimationsEnabled = it },
+                        checked = appSettingsState.effectsEnabled,
+                        onCheckedChange = { appSettingsState.effectsEnabled = it },
                     )
 
                     HorizontalDivider(

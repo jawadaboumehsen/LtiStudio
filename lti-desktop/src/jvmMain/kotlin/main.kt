@@ -47,6 +47,9 @@ fun main(args: Array<String>) = nucleusApplication(args) {
                 onClose = {
                     exitApplication()
                 },
+                onDragWindow = {
+                    try { nucleusWin.unsafe.taoWindow?.dragWindow() } catch (_: Throwable) {}
+                },
             )
         ) {
             LtiSharedApp()

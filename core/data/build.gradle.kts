@@ -22,6 +22,7 @@ kotlin {
             implementation(projects.core.network)
             implementation(projects.core.analytics)
             implementation(libs.kotlinx.serialization.json)
+            api(libs.jb.composeRuntime)
         }
 
     }

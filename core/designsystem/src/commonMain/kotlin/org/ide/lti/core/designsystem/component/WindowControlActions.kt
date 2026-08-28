@@ -18,6 +18,7 @@ data class WindowControlActions(
     val onMinimize: () -> Unit = {},
     val onMaximize: () -> Unit = {},
     val onClose: () -> Unit = {},
+    val onDragWindow: () -> Unit = {},
     val isMaximized: () -> Boolean = { false }
 )
 

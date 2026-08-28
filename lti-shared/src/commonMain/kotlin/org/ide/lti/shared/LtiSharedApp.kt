@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.navigation.compose.rememberNavController
 import com.kashif_e.backdrop.backdrops.layerBackdrop
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
+import org.ide.lti.core.data.settings.AppSettingsState
 import org.ide.lti.core.data.utils.NetworkMonitor
 import org.ide.lti.core.data.utils.TimeZoneMonitor
 import org.ide.lti.core.designsystem.theme.AlphaTokens
@@ -34,10 +35,12 @@ fun LtiSharedApp(
     modifier: Modifier = Modifier,
     networkMonitor: NetworkMonitor = koinInject(),
     timeZoneMonitor: TimeZoneMonitor = koinInject(),
+    appSettingsState: AppSettingsState = koinInject(),
 ) {
     SharedApp(
         networkMonitor = networkMonitor,
         timeZoneMonitor = timeZoneMonitor,
+        appSettingsState = appSettingsState,
         modifier = modifier,
     )
 }
@@ -46,12 +49,18 @@ fun LtiSharedApp(
 private fun SharedApp(
     networkMonitor: NetworkMonitor,
     timeZoneMonitor: TimeZoneMonitor,
+    appSettingsState: AppSettingsState,
     modifier: Modifier = Modifier,
 ) {
     val navController = rememberNavController()
     val backdrop = rememberLayerBackdrop()
 
-    LtiTheme(sharedBackdrop = backdrop) {
+    LtiTheme(
+        darkTheme = appSettingsState.isDarkTheme,
+        effectsEnabled = appSettingsState.effectsEnabled,
+        reducedMotion = appSettingsState.reducedMotion,
+        sharedBackdrop = backdrop,
+    ) {
         val colorScheme = MaterialTheme.colorScheme
 
         Box(modifier = modifier.fillMaxSize()) {

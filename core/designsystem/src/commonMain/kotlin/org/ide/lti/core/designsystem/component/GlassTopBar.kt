@@ -51,8 +51,11 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.PointerButton
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -103,6 +106,7 @@ fun GlassTopBar(
     onWindowMinimize: (() -> Unit)? = null,
     onWindowMaximize: (() -> Unit)? = null,
     onWindowClose: (() -> Unit)? = null,
+    onWindowDrag: (() -> Unit)? = null,
     isLeftPanelVisible: Boolean = true,
     isRightPanelVisible: Boolean = true,
     isMiddleDownPanelVisible: Boolean = true,
@@ -119,11 +123,13 @@ fun GlassTopBar(
     val effectiveMinimize = onWindowMinimize ?: localControls.onMinimize
     val effectiveMaximize = onWindowMaximize ?: localControls.onMaximize
     val effectiveClose = onWindowClose ?: localControls.onClose
+    val effectiveDrag = onWindowDrag ?: localControls.onDragWindow
 
     Row(
         modifier = modifier
             .fillMaxWidth()
             .height(ComponentSize.TopBarHeight)
+            .windowDragGesture(effectiveDrag)
             .then(
                 if (effectsEnabled && actualBackdrop != null) {
                     Modifier.drawBackdrop(
@@ -620,3 +626,33 @@ private fun GlassTopBar_Preview() {
         )
     }
 }
+
+@OptIn(ExperimentalComposeUiApi::class)
+private fun Modifier.windowDragGesture(onDrag: () -> Unit): Modifier =
+    pointerInput(onDrag) {
+        awaitPointerEventScope {
+            var pendingDrag = false
+            while (true) {
+                val event = awaitPointerEvent(PointerEventPass.Main)
+                event.changes.forEach { change ->
+                    if (!change.isConsumed) {
+                        when (event.type) {
+                            PointerEventType.Press -> {
+                                pendingDrag = event.button == PointerButton.Primary
+                            }
+                            PointerEventType.Move -> {
+                                if (pendingDrag) {
+                                    onDrag()
+                                    pendingDrag = false
+                                }
+                            }
+                            PointerEventType.Release -> {
+                                pendingDrag = false
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+

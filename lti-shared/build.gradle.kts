@@ -53,7 +53,25 @@ kotlin {
             implementation(compose.desktop.currentOs)
             implementation(compose.desktop.common)
         }
+
+        desktopTest.dependencies {
+            implementation(compose.desktop.uiTestJUnit4)
+            implementation(compose.desktop.currentOs)
+            implementation(libs.junit)
+            implementation(libs.koin.test)
+        }
     }
+}
+
+tasks.withType<Test>().configureEach {
+    testLogging {
+        events("passed", "skipped", "failed", "standardOut", "standardError")
+        showStandardStreams = true
+    }
+}
+
+tasks.register("test") {
+    dependsOn("desktopTest")
 }
 
 compose.resources {
