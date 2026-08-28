@@ -1,0 +1,431 @@
+/*
+ * Copyright 2025 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
+package org.ide.lti.core.designsystem.screenshot
+
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.FolderOpen
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Send
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.runDesktopComposeUiTest
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+import com.kashif_e.backdrop.backdrops.layerBackdrop
+import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
+import org.ide.lti.core.designsystem.component.GlassLayout
+import org.ide.lti.core.designsystem.component.GlassPanelContainer
+import org.ide.lti.core.designsystem.component.GlassPanelHeader
+import org.ide.lti.core.designsystem.component.GlassPanelHeaderAction
+import org.ide.lti.core.designsystem.component.rememberLtiLayoutState
+import org.ide.lti.core.designsystem.icon.AppIcons
+import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.CornerRadius
+import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.IconSize
+import org.ide.lti.core.designsystem.theme.LtiTheme
+import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.junit.Test
+
+class GlassChromeDiagnosticScreenshotTest {
+
+    companion object {
+        private const val TEST_WIDTH = 1200
+        private const val TEST_HEIGHT = 750
+    }
+
+    /**
+     * Aurora Backdrop Canvas exactly matching LtiSharedApp.kt
+     */
+    @Composable
+    private fun CosmicAuroraBackdrop(
+        backdrop: com.kashif_e.backdrop.backdrops.LayerBackdrop,
+        modifier: Modifier = Modifier,
+    ) {
+        val colorScheme = MaterialTheme.colorScheme
+
+        Canvas(
+            modifier = modifier
+                .layerBackdrop(backdrop)
+                .fillMaxSize()
+        ) {
+            // 1. Deep space / page base
+            drawRect(colorScheme.background)
+
+            // 2. Primary nebula (Top-Center)
+            drawRect(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        colorScheme.primary.copy(alpha = AlphaTokens.Soft),
+                        colorScheme.primaryContainer.copy(alpha = AlphaTokens.Faded),
+                        Color.Transparent
+                    ),
+                    center = Offset(size.width * 0.40f, size.height * 0.15f),
+                    radius = size.width * 0.55f
+                )
+            )
+
+            // 3. Secondary aurora glow (Top-Right)
+            drawRect(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        colorScheme.secondary.copy(alpha = AlphaTokens.Ambient),
+                        colorScheme.secondaryContainer.copy(alpha = AlphaTokens.Hover),
+                        Color.Transparent
+                    ),
+                    center = Offset(size.width * 0.85f, size.height * 0.20f),
+                    radius = size.width * 0.50f
+                )
+            )
+
+            // 4. Tertiary shimmer (Bottom-Left)
+            drawRect(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        colorScheme.tertiary.copy(alpha = AlphaTokens.Ambient),
+                        colorScheme.tertiaryContainer.copy(alpha = AlphaTokens.Hover),
+                        Color.Transparent
+                    ),
+                    center = Offset(size.width * 0.15f, size.height * 0.85f),
+                    radius = size.width * 0.50f
+                )
+            )
+
+            // 5. Inverse-primary accent (Bottom-Right)
+            drawRect(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        colorScheme.inversePrimary.copy(alpha = AlphaTokens.Faded),
+                        Color.Transparent
+                    ),
+                    center = Offset(size.width * 0.90f, size.height * 0.90f),
+                    radius = size.width * 0.45f
+                )
+            )
+
+            // 6. Smooth Vignette Overlay
+            drawRect(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        colorScheme.scrim.copy(alpha = AlphaTokens.Scrim),
+                        Color.Transparent,
+                        colorScheme.scrim.copy(alpha = AlphaTokens.Half)
+                    )
+                )
+            )
+        }
+    }
+
+    // Realistic Explorer Panel
+    @Composable
+    private fun MockExplorerPanel() {
+        GlassPanelContainer(
+            header = {
+                GlassPanelHeader(
+                    title = "EXPLORER",
+                    actions = {
+                        GlassPanelHeaderAction(
+                            icon = AppIcons.Refresh,
+                            contentDescription = "Refresh",
+                            onClick = {}
+                        )
+                    }
+                )
+            }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(Spacing.Small),
+                verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)
+            ) {
+                MockTreeItem(name = "LtiRomGui", isFolder = true, isOpen = true, depth = 0)
+                MockTreeItem(name = "core", isFolder = true, isOpen = true, depth = 1)
+                MockTreeItem(name = "designsystem", isFolder = true, isOpen = true, depth = 2)
+                MockTreeItem(name = "GlassLayout.kt", isFolder = false, isOpen = false, depth = 3, isSelected = true)
+                MockTreeItem(name = "GlassTopBar.kt", isFolder = false, isOpen = false, depth = 3)
+                MockTreeItem(name = "GlassStatusBar.kt", isFolder = false, isOpen = false, depth = 3)
+                MockTreeItem(name = "lti-shared", isFolder = true, isOpen = true, depth = 1)
+                MockTreeItem(name = "LtiSharedApp.kt", isFolder = false, isOpen = false, depth = 2)
+            }
+        }
+    }
+
+    @Composable
+    private fun MockTreeItem(
+        name: String,
+        isFolder: Boolean,
+        isOpen: Boolean,
+        depth: Int,
+        isSelected: Boolean = false,
+    ) {
+        val glassColors = GlassTheme.colors
+        val bgModifier = if (isSelected) {
+            Modifier.background(
+                glassColors.glassAccent.copy(alpha = AlphaTokens.Hover),
+                RoundedCornerShape(CornerRadius.Compact)
+            )
+        } else {
+            Modifier
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(bgModifier)
+                .padding(
+                    start = Spacing.Fourteen * depth,
+                    top = Spacing.ExtraExtraSmall,
+                    bottom = Spacing.ExtraExtraSmall,
+                    end = Spacing.ExtraSmall
+                ),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Compact)
+        ) {
+            Icon(
+                imageVector = if (isFolder) {
+                    if (isOpen) Icons.Default.FolderOpen else Icons.Default.Folder
+                } else {
+                    Icons.Default.Description
+                },
+                contentDescription = null,
+                tint = if (isFolder) {
+                    glassColors.glassAccent
+                } else if (isSelected) {
+                    glassColors.onGlass
+                } else {
+                    glassColors.onGlassMuted
+                },
+                modifier = Modifier.size(IconSize.Small)
+            )
+            Text(
+                text = name,
+                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                color = if (isSelected) glassColors.onGlass else glassColors.onGlassSecondary,
+                fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal,
+            )
+        }
+    }
+
+    // Realistic Editor Panel
+    @Composable
+    private fun MockEditorPanel() {
+        val glassColors = GlassTheme.colors
+        GlassPanelContainer(
+            header = {
+                GlassPanelHeader(
+                    title = "GlassLayout.kt",
+                    icon = Icons.Default.Code,
+                    actions = {
+                        GlassPanelHeaderAction(
+                            icon = Icons.Default.PlayArrow,
+                            contentDescription = "Run",
+                            onClick = {}
+                        )
+                    }
+                )
+            }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(Spacing.SmallMedium)
+            ) {
+                val lines = listOf(
+                    "package org.ide.lti.core.designsystem.component",
+                    "",
+                    "@Composable",
+                    "fun GlassLayout(",
+                    "    state: LtiLayoutState = rememberLtiLayoutState(),",
+                    "    leftPanel: @Composable () -> Unit,",
+                    "    mainContent: @Composable () -> Unit,",
+                    "    rightPanel: @Composable () -> Unit,",
+                    "    appearance: GlassLayoutAppearance = GlassLayoutAppearance.Default,",
+                    ") {",
+                    "    // Liquid Glass Morphism Container",
+                    "    Column(modifier = Modifier.fillMaxSize()) {",
+                    "        GlassTopBar()",
+                    "        // Resizable panel cluster with shared backdrop",
+                    "    }",
+                    "}",
+                )
+
+                lines.forEachIndexed { index, line ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.Hairline),
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.Medium)
+                    ) {
+                        Text(
+                            text = "${index + 1}".padStart(3, ' '),
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontFamily = FontFamily.Monospace,
+                                fontSize = 11.sp,
+                                color = glassColors.onGlassMuted.copy(alpha = AlphaTokens.Half)
+                            )
+                        )
+                        val textColor = when {
+                            line.startsWith("fun") ||
+                                line.startsWith("@Composable") ||
+                                line.startsWith("package") -> glassColors.glassAccent
+                            line.startsWith("    //") -> glassColors.onGlassMuted
+                            else -> glassColors.onGlassSecondary
+                        }
+                        Text(
+                            text = line,
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontFamily = FontFamily.Monospace,
+                                fontSize = 11.5.sp,
+                                color = textColor
+                            )
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    // Realistic AI Assistant Panel
+    @Composable
+    private fun MockAIAssistantPanel() {
+        val glassColors = GlassTheme.colors
+        GlassPanelContainer(
+            header = {
+                GlassPanelHeader(
+                    title = "AI Assistant",
+                    icon = Icons.Default.AutoAwesome
+                )
+            }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(Spacing.SmallMedium),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(CornerRadius.MediumSmall))
+                            .background(glassColors.glassSurfaceElevated)
+                            .border(
+                                StrokeWidth.Hairline,
+                                glassColors.glassBorder,
+                                RoundedCornerShape(CornerRadius.MediumSmall)
+                            )
+                            .padding(Spacing.SmallMedium)
+                    ) {
+                        Text(
+                            text = "Analyzing GlassLayout and chrome geometry. " +
+                                "Top bar and status bar layout alignment ready for review.",
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
+                            color = glassColors.onGlassSecondary
+                        )
+                    }
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(CornerRadius.Compact))
+                        .background(glassColors.glassSurface)
+                        .border(
+                            StrokeWidth.Hairline,
+                            glassColors.glassBorder,
+                            RoundedCornerShape(CornerRadius.Compact)
+                        )
+                        .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Ask AI Assistant...",
+                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                        color = glassColors.onGlassMuted,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Icon(
+                        imageVector = Icons.Default.Send,
+                        contentDescription = "Send",
+                        tint = glassColors.glassAccent,
+                        modifier = Modifier.size(IconSize.Small)
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * Diagnostic Integration Offscreen Render & Screenshot Regression Test.
+     * Composes real aurora Canvas + LtiTheme + GlassLayout with default topBar & statusBar.
+     */
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun testDiagnosticRealAppChromeAndBackdrop() = runDesktopComposeUiTest(width = TEST_WIDTH, height = TEST_HEIGHT) {
+        setContent {
+            val backdrop = rememberLayerBackdrop()
+
+            LtiTheme(sharedBackdrop = backdrop, darkTheme = true) {
+                val layoutState = rememberLtiLayoutState(
+                    initialLeftWeight = 0.22f,
+                    initialRightWeight = 0.26f,
+                    initialShowLeft = true,
+                    initialShowRight = true,
+                    initialShowBottom = false
+                )
+
+                Box(modifier = Modifier.fillMaxSize()) {
+                    CosmicAuroraBackdrop(backdrop = backdrop)
+
+                    GlassLayout(
+                        state = layoutState,
+                        modifier = Modifier.fillMaxSize(),
+                        leftPanel = { MockExplorerPanel() },
+                        mainContent = { MockEditorPanel() },
+                        bottomPanel = {},
+                        rightPanel = { MockAIAssistantPanel() },
+                    )
+                }
+            }
+        }
+
+        val image = onRoot().captureToImage()
+        ScreenshotTestHelper.assertMatchesBaseline("glass_app_chrome_full_composition", image)
+    }
+}

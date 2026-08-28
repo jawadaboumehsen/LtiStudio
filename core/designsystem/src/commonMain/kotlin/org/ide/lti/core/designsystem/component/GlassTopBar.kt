@@ -63,6 +63,7 @@ import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
 import com.kashif_e.backdrop.highlight.Highlight
+import com.kyant.capsule.ContinuousRoundedRectangle
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BackdropBlur
@@ -127,7 +128,7 @@ fun GlassTopBar(
                 if (effectsEnabled && actualBackdrop != null) {
                     Modifier.drawBackdrop(
                         backdrop = actualBackdrop,
-                        shape = { RoundedCornerShape(CornerRadius.None) },
+                        shape = { ContinuousRoundedRectangle(CornerRadius.Panel) },
                         effects = {
                             vibrancy()
                             blur(BackdropBlur.TopBar.toPx())
@@ -145,7 +146,7 @@ fun GlassTopBar(
             .border(
                 width = StrokeWidth.Hairline,
                 color = glassColors.glassBorder,
-                shape = RoundedCornerShape(CornerRadius.None)
+                shape = ContinuousRoundedRectangle(CornerRadius.Panel)
             )
             .padding(horizontal = Spacing.MediumSmall),
         verticalAlignment = Alignment.CenterVertically,

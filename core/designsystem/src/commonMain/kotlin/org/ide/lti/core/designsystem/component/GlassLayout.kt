@@ -211,16 +211,22 @@ fun GlassLayout(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .padding(Spacing.ExtraSmall)
             .onSizeChanged { state.containerSize = it }
             .semantics {
                 contentDescription = "LtiRomGui IDE Layout with resizable panels"
             }
     ) {
-        // Top Bar - Fixed height
+        // Top Bar
         Box(
             modifier = Modifier
-                .height(LtiLayoutDefaults.TopBarHeight)
                 .fillMaxWidth()
+                .padding(
+                    start = Spacing.PanelPadding,
+                    end = Spacing.PanelPadding,
+                    top = Spacing.PanelPadding,
+                    bottom = Spacing.ExtraSmall
+                )
         ) {
             topBar()
         }
@@ -307,11 +313,16 @@ fun GlassLayout(
             }
         }
 
-        // Status Bar - Fixed height
+        // Status Bar
         Box(
             modifier = Modifier
-                .height(LtiLayoutDefaults.StatusBarHeight)
                 .fillMaxWidth()
+                .padding(
+                    start = Spacing.PanelPadding,
+                    end = Spacing.PanelPadding,
+                    top = Spacing.ExtraSmall,
+                    bottom = Spacing.PanelPadding
+                )
         ) {
             statusBar()
         }
@@ -346,7 +357,12 @@ private fun GlassLeftPanel(
                 modifier = Modifier
                     .width(width)
                     .fillMaxHeight()
-                    .padding(appearance.panelPadding)
+                    .padding(
+                        start = Spacing.PanelPadding,
+                        end = Spacing.ExtraSmall,
+                        top = Spacing.ExtraSmall,
+                        bottom = Spacing.ExtraSmall
+                    )
                     .semantics {
                         val stateDesc = if (state.showLeft) "visible" else "hidden"
                         contentDescription = "Left panel: $stateDesc"
@@ -393,7 +409,8 @@ private fun RowScope.GlassCenterColumn(
     bottomPanel: @Composable () -> Unit
 ) {
     Column(modifier = Modifier.weight(1f)) {
-        val totalFixedHeight = LtiLayoutDefaults.TopBarHeight + LtiLayoutDefaults.StatusBarHeight
+        val floatingBarPadding = (Spacing.PanelPadding + Spacing.ExtraSmall) * 2
+        val totalFixedHeight = LtiLayoutDefaults.TopBarHeight + LtiLayoutDefaults.StatusBarHeight + floatingBarPadding
         val availableHeight = with(density) {
             (state.containerSize.height - totalFixedHeight.toPx()).toDp()
         }
@@ -404,7 +421,12 @@ private fun RowScope.GlassCenterColumn(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
-                .padding(appearance.panelPadding)
+                .padding(
+                    start = if (state.showLeft) Spacing.ExtraSmall else Spacing.PanelPadding,
+                    end = if (state.showRight) Spacing.ExtraSmall else Spacing.PanelPadding,
+                    top = Spacing.ExtraSmall,
+                    bottom = Spacing.ExtraSmall
+                )
                 .semantics {
                     contentDescription = "Main content panel"
                 },
@@ -453,7 +475,12 @@ private fun RowScope.GlassCenterColumn(
                     modifier = Modifier
                         .height(bottomPanelHeight)
                         .fillMaxWidth()
-                        .padding(appearance.panelPadding)
+                        .padding(
+                            start = Spacing.PanelPadding,
+                            end = Spacing.PanelPadding,
+                            top = Spacing.ExtraSmall,
+                            bottom = Spacing.ExtraSmall
+                        )
                         .semantics {
                             val stateDesc = if (state.showBottom) "visible" else "hidden"
                             contentDescription = "Bottom panel: $stateDesc"
@@ -514,7 +541,12 @@ private fun GlassRightPanel(
                 modifier = Modifier
                     .width(width)
                     .fillMaxHeight()
-                    .padding(appearance.panelPadding)
+                    .padding(
+                        start = Spacing.ExtraSmall,
+                        end = Spacing.PanelPadding,
+                        top = Spacing.ExtraSmall,
+                        bottom = Spacing.ExtraSmall
+                    )
                     .semantics {
                         val stateDesc = if (state.showRight) "visible" else "hidden"
                         contentDescription = "Right panel: $stateDesc"
