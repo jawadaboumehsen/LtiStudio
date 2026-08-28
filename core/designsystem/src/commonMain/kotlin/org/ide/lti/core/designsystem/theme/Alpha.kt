@@ -61,6 +61,13 @@ object AlphaTokens {
     const val Strong: Float = 0.55f
 
     /**
+     * Dedicated opacity for muted text on translucent glass surfaces (85%).
+     * Ensures high contrast and legibility over luminous backdrop gradients while preserving
+     * clear visual hierarchy below primary and secondary text tiers.
+     */
+    const val TextMuted: Float = 0.85f
+
+    /**
      * Dedicated tint opacity for [GlassPrimaryButton] and primary glass action surfaces.
      * Ensures the brand accent color (cyan) reads prominently and unmistakably as the primary CTA
      * over translucent glass surfaces without washing out or hiding backdrop blur (85%).

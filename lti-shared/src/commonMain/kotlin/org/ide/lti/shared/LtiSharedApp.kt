@@ -71,8 +71,8 @@ private fun SharedApp(
                 drawRect(
                     brush = Brush.radialGradient(
                         colors = listOf(
-                            colorScheme.primary.copy(alpha = AlphaTokens.Strong),
-                            colorScheme.primaryContainer.copy(alpha = AlphaTokens.Ambient),
+                            colorScheme.primary.copy(alpha = AlphaTokens.Soft),
+                            colorScheme.primaryContainer.copy(alpha = AlphaTokens.Faded),
                             Color.Transparent
                         ),
                         center = Offset(size.width * 0.40f, size.height * 0.15f),
@@ -84,8 +84,8 @@ private fun SharedApp(
                 drawRect(
                     brush = Brush.radialGradient(
                         colors = listOf(
-                            colorScheme.secondary.copy(alpha = AlphaTokens.Soft),
-                            colorScheme.secondaryContainer.copy(alpha = AlphaTokens.Faded),
+                            colorScheme.secondary.copy(alpha = AlphaTokens.Ambient),
+                            colorScheme.secondaryContainer.copy(alpha = AlphaTokens.Hover),
                             Color.Transparent
                         ),
                         center = Offset(size.width * 0.85f, size.height * 0.20f),
