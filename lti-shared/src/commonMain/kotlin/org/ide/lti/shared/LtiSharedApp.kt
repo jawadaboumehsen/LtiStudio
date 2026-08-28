@@ -33,11 +33,13 @@ import org.koin.compose.koinInject
 @Composable
 fun LtiSharedApp(
     modifier: Modifier = Modifier,
+    onOpenSettings: () -> Unit = {},
     networkMonitor: NetworkMonitor = koinInject(),
     timeZoneMonitor: TimeZoneMonitor = koinInject(),
     appSettingsState: AppSettingsState = koinInject(),
 ) {
     SharedApp(
+        onOpenSettings = onOpenSettings,
         networkMonitor = networkMonitor,
         timeZoneMonitor = timeZoneMonitor,
         appSettingsState = appSettingsState,
@@ -47,6 +49,7 @@ fun LtiSharedApp(
 
 @Composable
 private fun SharedApp(
+    onOpenSettings: () -> Unit,
     networkMonitor: NetworkMonitor,
     timeZoneMonitor: TimeZoneMonitor,
     appSettingsState: AppSettingsState,
@@ -144,6 +147,7 @@ private fun SharedApp(
                 timeZoneMonitor = timeZoneMonitor,
                 navHostController = navController,
                 startDestination = WORKSPACE_ROUTE,
+                onOpenSettings = onOpenSettings,
                 modifier = Modifier.fillMaxSize(),
             )
         }

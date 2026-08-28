@@ -145,6 +145,8 @@ object ComponentSize {
     val ActiveIndicatorHeight: Dp = 32.dp
     val ModalCardMaxWidth: Dp = 440.dp
     val SettingsMaxWidth: Dp = 760.dp
+    val SettingsWindowWidth: Dp = 800.dp
+    val SettingsWindowHeight: Dp = 640.dp
 }
 
 /**

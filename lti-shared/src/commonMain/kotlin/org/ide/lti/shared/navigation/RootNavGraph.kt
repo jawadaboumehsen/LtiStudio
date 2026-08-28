@@ -18,9 +18,7 @@ import org.ide.lti.core.data.utils.NetworkMonitor
 import org.ide.lti.core.data.utils.TimeZoneMonitor
 import org.ide.lti.feature.setup.setupScreen
 import org.ide.lti.feature.settings.navigateToNotification
-import org.ide.lti.feature.settings.navigateToSettings
 import org.ide.lti.feature.settings.notificationScreen
-import org.ide.lti.feature.settings.settingsScreen
 import org.ide.lti.feature.workspace.workspaceScreen
 import org.ide.lti.shared.ui.Lti
 
@@ -31,6 +29,7 @@ internal fun RootNavGraph(
     navHostController: NavHostController,
     startDestination: String,
     modifier: Modifier = Modifier,
+    onOpenSettings: () -> Unit = {},
 ) {
     NavHost(
         navController = navHostController,
@@ -51,14 +50,11 @@ internal fun RootNavGraph(
 
         // Workspace Screen (4-panel IDE layout)
         workspaceScreen(
-            onOpenSettings = { navHostController.navigateToSettings() },
+            onOpenSettings = onOpenSettings,
             onOpenNotifications = { navHostController.navigateToNotification() },
         )
 
-        // Settings & Notifications (reachable from the workspace top bar)
-        settingsScreen(
-            onBackClick = { navHostController.popBackStack() },
-        )
+        // Notifications (reachable from the workspace top bar)
         notificationScreen(
             onBackClick = { navHostController.popBackStack() },
         )
