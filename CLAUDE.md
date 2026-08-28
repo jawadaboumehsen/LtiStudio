@@ -32,6 +32,16 @@ Examples:
 
 ## Design System Architecture & Centralized Tokens
 
+> [!IMPORTANT]
+> Before editing anything under `core/designsystem/theme/`, `core/designsystem/component/`,
+> `core/ui/`, or any file rendering text/icons on a `Glass*` surface, read
+> `rules/systemdesignrule.md` (project root) first. It documents hard rules and known blind spots
+> discovered by real bugs this session — most load-bearing: any content-lambda-accepting glass
+> component must make `LocalContentColor` resolve to something other than black, and the
+> design-system guardrails/Detekt rules do NOT catch a color/size parameter being omitted entirely
+> (only a wrong literal). This section (`CLAUDE.md`) is the token/component API catalog;
+> `rules/systemdesignrule.md` is the "don't repeat this bug" companion.
+
 LtiRom Studio uses a professional IDE design built around a centralized token system in `core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/`.
 
 ### 1. Color System (`Color.kt`)
