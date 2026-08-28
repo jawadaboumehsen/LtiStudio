@@ -91,6 +91,7 @@ fun LtiTheme(
     val colorScheme = materialColorScheme ?: rememberDynamicColorScheme(
         seedColor = LtiSeedColor,
         isDark = darkTheme,
+        isAmoled = darkTheme,
     )
     val resolvedGlassColors = glassColors ?: rememberDynamicGlassColorScheme(
         colorScheme = colorScheme,

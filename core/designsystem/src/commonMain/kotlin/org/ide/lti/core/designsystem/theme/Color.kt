@@ -18,9 +18,10 @@ import com.materialkolor.dynamicColorScheme
 
 /**
  * Brand seed color used to dynamically generate the Material3 color scheme and glass palette.
- * Reused from the primary/accent Electric Cyan color (#38BDF8).
+ * Light Blue (#4FA8FF) - paired with an AMOLED true-black dark surface base (see
+ * [DarkGlassColorScheme]'s `isAmoled = true`), in the style of Samsung One UI's dark theme.
  */
-val LtiSeedColor = Color(0xFF38BDF8)
+val LtiSeedColor = Color(0xFF4FA8FF)
 
 /**
  * Glass color scheme definition for translucent UI surfaces.
@@ -102,7 +103,7 @@ fun rememberDynamicGlassColorScheme(
  */
 val DarkGlassColorScheme: GlassColorScheme
     get() = dynamicGlassColorScheme(
-        colorScheme = dynamicColorScheme(seedColor = LtiSeedColor, isDark = true),
+        colorScheme = dynamicColorScheme(seedColor = LtiSeedColor, isDark = true, isAmoled = true),
         isDark = true,
     )
 
