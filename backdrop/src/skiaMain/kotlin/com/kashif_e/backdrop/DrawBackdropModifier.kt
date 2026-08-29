@@ -386,7 +386,6 @@ private class DrawBackdropNode(
         }
 
         effectScope.reset()
-        layoutCoordinates = null
         clipPath = null
     }
 }

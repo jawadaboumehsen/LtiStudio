@@ -383,7 +383,5 @@ private class DrawBackdropNode(
         }
 
         effectScope.reset()
-        layoutCoordinates = null
-        exportedBackdrop?.layerCoordinates = null
     }
 }

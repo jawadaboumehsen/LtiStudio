@@ -22,6 +22,11 @@ private class LayerBackdropElement(
     }
 
     override fun update(node: LayerBackdropNode) {
+        if (node.backdrop != backdrop) {
+            if (backdrop.layerCoordinates == null) {
+                backdrop.layerCoordinates = node.backdrop.layerCoordinates
+            }
+        }
         node.backdrop = backdrop
         node.invalidateDraw()
     }
@@ -60,9 +65,5 @@ private class LayerBackdropNode(
         if (coordinates.isAttached) {
             backdrop.layerCoordinates = coordinates
         }
-    }
-
-    override fun onDetach() {
-        backdrop.layerCoordinates = null
     }
 }
