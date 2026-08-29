@@ -49,7 +49,17 @@ private class LayerBackdropNode(
     var backdrop: LayerBackdrop
 ) : DrawModifierNode, GlobalPositionAwareModifierNode, Modifier.Node() {
 
-    override val shouldAutoInvalidate: Boolean = false
+    // Must stay auto-invalidating (the default). LayerBackdropElement.equals() only compares
+    // the LayerBackdrop instance, not the content drawn into it - and callers are expected to
+    // share one stable LayerBackdrop instance across recompositions (see LtiTheme's
+    // sharedBackdrop param), so that equals() check is always true across a recomposition that
+    // changes only the drawn content (e.g. a dark/light theme flip changes the colors this
+    // Canvas draws, not the LayerBackdrop identity). With shouldAutoInvalidate = false,
+    // update()/invalidateDraw() then never fire for that case, so draw() - and therefore the
+    // recordLayer() call every glass surface samples from - never reruns, leaving every
+    // glass-backed surface showing the old theme's frozen pixels until something unrelated
+    // (e.g. a window resize) forces a layout-driven redraw regardless of this flag.
+    override val shouldAutoInvalidate: Boolean = true
 
     override fun ContentDrawScope.draw() {
         drawContent()
