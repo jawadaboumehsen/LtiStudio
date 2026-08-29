@@ -69,11 +69,11 @@ fun dynamicGlassColorScheme(
     } else {
         GlassColorScheme(
             glassSurface = colorScheme.surface.copy(alpha = AlphaTokens.IconTint),
-            glassSurfaceElevated = colorScheme.surfaceContainerLow.copy(alpha = AlphaTokens.PrimaryButtonTint),
+            glassSurfaceElevated = colorScheme.surfaceContainerHighest.copy(alpha = AlphaTokens.PrimaryButtonTint),
             glassTint = colorScheme.primary.copy(alpha = AlphaTokens.Subtle),
             glassTintSecondary = colorScheme.secondary.copy(alpha = AlphaTokens.Subtle),
-            glassBorder = colorScheme.outline.copy(alpha = AlphaTokens.Glow),
-            glassBorderHighlight = colorScheme.primary.copy(alpha = AlphaTokens.Half),
+            glassBorder = colorScheme.outline.copy(alpha = AlphaTokens.Medium),
+            glassBorderHighlight = colorScheme.primary.copy(alpha = AlphaTokens.Prominent),
             onGlass = colorScheme.onSurface,
             onGlassSecondary = colorScheme.onSurfaceVariant,
             onGlassMuted = colorScheme.outline,

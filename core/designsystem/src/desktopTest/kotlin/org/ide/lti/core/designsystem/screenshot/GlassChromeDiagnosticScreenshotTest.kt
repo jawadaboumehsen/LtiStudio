@@ -49,6 +49,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.kashif_e.backdrop.backdrops.layerBackdrop
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
+import org.ide.lti.core.designsystem.component.CosmicAuroraBackdrop
 import org.ide.lti.core.designsystem.component.GlassLayout
 import org.ide.lti.core.designsystem.component.GlassPanelContainer
 import org.ide.lti.core.designsystem.component.GlassPanelHeader
@@ -69,88 +70,6 @@ class GlassChromeDiagnosticScreenshotTest {
     companion object {
         private const val TEST_WIDTH = 1200
         private const val TEST_HEIGHT = 750
-    }
-
-    /**
-     * Aurora Backdrop Canvas exactly matching LtiSharedApp.kt
-     */
-    @Composable
-    private fun CosmicAuroraBackdrop(
-        backdrop: com.kashif_e.backdrop.backdrops.LayerBackdrop,
-        modifier: Modifier = Modifier,
-    ) {
-        val colorScheme = MaterialTheme.colorScheme
-
-        Canvas(
-            modifier = modifier
-                .layerBackdrop(backdrop)
-                .fillMaxSize()
-        ) {
-            // 1. Deep space / page base
-            drawRect(colorScheme.background)
-
-            // 2. Primary nebula (Top-Center)
-            drawRect(
-                brush = Brush.radialGradient(
-                    colors = listOf(
-                        colorScheme.primary.copy(alpha = AlphaTokens.Soft),
-                        colorScheme.primaryContainer.copy(alpha = AlphaTokens.Faded),
-                        Color.Transparent
-                    ),
-                    center = Offset(size.width * 0.40f, size.height * 0.15f),
-                    radius = size.width * 0.55f
-                )
-            )
-
-            // 3. Secondary aurora glow (Top-Right)
-            drawRect(
-                brush = Brush.radialGradient(
-                    colors = listOf(
-                        colorScheme.secondary.copy(alpha = AlphaTokens.Ambient),
-                        colorScheme.secondaryContainer.copy(alpha = AlphaTokens.Hover),
-                        Color.Transparent
-                    ),
-                    center = Offset(size.width * 0.85f, size.height * 0.20f),
-                    radius = size.width * 0.50f
-                )
-            )
-
-            // 4. Tertiary shimmer (Bottom-Left)
-            drawRect(
-                brush = Brush.radialGradient(
-                    colors = listOf(
-                        colorScheme.tertiary.copy(alpha = AlphaTokens.Ambient),
-                        colorScheme.tertiaryContainer.copy(alpha = AlphaTokens.Hover),
-                        Color.Transparent
-                    ),
-                    center = Offset(size.width * 0.15f, size.height * 0.85f),
-                    radius = size.width * 0.50f
-                )
-            )
-
-            // 5. Inverse-primary accent (Bottom-Right)
-            drawRect(
-                brush = Brush.radialGradient(
-                    colors = listOf(
-                        colorScheme.inversePrimary.copy(alpha = AlphaTokens.Faded),
-                        Color.Transparent
-                    ),
-                    center = Offset(size.width * 0.90f, size.height * 0.90f),
-                    radius = size.width * 0.45f
-                )
-            )
-
-            // 6. Smooth Vignette Overlay
-            drawRect(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        colorScheme.scrim.copy(alpha = AlphaTokens.Scrim),
-                        Color.Transparent,
-                        colorScheme.scrim.copy(alpha = AlphaTokens.Half)
-                    )
-                )
-            )
-        }
     }
 
     // Realistic Explorer Panel
@@ -392,12 +311,15 @@ class GlassChromeDiagnosticScreenshotTest {
     }
 
     /**
-     * Diagnostic Integration Offscreen Render & Screenshot Regression Test.
+     * Diagnostic Integration Offscreen Render & Screenshot Regression Test for Dark Mode.
      * Composes real aurora Canvas + LtiTheme + GlassLayout with default topBar & statusBar.
      */
     @OptIn(ExperimentalTestApi::class)
     @Test
-    fun testDiagnosticRealAppChromeAndBackdrop() = runDesktopComposeUiTest(width = TEST_WIDTH, height = TEST_HEIGHT) {
+    fun testDiagnosticRealAppChromeAndBackdrop() = runDesktopComposeUiTest(
+        width = TEST_WIDTH,
+        height = TEST_HEIGHT
+    ) {
         setContent {
             val backdrop = rememberLayerBackdrop()
 
@@ -428,4 +350,46 @@ class GlassChromeDiagnosticScreenshotTest {
         val image = onRoot().captureToImage()
         ScreenshotTestHelper.assertMatchesBaseline("glass_app_chrome_full_composition", image)
     }
+
+    /**
+     * Diagnostic Integration Offscreen Render & Screenshot Regression Test for Light Mode.
+     * Composes real aurora Canvas + LtiTheme + GlassLayout with default topBar & statusBar in light theme.
+     */
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun testDiagnosticRealAppChromeAndBackdropLight() = runDesktopComposeUiTest(
+        width = TEST_WIDTH,
+        height = TEST_HEIGHT
+    ) {
+        setContent {
+            val backdrop = rememberLayerBackdrop()
+
+            LtiTheme(sharedBackdrop = backdrop, darkTheme = false) {
+                val layoutState = rememberLtiLayoutState(
+                    initialLeftWeight = 0.22f,
+                    initialRightWeight = 0.26f,
+                    initialShowLeft = true,
+                    initialShowRight = true,
+                    initialShowBottom = false
+                )
+
+                Box(modifier = Modifier.fillMaxSize()) {
+                    CosmicAuroraBackdrop(backdrop = backdrop)
+
+                    GlassLayout(
+                        state = layoutState,
+                        modifier = Modifier.fillMaxSize(),
+                        leftPanel = { MockExplorerPanel() },
+                        mainContent = { MockEditorPanel() },
+                        bottomPanel = {},
+                        rightPanel = { MockAIAssistantPanel() },
+                    )
+                }
+            }
+        }
+
+        val image = onRoot().captureToImage()
+        ScreenshotTestHelper.assertMatchesBaseline("glass_app_chrome_full_composition_light", image)
+    }
 }
+

@@ -32,11 +32,11 @@ import dev.nucleusframework.application.DecoratedWindow
 import dev.nucleusframework.application.LocalNucleusWindow
 import dev.nucleusframework.application.nucleusApplication
 import org.ide.lti.core.data.settings.AppSettingsState
+import org.ide.lti.core.designsystem.component.CosmicAuroraBackdrop
 import org.ide.lti.core.designsystem.component.GlassSecondaryTopBar
 import org.ide.lti.core.designsystem.component.LocalWindowControlActions
 import org.ide.lti.core.designsystem.component.WindowControlActions
 import org.ide.lti.core.designsystem.icon.AppIcons
-import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -130,62 +130,8 @@ fun main(args: Array<String>) = nucleusApplication(args) {
                 reducedMotion = appSettingsState.reducedMotion,
                 sharedBackdrop = backdrop,
             ) {
-                val colorScheme = MaterialTheme.colorScheme
-
                 Box(modifier = Modifier.fillMaxSize()) {
-                    Canvas(
-                        modifier = Modifier
-                            .layerBackdrop(backdrop)
-                            .fillMaxSize()
-                    ) {
-                        drawRect(colorScheme.background)
-
-                        drawRect(
-                            brush = Brush.radialGradient(
-                                colors = listOf(
-                                    colorScheme.primary.copy(alpha = AlphaTokens.Soft),
-                                    colorScheme.primaryContainer.copy(alpha = AlphaTokens.Faded),
-                                    Color.Transparent
-                                ),
-                                center = Offset(size.width * 0.40f, size.height * 0.15f),
-                                radius = size.width * 0.55f
-                            )
-                        )
-
-                        drawRect(
-                            brush = Brush.radialGradient(
-                                colors = listOf(
-                                    colorScheme.secondary.copy(alpha = AlphaTokens.Ambient),
-                                    colorScheme.secondaryContainer.copy(alpha = AlphaTokens.Hover),
-                                    Color.Transparent
-                                ),
-                                center = Offset(size.width * 0.85f, size.height * 0.20f),
-                                radius = size.width * 0.50f
-                            )
-                        )
-
-                        drawRect(
-                            brush = Brush.radialGradient(
-                                colors = listOf(
-                                    colorScheme.tertiary.copy(alpha = AlphaTokens.Ambient),
-                                    colorScheme.tertiaryContainer.copy(alpha = AlphaTokens.Hover),
-                                    Color.Transparent
-                                ),
-                                center = Offset(size.width * 0.15f, size.height * 0.85f),
-                                radius = size.width * 0.50f
-                            )
-                        )
-
-                        drawRect(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(
-                                    colorScheme.scrim.copy(alpha = AlphaTokens.Scrim),
-                                    Color.Transparent,
-                                    colorScheme.scrim.copy(alpha = AlphaTokens.Half)
-                                )
-                            )
-                        )
-                    }
+                    CosmicAuroraBackdrop(backdrop = backdrop)
 
                     Column(
                         modifier = Modifier
