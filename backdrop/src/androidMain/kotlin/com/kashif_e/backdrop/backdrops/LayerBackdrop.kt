@@ -47,6 +47,8 @@ actual class LayerBackdrop internal constructor(
 
     internal var layerCoordinates: LayoutCoordinates? by mutableStateOf(null)
 
+    internal var drawRevision: Long by mutableStateOf(0L)
+
     private var inverseLayerScope: InverseLayerScope? = null
 
     actual override fun DrawScope.drawBackdrop(
@@ -54,6 +56,8 @@ actual class LayerBackdrop internal constructor(
         coordinates: LayoutCoordinates?,
         layerBlock: (GraphicsLayerScope.() -> Unit)?
     ) {
+        @Suppress("UNUSED_VARIABLE")
+        val revision = drawRevision
         val currentLayerCoordinates = layerCoordinates
         val bothAttached = currentLayerCoordinates != null && coordinates != null &&
             currentLayerCoordinates.isAttached && coordinates.isAttached
@@ -87,5 +91,9 @@ actual class LayerBackdrop internal constructor(
     private fun obtainInverseLayerScope(): InverseLayerScope {
         return inverseLayerScope?.apply { reset() }
             ?: InverseLayerScope().also { inverseLayerScope = it }
+    }
+
+    actual fun notifyContentChanged() {
+        drawRevision++
     }
 }

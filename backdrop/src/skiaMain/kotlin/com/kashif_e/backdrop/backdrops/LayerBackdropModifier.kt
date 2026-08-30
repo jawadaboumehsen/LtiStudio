@@ -59,6 +59,13 @@ private class LayerBackdropNode(
     override fun ContentDrawScope.draw() {
         drawContent()
         recordLayer(backdrop.graphicsLayer) { backdrop.onDraw(this@draw) }
+        // drawRevision is bumped by the composable that owns this backdrop's content (via
+        // SideEffect, tied to recomposition), NOT here. draw() re-runs every frame the scene
+        // repaints for any reason - bumping a mutableStateOf on every draw call is itself a
+        // state write, which schedules another frame, whose draw() bumps it again: a
+        // self-sustaining infinite render loop (confirmed: it hung the screenshot test suite's
+        // waitForIdle() indefinitely and pegged a CPU core forever). See CosmicAuroraBackdrop's
+        // SideEffect for the correct, composition-scoped place to signal a real content change.
     }
 
     override fun onGloballyPositioned(coordinates: LayoutCoordinates) {

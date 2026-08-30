@@ -21,12 +21,26 @@ import com.kashif_e.backdrop.Backdrop
 @Stable
 expect class LayerBackdrop : Backdrop {
     override val isCoordinatesDependent: Boolean
-    
+
     override fun DrawScope.drawBackdrop(
         density: Density,
         coordinates: LayoutCoordinates?,
         layerBlock: (GraphicsLayerScope.() -> Unit)?
     )
+
+    /**
+     * Call once per genuine content change - e.g. from a `SideEffect` in the composable that
+     * owns what gets drawn into this backdrop (see [layerBackdrop]'s content, not every consumer
+     * sampling it). Every [drawBackdrop] caller observes this as tracked Compose state, so they
+     * redraw to pick up the new content even though this backdrop's own identity never changes.
+     *
+     * Do NOT call this from a draw phase (e.g. inside the [Modifier.layerBackdrop]-tagged
+     * content's own draw). draw() re-runs on every frame the scene repaints for any reason, and
+     * this call is itself a state write - one that would schedule another frame, whose draw()
+     * calls this again: a self-sustaining infinite render loop with no relation to whether the
+     * content actually changed.
+     */
+    fun notifyContentChanged()
 }
 
 /**

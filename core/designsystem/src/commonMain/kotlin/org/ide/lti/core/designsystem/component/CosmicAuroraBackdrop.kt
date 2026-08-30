@@ -13,6 +13,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -44,6 +45,15 @@ fun CosmicAuroraBackdrop(
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val isDark = ColorContrast.relativeLuminance(colorScheme.background) < 0.5
+
+    // Runs once per successful recomposition of THIS composable (i.e. once per genuine content
+    // change - a theme flip, etc.) - never per draw/frame. Tells every consumer sampling this
+    // backdrop (every glass panel) to redraw and pick up the fresh content, even though the
+    // shared LayerBackdrop instance's own identity never changes. See notifyContentChanged()'s
+    // doc for why this must NOT be called from a draw phase.
+    SideEffect {
+        backdrop.notifyContentChanged()
+    }
 
     Canvas(
         modifier = modifier
