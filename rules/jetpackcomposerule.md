@@ -189,6 +189,57 @@ blur radius on frequently recomposed items" / "Share a single `Backdrop` instanc
 `LtiTheme(sharedBackdrop = ...)`." Same underlying rule — a `Backdrop` and its effect chain are
 exactly the kind of hot-path allocation this rule warns about.
 
+### 15. Shared/long-lived objects with mutable content require tracked snapshot reads for consumer invalidation — and writes MUST happen in `SideEffect`, never in `draw`
+
+**The general pattern:** when a shared object with **stable identity across recompositions** (created
+once via `remember`, held in a `CompositionLocal`, or shared at the root scaffold, e.g.
+`LtiTheme(sharedBackdrop = ...)`) has its internal content mutated/re-recorded by a "producer" (e.g.
+`CosmicAuroraBackdrop` drawing into a shared `GraphicsLayer`), and several "consumers" (every
+`GlassSurface`, `GlassPanel`, `GlassTopBar`) sample from it:
+- `@Stable` / `@Immutable` annotations do **NOT** solve this. They govern parameter comparison and
+  skip semantics during **recomposition**, not reactivity for arbitrary field reads or offscreen graphic
+  buffers at draw time.
+- If consumer modifier nodes check element equality (`equals()`), the shared object's reference identity
+  has not changed (`===`), so `update()` / `invalidateDraw()` will never be scheduled by Compose.
+  Consumers continue sampling stale buffers until an unrelated layout event (like a window resize) happens
+  to force a redraw.
+
+**The concrete fix pattern (revision counter + `SideEffect`):**
+- The shared object exposes a `mutableStateOf`-backed revision/version counter (`drawRevision` on
+  `LayerBackdrop`).
+- A public method (e.g. `LayerBackdrop.notifyContentChanged()` in
+  `backdrop/src/{skiaMain,androidMain}/kotlin/com/kashif_e/backdrop/backdrops/LayerBackdrop.kt`, also declared
+  on the `expect class LayerBackdrop` in `commonMain` because callers live in separate Gradle modules)
+  increments this counter.
+- The **producer composable** calls `notifyContentChanged()` inside a `SideEffect { ... }` block (see
+  `CosmicAuroraBackdrop.kt`) — running once per genuine recomposition (e.g. on a dark/light theme flip).
+- Every consumer's draw function reads this counter (`val revision = drawRevision` inside `drawBackdrop()`).
+  Because the read occurs in the Draw phase, Compose snapshot tracking automatically subscribes the consumer
+  node's draw phase to the revision state and schedules redraws whenever the counter changes.
+
+**CRITICAL: Never write state or revision counters inside a `draw()`/`DrawScope` callback:**
+- Writing a `mutableStateOf` (or calling `notifyContentChanged()`) directly inside
+  `override fun ContentDrawScope.draw()` or any `DrawScope` lambda is a catastrophic regression trap.
+- `draw()` re-runs on every single repaint of the frame for any reason. Writing a Compose `MutableState`
+  during draw is a state write that marks the draw phase dirty and schedules another frame, whose `draw()`
+  writes it again — creating a **self-sustaining infinite render loop**.
+- In the running desktop application, this loop may not appear visibly broken because vsync-coalesced
+  rendering repaints correct pixels forever while pegging a CPU core at 100%. But in offscreen and automated
+  test harnesses, it hangs `waitForIdle()` indefinitely (`"Suspicious! waitForIdle has not finished after N seconds"`
+  climbing past 40s, eventually killing the Gradle daemon under load).
+- Signals that content has changed must **always** be written from `SideEffect` (tied to composition) or an
+  explicit event handler, never from the draw phase.
+
+**Beware `shouldAutoInvalidate = false` on custom `Modifier.Node`s:**
+- Setting `override val shouldAutoInvalidate: Boolean = false` on a custom `DrawModifierNode` or
+  `LayoutModifierNode` silently disables Compose's default "redraw when this node's input changed" behavior.
+- In `LayerBackdropNode`, this flag combined with stable backdrop identity comparison in `equals()` to make the
+  stale-theme bug completely invisible to normal tests.
+- Note that `runDesktopComposeUiTest`'s `captureToImage()` forces a full redraw of the entire node tree
+  regardless of invalidation state. A passing screenshot diff does **NOT** prove invalidation is wired
+  correctly — it cannot distinguish a broken invalidation path from a working one, and only reveals the
+  infinite render loop trap if the test hangs.
+
 ---
 
 ## Before you finish (performance-specific checklist)
@@ -206,6 +257,12 @@ exactly the kind of hot-path allocation this rule warns about.
   Settings; treat it as a blocker, not a style note)
 - Does a new `Backdrop`/effect chain get created fresh on every recomposition instead of being
   `remember`ed or shared? (Rules 11, 14; CLAUDE.md Backdrop "❌ DON'T")
+- When adding/reviewing a custom `DrawModifierNode`/`LayoutModifierNode`, or any code where one part of the
+  app mutates a long-lived/shared object's content and another part reads it outside of normal recomposition:
+  (a) is the read a tracked Compose state read (e.g. a `mutableStateOf` revision counter)? (b) does the
+  corresponding WRITE happen at composition time (`SideEffect`) rather than inside a `draw()`/`DrawScope`
+  callback? and (c) if `shouldAutoInvalidate = false` is used, is there a reliable invalidation path for all
+  dynamic inputs? (Rule 15)
 
 See also [`rules/systemdesignrule.md`](systemdesignrule.md) for the correctness-side rules
 (colors, contrast, spacing) and its own "Before you finish" checklist — both apply to any glass
