@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -43,12 +44,15 @@ import org.ide.lti.core.designsystem.component.GlassCard
 import org.ide.lti.core.designsystem.component.GlassPanelContainer
 import org.ide.lti.core.designsystem.component.GlassPanelHeader
 import org.ide.lti.core.designsystem.component.GlassPrimaryButton
+import org.ide.lti.core.designsystem.component.GlassSidePanelTab
+import org.ide.lti.core.designsystem.component.GlassSidePanelTabs
 import org.ide.lti.core.designsystem.component.GlassSlider
 import org.ide.lti.core.designsystem.component.GlassSurface
 import org.ide.lti.core.designsystem.component.GlassTextButton
 import org.ide.lti.core.designsystem.component.GlassTextField
 import org.ide.lti.core.designsystem.component.GlassToggle
 import org.ide.lti.core.designsystem.component.GlassTopBar
+import org.ide.lti.core.designsystem.component.SidePanelRailPosition
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ColorContrast
@@ -399,6 +403,222 @@ class GlassComponentScreenshotTest {
 
         val image = onRoot().captureToImage()
         ScreenshotTestHelper.assertMatchesBaseline("glass_top_bar", image)
+    }
+
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun testGlassSidePanelTabs() = runDesktopComposeUiTest(width = 680, height = 300) {
+        setContent {
+            LtiTheme(darkTheme = true) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(GlassTheme.colors.glassSurface)
+                        .padding(Spacing.Medium),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.Medium)
+                    ) {
+                        // Left-docked multi-tab panel
+                        GlassCard(
+                            modifier = Modifier.weight(1f).fillMaxHeight(),
+                            contentPadding = Spacing.None
+                        ) {
+                            GlassSidePanelTabs(
+                                tabs = listOf(
+                                    GlassSidePanelTab(
+                                        icon = AppIcons.Folder,
+                                        label = "Explorer"
+                                    ) {
+                                        GlassPanelContainer(
+                                            header = { GlassPanelHeader(title = "EXPLORER") }
+                                        ) {
+                                            Text(
+                                                text = "Explorer panel content",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = GlassTheme.colors.onGlassSecondary,
+                                                modifier = Modifier.padding(Spacing.SmallMedium)
+                                            )
+                                        }
+                                    },
+                                    GlassSidePanelTab(
+                                        icon = AppIcons.Search,
+                                        label = "Search"
+                                    ) {
+                                        GlassPanelContainer(
+                                            header = { GlassPanelHeader(title = "SEARCH") }
+                                        ) {
+                                            Text(
+                                                text = "Search workspace",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = GlassTheme.colors.onGlassSecondary,
+                                                modifier = Modifier.padding(Spacing.SmallMedium)
+                                            )
+                                        }
+                                    }
+                                ),
+                                railPosition = SidePanelRailPosition.Left
+                            )
+                        }
+
+                        // Right-docked multi-tab panel
+                        GlassCard(
+                            modifier = Modifier.weight(1f).fillMaxHeight(),
+                            contentPadding = Spacing.None
+                        ) {
+                            GlassSidePanelTabs(
+                                tabs = listOf(
+                                    GlassSidePanelTab(
+                                        icon = AppIcons.Sparkles,
+                                        label = "AI Assistant"
+                                    ) {
+                                        GlassPanelContainer(
+                                            header = { GlassPanelHeader(title = "AI ASSISTANT") }
+                                        ) {
+                                            Text(
+                                                text = "AI assistant ready",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = GlassTheme.colors.onGlassSecondary,
+                                                modifier = Modifier.padding(Spacing.SmallMedium)
+                                            )
+                                        }
+                                    },
+                                    GlassSidePanelTab(
+                                        icon = AppIcons.Settings,
+                                        label = "Settings"
+                                    ) {
+                                        GlassPanelContainer(
+                                            header = { GlassPanelHeader(title = "SETTINGS") }
+                                        ) {
+                                            Text(
+                                                text = "Inspector settings",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = GlassTheme.colors.onGlassSecondary,
+                                                modifier = Modifier.padding(Spacing.SmallMedium)
+                                            )
+                                        }
+                                    }
+                                ),
+                                railPosition = SidePanelRailPosition.Right
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        val image = onRoot().captureToImage()
+        ScreenshotTestHelper.assertMatchesBaseline("glass_side_panel_tabs", image)
+    }
+
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun testGlassSidePanelTabsLight() = runDesktopComposeUiTest(width = 680, height = 300) {
+        setContent {
+            LtiTheme(darkTheme = false) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(GlassTheme.colors.glassSurface)
+                        .padding(Spacing.Medium),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.Medium)
+                    ) {
+                        // Left-docked multi-tab panel
+                        GlassCard(
+                            modifier = Modifier.weight(1f).fillMaxHeight(),
+                            contentPadding = Spacing.None
+                        ) {
+                            GlassSidePanelTabs(
+                                tabs = listOf(
+                                    GlassSidePanelTab(
+                                        icon = AppIcons.Folder,
+                                        label = "Explorer"
+                                    ) {
+                                        GlassPanelContainer(
+                                            header = { GlassPanelHeader(title = "EXPLORER") }
+                                        ) {
+                                            Text(
+                                                text = "Explorer panel content",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = GlassTheme.colors.onGlassSecondary,
+                                                modifier = Modifier.padding(Spacing.SmallMedium)
+                                            )
+                                        }
+                                    },
+                                    GlassSidePanelTab(
+                                        icon = AppIcons.Search,
+                                        label = "Search"
+                                    ) {
+                                        GlassPanelContainer(
+                                            header = { GlassPanelHeader(title = "SEARCH") }
+                                        ) {
+                                            Text(
+                                                text = "Search workspace",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = GlassTheme.colors.onGlassSecondary,
+                                                modifier = Modifier.padding(Spacing.SmallMedium)
+                                            )
+                                        }
+                                    }
+                                ),
+                                railPosition = SidePanelRailPosition.Left
+                            )
+                        }
+
+                        // Right-docked multi-tab panel
+                        GlassCard(
+                            modifier = Modifier.weight(1f).fillMaxHeight(),
+                            contentPadding = Spacing.None
+                        ) {
+                            GlassSidePanelTabs(
+                                tabs = listOf(
+                                    GlassSidePanelTab(
+                                        icon = AppIcons.Sparkles,
+                                        label = "AI Assistant"
+                                    ) {
+                                        GlassPanelContainer(
+                                            header = { GlassPanelHeader(title = "AI ASSISTANT") }
+                                        ) {
+                                            Text(
+                                                text = "AI assistant ready",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = GlassTheme.colors.onGlassSecondary,
+                                                modifier = Modifier.padding(Spacing.SmallMedium)
+                                            )
+                                        }
+                                    },
+                                    GlassSidePanelTab(
+                                        icon = AppIcons.Settings,
+                                        label = "Settings"
+                                    ) {
+                                        GlassPanelContainer(
+                                            header = { GlassPanelHeader(title = "SETTINGS") }
+                                        ) {
+                                            Text(
+                                                text = "Inspector settings",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = GlassTheme.colors.onGlassSecondary,
+                                                modifier = Modifier.padding(Spacing.SmallMedium)
+                                            )
+                                        }
+                                    }
+                                ),
+                                railPosition = SidePanelRailPosition.Right
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        val image = onRoot().captureToImage()
+        ScreenshotTestHelper.assertMatchesBaseline("glass_side_panel_tabs_light", image)
     }
 
     @Composable

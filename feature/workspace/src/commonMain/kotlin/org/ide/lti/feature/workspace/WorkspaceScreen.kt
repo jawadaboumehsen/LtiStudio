@@ -12,8 +12,12 @@ package org.ide.lti.feature.workspace
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import org.ide.lti.core.designsystem.component.GlassLayout
+import org.ide.lti.core.designsystem.component.GlassSidePanelTab
+import org.ide.lti.core.designsystem.component.GlassSidePanelTabs
 import org.ide.lti.core.designsystem.component.GlassTopBar
+import org.ide.lti.core.designsystem.component.SidePanelRailPosition
 import org.ide.lti.core.designsystem.component.rememberLtiLayoutState
+import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.feature.workspace.panels.ai.AIAssistantPanel
 import org.ide.lti.feature.workspace.panels.editor.EditorPanel
 import org.ide.lti.feature.workspace.panels.explorer.ExplorerPanel
@@ -43,10 +47,34 @@ fun WorkspaceScreen(
     GlassLayout(
         state = ltiLayoutState,
         modifier = modifier,
-        leftPanel = { ExplorerPanel() },
+        leftPanel = {
+            GlassSidePanelTabs(
+                tabs = listOf(
+                    GlassSidePanelTab(
+                        icon = AppIcons.Folder,
+                        label = "Explorer",
+                    ) {
+                        ExplorerPanel()
+                    }
+                ),
+                railPosition = SidePanelRailPosition.Left,
+            )
+        },
         mainContent = { EditorPanel() },
         bottomPanel = { TerminalPanel() },
-        rightPanel = { AIAssistantPanel() },
+        rightPanel = {
+            GlassSidePanelTabs(
+                tabs = listOf(
+                    GlassSidePanelTab(
+                        icon = AppIcons.Sparkles,
+                        label = "AI Assistant",
+                    ) {
+                        AIAssistantPanel()
+                    }
+                ),
+                railPosition = SidePanelRailPosition.Right,
+            )
+        },
         topBar = {
             GlassTopBar(
                 isLeftPanelVisible = ltiLayoutState.showLeft,
