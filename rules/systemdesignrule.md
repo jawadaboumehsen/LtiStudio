@@ -224,6 +224,98 @@ compile.
 
 ---
 
+## Rule 11: Material3's dynamic `colorScheme.primary` tonal-maps any seed to a fixed, desaturated
+## tone — a vivid seed color does NOT pass through as-is
+
+**The rule:** don't assume changing `LtiSeedColor` to a more vivid/saturated hex makes
+`glassAccent`/`focusRing` (or anything else sourced from `colorScheme.primary`) render that vivid
+color. Verify what the *actual composited pixel* looks like, not just the seed constant.
+
+**Why:** `com.materialkolor.dynamicColorScheme()` tonal-maps any seed to a fixed lightness/chroma
+tone per M3 role (dark-mode `primary` lands around HCT tone ~80, regardless of the seed's own
+tone/chroma) — correct for general M3 surface roles, but it silently desaturates a punchy brand
+seed. Changing `LtiSeedColor` from `#0B84FF` to a vivid `#00E5FF` cyan produced `colorScheme.primary
+= #82D3E1`, a muted pastel steel-teal — verified by probing `dynamicColorScheme(...).primary`
+directly in a temporary test, not by eyeballing a screenshot. Fixed by adding
+`deriveVibrantAccent(isDark)` in `Color.kt`, which samples the seed's own HCT **hue** at a
+deliberately high, fixed chroma (90) and a punchier tone (75 dark / 45 light) instead of routing
+through `colorScheme.primary` — the same direct-HCT technique `deriveSyntaxColorScheme` already
+uses for syntax token colors. `glassAccent`/`focusRing` use this vivid derivation;
+`glassTint`/`glassTintSecondary`/`glassBorderHighlight`/`glassHighlight` deliberately keep
+`colorScheme.primary` since those are alpha-blended *overlays*, where the softer tonal value is
+correct — only a token meant to render as a solid, recognizable brand color needs the vivid path.
+
+---
+
+## Rule 12: a blend mode can mute a vivid accent color even when the underlying color value is
+## correct — check what's UNDER the tint, not just the tint's own hex
+
+**The rule:** if an accent-tinted surface still looks muted/desaturated after confirming the accent
+color itself is correct (Rule 11), check *how* the tint is composited onto its base surface, not
+just what color it is.
+
+**Why:** after fixing Rule 11, `GlassButtonVariant.Primary` (and `GlassIconButton`'s selected state,
+which reuses the same variant) still rendered a muted steel-blue button while the logo badge —
+using the identical `glassAccent`/seed color — showed genuine vivid light blue right next to it.
+`drawButtonSurface()` in `GlassButton.kt` composited the tint with `blendMode = BlendMode.Hue`,
+which deliberately preserves the *lightness and saturation* of the base surface underneath
+(`glassSurfaceElevated`, a dark translucent gray) and only borrows the tint's hue — so the button
+could never show the pure accent, no matter how vivid `glassAccent` itself was. This is a correct,
+deliberate technique for `Secondary`/`Standard` buttons' subtle glass look, but wrong for `Primary`,
+whose whole purpose is to read as the solid brand color. Fixed with a `vividTint` parameter on
+`drawButtonSurface()` that switches to a full-strength `BlendMode.SrcOver` fill for
+`variant == Primary` only — verify a "why is this muted" bug by checking the actual `blendMode` in
+the draw call, not just re-deriving the color value again.
+
+---
+
+## Rule 13: when matching a reference screenshot's exact colors, derive real theme-aware tokens —
+## never hardcode a raw hex pair that only covers the theme mode you're looking at
+
+**The rule:** when asked to match a specific reference image's colors, resist reaching for
+`Color(0xFF090909)` literals dropped straight into a component file. Find (or add) the equivalent
+*generated* token in `theme/Color.kt`, covering **both** dark and light branches, even if you were
+only shown a dark-mode reference.
+
+**Why:** asked to match a reference screenshot's near-black outer chrome / charcoal inner-panel
+look, the first attempt added `TestOuterChromeColor = Color(0xFF090909)` /
+`TestInnerPanelColor = Color(0xFF18191B)` directly and wired them into `GlassLayout.kt`. This built
+and passed guardrails (raw hex is allowed inside `theme/`), but broke the light theme completely —
+`dynamicGlassColorScheme`'s light branch never got equivalent values, so light mode rendered with a
+dark chrome frame around a correctly-light center panel. The real fix: probe the actual M3
+surface-container ladder both themes generate (`surfaceContainerLowest` / `surfaceContainerLow` /
+etc. — see `com.materialkolor.dynamicColorScheme(...)`'s output, verified with a temporary probe
+test, not guessed) and add real `GlassColorScheme` fields (`chromeSurface`, and a repointed
+`canvasSurface`) derived from that ladder in **both** `isDark` branches of
+`dynamicGlassColorScheme()`. The dark-mode result (`surfaceContainerLowest` = `#0C0E13`,
+`surfaceContainerLow` = `#191C20`) landed almost pixel-identical to the reference's `#090909`/
+`#18191B` anyway — the seed-derived ladder already produces the right values, hardcoding just threw
+away theme-reactivity for no visual gain.
+
+---
+
+## Rule 14: resizing a container token does not proportionally resize the content token inside it —
+## check the ratio, not just that both tokens exist
+
+**The rule:** when you bump a `ComponentSize.*` container/button-box token, check every
+`IconSize.*`/content-size token rendered *inside* that container. A content size that was correctly
+proportioned for the old container size does not auto-scale — it silently becomes disproportionate
+inside the larger box.
+
+**Why:** the side-panel icon rail's button size grew from `ComponentSize.TopBarButtonSize` (28dp) to
+a dedicated `ComponentSize.SidePanelRailButtonSize` (36dp) to fix a real touch-target-too-small
+issue. The icon glyph inside kept using `IconSize.Segmented` (15dp) — a value that was correctly
+sized for the old 28dp box but left ~40% empty space in the new 36dp one, reading as a small,
+pixelated icon floating in an oversized button. Fixed with a new, dedicated
+`IconSize.SidePanelRail` (18dp) token, keeping roughly the original 15/28 ≈ 0.54 glyph-to-container
+ratio instead of reusing `IconSize.Segmented` (which is still correctly sized for its *other* 28dp
+call sites — the top bar's segmented toggles — and must not be bumped globally just because one
+consumer's container grew). Verify by pixel-measuring the rendered glyph's actual extent against its
+container box, not by confirming an `IconSize.*` constant is present (that alone doesn't prove the
+proportion is still right).
+
+---
+
 ## Before you finish: verification checklist for any theme/design-system change
 
 1. `JAVA_HOME` is not set in a fresh shell — set it to `C:\Users\Mohammad\.jdks\jbr-21.0.11` first.
@@ -242,3 +334,11 @@ compile.
    harness from reaching idle.
 8. `git status` at the end — confirm only the files you intended to change are modified, and that
    any throwaway diagnostic/test file has been deleted.
+9. Changing an accent/seed color? Don't trust the seed constant alone — probe the actual composited
+   `colorScheme.primary` (Rule 11) and check what blend mode any tint is drawn with (Rule 12); a
+   correct color value can still render muted.
+10. Matching a reference screenshot's exact colors? Derive real tokens covering both theme branches
+    (Rule 13) — never a hardcoded hex pair that only happens to be right for the mode you were shown.
+11. Bumped a `ComponentSize.*` container token? Check the `IconSize.*`/content token rendered inside
+    it for the same ratio (Rule 14) — a content size that compiles and "has a value" isn't proof it's
+    still proportioned correctly.
