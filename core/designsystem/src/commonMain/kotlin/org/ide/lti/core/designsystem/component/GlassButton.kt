@@ -341,6 +341,10 @@ fun GlassTextButton(
 
 /**
  * Glass icon button component optimized for toolbars.
+ *
+ * @param interactive Whether the button applies the squash-and-stretch press/drag transform
+ * (see [InteractiveHighlight]). Defaults to `false` — icon buttons are small, frequently-clicked
+ * controls (toolbars, rails, panel headers) where that motion reads as jittery rather than fluid.
  */
 @Composable
 fun GlassIconButton(
@@ -353,6 +357,7 @@ fun GlassIconButton(
     checked: Boolean? = null,
     selected: Boolean = checked ?: false,
     enabled: Boolean = true,
+    interactive: Boolean = false,
     content: @Composable () -> Unit
 ) {
     GlassButton(
@@ -365,6 +370,7 @@ fun GlassIconButton(
         minHeight = size,
         contentPadding = PaddingValues(Spacing.None),
         enabled = enabled,
+        interactive = interactive,
         variant = if (selected) GlassButtonVariant.Primary else GlassButtonVariant.Standard
     ) {
         content()
@@ -373,6 +379,9 @@ fun GlassIconButton(
 
 /**
  * Glass icon toggle button.
+ *
+ * @param interactive Whether the button applies the squash-and-stretch press/drag transform
+ * (see [InteractiveHighlight]). Defaults to `false`, matching [GlassIconButton].
  */
 @Composable
 fun GlassIconToggleButton(
@@ -382,6 +391,7 @@ fun GlassIconToggleButton(
     size: Dp = ComponentSize.IconButtonSize,
     shape: Shape = ContinuousCapsule,
     enabled: Boolean = true,
+    interactive: Boolean = false,
     content: @Composable () -> Unit
 ) {
     GlassIconButton(
@@ -391,6 +401,7 @@ fun GlassIconToggleButton(
         shape = shape,
         selected = selected,
         enabled = enabled,
+        interactive = interactive,
         content = content
     )
 }
