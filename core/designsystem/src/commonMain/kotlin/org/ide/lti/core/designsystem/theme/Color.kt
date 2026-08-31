@@ -18,12 +18,12 @@ import com.materialkolor.dynamicColorScheme
 
 /**
  * Brand seed color used to dynamically generate the Material3 color scheme and glass palette.
- * Electric Cyan (#00E5FF) - paired with an AMOLED true-black dark surface base (see
+ * Light Sky Blue (#38BDF8) - paired with an AMOLED true-black dark surface base (see
  * [DarkGlassColorScheme]'s `isAmoled = true`). Matches [BrandColors.LogoGradientEnd], so the app's
  * accent (buttons, focus rings, selected icon backgrounds, syntax highlighting) and the logo badge
  * gradient read as the same color.
  */
-val LtiSeedColor = Color(0xFF00E5FF)
+val LtiSeedColor = Color(0xFF38BDF8)
 
 /**
  * Syntax highlighting color scheme for code editor tokens.
@@ -292,7 +292,7 @@ object WindowControlColors {
  * Centralized token colors for brand assets and logos.
  */
 object BrandColors {
-    val LogoGradientEnd = Color(0xFF00E5FF)
+    val LogoGradientEnd = Color(0xFF38BDF8)
 }
 
 /**

@@ -48,7 +48,7 @@ LtiRom Studio uses a professional IDE design built around a centralized token sy
 ### 1. Color System (`Color.kt`)
 
 All colors are anchored to a brand seed color and dynamic Material 3 color generation:
-- `LtiSeedColor` = `#00E5FF` (Electric Cyan, matches `BrandColors.LogoGradientEnd`)
+- `LtiSeedColor` = `#38BDF8` (Light Sky Blue, matches `BrandColors.LogoGradientEnd`)
 - `DarkGlassColorScheme` / `LightGlassColorScheme`: dynamically generated via `dynamicGlassColorScheme()` and `com.materialkolor.dynamicColorScheme()`.
 
 **`GlassColorScheme` Tokens:**
@@ -95,7 +95,7 @@ data class SyntaxColorScheme(
 - `onGlass` / `onGlassSecondary` / `onGlassMuted`: Text and icon colors guaranteeing WCAG contrast against `glassSurface`.
 - Specialized token objects:
   - `WindowControlColors.CloseHover`: Native window close button hover color (`#E81123`).
-  - `BrandColors.LogoGradientEnd`: Brand logo cyan gradient stop (`#00E5FF`).
+  - `BrandColors.LogoGradientEnd`: Brand logo sky-blue gradient stop (`#38BDF8`).
   - `PerformanceMonitorColors`: `Good` (`#4EC9B0`), `Warning` (`#D7BA7D`), `Degraded` (`#CE9178`), `Bad` (`#F48771`).
   - `ToggleColors`: `ActiveLight` (`#34C759`), `ActiveDark` (`#30D158`).
   - `PreviewSampleColors`: `Blue`, `Purple`, `Orange`, `Green`.
