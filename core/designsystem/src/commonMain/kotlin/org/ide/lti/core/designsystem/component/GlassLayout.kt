@@ -86,6 +86,7 @@ import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import com.kashif_e.backdrop.drawBackdrop
 import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.lens
+import com.kashif_e.backdrop.highlight.Highlight
 import com.kashif_e.backdrop.effects.vibrancy
 import com.kashif_e.backdrop.shadow.Shadow
 import org.ide.lti.core.designsystem.theme.AlphaTokens
@@ -231,6 +232,7 @@ fun GlassLayout(
         borderColor = glassColors.glassBorder,
         borderWidth = StrokeWidth.Hairline,
         effects = LtiLayoutDefaults.ChromeEffects,
+        highlight = { Highlight.Default },
         shadow = {
             Shadow(
                 radius = LtiLayoutDefaults.PanelElevation,

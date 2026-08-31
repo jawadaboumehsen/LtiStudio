@@ -100,7 +100,7 @@ fun GlassDialog(
             shape = shape,
             effects = effects,
             backdrop = backdrop,
-            highlight = { Highlight.Plain },
+            highlight = { Highlight.Default },
             shadow = { Shadow(radius = Elevation.Modal, color = shadowColor) },
         ) {
             Column(
@@ -176,7 +176,7 @@ fun GlassLoadingDialog(
                         .padding(Spacing.DialogPadding),
                     effects = glassDialogEffects(MaterialTheme.colorScheme.surface.luminance() > 0.5f),
                     backdrop = backdrop,
-                    highlight = { Highlight.Plain },
+                    highlight = { Highlight.Default },
                     shadow = { Shadow(radius = Elevation.Modal, color = shadowColor) },
                 ) {
                     Column(

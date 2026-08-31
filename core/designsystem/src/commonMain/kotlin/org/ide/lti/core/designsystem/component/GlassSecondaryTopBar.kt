@@ -88,7 +88,7 @@ fun GlassSecondaryTopBar(
                             blur(BackdropBlur.TopBar.toPx())
                             lens(LensRefraction.TopBar.height.toPx(), LensRefraction.TopBar.amount.toPx())
                         },
-                        highlight = { Highlight.Plain },
+                        highlight = { Highlight.Default },
                         onDrawSurface = {
                             drawRect(glassColors.glassSurface)
                         }
