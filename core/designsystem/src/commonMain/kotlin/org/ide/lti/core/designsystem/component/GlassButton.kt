@@ -154,9 +154,10 @@ fun GlassButton(
     val finalContentColor = if (enabled) contentColor else glassColors.onGlassMuted
     val baseBorderColor = resolveButtonBorderColor(variant, glassColors)
 
+    val showFocusRing = isFocused && !GlassTheme.focusRingSuppressedByPointer
     val targetSurfaceColor = resolveHoverSurfaceColor(isHovered, variant, baseSurfaceColor, glassColors)
-    val targetBorderColor = resolveTargetBorderColor(isFocused, isHovered, baseBorderColor, glassColors)
-    val targetBorderWidth = resolveTargetBorderWidth(isFocused)
+    val targetBorderColor = resolveTargetBorderColor(showFocusRing, isHovered, baseBorderColor, glassColors)
+    val targetBorderWidth = resolveTargetBorderWidth(showFocusRing)
 
     val surfaceColor by animateColorAsState(
         targetValue = targetSurfaceColor,

@@ -10,13 +10,27 @@
 package org.ide.lti.core.designsystem.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import com.materialkolor.rememberDynamicColorScheme
@@ -50,6 +64,16 @@ val LocalReducedMotion = staticCompositionLocalOf {
 }
 
 /**
+ * Composition local tracking whether the most recent input event was a pointer press rather
+ * than a keyboard event. Interactive components use this to show a keyboard focus ring only
+ * for focus gained via Tab/keyboard or programmatic requestFocus() - not for focus gained by
+ * clicking with the mouse - mirroring the CSS `:focus-visible` pattern.
+ */
+val LocalFocusRingSuppressedByPointer = staticCompositionLocalOf {
+    false
+}
+
+/**
  * Accessor object for glass theme values anywhere in the composable hierarchy.
  */
 object GlassTheme {
@@ -72,6 +96,11 @@ object GlassTheme {
         @Composable
         @ReadOnlyComposable
         get() = LocalGlassBackdrop.current
+
+    val focusRingSuppressedByPointer: Boolean
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalFocusRingSuppressedByPointer.current
 }
 
 /**
@@ -79,8 +108,10 @@ object GlassTheme {
  *
  * Configures both Material 3 color & typography styling and GPU-accelerated Liquid Glass morphism.
  */
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun LtiTheme(
+    modifier: Modifier = Modifier,
     darkTheme: Boolean = isSystemInDarkTheme(),
     glassColors: GlassColorScheme? = null,
     effectsEnabled: Boolean = true,
@@ -99,6 +130,7 @@ fun LtiTheme(
         isDark = darkTheme,
     )
     val backdrop = sharedBackdrop ?: rememberLayerBackdrop()
+    var focusRingSuppressedByPointer by remember { mutableStateOf(false) }
 
     MaterialTheme(
         colorScheme = colorScheme,
@@ -110,8 +142,24 @@ fun LtiTheme(
             LocalGlassEffectsEnabled provides effectsEnabled,
             LocalReducedMotion provides reducedMotion,
             LocalContentColor provides resolvedGlassColors.onGlass,
-            content = content
-        )
+            LocalFocusRingSuppressedByPointer provides focusRingSuppressedByPointer,
+        ) {
+            Box(
+                modifier = modifier
+                    .fillMaxSize()
+                    .onPointerEvent(PointerEventType.Press, pass = PointerEventPass.Initial) {
+                        focusRingSuppressedByPointer = true
+                    }
+                    .onPreviewKeyEvent { keyEvent ->
+                        if (keyEvent.type == KeyEventType.KeyDown) {
+                            focusRingSuppressedByPointer = false
+                        }
+                        false
+                    }
+            ) {
+                content()
+            }
+        }
     }
 }
 

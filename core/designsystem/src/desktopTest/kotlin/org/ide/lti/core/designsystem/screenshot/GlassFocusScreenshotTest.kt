@@ -25,9 +25,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performKeyInput
+import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import org.ide.lti.core.designsystem.component.GlassButton
 import org.ide.lti.core.designsystem.component.GlassButtonVariant
@@ -110,5 +115,65 @@ class GlassFocusScreenshotTest {
 
         val image = onRoot().captureToImage()
         ScreenshotTestHelper.assertMatchesBaseline("glass_button_focused", image)
+    }
+
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun testGlassButtonFocusRingSuppressedOnMouseClick() = runDesktopComposeUiTest(width = 320, height = 160) {
+        setContent {
+            LtiTheme(darkTheme = true) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(GlassTheme.colors.glassSurface)
+                        .padding(Spacing.Medium),
+                    contentAlignment = Alignment.Center
+                ) {
+                    GlassButton(
+                        onClick = {},
+                        variant = GlassButtonVariant.Standard
+                    ) {
+                        Text("Clicked")
+                    }
+                }
+            }
+        }
+
+        onNodeWithText("Clicked").performClick()
+        waitForIdle()
+
+        val image = onRoot().captureToImage()
+        ScreenshotTestHelper.assertMatchesBaseline("glass_button_focus_ring_suppressed_on_click", image)
+    }
+
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun testGlassButtonFocusRingReappearsOnKeyPressWhileFocused() = runDesktopComposeUiTest(width = 320, height = 160) {
+        setContent {
+            LtiTheme(darkTheme = true) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(GlassTheme.colors.glassSurface)
+                        .padding(Spacing.Medium),
+                    contentAlignment = Alignment.Center
+                ) {
+                    GlassButton(
+                        onClick = {},
+                        variant = GlassButtonVariant.Standard
+                    ) {
+                        Text("Clicked")
+                    }
+                }
+            }
+        }
+
+        onNodeWithText("Clicked").performClick()
+        waitForIdle()
+        onNodeWithText("Clicked").performKeyInput { pressKey(Key.Tab) }
+        waitForIdle()
+
+        val image = onRoot().captureToImage()
+        ScreenshotTestHelper.assertMatchesBaseline("glass_button_focus_ring_reappears_on_keypress", image)
     }
 }
