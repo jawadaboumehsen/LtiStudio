@@ -41,6 +41,7 @@ import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import org.ide.lti.core.designsystem.component.GlassButton
 import org.ide.lti.core.designsystem.component.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.GlassCard
+import org.ide.lti.core.designsystem.component.GlassLayout
 import org.ide.lti.core.designsystem.component.GlassPanelContainer
 import org.ide.lti.core.designsystem.component.GlassPanelHeader
 import org.ide.lti.core.designsystem.component.GlassPrimaryButton
@@ -53,6 +54,8 @@ import org.ide.lti.core.designsystem.component.GlassTextField
 import org.ide.lti.core.designsystem.component.GlassToggle
 import org.ide.lti.core.designsystem.component.GlassTopBar
 import org.ide.lti.core.designsystem.component.SidePanelRailPosition
+import org.ide.lti.core.designsystem.component.WorkspacePanel
+import org.ide.lti.core.designsystem.component.rememberLtiLayoutState
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ColorContrast
@@ -621,6 +624,37 @@ class GlassComponentScreenshotTest {
         ScreenshotTestHelper.assertMatchesBaseline("glass_side_panel_tabs_light", image)
     }
 
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun testGlassLayoutFocusedPanel() = runDesktopComposeUiTest(width = 600, height = 360) {
+        setContent {
+            LtiTheme(darkTheme = true) {
+                val layoutState = rememberLtiLayoutState().apply {
+                    focusedPanel = WorkspacePanel.Editor
+                }
+                Box(modifier = Modifier.fillMaxSize()) {
+                    GlassLayout(
+                        state = layoutState,
+                        modifier = Modifier.fillMaxSize(),
+                        leftPanel = {
+                            Box(modifier = Modifier.fillMaxSize().padding(Spacing.Small)) {
+                                Text("Explorer Panel", color = GlassTheme.colors.onGlass)
+                            }
+                        },
+                        mainContent = {
+                            Box(modifier = Modifier.fillMaxSize().padding(Spacing.Small)) {
+                                Text("Focused Editor Panel", color = GlassTheme.colors.onGlass)
+                            }
+                        },
+                    )
+                }
+            }
+        }
+
+        val image = onRoot().captureToImage()
+        ScreenshotTestHelper.assertMatchesBaseline("glass_layout_focused_panel", image)
+    }
+
     @Composable
     private fun SwatchCard(
         name: String,
@@ -651,3 +685,5 @@ class GlassComponentScreenshotTest {
         }
     }
 }
+
+

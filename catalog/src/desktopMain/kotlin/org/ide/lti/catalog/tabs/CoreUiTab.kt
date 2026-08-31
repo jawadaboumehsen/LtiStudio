@@ -40,6 +40,7 @@ import org.ide.lti.core.model.filesystem.FileNode
 import org.ide.lti.core.model.filesystem.FileType
 import org.ide.lti.core.ui.GlassChatInput
 import org.ide.lti.core.ui.GlassCodeEditor
+import org.ide.lti.core.ui.syntax.SyntaxLanguage
 import org.ide.lti.core.ui.GlassFileTree
 import org.ide.lti.core.ui.GlassMessageBubble
 import org.ide.lti.core.ui.GlassScrollableTabRow
@@ -116,7 +117,8 @@ fun main() {
                 GlassCodeEditor(
                     content = editorCode,
                     onContentChange = { editorCode = it },
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
+                    language = SyntaxLanguage.KOTLIN,
                 )
             }
         }

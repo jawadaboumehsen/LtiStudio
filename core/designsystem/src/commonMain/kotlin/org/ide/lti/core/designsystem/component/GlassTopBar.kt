@@ -28,10 +28,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.CropSquare
-import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -46,16 +42,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -80,7 +70,6 @@ import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.MotionDuration
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
-import org.ide.lti.core.designsystem.theme.WindowControlColors
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /**
@@ -114,6 +103,7 @@ fun GlassTopBar(
     onClickMiddleDownPanelIcon: () -> Unit = {},
     onClickRightPanelIcon: () -> Unit = {},
     backdrop: Backdrop? = null,
+    drawOwnChrome: Boolean = true,
 ) {
     val actualBackdrop = backdrop ?: GlassTheme.backdrop
     val glassColors = GlassTheme.colors
@@ -125,35 +115,45 @@ fun GlassTopBar(
     val effectiveClose = onWindowClose ?: localControls.onClose
     val effectiveDrag = onWindowDrag ?: localControls.onDragWindow
 
+    val backgroundModifier = if (drawOwnChrome) {
+        if (effectsEnabled && actualBackdrop != null) {
+            Modifier.drawBackdrop(
+                backdrop = actualBackdrop,
+                shape = { ContinuousRoundedRectangle(CornerRadius.Panel) },
+                effects = {
+                    vibrancy()
+                    blur(BackdropBlur.TopBar.toPx())
+                    lens(LensRefraction.TopBar.height.toPx(), LensRefraction.TopBar.amount.toPx())
+                },
+                highlight = { Highlight.Plain },
+                onDrawSurface = {
+                    drawRect(glassColors.glassSurface)
+                }
+            )
+        } else {
+            Modifier.background(MaterialTheme.colorScheme.surface)
+        }
+    } else {
+        Modifier
+    }
+
+    val borderModifier = if (drawOwnChrome) {
+        Modifier.border(
+            width = StrokeWidth.Hairline,
+            color = glassColors.glassBorder,
+            shape = ContinuousRoundedRectangle(CornerRadius.Panel)
+        )
+    } else {
+        Modifier
+    }
+
     Row(
         modifier = modifier
             .fillMaxWidth()
             .height(ComponentSize.TopBarHeight)
             .windowDragGesture(effectiveDrag)
-            .then(
-                if (effectsEnabled && actualBackdrop != null) {
-                    Modifier.drawBackdrop(
-                        backdrop = actualBackdrop,
-                        shape = { ContinuousRoundedRectangle(CornerRadius.Panel) },
-                        effects = {
-                            vibrancy()
-                            blur(BackdropBlur.TopBar.toPx())
-                            lens(LensRefraction.TopBar.height.toPx(), LensRefraction.TopBar.amount.toPx())
-                        },
-                        highlight = { Highlight.Plain },
-                        onDrawSurface = {
-                            drawRect(glassColors.glassSurface)
-                        }
-                    )
-                } else {
-                    Modifier.background(MaterialTheme.colorScheme.surface)
-                }
-            )
-            .border(
-                width = StrokeWidth.Hairline,
-                color = glassColors.glassBorder,
-                shape = ContinuousRoundedRectangle(CornerRadius.Panel)
-            )
+            .then(backgroundModifier)
+            .then(borderModifier)
             .padding(horizontal = Spacing.MediumSmall),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.Small),

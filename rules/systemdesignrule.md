@@ -156,24 +156,34 @@ everywhere else dividers appear in this app.
 
 ---
 
-## Rule 8: layout/spacing conventions for the app chrome — 12dp outer margin, 8dp inter-card gap
+## Rule 8: layout/spacing conventions for the app chrome — ONE continuous framed window with hairline dividers
 
-**The rule:** the top bar, status bar, and the 3-panel workspace cluster all use one consistent
-spacing system: `Spacing.ExtraSmall` (4dp) as a base outer inset on the whole layout `Column`, plus
-each floating card getting `Spacing.PanelPadding` (8dp) on the edge(s) facing the window's outer
-edge and `Spacing.ExtraSmall` (4dp) on the edge(s) facing another card — so every seam in the layout
-(bar-to-panel, panel-to-panel, cluster-to-window-edge) resolves to the same 12dp outer margin / 8dp
-inter-card gap. If you add a new floating chrome element (another bar, another panel), match this
-pattern rather than inventing new spacing values. See `GlassLayout.kt`'s `GlassLeftPanel`/
-`GlassCenterColumn`/`GlassRightPanel` and the top/status bar `Box` wrappers for the reference
-implementation, and note the conditional case: when a side panel is hidden, the element next to
-where it would have been (main content's edge) switches from the inner 4dp to the outer 8dp, to keep
-the 12dp-from-window-edge margin consistent regardless of which panels are visible.
+**The rule:** the IDE window is structured into **TWO glass surfaces** — a chrome "picture frame"
+surface and an inner content surface:
+- **Surface 1 (Chrome Frame):** Outer `GlassSurface` (`shape = ContinuousRoundedRectangle(appearance.panelCornerRadius)`,
+  `StrokeWidth.Hairline` outer border, `glassSurface` + `glassTint` color). Forms a single full-window frame
+  with ONE backdrop sample. Contains the `topBar()`, the left icon rail (`leftRail()`), the right icon rail
+  (`rightRail()`), and the `statusBar()`.
+- **Horizontal dividers:** Crisp hairline horizontal dividers (`StrokeWidth.Hairline` height, colored with
+  `GlassTheme.colors.glassBorder.copy(alpha = AlphaTokens.Faint)`) separate the top bar and status bar from the content area.
+- **Surface 2 (Content Surface):** Inner `GlassSurface` (`shape = ContinuousRoundedRectangle(ThemeCornerRadius.None)`,
+  `surfaceColor = glassColors.canvasSurface`, `tint = Color.Transparent`, with `EnhancedPanelEffects` and ONE backdrop sample)
+  painted between the left and right rails. Contains the left panel content (Explorer), center column (Editor + Terminal),
+  and right panel content (AI Assistant), separated by interactive hairline drag dividers.
+- **Rail vs. Panel separation:** `GlassSidePanelRail` renders ONLY the narrow vertical icon strip (36dp, drawing NO
+  background of its own, so the chrome frame shows through) and an inner hairline divider. `GlassSidePanelTabs` is a
+  convenience wrapper delegating to `GlassSidePanelRail`. Left/right rails belong to Surface 1 (chrome), while Explorer
+  and AI Assistant content panes belong to Surface 2 (content).
+- **Embedded chrome components:** `GlassTopBar` and `GlassStatusBar` support `drawOwnChrome: Boolean = true`. When
+  embedded in `GlassLayout` (`drawOwnChrome = false`), they render NO own background, shape clip, or border, allowing
+  the parent chrome frame's single backdrop sample to show through seamlessly.
+- **Surface distinction:** Both surfaces remain liquid glass with real GPU refraction/blur, differing in base color
+  (`glassSurface` vs. `canvasSurface`) to provide >= 10 luma separation while maintaining ~3-5 luma uniformity across
+  all chrome regions.
 
-**Why:** the top bar and status bar used to be flush, sharp-cornered, edge-to-edge rectangles while
-the panel cluster floated with rounded corners and gaps — a real, user-reported "looks disconnected
-from the app" defect, fixed by unifying the corner radius (`CornerRadius.Panel` on the bars, matching
-the panels) and this spacing system.
+**Why:** independent `drawBackdrop` calls on separate toolbars and panels created a patchy, mismatched 15-luma
+spread across the window. The two-glass-surface architecture guarantees visual uniformity for the entire chrome frame
+while keeping the editor and tool window content distinctly framed on their own high-contrast glass canvas.
 
 ---
 

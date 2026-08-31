@@ -42,10 +42,12 @@ import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.colorControls
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.highlight.Highlight
+import com.kashif_e.backdrop.shadow.Shadow
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.BackdropBrightness
 import org.ide.lti.core.designsystem.theme.BackdropSaturation
 import org.ide.lti.core.designsystem.theme.CornerRadius
+import org.ide.lti.core.designsystem.theme.Elevation
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -85,6 +87,8 @@ fun GlassDialog(
     properties: DialogProperties = DialogProperties(),
     content: @Composable () -> Unit,
 ) {
+    val shadowColor = GlassTheme.colors.glassShadow
+
     Dialog(
         onDismissRequest = onDismissRequest,
         properties = properties,
@@ -97,6 +101,7 @@ fun GlassDialog(
             effects = effects,
             backdrop = backdrop,
             highlight = { Highlight.Plain },
+            shadow = { Shadow(radius = Elevation.Modal, color = shadowColor) },
         ) {
             Column(
                 modifier = Modifier
@@ -152,6 +157,8 @@ fun GlassLoadingDialog(
     modifier: Modifier = Modifier,
     backdrop: Backdrop? = null,
 ) {
+    val shadowColor = GlassTheme.colors.glassShadow
+
     when (visibilityState) {
         is LoadingDialogState.Hidden -> Unit
         is LoadingDialogState.Shown -> {
@@ -170,6 +177,7 @@ fun GlassLoadingDialog(
                     effects = glassDialogEffects(MaterialTheme.colorScheme.surface.luminance() > 0.5f),
                     backdrop = backdrop,
                     highlight = { Highlight.Plain },
+                    shadow = { Shadow(radius = Elevation.Modal, color = shadowColor) },
                 ) {
                     Column(
                         modifier = Modifier

@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.isSpecified
+import androidx.compose.ui.unit.Dp
 import com.kyant.capsule.ContinuousRoundedRectangle
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.BackdropEffectScope
@@ -56,6 +57,8 @@ val StandardGlassEffects: BackdropEffectScope.() -> Unit = {
  * @param backdrop Backdrop instance to sample (default: from [GlassTheme] or a new layer)
  * @param surfaceColor Optional surface color overlay (default: from [GlassTheme] colors)
  * @param tint Optional tint color (default: from [GlassTheme] colors)
+ * @param borderColor Optional border color
+ * @param borderWidth Width of the border (default: [StrokeWidth.Standard])
  * @param effects Backdrop effect chain, e.g. `{ vibrancy(); blur(4.dp.toPx()); lens(16.dp.toPx(), 32.dp.toPx()) }`
  * @param highlight Optional highlight decorator (default: [Highlight.Plain])
  * @param content Content to display inside the glass surface
@@ -68,6 +71,7 @@ fun GlassSurface(
     surfaceColor: Color = Color.Unspecified,
     tint: Color = Color.Unspecified,
     borderColor: Color = Color.Unspecified,
+    borderWidth: Dp = StrokeWidth.Standard,
     effects: BackdropEffectScope.() -> Unit = StandardGlassEffects,
     highlight: () -> Highlight? = { Highlight.Plain },
     shadow: (() -> Shadow?)? = null,
@@ -83,7 +87,7 @@ fun GlassSurface(
 
     val borderModifier = if (finalBorderColor.isSpecified) {
         Modifier.border(
-            border = BorderStroke(StrokeWidth.Standard, finalBorderColor),
+            border = BorderStroke(borderWidth, finalBorderColor),
             shape = shape
         )
     } else {

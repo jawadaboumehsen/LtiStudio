@@ -17,6 +17,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.sp
 import org.ide.lti.core.designsystem.generated.resources.Res
+import org.ide.lti.core.designsystem.generated.resources.jetbrains_mono_bold
+import org.ide.lti.core.designsystem.generated.resources.jetbrains_mono_medium
+import org.ide.lti.core.designsystem.generated.resources.jetbrains_mono_regular
 import org.ide.lti.core.designsystem.generated.resources.outfit_black
 import org.ide.lti.core.designsystem.generated.resources.outfit_bold
 import org.ide.lti.core.designsystem.generated.resources.outfit_extra_bold
@@ -40,6 +43,18 @@ private fun fontFamily(): FontFamily {
         Font(Res.font.outfit_thin, FontWeight.Thin),
         Font(Res.font.outfit_extra_light, FontWeight.ExtraLight),
         Font(Res.font.outfit_extra_bold, FontWeight.ExtraBold),
+    )
+}
+
+/**
+ * Returns the bundled JetBrains Mono [FontFamily] configured with Regular, Medium, and Bold weights.
+ */
+@Composable
+fun codeFontFamily(): FontFamily {
+    return FontFamily(
+        Font(Res.font.jetbrains_mono_regular, FontWeight.Normal),
+        Font(Res.font.jetbrains_mono_medium, FontWeight.Medium),
+        Font(Res.font.jetbrains_mono_bold, FontWeight.Bold),
     )
 }
 

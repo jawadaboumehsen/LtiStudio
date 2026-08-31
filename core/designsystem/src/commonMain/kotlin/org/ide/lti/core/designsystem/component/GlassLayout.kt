@@ -10,8 +10,6 @@
 package org.ide.lti.core.designsystem.component
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -25,13 +23,14 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -46,8 +45,10 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -59,10 +60,8 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Shape
 import org.ide.lti.core.designsystem.theme.GlassLayoutColors
 import org.ide.lti.core.designsystem.theme.PreviewSampleColors
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -79,6 +78,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import java.awt.Cursor
+import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.BackdropEffectScope
 import com.kyant.capsule.ContinuousCapsule
 import com.kyant.capsule.ContinuousRoundedRectangle
@@ -188,11 +188,13 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 @Composable
 fun GlassLayout(
     state: LtiLayoutState,
-    leftPanel: @Composable () -> Unit,
-    mainContent: @Composable () -> Unit,
-    bottomPanel: @Composable () -> Unit,
-    rightPanel: @Composable () -> Unit,
     modifier: Modifier = Modifier,
+    leftRail: @Composable () -> Unit = {},
+    leftPanel: @Composable () -> Unit = {},
+    mainContent: @Composable () -> Unit = {},
+    bottomPanel: @Composable () -> Unit = {},
+    rightPanel: @Composable () -> Unit = {},
+    rightRail: @Composable () -> Unit = {},
     topBar: @Composable () -> Unit = {
         GlassTopBar(
             isLeftPanelVisible = state.showLeft,
@@ -201,131 +203,160 @@ fun GlassLayout(
             onClickLeftPanelIcon = { state.toggleLeft() },
             onClickRightPanelIcon = { state.toggleRight() },
             onClickMiddleDownPanelIcon = { state.toggleBottom() },
+            drawOwnChrome = false,
         )
     },
-    statusBar: @Composable () -> Unit = { GlassStatusBar() },
+    statusBar: @Composable () -> Unit = { GlassStatusBar(drawOwnChrome = false) },
     showToggleButtons: Boolean = false,
-    appearance: GlassLayoutAppearance = GlassLayoutAppearance.Default
+    appearance: GlassLayoutAppearance = GlassLayoutAppearance.Default,
+    backdrop: Backdrop? = null,
 ) {
     val density = LocalDensity.current
+    val actualBackdrop = backdrop ?: GlassTheme.backdrop
+    val glassColors = GlassTheme.colors
+    val panelShape = ContinuousRoundedRectangle(appearance.panelCornerRadius)
 
-    Column(
+    GlassSurface(
         modifier = modifier
             .fillMaxSize()
             .padding(Spacing.ExtraSmall)
             .onSizeChanged { state.containerSize = it }
             .semantics {
                 contentDescription = "LtiRomGui IDE Layout with resizable panels"
-            }
+            },
+        shape = panelShape,
+        backdrop = actualBackdrop,
+        surfaceColor = glassColors.canvasSurface,
+        tint = Color.Transparent,
+        borderColor = glassColors.glassBorder,
+        borderWidth = StrokeWidth.Hairline,
+        effects = LtiLayoutDefaults.ChromeEffects,
+        shadow = {
+            Shadow(
+                radius = LtiLayoutDefaults.PanelElevation,
+                color = LtiLayoutDefaults.PanelShadowColor
+            )
+        }
     ) {
-        // Top Bar
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(
-                    start = Spacing.PanelPadding,
-                    end = Spacing.PanelPadding,
-                    top = Spacing.PanelPadding,
-                    bottom = Spacing.ExtraSmall
-                )
-        ) {
-            topBar()
-        }
-
-        // Main Content Area
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-        ) {
-            Row(modifier = Modifier.fillMaxSize()) {
-                val panelShape = ContinuousRoundedRectangle(appearance.panelCornerRadius)
-
-                val animatedLeftWeight by animateFloatAsState(
-                    targetValue = state.leftWeight,
-                    animationSpec = if (state.isDragging) {
-                        snap()
-                    } else {
-                        spring(
-                            dampingRatio = Spring.DampingRatioLowBouncy,
-                            stiffness = Spring.StiffnessLow
-                        )
-                    },
-                    label = "leftWeight"
-                )
-
-                val animatedRightWeight by animateFloatAsState(
-                    targetValue = state.rightWeight,
-                    animationSpec = if (state.isDragging) {
-                        snap()
-                    } else {
-                        spring(
-                            dampingRatio = Spring.DampingRatioLowBouncy,
-                            stiffness = Spring.StiffnessLow
-                        )
-                    },
-                    label = "rightWeight"
-                )
-
-                val animatedBottomWeight by animateFloatAsState(
-                    targetValue = state.bottomWeight,
-                    animationSpec = if (state.isDragging) {
-                        snap()
-                    } else {
-                        spring(
-                            dampingRatio = Spring.DampingRatioLowBouncy,
-                            stiffness = Spring.StiffnessLow
-                        )
-                    },
-                    label = "bottomWeight"
-                )
-
-                val availableWidth = with(density) { state.containerSize.width.toDp() }
-                val leftPanelWidth = (availableWidth * animatedLeftWeight)
-                    .coerceIn(LtiLayoutDefaults.MinPanelWidth, LtiLayoutDefaults.MaxPanelWidth)
-                val rightPanelWidth = (availableWidth * animatedRightWeight)
-                    .coerceIn(LtiLayoutDefaults.MinPanelWidth, LtiLayoutDefaults.MaxPanelWidth)
-
-                GlassLeftPanel(
-                    state = state,
-                    width = leftPanelWidth,
-                    shape = panelShape,
-                    appearance = appearance,
-                    content = leftPanel
-                )
-
-                GlassCenterColumn(
-                    state = state,
-                    density = density,
-                    animatedBottomWeight = animatedBottomWeight,
-                    shape = panelShape,
-                    appearance = appearance,
-                    mainContent = mainContent,
-                    bottomPanel = bottomPanel
-                )
-
-                GlassRightPanel(
-                    state = state,
-                    width = rightPanelWidth,
-                    shape = panelShape,
-                    appearance = appearance,
-                    content = rightPanel
-                )
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Top Bar (flush to the top and side edges of the frame)
+            Box(modifier = Modifier.fillMaxWidth()) {
+                topBar()
             }
-        }
 
-        // Status Bar
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(
-                    start = Spacing.PanelPadding,
-                    end = Spacing.PanelPadding,
-                    top = Spacing.ExtraSmall,
-                    bottom = Spacing.PanelPadding
-                )
-        ) {
-            statusBar()
+            // Hairline horizontal divider below top bar
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(StrokeWidth.Hairline)
+                    .background(glassColors.glassBorder.copy(alpha = AlphaTokens.Faint))
+            )
+
+            // Middle Row: Left Rail (Chrome) + Content GlassSurface + Right Rail (Chrome)
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) {
+                leftRail()
+
+                // Content area: each panel is its OWN GlassSurface so the chrome background
+                // shows through the gaps between them as a real, visible separation.
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .padding(Spacing.Small),
+                ) {
+                    Row(modifier = Modifier.fillMaxSize()) {
+                        val animatedLeftWeight by animateFloatAsState(
+                            targetValue = state.leftWeight,
+                            animationSpec = if (state.isDragging) {
+                                snap()
+                            } else {
+                                spring(
+                                    dampingRatio = Spring.DampingRatioLowBouncy,
+                                    stiffness = Spring.StiffnessLow
+                                )
+                            },
+                            label = "leftWeight"
+                        )
+
+                        val animatedRightWeight by animateFloatAsState(
+                            targetValue = state.rightWeight,
+                            animationSpec = if (state.isDragging) {
+                                snap()
+                            } else {
+                                spring(
+                                    dampingRatio = Spring.DampingRatioLowBouncy,
+                                    stiffness = Spring.StiffnessLow
+                                )
+                            },
+                            label = "rightWeight"
+                        )
+
+                        val animatedBottomWeight by animateFloatAsState(
+                            targetValue = state.bottomWeight,
+                            animationSpec = if (state.isDragging) {
+                                snap()
+                            } else {
+                                spring(
+                                    dampingRatio = Spring.DampingRatioLowBouncy,
+                                    stiffness = Spring.StiffnessLow
+                                )
+                            },
+                            label = "bottomWeight"
+                        )
+
+                        val availableWidth = with(density) { state.containerSize.width.toDp() }
+                        val leftPanelWidth = (availableWidth * animatedLeftWeight)
+                            .coerceIn(LtiLayoutDefaults.MinPanelWidth, LtiLayoutDefaults.MaxPanelWidth)
+                        val rightPanelWidth = (availableWidth * animatedRightWeight)
+                            .coerceIn(LtiLayoutDefaults.MinPanelWidth, LtiLayoutDefaults.MaxPanelWidth)
+
+                        GlassLeftPanel(
+                            state = state,
+                            width = leftPanelWidth,
+                            appearance = appearance,
+                            backdrop = actualBackdrop,
+                            content = leftPanel
+                        )
+
+                        GlassCenterColumn(
+                            state = state,
+                            density = density,
+                            animatedBottomWeight = animatedBottomWeight,
+                            appearance = appearance,
+                            backdrop = actualBackdrop,
+                            mainContent = mainContent,
+                            bottomPanel = bottomPanel
+                        )
+
+                        GlassRightPanel(
+                            state = state,
+                            width = rightPanelWidth,
+                            appearance = appearance,
+                            backdrop = actualBackdrop,
+                            content = rightPanel
+                        )
+                    }
+                }
+
+                rightRail()
+            }
+
+            // Hairline horizontal divider above status bar
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(StrokeWidth.Hairline)
+                    .background(glassColors.glassBorder.copy(alpha = AlphaTokens.Faint))
+            )
+
+            // Status Bar (flush to the bottom and side edges of the frame)
+            Box(modifier = Modifier.fillMaxWidth()) {
+                statusBar()
+            }
         }
     }
 
@@ -334,12 +365,49 @@ fun GlassLayout(
     }
 }
 
+/**
+ * A single content panel rendered as its own [GlassSurface].
+ *
+ * Each of the four workspace panels (Explorer, editor, terminal/console, AI Assistant) paints its
+ * own surface rather than sharing one continuous sheet. This is what makes the space between them
+ * read as a real, visible gap: the darker chrome frame behind shows through the gaps. Padding alone
+ * inside a single shared surface is invisible, since both sides of the gap are the same color.
+ */
+@Composable
+private fun GlassContentPanel(
+    isDragging: Boolean,
+    backdrop: Backdrop?,
+    modifier: Modifier = Modifier,
+    isFocused: Boolean = false,
+    content: @Composable () -> Unit,
+) {
+    val glassColors = GlassTheme.colors
+    GlassSurface(
+        modifier = modifier,
+        shape = ContinuousRoundedRectangle(ThemeCornerRadius.Panel),
+        backdrop = backdrop,
+        surfaceColor = glassColors.glassSurface,
+        tint = glassColors.glassTint,
+        borderColor = if (isFocused) glassColors.glassBorderHighlight else Color.Unspecified,
+        borderWidth = StrokeWidth.Hairline,
+        effects = if (isDragging) {
+            LtiLayoutDefaults.DragOptimizedEffects
+        } else {
+            LtiLayoutDefaults.EnhancedPanelEffects
+        },
+    ) {
+        CompositionLocalProvider(LocalContentColor provides glassColors.onGlass) {
+            content()
+        }
+    }
+}
+
 @Composable
 private fun GlassLeftPanel(
     state: LtiLayoutState,
     width: Dp,
-    shape: Shape,
     appearance: GlassLayoutAppearance,
+    backdrop: Backdrop?,
     content: @Composable () -> Unit
 ) {
     AnimatedVisibility(
@@ -353,36 +421,26 @@ private fun GlassLeftPanel(
             animationSpec = LtiLayoutAnimations.PanelExpandSpring
         ) + fadeOut(animationSpec = LtiLayoutAnimations.PanelFade)
     ) {
-        Row {
-            GlassCard(
+        Row(modifier = Modifier.fillMaxHeight()) {
+            GlassContentPanel(
+                isDragging = state.isDragging,
+                backdrop = backdrop,
+                isFocused = state.focusedPanel == WorkspacePanel.Explorer,
                 modifier = Modifier
                     .width(width)
                     .fillMaxHeight()
-                    .padding(
-                        start = Spacing.PanelPadding,
-                        end = Spacing.ExtraSmall,
-                        top = Spacing.ExtraSmall,
-                        bottom = Spacing.ExtraSmall
-                    )
+                    .pointerInput(state) {
+                        awaitEachGesture {
+                            awaitFirstDown(requireUnconsumed = false)
+                            state.focusedPanel = WorkspacePanel.Explorer
+                        }
+                    }
                     .semantics {
                         val stateDesc = if (state.showLeft) "visible" else "hidden"
                         contentDescription = "Left panel: $stateDesc"
                     },
-                shape = shape,
-                effects = if (state.isDragging) {
-                    LtiLayoutDefaults.DragOptimizedEffects
-                } else {
-                    LtiLayoutDefaults.EnhancedPanelEffects
-                },
-                shadow = {
-                    Shadow(
-                        radius = LtiLayoutDefaults.PanelElevation,
-                        color = LtiLayoutDefaults.PanelShadowColor
-                    )
-                }
-            ) {
-                content()
-            }
+                content = content,
+            )
 
             GlassDragDivider(
                 orientation = DividerOrientation.Vertical,
@@ -404,48 +462,41 @@ private fun RowScope.GlassCenterColumn(
     state: LtiLayoutState,
     density: androidx.compose.ui.unit.Density,
     animatedBottomWeight: Float,
-    shape: Shape,
     appearance: GlassLayoutAppearance,
+    backdrop: Backdrop?,
     mainContent: @Composable () -> Unit,
     bottomPanel: @Composable () -> Unit
 ) {
-    Column(modifier = Modifier.weight(1f)) {
-        val floatingBarPadding = (Spacing.PanelPadding + Spacing.ExtraSmall) * 2
-        val totalFixedHeight = LtiLayoutDefaults.TopBarHeight + LtiLayoutDefaults.StatusBarHeight + floatingBarPadding
+    Column(
+        modifier = Modifier
+            .weight(1f)
+            .fillMaxHeight()
+    ) {
+        val totalFixedHeight = LtiLayoutDefaults.TopBarHeight + LtiLayoutDefaults.StatusBarHeight
         val availableHeight = with(density) {
             (state.containerSize.height - totalFixedHeight.toPx()).toDp()
         }
         val bottomPanelHeight = (availableHeight * animatedBottomWeight)
             .coerceIn(LtiLayoutDefaults.MinPanelHeight, LtiLayoutDefaults.MaxPanelHeight)
 
-        GlassCard(
+        GlassContentPanel(
+            isDragging = state.isDragging,
+            backdrop = backdrop,
+            isFocused = state.focusedPanel == WorkspacePanel.Editor,
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
-                .padding(
-                    start = if (state.showLeft) Spacing.ExtraSmall else Spacing.PanelPadding,
-                    end = if (state.showRight) Spacing.ExtraSmall else Spacing.PanelPadding,
-                    top = Spacing.ExtraSmall,
-                    bottom = Spacing.ExtraSmall
-                )
+                .pointerInput(state) {
+                    awaitEachGesture {
+                        awaitFirstDown(requireUnconsumed = false)
+                        state.focusedPanel = WorkspacePanel.Editor
+                    }
+                }
                 .semantics {
                     contentDescription = "Main content panel"
                 },
-            shape = shape,
-            effects = if (state.isDragging) {
-                LtiLayoutDefaults.DragOptimizedEffects
-            } else {
-                LtiLayoutDefaults.EnhancedPanelEffects
-            },
-            shadow = {
-                Shadow(
-                    radius = LtiLayoutDefaults.PanelElevation,
-                    color = LtiLayoutDefaults.PanelShadowColor
-                )
-            }
-        ) {
-            mainContent()
-        }
+            content = mainContent,
+        )
 
         AnimatedVisibility(
             visible = state.showBottom,
@@ -472,35 +523,25 @@ private fun RowScope.GlassCenterColumn(
                     onDragEnd = { state.onBottomDragEnd() }
                 )
 
-                GlassCard(
+                GlassContentPanel(
+                    isDragging = state.isDragging,
+                    backdrop = backdrop,
+                    isFocused = state.focusedPanel == WorkspacePanel.Terminal,
                     modifier = Modifier
                         .height(bottomPanelHeight)
                         .fillMaxWidth()
-                        .padding(
-                            start = Spacing.PanelPadding,
-                            end = Spacing.PanelPadding,
-                            top = Spacing.ExtraSmall,
-                            bottom = Spacing.ExtraSmall
-                        )
+                        .pointerInput(state) {
+                            awaitEachGesture {
+                                awaitFirstDown(requireUnconsumed = false)
+                                state.focusedPanel = WorkspacePanel.Terminal
+                            }
+                        }
                         .semantics {
                             val stateDesc = if (state.showBottom) "visible" else "hidden"
                             contentDescription = "Bottom panel: $stateDesc"
                         },
-                    shape = shape,
-                    effects = if (state.isDragging) {
-                        LtiLayoutDefaults.DragOptimizedEffects
-                    } else {
-                        LtiLayoutDefaults.EnhancedPanelEffects
-                    },
-                    shadow = {
-                        Shadow(
-                            radius = LtiLayoutDefaults.PanelElevation,
-                            color = LtiLayoutDefaults.PanelShadowColor
-                        )
-                    }
-                ) {
-                    bottomPanel()
-                }
+                    content = bottomPanel,
+                )
             }
         }
     }
@@ -510,8 +551,8 @@ private fun RowScope.GlassCenterColumn(
 private fun GlassRightPanel(
     state: LtiLayoutState,
     width: Dp,
-    shape: Shape,
     appearance: GlassLayoutAppearance,
+    backdrop: Backdrop?,
     content: @Composable () -> Unit
 ) {
     AnimatedVisibility(
@@ -525,7 +566,7 @@ private fun GlassRightPanel(
             animationSpec = LtiLayoutAnimations.PanelExpandSpring
         ) + fadeOut(animationSpec = LtiLayoutAnimations.PanelFade)
     ) {
-        Row {
+        Row(modifier = Modifier.fillMaxHeight()) {
             GlassDragDivider(
                 orientation = DividerOrientation.Vertical,
                 appearance = appearance,
@@ -538,35 +579,25 @@ private fun GlassRightPanel(
                 onDragEnd = { state.onRightDragEnd() }
             )
 
-            GlassCard(
+            GlassContentPanel(
+                isDragging = state.isDragging,
+                backdrop = backdrop,
+                isFocused = state.focusedPanel == WorkspacePanel.AiAssistant,
                 modifier = Modifier
                     .width(width)
                     .fillMaxHeight()
-                    .padding(
-                        start = Spacing.ExtraSmall,
-                        end = Spacing.PanelPadding,
-                        top = Spacing.ExtraSmall,
-                        bottom = Spacing.ExtraSmall
-                    )
+                    .pointerInput(state) {
+                        awaitEachGesture {
+                            awaitFirstDown(requireUnconsumed = false)
+                            state.focusedPanel = WorkspacePanel.AiAssistant
+                        }
+                    }
                     .semantics {
                         val stateDesc = if (state.showRight) "visible" else "hidden"
                         contentDescription = "Right panel: $stateDesc"
                     },
-                shape = shape,
-                effects = if (state.isDragging) {
-                    LtiLayoutDefaults.DragOptimizedEffects
-                } else {
-                    LtiLayoutDefaults.EnhancedPanelEffects
-                },
-                shadow = {
-                    Shadow(
-                        radius = LtiLayoutDefaults.PanelElevation,
-                        color = LtiLayoutDefaults.PanelShadowColor
-                    )
-                }
-            ) {
-                content()
-            }
+                content = content,
+            )
         }
     }
 }
@@ -716,10 +747,17 @@ object LtiLayoutDefaults {
 
     // ==================== VISUAL POLISH ====================
 
-    /** Enhanced glass effect stack for professional panel appearance (subtle, per skill's Toolbar/Subtle guidance). */
+    /** Immersive glass effect stack for the outer chrome frame. */
+    val ChromeEffects: BackdropEffectScope.() -> Unit = {
+        vibrancy()
+        blur(BackdropBlur.Immersive.toPx())
+        lens(LensRefraction.Surface.height.toPx(), LensRefraction.Surface.amount.toPx())
+    }
+
+    /** Enhanced glass effect stack for professional panel appearance with deep frosted glass blur. */
     val EnhancedPanelEffects: BackdropEffectScope.() -> Unit = {
         vibrancy()
-        blur(BackdropBlur.Subtle.toPx())
+        blur(BackdropBlur.Deep.toPx())
         lens(LensRefraction.TextField.height.toPx(), LensRefraction.TextField.amount.toPx())
     }
 
@@ -926,7 +964,12 @@ private fun GlassDragDivider(
             },
         contentAlignment = Alignment.Center
     ) {
-        // Divider line - simple during drag, glass effects only on hover for performance
+        // No painted idle line: each content panel now draws its own GlassSurface, so the gap
+        // between panels already reads as a real separation (the darker chrome frame shows
+        // through it). Painting a line here would sit on top of that gap and muddy it. The
+        // hover/drag affordance below still appears on interaction.
+
+        // Divider line active state - simple during drag, glass effects only on hover for performance
         Box(
             modifier = lineModifier
                 .alpha(alpha)
@@ -1039,6 +1082,16 @@ fun PreviewGlassLayout() {
 }
 
 /**
+ * Workspace panels that can receive focus.
+ */
+enum class WorkspacePanel {
+    Explorer,
+    Editor,
+    Terminal,
+    AiAssistant,
+}
+
+/**
  * State holder for GlassLayout
  * Manages all panel sizes, visibility, and drag behavior
  */
@@ -1061,6 +1114,8 @@ class GlassLayoutState(
     private val _initialLeftWeight = initialLeftWeight
     private val _initialRightWeight = initialRightWeight
     private val _initialBottomWeight = initialBottomWeight
+
+    var focusedPanel by mutableStateOf<WorkspacePanel?>(null)
 
     var leftWeight by mutableStateOf(initialLeftWeight)
         private set
@@ -1230,6 +1285,7 @@ class GlassLayoutState(
         showLeft = initialShowLeft
         showRight = initialShowRight
         showBottom = initialShowBottom
+        focusedPanel = null
         leftWasAtMinBeforeDrag = false
         rightWasAtMinBeforeDrag = false
         bottomWasAtMinBeforeDrag = false

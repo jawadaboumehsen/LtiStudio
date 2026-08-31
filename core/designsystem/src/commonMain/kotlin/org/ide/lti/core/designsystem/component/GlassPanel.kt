@@ -47,12 +47,11 @@ import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.Spacing
 
 /**
- * Sidebar/panel glass effect stack, per the kmp-liquid-glass skill's "moderate effect for
- * side navigation panels" guidance.
+ * Sidebar/panel glass effect stack with deep frosted glass blur.
  */
 val GlassPanelEffects: BackdropEffectScope.() -> Unit = {
     vibrancy()
-    blur(BackdropBlur.Panel.toPx())
+    blur(BackdropBlur.Deep.toPx())
     lens(LensRefraction.Panel.height.toPx(), LensRefraction.Panel.amount.toPx())
 }
 

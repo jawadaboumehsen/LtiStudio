@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,22 +21,35 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.sp
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.codeFontFamily
+import org.ide.lti.core.ui.syntax.SyntaxHighlightingTransformation
+import org.ide.lti.core.ui.syntax.SyntaxLanguage
 
 /**
- * Lti code editor component with line numbers and syntax highlighting support.
+ * Lti code editor component with line numbers, opaque canvas surface, theme-aware syntax highlighting,
+ * and cursor position tracking.
  *
  * @param content The code content to display and edit
  * @param onContentChange Callback when the content changes
  * @param modifier Modifier to be applied to the editor
  * @param readOnly Whether the editor is read-only
  * @param showLineNumbers Whether to show line numbers
+ * @param language The syntax language used to tokenize and highlight the code
+ * @param onCursorPositionChange Optional callback invoked when the cursor/caret position changes
+ * (1-based line, 1-based column)
  */
 @Composable
 fun GlassCodeEditor(
@@ -44,13 +58,52 @@ fun GlassCodeEditor(
     modifier: Modifier = Modifier,
     readOnly: Boolean = false,
     showLineNumbers: Boolean = true,
+    language: SyntaxLanguage = SyntaxLanguage.PLAIN_TEXT,
+    onCursorPositionChange: ((line: Int, column: Int) -> Unit)? = null,
 ) {
     val verticalScrollState = rememberScrollState()
     val horizontalScrollState = rememberScrollState()
     val glassColors = GlassTheme.colors
+    val codeFont = codeFontFamily()
+
+    var textFieldValue by remember {
+        mutableStateOf(TextFieldValue(text = content, selection = TextRange.Zero))
+    }
+
+    if (textFieldValue.text != content) {
+        val maxLen = content.length
+        val clampedStart = textFieldValue.selection.start.coerceIn(0, maxLen)
+        val clampedEnd = textFieldValue.selection.end.coerceIn(0, maxLen)
+        textFieldValue = textFieldValue.copy(
+            text = content,
+            selection = TextRange(clampedStart, clampedEnd),
+        )
+    }
+
+    LaunchedEffect(content) {
+        if (onCursorPositionChange != null) {
+            val cursorOffset = textFieldValue.selection.start.coerceIn(0, content.length)
+            val textBeforeCursor = content.substring(0, cursorOffset)
+            val line = textBeforeCursor.count { it == '\n' } + 1
+            val lastNewline = textBeforeCursor.lastIndexOf('\n')
+            val col = if (lastNewline >= 0) cursorOffset - lastNewline else cursorOffset + 1
+            onCursorPositionChange(line, col)
+        }
+    }
+
+    // Memoize syntax tokenization keyed on content and language to avoid re-tokenizing during recomposition
+    val tokens = remember(content, language) {
+        language.tokenizer.tokenize(content)
+    }
+
+    // Memoize the VisualTransformation keyed on tokens and active syntax theme colors
+    val visualTransformation = remember(tokens, glassColors.syntax) {
+        SyntaxHighlightingTransformation(glassColors.syntax, tokens)
+    }
 
     Box(
         modifier = modifier
+            .background(glassColors.canvasSurface)
             .padding(Spacing.Medium),
     ) {
         Row(modifier = Modifier.fillMaxSize()) {
@@ -66,9 +119,10 @@ fun GlassCodeEditor(
                         Text(
                             text = lineNumber.toString().padStart(4),
                             style = TextStyle(
-                                fontFamily = FontFamily.Monospace,
+                                fontFamily = codeFont,
                                 fontSize = 14.sp,
-                                color = glassColors.onGlassSecondary,
+                                color = glassColors.onGlassMuted,
+                                lineHeight = 20.sp,
                             ),
                             modifier = Modifier.padding(vertical = Spacing.ExtraExtraSmall),
                         )
@@ -78,15 +132,32 @@ fun GlassCodeEditor(
 
             // Editor text field
             BasicTextField(
-                value = content,
-                onValueChange = onContentChange,
+                value = textFieldValue,
+                onValueChange = { newValue ->
+                    val oldText = textFieldValue.text
+                    val oldSelection = textFieldValue.selection
+                    textFieldValue = newValue
+                    if (newValue.text != oldText) {
+                        onContentChange(newValue.text)
+                    }
+                    val cursorMoved = newValue.selection != oldSelection || newValue.text != oldText
+                    if (onCursorPositionChange != null && cursorMoved) {
+                        val cursorOffset = newValue.selection.start.coerceIn(0, newValue.text.length)
+                        val textBeforeCursor = newValue.text.substring(0, cursorOffset)
+                        val line = textBeforeCursor.count { it == '\n' } + 1
+                        val lastNewline = textBeforeCursor.lastIndexOf('\n')
+                        val col = if (lastNewline >= 0) cursorOffset - lastNewline else cursorOffset + 1
+                        onCursorPositionChange(line, col)
+                    }
+                },
                 textStyle = TextStyle(
-                    fontFamily = FontFamily.Monospace,
+                    fontFamily = codeFont,
                     fontSize = 14.sp,
-                    color = glassColors.onGlass,
+                    color = glassColors.syntax.plain,
                     lineHeight = 20.sp,
                 ),
                 cursorBrush = SolidColor(glassColors.glassAccent),
+                visualTransformation = visualTransformation,
                 readOnly = readOnly,
                 modifier = Modifier
                     .fillMaxSize()
@@ -97,3 +168,4 @@ fun GlassCodeEditor(
         }
     }
 }
+

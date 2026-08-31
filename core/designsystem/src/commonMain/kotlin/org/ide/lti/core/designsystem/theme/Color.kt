@@ -24,12 +24,136 @@ import com.materialkolor.dynamicColorScheme
 val LtiSeedColor = Color(0xFF0B84FF)
 
 /**
+ * Syntax highlighting color scheme for code editor tokens.
+ *
+ * @property keyword Language keywords (e.g. `fun`, `val`, `class`, `return`).
+ * @property function Function names and declarations (e.g. `remember()`, `tokenize()`).
+ * @property string String literals and characters (e.g. `"..."`, `'a'`).
+ * @property number Numeric literals (e.g. `42`, `3.14f`, `0xFF`).
+ * @property comment Single-line and multi-line comments (e.g. `// ...`, `/* ... */`).
+ * @property type Type names and classes (e.g. `String`, `List`, `Modifier`).
+ * @property annotation Annotations (e.g. `@Composable`, `@OptIn`).
+ * @property plain Default code text (variables, punctuation, operators).
+ */
+@Immutable
+data class SyntaxColorScheme(
+    val keyword: Color,
+    val function: Color,
+    val string: Color,
+    val number: Color,
+    val comment: Color,
+    val type: Color,
+    val annotation: Color,
+    val plain: Color,
+)
+
+/**
+ * Derives a [SyntaxColorScheme] from a brand primary [Color] and theme mode using HCT dynamic color science.
+ * Ensures WCAG AA contrast (>= 4.5:1) against `canvasSurface` in both dark and light modes.
+ */
+fun deriveSyntaxColorScheme(
+    primaryColor: Color,
+    onSurfaceColor: Color,
+    isDark: Boolean,
+): SyntaxColorScheme {
+    val seedArgb = ((primaryColor.alpha * 255).toInt() shl 24) or
+        ((primaryColor.red * 255).toInt() shl 16) or
+        ((primaryColor.green * 255).toInt() shl 8) or
+        (primaryColor.blue * 255).toInt()
+    val seedHct = com.materialkolor.hct.Hct.fromInt(seedArgb)
+
+    return if (isDark) {
+        val tone = 80.0
+        val commentTone = 68.0
+        SyntaxColorScheme(
+            keyword = Color(com.materialkolor.hct.Hct.from(32.0, 60.0, tone).toInt()),
+            function = Color(com.materialkolor.hct.Hct.from(300.0, 50.0, tone).toInt()),
+            string = Color(com.materialkolor.hct.Hct.from(135.0, 50.0, tone).toInt()),
+            number = Color(com.materialkolor.hct.Hct.from(212.0, 50.0, tone).toInt()),
+            type = Color(com.materialkolor.hct.Hct.from(168.0, 50.0, tone).toInt()),
+            annotation = Color(com.materialkolor.hct.Hct.from(80.0, 60.0, tone).toInt()),
+            comment = Color(com.materialkolor.hct.Hct.from(seedHct.hue, 12.0, commentTone).toInt()),
+            plain = onSurfaceColor,
+        )
+    } else {
+        val tone = 38.0
+        val commentTone = 46.0
+        SyntaxColorScheme(
+            keyword = Color(com.materialkolor.hct.Hct.from(28.0, 65.0, tone).toInt()),
+            function = Color(com.materialkolor.hct.Hct.from(300.0, 55.0, tone).toInt()),
+            string = Color(com.materialkolor.hct.Hct.from(140.0, 55.0, 36.0).toInt()),
+            number = Color(com.materialkolor.hct.Hct.from(255.0, 55.0, 36.0).toInt()),
+            type = Color(com.materialkolor.hct.Hct.from(175.0, 55.0, 34.0).toInt()),
+            annotation = Color(com.materialkolor.hct.Hct.from(80.0, 60.0, 36.0).toInt()),
+            comment = Color(com.materialkolor.hct.Hct.from(seedHct.hue, 12.0, commentTone).toInt()),
+            plain = onSurfaceColor,
+        )
+    }
+}
+
+/**
+ * Semantic diagnostic and git-status color tokens.
+ *
+ * @property error Error state or indicator (e.g. build errors, fatal diagnostics).
+ * @property warning Warning state or indicator (e.g. linter warnings, deprecations).
+ * @property success Success state or indicator (e.g. tests passed, build succeeded).
+ * @property info Information state or indicator (e.g. hints, notes).
+ * @property gitModified Git modified status indicator.
+ * @property gitAdded Git added/untracked status indicator.
+ * @property gitDeleted Git deleted status indicator.
+ */
+@Immutable
+data class DiagnosticColors(
+    val error: Color,
+    val warning: Color,
+    val success: Color,
+    val info: Color,
+    val gitModified: Color,
+    val gitAdded: Color,
+    val gitDeleted: Color,
+)
+
+/**
+ * Derives a [DiagnosticColors] scheme using HCT dynamic color science.
+ * Ensures WCAG AA contrast (>= 4.5:1 text/diagnostic, >= 3.0:1 UI) against both
+ * `canvasSurface` and `glassSurface` in both dark and light modes.
+ */
+fun deriveDiagnosticColors(
+    isDark: Boolean,
+): DiagnosticColors {
+    return if (isDark) {
+        val tone = 80.0
+        DiagnosticColors(
+            error = Color(com.materialkolor.hct.Hct.from(25.0, 70.0, tone).toInt()),
+            warning = Color(com.materialkolor.hct.Hct.from(75.0, 70.0, tone).toInt()),
+            success = Color(com.materialkolor.hct.Hct.from(145.0, 60.0, tone).toInt()),
+            info = Color(com.materialkolor.hct.Hct.from(220.0, 60.0, tone).toInt()),
+            gitModified = Color(com.materialkolor.hct.Hct.from(50.0, 65.0, tone).toInt()),
+            gitAdded = Color(com.materialkolor.hct.Hct.from(140.0, 60.0, tone).toInt()),
+            gitDeleted = Color(com.materialkolor.hct.Hct.from(15.0, 70.0, tone).toInt()),
+        )
+    } else {
+        val tone = 36.0
+        DiagnosticColors(
+            error = Color(com.materialkolor.hct.Hct.from(25.0, 70.0, tone).toInt()),
+            warning = Color(com.materialkolor.hct.Hct.from(75.0, 70.0, 32.0).toInt()),
+            success = Color(com.materialkolor.hct.Hct.from(145.0, 60.0, 32.0).toInt()),
+            info = Color(com.materialkolor.hct.Hct.from(220.0, 60.0, tone).toInt()),
+            gitModified = Color(com.materialkolor.hct.Hct.from(50.0, 65.0, 32.0).toInt()),
+            gitAdded = Color(com.materialkolor.hct.Hct.from(140.0, 60.0, 32.0).toInt()),
+            gitDeleted = Color(com.materialkolor.hct.Hct.from(15.0, 70.0, tone).toInt()),
+        )
+    }
+}
+
+/**
  * Glass color scheme definition for translucent UI surfaces.
  */
 @Immutable
 data class GlassColorScheme(
     val glassSurface: Color,
     val glassSurfaceElevated: Color,
+    val canvasSurface: Color,
     val glassTint: Color,
     val glassTintSecondary: Color,
     val glassBorder: Color,
@@ -41,6 +165,8 @@ data class GlassColorScheme(
     val glassShadow: Color,
     val glassAccent: Color,
     val focusRing: Color,
+    val syntax: SyntaxColorScheme,
+    val diagnostics: DiagnosticColors,
 )
 
 /**
@@ -50,10 +176,19 @@ fun dynamicGlassColorScheme(
     colorScheme: ColorScheme,
     isDark: Boolean,
 ): GlassColorScheme {
+    val syntaxColors = deriveSyntaxColorScheme(
+        primaryColor = colorScheme.primary,
+        onSurfaceColor = colorScheme.onSurface,
+        isDark = isDark,
+    )
+    val diagnosticColors = deriveDiagnosticColors(
+        isDark = isDark,
+    )
     return if (isDark) {
         GlassColorScheme(
             glassSurface = colorScheme.surface.copy(alpha = AlphaTokens.Elevated),
             glassSurfaceElevated = colorScheme.surfaceContainerHigh.copy(alpha = AlphaTokens.Prominent),
+            canvasSurface = colorScheme.surfaceContainerLowest.copy(alpha = AlphaTokens.PrimaryButtonTint),
             glassTint = colorScheme.primary.copy(alpha = AlphaTokens.Glow),
             glassTintSecondary = colorScheme.secondary.copy(alpha = AlphaTokens.Glow),
             glassBorder = colorScheme.onSurface.copy(alpha = AlphaTokens.Hover),
@@ -65,22 +200,27 @@ fun dynamicGlassColorScheme(
             glassShadow = colorScheme.scrim.copy(alpha = AlphaTokens.Prominent),
             glassAccent = colorScheme.primary,
             focusRing = colorScheme.primary,
+            syntax = syntaxColors,
+            diagnostics = diagnosticColors,
         )
     } else {
         GlassColorScheme(
             glassSurface = colorScheme.surface.copy(alpha = AlphaTokens.IconTint),
             glassSurfaceElevated = colorScheme.surfaceContainerHighest.copy(alpha = AlphaTokens.PrimaryButtonTint),
+            canvasSurface = colorScheme.surfaceContainerLowest.copy(alpha = AlphaTokens.PrimaryButtonTint),
             glassTint = colorScheme.primary.copy(alpha = AlphaTokens.Subtle),
             glassTintSecondary = colorScheme.secondary.copy(alpha = AlphaTokens.Subtle),
             glassBorder = colorScheme.outline.copy(alpha = AlphaTokens.Medium),
             glassBorderHighlight = colorScheme.primary.copy(alpha = AlphaTokens.Prominent),
             onGlass = colorScheme.onSurface,
             onGlassSecondary = colorScheme.onSurfaceVariant,
-            onGlassMuted = colorScheme.outline,
+            onGlassMuted = colorScheme.onSurfaceVariant.copy(alpha = AlphaTokens.TextMuted),
             glassHighlight = colorScheme.primary.copy(alpha = AlphaTokens.Muted),
             glassShadow = colorScheme.scrim.copy(alpha = AlphaTokens.Glow),
             glassAccent = colorScheme.primary,
             focusRing = colorScheme.primary,
+            syntax = syntaxColors,
+            diagnostics = diagnosticColors,
         )
     }
 }

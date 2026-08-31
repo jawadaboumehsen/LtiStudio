@@ -57,6 +57,7 @@ All colors are anchored to a brand seed color and dynamic Material 3 color gener
 data class GlassColorScheme(
     val glassSurface: Color,
     val glassSurfaceElevated: Color,
+    val canvasSurface: Color,
     val glassTint: Color,
     val glassTintSecondary: Color,
     val glassBorder: Color,
@@ -68,10 +69,28 @@ data class GlassColorScheme(
     val glassShadow: Color,
     val glassAccent: Color,
     val focusRing: Color,
+    val syntax: SyntaxColorScheme,
+)
+```
+
+**`SyntaxColorScheme` Tokens:**
+```kotlin
+@Immutable
+data class SyntaxColorScheme(
+    val keyword: Color,
+    val function: Color,
+    val string: Color,
+    val number: Color,
+    val comment: Color,
+    val type: Color,
+    val annotation: Color,
+    val plain: Color,
 )
 ```
 
 **Key Color Tokens & Helpers:**
+- `syntax`: Dynamic theme-aware syntax palette derived via `com.materialkolor` HCT color science with verified WCAG AA contrast against `canvasSurface`.
+- `canvasSurface`: Dedicated flat, fully-opaque background token for the editor/terminal content area, distinct from translucent glass chrome.
 - `focusRing`: Dedicated WCAG focus ring token derived from `colorScheme.primary` at full (1.0f) opacity.
 - `onGlass` / `onGlassSecondary` / `onGlassMuted`: Text and icon colors guaranteeing WCAG contrast against `glassSurface`.
 - Specialized token objects:
@@ -351,37 +370,43 @@ GlassPanel(
 }
 ```
 
-### 4. `GlassLayout.kt`
+### 4. `GlassLayout.kt` & `GlassSidePanelRail`
 
-Complete 4-panel resizable IDE workspace layout with glass morphism, resizable dividers, and spring animation toggles.
+Two-glass-surface IDE architecture (chrome "picture frame" surface wrapping an inner content surface):
 
 ```
 ┌────────────────────────────────────────────────────────┐
-│ topBar() - GlassTopBar (40dp fixed)                    │
-├────────────┬────────────────────────────┬──────────────┤
-│            │                            │              │
-│  LEFT      │   MAIN (Editor area)       │    RIGHT     │
-│  Panel     ├────────────────────────────┤    Panel     │
-│  (weight)  │   BOTTOM Panel (weight)    │   (weight)   │
-│            │   [Optional/Collapsible]   │              │
-├────────────┴────────────────────────────┴──────────────┤
-│ statusBar() - GlassStatusBar (22dp fixed)              │
+│ topBar() - GlassTopBar (40dp fixed, Surface 1 Chrome)  │
+├────┬──────────────────────────────────────────────┬────┤
+│ ▣  │  Explorer │   Editor   │  AI Assistant       │ ✦  │
+│rail│  (left)   ├────────────┤     (right)         │rail│
+│(1) │           │  Terminal  │                     │(1) │
+│    │           │  (bottom)  │                     │    │
+│    │  (Surface 2 Content Glass Surface, own bg)   │    │
+├────┴──────────────────────────────────────────────┴────┤
+│ statusBar() - GlassStatusBar (22dp, Surface 1 Chrome)  │
 └────────────────────────────────────────────────────────┘
 ```
 
+- **Surface 1 (Chrome):** Outer `GlassSurface` containing `topBar`, `leftRail`, `rightRail`, and `statusBar` with a single backdrop sample for uniform chrome luma.
+- **Surface 2 (Content):** Inner `GlassSurface` with `surfaceColor = glassColors.canvasSurface` and `tint = Color.Transparent`, containing `leftPanel`, `mainContent`, `bottomPanel`, and `rightPanel`.
+- **`GlassSidePanelRail`**: Standalone vertical icon strip for side panel tool windows with inner hairline divider.
+- **`GlassSidePanelTabs`**: Convenience wrapper delegating to `GlassSidePanelRail` and hosting the active tab content.
 - State controller: `LtiLayoutState` (`rememberLtiLayoutState()`).
   - Controls panel visibility: `showLeft`, `showRight`, `showBottom`.
   - Controls panel weights: `leftWeight`, `rightWeight`, `bottomWeight`.
   - Methods: `toggleLeft()`, `toggleRight()`, `toggleBottom()`, `setLeftPanelVisible()`, `setRightPanelVisible()`, `setBottomPanelVisible()`.
-- Composable parameters: `state`, `leftPanel`, `mainContent`, `bottomPanel`, `rightPanel`, `modifier`, `topBar`, `statusBar`, `showToggleButtons`, `appearance`.
+- Composable parameters: `state`, `modifier`, `leftRail`, `leftPanel`, `mainContent`, `bottomPanel`, `rightPanel`, `rightRail`, `topBar`, `statusBar`, `showToggleButtons`, `appearance`.
 
 ### 5. `GlassTopBar.kt` & `GlassStatusBar.kt`
 
 - **`GlassTopBar.kt`**:
   - 40dp height top bar with app logo gradient (`BrandColors.LogoGradientEnd`), layout panel toggle icons, search bar slot, notification/settings triggers, and desktop window controls (minimize, maximize/restore, close with `#E81123` hover).
+  - Supports `drawOwnChrome: Boolean = true` (when `false`, transparently delegates background, shape, and borders to parent `GlassLayout` frame).
   - Uses `LocalWindowControlActions` to trigger platform window actions.
 - **`GlassStatusBar.kt`**:
   - 22dp height bottom bar displaying Git branch, file status, cursor position (line/column), indentation, encoding, and line endings (`LineEnding.LF`, `CRLF`, `CR`).
+  - Supports `drawOwnChrome: Boolean = true` (when `false`, delegates styling to parent `GlassLayout` frame).
   - State controller: `GlassStatusBarState` (`rememberGlassStatusBarState()`).
 
 ## Interactive Components (`core:designsystem/component`)

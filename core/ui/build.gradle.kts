@@ -41,3 +41,14 @@ compose.resources {
     generateResClass = always
     packageOfResClass = "org.ide.lti.core.ui.generated.resources"
 }
+
+tasks.withType<Test>().configureEach {
+    testLogging {
+        events("passed", "skipped", "failed", "standardOut", "standardError")
+        showStandardStreams = true
+    }
+}
+
+tasks.register("test") {
+    dependsOn("desktopTest")
+}

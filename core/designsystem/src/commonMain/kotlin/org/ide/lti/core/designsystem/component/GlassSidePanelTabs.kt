@@ -72,11 +72,101 @@ data class GlassSidePanelTab(
 )
 
 /**
- * Multi-tab "tool window" container for IDE side panels.
+ * Vertical icon rail component for IDE side panels (tool windows).
  *
- * Renders a vertical icon rail on the panel's outer edge (window-edge side) with one icon button
- * per tab, allowing switching between different tool windows (e.g. Explorer, Search, AI Assistant).
- * Only the currently active tab's content is composed in the remaining panel space.
+ * Renders ONLY the icon buttons for the tabs in a vertical strip with an inner hairline border,
+ * drawing no background of its own (allowing the surrounding chrome glass surface to show through).
+ *
+ * @param tabs List of [GlassSidePanelTab] items to display.
+ * @param selectedIndex The index of the currently active tab.
+ * @param onSelectedIndexChange Callback invoked when a tab icon is clicked.
+ * @param modifier Modifier applied to the rail layout.
+ * @param railPosition Whether the rail is docked on the [SidePanelRailPosition.Left]
+ * or [SidePanelRailPosition.Right] edge.
+ */
+@Composable
+fun GlassSidePanelRail(
+    tabs: List<GlassSidePanelTab>,
+    selectedIndex: Int,
+    onSelectedIndexChange: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+    railPosition: SidePanelRailPosition = SidePanelRailPosition.Left,
+) {
+    if (tabs.isEmpty()) return
+
+    val glassColors = GlassTheme.colors
+    val railWidth = ComponentSize.SidePanelRailButtonSize + Spacing.ExtraSmall * 2
+
+    val iconColumn = @Composable {
+        Column(
+            modifier = Modifier
+                .width(railWidth)
+                .fillMaxHeight()
+                .padding(
+                    start = Spacing.ExtraSmall,
+                    end = Spacing.ExtraSmall,
+                    top = Spacing.Small,
+                    bottom = Spacing.Small,
+                ),
+            verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            tabs.forEachIndexed { index, tab ->
+                val isSelected = index == selectedIndex
+                val desc = tab.contentDescription ?: tab.label
+                GlassIconButton(
+                    onClick = { onSelectedIndexChange(index) },
+                    size = ComponentSize.SidePanelRailButtonSize,
+                    shape = RoundedCornerShape(CornerRadius.Compact),
+                    selected = isSelected,
+                    modifier = Modifier.semantics {
+                        contentDescription = desc
+                        role = Role.Tab
+                    },
+                ) {
+                    Icon(
+                        imageVector = tab.icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(IconSize.SidePanelRail),
+                    )
+                }
+            }
+        }
+    }
+
+    val divider = @Composable {
+        Box(
+            modifier = Modifier
+                .fillMaxHeight()
+                .width(StrokeWidth.Hairline)
+                .background(glassColors.glassBorder.copy(alpha = AlphaTokens.Faint)),
+        )
+    }
+
+    Row(
+        modifier = modifier.fillMaxHeight(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        when (railPosition) {
+            SidePanelRailPosition.Left -> {
+                iconColumn()
+                divider()
+            }
+            SidePanelRailPosition.Right -> {
+                divider()
+                iconColumn()
+            }
+        }
+    }
+}
+
+/**
+ * Multi-tab "tool window" container for IDE side panels (convenience wrapper).
+ *
+ * Combines [GlassSidePanelRail] and the active tab's content into a single row.
+ * For the two-surface IDE architecture where the rail sits in the chrome frame and content
+ * sits in the inner content surface, use [GlassSidePanelRail] directly in the rail slot
+ * and place the active tab's content inside the content surface.
  *
  * @param tabs List of [GlassSidePanelTab] items to display in the switcher rail.
  * @param modifier Modifier applied to the outer layout container.
@@ -113,52 +203,11 @@ fun GlassSidePanelTabs(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             val rail = @Composable {
-                Column(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .padding(
-                            start = Spacing.ExtraSmall,
-                            end = Spacing.ExtraSmall,
-                            top = Spacing.Small,
-                            bottom = Spacing.Small,
-                        ),
-                    verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    tabs.forEachIndexed { index, tab ->
-                        val isSelected = index == activeIndex
-                        val desc = tab.contentDescription ?: tab.label
-                        GlassIconButton(
-                            onClick = { onTabClick(index) },
-                            size = ComponentSize.TopBarButtonSize,
-                            shape = RoundedCornerShape(CornerRadius.Compact),
-                            selected = isSelected,
-                            modifier = Modifier.semantics {
-                                contentDescription = desc
-                                role = Role.Tab
-                            },
-                        ) {
-                            // No manual tint: GlassButtonVariant.Primary (triggered by
-                            // selected = true) already resolves the correct content color
-                            // via LocalContentColor - same as every other selected-state
-                            // GlassIconButton in this codebase (see GlassToggleButtonsOverlay
-                            // in GlassLayout.kt, which passes no tint at all).
-                            Icon(
-                                imageVector = tab.icon,
-                                contentDescription = null,
-                                modifier = Modifier.size(IconSize.Segmented),
-                            )
-                        }
-                    }
-                }
-            }
-
-            val divider = @Composable {
-                Box(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .width(StrokeWidth.Hairline)
-                        .background(glassColors.glassBorder.copy(alpha = AlphaTokens.Faint)),
+                GlassSidePanelRail(
+                    tabs = tabs,
+                    selectedIndex = activeIndex,
+                    onSelectedIndexChange = onTabClick,
+                    railPosition = railPosition,
                 )
             }
 
@@ -177,12 +226,10 @@ fun GlassSidePanelTabs(
             when (railPosition) {
                 SidePanelRailPosition.Left -> {
                     rail()
-                    divider()
                     contentArea()
                 }
                 SidePanelRailPosition.Right -> {
                     contentArea()
-                    divider()
                     rail()
                 }
             }

@@ -10,11 +10,18 @@
 package org.ide.lti.feature.workspace
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import org.ide.lti.core.designsystem.component.GlassLayout
+import org.ide.lti.core.designsystem.component.GlassSidePanelRail
 import org.ide.lti.core.designsystem.component.GlassSidePanelTab
-import org.ide.lti.core.designsystem.component.GlassSidePanelTabs
+import org.ide.lti.core.designsystem.component.GlassStatusBar
 import org.ide.lti.core.designsystem.component.GlassTopBar
+import org.ide.lti.core.designsystem.component.LineEnding
 import org.ide.lti.core.designsystem.component.SidePanelRailPosition
 import org.ide.lti.core.designsystem.component.rememberLtiLayoutState
 import org.ide.lti.core.designsystem.icon.AppIcons
@@ -43,35 +50,69 @@ fun WorkspaceScreen(
     onOpenNotifications: () -> Unit = {},
 ) {
     val ltiLayoutState = rememberLtiLayoutState()
+    var leftTabIndex by rememberSaveable { mutableStateOf(0) }
+    var rightTabIndex by rememberSaveable { mutableStateOf(0) }
+
+    var activeFilePath by remember { mutableStateOf<String?>(null) }
+    var activeFileType by remember { mutableStateOf<String?>(null) }
+    var cursorPosition by remember { mutableStateOf<Pair<Int, Int>?>(null) }
+
+    val leftTabs = remember {
+        listOf(
+            GlassSidePanelTab(
+                icon = AppIcons.Folder,
+                label = "Explorer",
+            ) {
+                ExplorerPanel()
+            }
+        )
+    }
+
+    val rightTabs = remember {
+        listOf(
+            GlassSidePanelTab(
+                icon = AppIcons.Sparkles,
+                label = "AI Assistant",
+            ) {
+                AIAssistantPanel()
+            }
+        )
+    }
 
     GlassLayout(
         state = ltiLayoutState,
         modifier = modifier,
-        leftPanel = {
-            GlassSidePanelTabs(
-                tabs = listOf(
-                    GlassSidePanelTab(
-                        icon = AppIcons.Folder,
-                        label = "Explorer",
-                    ) {
-                        ExplorerPanel()
-                    }
-                ),
+        leftRail = {
+            GlassSidePanelRail(
+                tabs = leftTabs,
+                selectedIndex = leftTabIndex,
+                onSelectedIndexChange = { leftTabIndex = it },
                 railPosition = SidePanelRailPosition.Left,
             )
         },
-        mainContent = { EditorPanel() },
+        leftPanel = {
+            leftTabs.getOrNull(leftTabIndex)?.content?.invoke()
+        },
+        mainContent = {
+            EditorPanel(
+                onActiveFileChange = { path, language ->
+                    activeFilePath = path
+                    activeFileType = language
+                },
+                onCursorPositionChange = { line, col ->
+                    cursorPosition = line to col
+                },
+            )
+        },
         bottomPanel = { TerminalPanel() },
         rightPanel = {
-            GlassSidePanelTabs(
-                tabs = listOf(
-                    GlassSidePanelTab(
-                        icon = AppIcons.Sparkles,
-                        label = "AI Assistant",
-                    ) {
-                        AIAssistantPanel()
-                    }
-                ),
+            rightTabs.getOrNull(rightTabIndex)?.content?.invoke()
+        },
+        rightRail = {
+            GlassSidePanelRail(
+                tabs = rightTabs,
+                selectedIndex = rightTabIndex,
+                onSelectedIndexChange = { rightTabIndex = it },
                 railPosition = SidePanelRailPosition.Right,
             )
         },
@@ -85,6 +126,17 @@ fun WorkspaceScreen(
                 onClickMiddleDownPanelIcon = { ltiLayoutState.toggleBottom() },
                 onNotificationsClick = onOpenNotifications,
                 onSettingsClick = onOpenSettings,
+                drawOwnChrome = false,
+            )
+        },
+        statusBar = {
+            GlassStatusBar(
+                filePath = activeFilePath,
+                cursorPosition = cursorPosition,
+                encoding = "UTF-8",
+                lineEnding = LineEnding.LF,
+                fileType = activeFileType,
+                drawOwnChrome = false,
             )
         },
     )

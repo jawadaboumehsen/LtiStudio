@@ -92,6 +92,7 @@ fun LayoutTab() {
                         GlassTopBar(
                             title = "LtiRom Catalog Studio",
                             workspaceName = "DesignSystem",
+                            drawOwnChrome = false,
                         )
                     },
                     leftPanel = {
@@ -150,6 +151,7 @@ fun LayoutTab() {
                             cursorPosition = Pair(42, 18),
                             encoding = "UTF-8",
                             lineEnding = LineEnding.LF,
+                            drawOwnChrome = false,
                         )
                     }
                 )

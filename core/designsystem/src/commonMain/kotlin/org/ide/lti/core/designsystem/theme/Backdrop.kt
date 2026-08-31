@@ -25,6 +25,12 @@ object BackdropBlur {
     /** Moderate blur for side panels and docked navigation bars (6dp). */
     val Panel: Dp = 6.dp
 
+    /** Deep blur for recessed content panels, tool windows, and heavy frosted containers (12dp). */
+    val Deep: Dp = 12.dp
+
+    /** Immersive blur for the outermost application chrome frame (18dp). */
+    val Immersive: Dp = 18.dp
+
     // Semantic aliases
     val Button: Dp = 2.dp
     val TextField: Dp = 2.dp

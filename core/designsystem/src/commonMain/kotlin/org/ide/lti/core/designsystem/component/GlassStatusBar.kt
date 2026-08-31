@@ -27,7 +27,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.sp
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.drawBackdrop
@@ -60,39 +59,50 @@ fun GlassStatusBar(
     lineEnding: LineEnding = LineEnding.LF,
     fileType: String? = null,
     backdrop: Backdrop? = null,
+    drawOwnChrome: Boolean = true,
 ) {
     val actualBackdrop = backdrop ?: GlassTheme.backdrop
     val glassColors = GlassTheme.colors
     val effectsEnabled = GlassTheme.effectsEnabled
 
+    val backgroundModifier = if (drawOwnChrome) {
+        if (effectsEnabled && actualBackdrop != null) {
+            Modifier.drawBackdrop(
+                backdrop = actualBackdrop,
+                shape = { ContinuousRoundedRectangle(CornerRadius.Panel) },
+                effects = {
+                    vibrancy()
+                    blur(BackdropBlur.TopBar.toPx())
+                    lens(LensRefraction.TopBar.height.toPx(), LensRefraction.TopBar.amount.toPx())
+                },
+                highlight = { Highlight.Plain },
+                onDrawSurface = {
+                    drawRect(glassColors.glassSurface)
+                }
+            )
+        } else {
+            Modifier.background(glassColors.glassSurface.copy(alpha = AlphaTokens.Medium))
+        }
+    } else {
+        Modifier
+    }
+
+    val borderModifier = if (drawOwnChrome) {
+        Modifier.border(
+            width = StrokeWidth.Hairline,
+            color = glassColors.glassBorder,
+            shape = ContinuousRoundedRectangle(CornerRadius.Panel)
+        )
+    } else {
+        Modifier
+    }
+
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(ComponentSize.StatusBarHeightAlt)
-            .then(
-                if (effectsEnabled && actualBackdrop != null) {
-                    Modifier.drawBackdrop(
-                        backdrop = actualBackdrop,
-                        shape = { ContinuousRoundedRectangle(CornerRadius.Panel) },
-                        effects = {
-                            vibrancy()
-                            blur(BackdropBlur.TopBar.toPx())
-                            lens(LensRefraction.TopBar.height.toPx(), LensRefraction.TopBar.amount.toPx())
-                        },
-                        highlight = { Highlight.Plain },
-                        onDrawSurface = {
-                            drawRect(glassColors.glassSurface)
-                        }
-                    )
-                } else {
-                    Modifier.background(glassColors.glassSurface.copy(alpha = AlphaTokens.Medium))
-                }
-            )
-            .border(
-                width = StrokeWidth.Hairline,
-                color = glassColors.glassBorder,
-                shape = ContinuousRoundedRectangle(CornerRadius.Panel)
-            )
+            .then(backgroundModifier)
+            .then(borderModifier)
             .padding(horizontal = Spacing.SmallMedium),
         contentAlignment = Alignment.Center
     ) {

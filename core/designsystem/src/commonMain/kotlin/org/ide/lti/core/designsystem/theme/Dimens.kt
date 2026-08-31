@@ -70,6 +70,7 @@ object IconSize {
     val Search: Dp = 14.dp
     val Segmented: Dp = 15.dp
     val Medium: Dp = 16.dp
+    val SidePanelRail: Dp = 18.dp
     val Large: Dp = 24.dp
     val ExtraLarge: Dp = 28.dp
     val ActionCard: Dp = 32.dp
@@ -99,6 +100,7 @@ object ComponentSize {
     val ButtonMinHeight: Dp = 40.dp
     val IconButtonSize: Dp = 40.dp
     val TopBarButtonSize: Dp = 28.dp
+    val SidePanelRailButtonSize: Dp = 36.dp
     val LogoBadgeSize: Dp = 28.dp
     val SearchCapsuleHeight: Dp = 28.dp
     val SearchCapsuleMinWidth: Dp = 160.dp
@@ -156,4 +158,5 @@ object Elevation {
     val None: Dp = 0.dp
     val Raised: Dp = 4.dp
     val Panel: Dp = 8.dp
+    val Modal: Dp = 16.dp
 }

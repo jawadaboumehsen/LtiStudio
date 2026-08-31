@@ -16,10 +16,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
@@ -44,10 +47,12 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.runDesktopComposeUiTest
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.sp
-import com.kashif_e.backdrop.backdrops.layerBackdrop
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import org.ide.lti.core.designsystem.component.CosmicAuroraBackdrop
 import org.ide.lti.core.designsystem.component.GlassLayout
@@ -167,6 +172,7 @@ class GlassChromeDiagnosticScreenshotTest {
     @Composable
     private fun MockEditorPanel() {
         val glassColors = GlassTheme.colors
+        val syntax = glassColors.syntax
         GlassPanelContainer(
             header = {
                 GlassPanelHeader(
@@ -182,58 +188,88 @@ class GlassChromeDiagnosticScreenshotTest {
                 )
             }
         ) {
-            Column(
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
+                    .background(glassColors.canvasSurface)
                     .padding(Spacing.SmallMedium)
             ) {
-                val lines = listOf(
-                    "package org.ide.lti.core.designsystem.component",
-                    "",
-                    "@Composable",
-                    "fun GlassLayout(",
-                    "    state: LtiLayoutState = rememberLtiLayoutState(),",
-                    "    leftPanel: @Composable () -> Unit,",
-                    "    mainContent: @Composable () -> Unit,",
-                    "    rightPanel: @Composable () -> Unit,",
-                    "    appearance: GlassLayoutAppearance = GlassLayoutAppearance.Default,",
-                    ") {",
-                    "    // Liquid Glass Morphism Container",
-                    "    Column(modifier = Modifier.fillMaxSize()) {",
-                    "        GlassTopBar()",
-                    "        // Resizable panel cluster with shared backdrop",
-                    "    }",
-                    "}",
-                )
+                Column(modifier = Modifier.fillMaxSize()) {
+                    val codeLines = listOf(
+                        buildAnnotatedString {
+                            withStyle(SpanStyle(color = syntax.keyword)) { append("package ") }
+                            withStyle(SpanStyle(color = syntax.plain)) { append("org.ide.lti.core.designsystem") }
+                        },
+                        buildAnnotatedString { },
+                        buildAnnotatedString {
+                            withStyle(SpanStyle(color = syntax.annotation)) { append("@Composable") }
+                        },
+                        buildAnnotatedString {
+                            withStyle(SpanStyle(color = syntax.keyword)) { append("fun ") }
+                            withStyle(SpanStyle(color = syntax.function)) { append("GlassLayout") }
+                            withStyle(SpanStyle(color = syntax.plain)) { append("(") }
+                        },
+                        buildAnnotatedString {
+                            withStyle(SpanStyle(color = syntax.plain)) { append("    state: ") }
+                            withStyle(SpanStyle(color = syntax.type)) { append("LtiLayoutState") }
+                            withStyle(SpanStyle(color = syntax.plain)) { append(" = ") }
+                            withStyle(SpanStyle(color = syntax.function)) { append("rememberLtiLayoutState") }
+                            withStyle(SpanStyle(color = syntax.plain)) { append("(),") }
+                        },
+                        buildAnnotatedString {
+                            withStyle(SpanStyle(color = syntax.plain)) { append("    version: ") }
+                            withStyle(SpanStyle(color = syntax.type)) { append("Int") }
+                            withStyle(SpanStyle(color = syntax.plain)) { append(" = ") }
+                            withStyle(SpanStyle(color = syntax.number)) { append("42") }
+                            withStyle(SpanStyle(color = syntax.plain)) { append(",") }
+                        },
+                        buildAnnotatedString {
+                            withStyle(SpanStyle(color = syntax.plain)) { append("    title: ") }
+                            withStyle(SpanStyle(color = syntax.type)) { append("String") }
+                            withStyle(SpanStyle(color = syntax.plain)) { append(" = ") }
+                            withStyle(SpanStyle(color = syntax.string)) { append("\"Liquid Glass Studio\"") }
+                            withStyle(SpanStyle(color = syntax.plain)) { append(",") }
+                        },
+                        buildAnnotatedString {
+                            withStyle(SpanStyle(color = syntax.plain)) { append(") {") }
+                        },
+                        buildAnnotatedString {
+                            withStyle(SpanStyle(color = syntax.comment)) {
+                                append("    // Liquid Glass Morphism Container")
+                            }
+                        },
+                        buildAnnotatedString {
+                            withStyle(SpanStyle(color = syntax.plain)) { append("    ") }
+                            withStyle(SpanStyle(color = syntax.function)) { append("GlassTopBar") }
+                            withStyle(SpanStyle(color = syntax.plain)) { append("()") }
+                        },
+                        buildAnnotatedString {
+                            withStyle(SpanStyle(color = syntax.plain)) { append("}") }
+                        },
+                    )
 
-                lines.forEachIndexed { index, line ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.Hairline),
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.Medium)
-                    ) {
-                        Text(
-                            text = "${index + 1}".padStart(3, ' '),
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontFamily = FontFamily.Monospace,
-                                fontSize = 11.sp,
-                                color = glassColors.onGlassMuted.copy(alpha = AlphaTokens.Half)
+                    codeLines.forEachIndexed { index, annotatedLine ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.Hairline),
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.Medium)
+                        ) {
+                            Text(
+                                text = "${index + 1}".padStart(3, ' '),
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontFamily = FontFamily.Monospace,
+                                    fontSize = 11.sp,
+                                    color = glassColors.onGlassMuted.copy(alpha = AlphaTokens.Half)
+                                )
                             )
-                        )
-                        val textColor = when {
-                            line.startsWith("fun") ||
-                                line.startsWith("@Composable") ||
-                                line.startsWith("package") -> glassColors.glassAccent
-                            line.startsWith("    //") -> glassColors.onGlassMuted
-                            else -> glassColors.onGlassSecondary
+                            Text(
+                                text = annotatedLine,
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    fontFamily = FontFamily.Monospace,
+                                    fontSize = 11.5.sp,
+                                    color = syntax.plain,
+                                )
+                            )
                         }
-                        Text(
-                            text = line,
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                fontFamily = FontFamily.Monospace,
-                                fontSize = 11.5.sp,
-                                color = textColor
-                            )
-                        )
                     }
                 }
             }
@@ -332,16 +368,46 @@ class GlassChromeDiagnosticScreenshotTest {
                     initialShowBottom = false
                 )
 
+                val leftTabs = listOf(
+                    org.ide.lti.core.designsystem.component.GlassSidePanelTab(
+                        icon = AppIcons.Folder,
+                        label = "Explorer",
+                    ) { MockExplorerPanel() }
+                )
+
+                val rightTabs = listOf(
+                    org.ide.lti.core.designsystem.component.GlassSidePanelTab(
+                        icon = AppIcons.Sparkles,
+                        label = "AI Assistant",
+                    ) { MockAIAssistantPanel() }
+                )
+
                 Box(modifier = Modifier.fillMaxSize()) {
                     CosmicAuroraBackdrop(backdrop = backdrop)
 
                     GlassLayout(
                         state = layoutState,
                         modifier = Modifier.fillMaxSize(),
+                        leftRail = {
+                            org.ide.lti.core.designsystem.component.GlassSidePanelRail(
+                                tabs = leftTabs,
+                                selectedIndex = 0,
+                                onSelectedIndexChange = {},
+                                railPosition = org.ide.lti.core.designsystem.component.SidePanelRailPosition.Left,
+                            )
+                        },
                         leftPanel = { MockExplorerPanel() },
                         mainContent = { MockEditorPanel() },
                         bottomPanel = {},
                         rightPanel = { MockAIAssistantPanel() },
+                        rightRail = {
+                            org.ide.lti.core.designsystem.component.GlassSidePanelRail(
+                                tabs = rightTabs,
+                                selectedIndex = 0,
+                                onSelectedIndexChange = {},
+                                railPosition = org.ide.lti.core.designsystem.component.SidePanelRailPosition.Right,
+                            )
+                        },
                     )
                 }
             }
@@ -373,16 +439,46 @@ class GlassChromeDiagnosticScreenshotTest {
                     initialShowBottom = false
                 )
 
+                val leftTabs = listOf(
+                    org.ide.lti.core.designsystem.component.GlassSidePanelTab(
+                        icon = AppIcons.Folder,
+                        label = "Explorer",
+                    ) { MockExplorerPanel() }
+                )
+
+                val rightTabs = listOf(
+                    org.ide.lti.core.designsystem.component.GlassSidePanelTab(
+                        icon = AppIcons.Sparkles,
+                        label = "AI Assistant",
+                    ) { MockAIAssistantPanel() }
+                )
+
                 Box(modifier = Modifier.fillMaxSize()) {
                     CosmicAuroraBackdrop(backdrop = backdrop)
 
                     GlassLayout(
                         state = layoutState,
                         modifier = Modifier.fillMaxSize(),
+                        leftRail = {
+                            org.ide.lti.core.designsystem.component.GlassSidePanelRail(
+                                tabs = leftTabs,
+                                selectedIndex = 0,
+                                onSelectedIndexChange = {},
+                                railPosition = org.ide.lti.core.designsystem.component.SidePanelRailPosition.Left,
+                            )
+                        },
                         leftPanel = { MockExplorerPanel() },
                         mainContent = { MockEditorPanel() },
                         bottomPanel = {},
                         rightPanel = { MockAIAssistantPanel() },
+                        rightRail = {
+                            org.ide.lti.core.designsystem.component.GlassSidePanelRail(
+                                tabs = rightTabs,
+                                selectedIndex = 0,
+                                onSelectedIndexChange = {},
+                                railPosition = org.ide.lti.core.designsystem.component.SidePanelRailPosition.Right,
+                            )
+                        },
                     )
                 }
             }
@@ -390,6 +486,78 @@ class GlassChromeDiagnosticScreenshotTest {
 
         val image = onRoot().captureToImage()
         ScreenshotTestHelper.assertMatchesBaseline("glass_app_chrome_full_composition_light", image)
+    }
+
+    /**
+     * Diagnostic Integration Offscreen Render & Screenshot Regression Test for the continuous
+     * frame combined with [org.ide.lti.core.designsystem.component.GlassSidePanelRail], matching
+     * exactly how `WorkspaceScreen` wires the left/right panels in production.
+     */
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun testDiagnosticRealAppChromeWithSidePanelTabs() = runDesktopComposeUiTest(
+        width = TEST_WIDTH,
+        height = TEST_HEIGHT
+    ) {
+        setContent {
+            val backdrop = rememberLayerBackdrop()
+
+            LtiTheme(sharedBackdrop = backdrop, darkTheme = true) {
+                val layoutState = rememberLtiLayoutState(
+                    initialLeftWeight = 0.22f,
+                    initialRightWeight = 0.26f,
+                    initialShowLeft = true,
+                    initialShowRight = true,
+                    initialShowBottom = false
+                )
+
+                val leftTabs = listOf(
+                    org.ide.lti.core.designsystem.component.GlassSidePanelTab(
+                        icon = AppIcons.Folder,
+                        label = "Explorer",
+                    ) { MockExplorerPanel() }
+                )
+
+                val rightTabs = listOf(
+                    org.ide.lti.core.designsystem.component.GlassSidePanelTab(
+                        icon = AppIcons.Sparkles,
+                        label = "AI Assistant",
+                    ) { MockAIAssistantPanel() }
+                )
+
+                Box(modifier = Modifier.fillMaxSize()) {
+                    CosmicAuroraBackdrop(backdrop = backdrop)
+
+                    GlassLayout(
+                        state = layoutState,
+                        modifier = Modifier.fillMaxSize(),
+                        leftRail = {
+                            org.ide.lti.core.designsystem.component.GlassSidePanelRail(
+                                tabs = leftTabs,
+                                selectedIndex = 0,
+                                onSelectedIndexChange = {},
+                                railPosition = org.ide.lti.core.designsystem.component.SidePanelRailPosition.Left,
+                            )
+                        },
+                        leftPanel = { MockExplorerPanel() },
+                        mainContent = { MockEditorPanel() },
+                        bottomPanel = {},
+                        rightPanel = { MockAIAssistantPanel() },
+                        rightRail = {
+                            org.ide.lti.core.designsystem.component.GlassSidePanelRail(
+                                tabs = rightTabs,
+                                selectedIndex = 0,
+                                onSelectedIndexChange = {},
+                                railPosition = org.ide.lti.core.designsystem.component.SidePanelRailPosition.Right,
+                            )
+                        },
+                    )
+                }
+            }
+        }
+
+        val image = onRoot().captureToImage()
+        ScreenshotTestHelper.assertMatchesBaseline("glass_app_chrome_with_side_panel_tabs", image)
     }
 }
 
