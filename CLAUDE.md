@@ -48,7 +48,7 @@ LtiRom Studio uses a professional IDE design built around a centralized token sy
 ### 1. Color System (`Color.kt`)
 
 All colors are anchored to a brand seed color and dynamic Material 3 color generation:
-- `LtiSeedColor` = `#38BDF8` (Electric Cyan)
+- `LtiSeedColor` = `#00E5FF` (Electric Cyan, matches `BrandColors.LogoGradientEnd`)
 - `DarkGlassColorScheme` / `LightGlassColorScheme`: dynamically generated via `dynamicGlassColorScheme()` and `com.materialkolor.dynamicColorScheme()`.
 
 **`GlassColorScheme` Tokens:**

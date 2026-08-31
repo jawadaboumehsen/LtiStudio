@@ -18,10 +18,12 @@ import com.materialkolor.dynamicColorScheme
 
 /**
  * Brand seed color used to dynamically generate the Material3 color scheme and glass palette.
- * Saturated Azure Blue (#0B84FF) - paired with an AMOLED true-black dark surface base (see
- * [DarkGlassColorScheme]'s `isAmoled = true`), matching Samsung One UI's signature punchy blue accent.
+ * Electric Cyan (#00E5FF) - paired with an AMOLED true-black dark surface base (see
+ * [DarkGlassColorScheme]'s `isAmoled = true`). Matches [BrandColors.LogoGradientEnd], so the app's
+ * accent (buttons, focus rings, selected icon backgrounds, syntax highlighting) and the logo badge
+ * gradient read as the same color.
  */
-val LtiSeedColor = Color(0xFF0B84FF)
+val LtiSeedColor = Color(0xFF00E5FF)
 
 /**
  * Syntax highlighting color scheme for code editor tokens.
@@ -171,12 +173,32 @@ data class GlassColorScheme(
 )
 
 /**
+ * Derives a vibrant, high-chroma accent color from [LtiSeedColor]'s own hue.
+ *
+ * Material3's dynamic `colorScheme.primary` role tonal-maps any seed to a fixed, desaturated
+ * tone (e.g. a vivid cyan seed becomes a pastel steel-teal in dark mode) - correct for general
+ * M3 surfaces, but it defeats the point of a punchy brand accent used for icon fills, selected
+ * states, and focus rings. This samples the seed's real hue at a high, fixed chroma instead, the
+ * same direct-HCT approach [deriveSyntaxColorScheme] already uses for syntax token colors.
+ */
+private fun deriveVibrantAccent(isDark: Boolean): Color {
+    val seedArgb = ((LtiSeedColor.alpha * 255).toInt() shl 24) or
+        ((LtiSeedColor.red * 255).toInt() shl 16) or
+        ((LtiSeedColor.green * 255).toInt() shl 8) or
+        (LtiSeedColor.blue * 255).toInt()
+    val seedHue = com.materialkolor.hct.Hct.fromInt(seedArgb).hue
+    val tone = if (isDark) 75.0 else 45.0
+    return Color(com.materialkolor.hct.Hct.from(seedHue, 90.0, tone).toInt())
+}
+
+/**
  * Derives a [GlassColorScheme] from a generated [ColorScheme] and theme mode.
  */
 fun dynamicGlassColorScheme(
     colorScheme: ColorScheme,
     isDark: Boolean,
 ): GlassColorScheme {
+    val vibrantAccent = deriveVibrantAccent(isDark)
     val syntaxColors = deriveSyntaxColorScheme(
         primaryColor = colorScheme.primary,
         onSurfaceColor = colorScheme.onSurface,
@@ -200,8 +222,8 @@ fun dynamicGlassColorScheme(
             onGlassMuted = colorScheme.onSurfaceVariant.copy(alpha = AlphaTokens.TextMuted),
             glassHighlight = colorScheme.primary.copy(alpha = AlphaTokens.Medium),
             glassShadow = colorScheme.scrim.copy(alpha = AlphaTokens.Prominent),
-            glassAccent = colorScheme.primary,
-            focusRing = colorScheme.primary,
+            glassAccent = vibrantAccent,
+            focusRing = vibrantAccent,
             syntax = syntaxColors,
             diagnostics = diagnosticColors,
         )
@@ -220,8 +242,8 @@ fun dynamicGlassColorScheme(
             onGlassMuted = colorScheme.onSurfaceVariant.copy(alpha = AlphaTokens.TextMuted),
             glassHighlight = colorScheme.primary.copy(alpha = AlphaTokens.Muted),
             glassShadow = colorScheme.scrim.copy(alpha = AlphaTokens.Glow),
-            glassAccent = colorScheme.primary,
-            focusRing = colorScheme.primary,
+            glassAccent = vibrantAccent,
+            focusRing = vibrantAccent,
             syntax = syntaxColors,
             diagnostics = diagnosticColors,
         )
