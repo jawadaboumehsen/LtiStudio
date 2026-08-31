@@ -1,5 +1,6 @@
 package org.ide.lti.core.designsystem.component
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
@@ -67,6 +68,7 @@ fun GlassToggle(
     val actualBackdrop = backdrop ?: GlassTheme.backdrop ?: rememberLayerBackdrop()
     val isLightTheme = MaterialTheme.colorScheme.surface.luminance() > 0.5f
     val glassColors = GlassTheme.colors
+    val effectsEnabled = GlassTheme.effectsEnabled
     val accentColor =
         if (isLightTheme) ToggleColors.ActiveLight
         else ToggleColors.ActiveDark
@@ -159,62 +161,87 @@ fun GlassToggle(
                         else lerp(-padding, -(padding + dragWidth), fraction)
                 }
                 .then(dampedDragAnimation.modifier)
-                .drawBackdrop(
-                    backdrop = rememberCombinedBackdrop(
-                        actualBackdrop,
-                        rememberBackdrop(trackBackdrop) { drawBackdrop ->
-                            val progress = dampedDragAnimation.pressProgress
-                            val scaleX = lerp(2f / 3f, 0.75f, progress)
-                            val scaleY = lerp(0f, 0.75f, progress)
-                            scale(scaleX, scaleY) {
-                                drawBackdrop()
-                            }
-                        }
-                    ),
-                    shape = { ContinuousCapsule },
-                    effects = {
-                        val progress = dampedDragAnimation.pressProgress
-                        blur(BackdropBlur.Toggle.toPx() * (1f - progress))
-                        lens(
-                            LensRefraction.Toggle.height.toPx() * progress,
-                            LensRefraction.Toggle.amount.toPx() * progress,
-                            chromaticAberration = true
-                        )
-                    },
-                    highlight = {
-                        val progress = dampedDragAnimation.pressProgress
-                        Highlight.Ambient.copy(
-                            width = Highlight.Ambient.width / 1.5f,
-                            blurRadius = Highlight.Ambient.blurRadius / 1.5f,
-                            alpha = progress
-                        )
-                    },
-                    shadow = {
-                        Shadow(
-                            radius = Elevation.Raised,
-                            color = glassColors.glassShadow.copy(alpha = AlphaTokens.Faint)
-                        )
-                    },
-                    innerShadow = {
-                        val progress = dampedDragAnimation.pressProgress
-                        InnerShadow(
-                            radius = Elevation.Raised * progress,
-                            alpha = progress
-                        )
-                    },
-                    layerBlock = {
-                        scaleX = dampedDragAnimation.scaleX
-                        scaleY = dampedDragAnimation.scaleY
-                        val velocity = dampedDragAnimation.velocity / 50f
-                        scaleX /= 1f - (velocity * 0.75f).fastCoerceIn(-0.2f, 0.2f)
-                        scaleY *= 1f - (velocity * 0.25f).fastCoerceIn(-0.2f, 0.2f)
-                    },
-                    onDrawSurface = {
-                        val progress = dampedDragAnimation.pressProgress
-                        drawRect(glassColors.onGlass.copy(alpha = 1f - progress))
-                    }
+                .then(
+                    toggleThumbModifier(
+                        effectsEnabled = effectsEnabled,
+                        actualBackdrop = actualBackdrop,
+                        trackBackdrop = trackBackdrop,
+                        dampedDragAnimation = dampedDragAnimation,
+                        glassColors = glassColors,
+                    )
                 )
                 .size(ComponentSize.ToggleThumbWidth, ComponentSize.ToggleThumbHeight)
         )
+    }
+}
+
+@Composable
+private fun toggleThumbModifier(
+    effectsEnabled: Boolean,
+    actualBackdrop: Backdrop,
+    trackBackdrop: com.kashif_e.backdrop.backdrops.LayerBackdrop,
+    dampedDragAnimation: DampedDragAnimation,
+    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme,
+): Modifier {
+    return if (effectsEnabled) {
+        Modifier.drawBackdrop(
+            backdrop = rememberCombinedBackdrop(
+                actualBackdrop,
+                rememberBackdrop(trackBackdrop) { drawBackdrop ->
+                    val progress = dampedDragAnimation.pressProgress
+                    val scaleX = lerp(2f / 3f, 0.75f, progress)
+                    val scaleY = lerp(0f, 0.75f, progress)
+                    scale(scaleX, scaleY) {
+                        drawBackdrop()
+                    }
+                }
+            ),
+            shape = { ContinuousCapsule },
+            effects = {
+                val progress = dampedDragAnimation.pressProgress
+                blur(BackdropBlur.Toggle.toPx() * (1f - progress))
+                lens(
+                    LensRefraction.Toggle.height.toPx() * progress,
+                    LensRefraction.Toggle.amount.toPx() * progress,
+                    chromaticAberration = true
+                )
+            },
+            highlight = {
+                val progress = dampedDragAnimation.pressProgress
+                Highlight.Ambient.copy(
+                    width = Highlight.Ambient.width / 1.5f,
+                    blurRadius = Highlight.Ambient.blurRadius / 1.5f,
+                    alpha = progress
+                )
+            },
+            shadow = {
+                Shadow(
+                    radius = Elevation.Raised,
+                    color = glassColors.glassShadow.copy(alpha = AlphaTokens.Faint)
+                )
+            },
+            innerShadow = {
+                val progress = dampedDragAnimation.pressProgress
+                InnerShadow(
+                    radius = Elevation.Raised * progress,
+                    alpha = progress
+                )
+            },
+            layerBlock = {
+                scaleX = dampedDragAnimation.scaleX
+                scaleY = dampedDragAnimation.scaleY
+                val velocity = dampedDragAnimation.velocity / 50f
+                scaleX /= 1f - (velocity * 0.75f).fastCoerceIn(-0.2f, 0.2f)
+                scaleY *= 1f - (velocity * 0.25f).fastCoerceIn(-0.2f, 0.2f)
+            },
+            onDrawSurface = {
+                val progress = dampedDragAnimation.pressProgress
+                drawRect(glassColors.onGlass.copy(alpha = 1f - progress))
+            }
+        )
+    } else {
+        Modifier
+            .clip(ContinuousCapsule)
+            .background(glassColors.onGlass)
     }
 }

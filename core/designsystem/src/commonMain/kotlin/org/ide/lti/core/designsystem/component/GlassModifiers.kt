@@ -14,6 +14,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
@@ -98,6 +99,14 @@ fun Modifier.glassEffect(
         )
     } else {
         this
+            .clip(shape)
+            .drawBehind {
+                drawRect(finalSurfaceColor)
+
+                if (finalTint.isSpecified && finalTint.alpha > 0f) {
+                    drawRect(finalTint, blendMode = BlendMode.SrcOver)
+                }
+            }
     }
 }
 

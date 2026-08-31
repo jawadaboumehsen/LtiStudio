@@ -14,6 +14,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.isSpecified
@@ -48,6 +50,7 @@ fun GlassIcon(
 ) {
     val animationScope = rememberCoroutineScope()
     val glassColors = GlassTheme.colors
+    val effectsEnabled = GlassTheme.effectsEnabled
     val actualBackdrop = backdrop ?: GlassTheme.backdrop ?: rememberLayerBackdrop()
     val finalContentColor = if (contentColor.isSpecified) contentColor else glassColors.onGlass
 
@@ -59,28 +62,42 @@ fun GlassIcon(
 
     Box(
         modifier = modifier
-            .drawBackdrop(
-                backdrop = actualBackdrop,
-                shape = { ContinuousCapsule },
-                effects = {
-                    vibrancy()
-                    blur(BackdropBlur.Button.toPx())
-                    lens(LensRefraction.Button.height.toPx(), LensRefraction.Button.amount.toPx())
-                },
-                highlight = { Highlight.Plain },
-                layerBlock = if (isInteractive) {
-                    {
-                        applyInteractiveHighlightTransform(interactiveHighlight)
-                    }
+            .then(
+                if (effectsEnabled) {
+                    Modifier.drawBackdrop(
+                        backdrop = actualBackdrop,
+                        shape = { ContinuousCapsule },
+                        effects = {
+                            vibrancy()
+                            blur(BackdropBlur.Button.toPx())
+                            lens(LensRefraction.Button.height.toPx(), LensRefraction.Button.amount.toPx())
+                        },
+                        highlight = { Highlight.Plain },
+                        layerBlock = if (isInteractive) {
+                            {
+                                applyInteractiveHighlightTransform(interactiveHighlight)
+                            }
+                        } else {
+                            null
+                        },
+                        onDrawSurface = {
+                            drawRect(if (surfaceColor.isSpecified) surfaceColor else glassColors.glassSurface)
+                            if (tint.isSpecified) {
+                                drawRect(tint, blendMode = BlendMode.Hue)
+                                drawRect(tint.copy(alpha = AlphaTokens.IconTint))
+                            }
+                        }
+                    )
                 } else {
-                    null
-                },
-                onDrawSurface = {
-                    drawRect(if (surfaceColor.isSpecified) surfaceColor else glassColors.glassSurface)
-                    if (tint.isSpecified) {
-                        drawRect(tint, blendMode = BlendMode.Hue)
-                        drawRect(tint.copy(alpha = AlphaTokens.IconTint))
-                    }
+                    Modifier
+                        .clip(ContinuousCapsule)
+                        .drawBehind {
+                            drawRect(if (surfaceColor.isSpecified) surfaceColor else glassColors.glassSurface)
+                            if (tint.isSpecified) {
+                                drawRect(tint, blendMode = BlendMode.Hue)
+                                drawRect(tint.copy(alpha = AlphaTokens.IconTint))
+                            }
+                        }
                 }
             )
             .border(width = StrokeWidth.Hairline, color = glassColors.glassBorder, shape = ContinuousCapsule)

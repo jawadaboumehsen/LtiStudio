@@ -36,6 +36,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
@@ -176,27 +178,41 @@ fun GlassButton(
         modifier = modifier
             .defaultMinSize(minWidth = minWidth, minHeight = minHeight)
             .then(
-                if (effectsEnabled && variant != GlassButtonVariant.Text && actualBackdrop != null) {
-                    Modifier.drawBackdrop(
-                        backdrop = actualBackdrop,
-                        shape = { shape },
-                        effects = effects,
-                        highlight = { if (isHovered) Highlight.Ambient else Highlight.Plain },
-                        layerBlock = if (interactiveHighlight != null) {
-                            {
-                                applyInteractiveHighlightTransform(interactiveHighlight)
+                if (variant != GlassButtonVariant.Text) {
+                    if (effectsEnabled && actualBackdrop != null) {
+                        Modifier.drawBackdrop(
+                            backdrop = actualBackdrop,
+                            shape = { shape },
+                            effects = effects,
+                            highlight = { if (isHovered) Highlight.Ambient else Highlight.Plain },
+                            layerBlock = if (interactiveHighlight != null) {
+                                {
+                                    applyInteractiveHighlightTransform(interactiveHighlight)
+                                }
+                            } else null,
+                            onDrawSurface = {
+                                drawButtonSurface(
+                                    surfaceColor = surfaceColor,
+                                    tint = tint,
+                                    enabled = enabled,
+                                    glassShadowColor = glassColors.glassShadow,
+                                    vividTint = variant == GlassButtonVariant.Primary,
+                                )
                             }
-                        } else null,
-                        onDrawSurface = {
-                            drawButtonSurface(
-                                surfaceColor = surfaceColor,
-                                tint = tint,
-                                enabled = enabled,
-                                glassShadowColor = glassColors.glassShadow,
-                                vividTint = variant == GlassButtonVariant.Primary,
-                            )
-                        }
-                    )
+                        )
+                    } else {
+                        Modifier
+                            .clip(shape)
+                            .drawBehind {
+                                drawButtonSurface(
+                                    surfaceColor = surfaceColor,
+                                    tint = tint,
+                                    enabled = enabled,
+                                    glassShadowColor = glassColors.glassShadow,
+                                    vividTint = variant == GlassButtonVariant.Primary,
+                                )
+                            }
+                    }
                 } else {
                     Modifier
                 }

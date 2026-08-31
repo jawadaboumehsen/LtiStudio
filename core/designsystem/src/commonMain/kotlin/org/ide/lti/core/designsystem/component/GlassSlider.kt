@@ -66,6 +66,7 @@ fun GlassSlider(
 ) {
     val actualBackdrop = backdrop ?: GlassTheme.backdrop ?: rememberLayerBackdrop()
     val glassColors = GlassTheme.colors
+    val effectsEnabled = GlassTheme.effectsEnabled
     val accentColor = glassColors.glassAccent
     val trackColor = glassColors.glassBorder
 
@@ -174,59 +175,67 @@ fun GlassSlider(
                             .fastCoerceIn(-size.width / 4f, trackWidth - size.width * 3f / 4f) * if (isLtr) 1f else -1f
                 }
                 .then(dampedDragAnimation.modifier)
-                .drawBackdrop(
-                    backdrop = rememberCombinedBackdrop(
-                        actualBackdrop,
-                        rememberBackdrop(trackBackdrop) { drawBackdrop ->
-                            val progress = dampedDragAnimation.pressProgress
-                            val scaleX = lerp(2f / 3f, 1f, progress)
-                            val scaleY = lerp(0f, 1f, progress)
-                            scale(scaleX, scaleY) {
-                                drawBackdrop()
+                .then(
+                    if (effectsEnabled) {
+                        Modifier.drawBackdrop(
+                            backdrop = rememberCombinedBackdrop(
+                                actualBackdrop,
+                                rememberBackdrop(trackBackdrop) { drawBackdrop ->
+                                    val progress = dampedDragAnimation.pressProgress
+                                    val scaleX = lerp(2f / 3f, 1f, progress)
+                                    val scaleY = lerp(0f, 1f, progress)
+                                    scale(scaleX, scaleY) {
+                                        drawBackdrop()
+                                    }
+                                }
+                            ),
+                            shape = { ContinuousCapsule },
+                            effects = {
+                                val progress = dampedDragAnimation.pressProgress
+                                blur(BackdropBlur.Slider.toPx() * (1f - progress))
+                                lens(
+                                    LensRefraction.Slider.height.toPx() * progress,
+                                    LensRefraction.Slider.amount.toPx() * progress,
+                                    chromaticAberration = true
+                                )
+                            },
+                            highlight = {
+                                val progress = dampedDragAnimation.pressProgress
+                                Highlight.Ambient.copy(
+                                    width = Highlight.Ambient.width / 1.5f,
+                                    blurRadius = Highlight.Ambient.blurRadius / 1.5f,
+                                    alpha = progress
+                                )
+                            },
+                            shadow = {
+                                Shadow(
+                                    radius = Elevation.Raised,
+                                    color = glassColors.glassShadow.copy(alpha = AlphaTokens.Faint)
+                                )
+                            },
+                            innerShadow = {
+                                val progress = dampedDragAnimation.pressProgress
+                                InnerShadow(
+                                    radius = Elevation.Raised * progress,
+                                    alpha = progress
+                                )
+                            },
+                            layerBlock = {
+                                scaleX = dampedDragAnimation.scaleX
+                                scaleY = dampedDragAnimation.scaleY
+                                val velocity = dampedDragAnimation.velocity / 10f
+                                scaleX /= 1f - (velocity * 0.75f).fastCoerceIn(-0.2f, 0.2f)
+                                scaleY *= 1f - (velocity * 0.25f).fastCoerceIn(-0.2f, 0.2f)
+                            },
+                            onDrawSurface = {
+                                val progress = dampedDragAnimation.pressProgress
+                                drawRect(glassColors.onGlass.copy(alpha = 1f - progress))
                             }
-                        }
-                    ),
-                    shape = { ContinuousCapsule },
-                    effects = {
-                        val progress = dampedDragAnimation.pressProgress
-                        blur(BackdropBlur.Slider.toPx() * (1f - progress))
-                        lens(
-                            LensRefraction.Slider.height.toPx() * progress,
-                            LensRefraction.Slider.amount.toPx() * progress,
-                            chromaticAberration = true
                         )
-                    },
-                    highlight = {
-                        val progress = dampedDragAnimation.pressProgress
-                        Highlight.Ambient.copy(
-                            width = Highlight.Ambient.width / 1.5f,
-                            blurRadius = Highlight.Ambient.blurRadius / 1.5f,
-                            alpha = progress
-                        )
-                    },
-                    shadow = {
-                        Shadow(
-                            radius = Elevation.Raised,
-                            color = glassColors.glassShadow.copy(alpha = AlphaTokens.Faint)
-                        )
-                    },
-                    innerShadow = {
-                        val progress = dampedDragAnimation.pressProgress
-                        InnerShadow(
-                            radius = Elevation.Raised * progress,
-                            alpha = progress
-                        )
-                    },
-                    layerBlock = {
-                        scaleX = dampedDragAnimation.scaleX
-                        scaleY = dampedDragAnimation.scaleY
-                        val velocity = dampedDragAnimation.velocity / 10f
-                        scaleX /= 1f - (velocity * 0.75f).fastCoerceIn(-0.2f, 0.2f)
-                        scaleY *= 1f - (velocity * 0.25f).fastCoerceIn(-0.2f, 0.2f)
-                    },
-                    onDrawSurface = {
-                        val progress = dampedDragAnimation.pressProgress
-                        drawRect(glassColors.onGlass.copy(alpha = 1f - progress))
+                    } else {
+                        Modifier
+                            .clip(ContinuousCapsule)
+                            .background(glassColors.onGlass)
                     }
                 )
                 .size(ComponentSize.SliderThumbWidth, ComponentSize.SliderThumbHeight)

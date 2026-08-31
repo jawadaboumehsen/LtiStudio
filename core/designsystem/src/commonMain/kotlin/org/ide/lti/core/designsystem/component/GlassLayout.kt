@@ -919,6 +919,7 @@ private fun GlassDragDivider(
 
     // Capture colors from theme (must be done in composable context)
     val colors = GlassTheme.colors
+    val effectsEnabled = GlassTheme.effectsEnabled
     val normalColor = if (appearance.dividerColor.isSpecified) {
         appearance.dividerColor
     } else {
@@ -983,7 +984,8 @@ private fun GlassDragDivider(
                         activeColor = activeColor,
                         normalColor = normalColor,
                         actualBackdrop = actualBackdrop,
-                        orientation = orientation
+                        orientation = orientation,
+                        effectsEnabled = effectsEnabled,
                     )
                 )
         )
@@ -1012,51 +1014,56 @@ private fun getDividerBackgroundModifier(
     activeColor: Color,
     normalColor: Color,
     actualBackdrop: com.kashif_e.backdrop.Backdrop,
-    orientation: DividerOrientation
+    orientation: DividerOrientation,
+    effectsEnabled: Boolean = true,
 ): Modifier = when {
     isDragging -> Modifier.background(activeColor)
-    isHovered -> Modifier
-        .drawBehind {
-            drawRoundRect(
-                color = activeColor.copy(alpha = AlphaTokens.Glow),
-                cornerRadius = CornerRadius(ThemeCornerRadius.Pill.toPx()),
-                size = size.copy(
-                    width = size.width + Spacing.Small.toPx(),
-                    height = size.height + Spacing.Small.toPx()
-                ),
-                topLeft = Offset(
-                    x = -Spacing.ExtraSmall.toPx(),
-                    y = -Spacing.ExtraSmall.toPx()
+    isHovered -> if (effectsEnabled) {
+        Modifier
+            .drawBehind {
+                drawRoundRect(
+                    color = activeColor.copy(alpha = AlphaTokens.Glow),
+                    cornerRadius = CornerRadius(ThemeCornerRadius.Pill.toPx()),
+                    size = size.copy(
+                        width = size.width + Spacing.Small.toPx(),
+                        height = size.height + Spacing.Small.toPx()
+                    ),
+                    topLeft = Offset(
+                        x = -Spacing.ExtraSmall.toPx(),
+                        y = -Spacing.ExtraSmall.toPx()
+                    )
                 )
-            )
-        }
-        .drawBackdrop(
-            backdrop = actualBackdrop,
-            shape = { ContinuousCapsule },
-            effects = {
-                blur(BackdropBlur.Minimap.toPx())
-                lens(LensRefraction.Minimap.height.toPx(), LensRefraction.Minimap.amount.toPx())
-            },
-            onDrawSurface = {
-                val gradient = when (orientation) {
-                    DividerOrientation.Vertical -> Brush.verticalGradient(
-                        colors = listOf(
-                            activeColor.copy(alpha = AlphaTokens.Muted),
-                            activeColor.copy(alpha = AlphaTokens.Prominent),
-                            activeColor.copy(alpha = AlphaTokens.Muted)
-                        )
-                    )
-                    DividerOrientation.Horizontal -> Brush.horizontalGradient(
-                        colors = listOf(
-                            activeColor.copy(alpha = AlphaTokens.Muted),
-                            activeColor.copy(alpha = AlphaTokens.Prominent),
-                            activeColor.copy(alpha = AlphaTokens.Muted)
-                        )
-                    )
-                }
-                drawRect(gradient)
             }
-        )
+            .drawBackdrop(
+                backdrop = actualBackdrop,
+                shape = { ContinuousCapsule },
+                effects = {
+                    blur(BackdropBlur.Minimap.toPx())
+                    lens(LensRefraction.Minimap.height.toPx(), LensRefraction.Minimap.amount.toPx())
+                },
+                onDrawSurface = {
+                    val gradient = when (orientation) {
+                        DividerOrientation.Vertical -> Brush.verticalGradient(
+                            colors = listOf(
+                                activeColor.copy(alpha = AlphaTokens.Muted),
+                                activeColor.copy(alpha = AlphaTokens.Prominent),
+                                activeColor.copy(alpha = AlphaTokens.Muted)
+                            )
+                        )
+                        DividerOrientation.Horizontal -> Brush.horizontalGradient(
+                            colors = listOf(
+                                activeColor.copy(alpha = AlphaTokens.Muted),
+                                activeColor.copy(alpha = AlphaTokens.Prominent),
+                                activeColor.copy(alpha = AlphaTokens.Muted)
+                            )
+                        )
+                    }
+                    drawRect(gradient)
+                }
+            )
+    } else {
+        Modifier.background(activeColor)
+    }
     else -> Modifier.background(normalColor)
 }
 

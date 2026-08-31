@@ -16,6 +16,8 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
@@ -94,22 +96,36 @@ fun GlassSurface(
         Modifier
     }
 
+    val backgroundModifier = if (effectsEnabled) {
+        Modifier.drawBackdrop(
+            backdrop = actualBackdrop,
+            shape = { shape },
+            effects = effects,
+            highlight = highlight,
+            shadow = shadow,
+            onDrawSurface = {
+                drawRect(finalSurfaceColor)
+
+                if (finalTint.isSpecified && finalTint.alpha > 0f) {
+                    drawRect(finalTint, blendMode = BlendMode.SrcOver)
+                }
+            }
+        )
+    } else {
+        Modifier
+            .clip(shape)
+            .drawBehind {
+                drawRect(finalSurfaceColor)
+
+                if (finalTint.isSpecified && finalTint.alpha > 0f) {
+                    drawRect(finalTint, blendMode = BlendMode.SrcOver)
+                }
+            }
+    }
+
     Box(
         modifier = modifier
-            .drawBackdrop(
-                backdrop = actualBackdrop,
-                shape = { shape },
-                effects = { if (effectsEnabled) effects() },
-                highlight = highlight,
-                shadow = shadow,
-                onDrawSurface = {
-                    drawRect(finalSurfaceColor)
-
-                    if (finalTint.isSpecified && finalTint.alpha > 0f) {
-                        drawRect(finalTint, blendMode = BlendMode.SrcOver)
-                    }
-                }
-            )
+            .then(backgroundModifier)
             .then(borderModifier)
     ) {
         CompositionLocalProvider(LocalContentColor provides glassColors.onGlass) {
