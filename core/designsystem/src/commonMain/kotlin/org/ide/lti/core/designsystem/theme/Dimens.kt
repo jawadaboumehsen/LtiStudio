@@ -71,6 +71,7 @@ object IconSize {
     val Segmented: Dp = 15.dp
     val Medium: Dp = 16.dp
     val SidePanelRail: Dp = 18.dp
+    val PanelHeaderAction: Dp = 18.dp
     val Large: Dp = 24.dp
     val ExtraLarge: Dp = 28.dp
     val ActionCard: Dp = 32.dp
@@ -111,6 +112,7 @@ object ComponentSize {
     val WindowControlWidth: Dp = 36.dp
     val WindowControlHeight: Dp = 28.dp
     val PanelHeaderAction: Dp = 24.dp
+    val PanelHeaderActionTouchTarget: Dp = 32.dp
     val TabBarHeight: Dp = 36.dp
     val TabItemHeight: Dp = 32.dp
     val OtpBoxSize: Dp = 48.dp

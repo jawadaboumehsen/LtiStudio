@@ -144,13 +144,13 @@ fun GlassPanelHeaderAction(
     GlassIconButton(
         onClick = onClick,
         modifier = modifier,
-        size = ComponentSize.PanelHeaderAction,
+        size = ComponentSize.PanelHeaderActionTouchTarget,
         backdrop = backdrop,
     ) {
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
-            modifier = Modifier.size(IconSize.Medium),
+            modifier = Modifier.size(IconSize.PanelHeaderAction),
         )
     }
 }

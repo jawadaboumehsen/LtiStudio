@@ -10,6 +10,8 @@
 package org.ide.lti.core.designsystem.component
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.border
@@ -34,6 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
@@ -136,6 +139,7 @@ fun GlassButton(
     val effectsEnabled = GlassTheme.effectsEnabled
     val actualBackdrop = backdrop ?: GlassTheme.backdrop
     var isHovered by remember { mutableStateOf(false) }
+    var isFocused by remember { mutableStateOf(false) }
 
     val animationScope = rememberCoroutineScope()
     val interactiveHighlight = if (interactive) {
@@ -150,13 +154,21 @@ fun GlassButton(
     val finalContentColor = if (enabled) contentColor else glassColors.onGlassMuted
     val baseBorderColor = resolveButtonBorderColor(variant, glassColors)
 
+    val targetSurfaceColor = resolveHoverSurfaceColor(isHovered, variant, baseSurfaceColor, glassColors)
+    val targetBorderColor = resolveTargetBorderColor(isFocused, isHovered, baseBorderColor, glassColors)
+    val targetBorderWidth = resolveTargetBorderWidth(isFocused)
+
     val surfaceColor by animateColorAsState(
-        targetValue = resolveHoverSurfaceColor(isHovered, variant, baseSurfaceColor, glassColors),
-        animationSpec = tween(MotionDuration.Fast)
+        targetValue = targetSurfaceColor,
+        animationSpec = resolveButtonAnimationSpec(GlassTheme.reducedMotion)
     )
     val borderColor by animateColorAsState(
-        targetValue = resolveHoverBorderColor(isHovered, baseBorderColor, glassColors),
-        animationSpec = tween(MotionDuration.Fast)
+        targetValue = targetBorderColor,
+        animationSpec = resolveButtonAnimationSpec(GlassTheme.reducedMotion)
+    )
+    val borderWidth by animateDpAsState(
+        targetValue = targetBorderWidth,
+        animationSpec = resolveButtonAnimationSpec(GlassTheme.reducedMotion)
     )
 
     Row(
@@ -190,13 +202,14 @@ fun GlassButton(
             )
             .then(
                 if (borderColor != Color.Transparent) {
-                    Modifier.border(width = StrokeWidth.Hairline, color = borderColor, shape = shape)
+                    Modifier.border(width = borderWidth, color = borderColor, shape = shape)
                 } else {
                     Modifier
                 }
             )
             .onPointerEvent(PointerEventType.Enter) { isHovered = true }
             .onPointerEvent(PointerEventType.Exit) { isHovered = false }
+            .onFocusChanged { isFocused = it.isFocused }
             .clickable(
                 enabled = enabled,
                 interactionSource = null,
@@ -224,6 +237,25 @@ fun GlassButton(
         }
     }
 }
+
+private fun resolveTargetBorderColor(
+    isFocused: Boolean,
+    isHovered: Boolean,
+    baseBorderColor: Color,
+    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme,
+): Color = if (isFocused) {
+    glassColors.focusRing
+} else {
+    resolveHoverBorderColor(isHovered, baseBorderColor, glassColors)
+}
+
+private fun resolveTargetBorderWidth(isFocused: Boolean): Dp =
+    if (isFocused) StrokeWidth.Focused else StrokeWidth.Hairline
+
+private fun <T> resolveButtonAnimationSpec(
+    reducedMotion: Boolean
+): androidx.compose.animation.core.AnimationSpec<T> =
+    if (reducedMotion) snap() else tween(MotionDuration.Fast)
 
 private fun resolveButtonColors(
     variant: GlassButtonVariant,
