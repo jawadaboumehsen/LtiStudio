@@ -42,6 +42,7 @@ import org.ide.lti.core.designsystem.component.glassEffect
 import org.ide.lti.core.designsystem.component.glassInteractive
 import org.ide.lti.core.designsystem.component.glassScrim
 import org.ide.lti.core.designsystem.icon.AppIcons
+import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassTheme
@@ -193,7 +194,7 @@ fun SurfacesTab() {
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .glassScrim(blurRadius = Spacing.Small)
+                        .glassScrim(blurRadius = BackdropBlur.Card)
                         .padding(Spacing.Medium),
                     contentAlignment = Alignment.Center
                 ) {

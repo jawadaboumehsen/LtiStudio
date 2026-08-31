@@ -3,6 +3,7 @@ package org.ide.lti.core.designsystem.component
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -48,6 +49,7 @@ import com.kashif_e.backdrop.BackdropEffectScope
 import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.colorControls
 import com.kashif_e.backdrop.effects.lens
+import com.kashif_e.backdrop.highlight.Highlight
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.BackdropSaturation
 import org.ide.lti.core.designsystem.theme.ComponentSize
@@ -56,6 +58,7 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.MotionDuration
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
 
 /**
  * Bottom sheet glass effect stack — frosted/heavy, per the kmp-liquid-glass skill's guidance
@@ -188,23 +191,28 @@ fun GlassBottomSheet(
 ) {
     val scope = rememberCoroutineScope()
     val glassColors = GlassTheme.colors
+    val reducedMotion = GlassTheme.reducedMotion
     val resolvedScrimColor = if (scrimColor.isSpecified) scrimColor else glassColors.glassShadow
 
     // Animation for slide in/out
     val targetOffsetY = if (state.currentValue == GlassBottomSheetValue.Expanded) 0f else 1f
     val animatedOffsetY by animateFloatAsState(
         targetValue = targetOffsetY,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMedium
-        ),
+        animationSpec = if (reducedMotion) {
+            snap()
+        } else {
+            spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessMedium
+            )
+        },
         label = "bottomSheetOffset"
     )
 
     // Scrim alpha animation
     val scrimAlpha by animateFloatAsState(
         targetValue = if (state.currentValue == GlassBottomSheetValue.Expanded) 1f else 0f,
-        animationSpec = tween(durationMillis = MotionDuration.Standard),
+        animationSpec = resolveAnimationSpec(reducedMotion, MotionDuration.Standard),
         label = "scrimAlpha"
     )
 
@@ -247,7 +255,8 @@ fun GlassBottomSheet(
                     backdrop = backdrop,
                     surfaceColor = glassColors.glassSurface,
                     tint = glassColors.glassTint,
-                    borderColor = glassColors.glassBorder
+                    borderColor = glassColors.glassBorder,
+                    highlight = { Highlight.Default },
                 ) {
                     Column(
                         modifier = Modifier
@@ -280,7 +289,7 @@ fun GlassBottomSheet(
                                                 animate(
                                                     initialValue = state.offsetY,
                                                     targetValue = 0f,
-                                                    animationSpec = spring()
+                                                    animationSpec = if (reducedMotion) snap() else spring()
                                                 ) { value, _ ->
                                                     state.offsetY = value
                                                 }

@@ -1,6 +1,7 @@
-﻿package org.ide.lti.core.designsystem.utils
+package org.ide.lti.core.designsystem.utils
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.MutatorMutex
 import androidx.compose.runtime.snapshotFlow
@@ -25,6 +26,7 @@ class DampedDragAnimation(
     val visibilityThreshold: Float,
     val initialScale: Float,
     val pressedScale: Float,
+    val reducedMotion: Boolean = false,
     val onDragStarted: DampedDragAnimation.(position: Offset) -> Unit,
     val onDragStopped: DampedDragAnimation.() -> Unit,
     val onDrag: DampedDragAnimation.(size: IntSize, dragAmount: Offset) -> Unit,
@@ -33,13 +35,13 @@ class DampedDragAnimation(
     private val valueAnimationSpec =
         spring<Float>(1f, 1000f, visibilityThreshold)
     private val velocityAnimationSpec =
-        spring<Float>(0.5f, 300f, visibilityThreshold * 10f)
+        if (reducedMotion) snap() else spring<Float>(0.5f, 300f, visibilityThreshold * 10f)
     private val pressProgressAnimationSpec =
-        spring<Float>(1f, 1000f, 0.001f)
+        if (reducedMotion) snap() else spring<Float>(1f, 1000f, 0.001f)
     private val scaleXAnimationSpec =
-        spring<Float>(0.6f, 250f, 0.001f)
+        if (reducedMotion) snap() else spring<Float>(0.6f, 250f, 0.001f)
     private val scaleYAnimationSpec =
-        spring<Float>(0.7f, 250f, 0.001f)
+        if (reducedMotion) snap() else spring<Float>(0.7f, 250f, 0.001f)
 
     private val valueAnimation =
         Animatable(initialValue, visibilityThreshold)

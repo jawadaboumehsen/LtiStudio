@@ -10,15 +10,21 @@ import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.isSpecified
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.semantics.Role
 import com.kyant.capsule.ContinuousCapsule
 import com.kashif_e.backdrop.Backdrop
@@ -37,6 +43,7 @@ import org.ide.lti.core.designsystem.utils.InteractiveHighlight
 import org.ide.lti.core.designsystem.utils.applyInteractiveHighlightTransform
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun GlassIcon(
     onClick: () -> Unit,
@@ -53,6 +60,7 @@ fun GlassIcon(
     val effectsEnabled = GlassTheme.effectsEnabled
     val actualBackdrop = backdrop ?: GlassTheme.backdrop ?: rememberLayerBackdrop()
     val finalContentColor = if (contentColor.isSpecified) contentColor else glassColors.onGlass
+    var isHovered by remember { mutableStateOf(false) }
 
     val interactiveHighlight = remember(animationScope) {
         InteractiveHighlight(
@@ -72,7 +80,7 @@ fun GlassIcon(
                             blur(BackdropBlur.Button.toPx())
                             lens(LensRefraction.Button.height.toPx(), LensRefraction.Button.amount.toPx())
                         },
-                        highlight = { Highlight.Plain },
+                        highlight = { if (isHovered) Highlight.Ambient else Highlight.Plain },
                         layerBlock = if (isInteractive) {
                             {
                                 applyInteractiveHighlightTransform(interactiveHighlight)
@@ -101,6 +109,8 @@ fun GlassIcon(
                 }
             )
             .border(width = StrokeWidth.Hairline, color = glassColors.glassBorder, shape = ContinuousCapsule)
+            .onPointerEvent(PointerEventType.Enter) { isHovered = true }
+            .onPointerEvent(PointerEventType.Exit) { isHovered = false }
             .clickable(
                 interactionSource = null,
                 indication = if (isInteractive) null else LocalIndication.current,

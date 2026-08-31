@@ -78,9 +78,10 @@ fun GlassToggle(
     val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
     val dragWidth = with(density) { ComponentSize.ToggleDragWidth.toPx() }
     val animationScope = rememberCoroutineScope()
+    val reducedMotion = GlassTheme.reducedMotion
     var didDrag by remember { mutableStateOf(false) }
     var fraction by remember { mutableFloatStateOf(if (selected()) 1f else 0f) }
-    val dampedDragAnimation = remember(animationScope) {
+    val dampedDragAnimation = remember(animationScope, reducedMotion) {
         DampedDragAnimation(
             animationScope = animationScope,
             initialValue = fraction,
@@ -88,6 +89,7 @@ fun GlassToggle(
             visibilityThreshold = 0.001f,
             initialScale = 1f,
             pressedScale = 1.5f,
+            reducedMotion = reducedMotion,
             onDragStarted = {},
             onDragStopped = {
                 if (didDrag) {

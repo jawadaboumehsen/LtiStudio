@@ -96,8 +96,9 @@ fun GlassSlider(
 
         val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
         val animationScope = rememberCoroutineScope()
+        val reducedMotion = GlassTheme.reducedMotion
         var didDrag by remember { mutableStateOf(false) }
-        val dampedDragAnimation = remember(animationScope) {
+        val dampedDragAnimation = remember(animationScope, reducedMotion) {
             DampedDragAnimation(
                 animationScope = animationScope,
                 initialValue = value(),
@@ -105,6 +106,7 @@ fun GlassSlider(
                 visibilityThreshold = visibilityThreshold,
                 initialScale = 1f,
                 pressedScale = 1.5f,
+                reducedMotion = reducedMotion,
                 onDragStarted = {},
                 onDragStopped = {
                     if (didDrag) {

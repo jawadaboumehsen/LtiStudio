@@ -70,6 +70,7 @@ import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.MotionDuration
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /**
@@ -372,12 +373,12 @@ private fun LiquidSearchCapsule(
 
     val borderColor by animateColorAsState(
         targetValue = if (isHovered) glassColors.glassBorderHighlight else glassColors.glassBorder,
-        animationSpec = tween(MotionDuration.Fast)
+        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion)
     )
 
     val scale by animateFloatAsState(
         targetValue = if (isHovered) 1.01f else 1f,
-        animationSpec = tween(MotionDuration.Fast)
+        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion)
     )
 
     Row(

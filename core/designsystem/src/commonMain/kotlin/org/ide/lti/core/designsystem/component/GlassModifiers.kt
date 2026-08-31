@@ -74,7 +74,8 @@ fun Modifier.glassEffect(
     shape: Shape = ContinuousRoundedRectangle(CornerRadius.Medium),
     surfaceColor: Color = Color.Unspecified,
     tint: Color = Color.Unspecified,
-    effects: BackdropEffectScope.() -> Unit = StandardGlassEffects
+    effects: BackdropEffectScope.() -> Unit = StandardGlassEffects,
+    highlight: () -> Highlight? = { Highlight.Plain },
 ): Modifier = composed {
     val glassColors = GlassTheme.colors
     val effectsEnabled = GlassTheme.effectsEnabled
@@ -88,7 +89,7 @@ fun Modifier.glassEffect(
             backdrop = actualBackdrop,
             shape = { shape },
             effects = effects,
-            highlight = { Highlight.Plain },
+            highlight = highlight,
             onDrawSurface = {
                 drawRect(finalSurfaceColor)
 

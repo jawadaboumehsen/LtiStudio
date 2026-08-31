@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import com.kashif_e.backdrop.BackdropEffectScope
 import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.vibrancy
+import com.kashif_e.backdrop.highlight.Highlight
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.Elevation
@@ -93,7 +94,11 @@ fun GlassNavigationBar(
     NavigationBar(
         // Docked flush to the bottom screen edge — RectangleShape, not the module-wide capsule
         // (rounding here would leave gaps against the window's real edge).
-        modifier = modifier.glassEffect(shape = RectangleShape, effects = GlassDockedBarEffects),
+        modifier = modifier.glassEffect(
+            shape = RectangleShape,
+            effects = GlassDockedBarEffects,
+            highlight = { Highlight.Default }
+        ),
         containerColor = Color.Transparent,
         tonalElevation = Elevation.None,
         content = content,
@@ -153,7 +158,11 @@ fun GlassNavigationRail(
 ) {
     NavigationRail(
         // Docked flush to the side screen edge — RectangleShape for the same reason as the bar.
-        modifier = modifier.glassEffect(shape = RectangleShape, effects = GlassDockedBarEffects),
+        modifier = modifier.glassEffect(
+            shape = RectangleShape,
+            effects = GlassDockedBarEffects,
+            highlight = { Highlight.Default }
+        ),
         containerColor = Color.Transparent,
         contentColor = LtiNavigationDefaults.navigationContentColor(),
         header = header,

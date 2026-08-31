@@ -73,6 +73,7 @@ import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.MotionDuration
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.utils.nonLetterColorVisualTransformation
 import org.ide.lti.core.designsystem.utils.tabNavigation
@@ -122,7 +123,7 @@ fun GlassTextField(
             isFocused -> GlassTheme.colors.glassBorderHighlight
             else -> GlassTheme.colors.glassBorder
         },
-        animationSpec = tween(MotionDuration.Fast)
+        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion)
     )
 
     Column(modifier = modifier) {

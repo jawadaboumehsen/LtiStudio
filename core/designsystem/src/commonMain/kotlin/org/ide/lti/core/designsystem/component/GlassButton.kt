@@ -68,6 +68,7 @@ import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.MotionDuration
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
 import org.ide.lti.core.designsystem.utils.InteractiveHighlight
 import org.ide.lti.core.designsystem.utils.applyInteractiveHighlightTransform
 
@@ -163,15 +164,15 @@ fun GlassButton(
 
     val surfaceColor by animateColorAsState(
         targetValue = targetSurfaceColor,
-        animationSpec = resolveButtonAnimationSpec(GlassTheme.reducedMotion)
+        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion)
     )
     val borderColor by animateColorAsState(
         targetValue = targetBorderColor,
-        animationSpec = resolveButtonAnimationSpec(GlassTheme.reducedMotion)
+        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion)
     )
     val borderWidth by animateDpAsState(
         targetValue = targetBorderWidth,
-        animationSpec = resolveButtonAnimationSpec(GlassTheme.reducedMotion)
+        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion)
     )
 
     Row(
@@ -268,11 +269,6 @@ private fun resolveTargetBorderColor(
 
 private fun resolveTargetBorderWidth(isFocused: Boolean): Dp =
     if (isFocused) StrokeWidth.Focused else StrokeWidth.Hairline
-
-private fun <T> resolveButtonAnimationSpec(
-    reducedMotion: Boolean
-): androidx.compose.animation.core.AnimationSpec<T> =
-    if (reducedMotion) snap() else tween(MotionDuration.Fast)
 
 private fun resolveButtonColors(
     variant: GlassButtonVariant,

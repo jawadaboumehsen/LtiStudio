@@ -62,6 +62,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
 import org.ide.lti.core.designsystem.theme.GlassLayoutColors
 import org.ide.lti.core.designsystem.theme.PreviewSampleColors
+import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -910,7 +911,7 @@ private fun GlassDragDivider(
         animationSpec = if (isDragging) {
             snap()  // Instant update during drag
         } else {
-            tween(durationMillis = MotionDuration.Fast)  // Smooth fade on hover
+            resolveAnimationSpec(GlassTheme.reducedMotion)  // Smooth fade on hover, instant on reduced motion
         }
     )
 

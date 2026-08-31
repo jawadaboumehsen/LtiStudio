@@ -9,7 +9,10 @@
  */
 package org.ide.lti.core.designsystem.theme
 
+import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.tween
 
 /**
  * Centralized duration tokens (in milliseconds) for transitions, fades, hover
@@ -62,3 +65,13 @@ object MotionThreshold {
     /** Offset threshold for positional and drag animations (0.5f). */
     const val Offset: Float = 0.5f
 }
+
+/**
+ * Resolves an [AnimationSpec] that falls back to [snap] when [reducedMotion] is enabled.
+ * Defaults to a standard fast tween ([MotionDuration.Fast]) for regular motion.
+ */
+fun <T> resolveAnimationSpec(
+    reducedMotion: Boolean,
+    durationMillis: Int = MotionDuration.Fast,
+): AnimationSpec<T> = if (reducedMotion) snap() else tween(durationMillis)
+

@@ -11,6 +11,7 @@ package org.ide.lti.core.designsystem.component
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseOut
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -169,11 +170,12 @@ fun GlassBottomTabs(
 
         val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
         val animationScope = rememberCoroutineScope()
+        val reducedMotion = GlassTheme.reducedMotion
         var currentIndex by remember(selectedTabIndex) {
             mutableIntStateOf(selectedTabIndex())
         }
 
-        val drag = remember(animationScope) {
+        val drag = remember(animationScope, reducedMotion) {
             DampedDragAnimation(
                 animationScope = animationScope,
                 initialValue = selectedTabIndex().toFloat(),
@@ -181,6 +183,7 @@ fun GlassBottomTabs(
                 visibilityThreshold = MotionThreshold.Fine,
                 initialScale = 1f,
                 pressedScale = 78f / 56f,
+                reducedMotion = reducedMotion,
                 onDragStarted = {},
                 onDragStopped = {
                     val targetIndex = targetValue.fastRoundToInt().fastCoerceIn(0, tabsCount - 1)
@@ -189,7 +192,7 @@ fun GlassBottomTabs(
                     animationScope.launch {
                         offsetAnimation.animateTo(
                             0f,
-                            spring(
+                            if (reducedMotion) snap() else spring(
                                 dampingRatio = MotionSpring.DampingRatioNoBouncy,
                                 stiffness = MotionSpring.StiffnessInteractive,
                                 visibilityThreshold = MotionThreshold.Offset,

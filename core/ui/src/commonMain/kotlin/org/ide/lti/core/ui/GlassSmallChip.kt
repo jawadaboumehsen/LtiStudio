@@ -46,6 +46,7 @@ import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.MotionDuration
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
 
 /**
  * Modern Liquid Glass Action Chip / Tag with subtle hover feedback and backdrop effects.
@@ -66,17 +67,17 @@ fun GlassSmallChip(
 
     val backgroundColor by animateColorAsState(
         targetValue = if (isHovered) glassColors.glassSurfaceElevated else glassColors.glassSurface,
-        animationSpec = tween(MotionDuration.Fast)
+        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion)
     )
 
     val borderColor by animateColorAsState(
         targetValue = if (isHovered) glassColors.glassBorderHighlight else glassColors.glassBorder,
-        animationSpec = tween(MotionDuration.Fast)
+        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion)
     )
 
     val textColor by animateColorAsState(
         targetValue = if (isHovered) glassColors.onGlass else glassColors.onGlassSecondary,
-        animationSpec = tween(MotionDuration.Fast)
+        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion)
     )
 
     Box(
