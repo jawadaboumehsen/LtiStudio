@@ -179,7 +179,8 @@ fun GlassButton(
                                 surfaceColor = surfaceColor,
                                 tint = tint,
                                 enabled = enabled,
-                                glassShadowColor = glassColors.glassShadow
+                                glassShadowColor = glassColors.glassShadow,
+                                vividTint = variant == GlassButtonVariant.Primary,
                             )
                         }
                     )
@@ -286,14 +287,22 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawButtonSurface(
     surfaceColor: Color,
     tint: Color,
     enabled: Boolean,
-    glassShadowColor: Color
+    glassShadowColor: Color,
+    vividTint: Boolean = false,
 ) {
     if (surfaceColor.isSpecified && surfaceColor != Color.Transparent) {
         drawRect(surfaceColor.copy(alpha = surfaceColor.alpha * AlphaTokens.ButtonFill))
     }
     if (tint.isSpecified && tint != Color.Transparent) {
-        drawRect(tint, blendMode = BlendMode.Hue)
-        drawRect(tint.copy(alpha = tint.alpha * AlphaTokens.Half))
+        if (vividTint) {
+            // Full-strength SrcOver instead of a Hue-only blend: the accent color reads as
+            // itself (matching the brand logo badge) rather than being diluted by the dark
+            // base surface underneath, which a Hue blend deliberately preserves the lightness of.
+            drawRect(tint, blendMode = BlendMode.SrcOver)
+        } else {
+            drawRect(tint, blendMode = BlendMode.Hue)
+            drawRect(tint.copy(alpha = tint.alpha * AlphaTokens.Half))
+        }
     }
     if (!enabled) {
         drawRect(glassShadowColor.copy(alpha = AlphaTokens.Disabled))
