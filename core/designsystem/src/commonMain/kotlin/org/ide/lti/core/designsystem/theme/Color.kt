@@ -153,6 +153,7 @@ fun deriveDiagnosticColors(
 data class GlassColorScheme(
     val glassSurface: Color,
     val glassSurfaceElevated: Color,
+    val chromeSurface: Color,
     val canvasSurface: Color,
     val glassTint: Color,
     val glassTintSecondary: Color,
@@ -188,7 +189,8 @@ fun dynamicGlassColorScheme(
         GlassColorScheme(
             glassSurface = colorScheme.surface.copy(alpha = AlphaTokens.Elevated),
             glassSurfaceElevated = colorScheme.surfaceContainerHigh.copy(alpha = AlphaTokens.Prominent),
-            canvasSurface = colorScheme.surfaceContainerLowest.copy(alpha = AlphaTokens.PrimaryButtonTint),
+            chromeSurface = colorScheme.surfaceContainerLowest,
+            canvasSurface = colorScheme.surfaceContainerLow,
             glassTint = colorScheme.primary.copy(alpha = AlphaTokens.Glow),
             glassTintSecondary = colorScheme.secondary.copy(alpha = AlphaTokens.Glow),
             glassBorder = colorScheme.onSurface.copy(alpha = AlphaTokens.Hover),
@@ -207,7 +209,8 @@ fun dynamicGlassColorScheme(
         GlassColorScheme(
             glassSurface = colorScheme.surface.copy(alpha = AlphaTokens.IconTint),
             glassSurfaceElevated = colorScheme.surfaceContainerHighest.copy(alpha = AlphaTokens.PrimaryButtonTint),
-            canvasSurface = colorScheme.surfaceContainerLowest.copy(alpha = AlphaTokens.PrimaryButtonTint),
+            chromeSurface = colorScheme.surfaceContainer,
+            canvasSurface = colorScheme.surfaceContainerLowest,
             glassTint = colorScheme.primary.copy(alpha = AlphaTokens.Subtle),
             glassTintSecondary = colorScheme.secondary.copy(alpha = AlphaTokens.Subtle),
             glassBorder = colorScheme.outline.copy(alpha = AlphaTokens.Medium),
