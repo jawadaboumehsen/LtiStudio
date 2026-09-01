@@ -46,6 +46,7 @@ import org.koin.compose.viewmodel.koinViewModel
 fun ExplorerPanel(
     modifier: Modifier = Modifier,
     viewModel: ExplorerViewModel = koinViewModel(),
+    onFileClick: (path: String) -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val expandedNodes by viewModel.expandedNodes.collectAsState()
@@ -88,6 +89,7 @@ fun ExplorerPanel(
                             viewModel.toggleNodeExpansion(node.path)
                         } else {
                             viewModel.onFileSelected(node)
+                            onFileClick(node.path)
                         }
                     },
                 )

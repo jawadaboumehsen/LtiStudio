@@ -84,17 +84,58 @@ class ExplorerViewModel(
     }
 
     fun toggleNodeExpansion(path: String) {
-        _expandedNodes.value = if (path in _expandedNodes.value) {
-            _expandedNodes.value - path
+        val isExpanded = path in _expandedNodes.value
+        if (isExpanded) {
+            _expandedNodes.value = _expandedNodes.value - path
         } else {
-            _expandedNodes.value + path
+            _expandedNodes.value = _expandedNodes.value + path
+            loadChildrenIfNeeded(path)
+        }
+    }
+
+    private fun loadChildrenIfNeeded(path: String) {
+        val currentState = _uiState.value
+        if (currentState !is ExplorerUiState.Success) return
+
+        val targetNode = currentState.rootNode.findNode(path)
+        if (targetNode == null || targetNode.children != null) return
+
+        viewModelScope.launch {
+            try {
+                val result = fileSystemRepository.listFiles(path)
+                result.fold(
+                    onSuccess = { files ->
+                        val state = _uiState.value
+                        if (state is ExplorerUiState.Success) {
+                            _uiState.value = ExplorerUiState.Success(
+                                state.rootNode.updateChildrenForPath(path, files),
+                            )
+                        }
+                    },
+                    onFailure = { error ->
+                        println("Failed to list directory contents for $path: ${error.message}")
+                        val state = _uiState.value
+                        if (state is ExplorerUiState.Success) {
+                            _uiState.value = ExplorerUiState.Success(
+                                state.rootNode.updateChildrenForPath(path, emptyList()),
+                            )
+                        }
+                    },
+                )
+            } catch (e: Exception) {
+                println("Exception listing directory contents for $path: ${e.message}")
+                val state = _uiState.value
+                if (state is ExplorerUiState.Success) {
+                    _uiState.value = ExplorerUiState.Success(
+                        state.rootNode.updateChildrenForPath(path, emptyList()),
+                    )
+                }
+            }
         }
     }
 
     fun onFileSelected(fileNode: FileNode) {
         _selectedFile.value = fileNode
-        // TODO: Open file in editor
-        // Will be implemented when editor feature is created
     }
 
     fun openFolder() {
@@ -116,3 +157,32 @@ class ExplorerViewModel(
         }
     }
 }
+
+/**
+ * Recursively searches for a [FileNode] matching [targetPath] in the tree rooted at this node.
+ */
+private fun FileNode.findNode(targetPath: String): FileNode? {
+    return if (this.path == targetPath) {
+        this
+    } else {
+        this.children?.firstNotNullOfOrNull { it.findNode(targetPath) }
+    }
+}
+
+/**
+ * Returns a copy of this [FileNode] tree with the node at [targetPath] updated to have [newChildren].
+ */
+private fun FileNode.updateChildrenForPath(
+    targetPath: String,
+    newChildren: List<FileNode>,
+): FileNode {
+    val currentChildren = this.children
+    return when {
+        this.path == targetPath -> this.copy(children = newChildren)
+        currentChildren == null -> this
+        else -> this.copy(
+            children = currentChildren.map { it.updateChildrenForPath(targetPath, newChildren) },
+        )
+    }
+}
+

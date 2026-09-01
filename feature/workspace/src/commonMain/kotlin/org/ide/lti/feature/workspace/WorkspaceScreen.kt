@@ -30,6 +30,7 @@ import org.ide.lti.core.designsystem.component.rememberLtiLayoutState
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.feature.workspace.panels.ai.AIAssistantPanel
 import org.ide.lti.feature.workspace.panels.editor.EditorPanel
+import org.ide.lti.feature.workspace.panels.editor.EditorViewModel
 import org.ide.lti.feature.workspace.panels.explorer.ExplorerPanel
 import org.ide.lti.feature.workspace.panels.terminal.TerminalPanel
 import org.koin.compose.viewmodel.koinViewModel
@@ -53,6 +54,7 @@ fun WorkspaceScreen(
     onOpenSettings: () -> Unit = {},
     onOpenNotifications: () -> Unit = {},
     viewModel: WorkspaceViewModel = koinViewModel(),
+    editorViewModel: EditorViewModel = koinViewModel(),
 ) {
     val workspaceName by viewModel.workspaceName.collectAsState()
     val initialPanelsState = viewModel.panelsState.value
@@ -79,13 +81,17 @@ fun WorkspaceScreen(
     var activeFileType by remember { mutableStateOf<String?>(null) }
     var cursorPosition by remember { mutableStateOf<Pair<Int, Int>?>(null) }
 
-    val leftTabs = remember {
+    val leftTabs = remember(editorViewModel) {
         listOf(
             GlassSidePanelTab(
                 icon = AppIcons.Folder,
                 label = "Explorer",
             ) {
-                ExplorerPanel()
+                ExplorerPanel(
+                    onFileClick = { path ->
+                        editorViewModel.openFile(path)
+                    },
+                )
             }
         )
     }
@@ -117,6 +123,7 @@ fun WorkspaceScreen(
         },
         mainContent = {
             EditorPanel(
+                viewModel = editorViewModel,
                 onActiveFileChange = { path, language ->
                     activeFilePath = path
                     activeFileType = language

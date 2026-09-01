@@ -48,7 +48,7 @@ class DesktopFileSystemRepository : FileSystemRepository {
                     type = if (metadata.isDirectory) FileType.DIRECTORY else FileType.FILE,
                     size = metadata.size ?: 0,
                     lastModified = metadata.lastModifiedAtMillis ?: 0,
-                    children = if (metadata.isDirectory) emptyList() else null,
+                    children = null,
                 )
             }.sortedWith(compareBy({ it.type != FileType.DIRECTORY }, { it.name.lowercase() }))
             Result.success(files)
