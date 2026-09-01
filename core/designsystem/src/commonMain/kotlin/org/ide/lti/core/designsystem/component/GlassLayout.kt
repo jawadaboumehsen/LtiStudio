@@ -38,12 +38,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -86,6 +80,8 @@ import com.kashif_e.backdrop.highlight.Highlight
 import com.kashif_e.backdrop.shadow.Shadow
 import com.kyant.capsule.ContinuousCapsule
 import com.kyant.capsule.ContinuousRoundedRectangle
+import org.ide.lti.core.designsystem.icon.AppIcons
+import org.ide.lti.core.designsystem.icon.ideGeneralChevronUp
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize
@@ -629,7 +625,11 @@ private fun GlassToggleButtonsOverlay(
                 selected = state.showLeft,
             ) {
                 Icon(
-                    imageVector = if (state.showLeft) Icons.Default.Close else Icons.Default.Menu,
+                    painter = if (state.showLeft) {
+                        AppIcons.ClosePainterResource()
+                    } else {
+                        AppIcons.MenuPainterResource()
+                    },
                     contentDescription = if (state.showLeft) {
                         "Hide left panel"
                     } else {
@@ -644,10 +644,10 @@ private fun GlassToggleButtonsOverlay(
                 selected = state.showBottom,
             ) {
                 Icon(
-                    imageVector = if (state.showBottom) {
-                        Icons.Default.KeyboardArrowDown
+                    painter = if (state.showBottom) {
+                        AppIcons.ChevronDownPainterResource()
                     } else {
-                        Icons.Default.KeyboardArrowUp
+                        AppIcons.ideGeneralChevronUp()
                     },
                     contentDescription = if (state.showBottom) {
                         "Hide bottom panel"
@@ -663,7 +663,11 @@ private fun GlassToggleButtonsOverlay(
                 selected = state.showRight,
             ) {
                 Icon(
-                    imageVector = if (state.showRight) Icons.Default.Close else Icons.Default.Settings,
+                    painter = if (state.showRight) {
+                        AppIcons.ClosePainterResource()
+                    } else {
+                        AppIcons.SettingsPainterResource()
+                    },
                     contentDescription = if (state.showRight) {
                         "Hide right panel"
                     } else {
@@ -765,7 +769,7 @@ object LtiLayoutDefaults {
     val EnhancedPanelEffects: BackdropEffectScope.() -> Unit = {
         vibrancy()
         blur(BackdropBlur.Deep.toPx())
-        lens(LensRefraction.TextField.height.toPx(), LensRefraction.TextField.amount.toPx())
+        lens(LensRefraction.Panel.height.toPx(), LensRefraction.Panel.amount.toPx())
     }
 
     /**

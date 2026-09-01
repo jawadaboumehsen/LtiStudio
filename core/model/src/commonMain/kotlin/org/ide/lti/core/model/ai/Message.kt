@@ -9,8 +9,8 @@
  */
 package org.ide.lti.core.model.ai
 
-import kotlin.random.Random
 import kotlinx.serialization.Serializable
+import kotlin.random.Random
 
 @Serializable
 data class Message(

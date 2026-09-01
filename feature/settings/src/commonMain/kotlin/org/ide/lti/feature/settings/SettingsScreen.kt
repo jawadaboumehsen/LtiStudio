@@ -25,8 +25,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Language
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -47,6 +45,7 @@ import org.ide.lti.core.designsystem.component.GlassIconButton
 import org.ide.lti.core.designsystem.component.GlassToggle
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
+import org.ide.lti.core.designsystem.icon.ideGeneralLanguage
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius
@@ -154,7 +153,7 @@ fun SettingsScreenContent(
                     )
 
                     SettingsValueItem(
-                        icon = Icons.Default.Language,
+                        icon = AppIcon.Painted(AppIcons.ideGeneralLanguage),
                         title = "Language",
                         description = "Display language for IDE interface",
                         value = "English (US)",
@@ -263,7 +262,7 @@ private fun SettingsToggleItem(
 
 @Composable
 private fun SettingsValueItem(
-    icon: ImageVector,
+    icon: AppIcon,
     title: String,
     description: String,
     value: String,
@@ -279,12 +278,20 @@ private fun SettingsValueItem(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.weight(1f).padding(end = Spacing.Medium),
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = GlassTheme.colors.glassAccent,
-                modifier = Modifier.size(IconSize.Large),
-            )
+            when (icon) {
+                is AppIcon.Vector -> Icon(
+                    imageVector = icon.imageVector,
+                    contentDescription = null,
+                    tint = GlassTheme.colors.glassAccent,
+                    modifier = Modifier.size(IconSize.Large),
+                )
+                is AppIcon.Painted -> Icon(
+                    painter = icon.painter(),
+                    contentDescription = null,
+                    tint = GlassTheme.colors.glassAccent,
+                    modifier = Modifier.size(IconSize.Large),
+                )
+            }
 
             Column {
                 Text(
@@ -321,3 +328,18 @@ private fun SettingsValueItem(
         }
     }
 }
+
+@Composable
+private fun SettingsValueItem(
+    icon: ImageVector,
+    title: String,
+    description: String,
+    value: String,
+    modifier: Modifier = Modifier,
+) = SettingsValueItem(
+    icon = AppIcon.Vector(icon),
+    title = title,
+    description = description,
+    value = value,
+    modifier = modifier,
+)
