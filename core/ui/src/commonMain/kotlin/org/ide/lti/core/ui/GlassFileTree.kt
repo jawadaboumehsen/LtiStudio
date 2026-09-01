@@ -7,11 +7,12 @@
  *
  * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
  */
+@file:Suppress("MatchingDeclarationName")
+
 package org.ide.lti.core.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,6 +26,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
@@ -36,6 +39,36 @@ import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.model.filesystem.FileNode
 import org.ide.lti.core.model.filesystem.FileType
+
+/**
+ * Represents a flattened file tree node with its nesting depth.
+ */
+@Immutable
+internal data class FlattenedFileNode(
+    val node: FileNode,
+    val level: Int,
+)
+
+/**
+ * Flattens the visible tree nodes based on current expanded directory state.
+ */
+internal fun flattenFileTree(
+    rootNode: FileNode,
+    expandedNodes: Set<String>,
+): List<FlattenedFileNode> {
+    val result = mutableListOf<FlattenedFileNode>()
+    fun traverse(children: List<FileNode>?, level: Int) {
+        if (children == null) return
+        for (child in children) {
+            result.add(FlattenedFileNode(child, level))
+            if (child.type == FileType.DIRECTORY && child.path in expandedNodes) {
+                traverse(child.children, level + 1)
+            }
+        }
+    }
+    traverse(rootNode.children, 0)
+    return result
+}
 
 /**
  * Lti file tree component for displaying hierarchical file structures.
@@ -52,19 +85,24 @@ fun GlassFileTree(
     onNodeClick: (FileNode) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val visibleNodes = remember(rootNode, expandedNodes) {
+        flattenFileTree(rootNode, expandedNodes)
+    }
+
     LazyColumn(
         modifier = modifier.fillMaxSize(),
     ) {
-        // Render root node's children
-        rootNode.children?.let { children ->
-            items(children, key = { it.path }) { node ->
-                GlassFileTreeItem(
-                    node = node,
-                    level = 0,
-                    expandedNodes = expandedNodes,
-                    onNodeClick = onNodeClick,
-                )
-            }
+        items(
+            items = visibleNodes,
+            key = { it.node.path },
+            contentType = { it.node.type },
+        ) { item ->
+            GlassFileTreeItem(
+                node = item.node,
+                level = item.level,
+                expandedNodes = expandedNodes,
+                onNodeClick = onNodeClick,
+            )
         }
     }
 }
@@ -82,72 +120,58 @@ private fun GlassFileTreeItem(
 ) {
     val glassColors = GlassTheme.colors
 
-    Column(modifier = modifier) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(
-                    role = Role.Button,
-                    onClick = { onNodeClick(node) },
-                )
-                .padding(
-                    start = Spacing.Medium * level + Spacing.Small,
-                    top = Spacing.ExtraSmall,
-                    bottom = Spacing.ExtraSmall,
-                    end = Spacing.Small,
-                ),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Start,
-        ) {
-            // Expansion indicator for directories
-            if (node.type == FileType.DIRECTORY) {
-                Icon(
-                    painter = if (node.path in expandedNodes) {
-                        AppIcons.ChevronDownPainterResource()
-                    } else {
-                        AppIcons.ChevronRightPainterResource()
-                    },
-                    contentDescription = null,
-                    modifier = Modifier.size(IconSize.Medium),
-                    tint = glassColors.onGlassMuted,
-                )
-                Spacer(modifier = Modifier.width(Spacing.ExtraSmall))
-            } else {
-                Spacer(modifier = Modifier.width(Spacing.TabHorizontal))
-            }
-
-            // File/folder icon
-            LtiFileIcon(
-                fileType = node.type,
-                isExpanded = node.path in expandedNodes,
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(
+                role = Role.Button,
+                onClick = { onNodeClick(node) },
             )
-
-            Spacer(modifier = Modifier.width(Spacing.Small))
-
-            // File/folder name
-            Text(
-                text = node.name,
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (node.type == FileType.DIRECTORY) glassColors.onGlass else glassColors.onGlassSecondary,
-                fontWeight = if (node.type == FileType.DIRECTORY) {
-                    FontWeight.Medium
+            .padding(
+                start = Spacing.Medium * level + Spacing.Small,
+                top = Spacing.ExtraSmall,
+                bottom = Spacing.ExtraSmall,
+                end = Spacing.Small,
+            ),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Start,
+    ) {
+        // Expansion indicator for directories
+        if (node.type == FileType.DIRECTORY) {
+            Icon(
+                painter = if (node.path in expandedNodes) {
+                    AppIcons.ChevronDownPainterResource()
                 } else {
-                    FontWeight.Normal
+                    AppIcons.ChevronRightPainterResource()
                 },
+                contentDescription = null,
+                modifier = Modifier.size(IconSize.Medium),
+                tint = glassColors.onGlassMuted,
             )
+            Spacer(modifier = Modifier.width(Spacing.ExtraSmall))
+        } else {
+            Spacer(modifier = Modifier.width(Spacing.TabHorizontal))
         }
 
-        // Render children if expanded
-        if (node.type == FileType.DIRECTORY && node.path in expandedNodes) {
-            node.children?.forEach { child ->
-                GlassFileTreeItem(
-                    node = child,
-                    level = level + 1,
-                    expandedNodes = expandedNodes,
-                    onNodeClick = onNodeClick,
-                )
-            }
-        }
+        // File/folder icon
+        LtiFileIcon(
+            fileType = node.type,
+            isExpanded = node.path in expandedNodes,
+        )
+
+        Spacer(modifier = Modifier.width(Spacing.Small))
+
+        // File/folder name
+        Text(
+            text = node.name,
+            style = MaterialTheme.typography.bodyMedium,
+            color = if (node.type == FileType.DIRECTORY) glassColors.onGlass else glassColors.onGlassSecondary,
+            fontWeight = if (node.type == FileType.DIRECTORY) {
+                FontWeight.Medium
+            } else {
+                FontWeight.Normal
+            },
+        )
     }
 }
 
