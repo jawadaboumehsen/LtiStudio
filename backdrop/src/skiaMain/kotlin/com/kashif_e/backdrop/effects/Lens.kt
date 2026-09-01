@@ -8,6 +8,7 @@ import org.jetbrains.skia.Data
 import org.jetbrains.skia.ImageFilter
 import org.jetbrains.skia.RuntimeEffect
 import org.jetbrains.skia.RuntimeShaderBuilder
+import kotlin.math.ceil
 import kotlin.math.min
 
 /**
@@ -110,7 +111,7 @@ actual fun BackdropEffectScope.lens(
     if (refractionHeight <= 0f || refractionAmount <= 0f) return
 
     if (padding > 0f) {
-        padding = maxOf(padding - refractionHeight, 0f)
+        padding = ceil(maxOf(padding - refractionHeight, 0f))
     }
 
     val cornerRadii = cornerRadii

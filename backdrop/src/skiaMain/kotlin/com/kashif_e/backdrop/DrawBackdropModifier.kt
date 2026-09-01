@@ -310,20 +310,10 @@ private class DrawBackdropNode(
                 )
             }
 
-            // Clip to shape before drawing the layer with effects
-            val canvas = drawContext.canvas
-            val outline = shapeProvider.shape.createOutline(currentSize, layoutDirection, this)
-            val path = clipPath ?: Path().also { clipPath = it }
-
-            canvas.save()
-            canvas.clipOutline(outline, path)
-
             layer.topLeft =
                 if (currentPadding != 0) IntOffset(-currentPadding, -currentPadding)
                 else IntOffset.Zero
             drawLayer(layer)
-
-            canvas.restore()
         }
     }
 
