@@ -19,8 +19,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Tab
@@ -47,6 +45,7 @@ import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
 import com.kashif_e.backdrop.highlight.Highlight
 import com.kyant.capsule.ContinuousCapsule
+import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize
@@ -196,7 +195,7 @@ fun GlassTabItem(
                 shape = RoundedCornerShape(CornerRadius.ExtraSmall),
             ) {
                 Icon(
-                    imageVector = Icons.Default.Close,
+                    painter = AppIcons.ClosePainterResource(),
                     contentDescription = "Close tab",
                     modifier = Modifier.size(IconSize.Small),
                 )

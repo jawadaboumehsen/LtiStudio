@@ -13,8 +13,7 @@ import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -42,6 +41,7 @@ import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
 import com.kashif_e.backdrop.highlight.Highlight
 import com.kyant.capsule.ContinuousCapsule
+import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.GlassTheme
@@ -150,12 +150,10 @@ fun GlassIconPreview() {
         onClick = {},
         backdrop = backdrop,
         icon = {
-//            androidx.compose.foundation.Image(
-//                painter = androidx.compose.ui.res.painterResource("ic_launcher.png"), // Replace with your actual icon
-//                contentDescription = "Preview Icon",
-//                modifier = androidx.compose.ui.Modifier.size(24.dp)
-//            )
-            Icons.Default.Folder
+            Icon(
+                painter = AppIcons.FolderPainterResource(),
+                contentDescription = null,
+            )
         },
     )
 }
