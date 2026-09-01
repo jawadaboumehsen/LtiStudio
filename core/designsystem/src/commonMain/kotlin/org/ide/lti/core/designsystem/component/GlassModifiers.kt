@@ -90,7 +90,7 @@ fun Modifier.glassEffect(
             effects = effects,
             highlight = highlight,
             onDrawSurface = {
-                drawRect(finalSurfaceColor)
+                drawRect(finalSurfaceColor.copy(alpha = finalSurfaceColor.alpha * AlphaTokens.ButtonFill))
 
                 if (finalTint.isSpecified && finalTint.alpha > 0f) {
                     drawRect(finalTint, blendMode = BlendMode.SrcOver)
@@ -101,7 +101,7 @@ fun Modifier.glassEffect(
         this
             .clip(shape)
             .drawBehind {
-                drawRect(finalSurfaceColor)
+                drawRect(finalSurfaceColor.copy(alpha = finalSurfaceColor.alpha * AlphaTokens.ButtonFill))
 
                 if (finalTint.isSpecified && finalTint.alpha > 0f) {
                     drawRect(finalTint, blendMode = BlendMode.SrcOver)
