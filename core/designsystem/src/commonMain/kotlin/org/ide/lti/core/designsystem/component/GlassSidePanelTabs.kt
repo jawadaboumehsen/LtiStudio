@@ -36,6 +36,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius
@@ -58,18 +59,30 @@ enum class SidePanelRailPosition {
 /**
  * Specification for a single tool window side panel tab.
  *
- * @param icon The [ImageVector] displayed in the tool window rail.
+ * @param icon The [AppIcon] displayed in the tool window rail.
  * @param label The human-readable tab label/tooltip.
  * @param contentDescription Optional accessible description (defaults to [label]).
  * @param content Composable body rendered when this tab is active.
  */
 @Immutable
 data class GlassSidePanelTab(
-    val icon: ImageVector,
+    val icon: AppIcon,
     val label: String,
     val contentDescription: String? = label,
     val content: @Composable () -> Unit,
-)
+) {
+    constructor(
+        icon: ImageVector,
+        label: String,
+        contentDescription: String? = label,
+        content: @Composable () -> Unit,
+    ) : this(
+        icon = AppIcon.Vector(icon),
+        label = label,
+        contentDescription = contentDescription,
+        content = content,
+    )
+}
 
 /**
  * Vertical icon rail component for IDE side panels (tool windows).
@@ -134,11 +147,18 @@ fun GlassSidePanelRail(
                         role = Role.Tab
                     },
                 ) {
-                    Icon(
-                        imageVector = tab.icon,
-                        contentDescription = null,
-                        modifier = Modifier.size(IconSize.SidePanelRail),
-                    )
+                    when (tab.icon) {
+                        is AppIcon.Vector -> Icon(
+                            imageVector = tab.icon.imageVector,
+                            contentDescription = null,
+                            modifier = Modifier.size(IconSize.SidePanelRail),
+                        )
+                        is AppIcon.Painted -> Icon(
+                            painter = tab.icon.painter(),
+                            contentDescription = null,
+                            modifier = Modifier.size(IconSize.SidePanelRail),
+                        )
+                    }
                 }
             }
         }

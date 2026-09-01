@@ -36,6 +36,7 @@ import org.ide.lti.core.designsystem.component.CosmicAuroraBackdrop
 import org.ide.lti.core.designsystem.component.GlassSecondaryTopBar
 import org.ide.lti.core.designsystem.component.LocalWindowControlActions
 import org.ide.lti.core.designsystem.component.WindowControlActions
+import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.LtiTheme
@@ -150,7 +151,7 @@ fun main(args: Array<String>) = nucleusApplication(args) {
                         ) {
                             GlassSecondaryTopBar(
                                 title = "Settings",
-                                icon = AppIcons.SettingsOutlined,
+                                icon = AppIcon.Painted(AppIcons.SettingsPainterResource),
                                 backdrop = backdrop,
                             )
                         }

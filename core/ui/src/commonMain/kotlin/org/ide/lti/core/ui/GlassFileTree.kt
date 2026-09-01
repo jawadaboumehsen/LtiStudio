@@ -29,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
@@ -159,10 +160,14 @@ private fun LtiFileIcon(
     isExpanded: Boolean = false,
 ) {
     val glassColors = GlassTheme.colors
-    val icon = when (fileType) {
-        FileType.DIRECTORY -> if (isExpanded) AppIcons.FolderOpen else AppIcons.Folder
-        FileType.FILE -> AppIcons.File
-        FileType.SYMLINK -> AppIcons.Link
+    val icon: AppIcon = when (fileType) {
+        FileType.DIRECTORY -> if (isExpanded) {
+            AppIcon.Vector(AppIcons.FolderOpen)
+        } else {
+            AppIcon.Painted(AppIcons.FolderPainterResource)
+        }
+        FileType.FILE -> AppIcon.Painted(AppIcons.FilePainterResource)
+        FileType.SYMLINK -> AppIcon.Vector(AppIcons.Link)
     }
 
     val tint = when (fileType) {
@@ -171,10 +176,18 @@ private fun LtiFileIcon(
         FileType.SYMLINK -> glassColors.onGlassMuted
     }
 
-    Icon(
-        imageVector = icon,
-        contentDescription = null,
-        modifier = Modifier.size(IconSize.Medium),
-        tint = tint,
-    )
+    when (icon) {
+        is AppIcon.Vector -> Icon(
+            imageVector = icon.imageVector,
+            contentDescription = null,
+            modifier = Modifier.size(IconSize.Medium),
+            tint = tint,
+        )
+        is AppIcon.Painted -> Icon(
+            painter = icon.painter(),
+            contentDescription = null,
+            modifier = Modifier.size(IconSize.Medium),
+            tint = tint,
+        )
+    }
 }

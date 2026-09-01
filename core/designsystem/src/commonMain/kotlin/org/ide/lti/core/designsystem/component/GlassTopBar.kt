@@ -241,7 +241,7 @@ private fun GlassTopBarLeftSection(
             backdrop = backdrop,
         ) {
             Icon(
-                imageVector = AppIcons.Menu,
+                painter = AppIcons.MenuPainterResource(),
                 contentDescription = "Main Menu",
                 modifier = Modifier.size(IconSize.Medium),
             )
@@ -335,7 +335,7 @@ private fun GlassTopBarRightSection(
             backdrop = backdrop,
         ) {
             Icon(
-                imageVector = AppIcons.SettingsOutlined,
+                painter = AppIcons.SettingsPainterResource(),
                 contentDescription = "Settings",
                 modifier = Modifier.size(IconSize.Medium),
             )
@@ -421,7 +421,7 @@ private fun LiquidSearchCapsule(
         horizontalArrangement = Arrangement.spacedBy(Spacing.Small)
     ) {
         Icon(
-            imageVector = AppIcons.Search,
+            painter = AppIcons.SearchPainterResource(),
             contentDescription = "Search",
             modifier = Modifier.size(IconSize.Search),
             tint = if (isHovered) glassColors.glassAccent else glassColors.onGlassMuted

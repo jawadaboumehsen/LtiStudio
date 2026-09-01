@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
+import org.ide.lti.core.designsystem.icon.AppIcon
 import com.kyant.capsule.ContinuousRoundedRectangle
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.BackdropEffectScope
@@ -135,7 +136,7 @@ fun GlassPanelHeader(
  */
 @Composable
 fun GlassPanelHeaderAction(
-    icon: ImageVector,
+    icon: AppIcon,
     contentDescription: String?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -147,13 +148,35 @@ fun GlassPanelHeaderAction(
         size = ComponentSize.PanelHeaderActionTouchTarget,
         backdrop = backdrop,
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = contentDescription,
-            modifier = Modifier.size(IconSize.PanelHeaderAction),
-        )
+        when (icon) {
+            is AppIcon.Vector -> Icon(
+                imageVector = icon.imageVector,
+                contentDescription = contentDescription,
+                modifier = Modifier.size(IconSize.PanelHeaderAction),
+            )
+            is AppIcon.Painted -> Icon(
+                painter = icon.painter(),
+                contentDescription = contentDescription,
+                modifier = Modifier.size(IconSize.PanelHeaderAction),
+            )
+        }
     }
 }
+
+@Composable
+fun GlassPanelHeaderAction(
+    icon: ImageVector,
+    contentDescription: String?,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    backdrop: Backdrop? = null,
+) = GlassPanelHeaderAction(
+    icon = AppIcon.Vector(icon),
+    contentDescription = contentDescription,
+    onClick = onClick,
+    modifier = modifier,
+    backdrop = backdrop,
+)
 
 /**
  * Container for panel content with optional header.

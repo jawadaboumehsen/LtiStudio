@@ -93,6 +93,14 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import org.ide.lti.core.designsystem.generated.resources.Res
 import org.ide.lti.core.designsystem.generated.resources.bottomPanel
+import org.ide.lti.core.designsystem.generated.resources.ideClose
+import org.ide.lti.core.designsystem.generated.resources.ideFile
+import org.ide.lti.core.designsystem.generated.resources.ideFolder
+import org.ide.lti.core.designsystem.generated.resources.ideMenu
+import org.ide.lti.core.designsystem.generated.resources.ideRefresh
+import org.ide.lti.core.designsystem.generated.resources.ideSave
+import org.ide.lti.core.designsystem.generated.resources.ideSearch
+import org.ide.lti.core.designsystem.generated.resources.ideSettings
 import org.ide.lti.core.designsystem.generated.resources.leftPanel_1
 import org.ide.lti.core.designsystem.generated.resources.rightPanel
 import org.ide.lti.core.designsystem.theme.GlassTheme
@@ -208,6 +216,15 @@ object AppIcons {
         )
     }
     val bottomPanelPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.bottomPanel) }
+
+    val FolderPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideFolder) }
+    val FilePainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideFile) }
+    val SearchPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideSearch) }
+    val SettingsPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideSettings) }
+    val RefreshPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideRefresh) }
+    val SavePainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideSave) }
+    val ClearPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideClose) }
+    val MenuPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideMenu) }
 
     val LayoutThreePanel = Icons.Default.ViewQuilt
     val LayoutFourPanel = Icons.Default.ViewStream

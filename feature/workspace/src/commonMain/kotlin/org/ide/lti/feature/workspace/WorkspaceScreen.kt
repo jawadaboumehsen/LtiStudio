@@ -27,6 +27,7 @@ import org.ide.lti.core.designsystem.component.LineEnding
 import org.ide.lti.core.designsystem.component.SidePanelRailPosition
 import org.ide.lti.core.designsystem.component.WorkspacePanel
 import org.ide.lti.core.designsystem.component.rememberLtiLayoutState
+import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.feature.workspace.panels.ai.AIAssistantPanel
 import org.ide.lti.feature.workspace.panels.editor.EditorPanel
@@ -84,7 +85,7 @@ fun WorkspaceScreen(
     val leftTabs = remember(editorViewModel) {
         listOf(
             GlassSidePanelTab(
-                icon = AppIcons.Folder,
+                icon = AppIcon.Painted(AppIcons.FolderPainterResource),
                 label = "Explorer",
             ) {
                 ExplorerPanel(
@@ -99,7 +100,7 @@ fun WorkspaceScreen(
     val rightTabs = remember {
         listOf(
             GlassSidePanelTab(
-                icon = AppIcons.Sparkles,
+                icon = AppIcon.Vector(AppIcons.Sparkles),
                 label = "AI Assistant",
             ) {
                 AIAssistantPanel()

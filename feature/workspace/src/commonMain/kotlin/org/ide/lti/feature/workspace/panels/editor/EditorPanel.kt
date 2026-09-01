@@ -39,6 +39,7 @@ import org.ide.lti.core.designsystem.component.GlassPanelContainer
 import org.ide.lti.core.designsystem.component.GlassPanelHeader
 import org.ide.lti.core.designsystem.component.GlassPanelHeaderAction
 import org.ide.lti.core.designsystem.component.GlassTabBar
+import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
@@ -108,7 +109,7 @@ fun EditorPanel(
                             actions = {
                                 if (currentFile.isModified) {
                                     GlassPanelHeaderAction(
-                                        icon = AppIcons.Save,
+                                        icon = AppIcon.Painted(AppIcons.SavePainterResource),
                                         contentDescription = "Save file",
                                         onClick = { viewModel.saveFile() },
                                     )
@@ -175,7 +176,7 @@ private fun NoWorkspaceEditorView() {
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    imageVector = AppIcons.File,
+                    painter = AppIcons.FilePainterResource(),
                     contentDescription = null,
                     tint = glassColors.onGlassMuted,
                     modifier = Modifier.size(IconSize.ExtraLarge),
@@ -223,7 +224,7 @@ private fun EmptyEditorView() {
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = AppIcons.File,
+                    painter = AppIcons.FilePainterResource(),
                     contentDescription = null,
                     tint = glassColors.glassAccent,
                     modifier = Modifier.size(IconSize.ExtraLarge)

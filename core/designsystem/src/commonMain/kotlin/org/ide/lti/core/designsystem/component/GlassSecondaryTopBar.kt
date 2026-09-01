@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import org.ide.lti.core.designsystem.icon.AppIcon
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.drawBackdrop
 import com.kashif_e.backdrop.effects.blur
@@ -56,7 +57,7 @@ import org.ide.lti.core.designsystem.theme.StrokeWidth
 fun GlassSecondaryTopBar(
     title: String,
     modifier: Modifier = Modifier,
-    icon: ImageVector? = null,
+    icon: AppIcon? = null,
     onMinimize: (() -> Unit)? = null,
     onMaximize: (() -> Unit)? = null,
     onClose: (() -> Unit)? = null,
@@ -112,12 +113,20 @@ fun GlassSecondaryTopBar(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
             ) {
                 if (icon != null) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = glassColors.glassAccent,
-                        modifier = Modifier.size(IconSize.Large)
-                    )
+                    when (icon) {
+                        is AppIcon.Vector -> Icon(
+                            imageVector = icon.imageVector,
+                            contentDescription = null,
+                            tint = glassColors.glassAccent,
+                            modifier = Modifier.size(IconSize.Large),
+                        )
+                        is AppIcon.Painted -> Icon(
+                            painter = icon.painter(),
+                            contentDescription = null,
+                            tint = glassColors.glassAccent,
+                            modifier = Modifier.size(IconSize.Large),
+                        )
+                    }
                 }
                 Text(
                     text = title,

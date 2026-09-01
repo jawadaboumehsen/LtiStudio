@@ -33,6 +33,7 @@ import org.ide.lti.core.designsystem.component.GlassPanelContainer
 import org.ide.lti.core.designsystem.component.GlassPanelHeader
 import org.ide.lti.core.designsystem.component.GlassPanelHeaderAction
 import org.ide.lti.core.designsystem.component.GlassPrimaryButton
+import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
@@ -59,7 +60,7 @@ fun ExplorerPanel(
                 title = "Explorer",
                 actions = {
                     GlassPanelHeaderAction(
-                        icon = AppIcons.Refresh,
+                        icon = AppIcon.Painted(AppIcons.RefreshPainterResource),
                         contentDescription = "Refresh",
                         onClick = { viewModel.refresh() },
                     )
