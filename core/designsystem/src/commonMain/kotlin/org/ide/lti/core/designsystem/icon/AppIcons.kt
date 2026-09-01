@@ -125,7 +125,15 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.jetbrains.compose.resources.painterResource
 
-
+/**
+ * Curated, semantically-named icon accessors for icons actively used by LtiRom Studio.
+ *
+ * The full JetBrains IntelliJ Platform "Expressive UI" icon library (~780+ additional icons
+ * covering actions, nodes, file types, debugger, VCS, diff, tool windows, etc.) is also
+ * available as raw Compose resources under `composeResources/drawable/ide*.svg`. These can be
+ * consumed directly via `org.jetbrains.compose.resources.painterResource(Res.drawable.ideXxx)`
+ * without needing an entry here. See `ICON_MANIFEST.md` in that directory to discover what is available.
+ */
 object AppIcons {
     val OutlinedInfo = Icons.Outlined.Info
     val OutlinedLock = Icons.Outlined.Lock
