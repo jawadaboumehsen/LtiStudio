@@ -72,9 +72,9 @@ object AlphaTokens {
     /**
      * Dedicated tint opacity for [GlassPrimaryButton] and primary glass action surfaces.
      * Ensures the brand accent color (cyan) reads prominently and unmistakably as the primary CTA
-     * over translucent glass surfaces without washing out or hiding backdrop blur (85%).
+     * over translucent glass surfaces without washing out or hiding backdrop blur (55%).
      */
-    const val PrimaryButtonTint: Float = 0.85f
+    const val PrimaryButtonTint: Float = 0.55f
 
     /**
      * Fill opacity multiplier for GlassButton's surface layer, applied on top of the shared
