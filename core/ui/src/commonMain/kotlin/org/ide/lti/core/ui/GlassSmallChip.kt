@@ -38,6 +38,7 @@ import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
 import com.kashif_e.backdrop.highlight.Highlight
+import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassTheme
@@ -93,7 +94,7 @@ fun GlassSmallChip(
                         },
                         highlight = { if (isHovered) Highlight.Ambient else Highlight.Plain },
                         onDrawSurface = {
-                            drawRect(backgroundColor)
+                            drawRect(backgroundColor.copy(alpha = backgroundColor.alpha * AlphaTokens.ButtonFill))
                         },
                     )
                 } else {

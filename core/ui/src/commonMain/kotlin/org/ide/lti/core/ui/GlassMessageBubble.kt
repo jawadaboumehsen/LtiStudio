@@ -28,18 +28,28 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
+import com.kashif_e.backdrop.effects.blur
+import com.kashif_e.backdrop.effects.lens
+import com.kashif_e.backdrop.effects.vibrancy
+import com.kyant.capsule.ContinuousRoundedRectangle
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.ide.lti.core.designsystem.component.GlassIconButton
+import org.ide.lti.core.designsystem.component.glassBorder
+import org.ide.lti.core.designsystem.component.glassEffect
 import org.ide.lti.core.designsystem.icon.AppIcons
+import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
+import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.model.ai.MessageRole
 
@@ -75,9 +85,19 @@ fun GlassMessageBubble(
             horizontalAlignment = if (isUser) Alignment.End else Alignment.Start,
         ) {
             // Message bubble with hover effect
+            val bubbleShape = ContinuousRoundedRectangle(CornerRadius.Medium)
             Box(
                 modifier = Modifier
-                    .padding(Spacing.SmallMedium)
+                    .glassEffect(
+                        shape = bubbleShape,
+                        tint = if (isUser) GlassTheme.colors.glassTint else Color.Unspecified,
+                        effects = {
+                            vibrancy()
+                            blur(BackdropBlur.Button.toPx())
+                            lens(LensRefraction.Button.height.toPx(), LensRefraction.Button.amount.toPx())
+                        },
+                    )
+                    .glassBorder(shape = bubbleShape)
                     .then(
                         if (showCopyButton) {
                             Modifier
@@ -86,7 +106,8 @@ fun GlassMessageBubble(
                         } else {
                             Modifier
                         },
-                    ),
+                    )
+                    .padding(Spacing.SmallMedium),
             ) {
                 Column {
                     // Message content with selection support
