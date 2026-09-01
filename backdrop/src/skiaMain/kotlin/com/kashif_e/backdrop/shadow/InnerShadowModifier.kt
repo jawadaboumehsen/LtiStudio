@@ -169,10 +169,26 @@ internal class InnerShadowNode(
         when (outline) {
             is Outline.Rectangle -> drawContext.canvas.drawRect(outline.rect, paint)
             is Outline.Rounded -> {
-                val path = clipPath ?: Path()
-                path.reset()
-                path.addRoundRect(outline.roundRect)
-                drawContext.canvas.drawPath(path, paint)
+                val roundRect = outline.roundRect
+                if (roundRect.topLeftCornerRadius == roundRect.topRightCornerRadius &&
+                    roundRect.topLeftCornerRadius == roundRect.bottomRightCornerRadius &&
+                    roundRect.topLeftCornerRadius == roundRect.bottomLeftCornerRadius
+                ) {
+                    drawContext.canvas.drawRoundRect(
+                        roundRect.left,
+                        roundRect.top,
+                        roundRect.right,
+                        roundRect.bottom,
+                        roundRect.topLeftCornerRadius.x,
+                        roundRect.topLeftCornerRadius.y,
+                        paint
+                    )
+                } else {
+                    val path = clipPath ?: Path().also { clipPath = it }
+                    path.reset()
+                    path.addRoundRect(roundRect)
+                    drawContext.canvas.drawPath(path, paint)
+                }
             }
             is Outline.Generic -> drawContext.canvas.drawPath(outline.path, paint)
         }

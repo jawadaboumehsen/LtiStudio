@@ -101,12 +101,7 @@ internal class HighlightNode(
                 )
 
             val outline = shapeProvider.shape.createOutline(size, layoutDirection, density)
-            val clipPath =
-                if (outline is Outline.Rounded) {
-                    clipPath ?: Path().also { clipPath = it }
-                } else {
-                    null
-                }
+            val scratchPath = clipPath ?: Path().also { clipPath = it }
 
             configurePaint(highlight)
 
@@ -116,7 +111,7 @@ internal class HighlightNode(
                 translate(1f, 1f) {
                     val canvas = drawContext.canvas
                     canvas.save()
-                    canvas.clipOutline(outline, clipPath)
+                    canvas.clipOutline(outline, scratchPath)
                     drawOutline(outline, paint)
                     canvas.restore()
                 }
@@ -167,10 +162,26 @@ internal class HighlightNode(
         when (outline) {
             is Outline.Rectangle -> drawContext.canvas.drawRect(outline.rect, paint)
             is Outline.Rounded -> {
-                val path = clipPath ?: Path()
-                path.reset()
-                path.addRoundRect(outline.roundRect)
-                drawContext.canvas.drawPath(path, paint)
+                val roundRect = outline.roundRect
+                if (roundRect.topLeftCornerRadius == roundRect.topRightCornerRadius &&
+                    roundRect.topLeftCornerRadius == roundRect.bottomRightCornerRadius &&
+                    roundRect.topLeftCornerRadius == roundRect.bottomLeftCornerRadius
+                ) {
+                    drawContext.canvas.drawRoundRect(
+                        roundRect.left,
+                        roundRect.top,
+                        roundRect.right,
+                        roundRect.bottom,
+                        roundRect.topLeftCornerRadius.x,
+                        roundRect.topLeftCornerRadius.y,
+                        paint
+                    )
+                } else {
+                    val path = clipPath ?: Path().also { clipPath = it }
+                    path.reset()
+                    path.addRoundRect(roundRect)
+                    drawContext.canvas.drawPath(path, paint)
+                }
             }
             is Outline.Generic -> drawContext.canvas.drawPath(outline.path, paint)
         }

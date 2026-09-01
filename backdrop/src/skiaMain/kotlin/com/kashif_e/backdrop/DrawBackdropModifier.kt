@@ -335,11 +335,20 @@ private class DrawBackdropNode(
             updateEffects()
         }
 
+        val canvas = drawContext.canvas
+        val outline = shapeProvider.shape.createOutline(size, layoutDirection, this)
+        val path = clipPath ?: Path().also { clipPath = it }
+
+        canvas.save()
+        canvas.clipOutline(outline, path)
+
         onDrawBehind?.invoke(this)
         drawBackdropLayer()
         onDrawSurface?.invoke(this)
         drawContent()
         onDrawFront?.invoke(this)
+
+        canvas.restore()
     }
 
     override fun onGloballyPositioned(coordinates: LayoutCoordinates) {
