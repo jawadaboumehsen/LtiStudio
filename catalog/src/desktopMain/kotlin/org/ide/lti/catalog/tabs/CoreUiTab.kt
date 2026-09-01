@@ -36,17 +36,17 @@ import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.model.ai.MessageRole
 import org.ide.lti.core.model.filesystem.FileNode
 import org.ide.lti.core.model.filesystem.FileType
 import org.ide.lti.core.ui.GlassChatInput
 import org.ide.lti.core.ui.GlassCodeEditor
-import org.ide.lti.core.ui.syntax.SyntaxLanguage
 import org.ide.lti.core.ui.GlassFileTree
 import org.ide.lti.core.ui.GlassMessageBubble
 import org.ide.lti.core.ui.GlassScrollableTabRow
 import org.ide.lti.core.ui.GlassSmallChip
-import org.ide.lti.core.ui.LtiMessageRole
 import org.ide.lti.core.ui.TabContent
+import org.ide.lti.core.ui.syntax.SyntaxLanguage
 
 @Composable
 fun CoreUiTab() {
@@ -158,14 +158,14 @@ fun main() {
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium)) {
                 GlassMessageBubble(
                     content = "How can I verify the WCAG contrast ratios of my color tokens?",
-                    role = LtiMessageRole.USER,
+                    role = MessageRole.USER,
                     timestamp = 1772184000000L,
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 GlassMessageBubble(
                     content = "Run `./gradlew :core:designsystem:test` to run GlassContrastTest and GlassComponentScreenshotTest.",
-                    role = LtiMessageRole.ASSISTANT,
+                    role = MessageRole.ASSISTANT,
                     timestamp = 1772184010000L,
                     modifier = Modifier.fillMaxWidth()
                 )

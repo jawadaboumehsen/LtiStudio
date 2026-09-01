@@ -20,6 +20,58 @@ enum class SyntaxLanguage(val displayName: String, val extensions: Set<String>) 
         displayName = "Kotlin",
         extensions = setOf("kt", "kts"),
     ),
+    JAVA(
+        displayName = "Java",
+        extensions = setOf("java"),
+    ),
+    JAVASCRIPT(
+        displayName = "JavaScript",
+        extensions = setOf("js", "jsx"),
+    ),
+    TYPESCRIPT(
+        displayName = "TypeScript",
+        extensions = setOf("ts", "tsx"),
+    ),
+    PYTHON(
+        displayName = "Python",
+        extensions = setOf("py"),
+    ),
+    RUST(
+        displayName = "Rust",
+        extensions = setOf("rs"),
+    ),
+    GO(
+        displayName = "Go",
+        extensions = setOf("go"),
+    ),
+    MARKDOWN(
+        displayName = "Markdown",
+        extensions = setOf("md"),
+    ),
+    JSON(
+        displayName = "JSON",
+        extensions = setOf("json"),
+    ),
+    XML(
+        displayName = "XML",
+        extensions = setOf("xml"),
+    ),
+    YAML(
+        displayName = "YAML",
+        extensions = setOf("yaml", "yml"),
+    ),
+    HTML(
+        displayName = "HTML",
+        extensions = setOf("html", "htm"),
+    ),
+    CSS(
+        displayName = "CSS",
+        extensions = setOf("css"),
+    ),
+    GRADLE(
+        displayName = "Gradle",
+        extensions = setOf("gradle"),
+    ),
     PLAIN_TEXT(
         displayName = "Plain Text",
         extensions = emptySet(),
@@ -28,7 +80,7 @@ enum class SyntaxLanguage(val displayName: String, val extensions: Set<String>) 
     val tokenizer: SyntaxTokenizer
         get() = when (this) {
             KOTLIN -> KotlinSyntaxTokenizer
-            PLAIN_TEXT -> PlainTextSyntaxTokenizer
+            else -> PlainTextSyntaxTokenizer
         }
 
     companion object {

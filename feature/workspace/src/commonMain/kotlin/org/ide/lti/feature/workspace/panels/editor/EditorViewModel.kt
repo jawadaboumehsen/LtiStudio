@@ -20,13 +20,14 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.ide.lti.core.domain.repository.filesystem.FileSystemRepository
 import org.ide.lti.core.domain.workspace.WorkspaceManager
+import org.ide.lti.core.ui.syntax.SyntaxLanguage
 
 data class EditorFile(
     val path: String,
     val name: String,
     val content: String,
     val isModified: Boolean = false,
-    val language: String = "text",
+    val language: String = SyntaxLanguage.PLAIN_TEXT.displayName,
 )
 
 sealed interface EditorUiState {
@@ -164,31 +165,6 @@ class EditorViewModel(
     }
 
     private fun detectLanguage(fileName: String): String {
-        val extension = fileName.substringAfterLast('.', "")
-        return EXTENSION_TO_LANGUAGE[extension] ?: "text"
-    }
-
-    private companion object {
-        private val EXTENSION_TO_LANGUAGE = mapOf(
-            "kt" to "kotlin",
-            "kts" to "kotlin",
-            "java" to "java",
-            "js" to "javascript",
-            "jsx" to "javascript",
-            "ts" to "typescript",
-            "tsx" to "typescript",
-            "py" to "python",
-            "rs" to "rust",
-            "go" to "go",
-            "md" to "markdown",
-            "json" to "json",
-            "xml" to "xml",
-            "yaml" to "yaml",
-            "yml" to "yaml",
-            "html" to "html",
-            "htm" to "html",
-            "css" to "css",
-            "gradle" to "gradle",
-        )
+        return SyntaxLanguage.fromFileName(fileName).displayName
     }
 }

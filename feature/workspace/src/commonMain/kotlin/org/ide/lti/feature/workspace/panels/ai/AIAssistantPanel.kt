@@ -42,7 +42,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
-import org.ide.lti.core.designsystem.component.GlassButton
 import org.ide.lti.core.designsystem.component.GlassPanelContainer
 import org.ide.lti.core.designsystem.component.GlassPanelHeader
 import org.ide.lti.core.designsystem.component.GlassPanelHeaderAction
@@ -58,7 +57,6 @@ import org.ide.lti.core.model.ai.MessageRole
 import org.ide.lti.core.ui.GlassChatInput
 import org.ide.lti.core.ui.GlassMessageBubble
 import org.ide.lti.core.ui.GlassSmallChip
-import org.ide.lti.core.ui.LtiMessageRole
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -227,11 +225,7 @@ private fun ChatView(
             items(messages) { message ->
                 GlassMessageBubble(
                     content = message.content,
-                    role = when (message.role) {
-                        MessageRole.USER -> LtiMessageRole.USER
-                        MessageRole.ASSISTANT -> LtiMessageRole.ASSISTANT
-                        MessageRole.SYSTEM -> LtiMessageRole.SYSTEM
-                    },
+                    role = message.role,
                     timestamp = message.timestamp,
                 )
                 Spacer(modifier = Modifier.height(Spacing.SmallMedium))

@@ -174,9 +174,38 @@ class KotlinSyntaxTokenizerTest {
     fun testLanguageDetection() {
         assertEquals(SyntaxLanguage.KOTLIN, SyntaxLanguage.fromFileName("GlassLayout.kt"))
         assertEquals(SyntaxLanguage.KOTLIN, SyntaxLanguage.fromFileName("build.gradle.kts"))
-        assertEquals(SyntaxLanguage.PLAIN_TEXT, SyntaxLanguage.fromFileName("README.md"))
-        assertEquals(SyntaxLanguage.PLAIN_TEXT, SyntaxLanguage.fromFileName("config.json"))
+        assertEquals(SyntaxLanguage.JAVA, SyntaxLanguage.fromFileName("App.java"))
+        assertEquals(SyntaxLanguage.JAVASCRIPT, SyntaxLanguage.fromFileName("index.js"))
+        assertEquals(SyntaxLanguage.JAVASCRIPT, SyntaxLanguage.fromFileName("Component.jsx"))
+        assertEquals(SyntaxLanguage.TYPESCRIPT, SyntaxLanguage.fromFileName("index.ts"))
+        assertEquals(SyntaxLanguage.TYPESCRIPT, SyntaxLanguage.fromFileName("Component.tsx"))
+        assertEquals(SyntaxLanguage.PYTHON, SyntaxLanguage.fromFileName("script.py"))
+        assertEquals(SyntaxLanguage.RUST, SyntaxLanguage.fromFileName("main.rs"))
+        assertEquals(SyntaxLanguage.GO, SyntaxLanguage.fromFileName("server.go"))
+        assertEquals(SyntaxLanguage.MARKDOWN, SyntaxLanguage.fromFileName("README.md"))
+        assertEquals(SyntaxLanguage.JSON, SyntaxLanguage.fromFileName("config.json"))
+        assertEquals(SyntaxLanguage.XML, SyntaxLanguage.fromFileName("pom.xml"))
+        assertEquals(SyntaxLanguage.YAML, SyntaxLanguage.fromFileName("compose.yaml"))
+        assertEquals(SyntaxLanguage.YAML, SyntaxLanguage.fromFileName("compose.yml"))
+        assertEquals(SyntaxLanguage.HTML, SyntaxLanguage.fromFileName("index.html"))
+        assertEquals(SyntaxLanguage.HTML, SyntaxLanguage.fromFileName("index.htm"))
+        assertEquals(SyntaxLanguage.CSS, SyntaxLanguage.fromFileName("styles.css"))
+        assertEquals(SyntaxLanguage.GRADLE, SyntaxLanguage.fromFileName("build.gradle"))
+        assertEquals(SyntaxLanguage.PLAIN_TEXT, SyntaxLanguage.fromFileName("unknown.xyz"))
         assertEquals(SyntaxLanguage.PLAIN_TEXT, SyntaxLanguage.fromFileName("no_ext"))
+    }
+
+    @Test
+    fun testNewLanguagesDefaultToPlainTextTokenizer() {
+        val nonKotlinLanguages = SyntaxLanguage.entries.filter { it != SyntaxLanguage.KOTLIN }
+        for (lang in nonKotlinLanguages) {
+            assertEquals(
+                PlainTextSyntaxTokenizer,
+                lang.tokenizer,
+                "${lang.name} should default to PlainTextSyntaxTokenizer",
+            )
+        }
+        assertEquals(KotlinSyntaxTokenizer, SyntaxLanguage.KOTLIN.tokenizer)
     }
 
     private fun assertTokensValid(text: String, tokens: List<SyntaxToken>) {

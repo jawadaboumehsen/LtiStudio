@@ -43,6 +43,7 @@ import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.model.ai.MessageRole
 
 /**
  * Lti message bubble component for displaying chat messages.
@@ -57,12 +58,12 @@ import org.ide.lti.core.designsystem.theme.Spacing
 @Composable
 fun GlassMessageBubble(
     content: String,
-    role: LtiMessageRole,
+    role: MessageRole,
     timestamp: Long,
     modifier: Modifier = Modifier,
     showCopyButton: Boolean = true,
 ) {
-    val isUser = role == LtiMessageRole.USER
+    val isUser = role == MessageRole.USER
     val alignment = if (isUser) Alignment.CenterEnd else Alignment.CenterStart
 
     val clipboardManager = LocalClipboardManager.current
