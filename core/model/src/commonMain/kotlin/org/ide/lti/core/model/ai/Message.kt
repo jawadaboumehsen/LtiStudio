@@ -9,12 +9,14 @@
  */
 package org.ide.lti.core.model.ai
 
+import kotlin.random.Random
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class Message(
     val role: MessageRole,
     val content: String,
+    val id: String = "${System.currentTimeMillis()}-${Random.nextLong()}",
     val timestamp: Long = System.currentTimeMillis(),
 )
 

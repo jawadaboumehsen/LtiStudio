@@ -114,16 +114,19 @@ fun GlassCodeEditor(
                         .padding(end = Spacing.SmallMedium)
                         .verticalScroll(verticalScrollState),
                 ) {
-                    val lineCount = content.count { it == '\n' } + 1
+                    val lineCount = remember(content) { content.count { it == '\n' } + 1 }
+                    val lineStyle = remember(codeFont, glassColors.onGlassMuted) {
+                        TextStyle(
+                            fontFamily = codeFont,
+                            fontSize = 14.sp,
+                            color = glassColors.onGlassMuted,
+                            lineHeight = 20.sp,
+                        )
+                    }
                     for (lineNumber in 1..lineCount) {
                         Text(
                             text = lineNumber.toString().padStart(4),
-                            style = TextStyle(
-                                fontFamily = codeFont,
-                                fontSize = 14.sp,
-                                color = glassColors.onGlassMuted,
-                                lineHeight = 20.sp,
-                            ),
+                            style = lineStyle,
                             modifier = Modifier.padding(vertical = Spacing.ExtraExtraSmall),
                         )
                     }

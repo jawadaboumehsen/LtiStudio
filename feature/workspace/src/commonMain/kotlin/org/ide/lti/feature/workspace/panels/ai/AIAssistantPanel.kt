@@ -222,7 +222,7 @@ private fun ChatView(
                 .weight(1f)
                 .fillMaxWidth(),
         ) {
-            items(messages) { message ->
+            items(messages, key = { it.id }) { message ->
                 GlassMessageBubble(
                     content = message.content,
                     role = message.role,
