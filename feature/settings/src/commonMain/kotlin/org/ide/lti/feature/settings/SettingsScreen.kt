@@ -45,6 +45,7 @@ import org.ide.lti.core.data.settings.AppSettingsState
 import org.ide.lti.core.designsystem.component.GlassCard
 import org.ide.lti.core.designsystem.component.GlassIconButton
 import org.ide.lti.core.designsystem.component.GlassToggle
+import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
@@ -175,7 +176,7 @@ fun SettingsScreenContent(
                     )
 
                     SettingsToggleItem(
-                        icon = AppIcons.OutlinedNotifications,
+                        icon = AppIcon.Painted(AppIcons.NotificationsPainterResource),
                         title = "Push Notifications",
                         description = "Receive workspace and background task alerts",
                         checked = pushEnabled,
@@ -189,7 +190,7 @@ fun SettingsScreenContent(
 
 @Composable
 private fun SettingsToggleItem(
-    icon: ImageVector,
+    icon: AppIcon,
     title: String,
     description: String,
     checked: Boolean,
@@ -206,12 +207,20 @@ private fun SettingsToggleItem(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.weight(1f).padding(end = Spacing.Medium),
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = GlassTheme.colors.glassAccent,
-                modifier = Modifier.size(IconSize.Large),
-            )
+            when (icon) {
+                is AppIcon.Vector -> Icon(
+                    imageVector = icon.imageVector,
+                    contentDescription = null,
+                    tint = GlassTheme.colors.glassAccent,
+                    modifier = Modifier.size(IconSize.Large),
+                )
+                is AppIcon.Painted -> Icon(
+                    painter = icon.painter(),
+                    contentDescription = null,
+                    tint = GlassTheme.colors.glassAccent,
+                    modifier = Modifier.size(IconSize.Large),
+                )
+            }
 
             Column {
                 Text(
@@ -234,6 +243,23 @@ private fun SettingsToggleItem(
         )
     }
 }
+
+@Composable
+private fun SettingsToggleItem(
+    icon: ImageVector,
+    title: String,
+    description: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) = SettingsToggleItem(
+    icon = AppIcon.Vector(icon),
+    title = title,
+    description = description,
+    checked = checked,
+    onCheckedChange = onCheckedChange,
+    modifier = modifier,
+)
 
 @Composable
 private fun SettingsValueItem(

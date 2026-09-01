@@ -102,10 +102,10 @@ private fun GlassFileTreeItem(
             // Expansion indicator for directories
             if (node.type == FileType.DIRECTORY) {
                 Icon(
-                    imageVector = if (node.path in expandedNodes) {
-                        AppIcons.KeyboardArrowDown
+                    painter = if (node.path in expandedNodes) {
+                        AppIcons.ChevronDownPainterResource()
                     } else {
-                        AppIcons.KeyboardArrowRight
+                        AppIcons.ChevronRightPainterResource()
                     },
                     contentDescription = null,
                     modifier = Modifier.size(IconSize.Medium),

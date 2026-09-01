@@ -14,10 +14,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -113,7 +111,7 @@ fun GlassMessageBubble(
                                 size = ComponentSize.PanelHeaderAction,
                             ) {
                                 Icon(
-                                    imageVector = AppIcons.ContentCopy,
+                                    painter = AppIcons.CopyPainterResource(),
                                     contentDescription = "Copy",
                                     modifier = Modifier.size(IconSize.Medium),
                                 )

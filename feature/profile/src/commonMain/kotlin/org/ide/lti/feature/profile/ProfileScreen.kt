@@ -38,6 +38,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.GlassCard
 import org.ide.lti.core.designsystem.component.GlassPrimaryButton
+import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
@@ -93,7 +94,7 @@ fun ProfileScreenContent(
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
-                        imageVector = AppIcons.Person,
+                        painter = AppIcons.UserPainterResource(),
                         contentDescription = "Profile Avatar",
                         modifier = Modifier.size(IconSize.ActionCard),
                         tint = GlassTheme.colors.glassAccent,
@@ -132,7 +133,7 @@ fun ProfileScreenContent(
                     verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
                 ) {
                     ProfileInfoRow(
-                        icon = AppIcons.Person,
+                        icon = AppIcon.Painted(AppIcons.UserPainterResource),
                         label = "Username",
                         value = "developer",
                     )
@@ -171,7 +172,7 @@ fun ProfileScreenContent(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
-                            imageVector = AppIcons.Edit,
+                            painter = AppIcons.EditPainterResource(),
                             contentDescription = null,
                             modifier = Modifier.size(IconSize.Medium),
                         )
@@ -185,7 +186,7 @@ fun ProfileScreenContent(
 
 @Composable
 private fun ProfileInfoRow(
-    icon: ImageVector,
+    icon: AppIcon,
     label: String,
     value: String,
     modifier: Modifier = Modifier,
@@ -195,12 +196,20 @@ private fun ProfileInfoRow(
         horizontalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = GlassTheme.colors.glassAccent,
-            modifier = Modifier.size(IconSize.Medium),
-        )
+        when (icon) {
+            is AppIcon.Vector -> Icon(
+                imageVector = icon.imageVector,
+                contentDescription = null,
+                tint = GlassTheme.colors.glassAccent,
+                modifier = Modifier.size(IconSize.Medium),
+            )
+            is AppIcon.Painted -> Icon(
+                painter = icon.painter(),
+                contentDescription = null,
+                tint = GlassTheme.colors.glassAccent,
+                modifier = Modifier.size(IconSize.Medium),
+            )
+        }
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
@@ -217,3 +226,16 @@ private fun ProfileInfoRow(
         }
     }
 }
+
+@Composable
+private fun ProfileInfoRow(
+    icon: ImageVector,
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+) = ProfileInfoRow(
+    icon = AppIcon.Vector(icon),
+    label = label,
+    value = value,
+    modifier = modifier,
+)

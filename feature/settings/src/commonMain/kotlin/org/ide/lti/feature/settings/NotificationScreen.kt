@@ -26,7 +26,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -45,7 +44,6 @@ import org.ide.lti.core.designsystem.component.GlassTextButton
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
-import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -141,7 +139,7 @@ fun NotificationScreenContent(
                             contentAlignment = Alignment.Center,
                         ) {
                             Icon(
-                                imageVector = AppIcons.OutlinedNotifications,
+                                painter = AppIcons.NotificationsPainterResource(),
                                 contentDescription = null,
                                 tint = GlassTheme.colors.glassAccent,
                                 modifier = Modifier.size(IconSize.ExtraLarge),
@@ -244,7 +242,7 @@ private fun NotificationCard(
                     modifier = Modifier
                         .size(ComponentSize.StatusDotSize)
                         .clip(CircleShape)
-                        .background(GlassTheme.colors.glassAccent)
+                        .background(GlassTheme.colors.glassAccent),
                 )
             }
         }

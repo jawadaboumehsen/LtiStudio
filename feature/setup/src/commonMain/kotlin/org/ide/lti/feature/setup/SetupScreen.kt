@@ -47,6 +47,7 @@ import org.ide.lti.core.designsystem.component.GlassButton
 import org.ide.lti.core.designsystem.component.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.GlassCard
 import org.ide.lti.core.designsystem.component.GlassPanel
+import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
@@ -144,7 +145,7 @@ fun SetupScreenContent(
                 ActionCard(
                     title = "Clone from Git...",
                     subtitle = "Clone a repository from GitHub or remote",
-                    icon = AppIcons.Copy,
+                    icon = AppIcon.Painted(AppIcons.CopyPainterResource),
                     isPrimary = false,
                     onClick = onCloneGit,
                     modifier = Modifier.weight(1f),
@@ -152,7 +153,7 @@ fun SetupScreenContent(
                 ActionCard(
                     title = "New File...",
                     subtitle = "Create a new scratch file",
-                    icon = AppIcons.File,
+                    icon = AppIcon.Painted(AppIcons.FilePainterResource),
                     isPrimary = false,
                     onClick = onNewFile,
                     modifier = Modifier.weight(1f),
@@ -202,7 +203,7 @@ fun SetupScreenContent(
                             contentAlignment = Alignment.Center,
                         ) {
                             Icon(
-                                imageVector = AppIcons.Folder,
+                                painter = AppIcons.FolderPainterResource(),
                                 contentDescription = null,
                                 tint = GlassTheme.colors.onGlassMuted,
                                 modifier = Modifier.size(IconSize.Large),
@@ -319,7 +320,7 @@ private fun SidebarItem(
 private fun ActionCard(
     title: String,
     subtitle: String,
-    icon: ImageVector,
+    icon: AppIcon,
     isPrimary: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -349,12 +350,20 @@ private fun ActionCard(
                     ),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = title,
-                    modifier = Modifier.size(IconSize.Medium),
-                    tint = GlassTheme.colors.glassAccent,
-                )
+                when (icon) {
+                    is AppIcon.Vector -> Icon(
+                        imageVector = icon.imageVector,
+                        contentDescription = title,
+                        modifier = Modifier.size(IconSize.Medium),
+                        tint = GlassTheme.colors.glassAccent,
+                    )
+                    is AppIcon.Painted -> Icon(
+                        painter = icon.painter(),
+                        contentDescription = title,
+                        modifier = Modifier.size(IconSize.Medium),
+                        tint = GlassTheme.colors.glassAccent,
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(Spacing.Small))
             Text(
@@ -373,6 +382,23 @@ private fun ActionCard(
         }
     }
 }
+
+@Composable
+private fun ActionCard(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    isPrimary: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) = ActionCard(
+    title = title,
+    subtitle = subtitle,
+    icon = AppIcon.Vector(icon),
+    isPrimary = isPrimary,
+    onClick = onClick,
+    modifier = modifier,
+)
 
 @Composable
 private fun RecentProjectCard(
@@ -399,7 +425,7 @@ private fun RecentProjectCard(
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    imageVector = AppIcons.Folder,
+                    painter = AppIcons.FolderPainterResource(),
                     contentDescription = null,
                     modifier = Modifier.size(IconSize.Medium),
                     tint = GlassTheme.colors.glassAccent,
@@ -420,7 +446,7 @@ private fun RecentProjectCard(
                 )
             }
             Icon(
-                imageVector = AppIcons.ChevronRight,
+                painter = AppIcons.ChevronRightPainterResource(),
                 contentDescription = null,
                 tint = GlassTheme.colors.onGlassMuted,
                 modifier = Modifier.size(IconSize.Medium),
