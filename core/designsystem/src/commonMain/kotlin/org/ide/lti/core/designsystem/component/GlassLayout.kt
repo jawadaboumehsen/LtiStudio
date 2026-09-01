@@ -393,6 +393,10 @@ private fun GlassContentPanel(
         tint = Color.Transparent,
         borderColor = if (isFocused) glassColors.glassBorderHighlight else Color.Unspecified,
         borderWidth = StrokeWidth.Hairline,
+        // The focus border above and the passive Highlight.Plain edge shimmer both draw on the
+        // same panel edge - stacking them reads as two parallel lines. Drop the highlight while
+        // focused so the border stroke is the sole edge treatment, matching the button focus ring.
+        highlight = { if (isFocused) null else Highlight.Plain },
         effects = if (isDragging) {
             LtiLayoutDefaults.DragOptimizedEffects
         } else {
