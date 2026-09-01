@@ -13,19 +13,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import org.ide.lti.core.data.utils.NetworkMonitor
-import org.ide.lti.core.data.utils.TimeZoneMonitor
 import org.ide.lti.feature.setup.setupScreen
 import org.ide.lti.feature.settings.navigateToNotification
 import org.ide.lti.feature.settings.notificationScreen
 import org.ide.lti.feature.workspace.workspaceScreen
-import org.ide.lti.shared.ui.Lti
 
 @Composable
 internal fun RootNavGraph(
-    networkMonitor: NetworkMonitor,
-    timeZoneMonitor: TimeZoneMonitor,
     navHostController: NavHostController,
     startDestination: String,
     modifier: Modifier = Modifier,
@@ -58,13 +52,5 @@ internal fun RootNavGraph(
         notificationScreen(
             onBackClick = { navHostController.popBackStack() },
         )
-
-        // Legacy main screen (kept for reference)
-        composable(LtiNavGraph.MAIN_GRAPH) {
-            Lti(
-                networkMonitor = networkMonitor,
-                timeZoneMonitor = timeZoneMonitor,
-            )
-        }
     }
 }

@@ -16,8 +16,6 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import org.ide.lti.core.data.settings.AppSettingsState
-import org.ide.lti.core.data.utils.NetworkMonitor
-import org.ide.lti.core.data.utils.TimeZoneMonitor
 import org.ide.lti.core.designsystem.component.CosmicAuroraBackdrop
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.feature.workspace.WORKSPACE_ROUTE
@@ -28,14 +26,10 @@ import org.koin.compose.koinInject
 fun LtiSharedApp(
     modifier: Modifier = Modifier,
     onOpenSettings: () -> Unit = {},
-    networkMonitor: NetworkMonitor = koinInject(),
-    timeZoneMonitor: TimeZoneMonitor = koinInject(),
     appSettingsState: AppSettingsState = koinInject(),
 ) {
     SharedApp(
         onOpenSettings = onOpenSettings,
-        networkMonitor = networkMonitor,
-        timeZoneMonitor = timeZoneMonitor,
         appSettingsState = appSettingsState,
         modifier = modifier,
     )
@@ -44,8 +38,6 @@ fun LtiSharedApp(
 @Composable
 private fun SharedApp(
     onOpenSettings: () -> Unit,
-    networkMonitor: NetworkMonitor,
-    timeZoneMonitor: TimeZoneMonitor,
     appSettingsState: AppSettingsState,
     modifier: Modifier = Modifier,
 ) {
@@ -62,8 +54,6 @@ private fun SharedApp(
             CosmicAuroraBackdrop(backdrop = backdrop)
 
             RootNavGraph(
-                networkMonitor = networkMonitor,
-                timeZoneMonitor = timeZoneMonitor,
                 navHostController = navController,
                 startDestination = WORKSPACE_ROUTE,
                 onOpenSettings = onOpenSettings,

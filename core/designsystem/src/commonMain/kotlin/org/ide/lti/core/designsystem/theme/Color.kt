@@ -330,11 +330,4 @@ object GlassLayoutColors {
     val PanelShadow = Color(0x26000000)
 }
 
-/**
- * Centralized token colors for password strength indicator states.
- */
-object PasswordStrengthColors {
-    val Weak = Color(0xFF8B6609)
-    val Strong = Color(0xFF41B06D)
-    val VeryStrong = Color(0xFF9C27B0)
-}
+

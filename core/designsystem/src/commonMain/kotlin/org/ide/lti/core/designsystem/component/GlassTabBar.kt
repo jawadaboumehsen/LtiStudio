@@ -242,14 +242,12 @@ fun GlassTabBar(
     tabs: List<String>,
     onTabSelected: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    selectedTabIndex: Int = 0,
-    selectedIndex: Int = selectedTabIndex,
+    selectedIndex: Int = 0,
     onTabClosed: ((Int) -> Unit)? = null,
     actions: (@Composable () -> Unit)? = null,
     backdrop: Backdrop? = null,
 ) {
     val actualBackdrop = backdrop ?: GlassTheme.backdrop
-    val activeIndex = if (selectedIndex != selectedTabIndex) selectedIndex else selectedTabIndex
     Row(
         modifier = modifier
             .height(ComponentSize.TabBarHeight)
@@ -265,7 +263,7 @@ fun GlassTabBar(
             tabs.forEachIndexed { index, title ->
                 GlassTabItem(
                     title = title,
-                    selected = index == activeIndex,
+                    selected = index == selectedIndex,
                     onSelect = { onTabSelected(index) },
                     onClose = onTabClosed?.let { { it(index) } },
                     backdrop = actualBackdrop,

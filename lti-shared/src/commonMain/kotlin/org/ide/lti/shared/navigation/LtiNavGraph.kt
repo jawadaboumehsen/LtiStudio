@@ -11,5 +11,4 @@ package org.ide.lti.shared.navigation
 
 internal object LtiNavGraph {
     const val ROOT_GRAPH = "root_graph"
-    const val MAIN_GRAPH = "main_graph"
 }

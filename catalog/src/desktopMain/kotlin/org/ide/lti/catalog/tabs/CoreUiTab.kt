@@ -46,8 +46,6 @@ import org.ide.lti.core.ui.GlassMessageBubble
 import org.ide.lti.core.ui.GlassScrollableTabRow
 import org.ide.lti.core.ui.GlassSmallChip
 import org.ide.lti.core.ui.LtiMessageRole
-import org.ide.lti.core.ui.PasswordStrengthIndicator
-import org.ide.lti.core.ui.PasswordStrengthState
 import org.ide.lti.core.ui.TabContent
 
 @Composable
@@ -211,19 +209,6 @@ fun main() {
                     }
                 ),
                 pagerState = pagerState,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-
-        // Section 5: Password Strength Indicator
-        SectionContainer(
-            title = "5. Password Strength Meter (PasswordStrengthIndicator)",
-            description = "Visual security strength gauge with color transitions."
-        ) {
-            PasswordStrengthIndicator(
-                state = PasswordStrengthState.STRONG,
-                currentCharacterCount = 14,
-                minimumCharacterCount = 8,
                 modifier = Modifier.fillMaxWidth()
             )
         }

@@ -20,15 +20,12 @@ Add to `core:ui` when:
 - Building complex widgets that combine multiple components
 - Creating stateful composables with ViewModels
 - Adding utility functions for navigation, effects, lifecycle
-- Implementing business logic in UI (like password strength validation)
 - Platform-specific UI utilities (share, file pickers)
 
 Examples:
 - Code editor and file tree components (`GlassCodeEditor.kt`, `GlassFileTree.kt`)
 - Chat input and message bubbles (`GlassChatInput.kt`, `GlassMessageBubble.kt`)
 - Scrollable tab rows and small chips (`GlassScrollableTabRow.kt`, `GlassSmallChip.kt`)
-- Password strength indicator (`PasswordStrengthIndicator.kt`)
-- ViewModel base classes and lifecycle effect handlers
 
 ## Design System Architecture & Centralized Tokens
 
@@ -100,7 +97,6 @@ data class SyntaxColorScheme(
   - `ToggleColors`: `ActiveLight` (`#34C759`), `ActiveDark` (`#30D158`).
   - `PreviewSampleColors`: `Blue`, `Purple`, `Orange`, `Green`.
   - `GlassLayoutColors.PanelShadow`: Panel shadow color token (`#26000000`).
-  - `PasswordStrengthColors`: `Weak` (`#8B6609`), `Strong` (`#41B06D`), `VeryStrong` (`#9C27B0`).
 
 ### 2. Alpha & Opacity Tokens (`Alpha.kt`)
 
@@ -114,7 +110,7 @@ All opacity values are centralized in `AlphaTokens` (no raw float literals in UI
 All layout metrics are centralized in `Dimens.kt`:
 - `Spacing`: `None` (0dp), `Hairline` (1dp), `ExtraExtraSmall` (2dp), `ExtraSmall` (4dp), `Five` (5dp), `Compact` (6dp), `Small` (8dp), `MediumSmall` (10dp), `SmallMedium` (12dp), `Fourteen` (14dp), `Medium` (16dp), `Large` (20dp), `ExtraLarge` (24dp), `ExtraExtraLarge` (32dp), `DialogPadding` (24dp), `PanelPadding` (8dp), `TabHorizontal` (20dp).
 - `CornerRadius`: `None` (0dp), `ExtraSmall` (4dp), `Compact` (6dp), `Small` (6dp), `MediumSmall` (8dp), `Medium` (12dp), `ExtraLarge` (28dp), `Pill` (50dp), `Card` (16dp), `Dialog` (16dp), `Panel` (12dp).
-- `ComponentSize`: `TopBarHeight` (44dp), `StatusBarHeight` (22dp), `StatusBarHeightAlt` (24dp), `BottomTabsHeight` (64dp), `BottomTabItemHeight` (56dp), `ButtonMinWidth` (64dp), `ButtonMinHeight` (40dp), `IconButtonSize` (40dp), `TopBarButtonSize` (28dp), `SidePanelRailButtonSize` (36dp), `LogoBadgeSize` (28dp), `SearchCapsuleHeight` (28dp), `SearchCapsuleMinWidth` (160dp), `SearchCapsuleMaxWidth` (280dp), `SegmentedToggleHeight` (28dp), `SegmentedButtonSize` (24dp), `TopBarDividerHeight` (18dp), `WindowControlWidth` (36dp), `WindowControlHeight` (28dp), `PanelHeaderAction` (24dp), `PanelHeaderActionTouchTarget` (32dp), `TabBarHeight` (36dp), `TabItemHeight` (32dp), `OtpBoxSize` (48dp), `ToggleTrackWidth` (64dp), `ToggleTrackHeight` (28dp), `ToggleThumbWidth` (40dp), `ToggleThumbHeight` (24dp), `ToggleDragWidth` (20dp), `SliderTrackHeight` (6dp), `SliderThumbWidth` (40dp), `SliderThumbHeight` (24dp), `DragHandleWidth` (32dp), `DragHandleHeight` (4dp), `ProgressBarHeight` (4dp), `PerformanceMonitorWidth` (220dp), `MinPanelWidth` (180dp), `MaxPanelWidth` (600dp), `MinPanelHeight` (100dp), `MaxPanelHeight` (600dp), `ToggleButtonTopPadding` (48dp), `ToggleButtonEndPadding` (8dp), `ToggleButtonSpacing` (4dp), `DividerWidth` (8dp), `MaxRevealDp` (75dp), `VelocityThreshold` (100dp), `DefaultVelocityThreshold` (10dp), `SetupSidebarWidth` (240dp), `ActionCardHeight` (120dp), `EmptyStateBadgeSize` (56dp), `SpinnerSize` (28dp), `ShortcutHelpWidth` (320dp), `StatusDotSize` (8dp), `ActiveIndicatorWidth` (64dp), `ActiveIndicatorHeight` (32dp).
+- `ComponentSize`: `TopBarHeight` (44dp), `StatusBarHeight` (22dp), `StatusBarHeightAlt` (24dp), `BottomTabsHeight` (64dp), `BottomTabItemHeight` (56dp), `ButtonMinWidth` (64dp), `ButtonMinHeight` (40dp), `IconButtonSize` (40dp), `TopBarButtonSize` (28dp), `SidePanelRailButtonSize` (36dp), `LogoBadgeSize` (28dp), `SearchCapsuleHeight` (28dp), `SearchCapsuleMinWidth` (160dp), `SearchCapsuleMaxWidth` (280dp), `SegmentedToggleHeight` (28dp), `SegmentedButtonSize` (24dp), `TopBarDividerHeight` (18dp), `WindowControlWidth` (36dp), `WindowControlHeight` (28dp), `PanelHeaderAction` (24dp), `PanelHeaderActionTouchTarget` (32dp), `TabBarHeight` (36dp), `TabItemHeight` (32dp), `OtpBoxSize` (48dp), `ToggleTrackWidth` (64dp), `ToggleTrackHeight` (28dp), `ToggleThumbWidth` (40dp), `ToggleThumbHeight` (24dp), `ToggleDragWidth` (20dp), `SliderTrackHeight` (6dp), `SliderThumbWidth` (40dp), `SliderThumbHeight` (24dp), `DragHandleWidth` (32dp), `DragHandleHeight` (4dp), `ProgressBarHeight` (4dp), `PerformanceMonitorWidth` (220dp), `MinPanelWidth` (180dp), `MaxPanelWidth` (600dp), `MinPanelHeight` (100dp), `MaxPanelHeight` (600dp), `ToggleButtonTopPadding` (48dp), `ToggleButtonEndPadding` (8dp), `ToggleButtonSpacing` (4dp), `DividerWidth` (8dp), `SetupSidebarWidth` (240dp), `ActionCardHeight` (120dp), `EmptyStateBadgeSize` (56dp), `SpinnerSize` (28dp), `ShortcutHelpWidth` (320dp), `StatusDotSize` (8dp).
 - `StrokeWidth`: `Hairline` (0.5dp), `Standard` (1dp), `Focused` (2dp), `Active` (3dp).
 - `IconSize`: `Indicator` (6dp), `Small` (12dp), `WindowControl` (13dp), `Search` (14dp), `Segmented` (15dp), `Medium` (16dp), `SidePanelRail` (18dp), `PanelHeaderAction` (18dp), `Large` (24dp), `ExtraLarge` (28dp), `ActionCard` (32dp), `Avatar` (80dp).
 - `Elevation`: `None` (0dp), `Raised` (4dp), `Panel` (8dp).
@@ -536,7 +532,7 @@ GlassTextField(
 
 ### 4. `GlassTabBar.kt` & `GlassBottomTabs.kt`
 
-- `GlassTabBar(selectedTabIndex, onTabSelected, modifier, tabs)`: Horizontal tab bar with pill indicator and tab items (`GlassTab`).
+- `GlassTabBar(tabs, onTabSelected, modifier, selectedIndex)`: Horizontal tab bar with pill indicator and tab items (`GlassTab`).
 - `GlassBottomTabs(...)`: Bottom navigation tabs with interactive spotlight positioning.
 
 ### 5. `GlassNavigation.kt`

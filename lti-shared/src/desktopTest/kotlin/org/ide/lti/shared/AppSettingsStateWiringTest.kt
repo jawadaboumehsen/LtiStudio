@@ -15,12 +15,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.runDesktopComposeUiTest
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.datetime.TimeZone
 import org.ide.lti.core.data.settings.AppSettingsState
-import org.ide.lti.core.data.utils.NetworkMonitor
-import org.ide.lti.core.data.utils.TimeZoneMonitor
 import org.ide.lti.feature.settings.SettingsScreenContent
 import org.ide.lti.shared.di.initKoin
 import org.junit.After
@@ -32,14 +27,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class AppSettingsStateWiringTest {
-
-    private class FakeNetworkMonitor : NetworkMonitor {
-        override val isOnline: Flow<Boolean> = flowOf(true)
-    }
-
-    private class FakeTimeZoneMonitor : TimeZoneMonitor {
-        override val currentTimeZone: Flow<TimeZone> = flowOf(TimeZone.currentSystemDefault())
-    }
 
     @Before
     fun setUp() {
@@ -92,8 +79,6 @@ class AppSettingsStateWiringTest {
 
         setContent {
             LtiSharedApp(
-                networkMonitor = FakeNetworkMonitor(),
-                timeZoneMonitor = FakeTimeZoneMonitor(),
                 appSettingsState = settingsState,
             )
         }
@@ -129,8 +114,6 @@ class AppSettingsStateWiringTest {
 
         setContent {
             LtiSharedApp(
-                networkMonitor = FakeNetworkMonitor(),
-                timeZoneMonitor = FakeTimeZoneMonitor(),
                 appSettingsState = settingsState,
             )
         }

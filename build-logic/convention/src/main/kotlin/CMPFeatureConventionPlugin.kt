@@ -45,9 +45,6 @@ class CMPFeatureConventionPlugin : Plugin<Project> {
                 add("commonMainImplementation", libs.findLibrary("jb.bundle").get())
                 add("commonMainImplementation", libs.findLibrary("jb.composeNavigation").get())
                 add("commonMainImplementation", libs.findLibrary("kotlinx.collections.immutable").get())
-                add("commonMainImplementation", libs.findLibrary("kotlinx.collections.immutable").get())
-
-
             }
 
 

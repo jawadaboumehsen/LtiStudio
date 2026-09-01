@@ -2,7 +2,6 @@
 <SmellBaseline>
   <ManuallySuppressedIssues></ManuallySuppressedIssues>
   <CurrentIssues>
-    <ID>LongParameterList:RevealSwipe.kt$( backgroundStartActionLabel: String?, backgroundEndActionLabel: String?, shape: CornerBasedShape, backgroundCardStartColor: Color, backgroundCardEndColor: Color, card: @Composable BoxScope.( shape: Shape, content: @Composable ColumnScope.() -&gt; Unit, ) -&gt; Unit, modifier: Modifier = Modifier, enableSwipe: Boolean = true, onContentClick: (() -&gt; Unit)? = null, onContentLongClick: ((DpOffset) -&gt; Unit)? = null, onBackgroundStartClick: () -&gt; Boolean = { true }, onBackgroundEndClick: () -&gt; Boolean = { true }, closeOnContentClick: Boolean = true, closeOnBackgroundClick: Boolean = true, alphaEasing: Easing = MotionEasing.EmphasizedDecelerate, coroutineScope: CoroutineScope = rememberCoroutineScope(), state: RevealState = rememberRevealState( maxRevealDp = ComponentSize.MaxRevealDp, directions = setOf( RevealDirection.StartToEnd, RevealDirection.EndToStart, ), ), hiddenContentEnd: @Composable BoxScope.() -&gt; Unit = {}, hiddenContentStart: @Composable BoxScope.() -&gt; Unit = {}, content: @Composable (Shape) -&gt; Unit, )</ID>
     <ID>MatchingDeclarationName:ShareUtils.desktop.kt$ShareUtils</ID>
   </CurrentIssues>
 </SmellBaseline>

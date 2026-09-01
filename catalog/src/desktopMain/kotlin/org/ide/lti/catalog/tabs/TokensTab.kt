@@ -49,7 +49,6 @@ import org.ide.lti.core.designsystem.theme.MotionDuration
 import org.ide.lti.core.designsystem.theme.MotionEasing
 import org.ide.lti.core.designsystem.theme.MotionSpring
 import org.ide.lti.core.designsystem.theme.MotionThreshold
-import org.ide.lti.core.designsystem.theme.PasswordStrengthColors
 import org.ide.lti.core.designsystem.theme.PerformanceMonitorColors
 import org.ide.lti.core.designsystem.theme.PreviewSampleColors
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -281,9 +280,6 @@ private fun SpecializedColorsGrid() {
         "Preview.Orange" to PreviewSampleColors.Orange,
         "Preview.Green" to PreviewSampleColors.Green,
         "GlassLayout.PanelShadow" to GlassLayoutColors.PanelShadow,
-        "Password.Weak" to PasswordStrengthColors.Weak,
-        "Password.Strong" to PasswordStrengthColors.Strong,
-        "Password.VeryStrong" to PasswordStrengthColors.VeryStrong,
     )
 
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {

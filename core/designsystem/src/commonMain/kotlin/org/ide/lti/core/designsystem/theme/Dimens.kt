@@ -136,17 +136,12 @@ object ComponentSize {
     val ToggleButtonEndPadding: Dp = 8.dp
     val ToggleButtonSpacing: Dp = 4.dp
     val DividerWidth: Dp = 8.dp
-    val MaxRevealDp: Dp = 75.dp
-    val VelocityThreshold: Dp = 100.dp
-    val DefaultVelocityThreshold: Dp = 10.dp
     val SetupSidebarWidth: Dp = 240.dp
     val ActionCardHeight: Dp = 120.dp
     val EmptyStateBadgeSize: Dp = 56.dp
     val SpinnerSize: Dp = 28.dp
     val ShortcutHelpWidth: Dp = 320.dp
     val StatusDotSize: Dp = 8.dp
-    val ActiveIndicatorWidth: Dp = 64.dp
-    val ActiveIndicatorHeight: Dp = 32.dp
     val ModalCardMaxWidth: Dp = 440.dp
     val SettingsMaxWidth: Dp = 760.dp
     val SettingsWindowWidth: Dp = 800.dp
