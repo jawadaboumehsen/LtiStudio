@@ -9,6 +9,10 @@
  */
 package org.ide.lti.feature.workspace
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -21,6 +25,7 @@ import org.ide.lti.core.common.event.PanelId
 import org.ide.lti.core.designsystem.component.GlassLayout
 import org.ide.lti.core.designsystem.component.GlassSidePanelRail
 import org.ide.lti.core.designsystem.component.GlassSidePanelTab
+import org.ide.lti.core.designsystem.component.GlassSidePanelTabStrip
 import org.ide.lti.core.designsystem.component.GlassStatusBar
 import org.ide.lti.core.designsystem.component.GlassTopBar
 import org.ide.lti.core.designsystem.component.LineEnding
@@ -86,7 +91,7 @@ fun WorkspaceScreen(
         listOf(
             GlassSidePanelTab(
                 icon = AppIcon.Painted(AppIcons.FolderPainterResource),
-                label = "Explorer",
+                label = "Files",
             ) {
                 ExplorerPanel(
                     onFileClick = { path ->
@@ -111,16 +116,21 @@ fun WorkspaceScreen(
     GlassLayout(
         state = ltiLayoutState,
         modifier = modifier,
-        leftRail = {
-            GlassSidePanelRail(
-                tabs = leftTabs,
-                selectedIndex = leftTabIndex,
-                onSelectedIndexChange = { leftTabIndex = it },
-                railPosition = SidePanelRailPosition.Left,
-            )
-        },
         leftPanel = {
-            leftTabs.getOrNull(leftTabIndex)?.content?.invoke()
+            Column(modifier = Modifier.fillMaxSize()) {
+                GlassSidePanelTabStrip(
+                    tabs = leftTabs,
+                    selectedIndex = leftTabIndex,
+                    onSelectedIndexChange = { leftTabIndex = it },
+                )
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
+                ) {
+                    leftTabs.getOrNull(leftTabIndex)?.content?.invoke()
+                }
+            }
         },
         mainContent = {
             EditorPanel(

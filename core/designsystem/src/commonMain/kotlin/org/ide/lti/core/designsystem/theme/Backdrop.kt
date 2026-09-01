@@ -34,7 +34,6 @@ object BackdropBlur {
     // Semantic aliases
     val Button: Dp = 2.dp
     val TextField: Dp = 2.dp
-    val SearchCapsule: Dp = 2.dp
     val TopBar: Dp = 4.dp
     val Minimap: Dp = 4.dp
 

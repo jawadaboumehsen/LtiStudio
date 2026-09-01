@@ -13,15 +13,20 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
@@ -187,6 +192,87 @@ fun GlassSidePanelRail(
                 iconColumn()
             }
         }
+    }
+}
+
+/**
+ * Horizontal tab strip component for IDE side panels (tool windows).
+ *
+ * Renders tab pills in a top-anchored horizontal row with an icon, text label, and subtle
+ * bottom hairline divider separating the tab switcher from the panel content area below.
+ *
+ * @param tabs List of [GlassSidePanelTab] items to display.
+ * @param selectedIndex The index of the currently active tab.
+ * @param onSelectedIndexChange Callback invoked when a tab is clicked.
+ * @param modifier Modifier applied to the tab strip layout.
+ */
+@Composable
+fun GlassSidePanelTabStrip(
+    tabs: List<GlassSidePanelTab>,
+    selectedIndex: Int,
+    onSelectedIndexChange: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (tabs.isEmpty()) return
+
+    val glassColors = GlassTheme.colors
+
+    Column(
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(ComponentSize.TabBarHeight)
+                .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraExtraSmall),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            tabs.forEachIndexed { index, tab ->
+                val isSelected = index == selectedIndex
+                val desc = tab.contentDescription ?: tab.label
+                GlassButton(
+                    onClick = { onSelectedIndexChange(index) },
+                    variant = if (isSelected) GlassButtonVariant.Primary else GlassButtonVariant.Standard,
+                    shape = RoundedCornerShape(CornerRadius.Compact),
+                    minWidth = Spacing.None,
+                    minHeight = ComponentSize.TopBarButtonSize,
+                    contentPadding = PaddingValues(
+                        horizontal = Spacing.Small,
+                        vertical = Spacing.ExtraExtraSmall,
+                    ),
+                    modifier = Modifier.semantics {
+                        contentDescription = desc
+                        role = Role.Tab
+                    },
+                ) {
+                    when (tab.icon) {
+                        is AppIcon.Vector -> Icon(
+                            imageVector = tab.icon.imageVector,
+                            contentDescription = null,
+                            modifier = Modifier.size(IconSize.SidePanelRail),
+                        )
+                        is AppIcon.Painted -> Icon(
+                            painter = tab.icon.painter(),
+                            contentDescription = null,
+                            modifier = Modifier.size(IconSize.SidePanelRail),
+                        )
+                    }
+                    Text(
+                        text = tab.label,
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1,
+                    )
+                }
+            }
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(StrokeWidth.Hairline)
+                .background(glassColors.glassBorder.copy(alpha = AlphaTokens.Faint)),
+        )
     }
 }
 

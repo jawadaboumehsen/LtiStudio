@@ -9,12 +9,8 @@
  */
 package org.ide.lti.core.designsystem.component
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -24,28 +20,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.onPointerEvent
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.drawBackdrop
 import com.kashif_e.backdrop.effects.blur
@@ -65,7 +49,6 @@ import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
-import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /**
@@ -74,7 +57,7 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
  * Implements Apple-inspired Liquid Glass effects using the backdrop engine:
  * - Brand logo badge with glowing accent gradient.
  * - Workspace / file breadcrumb pill indicator.
- * - Interactive Liquid Glass Command Search capsule with shortcut badge.
+ * - Compact icon-only search button.
  * - Segmented Liquid Glass panel layout toggles (Explorer, Terminal, AI Assistant).
  * - Utility actions (Notifications, Settings) with micro-interaction hover states.
  * - Platform window management controls with smooth hover responses.
@@ -163,17 +146,6 @@ fun GlassTopBar(
 
         Spacer(modifier = Modifier.weight(1f))
 
-        LiquidSearchCapsule(
-            onClick = onSearchClick,
-            backdrop = actualBackdrop,
-            modifier = Modifier.widthIn(
-                min = ComponentSize.SearchCapsuleMinWidth,
-                max = ComponentSize.SearchCapsuleMaxWidth,
-            ),
-        )
-
-        Spacer(modifier = Modifier.weight(1f))
-
         GlassTopBarRightSection(
             isLeftPanelVisible = isLeftPanelVisible,
             isMiddleDownPanelVisible = isMiddleDownPanelVisible,
@@ -181,6 +153,7 @@ fun GlassTopBar(
             onClickLeftPanelIcon = onClickLeftPanelIcon,
             onClickMiddleDownPanelIcon = onClickMiddleDownPanelIcon,
             onClickRightPanelIcon = onClickRightPanelIcon,
+            onSearchClick = onSearchClick,
             onNotificationsClick = onNotificationsClick,
             onSettingsClick = onSettingsClick,
             effectiveMinimize = effectiveMinimize,
@@ -290,6 +263,7 @@ private fun GlassTopBarRightSection(
     onClickLeftPanelIcon: () -> Unit,
     onClickMiddleDownPanelIcon: () -> Unit,
     onClickRightPanelIcon: () -> Unit,
+    onSearchClick: () -> Unit,
     onNotificationsClick: () -> Unit,
     onSettingsClick: () -> Unit,
     effectiveMinimize: () -> Unit,
@@ -311,6 +285,18 @@ private fun GlassTopBarRightSection(
             onClickMiddleDownPanelIcon = onClickMiddleDownPanelIcon,
             onClickRightPanelIcon = onClickRightPanelIcon,
         )
+
+        GlassIconButton(
+            onClick = onSearchClick,
+            size = ComponentSize.TopBarButtonSize,
+            backdrop = backdrop,
+        ) {
+            Icon(
+                painter = AppIcons.SearchPainterResource(),
+                contentDescription = "Search",
+                modifier = Modifier.size(IconSize.Medium),
+            )
+        }
 
         GlassIconButton(
             onClick = onNotificationsClick,
@@ -349,104 +335,6 @@ private fun GlassTopBarRightSection(
             onMaximize = effectiveMaximize,
             onClose = effectiveClose,
         )
-    }
-}
-
-/**
- * Liquid Glass Search Capsule with keyboard shortcut badge.
- */
-@OptIn(ExperimentalComposeUiApi::class)
-@Composable
-private fun LiquidSearchCapsule(
-    onClick: () -> Unit,
-    backdrop: Backdrop?,
-    modifier: Modifier = Modifier,
-) {
-    var isHovered by remember { mutableStateOf(false) }
-    val glassColors = GlassTheme.colors
-    val effectsEnabled = GlassTheme.effectsEnabled
-
-    val borderColor by animateColorAsState(
-        targetValue = if (isHovered) glassColors.glassBorderHighlight else glassColors.glassBorder,
-        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion),
-    )
-
-    val scale by animateFloatAsState(
-        targetValue = if (isHovered) 1.01f else 1f,
-        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion),
-    )
-
-    Row(
-        modifier = modifier
-            .height(ComponentSize.SearchCapsuleHeight)
-            .scale(scale)
-            .clip(RoundedCornerShape(CornerRadius.Pill))
-            .then(
-                if (effectsEnabled && backdrop != null) {
-                    Modifier.drawBackdrop(
-                        backdrop = backdrop,
-                        shape = { RoundedCornerShape(CornerRadius.Pill) },
-                        effects = {
-                            vibrancy()
-                            blur(BackdropBlur.SearchCapsule.toPx())
-                            lens(LensRefraction.TopBar.height.toPx(), LensRefraction.TopBar.amount.toPx())
-                        },
-                        highlight = { if (isHovered) Highlight.Ambient else Highlight.Plain },
-                        onDrawSurface = {
-                            drawRect(
-                                if (isHovered) glassColors.glassSurfaceElevated else glassColors.glassSurface,
-                            )
-                        },
-                    )
-                } else {
-                    Modifier.background(glassColors.glassSurface)
-                },
-            )
-            .border(width = StrokeWidth.Hairline, color = borderColor, shape = RoundedCornerShape(CornerRadius.Pill))
-            .onPointerEvent(PointerEventType.Enter) { isHovered = true }
-            .onPointerEvent(PointerEventType.Exit) { isHovered = false }
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                role = Role.Button,
-                onClick = onClick,
-            )
-            .padding(horizontal = Spacing.MediumSmall),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-    ) {
-        Icon(
-            painter = AppIcons.SearchPainterResource(),
-            contentDescription = "Search",
-            modifier = Modifier.size(IconSize.Search),
-            tint = if (isHovered) glassColors.glassAccent else glassColors.onGlassMuted,
-        )
-
-        Text(
-            text = "Search files, actions...",
-            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
-            color = if (isHovered) glassColors.onGlassSecondary else glassColors.onGlassMuted,
-            modifier = Modifier.weight(1f),
-            maxLines = 1,
-        )
-
-        // Shortcut pill badge
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(CornerRadius.ExtraSmall))
-                .background(glassColors.glassSurfaceElevated)
-                .border(StrokeWidth.Hairline, glassColors.glassBorder, RoundedCornerShape(CornerRadius.ExtraSmall))
-                .padding(horizontal = Spacing.Compact, vertical = Spacing.ExtraExtraSmall),
-        ) {
-            Text(
-                text = "Ctrl+P",
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontSize = 9.5.sp,
-                    fontFamily = FontFamily.Monospace,
-                ),
-                color = glassColors.onGlassSecondary,
-            )
-        }
     }
 }
 

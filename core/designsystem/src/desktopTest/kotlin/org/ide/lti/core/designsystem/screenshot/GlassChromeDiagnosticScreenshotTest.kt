@@ -485,7 +485,7 @@ class GlassChromeDiagnosticScreenshotTest {
 
     /**
      * Diagnostic Integration Offscreen Render & Screenshot Regression Test for the continuous
-     * frame combined with [org.ide.lti.core.designsystem.component.GlassSidePanelRail], matching
+     * frame combined with [org.ide.lti.core.designsystem.component.GlassSidePanelTabStrip], matching
      * exactly how `WorkspaceScreen` wires the left/right panels in production.
      */
     @OptIn(ExperimentalTestApi::class)
@@ -509,7 +509,7 @@ class GlassChromeDiagnosticScreenshotTest {
                 val leftTabs = listOf(
                     org.ide.lti.core.designsystem.component.GlassSidePanelTab(
                         icon = AppIcons.Folder,
-                        label = "Explorer",
+                        label = "Files",
                     ) { MockExplorerPanel() },
                 )
 
@@ -526,15 +526,22 @@ class GlassChromeDiagnosticScreenshotTest {
                     GlassLayout(
                         state = layoutState,
                         modifier = Modifier.fillMaxSize(),
-                        leftRail = {
-                            org.ide.lti.core.designsystem.component.GlassSidePanelRail(
-                                tabs = leftTabs,
-                                selectedIndex = 0,
-                                onSelectedIndexChange = {},
-                                railPosition = org.ide.lti.core.designsystem.component.SidePanelRailPosition.Left,
-                            )
+                        leftPanel = {
+                            Column(modifier = Modifier.fillMaxSize()) {
+                                org.ide.lti.core.designsystem.component.GlassSidePanelTabStrip(
+                                    tabs = leftTabs,
+                                    selectedIndex = 0,
+                                    onSelectedIndexChange = {},
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxWidth(),
+                                ) {
+                                    MockExplorerPanel()
+                                }
+                            }
                         },
-                        leftPanel = { MockExplorerPanel() },
                         mainContent = { MockEditorPanel() },
                         bottomPanel = {},
                         rightPanel = { MockAIAssistantPanel() },

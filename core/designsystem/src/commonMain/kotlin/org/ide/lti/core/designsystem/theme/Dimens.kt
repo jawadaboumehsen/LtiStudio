@@ -103,9 +103,6 @@ object ComponentSize {
     val TopBarButtonSize: Dp = 28.dp
     val SidePanelRailButtonSize: Dp = 36.dp
     val LogoBadgeSize: Dp = 28.dp
-    val SearchCapsuleHeight: Dp = 28.dp
-    val SearchCapsuleMinWidth: Dp = 160.dp
-    val SearchCapsuleMaxWidth: Dp = 280.dp
     val SegmentedToggleHeight: Dp = 28.dp
     val SegmentedButtonSize: Dp = 24.dp
     val TopBarDividerHeight: Dp = 18.dp
