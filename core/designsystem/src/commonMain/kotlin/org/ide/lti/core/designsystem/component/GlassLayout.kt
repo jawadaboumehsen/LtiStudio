@@ -1123,7 +1123,8 @@ class GlassLayoutState(
     val minCenterWeight: Float = 0.4f,
     val maxLeftWeight: Float = 0.5f,
     val maxRightWeight: Float = 0.5f,
-    val maxBottomWeight: Float = 0.6f
+    val maxBottomWeight: Float = 0.6f,
+    val onDragEnd: ((panel: WorkspacePanel, weight: Float) -> Unit)? = null,
 ) {
     private val _initialLeftWeight = initialLeftWeight
     private val _initialRightWeight = initialRightWeight
@@ -1197,6 +1198,7 @@ class GlassLayoutState(
             showLeft = false
             leftTriedBelowMinThisDrag = false
         }
+        onDragEnd?.invoke(WorkspacePanel.Explorer, leftWeight)
     }
 
     fun toggleLeft() {
@@ -1239,6 +1241,7 @@ class GlassLayoutState(
             showRight = false
             rightTriedBelowMinThisDrag = false
         }
+        onDragEnd?.invoke(WorkspacePanel.AiAssistant, rightWeight)
     }
 
     fun toggleRight() {
@@ -1280,6 +1283,7 @@ class GlassLayoutState(
             showBottom = false
             bottomTriedBelowMinThisDrag = false
         }
+        onDragEnd?.invoke(WorkspacePanel.Terminal, bottomWeight)
     }
 
     fun toggleBottom() {
@@ -1328,7 +1332,8 @@ fun rememberLtiLayoutState(
     minCenterWeight: Float = 0.4f,
     maxLeftWeight: Float = 0.5f,
     maxRightWeight: Float = 0.5f,
-    maxBottomWeight: Float = 0.6f
+    maxBottomWeight: Float = 0.6f,
+    onDragEnd: ((panel: WorkspacePanel, weight: Float) -> Unit)? = null,
 ): GlassLayoutState = remember {
     GlassLayoutState(
         initialLeftWeight = initialLeftWeight,
@@ -1343,7 +1348,8 @@ fun rememberLtiLayoutState(
         minCenterWeight = minCenterWeight,
         maxLeftWeight = maxLeftWeight,
         maxRightWeight = maxRightWeight,
-        maxBottomWeight = maxBottomWeight
+        maxBottomWeight = maxBottomWeight,
+        onDragEnd = onDragEnd,
     )
 }
 

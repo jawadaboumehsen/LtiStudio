@@ -51,6 +51,10 @@ class WorkspaceViewModel(
         panelManager.togglePanelVisibility(panelId)
     }
 
+    fun setPanelSize(panelId: PanelId, size: Float) {
+        panelManager.setPanelSize(panelId, size)
+    }
+
     fun setActiveTab(panelId: PanelId, tabIndex: Int) {
         panelManager.setActiveTab(panelId, tabIndex)
     }

@@ -10,12 +10,14 @@
 package org.ide.lti.feature.workspace
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import org.ide.lti.core.common.event.PanelId
 import org.ide.lti.core.designsystem.component.GlassLayout
 import org.ide.lti.core.designsystem.component.GlassSidePanelRail
 import org.ide.lti.core.designsystem.component.GlassSidePanelTab
@@ -23,12 +25,14 @@ import org.ide.lti.core.designsystem.component.GlassStatusBar
 import org.ide.lti.core.designsystem.component.GlassTopBar
 import org.ide.lti.core.designsystem.component.LineEnding
 import org.ide.lti.core.designsystem.component.SidePanelRailPosition
+import org.ide.lti.core.designsystem.component.WorkspacePanel
 import org.ide.lti.core.designsystem.component.rememberLtiLayoutState
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.feature.workspace.panels.ai.AIAssistantPanel
 import org.ide.lti.feature.workspace.panels.editor.EditorPanel
 import org.ide.lti.feature.workspace.panels.explorer.ExplorerPanel
 import org.ide.lti.feature.workspace.panels.terminal.TerminalPanel
+import org.koin.compose.viewmodel.koinViewModel
 
 /**
  * Main workspace screen with complete glass theme integration.
@@ -48,8 +52,26 @@ fun WorkspaceScreen(
     modifier: Modifier = Modifier,
     onOpenSettings: () -> Unit = {},
     onOpenNotifications: () -> Unit = {},
+    viewModel: WorkspaceViewModel = koinViewModel(),
 ) {
-    val ltiLayoutState = rememberLtiLayoutState()
+    val workspaceName by viewModel.workspaceName.collectAsState()
+    val initialPanelsState = viewModel.panelsState.value
+
+    val initialLeftState = initialPanelsState[PanelId.LEFT]
+    val initialRightState = initialPanelsState[PanelId.RIGHT]
+    val initialBottomState = initialPanelsState[PanelId.BOTTOM]
+
+    val ltiLayoutState = rememberLtiLayoutState(
+        initialLeftWeight = initialLeftState?.size ?: 0.2f,
+        initialRightWeight = initialRightState?.size ?: 0.25f,
+        initialBottomWeight = initialBottomState?.size ?: 0.3f,
+        initialShowLeft = initialLeftState?.visible ?: true,
+        initialShowRight = initialRightState?.visible ?: true,
+        initialShowBottom = initialBottomState?.visible ?: false,
+        onDragEnd = { panel, size ->
+            viewModel.setPanelSize(panel.toPanelId(), size)
+        },
+    )
     var leftTabIndex by rememberSaveable { mutableStateOf(0) }
     var rightTabIndex by rememberSaveable { mutableStateOf(0) }
 
@@ -118,12 +140,22 @@ fun WorkspaceScreen(
         },
         topBar = {
             GlassTopBar(
+                workspaceName = workspaceName,
                 isLeftPanelVisible = ltiLayoutState.showLeft,
                 isRightPanelVisible = ltiLayoutState.showRight,
                 isMiddleDownPanelVisible = ltiLayoutState.showBottom,
-                onClickLeftPanelIcon = { ltiLayoutState.toggleLeft() },
-                onClickRightPanelIcon = { ltiLayoutState.toggleRight() },
-                onClickMiddleDownPanelIcon = { ltiLayoutState.toggleBottom() },
+                onClickLeftPanelIcon = {
+                    ltiLayoutState.toggleLeft()
+                    viewModel.togglePanelVisibility(PanelId.LEFT)
+                },
+                onClickRightPanelIcon = {
+                    ltiLayoutState.toggleRight()
+                    viewModel.togglePanelVisibility(PanelId.RIGHT)
+                },
+                onClickMiddleDownPanelIcon = {
+                    ltiLayoutState.toggleBottom()
+                    viewModel.togglePanelVisibility(PanelId.BOTTOM)
+                },
                 onNotificationsClick = onOpenNotifications,
                 onSettingsClick = onOpenSettings,
                 drawOwnChrome = false,
@@ -140,4 +172,14 @@ fun WorkspaceScreen(
             )
         },
     )
+}
+
+/**
+ * Maps design-system layout [WorkspacePanel] identity to domain [PanelId] slot.
+ */
+private fun WorkspacePanel.toPanelId(): PanelId = when (this) {
+    WorkspacePanel.Explorer -> PanelId.LEFT
+    WorkspacePanel.Editor -> PanelId.MAIN
+    WorkspacePanel.Terminal -> PanelId.BOTTOM
+    WorkspacePanel.AiAssistant -> PanelId.RIGHT
 }
