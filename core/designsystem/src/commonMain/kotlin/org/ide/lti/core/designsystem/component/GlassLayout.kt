@@ -796,7 +796,8 @@ private object LtiLayoutAnimations {
      */
     val PanelExpandSpring = spring<androidx.compose.ui.unit.IntSize>(
         dampingRatio = Spring.DampingRatioNoBouncy,
-        stiffness = Spring.StiffnessLow  // Changed from Medium to Low for smoother motion
+        // Changed from Medium to Low for smoother motion
+        stiffness = Spring.StiffnessLow,
     )
 
     /**
@@ -804,8 +805,10 @@ private object LtiLayoutAnimations {
      * Uses Material Design's standard easing (0.4, 0.0, 0.2, 1.0) for smooth acceleration.
      */
     val PanelFade = tween<Float>(
-        durationMillis = MotionDuration.Standard,  // Reduced from 400ms for snappier feel
-        easing = MotionEasing.Standard  // Custom professional easing
+        // Reduced from 400ms for snappier feel
+        durationMillis = MotionDuration.Standard,
+        // Custom professional easing
+        easing = MotionEasing.Standard,
     )
 
     /**
@@ -813,8 +816,9 @@ private object LtiLayoutAnimations {
      * No bounce for precise, professional feel.
      */
     val DividerContentSize = spring<androidx.compose.ui.unit.IntSize>(
-        dampingRatio = Spring.DampingRatioNoBouncy,  // Changed from MediumBouncy to NoBouncy
-        stiffness = Spring.StiffnessMedium
+        // Changed from MediumBouncy to NoBouncy
+        dampingRatio = Spring.DampingRatioNoBouncy,
+        stiffness = Spring.StiffnessMedium,
     )
 
     /**
@@ -913,9 +917,11 @@ private fun GlassDragDivider(
     val alpha by animateFloatAsState(
         targetValue = if (isHovered || isDragging) 1f else 0f,
         animationSpec = if (isDragging) {
-            snap()  // Instant update during drag
+            // Instant update during drag
+            snap()
         } else {
-            resolveAnimationSpec(GlassTheme.reducedMotion)  // Smooth fade on hover, instant on reduced motion
+            // Smooth fade on hover, instant on reduced motion
+            resolveAnimationSpec(GlassTheme.reducedMotion)
         }
     )
 

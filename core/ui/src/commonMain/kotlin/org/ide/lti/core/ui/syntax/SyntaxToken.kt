@@ -28,7 +28,7 @@ enum class SyntaxTokenKind {
 /**
  * Represents a single highlighted character range within the code editor.
  *
- * @property range The character index range `[first..last]` in the source text.
+ * @property range The character index range (first to last, inclusive) in the source text.
  * @property kind The semantic token kind.
  */
 @Immutable
