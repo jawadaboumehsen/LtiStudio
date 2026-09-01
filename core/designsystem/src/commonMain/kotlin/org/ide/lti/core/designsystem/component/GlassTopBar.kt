@@ -284,6 +284,7 @@ private fun GlassTopBarRightSection(
             onClickLeftPanelIcon = onClickLeftPanelIcon,
             onClickMiddleDownPanelIcon = onClickMiddleDownPanelIcon,
             onClickRightPanelIcon = onClickRightPanelIcon,
+            backdrop = backdrop,
         )
 
         GlassIconButton(
@@ -350,15 +351,27 @@ private fun SegmentedPanelLayoutToggle(
     onClickMiddleDownPanelIcon: () -> Unit,
     onClickRightPanelIcon: () -> Unit,
     modifier: Modifier = Modifier,
+    backdrop: Backdrop? = null,
 ) {
     val glassColors = GlassTheme.colors
+    val toggleShape = ContinuousRoundedRectangle(CornerRadius.Small)
 
     Row(
         modifier = modifier
             .height(ComponentSize.SegmentedToggleHeight)
-            .clip(RoundedCornerShape(CornerRadius.Small))
-            .background(glassColors.glassSurface)
-            .border(StrokeWidth.Hairline, glassColors.glassBorder, RoundedCornerShape(CornerRadius.Small))
+            .glassEffect(
+                backdrop = backdrop,
+                shape = toggleShape,
+                effects = {
+                    vibrancy()
+                    blur(BackdropBlur.Subtle.toPx())
+                    lens(LensRefraction.Toggle.height.toPx(), LensRefraction.Toggle.amount.toPx())
+                },
+            )
+            .glassBorder(
+                width = StrokeWidth.Hairline,
+                shape = toggleShape,
+            )
             .padding(Spacing.ExtraExtraSmall),
         horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
         verticalAlignment = Alignment.CenterVertically,

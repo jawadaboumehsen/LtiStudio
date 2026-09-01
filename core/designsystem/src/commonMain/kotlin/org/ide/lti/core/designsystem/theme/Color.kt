@@ -211,7 +211,7 @@ fun dynamicGlassColorScheme(
         GlassColorScheme(
             glassSurface = colorScheme.surface.copy(alpha = AlphaTokens.Elevated),
             glassSurfaceElevated = colorScheme.surfaceContainerHigh.copy(alpha = AlphaTokens.Prominent),
-            chromeSurface = colorScheme.surfaceContainerLowest,
+            chromeSurface = colorScheme.surfaceContainerLowest.copy(alpha = AlphaTokens.Elevated),
             canvasSurface = colorScheme.surfaceContainerLow,
             glassTint = colorScheme.primary.copy(alpha = AlphaTokens.Glow),
             glassTintSecondary = colorScheme.secondary.copy(alpha = AlphaTokens.Glow),
@@ -229,9 +229,9 @@ fun dynamicGlassColorScheme(
         )
     } else {
         GlassColorScheme(
-            glassSurface = colorScheme.surface.copy(alpha = AlphaTokens.IconTint),
+            glassSurface = colorScheme.surface.copy(alpha = AlphaTokens.Elevated),
             glassSurfaceElevated = colorScheme.surfaceContainerHighest.copy(alpha = AlphaTokens.PrimaryButtonTint),
-            chromeSurface = colorScheme.surfaceContainer,
+            chromeSurface = colorScheme.surfaceContainer.copy(alpha = AlphaTokens.Elevated),
             canvasSurface = colorScheme.surfaceContainerLowest,
             glassTint = colorScheme.primary.copy(alpha = AlphaTokens.Subtle),
             glassTintSecondary = colorScheme.secondary.copy(alpha = AlphaTokens.Subtle),
