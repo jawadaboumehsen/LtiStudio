@@ -25,11 +25,14 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.window.WindowPlacement
+import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.rememberWindowState
 import com.kashif_e.backdrop.backdrops.layerBackdrop
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import dev.nucleusframework.application.DecoratedWindow
 import dev.nucleusframework.application.LocalNucleusWindow
+import dev.nucleusframework.application.NucleusWindow
 import dev.nucleusframework.application.nucleusApplication
 import org.ide.lti.core.data.settings.AppSettingsState
 import org.ide.lti.core.designsystem.component.CosmicAuroraBackdrop
@@ -45,6 +48,33 @@ import org.ide.lti.feature.settings.SettingsScreen
 import org.ide.lti.shared.LtiSharedApp
 import org.ide.lti.shared.di.initKoin
 import org.koin.compose.koinInject
+
+private fun buildWindowControlActions(
+    windowState: WindowState,
+    nucleusWin: NucleusWindow,
+    onClose: () -> Unit,
+): WindowControlActions = WindowControlActions(
+    onMinimize = {
+        windowState.isMinimized = true
+        try { nucleusWin.setMinimized(true) } catch (_: Throwable) {}
+    },
+    onMaximize = {
+        windowState.placement = if (windowState.placement == WindowPlacement.Maximized) {
+            WindowPlacement.Floating
+        } else {
+            WindowPlacement.Maximized
+        }
+        try { nucleusWin.setMaximized(!nucleusWin.isMaximized) } catch (_: Throwable) {}
+    },
+    onClose = onClose,
+    onDragWindow = {
+        try { nucleusWin.unsafe.taoWindow?.dragWindow() } catch (_: Throwable) {}
+    },
+    isMaximized = {
+        windowState.placement == WindowPlacement.Maximized ||
+            try { nucleusWin.isMaximized } catch (_: Throwable) { false }
+    },
+)
 
 fun main(args: Array<String>) = nucleusApplication(args) {
     remember { initKoin() }
@@ -63,26 +93,11 @@ fun main(args: Array<String>) = nucleusApplication(args) {
     ) {
         val nucleusWin = LocalNucleusWindow.current
         CompositionLocalProvider(
-            LocalWindowControlActions provides WindowControlActions(
-                onMinimize = {
-                    windowState.isMinimized = true
-                    try { nucleusWin.setMinimized(true) } catch (_: Throwable) {}
-                },
-                onMaximize = {
-                    windowState.placement = if (windowState.placement == androidx.compose.ui.window.WindowPlacement.Maximized) {
-                        androidx.compose.ui.window.WindowPlacement.Floating
-                    } else {
-                        androidx.compose.ui.window.WindowPlacement.Maximized
-                    }
-                    try { nucleusWin.setMaximized(!nucleusWin.isMaximized) } catch (_: Throwable) {}
-                },
-                onClose = {
-                    exitApplication()
-                },
-                onDragWindow = {
-                    try { nucleusWin.unsafe.taoWindow?.dragWindow() } catch (_: Throwable) {}
-                },
-            )
+            LocalWindowControlActions provides buildWindowControlActions(
+                windowState = windowState,
+                nucleusWin = nucleusWin,
+                onClose = ::exitApplication,
+            ),
         ) {
             LtiSharedApp(
                 onOpenSettings = { showSettingsWindow = true },
@@ -102,26 +117,11 @@ fun main(args: Array<String>) = nucleusApplication(args) {
         val appSettingsState: AppSettingsState = koinInject()
 
         CompositionLocalProvider(
-            LocalWindowControlActions provides WindowControlActions(
-                onMinimize = {
-                    settingsWindowState.isMinimized = true
-                    try { settingsWin.setMinimized(true) } catch (_: Throwable) {}
-                },
-                onMaximize = {
-                    settingsWindowState.placement = if (settingsWindowState.placement == androidx.compose.ui.window.WindowPlacement.Maximized) {
-                        androidx.compose.ui.window.WindowPlacement.Floating
-                    } else {
-                        androidx.compose.ui.window.WindowPlacement.Maximized
-                    }
-                    try { settingsWin.setMaximized(!settingsWin.isMaximized) } catch (_: Throwable) {}
-                },
-                onClose = {
-                    showSettingsWindow = false
-                },
-                onDragWindow = {
-                    try { settingsWin.unsafe.taoWindow?.dragWindow() } catch (_: Throwable) {}
-                },
-            )
+            LocalWindowControlActions provides buildWindowControlActions(
+                windowState = settingsWindowState,
+                nucleusWin = settingsWin,
+                onClose = { showSettingsWindow = false },
+            ),
         ) {
             val backdrop = rememberLayerBackdrop()
 

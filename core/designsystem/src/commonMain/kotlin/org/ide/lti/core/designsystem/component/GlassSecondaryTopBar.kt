@@ -61,6 +61,7 @@ fun GlassSecondaryTopBar(
     onMaximize: (() -> Unit)? = null,
     onClose: (() -> Unit)? = null,
     onDrag: (() -> Unit)? = null,
+    isMaximized: Boolean? = null,
     backdrop: Backdrop? = null,
 ) {
     val actualBackdrop = backdrop ?: GlassTheme.backdrop
@@ -72,6 +73,7 @@ fun GlassSecondaryTopBar(
     val effectiveMaximize = onMaximize ?: localControls.onMaximize
     val effectiveClose = onClose ?: localControls.onClose
     val effectiveDrag = onDrag ?: localControls.onDragWindow
+    val effectiveIsMaximized = isMaximized ?: localControls.isMaximized()
 
     Row(
         modifier = modifier
@@ -139,6 +141,7 @@ fun GlassSecondaryTopBar(
                 onMinimize = effectiveMinimize,
                 onMaximize = effectiveMaximize,
                 onClose = effectiveClose,
+                isMaximized = effectiveIsMaximized,
             )
         }
     }

@@ -25,11 +25,9 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.CropSquare
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.FilterNone
 import androidx.compose.material.icons.filled.FlashOff
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.Folder
@@ -48,7 +46,6 @@ import androidx.compose.material.icons.filled.QrCode2
 import androidx.compose.material.icons.filled.RadioButtonChecked
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Share
@@ -116,9 +113,6 @@ import org.ide.lti.core.designsystem.generated.resources.ideSearch
 import org.ide.lti.core.designsystem.generated.resources.ideSettings
 import org.ide.lti.core.designsystem.generated.resources.ideShow
 import org.ide.lti.core.designsystem.generated.resources.ideUser
-import org.ide.lti.core.designsystem.generated.resources.ideWindowMaximize
-import org.ide.lti.core.designsystem.generated.resources.ideWindowMinimize
-import org.ide.lti.core.designsystem.generated.resources.ideWindowRestore
 import org.ide.lti.core.designsystem.generated.resources.leftPanel_1
 import org.ide.lti.core.designsystem.generated.resources.rightPanel
 import org.ide.lti.core.designsystem.theme.GlassTheme
@@ -259,9 +253,6 @@ object AppIcons {
     val ChevronRightPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideChevronRight) }
     val ChevronLeftPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideChevronLeft) }
     val ChevronDownPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideChevronDown) }
-    val WindowMinimizePainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideWindowMinimize) }
-    val WindowMaximizePainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideWindowMaximize) }
-    val WindowRestorePainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideWindowRestore) }
     val UserPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideUser) }
     val LockedPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideLocked) }
     val ShowPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideShow) }
@@ -272,11 +263,6 @@ object AppIcons {
 
     val LayoutThreePanel = Icons.Default.ViewQuilt
     val LayoutFourPanel = Icons.Default.ViewStream
-
-    // Window control icons
-    val WindowMinimize = Icons.Default.Remove
-    val WindowMaximize = Icons.Default.CropSquare
-    val WindowRestore = Icons.Default.FilterNone
 
     // Top app bar icons
     val Menu = Icons.Default.Menu

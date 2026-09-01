@@ -17,10 +17,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.CropSquare
-import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
@@ -40,6 +36,12 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.Role
+import org.ide.lti.core.designsystem.icon.AppIcon
+import org.ide.lti.core.designsystem.icon.AppIcons
+import org.ide.lti.core.designsystem.icon.ideWindowsCloseSmall
+import org.ide.lti.core.designsystem.icon.ideWindowsMaximizeSmall
+import org.ide.lti.core.designsystem.icon.ideWindowsMinimizeSmall
+import org.ide.lti.core.designsystem.icon.ideWindowsRestoreSmall
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassTheme
@@ -69,6 +71,7 @@ fun DesktopWindowControls(
     onMaximize: () -> Unit,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
+    isMaximized: Boolean = LocalWindowControlActions.current.isMaximized(),
 ) {
     Row(
         modifier = modifier,
@@ -76,19 +79,21 @@ fun DesktopWindowControls(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         WindowControlButton(
-            icon = Icons.Default.Remove,
+            icon = AppIcon.Painted(AppIcons.ideWindowsMinimizeSmall),
             contentDescription = "Minimize",
             onClick = onMinimize,
         )
 
         WindowControlButton(
-            icon = Icons.Default.CropSquare,
-            contentDescription = "Maximize",
+            icon = AppIcon.Painted(
+                if (isMaximized) AppIcons.ideWindowsRestoreSmall else AppIcons.ideWindowsMaximizeSmall,
+            ),
+            contentDescription = if (isMaximized) "Restore" else "Maximize",
             onClick = onMaximize,
         )
 
         WindowControlButton(
-            icon = Icons.Default.Close,
+            icon = AppIcon.Painted(AppIcons.ideWindowsCloseSmall),
             contentDescription = "Close",
             onClick = onClose,
             isCloseButton = true,
@@ -102,7 +107,7 @@ fun DesktopWindowControls(
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun WindowControlButton(
-    icon: ImageVector,
+    icon: AppIcon,
     contentDescription: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -138,14 +143,37 @@ fun WindowControlButton(
             ),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = contentDescription,
-            modifier = Modifier.size(IconSize.WindowControl),
-            tint = iconTint,
-        )
+        when (icon) {
+            is AppIcon.Vector -> Icon(
+                imageVector = icon.imageVector,
+                contentDescription = contentDescription,
+                modifier = Modifier.size(IconSize.WindowControl),
+                tint = iconTint,
+            )
+            is AppIcon.Painted -> Icon(
+                painter = icon.painter(),
+                contentDescription = contentDescription,
+                modifier = Modifier.size(IconSize.WindowControl),
+                tint = iconTint,
+            )
+        }
     }
 }
+
+@Composable
+fun WindowControlButton(
+    icon: ImageVector,
+    contentDescription: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    isCloseButton: Boolean = false,
+) = WindowControlButton(
+    icon = AppIcon.Vector(icon),
+    contentDescription = contentDescription,
+    onClick = onClick,
+    modifier = modifier,
+    isCloseButton = isCloseButton,
+)
 
 /**
  * Window drag gesture detector modifier that coordinates with OS window dragging.
