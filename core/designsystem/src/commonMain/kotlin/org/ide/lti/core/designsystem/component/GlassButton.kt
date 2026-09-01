@@ -11,8 +11,6 @@ package org.ide.lti.core.designsystem.component
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.snap
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -50,9 +48,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.util.fastCoerceAtMost
-import androidx.compose.ui.util.lerp
-import com.kyant.capsule.ContinuousCapsule
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.BackdropEffectScope
 import com.kashif_e.backdrop.drawBackdrop
@@ -60,12 +55,12 @@ import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
 import com.kashif_e.backdrop.highlight.Highlight
+import com.kyant.capsule.ContinuousCapsule
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LensRefraction
-import org.ide.lti.core.designsystem.theme.MotionDuration
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
@@ -102,7 +97,7 @@ enum class GlassButtonVariant {
     Primary,
     Secondary,
     Standard,
-    Text
+    Text,
 }
 
 /**
@@ -115,7 +110,7 @@ object GlassButtonDefaults {
     val TextStyle = TextStyle(
         fontSize = 14.sp,
         fontWeight = FontWeight.Medium,
-        letterSpacing = 0.1.sp
+        letterSpacing = 0.1.sp,
     )
 }
 
@@ -136,7 +131,7 @@ fun GlassButton(
     minHeight: Dp = GlassButtonDefaults.MinHeight,
     contentPadding: PaddingValues = GlassButtonDefaults.ContentPadding,
     interactive: Boolean = true,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     val glassColors = GlassTheme.colors
     val effectsEnabled = GlassTheme.effectsEnabled
@@ -164,15 +159,15 @@ fun GlassButton(
 
     val surfaceColor by animateColorAsState(
         targetValue = targetSurfaceColor,
-        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion)
+        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion),
     )
     val borderColor by animateColorAsState(
         targetValue = targetBorderColor,
-        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion)
+        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion),
     )
     val borderWidth by animateDpAsState(
         targetValue = targetBorderWidth,
-        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion)
+        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion),
     )
 
     Row(
@@ -190,7 +185,9 @@ fun GlassButton(
                                 {
                                     applyInteractiveHighlightTransform(interactiveHighlight)
                                 }
-                            } else null,
+                            } else {
+                                null
+                            },
                             onDrawSurface = {
                                 drawButtonSurface(
                                     surfaceColor = surfaceColor,
@@ -199,7 +196,7 @@ fun GlassButton(
                                     glassShadowColor = glassColors.glassShadow,
                                     vividTint = variant == GlassButtonVariant.Primary,
                                 )
-                            }
+                            },
                         )
                     } else {
                         Modifier
@@ -216,14 +213,14 @@ fun GlassButton(
                     }
                 } else {
                     Modifier
-                }
+                },
             )
             .then(
                 if (borderColor != Color.Transparent) {
                     Modifier.border(width = borderWidth, color = borderColor, shape = shape)
                 } else {
                     Modifier
-                }
+                },
             )
             .onPointerEvent(PointerEventType.Enter) { isHovered = true }
             .onPointerEvent(PointerEventType.Exit) { isHovered = false }
@@ -233,7 +230,7 @@ fun GlassButton(
                 interactionSource = null,
                 indication = if (interactiveHighlight != null) null else LocalIndication.current,
                 role = Role.Button,
-                onClick = onClick
+                onClick = onClick,
             )
             .then(
                 if (interactiveHighlight != null) {
@@ -242,11 +239,11 @@ fun GlassButton(
                         .then(interactiveHighlight.gestureModifier)
                 } else {
                     Modifier
-                }
+                },
             )
             .padding(contentPadding),
         horizontalArrangement = Arrangement.spacedBy(Spacing.Small, Alignment.CenterHorizontally),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         CompositionLocalProvider(LocalContentColor provides finalContentColor) {
             ProvideTextStyle(GlassButtonDefaults.TextStyle) {
@@ -272,33 +269,33 @@ private fun resolveTargetBorderWidth(isFocused: Boolean): Dp =
 
 private fun resolveButtonColors(
     variant: GlassButtonVariant,
-    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme
+    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme,
 ): Triple<Color, Color, Color> = when (variant) {
     GlassButtonVariant.Primary -> Triple(
         glassColors.glassSurfaceElevated,
         glassColors.glassAccent.copy(alpha = AlphaTokens.PrimaryButtonTint),
-        glassColors.onGlass
+        glassColors.onGlass,
     )
     GlassButtonVariant.Secondary -> Triple(
         glassColors.glassSurface,
         glassColors.glassTintSecondary,
-        glassColors.onGlass
+        glassColors.onGlass,
     )
     GlassButtonVariant.Standard -> Triple(
         glassColors.glassSurface,
         glassColors.glassTint,
-        glassColors.onGlass
+        glassColors.onGlass,
     )
     GlassButtonVariant.Text -> Triple(
         Color.Transparent,
         Color.Transparent,
-        glassColors.onGlass
+        glassColors.onGlass,
     )
 }
 
 private fun resolveButtonBorderColor(
     variant: GlassButtonVariant,
-    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme
+    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme,
 ): Color = when (variant) {
     GlassButtonVariant.Primary -> glassColors.glassBorderHighlight
     GlassButtonVariant.Secondary -> glassColors.glassBorder
@@ -310,7 +307,7 @@ private fun resolveHoverSurfaceColor(
     isHovered: Boolean,
     variant: GlassButtonVariant,
     baseSurfaceColor: Color,
-    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme
+    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme,
 ): Color = if (isHovered && variant != GlassButtonVariant.Text) {
     glassColors.glassSurfaceElevated
 } else {
@@ -320,13 +317,12 @@ private fun resolveHoverSurfaceColor(
 private fun resolveHoverBorderColor(
     isHovered: Boolean,
     baseBorderColor: Color,
-    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme
+    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme,
 ): Color = if (isHovered && baseBorderColor != Color.Transparent) {
     glassColors.glassBorderHighlight
 } else {
     baseBorderColor
 }
-
 
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawButtonSurface(
     surfaceColor: Color,
@@ -362,14 +358,14 @@ fun GlassPrimaryButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     GlassButton(
         onClick = onClick,
         modifier = modifier,
         enabled = enabled,
         variant = GlassButtonVariant.Primary,
-        content = content
+        content = content,
     )
 }
 
@@ -381,7 +377,7 @@ fun GlassTextButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     GlassButton(
         onClick = onClick,
@@ -389,7 +385,7 @@ fun GlassTextButton(
         enabled = enabled,
         variant = GlassButtonVariant.Text,
         contentPadding = PaddingValues(horizontal = Spacing.Medium, vertical = Spacing.Small),
-        content = content
+        content = content,
     )
 }
 
@@ -412,7 +408,7 @@ fun GlassIconButton(
     selected: Boolean = checked ?: false,
     enabled: Boolean = true,
     interactive: Boolean = false,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     GlassButton(
         onClick = onClick,
@@ -425,7 +421,7 @@ fun GlassIconButton(
         contentPadding = PaddingValues(Spacing.None),
         enabled = enabled,
         interactive = interactive,
-        variant = if (selected) GlassButtonVariant.Primary else GlassButtonVariant.Standard
+        variant = if (selected) GlassButtonVariant.Primary else GlassButtonVariant.Standard,
     ) {
         content()
     }
@@ -446,7 +442,7 @@ fun GlassIconToggleButton(
     shape: Shape = ContinuousCapsule,
     enabled: Boolean = true,
     interactive: Boolean = false,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     GlassIconButton(
         onClick = { onSelectedChange(!selected) },
@@ -456,6 +452,6 @@ fun GlassIconToggleButton(
         selected = selected,
         enabled = enabled,
         interactive = interactive,
-        content = content
+        content = content,
     )
 }

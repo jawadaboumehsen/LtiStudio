@@ -23,7 +23,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.unit.Dp
-import com.kyant.capsule.ContinuousRoundedRectangle
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.BackdropEffectScope
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
@@ -33,6 +32,7 @@ import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
 import com.kashif_e.backdrop.highlight.Highlight
 import com.kashif_e.backdrop.shadow.Shadow
+import com.kyant.capsule.ContinuousRoundedRectangle
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassTheme
@@ -77,7 +77,7 @@ fun GlassSurface(
     effects: BackdropEffectScope.() -> Unit = StandardGlassEffects,
     highlight: () -> Highlight? = { Highlight.Plain },
     shadow: (() -> Shadow?)? = null,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val glassColors = GlassTheme.colors
     val effectsEnabled = GlassTheme.effectsEnabled
@@ -90,7 +90,7 @@ fun GlassSurface(
     val borderModifier = if (finalBorderColor.isSpecified) {
         Modifier.border(
             border = BorderStroke(borderWidth, finalBorderColor),
-            shape = shape
+            shape = shape,
         )
     } else {
         Modifier
@@ -109,7 +109,7 @@ fun GlassSurface(
                 if (finalTint.isSpecified && finalTint.alpha > 0f) {
                     drawRect(finalTint, blendMode = BlendMode.SrcOver)
                 }
-            }
+            },
         )
     } else {
         Modifier
@@ -126,7 +126,7 @@ fun GlassSurface(
     Box(
         modifier = modifier
             .then(backgroundModifier)
-            .then(borderModifier)
+            .then(borderModifier),
     ) {
         CompositionLocalProvider(LocalContentColor provides glassColors.onGlass) {
             content()

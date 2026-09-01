@@ -59,7 +59,7 @@ class GlassEffectsDisabledScreenshotTest {
                         .fillMaxSize()
                         .background(GlassTheme.colors.canvasSurface)
                         .padding(Spacing.Medium),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     Column(
                         verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
@@ -100,7 +100,7 @@ class GlassEffectsDisabledScreenshotTest {
                         .fillMaxSize()
                         .background(GlassTheme.colors.canvasSurface)
                         .padding(Spacing.Large),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     GlassCard(
                         modifier = Modifier.fillMaxWidth(),
@@ -121,7 +121,7 @@ class GlassEffectsDisabledScreenshotTest {
                             Spacer(Modifier.height(Spacing.SmallMedium))
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.End
+                                horizontalArrangement = Arrangement.End,
                             ) {
                                 GlassPrimaryButton(onClick = {}) {
                                     Text("Explore")
@@ -147,7 +147,7 @@ class GlassEffectsDisabledScreenshotTest {
                         .fillMaxSize()
                         .background(GlassTheme.colors.canvasSurface)
                         .padding(Spacing.Small),
-                    contentAlignment = Alignment.BottomCenter
+                    contentAlignment = Alignment.BottomCenter,
                 ) {
                     val items = listOf("Explorer", "Editor", "Search", "Settings")
                     val icons = listOf(

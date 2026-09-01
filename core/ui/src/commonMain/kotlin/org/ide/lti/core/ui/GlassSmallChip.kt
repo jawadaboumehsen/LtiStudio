@@ -5,12 +5,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * See See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
  */
 package org.ide.lti.core.ui
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -43,7 +42,6 @@ import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LensRefraction
-import org.ide.lti.core.designsystem.theme.MotionDuration
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
@@ -67,17 +65,17 @@ fun GlassSmallChip(
 
     val backgroundColor by animateColorAsState(
         targetValue = if (isHovered) glassColors.glassSurfaceElevated else glassColors.glassSurface,
-        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion)
+        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion),
     )
 
     val borderColor by animateColorAsState(
         targetValue = if (isHovered) glassColors.glassBorderHighlight else glassColors.glassBorder,
-        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion)
+        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion),
     )
 
     val textColor by animateColorAsState(
         targetValue = if (isHovered) glassColors.onGlass else glassColors.onGlassSecondary,
-        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion)
+        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion),
     )
 
     Box(
@@ -96,11 +94,11 @@ fun GlassSmallChip(
                         highlight = { if (isHovered) Highlight.Ambient else Highlight.Plain },
                         onDrawSurface = {
                             drawRect(backgroundColor)
-                        }
+                        },
                     )
                 } else {
                     Modifier.background(backgroundColor)
-                }
+                },
             )
             .border(StrokeWidth.Hairline, borderColor, chipShape)
             .onPointerEvent(PointerEventType.Enter) { isHovered = true }
@@ -112,7 +110,7 @@ fun GlassSmallChip(
                 onClick = onClick,
             )
             .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Compact),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         Text(
             text = label,

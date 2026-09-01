@@ -5,7 +5,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * See See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
  */
 package org.ide.lti.core.designsystem.component
 
@@ -78,7 +78,7 @@ fun GlassStatusBar(
                 highlight = { Highlight.Default },
                 onDrawSurface = {
                     drawRect(glassColors.glassSurface)
-                }
+                },
             )
         } else {
             Modifier.background(glassColors.glassSurface.copy(alpha = AlphaTokens.Medium))
@@ -91,7 +91,7 @@ fun GlassStatusBar(
         Modifier.border(
             width = StrokeWidth.Hairline,
             color = glassColors.glassBorder,
-            shape = ContinuousRoundedRectangle(CornerRadius.Panel)
+            shape = ContinuousRoundedRectangle(CornerRadius.Panel),
         )
     } else {
         Modifier
@@ -104,7 +104,7 @@ fun GlassStatusBar(
             .then(backgroundModifier)
             .then(borderModifier)
             .padding(horizontal = Spacing.SmallMedium),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         Row(
             modifier = Modifier.fillMaxSize(),
@@ -126,20 +126,20 @@ fun GlassStatusBar(
                         .border(
                             StrokeWidth.Hairline,
                             glassColors.glassBorder,
-                            RoundedCornerShape(CornerRadius.ExtraSmall)
+                            RoundedCornerShape(CornerRadius.ExtraSmall),
                         )
-                        .padding(horizontal = Spacing.Compact, vertical = Spacing.ExtraExtraSmall)
+                        .padding(horizontal = Spacing.Compact, vertical = Spacing.ExtraExtraSmall),
                 ) {
                     Box(
                         modifier = Modifier
                             .size(IconSize.Indicator)
                             .clip(CircleShape)
-                            .background(glassColors.glassAccent)
+                            .background(glassColors.glassAccent),
                     )
                     Text(
                         text = branchName,
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
-                        color = glassColors.onGlassSecondary
+                        color = glassColors.onGlassSecondary,
                     )
                 }
 
@@ -147,7 +147,7 @@ fun GlassStatusBar(
                     Text(
                         text = ".",
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
-                        color = glassColors.onGlassMuted
+                        color = glassColors.onGlassMuted,
                     )
                 }
 
@@ -155,7 +155,7 @@ fun GlassStatusBar(
                     Text(
                         text = it,
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
-                        color = glassColors.onGlassSecondary
+                        color = glassColors.onGlassSecondary,
                     )
                 }
             }
@@ -169,27 +169,27 @@ fun GlassStatusBar(
                     Text(
                         text = "Ln $line, Col $col",
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
-                        color = glassColors.onGlassSecondary
+                        color = glassColors.onGlassSecondary,
                     )
                 }
 
                 Text(
                     text = encoding,
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
-                    color = glassColors.onGlassSecondary
+                    color = glassColors.onGlassSecondary,
                 )
 
                 Text(
                     text = lineEnding.displayName,
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
-                    color = glassColors.onGlassMuted
+                    color = glassColors.onGlassMuted,
                 )
 
                 fileType?.let {
                     Text(
                         text = it.uppercase(),
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
-                        color = glassColors.onGlassSecondary
+                        color = glassColors.onGlassSecondary,
                     )
                 }
             }

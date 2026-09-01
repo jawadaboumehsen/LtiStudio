@@ -84,7 +84,7 @@ class GlassComponentScreenshotTest {
                         .fillMaxSize()
                         .background(GlassTheme.colors.glassSurface)
                         .padding(Spacing.Medium),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     Column(
                         verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
@@ -125,7 +125,7 @@ class GlassComponentScreenshotTest {
                         .fillMaxSize()
                         .background(GlassTheme.colors.glassSurface)
                         .padding(Spacing.Large),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     GlassCard(
                         modifier = Modifier.fillMaxWidth(),
@@ -146,7 +146,7 @@ class GlassComponentScreenshotTest {
                             Spacer(Modifier.height(Spacing.SmallMedium))
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.End
+                                horizontalArrangement = Arrangement.End,
                             ) {
                                 GlassPrimaryButton(onClick = {}) {
                                     Text("Explore")
@@ -172,7 +172,7 @@ class GlassComponentScreenshotTest {
                         .fillMaxSize()
                         .background(GlassTheme.colors.glassSurface)
                         .padding(Spacing.Large),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     // Mirrors the real production wrapping in GlassLayout.kt's GlassLeftPanel:
                     // a GlassPanelContainer nested inside a real glass GlassCard ancestor.
@@ -216,7 +216,7 @@ class GlassComponentScreenshotTest {
                         .fillMaxSize()
                         .background(GlassTheme.colors.glassSurface)
                         .padding(Spacing.Large),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
                         GlassTextField(
@@ -230,7 +230,7 @@ class GlassComponentScreenshotTest {
                                     contentDescription = null,
                                     tint = GlassTheme.colors.onGlassSecondary,
                                 )
-                            }
+                            },
                         )
                     }
                 }
@@ -251,7 +251,7 @@ class GlassComponentScreenshotTest {
                         .fillMaxSize()
                         .background(GlassTheme.colors.glassShadow.copy(alpha = AlphaTokens.Scrim))
                         .padding(Spacing.Large),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     GlassSurface(
                         modifier = Modifier.fillMaxWidth(),
@@ -274,7 +274,7 @@ class GlassComponentScreenshotTest {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.End,
-                                verticalAlignment = Alignment.CenterVertically
+                                verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 GlassTextButton(onClick = {}) {
                                     Text("Cancel")
@@ -308,17 +308,17 @@ class GlassComponentScreenshotTest {
                         .fillMaxSize()
                         .background(GlassTheme.colors.glassSurface)
                         .padding(Spacing.Large),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     Column(
                         modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text("Enable Fluid Lighting", color = GlassTheme.colors.onGlass)
                             GlassToggle(
@@ -355,13 +355,13 @@ class GlassComponentScreenshotTest {
                         .fillMaxSize()
                         .background(scheme.glassSurface)
                         .padding(Spacing.Medium),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
                         Text(
                             text = "Color Tokens & Contrast Ratios",
                             style = MaterialTheme.typography.titleSmall,
-                            color = scheme.onGlass
+                            color = scheme.onGlass,
                         )
                         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
                             SwatchCard("onGlass", scheme.onGlass, scheme.glassSurface)
@@ -390,7 +390,7 @@ class GlassComponentScreenshotTest {
                         .fillMaxSize()
                         .background(GlassTheme.colors.glassSurface)
                         .padding(Spacing.Small),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     GlassTopBar(
                         title = "LtiRom",
@@ -418,93 +418,93 @@ class GlassComponentScreenshotTest {
                         .fillMaxSize()
                         .background(GlassTheme.colors.glassSurface)
                         .padding(Spacing.Medium),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     Row(
                         modifier = Modifier.fillMaxSize(),
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.Medium)
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
                     ) {
                         // Left-docked multi-tab panel
                         GlassCard(
                             modifier = Modifier.weight(1f).fillMaxHeight(),
-                            contentPadding = Spacing.None
+                            contentPadding = Spacing.None,
                         ) {
                             GlassSidePanelTabs(
                                 tabs = listOf(
                                     GlassSidePanelTab(
                                         icon = AppIcons.Folder,
-                                        label = "Explorer"
+                                        label = "Explorer",
                                     ) {
                                         GlassPanelContainer(
-                                            header = { GlassPanelHeader(title = "EXPLORER") }
+                                            header = { GlassPanelHeader(title = "EXPLORER") },
                                         ) {
                                             Text(
                                                 text = "Explorer panel content",
                                                 style = MaterialTheme.typography.bodySmall,
                                                 color = GlassTheme.colors.onGlassSecondary,
-                                                modifier = Modifier.padding(Spacing.SmallMedium)
+                                                modifier = Modifier.padding(Spacing.SmallMedium),
                                             )
                                         }
                                     },
                                     GlassSidePanelTab(
                                         icon = AppIcons.Search,
-                                        label = "Search"
+                                        label = "Search",
                                     ) {
                                         GlassPanelContainer(
-                                            header = { GlassPanelHeader(title = "SEARCH") }
+                                            header = { GlassPanelHeader(title = "SEARCH") },
                                         ) {
                                             Text(
                                                 text = "Search workspace",
                                                 style = MaterialTheme.typography.bodySmall,
                                                 color = GlassTheme.colors.onGlassSecondary,
-                                                modifier = Modifier.padding(Spacing.SmallMedium)
+                                                modifier = Modifier.padding(Spacing.SmallMedium),
                                             )
                                         }
-                                    }
+                                    },
                                 ),
-                                railPosition = SidePanelRailPosition.Left
+                                railPosition = SidePanelRailPosition.Left,
                             )
                         }
 
                         // Right-docked multi-tab panel
                         GlassCard(
                             modifier = Modifier.weight(1f).fillMaxHeight(),
-                            contentPadding = Spacing.None
+                            contentPadding = Spacing.None,
                         ) {
                             GlassSidePanelTabs(
                                 tabs = listOf(
                                     GlassSidePanelTab(
                                         icon = AppIcons.Sparkles,
-                                        label = "AI Assistant"
+                                        label = "AI Assistant",
                                     ) {
                                         GlassPanelContainer(
-                                            header = { GlassPanelHeader(title = "AI ASSISTANT") }
+                                            header = { GlassPanelHeader(title = "AI ASSISTANT") },
                                         ) {
                                             Text(
                                                 text = "AI assistant ready",
                                                 style = MaterialTheme.typography.bodySmall,
                                                 color = GlassTheme.colors.onGlassSecondary,
-                                                modifier = Modifier.padding(Spacing.SmallMedium)
+                                                modifier = Modifier.padding(Spacing.SmallMedium),
                                             )
                                         }
                                     },
                                     GlassSidePanelTab(
                                         icon = AppIcons.Settings,
-                                        label = "Settings"
+                                        label = "Settings",
                                     ) {
                                         GlassPanelContainer(
-                                            header = { GlassPanelHeader(title = "SETTINGS") }
+                                            header = { GlassPanelHeader(title = "SETTINGS") },
                                         ) {
                                             Text(
                                                 text = "Inspector settings",
                                                 style = MaterialTheme.typography.bodySmall,
                                                 color = GlassTheme.colors.onGlassSecondary,
-                                                modifier = Modifier.padding(Spacing.SmallMedium)
+                                                modifier = Modifier.padding(Spacing.SmallMedium),
                                             )
                                         }
-                                    }
+                                    },
                                 ),
-                                railPosition = SidePanelRailPosition.Right
+                                railPosition = SidePanelRailPosition.Right,
                             )
                         }
                     }
@@ -526,93 +526,93 @@ class GlassComponentScreenshotTest {
                         .fillMaxSize()
                         .background(GlassTheme.colors.glassSurface)
                         .padding(Spacing.Medium),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     Row(
                         modifier = Modifier.fillMaxSize(),
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.Medium)
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
                     ) {
                         // Left-docked multi-tab panel
                         GlassCard(
                             modifier = Modifier.weight(1f).fillMaxHeight(),
-                            contentPadding = Spacing.None
+                            contentPadding = Spacing.None,
                         ) {
                             GlassSidePanelTabs(
                                 tabs = listOf(
                                     GlassSidePanelTab(
                                         icon = AppIcons.Folder,
-                                        label = "Explorer"
+                                        label = "Explorer",
                                     ) {
                                         GlassPanelContainer(
-                                            header = { GlassPanelHeader(title = "EXPLORER") }
+                                            header = { GlassPanelHeader(title = "EXPLORER") },
                                         ) {
                                             Text(
                                                 text = "Explorer panel content",
                                                 style = MaterialTheme.typography.bodySmall,
                                                 color = GlassTheme.colors.onGlassSecondary,
-                                                modifier = Modifier.padding(Spacing.SmallMedium)
+                                                modifier = Modifier.padding(Spacing.SmallMedium),
                                             )
                                         }
                                     },
                                     GlassSidePanelTab(
                                         icon = AppIcons.Search,
-                                        label = "Search"
+                                        label = "Search",
                                     ) {
                                         GlassPanelContainer(
-                                            header = { GlassPanelHeader(title = "SEARCH") }
+                                            header = { GlassPanelHeader(title = "SEARCH") },
                                         ) {
                                             Text(
                                                 text = "Search workspace",
                                                 style = MaterialTheme.typography.bodySmall,
                                                 color = GlassTheme.colors.onGlassSecondary,
-                                                modifier = Modifier.padding(Spacing.SmallMedium)
+                                                modifier = Modifier.padding(Spacing.SmallMedium),
                                             )
                                         }
-                                    }
+                                    },
                                 ),
-                                railPosition = SidePanelRailPosition.Left
+                                railPosition = SidePanelRailPosition.Left,
                             )
                         }
 
                         // Right-docked multi-tab panel
                         GlassCard(
                             modifier = Modifier.weight(1f).fillMaxHeight(),
-                            contentPadding = Spacing.None
+                            contentPadding = Spacing.None,
                         ) {
                             GlassSidePanelTabs(
                                 tabs = listOf(
                                     GlassSidePanelTab(
                                         icon = AppIcons.Sparkles,
-                                        label = "AI Assistant"
+                                        label = "AI Assistant",
                                     ) {
                                         GlassPanelContainer(
-                                            header = { GlassPanelHeader(title = "AI ASSISTANT") }
+                                            header = { GlassPanelHeader(title = "AI ASSISTANT") },
                                         ) {
                                             Text(
                                                 text = "AI assistant ready",
                                                 style = MaterialTheme.typography.bodySmall,
                                                 color = GlassTheme.colors.onGlassSecondary,
-                                                modifier = Modifier.padding(Spacing.SmallMedium)
+                                                modifier = Modifier.padding(Spacing.SmallMedium),
                                             )
                                         }
                                     },
                                     GlassSidePanelTab(
                                         icon = AppIcons.Settings,
-                                        label = "Settings"
+                                        label = "Settings",
                                     ) {
                                         GlassPanelContainer(
-                                            header = { GlassPanelHeader(title = "SETTINGS") }
+                                            header = { GlassPanelHeader(title = "SETTINGS") },
                                         ) {
                                             Text(
                                                 text = "Inspector settings",
                                                 style = MaterialTheme.typography.bodySmall,
                                                 color = GlassTheme.colors.onGlassSecondary,
-                                                modifier = Modifier.padding(Spacing.SmallMedium)
+                                                modifier = Modifier.padding(Spacing.SmallMedium),
                                             )
                                         }
-                                    }
+                                    },
                                 ),
-                                railPosition = SidePanelRailPosition.Right
+                                railPosition = SidePanelRailPosition.Right,
                             )
                         }
                     }
@@ -668,12 +668,12 @@ class GlassComponentScreenshotTest {
                 .width(ComponentSize.ButtonMinWidth)
                 .background(color.copy(alpha = AlphaTokens.Hover))
                 .padding(Spacing.ExtraSmall),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Box(
                 modifier = Modifier
                     .size(Spacing.Medium)
-                    .background(color)
+                    .background(color),
             )
             Spacer(Modifier.height(Spacing.ExtraExtraSmall))
             Text(name, style = MaterialTheme.typography.labelSmall, color = GlassTheme.colors.onGlass)
@@ -685,5 +685,3 @@ class GlassComponentScreenshotTest {
         }
     }
 }
-
-

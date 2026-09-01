@@ -60,9 +60,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
-import org.ide.lti.core.designsystem.theme.GlassLayoutColors
-import org.ide.lti.core.designsystem.theme.PreviewSampleColors
-import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -78,31 +75,34 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
-import java.awt.Cursor
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.BackdropEffectScope
-import com.kyant.capsule.ContinuousCapsule
-import com.kyant.capsule.ContinuousRoundedRectangle
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import com.kashif_e.backdrop.drawBackdrop
 import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.lens
-import com.kashif_e.backdrop.highlight.Highlight
 import com.kashif_e.backdrop.effects.vibrancy
+import com.kashif_e.backdrop.highlight.Highlight
 import com.kashif_e.backdrop.shadow.Shadow
+import com.kyant.capsule.ContinuousCapsule
+import com.kyant.capsule.ContinuousRoundedRectangle
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize
-import org.ide.lti.core.designsystem.theme.CornerRadius as ThemeCornerRadius
 import org.ide.lti.core.designsystem.theme.Elevation
+import org.ide.lti.core.designsystem.theme.GlassLayoutColors
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.MotionDuration
 import org.ide.lti.core.designsystem.theme.MotionEasing
+import org.ide.lti.core.designsystem.theme.PreviewSampleColors
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import java.awt.Cursor
+import org.ide.lti.core.designsystem.theme.CornerRadius as ThemeCornerRadius
 
 /**
  * Professional resizable panel layout for LtiRomGui IDE with Liquid Glass theme.
@@ -237,9 +237,9 @@ fun GlassLayout(
         shadow = {
             Shadow(
                 radius = LtiLayoutDefaults.PanelElevation,
-                color = LtiLayoutDefaults.PanelShadowColor
+                color = LtiLayoutDefaults.PanelShadowColor,
             )
-        }
+        },
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             // Top Bar (flush to the top and side edges of the frame)
@@ -252,14 +252,14 @@ fun GlassLayout(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(StrokeWidth.Hairline)
-                    .background(glassColors.glassBorder.copy(alpha = AlphaTokens.Faint))
+                    .background(glassColors.glassBorder.copy(alpha = AlphaTokens.Faint)),
             )
 
             // Middle Row: Left Rail (Chrome) + Content GlassSurface + Right Rail (Chrome)
             Row(
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxWidth()
+                    .fillMaxWidth(),
             ) {
                 leftRail()
 
@@ -279,10 +279,10 @@ fun GlassLayout(
                             } else {
                                 spring(
                                     dampingRatio = Spring.DampingRatioLowBouncy,
-                                    stiffness = Spring.StiffnessLow
+                                    stiffness = Spring.StiffnessLow,
                                 )
                             },
-                            label = "leftWeight"
+                            label = "leftWeight",
                         )
 
                         val animatedRightWeight by animateFloatAsState(
@@ -292,10 +292,10 @@ fun GlassLayout(
                             } else {
                                 spring(
                                     dampingRatio = Spring.DampingRatioLowBouncy,
-                                    stiffness = Spring.StiffnessLow
+                                    stiffness = Spring.StiffnessLow,
                                 )
                             },
-                            label = "rightWeight"
+                            label = "rightWeight",
                         )
 
                         val animatedBottomWeight by animateFloatAsState(
@@ -305,10 +305,10 @@ fun GlassLayout(
                             } else {
                                 spring(
                                     dampingRatio = Spring.DampingRatioLowBouncy,
-                                    stiffness = Spring.StiffnessLow
+                                    stiffness = Spring.StiffnessLow,
                                 )
                             },
-                            label = "bottomWeight"
+                            label = "bottomWeight",
                         )
 
                         val availableWidth = with(density) { state.containerSize.width.toDp() }
@@ -322,7 +322,7 @@ fun GlassLayout(
                             width = leftPanelWidth,
                             appearance = appearance,
                             backdrop = actualBackdrop,
-                            content = leftPanel
+                            content = leftPanel,
                         )
 
                         GlassCenterColumn(
@@ -332,7 +332,7 @@ fun GlassLayout(
                             appearance = appearance,
                             backdrop = actualBackdrop,
                             mainContent = mainContent,
-                            bottomPanel = bottomPanel
+                            bottomPanel = bottomPanel,
                         )
 
                         GlassRightPanel(
@@ -340,7 +340,7 @@ fun GlassLayout(
                             width = rightPanelWidth,
                             appearance = appearance,
                             backdrop = actualBackdrop,
-                            content = rightPanel
+                            content = rightPanel,
                         )
                     }
                 }
@@ -353,7 +353,7 @@ fun GlassLayout(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(StrokeWidth.Hairline)
-                    .background(glassColors.glassBorder.copy(alpha = AlphaTokens.Faint))
+                    .background(glassColors.glassBorder.copy(alpha = AlphaTokens.Faint)),
             )
 
             // Status Bar (flush to the bottom and side edges of the frame)
@@ -415,18 +415,18 @@ private fun GlassLeftPanel(
     width: Dp,
     appearance: GlassLayoutAppearance,
     backdrop: Backdrop?,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     AnimatedVisibility(
         visible = state.showLeft,
         enter = expandHorizontally(
             expandFrom = Alignment.Start,
-            animationSpec = LtiLayoutAnimations.PanelExpandSpring
+            animationSpec = LtiLayoutAnimations.PanelExpandSpring,
         ) + fadeIn(animationSpec = LtiLayoutAnimations.PanelFade),
         exit = shrinkHorizontally(
             shrinkTowards = Alignment.Start,
-            animationSpec = LtiLayoutAnimations.PanelExpandSpring
-        ) + fadeOut(animationSpec = LtiLayoutAnimations.PanelFade)
+            animationSpec = LtiLayoutAnimations.PanelExpandSpring,
+        ) + fadeOut(animationSpec = LtiLayoutAnimations.PanelFade),
     ) {
         Row(modifier = Modifier.fillMaxHeight()) {
             GlassContentPanel(
@@ -458,7 +458,7 @@ private fun GlassLeftPanel(
                     val weightDelta = dragDelta / containerWidth
                     state.onLeftDrag(weightDelta)
                 },
-                onDragEnd = { state.onLeftDragEnd() }
+                onDragEnd = { state.onLeftDragEnd() },
             )
         }
     }
@@ -472,12 +472,12 @@ private fun RowScope.GlassCenterColumn(
     appearance: GlassLayoutAppearance,
     backdrop: Backdrop?,
     mainContent: @Composable () -> Unit,
-    bottomPanel: @Composable () -> Unit
+    bottomPanel: @Composable () -> Unit,
 ) {
     Column(
         modifier = Modifier
             .weight(1f)
-            .fillMaxHeight()
+            .fillMaxHeight(),
     ) {
         val totalFixedHeight = LtiLayoutDefaults.TopBarHeight + LtiLayoutDefaults.StatusBarHeight
         val availableHeight = with(density) {
@@ -509,12 +509,12 @@ private fun RowScope.GlassCenterColumn(
             visible = state.showBottom,
             enter = expandVertically(
                 expandFrom = Alignment.Top,
-                animationSpec = LtiLayoutAnimations.PanelExpandSpring
+                animationSpec = LtiLayoutAnimations.PanelExpandSpring,
             ) + fadeIn(animationSpec = LtiLayoutAnimations.PanelFade),
             exit = shrinkVertically(
                 shrinkTowards = Alignment.Top,
-                animationSpec = LtiLayoutAnimations.PanelExpandSpring
-            ) + fadeOut(animationSpec = LtiLayoutAnimations.PanelFade)
+                animationSpec = LtiLayoutAnimations.PanelExpandSpring,
+            ) + fadeOut(animationSpec = LtiLayoutAnimations.PanelFade),
         ) {
             Column {
                 GlassDragDivider(
@@ -527,7 +527,7 @@ private fun RowScope.GlassCenterColumn(
                         val weightDelta = -dragDelta / containerHeight
                         state.onBottomDrag(weightDelta)
                     },
-                    onDragEnd = { state.onBottomDragEnd() }
+                    onDragEnd = { state.onBottomDragEnd() },
                 )
 
                 GlassContentPanel(
@@ -560,18 +560,18 @@ private fun GlassRightPanel(
     width: Dp,
     appearance: GlassLayoutAppearance,
     backdrop: Backdrop?,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     AnimatedVisibility(
         visible = state.showRight,
         enter = expandHorizontally(
             expandFrom = Alignment.End,
-            animationSpec = LtiLayoutAnimations.PanelExpandSpring
+            animationSpec = LtiLayoutAnimations.PanelExpandSpring,
         ) + fadeIn(animationSpec = LtiLayoutAnimations.PanelFade),
         exit = shrinkHorizontally(
             shrinkTowards = Alignment.End,
-            animationSpec = LtiLayoutAnimations.PanelExpandSpring
-        ) + fadeOut(animationSpec = LtiLayoutAnimations.PanelFade)
+            animationSpec = LtiLayoutAnimations.PanelExpandSpring,
+        ) + fadeOut(animationSpec = LtiLayoutAnimations.PanelFade),
     ) {
         Row(modifier = Modifier.fillMaxHeight()) {
             GlassDragDivider(
@@ -583,7 +583,7 @@ private fun GlassRightPanel(
                     val weightDelta = -dragDelta / containerWidth
                     state.onRightDrag(weightDelta)
                 },
-                onDragEnd = { state.onRightDragEnd() }
+                onDragEnd = { state.onRightDragEnd() },
             )
 
             GlassContentPanel(
@@ -611,22 +611,22 @@ private fun GlassRightPanel(
 
 @Composable
 private fun GlassToggleButtonsOverlay(
-    state: LtiLayoutState
+    state: LtiLayoutState,
 ) {
     Box(
         modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.TopEnd
+        contentAlignment = Alignment.TopEnd,
     ) {
         Row(
             modifier = Modifier.padding(
                 top = LtiLayoutDefaults.ToggleButtonTopPadding,
-                end = LtiLayoutDefaults.ToggleButtonEndPadding
+                end = LtiLayoutDefaults.ToggleButtonEndPadding,
             ),
-            horizontalArrangement = Arrangement.spacedBy(LtiLayoutDefaults.ToggleButtonSpacing)
+            horizontalArrangement = Arrangement.spacedBy(LtiLayoutDefaults.ToggleButtonSpacing),
         ) {
             AnimatedToggleButton(
                 onClick = { state.toggleLeft() },
-                selected = state.showLeft
+                selected = state.showLeft,
             ) {
                 Icon(
                     imageVector = if (state.showLeft) Icons.Default.Close else Icons.Default.Menu,
@@ -641,7 +641,7 @@ private fun GlassToggleButtonsOverlay(
 
             AnimatedToggleButton(
                 onClick = { state.toggleBottom() },
-                selected = state.showBottom
+                selected = state.showBottom,
             ) {
                 Icon(
                     imageVector = if (state.showBottom) {
@@ -660,7 +660,7 @@ private fun GlassToggleButtonsOverlay(
 
             AnimatedToggleButton(
                 onClick = { state.toggleRight() },
-                selected = state.showRight
+                selected = state.showRight,
             ) {
                 Icon(
                     imageVector = if (state.showRight) Icons.Default.Close else Icons.Default.Settings,
@@ -692,7 +692,7 @@ data class GlassLayoutAppearance(
     val panelCornerRadius: Dp = LtiLayoutDefaults.PanelCornerRadius,
     val dividerWidth: Dp = LtiLayoutDefaults.DividerWidth,
     val dividerColor: Color = Color.Unspecified,
-    val dividerActiveColor: Color = Color.Unspecified
+    val dividerActiveColor: Color = Color.Unspecified,
 ) {
     companion object {
         /**
@@ -827,7 +827,7 @@ private object LtiLayoutAnimations {
      */
     val PanelResize = tween<androidx.compose.ui.unit.IntSize>(
         durationMillis = MotionDuration.Moderate,
-        easing = FastOutSlowInEasing
+        easing = FastOutSlowInEasing,
     )
 
     /**
@@ -836,7 +836,7 @@ private object LtiLayoutAnimations {
      */
     val ButtonHoverScale = spring<Float>(
         dampingRatio = Spring.DampingRatioMediumBouncy,
-        stiffness = Spring.StiffnessMediumLow
+        stiffness = Spring.StiffnessMediumLow,
     )
 }
 
@@ -854,24 +854,24 @@ private object LtiLayoutAnimations {
 private fun AnimatedToggleButton(
     onClick: () -> Unit,
     selected: Boolean,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     var isHovered by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(
         targetValue = if (isHovered) 1.08f else 1f,
-        animationSpec = LtiLayoutAnimations.ButtonHoverScale
+        animationSpec = LtiLayoutAnimations.ButtonHoverScale,
     )
 
     Box(
         modifier = Modifier
             .scale(scale)
             .onPointerEvent(PointerEventType.Enter) { isHovered = true }
-            .onPointerEvent(PointerEventType.Exit) { isHovered = false }
+            .onPointerEvent(PointerEventType.Exit) { isHovered = false },
     ) {
         GlassIconButton(
             onClick = onClick,
             selected = selected,
-            content = content
+            content = content,
         )
     }
 }
@@ -884,7 +884,7 @@ private enum class DividerOrientation {
     Vertical,
 
     /** Horizontal divider for vertical resizing */
-    Horizontal
+    Horizontal,
 }
 
 /**
@@ -908,7 +908,7 @@ private fun GlassDragDivider(
     onDragStart: () -> Unit,
     onDrag: (Float) -> Unit,
     backdrop: com.kashif_e.backdrop.Backdrop? = null,
-    onDragEnd: () -> Unit
+    onDragEnd: () -> Unit,
 ) {
     var isHovered by remember { mutableStateOf(false) }
     var isDragging by remember { mutableStateOf(false) }
@@ -922,7 +922,7 @@ private fun GlassDragDivider(
         } else {
             // Smooth fade on hover, instant on reduced motion
             resolveAnimationSpec(GlassTheme.reducedMotion)
-        }
+        },
     )
 
     // Get backdrop from theme if not explicitly provided
@@ -962,7 +962,7 @@ private fun GlassDragDivider(
                     onDragCancel = {
                         isDragging = false
                         onDragEnd()
-                    }
+                    },
                 ) { change, dragAmount ->
                     change.consume()
                     val delta = when (orientation) {
@@ -976,7 +976,7 @@ private fun GlassDragDivider(
                 val stateDesc = if (isDragging) "dragging" else if (isHovered) "hovered" else "idle"
                 contentDescription = "Resize divider: $stateDesc"
             },
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         // No painted idle line: each content panel now draws its own GlassSurface, so the gap
         // between panels already reads as a real separation (the darker chrome frame shows
@@ -997,25 +997,25 @@ private fun GlassDragDivider(
                         actualBackdrop = actualBackdrop,
                         orientation = orientation,
                         effectsEnabled = effectsEnabled,
-                    )
-                )
+                    ),
+                ),
         )
     }
 }
 
 private fun getDividerModifiers(
     orientation: DividerOrientation,
-    appearance: GlassLayoutAppearance
+    appearance: GlassLayoutAppearance,
 ): Triple<PointerIcon, Modifier, Modifier> = when (orientation) {
     DividerOrientation.Vertical -> Triple(
         PointerIcon(Cursor(Cursor.E_RESIZE_CURSOR)),
         Modifier.width(appearance.dividerWidth).fillMaxHeight(),
-        Modifier.width(LtiLayoutDefaults.DividerLineWidthActive).fillMaxHeight()
+        Modifier.width(LtiLayoutDefaults.DividerLineWidthActive).fillMaxHeight(),
     )
     DividerOrientation.Horizontal -> Triple(
         PointerIcon(Cursor(Cursor.N_RESIZE_CURSOR)),
         Modifier.height(appearance.dividerWidth).fillMaxWidth(),
-        Modifier.height(LtiLayoutDefaults.DividerLineWidthActive).fillMaxWidth()
+        Modifier.height(LtiLayoutDefaults.DividerLineWidthActive).fillMaxWidth(),
     )
 }
 
@@ -1037,12 +1037,12 @@ private fun getDividerBackgroundModifier(
                     cornerRadius = CornerRadius(ThemeCornerRadius.Pill.toPx()),
                     size = size.copy(
                         width = size.width + Spacing.Small.toPx(),
-                        height = size.height + Spacing.Small.toPx()
+                        height = size.height + Spacing.Small.toPx(),
                     ),
                     topLeft = Offset(
                         x = -Spacing.ExtraSmall.toPx(),
-                        y = -Spacing.ExtraSmall.toPx()
-                    )
+                        y = -Spacing.ExtraSmall.toPx(),
+                    ),
                 )
             }
             .drawBackdrop(
@@ -1058,19 +1058,19 @@ private fun getDividerBackgroundModifier(
                             colors = listOf(
                                 activeColor.copy(alpha = AlphaTokens.Muted),
                                 activeColor.copy(alpha = AlphaTokens.Prominent),
-                                activeColor.copy(alpha = AlphaTokens.Muted)
-                            )
+                                activeColor.copy(alpha = AlphaTokens.Muted),
+                            ),
                         )
                         DividerOrientation.Horizontal -> Brush.horizontalGradient(
                             colors = listOf(
                                 activeColor.copy(alpha = AlphaTokens.Muted),
                                 activeColor.copy(alpha = AlphaTokens.Prominent),
-                                activeColor.copy(alpha = AlphaTokens.Muted)
-                            )
+                                activeColor.copy(alpha = AlphaTokens.Muted),
+                            ),
                         )
                     }
                     drawRect(gradient)
-                }
+                },
             )
     } else {
         Modifier.background(activeColor)
@@ -1096,7 +1096,7 @@ fun PreviewGlassLayout() {
             leftPanel = { SamplePanel("FILE EXPLORER", PreviewSampleColors.Blue) },
             mainContent = { SamplePanel("CODE EDITOR", PreviewSampleColors.Purple) },
             bottomPanel = { SamplePanel("TERMINAL", PreviewSampleColors.Orange) },
-            rightPanel = { SamplePanel("PROPERTIES", PreviewSampleColors.Green) }
+            rightPanel = { SamplePanel("PROPERTIES", PreviewSampleColors.Green) },
         )
     }
 }
@@ -1364,12 +1364,12 @@ fun SamplePanel(
             .fillMaxSize()
             .background(color.copy(alpha = AlphaTokens.Glow))
             .padding(Spacing.Medium),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         androidx.compose.material3.Text(
             title,
             style = MaterialTheme.typography.headlineSmall,
-            color = color
+            color = color,
         )
     }
 }

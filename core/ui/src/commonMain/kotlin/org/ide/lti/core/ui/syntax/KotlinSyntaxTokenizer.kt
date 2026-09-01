@@ -26,7 +26,7 @@ object KotlinSyntaxTokenizer : SyntaxTokenizer {
         "object", "open", "operator", "out", "override", "package", "param", "private",
         "property", "protected", "public", "receiver", "reified", "return", "sealed", "set",
         "setparam", "super", "suspend", "tailrec", "this", "throw", "true", "try",
-        "typealias", "val", "value", "var", "vararg", "when", "where", "while"
+        "typealias", "val", "value", "var", "vararg", "when", "where", "while",
     )
 
     private val DECIMAL_SUFFIXES = "fFdDlLgGuU".toSet()

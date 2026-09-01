@@ -14,13 +14,12 @@ import androidx.compose.ui.graphics.asSkiaBitmap
 import androidx.compose.ui.graphics.toPixelMap
 import org.jetbrains.skia.EncodedImageFormat
 import org.jetbrains.skia.Image
-import java.awt.Color as AwtColor
 import java.awt.image.BufferedImage
 import java.io.File
 import javax.imageio.ImageIO
 import kotlin.math.abs
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
+import java.awt.Color as AwtColor
 
 /**
  * Deterministic screenshot comparison helper for Compose Desktop JVM tests.
@@ -97,13 +96,13 @@ object ScreenshotTestHelper {
             baselineBufferedImage.width,
             actualImage.width,
             "Screenshot width mismatch for '$screenshotName'. " +
-                "Baseline: ${baselineBufferedImage.width}, Actual: ${actualImage.width}"
+                "Baseline: ${baselineBufferedImage.width}, Actual: ${actualImage.width}",
         )
         assertEquals(
             baselineBufferedImage.height,
             actualImage.height,
             "Screenshot height mismatch for '$screenshotName'. " +
-                "Baseline: ${baselineBufferedImage.height}, Actual: ${actualImage.height}"
+                "Baseline: ${baselineBufferedImage.height}, Actual: ${actualImage.height}",
         )
 
         val actualPixelMap = actualImage.toPixelMap()

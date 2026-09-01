@@ -155,7 +155,7 @@ fun LtiTheme(
                             focusRingSuppressedByPointer = false
                         }
                         false
-                    }
+                    },
             ) {
                 content()
             }
@@ -169,11 +169,11 @@ fun LtiTheme(
 @Composable
 fun ProvideGlassColors(
     colors: GlassColorScheme,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     CompositionLocalProvider(
         LocalGlassColors provides colors,
         LocalContentColor provides colors.onGlass,
-        content = content
+        content = content,
     )
 }

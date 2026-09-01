@@ -1,3 +1,12 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.core.designsystem.component
 
 import androidx.compose.animation.core.Spring
@@ -5,7 +14,6 @@ import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
@@ -40,16 +48,15 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.unit.Dp
-import kotlinx.coroutines.launch
-import com.kyant.capsule.ContinuousCapsule
-import com.kyant.capsule.ContinuousRoundedRectangle
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.BackdropEffectScope
 import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.colorControls
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.highlight.Highlight
+import com.kyant.capsule.ContinuousCapsule
+import com.kyant.capsule.ContinuousRoundedRectangle
+import kotlinx.coroutines.launch
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.BackdropSaturation
 import org.ide.lti.core.designsystem.theme.ComponentSize
@@ -70,7 +77,7 @@ val GlassBottomSheetEffects: BackdropEffectScope.() -> Unit = {
     lens(
         LensRefraction.BottomSheet.height.toPx(),
         LensRefraction.BottomSheet.amount.toPx(),
-        depthEffect = true
+        depthEffect = true,
     )
 }
 
@@ -81,7 +88,7 @@ val GlassBottomSheetEffects: BackdropEffectScope.() -> Unit = {
  */
 @Stable
 class GlassBottomSheetState(
-    initialValue: GlassBottomSheetValue = GlassBottomSheetValue.Collapsed
+    initialValue: GlassBottomSheetValue = GlassBottomSheetValue.Collapsed,
 ) {
     /**
      * The current value of the bottom sheet.
@@ -139,7 +146,7 @@ enum class GlassBottomSheetValue {
     /**
      * The bottom sheet is expanded (visible).
      */
-    Expanded
+    Expanded,
 }
 
 /**
@@ -147,7 +154,7 @@ enum class GlassBottomSheetValue {
  */
 @Composable
 fun rememberGlassBottomSheetState(
-    initialValue: GlassBottomSheetValue = GlassBottomSheetValue.Collapsed
+    initialValue: GlassBottomSheetValue = GlassBottomSheetValue.Collapsed,
 ): GlassBottomSheetState {
     return remember { GlassBottomSheetState(initialValue) }
 }
@@ -183,11 +190,11 @@ fun GlassBottomSheet(
         topStart = CornerRadius.Medium,
         topEnd = CornerRadius.Medium,
         bottomEnd = CornerRadius.None,
-        bottomStart = CornerRadius.None
+        bottomStart = CornerRadius.None,
     ),
     scrimColor: Color = Color.Unspecified,
     dismissThreshold: Float = 0.3f,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     val glassColors = GlassTheme.colors
@@ -203,17 +210,17 @@ fun GlassBottomSheet(
         } else {
             spring(
                 dampingRatio = Spring.DampingRatioMediumBouncy,
-                stiffness = Spring.StiffnessMedium
+                stiffness = Spring.StiffnessMedium,
             )
         },
-        label = "bottomSheetOffset"
+        label = "bottomSheetOffset",
     )
 
     // Scrim alpha animation
     val scrimAlpha by animateFloatAsState(
         targetValue = if (state.currentValue == GlassBottomSheetValue.Expanded) 1f else 0f,
         animationSpec = resolveAnimationSpec(reducedMotion, MotionDuration.Standard),
-        label = "scrimAlpha"
+        label = "scrimAlpha",
     )
 
     // Only render when visible or animating out
@@ -228,13 +235,13 @@ fun GlassBottomSheet(
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
-                        onClick = onDismissRequest
+                        onClick = onDismissRequest,
                     )
                     .pointerInput(Unit) {
                         detectVerticalDragGestures { _, _ ->
                             // Intercept drag gestures on scrim
                         }
-                    }
+                    },
             )
 
             // Bottom sheet content
@@ -247,7 +254,7 @@ fun GlassBottomSheet(
                         val offset = animatedOffsetY * size.height + state.offsetY
                         translationY = offset
                     }
-                    .then(modifier)
+                    .then(modifier),
             ) {
                 GlassSurface(
                     shape = shape,
@@ -289,7 +296,7 @@ fun GlassBottomSheet(
                                                 animate(
                                                     initialValue = state.offsetY,
                                                     targetValue = 0f,
-                                                    animationSpec = if (reducedMotion) snap() else spring()
+                                                    animationSpec = if (reducedMotion) snap() else spring(),
                                                 ) { value, _ ->
                                                     state.offsetY = value
                                                 }
@@ -301,16 +308,16 @@ fun GlassBottomSheet(
                                         // Only allow dragging down (positive offset)
                                         val newOffset = state.offsetY + dragAmount
                                         state.offsetY = maxOf(0f, newOffset)
-                                    }
+                                    },
                                 )
-                            }
+                            },
                     ) {
                         // Drag handle
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = Spacing.SmallMedium),
-                            contentAlignment = Alignment.Center
+                            contentAlignment = Alignment.Center,
                         ) {
                             Box(
                                 modifier = Modifier
@@ -318,8 +325,8 @@ fun GlassBottomSheet(
                                     .height(ComponentSize.DragHandleHeight)
                                     .background(
                                         color = glassColors.onGlassMuted,
-                                        shape = ContinuousCapsule
-                                    )
+                                        shape = ContinuousCapsule,
+                                    ),
                             )
                         }
 
@@ -352,14 +359,14 @@ fun GlassBottomSheetScaffold(
     headerContent: (@Composable RowScope.() -> Unit)? = null,
     backdrop: Backdrop? = null,
     effects: BackdropEffectScope.() -> Unit = GlassBottomSheetEffects,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     val state = rememberGlassBottomSheetState(
         initialValue = if (visible) {
             GlassBottomSheetValue.Expanded
         } else {
             GlassBottomSheetValue.Collapsed
-        }
+        },
     )
 
     // Sync state with visible parameter
@@ -376,7 +383,7 @@ fun GlassBottomSheetScaffold(
         onDismissRequest = onDismissRequest,
         backdrop = backdrop,
         effects = effects,
-        modifier = modifier
+        modifier = modifier,
     ) {
         // Header
         if (title != null || headerContent != null) {
@@ -385,13 +392,13 @@ fun GlassBottomSheetScaffold(
                     .fillMaxWidth()
                     .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (title != null) {
                     androidx.compose.material3.Text(
                         title,
                         style = MaterialTheme.typography.titleLarge,
-                        color = GlassTheme.colors.onGlass
+                        color = GlassTheme.colors.onGlass,
                     )
                 }
 
@@ -423,31 +430,31 @@ fun GlassBottomSheetExample(
         GlassBottomSheetScaffold(
             visible = showSheet,
             onDismissRequest = { showSheet = false },
-            title = "Glass Bottom Sheet"
+            title = "Glass Bottom Sheet",
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(Spacing.Medium),
-                verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium)
+                verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
             ) {
                 androidx.compose.material3.Text(
                     "This is a bottom sheet with glass morphism effects.",
                     style = MaterialTheme.typography.bodyLarge,
-                    color = GlassTheme.colors.onGlass
+                    color = GlassTheme.colors.onGlass,
                 )
 
                 androidx.compose.material3.Text(
                     "Drag down to dismiss, or tap outside.",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = GlassTheme.colors.onGlassSecondary
+                    color = GlassTheme.colors.onGlassSecondary,
                 )
 
                 Spacer(Modifier.height(Spacing.Small))
 
                 GlassPrimaryButton(
                     onClick = { showSheet = false },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     androidx.compose.material3.Text("Close")
                 }

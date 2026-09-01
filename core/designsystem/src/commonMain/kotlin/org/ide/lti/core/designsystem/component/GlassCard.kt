@@ -16,13 +16,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
-import com.kyant.capsule.ContinuousRoundedRectangle
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.BackdropEffectScope
 import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
 import com.kashif_e.backdrop.shadow.Shadow
+import com.kyant.capsule.ContinuousRoundedRectangle
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.LensRefraction
@@ -79,7 +79,7 @@ fun GlassCard(
     borderColor: Color = Color.Unspecified,
     contentPadding: Dp = Spacing.Medium,
     shadow: (() -> Shadow?)? = null,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     GlassSurface(
         modifier = modifier,
@@ -89,7 +89,7 @@ fun GlassCard(
         surfaceColor = surfaceColor,
         tint = tint,
         borderColor = borderColor,
-        shadow = shadow
+        shadow = shadow,
     ) {
         Box(modifier = Modifier.padding(contentPadding)) {
             content()

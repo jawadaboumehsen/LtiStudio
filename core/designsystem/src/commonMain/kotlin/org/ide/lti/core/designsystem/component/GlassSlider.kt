@@ -1,3 +1,12 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.core.designsystem.component
 
 import androidx.compose.foundation.background
@@ -18,7 +27,6 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -32,9 +40,6 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastCoerceIn
 import androidx.compose.ui.util.fastRoundToInt
 import androidx.compose.ui.util.lerp
-
-import kotlinx.coroutines.flow.collectLatest
-import com.kyant.capsule.ContinuousCapsule
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.backdrops.layerBackdrop
 import com.kashif_e.backdrop.backdrops.rememberBackdrop
@@ -46,6 +51,8 @@ import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.highlight.Highlight
 import com.kashif_e.backdrop.shadow.InnerShadow
 import com.kashif_e.backdrop.shadow.Shadow
+import com.kyant.capsule.ContinuousCapsule
+import kotlinx.coroutines.flow.collectLatest
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize
@@ -78,7 +85,7 @@ fun GlassSlider(
             .semantics {
                 progressBarRangeInfo = ProgressBarRangeInfo(
                     current = value(),
-                    range = valueRange
+                    range = valueRange,
                 )
                 setProgress { target ->
                     val coerced = target.coerceIn(valueRange)
@@ -90,7 +97,7 @@ fun GlassSlider(
                     }
                 }
             },
-        contentAlignment = Alignment.CenterStart
+        contentAlignment = Alignment.CenterStart,
     ) {
         val trackWidth = constraints.maxWidth
 
@@ -119,10 +126,13 @@ fun GlassSlider(
                     }
                     val delta = (valueRange.endInclusive - valueRange.start) * (dragAmount.x / trackWidth)
                     onValueChange(
-                        if (isLtr) (targetValue + delta).coerceIn(valueRange)
-                        else (targetValue - delta).coerceIn(valueRange)
+                        if (isLtr) {
+                            (targetValue + delta).coerceIn(valueRange)
+                        } else {
+                            (targetValue - delta).coerceIn(valueRange)
+                        },
                     )
-                }
+                },
             )
         }
         LaunchedEffect(dampedDragAnimation) {
@@ -143,15 +153,20 @@ fun GlassSlider(
                         detectTapGestures { position ->
                             val delta = (valueRange.endInclusive - valueRange.start) * (position.x / trackWidth)
                             val targetValue =
-                                (if (isLtr) valueRange.start + delta
-                                else valueRange.endInclusive - delta)
+                                (
+                                    if (isLtr) {
+                                        valueRange.start + delta
+                                    } else {
+                                        valueRange.endInclusive - delta
+                                    }
+                                    )
                                     .coerceIn(valueRange)
                             dampedDragAnimation.animateToValue(targetValue)
                             onValueChange(targetValue)
                         }
                     }
                     .height(ComponentSize.SliderTrackHeight)
-                    .fillMaxWidth()
+                    .fillMaxWidth(),
             )
 
             Box(
@@ -165,7 +180,7 @@ fun GlassSlider(
                         layout(width, placeable.height) {
                             placeable.place(0, 0)
                         }
-                    }
+                    },
             )
         }
 
@@ -189,7 +204,7 @@ fun GlassSlider(
                                     scale(scaleX, scaleY) {
                                         drawBackdrop()
                                     }
-                                }
+                                },
                             ),
                             shape = { ContinuousCapsule },
                             effects = {
@@ -198,7 +213,7 @@ fun GlassSlider(
                                 lens(
                                     LensRefraction.Slider.height.toPx() * progress,
                                     LensRefraction.Slider.amount.toPx() * progress,
-                                    chromaticAberration = true
+                                    chromaticAberration = true,
                                 )
                             },
                             highlight = {
@@ -206,20 +221,20 @@ fun GlassSlider(
                                 Highlight.Ambient.copy(
                                     width = Highlight.Ambient.width / 1.5f,
                                     blurRadius = Highlight.Ambient.blurRadius / 1.5f,
-                                    alpha = progress
+                                    alpha = progress,
                                 )
                             },
                             shadow = {
                                 Shadow(
                                     radius = Elevation.Raised,
-                                    color = glassColors.glassShadow.copy(alpha = AlphaTokens.Faint)
+                                    color = glassColors.glassShadow.copy(alpha = AlphaTokens.Faint),
                                 )
                             },
                             innerShadow = {
                                 val progress = dampedDragAnimation.pressProgress
                                 InnerShadow(
                                     radius = Elevation.Raised * progress,
-                                    alpha = progress
+                                    alpha = progress,
                                 )
                             },
                             layerBlock = {
@@ -232,15 +247,15 @@ fun GlassSlider(
                             onDrawSurface = {
                                 val progress = dampedDragAnimation.pressProgress
                                 drawRect(glassColors.onGlass.copy(alpha = 1f - progress))
-                            }
+                            },
                         )
                     } else {
                         Modifier
                             .clip(ContinuousCapsule)
                             .background(glassColors.onGlass)
-                    }
+                    },
                 )
-                .size(ComponentSize.SliderThumbWidth, ComponentSize.SliderThumbHeight)
+                .size(ComponentSize.SliderThumbWidth, ComponentSize.SliderThumbHeight),
         )
     }
 }

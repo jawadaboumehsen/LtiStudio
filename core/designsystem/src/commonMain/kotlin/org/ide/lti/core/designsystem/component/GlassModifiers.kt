@@ -22,7 +22,6 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
-import com.kyant.capsule.ContinuousRoundedRectangle
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.BackdropEffectScope
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
@@ -30,11 +29,11 @@ import com.kashif_e.backdrop.drawBackdrop
 import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.vibrancy
 import com.kashif_e.backdrop.highlight.Highlight
+import com.kyant.capsule.ContinuousRoundedRectangle
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassTheme
-import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 
 /**
@@ -96,7 +95,7 @@ fun Modifier.glassEffect(
                 if (finalTint.isSpecified && finalTint.alpha > 0f) {
                     drawRect(finalTint, blendMode = BlendMode.SrcOver)
                 }
-            }
+            },
         )
     } else {
         this
@@ -131,7 +130,7 @@ fun Modifier.glassEffect(
  * ```
  */
 fun Modifier.glassBackground(
-    color: Color = Color.Unspecified
+    color: Color = Color.Unspecified,
 ): Modifier = composed {
     val glassColors = GlassTheme.colors
     val finalColor = if (color.isSpecified) color else glassColors.glassSurface
@@ -163,14 +162,14 @@ fun Modifier.glassBackground(
 fun Modifier.glassBorder(
     color: Color? = null,
     width: Dp = StrokeWidth.Standard,
-    shape: Shape = ContinuousRoundedRectangle(CornerRadius.Medium)
+    shape: Shape = ContinuousRoundedRectangle(CornerRadius.Medium),
 ): Modifier = composed {
     val glassColors = GlassTheme.colors
     val finalColor = color ?: glassColors.glassBorder
 
     this.border(
         border = BorderStroke(width, finalColor),
-        shape = shape
+        shape = shape,
     )
 }
 
@@ -198,12 +197,12 @@ fun Modifier.glassBorder(
 fun Modifier.glassInteractive(
     onClick: () -> Unit,
     enabled: Boolean = true,
-    role: Role? = Role.Button
+    role: Role? = Role.Button,
 ): Modifier {
     return this.clickable(
         enabled = enabled,
         onClick = onClick,
-        role = role
+        role = role,
     )
 }
 
@@ -230,7 +229,7 @@ fun Modifier.glassInteractive(
 fun Modifier.glassScrim(
     backdrop: Backdrop? = null,
     blurRadius: Dp = BackdropBlur.Scrim,
-    surfaceColor: Color = Color.Unspecified
+    surfaceColor: Color = Color.Unspecified,
 ): Modifier = composed {
     val actualBackdrop = backdrop ?: GlassTheme.backdrop ?: rememberLayerBackdrop()
     val effectsEnabled = GlassTheme.effectsEnabled
@@ -251,7 +250,7 @@ fun Modifier.glassScrim(
             highlight = { Highlight.Plain },
             onDrawSurface = {
                 drawRect(resolvedSurfaceColor)
-            }
+            },
         )
     } else {
         this.drawBehind {

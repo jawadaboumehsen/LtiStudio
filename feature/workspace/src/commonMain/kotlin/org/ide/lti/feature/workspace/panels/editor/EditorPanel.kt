@@ -5,7 +5,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * See See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
  */
 package org.ide.lti.feature.workspace.panels.editor
 
@@ -213,7 +213,7 @@ private fun EmptyEditorView() {
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Center,
         ) {
             Box(
                 modifier = Modifier
@@ -221,13 +221,13 @@ private fun EmptyEditorView() {
                     .clip(CircleShape)
                     .background(glassColors.glassSurfaceElevated)
                     .border(StrokeWidth.Hairline, glassColors.glassBorder, CircleShape),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     painter = AppIcons.FilePainterResource(),
                     contentDescription = null,
                     tint = glassColors.glassAccent,
-                    modifier = Modifier.size(IconSize.ExtraLarge)
+                    modifier = Modifier.size(IconSize.ExtraLarge),
                 )
             }
 
@@ -259,7 +259,7 @@ private fun EmptyEditorView() {
                     .clip(RoundedCornerShape(CornerRadius.MediumSmall))
                     .background(glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Disabled))
                     .border(StrokeWidth.Hairline, glassColors.glassBorder, RoundedCornerShape(CornerRadius.MediumSmall))
-                    .padding(Spacing.Medium)
+                    .padding(Spacing.Medium),
             ) {
                 ShortcutRow(action = "Search Files", keys = "Ctrl + P")
                 ShortcutRow(action = "Show All Commands", keys = "Ctrl + Shift + P")
@@ -275,12 +275,12 @@ private fun ShortcutRow(action: String, keys: String) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraLarge)
+        horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraLarge),
     ) {
         Text(
             text = action,
             style = MaterialTheme.typography.bodySmall,
-            color = glassColors.onGlassSecondary
+            color = glassColors.onGlassSecondary,
         )
         Spacer(modifier = Modifier.weight(1f))
         Box(
@@ -288,13 +288,13 @@ private fun ShortcutRow(action: String, keys: String) {
                 .clip(RoundedCornerShape(CornerRadius.ExtraSmall))
                 .background(glassColors.glassSurfaceElevated)
                 .border(StrokeWidth.Hairline, glassColors.glassBorder, RoundedCornerShape(CornerRadius.ExtraSmall))
-                .padding(horizontal = Spacing.Compact, vertical = Spacing.ExtraExtraSmall)
+                .padding(horizontal = Spacing.Compact, vertical = Spacing.ExtraExtraSmall),
         ) {
             Text(
                 text = keys,
                 style = MaterialTheme.typography.labelSmall,
                 color = glassColors.glassAccent,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
             )
         }
     }

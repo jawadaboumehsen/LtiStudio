@@ -1,8 +1,16 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.core.designsystem.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.toggleable
@@ -20,7 +28,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
@@ -29,13 +36,9 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastCoerceIn
 import androidx.compose.ui.util.lerp
-
-import kotlinx.coroutines.flow.collectLatest
-import com.kyant.capsule.ContinuousCapsule
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.backdrops.layerBackdrop
 import com.kashif_e.backdrop.backdrops.rememberBackdrop
@@ -47,6 +50,8 @@ import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.highlight.Highlight
 import com.kashif_e.backdrop.shadow.InnerShadow
 import com.kashif_e.backdrop.shadow.Shadow
+import com.kyant.capsule.ContinuousCapsule
+import kotlinx.coroutines.flow.collectLatest
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize
@@ -70,8 +75,11 @@ fun GlassToggle(
     val glassColors = GlassTheme.colors
     val effectsEnabled = GlassTheme.effectsEnabled
     val accentColor =
-        if (isLightTheme) ToggleColors.ActiveLight
-        else ToggleColors.ActiveDark
+        if (isLightTheme) {
+            ToggleColors.ActiveLight
+        } else {
+            ToggleColors.ActiveDark
+        }
     val trackColor = glassColors.glassBorder
 
     val density = LocalDensity.current
@@ -107,9 +115,12 @@ fun GlassToggle(
                 }
                 val delta = dragAmount.x / dragWidth
                 fraction =
-                    if (isLtr) (fraction + delta).fastCoerceIn(0f, 1f)
-                    else (fraction - delta).fastCoerceIn(0f, 1f)
-            }
+                    if (isLtr) {
+                        (fraction + delta).fastCoerceIn(0f, 1f)
+                    } else {
+                        (fraction - delta).fastCoerceIn(0f, 1f)
+                    }
+            },
         )
     }
     LaunchedEffect(dampedDragAnimation) {
@@ -138,9 +149,9 @@ fun GlassToggle(
                 onValueChange = onSelect,
                 role = Role.Switch,
                 interactionSource = remember { MutableInteractionSource() },
-                indication = null
+                indication = null,
             ),
-        contentAlignment = Alignment.CenterStart
+        contentAlignment = Alignment.CenterStart,
     ) {
         Box(
             Modifier
@@ -150,7 +161,7 @@ fun GlassToggle(
                     val fraction = dampedDragAnimation.value
                     drawRect(lerp(trackColor, accentColor, fraction))
                 }
-                .size(ComponentSize.ToggleTrackWidth, ComponentSize.ToggleTrackHeight)
+                .size(ComponentSize.ToggleTrackWidth, ComponentSize.ToggleTrackHeight),
         )
 
         Box(
@@ -159,8 +170,11 @@ fun GlassToggle(
                     val fraction = dampedDragAnimation.value
                     val padding = Spacing.ExtraExtraSmall.toPx()
                     translationX =
-                        if (isLtr) lerp(padding, padding + dragWidth, fraction)
-                        else lerp(-padding, -(padding + dragWidth), fraction)
+                        if (isLtr) {
+                            lerp(padding, padding + dragWidth, fraction)
+                        } else {
+                            lerp(-padding, -(padding + dragWidth), fraction)
+                        }
                 }
                 .then(dampedDragAnimation.modifier)
                 .then(
@@ -170,9 +184,9 @@ fun GlassToggle(
                         trackBackdrop = trackBackdrop,
                         dampedDragAnimation = dampedDragAnimation,
                         glassColors = glassColors,
-                    )
+                    ),
                 )
-                .size(ComponentSize.ToggleThumbWidth, ComponentSize.ToggleThumbHeight)
+                .size(ComponentSize.ToggleThumbWidth, ComponentSize.ToggleThumbHeight),
         )
     }
 }
@@ -196,7 +210,7 @@ private fun toggleThumbModifier(
                     scale(scaleX, scaleY) {
                         drawBackdrop()
                     }
-                }
+                },
             ),
             shape = { ContinuousCapsule },
             effects = {
@@ -205,7 +219,7 @@ private fun toggleThumbModifier(
                 lens(
                     LensRefraction.Toggle.height.toPx() * progress,
                     LensRefraction.Toggle.amount.toPx() * progress,
-                    chromaticAberration = true
+                    chromaticAberration = true,
                 )
             },
             highlight = {
@@ -213,20 +227,20 @@ private fun toggleThumbModifier(
                 Highlight.Ambient.copy(
                     width = Highlight.Ambient.width / 1.5f,
                     blurRadius = Highlight.Ambient.blurRadius / 1.5f,
-                    alpha = progress
+                    alpha = progress,
                 )
             },
             shadow = {
                 Shadow(
                     radius = Elevation.Raised,
-                    color = glassColors.glassShadow.copy(alpha = AlphaTokens.Faint)
+                    color = glassColors.glassShadow.copy(alpha = AlphaTokens.Faint),
                 )
             },
             innerShadow = {
                 val progress = dampedDragAnimation.pressProgress
                 InnerShadow(
                     radius = Elevation.Raised * progress,
-                    alpha = progress
+                    alpha = progress,
                 )
             },
             layerBlock = {
@@ -239,7 +253,7 @@ private fun toggleThumbModifier(
             onDrawSurface = {
                 val progress = dampedDragAnimation.pressProgress
                 drawRect(glassColors.onGlass.copy(alpha = 1f - progress))
-            }
+            },
         )
     } else {
         Modifier

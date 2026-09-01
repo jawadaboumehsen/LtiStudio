@@ -11,7 +11,6 @@ package org.ide.lti.core.designsystem.component
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -26,7 +25,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -42,8 +40,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.input.pointer.PointerButton
-import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.semantics.Role
@@ -67,7 +63,6 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.LtiTheme
-import org.ide.lti.core.designsystem.theme.MotionDuration
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
@@ -129,7 +124,7 @@ fun GlassTopBar(
                 highlight = { Highlight.Default },
                 onDrawSurface = {
                     drawRect(glassColors.glassSurface)
-                }
+                },
             )
         } else {
             Modifier.background(MaterialTheme.colorScheme.surface)
@@ -142,7 +137,7 @@ fun GlassTopBar(
         Modifier.border(
             width = StrokeWidth.Hairline,
             color = glassColors.glassBorder,
-            shape = ContinuousRoundedRectangle(CornerRadius.Panel)
+            shape = ContinuousRoundedRectangle(CornerRadius.Panel),
         )
     } else {
         Modifier
@@ -173,8 +168,8 @@ fun GlassTopBar(
             backdrop = actualBackdrop,
             modifier = Modifier.widthIn(
                 min = ComponentSize.SearchCapsuleMinWidth,
-                max = ComponentSize.SearchCapsuleMaxWidth
-            )
+                max = ComponentSize.SearchCapsuleMaxWidth,
+            ),
         )
 
         Spacer(modifier = Modifier.weight(1f))
@@ -206,7 +201,7 @@ private fun GlassTopBarLeftSection(
     val glassColors = GlassTheme.colors
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.Compact)
+        horizontalArrangement = Arrangement.spacedBy(Spacing.Compact),
     ) {
         Box(
             modifier = Modifier
@@ -216,14 +211,14 @@ private fun GlassTopBarLeftSection(
                     Brush.linearGradient(
                         listOf(
                             glassColors.glassAccent,
-                            BrandColors.LogoGradientEnd
-                        )
-                    )
+                            BrandColors.LogoGradientEnd,
+                        ),
+                    ),
                 )
                 .border(
                     StrokeWidth.Hairline,
                     glassColors.glassBorder.copy(alpha = AlphaTokens.Disabled),
-                    RoundedCornerShape(CornerRadius.Small)
+                    RoundedCornerShape(CornerRadius.Small),
                 ),
             contentAlignment = Alignment.Center,
         ) {
@@ -231,7 +226,7 @@ private fun GlassTopBarLeftSection(
                 text = "L",
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold,
-                color = glassColors.onGlass
+                color = glassColors.onGlass,
             )
         }
 
@@ -250,7 +245,7 @@ private fun GlassTopBarLeftSection(
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-            modifier = Modifier.padding(start = Spacing.ExtraSmall)
+            modifier = Modifier.padding(start = Spacing.ExtraSmall),
         ) {
             Text(
                 text = title,
@@ -272,9 +267,9 @@ private fun GlassTopBarLeftSection(
                         .border(
                             StrokeWidth.Hairline,
                             glassColors.glassBorder,
-                            RoundedCornerShape(CornerRadius.Compact)
+                            RoundedCornerShape(CornerRadius.Compact),
                         )
-                        .padding(horizontal = Spacing.Compact, vertical = Spacing.ExtraExtraSmall)
+                        .padding(horizontal = Spacing.Compact, vertical = Spacing.ExtraExtraSmall),
                 ) {
                     Text(
                         text = workspaceName,
@@ -306,7 +301,7 @@ private fun GlassTopBarRightSection(
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-        modifier = Modifier.padding(end = Spacing.Compact)
+        modifier = Modifier.padding(end = Spacing.Compact),
     ) {
         SegmentedPanelLayoutToggle(
             isLeftPanelVisible = isLeftPanelVisible,
@@ -346,7 +341,7 @@ private fun GlassTopBarRightSection(
                 .padding(horizontal = Spacing.ExtraExtraSmall)
                 .width(StrokeWidth.Standard)
                 .height(ComponentSize.TopBarDividerHeight)
-                .background(glassColors.glassBorder)
+                .background(glassColors.glassBorder),
         )
 
         DesktopWindowControls(
@@ -373,12 +368,12 @@ private fun LiquidSearchCapsule(
 
     val borderColor by animateColorAsState(
         targetValue = if (isHovered) glassColors.glassBorderHighlight else glassColors.glassBorder,
-        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion)
+        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion),
     )
 
     val scale by animateFloatAsState(
         targetValue = if (isHovered) 1.01f else 1f,
-        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion)
+        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion),
     )
 
     Row(
@@ -399,13 +394,13 @@ private fun LiquidSearchCapsule(
                         highlight = { if (isHovered) Highlight.Ambient else Highlight.Plain },
                         onDrawSurface = {
                             drawRect(
-                                if (isHovered) glassColors.glassSurfaceElevated else glassColors.glassSurface
+                                if (isHovered) glassColors.glassSurfaceElevated else glassColors.glassSurface,
                             )
-                        }
+                        },
                     )
                 } else {
                     Modifier.background(glassColors.glassSurface)
-                }
+                },
             )
             .border(width = StrokeWidth.Hairline, color = borderColor, shape = RoundedCornerShape(CornerRadius.Pill))
             .onPointerEvent(PointerEventType.Enter) { isHovered = true }
@@ -418,13 +413,13 @@ private fun LiquidSearchCapsule(
             )
             .padding(horizontal = Spacing.MediumSmall),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.Small)
+        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
         Icon(
             painter = AppIcons.SearchPainterResource(),
             contentDescription = "Search",
             modifier = Modifier.size(IconSize.Search),
-            tint = if (isHovered) glassColors.glassAccent else glassColors.onGlassMuted
+            tint = if (isHovered) glassColors.glassAccent else glassColors.onGlassMuted,
         )
 
         Text(
@@ -432,7 +427,7 @@ private fun LiquidSearchCapsule(
             style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
             color = if (isHovered) glassColors.onGlassSecondary else glassColors.onGlassMuted,
             modifier = Modifier.weight(1f),
-            maxLines = 1
+            maxLines = 1,
         )
 
         // Shortcut pill badge
@@ -441,15 +436,15 @@ private fun LiquidSearchCapsule(
                 .clip(RoundedCornerShape(CornerRadius.ExtraSmall))
                 .background(glassColors.glassSurfaceElevated)
                 .border(StrokeWidth.Hairline, glassColors.glassBorder, RoundedCornerShape(CornerRadius.ExtraSmall))
-                .padding(horizontal = Spacing.Compact, vertical = Spacing.ExtraExtraSmall)
+                .padding(horizontal = Spacing.Compact, vertical = Spacing.ExtraExtraSmall),
         ) {
             Text(
                 text = "Ctrl+P",
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontSize = 9.5.sp,
-                    fontFamily = FontFamily.Monospace
+                    fontFamily = FontFamily.Monospace,
                 ),
-                color = glassColors.onGlassSecondary
+                color = glassColors.onGlassSecondary,
             )
         }
     }
@@ -540,4 +535,3 @@ private fun GlassTopBar_Preview() {
         )
     }
 }
-

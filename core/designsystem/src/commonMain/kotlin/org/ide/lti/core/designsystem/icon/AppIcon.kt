@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2024 Mifos Initiative
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -24,4 +24,3 @@ sealed interface AppIcon {
     data class Vector(val imageVector: ImageVector) : AppIcon
     data class Painted(val painter: @Composable () -> Painter) : AppIcon
 }
-

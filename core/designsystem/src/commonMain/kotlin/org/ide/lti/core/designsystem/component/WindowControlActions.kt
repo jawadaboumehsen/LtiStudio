@@ -55,7 +55,7 @@ data class WindowControlActions(
     val onMaximize: () -> Unit = {},
     val onClose: () -> Unit = {},
     val onDragWindow: () -> Unit = {},
-    val isMaximized: () -> Boolean = { false }
+    val isMaximized: () -> Boolean = { false },
 )
 
 val LocalWindowControlActions = compositionLocalOf { WindowControlActions() }
@@ -178,4 +178,3 @@ fun Modifier.windowDragGesture(onDrag: () -> Unit): Modifier =
             }
         }
     }
-

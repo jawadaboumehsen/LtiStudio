@@ -5,7 +5,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * See See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
  */
 package org.ide.lti.shared.navigation
 
@@ -13,9 +13,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
-import org.ide.lti.feature.setup.setupScreen
 import org.ide.lti.feature.settings.navigateToNotification
 import org.ide.lti.feature.settings.notificationScreen
+import org.ide.lti.feature.setup.setupScreen
 import org.ide.lti.feature.workspace.workspaceScreen
 
 @Composable

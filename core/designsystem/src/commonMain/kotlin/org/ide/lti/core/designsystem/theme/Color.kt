@@ -329,5 +329,3 @@ object PreviewSampleColors {
 object GlassLayoutColors {
     val PanelShadow = Color(0x26000000)
 }
-
-

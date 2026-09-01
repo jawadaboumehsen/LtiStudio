@@ -1,10 +1,18 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.core.designsystem.component
 
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material3.LocalContentColor
@@ -26,7 +34,6 @@ import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.semantics.Role
-import com.kyant.capsule.ContinuousCapsule
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import com.kashif_e.backdrop.drawBackdrop
@@ -34,6 +41,7 @@ import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
 import com.kashif_e.backdrop.highlight.Highlight
+import com.kyant.capsule.ContinuousCapsule
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.GlassTheme
@@ -53,7 +61,7 @@ fun GlassIcon(
     tint: Color = Color.Unspecified,
     surfaceColor: Color = Color.Unspecified,
     contentColor: Color = Color.Unspecified,
-    icon: @Composable () -> Unit
+    icon: @Composable () -> Unit,
 ) {
     val animationScope = rememberCoroutineScope()
     val glassColors = GlassTheme.colors
@@ -64,7 +72,7 @@ fun GlassIcon(
 
     val interactiveHighlight = remember(animationScope) {
         InteractiveHighlight(
-            animationScope = animationScope
+            animationScope = animationScope,
         )
     }
 
@@ -94,7 +102,7 @@ fun GlassIcon(
                                 drawRect(tint, blendMode = BlendMode.Hue)
                                 drawRect(tint.copy(alpha = AlphaTokens.IconTint))
                             }
-                        }
+                        },
                     )
                 } else {
                     Modifier
@@ -106,7 +114,7 @@ fun GlassIcon(
                                 drawRect(tint.copy(alpha = AlphaTokens.IconTint))
                             }
                         }
-                }
+                },
             )
             .border(width = StrokeWidth.Hairline, color = glassColors.glassBorder, shape = ContinuousCapsule)
             .onPointerEvent(PointerEventType.Enter) { isHovered = true }
@@ -115,7 +123,7 @@ fun GlassIcon(
                 interactionSource = null,
                 indication = if (isInteractive) null else LocalIndication.current,
                 role = Role.Button,
-                onClick = onClick
+                onClick = onClick,
             )
             .then(
                 if (isInteractive) {
@@ -124,9 +132,9 @@ fun GlassIcon(
                         .then(interactiveHighlight.gestureModifier)
                 } else {
                     Modifier
-                }
+                },
             ),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         CompositionLocalProvider(LocalContentColor provides finalContentColor) {
             icon()
@@ -148,6 +156,6 @@ fun GlassIconPreview() {
 //                modifier = androidx.compose.ui.Modifier.size(24.dp)
 //            )
             Icons.Default.Folder
-        }
+        },
     )
 }

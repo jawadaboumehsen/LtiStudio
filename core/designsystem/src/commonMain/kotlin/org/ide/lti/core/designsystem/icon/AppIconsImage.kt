@@ -7,7 +7,6 @@
  *
  * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
  */
-
 package org.ide.lti.core.designsystem.icon
 
 import androidx.compose.runtime.Composable

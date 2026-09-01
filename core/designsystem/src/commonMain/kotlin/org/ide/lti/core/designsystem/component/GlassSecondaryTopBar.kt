@@ -25,9 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import org.ide.lti.core.designsystem.icon.AppIcon
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.drawBackdrop
 import com.kashif_e.backdrop.effects.blur
@@ -35,6 +33,7 @@ import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
 import com.kashif_e.backdrop.highlight.Highlight
 import com.kyant.capsule.ContinuousRoundedRectangle
+import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius
@@ -92,16 +91,16 @@ fun GlassSecondaryTopBar(
                         highlight = { Highlight.Default },
                         onDrawSurface = {
                             drawRect(glassColors.glassSurface)
-                        }
+                        },
                     )
                 } else {
                     Modifier.background(MaterialTheme.colorScheme.surface)
-                }
+                },
             )
             .border(
                 width = StrokeWidth.Hairline,
                 color = glassColors.glassBorder,
-                shape = ContinuousRoundedRectangle(CornerRadius.Panel)
+                shape = ContinuousRoundedRectangle(CornerRadius.Panel),
             )
             .padding(horizontal = Spacing.MediumSmall),
         verticalAlignment = Alignment.CenterVertically,

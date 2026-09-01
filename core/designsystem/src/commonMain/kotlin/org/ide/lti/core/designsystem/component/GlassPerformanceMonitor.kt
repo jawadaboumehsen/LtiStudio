@@ -1,3 +1,12 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.core.designsystem.component
 
 import androidx.compose.foundation.background
@@ -82,7 +91,7 @@ data class GlassPerformanceMetrics(
     /**
      * Number of glass components currently rendered.
      */
-    val componentsRendered: Int = 0
+    val componentsRendered: Int = 0,
 ) {
     /**
      * Returns a performance rating based on FPS and frame times.
@@ -138,13 +147,13 @@ class GlassPerformanceCollector {
     fun computeMetrics(
         shaderCacheSize: Int,
         activeBackdrops: Int,
-        componentsRendered: Int
+        componentsRendered: Int,
     ): GlassPerformanceMetrics {
         if (frameTimes.isEmpty()) {
             return GlassPerformanceMetrics(
                 shaderCacheSize = shaderCacheSize,
                 activeBackdrops = activeBackdrops,
-                componentsRendered = componentsRendered
+                componentsRendered = componentsRendered,
             )
         }
 
@@ -160,7 +169,7 @@ class GlassPerformanceCollector {
         val memoryPerBackdrop = 512L // KB per backdrop
         val memoryPerComponent = 64L // KB per glass component
         val memoryUsageKB = (activeBackdrops * memoryPerBackdrop) +
-                           (componentsRendered * memoryPerComponent)
+            (componentsRendered * memoryPerComponent)
 
         return GlassPerformanceMetrics(
             fps = fps,
@@ -171,7 +180,7 @@ class GlassPerformanceCollector {
             shaderCacheSize = shaderCacheSize,
             activeBackdrops = activeBackdrops,
             memoryUsageKB = memoryUsageKB,
-            componentsRendered = componentsRendered
+            componentsRendered = componentsRendered,
         )
     }
 
@@ -201,7 +210,7 @@ fun GlassPerformanceMonitor(
     visible: Boolean,
     modifier: Modifier = Modifier,
     position: MonitorPosition = MonitorPosition.TopEnd,
-    collector: GlassPerformanceCollector = remember { GlassPerformanceCollector() }
+    collector: GlassPerformanceCollector = remember { GlassPerformanceCollector() },
 ) {
     if (!visible) return
 
@@ -226,18 +235,18 @@ fun GlassPerformanceMonitor(
                 // per-effect on demand and backdrop layers are scoped locally without a global count registry.
                 shaderCacheSize = 0,
                 activeBackdrops = 1,
-                componentsRendered = componentsRendered.value
+                componentsRendered = componentsRendered.value,
             )
         }
     }
 
     Box(
         modifier = Modifier.fillMaxSize(),
-        contentAlignment = position.alignment
+        contentAlignment = position.alignment,
     ) {
         PerformanceOverlay(
             metrics = metrics,
-            modifier = modifier.padding(Spacing.Medium)
+            modifier = modifier.padding(Spacing.Medium),
         )
     }
 }
@@ -248,39 +257,39 @@ fun GlassPerformanceMonitor(
 @Composable
 private fun PerformanceOverlay(
     metrics: GlassPerformanceMetrics,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     GlassCard(
         modifier = modifier.width(ComponentSize.PerformanceMonitorWidth),
         contentPadding = Spacing.SmallMedium,
         borderColor = GlassTheme.colors.glassBorder,
         // Lean stack (blur only) — this overlay redraws every frame, so keep it cheap.
-        effects = { blur(BackdropBlur.Subtle.toPx()) }
+        effects = { blur(BackdropBlur.Subtle.toPx()) },
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
             // Title
             Text(
                 "Glass Performance",
                 style = MaterialTheme.typography.labelLarge,
-                color = GlassTheme.colors.onGlass
+                color = GlassTheme.colors.onGlass,
             )
 
             MetricRow(
                 label = "FPS",
                 value = "${metrics.fps.roundToInt()}",
-                valueColor = metrics.performanceColor
+                valueColor = metrics.performanceColor,
             )
 
             MetricRow(
                 label = "Frame Time",
                 value = "${metrics.avgFrameTimeMs.roundToInt()}ms",
-                valueColor = GlassTheme.colors.onGlass
+                valueColor = GlassTheme.colors.onGlass,
             )
 
             MetricRow(
                 label = "Min / Max",
                 value = "${metrics.minFrameTimeMs.roundToInt()} / ${metrics.maxFrameTimeMs.roundToInt()}ms",
-                valueColor = GlassTheme.colors.onGlassSecondary
+                valueColor = GlassTheme.colors.onGlassSecondary,
             )
 
             val droppedColor = if (metrics.droppedFrames > 0) {
@@ -291,7 +300,7 @@ private fun PerformanceOverlay(
             MetricRow(
                 label = "Dropped",
                 value = "${metrics.droppedFrames}",
-                valueColor = droppedColor
+                valueColor = droppedColor,
             )
 
             // Divider
@@ -299,31 +308,31 @@ private fun PerformanceOverlay(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(StrokeWidth.Standard)
-                    .background(GlassTheme.colors.glassBorder)
+                    .background(GlassTheme.colors.glassBorder),
             )
 
             MetricRow(
                 label = "Shader Cache",
                 value = "${metrics.shaderCacheSize}",
-                valueColor = GlassTheme.colors.onGlass
+                valueColor = GlassTheme.colors.onGlass,
             )
 
             MetricRow(
                 label = "Backdrops",
                 value = "${metrics.activeBackdrops}",
-                valueColor = GlassTheme.colors.onGlass
+                valueColor = GlassTheme.colors.onGlass,
             )
 
             MetricRow(
                 label = "Components",
                 value = "${metrics.componentsRendered}",
-                valueColor = GlassTheme.colors.onGlass
+                valueColor = GlassTheme.colors.onGlass,
             )
 
             MetricRow(
                 label = "Memory",
                 value = "${metrics.memoryUsageKB} KB",
-                valueColor = GlassTheme.colors.onGlass
+                valueColor = GlassTheme.colors.onGlass,
             )
 
             // Performance rating indicator
@@ -333,8 +342,8 @@ private fun PerformanceOverlay(
                     .height(ComponentSize.ProgressBarHeight)
                     .background(
                         color = metrics.performanceColor,
-                        shape = ContinuousCapsule
-                    )
+                        shape = ContinuousCapsule,
+                    ),
             )
         }
     }
@@ -344,23 +353,23 @@ private fun PerformanceOverlay(
 private fun MetricRow(
     label: String,
     value: String,
-    valueColor: Color = GlassTheme.colors.onGlass
+    valueColor: Color = GlassTheme.colors.onGlass,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
             label,
             style = MaterialTheme.typography.bodySmall,
-            color = GlassTheme.colors.onGlassSecondary
+            color = GlassTheme.colors.onGlassSecondary,
         )
         Text(
             value,
             style = MaterialTheme.typography.bodySmall.copy(
-                fontFamily = FontFamily.Monospace
+                fontFamily = FontFamily.Monospace,
             ),
-            color = valueColor
+            color = valueColor,
         )
     }
 }
@@ -372,7 +381,7 @@ enum class MonitorPosition(val alignment: Alignment) {
     TopStart(Alignment.TopStart),
     TopEnd(Alignment.TopEnd),
     BottomStart(Alignment.BottomStart),
-    BottomEnd(Alignment.BottomEnd)
+    BottomEnd(Alignment.BottomEnd),
 }
 
 /**
@@ -388,7 +397,7 @@ fun GlassPerformanceMonitorExample(
         // Your app content
         Column(
             modifier = Modifier.fillMaxSize().padding(Spacing.Medium),
-            verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium)
+            verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
         ) {
             GlassButton(onClick = { showMonitor = !showMonitor }) {
                 Text(if (showMonitor) "Hide Monitor" else "Show Monitor")
@@ -397,7 +406,7 @@ fun GlassPerformanceMonitorExample(
             GlassCard {
                 Text(
                     "Glass components being rendered...",
-                    color = GlassTheme.colors.onGlass
+                    color = GlassTheme.colors.onGlass,
                 )
             }
         }
@@ -405,7 +414,7 @@ fun GlassPerformanceMonitorExample(
         // Performance monitor overlay
         GlassPerformanceMonitor(
             visible = showMonitor,
-            position = MonitorPosition.TopEnd
+            position = MonitorPosition.TopEnd,
         )
     }
 }

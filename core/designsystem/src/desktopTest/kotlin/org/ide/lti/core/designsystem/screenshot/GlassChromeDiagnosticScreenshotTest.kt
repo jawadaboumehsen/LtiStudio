@@ -9,14 +9,12 @@
  */
 package org.ide.lti.core.designsystem.screenshot
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -40,9 +38,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onRoot
@@ -88,17 +83,17 @@ class GlassChromeDiagnosticScreenshotTest {
                         GlassPanelHeaderAction(
                             icon = AppIcons.Refresh,
                             contentDescription = "Refresh",
-                            onClick = {}
+                            onClick = {},
                         )
-                    }
+                    },
                 )
-            }
+            },
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(Spacing.Small),
-                verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)
+                verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
             ) {
                 MockTreeItem(name = "LtiRomGui", isFolder = true, isOpen = true, depth = 0)
                 MockTreeItem(name = "core", isFolder = true, isOpen = true, depth = 1)
@@ -124,7 +119,7 @@ class GlassChromeDiagnosticScreenshotTest {
         val bgModifier = if (isSelected) {
             Modifier.background(
                 glassColors.glassAccent.copy(alpha = AlphaTokens.Hover),
-                RoundedCornerShape(CornerRadius.Compact)
+                RoundedCornerShape(CornerRadius.Compact),
             )
         } else {
             Modifier
@@ -138,10 +133,10 @@ class GlassChromeDiagnosticScreenshotTest {
                     start = Spacing.Fourteen * depth,
                     top = Spacing.ExtraExtraSmall,
                     bottom = Spacing.ExtraExtraSmall,
-                    end = Spacing.ExtraSmall
+                    end = Spacing.ExtraSmall,
                 ),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.Compact)
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Compact),
         ) {
             Icon(
                 imageVector = if (isFolder) {
@@ -157,7 +152,7 @@ class GlassChromeDiagnosticScreenshotTest {
                 } else {
                     glassColors.onGlassMuted
                 },
-                modifier = Modifier.size(IconSize.Small)
+                modifier = Modifier.size(IconSize.Small),
             )
             Text(
                 text = name,
@@ -182,17 +177,17 @@ class GlassChromeDiagnosticScreenshotTest {
                         GlassPanelHeaderAction(
                             icon = Icons.Default.PlayArrow,
                             contentDescription = "Run",
-                            onClick = {}
+                            onClick = {},
                         )
-                    }
+                    },
                 )
-            }
+            },
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(glassColors.canvasSurface)
-                    .padding(Spacing.SmallMedium)
+                    .padding(Spacing.SmallMedium),
             ) {
                 Column(modifier = Modifier.fillMaxSize()) {
                     val codeLines = listOf(
@@ -251,15 +246,15 @@ class GlassChromeDiagnosticScreenshotTest {
                     codeLines.forEachIndexed { index, annotatedLine ->
                         Row(
                             modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.Hairline),
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.Medium)
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
                         ) {
                             Text(
                                 text = "${index + 1}".padStart(3, ' '),
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontFamily = FontFamily.Monospace,
                                     fontSize = 11.sp,
-                                    color = glassColors.onGlassMuted.copy(alpha = AlphaTokens.Half)
-                                )
+                                    color = glassColors.onGlassMuted.copy(alpha = AlphaTokens.Half),
+                                ),
                             )
                             Text(
                                 text = annotatedLine,
@@ -267,7 +262,7 @@ class GlassChromeDiagnosticScreenshotTest {
                                     fontFamily = FontFamily.Monospace,
                                     fontSize = 11.5.sp,
                                     color = syntax.plain,
-                                )
+                                ),
                             )
                         }
                     }
@@ -284,15 +279,15 @@ class GlassChromeDiagnosticScreenshotTest {
             header = {
                 GlassPanelHeader(
                     title = "AI Assistant",
-                    icon = Icons.Default.AutoAwesome
+                    icon = Icons.Default.AutoAwesome,
                 )
-            }
+            },
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(Spacing.SmallMedium),
-                verticalArrangement = Arrangement.SpaceBetween
+                verticalArrangement = Arrangement.SpaceBetween,
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
                     Box(
@@ -303,15 +298,15 @@ class GlassChromeDiagnosticScreenshotTest {
                             .border(
                                 StrokeWidth.Hairline,
                                 glassColors.glassBorder,
-                                RoundedCornerShape(CornerRadius.MediumSmall)
+                                RoundedCornerShape(CornerRadius.MediumSmall),
                             )
-                            .padding(Spacing.SmallMedium)
+                            .padding(Spacing.SmallMedium),
                     ) {
                         Text(
                             text = "Analyzing GlassLayout and chrome geometry. " +
                                 "Top bar and status bar layout alignment ready for review.",
                             style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
-                            color = glassColors.onGlassSecondary
+                            color = glassColors.onGlassSecondary,
                         )
                     }
                 }
@@ -324,22 +319,22 @@ class GlassChromeDiagnosticScreenshotTest {
                         .border(
                             StrokeWidth.Hairline,
                             glassColors.glassBorder,
-                            RoundedCornerShape(CornerRadius.Compact)
+                            RoundedCornerShape(CornerRadius.Compact),
                         )
                         .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
                         text = "Ask AI Assistant...",
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
                         color = glassColors.onGlassMuted,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
                     )
                     Icon(
                         imageVector = Icons.Default.Send,
                         contentDescription = "Send",
                         tint = glassColors.glassAccent,
-                        modifier = Modifier.size(IconSize.Small)
+                        modifier = Modifier.size(IconSize.Small),
                     )
                 }
             }
@@ -354,7 +349,7 @@ class GlassChromeDiagnosticScreenshotTest {
     @Test
     fun testDiagnosticRealAppChromeAndBackdrop() = runDesktopComposeUiTest(
         width = TEST_WIDTH,
-        height = TEST_HEIGHT
+        height = TEST_HEIGHT,
     ) {
         setContent {
             val backdrop = rememberLayerBackdrop()
@@ -365,21 +360,21 @@ class GlassChromeDiagnosticScreenshotTest {
                     initialRightWeight = 0.26f,
                     initialShowLeft = true,
                     initialShowRight = true,
-                    initialShowBottom = false
+                    initialShowBottom = false,
                 )
 
                 val leftTabs = listOf(
                     org.ide.lti.core.designsystem.component.GlassSidePanelTab(
                         icon = AppIcons.Folder,
                         label = "Explorer",
-                    ) { MockExplorerPanel() }
+                    ) { MockExplorerPanel() },
                 )
 
                 val rightTabs = listOf(
                     org.ide.lti.core.designsystem.component.GlassSidePanelTab(
                         icon = AppIcons.Sparkles,
                         label = "AI Assistant",
-                    ) { MockAIAssistantPanel() }
+                    ) { MockAIAssistantPanel() },
                 )
 
                 Box(modifier = Modifier.fillMaxSize()) {
@@ -425,7 +420,7 @@ class GlassChromeDiagnosticScreenshotTest {
     @Test
     fun testDiagnosticRealAppChromeAndBackdropLight() = runDesktopComposeUiTest(
         width = TEST_WIDTH,
-        height = TEST_HEIGHT
+        height = TEST_HEIGHT,
     ) {
         setContent {
             val backdrop = rememberLayerBackdrop()
@@ -436,21 +431,21 @@ class GlassChromeDiagnosticScreenshotTest {
                     initialRightWeight = 0.26f,
                     initialShowLeft = true,
                     initialShowRight = true,
-                    initialShowBottom = false
+                    initialShowBottom = false,
                 )
 
                 val leftTabs = listOf(
                     org.ide.lti.core.designsystem.component.GlassSidePanelTab(
                         icon = AppIcons.Folder,
                         label = "Explorer",
-                    ) { MockExplorerPanel() }
+                    ) { MockExplorerPanel() },
                 )
 
                 val rightTabs = listOf(
                     org.ide.lti.core.designsystem.component.GlassSidePanelTab(
                         icon = AppIcons.Sparkles,
                         label = "AI Assistant",
-                    ) { MockAIAssistantPanel() }
+                    ) { MockAIAssistantPanel() },
                 )
 
                 Box(modifier = Modifier.fillMaxSize()) {
@@ -497,7 +492,7 @@ class GlassChromeDiagnosticScreenshotTest {
     @Test
     fun testDiagnosticRealAppChromeWithSidePanelTabs() = runDesktopComposeUiTest(
         width = TEST_WIDTH,
-        height = TEST_HEIGHT
+        height = TEST_HEIGHT,
     ) {
         setContent {
             val backdrop = rememberLayerBackdrop()
@@ -508,21 +503,21 @@ class GlassChromeDiagnosticScreenshotTest {
                     initialRightWeight = 0.26f,
                     initialShowLeft = true,
                     initialShowRight = true,
-                    initialShowBottom = false
+                    initialShowBottom = false,
                 )
 
                 val leftTabs = listOf(
                     org.ide.lti.core.designsystem.component.GlassSidePanelTab(
                         icon = AppIcons.Folder,
                         label = "Explorer",
-                    ) { MockExplorerPanel() }
+                    ) { MockExplorerPanel() },
                 )
 
                 val rightTabs = listOf(
                     org.ide.lti.core.designsystem.component.GlassSidePanelTab(
                         icon = AppIcons.Sparkles,
                         label = "AI Assistant",
-                    ) { MockAIAssistantPanel() }
+                    ) { MockAIAssistantPanel() },
                 )
 
                 Box(modifier = Modifier.fillMaxSize()) {
@@ -560,4 +555,3 @@ class GlassChromeDiagnosticScreenshotTest {
         ScreenshotTestHelper.assertMatchesBaseline("glass_app_chrome_with_side_panel_tabs", image)
     }
 }
-

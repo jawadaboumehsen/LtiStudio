@@ -7,6 +7,8 @@
  *
  * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
  */
+@file:Suppress("ktlint:standard:filename")
+
 package org.ide.lti.core.designsystem.theme
 
 /**

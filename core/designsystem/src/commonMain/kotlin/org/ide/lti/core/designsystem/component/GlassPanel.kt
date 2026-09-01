@@ -32,13 +32,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
-import org.ide.lti.core.designsystem.icon.AppIcon
-import com.kyant.capsule.ContinuousRoundedRectangle
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.BackdropEffectScope
 import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
+import com.kyant.capsule.ContinuousRoundedRectangle
+import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius
@@ -117,7 +117,7 @@ fun GlassPanelHeader(
                     imageVector = icon,
                     contentDescription = null,
                     tint = GlassTheme.colors.onGlassSecondary,
-                    modifier = Modifier.size(IconSize.Medium)
+                    modifier = Modifier.size(IconSize.Medium),
                 )
                 Spacer(modifier = Modifier.width(Spacing.Small))
             }

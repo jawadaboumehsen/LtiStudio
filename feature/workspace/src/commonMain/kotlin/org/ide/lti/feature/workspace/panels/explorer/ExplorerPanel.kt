@@ -5,7 +5,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * See See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
  */
 package org.ide.lti.feature.workspace.panels.explorer
 
@@ -76,7 +76,7 @@ fun ExplorerPanel(
                 ) {
                     CircularProgressIndicator(
                         color = glassColors.glassAccent,
-                        modifier = Modifier.size(ComponentSize.SpinnerSize)
+                        modifier = Modifier.size(ComponentSize.SpinnerSize),
                     )
                 }
             }
@@ -105,7 +105,7 @@ fun ExplorerPanel(
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                        verticalArrangement = Arrangement.Center,
                     ) {
                         GlassIconButton(
                             onClick = { viewModel.openFolder() },
@@ -116,7 +116,7 @@ fun ExplorerPanel(
                                 imageVector = AppIcons.FolderOpen,
                                 contentDescription = "Open Folder",
                                 tint = glassColors.glassAccent,
-                                modifier = Modifier.size(IconSize.ExtraLarge)
+                                modifier = Modifier.size(IconSize.ExtraLarge),
                             )
                         }
 
@@ -126,7 +126,7 @@ fun ExplorerPanel(
                             text = "No Workspace Selected",
                             color = glassColors.onGlass,
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.SemiBold,
                         )
 
                         Spacer(modifier = Modifier.height(Spacing.Small))
@@ -135,11 +135,11 @@ fun ExplorerPanel(
                             text = "Open a directory to explore files",
                             color = glassColors.onGlassMuted,
                             style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(bottom = Spacing.Medium)
+                            modifier = Modifier.padding(bottom = Spacing.Medium),
                         )
 
                         GlassPrimaryButton(
-                            onClick = { viewModel.openFolder() }
+                            onClick = { viewModel.openFolder() },
                         ) {
                             Text(text = "Open Folder")
                         }

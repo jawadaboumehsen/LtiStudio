@@ -95,7 +95,7 @@ class AppSettingsStateWiringTest {
         val total = imageEffectsOn.width * imageEffectsOn.height
         val formattedEffects = "%.4f".format(diffPercent)
         println(
-            "[VERIFICATION] Fluid Glass Effects toggle diff: $diffPixels / $total pixels ($formattedEffects%)"
+            "[VERIFICATION] Fluid Glass Effects toggle diff: $diffPixels / $total pixels ($formattedEffects%)",
         )
 
         assertTrue(
@@ -130,7 +130,7 @@ class AppSettingsStateWiringTest {
         val total = imageDark.width * imageDark.height
         val formattedDark = "%.4f".format(diffPercent)
         println(
-            "[VERIFICATION] Dark Mode toggle diff: $diffPixels / $total pixels ($formattedDark%)"
+            "[VERIFICATION] Dark Mode toggle diff: $diffPixels / $total pixels ($formattedDark%)",
         )
 
         assertTrue(

@@ -216,15 +216,15 @@ class KotlinSyntaxTokenizerTest {
 
             assertTrue(
                 start >= 0 && end < text.length,
-                "Token range $start..$end out of bounds for text length ${text.length}"
+                "Token range $start..$end out of bounds for text length ${text.length}",
             )
             assertTrue(
                 start <= end,
-                "Invalid token range: start $start > end $end"
+                "Invalid token range: start $start > end $end",
             )
             assertTrue(
                 start > lastEnd,
-                "Overlapping token range: start $start <= previous end $lastEnd"
+                "Overlapping token range: start $start <= previous end $lastEnd",
             )
             lastEnd = end
         }

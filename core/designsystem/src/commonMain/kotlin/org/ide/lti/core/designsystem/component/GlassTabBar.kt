@@ -14,7 +14,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -299,11 +298,11 @@ private fun Modifier.tabGlassSurface(
                 if (tintColor != Color.Transparent) {
                     drawRect(tintColor)
                 }
-            }
+            },
         )
     } else {
         this.background(surfaceColor).then(
-            if (tintColor != Color.Transparent) Modifier.background(tintColor) else Modifier
+            if (tintColor != Color.Transparent) Modifier.background(tintColor) else Modifier,
         )
     }
 }

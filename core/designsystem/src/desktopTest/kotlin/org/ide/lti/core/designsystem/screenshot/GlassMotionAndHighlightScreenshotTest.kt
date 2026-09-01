@@ -25,15 +25,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -78,7 +75,7 @@ class GlassMotionAndHighlightScreenshotTest {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(GlassTheme.colors.glassShadow.copy(alpha = AlphaTokens.Scrim))
+                        .background(GlassTheme.colors.glassShadow.copy(alpha = AlphaTokens.Scrim)),
                 ) {
                     GlassBottomSheet(
                         state = state,
@@ -89,18 +86,18 @@ class GlassMotionAndHighlightScreenshotTest {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = Spacing.Large, vertical = Spacing.Medium),
-                            verticalArrangement = Arrangement.spacedBy(Spacing.Small)
+                            verticalArrangement = Arrangement.spacedBy(Spacing.Small),
                         ) {
                             Text(
                                 text = "Glass Bottom Sheet Modal",
                                 style = MaterialTheme.typography.titleMedium,
-                                color = GlassTheme.colors.onGlass
+                                color = GlassTheme.colors.onGlass,
                             )
                             Text(
                                 text = "Visual parity with GlassDialog: Highlight.Default edge lighting " +
                                     "& spring offset physics.",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = GlassTheme.colors.onGlassSecondary
+                                color = GlassTheme.colors.onGlassSecondary,
                             )
                         }
                     }
@@ -122,7 +119,7 @@ class GlassMotionAndHighlightScreenshotTest {
                     modifier = Modifier
                         .fillMaxSize()
                         .background(GlassTheme.colors.glassSurface)
-                        .padding(Spacing.Small)
+                        .padding(Spacing.Small),
                 ) {
                     Row(modifier = Modifier.fillMaxSize()) {
                         GlassNavigationRail {
@@ -133,10 +130,10 @@ class GlassMotionAndHighlightScreenshotTest {
                                     Icon(
                                         imageVector = AppIcons.Folder,
                                         contentDescription = "Explorer",
-                                        modifier = Modifier.size(IconSize.Large)
+                                        modifier = Modifier.size(IconSize.Large),
                                     )
                                 },
-                                label = { Text("Files") }
+                                label = { Text("Files") },
                             )
                             GlassNavigationRailItem(
                                 selected = false,
@@ -145,10 +142,10 @@ class GlassMotionAndHighlightScreenshotTest {
                                     Icon(
                                         imageVector = AppIcons.Search,
                                         contentDescription = "Search",
-                                        modifier = Modifier.size(IconSize.Large)
+                                        modifier = Modifier.size(IconSize.Large),
                                     )
                                 },
-                                label = { Text("Search") }
+                                label = { Text("Search") },
                             )
                         }
 
@@ -158,7 +155,7 @@ class GlassMotionAndHighlightScreenshotTest {
                             modifier = Modifier
                                 .weight(1f)
                                 .fillMaxHeight(),
-                            contentAlignment = Alignment.BottomCenter
+                            contentAlignment = Alignment.BottomCenter,
                         ) {
                             GlassNavigationBar {
                                 GlassNavigationBarItem(
@@ -168,10 +165,10 @@ class GlassMotionAndHighlightScreenshotTest {
                                         Icon(
                                             imageVector = AppIcons.Home,
                                             contentDescription = "Home",
-                                            modifier = Modifier.size(IconSize.Large)
+                                            modifier = Modifier.size(IconSize.Large),
                                         )
                                     },
-                                    label = { Text("Home") }
+                                    label = { Text("Home") },
                                 )
                                 GlassNavigationBarItem(
                                     selected = false,
@@ -180,10 +177,10 @@ class GlassMotionAndHighlightScreenshotTest {
                                         Icon(
                                             imageVector = AppIcons.Settings,
                                             contentDescription = "Settings",
-                                            modifier = Modifier.size(IconSize.Large)
+                                            modifier = Modifier.size(IconSize.Large),
                                         )
                                     },
-                                    label = { Text("Settings") }
+                                    label = { Text("Settings") },
                                 )
                             }
                         }
@@ -207,11 +204,11 @@ class GlassMotionAndHighlightScreenshotTest {
                         .fillMaxSize()
                         .background(GlassTheme.colors.glassSurface)
                         .padding(Spacing.Medium),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraLarge),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             GlassIcon(
@@ -219,19 +216,19 @@ class GlassMotionAndHighlightScreenshotTest {
                                 backdrop = backdrop,
                                 modifier = Modifier
                                     .testTag("idle_glass_icon")
-                                    .size(ComponentSize.IconButtonSize)
+                                    .size(ComponentSize.IconButtonSize),
                             ) {
                                 Icon(
                                     imageVector = AppIcons.Sparkles,
                                     contentDescription = "Idle Icon",
-                                    modifier = Modifier.size(IconSize.Medium)
+                                    modifier = Modifier.size(IconSize.Medium),
                                 )
                             }
                             Spacer(Modifier.height(Spacing.ExtraSmall))
                             Text(
                                 text = "Idle (Plain)",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = GlassTheme.colors.onGlassMuted
+                                color = GlassTheme.colors.onGlassMuted,
                             )
                         }
 
@@ -241,19 +238,19 @@ class GlassMotionAndHighlightScreenshotTest {
                                 backdrop = backdrop,
                                 modifier = Modifier
                                     .testTag("hovered_glass_icon")
-                                    .size(ComponentSize.IconButtonSize)
+                                    .size(ComponentSize.IconButtonSize),
                             ) {
                                 Icon(
                                     imageVector = AppIcons.Settings,
                                     contentDescription = "Hovered Icon",
-                                    modifier = Modifier.size(IconSize.Medium)
+                                    modifier = Modifier.size(IconSize.Medium),
                                 )
                             }
                             Spacer(Modifier.height(Spacing.ExtraSmall))
                             Text(
                                 text = "Hovered (Ambient)",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = GlassTheme.colors.onGlassMuted
+                                color = GlassTheme.colors.onGlassMuted,
                             )
                         }
                     }
@@ -285,33 +282,33 @@ class GlassMotionAndHighlightScreenshotTest {
                     .fillMaxSize()
                     .background(GlassTheme.colors.glassSurface)
                     .padding(Spacing.Medium),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.Large)
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.Large),
                 ) {
                     // Left Column: Normal Motion (spring physics enabled)
                     Box(modifier = Modifier.weight(1f)) {
                         LtiTheme(darkTheme = true, reducedMotion = false) {
                             Column(
                                 modifier = Modifier.fillMaxWidth(),
-                                verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium)
+                                verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
                             ) {
                                 Text(
                                     text = "Normal Motion (Spring)",
                                     style = MaterialTheme.typography.titleSmall,
-                                    color = GlassTheme.colors.onGlass
+                                    color = GlassTheme.colors.onGlass,
                                 )
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
+                                    verticalAlignment = Alignment.CenterVertically,
                                 ) {
                                     Text(
                                         text = "Toggle",
                                         color = GlassTheme.colors.onGlassSecondary,
-                                        style = MaterialTheme.typography.bodySmall
+                                        style = MaterialTheme.typography.bodySmall,
                                     )
                                     GlassToggle(
                                         selected = { normalToggle },
@@ -335,22 +332,22 @@ class GlassMotionAndHighlightScreenshotTest {
                         LtiTheme(darkTheme = true, reducedMotion = true) {
                             Column(
                                 modifier = Modifier.fillMaxWidth(),
-                                verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium)
+                                verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
                             ) {
                                 Text(
                                     text = "Reduced Motion (Snap)",
                                     style = MaterialTheme.typography.titleSmall,
-                                    color = GlassTheme.colors.onGlass
+                                    color = GlassTheme.colors.onGlass,
                                 )
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
+                                    verticalAlignment = Alignment.CenterVertically,
                                 ) {
                                     Text(
                                         text = "Toggle",
                                         color = GlassTheme.colors.onGlassSecondary,
-                                        style = MaterialTheme.typography.bodySmall
+                                        style = MaterialTheme.typography.bodySmall,
                                     )
                                     GlassToggle(
                                         selected = { reducedToggle },

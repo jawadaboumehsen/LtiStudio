@@ -1,3 +1,12 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.core.designsystem.utils
 
 import androidx.compose.animation.core.Animatable
@@ -10,14 +19,14 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.util.fastCoerceAtMost
+import androidx.compose.ui.util.lerp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.ide.lti.core.designsystem.theme.MotionSpring
 import org.ide.lti.core.designsystem.theme.MotionThreshold
-import androidx.compose.ui.graphics.GraphicsLayerScope
-import androidx.compose.ui.util.fastCoerceAtMost
-import androidx.compose.ui.util.lerp
 import org.ide.lti.core.designsystem.theme.Spacing
 import kotlin.math.abs
 import kotlin.math.atan2
@@ -27,7 +36,7 @@ import kotlin.math.tanh
 
 class InteractiveHighlight(
     val animationScope: CoroutineScope,
-    val position: (size: Size, offset: Offset) -> Offset = { _, offset -> offset }
+    val position: (size: Size, offset: Offset) -> Offset = { _, offset -> offset },
 ) {
 
     private val pressProgressAnimationSpec =
@@ -50,7 +59,7 @@ class InteractiveHighlight(
             if (progress > 0f) {
                 drawRect(
                     Color.White.copy(0.25f * progress),
-                    blendMode = BlendMode.Plus
+                    blendMode = BlendMode.Plus,
                 )
             }
 
@@ -78,7 +87,7 @@ class InteractiveHighlight(
                         launch { pressProgressAnimation.animateTo(0f, pressProgressAnimationSpec) }
                         launch { positionAnimation.animateTo(startPosition, positionAnimationSpec) }
                     }
-                }
+                },
             ) { change, _ ->
                 animationScope.launch { positionAnimation.snapTo(change.position) }
             }
@@ -89,7 +98,7 @@ class InteractiveHighlight(
  * Applies physical squash-and-stretch and drag damping to a graphics layer during press/drag interactions.
  */
 fun GraphicsLayerScope.applyInteractiveHighlightTransform(
-    interactiveHighlight: InteractiveHighlight
+    interactiveHighlight: InteractiveHighlight,
 ) {
     val width = size.width
     val height = size.height

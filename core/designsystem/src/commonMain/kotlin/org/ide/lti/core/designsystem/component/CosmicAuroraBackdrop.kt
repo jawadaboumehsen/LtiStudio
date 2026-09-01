@@ -58,7 +58,7 @@ fun CosmicAuroraBackdrop(
     Canvas(
         modifier = modifier
             .layerBackdrop(backdrop)
-            .fillMaxSize()
+            .fillMaxSize(),
     ) {
         if (isDark) {
             // 1. Deep space / page base
@@ -70,11 +70,11 @@ fun CosmicAuroraBackdrop(
                     colors = listOf(
                         colorScheme.primary.copy(alpha = AlphaTokens.Soft),
                         colorScheme.primaryContainer.copy(alpha = AlphaTokens.Faded),
-                        Color.Transparent
+                        Color.Transparent,
                     ),
                     center = Offset(size.width * 0.40f, size.height * 0.15f),
-                    radius = size.width * 0.55f
-                )
+                    radius = size.width * 0.55f,
+                ),
             )
 
             // 3. Secondary aurora glow (Top-Right)
@@ -83,11 +83,11 @@ fun CosmicAuroraBackdrop(
                     colors = listOf(
                         colorScheme.secondary.copy(alpha = AlphaTokens.Ambient),
                         colorScheme.secondaryContainer.copy(alpha = AlphaTokens.Hover),
-                        Color.Transparent
+                        Color.Transparent,
                     ),
                     center = Offset(size.width * 0.85f, size.height * 0.20f),
-                    radius = size.width * 0.50f
-                )
+                    radius = size.width * 0.50f,
+                ),
             )
 
             // 4. Tertiary shimmer (Bottom-Left)
@@ -96,11 +96,11 @@ fun CosmicAuroraBackdrop(
                     colors = listOf(
                         colorScheme.tertiary.copy(alpha = AlphaTokens.Ambient),
                         colorScheme.tertiaryContainer.copy(alpha = AlphaTokens.Hover),
-                        Color.Transparent
+                        Color.Transparent,
                     ),
                     center = Offset(size.width * 0.15f, size.height * 0.85f),
-                    radius = size.width * 0.50f
-                )
+                    radius = size.width * 0.50f,
+                ),
             )
 
             // 5. Inverse-primary accent (Bottom-Right)
@@ -108,11 +108,11 @@ fun CosmicAuroraBackdrop(
                 brush = Brush.radialGradient(
                     colors = listOf(
                         colorScheme.inversePrimary.copy(alpha = AlphaTokens.Faded),
-                        Color.Transparent
+                        Color.Transparent,
                     ),
                     center = Offset(size.width * 0.90f, size.height * 0.90f),
-                    radius = size.width * 0.45f
-                )
+                    radius = size.width * 0.45f,
+                ),
             )
 
             // 6. Smooth Vignette Overlay
@@ -121,9 +121,9 @@ fun CosmicAuroraBackdrop(
                     colors = listOf(
                         colorScheme.scrim.copy(alpha = AlphaTokens.Scrim),
                         Color.Transparent,
-                        colorScheme.scrim.copy(alpha = AlphaTokens.Half)
-                    )
-                )
+                        colorScheme.scrim.copy(alpha = AlphaTokens.Half),
+                    ),
+                ),
             )
         } else {
             // 1. Light space base
@@ -135,11 +135,11 @@ fun CosmicAuroraBackdrop(
                     colors = listOf(
                         LtiSeedColor.copy(alpha = AlphaTokens.Ambient),
                         BrandColors.LogoGradientEnd.copy(alpha = AlphaTokens.Faded),
-                        Color.Transparent
+                        Color.Transparent,
                     ),
                     center = Offset(size.width * 0.40f, size.height * 0.15f),
-                    radius = size.width * 0.55f
-                )
+                    radius = size.width * 0.55f,
+                ),
             )
 
             // 3. Secondary aurora glow (Top-Right) - Electric Cyan
@@ -148,11 +148,11 @@ fun CosmicAuroraBackdrop(
                     colors = listOf(
                         BrandColors.LogoGradientEnd.copy(alpha = AlphaTokens.Ambient),
                         LtiSeedColor.copy(alpha = AlphaTokens.Hover),
-                        Color.Transparent
+                        Color.Transparent,
                     ),
                     center = Offset(size.width * 0.85f, size.height * 0.20f),
-                    radius = size.width * 0.50f
-                )
+                    radius = size.width * 0.50f,
+                ),
             )
 
             // 4. Tertiary shimmer (Bottom-Left) - Vibrant violet
@@ -161,11 +161,11 @@ fun CosmicAuroraBackdrop(
                     colors = listOf(
                         PreviewSampleColors.Purple.copy(alpha = AlphaTokens.Faded),
                         colorScheme.tertiaryContainer.copy(alpha = AlphaTokens.Hover),
-                        Color.Transparent
+                        Color.Transparent,
                     ),
                     center = Offset(size.width * 0.15f, size.height * 0.85f),
-                    radius = size.width * 0.50f
-                )
+                    radius = size.width * 0.50f,
+                ),
             )
 
             // 5. Inverse-primary accent (Bottom-Right) - Soft Azure
@@ -173,11 +173,11 @@ fun CosmicAuroraBackdrop(
                 brush = Brush.radialGradient(
                     colors = listOf(
                         LtiSeedColor.copy(alpha = AlphaTokens.Hover),
-                        Color.Transparent
+                        Color.Transparent,
                     ),
                     center = Offset(size.width * 0.90f, size.height * 0.90f),
-                    radius = size.width * 0.45f
-                )
+                    radius = size.width * 0.45f,
+                ),
             )
         }
     }

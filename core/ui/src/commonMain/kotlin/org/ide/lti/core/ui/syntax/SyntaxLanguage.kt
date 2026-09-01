@@ -75,7 +75,8 @@ enum class SyntaxLanguage(val displayName: String, val extensions: Set<String>) 
     PLAIN_TEXT(
         displayName = "Plain Text",
         extensions = emptySet(),
-    );
+    ),
+    ;
 
     val tokenizer: SyntaxTokenizer
         get() = when (this) {

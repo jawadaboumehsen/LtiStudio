@@ -66,7 +66,7 @@ class GlassFocusScreenshotTest {
                         .fillMaxSize()
                         .background(GlassTheme.colors.glassSurface)
                         .padding(Spacing.Medium),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     Column(
                         verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
@@ -74,25 +74,25 @@ class GlassFocusScreenshotTest {
                     ) {
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
                             GlassButton(
                                 onClick = {},
                                 modifier = Modifier.focusRequester(focusRequester),
-                                variant = GlassButtonVariant.Standard
+                                variant = GlassButtonVariant.Standard,
                             ) {
                                 Text("Focused Standard")
                             }
                             GlassButton(
                                 onClick = {},
-                                variant = GlassButtonVariant.Standard
+                                variant = GlassButtonVariant.Standard,
                             ) {
                                 Text("Unfocused")
                             }
                         }
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
                             GlassPrimaryButton(onClick = {}) {
                                 Text("Primary Action")
@@ -101,7 +101,7 @@ class GlassFocusScreenshotTest {
                                 Icon(
                                     imageVector = AppIcons.Refresh,
                                     contentDescription = "Refresh",
-                                    modifier = Modifier.size(IconSize.Medium)
+                                    modifier = Modifier.size(IconSize.Medium),
                                 )
                             }
                             GlassTextButton(onClick = {}) {
@@ -127,11 +127,11 @@ class GlassFocusScreenshotTest {
                         .fillMaxSize()
                         .background(GlassTheme.colors.glassSurface)
                         .padding(Spacing.Medium),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     GlassButton(
                         onClick = {},
-                        variant = GlassButtonVariant.Standard
+                        variant = GlassButtonVariant.Standard,
                     ) {
                         Text("Clicked")
                     }
@@ -156,11 +156,11 @@ class GlassFocusScreenshotTest {
                         .fillMaxSize()
                         .background(GlassTheme.colors.glassSurface)
                         .padding(Spacing.Medium),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     GlassButton(
                         onClick = {},
-                        variant = GlassButtonVariant.Standard
+                        variant = GlassButtonVariant.Standard,
                     ) {
                         Text("Clicked")
                     }

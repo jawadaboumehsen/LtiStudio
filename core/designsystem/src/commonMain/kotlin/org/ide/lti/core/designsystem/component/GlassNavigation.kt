@@ -5,7 +5,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * See See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
  */
 package org.ide.lti.core.designsystem.component
 
@@ -97,7 +97,7 @@ fun GlassNavigationBar(
         modifier = modifier.glassEffect(
             shape = RectangleShape,
             effects = GlassDockedBarEffects,
-            highlight = { Highlight.Default }
+            highlight = { Highlight.Default },
         ),
         containerColor = Color.Transparent,
         tonalElevation = Elevation.None,
@@ -161,7 +161,7 @@ fun GlassNavigationRail(
         modifier = modifier.glassEffect(
             shape = RectangleShape,
             effects = GlassDockedBarEffects,
-            highlight = { Highlight.Default }
+            highlight = { Highlight.Default },
         ),
         containerColor = Color.Transparent,
         contentColor = LtiNavigationDefaults.navigationContentColor(),

@@ -74,4 +74,3 @@ fun <T> resolveAnimationSpec(
     reducedMotion: Boolean,
     durationMillis: Int = MotionDuration.Fast,
 ): AnimationSpec<T> = if (reducedMotion) snap() else tween(durationMillis)
-
