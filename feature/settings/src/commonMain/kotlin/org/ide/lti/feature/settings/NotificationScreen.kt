@@ -39,10 +39,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.GlassCard
+import org.ide.lti.core.designsystem.component.GlassEmptyState
 import org.ide.lti.core.designsystem.component.GlassIconButton
 import org.ide.lti.core.designsystem.component.GlassTextButton
+import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
-import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
@@ -121,44 +122,12 @@ fun NotificationScreenContent(
                     modifier = Modifier.fillMaxWidth(),
                     contentPadding = Spacing.ExtraExtraLarge,
                 ) {
-                    Column(
+                    GlassEmptyState(
+                        icon = AppIcon.Painted(AppIcons.NotificationsPainterResource),
+                        title = "All Caught Up",
+                        description = "No unread notifications at this time.",
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(Spacing.CardPadding),
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(ComponentSize.EmptyStateBadgeSize)
-                                .clip(CircleShape)
-                                .background(GlassTheme.colors.glassSurfaceElevated.copy(alpha = AlphaTokens.Faint))
-                                .border(
-                                    StrokeWidth.Hairline,
-                                    GlassTheme.colors.glassBorderHighlight.copy(alpha = AlphaTokens.Border),
-                                    CircleShape,
-                                ),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                painter = AppIcons.NotificationsPainterResource(),
-                                contentDescription = null,
-                                tint = GlassTheme.colors.glassAccent,
-                                modifier = Modifier.size(IconSize.ExtraLarge),
-                            )
-                        }
-
-                        Text(
-                            text = "All Caught Up",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = GlassTheme.colors.onGlass,
-                        )
-
-                        Text(
-                            text = "No unread notifications at this time.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = GlassTheme.colors.onGlassSecondary,
-                        )
-                    }
+                    )
                 }
             } else {
                 LazyColumn(

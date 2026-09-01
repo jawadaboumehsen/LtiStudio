@@ -9,26 +9,18 @@
  */
 package org.ide.lti.feature.workspace.panels.explorer
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import org.ide.lti.core.designsystem.component.GlassIconButton
+import org.ide.lti.core.designsystem.component.GlassEmptyState
 import org.ide.lti.core.designsystem.component.GlassPanelContainer
 import org.ide.lti.core.designsystem.component.GlassPanelHeader
 import org.ide.lti.core.designsystem.component.GlassPanelHeaderAction
@@ -37,7 +29,6 @@ import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
-import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.model.filesystem.FileType
 import org.ide.lti.core.ui.GlassFileTree
@@ -103,47 +94,20 @@ fun ExplorerPanel(
                         .padding(Spacing.Medium),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
-                    ) {
-                        GlassIconButton(
-                            onClick = { viewModel.openFolder() },
-                            size = ComponentSize.EmptyStateBadgeSize,
-                            shape = CircleShape,
-                        ) {
-                            Icon(
-                                imageVector = AppIcons.FolderOpen,
-                                contentDescription = "Open Folder",
-                                tint = glassColors.glassAccent,
-                                modifier = Modifier.size(IconSize.ExtraLarge),
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(Spacing.Medium))
-
-                        Text(
-                            text = "No Workspace Selected",
-                            color = glassColors.onGlass,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                        )
-
-                        Spacer(modifier = Modifier.height(Spacing.Small))
-
-                        Text(
-                            text = "Open a directory to explore files",
-                            color = glassColors.onGlassMuted,
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(bottom = Spacing.Medium),
-                        )
-
-                        GlassPrimaryButton(
-                            onClick = { viewModel.openFolder() },
-                        ) {
-                            Text(text = "Open Folder")
-                        }
-                    }
+                    GlassEmptyState(
+                        icon = AppIcons.FolderOpen,
+                        title = "No Workspace Selected",
+                        description = "Open a directory to explore files",
+                        descriptionColor = glassColors.onGlassMuted,
+                        onIconClick = { viewModel.openFolder() },
+                        action = {
+                            GlassPrimaryButton(
+                                onClick = { viewModel.openFolder() },
+                            ) {
+                                Text(text = "Open Folder")
+                            }
+                        },
+                    )
                 }
             }
         }

@@ -46,6 +46,8 @@ import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.GlassButton
 import org.ide.lti.core.designsystem.component.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.GlassCard
+import org.ide.lti.core.designsystem.component.GlassEmptyState
+import org.ide.lti.core.designsystem.component.GlassEmptyStateOrientation
 import org.ide.lti.core.designsystem.component.GlassPanel
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
@@ -189,41 +191,16 @@ fun SetupScreenContent(
                     modifier = Modifier.fillMaxWidth(),
                     contentPadding = Spacing.CardPadding,
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(ComponentSize.IconButtonSize)
-                                .clip(CircleShape)
-                                .background(GlassTheme.colors.glassSurfaceElevated)
-                                .border(StrokeWidth.Hairline, GlassTheme.colors.glassBorder, CircleShape),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                painter = AppIcons.FolderPainterResource(),
-                                contentDescription = null,
-                                tint = GlassTheme.colors.onGlassMuted,
-                                modifier = Modifier.size(IconSize.Large),
-                            )
-                        }
-
-                        Column {
-                            Text(
-                                text = "No Recent Projects",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium,
-                                color = GlassTheme.colors.onGlass,
-                            )
-                            Text(
-                                text = "Projects you open will appear here for quick access.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = GlassTheme.colors.onGlassSecondary,
-                            )
-                        }
-                    }
+                    GlassEmptyState(
+                        icon = AppIcon.Painted(AppIcons.FolderPainterResource),
+                        title = "No Recent Projects",
+                        description = "Projects you open will appear here for quick access.",
+                        badgeSize = ComponentSize.IconButtonSize,
+                        iconSize = IconSize.Large,
+                        iconTint = GlassTheme.colors.onGlassMuted,
+                        titleStyle = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                        orientation = GlassEmptyStateOrientation.Horizontal,
+                    )
                 }
             }
         }

@@ -20,11 +20,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import org.ide.lti.core.designsystem.component.GlassEmptyState
 import org.ide.lti.core.designsystem.component.GlassPanelContainer
 import org.ide.lti.core.designsystem.component.GlassPanelHeader
 import org.ide.lti.core.designsystem.component.GlassPanelHeaderAction
@@ -45,7 +43,6 @@ import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassTheme
-import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.ui.GlassCodeEditor
@@ -155,51 +152,21 @@ fun EditorPanel(
 private fun NoWorkspaceEditorView() {
     val glassColors = GlassTheme.colors
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(glassColors.canvasSurface),
         contentAlignment = Alignment.Center,
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
+        GlassEmptyState(
+            icon = AppIcon.Painted(AppIcons.FilePainterResource),
+            title = "Welcome to LtiRom",
+            description = "Open a folder in the Explorer to begin editing",
+            iconTint = glassColors.onGlassMuted,
+            titleStyle = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Medium),
+            titleColor = glassColors.onGlassSecondary,
+            descriptionColor = glassColors.onGlassMuted,
             modifier = Modifier.padding(Spacing.Large),
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(ComponentSize.EmptyStateBadgeSize)
-                    .clip(CircleShape)
-                    .background(glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Faint))
-                    .border(
-                        StrokeWidth.Hairline,
-                        glassColors.glassBorder,
-                        CircleShape,
-                    ),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    painter = AppIcons.FilePainterResource(),
-                    contentDescription = null,
-                    tint = glassColors.onGlassMuted,
-                    modifier = Modifier.size(IconSize.ExtraLarge),
-                )
-            }
-
-            Spacer(modifier = Modifier.height(Spacing.Medium))
-
-            Text(
-                text = "Welcome to LtiRom",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Medium,
-                color = glassColors.onGlassSecondary,
-            )
-
-            Spacer(modifier = Modifier.height(Spacing.ExtraSmall))
-
-            Text(
-                text = "Open a folder in the Explorer to begin editing",
-                style = MaterialTheme.typography.bodySmall,
-                color = glassColors.onGlassMuted,
-            )
-        }
+        )
     }
 }
 
@@ -215,37 +182,11 @@ private fun EmptyEditorView() {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            Box(
-                modifier = Modifier
-                    .size(ComponentSize.EmptyStateBadgeSize)
-                    .clip(CircleShape)
-                    .background(glassColors.glassSurfaceElevated)
-                    .border(StrokeWidth.Hairline, glassColors.glassBorder, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    painter = AppIcons.FilePainterResource(),
-                    contentDescription = null,
-                    tint = glassColors.glassAccent,
-                    modifier = Modifier.size(IconSize.ExtraLarge),
-                )
-            }
-
-            Spacer(modifier = Modifier.height(Spacing.Medium))
-
-            Text(
-                text = "No File Open",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = glassColors.onGlass,
-            )
-
-            Spacer(modifier = Modifier.height(Spacing.ExtraSmall))
-
-            Text(
-                text = "Select a file from the Explorer or press Ctrl+P to quick open",
-                style = MaterialTheme.typography.bodySmall,
-                color = glassColors.onGlassMuted,
+            GlassEmptyState(
+                icon = AppIcon.Painted(AppIcons.FilePainterResource),
+                title = "No File Open",
+                description = "Select a file from the Explorer or press Ctrl+P to quick open",
+                descriptionColor = glassColors.onGlassMuted,
             )
 
             Spacer(modifier = Modifier.height(Spacing.ExtraLarge))
