@@ -95,7 +95,17 @@ fun GlassSidePanelRail(
     if (tabs.isEmpty()) return
 
     val glassColors = GlassTheme.colors
-    val railWidth = ComponentSize.SidePanelRailButtonSize + Spacing.ExtraSmall * 2
+
+    // The rail's inner edge (facing the divider) is followed by the divider hairline plus the
+    // content area's own Spacing.Small gap before the panel's visible border, while the outer
+    // edge (facing the window edge) has nothing after it - so a symmetric padding here would
+    // leave the rail button visually closer to the window edge than to the panel. Widen the
+    // outer-edge padding to match that combined inner-side gap (divider + content padding) so
+    // the button reads as centered between the window edge and the panel, not just within its
+    // own narrow column.
+    val innerEdgePadding = Spacing.ExtraSmall
+    val outerEdgePadding = Spacing.SmallMedium
+    val railWidth = ComponentSize.SidePanelRailButtonSize + innerEdgePadding + outerEdgePadding
 
     val iconColumn = @Composable {
         Column(
@@ -103,8 +113,8 @@ fun GlassSidePanelRail(
                 .width(railWidth)
                 .fillMaxHeight()
                 .padding(
-                    start = Spacing.ExtraSmall,
-                    end = Spacing.ExtraSmall,
+                    start = if (railPosition == SidePanelRailPosition.Left) outerEdgePadding else innerEdgePadding,
+                    end = if (railPosition == SidePanelRailPosition.Left) innerEdgePadding else outerEdgePadding,
                     top = Spacing.Small,
                     bottom = Spacing.Small,
                 ),
