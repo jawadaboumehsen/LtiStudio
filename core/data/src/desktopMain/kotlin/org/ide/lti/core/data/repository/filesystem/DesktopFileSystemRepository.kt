@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.data.repository.filesystem
 
+import co.touchlab.kermit.Logger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -36,6 +37,7 @@ import java.nio.file.WatchService
 class DesktopFileSystemRepository : FileSystemRepository {
 
     private val fileSystem = FileSystem.SYSTEM
+    private val logger = Logger.withTag("FileSystemWatcher")
 
     override suspend fun listFiles(path: String): Result<List<FileNode>> {
         return try {
@@ -120,7 +122,8 @@ class DesktopFileSystemRepository : FileSystemRepository {
             while (isActive && keepWatching) {
                 val key = try {
                     watchService.take()
-                } catch (_: Exception) {
+                } catch (e: Exception) {
+                    logger.e(e) { "Error taking watch event key for directory: $path" }
                     null
                 } ?: break
 
@@ -133,7 +136,8 @@ class DesktopFileSystemRepository : FileSystemRepository {
             job.cancel()
             try {
                 watchService?.close()
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                logger.w(e) { "Error closing WatchService for directory: $path" }
             }
         }
     }
@@ -141,7 +145,8 @@ class DesktopFileSystemRepository : FileSystemRepository {
     private fun createWatchService(): WatchService? {
         return try {
             FileSystems.getDefault().newWatchService()
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            logger.e(e) { "Failed to create WatchService" }
             null
         }
     }
@@ -159,7 +164,8 @@ class DesktopFileSystemRepository : FileSystemRepository {
                 )
             }
             p
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            logger.e(e) { "Failed to register directory with WatchService: $path" }
             null
         }
     }

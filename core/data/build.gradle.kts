@@ -21,6 +21,7 @@ kotlin {
             implementation(projects.core.domain)
             implementation(projects.core.network)
             implementation(projects.core.analytics)
+            implementation(libs.kermit.logging)
             implementation(libs.kotlinx.serialization.json)
             api(libs.jb.composeRuntime)
         }
