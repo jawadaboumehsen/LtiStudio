@@ -93,14 +93,32 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import org.ide.lti.core.designsystem.generated.resources.Res
 import org.ide.lti.core.designsystem.generated.resources.bottomPanel
+import org.ide.lti.core.designsystem.generated.resources.ideAdd
+import org.ide.lti.core.designsystem.generated.resources.ideCheck
+import org.ide.lti.core.designsystem.generated.resources.ideChevronDown
+import org.ide.lti.core.designsystem.generated.resources.ideChevronLeft
+import org.ide.lti.core.designsystem.generated.resources.ideChevronRight
 import org.ide.lti.core.designsystem.generated.resources.ideClose
+import org.ide.lti.core.designsystem.generated.resources.ideCopy
+import org.ide.lti.core.designsystem.generated.resources.ideDelete
+import org.ide.lti.core.designsystem.generated.resources.ideEdit
 import org.ide.lti.core.designsystem.generated.resources.ideFile
 import org.ide.lti.core.designsystem.generated.resources.ideFolder
+import org.ide.lti.core.designsystem.generated.resources.ideHide
+import org.ide.lti.core.designsystem.generated.resources.ideInfo
+import org.ide.lti.core.designsystem.generated.resources.ideLocked
 import org.ide.lti.core.designsystem.generated.resources.ideMenu
+import org.ide.lti.core.designsystem.generated.resources.ideMoreVertical
+import org.ide.lti.core.designsystem.generated.resources.ideNotifications
 import org.ide.lti.core.designsystem.generated.resources.ideRefresh
 import org.ide.lti.core.designsystem.generated.resources.ideSave
 import org.ide.lti.core.designsystem.generated.resources.ideSearch
 import org.ide.lti.core.designsystem.generated.resources.ideSettings
+import org.ide.lti.core.designsystem.generated.resources.ideShow
+import org.ide.lti.core.designsystem.generated.resources.ideUser
+import org.ide.lti.core.designsystem.generated.resources.ideWindowMaximize
+import org.ide.lti.core.designsystem.generated.resources.ideWindowMinimize
+import org.ide.lti.core.designsystem.generated.resources.ideWindowRestore
 import org.ide.lti.core.designsystem.generated.resources.leftPanel_1
 import org.ide.lti.core.designsystem.generated.resources.rightPanel
 import org.ide.lti.core.designsystem.theme.GlassTheme
@@ -225,6 +243,25 @@ object AppIcons {
     val SavePainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideSave) }
     val ClearPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideClose) }
     val MenuPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideMenu) }
+    val AddPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideAdd) }
+    val DeletePainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideDelete) }
+    val EditPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideEdit) }
+    val CopyPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideCopy) }
+    val ClosePainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideClose) }
+    val MoreVertPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideMoreVertical) }
+    val ChevronRightPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideChevronRight) }
+    val ChevronLeftPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideChevronLeft) }
+    val ChevronDownPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideChevronDown) }
+    val WindowMinimizePainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideWindowMinimize) }
+    val WindowMaximizePainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideWindowMaximize) }
+    val WindowRestorePainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideWindowRestore) }
+    val UserPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideUser) }
+    val LockedPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideLocked) }
+    val ShowPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideShow) }
+    val HidePainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideHide) }
+    val InfoPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideInfo) }
+    val CheckPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideCheck) }
+    val NotificationsPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideNotifications) }
 
     val LayoutThreePanel = Icons.Default.ViewQuilt
     val LayoutFourPanel = Icons.Default.ViewStream
