@@ -97,22 +97,22 @@ fun GlassIcon(
                             null
                         },
                         onDrawSurface = {
-                            drawRect(if (surfaceColor.isSpecified) surfaceColor else glassColors.glassSurface)
-                            if (tint.isSpecified) {
-                                drawRect(tint, blendMode = BlendMode.Hue)
-                                drawRect(tint.copy(alpha = AlphaTokens.IconTint))
-                            }
+                            drawIconSurface(
+                                surfaceColor = surfaceColor,
+                                glassSurfaceColor = glassColors.glassSurface,
+                                tint = tint,
+                            )
                         },
                     )
                 } else {
                     Modifier
                         .clip(ContinuousCapsule)
                         .drawBehind {
-                            drawRect(if (surfaceColor.isSpecified) surfaceColor else glassColors.glassSurface)
-                            if (tint.isSpecified) {
-                                drawRect(tint, blendMode = BlendMode.Hue)
-                                drawRect(tint.copy(alpha = AlphaTokens.IconTint))
-                            }
+                            drawIconSurface(
+                                surfaceColor = surfaceColor,
+                                glassSurfaceColor = glassColors.glassSurface,
+                                tint = tint,
+                            )
                         }
                 },
             )
@@ -139,6 +139,18 @@ fun GlassIcon(
         CompositionLocalProvider(LocalContentColor provides finalContentColor) {
             icon()
         }
+    }
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawIconSurface(
+    surfaceColor: Color,
+    glassSurfaceColor: Color,
+    tint: Color,
+) {
+    drawRect(if (surfaceColor.isSpecified) surfaceColor else glassSurfaceColor)
+    if (tint.isSpecified && tint != Color.Transparent) {
+        drawRect(tint, blendMode = BlendMode.Hue)
+        drawRect(tint.copy(alpha = tint.alpha * AlphaTokens.Half))
     }
 }
 

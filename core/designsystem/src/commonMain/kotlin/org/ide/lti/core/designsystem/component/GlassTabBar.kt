@@ -9,7 +9,6 @@
  */
 package org.ide.lti.core.designsystem.component
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -32,8 +31,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.semantics.Role
@@ -64,7 +65,7 @@ fun GlassTab(
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    selectedColor: Color = GlassTheme.colors.glassAccent,
+    selectedColor: Color = GlassTheme.colors.glassAccent.copy(alpha = AlphaTokens.PrimaryButtonTint),
     unselectedColor: Color = GlassTheme.colors.glassSurfaceElevated,
     backdrop: Backdrop? = null,
 ) {
@@ -291,17 +292,22 @@ private fun Modifier.tabGlassSurface(
             },
             highlight = { if (isHovered) Highlight.Ambient else Highlight.Plain },
             onDrawSurface = {
-                if (surfaceColor != Color.Transparent) {
-                    drawRect(surfaceColor)
+                if (surfaceColor.isSpecified && surfaceColor != Color.Transparent) {
+                    drawRect(surfaceColor.copy(alpha = surfaceColor.alpha * AlphaTokens.ButtonFill))
                 }
-                if (tintColor != Color.Transparent) {
+                if (tintColor.isSpecified && tintColor != Color.Transparent) {
                     drawRect(tintColor)
                 }
             },
         )
     } else {
-        this.background(surfaceColor).then(
-            if (tintColor != Color.Transparent) Modifier.background(tintColor) else Modifier,
-        )
+        this.drawBehind {
+            if (surfaceColor.isSpecified && surfaceColor != Color.Transparent) {
+                drawRect(surfaceColor.copy(alpha = surfaceColor.alpha * AlphaTokens.ButtonFill))
+            }
+            if (tintColor.isSpecified && tintColor != Color.Transparent) {
+                drawRect(tintColor)
+            }
+        }
     }
 }
