@@ -40,6 +40,7 @@ import com.kashif_e.backdrop.shadow.InnerShadow
 import com.kashif_e.backdrop.shadow.InnerShadowElement
 import com.kashif_e.backdrop.shadow.Shadow
 import com.kashif_e.backdrop.shadow.ShadowElement
+import kotlin.math.ceil
 
 private val DefaultOnDrawBackdrop: DrawScope.(DrawScope.() -> Unit) -> Unit = { it() }
 
@@ -267,7 +268,12 @@ private class DrawBackdropNode(
 
     private val recordBackdropBlock: (DrawScope.() -> Unit) = {
         val canvas = drawContext.canvas
-        val currentPadding = padding
+        // Rounded up (not truncated) and to the exact same integer drawBackdropLayer() uses for
+        // the recorded layer's size/offset below - a raw fractional padding here (e.g. 2.5px at
+        // 125% display scaling) would translate the recorded content by a sub-pixel amount that
+        // the layer's IntSize/IntOffset math can't represent, misaligning the recorded backdrop
+        // from where it gets placed and softening/aliasing every glass element's edges.
+        val currentPadding = ceil(padding).toInt().toFloat()
 
         if (currentPadding != 0f) {
             canvas.translate(currentPadding, currentPadding)
@@ -289,15 +295,16 @@ private class DrawBackdropNode(
     private val drawBackdropLayer: DrawScope.() -> Unit = {
         val layer = graphicsLayer
         if (layer != null) {
-            val currentPadding = padding
+            // Same rounding as recordBackdropBlock's currentPadding - both must agree exactly.
+            val currentPadding = ceil(padding).toInt()
             val currentSize = size
 
             with(this@DrawBackdropNode) {
                 recordLayer(
                     layer,
                     size = IntSize(
-                        currentSize.width.toInt() + currentPadding.toInt() * 2,
-                        currentSize.height.toInt() + currentPadding.toInt() * 2
+                        currentSize.width.toInt() + currentPadding * 2,
+                        currentSize.height.toInt() + currentPadding * 2
                     ),
                     block = recordBackdropBlock
                 )
@@ -307,15 +314,15 @@ private class DrawBackdropNode(
             val canvas = drawContext.canvas
             val outline = shapeProvider.shape.createOutline(currentSize, layoutDirection, this)
             val path = clipPath ?: Path().also { clipPath = it }
-            
+
             canvas.save()
             canvas.clipOutline(outline, path)
-            
+
             layer.topLeft =
-                if (currentPadding != 0f) IntOffset(-currentPadding.toInt(), -currentPadding.toInt())
+                if (currentPadding != 0) IntOffset(-currentPadding, -currentPadding)
                 else IntOffset.Zero
             drawLayer(layer)
-            
+
             canvas.restore()
         }
     }
