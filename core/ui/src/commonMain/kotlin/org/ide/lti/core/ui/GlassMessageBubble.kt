@@ -122,8 +122,9 @@ fun GlassMessageBubble(
             }
 
             // Timestamp
+            val formattedTime = remember(timestamp) { formatTimestamp(timestamp) }
             Text(
-                text = formatTimestamp(timestamp),
+                text = formattedTime,
                 style = MaterialTheme.typography.labelSmall,
                 color = GlassTheme.colors.onGlassMuted,
                 modifier = Modifier.padding(horizontal = Spacing.SmallMedium, vertical = Spacing.ExtraSmall),
