@@ -1110,6 +1110,85 @@ enum class WorkspacePanel {
  * Manages all panel sizes, visibility, and drag behavior
  */
 @androidx.compose.runtime.Stable
+internal class PanelDragAxisState(
+    val panel: WorkspacePanel,
+    val initialWeight: Float,
+    val initialShow: Boolean,
+    val minWeight: Float,
+    private val computeMaxAllowedWeight: () -> Float,
+    private val onDragEndCallback: ((panel: WorkspacePanel, weight: Float) -> Unit)? = null,
+) {
+    var weight by mutableStateOf(initialWeight)
+        internal set
+
+    var isVisible by mutableStateOf(initialShow)
+        internal set
+
+    var isDragging by mutableStateOf(false)
+        private set
+
+    private var wasAtMinBeforeDrag by mutableStateOf(false)
+    private var hitMinThisDrag by mutableStateOf(false)
+    private var triedBelowMinThisDrag by mutableStateOf(false)
+
+    fun onDragStart() {
+        isDragging = true
+        wasAtMinBeforeDrag = (weight <= minWeight + 0.001f)
+        hitMinThisDrag = false
+        triedBelowMinThisDrag = false
+    }
+
+    fun onDrag(weightDelta: Float) {
+        val newWeight = weight + weightDelta
+        if (newWeight < minWeight) {
+            if (wasAtMinBeforeDrag && !hitMinThisDrag) {
+                weight = minWeight
+                triedBelowMinThisDrag = true
+            } else {
+                weight = minWeight
+                hitMinThisDrag = true
+            }
+        } else {
+            val maxAllowed = computeMaxAllowedWeight()
+            weight = newWeight.coerceAtMost(maxAllowed)
+            triedBelowMinThisDrag = false
+        }
+    }
+
+    fun onDragEnd() {
+        isDragging = false
+        if (triedBelowMinThisDrag && wasAtMinBeforeDrag) {
+            isVisible = false
+            triedBelowMinThisDrag = false
+        }
+        onDragEndCallback?.invoke(panel, weight)
+    }
+
+    fun toggle() {
+        isVisible = !isVisible
+        if (isVisible) {
+            weight = initialWeight
+            wasAtMinBeforeDrag = false
+            hitMinThisDrag = false
+            triedBelowMinThisDrag = false
+        }
+    }
+
+    fun reset() {
+        weight = initialWeight
+        isVisible = initialShow
+        isDragging = false
+        wasAtMinBeforeDrag = false
+        hitMinThisDrag = false
+        triedBelowMinThisDrag = false
+    }
+}
+
+/**
+ * State holder for GlassLayout
+ * Manages all panel sizes, visibility, and drag behavior
+ */
+@androidx.compose.runtime.Stable
 class GlassLayoutState(
     initialLeftWeight: Float = 0.2f,
     initialRightWeight: Float = 0.25f,
@@ -1126,193 +1205,108 @@ class GlassLayoutState(
     val maxBottomWeight: Float = 0.6f,
     val onDragEnd: ((panel: WorkspacePanel, weight: Float) -> Unit)? = null,
 ) {
-    private val _initialLeftWeight = initialLeftWeight
-    private val _initialRightWeight = initialRightWeight
-    private val _initialBottomWeight = initialBottomWeight
+    private val leftAxis = PanelDragAxisState(
+        panel = WorkspacePanel.Explorer,
+        initialWeight = initialLeftWeight,
+        initialShow = initialShowLeft,
+        minWeight = minLeftWeight,
+        computeMaxAllowedWeight = { (1.0f - minCenterWeight - rightWeight).coerceAtMost(maxLeftWeight) },
+        onDragEndCallback = onDragEnd,
+    )
+
+    private val rightAxis = PanelDragAxisState(
+        panel = WorkspacePanel.AiAssistant,
+        initialWeight = initialRightWeight,
+        initialShow = initialShowRight,
+        minWeight = minRightWeight,
+        computeMaxAllowedWeight = { (1.0f - minCenterWeight - leftWeight).coerceAtMost(maxRightWeight) },
+        onDragEndCallback = onDragEnd,
+    )
+
+    private val bottomAxis = PanelDragAxisState(
+        panel = WorkspacePanel.Terminal,
+        initialWeight = initialBottomWeight,
+        initialShow = initialShowBottom,
+        minWeight = minBottomWeight,
+        computeMaxAllowedWeight = { maxBottomWeight },
+        onDragEndCallback = onDragEnd,
+    )
 
     var focusedPanel by mutableStateOf<WorkspacePanel?>(null)
 
-    var leftWeight by mutableStateOf(initialLeftWeight)
-        private set
-    var rightWeight by mutableStateOf(initialRightWeight)
-        private set
-    var bottomWeight by mutableStateOf(initialBottomWeight)
-        private set
+    val leftWeight: Float
+        get() = leftAxis.weight
+    val rightWeight: Float
+        get() = rightAxis.weight
+    val bottomWeight: Float
+        get() = bottomAxis.weight
 
-    var showLeft by mutableStateOf(initialShowLeft)
-        private set
-    var showRight by mutableStateOf(initialShowRight)
-        private set
-    var showBottom by mutableStateOf(initialShowBottom)
-        private set
-
-    private var leftWasAtMinBeforeDrag by mutableStateOf(false)
-    private var rightWasAtMinBeforeDrag by mutableStateOf(false)
-    private var bottomWasAtMinBeforeDrag by mutableStateOf(false)
-
-    private var leftHitMinThisDrag by mutableStateOf(false)
-    private var rightHitMinThisDrag by mutableStateOf(false)
-    private var bottomHitMinThisDrag by mutableStateOf(false)
-
-    private var leftTriedBelowMinThisDrag by mutableStateOf(false)
-    private var rightTriedBelowMinThisDrag by mutableStateOf(false)
-    private var bottomTriedBelowMinThisDrag by mutableStateOf(false)
+    val showLeft: Boolean
+        get() = leftAxis.isVisible
+    val showRight: Boolean
+        get() = rightAxis.isVisible
+    val showBottom: Boolean
+        get() = bottomAxis.isVisible
 
     var containerSize by mutableStateOf(androidx.compose.ui.unit.IntSize.Zero)
         internal set
 
-    private var isLeftDragging by mutableStateOf(false)
-    private var isRightDragging by mutableStateOf(false)
-    private var isBottomDragging by mutableStateOf(false)
-
     val isDragging: Boolean
-        get() = isLeftDragging || isRightDragging || isBottomDragging
+        get() = leftAxis.isDragging || rightAxis.isDragging || bottomAxis.isDragging
 
     fun onLeftDragStart() {
-        isLeftDragging = true
-        leftWasAtMinBeforeDrag = (leftWeight <= minLeftWeight + 0.001f)
-        leftHitMinThisDrag = false
-        leftTriedBelowMinThisDrag = false
+        leftAxis.onDragStart()
     }
 
     fun onLeftDrag(weightDelta: Float) {
-        val newWeight = leftWeight + weightDelta
-        if (newWeight < minLeftWeight) {
-            if (leftWasAtMinBeforeDrag && !leftHitMinThisDrag) {
-                leftWeight = minLeftWeight
-                leftTriedBelowMinThisDrag = true
-            } else {
-                leftWeight = minLeftWeight
-                leftHitMinThisDrag = true
-            }
-        } else {
-            val maxAllowedLeft = (1.0f - minCenterWeight - rightWeight).coerceAtMost(maxLeftWeight)
-            leftWeight = newWeight.coerceAtMost(maxAllowedLeft)
-            leftTriedBelowMinThisDrag = false
-        }
+        leftAxis.onDrag(weightDelta)
     }
 
     fun onLeftDragEnd() {
-        isLeftDragging = false
-        if (leftTriedBelowMinThisDrag && leftWasAtMinBeforeDrag) {
-            showLeft = false
-            leftTriedBelowMinThisDrag = false
-        }
-        onDragEnd?.invoke(WorkspacePanel.Explorer, leftWeight)
+        leftAxis.onDragEnd()
     }
 
     fun toggleLeft() {
-        showLeft = !showLeft
-        if (showLeft) {
-            leftWeight = _initialLeftWeight
-            leftWasAtMinBeforeDrag = false
-            leftHitMinThisDrag = false
-            leftTriedBelowMinThisDrag = false
-        }
+        leftAxis.toggle()
     }
 
     fun onRightDragStart() {
-        isRightDragging = true
-        rightWasAtMinBeforeDrag = (rightWeight <= minRightWeight + 0.001f)
-        rightHitMinThisDrag = false
-        rightTriedBelowMinThisDrag = false
+        rightAxis.onDragStart()
     }
 
     fun onRightDrag(weightDelta: Float) {
-        val newWeight = rightWeight + weightDelta
-        if (newWeight < minRightWeight) {
-            if (rightWasAtMinBeforeDrag && !rightHitMinThisDrag) {
-                rightWeight = minRightWeight
-                rightTriedBelowMinThisDrag = true
-            } else {
-                rightWeight = minRightWeight
-                rightHitMinThisDrag = true
-            }
-        } else {
-            val maxAllowedRight = (1.0f - minCenterWeight - leftWeight).coerceAtMost(maxRightWeight)
-            rightWeight = newWeight.coerceAtMost(maxAllowedRight)
-            rightTriedBelowMinThisDrag = false
-        }
+        rightAxis.onDrag(weightDelta)
     }
 
     fun onRightDragEnd() {
-        isRightDragging = false
-        if (rightTriedBelowMinThisDrag && rightWasAtMinBeforeDrag) {
-            showRight = false
-            rightTriedBelowMinThisDrag = false
-        }
-        onDragEnd?.invoke(WorkspacePanel.AiAssistant, rightWeight)
+        rightAxis.onDragEnd()
     }
 
     fun toggleRight() {
-        showRight = !showRight
-        if (showRight) {
-            rightWeight = _initialRightWeight
-            rightWasAtMinBeforeDrag = false
-            rightHitMinThisDrag = false
-            rightTriedBelowMinThisDrag = false
-        }
+        rightAxis.toggle()
     }
 
     fun onBottomDragStart() {
-        isBottomDragging = true
-        bottomWasAtMinBeforeDrag = (bottomWeight <= minBottomWeight + 0.001f)
-        bottomHitMinThisDrag = false
-        bottomTriedBelowMinThisDrag = false
+        bottomAxis.onDragStart()
     }
 
     fun onBottomDrag(weightDelta: Float) {
-        val newWeight = bottomWeight + weightDelta
-        if (newWeight < minBottomWeight) {
-            if (bottomWasAtMinBeforeDrag && !bottomHitMinThisDrag) {
-                bottomWeight = minBottomWeight
-                bottomTriedBelowMinThisDrag = true
-            } else {
-                bottomWeight = minBottomWeight
-                bottomHitMinThisDrag = true
-            }
-        } else {
-            bottomWeight = newWeight.coerceAtMost(maxBottomWeight)
-            bottomTriedBelowMinThisDrag = false
-        }
+        bottomAxis.onDrag(weightDelta)
     }
 
     fun onBottomDragEnd() {
-        isBottomDragging = false
-        if (bottomTriedBelowMinThisDrag && bottomWasAtMinBeforeDrag) {
-            showBottom = false
-            bottomTriedBelowMinThisDrag = false
-        }
-        onDragEnd?.invoke(WorkspacePanel.Terminal, bottomWeight)
+        bottomAxis.onDragEnd()
     }
 
     fun toggleBottom() {
-        showBottom = !showBottom
-        if (showBottom) {
-            bottomWeight = _initialBottomWeight
-            bottomWasAtMinBeforeDrag = false
-            bottomHitMinThisDrag = false
-            bottomTriedBelowMinThisDrag = false
-        }
+        bottomAxis.toggle()
     }
 
     fun resetAll() {
-        leftWeight = _initialLeftWeight
-        rightWeight = _initialRightWeight
-        bottomWeight = _initialBottomWeight
-        showLeft = initialShowLeft
-        showRight = initialShowRight
-        showBottom = initialShowBottom
+        leftAxis.reset()
+        rightAxis.reset()
+        bottomAxis.reset()
         focusedPanel = null
-        leftWasAtMinBeforeDrag = false
-        rightWasAtMinBeforeDrag = false
-        bottomWasAtMinBeforeDrag = false
-        leftHitMinThisDrag = false
-        rightHitMinThisDrag = false
-        bottomHitMinThisDrag = false
-        leftTriedBelowMinThisDrag = false
-        rightTriedBelowMinThisDrag = false
-        bottomTriedBelowMinThisDrag = false
     }
 }
 
