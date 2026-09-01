@@ -98,7 +98,7 @@ fun GlassPanel(
 fun GlassPanelHeader(
     title: String,
     modifier: Modifier = Modifier,
-    icon: ImageVector? = null,
+    icon: AppIcon? = null,
     actions: (@Composable () -> Unit)? = null,
 ) {
     Row(
@@ -113,12 +113,20 @@ fun GlassPanelHeader(
             modifier = Modifier.weight(1f),
         ) {
             if (icon != null) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = GlassTheme.colors.onGlassSecondary,
-                    modifier = Modifier.size(IconSize.Medium),
-                )
+                when (icon) {
+                    is AppIcon.Vector -> Icon(
+                        imageVector = icon.imageVector,
+                        contentDescription = null,
+                        tint = GlassTheme.colors.onGlassSecondary,
+                        modifier = Modifier.size(IconSize.Medium),
+                    )
+                    is AppIcon.Painted -> Icon(
+                        painter = icon.painter(),
+                        contentDescription = null,
+                        tint = GlassTheme.colors.onGlassSecondary,
+                        modifier = Modifier.size(IconSize.Medium),
+                    )
+                }
                 Spacer(modifier = Modifier.width(Spacing.Small))
             }
             Text(
@@ -130,6 +138,19 @@ fun GlassPanelHeader(
         actions?.invoke()
     }
 }
+
+@Composable
+fun GlassPanelHeader(
+    title: String,
+    icon: ImageVector?,
+    modifier: Modifier = Modifier,
+    actions: (@Composable () -> Unit)? = null,
+) = GlassPanelHeader(
+    title = title,
+    modifier = modifier,
+    icon = icon?.let { AppIcon.Vector(it) },
+    actions = actions,
+)
 
 /**
  * Action button inside a panel header.
