@@ -32,10 +32,9 @@ class SetupViewModel(
 
     fun openFolder(onWorkspaceOpened: (Workspace) -> Unit) {
         viewModelScope.launch {
-            val selectedPath = org.ide.lti.core.common.utils.DialogUtils.selectDirectory()
-            if (selectedPath != null) {
-                val result = workspaceManager.openWorkspaceByPath(selectedPath)
-                result.onSuccess { workspace ->
+            val result = workspaceManager.selectAndOpenDirectory()
+            result.onSuccess { workspace ->
+                if (workspace != null) {
                     onWorkspaceOpened(workspace)
                 }
             }

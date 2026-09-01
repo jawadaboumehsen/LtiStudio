@@ -100,6 +100,20 @@ class WorkspaceManager(
     }
 
     /**
+     * Shows a directory selection dialog and opens the chosen directory as a workspace.
+     * Returns Result.success(workspace) if opened, Result.success(null) if selection was cancelled,
+     * or Result.failure(exception) on error.
+     */
+    suspend fun selectAndOpenDirectory(): Result<Workspace?> {
+        val selectedPath = org.ide.lti.core.common.utils.DialogUtils.selectDirectory()
+        return if (selectedPath != null && selectedPath.isNotBlank()) {
+            openWorkspaceByPath(selectedPath).map { it }
+        } else {
+            Result.success(null)
+        }
+    }
+
+    /**
      * Close the current workspace.
      */
     suspend fun closeWorkspace() {

@@ -140,10 +140,7 @@ class ExplorerViewModel(
 
     fun openFolder() {
         viewModelScope.launch {
-            val selectedPath = org.ide.lti.core.common.utils.DialogUtils.selectDirectory()
-            if (selectedPath != null) {
-                workspaceManager.openWorkspaceByPath(selectedPath)
-            }
+            workspaceManager.selectAndOpenDirectory()
         }
     }
 
