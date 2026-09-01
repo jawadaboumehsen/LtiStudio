@@ -303,8 +303,8 @@ private class DrawBackdropNode(
                 recordLayer(
                     layer,
                     size = IntSize(
-                        currentSize.width.toInt() + currentPadding * 2,
-                        currentSize.height.toInt() + currentPadding * 2
+                        ceil(currentSize.width).toInt() + currentPadding * 2,
+                        ceil(currentSize.height).toInt() + currentPadding * 2
                     ),
                     block = recordBackdropBlock
                 )

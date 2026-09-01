@@ -75,6 +75,9 @@ half4 main(float2 coord) {
     float radius = radiusAt(centeredCoord, cornerRadii);
     
     float sd = sdRoundedRect(centeredCoord, halfSize, radius);
+    if (sd > 0.0) {
+        return content.eval(coord);
+    }
     if (-sd >= refractionHeight) {
         return content.eval(coord);
     }
@@ -115,6 +118,9 @@ half4 main(float2 coord) {
     float radius = radiusAt(centeredCoord, cornerRadii);
     
     float sd = sdRoundedRect(centeredCoord, halfSize, radius);
+    if (sd > 0.0) {
+        return content.eval(coord);
+    }
     if (-sd >= refractionHeight) {
         return content.eval(coord);
     }

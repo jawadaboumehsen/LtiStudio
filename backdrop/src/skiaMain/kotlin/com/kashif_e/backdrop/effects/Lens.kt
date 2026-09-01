@@ -67,6 +67,11 @@ half4 main(float2 coord) {
     float radius = radiusAt(centeredCoord, cornerRadii);
     
     float sd = sdRoundedRect(centeredCoord, halfSize, radius);
+    if (sd > 0.0) {
+        // Outside the shape entirely - the anti-aliased clip fringe. Sample undisplaced, or the
+        // visible alpha-blended fringe pixels get max-displacement scattering (the actual zigzag bug).
+        return content.eval(coord);
+    }
     if (-sd >= refractionHeight) {
         // No displacement in the interior - sample at original position
         return content.eval(coord);
