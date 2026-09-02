@@ -36,15 +36,19 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import com.kashif_e.backdrop.shadow.Shadow
+import com.kyant.capsule.ContinuousRoundedRectangle
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius
+import org.ide.lti.core.designsystem.theme.Elevation
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -198,8 +202,17 @@ fun GlassSidePanelRail(
 /**
  * Horizontal tab strip component for IDE side panels (tool windows).
  *
- * Renders tab pills in a top-anchored horizontal row with an icon, text label, and subtle
- * bottom hairline divider separating the tab switcher from the panel content area below.
+ * Renders tab pills in a top-anchored horizontal row on its own raised [GlassSurface] —
+ * elevated above the panel content below via a real drop [Shadow] (matching how
+ * [GlassDialog] separates from its scrim) rather than a flat divider line, so the strip
+ * reads as a distinct glass layer sitting in front of the panel header beneath it.
+ *
+ * Uses a real [ContinuousRoundedRectangle], not [RectangleShape]: the outer chrome frame
+ * ([GlassLayout]'s own [ContinuousRoundedRectangle]) rounds its top corner right where this
+ * strip sits, so a flat-cornered strip only *looks* rounded at the top (borrowing the
+ * frame's corner behind it) while its own bottom edge - which has no frame corner to
+ * borrow - reads as an abrupt clip. Giving the strip its own matching rounded shape on
+ * every corner makes the rounding genuine on all sides, not an illusion at the top only.
  *
  * @param tabs List of [GlassSidePanelTab] items to display.
  * @param selectedIndex The index of the currently active tab.
@@ -217,8 +230,13 @@ fun GlassSidePanelTabStrip(
 
     val glassColors = GlassTheme.colors
 
-    Column(
+    GlassSurface(
         modifier = modifier.fillMaxWidth(),
+        shape = ContinuousRoundedRectangle(CornerRadius.Panel),
+        surfaceColor = glassColors.glassSurfaceElevated,
+        tint = Color.Unspecified,
+        effects = {},
+        shadow = { Shadow(radius = Elevation.Raised, color = glassColors.glassShadow) },
     ) {
         Row(
             modifier = Modifier
@@ -266,13 +284,6 @@ fun GlassSidePanelTabStrip(
                 }
             }
         }
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(StrokeWidth.Hairline)
-                .background(glassColors.glassBorder.copy(alpha = AlphaTokens.Faint)),
-        )
     }
 }
 
