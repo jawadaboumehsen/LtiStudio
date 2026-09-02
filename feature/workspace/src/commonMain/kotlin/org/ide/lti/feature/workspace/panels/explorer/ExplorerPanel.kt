@@ -58,6 +58,7 @@ fun ExplorerPanel(
                 },
             )
         },
+        scrollEdgeFade = true,
     ) {
         when (val state = uiState) {
             is ExplorerUiState.Loading -> {

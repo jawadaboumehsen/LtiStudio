@@ -48,6 +48,9 @@ object BackdropBlur {
     val DialogLight: Dp = 16.dp
     val BottomSheet: Dp = 16.dp
     val Scrim: Dp = 16.dp
+
+    /** Blur for progressive-blur scroll-edge fades on panel containers (4dp). */
+    val ScrollEdge: Dp = 4.dp
 }
 
 /**
@@ -121,3 +124,12 @@ object BackdropBrightness {
     /** Unadjusted brightness for dark-theme modal dialog frosted backdrops (0.0f). */
     const val DialogDark: Float = 0.0f
 }
+
+/**
+ * Centralized tint intensity tokens for backdrop effects.
+ */
+object BackdropTint {
+    /** Tint intensity for progressive-blur scroll-edge fades (0.8f). */
+    const val ScrollEdgeIntensity: Float = 0.8f
+}
+

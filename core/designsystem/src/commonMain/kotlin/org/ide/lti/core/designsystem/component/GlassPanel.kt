@@ -34,6 +34,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.BackdropEffectScope
+import com.kashif_e.backdrop.backdrops.layerBackdrop
+import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
@@ -200,12 +202,18 @@ fun GlassPanelHeaderAction(
 )
 
 /**
- * Container for panel content with optional header.
+ * Container for panel content with optional header and progressive-blur scroll-edge fades.
+ *
+ * @param modifier Modifier to be applied to the container.
+ * @param header Optional header composable slot.
+ * @param scrollEdgeFade Whether to apply progressive-blur scroll-edge fades at the top and bottom.
+ * @param content The main panel content.
  */
 @Composable
 fun GlassPanelContainer(
     modifier: Modifier = Modifier,
     header: (@Composable () -> Unit)? = null,
+    scrollEdgeFade: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     Surface(
@@ -214,7 +222,30 @@ fun GlassPanelContainer(
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             header?.invoke()
-            content()
+            if (!scrollEdgeFade) {
+                content()
+            } else {
+                val contentBackdrop = rememberLayerBackdrop()
+                Box(modifier = Modifier.fillMaxSize()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .layerBackdrop(contentBackdrop),
+                    ) {
+                        content()
+                    }
+                    GlassScrollEdgeFade(
+                        backdrop = contentBackdrop,
+                        edge = GlassScrollEdge.Top,
+                        modifier = Modifier.align(Alignment.TopCenter),
+                    )
+                    GlassScrollEdgeFade(
+                        backdrop = contentBackdrop,
+                        edge = GlassScrollEdge.Bottom,
+                        modifier = Modifier.align(Alignment.BottomCenter),
+                    )
+                }
+            }
         }
     }
 }

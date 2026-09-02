@@ -72,6 +72,7 @@ import org.junit.Test
  * Uses off-screen rendering via [runDesktopComposeUiTest] to verify visual fidelity
  * across builds against verified baselines.
  */
+@Suppress("LargeClass")
 class GlassComponentScreenshotTest {
 
     @OptIn(ExperimentalTestApi::class)
@@ -204,6 +205,55 @@ class GlassComponentScreenshotTest {
 
         val image = onRoot().captureToImage()
         ScreenshotTestHelper.assertMatchesBaseline("glass_panel_container", image)
+    }
+
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun testGlassPanelScrollEdgeFade() = runDesktopComposeUiTest(width = 320, height = 260) {
+        setContent {
+            LtiTheme(darkTheme = true) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(GlassTheme.colors.glassSurface)
+                        .padding(Spacing.Large),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    GlassCard(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = Spacing.None,
+                    ) {
+                        GlassPanelContainer(
+                            modifier = Modifier.fillMaxSize(),
+                            header = {
+                                GlassPanelHeader(
+                                    title = "EXPLORER",
+                                )
+                            },
+                            scrollEdgeFade = true,
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(horizontal = Spacing.SmallMedium),
+                            ) {
+                                repeat(12) { index ->
+                                    Text(
+                                        text = "Item row $index - file_item_name_$index.kt",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = GlassTheme.colors.onGlassSecondary,
+                                        modifier = Modifier.padding(vertical = Spacing.ExtraSmall),
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        val image = onRoot().captureToImage()
+        ScreenshotTestHelper.assertMatchesBaseline("glass_panel_scroll_edge_fade", image)
     }
 
     @OptIn(ExperimentalTestApi::class)

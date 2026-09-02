@@ -80,6 +80,7 @@ fun AIAssistantPanel(
                 },
             )
         },
+        scrollEdgeFade = true,
     ) {
         when (val state = uiState) {
             is AIAssistantUiState.Empty -> {

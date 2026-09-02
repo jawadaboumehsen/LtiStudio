@@ -143,6 +143,7 @@ object ComponentSize {
     val SettingsMaxWidth: Dp = 760.dp
     val SettingsWindowWidth: Dp = 800.dp
     val SettingsWindowHeight: Dp = 640.dp
+    val ScrollEdgeFadeHeight: Dp = 24.dp
 }
 
 /**
