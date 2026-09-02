@@ -35,6 +35,20 @@ allprojects {
             freeCompilerArgs.add("-Xskip-metadata-version-check")
         }
     }
+
+    configurations.all {
+        resolutionStrategy {
+            // com.materialkolor:material-kolor transitively pulls an alpha
+            // org.jetbrains.compose.material3:material3 build that depends on
+            // kotlinx-datetime 0.7.x, which removed kotlinx.datetime.Instant in favor of
+            // kotlin.time.Instant. Gradle's default "highest wins" conflict resolution
+            // would otherwise silently upgrade the whole runtime classpath to that
+            // incompatible version, causing a NoClassDefFoundError at runtime for any code
+            // (e.g. GlassMessageBubble.kt) still using kotlinx.datetime.Instant. Force the
+            // version this app's code is actually written against.
+            force("org.jetbrains.kotlinx:kotlinx-datetime:${libs.versions.kotlinxDatetime.get()}")
+        }
+    }
 }
 
 /**
