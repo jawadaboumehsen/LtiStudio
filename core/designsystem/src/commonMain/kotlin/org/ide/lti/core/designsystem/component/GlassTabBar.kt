@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Tab
@@ -45,6 +44,7 @@ import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
 import com.kashif_e.backdrop.highlight.Highlight
 import com.kyant.capsule.ContinuousCapsule
+import com.kyant.capsule.ContinuousRoundedRectangle
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BackdropBlur
@@ -148,7 +148,7 @@ fun GlassTabItem(
     val glassColors = GlassTheme.colors
     val effectsEnabled = GlassTheme.effectsEnabled
     val actualBackdrop = backdrop ?: GlassTheme.backdrop
-    val tabShape = RoundedCornerShape(CornerRadius.Small)
+    val tabShape = ContinuousRoundedRectangle(CornerRadius.Small)
     val tabColors = resolveTabItemColors(selected, isHovered, glassColors)
 
     Row(
@@ -192,7 +192,7 @@ fun GlassTabItem(
             GlassIconButton(
                 onClick = onClose,
                 size = IconSize.Medium,
-                shape = RoundedCornerShape(CornerRadius.ExtraSmall),
+                shape = ContinuousRoundedRectangle(CornerRadius.ExtraSmall),
             ) {
                 Icon(
                     painter = AppIcons.ClosePainterResource(),

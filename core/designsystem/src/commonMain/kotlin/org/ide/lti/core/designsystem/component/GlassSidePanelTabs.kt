@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -149,7 +148,7 @@ fun GlassSidePanelRail(
                 GlassIconButton(
                     onClick = { onSelectedIndexChange(index) },
                     size = ComponentSize.SidePanelRailButtonSize,
-                    shape = RoundedCornerShape(CornerRadius.Compact),
+                    shape = ContinuousRoundedRectangle(CornerRadius.Compact),
                     selected = isSelected,
                     modifier = Modifier.semantics {
                         contentDescription = desc
@@ -252,7 +251,7 @@ fun GlassSidePanelTabStrip(
                 GlassButton(
                     onClick = { onSelectedIndexChange(index) },
                     variant = if (isSelected) GlassButtonVariant.Primary else GlassButtonVariant.Standard,
-                    shape = RoundedCornerShape(CornerRadius.Compact),
+                    shape = ContinuousRoundedRectangle(CornerRadius.Compact),
                     minWidth = Spacing.None,
                     minHeight = ComponentSize.TopBarButtonSize,
                     contentPadding = PaddingValues(

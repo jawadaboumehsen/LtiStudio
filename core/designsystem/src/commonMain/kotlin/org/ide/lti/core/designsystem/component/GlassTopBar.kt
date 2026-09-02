@@ -140,18 +140,18 @@ fun GlassTopBar(
             title = title,
             workspaceName = workspaceName,
             onMenuClick = onMenuClick,
-            backdrop = actualBackdrop,
-        )
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        GlassTopBarRightSection(
             isLeftPanelVisible = isLeftPanelVisible,
             isMiddleDownPanelVisible = isMiddleDownPanelVisible,
             isRightPanelVisible = isRightPanelVisible,
             onClickLeftPanelIcon = onClickLeftPanelIcon,
             onClickMiddleDownPanelIcon = onClickMiddleDownPanelIcon,
             onClickRightPanelIcon = onClickRightPanelIcon,
+            backdrop = actualBackdrop,
+        )
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        GlassTopBarRightSection(
             onSearchClick = onSearchClick,
             onNotificationsClick = onNotificationsClick,
             onSettingsClick = onSettingsClick,
@@ -168,6 +168,12 @@ private fun GlassTopBarLeftSection(
     title: String,
     workspaceName: String?,
     onMenuClick: () -> Unit,
+    isLeftPanelVisible: Boolean,
+    isMiddleDownPanelVisible: Boolean,
+    isRightPanelVisible: Boolean,
+    onClickLeftPanelIcon: () -> Unit,
+    onClickMiddleDownPanelIcon: () -> Unit,
+    onClickRightPanelIcon: () -> Unit,
     backdrop: Backdrop? = null,
 ) {
     val glassColors = GlassTheme.colors
@@ -251,17 +257,21 @@ private fun GlassTopBarLeftSection(
                 }
             }
         }
+
+        SegmentedPanelLayoutToggle(
+            isLeftPanelVisible = isLeftPanelVisible,
+            isMiddleDownPanelVisible = isMiddleDownPanelVisible,
+            isRightPanelVisible = isRightPanelVisible,
+            onClickLeftPanelIcon = onClickLeftPanelIcon,
+            onClickMiddleDownPanelIcon = onClickMiddleDownPanelIcon,
+            onClickRightPanelIcon = onClickRightPanelIcon,
+            backdrop = backdrop,
+        )
     }
 }
 
 @Composable
 private fun GlassTopBarRightSection(
-    isLeftPanelVisible: Boolean,
-    isMiddleDownPanelVisible: Boolean,
-    isRightPanelVisible: Boolean,
-    onClickLeftPanelIcon: () -> Unit,
-    onClickMiddleDownPanelIcon: () -> Unit,
-    onClickRightPanelIcon: () -> Unit,
     onSearchClick: () -> Unit,
     onNotificationsClick: () -> Unit,
     onSettingsClick: () -> Unit,
@@ -276,16 +286,6 @@ private fun GlassTopBarRightSection(
         horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
         modifier = Modifier.padding(end = Spacing.Compact),
     ) {
-        SegmentedPanelLayoutToggle(
-            isLeftPanelVisible = isLeftPanelVisible,
-            isMiddleDownPanelVisible = isMiddleDownPanelVisible,
-            isRightPanelVisible = isRightPanelVisible,
-            onClickLeftPanelIcon = onClickLeftPanelIcon,
-            onClickMiddleDownPanelIcon = onClickMiddleDownPanelIcon,
-            onClickRightPanelIcon = onClickRightPanelIcon,
-            backdrop = backdrop,
-        )
-
         GlassIconButton(
             onClick = onSearchClick,
             size = ComponentSize.TopBarButtonSize,
@@ -304,7 +304,7 @@ private fun GlassTopBarRightSection(
             backdrop = backdrop,
         ) {
             Icon(
-                imageVector = AppIcons.OutlinedNotifications,
+                painter = AppIcons.NotificationsPainterResource(),
                 contentDescription = "Notifications",
                 modifier = Modifier.size(IconSize.Medium),
             )
@@ -380,7 +380,7 @@ private fun SegmentedPanelLayoutToggle(
             selected = isLeftPanelVisible,
             onSelectedChange = { onClickLeftPanelIcon() },
             size = ComponentSize.SegmentedButtonSize,
-            shape = RoundedCornerShape(CornerRadius.Compact),
+            shape = ContinuousRoundedRectangle(CornerRadius.Compact),
         ) {
             Icon(
                 painter = AppIcons.leftPanelPainterResource(),
@@ -395,7 +395,7 @@ private fun SegmentedPanelLayoutToggle(
             selected = isMiddleDownPanelVisible,
             onSelectedChange = { onClickMiddleDownPanelIcon() },
             size = ComponentSize.SegmentedButtonSize,
-            shape = RoundedCornerShape(CornerRadius.Compact),
+            shape = ContinuousRoundedRectangle(CornerRadius.Compact),
         ) {
             Icon(
                 painter = AppIcons.bottomPanelPainterResource(),
@@ -410,7 +410,7 @@ private fun SegmentedPanelLayoutToggle(
             selected = isRightPanelVisible,
             onSelectedChange = { onClickRightPanelIcon() },
             size = ComponentSize.SegmentedButtonSize,
-            shape = RoundedCornerShape(CornerRadius.Compact),
+            shape = ContinuousRoundedRectangle(CornerRadius.Compact),
         ) {
             Icon(
                 painter = AppIcons.rightPanelPainterResource(),

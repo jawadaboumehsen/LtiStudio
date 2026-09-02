@@ -10,7 +10,6 @@
 package org.ide.lti.feature.profile
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,8 +21,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material3.HorizontalDivider
@@ -36,8 +33,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import com.kyant.capsule.ContinuousCapsule
+import com.kyant.capsule.ContinuousRoundedRectangle
 import org.ide.lti.core.designsystem.component.GlassCard
 import org.ide.lti.core.designsystem.component.GlassPrimaryButton
+import org.ide.lti.core.designsystem.component.glassOutlineBorder
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
@@ -84,12 +84,12 @@ fun ProfileScreenContent(
                 Box(
                     modifier = Modifier
                         .size(IconSize.Avatar)
-                        .clip(CircleShape)
+                        .clip(ContinuousCapsule)
                         .background(GlassTheme.colors.glassSurfaceElevated.copy(alpha = AlphaTokens.Faint))
-                        .border(
-                            StrokeWidth.Hairline,
-                            GlassTheme.colors.glassBorderHighlight.copy(alpha = AlphaTokens.Border),
-                            CircleShape,
+                        .glassOutlineBorder(
+                            color = GlassTheme.colors.glassBorderHighlight.copy(alpha = AlphaTokens.Border),
+                            width = StrokeWidth.Hairline,
+                            shape = ContinuousCapsule,
                         ),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -122,12 +122,12 @@ fun ProfileScreenContent(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(CornerRadius.Medium))
+                        .clip(ContinuousRoundedRectangle(CornerRadius.Medium))
                         .background(GlassTheme.colors.glassSurfaceElevated.copy(alpha = AlphaTokens.Faint))
-                        .border(
-                            StrokeWidth.Hairline,
-                            GlassTheme.colors.glassBorder,
-                            RoundedCornerShape(CornerRadius.Medium),
+                        .glassOutlineBorder(
+                            color = GlassTheme.colors.glassBorder,
+                            width = StrokeWidth.Hairline,
+                            shape = ContinuousRoundedRectangle(CornerRadius.Medium),
                         )
                         .padding(Spacing.CardPadding),
                     verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),

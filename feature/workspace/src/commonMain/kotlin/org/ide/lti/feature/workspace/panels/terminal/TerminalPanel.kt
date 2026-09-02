@@ -22,7 +22,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
+import com.kyant.capsule.ContinuousCapsule
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -148,7 +148,7 @@ private fun TerminalStatusHeader(
         Box(
             modifier = Modifier
                 .size(ComponentSize.StatusDotSize)
-                .clip(CircleShape)
+                .clip(ContinuousCapsule)
                 .background(
                     if (isRunning) glassColors.syntax.keyword else glassColors.glassAccent,
                 ),

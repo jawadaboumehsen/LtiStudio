@@ -18,7 +18,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
+import com.kyant.capsule.ContinuousCapsule
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -205,7 +205,6 @@ fun GlassEmptyStateBadge(
             onClick = onClick,
             modifier = modifier,
             size = badgeSize,
-            shape = CircleShape,
         ) {
             when (icon) {
                 is AppIcon.Vector -> Icon(
@@ -226,12 +225,12 @@ fun GlassEmptyStateBadge(
         Box(
             modifier = modifier
                 .size(badgeSize)
-                .clip(CircleShape)
+                .clip(ContinuousCapsule)
                 .background(glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Faint))
                 .glassOutlineBorder(
                     width = StrokeWidth.Hairline,
                     color = glassColors.glassBorderHighlight.copy(alpha = AlphaTokens.Border),
-                    shape = CircleShape,
+                    shape = ContinuousCapsule,
                 ),
             contentAlignment = Alignment.Center,
         ) {

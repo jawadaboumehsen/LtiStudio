@@ -10,7 +10,6 @@
 package org.ide.lti.feature.workspace.panels.editor
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,7 +20,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,11 +30,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import com.kyant.capsule.ContinuousRoundedRectangle
 import org.ide.lti.core.designsystem.component.GlassEmptyState
 import org.ide.lti.core.designsystem.component.GlassPanelContainer
 import org.ide.lti.core.designsystem.component.GlassPanelHeader
 import org.ide.lti.core.designsystem.component.GlassPanelHeaderAction
 import org.ide.lti.core.designsystem.component.GlassTabBar
+import org.ide.lti.core.designsystem.component.glassOutlineBorder
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
@@ -197,9 +197,13 @@ private fun EmptyEditorView() {
                 horizontalAlignment = Alignment.Start,
                 modifier = Modifier
                     .width(ComponentSize.ShortcutHelpWidth)
-                    .clip(RoundedCornerShape(CornerRadius.MediumSmall))
+                    .clip(ContinuousRoundedRectangle(CornerRadius.MediumSmall))
                     .background(glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Disabled))
-                    .border(StrokeWidth.Hairline, glassColors.glassBorder, RoundedCornerShape(CornerRadius.MediumSmall))
+                    .glassOutlineBorder(
+                        color = glassColors.glassBorder,
+                        width = StrokeWidth.Hairline,
+                        shape = ContinuousRoundedRectangle(CornerRadius.MediumSmall),
+                    )
                     .padding(Spacing.Medium),
             ) {
                 ShortcutRow(action = "Search Files", keys = "Ctrl + P")
@@ -226,9 +230,13 @@ private fun ShortcutRow(action: String, keys: String) {
         Spacer(modifier = Modifier.weight(1f))
         Box(
             modifier = Modifier
-                .clip(RoundedCornerShape(CornerRadius.ExtraSmall))
+                .clip(ContinuousRoundedRectangle(CornerRadius.ExtraSmall))
                 .background(glassColors.glassSurfaceElevated)
-                .border(StrokeWidth.Hairline, glassColors.glassBorder, RoundedCornerShape(CornerRadius.ExtraSmall))
+                .glassOutlineBorder(
+                    color = glassColors.glassBorder,
+                    width = StrokeWidth.Hairline,
+                    shape = ContinuousRoundedRectangle(CornerRadius.ExtraSmall),
+                )
                 .padding(horizontal = Spacing.Compact, vertical = Spacing.ExtraExtraSmall),
         ) {
             Text(

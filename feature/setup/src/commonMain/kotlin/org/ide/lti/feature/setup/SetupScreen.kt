@@ -10,7 +10,6 @@
 package org.ide.lti.feature.setup
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,8 +25,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -43,12 +40,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import com.kyant.capsule.ContinuousCapsule
+import com.kyant.capsule.ContinuousRoundedRectangle
 import org.ide.lti.core.designsystem.component.GlassButton
 import org.ide.lti.core.designsystem.component.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.GlassCard
 import org.ide.lti.core.designsystem.component.GlassEmptyState
 import org.ide.lti.core.designsystem.component.GlassEmptyStateOrientation
 import org.ide.lti.core.designsystem.component.GlassPanel
+import org.ide.lti.core.designsystem.component.glassOutlineBorder
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
@@ -98,7 +98,7 @@ fun SetupScreenContent(
         // Left Sidebar with glass
         GlassPanel(
             width = ComponentSize.SetupSidebarWidth,
-            shape = RoundedCornerShape(CornerRadius.None),
+            shape = ContinuousRoundedRectangle(CornerRadius.None),
             modifier = Modifier.fillMaxHeight(),
         ) {
             SetupSidebar(
@@ -318,12 +318,12 @@ private fun ActionCard(
             Box(
                 modifier = Modifier
                     .size(IconSize.ActionCard)
-                    .clip(CircleShape)
+                    .clip(ContinuousCapsule)
                     .background(GlassTheme.colors.glassSurfaceElevated.copy(alpha = AlphaTokens.Faint))
-                    .border(
-                        StrokeWidth.Hairline,
-                        if (isPrimary) GlassTheme.colors.glassBorderHighlight else GlassTheme.colors.glassBorder,
-                        CircleShape,
+                    .glassOutlineBorder(
+                        width = StrokeWidth.Hairline,
+                        color = if (isPrimary) GlassTheme.colors.glassBorderHighlight else GlassTheme.colors.glassBorder,
+                        shape = ContinuousCapsule,
                     ),
                 contentAlignment = Alignment.Center,
             ) {
@@ -396,9 +396,9 @@ private fun RecentProjectCard(
             Box(
                 modifier = Modifier
                     .size(ComponentSize.TopBarButtonSize)
-                    .clip(CircleShape)
+                    .clip(ContinuousCapsule)
                     .background(GlassTheme.colors.glassSurfaceElevated)
-                    .border(StrokeWidth.Hairline, GlassTheme.colors.glassBorder, CircleShape),
+                    .glassOutlineBorder(color = GlassTheme.colors.glassBorder, width = StrokeWidth.Hairline, shape = ContinuousCapsule),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
