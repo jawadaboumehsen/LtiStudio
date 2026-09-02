@@ -32,12 +32,15 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.sp
+import com.kyant.capsule.ContinuousCapsule
 import org.ide.lti.core.designsystem.component.GlassIconButton
+import org.ide.lti.core.designsystem.component.GlassSurface
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.StrokeWidth
 
 /**
  * Lti chat input field with send button.
@@ -55,61 +58,76 @@ fun GlassChatInput(
     placeholder: String = "Type a message...",
 ) {
     var inputText by remember { mutableStateOf("") }
+    val glassColors = GlassTheme.colors
 
-    Row(
+    GlassSurface(
         modifier = modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
+        shape = ContinuousCapsule,
+        surfaceColor = glassColors.glassSurfaceElevated,
+        borderColor = glassColors.glassBorder,
+        borderWidth = StrokeWidth.Hairline,
     ) {
-        BasicTextField(
-            value = inputText,
-            onValueChange = { inputText = it },
-            textStyle = TextStyle(
-                fontSize = 14.sp,
-                color = if (enabled) GlassTheme.colors.onGlass else GlassTheme.colors.onGlassMuted,
-            ),
-            cursorBrush = SolidColor(GlassTheme.colors.glassAccent),
-            enabled = enabled,
+        Row(
             modifier = Modifier
-                .weight(1f)
-                .padding(Spacing.SmallMedium)
-                .onKeyEvent { keyEvent ->
-                    if (keyEvent.key == Key.Enter && inputText.isNotBlank()) {
+                .fillMaxWidth()
+                .padding(
+                    start = Spacing.Medium,
+                    end = Spacing.ExtraSmall,
+                    top = Spacing.ExtraSmall,
+                    bottom = Spacing.ExtraSmall,
+                ),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            BasicTextField(
+                value = inputText,
+                onValueChange = { inputText = it },
+                textStyle = TextStyle(
+                    fontSize = 14.sp,
+                    color = if (enabled) glassColors.onGlass else glassColors.onGlassMuted,
+                ),
+                cursorBrush = SolidColor(glassColors.glassAccent),
+                enabled = enabled,
+                modifier = Modifier
+                    .weight(1f)
+                    .onKeyEvent { keyEvent ->
+                        if (keyEvent.key == Key.Enter && inputText.isNotBlank()) {
+                            onSendMessage(inputText)
+                            inputText = ""
+                            true
+                        } else {
+                            false
+                        }
+                    },
+                decorationBox = { innerTextField ->
+                    if (inputText.isEmpty()) {
+                        Text(
+                            text = placeholder,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = glassColors.onGlassMuted,
+                        )
+                    }
+                    innerTextField()
+                },
+            )
+
+            Spacer(modifier = Modifier.width(Spacing.Small))
+
+            GlassIconButton(
+                onClick = {
+                    if (inputText.isNotBlank()) {
                         onSendMessage(inputText)
                         inputText = ""
-                        true
-                    } else {
-                        false
                     }
                 },
-            decorationBox = { innerTextField ->
-                if (inputText.isEmpty()) {
-                    Text(
-                        text = placeholder,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = GlassTheme.colors.onGlassMuted,
-                    )
-                }
-                innerTextField()
-            },
-        )
-
-        Spacer(modifier = Modifier.width(Spacing.Small))
-
-        GlassIconButton(
-            onClick = {
-                if (inputText.isNotBlank()) {
-                    onSendMessage(inputText)
-                    inputText = ""
-                }
-            },
-            enabled = enabled && inputText.isNotBlank(),
-            size = ComponentSize.IconButtonSize,
-        ) {
-            Icon(
-                imageVector = AppIcons.Send,
-                contentDescription = "Send",
-                modifier = Modifier.size(IconSize.Medium),
-            )
+                enabled = enabled && inputText.isNotBlank(),
+                size = ComponentSize.IconButtonSize,
+            ) {
+                Icon(
+                    painter = AppIcons.SendPainterResource(),
+                    contentDescription = "Send",
+                    modifier = Modifier.size(IconSize.Medium),
+                )
+            }
         }
     }
 }

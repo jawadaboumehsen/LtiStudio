@@ -81,12 +81,12 @@ fun Modifier.glassEffect(
 ): Modifier = composed {
     val glassColors = GlassTheme.colors
     val effectsEnabled = GlassTheme.effectsEnabled
-    val actualBackdrop = backdrop ?: GlassTheme.backdrop ?: rememberLayerBackdrop()
+    val actualBackdrop = backdrop ?: GlassTheme.backdrop
 
     val finalSurfaceColor = if (surfaceColor.isSpecified) surfaceColor else glassColors.glassSurface
     val finalTint = if (tint.isSpecified) tint else glassColors.glassTint
 
-    if (effectsEnabled) {
+    if (effectsEnabled && actualBackdrop != null) {
         this.drawBackdrop(
             backdrop = actualBackdrop,
             shape = { shape },

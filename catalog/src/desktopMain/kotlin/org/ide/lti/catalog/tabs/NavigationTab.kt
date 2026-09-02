@@ -32,7 +32,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import org.ide.lti.core.designsystem.component.GlassBottomTab
 import org.ide.lti.core.designsystem.component.GlassBottomTabs
 import org.ide.lti.core.designsystem.component.GlassNavigationBar
@@ -49,7 +48,7 @@ import org.ide.lti.core.designsystem.theme.Spacing
 @Composable
 fun NavigationTab() {
     val scrollState = rememberScrollState()
-    val backdrop = rememberLayerBackdrop()
+    val backdrop = GlassTheme.backdrop
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     var selectedBottomTabIndex by remember { mutableIntStateOf(1) }
@@ -98,25 +97,26 @@ fun NavigationTab() {
                 backdrop = backdrop,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(ComponentSize.BottomTabsHeight)
-            ) {
-                GlassBottomTab(onClick = { selectedBottomTabIndex = 0 }) {
-                    Icon(AppIcons.Home, contentDescription = "Home", modifier = Modifier.size(IconSize.Medium))
-                    Text("Home", style = MaterialTheme.typography.labelSmall)
+                    .height(ComponentSize.BottomTabsHeight),
+                tabs = {
+                    GlassBottomTab(onClick = { selectedBottomTabIndex = 0 }) {
+                        Icon(painter = AppIcons.HomePainterResource(), contentDescription = "Home", modifier = Modifier.size(IconSize.Medium))
+                        Text("Home", style = MaterialTheme.typography.labelSmall)
+                    }
+                    GlassBottomTab(onClick = { selectedBottomTabIndex = 1 }) {
+                        Icon(painter = AppIcons.FolderPainterResource(), contentDescription = "Files", modifier = Modifier.size(IconSize.Medium))
+                        Text("Explorer", style = MaterialTheme.typography.labelSmall)
+                    }
+                    GlassBottomTab(onClick = { selectedBottomTabIndex = 2 }) {
+                        Icon(painter = AppIcons.SearchPainterResource(), contentDescription = "Search", modifier = Modifier.size(IconSize.Medium))
+                        Text("Search", style = MaterialTheme.typography.labelSmall)
+                    }
+                    GlassBottomTab(onClick = { selectedBottomTabIndex = 3 }) {
+                        Icon(painter = AppIcons.SettingsPainterResource(), contentDescription = "Settings", modifier = Modifier.size(IconSize.Medium))
+                        Text("Settings", style = MaterialTheme.typography.labelSmall)
+                    }
                 }
-                GlassBottomTab(onClick = { selectedBottomTabIndex = 1 }) {
-                    Icon(AppIcons.Folder, contentDescription = "Files", modifier = Modifier.size(IconSize.Medium))
-                    Text("Explorer", style = MaterialTheme.typography.labelSmall)
-                }
-                GlassBottomTab(onClick = { selectedBottomTabIndex = 2 }) {
-                    Icon(AppIcons.Search, contentDescription = "Search", modifier = Modifier.size(IconSize.Medium))
-                    Text("Search", style = MaterialTheme.typography.labelSmall)
-                }
-                GlassBottomTab(onClick = { selectedBottomTabIndex = 3 }) {
-                    Icon(AppIcons.SettingsOutlined, contentDescription = "Settings", modifier = Modifier.size(IconSize.Medium))
-                    Text("Settings", style = MaterialTheme.typography.labelSmall)
-                }
-            }
+            )
         }
 
         // Section 3: Glass Navigation Rail
@@ -136,19 +136,19 @@ fun NavigationTab() {
                     GlassNavigationRailItem(
                         selected = selectedRailIndex == 0,
                         onClick = { selectedRailIndex = 0 },
-                        icon = { Icon(AppIcons.Home, contentDescription = "Home") },
+                        icon = { Icon(painter = AppIcons.HomePainterResource(), contentDescription = "Home") },
                         label = { Text("Home") }
                     )
                     GlassNavigationRailItem(
                         selected = selectedRailIndex == 1,
                         onClick = { selectedRailIndex = 1 },
-                        icon = { Icon(AppIcons.Payment, contentDescription = "Finance") },
+                        icon = { Icon(painter = AppIcons.SettingsPainterResource(), contentDescription = "Finance") },
                         label = { Text("Finance") }
                     )
                     GlassNavigationRailItem(
                         selected = selectedRailIndex == 2,
                         onClick = { selectedRailIndex = 2 },
-                        icon = { Icon(AppIcons.Profile, contentDescription = "Profile") },
+                        icon = { Icon(painter = AppIcons.UserPainterResource(), contentDescription = "Profile") },
                         label = { Text("Profile") }
                     )
                 }
@@ -177,19 +177,19 @@ fun NavigationTab() {
                 GlassNavigationBarItem(
                     selected = selectedBarIndex == 0,
                     onClick = { selectedBarIndex = 0 },
-                    icon = { Icon(AppIcons.Home, contentDescription = "Home") },
+                    icon = { Icon(painter = AppIcons.HomePainterResource(), contentDescription = "Home") },
                     label = { Text("Home") }
                 )
                 GlassNavigationBarItem(
                     selected = selectedBarIndex == 1,
                     onClick = { selectedBarIndex = 1 },
-                    icon = { Icon(AppIcons.Payment, contentDescription = "Payment") },
+                    icon = { Icon(painter = AppIcons.SettingsPainterResource(), contentDescription = "Payment") },
                     label = { Text("Payment") }
                 )
                 GlassNavigationBarItem(
                     selected = selectedBarIndex == 2,
                     onClick = { selectedBarIndex = 2 },
-                    icon = { Icon(AppIcons.Profile, contentDescription = "Profile") },
+                    icon = { Icon(painter = AppIcons.UserPainterResource(), contentDescription = "Profile") },
                     label = { Text("Profile") }
                 )
             }

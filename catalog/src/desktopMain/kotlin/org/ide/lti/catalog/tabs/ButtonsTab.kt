@@ -36,7 +36,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import com.kyant.capsule.ContinuousRoundedRectangle
 import org.ide.lti.core.designsystem.component.GlassButton
 import org.ide.lti.core.designsystem.component.GlassButtonVariant
@@ -59,7 +58,7 @@ fun ButtonsTab() {
     var isPinned by remember { mutableStateOf(true) }
     var isFavorite by remember { mutableStateOf(false) }
 
-    val backdrop = rememberLayerBackdrop()
+    val backdrop = GlassTheme.backdrop
 
     Column(
         modifier = Modifier
@@ -129,7 +128,7 @@ fun ButtonsTab() {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 GlassPrimaryButton(onClick = { clickCount++ }) {
-                    Icon(AppIcons.Check, contentDescription = null, modifier = Modifier.size(IconSize.Small))
+                    Icon(painter = AppIcons.CheckPainterResource(), contentDescription = null, modifier = Modifier.size(IconSize.Small))
                     Spacer(Modifier.size(Spacing.ExtraSmall))
                     Text("Save Changes")
                 }
@@ -188,7 +187,7 @@ fun ButtonsTab() {
                     selected = isPinned
                 ) {
                     Icon(
-                        imageVector = AppIcons.OutlinedLock,
+                        painter = AppIcons.LockedPainterResource(),
                         contentDescription = "Pin Panel",
                         modifier = Modifier.size(IconSize.Medium)
                     )
@@ -199,7 +198,7 @@ fun ButtonsTab() {
                     onSelectedChange = { isMuted = it }
                 ) {
                     Icon(
-                        imageVector = AppIcons.OutlinedNotifications,
+                        painter = AppIcons.NotificationsPainterResource(),
                         contentDescription = "Toggle Mute",
                         modifier = Modifier.size(IconSize.Medium)
                     )
@@ -210,7 +209,7 @@ fun ButtonsTab() {
                     onSelectedChange = { isFavorite = it }
                 ) {
                     Icon(
-                        imageVector = AppIcons.OutlinedInfo,
+                        painter = AppIcons.InfoPainterResource(),
                         contentDescription = "Info",
                         modifier = Modifier.size(IconSize.Medium)
                     )
@@ -232,7 +231,7 @@ fun ButtonsTab() {
                     backdrop = backdrop,
                     modifier = Modifier.size(Spacing.ExtraExtraLarge)
                 ) {
-                    Icon(AppIcons.Home, contentDescription = "Home", modifier = Modifier.size(IconSize.Medium))
+                    Icon(painter = AppIcons.HomePainterResource(), contentDescription = "Home", modifier = Modifier.size(IconSize.Medium))
                 }
 
                 GlassIcon(
@@ -241,7 +240,7 @@ fun ButtonsTab() {
                     tint = GlassTheme.colors.glassAccent,
                     modifier = Modifier.size(Spacing.ExtraExtraLarge)
                 ) {
-                    Icon(AppIcons.Folder, contentDescription = "Folder", modifier = Modifier.size(IconSize.Medium))
+                    Icon(painter = AppIcons.FolderPainterResource(), contentDescription = "Folder", modifier = Modifier.size(IconSize.Medium))
                 }
             }
         }

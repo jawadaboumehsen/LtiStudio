@@ -173,20 +173,13 @@ fun GlassNavigationRail(
 @Preview
 @Composable
 fun GlassNavigationBarPreview() {
-    val items = listOf("Home", "Payments", "Finance", "Profile")
-    val icons =
+    val items = listOf("Explorer", "Search", "Settings", "Profile")
+    val icons: List<@Composable () -> androidx.compose.ui.graphics.painter.Painter> =
         listOf(
-            AppIcons.Home,
-            AppIcons.Payment,
-            AppIcons.Finance,
-            AppIcons.Profile,
-        )
-    val selectedIcons =
-        listOf(
-            AppIcons.HomeBoarder,
-            AppIcons.Payment,
-            AppIcons.Finance,
-            AppIcons.ProfileBoarder,
+            AppIcons.FolderPainterResource,
+            AppIcons.SearchPainterResource,
+            AppIcons.SettingsPainterResource,
+            AppIcons.UserPainterResource,
         )
 
     LtiTheme {
@@ -197,13 +190,13 @@ fun GlassNavigationBarPreview() {
                     onClick = { },
                     icon = {
                         Icon(
-                            imageVector = icons[index],
+                            painter = icons[index](),
                             contentDescription = item,
                         )
                     },
                     selectedIcon = {
                         Icon(
-                            imageVector = selectedIcons[index],
+                            painter = icons[index](),
                             contentDescription = item,
                         )
                     },
@@ -217,20 +210,13 @@ fun GlassNavigationBarPreview() {
 @Preview
 @Composable
 fun GlassNavigationRailPreview() {
-    val items = listOf("Home", "Payments", "Finance", "Profile")
-    val icons =
+    val items = listOf("Explorer", "Search", "Settings", "Profile")
+    val icons: List<@Composable () -> androidx.compose.ui.graphics.painter.Painter> =
         listOf(
-            AppIcons.Home,
-            AppIcons.Payment,
-            AppIcons.Finance,
-            AppIcons.Profile,
-        )
-    val selectedIcons =
-        listOf(
-            AppIcons.HomeBoarder,
-            AppIcons.Payment,
-            AppIcons.Finance,
-            AppIcons.ProfileBoarder,
+            AppIcons.FolderPainterResource,
+            AppIcons.SearchPainterResource,
+            AppIcons.SettingsPainterResource,
+            AppIcons.UserPainterResource,
         )
 
     LtiTheme {
@@ -241,13 +227,13 @@ fun GlassNavigationRailPreview() {
                     onClick = { },
                     icon = {
                         Icon(
-                            imageVector = icons[index],
+                            painter = icons[index](),
                             contentDescription = item,
                         )
                     },
                     selectedIcon = {
                         Icon(
-                            imageVector = selectedIcons[index],
+                            painter = icons[index](),
                             contentDescription = item,
                         )
                     },

@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -216,35 +215,30 @@ fun GlassPanelContainer(
     scrollEdgeFade: Boolean = false,
     content: @Composable () -> Unit,
 ) {
-    Surface(
-        modifier = modifier,
-        color = Color.Transparent,
-    ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            header?.invoke()
-            if (!scrollEdgeFade) {
-                content()
-            } else {
-                val contentBackdrop = rememberLayerBackdrop()
-                Box(modifier = Modifier.fillMaxSize()) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .layerBackdrop(contentBackdrop),
-                    ) {
-                        content()
-                    }
-                    GlassScrollEdgeFade(
-                        backdrop = contentBackdrop,
-                        edge = GlassScrollEdge.Top,
-                        modifier = Modifier.align(Alignment.TopCenter),
-                    )
-                    GlassScrollEdgeFade(
-                        backdrop = contentBackdrop,
-                        edge = GlassScrollEdge.Bottom,
-                        modifier = Modifier.align(Alignment.BottomCenter),
-                    )
+    Column(modifier = modifier.fillMaxSize()) {
+        header?.invoke()
+        if (!scrollEdgeFade) {
+            content()
+        } else {
+            val contentBackdrop = rememberLayerBackdrop()
+            Box(modifier = Modifier.fillMaxSize()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .layerBackdrop(contentBackdrop),
+                ) {
+                    content()
                 }
+                GlassScrollEdgeFade(
+                    backdrop = contentBackdrop,
+                    edge = GlassScrollEdge.Top,
+                    modifier = Modifier.align(Alignment.TopCenter),
+                )
+                GlassScrollEdgeFade(
+                    backdrop = contentBackdrop,
+                    edge = GlassScrollEdge.Bottom,
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                )
             }
         }
     }

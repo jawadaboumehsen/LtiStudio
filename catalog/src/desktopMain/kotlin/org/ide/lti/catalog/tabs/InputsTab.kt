@@ -31,7 +31,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import org.ide.lti.core.designsystem.component.GlassOtpTextField
 import org.ide.lti.core.designsystem.component.GlassPasswordField
 import org.ide.lti.core.designsystem.component.GlassSlider
@@ -45,7 +44,7 @@ import org.ide.lti.core.designsystem.theme.Spacing
 @Composable
 fun InputsTab() {
     val scrollState = rememberScrollState()
-    val backdrop = rememberLayerBackdrop()
+    val backdrop = GlassTheme.backdrop
 
     var textValue by remember { mutableStateOf("workspace-alpha") }
     var emailValue by remember { mutableStateOf("developer@ltirom.org") }
@@ -77,7 +76,7 @@ fun InputsTab() {
                     label = "Workspace Name",
                     placeholder = "Enter workspace name",
                     leadingIcon = {
-                        Icon(AppIcons.Folder, contentDescription = null, tint = GlassTheme.colors.onGlassSecondary, modifier = Modifier.size(IconSize.Medium))
+                        Icon(painter = AppIcons.FolderPainterResource(), contentDescription = null, tint = GlassTheme.colors.onGlassSecondary, modifier = Modifier.size(IconSize.Medium))
                     },
                     helperText = "Alphanumeric characters and hyphens only"
                 )
@@ -88,7 +87,7 @@ fun InputsTab() {
                     label = "Email Address",
                     placeholder = "developer@domain.com",
                     leadingIcon = {
-                        Icon(AppIcons.OutlinedInfo, contentDescription = null, tint = GlassTheme.colors.onGlassSecondary, modifier = Modifier.size(IconSize.Medium))
+                        Icon(painter = AppIcons.InfoPainterResource(), contentDescription = null, tint = GlassTheme.colors.onGlassSecondary, modifier = Modifier.size(IconSize.Medium))
                     }
                 )
 
@@ -98,7 +97,7 @@ fun InputsTab() {
                     label = "Verification Token",
                     errorText = "Invalid signature token. Please regenerate.",
                     leadingIcon = {
-                        Icon(AppIcons.OutlinedLock, contentDescription = null, tint = GlassTheme.colors.glassAccent, modifier = Modifier.size(IconSize.Medium))
+                        Icon(painter = AppIcons.LockedPainterResource(), contentDescription = null, tint = GlassTheme.colors.glassAccent, modifier = Modifier.size(IconSize.Medium))
                     }
                 )
             }

@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -150,11 +151,11 @@ class GlassEffectsDisabledScreenshotTest {
                     contentAlignment = Alignment.BottomCenter,
                 ) {
                     val items = listOf("Explorer", "Editor", "Search", "Settings")
-                    val icons = listOf(
-                        AppIcons.Folder,
-                        AppIcons.File,
-                        AppIcons.Search,
-                        AppIcons.Settings,
+                    val icons: List<@Composable () -> androidx.compose.ui.graphics.painter.Painter> = listOf(
+                        AppIcons.FolderPainterResource,
+                        AppIcons.FilePainterResource,
+                        AppIcons.SearchPainterResource,
+                        AppIcons.SettingsPainterResource,
                     )
                     GlassNavigationBar {
                         items.forEachIndexed { index, item ->
@@ -163,7 +164,7 @@ class GlassEffectsDisabledScreenshotTest {
                                 onClick = {},
                                 icon = {
                                     Icon(
-                                        imageVector = icons[index],
+                                        painter = icons[index](),
                                         contentDescription = item,
                                         modifier = Modifier.size(IconSize.Large),
                                     )

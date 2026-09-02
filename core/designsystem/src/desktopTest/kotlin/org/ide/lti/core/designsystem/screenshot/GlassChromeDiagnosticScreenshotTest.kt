@@ -22,15 +22,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.FolderOpen
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -107,6 +98,7 @@ class GlassChromeDiagnosticScreenshotTest {
         }
     }
 
+    @Suppress("UnusedParameter")
     @Composable
     private fun MockTreeItem(
         name: String,
@@ -139,10 +131,10 @@ class GlassChromeDiagnosticScreenshotTest {
             horizontalArrangement = Arrangement.spacedBy(Spacing.Compact),
         ) {
             Icon(
-                imageVector = if (isFolder) {
-                    if (isOpen) Icons.Default.FolderOpen else Icons.Default.Folder
+                painter = if (isFolder) {
+                    AppIcons.FolderPainterResource()
                 } else {
-                    Icons.Default.Description
+                    AppIcons.FilePainterResource()
                 },
                 contentDescription = null,
                 tint = if (isFolder) {
@@ -172,10 +164,10 @@ class GlassChromeDiagnosticScreenshotTest {
             header = {
                 GlassPanelHeader(
                     title = "GlassLayout.kt",
-                    icon = Icons.Default.Code,
+                    icon = AppIcons.File,
                     actions = {
                         GlassPanelHeaderAction(
-                            icon = Icons.Default.PlayArrow,
+                            icon = AppIcons.Check,
                             contentDescription = "Run",
                             onClick = {},
                         )
@@ -279,7 +271,7 @@ class GlassChromeDiagnosticScreenshotTest {
             header = {
                 GlassPanelHeader(
                     title = "AI Assistant",
-                    icon = Icons.Default.AutoAwesome,
+                    icon = AppIcons.Info,
                 )
             },
         ) {
@@ -331,7 +323,7 @@ class GlassChromeDiagnosticScreenshotTest {
                         modifier = Modifier.weight(1f),
                     )
                     Icon(
-                        imageVector = Icons.Default.Send,
+                        painter = AppIcons.EditPainterResource(),
                         contentDescription = "Send",
                         tint = glassColors.glassAccent,
                         modifier = Modifier.size(IconSize.Small),

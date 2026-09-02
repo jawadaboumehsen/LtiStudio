@@ -65,7 +65,7 @@ fun GlassIcon(
     val animationScope = rememberCoroutineScope()
     val glassColors = GlassTheme.colors
     val effectsEnabled = GlassTheme.effectsEnabled
-    val actualBackdrop = backdrop ?: GlassTheme.backdrop ?: rememberLayerBackdrop()
+    val actualBackdrop = backdrop ?: GlassTheme.backdrop
     val finalContentColor = if (contentColor.isSpecified) contentColor else glassColors.onGlass
     var isHovered by remember { mutableStateOf(false) }
 
@@ -78,7 +78,7 @@ fun GlassIcon(
     Box(
         modifier = modifier
             .then(
-                if (effectsEnabled) {
+                if (effectsEnabled && actualBackdrop != null) {
                     Modifier.drawBackdrop(
                         backdrop = actualBackdrop,
                         shape = { ContinuousCapsule },

@@ -695,6 +695,7 @@ data class GlassLayoutAppearance(
     val panelPadding: Dp = LtiLayoutDefaults.PanelPadding,
     val panelCornerRadius: Dp = LtiLayoutDefaults.PanelCornerRadius,
     val dividerWidth: Dp = LtiLayoutDefaults.DividerWidth,
+    val dividerLinePadding: Dp = LtiLayoutDefaults.DividerLinePadding,
     val dividerColor: Color = Color.Unspecified,
     val dividerActiveColor: Color = Color.Unspecified,
 ) {
@@ -726,6 +727,9 @@ object LtiLayoutDefaults {
 
     /** Width of drag dividers (hit target) */
     val DividerWidth = ComponentSize.DividerWidth
+
+    /** Padding applied to the start and end of the active drag divider line */
+    val DividerLinePadding = Spacing.SmallMedium
 
     /** Width of divider visual line in normal state */
     val DividerLineWidthNormal = StrokeWidth.Standard
@@ -1014,12 +1018,18 @@ private fun getDividerModifiers(
     DividerOrientation.Vertical -> Triple(
         PointerIcon(Cursor(Cursor.E_RESIZE_CURSOR)),
         Modifier.width(appearance.dividerWidth).fillMaxHeight(),
-        Modifier.width(LtiLayoutDefaults.DividerLineWidthActive).fillMaxHeight(),
+        Modifier
+            .width(LtiLayoutDefaults.DividerLineWidthActive)
+            .fillMaxHeight()
+            .padding(vertical = appearance.dividerLinePadding),
     )
     DividerOrientation.Horizontal -> Triple(
         PointerIcon(Cursor(Cursor.N_RESIZE_CURSOR)),
         Modifier.height(appearance.dividerWidth).fillMaxWidth(),
-        Modifier.height(LtiLayoutDefaults.DividerLineWidthActive).fillMaxWidth(),
+        Modifier
+            .height(LtiLayoutDefaults.DividerLineWidthActive)
+            .fillMaxWidth()
+            .padding(horizontal = appearance.dividerLinePadding),
     )
 }
 

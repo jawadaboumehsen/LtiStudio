@@ -9,7 +9,7 @@
  */
 package org.ide.lti.shared.utils
 
-import androidx.compose.ui.graphics.vector.ImageVector
+import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.shared.generated.resources.Res
 import org.ide.lti.shared.generated.resources.app_name
@@ -23,8 +23,8 @@ import org.jetbrains.compose.resources.StringResource
  * next within a single destination will be handled directly in composables.
  */
 internal enum class TopLevelDestination(
-    val selectedIcon: ImageVector,
-    val unselectedIcon: ImageVector,
+    val selectedIcon: AppIcon,
+    val unselectedIcon: AppIcon,
     val iconText: StringResource,
     val titleText: StringResource,
 ) {

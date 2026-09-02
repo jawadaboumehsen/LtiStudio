@@ -96,7 +96,7 @@ fun SettingsScreenContent(
             ) {
                 GlassIconButton(onClick = onBackClick) {
                     Icon(
-                        imageVector = AppIcons.ArrowBack,
+                        painter = AppIcons.ArrowBackPainterResource(),
                         contentDescription = "Back",
                         tint = GlassTheme.colors.onGlass,
                         modifier = Modifier.size(IconSize.Medium),

@@ -128,7 +128,7 @@ class GlassMotionAndHighlightScreenshotTest {
                                 onClick = {},
                                 icon = {
                                     Icon(
-                                        imageVector = AppIcons.Folder,
+                                        painter = AppIcons.FolderPainterResource(),
                                         contentDescription = "Explorer",
                                         modifier = Modifier.size(IconSize.Large),
                                     )
@@ -140,7 +140,7 @@ class GlassMotionAndHighlightScreenshotTest {
                                 onClick = {},
                                 icon = {
                                     Icon(
-                                        imageVector = AppIcons.Search,
+                                        painter = AppIcons.SearchPainterResource(),
                                         contentDescription = "Search",
                                         modifier = Modifier.size(IconSize.Large),
                                     )
@@ -163,7 +163,7 @@ class GlassMotionAndHighlightScreenshotTest {
                                     onClick = {},
                                     icon = {
                                         Icon(
-                                            imageVector = AppIcons.Home,
+                                            painter = AppIcons.FolderPainterResource(),
                                             contentDescription = "Home",
                                             modifier = Modifier.size(IconSize.Large),
                                         )
@@ -175,7 +175,7 @@ class GlassMotionAndHighlightScreenshotTest {
                                     onClick = {},
                                     icon = {
                                         Icon(
-                                            imageVector = AppIcons.Settings,
+                                            painter = AppIcons.SettingsPainterResource(),
                                             contentDescription = "Settings",
                                             modifier = Modifier.size(IconSize.Large),
                                         )
@@ -219,7 +219,7 @@ class GlassMotionAndHighlightScreenshotTest {
                                     .size(ComponentSize.IconButtonSize),
                             ) {
                                 Icon(
-                                    imageVector = AppIcons.Sparkles,
+                                    painter = AppIcons.SparklesPainterResource(),
                                     contentDescription = "Idle Icon",
                                     modifier = Modifier.size(IconSize.Medium),
                                 )
@@ -241,7 +241,7 @@ class GlassMotionAndHighlightScreenshotTest {
                                     .size(ComponentSize.IconButtonSize),
                             ) {
                                 Icon(
-                                    imageVector = AppIcons.Settings,
+                                    painter = AppIcons.SettingsPainterResource(),
                                     contentDescription = "Hovered Icon",
                                     modifier = Modifier.size(IconSize.Medium),
                                 )

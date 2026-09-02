@@ -99,7 +99,7 @@ class GlassFocusScreenshotTest {
                             }
                             GlassIconButton(onClick = {}) {
                                 Icon(
-                                    imageVector = AppIcons.Refresh,
+                                    painter = AppIcons.RefreshPainterResource(),
                                     contentDescription = "Refresh",
                                     modifier = Modifier.size(IconSize.Medium),
                                 )

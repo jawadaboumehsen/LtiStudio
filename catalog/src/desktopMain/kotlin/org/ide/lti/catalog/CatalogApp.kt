@@ -46,6 +46,7 @@ import org.ide.lti.catalog.tabs.ModalsTab
 import org.ide.lti.catalog.tabs.NavigationTab
 import org.ide.lti.catalog.tabs.SurfacesTab
 import org.ide.lti.catalog.tabs.TokensTab
+import org.ide.lti.core.designsystem.component.CosmicAuroraBackdrop
 import org.ide.lti.core.designsystem.component.GlassIconToggleButton
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
@@ -86,43 +87,46 @@ fun CatalogApp() {
         reducedMotion = reducedMotion,
         sharedBackdrop = backdrop,
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(GlassTheme.colors.glassSurface)
-        ) {
-            // Top App Bar / Catalog Header
-            CatalogTopBar(
-                isDarkTheme = isDarkTheme,
-                onToggleTheme = { isDarkTheme = !isDarkTheme },
-                reducedMotion = reducedMotion,
-                onToggleReducedMotion = { reducedMotion = !reducedMotion },
-                effectsEnabled = effectsEnabled,
-                onToggleEffects = { effectsEnabled = !effectsEnabled },
-            )
+        Box(modifier = Modifier.fillMaxSize()) {
+            CosmicAuroraBackdrop(backdrop = backdrop)
 
-            // Category Tabs Row
-            CategoryNavBar(
-                categories = CatalogCategory.entries,
-                selectedIndex = selectedCategoryIndex,
-                onSelectCategory = { selectedCategoryIndex = it }
-            )
-
-            // Active Tab Content
-            Box(
+            Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .weight(1f)
             ) {
-                when (CatalogCategory.entries[selectedCategoryIndex]) {
-                    CatalogCategory.Tokens -> TokensTab()
-                    CatalogCategory.Buttons -> ButtonsTab()
-                    CatalogCategory.Inputs -> InputsTab()
-                    CatalogCategory.Surfaces -> SurfacesTab()
-                    CatalogCategory.Navigation -> NavigationTab()
-                    CatalogCategory.Modals -> ModalsTab()
-                    CatalogCategory.Layout -> LayoutTab()
-                    CatalogCategory.CoreUi -> CoreUiTab()
+                // Top App Bar / Catalog Header
+                CatalogTopBar(
+                    isDarkTheme = isDarkTheme,
+                    onToggleTheme = { isDarkTheme = !isDarkTheme },
+                    reducedMotion = reducedMotion,
+                    onToggleReducedMotion = { reducedMotion = !reducedMotion },
+                    effectsEnabled = effectsEnabled,
+                    onToggleEffects = { effectsEnabled = !effectsEnabled },
+                )
+
+                // Category Tabs Row
+                CategoryNavBar(
+                    categories = CatalogCategory.entries,
+                    selectedIndex = selectedCategoryIndex,
+                    onSelectCategory = { selectedCategoryIndex = it }
+                )
+
+                // Active Tab Content
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .weight(1f)
+                ) {
+                    when (CatalogCategory.entries[selectedCategoryIndex]) {
+                        CatalogCategory.Tokens -> TokensTab()
+                        CatalogCategory.Buttons -> ButtonsTab()
+                        CatalogCategory.Inputs -> InputsTab()
+                        CatalogCategory.Surfaces -> SurfacesTab()
+                        CatalogCategory.Navigation -> NavigationTab()
+                        CatalogCategory.Modals -> ModalsTab()
+                        CatalogCategory.Layout -> LayoutTab()
+                        CatalogCategory.CoreUi -> CoreUiTab()
+                    }
                 }
             }
         }

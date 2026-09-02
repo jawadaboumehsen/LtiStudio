@@ -125,7 +125,7 @@ fun LayoutTab() {
                     bottomPanel = {
                         GlassPanelContainer(
                             header = {
-                                GlassPanelHeader(title = "TERMINAL", icon = AppIcons.OutlinedInfo)
+                                GlassPanelHeader(title = "TERMINAL", icon = AppIcons.Info)
                             }
                         ) {
                             Column(Modifier.padding(Spacing.SmallMedium)) {
@@ -137,7 +137,7 @@ fun LayoutTab() {
                     rightPanel = {
                         GlassPanelContainer(
                             header = {
-                                GlassPanelHeader(title = "AI ASSISTANT", icon = AppIcons.OutlinedInfo)
+                                GlassPanelHeader(title = "AI ASSISTANT", icon = AppIcons.Info)
                             }
                         ) {
                             Column(Modifier.padding(Spacing.SmallMedium)) {

@@ -105,7 +105,7 @@ fun WorkspaceScreen(
     val rightTabs = remember {
         listOf(
             GlassSidePanelTab(
-                icon = AppIcon.Vector(AppIcons.Sparkles),
+                icon = AppIcons.Sparkles,
                 label = "AI Assistant",
             ) {
                 AIAssistantPanel()

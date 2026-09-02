@@ -247,10 +247,10 @@ fun GlassBottomTabs(
             panelOffset = panelOffset,
             drag = drag,
             interactiveHighlight = interactiveHighlight,
-            tabs = tabs,
         )
 
         // Layer 2 — invisible "tinted" row, exported as tabsBackdrop.
+        // Purely so the spotlight (layer 3) can sample a color-filtered copy of the tab content.
         GlassBottomTabTintedRow(
             backdrop = actualBackdrop,
             tabsBackdrop = tabsBackdrop,
@@ -273,6 +273,17 @@ fun GlassBottomTabs(
             drag = drag,
             interactiveHighlight = interactiveHighlight,
         )
+
+        // Layer 4 — visible, interactive foreground tab content row.
+        Row(
+            modifier = Modifier
+                .graphicsLayer { translationX = panelOffset }
+                .height(ComponentSize.BottomTabsHeight)
+                .fillMaxWidth()
+                .padding(Spacing.ExtraSmall),
+            verticalAlignment = Alignment.CenterVertically,
+            content = tabs,
+        )
     }
 }
 
@@ -283,7 +294,6 @@ private fun GlassBottomTabBarBackground(
     panelOffset: Float,
     drag: DampedDragAnimation,
     interactiveHighlight: InteractiveHighlight,
-    tabs: @Composable RowScope.() -> Unit,
 ) {
     val effectsEnabled = GlassTheme.effectsEnabled
     Row(
@@ -326,8 +336,7 @@ private fun GlassBottomTabBarBackground(
             .fillMaxWidth()
             .padding(Spacing.ExtraSmall),
         verticalAlignment = Alignment.CenterVertically,
-        content = tabs,
-    )
+    ) {}
 }
 
 @Composable

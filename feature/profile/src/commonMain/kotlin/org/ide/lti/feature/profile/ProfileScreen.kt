@@ -21,8 +21,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -133,7 +131,7 @@ fun ProfileScreenContent(
                     verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
                 ) {
                     ProfileInfoRow(
-                        icon = AppIcon.Painted(AppIcons.UserPainterResource),
+                        icon = AppIcons.User,
                         label = "Username",
                         value = "developer",
                     )
@@ -144,7 +142,7 @@ fun ProfileScreenContent(
                     )
 
                     ProfileInfoRow(
-                        icon = Icons.Default.Email,
+                        icon = AppIcons.Contact,
                         label = "Email",
                         value = "developer@lti.com",
                     )
@@ -155,7 +153,7 @@ fun ProfileScreenContent(
                     )
 
                     ProfileInfoRow(
-                        icon = AppIcons.Badge,
+                        icon = AppIcons.Locked,
                         label = "Role",
                         value = "Administrator",
                     )

@@ -186,12 +186,12 @@ private fun LtiFileIcon(
     val glassColors = GlassTheme.colors
     val icon: AppIcon = when (fileType) {
         FileType.DIRECTORY -> if (isExpanded) {
-            AppIcon.Vector(AppIcons.FolderOpen)
+            AppIcon.Painted(AppIcons.FolderOpenPainterResource)
         } else {
             AppIcon.Painted(AppIcons.FolderPainterResource)
         }
         FileType.FILE -> AppIcon.Painted(AppIcons.FilePainterResource)
-        FileType.SYMLINK -> AppIcon.Vector(AppIcons.Link)
+        FileType.SYMLINK -> AppIcon.Painted(AppIcons.LinkPainterResource)
     }
 
     val tint = when (fileType) {

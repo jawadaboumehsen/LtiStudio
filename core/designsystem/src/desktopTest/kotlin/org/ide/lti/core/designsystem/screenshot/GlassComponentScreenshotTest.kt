@@ -276,7 +276,7 @@ class GlassComponentScreenshotTest {
                             placeholder = "Enter git branch",
                             leadingIcon = {
                                 Icon(
-                                    imageVector = AppIcons.Search,
+                                    painter = AppIcons.SearchPainterResource(),
                                     contentDescription = null,
                                     tint = GlassTheme.colors.onGlassSecondary,
                                 )

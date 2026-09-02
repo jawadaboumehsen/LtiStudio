@@ -41,7 +41,7 @@ fun HomeScreen(
     onOpenWorkspace: () -> Unit = {},
 ) {
     HomeScreenContent(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier,
         onOpenWorkspace = onOpenWorkspace,
     )
 }
@@ -86,7 +86,7 @@ fun HomeScreenContent(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
-                            imageVector = AppIcons.FolderOpen,
+                            painter = AppIcons.FolderOpenPainterResource(),
                             contentDescription = null,
                             modifier = Modifier.size(IconSize.Medium),
                         )

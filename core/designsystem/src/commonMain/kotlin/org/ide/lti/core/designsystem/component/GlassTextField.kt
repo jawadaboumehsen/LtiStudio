@@ -245,17 +245,17 @@ fun GlassPasswordField(
             IconButton(
                 onClick = { showPasswordChange(!showPassword) },
             ) {
-                val imageVector = if (showPassword) {
-                    AppIcons.OutlinedVisibilityOff
+                val painter = if (showPassword) {
+                    AppIcons.HidePainterResource()
                 } else {
-                    AppIcons.OutlinedVisibility
+                    AppIcons.ShowPainterResource()
                 }
 
                 Icon(
                     modifier = Modifier
                         .size(IconSize.Medium)
                         .semantics { showPasswordTestTag?.let { testTag = it } },
-                    imageVector = imageVector,
+                    painter = painter,
                     contentDescription = "togglePassword",
                     tint = GlassTheme.colors.onGlassSecondary,
                 )
