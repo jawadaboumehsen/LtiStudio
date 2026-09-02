@@ -29,8 +29,9 @@ import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.Spacing
 
 /**
- * Card glass effect stack, straight from the kmp-liquid-glass skill's "Glass card" recipe:
- * vibrancy + moderate blur + lens refraction.
+ * Card glass effect stack, adapted from the kmp-liquid-glass skill's "Glass card" recipe
+ * (vibrancy + lens refraction): a blur pass is added and the lens amount reduced from the
+ * doc's defaults, tuned for legibility over the denser IDE content this app's cards host.
  */
 val GlassCardEffects: BackdropEffectScope.() -> Unit = {
     vibrancy()
