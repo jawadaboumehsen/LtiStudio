@@ -78,6 +78,7 @@ composeLifecycle = "2.9.5"
 composeNavigation = "2.9.1"
 jbCoreBundle = "1.0.1"
 jbSavedState = "1.2.2"
+clikt = "5.0.1"
 
 
 # Desktop Version
@@ -148,6 +149,7 @@ lint-checks = { group = "com.android.tools.lint", name = "lint-checks", version.
 lint-tests = { group = "com.android.tools.lint", name = "lint-tests", version.ref = "androidTools" }
 
 truth = { group = "com.google.truth", name = "truth", version.ref = "truth" }
+clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt" }
 
 # jb Compose
 jb-kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlin" }
