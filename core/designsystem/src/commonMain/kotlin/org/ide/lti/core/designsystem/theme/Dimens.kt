@@ -129,6 +129,8 @@ object ComponentSize {
     val MaxPanelWidth: Dp = 600.dp
     val MinPanelHeight: Dp = 100.dp
     val MaxPanelHeight: Dp = 600.dp
+    val MainWindowMinWidth: Dp = 960.dp
+    val MainWindowMinHeight: Dp = 640.dp
     val ToggleButtonTopPadding: Dp = 48.dp
     val ToggleButtonEndPadding: Dp = 8.dp
     val ToggleButtonSpacing: Dp = 4.dp

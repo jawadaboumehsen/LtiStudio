@@ -25,6 +25,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.rememberWindowState
@@ -79,7 +80,10 @@ private fun buildWindowControlActions(
 fun main(args: Array<String>) = nucleusApplication(args) {
     remember { initKoin() }
     var showSettingsWindow by remember { mutableStateOf(false) }
-    val windowState = rememberWindowState()
+    val windowState = rememberWindowState(
+        width = ComponentSize.MaxPanelWidth * 2,
+        height = ComponentSize.MaxPanelHeight * 1.4f,
+    )
     val settingsWindowState = rememberWindowState(
         width = ComponentSize.SettingsWindowWidth,
         height = ComponentSize.SettingsWindowHeight,
@@ -90,6 +94,7 @@ fun main(args: Array<String>) = nucleusApplication(args) {
         state = windowState,
         title = "LtiRom Studio",
         icon = painterResource("icons/ic_launcher.png"),
+        minimumSize = DpSize(ComponentSize.MainWindowMinWidth, ComponentSize.MainWindowMinHeight),
     ) {
         val nucleusWin = LocalNucleusWindow.current
         CompositionLocalProvider(
