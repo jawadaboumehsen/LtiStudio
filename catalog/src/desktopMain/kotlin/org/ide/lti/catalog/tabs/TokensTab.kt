@@ -10,7 +10,6 @@
 package org.ide.lti.catalog.tabs
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,6 +32,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import com.kyant.capsule.ContinuousCapsule
 import com.kyant.capsule.ContinuousRoundedRectangle
+import org.ide.lti.core.designsystem.component.glassOutlineBorder
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BrandColors
 import org.ide.lti.core.designsystem.theme.ColorContrast
@@ -205,7 +205,7 @@ private fun ColorSwatchCard(
         modifier = modifier
             .clip(ContinuousRoundedRectangle(CornerRadius.Small))
             .background(GlassTheme.colors.glassSurfaceElevated)
-            .border(
+            .glassOutlineBorder(
                 width = StrokeWidth.Hairline,
                 color = GlassTheme.colors.glassBorder,
                 shape = ContinuousRoundedRectangle(CornerRadius.Small)
@@ -219,7 +219,7 @@ private fun ColorSwatchCard(
                 .height(ComponentSize.ButtonMinHeight)
                 .clip(ContinuousRoundedRectangle(CornerRadius.ExtraSmall))
                 .background(color)
-                .border(
+                .glassOutlineBorder(
                     width = StrokeWidth.Hairline,
                     color = GlassTheme.colors.glassBorder,
                     shape = ContinuousRoundedRectangle(CornerRadius.ExtraSmall)
@@ -306,7 +306,7 @@ private fun SpecializedColorCard(name: String, color: Color, modifier: Modifier 
         modifier = modifier
             .clip(ContinuousRoundedRectangle(CornerRadius.Small))
             .background(GlassTheme.colors.glassSurfaceElevated)
-            .border(
+            .glassOutlineBorder(
                 width = StrokeWidth.Hairline,
                 color = GlassTheme.colors.glassBorder,
                 shape = ContinuousRoundedRectangle(CornerRadius.Small)
