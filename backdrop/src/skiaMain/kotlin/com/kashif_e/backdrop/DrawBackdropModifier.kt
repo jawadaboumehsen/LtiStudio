@@ -254,8 +254,16 @@ private class DrawBackdropNode(
     private var graphicsLayer: GraphicsLayer? = null
 
     private val layoutLayerBlock: GraphicsLayerScope.() -> Unit = {
-        clip = true
-        shape = shapeProvider.shape
+        // The clip here is redundant: ContentDrawScope.draw() below already wraps
+        // everything it draws — including drawContent() — in
+        // canvas.clipOutline(outline, path) against the identical outline,
+        // same bounds, same coordinate space. Keeping both means the shape's curve gets
+        // its anti-aliased coverage computed twice: once when this Offscreen layer is
+        // rasterized against its own clip (SkiaGraphicsLayer sets
+        // renderNode.setClipPath(..., antiAlias = true)), and again when that layer is
+        // composited under the canvas clip. On curved edges that reads as a rough,
+        // doubled boundary. The layer itself is kept for invalidation isolation.
+        clip = false
         compositingStrategy = CompositingStrategy.Offscreen
     }
 
