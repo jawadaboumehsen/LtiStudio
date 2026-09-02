@@ -88,12 +88,15 @@ internal class ShadowNode(
         // Use native Skia canvas with saveLayer for proper blending
         val nativeCanvas = drawContext.canvas.nativeCanvas
         
-        // Calculate bounds for the shadow layer
+        // Calculate bounds for the shadow layer.
+        // We must expand on *both* sides to accommodate any offset direction:
+        // - positive offset → shadow bleeds right/down, so right/bottom must grow
+        // - negative offset → shadow bleeds left/up, so left/top must also expand
         val layerBounds = org.jetbrains.skia.Rect.makeLTRB(
-            -radius * 2f,
-            -radius * 2f,
-            size.width + radius * 2f + offsetX,
-            size.height + radius * 2f + offsetY
+            minOf(-radius * 2f, -radius * 2f + offsetX),
+            minOf(-radius * 2f, -radius * 2f + offsetY),
+            maxOf(size.width + radius * 2f, size.width + radius * 2f + offsetX),
+            maxOf(size.height + radius * 2f, size.height + radius * 2f + offsetY)
         )
         
         // Apply alpha to the layer (like Android's GraphicsLayer.alpha)

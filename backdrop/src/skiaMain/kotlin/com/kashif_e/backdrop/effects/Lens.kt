@@ -147,7 +147,10 @@ actual fun BackdropEffectScope.lens(
         }
         // If null, silently skip the effect rather than crashing
     } else {
-        throwUnsupportedSDFException()
+        // Shape is not a CornerBasedShape (e.g. ContinuousRoundedRectangle / squircle).
+        // The SDF shader only supports circular-arc corners, so we silently skip the lens
+        // effect rather than throwing. Blur + vibrancy still apply for a clean glass look.
+        return
     }
 }
 
@@ -176,7 +179,3 @@ private val BackdropEffectScope.cornerRadii: FloatArray?
             min(bottomLeft, maxRadius)
         )
     }
-
-private fun throwUnsupportedSDFException(): Nothing {
-    throw UnsupportedOperationException("Only CornerBasedShape is supported in lens effects.")
-}
