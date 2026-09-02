@@ -12,7 +12,6 @@ package org.ide.lti.core.designsystem.component
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.LocalIndication
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
@@ -217,7 +216,11 @@ fun GlassButton(
             )
             .then(
                 if (borderColor != Color.Transparent) {
-                    Modifier.border(width = borderWidth, color = borderColor, shape = shape)
+                    Modifier.glassOutlineBorder(
+                        color = borderColor,
+                        width = borderWidth,
+                        shape = shape,
+                    )
                 } else {
                     Modifier
                 },

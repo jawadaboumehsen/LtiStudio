@@ -10,7 +10,6 @@
 package org.ide.lti.core.designsystem.component
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -99,7 +98,7 @@ fun GlassSecondaryTopBar(
                     Modifier.background(MaterialTheme.colorScheme.surface)
                 },
             )
-            .border(
+            .glassOutlineBorder(
                 width = StrokeWidth.Hairline,
                 color = glassColors.glassBorder,
                 shape = ContinuousRoundedRectangle(CornerRadius.Panel),

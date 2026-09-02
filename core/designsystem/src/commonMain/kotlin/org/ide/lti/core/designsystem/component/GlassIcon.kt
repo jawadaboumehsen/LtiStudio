@@ -10,7 +10,6 @@
 package org.ide.lti.core.designsystem.component
 
 import androidx.compose.foundation.LocalIndication
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.Icon
@@ -116,7 +115,11 @@ fun GlassIcon(
                         }
                 },
             )
-            .border(width = StrokeWidth.Hairline, color = glassColors.glassBorder, shape = ContinuousCapsule)
+            .glassOutlineBorder(
+                color = glassColors.glassBorder,
+                width = StrokeWidth.Hairline,
+                shape = ContinuousCapsule,
+            )
             .onPointerEvent(PointerEventType.Enter) { isHovered = true }
             .onPointerEvent(PointerEventType.Exit) { isHovered = false }
             .clickable(

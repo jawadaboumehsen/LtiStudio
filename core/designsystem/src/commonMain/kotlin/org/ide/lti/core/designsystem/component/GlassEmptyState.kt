@@ -10,7 +10,6 @@
 package org.ide.lti.core.designsystem.component
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -229,10 +228,10 @@ fun GlassEmptyStateBadge(
                 .size(badgeSize)
                 .clip(CircleShape)
                 .background(glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Faint))
-                .border(
-                    StrokeWidth.Hairline,
-                    glassColors.glassBorderHighlight.copy(alpha = AlphaTokens.Border),
-                    CircleShape,
+                .glassOutlineBorder(
+                    width = StrokeWidth.Hairline,
+                    color = glassColors.glassBorderHighlight.copy(alpha = AlphaTokens.Border),
+                    shape = CircleShape,
                 ),
             contentAlignment = Alignment.Center,
         ) {

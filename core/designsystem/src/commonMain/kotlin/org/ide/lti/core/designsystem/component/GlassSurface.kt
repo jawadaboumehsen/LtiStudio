@@ -9,8 +9,6 @@
  */
 package org.ide.lti.core.designsystem.component
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
@@ -88,8 +86,9 @@ fun GlassSurface(
     val finalBorderColor = if (borderColor.isSpecified) borderColor else Color.Unspecified
 
     val borderModifier = if (finalBorderColor.isSpecified) {
-        Modifier.border(
-            border = BorderStroke(borderWidth, finalBorderColor),
+        Modifier.glassOutlineBorder(
+            color = finalBorderColor,
+            width = borderWidth,
             shape = shape,
         )
     } else {

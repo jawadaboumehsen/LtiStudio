@@ -10,7 +10,6 @@
 package org.ide.lti.core.designsystem.component
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -117,7 +116,7 @@ fun GlassTopBar(
     }
 
     val borderModifier = if (drawOwnChrome) {
-        Modifier.border(
+        Modifier.glassOutlineBorder(
             width = StrokeWidth.Hairline,
             color = glassColors.glassBorder,
             shape = ContinuousRoundedRectangle(CornerRadius.Panel),
@@ -188,10 +187,10 @@ private fun GlassTopBarLeftSection(
                         ),
                     ),
                 )
-                .border(
-                    StrokeWidth.Hairline,
-                    glassColors.glassBorder.copy(alpha = AlphaTokens.Disabled),
-                    RoundedCornerShape(CornerRadius.Small),
+                .glassOutlineBorder(
+                    width = StrokeWidth.Hairline,
+                    color = glassColors.glassBorder.copy(alpha = AlphaTokens.Disabled),
+                    shape = RoundedCornerShape(CornerRadius.Small),
                 ),
             contentAlignment = Alignment.Center,
         ) {
@@ -237,10 +236,10 @@ private fun GlassTopBarLeftSection(
                     modifier = Modifier
                         .clip(RoundedCornerShape(CornerRadius.Compact))
                         .background(glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Elevated))
-                        .border(
-                            StrokeWidth.Hairline,
-                            glassColors.glassBorder,
-                            RoundedCornerShape(CornerRadius.Compact),
+                        .glassOutlineBorder(
+                            width = StrokeWidth.Hairline,
+                            color = glassColors.glassBorder,
+                            shape = RoundedCornerShape(CornerRadius.Compact),
                         )
                         .padding(horizontal = Spacing.Compact, vertical = Spacing.ExtraExtraSmall),
                 ) {

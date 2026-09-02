@@ -9,7 +9,6 @@
  */
 package org.ide.lti.core.designsystem.component
 
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -120,9 +119,9 @@ fun GlassTab(
                 surfaceColor = surfaceColor,
                 tintColor = tintColor,
             )
-            .border(
-                width = StrokeWidth.Hairline,
+            .glassOutlineBorder(
                 color = borderColor,
+                width = StrokeWidth.Hairline,
                 shape = tabShape,
             )
             .onPointerEvent(PointerEventType.Enter) { isHovered = true }
@@ -164,9 +163,9 @@ fun GlassTabItem(
                 surfaceColor = tabColors.surfaceColor,
                 tintColor = tabColors.tintColor,
             )
-            .border(
-                width = StrokeWidth.Hairline,
+            .glassOutlineBorder(
                 color = tabColors.borderColor,
+                width = StrokeWidth.Hairline,
                 shape = tabShape,
             )
             .onPointerEvent(PointerEventType.Enter) { isHovered = true }

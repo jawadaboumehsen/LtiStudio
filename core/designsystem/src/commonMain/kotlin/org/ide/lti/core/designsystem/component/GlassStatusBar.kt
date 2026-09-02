@@ -10,7 +10,6 @@
 package org.ide.lti.core.designsystem.component
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -88,7 +87,7 @@ fun GlassStatusBar(
     }
 
     val borderModifier = if (drawOwnChrome) {
-        Modifier.border(
+        Modifier.glassOutlineBorder(
             width = StrokeWidth.Hairline,
             color = glassColors.glassBorder,
             shape = ContinuousRoundedRectangle(CornerRadius.Panel),
@@ -123,10 +122,10 @@ fun GlassStatusBar(
                     modifier = Modifier
                         .clip(RoundedCornerShape(CornerRadius.ExtraSmall))
                         .background(glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Elevated))
-                        .border(
-                            StrokeWidth.Hairline,
-                            glassColors.glassBorder,
-                            RoundedCornerShape(CornerRadius.ExtraSmall),
+                        .glassOutlineBorder(
+                            width = StrokeWidth.Hairline,
+                            color = glassColors.glassBorder,
+                            shape = RoundedCornerShape(CornerRadius.ExtraSmall),
                         )
                         .padding(horizontal = Spacing.Compact, vertical = Spacing.ExtraExtraSmall),
                 ) {
