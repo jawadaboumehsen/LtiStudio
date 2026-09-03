@@ -30,8 +30,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import com.kyant.capsule.ContinuousCapsule
-import com.kyant.capsule.ContinuousRoundedRectangle
 import org.ide.lti.core.designsystem.component.glassOutlineBorder
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BrandColors
@@ -42,6 +40,7 @@ import org.ide.lti.core.designsystem.theme.DarkGlassColorScheme
 import org.ide.lti.core.designsystem.theme.Elevation
 import org.ide.lti.core.designsystem.theme.GlassColorScheme
 import org.ide.lti.core.designsystem.theme.GlassLayoutColors
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.LightGlassColorScheme
@@ -80,7 +79,7 @@ fun TokensTab() {
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .clip(ContinuousRoundedRectangle(CornerRadius.Card))
+                    .clip(GlassShapes.Card)
                     .background(DarkGlassColorScheme.glassSurface)
                     .padding(Spacing.Medium)
             ) {
@@ -96,7 +95,7 @@ fun TokensTab() {
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .clip(ContinuousRoundedRectangle(CornerRadius.Card))
+                    .clip(GlassShapes.Card)
                     .background(LightGlassColorScheme.glassSurface)
                     .padding(Spacing.Medium)
             ) {
@@ -203,12 +202,12 @@ private fun ColorSwatchCard(
 
     Column(
         modifier = modifier
-            .clip(ContinuousRoundedRectangle(CornerRadius.Small))
+            .clip(GlassShapes.Small)
             .background(GlassTheme.colors.glassSurfaceElevated)
             .glassOutlineBorder(
                 width = StrokeWidth.Hairline,
                 color = GlassTheme.colors.glassBorder,
-                shape = ContinuousRoundedRectangle(CornerRadius.Small)
+                shape = GlassShapes.Small
             )
             .padding(Spacing.Small),
         verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)
@@ -217,12 +216,12 @@ private fun ColorSwatchCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(ComponentSize.ButtonMinHeight)
-                .clip(ContinuousRoundedRectangle(CornerRadius.ExtraSmall))
+                .clip(GlassShapes.ExtraSmall)
                 .background(color)
                 .glassOutlineBorder(
                     width = StrokeWidth.Hairline,
                     color = GlassTheme.colors.glassBorder,
-                    shape = ContinuousRoundedRectangle(CornerRadius.ExtraSmall)
+                    shape = GlassShapes.ExtraSmall
                 )
         )
         Text(
@@ -247,7 +246,7 @@ private fun ColorSwatchCard(
             )
             Box(
                 modifier = Modifier
-                    .clip(ContinuousCapsule)
+                    .clip(GlassShapes.Capsule)
                     .background(
                         if (contrast >= 3.0) GlassTheme.colors.glassAccent.copy(alpha = AlphaTokens.Hover)
                         else GlassTheme.colors.glassShadow.copy(alpha = AlphaTokens.Faint)
@@ -304,12 +303,12 @@ private fun SpecializedColorCard(name: String, color: Color, modifier: Modifier 
     val hex = ColorContrast.toHexString(color)
     Row(
         modifier = modifier
-            .clip(ContinuousRoundedRectangle(CornerRadius.Small))
+            .clip(GlassShapes.Small)
             .background(GlassTheme.colors.glassSurfaceElevated)
             .glassOutlineBorder(
                 width = StrokeWidth.Hairline,
                 color = GlassTheme.colors.glassBorder,
-                shape = ContinuousRoundedRectangle(CornerRadius.Small)
+                shape = GlassShapes.Small
             )
             .padding(Spacing.Small),
         verticalAlignment = Alignment.CenterVertically,
@@ -318,7 +317,7 @@ private fun SpecializedColorCard(name: String, color: Color, modifier: Modifier 
         Box(
             modifier = Modifier
                 .size(ComponentSize.SegmentedButtonSize)
-                .clip(ContinuousCapsule)
+                .clip(GlassShapes.Capsule)
                 .background(color)
         )
         Column {
@@ -357,7 +356,7 @@ private fun AlphaTokensGrid() {
                     Row(
                         modifier = Modifier
                             .weight(1f)
-                            .clip(ContinuousRoundedRectangle(CornerRadius.Small))
+                            .clip(GlassShapes.Small)
                             .background(GlassTheme.colors.glassSurfaceElevated)
                             .padding(Spacing.SmallMedium),
                         verticalAlignment = Alignment.CenterVertically,
@@ -372,7 +371,7 @@ private fun AlphaTokensGrid() {
                                 modifier = Modifier
                                     .width(ComponentSize.ButtonMinWidth)
                                     .height(ComponentSize.ProgressBarHeight * 3)
-                                    .clip(ContinuousCapsule)
+                                    .clip(GlassShapes.Capsule)
                                     .background(GlassTheme.colors.glassAccent.copy(alpha = alphaValue))
                             )
                             Text(
@@ -393,7 +392,7 @@ private fun DimensionsGrid() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(ContinuousRoundedRectangle(CornerRadius.Card))
+            .clip(GlassShapes.Card)
             .background(GlassTheme.colors.glassSurfaceElevated)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium)
@@ -474,7 +473,7 @@ private fun DimensionCategoryRow(category: String, tokens: List<String>) {
             tokens.forEach { token ->
                 Box(
                     modifier = Modifier
-                        .clip(ContinuousCapsule)
+                        .clip(GlassShapes.Capsule)
                         .background(GlassTheme.colors.glassSurface)
                         .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraExtraSmall)
                 ) {
@@ -494,7 +493,7 @@ private fun MotionTokensGrid() {
         Column(
             modifier = Modifier
                 .weight(1f)
-                .clip(ContinuousRoundedRectangle(CornerRadius.Card))
+                .clip(GlassShapes.Card)
                 .background(GlassTheme.colors.glassSurfaceElevated)
                 .padding(Spacing.Medium),
             verticalArrangement = Arrangement.spacedBy(Spacing.Small)
@@ -508,7 +507,7 @@ private fun MotionTokensGrid() {
         Column(
             modifier = Modifier
                 .weight(1f)
-                .clip(ContinuousRoundedRectangle(CornerRadius.Card))
+                .clip(GlassShapes.Card)
                 .background(GlassTheme.colors.glassSurfaceElevated)
                 .padding(Spacing.Medium),
             verticalArrangement = Arrangement.spacedBy(Spacing.Small)
@@ -522,7 +521,7 @@ private fun MotionTokensGrid() {
         Column(
             modifier = Modifier
                 .weight(1f)
-                .clip(ContinuousRoundedRectangle(CornerRadius.Card))
+                .clip(GlassShapes.Card)
                 .background(GlassTheme.colors.glassSurfaceElevated)
                 .padding(Spacing.Medium),
             verticalArrangement = Arrangement.spacedBy(Spacing.Small)
@@ -541,7 +540,7 @@ private fun TypographyScaleGrid() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(ContinuousRoundedRectangle(CornerRadius.Card))
+            .clip(GlassShapes.Card)
             .background(GlassTheme.colors.glassSurfaceElevated)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Small)

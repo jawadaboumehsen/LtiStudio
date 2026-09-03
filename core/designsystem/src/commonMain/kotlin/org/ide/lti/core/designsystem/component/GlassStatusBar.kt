@@ -18,26 +18,25 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import com.kyant.capsule.ContinuousCapsule
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.unit.sp
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.drawBackdrop
 import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
 import com.kashif_e.backdrop.highlight.Highlight
-import com.kyant.capsule.ContinuousRoundedRectangle
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius
+import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassEffects
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.LensRefraction
@@ -68,12 +67,8 @@ fun GlassStatusBar(
         if (effectsEnabled && actualBackdrop != null) {
             Modifier.drawBackdrop(
                 backdrop = actualBackdrop,
-                shape = { ContinuousRoundedRectangle(CornerRadius.Panel) },
-                effects = {
-                    vibrancy()
-                    blur(BackdropBlur.TopBar.toPx())
-                    lens(LensRefraction.TopBar.height.toPx(), LensRefraction.TopBar.amount.toPx())
-                },
+                shape = { GlassShapes.Panel },
+                effects = GlassEffects.StatusBar,
                 highlight = { Highlight.Default },
                 onDrawSurface = {
                     drawRect(glassColors.glassSurface)
@@ -90,7 +85,7 @@ fun GlassStatusBar(
         Modifier.glassOutlineBorder(
             width = StrokeWidth.Hairline,
             color = glassColors.glassBorder,
-            shape = ContinuousRoundedRectangle(CornerRadius.Panel),
+            shape = GlassShapes.Panel,
         )
     } else {
         Modifier
@@ -120,24 +115,24 @@ fun GlassStatusBar(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(Spacing.Five),
                     modifier = Modifier
-                        .clip(RoundedCornerShape(CornerRadius.ExtraSmall))
+                        .clip(GlassShapes.ExtraSmall)
                         .background(glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Elevated))
                         .glassOutlineBorder(
                             width = StrokeWidth.Hairline,
                             color = glassColors.glassBorder,
-                            shape = RoundedCornerShape(CornerRadius.ExtraSmall),
+                            shape = GlassShapes.ExtraSmall,
                         )
                         .padding(horizontal = Spacing.Compact, vertical = Spacing.ExtraExtraSmall),
                 ) {
                     Box(
                         modifier = Modifier
                             .size(IconSize.Indicator)
-                            .clip(ContinuousCapsule)
+                            .clip(GlassShapes.Capsule)
                             .background(glassColors.glassAccent),
                     )
                     Text(
                         text = branchName,
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = FontSize.MicroAlt),
                         color = glassColors.onGlassSecondary,
                     )
                 }
@@ -145,7 +140,7 @@ fun GlassStatusBar(
                 module?.let {
                     Text(
                         text = ".",
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = FontSize.MicroAlt),
                         color = glassColors.onGlassMuted,
                     )
                 }
@@ -153,7 +148,7 @@ fun GlassStatusBar(
                 filePath?.let {
                     Text(
                         text = it,
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = FontSize.MicroAlt),
                         color = glassColors.onGlassSecondary,
                     )
                 }
@@ -167,27 +162,27 @@ fun GlassStatusBar(
                 cursorPosition?.let { (line, col) ->
                     Text(
                         text = "Ln $line, Col $col",
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = FontSize.MicroAlt),
                         color = glassColors.onGlassSecondary,
                     )
                 }
 
                 Text(
                     text = encoding,
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = FontSize.MicroAlt),
                     color = glassColors.onGlassSecondary,
                 )
 
                 Text(
                     text = lineEnding.displayName,
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = FontSize.MicroAlt),
                     color = glassColors.onGlassMuted,
                 )
 
                 fileType?.let {
                     Text(
                         text = it.uppercase(),
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = FontSize.MicroAlt),
                         color = glassColors.onGlassSecondary,
                     )
                 }

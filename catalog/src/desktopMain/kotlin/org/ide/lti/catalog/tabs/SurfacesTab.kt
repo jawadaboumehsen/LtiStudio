@@ -28,7 +28,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.kyant.capsule.ContinuousRoundedRectangle
 import org.ide.lti.core.designsystem.component.GlassCard
 import org.ide.lti.core.designsystem.component.GlassPanel
 import org.ide.lti.core.designsystem.component.GlassPanelContainer
@@ -45,6 +44,7 @@ import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -68,7 +68,7 @@ fun SurfacesTab() {
         ) {
             GlassSurface(
                 modifier = Modifier.fillMaxWidth(),
-                shape = ContinuousRoundedRectangle(CornerRadius.Medium),
+                shape = GlassShapes.Medium,
                 borderColor = GlassTheme.colors.glassBorderHighlight
             ) {
                 Column(modifier = Modifier.padding(Spacing.Medium)) {

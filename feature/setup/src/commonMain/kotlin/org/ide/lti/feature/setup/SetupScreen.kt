@@ -25,7 +25,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -40,24 +39,39 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import com.kyant.capsule.ContinuousCapsule
-import com.kyant.capsule.ContinuousRoundedRectangle
+import com.kashif_e.backdrop.Backdrop
+import com.kashif_e.backdrop.backdrops.LayerBackdrop
+import com.kashif_e.backdrop.backdrops.layerBackdrop
+import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
+import org.ide.lti.core.designsystem.component.GlassActionCard
 import org.ide.lti.core.designsystem.component.GlassButton
 import org.ide.lti.core.designsystem.component.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.GlassCard
+import org.ide.lti.core.designsystem.component.GlassChip
 import org.ide.lti.core.designsystem.component.GlassEmptyState
 import org.ide.lti.core.designsystem.component.GlassEmptyStateOrientation
+import org.ide.lti.core.designsystem.component.GlassHorizontalDivider
+import org.ide.lti.core.designsystem.component.GlassItemCard
 import org.ide.lti.core.designsystem.component.GlassPanel
+import org.ide.lti.core.designsystem.component.GlassSecondaryButton
+import org.ide.lti.core.designsystem.component.GlassSidebarItem
+import org.ide.lti.core.designsystem.component.GlassStatusBar
+import org.ide.lti.core.designsystem.component.GlassTopBar
+import org.ide.lti.core.designsystem.component.GlassVerticalDivider
+import org.ide.lti.core.designsystem.component.LineEnding
 import org.ide.lti.core.designsystem.component.glassOutlineBorder
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
+import org.ide.lti.core.designsystem.theme.LetterSpacing
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.core.model.workspace.Workspace
 import org.koin.compose.viewmodel.koinViewModel
@@ -67,6 +81,8 @@ fun SetupScreen(
     onOpenWorkspace: (Workspace) -> Unit,
     onNavigateToConnections: () -> Unit,
     modifier: Modifier = Modifier,
+    onOpenSettings: () -> Unit = {},
+    backdrop: Backdrop? = null,
     viewModel: SetupViewModel = koinViewModel(),
 ) {
     val recentProjects by viewModel.recentProjects.collectAsState()
@@ -78,6 +94,8 @@ fun SetupScreen(
         onNewFile = { /* TODO: New File */ },
         onRecentProjectClick = { project -> viewModel.openRecentProject(project, onOpenWorkspace) },
         onNavigateToConnections = onNavigateToConnections,
+        onOpenSettings = onOpenSettings,
+        backdrop = backdrop,
         modifier = modifier,
     )
 }
@@ -91,120 +109,223 @@ fun SetupScreenContent(
     onRecentProjectClick: (RecentProject) -> Unit,
     onNavigateToConnections: () -> Unit,
     modifier: Modifier = Modifier,
+    onOpenSettings: () -> Unit = {},
+    backdrop: Backdrop? = null,
+    onMinimize: (() -> Unit)? = null,
+    onMaximize: (() -> Unit)? = null,
+    onClose: (() -> Unit)? = null,
+    onDrag: (() -> Unit)? = null,
+    isMaximized: Boolean? = null,
 ) {
+    val localBackdrop = rememberLayerBackdrop()
+    val resolvedBackdrop = (backdrop as? LayerBackdrop) ?: (GlassTheme.backdrop as? LayerBackdrop) ?: localBackdrop
     var selectedTab by remember { mutableStateOf("workspaces") }
 
-    Row(modifier = modifier.fillMaxSize()) {
-        // Left Sidebar with glass
-        GlassPanel(
-            width = ComponentSize.SetupSidebarWidth,
-            shape = ContinuousRoundedRectangle(CornerRadius.None),
-            modifier = Modifier.fillMaxHeight(),
-        ) {
-            SetupSidebar(
-                selectedTab = selectedTab,
-                onTabSelected = { selectedTab = it },
-                onNavigateToConnections = onNavigateToConnections,
-            )
-        }
-
-        // Main Content Area
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight()
-                .padding(horizontal = Spacing.ScreenHorizontal, vertical = Spacing.ScreenVertical),
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
-                Text(
-                    text = "Workspaces",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = GlassTheme.colors.onGlass,
-                )
-                Text(
-                    text = "Open, clone, or create a project to begin developing",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = GlassTheme.colors.onGlassSecondary,
-                )
-            }
-
-            Spacer(modifier = Modifier.height(Spacing.SectionGap))
-
-            // Action Cards with distinct semantic icons
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(Spacing.CardPadding),
-            ) {
-                ActionCard(
-                    title = "Open Folder...",
-                    subtitle = "Open a local workspace directory",
-                    icon = AppIcons.FolderOpen,
-                    isPrimary = true,
-                    onClick = onOpenFolder,
-                    modifier = Modifier.weight(1f),
-                )
-                ActionCard(
-                    title = "Clone from Git...",
-                    subtitle = "Clone a repository from GitHub or remote",
-                    icon = AppIcon.Painted(AppIcons.CopyPainterResource),
-                    isPrimary = false,
-                    onClick = onCloneGit,
-                    modifier = Modifier.weight(1f),
-                )
-                ActionCard(
-                    title = "New File...",
-                    subtitle = "Create a new scratch file",
-                    icon = AppIcon.Painted(AppIcons.FilePainterResource),
-                    isPrimary = false,
-                    onClick = onNewFile,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-
-            Spacer(modifier = Modifier.height(Spacing.ScreenVertical))
-
-            // Recent Projects Section
-            Text(
-                text = "Recent Projects",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = GlassTheme.colors.onGlass,
+    Box(
+        modifier = modifier.fillMaxSize(),
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Standard Unified Liquid Glass Top Bar (identical to workspace screen)
+            GlassTopBar(
+                title = "LtiRom",
+                workspaceName = "Setup",
+                showMenuButton = false,
+                showPanelToggles = false,
+                showCommandPalette = false,
+                onSettingsClick = onOpenSettings,
+                onWindowMinimize = onMinimize,
+                onWindowMaximize = onMaximize,
+                onWindowClose = onClose,
+                onWindowDrag = onDrag,
+                isMaximized = isMaximized,
+                backdrop = resolvedBackdrop,
+                drawOwnChrome = true,
             )
 
-            Spacer(modifier = Modifier.height(Spacing.Medium))
-
-            if (recentProjects.isNotEmpty()) {
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
+            Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                // Left Sidebar with glass panel
+                GlassPanel(
+                    width = ComponentSize.SetupSidebarWidth,
+                    shape = GlassShapes.None,
+                    modifier = Modifier.fillMaxHeight(),
                 ) {
-                    items(recentProjects, key = { it.workspaceId }) { project ->
-                        RecentProjectCard(
-                            project = project,
-                            onClick = { onRecentProjectClick(project) },
+                    SetupSidebar(
+                        selectedTab = selectedTab,
+                        onTabSelected = { selectedTab = it },
+                        onNavigateToConnections = onNavigateToConnections,
+                        onOpenSettings = onOpenSettings,
+                        recentProjectCount = recentProjects.size,
+                    )
+                }
+
+                // Sleek Specular Hairline Vertical Divider
+                GlassVerticalDivider(specular = true)
+
+            // Main Content Area
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .padding(horizontal = Spacing.ScreenHorizontal, vertical = Spacing.ScreenVertical),
+            ) {
+                // Header with status indicator
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
+                        Text(
+                            text = "Workspaces",
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = GlassTheme.colors.onGlass,
+                        )
+                        Text(
+                            text = "Open, clone, or create a project to begin developing",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = GlassTheme.colors.onGlassSecondary,
+                        )
+                    }
+
+                    GlassChip(
+                        label = "Ready",
+                        selected = false,
+                        leadingIcon = {
+                            Box(
+                                modifier = Modifier
+                                    .size(IconSize.Indicator)
+                                    .clip(GlassShapes.Capsule)
+                                    .background(GlassTheme.colors.glassAccent),
+                            )
+                        },
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(Spacing.SectionGap))
+
+                // Action Cards with distinct semantic icons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.CardPadding),
+                ) {
+                    GlassActionCard(
+                        title = "Open Folder...",
+                        subtitle = "Open a local workspace directory",
+                        icon = AppIcons.FolderOpen,
+                        isPrimary = true,
+                        onClick = onOpenFolder,
+                        modifier = Modifier.weight(1f),
+                    )
+                    GlassActionCard(
+                        title = "Clone from Git...",
+                        subtitle = "Clone a repository from GitHub or remote",
+                        icon = AppIcon.Painted(AppIcons.CopyPainterResource),
+                        isPrimary = false,
+                        onClick = onCloneGit,
+                        modifier = Modifier.weight(1f),
+                    )
+                    GlassActionCard(
+                        title = "New File...",
+                        subtitle = "Create a new scratch file",
+                        icon = AppIcon.Painted(AppIcons.FilePainterResource),
+                        isPrimary = false,
+                        onClick = onNewFile,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(Spacing.ScreenVertical))
+
+                // Recent Projects Section Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                    ) {
+                        Text(
+                            text = "Recent Projects",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = GlassTheme.colors.onGlass,
+                        )
+                        if (recentProjects.isNotEmpty()) {
+                            GlassChip(
+                                label = "${recentProjects.size}",
+                                selected = false,
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(Spacing.Medium))
+
+                if (recentProjects.isNotEmpty()) {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
+                    ) {
+                        items(recentProjects, key = { it.workspaceId }) { project ->
+                            GlassItemCard(
+                                title = project.name,
+                                subtitle = project.path,
+                                icon = AppIcon.Painted(AppIcons.FolderPainterResource),
+                                onClick = { onRecentProjectClick(project) },
+                            )
+                        }
+                    }
+                } else {
+                    // Empty state card
+                    GlassCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentPadding = Spacing.CardPadding,
+                    ) {
+                        GlassEmptyState(
+                            icon = AppIcons.Folder,
+                            title = "No Recent Projects",
+                            description = "Projects you open will appear here for quick access.",
+                            badgeSize = ComponentSize.EmptyStateBadgeSize,
+                            iconSize = IconSize.Large,
+                            iconTint = GlassTheme.colors.onGlassMuted,
+                            titleStyle = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                            orientation = GlassEmptyStateOrientation.Horizontal,
+                            action = {
+                                GlassSecondaryButton(onClick = onOpenFolder) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                                    ) {
+                                        Icon(
+                                            painter = AppIcons.FolderOpenPainterResource(),
+                                            contentDescription = null,
+                                            modifier = Modifier.size(IconSize.Medium),
+                                        )
+                                        Text("Open Folder")
+                                    }
+                                }
+                            },
                         )
                     }
                 }
-            } else {
-                // Empty state card
-                GlassCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentPadding = Spacing.CardPadding,
-                ) {
-                    GlassEmptyState(
-                        icon = AppIcon.Painted(AppIcons.FolderPainterResource),
-                        title = "No Recent Projects",
-                        description = "Projects you open will appear here for quick access.",
-                        badgeSize = ComponentSize.IconButtonSize,
-                        iconSize = IconSize.Large,
-                        iconTint = GlassTheme.colors.onGlassMuted,
-                        titleStyle = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                        orientation = GlassEmptyStateOrientation.Horizontal,
-                    )
-                }
             }
         }
+
+        // Bottom Unified Liquid Glass Status Bar
+        GlassStatusBar(
+            filePath = if (selectedTab == "workspaces") "Workspaces" else "Connections",
+            branchName = "main",
+            encoding = "UTF-8",
+            lineEnding = LineEnding.LF,
+            fileType = "LtiRom Desktop",
+            cursorPosition = null,
+            drawOwnChrome = true,
+            backdrop = resolvedBackdrop,
+        )
     }
+}
 }
 
 @Composable
@@ -212,6 +333,8 @@ private fun SetupSidebar(
     selectedTab: String,
     onTabSelected: (String) -> Unit,
     onNavigateToConnections: () -> Unit,
+    onOpenSettings: () -> Unit,
+    recentProjectCount: Int,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -220,16 +343,58 @@ private fun SetupSidebar(
             .padding(Spacing.PanelPadding),
         verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
     ) {
-        SidebarItem(
+        // IDE Brand Header
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Compact),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Small),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(IconSize.Indicator)
+                    .clip(GlassShapes.Capsule)
+                    .background(GlassTheme.colors.glassAccent),
+            )
+            Text(
+                text = "LTIROM",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontFamily = codeFontFamily(),
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = LetterSpacing.Widest,
+                ),
+                color = GlassTheme.colors.onGlass,
+            )
+            Spacer(Modifier.weight(1f))
+            GlassChip(
+                label = "v0.0.1",
+                selected = false,
+            )
+        }
+
+        Spacer(modifier = Modifier.height(Spacing.ExtraSmall))
+        GlassHorizontalDivider()
+        Spacer(modifier = Modifier.height(Spacing.ExtraSmall))
+
+        Text(
+            text = "WORKSPACE",
+            style = MaterialTheme.typography.labelSmall,
+            color = GlassTheme.colors.onGlassMuted,
+            modifier = Modifier.padding(horizontal = Spacing.SmallMedium, vertical = Spacing.ExtraSmall),
+        )
+
+        GlassSidebarItem(
             label = "Workspaces",
-            icon = AppIcons.Home,
-            isSelected = selectedTab == "workspaces",
+            icon = AppIcons.FolderOpen,
+            selected = selectedTab == "workspaces",
+            badge = if (recentProjectCount > 0) "$recentProjectCount" else null,
             onClick = { onTabSelected("workspaces") },
         )
-        SidebarItem(
+        GlassSidebarItem(
             label = "Connections",
             icon = AppIcons.Link,
-            isSelected = selectedTab == "connections",
+            selected = selectedTab == "connections",
             onClick = {
                 onTabSelected("connections")
                 onNavigateToConnections()
@@ -237,10 +402,7 @@ private fun SetupSidebar(
         )
 
         Spacer(modifier = Modifier.height(Spacing.Small))
-        HorizontalDivider(
-            color = GlassTheme.colors.glassBorder.copy(alpha = AlphaTokens.Faint),
-            thickness = StrokeWidth.Hairline,
-        )
+        GlassHorizontalDivider()
         Spacer(modifier = Modifier.height(Spacing.ExtraSmall))
 
         Text(
@@ -250,184 +412,23 @@ private fun SetupSidebar(
             modifier = Modifier.padding(horizontal = Spacing.SmallMedium, vertical = Spacing.ExtraSmall),
         )
 
-        SidebarItem(
+        GlassSidebarItem(
             label = "Join Session",
             icon = AppIcons.Person,
-            isSelected = selectedTab == "join_session",
+            selected = selectedTab == "join_session",
             onClick = { onTabSelected("join_session") },
         )
-    }
-}
 
-@Composable
-private fun SidebarItem(
-    label: String,
-    icon: ImageVector,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    GlassButton(
-        onClick = onClick,
-        modifier = modifier.fillMaxWidth(),
-        variant = if (isSelected) GlassButtonVariant.Primary else GlassButtonVariant.Text,
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = if (isSelected) GlassTheme.colors.onGlass else GlassTheme.colors.onGlassSecondary,
-                modifier = Modifier.size(IconSize.Medium),
-            )
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                color = if (isSelected) GlassTheme.colors.onGlass else GlassTheme.colors.onGlassSecondary,
-            )
-        }
-    }
-}
+        Spacer(modifier = Modifier.weight(1f))
 
-@Composable
-private fun ActionCard(
-    title: String,
-    subtitle: String,
-    icon: AppIcon,
-    isPrimary: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    GlassCard(
-        modifier = modifier
-            .height(ComponentSize.ActionCardHeight)
-            .clickable(onClick = onClick),
-        contentPadding = Spacing.Medium,
-        surfaceColor = if (isPrimary) GlassTheme.colors.glassSurfaceElevated else GlassTheme.colors.glassSurface,
-        borderColor = if (isPrimary) GlassTheme.colors.glassBorderHighlight else GlassTheme.colors.glassBorder,
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.Start,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(IconSize.ActionCard)
-                    .clip(ContinuousCapsule)
-                    .background(GlassTheme.colors.glassSurfaceElevated.copy(alpha = AlphaTokens.Faint))
-                    .glassOutlineBorder(
-                        width = StrokeWidth.Hairline,
-                        color = if (isPrimary) GlassTheme.colors.glassBorderHighlight else GlassTheme.colors.glassBorder,
-                        shape = ContinuousCapsule,
-                    ),
-                contentAlignment = Alignment.Center,
-            ) {
-                when (icon) {
-                    is AppIcon.Vector -> Icon(
-                        imageVector = icon.imageVector,
-                        contentDescription = title,
-                        modifier = Modifier.size(IconSize.Medium),
-                        tint = GlassTheme.colors.glassAccent,
-                    )
-                    is AppIcon.Painted -> Icon(
-                        painter = icon.painter(),
-                        contentDescription = title,
-                        modifier = Modifier.size(IconSize.Medium),
-                        tint = GlassTheme.colors.glassAccent,
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.height(Spacing.Small))
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
-                color = GlassTheme.colors.onGlass,
-            )
-            Spacer(modifier = Modifier.height(Spacing.ExtraExtraSmall))
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = GlassTheme.colors.onGlassSecondary,
-                maxLines = 1,
-            )
-        }
-    }
-}
+        GlassHorizontalDivider()
+        Spacer(modifier = Modifier.height(Spacing.ExtraSmall))
 
-@Composable
-private fun ActionCard(
-    title: String,
-    subtitle: String,
-    icon: ImageVector,
-    isPrimary: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) = ActionCard(
-    title = title,
-    subtitle = subtitle,
-    icon = AppIcon.Vector(icon),
-    isPrimary = isPrimary,
-    onClick = onClick,
-    modifier = modifier,
-)
-
-@Composable
-private fun RecentProjectCard(
-    project: RecentProject,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    GlassCard(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        contentPadding = Spacing.Medium,
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(ComponentSize.TopBarButtonSize)
-                    .clip(ContinuousCapsule)
-                    .background(GlassTheme.colors.glassSurfaceElevated)
-                    .glassOutlineBorder(color = GlassTheme.colors.glassBorder, width = StrokeWidth.Hairline, shape = ContinuousCapsule),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    painter = AppIcons.FolderPainterResource(),
-                    contentDescription = null,
-                    modifier = Modifier.size(IconSize.Medium),
-                    tint = GlassTheme.colors.glassAccent,
-                )
-            }
-            Spacer(modifier = Modifier.width(Spacing.SmallMedium))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = project.name,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = GlassTheme.colors.onGlass,
-                )
-                Text(
-                    text = project.path,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = GlassTheme.colors.onGlassSecondary,
-                )
-            }
-            Icon(
-                painter = AppIcons.ChevronRightPainterResource(),
-                contentDescription = null,
-                tint = GlassTheme.colors.onGlassMuted,
-                modifier = Modifier.size(IconSize.Medium),
-            )
-        }
+        GlassSidebarItem(
+            label = "Settings",
+            icon = AppIcon.Painted(AppIcons.SettingsPainterResource),
+            selected = false,
+            onClick = onOpenSettings,
+        )
     }
 }

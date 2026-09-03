@@ -28,10 +28,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.graphics.lerp
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.Role
@@ -50,17 +51,33 @@ import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.highlight.Highlight
 import com.kashif_e.backdrop.shadow.InnerShadow
 import com.kashif_e.backdrop.shadow.Shadow
-import com.kyant.capsule.ContinuousCapsule
 import kotlinx.coroutines.flow.collectLatest
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.Elevation
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.ToggleColors
 import org.ide.lti.core.designsystem.utils.DampedDragAnimation
+
+@Composable
+fun GlassToggle(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    activeColor: Color = GlassTheme.colors.glassAccent,
+    backdrop: Backdrop? = null,
+) = GlassToggle(
+    selected = { checked },
+    onSelect = if (enabled) onCheckedChange else { _ -> },
+    modifier = modifier,
+    activeColor = activeColor,
+    backdrop = backdrop,
+)
 
 @Suppress("LongMethod")
 @Composable
@@ -68,18 +85,19 @@ fun GlassToggle(
     selected: () -> Boolean,
     onSelect: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    activeColor: Color = GlassTheme.colors.glassAccent,
     backdrop: Backdrop? = null,
 ) {
     val actualBackdrop = backdrop ?: GlassTheme.backdrop ?: rememberLayerBackdrop()
-    val isLightTheme = MaterialTheme.colorScheme.surface.luminance() > 0.5f
     val glassColors = GlassTheme.colors
     val effectsEnabled = GlassTheme.effectsEnabled
-    val accentColor =
-        if (isLightTheme) {
-            ToggleColors.ActiveLight
-        } else {
-            ToggleColors.ActiveDark
-        }
+    val resolvedActiveColor = if (activeColor.isSpecified) {
+        activeColor
+    } else if (GlassTheme.isDark) {
+        ToggleColors.ActiveDark
+    } else {
+        ToggleColors.ActiveLight
+    }
     val trackColor = glassColors.glassBorder
 
     val density = LocalDensity.current
@@ -156,10 +174,10 @@ fun GlassToggle(
         Box(
             Modifier
                 .layerBackdrop(trackBackdrop)
-                .clip(ContinuousCapsule)
+                .clip(GlassShapes.Capsule)
                 .drawBehind {
                     val fraction = dampedDragAnimation.value
-                    drawRect(lerp(trackColor, accentColor, fraction))
+                    drawRect(lerp(trackColor, resolvedActiveColor, fraction))
                 }
                 .size(ComponentSize.ToggleTrackWidth, ComponentSize.ToggleTrackHeight),
         )
@@ -212,7 +230,7 @@ private fun toggleThumbModifier(
                     }
                 },
             ),
-            shape = { ContinuousCapsule },
+            shape = { GlassShapes.Capsule },
             effects = {
                 val progress = dampedDragAnimation.pressProgress
                 blur(BackdropBlur.Toggle.toPx() * (1f - progress))
@@ -257,7 +275,7 @@ private fun toggleThumbModifier(
         )
     } else {
         Modifier
-            .clip(ContinuousCapsule)
+            .clip(GlassShapes.Capsule)
             .background(glassColors.onGlass)
     }
 }

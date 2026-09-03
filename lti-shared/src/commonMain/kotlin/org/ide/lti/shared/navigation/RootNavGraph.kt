@@ -40,6 +40,7 @@ internal fun RootNavGraph(
             onNavigateToConnections = {
                 // TODO: Navigate to connections screen
             },
+            onOpenSettings = onOpenSettings,
         )
 
         // Workspace Screen (4-panel IDE layout)

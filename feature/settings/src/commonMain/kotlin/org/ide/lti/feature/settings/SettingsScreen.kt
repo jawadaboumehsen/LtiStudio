@@ -23,9 +23,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -39,16 +37,30 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.runtime.mutableIntStateOf
+import com.kashif_e.backdrop.Backdrop
+import com.kashif_e.backdrop.backdrops.LayerBackdrop
+import com.kashif_e.backdrop.backdrops.layerBackdrop
+import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import org.ide.lti.core.data.settings.AppSettingsState
 import org.ide.lti.core.designsystem.component.GlassCard
+import org.ide.lti.core.designsystem.component.GlassChip
+import org.ide.lti.core.designsystem.component.GlassHorizontalDivider
 import org.ide.lti.core.designsystem.component.GlassIconButton
+import org.ide.lti.core.designsystem.component.GlassStatusBar
 import org.ide.lti.core.designsystem.component.GlassToggle
+import org.ide.lti.core.designsystem.component.GlassToggleTile
+import org.ide.lti.core.designsystem.component.GlassTopBar
+import org.ide.lti.core.designsystem.component.GlassValueTile
+import org.ide.lti.core.designsystem.component.LineEnding
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.icon.ideGeneralLanguage
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -59,11 +71,15 @@ import org.koin.compose.koinInject
 fun SettingsScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
+    showHeader: Boolean = true,
+    backdrop: Backdrop? = null,
     appSettingsState: AppSettingsState = koinInject(),
 ) {
     SettingsScreenContent(
         modifier = modifier.fillMaxSize(),
         onBackClick = onBackClick,
+        showHeader = showHeader,
+        backdrop = backdrop,
         appSettingsState = appSettingsState,
     )
 }
@@ -72,274 +88,353 @@ fun SettingsScreen(
 fun SettingsScreenContent(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
+    showHeader: Boolean = true,
+    backdrop: Backdrop? = null,
     appSettingsState: AppSettingsState = koinInject(),
 ) {
+    val localBackdrop = rememberLayerBackdrop()
+    val resolvedBackdrop = (backdrop as? LayerBackdrop) ?: (GlassTheme.backdrop as? LayerBackdrop) ?: localBackdrop
+    var selectedCategoryIndex by remember { mutableIntStateOf(0) }
+    val categories = remember { listOf("Appearance", "Editor", "Notifications", "About") }
+
     var pushEnabled by remember { mutableStateOf(true) }
+    var soundEnabled by remember { mutableStateOf(false) }
+    var autoSaveEnabled by remember { mutableStateOf(true) }
+    var lineNumbersEnabled by remember { mutableStateOf(true) }
+    var bracketMatchingEnabled by remember { mutableStateOf(true) }
 
     Box(
         modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.TopCenter,
     ) {
-        Column(
-            modifier = Modifier
-                .widthIn(max = ComponentSize.SettingsMaxWidth)
-                .fillMaxWidth()
-                .padding(horizontal = Spacing.ScreenHorizontal, vertical = Spacing.ScreenVertical)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(Spacing.SectionGap),
-        ) {
-            // Header with back button
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
-                verticalAlignment = Alignment.CenterVertically,
+        Column(modifier = Modifier.fillMaxSize()) {
+            if (showHeader) {
+                GlassTopBar(
+                    title = "LtiRom",
+                    workspaceName = "Settings",
+                    onBackClick = onBackClick,
+                    showMenuButton = false,
+                    showPanelToggles = false,
+                    showCommandPalette = false,
+                    showSearchButton = false,
+                    backdrop = resolvedBackdrop,
+                    drawOwnChrome = true,
+                )
+            }
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                contentAlignment = Alignment.TopCenter,
             ) {
-                GlassIconButton(onClick = onBackClick) {
-                    Icon(
-                        painter = AppIcons.ArrowBackPainterResource(),
-                        contentDescription = "Back",
-                        tint = GlassTheme.colors.onGlass,
-                        modifier = Modifier.size(IconSize.Medium),
-                    )
+                Column(
+                    modifier = Modifier
+                        .widthIn(max = ComponentSize.SettingsMaxWidth)
+                        .fillMaxWidth()
+                        .padding(horizontal = Spacing.ScreenHorizontal, vertical = Spacing.ScreenVertical)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.SectionGap),
+                ) {
+                    // Header & Category Chips Bar
+                    Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
+                                Text(
+                                    text = "Preferences",
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = GlassTheme.colors.onGlass,
+                                )
+                                Text(
+                                    text = "Configure your IDE environment, editor experience, and themes",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = GlassTheme.colors.onGlassSecondary,
+                                )
+                            }
+
+                            GlassChip(
+                                label = "Synced",
+                                selected = false,
+                                leadingIcon = {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(IconSize.Indicator)
+                                            .clip(GlassShapes.Capsule)
+                                            .background(GlassTheme.colors.glassAccent),
+                                    )
+                                },
+                            )
+                        }
+
+                        // Category Tabs Row
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            categories.forEachIndexed { index, name ->
+                                GlassChip(
+                                    label = name,
+                                    selected = selectedCategoryIndex == index,
+                                    onClick = { selectedCategoryIndex = index },
+                                )
+                            }
+                        }
+                    }
+
+                    // Selected Category Content
+                    when (selectedCategoryIndex) {
+                        0 -> {
+                            // Appearance
+                            GlassCard(
+                                contentPadding = Spacing.CardPadding,
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Column(verticalArrangement = Arrangement.spacedBy(Spacing.CardPadding)) {
+                                    Text(
+                                        text = "Appearance & Interface",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = GlassTheme.colors.onGlass,
+                                    )
+
+                                    GlassToggleTile(
+                                        icon = AppIcons.Sparkles,
+                                        title = "Dark Mode",
+                                        description = "AMOLED true-black surfaces with vibrant light-blue accents",
+                                        checked = appSettingsState.isDarkTheme,
+                                        onCheckedChange = { appSettingsState.isDarkTheme = it },
+                                    )
+
+                                    GlassHorizontalDivider()
+
+                                    GlassToggleTile(
+                                        icon = AppIcons.LayoutSplit,
+                                        title = "Fluid Glass Effects",
+                                        description = "GPU-accelerated lens refraction, vibrancy, and specular hairlines",
+                                        checked = appSettingsState.effectsEnabled,
+                                        onCheckedChange = { appSettingsState.effectsEnabled = it },
+                                    )
+
+                                    GlassHorizontalDivider()
+
+                                    GlassToggleTile(
+                                        icon = AppIcons.Info,
+                                        title = "Reduced Motion",
+                                        description = "Disable non-essential spring and fluid animations for accessibility",
+                                        checked = appSettingsState.reducedMotion,
+                                        onCheckedChange = { appSettingsState.reducedMotion = it },
+                                    )
+
+                                    GlassHorizontalDivider()
+
+                                    GlassValueTile(
+                                        icon = AppIcon.Painted(AppIcons.ideGeneralLanguage),
+                                        title = "Language",
+                                        description = "Display language for IDE interface",
+                                        value = "English (US)",
+                                    )
+
+                                    GlassHorizontalDivider()
+
+                                    GlassValueTile(
+                                        icon = AppIcons.Sparkles,
+                                        title = "Accent Palette",
+                                        description = "Primary liquid glass highlight tone",
+                                        value = "Light Blue (#4FA8FF)",
+                                    )
+                                }
+                            }
+                        }
+
+                        1 -> {
+                            // Editor
+                            GlassCard(
+                                contentPadding = Spacing.CardPadding,
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Column(verticalArrangement = Arrangement.spacedBy(Spacing.CardPadding)) {
+                                    Text(
+                                        text = "Editor Preferences",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = GlassTheme.colors.onGlass,
+                                    )
+
+                                    GlassValueTile(
+                                        icon = AppIcon.Painted(AppIcons.FilePainterResource),
+                                        title = "Font Family",
+                                        description = "Monospace coding font used in editor panes",
+                                        value = "JetBrains Mono",
+                                    )
+
+                                    GlassHorizontalDivider()
+
+                                    GlassValueTile(
+                                        icon = AppIcons.Edit,
+                                        title = "Font Size",
+                                        description = "Base font size for code tokens",
+                                        value = "13 sp",
+                                    )
+
+                                    GlassHorizontalDivider()
+
+                                    GlassValueTile(
+                                        icon = AppIcons.LayoutSplit,
+                                        title = "Tab Size",
+                                        description = "Number of spaces per indentation level",
+                                        value = "4 spaces",
+                                    )
+
+                                    GlassHorizontalDivider()
+
+                                    GlassToggleTile(
+                                        icon = AppIcons.Show,
+                                        title = "Line Numbers",
+                                        description = "Display line numbers in editor gutter",
+                                        checked = lineNumbersEnabled,
+                                        onCheckedChange = { lineNumbersEnabled = it },
+                                    )
+
+                                    GlassHorizontalDivider()
+
+                                    GlassToggleTile(
+                                        icon = AppIcons.Check,
+                                        title = "Bracket Pair Colorization",
+                                        description = "Highlight matching delimiters with distinct tints",
+                                        checked = bracketMatchingEnabled,
+                                        onCheckedChange = { bracketMatchingEnabled = it },
+                                    )
+                                }
+                            }
+                        }
+
+                        2 -> {
+                            // Notifications
+                            GlassCard(
+                                contentPadding = Spacing.CardPadding,
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Column(verticalArrangement = Arrangement.spacedBy(Spacing.CardPadding)) {
+                                    Text(
+                                        text = "Alerts & Notifications",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = GlassTheme.colors.onGlass,
+                                    )
+
+                                    GlassToggleTile(
+                                        icon = AppIcon.Painted(AppIcons.NotificationsPainterResource),
+                                        title = "Push Notifications",
+                                        description = "Receive workspace alerts and background task notifications",
+                                        checked = pushEnabled,
+                                        onCheckedChange = { pushEnabled = it },
+                                    )
+
+                                    GlassHorizontalDivider()
+
+                                    GlassToggleTile(
+                                        icon = AppIcons.Sparkles,
+                                        title = "Sound Effects",
+                                        description = "Play subtle auditory cues on build completion and diagnostics",
+                                        checked = soundEnabled,
+                                        onCheckedChange = { soundEnabled = it },
+                                    )
+
+                                    GlassHorizontalDivider()
+
+                                    GlassToggleTile(
+                                        icon = AppIcons.Save,
+                                        title = "Auto-Save on Focus Lost",
+                                        description = "Automatically save modified files when switching windows",
+                                        checked = autoSaveEnabled,
+                                        onCheckedChange = { autoSaveEnabled = it },
+                                    )
+                                }
+                            }
+                        }
+
+                        3 -> {
+                            // About & Diagnostics
+                            GlassCard(
+                                contentPadding = Spacing.CardPadding,
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Column(verticalArrangement = Arrangement.spacedBy(Spacing.CardPadding)) {
+                                    Text(
+                                        text = "System & Architecture",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = GlassTheme.colors.onGlass,
+                                    )
+
+                                    GlassValueTile(
+                                        icon = AppIcons.Sparkles,
+                                        title = "Application",
+                                        description = "Liquid Glass IDE Studio",
+                                        value = "LtiRom Desktop",
+                                    )
+
+                                    GlassHorizontalDivider()
+
+                                    GlassValueTile(
+                                        icon = AppIcons.Info,
+                                        title = "Build Version",
+                                        description = "Current software distribution",
+                                        value = "0.0.1-beta.0.118",
+                                    )
+
+                                    GlassHorizontalDivider()
+
+                                    GlassValueTile(
+                                        icon = AppIcons.Settings,
+                                        title = "Framework Stack",
+                                        description = "Core compiler and declarative UI runtime",
+                                        value = "Kotlin 2.1.0 · Compose 1.9.0",
+                                    )
+
+                                    GlassHorizontalDivider()
+
+                                    GlassValueTile(
+                                        icon = AppIcons.LayoutSplit,
+                                        title = "Graphics Engine",
+                                        description = "Skiko Skia GPU Acceleration",
+                                        value = "DirectX 12 / Metal / Vulkan",
+                                    )
+
+                                    GlassHorizontalDivider()
+
+                                    GlassValueTile(
+                                        icon = AppIcons.Check,
+                                        title = "Accessibility Standard",
+                                        description = "Contrast ratio & readability compliance",
+                                        value = "WCAG 2.1 AA Compliant",
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
-
-                Text(
-                    text = "Settings",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = GlassTheme.colors.onGlass,
-                )
             }
 
-            Spacer(Modifier.height(Spacing.ExtraSmall))
-
-            // Appearance Section
-            GlassCard(
-                contentPadding = Spacing.CardPadding,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(Spacing.CardPadding)) {
-                    Text(
-                        text = "Appearance",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = GlassTheme.colors.onGlass,
-                    )
-
-                    SettingsToggleItem(
-                        icon = AppIcons.Sparkles,
-                        title = "Dark Mode",
-                        description = "AMOLED true-black surfaces with light-blue accents",
-                        checked = appSettingsState.isDarkTheme,
-                        onCheckedChange = { appSettingsState.isDarkTheme = it },
-                    )
-
-                    HorizontalDivider(
-                        color = GlassTheme.colors.glassBorder.copy(alpha = AlphaTokens.Faint),
-                        thickness = StrokeWidth.Hairline,
-                    )
-
-                    SettingsToggleItem(
-                        icon = AppIcons.LayoutSplit,
-                        title = "Fluid Glass Effects",
-                        description = "GPU-accelerated lens refraction and vibrancy",
-                        checked = appSettingsState.effectsEnabled,
-                        onCheckedChange = { appSettingsState.effectsEnabled = it },
-                    )
-
-                    HorizontalDivider(
-                        color = GlassTheme.colors.glassBorder.copy(alpha = AlphaTokens.Faint),
-                        thickness = StrokeWidth.Hairline,
-                    )
-
-                    SettingsValueItem(
-                        icon = AppIcon.Painted(AppIcons.ideGeneralLanguage),
-                        title = "Language",
-                        description = "Display language for IDE interface",
-                        value = "English (US)",
-                    )
-                }
-            }
-
-            // Notifications Section
-            GlassCard(
-                contentPadding = Spacing.CardPadding,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(Spacing.CardPadding)) {
-                    Text(
-                        text = "Notifications",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = GlassTheme.colors.onGlass,
-                    )
-
-                    SettingsToggleItem(
-                        icon = AppIcon.Painted(AppIcons.NotificationsPainterResource),
-                        title = "Push Notifications",
-                        description = "Receive workspace and background task alerts",
-                        checked = pushEnabled,
-                        onCheckedChange = { pushEnabled = it },
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun SettingsToggleItem(
-    icon: AppIcon,
-    title: String,
-    description: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.weight(1f).padding(end = Spacing.Medium),
-        ) {
-            when (icon) {
-                is AppIcon.Vector -> Icon(
-                    imageVector = icon.imageVector,
-                    contentDescription = null,
-                    tint = GlassTheme.colors.glassAccent,
-                    modifier = Modifier.size(IconSize.Large),
-                )
-                is AppIcon.Painted -> Icon(
-                    painter = icon.painter(),
-                    contentDescription = null,
-                    tint = GlassTheme.colors.glassAccent,
-                    modifier = Modifier.size(IconSize.Large),
-                )
-            }
-
-            Column {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium,
-                    color = GlassTheme.colors.onGlass,
-                )
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = GlassTheme.colors.onGlassSecondary,
-                )
-            }
-        }
-
-        GlassToggle(
-            selected = { checked },
-            onSelect = onCheckedChange,
-        )
-    }
-}
-
-@Composable
-private fun SettingsToggleItem(
-    icon: ImageVector,
-    title: String,
-    description: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier,
-) = SettingsToggleItem(
-    icon = AppIcon.Vector(icon),
-    title = title,
-    description = description,
-    checked = checked,
-    onCheckedChange = onCheckedChange,
-    modifier = modifier,
-)
-
-@Composable
-private fun SettingsValueItem(
-    icon: AppIcon,
-    title: String,
-    description: String,
-    value: String,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.weight(1f).padding(end = Spacing.Medium),
-        ) {
-            when (icon) {
-                is AppIcon.Vector -> Icon(
-                    imageVector = icon.imageVector,
-                    contentDescription = null,
-                    tint = GlassTheme.colors.glassAccent,
-                    modifier = Modifier.size(IconSize.Large),
-                )
-                is AppIcon.Painted -> Icon(
-                    painter = icon.painter(),
-                    contentDescription = null,
-                    tint = GlassTheme.colors.glassAccent,
-                    modifier = Modifier.size(IconSize.Large),
-                )
-            }
-
-            Column {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium,
-                    color = GlassTheme.colors.onGlass,
-                )
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = GlassTheme.colors.onGlassSecondary,
-                )
-            }
-        }
-
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(CornerRadius.Compact))
-                .background(GlassTheme.colors.glassSurfaceElevated)
-                .border(
-                    StrokeWidth.Hairline,
-                    GlassTheme.colors.glassBorder,
-                    RoundedCornerShape(CornerRadius.Compact),
-                )
-                .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.ExtraSmall),
-        ) {
-            Text(
-                text = value,
-                style = MaterialTheme.typography.labelMedium,
-                color = GlassTheme.colors.glassAccent,
-                fontWeight = FontWeight.SemiBold,
+            // Bottom Unified Liquid Glass Status Bar
+            GlassStatusBar(
+                filePath = "Settings",
+                branchName = "preferences",
+                encoding = "UTF-8",
+                lineEnding = LineEnding.LF,
+                fileType = "Configuration",
+                cursorPosition = null,
+                drawOwnChrome = true,
+                backdrop = resolvedBackdrop,
             )
         }
     }
 }
 
-@Composable
-private fun SettingsValueItem(
-    icon: ImageVector,
-    title: String,
-    description: String,
-    value: String,
-    modifier: Modifier = Modifier,
-) = SettingsValueItem(
-    icon = AppIcon.Vector(icon),
-    title = title,
-    description = description,
-    value = value,
-    modifier = modifier,
-)

@@ -27,7 +27,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import com.kyant.capsule.ContinuousRoundedRectangle
 import org.ide.lti.core.designsystem.component.GlassLayout
 import org.ide.lti.core.designsystem.component.GlassPanel
 import org.ide.lti.core.designsystem.component.GlassPanelContainer
@@ -41,6 +40,7 @@ import org.ide.lti.core.designsystem.component.rememberLtiLayoutState
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 
@@ -82,7 +82,7 @@ fun LayoutTab() {
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(ComponentSize.MaxPanelHeight * 0.8f)
-                    .clip(ContinuousRoundedRectangle(CornerRadius.Card))
+                    .clip(GlassShapes.Card)
                     .background(GlassTheme.colors.glassSurface)
             ) {
                 GlassLayout(

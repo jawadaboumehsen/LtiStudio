@@ -36,15 +36,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
-import com.kyant.capsule.ContinuousCapsule
 import org.ide.lti.core.designsystem.component.GlassCard
 import org.ide.lti.core.designsystem.component.GlassEmptyState
-import org.ide.lti.core.designsystem.component.GlassIconButton
-import org.ide.lti.core.designsystem.component.GlassTextButton
+import org.ide.lti.core.designsystem.component.GlassItemCard
+import org.ide.lti.core.designsystem.component.GlassTopBar
 import org.ide.lti.core.designsystem.component.glassOutlineBorder
+import org.ide.lti.core.designsystem.component.GlassTextButton
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -69,73 +70,86 @@ fun NotificationScreenContent(
 ) {
     var notificationList by remember(notifications) { mutableStateOf(notifications) }
 
-    Box(
-        modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.TopCenter,
-    ) {
-        Column(
-            modifier = Modifier
-                .widthIn(max = ComponentSize.SettingsMaxWidth)
-                .fillMaxWidth()
-                .padding(horizontal = Spacing.ScreenHorizontal, vertical = Spacing.ScreenVertical),
-            verticalArrangement = Arrangement.spacedBy(Spacing.SectionGap),
+    Column(modifier = modifier.fillMaxSize()) {
+        GlassTopBar(
+            title = "LtiRom",
+            workspaceName = "Notifications",
+            onBackClick = onBackClick,
+            showMenuButton = false,
+            showPanelToggles = false,
+            showCommandPalette = false,
+            drawOwnChrome = true,
+        )
+
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.TopCenter,
         ) {
-            // Header
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+            Column(
+                modifier = Modifier
+                    .widthIn(max = ComponentSize.SettingsMaxWidth)
+                    .fillMaxWidth()
+                    .padding(horizontal = Spacing.ScreenHorizontal, vertical = Spacing.ScreenVertical),
+                verticalArrangement = Arrangement.spacedBy(Spacing.SectionGap),
             ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    GlassIconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector = AppIcons.ArrowBack,
-                            contentDescription = "Back",
-                            tint = GlassTheme.colors.onGlass,
-                            modifier = Modifier.size(IconSize.Medium),
+                if (notificationList.isNotEmpty()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                    ) {
+                        GlassTextButton(onClick = { notificationList = emptyList() }) {
+                            Text("Clear all")
+                        }
+                    }
+                }
+
+                if (notificationList.isEmpty()) {
+                    // Empty state
+                    GlassCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentPadding = Spacing.ExtraExtraLarge,
+                    ) {
+                        GlassEmptyState(
+                            icon = AppIcon.Painted(AppIcons.NotificationsPainterResource),
+                            title = "All Caught Up",
+                            description = "No unread notifications at this time.",
+                            modifier = Modifier.fillMaxWidth(),
                         )
                     }
-
-                    Text(
-                        text = "Notifications",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = GlassTheme.colors.onGlass,
-                    )
-                }
-
-                if (notificationList.isNotEmpty()) {
-                    GlassTextButton(onClick = { notificationList = emptyList() }) {
-                        Text("Clear all")
-                    }
-                }
-            }
-
-            Spacer(Modifier.height(Spacing.ExtraSmall))
-
-            if (notificationList.isEmpty()) {
-                // Empty state
-                GlassCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentPadding = Spacing.ExtraExtraLarge,
-                ) {
-                    GlassEmptyState(
-                        icon = AppIcon.Painted(AppIcons.NotificationsPainterResource),
-                        title = "All Caught Up",
-                        description = "No unread notifications at this time.",
+                } else {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
                         modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-            } else {
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    items(notificationList, key = { it.id }) { item ->
-                        NotificationCard(item = item)
+                    ) {
+                        items(notificationList, key = { it.id }) { item ->
+                            GlassItemCard(
+                                title = item.title,
+                                subtitle = item.description,
+                                icon = AppIcon.Painted(AppIcons.SparklesPainterResource),
+                                isHighlighted = item.isUnread,
+                                modifier = Modifier.fillMaxWidth(),
+                                trailingContent = {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                                    ) {
+                                        Text(
+                                            text = item.time,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = GlassTheme.colors.onGlassMuted,
+                                        )
+                                        if (item.isUnread) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(ComponentSize.StatusDotSize)
+                                                    .clip(GlassShapes.Capsule)
+                                                    .background(GlassTheme.colors.glassAccent),
+                                            )
+                                        }
+                                    }
+                                },
+                            )
+                        }
                     }
                 }
             }
@@ -143,80 +157,6 @@ fun NotificationScreenContent(
     }
 }
 
-@Composable
-private fun NotificationCard(
-    item: AppNotificationItem,
-    modifier: Modifier = Modifier,
-) {
-    GlassCard(
-        modifier = modifier.fillMaxWidth(),
-        contentPadding = Spacing.CardPadding,
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.Top,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(ComponentSize.TopBarButtonSize)
-                    .clip(ContinuousCapsule)
-                    .background(GlassTheme.colors.glassSurfaceElevated)
-                    .glassOutlineBorder(
-                        color = if (item.isUnread) GlassTheme.colors.glassBorderHighlight else GlassTheme.colors.glassBorder,
-                        width = StrokeWidth.Hairline,
-                        shape = ContinuousCapsule,
-                    ),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = AppIcons.Sparkles,
-                    contentDescription = null,
-                    tint = if (item.isUnread) GlassTheme.colors.glassAccent else GlassTheme.colors.onGlassMuted,
-                    modifier = Modifier.size(IconSize.Medium),
-                )
-            }
-
-            Column(modifier = Modifier.weight(1f)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = item.title,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = if (item.isUnread) FontWeight.Bold else FontWeight.Medium,
-                        color = GlassTheme.colors.onGlass,
-                    )
-                    Text(
-                        text = item.time,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = GlassTheme.colors.onGlassMuted,
-                    )
-                }
-
-                Spacer(Modifier.height(Spacing.ExtraSmall))
-
-                Text(
-                    text = item.description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = GlassTheme.colors.onGlassSecondary,
-                )
-            }
-
-            if (item.isUnread) {
-                Spacer(Modifier.width(Spacing.ExtraSmall))
-                Box(
-                    modifier = Modifier
-                        .size(ComponentSize.StatusDotSize)
-                        .clip(ContinuousCapsule)
-                        .background(GlassTheme.colors.glassAccent),
-                )
-            }
-        }
-    }
-}
 
 data class AppNotificationItem(
     val id: String,

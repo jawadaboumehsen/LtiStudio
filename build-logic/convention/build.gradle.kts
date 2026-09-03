@@ -16,6 +16,7 @@ java {
 kotlin {
     compilerOptions {
         jvmTarget = JvmTarget.JVM_21
+        freeCompilerArgs.add("-Xskip-metadata-version-check")
     }
 }
 

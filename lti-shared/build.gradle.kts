@@ -16,9 +16,8 @@ plugins {
 }
 
 kotlin {
-    jvm("desktop") {
-        withJava()
-    }
+    jvm("desktop")
+
 
     sourceSets {
         commonMain.dependencies {

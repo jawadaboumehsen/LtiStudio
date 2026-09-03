@@ -37,7 +37,7 @@ import dev.nucleusframework.application.NucleusWindow
 import dev.nucleusframework.application.nucleusApplication
 import org.ide.lti.core.data.settings.AppSettingsState
 import org.ide.lti.core.designsystem.component.CosmicAuroraBackdrop
-import org.ide.lti.core.designsystem.component.GlassSecondaryTopBar
+import org.ide.lti.core.designsystem.component.GlassTopBar
 import org.ide.lti.core.designsystem.component.LocalWindowControlActions
 import org.ide.lti.core.designsystem.component.WindowControlActions
 import org.ide.lti.core.designsystem.icon.AppIcon
@@ -110,62 +110,57 @@ fun main(args: Array<String>) = nucleusApplication(args) {
         }
     }
 
-    DecoratedWindow(
-        onCloseRequest = { showSettingsWindow = false },
-        visible = showSettingsWindow,
-        state = settingsWindowState,
-        title = "Settings",
-        icon = painterResource("icons/ic_launcher.png"),
-        resizable = true,
-    ) {
-        val settingsWin = LocalNucleusWindow.current
-        val appSettingsState: AppSettingsState = koinInject()
-
-        CompositionLocalProvider(
-            LocalWindowControlActions provides buildWindowControlActions(
-                windowState = settingsWindowState,
-                nucleusWin = settingsWin,
-                onClose = { showSettingsWindow = false },
-            ),
+    if (showSettingsWindow) {
+        DecoratedWindow(
+            onCloseRequest = { showSettingsWindow = false },
+            state = settingsWindowState,
+            title = "Settings",
+            icon = painterResource("icons/ic_launcher.png"),
+            resizable = true,
         ) {
-            val backdrop = rememberLayerBackdrop()
+            val settingsWin = LocalNucleusWindow.current
+            val appSettingsState: AppSettingsState = koinInject()
 
-            LtiTheme(
-                darkTheme = appSettingsState.isDarkTheme,
-                effectsEnabled = appSettingsState.effectsEnabled,
-                reducedMotion = appSettingsState.reducedMotion,
-                sharedBackdrop = backdrop,
+            CompositionLocalProvider(
+                LocalWindowControlActions provides buildWindowControlActions(
+                    windowState = settingsWindowState,
+                    nucleusWin = settingsWin,
+                    onClose = { showSettingsWindow = false },
+                ),
             ) {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    CosmicAuroraBackdrop(backdrop = backdrop)
+                val backdrop = rememberLayerBackdrop()
 
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(Spacing.ExtraSmall),
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(
-                                    start = Spacing.PanelPadding,
-                                    end = Spacing.PanelPadding,
-                                    top = Spacing.PanelPadding,
-                                    bottom = Spacing.ExtraSmall
-                                )
+                LtiTheme(
+                    darkTheme = appSettingsState.isDarkTheme,
+                    effectsEnabled = appSettingsState.effectsEnabled,
+                    reducedMotion = appSettingsState.reducedMotion,
+                    sharedBackdrop = backdrop,
+                ) {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        CosmicAuroraBackdrop(backdrop = backdrop)
+
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
                         ) {
-                            GlassSecondaryTopBar(
-                                title = "Settings",
-                                icon = AppIcon.Painted(AppIcons.SettingsPainterResource),
+                            GlassTopBar(
+                                title = "LtiRom",
+                                workspaceName = "Settings",
+                                onBackClick = { showSettingsWindow = false },
+                                showMenuButton = false,
+                                showPanelToggles = false,
+                                showCommandPalette = false,
+                                onClose = { showSettingsWindow = false },
                                 backdrop = backdrop,
+                                drawOwnChrome = true,
+                            )
+
+                            SettingsScreen(
+                                onBackClick = { showSettingsWindow = false },
+                                modifier = Modifier.weight(1f),
+                                showHeader = false,
+                                appSettingsState = appSettingsState,
                             )
                         }
-
-                        SettingsScreen(
-                            onBackClick = { showSettingsWindow = false },
-                            modifier = Modifier.weight(1f),
-                            appSettingsState = appSettingsState,
-                        )
                     }
                 }
             }

@@ -9,10 +9,6 @@
  */
 package org.ide.lti.feature.workspace
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -25,7 +21,6 @@ import org.ide.lti.core.common.event.PanelId
 import org.ide.lti.core.designsystem.component.GlassLayout
 import org.ide.lti.core.designsystem.component.GlassSidePanelRail
 import org.ide.lti.core.designsystem.component.GlassSidePanelTab
-import org.ide.lti.core.designsystem.component.GlassSidePanelTabStrip
 import org.ide.lti.core.designsystem.component.GlassStatusBar
 import org.ide.lti.core.designsystem.component.GlassTopBar
 import org.ide.lti.core.designsystem.component.LineEnding
@@ -38,6 +33,7 @@ import org.ide.lti.feature.workspace.panels.ai.AIAssistantPanel
 import org.ide.lti.feature.workspace.panels.editor.EditorPanel
 import org.ide.lti.feature.workspace.panels.editor.EditorViewModel
 import org.ide.lti.feature.workspace.panels.explorer.ExplorerPanel
+import org.ide.lti.feature.workspace.panels.explorer.ExplorerViewModel
 import org.ide.lti.feature.workspace.panels.terminal.TerminalPanel
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -61,6 +57,7 @@ fun WorkspaceScreen(
     onOpenNotifications: () -> Unit = {},
     viewModel: WorkspaceViewModel = koinViewModel(),
     editorViewModel: EditorViewModel = koinViewModel(),
+    explorerViewModel: ExplorerViewModel = koinViewModel(),
 ) {
     val workspaceName by viewModel.workspaceName.collectAsState()
     val initialPanelsState = viewModel.panelsState.value
@@ -87,13 +84,14 @@ fun WorkspaceScreen(
     var activeFileType by remember { mutableStateOf<String?>(null) }
     var cursorPosition by remember { mutableStateOf<Pair<Int, Int>?>(null) }
 
-    val leftTabs = remember(editorViewModel) {
+    val leftTabs = remember(editorViewModel, explorerViewModel) {
         listOf(
             GlassSidePanelTab(
                 icon = AppIcon.Painted(AppIcons.FolderPainterResource),
                 label = "Files",
             ) {
                 ExplorerPanel(
+                    viewModel = explorerViewModel,
                     onFileClick = { path ->
                         editorViewModel.openFile(path)
                     },
@@ -116,25 +114,32 @@ fun WorkspaceScreen(
     GlassLayout(
         state = ltiLayoutState,
         modifier = modifier,
+        leftRail = {
+            GlassSidePanelRail(
+                tabs = leftTabs,
+                selectedIndex = leftTabIndex,
+                onSelectedIndexChange = { index ->
+                    if (leftTabIndex == index) {
+                        ltiLayoutState.toggleLeft()
+                        viewModel.togglePanelVisibility(PanelId.LEFT)
+                    } else {
+                        leftTabIndex = index
+                        if (!ltiLayoutState.showLeft) {
+                            ltiLayoutState.toggleLeft()
+                            viewModel.togglePanelVisibility(PanelId.LEFT)
+                        }
+                    }
+                },
+                railPosition = SidePanelRailPosition.Left,
+            )
+        },
         leftPanel = {
-            Column(modifier = Modifier.fillMaxSize()) {
-                GlassSidePanelTabStrip(
-                    tabs = leftTabs,
-                    selectedIndex = leftTabIndex,
-                    onSelectedIndexChange = { leftTabIndex = it },
-                )
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
-                ) {
-                    leftTabs.getOrNull(leftTabIndex)?.content?.invoke()
-                }
-            }
+            leftTabs.getOrNull(leftTabIndex)?.content?.invoke()
         },
         mainContent = {
             EditorPanel(
                 viewModel = editorViewModel,
+                onOpenFolder = { explorerViewModel.openFolder() },
                 onActiveFileChange = { path, language ->
                     activeFilePath = path
                     activeFileType = language
@@ -152,7 +157,18 @@ fun WorkspaceScreen(
             GlassSidePanelRail(
                 tabs = rightTabs,
                 selectedIndex = rightTabIndex,
-                onSelectedIndexChange = { rightTabIndex = it },
+                onSelectedIndexChange = { index ->
+                    if (rightTabIndex == index) {
+                        ltiLayoutState.toggleRight()
+                        viewModel.togglePanelVisibility(PanelId.RIGHT)
+                    } else {
+                        rightTabIndex = index
+                        if (!ltiLayoutState.showRight) {
+                            ltiLayoutState.toggleRight()
+                            viewModel.togglePanelVisibility(PanelId.RIGHT)
+                        }
+                    }
+                },
                 railPosition = SidePanelRailPosition.Right,
             )
         },

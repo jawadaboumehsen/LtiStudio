@@ -27,7 +27,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -40,7 +39,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
-import com.kyant.capsule.ContinuousCapsule
+import org.ide.lti.core.designsystem.component.GlassChip
+import org.ide.lti.core.designsystem.component.GlassHorizontalDivider
 import org.ide.lti.core.designsystem.component.GlassPanelContainer
 import org.ide.lti.core.designsystem.component.GlassPanelHeader
 import org.ide.lti.core.designsystem.component.GlassPanelHeaderAction
@@ -50,13 +50,13 @@ import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.ui.GlassChatInput
 import org.ide.lti.core.ui.GlassMessageBubble
-import org.ide.lti.core.ui.GlassSmallChip
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -144,13 +144,13 @@ private fun EmptyAIChatView(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(ComponentSize.TopBarButtonSize)
-                        .clip(ContinuousCapsule)
-                        .background(glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Faint))
+                        .size(ComponentSize.EmptyStateBadgeSize)
+                        .clip(GlassShapes.Capsule)
+                        .background(glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Hover))
                         .glassOutlineBorder(
-                            color = glassColors.glassBorder,
+                            color = glassColors.glassBorder.copy(alpha = AlphaTokens.Faint),
                             width = StrokeWidth.Hairline,
-                            shape = ContinuousCapsule,
+                            shape = GlassShapes.Capsule,
                         ),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -158,7 +158,7 @@ private fun EmptyAIChatView(
                         painter = AppIcons.SparklesPainterResource(),
                         contentDescription = null,
                         tint = glassColors.glassAccent,
-                        modifier = Modifier.size(IconSize.Medium),
+                        modifier = Modifier.size(IconSize.ExtraLarge),
                     )
                 }
 
@@ -183,7 +183,7 @@ private fun EmptyAIChatView(
                     modifier = Modifier.padding(horizontal = Spacing.Small),
                 ) {
                     quickActions.forEach { action ->
-                        GlassSmallChip(
+                        GlassChip(
                             label = action,
                             onClick = { onSendMessage(action) },
                         )
@@ -257,10 +257,7 @@ private fun ChatView(
         }
 
         Spacer(modifier = Modifier.height(Spacing.Small))
-        HorizontalDivider(
-            color = GlassTheme.colors.glassBorder.copy(alpha = AlphaTokens.Faint),
-            thickness = StrokeWidth.Hairline,
-        )
+        GlassHorizontalDivider()
         Spacer(modifier = Modifier.height(Spacing.Small))
 
         // Input field

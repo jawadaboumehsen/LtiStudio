@@ -10,6 +10,7 @@
 package org.ide.lti.core.designsystem.component
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,23 +32,32 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import com.kashif_e.backdrop.shadow.Shadow
-import com.kyant.capsule.ContinuousRoundedRectangle
+import java.awt.Cursor
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.Elevation
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -145,15 +155,10 @@ fun GlassSidePanelRail(
             tabs.forEachIndexed { index, tab ->
                 val isSelected = index == selectedIndex
                 val desc = tab.contentDescription ?: tab.label
-                GlassIconButton(
+                GlassSidePanelRailButton(
                     onClick = { onSelectedIndexChange(index) },
-                    size = ComponentSize.SidePanelRailButtonSize,
-                    shape = ContinuousRoundedRectangle(CornerRadius.Compact),
-                    selected = isSelected,
-                    modifier = Modifier.semantics {
-                        contentDescription = desc
-                        role = Role.Tab
-                    },
+                    isSelected = isSelected,
+                    desc = desc,
                 ) {
                     when (tab.icon) {
                         is AppIcon.Vector -> Icon(
@@ -177,7 +182,15 @@ fun GlassSidePanelRail(
             modifier = Modifier
                 .fillMaxHeight()
                 .width(StrokeWidth.Hairline)
-                .background(glassColors.glassBorder.copy(alpha = AlphaTokens.Faint)),
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            glassColors.glassBorderHighlight.copy(alpha = AlphaTokens.Prominent),
+                            glassColors.glassBorder.copy(alpha = AlphaTokens.Hover),
+                            glassColors.glassBorder.copy(alpha = AlphaTokens.Faint),
+                        ),
+                    ),
+                ),
         )
     }
 
@@ -231,7 +244,7 @@ fun GlassSidePanelTabStrip(
 
     GlassSurface(
         modifier = modifier.fillMaxWidth(),
-        shape = ContinuousRoundedRectangle(CornerRadius.Panel),
+        shape = GlassShapes.Panel,
         surfaceColor = glassColors.glassSurfaceElevated,
         tint = Color.Unspecified,
         effects = {},
@@ -251,7 +264,7 @@ fun GlassSidePanelTabStrip(
                 GlassButton(
                     onClick = { onSelectedIndexChange(index) },
                     variant = if (isSelected) GlassButtonVariant.Primary else GlassButtonVariant.Standard,
-                    shape = ContinuousRoundedRectangle(CornerRadius.Compact),
+                    shape = GlassShapes.Compact,
                     minWidth = Spacing.None,
                     minHeight = ComponentSize.TopBarButtonSize,
                     contentPadding = PaddingValues(
@@ -359,6 +372,72 @@ fun GlassSidePanelTabs(
                     rail()
                 }
             }
+        }
+    }
+}
+
+/**
+ * Sleek, professional Activity Rail Button.
+ *
+ * Replaces heavy solid-color fills with a luminous glass accent pill on selection,
+ * subtle hover illumination, and muted peripheral resting state.
+ */
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+private fun GlassSidePanelRailButton(
+    onClick: () -> Unit,
+    isSelected: Boolean,
+    desc: String,
+    content: @Composable () -> Unit,
+) {
+    val glassColors = GlassTheme.colors
+    var isHovered by remember { mutableStateOf(false) }
+
+    val shape = GlassShapes.Compact
+    val backgroundColor = when {
+        isSelected -> glassColors.glassAccent.copy(alpha = AlphaTokens.Hover)
+        isHovered -> glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Subtle)
+        else -> Color.Transparent
+    }
+    val borderColor = when {
+        isSelected -> glassColors.glassBorderHighlight.copy(alpha = AlphaTokens.Prominent)
+        isHovered -> glassColors.glassBorder.copy(alpha = AlphaTokens.Faint)
+        else -> Color.Transparent
+    }
+    val iconTint = when {
+        isSelected -> glassColors.onGlass
+        isHovered -> glassColors.onGlass
+        else -> glassColors.onGlassMuted
+    }
+
+    Box(
+        modifier = Modifier
+            .size(ComponentSize.SidePanelRailButtonSize)
+            .clip(shape)
+            .background(backgroundColor)
+            .then(
+                if (borderColor != Color.Transparent) {
+                    Modifier.glassOutlineBorder(
+                        width = StrokeWidth.Hairline,
+                        color = borderColor,
+                        shape = shape,
+                    )
+                } else {
+                    Modifier
+                }
+            )
+            .onPointerEvent(PointerEventType.Enter) { isHovered = true }
+            .onPointerEvent(PointerEventType.Exit) { isHovered = false }
+            .clickable(onClick = onClick)
+            .pointerHoverIcon(PointerIcon(Cursor(Cursor.HAND_CURSOR)))
+            .semantics {
+                contentDescription = desc
+                role = Role.Tab
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        CompositionLocalProvider(LocalContentColor provides iconTint) {
+            content()
         }
     }
 }

@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.designsystem.component
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -16,7 +17,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
-import com.kyant.capsule.ContinuousRoundedRectangle
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
@@ -42,12 +42,16 @@ import org.ide.lti.core.designsystem.icon.ideWindowsCloseSmall
 import org.ide.lti.core.designsystem.icon.ideWindowsMaximizeSmall
 import org.ide.lti.core.designsystem.icon.ideWindowsMinimizeSmall
 import org.ide.lti.core.designsystem.icon.ideWindowsRestoreSmall
+import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.WindowControlColors
+import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
 
 /**
  * Window control actions interface for desktop platform integration.
@@ -116,23 +120,44 @@ fun WindowControlButton(
     var isHovered by remember { mutableStateOf(false) }
     val glassColors = GlassTheme.colors
 
-    val backgroundColor = when {
+    val targetBackgroundColor = when {
         isCloseButton && isHovered -> WindowControlColors.CloseHover
-        isHovered -> glassColors.glassSurfaceElevated
+        isHovered -> glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Elevated)
         else -> Color.Transparent
     }
 
-    val iconTint = when {
+    val targetIconTint = when {
         isCloseButton && isHovered -> glassColors.onGlass
         isHovered -> glassColors.onGlass
         else -> glassColors.onGlassMuted
     }
 
+    val backgroundColor by animateColorAsState(
+        targetValue = targetBackgroundColor,
+        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion),
+    )
+
+    val iconTint by animateColorAsState(
+        targetValue = targetIconTint,
+        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion),
+    )
+
+    val borderModifier = if (isHovered && !isCloseButton) {
+        Modifier.glassOutlineBorder(
+            width = StrokeWidth.Hairline,
+            color = glassColors.glassBorderHighlight.copy(alpha = AlphaTokens.Hover),
+            shape = GlassShapes.ExtraSmall,
+        )
+    } else {
+        Modifier
+    }
+
     Box(
         modifier = modifier
             .size(width = ComponentSize.WindowControlWidth, height = ComponentSize.WindowControlHeight)
-            .clip(ContinuousRoundedRectangle(CornerRadius.ExtraSmall))
+            .clip(GlassShapes.ExtraSmall)
             .background(backgroundColor)
+            .then(borderModifier)
             .onPointerEvent(PointerEventType.Enter) { isHovered = true }
             .onPointerEvent(PointerEventType.Exit) { isHovered = false }
             .clickable(

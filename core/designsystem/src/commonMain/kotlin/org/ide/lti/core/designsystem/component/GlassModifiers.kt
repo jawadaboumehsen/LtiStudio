@@ -20,9 +20,14 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawOutline
+import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.isSpecified
+import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
+import androidx.compose.ui.node.DrawModifierNode
+import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.node.currentValueOf
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import com.kashif_e.backdrop.Backdrop
@@ -32,24 +37,28 @@ import com.kashif_e.backdrop.drawBackdrop
 import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.vibrancy
 import com.kashif_e.backdrop.highlight.Highlight
-import com.kyant.capsule.ContinuousRoundedRectangle
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.CornerRadius
+import org.ide.lti.core.designsystem.theme.GlassEffects
+import org.ide.lti.core.designsystem.theme.GlassHighlights
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.LocalGlassColors
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 
 /**
  * Applies glass morphism effect to any composable.
  *
  * Convenience modifier that wraps [com.kashif_e.backdrop.drawBackdrop] with the
- * standard iOS-style liquid stack (vibrancy + blur + lens), or a custom [effects] block.
+ * standard liquid glass effects, shape, and colors.
  *
- * @param backdrop Backdrop instance (default: from GlassTheme or create new)
- * @param shape Shape of the glass surface (default: [ContinuousRoundedRectangle] with 16dp radius)
- * @param surfaceColor Optional surface color (default: from GlassTheme)
- * @param tint Optional tint color (default: from GlassTheme)
- * @param effects Backdrop effect chain (default: [StandardGlassEffects])
+ * @param backdrop The backdrop instance to sample from (defaults to [GlassTheme.backdrop])
+ * @param shape The shape to clip the glass to (defaults to [GlassShapes.Medium])
+ * @param surfaceColor Optional custom surface color (defaults to [GlassColorScheme.glassSurface])
+ * @param tint Optional tint color applied over the backdrop (defaults to [GlassColorScheme.glassTint])
+ * @param effects Custom backdrop effect block (defaults to [GlassEffects.Standard])
+ * @param highlight Custom highlight style (defaults to [GlassHighlights.Plain])
  *
  * Example:
  * ```kotlin
@@ -58,26 +67,17 @@ import org.ide.lti.core.designsystem.theme.StrokeWidth
  *         .size(200.dp)
  *         .glassEffect()
  * ) {
- *     Text("Glass Content")
- * }
- * ```
- *
- * Example with a custom effect chain:
- * ```kotlin
- * Box(
- *     Modifier.glassEffect(effects = { vibrancy(); blur(8.dp.toPx()); lens(24.dp.toPx(), 48.dp.toPx()) })
- * ) {
- *     Text("Intense Glass")
+ *     Text("Liquid Glass")
  * }
  * ```
  */
 fun Modifier.glassEffect(
     backdrop: Backdrop? = null,
-    shape: Shape = ContinuousRoundedRectangle(CornerRadius.Medium),
+    shape: Shape = GlassShapes.Medium,
     surfaceColor: Color = Color.Unspecified,
     tint: Color = Color.Unspecified,
-    effects: BackdropEffectScope.() -> Unit = StandardGlassEffects,
-    highlight: () -> Highlight? = { Highlight.Plain },
+    effects: BackdropEffectScope.() -> Unit = GlassEffects.Standard,
+    highlight: () -> Highlight? = GlassHighlights.Plain,
 ): Modifier = composed {
     val glassColors = GlassTheme.colors
     val effectsEnabled = GlassTheme.effectsEnabled
@@ -134,12 +134,32 @@ fun Modifier.glassEffect(
  */
 fun Modifier.glassBackground(
     color: Color = Color.Unspecified,
-): Modifier = composed {
-    val glassColors = GlassTheme.colors
-    val finalColor = if (color.isSpecified) color else glassColors.glassSurface
+): Modifier = this then GlassBackgroundElement(color)
 
-    this.drawBehind {
+private data class GlassBackgroundElement(
+    val color: Color,
+) : ModifierNodeElement<GlassBackgroundNode>() {
+    override fun create(): GlassBackgroundNode = GlassBackgroundNode(color)
+
+    override fun update(node: GlassBackgroundNode) {
+        node.color = color
+    }
+}
+
+private class GlassBackgroundNode(
+    var color: Color,
+) : Modifier.Node(),
+    CompositionLocalConsumerModifierNode,
+    DrawModifierNode {
+
+    override fun ContentDrawScope.draw() {
+        val finalColor = if (color.isSpecified) {
+            color
+        } else {
+            currentValueOf(LocalGlassColors).glassSurface
+        }
         drawRect(finalColor)
+        drawContent()
     }
 }
 
@@ -222,12 +242,52 @@ fun Modifier.glassOutlineBorder(
 fun Modifier.glassBorder(
     color: Color? = null,
     width: Dp = StrokeWidth.Standard,
-    shape: Shape = ContinuousRoundedRectangle(CornerRadius.Medium),
-): Modifier = composed {
-    val glassColors = GlassTheme.colors
-    val finalColor = color ?: glassColors.glassBorder
+    shape: Shape = GlassShapes.Medium,
+): Modifier = if (color != null) {
+    this.glassOutlineBorder(color = color, width = width, shape = shape)
+} else {
+    this then GlassBorderElement(width, shape)
+}
 
-    this.glassOutlineBorder(color = finalColor, width = width, shape = shape)
+private data class GlassBorderElement(
+    val width: Dp,
+    val shape: Shape,
+) : ModifierNodeElement<GlassBorderNode>() {
+    override fun create(): GlassBorderNode = GlassBorderNode(width, shape)
+
+    override fun update(node: GlassBorderNode) {
+        node.width = width
+        node.shape = shape
+    }
+}
+
+private class GlassBorderNode(
+    var width: Dp,
+    var shape: Shape,
+) : Modifier.Node(),
+    CompositionLocalConsumerModifierNode,
+    DrawModifierNode {
+
+    override fun ContentDrawScope.draw() {
+        drawContent()
+        val finalColor = currentValueOf(LocalGlassColors).glassBorder
+        val strokePx = (if (width == Dp.Hairline) 1f else width.toPx())
+            .coerceAtMost(size.minDimension / 2f)
+        val innerWidth = size.width - strokePx
+        val innerHeight = size.height - strokePx
+        if (strokePx > 0f && finalColor.alpha > 0f && innerWidth > 0f && innerHeight > 0f) {
+            val halfStroke = strokePx / 2f
+            val outline = shape.createOutline(
+                Size(innerWidth, innerHeight),
+                layoutDirection,
+                this,
+            )
+            val stroke = Stroke(width = strokePx)
+            translate(left = halfStroke, top = halfStroke) {
+                drawOutline(outline = outline, color = finalColor, style = stroke)
+            }
+        }
+    }
 }
 
 /**
@@ -300,11 +360,15 @@ fun Modifier.glassScrim(
         this.drawBackdrop(
             backdrop = actualBackdrop,
             shape = { androidx.compose.ui.graphics.RectangleShape },
-            effects = {
-                vibrancy()
-                blur(blurRadius.toPx())
+            effects = if (blurRadius == BackdropBlur.Scrim) {
+                GlassEffects.Scrim
+            } else {
+                {
+                    vibrancy()
+                    blur(blurRadius.toPx())
+                }
             },
-            highlight = { Highlight.Plain },
+            highlight = GlassHighlights.Plain,
             onDrawSurface = {
                 drawRect(resolvedSurfaceColor)
             },

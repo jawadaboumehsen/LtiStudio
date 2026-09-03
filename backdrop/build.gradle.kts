@@ -16,9 +16,8 @@ plugins {
 kotlin {
     applyDefaultHierarchyTemplate()
 
-    jvm("desktop") {
-        withJava()
-    }
+    jvm("desktop")
+
 
     jvmToolchain(21)
 

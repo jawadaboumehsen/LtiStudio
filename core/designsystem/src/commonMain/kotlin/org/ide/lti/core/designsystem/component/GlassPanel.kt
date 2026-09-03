@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.designsystem.component
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,6 +28,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -38,24 +40,23 @@ import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
-import com.kyant.capsule.ContinuousRoundedRectangle
 import org.ide.lti.core.designsystem.icon.AppIcon
+import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius
+import org.ide.lti.core.designsystem.theme.GlassEffects
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.StrokeWidth
 
 /**
  * Sidebar/panel glass effect stack with deep frosted glass blur.
+ * Delegated to canonical [GlassEffects.Panel].
  */
-val GlassPanelEffects: BackdropEffectScope.() -> Unit = {
-    vibrancy()
-    blur(BackdropBlur.Deep.toPx())
-    lens(LensRefraction.Panel.height.toPx(), LensRefraction.Panel.amount.toPx())
-}
+val GlassPanelEffects: BackdropEffectScope.() -> Unit = GlassEffects.Panel
 
 /**
  * Glass panel component optimized for IDE tool windows and sidebar panels.
@@ -64,8 +65,8 @@ val GlassPanelEffects: BackdropEffectScope.() -> Unit = {
 fun GlassPanel(
     modifier: Modifier = Modifier,
     width: Dp? = null,
-    shape: Shape = ContinuousRoundedRectangle(CornerRadius.Panel),
-    effects: BackdropEffectScope.() -> Unit = GlassPanelEffects,
+    shape: Shape = GlassShapes.Panel,
+    effects: BackdropEffectScope.() -> Unit = GlassEffects.Panel,
     backdrop: Backdrop? = null,
     surfaceColor: Color = Color.Unspecified,
     tint: Color = Color.Unspecified,
@@ -216,7 +217,23 @@ fun GlassPanelContainer(
     content: @Composable () -> Unit,
 ) {
     Column(modifier = modifier.fillMaxSize()) {
-        header?.invoke()
+        header?.let {
+            it()
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(StrokeWidth.Hairline)
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(
+                                GlassTheme.colors.glassBorderHighlight.copy(alpha = AlphaTokens.Hover),
+                                GlassTheme.colors.glassBorderHighlight.copy(alpha = AlphaTokens.Prominent),
+                                GlassTheme.colors.glassBorder.copy(alpha = AlphaTokens.Hover),
+                            ),
+                        ),
+                    ),
+            )
+        }
         if (!scrollEdgeFade) {
             content()
         } else {

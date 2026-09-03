@@ -186,3 +186,81 @@ internal fun appTypography() = Typography(
         ),
     ),
 )
+
+/**
+ * Canonical font size tokens for the design system.
+ */
+object FontSize {
+    val DisplayLarge = 57.sp
+    val DisplayMedium = 45.sp
+    val DisplaySmall = 36.sp
+    val HeadlineLarge = 34.sp
+    val HeadlineMedium = 32.sp
+    val HeadlineSmall = 26.sp
+    val TitleLarge = 24.sp
+    val TitleMedium = 20.sp
+    val TitleSmall = 14.sp
+    val BodyLarge = 16.sp
+    val BodyMedium = 14.sp
+    val BodySmall = 12.sp
+    val LabelLarge = 16.sp
+    val LabelMedium = 12.sp
+    val LabelSmall = 10.sp
+
+    // Sub-scale & precision micro typography for IDE status bars & chips
+    val Micro = 10.sp
+    val MicroAlt = 10.5.sp
+    val CodeCompact = 11.sp
+    val Chip = 11.5.sp
+    val Code = 14.sp
+}
+
+/**
+ * Canonical line height tokens for the design system.
+ */
+object LineHeight {
+    val DisplayLarge = 64.sp
+    val DisplayMedium = 52.sp
+    val DisplaySmall = 44.sp
+    val HeadlineLarge = 42.sp
+    val HeadlineMedium = 40.sp
+    val HeadlineSmall = 34.sp
+    val TitleLarge = 32.sp
+    val TitleMedium = 28.sp
+    val TitleSmall = 20.sp
+    val BodyLarge = 24.sp
+    val BodyMedium = 20.sp
+    val BodySmall = 16.sp
+    val LabelLarge = 20.sp
+    val LabelMedium = 16.sp
+    val LabelSmall = 14.sp
+    val Code = 20.sp
+}
+
+/**
+ * Canonical letter spacing tokens for the design system.
+ */
+object LetterSpacing {
+    val Tight = (-0.25).sp
+    val None = 0.sp
+    val Snug = 0.1.sp
+    val Normal = 0.25.sp
+    val Loose = 0.4.sp
+    val Wide = 0.5.sp
+    val CodeWide = 1.2.sp
+    val Widest = 1.2.sp
+}
+
+/**
+ * Accessors for design system font families.
+ */
+object GlassFontFamily {
+    /** Brand display & UI font family (Outfit). */
+    @Composable
+    fun default(): FontFamily = fontFamily()
+
+    /** High-legibility monospaced font family for code, terminals, and hex (JetBrains Mono). */
+    @Composable
+    fun code(): FontFamily = codeFontFamily()
+}
+

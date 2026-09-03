@@ -36,34 +36,18 @@ import com.kashif_e.backdrop.effects.colorControls
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.highlight.Highlight
 import com.kashif_e.backdrop.shadow.Shadow
-import com.kyant.capsule.ContinuousRoundedRectangle
-import org.ide.lti.core.designsystem.theme.BackdropBlur
-import org.ide.lti.core.designsystem.theme.BackdropBrightness
-import org.ide.lti.core.designsystem.theme.BackdropSaturation
 import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.Elevation
+import org.ide.lti.core.designsystem.theme.GlassEffects
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
-import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.Spacing
 
 /**
- * Frosted (heavy) glass effect stack for modal surfaces, per the kmp-liquid-glass skill's
- * "Frosted dialog" recipe: brighten/saturate, heavy blur, deep lens refraction with depth.
- * Branches by theme — light mode needs more brightness lift and a heavier blur to read as a
- * bright frosted panel over content; dark mode needs neither.
+ * Frosted glass effect stack for modal surfaces.
+ * Delegated to canonical [GlassEffects.dialog].
  */
-fun glassDialogEffects(isLightTheme: Boolean): BackdropEffectScope.() -> Unit = {
-    colorControls(
-        brightness = if (isLightTheme) BackdropBrightness.DialogLight else BackdropBrightness.DialogDark,
-        saturation = BackdropSaturation.Vibrant,
-    )
-    blur(if (isLightTheme) BackdropBlur.DialogLight.toPx() else BackdropBlur.DialogDark.toPx())
-    lens(
-        LensRefraction.Dialog.height.toPx(),
-        LensRefraction.Dialog.amount.toPx(),
-        depthEffect = true,
-    )
-}
+fun glassDialogEffects(isLightTheme: Boolean): BackdropEffectScope.() -> Unit = GlassEffects.dialog(isLightTheme)
 
 /**
  * Glass dialog component with scrim and glass surface.
@@ -75,8 +59,8 @@ fun GlassDialog(
     modifier: Modifier = Modifier,
     title: String? = null,
     dismissButton: (@Composable () -> Unit)? = null,
-    shape: Shape = ContinuousRoundedRectangle(CornerRadius.Dialog),
-    effects: BackdropEffectScope.() -> Unit = glassDialogEffects(MaterialTheme.colorScheme.surface.luminance() > 0.5f),
+    shape: Shape = GlassShapes.Dialog,
+    effects: BackdropEffectScope.() -> Unit = GlassEffects.dialog(!GlassTheme.isDark),
     backdrop: Backdrop? = null,
     properties: DialogProperties = DialogProperties(),
     content: @Composable () -> Unit,
@@ -164,7 +148,7 @@ fun GlassLoadingDialog(
                 ),
             ) {
                 GlassSurface(
-                    shape = ContinuousRoundedRectangle(CornerRadius.ExtraLarge),
+                    shape = GlassShapes.ExtraLarge,
                     modifier = modifier
                         .fillMaxWidth()
                         .padding(Spacing.DialogPadding),

@@ -18,7 +18,6 @@ plugins {
 
 kotlin {
     jvm {
-        withJava()
         compilerOptions {
             freeCompilerArgs.add("-Xskip-metadata-version-check")
         }
@@ -62,6 +61,10 @@ val appVersion: String = libs.versions.packageVersion.get()
 compose.desktop {
     application {
         mainClass = "MainKt"
+        jvmArgs += listOf(
+            "-Xss4m",
+            "-Dskiko.renderApi=DIRECT3D",
+        )
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Exe, TargetFormat.Deb)
             packageName = appName
@@ -104,3 +107,11 @@ compose.desktop {
         }
     }
 }
+
+tasks.matching { it.name == "run" }.configureEach {
+    if (this is JavaExec) {
+        jvmArgs("-Xss8m")
+        systemProperty("skiko.renderApi", "DIRECT3D")
+    }
+}
+

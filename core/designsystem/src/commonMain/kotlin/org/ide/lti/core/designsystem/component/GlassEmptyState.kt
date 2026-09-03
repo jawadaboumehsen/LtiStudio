@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
-import com.kyant.capsule.ContinuousCapsule
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -28,6 +27,8 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
@@ -37,6 +38,7 @@ import androidx.compose.ui.unit.Dp
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -225,12 +227,24 @@ fun GlassEmptyStateBadge(
         Box(
             modifier = modifier
                 .size(badgeSize)
-                .clip(ContinuousCapsule)
-                .background(glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Faint))
+                .drawBehind {
+                    drawCircle(
+                        brush = Brush.radialGradient(
+                            colors = listOf(
+                                glassColors.glassAccent.copy(alpha = AlphaTokens.Glow),
+                                Color.Transparent,
+                            ),
+                            center = center,
+                            radius = size.minDimension * 0.85f,
+                        ),
+                    )
+                }
+                .clip(GlassShapes.Capsule)
+                .background(glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Elevated))
                 .glassOutlineBorder(
                     width = StrokeWidth.Hairline,
                     color = glassColors.glassBorderHighlight.copy(alpha = AlphaTokens.Border),
-                    shape = ContinuousCapsule,
+                    shape = GlassShapes.Capsule,
                 ),
             contentAlignment = Alignment.Center,
         ) {

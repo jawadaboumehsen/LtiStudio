@@ -40,7 +40,7 @@ kotlin {
 
             api(libs.back.handler)
             api(libs.window.size)
-            api("top.ltfan.capsule:capsule:1.0.0")
+            api(libs.capsule)
             api("com.materialkolor:material-kolor:5.0.0")
             api(libs.kermit.logging)
         }

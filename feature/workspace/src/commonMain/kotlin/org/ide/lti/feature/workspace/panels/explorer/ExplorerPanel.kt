@@ -10,10 +10,15 @@
 package org.ide.lti.feature.workspace.panels.explorer
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -24,11 +29,12 @@ import org.ide.lti.core.designsystem.component.GlassEmptyState
 import org.ide.lti.core.designsystem.component.GlassPanelContainer
 import org.ide.lti.core.designsystem.component.GlassPanelHeader
 import org.ide.lti.core.designsystem.component.GlassPanelHeaderAction
-import org.ide.lti.core.designsystem.component.GlassPrimaryButton
+import org.ide.lti.core.designsystem.component.GlassSecondaryButton
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.model.filesystem.FileType
 import org.ide.lti.core.ui.GlassFileTree
@@ -42,13 +48,17 @@ fun ExplorerPanel(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val expandedNodes by viewModel.expandedNodes.collectAsState()
+    val selectedFile by viewModel.selectedFile.collectAsState()
     val glassColors = GlassTheme.colors
+
+    val rootName = (uiState as? ExplorerUiState.Success)?.rootNode?.name
+    val headerTitle = if (!rootName.isNullOrBlank()) rootName else "Explorer"
 
     GlassPanelContainer(
         modifier = modifier,
         header = {
             GlassPanelHeader(
-                title = "Explorer",
+                title = headerTitle,
                 actions = {
                     GlassPanelHeaderAction(
                         icon = AppIcon.Painted(AppIcons.RefreshPainterResource),
@@ -77,6 +87,7 @@ fun ExplorerPanel(
                 GlassFileTree(
                     rootNode = state.rootNode,
                     expandedNodes = expandedNodes,
+                    selectedPath = selectedFile?.path,
                     onNodeClick = { node ->
                         if (node.type == FileType.DIRECTORY) {
                             viewModel.toggleNodeExpansion(node.path)
@@ -92,19 +103,26 @@ fun ExplorerPanel(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(Spacing.Medium),
+                        .padding(horizontal = Spacing.Large, vertical = Spacing.ExtraLarge),
                     contentAlignment = Alignment.Center,
                 ) {
                     GlassEmptyState(
                         icon = AppIcons.FolderOpen,
-                        title = "No Workspace Selected",
-                        description = "Open a directory to explore files",
+                        title = "No Folder Open",
+                        description = "Open a folder to start browsing files",
                         descriptionColor = glassColors.onGlassMuted,
-                        onIconClick = { viewModel.openFolder() },
+                        iconTint = glassColors.onGlassMuted,
                         action = {
-                            GlassPrimaryButton(
+                            Spacer(modifier = Modifier.height(Spacing.Medium))
+                            GlassSecondaryButton(
                                 onClick = { viewModel.openFolder() },
                             ) {
+                                Icon(
+                                    painter = AppIcons.FolderOpenPainterResource(),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(IconSize.Small),
+                                )
+                                Spacer(modifier = Modifier.width(Spacing.Small))
                                 Text(text = "Open Folder")
                             }
                         },

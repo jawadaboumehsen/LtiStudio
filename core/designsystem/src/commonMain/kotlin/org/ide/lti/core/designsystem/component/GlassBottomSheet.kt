@@ -54,32 +54,21 @@ import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.colorControls
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.highlight.Highlight
-import com.kyant.capsule.ContinuousCapsule
-import com.kyant.capsule.ContinuousRoundedRectangle
 import kotlinx.coroutines.launch
-import org.ide.lti.core.designsystem.theme.BackdropBlur
-import org.ide.lti.core.designsystem.theme.BackdropSaturation
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius
+import org.ide.lti.core.designsystem.theme.GlassEffects
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
-import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.MotionDuration
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
 
 /**
- * Bottom sheet glass effect stack — frosted/heavy, per the kmp-liquid-glass skill's guidance
- * for sheets and modal overlays.
+ * Bottom sheet glass effect stack.
+ * Delegated to canonical [GlassEffects.BottomSheet].
  */
-val GlassBottomSheetEffects: BackdropEffectScope.() -> Unit = {
-    colorControls(saturation = BackdropSaturation.Vibrant)
-    blur(BackdropBlur.BottomSheet.toPx())
-    lens(
-        LensRefraction.BottomSheet.height.toPx(),
-        LensRefraction.BottomSheet.amount.toPx(),
-        depthEffect = true,
-    )
-}
+val GlassBottomSheetEffects: BackdropEffectScope.() -> Unit = GlassEffects.BottomSheet
 
 /**
  * State for managing the bottom sheet visibility and animations.
@@ -183,15 +172,7 @@ fun GlassBottomSheet(
     modifier: Modifier = Modifier,
     backdrop: Backdrop? = null,
     effects: BackdropEffectScope.() -> Unit = GlassBottomSheetEffects,
-    // Exception to the module-wide capsule shape: this sheet is anchored flush to the bottom
-    // edge, so only the top corners can round — a full capsule would detach its bottom edge
-    // from the screen with visible rounded gaps.
-    shape: Shape = ContinuousRoundedRectangle(
-        topStart = CornerRadius.Medium,
-        topEnd = CornerRadius.Medium,
-        bottomEnd = CornerRadius.None,
-        bottomStart = CornerRadius.None,
-    ),
+    shape: Shape = GlassShapes.BottomSheet,
     scrimColor: Color = Color.Unspecified,
     dismissThreshold: Float = 0.3f,
     content: @Composable ColumnScope.() -> Unit,
@@ -325,7 +306,7 @@ fun GlassBottomSheet(
                                     .height(ComponentSize.DragHandleHeight)
                                     .background(
                                         color = glassColors.onGlassMuted,
-                                        shape = ContinuousCapsule,
+                                        shape = GlassShapes.Capsule,
                                     ),
                             )
                         }

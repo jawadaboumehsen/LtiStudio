@@ -9,9 +9,7 @@
  */
 plugins {
     alias(libs.plugins.kmp.library.convention)
-    alias(libs.plugins.ktrofit)
     id("kotlinx-serialization")
-    id("com.google.devtools.ksp")
 }
 
 kotlin {
@@ -42,7 +40,4 @@ kotlin {
     }
 }
 
-dependencies {
-    add("kspCommonMainMetadata", libs.ktorfit.ksp)
-    add("kspDesktop", libs.ktorfit.ksp)
-}
+

@@ -31,8 +31,9 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.unit.sp
+import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.LineHeight
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.ui.syntax.SyntaxHighlightingTransformation
@@ -109,27 +110,33 @@ fun GlassCodeEditor(
         Row(modifier = Modifier.fillMaxSize()) {
             // Line numbers
             if (showLineNumbers) {
-                Column(
+                val lineCount = remember(content) { content.count { it == '\n' } + 1 }
+                val lineStyle = remember(codeFont, glassColors.onGlassMuted) {
+                    TextStyle(
+                        fontFamily = codeFont,
+                        fontSize = FontSize.Code,
+                        color = glassColors.onGlassMuted,
+                        lineHeight = LineHeight.Code,
+                    )
+                }
+                val lineNumbersText = remember(lineCount) {
+                    buildString(lineCount * 6) {
+                        for (lineNumber in 1..lineCount) {
+                            append(lineNumber.toString().padStart(4))
+                            if (lineNumber < lineCount) append('\n')
+                        }
+                    }
+                }
+                Box(
                     modifier = Modifier
                         .padding(end = Spacing.SmallMedium)
-                        .verticalScroll(verticalScrollState),
+                        .verticalScroll(verticalScrollState)
+                        .padding(vertical = Spacing.ExtraExtraSmall),
                 ) {
-                    val lineCount = remember(content) { content.count { it == '\n' } + 1 }
-                    val lineStyle = remember(codeFont, glassColors.onGlassMuted) {
-                        TextStyle(
-                            fontFamily = codeFont,
-                            fontSize = 14.sp,
-                            color = glassColors.onGlassMuted,
-                            lineHeight = 20.sp,
-                        )
-                    }
-                    for (lineNumber in 1..lineCount) {
-                        Text(
-                            text = lineNumber.toString().padStart(4),
-                            style = lineStyle,
-                            modifier = Modifier.padding(vertical = Spacing.ExtraExtraSmall),
-                        )
-                    }
+                    Text(
+                        text = lineNumbersText,
+                        style = lineStyle,
+                    )
                 }
             }
 
@@ -155,9 +162,9 @@ fun GlassCodeEditor(
                 },
                 textStyle = TextStyle(
                     fontFamily = codeFont,
-                    fontSize = 14.sp,
+                    fontSize = FontSize.Code,
                     color = glassColors.syntax.plain,
-                    lineHeight = 20.sp,
+                    lineHeight = LineHeight.Code,
                 ),
                 cursorBrush = SolidColor(glassColors.glassAccent),
                 visualTransformation = visualTransformation,

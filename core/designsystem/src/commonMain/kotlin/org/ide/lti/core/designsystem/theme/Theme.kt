@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
@@ -74,9 +75,21 @@ val LocalFocusRingSuppressedByPointer = staticCompositionLocalOf {
 }
 
 /**
+ * Composition local for whether the dark theme is active.
+ */
+val LocalIsDarkTheme = staticCompositionLocalOf {
+    true
+}
+
+/**
  * Accessor object for glass theme values anywhere in the composable hierarchy.
  */
 object GlassTheme {
+    val isDark: Boolean
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalIsDarkTheme.current
+
     val colors: GlassColorScheme
         @Composable
         @ReadOnlyComposable
@@ -101,6 +114,28 @@ object GlassTheme {
         @Composable
         @ReadOnlyComposable
         get() = LocalFocusRingSuppressedByPointer.current
+
+    /** Centralized registry of all backdrop visual effect stacks. */
+    val effects: GlassEffects
+        get() = GlassEffects
+
+    /** Centralized registry of all glass specular highlight strategies. */
+    val highlights: GlassHighlights
+        get() = GlassHighlights
+
+    /** Centralized registry of all glass ambient shadow presets. */
+    val shadows: GlassShadows
+        get() = GlassShadows
+
+    /** Centralized registry of all glass squircle and capsule shapes. */
+    val shapes: GlassShapes
+        get() = GlassShapes
+
+    /** Centralized design system typography. */
+    val typography: Typography
+        @Composable
+        @ReadOnlyComposable
+        get() = MaterialTheme.typography
 }
 
 /**
@@ -137,6 +172,7 @@ fun LtiTheme(
         typography = appTypography(),
     ) {
         CompositionLocalProvider(
+            LocalIsDarkTheme provides darkTheme,
             LocalGlassColors provides resolvedGlassColors,
             LocalGlassBackdrop provides backdrop,
             LocalGlassEffectsEnabled provides effectsEnabled,

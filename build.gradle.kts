@@ -180,6 +180,92 @@ tasks.register("verifyDesignSystemGuardrails") {
             }
         }
 
+        // ---- 1d. Shape bypass scan: UI code may not instantiate shapes inline or import shape ----
+        // ---- primitives directly — use canonical GlassShapes/GlassTheme.shapes tokens.         ----
+        val shapeScanRoots = listOf(
+            File(root, "core/designsystem/src"),
+            File(root, "core/ui/src"),
+            File(root, "feature"),
+            File(root, "lti-shared/src"),
+            File(root, "lti-desktop/src"),
+            File(root, "catalog/src"),
+        )
+        val forbiddenShapeImports = setOf(
+            "import androidx.compose.foundation.shape.RoundedCornerShape",
+            "import androidx.compose.foundation.shape.CutCornerShape",
+            "import com.kyant.capsule.ContinuousRoundedRectangle",
+            "import com.kyant.capsule.ContinuousCapsule",
+            "import com.kyant.capsule.Continuity",
+            "import com.kyant.capsule.continuities.G2Continuity",
+            "import com.kyant.capsule.continuities.G1Continuity",
+            "import com.kyant.capsule.concentricInset",
+            "import com.kyant.capsule.concentricOutset",
+            "import com.kyant.capsule.lerp",
+        )
+
+        shapeScanRoots.forEach { scanRoot ->
+            ktFiles(scanRoot).forEach { file ->
+                val path = file.absolutePath.replace('\\', '/')
+                if (path.contains("/theme/") || path.contains("/desktopTest/") || path.contains("/test/")) return@forEach
+                file.readLines().forEachIndexed { idx, rawLine ->
+                    val line = rawLine.trim()
+                    if (forbiddenShapeImports.contains(line)) {
+                        violations += "${file.relativeTo(root).path}:${idx + 1}: forbidden raw shape import " +
+                            "bypasses theme/Shape.kt (GlassShapes). [$line]"
+                        return@forEachIndexed
+                    }
+                    if (isCommentOrImport(rawLine)) return@forEachIndexed
+                    if (Regex("""\b(?:RoundedCornerShape|ContinuousRoundedRectangle|CutCornerShape)\s*\(""").containsMatchIn(line)) {
+                        violations += "${file.relativeTo(root).path}:${idx + 1}: raw inline shape constructor " +
+                            "bypasses theme/Shape.kt (use GlassShapes.<Preset> instead). [$line]"
+                    }
+                    if (Regex("""\bContinuousCapsule\b""").containsMatchIn(line)) {
+                        violations += "${file.relativeTo(root).path}:${idx + 1}: ContinuousCapsule direct usage " +
+                            "bypasses theme/Shape.kt (use GlassShapes.Capsule instead). [$line]"
+                    }
+                }
+            }
+        }
+
+        // ---- 1e. Font/typography bypass scan: UI code may not declare raw .sp literals or raw font ----
+        // ---- families inline — use theme/Type.kt tokens (FontSize, LineHeight, codeFontFamily). ----
+        val fontScanRoots = listOf(
+            File(root, "core/designsystem/src"),
+            File(root, "core/ui/src"),
+            File(root, "feature"),
+            File(root, "lti-shared/src"),
+            File(root, "lti-desktop/src"),
+            File(root, "catalog/src"),
+        )
+        val forbiddenFontImports = setOf(
+            "import androidx.compose.ui.unit.sp",
+            "import androidx.compose.ui.text.font.FontFamily",
+        )
+
+        fontScanRoots.forEach { scanRoot ->
+            ktFiles(scanRoot).forEach { file ->
+                val path = file.absolutePath.replace('\\', '/')
+                if (path.contains("/theme/") || path.contains("/desktopTest/") || path.contains("/test/")) return@forEach
+                file.readLines().forEachIndexed { idx, rawLine ->
+                    val line = rawLine.trim()
+                    if (forbiddenFontImports.contains(line)) {
+                        violations += "${file.relativeTo(root).path}:${idx + 1}: forbidden raw font/unit import " +
+                            "bypasses theme/Type.kt tokens (FontSize/LineHeight/codeFontFamily). [$line]"
+                        return@forEachIndexed
+                    }
+                    if (isCommentOrImport(rawLine)) return@forEachIndexed
+                    if (Regex("""\b[0-9]+(?:\.[0-9]+)?f?\.sp\b""").containsMatchIn(line)) {
+                        violations += "${file.relativeTo(root).path}:${idx + 1}: raw .sp literal bypasses " +
+                            "theme/Type.kt tokens (FontSize/LineHeight/LetterSpacing). [$line]"
+                    }
+                    if (Regex("""\bFontFamily\.(?:Monospace|Default|SansSerif|Serif|Cursive)\b""").containsMatchIn(line)) {
+                        violations += "${file.relativeTo(root).path}:${idx + 1}: direct FontFamily reference bypasses " +
+                            "theme/Type.kt (use codeFontFamily() or GlassTheme.typography). [$line]"
+                    }
+                }
+            }
+        }
+
         // ---- 2. Component-boundary scan: feature/*, lti-shared, lti-desktop must not hand-roll ----
         // ---- glass components directly from backdrop effect primitives.                        ----
         val boundaryScanRoots = listOf(

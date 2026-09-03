@@ -37,10 +37,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.TextRange
@@ -55,14 +60,16 @@ import com.kashif_e.backdrop.BackdropEffectScope
 import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
-import com.kyant.capsule.ContinuousRoundedRectangle
+import com.kashif_e.backdrop.highlight.Highlight
 import org.ide.lti.core.designsystem.icon.AppIcons
+import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius
+import org.ide.lti.core.designsystem.theme.GlassEffects
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
@@ -70,18 +77,15 @@ import org.ide.lti.core.designsystem.utils.nonLetterColorVisualTransformation
 import org.ide.lti.core.designsystem.utils.tabNavigation
 
 /**
- * Text field glass effect stack — subtle, per the kmp-liquid-glass skill's guidance for
- * inputs that shouldn't distract from typed content.
+ * Text field glass effect stack.
+ * Delegated to canonical [GlassEffects.TextField].
  */
-val GlassTextFieldEffects: BackdropEffectScope.() -> Unit = {
-    vibrancy()
-    blur(BackdropBlur.TextField.toPx())
-    lens(LensRefraction.TextField.height.toPx(), LensRefraction.TextField.amount.toPx())
-}
+val GlassTextFieldEffects: BackdropEffectScope.() -> Unit = GlassEffects.TextField
 
 /**
  * Glass text field component with focus animations.
  */
+@OptIn(ExperimentalComposeUiApi::class)
 @Suppress("LongParameterList")
 @Composable
 fun GlassTextField(
@@ -108,17 +112,24 @@ fun GlassTextField(
 ) {
     val isFocused by interactionSource.collectIsFocusedAsState()
     val isError = errorText != null
+    var isHovered by remember { mutableStateOf(false) }
+    val glassColors = GlassTheme.colors
 
     val animatedBorderColor by animateColorAsState(
         targetValue = when {
             isError -> MaterialTheme.colorScheme.error
-            isFocused -> GlassTheme.colors.glassBorderHighlight
-            else -> GlassTheme.colors.glassBorder
+            isFocused -> glassColors.glassBorderHighlight
+            isHovered -> glassColors.glassBorder.copy(alpha = AlphaTokens.Prominent)
+            else -> glassColors.glassBorder
         },
         animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion),
     )
 
-    Column(modifier = modifier) {
+    Column(
+        modifier = modifier
+            .onPointerEvent(PointerEventType.Enter) { isHovered = true }
+            .onPointerEvent(PointerEventType.Exit) { isHovered = false },
+    ) {
         if (label != null) {
             Text(
                 text = label,
@@ -129,11 +140,33 @@ fun GlassTextField(
         }
 
         GlassSurface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = ContinuousRoundedRectangle(CornerRadius.Medium),
+            modifier = Modifier
+                .fillMaxWidth()
+                .drawBehind {
+                    if (isFocused) {
+                        drawRect(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    glassColors.glassAccent.copy(alpha = AlphaTokens.Subtle),
+                                    Color.Transparent,
+                                ),
+                                startY = 0f,
+                                endY = size.height * 0.75f,
+                            ),
+                        )
+                    }
+                },
+            shape = GlassShapes.TextField,
             effects = effects,
             backdrop = backdrop,
             borderColor = animatedBorderColor,
+            highlight = {
+                when {
+                    isFocused -> Highlight.Default
+                    isHovered -> Highlight.Ambient
+                    else -> Highlight.Plain
+                }
+            },
         ) {
             Row(
                 modifier = Modifier
@@ -318,11 +351,8 @@ fun GlassOtpTextField(
                                 .size(ComponentSize.OtpBoxSize)
                                 .padding(Spacing.ExtraSmall)
                                 .glassEffect(
-                                    shape = ContinuousRoundedRectangle(CornerRadius.Small),
-                                    effects = {
-                                        vibrancy()
-                                        blur(BackdropBlur.TextField.toPx())
-                                    },
+                                    shape = GlassShapes.Small,
+                                    effects = GlassEffects.TextField,
                                     tint = if (filled) GlassTheme.colors.glassTint else Color.Unspecified,
                                 )
                                 .glassBorder(
@@ -332,7 +362,7 @@ fun GlassOtpTextField(
                                         GlassTheme.colors.glassBorder
                                     },
                                     width = StrokeWidth.Standard,
-                                    shape = ContinuousRoundedRectangle(CornerRadius.Small),
+                                    shape = GlassShapes.Small,
                                 ),
                             contentAlignment = Alignment.Center,
                         ) {

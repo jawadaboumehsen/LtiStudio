@@ -22,7 +22,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import com.kyant.capsule.ContinuousCapsule
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -39,7 +38,6 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.cli.TerminalLine
 import org.ide.lti.core.designsystem.component.GlassIconButton
@@ -48,9 +46,11 @@ import org.ide.lti.core.designsystem.component.GlassPanelHeader
 import org.ide.lti.core.designsystem.component.GlassTextField
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -62,7 +62,7 @@ fun TerminalPanel(
     val listState = rememberLazyListState()
 
     val monospaceStyle = MaterialTheme.typography.bodySmall.copy(
-        fontFamily = FontFamily.Monospace,
+        fontFamily = codeFontFamily(),
     )
 
     LaunchedEffect(uiState.lines.size) {
@@ -148,14 +148,14 @@ private fun TerminalStatusHeader(
         Box(
             modifier = Modifier
                 .size(ComponentSize.StatusDotSize)
-                .clip(ContinuousCapsule)
+                .clip(GlassShapes.Capsule)
                 .background(
                     if (isRunning) glassColors.syntax.keyword else glassColors.glassAccent,
                 ),
         )
         Text(
             text = if (isRunning) "running..." else "ready ($cwd)",
-            style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
+            style = MaterialTheme.typography.labelSmall.copy(fontFamily = codeFontFamily()),
             color = glassColors.onGlassMuted,
         )
     }

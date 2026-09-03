@@ -19,6 +19,7 @@ import org.ide.lti.core.data.settings.AppSettingsState
 import org.ide.lti.core.designsystem.component.CosmicAuroraBackdrop
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.feature.setup.SETUP_ROUTE
+import org.ide.lti.feature.workspace.WORKSPACE_ROUTE
 import org.ide.lti.shared.navigation.RootNavGraph
 import org.koin.compose.koinInject
 
@@ -55,7 +56,7 @@ private fun SharedApp(
 
             RootNavGraph(
                 navHostController = navController,
-                startDestination = SETUP_ROUTE,
+                startDestination = WORKSPACE_ROUTE,
                 onOpenSettings = onOpenSettings,
                 modifier = Modifier.fillMaxSize(),
             )

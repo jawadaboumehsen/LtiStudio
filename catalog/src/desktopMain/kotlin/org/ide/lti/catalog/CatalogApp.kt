@@ -37,7 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
-import com.kyant.capsule.ContinuousCapsule
+import org.ide.lti.core.designsystem.component.GlassChip
 import org.ide.lti.catalog.tabs.ButtonsTab
 import org.ide.lti.catalog.tabs.CoreUiTab
 import org.ide.lti.catalog.tabs.InputsTab
@@ -48,6 +48,7 @@ import org.ide.lti.catalog.tabs.SurfacesTab
 import org.ide.lti.catalog.tabs.TokensTab
 import org.ide.lti.core.designsystem.component.CosmicAuroraBackdrop
 import org.ide.lti.core.designsystem.component.GlassIconToggleButton
+import org.ide.lti.core.designsystem.component.GlassTopBar
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
@@ -142,90 +143,44 @@ private fun CatalogTopBar(
     effectsEnabled: Boolean,
     onToggleEffects: () -> Unit,
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(ComponentSize.TopBarHeight)
-            .background(GlassTheme.colors.glassSurfaceElevated)
-            .padding(horizontal = Spacing.Medium),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.SmallMedium)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(ComponentSize.LogoBadgeSize)
-                    .clip(ContinuousCapsule)
-                    .background(GlassTheme.colors.glassAccent),
-                contentAlignment = Alignment.Center
+    GlassTopBar(
+        title = "LtiRom Design System Catalog",
+        workspaceName = null,
+        showMenuButton = false,
+        showPanelToggles = false,
+        showCommandPalette = false,
+        showSearchButton = false,
+        onNotificationsClick = null,
+        onSettingsClick = null,
+        showWindowControls = false,
+        actions = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
             ) {
-                Text(
-                    text = "L",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = GlassTheme.colors.onGlass
+                // Theme Mode Toggle
+                GlassChip(
+                    label = if (isDarkTheme) "Dark Theme" else "Light Theme",
+                    selected = isDarkTheme,
+                    onClick = onToggleTheme,
+                )
+
+                // Reduced Motion Toggle
+                GlassChip(
+                    label = if (reducedMotion) "Reduced Motion: ON" else "Reduced Motion: OFF",
+                    selected = reducedMotion,
+                    onClick = onToggleReducedMotion,
+                )
+
+                // Effects Toggle
+                GlassChip(
+                    label = if (effectsEnabled) "GPU Effects: ON" else "GPU Effects: OFF",
+                    selected = effectsEnabled,
+                    onClick = onToggleEffects,
                 )
             }
-            Text(
-                text = "LtiRom Design System Catalog",
-                style = MaterialTheme.typography.titleMedium,
-                color = GlassTheme.colors.onGlass
-            )
-        }
-
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.Small)
-        ) {
-            // Theme Mode Toggle
-            CatalogToggleChip(
-                label = if (isDarkTheme) "Dark Theme" else "Light Theme",
-                checked = isDarkTheme,
-                onToggle = onToggleTheme
-            )
-
-            // Reduced Motion Toggle
-            CatalogToggleChip(
-                label = if (reducedMotion) "Reduced Motion: ON" else "Reduced Motion: OFF",
-                checked = reducedMotion,
-                onToggle = onToggleReducedMotion
-            )
-
-            // Effects Toggle
-            CatalogToggleChip(
-                label = if (effectsEnabled) "GPU Effects: ON" else "GPU Effects: OFF",
-                checked = effectsEnabled,
-                onToggle = onToggleEffects
-            )
-        }
-    }
-}
-
-@Composable
-private fun CatalogToggleChip(
-    label: String,
-    checked: Boolean,
-    onToggle: () -> Unit,
-) {
-    Box(
-        modifier = Modifier
-            .clip(ContinuousCapsule)
-            .background(
-                if (checked) GlassTheme.colors.glassAccent.copy(alpha = AlphaTokens.Hover)
-                else GlassTheme.colors.glassSurface
-            )
-            .clickable(onClick = onToggle)
-            .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.ExtraSmall),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = if (checked) GlassTheme.colors.glassAccent else GlassTheme.colors.onGlassSecondary
-        )
-    }
+        },
+    )
 }
 
 @Composable
@@ -241,27 +196,15 @@ private fun CategoryNavBar(
             .background(GlassTheme.colors.glassSurfaceElevated.copy(alpha = AlphaTokens.Half))
             .horizontalScroll(scrollState)
             .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
-        horizontalArrangement = Arrangement.spacedBy(Spacing.Small)
+        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
         categories.forEachIndexed { index, category ->
-            val isSelected = index == selectedIndex
-            Box(
-                modifier = Modifier
-                    .clip(ContinuousCapsule)
-                    .background(
-                        if (isSelected) GlassTheme.colors.glassAccent
-                        else GlassTheme.colors.glassSurface
-                    )
-                    .clickable { onSelectCategory(index) }
-                    .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = category.title,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = if (isSelected) GlassTheme.colors.onGlass else GlassTheme.colors.onGlassSecondary
-                )
-            }
+            GlassChip(
+                label = category.title,
+                selected = index == selectedIndex,
+                onClick = { onSelectCategory(index) },
+            )
         }
     }
 }
+

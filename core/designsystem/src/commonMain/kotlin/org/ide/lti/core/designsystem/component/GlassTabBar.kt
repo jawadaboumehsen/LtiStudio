@@ -30,6 +30,8 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.isSpecified
@@ -43,14 +45,14 @@ import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
 import com.kashif_e.backdrop.highlight.Highlight
-import com.kyant.capsule.ContinuousCapsule
-import com.kyant.capsule.ContinuousRoundedRectangle
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassColorScheme
+import org.ide.lti.core.designsystem.theme.GlassEffects
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.LensRefraction
@@ -72,7 +74,7 @@ fun GlassTab(
     val glassColors = GlassTheme.colors
     val effectsEnabled = GlassTheme.effectsEnabled
     val actualBackdrop = backdrop ?: GlassTheme.backdrop
-    val tabShape = ContinuousCapsule
+    val tabShape = GlassShapes.Capsule
 
     val surfaceColor = when {
         selected -> selectedColor
@@ -148,7 +150,7 @@ fun GlassTabItem(
     val glassColors = GlassTheme.colors
     val effectsEnabled = GlassTheme.effectsEnabled
     val actualBackdrop = backdrop ?: GlassTheme.backdrop
-    val tabShape = ContinuousRoundedRectangle(CornerRadius.Small)
+    val tabShape = GlassShapes.Small
     val tabColors = resolveTabItemColors(selected, isHovered, glassColors)
 
     Row(
@@ -176,6 +178,29 @@ fun GlassTabItem(
                 role = Role.Tab,
                 onClick = onSelect,
             )
+            .then(
+                if (selected) {
+                    Modifier.drawBehind {
+                        drawLine(
+                            brush = Brush.horizontalGradient(
+                                colors = listOf(
+                                    glassColors.glassBorderHighlight.copy(alpha = AlphaTokens.Prominent),
+                                    glassColors.glassHighlight.copy(alpha = AlphaTokens.Medium),
+                                    glassColors.glassBorderHighlight.copy(alpha = AlphaTokens.Glow),
+                                    Color.Transparent,
+                                ),
+                                startX = 0f,
+                                endX = size.width,
+                            ),
+                            start = Offset(0f, 0f),
+                            end = Offset(size.width, 0f),
+                            strokeWidth = StrokeWidth.Hairline.toPx(),
+                        )
+                    }
+                } else {
+                    Modifier
+                },
+            )
             .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Compact),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -192,7 +217,7 @@ fun GlassTabItem(
             GlassIconButton(
                 onClick = onClose,
                 size = IconSize.Medium,
-                shape = ContinuousRoundedRectangle(CornerRadius.ExtraSmall),
+                shape = GlassShapes.ExtraSmall,
             ) {
                 Icon(
                     painter = AppIcons.ClosePainterResource(),
@@ -284,11 +309,7 @@ private fun Modifier.tabGlassSurface(
         this.drawBackdrop(
             backdrop = backdrop,
             shape = { shape },
-            effects = {
-                vibrancy()
-                blur(BackdropBlur.Button.toPx())
-                lens(LensRefraction.Button.height.toPx(), LensRefraction.Button.amount.toPx())
-            },
+            effects = GlassEffects.Button,
             highlight = { if (isHovered) Highlight.Ambient else Highlight.Plain },
             onDrawSurface = {
                 if (surfaceColor.isSpecified && surfaceColor != Color.Transparent) {

@@ -36,7 +36,6 @@ import androidx.compose.ui.text.AnnotatedString
 import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
-import com.kyant.capsule.ContinuousRoundedRectangle
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -47,6 +46,7 @@ import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.LensRefraction
@@ -85,7 +85,7 @@ fun GlassMessageBubble(
             horizontalAlignment = if (isUser) Alignment.End else Alignment.Start,
         ) {
             // Message bubble with hover effect
-            val bubbleShape = ContinuousRoundedRectangle(CornerRadius.Medium)
+            val bubbleShape = GlassShapes.Medium
             Box(
                 modifier = Modifier
                     .glassEffect(

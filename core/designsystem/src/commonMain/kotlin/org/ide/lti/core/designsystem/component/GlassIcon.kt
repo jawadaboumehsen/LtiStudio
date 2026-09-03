@@ -39,10 +39,11 @@ import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
 import com.kashif_e.backdrop.highlight.Highlight
-import com.kyant.capsule.ContinuousCapsule
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BackdropBlur
+import org.ide.lti.core.designsystem.theme.GlassEffects
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.StrokeWidth
@@ -81,12 +82,8 @@ fun GlassIcon(
                 if (effectsEnabled && actualBackdrop != null) {
                     Modifier.drawBackdrop(
                         backdrop = actualBackdrop,
-                        shape = { ContinuousCapsule },
-                        effects = {
-                            vibrancy()
-                            blur(BackdropBlur.Button.toPx())
-                            lens(LensRefraction.Button.height.toPx(), LensRefraction.Button.amount.toPx())
-                        },
+                        shape = { GlassShapes.Capsule },
+                        effects = GlassEffects.Button,
                         highlight = { if (isHovered) Highlight.Ambient else Highlight.Plain },
                         layerBlock = if (isInteractive) {
                             {
@@ -105,7 +102,7 @@ fun GlassIcon(
                     )
                 } else {
                     Modifier
-                        .clip(ContinuousCapsule)
+                        .clip(GlassShapes.Capsule)
                         .drawBehind {
                             drawIconSurface(
                                 surfaceColor = surfaceColor,
@@ -118,7 +115,7 @@ fun GlassIcon(
             .glassOutlineBorder(
                 color = glassColors.glassBorder,
                 width = StrokeWidth.Hairline,
-                shape = ContinuousCapsule,
+                shape = GlassShapes.Capsule,
             )
             .onPointerEvent(PointerEventType.Enter) { isHovered = true }
             .onPointerEvent(PointerEventType.Exit) { isHovered = false }

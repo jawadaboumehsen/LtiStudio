@@ -46,7 +46,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.sp
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.BackdropEffectScope
 import com.kashif_e.backdrop.drawBackdrop
@@ -54,12 +53,14 @@ import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
 import com.kashif_e.backdrop.highlight.Highlight
-import com.kyant.capsule.ContinuousCapsule
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassEffects
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
-import org.ide.lti.core.designsystem.theme.LensRefraction
+import org.ide.lti.core.designsystem.theme.LetterSpacing
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
@@ -67,27 +68,16 @@ import org.ide.lti.core.designsystem.utils.InteractiveHighlight
 import org.ide.lti.core.designsystem.utils.applyInteractiveHighlightTransform
 
 /**
- * Button glass effect stack — crisp/glossy, per the kmp-liquid-glass skill's guidance for
- * buttons, toggles, and tab bars: light blur + tight lens + vibrancy. Tuned for compact,
- * icon-sized surfaces (GlassIconButton, GlassIconToggleButton) where this radius reads clearly.
+ * Button glass effect stack for compact icon buttons.
+ * Delegated to canonical [GlassEffects.Button].
  */
-val GlassButtonEffects: BackdropEffectScope.() -> Unit = {
-    vibrancy()
-    blur(BackdropBlur.Button.toPx())
-    lens(LensRefraction.Button.height.toPx(), LensRefraction.Button.amount.toPx())
-}
+val GlassButtonEffects: BackdropEffectScope.() -> Unit = GlassEffects.Button
 
 /**
- * Pill-button glass effect stack — scaled up from [GlassButtonEffects] so the lens refraction
- * stays visible across the wider surface of a text-labeled action button; the icon-tier radius
- * reads as flat once stretched across a full pill. Default for GlassButton/GlassPrimaryButton/
- * GlassTextButton.
+ * Pill-button glass effect stack for text-labeled action buttons.
+ * Delegated to canonical [GlassEffects.ButtonPill].
  */
-val GlassButtonPillEffects: BackdropEffectScope.() -> Unit = {
-    vibrancy()
-    blur(BackdropBlur.ButtonPill.toPx())
-    lens(LensRefraction.ButtonPill.height.toPx(), LensRefraction.ButtonPill.amount.toPx())
-}
+val GlassButtonPillEffects: BackdropEffectScope.() -> Unit = GlassEffects.ButtonPill
 
 /**
  * Button style variants.
@@ -107,9 +97,9 @@ object GlassButtonDefaults {
     val MinWidth = ComponentSize.ButtonMinWidth
     val MinHeight = ComponentSize.ButtonMinHeight
     val TextStyle = TextStyle(
-        fontSize = 14.sp,
+        fontSize = FontSize.TitleSmall,
         fontWeight = FontWeight.Medium,
-        letterSpacing = 0.1.sp,
+        letterSpacing = LetterSpacing.Snug,
     )
 }
 
@@ -122,7 +112,7 @@ fun GlassButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    shape: Shape = ContinuousCapsule,
+    shape: Shape = GlassShapes.Capsule,
     variant: GlassButtonVariant = GlassButtonVariant.Standard,
     effects: BackdropEffectScope.() -> Unit = GlassButtonPillEffects,
     backdrop: Backdrop? = null,
@@ -373,6 +363,25 @@ fun GlassPrimaryButton(
 }
 
 /**
+ * Convenience composable for a secondary glass button.
+ */
+@Composable
+fun GlassSecondaryButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    content: @Composable RowScope.() -> Unit,
+) {
+    GlassButton(
+        onClick = onClick,
+        modifier = modifier,
+        enabled = enabled,
+        variant = GlassButtonVariant.Secondary,
+        content = content,
+    )
+}
+
+/**
  * Convenience composable for a text-only glass button.
  */
 @Composable
@@ -404,7 +413,7 @@ fun GlassIconButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     size: Dp = ComponentSize.IconButtonSize,
-    shape: Shape = ContinuousCapsule,
+    shape: Shape = GlassShapes.Capsule,
     effects: BackdropEffectScope.() -> Unit = GlassButtonEffects,
     backdrop: Backdrop? = null,
     checked: Boolean? = null,
@@ -442,7 +451,7 @@ fun GlassIconToggleButton(
     onSelectedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     size: Dp = ComponentSize.IconButtonSize,
-    shape: Shape = ContinuousCapsule,
+    shape: Shape = GlassShapes.Capsule,
     enabled: Boolean = true,
     interactive: Boolean = false,
     content: @Composable () -> Unit,

@@ -58,6 +58,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerIcon
@@ -78,15 +79,15 @@ import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
 import com.kashif_e.backdrop.highlight.Highlight
 import com.kashif_e.backdrop.shadow.Shadow
-import com.kyant.capsule.ContinuousCapsule
-import com.kyant.capsule.ContinuousRoundedRectangle
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.icon.ideGeneralChevronUp
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.Elevation
+import org.ide.lti.core.designsystem.theme.GlassEffects
 import org.ide.lti.core.designsystem.theme.GlassLayoutColors
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.LensRefraction
@@ -212,30 +213,23 @@ fun GlassLayout(
     val density = LocalDensity.current
     val actualBackdrop = backdrop ?: GlassTheme.backdrop
     val glassColors = GlassTheme.colors
-    val panelShape = ContinuousRoundedRectangle(appearance.panelCornerRadius)
 
     GlassSurface(
         modifier = modifier
             .fillMaxSize()
-            .padding(Spacing.ExtraSmall)
             .onSizeChanged { state.containerSize = it }
             .semantics {
                 contentDescription = "LtiRomGui IDE Layout with resizable panels"
             },
-        shape = panelShape,
+        shape = RectangleShape,
         backdrop = actualBackdrop,
         surfaceColor = glassColors.chromeSurface,
         tint = Color.Transparent,
-        borderColor = glassColors.glassBorder,
-        borderWidth = StrokeWidth.Hairline,
+        borderColor = Color.Transparent,
+        borderWidth = Dp.Hairline,
         effects = LtiLayoutDefaults.ChromeEffects,
-        highlight = { Highlight.Default },
-        shadow = {
-            Shadow(
-                radius = LtiLayoutDefaults.PanelElevation,
-                color = LtiLayoutDefaults.PanelShadowColor,
-            )
-        },
+        highlight = { null },
+        shadow = { null },
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             // Top Bar (flush to the top and side edges of the frame)
@@ -259,13 +253,11 @@ fun GlassLayout(
             ) {
                 leftRail()
 
-                // Content area: each panel is its OWN GlassSurface so the chrome background
-                // shows through the gaps between them as a real, visible separation.
+                // Content area: panels dock flush edge-to-edge against rails, top bar, and status bar.
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .fillMaxHeight()
-                        .padding(Spacing.Small),
+                        .fillMaxHeight(),
                 ) {
                     Row(modifier = Modifier.fillMaxSize()) {
                         val animatedLeftWeight by animateFloatAsState(
@@ -365,12 +357,11 @@ fun GlassLayout(
 }
 
 /**
- * A single content panel rendered as its own [GlassSurface].
+ * A docked content panel rendered as a seamless [GlassSurface].
  *
- * Each of the four workspace panels (Explorer, editor, terminal/console, AI Assistant) paints its
- * own surface rather than sharing one continuous sheet. This is what makes the space between them
- * read as a real, visible gap: the darker chrome frame behind shows through the gaps. Padding alone
- * inside a single shared surface is invisible, since both sides of the gap are the same color.
+ * Workspace panels dock flush edge-to-edge against each other and against the outer chrome.
+ * Single shared hairline dividers provide clear, modern tool-window separation without
+ * doubled borders or clashing curved corners.
  */
 @Composable
 private fun GlassContentPanel(
@@ -383,16 +374,13 @@ private fun GlassContentPanel(
     val glassColors = GlassTheme.colors
     GlassSurface(
         modifier = modifier,
-        shape = ContinuousRoundedRectangle(ThemeCornerRadius.Panel),
+        shape = RectangleShape,
         backdrop = backdrop,
-        surfaceColor = glassColors.canvasSurface,
-        tint = Color.Transparent,
-        borderColor = if (isFocused) glassColors.glassBorderHighlight else Color.Unspecified,
-        borderWidth = StrokeWidth.Hairline,
-        // The focus border above and the passive Highlight.Plain edge shimmer both draw on the
-        // same panel edge - stacking them reads as two parallel lines. Drop the highlight while
-        // focused so the border stroke is the sole edge treatment, matching the button focus ring.
-        highlight = { if (isFocused) null else Highlight.Plain },
+        surfaceColor = glassColors.canvasSurface.copy(alpha = AlphaTokens.Medium),
+        tint = glassColors.glassTint.copy(alpha = AlphaTokens.UltraFaint),
+        borderColor = Color.Transparent,
+        borderWidth = Dp.Hairline,
+        highlight = { null },
         effects = if (isDragging) {
             LtiLayoutDefaults.DragOptimizedEffects
         } else {
@@ -942,7 +930,7 @@ private fun GlassDragDivider(
     val normalColor = if (appearance.dividerColor.isSpecified) {
         appearance.dividerColor
     } else {
-        colors.glassBorder.copy(alpha = AlphaTokens.Muted)
+        colors.glassBorder.copy(alpha = AlphaTokens.Hover)
     }
     val activeColor = if (appearance.dividerActiveColor.isSpecified) {
         appearance.dividerActiveColor
@@ -986,16 +974,24 @@ private fun GlassDragDivider(
             },
         contentAlignment = Alignment.Center,
     ) {
-        // No painted idle line: each content panel now draws its own GlassSurface, so the gap
-        // between panels already reads as a real separation (the darker chrome frame shows
-        // through it). Painting a line here would sit on top of that gap and muddy it. The
-        // hover/drag affordance below still appears on interaction.
+        // Single shared idle hairline divider between adjacent docked panels
+        val idleLineModifier = when (orientation) {
+            DividerOrientation.Vertical -> Modifier
+                .width(StrokeWidth.Hairline)
+                .fillMaxHeight()
+                .background(normalColor)
+            DividerOrientation.Horizontal -> Modifier
+                .height(StrokeWidth.Hairline)
+                .fillMaxWidth()
+                .background(normalColor)
+        }
+        Box(modifier = idleLineModifier)
 
-        // Divider line active state - simple during drag, glass effects only on hover for performance
+        // Divider line active state - animated glow during hover/drag
         Box(
             modifier = lineModifier
                 .alpha(alpha)
-                .clip(ContinuousCapsule)
+                .clip(GlassShapes.Capsule)
                 .then(
                     getDividerBackgroundModifier(
                         isDragging = isDragging,
@@ -1061,11 +1057,8 @@ private fun getDividerBackgroundModifier(
             }
             .drawBackdrop(
                 backdrop = actualBackdrop,
-                shape = { ContinuousCapsule },
-                effects = {
-                    blur(BackdropBlur.Minimap.toPx())
-                    lens(LensRefraction.Minimap.height.toPx(), LensRefraction.Minimap.amount.toPx())
-                },
+                shape = { GlassShapes.Capsule },
+                effects = GlassEffects.SplitterGrip,
                 onDrawSurface = {
                     val gradient = when (orientation) {
                         DividerOrientation.Vertical -> Brush.verticalGradient(

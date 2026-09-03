@@ -30,7 +30,6 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -65,7 +64,6 @@ import com.kashif_e.backdrop.effects.vibrancy
 import com.kashif_e.backdrop.highlight.Highlight
 import com.kashif_e.backdrop.shadow.InnerShadow
 import com.kashif_e.backdrop.shadow.Shadow
-import com.kyant.capsule.ContinuousCapsule
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
@@ -73,6 +71,8 @@ import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.Elevation
+import org.ide.lti.core.designsystem.theme.GlassEffects
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.MotionSpring
@@ -97,7 +97,7 @@ fun RowScope.GlassBottomTab(
     val glassColors = GlassTheme.colors
     Column(
         modifier
-            .clip(ContinuousCapsule)
+            .clip(GlassShapes.Capsule)
             .clickable(
                 interactionSource = null,
                 indication = null,
@@ -158,8 +158,8 @@ fun GlassBottomTabs(
 
         // Drag-pan offset: dragging the whole bar animates back to 0 on release.
         val offsetAnimation = remember { Animatable(0f) }
-        val panelOffset by remember(density) {
-            derivedStateOf {
+        val panelOffset: () -> Float = remember(density) {
+            {
                 val fraction = (offsetAnimation.value / constraints.maxWidth).fastCoerceIn(-1f, 1f)
                 with(density) {
                     Spacing.ExtraSmall.toPx() * fraction.sign * EaseOut.transform(abs(fraction))
@@ -230,9 +230,9 @@ fun GlassBottomTabs(
                 position = { size, _ ->
                     Offset(
                         if (isLtr) {
-                            (drag.value + 0.5f) * tabWidth + panelOffset
+                            (drag.value + 0.5f) * tabWidth + panelOffset()
                         } else {
-                            size.width - (drag.value + 0.5f) * tabWidth + panelOffset
+                            size.width - (drag.value + 0.5f) * tabWidth + panelOffset()
                         },
                         size.height / 2f,
                     )
@@ -277,7 +277,7 @@ fun GlassBottomTabs(
         // Layer 4 — visible, interactive foreground tab content row.
         Row(
             modifier = Modifier
-                .graphicsLayer { translationX = panelOffset }
+                .graphicsLayer { translationX = panelOffset() }
                 .height(ComponentSize.BottomTabsHeight)
                 .fillMaxWidth()
                 .padding(Spacing.ExtraSmall),
@@ -291,27 +291,20 @@ fun GlassBottomTabs(
 private fun GlassBottomTabBarBackground(
     backdrop: Backdrop,
     containerColor: Color,
-    panelOffset: Float,
+    panelOffset: () -> Float,
     drag: DampedDragAnimation,
     interactiveHighlight: InteractiveHighlight,
 ) {
     val effectsEnabled = GlassTheme.effectsEnabled
     Row(
         Modifier
-            .graphicsLayer { translationX = panelOffset }
+            .graphicsLayer { translationX = panelOffset() }
             .then(
                 if (effectsEnabled) {
                     Modifier.drawBackdrop(
                         backdrop = backdrop,
-                        shape = { ContinuousCapsule },
-                        effects = {
-                            vibrancy()
-                            blur(BackdropBlur.BottomTabs.toPx())
-                            lens(
-                                LensRefraction.BottomTabs.height.toPx(),
-                                LensRefraction.BottomTabs.amount.toPx(),
-                            )
-                        },
+                        shape = { GlassShapes.Capsule },
+                        effects = GlassEffects.BottomTabs,
                         layerBlock = {
                             val p = drag.pressProgress
                             val s = lerp(1f, 1f + Spacing.Medium.toPx() / size.width, p)
@@ -322,14 +315,14 @@ private fun GlassBottomTabBarBackground(
                     )
                 } else {
                     Modifier
-                        .clip(ContinuousCapsule)
+                        .clip(GlassShapes.Capsule)
                         .background(containerColor)
                 },
             )
             .glassOutlineBorder(
                 color = GlassTheme.colors.glassBorder,
                 width = StrokeWidth.Hairline,
-                shape = ContinuousCapsule,
+                shape = GlassShapes.Capsule,
             )
             .then(interactiveHighlight.modifier)
             .height(ComponentSize.BottomTabsHeight)
@@ -345,7 +338,7 @@ private fun GlassBottomTabTintedRow(
     tabsBackdrop: com.kashif_e.backdrop.backdrops.LayerBackdrop,
     containerColor: Color,
     accentColor: Color,
-    panelOffset: Float,
+    panelOffset: () -> Float,
     drag: DampedDragAnimation,
     interactiveHighlight: InteractiveHighlight,
     tabs: @Composable RowScope.() -> Unit,
@@ -361,10 +354,10 @@ private fun GlassBottomTabTintedRow(
                 .clearAndSetSemantics {}
                 .alpha(0f)
                 .layerBackdrop(tabsBackdrop)
-                .graphicsLayer { translationX = panelOffset }
+                .graphicsLayer { translationX = panelOffset() }
                 .drawBackdrop(
                     backdrop = backdrop,
-                    shape = { ContinuousCapsule },
+                    shape = { GlassShapes.Capsule },
                     effects = {
                         val p = drag.pressProgress
                         vibrancy()
@@ -378,13 +371,15 @@ private fun GlassBottomTabTintedRow(
                         val p = drag.pressProgress
                         Highlight.Default.copy(alpha = p)
                     },
-                    onDrawSurface = { drawRect(containerColor) },
+                    onDrawSurface = {
+                        drawRect(accentColor)
+                    },
                 )
-                .then(interactiveHighlight.modifier)
-                .height(ComponentSize.BottomTabItemHeight)
+                .then(interactiveHighlight.gestureModifier)
+                .then(drag.modifier)
+                .height(ComponentSize.BottomTabsHeight)
                 .fillMaxWidth()
-                .padding(horizontal = Spacing.ExtraSmall)
-                .graphicsLayer(colorFilter = ColorFilter.tint(accentColor)),
+                .padding(Spacing.ExtraSmall),
             verticalAlignment = Alignment.CenterVertically,
             content = tabs,
         )
@@ -397,7 +392,7 @@ private fun GlassBottomTabSpotlight(
     tabsBackdrop: com.kashif_e.backdrop.backdrops.LayerBackdrop,
     tabsCount: Int,
     tabWidth: Float,
-    panelOffset: Float,
+    panelOffset: () -> Float,
     isLtr: Boolean,
     drag: DampedDragAnimation,
     interactiveHighlight: InteractiveHighlight,
@@ -408,11 +403,12 @@ private fun GlassBottomTabSpotlight(
         Modifier
             .padding(horizontal = Spacing.ExtraSmall)
             .graphicsLayer {
+                val offset = panelOffset()
                 translationX =
                     if (isLtr) {
-                        drag.value * tabWidth + panelOffset
+                        drag.value * tabWidth + offset
                     } else {
-                        size.width - (drag.value + 1f) * tabWidth + panelOffset
+                        size.width - (drag.value + 1f) * tabWidth + offset
                     }
             }
             .then(interactiveHighlight.gestureModifier)
@@ -421,7 +417,7 @@ private fun GlassBottomTabSpotlight(
                 if (effectsEnabled) {
                     Modifier.drawBackdrop(
                         backdrop = rememberCombinedBackdrop(backdrop, tabsBackdrop),
-                        shape = { ContinuousCapsule },
+                        shape = { GlassShapes.Capsule },
                         effects = {
                             val p = drag.pressProgress
                             lens(
@@ -457,7 +453,7 @@ private fun GlassBottomTabSpotlight(
                     )
                 } else {
                     Modifier
-                        .clip(ContinuousCapsule)
+                        .clip(GlassShapes.Capsule)
                         .background(glassColors.onGlass.copy(alpha = AlphaTokens.Subtle))
                 },
             )

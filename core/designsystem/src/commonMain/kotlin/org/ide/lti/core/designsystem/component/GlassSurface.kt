@@ -30,27 +30,23 @@ import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
 import com.kashif_e.backdrop.highlight.Highlight
 import com.kashif_e.backdrop.shadow.Shadow
-import com.kyant.capsule.ContinuousRoundedRectangle
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.CornerRadius
+import org.ide.lti.core.designsystem.theme.GlassEffects
+import org.ide.lti.core.designsystem.theme.GlassHighlights
+import org.ide.lti.core.designsystem.theme.GlassShadows
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
-import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 
 /**
  * Default glass effect stack ("Standard" look): vibrancy + moderate blur + lens refraction.
- * Matches the kmp-liquid-glass skill's canonical iOS-style liquid stack.
+ * Delegated to canonical [GlassEffects.Standard].
  */
-val StandardGlassEffects: BackdropEffectScope.() -> Unit = {
-    vibrancy()
-    blur(BackdropBlur.Standard.toPx())
-    lens(LensRefraction.Surface.height.toPx(), LensRefraction.Surface.amount.toPx())
-}
+val StandardGlassEffects: BackdropEffectScope.() -> Unit = GlassEffects.Standard
 
 /**
- * Base glass surface component. Thin wrapper over [com.kashif_e.backdrop.drawBackdrop] —
- * callers supply their own tuned [effects] block (see the kmp-liquid-glass skill's
- * per-component effect ordering guidance) instead of a shared preset object.
+ * Base glass surface component. Thin wrapper over [com.kashif_e.backdrop.drawBackdrop].
  *
  * @param modifier Modifier to be applied to the surface
  * @param shape Shape of the glass surface
@@ -59,22 +55,23 @@ val StandardGlassEffects: BackdropEffectScope.() -> Unit = {
  * @param tint Optional tint color (default: from [GlassTheme] colors)
  * @param borderColor Optional border color
  * @param borderWidth Width of the border (default: [StrokeWidth.Standard])
- * @param effects Backdrop effect chain, e.g. `{ vibrancy(); blur(4.dp.toPx()); lens(16.dp.toPx(), 32.dp.toPx()) }`
- * @param highlight Optional highlight decorator (default: [Highlight.Plain])
+ * @param effects Backdrop effect chain (default: [GlassEffects.Standard])
+ * @param highlight Optional highlight decorator (default: [GlassHighlights.Plain])
+ * @param shadow Optional shadow decorator (default: [GlassShadows.None])
  * @param content Content to display inside the glass surface
  */
 @Composable
 fun GlassSurface(
     modifier: Modifier = Modifier,
-    shape: Shape = ContinuousRoundedRectangle(CornerRadius.Medium),
+    shape: Shape = GlassShapes.Medium,
     backdrop: Backdrop? = null,
     surfaceColor: Color = Color.Unspecified,
     tint: Color = Color.Unspecified,
     borderColor: Color = Color.Unspecified,
     borderWidth: Dp = StrokeWidth.Standard,
-    effects: BackdropEffectScope.() -> Unit = StandardGlassEffects,
-    highlight: () -> Highlight? = { Highlight.Plain },
-    shadow: (() -> Shadow?)? = null,
+    effects: BackdropEffectScope.() -> Unit = GlassEffects.Standard,
+    highlight: () -> Highlight? = GlassHighlights.Plain,
+    shadow: (() -> Shadow?)? = GlassShadows.None,
     content: @Composable () -> Unit,
 ) {
     val glassColors = GlassTheme.colors

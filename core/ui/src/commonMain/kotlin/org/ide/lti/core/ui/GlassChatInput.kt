@@ -31,12 +31,12 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.unit.sp
-import com.kyant.capsule.ContinuousCapsule
 import org.ide.lti.core.designsystem.component.GlassIconButton
 import org.ide.lti.core.designsystem.component.GlassSurface
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -62,7 +62,7 @@ fun GlassChatInput(
 
     GlassSurface(
         modifier = modifier.fillMaxWidth(),
-        shape = ContinuousCapsule,
+        shape = GlassShapes.Capsule,
         surfaceColor = glassColors.glassSurfaceElevated,
         borderColor = glassColors.glassBorder,
         borderWidth = StrokeWidth.Hairline,
@@ -82,7 +82,7 @@ fun GlassChatInput(
                 value = inputText,
                 onValueChange = { inputText = it },
                 textStyle = TextStyle(
-                    fontSize = 14.sp,
+                    fontSize = FontSize.BodyMedium,
                     color = if (enabled) glassColors.onGlass else glassColors.onGlassMuted,
                 ),
                 cursorBrush = SolidColor(glassColors.glassAccent),

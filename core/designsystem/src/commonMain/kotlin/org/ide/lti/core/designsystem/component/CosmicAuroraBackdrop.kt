@@ -64,29 +64,29 @@ fun CosmicAuroraBackdrop(
             // 1. Deep space / page base
             drawRect(colorScheme.background)
 
-            // 2. Primary nebula (Top-Center)
+            // 2. Primary nebula (Top-Center) - Vibrant Azure/Cyan Glow
             drawRect(
                 brush = Brush.radialGradient(
                     colors = listOf(
-                        colorScheme.primary.copy(alpha = AlphaTokens.Soft),
-                        colorScheme.primaryContainer.copy(alpha = AlphaTokens.Faded),
+                        LtiSeedColor.copy(alpha = AlphaTokens.Prominent),
+                        colorScheme.primary.copy(alpha = AlphaTokens.Elevated),
                         Color.Transparent,
                     ),
                     center = Offset(size.width * 0.40f, size.height * 0.15f),
-                    radius = size.width * 0.55f,
+                    radius = size.width * 0.60f,
                 ),
             )
 
-            // 3. Secondary aurora glow (Top-Right)
+            // 3. Secondary aurora glow (Top-Right) - Vibrant Electric Blue
             drawRect(
                 brush = Brush.radialGradient(
                     colors = listOf(
+                        BrandColors.LogoGradientEnd.copy(alpha = AlphaTokens.Elevated),
                         colorScheme.secondary.copy(alpha = AlphaTokens.Ambient),
-                        colorScheme.secondaryContainer.copy(alpha = AlphaTokens.Hover),
                         Color.Transparent,
                     ),
                     center = Offset(size.width * 0.85f, size.height * 0.20f),
-                    radius = size.width * 0.50f,
+                    radius = size.width * 0.55f,
                 ),
             )
 

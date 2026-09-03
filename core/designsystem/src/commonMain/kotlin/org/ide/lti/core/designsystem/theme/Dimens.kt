@@ -51,6 +51,7 @@ object CornerRadius {
     val Small: Dp = 6.dp
     val MediumSmall: Dp = 8.dp
     val Medium: Dp = 12.dp
+    val Large: Dp = 20.dp
     val ExtraLarge: Dp = 32.dp
     val Pill: Dp = 50.dp
 
@@ -146,6 +147,9 @@ object ComponentSize {
     val SettingsWindowWidth: Dp = 800.dp
     val SettingsWindowHeight: Dp = 640.dp
     val ScrollEdgeFadeHeight: Dp = 24.dp
+    val CommandPaletteMinWidth: Dp = 200.dp
+    val CommandPaletteMaxWidth: Dp = 320.dp
+    val CommandPaletteHeight: Dp = 28.dp
 }
 
 /**

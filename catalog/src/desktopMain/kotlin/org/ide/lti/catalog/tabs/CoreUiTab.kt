@@ -31,12 +31,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import com.kyant.capsule.ContinuousRoundedRectangle
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.model.ai.MessageRole
+import org.ide.lti.core.designsystem.component.GlassChip
 import org.ide.lti.core.model.filesystem.FileNode
 import org.ide.lti.core.model.filesystem.FileType
 import org.ide.lti.core.ui.GlassChatInput
@@ -44,7 +45,6 @@ import org.ide.lti.core.ui.GlassCodeEditor
 import org.ide.lti.core.ui.GlassFileTree
 import org.ide.lti.core.ui.GlassMessageBubble
 import org.ide.lti.core.ui.GlassScrollableTabRow
-import org.ide.lti.core.ui.GlassSmallChip
 import org.ide.lti.core.ui.TabContent
 import org.ide.lti.core.ui.syntax.SyntaxLanguage
 
@@ -109,7 +109,7 @@ fun main() {
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(ComponentSize.MinPanelHeight * 1.5f)
-                    .clip(ContinuousRoundedRectangle(CornerRadius.Small))
+                    .clip(GlassShapes.Small)
                     .background(GlassTheme.colors.glassSurface)
             ) {
                 GlassCodeEditor(
@@ -130,7 +130,7 @@ fun main() {
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(ComponentSize.MinPanelHeight * 1.8f)
-                    .clip(ContinuousRoundedRectangle(CornerRadius.Small))
+                    .clip(GlassShapes.Small)
                     .background(GlassTheme.colors.glassSurface)
                     .padding(Spacing.Small)
             ) {
@@ -181,17 +181,17 @@ fun main() {
 
         // Section 4: Glass Chips & Tabs
         SectionContainer(
-            title = "4. Action Chips & Scrollable Tab Rows (GlassSmallChip & GlassScrollableTabRow)",
+            title = "4. Action Chips & Scrollable Tab Rows (GlassChip & GlassScrollableTabRow)",
             description = "Compact hover-reactive metadata chips and horizontally scrollable tab rows."
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(Spacing.Small)
             ) {
-                GlassSmallChip(label = "Kotlin 2.1.0")
-                GlassSmallChip(label = "Compose 1.9.0")
-                GlassSmallChip(label = "Skiko GPU")
-                GlassSmallChip(label = "WCAG 2.1 AA")
+                GlassChip(label = "Kotlin 2.1.0")
+                GlassChip(label = "Compose 1.9.0")
+                GlassChip(label = "Skiko GPU")
+                GlassChip(label = "WCAG 2.1 AA")
             }
 
             Spacer(Modifier.height(Spacing.Small))

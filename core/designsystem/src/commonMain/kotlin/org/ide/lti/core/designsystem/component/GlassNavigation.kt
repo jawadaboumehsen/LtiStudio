@@ -27,20 +27,16 @@ import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.vibrancy
 import com.kashif_e.backdrop.highlight.Highlight
 import org.ide.lti.core.designsystem.icon.AppIcons
-import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.Elevation
+import org.ide.lti.core.designsystem.theme.GlassEffects
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /**
- * Docked-bar glass effect stack — same intensity as [GlassPanelEffects] but without `lens()`,
- * which only supports `CornerBasedShape` and throws at runtime against these bars'
- * `RectangleShape` (they're flush against the real screen edge, see [GlassNavigationBar]).
+ * Docked-bar glass effect stack.
+ * Delegated to canonical [GlassEffects.DockedNav].
  */
-private val GlassDockedBarEffects: BackdropEffectScope.() -> Unit = {
-    vibrancy()
-    blur(BackdropBlur.Panel.toPx())
-}
+private val GlassDockedBarEffects: BackdropEffectScope.() -> Unit = GlassEffects.DockedNav
 
 /**
  * Now in Android navigation bar item with icon and label content slots. Wraps Material 3

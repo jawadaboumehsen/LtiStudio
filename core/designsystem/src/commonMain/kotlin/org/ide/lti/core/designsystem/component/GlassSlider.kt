@@ -51,12 +51,12 @@ import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.highlight.Highlight
 import com.kashif_e.backdrop.shadow.InnerShadow
 import com.kashif_e.backdrop.shadow.Shadow
-import com.kyant.capsule.ContinuousCapsule
 import kotlinx.coroutines.flow.collectLatest
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.Elevation
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.utils.DampedDragAnimation
@@ -147,7 +147,7 @@ fun GlassSlider(
         Box(Modifier.layerBackdrop(trackBackdrop)) {
             Box(
                 Modifier
-                    .clip(ContinuousCapsule)
+                    .clip(GlassShapes.Capsule)
                     .background(trackColor)
                     .pointerInput(animationScope) {
                         detectTapGestures { position ->
@@ -171,7 +171,7 @@ fun GlassSlider(
 
             Box(
                 Modifier
-                    .clip(ContinuousCapsule)
+                    .clip(GlassShapes.Capsule)
                     .background(accentColor)
                     .height(ComponentSize.SliderTrackHeight)
                     .layout { measurable, constraints ->
@@ -206,7 +206,7 @@ fun GlassSlider(
                                     }
                                 },
                             ),
-                            shape = { ContinuousCapsule },
+                            shape = { GlassShapes.Capsule },
                             effects = {
                                 val progress = dampedDragAnimation.pressProgress
                                 blur(BackdropBlur.Slider.toPx() * (1f - progress))
@@ -251,7 +251,7 @@ fun GlassSlider(
                         )
                     } else {
                         Modifier
-                            .clip(ContinuousCapsule)
+                            .clip(GlassShapes.Capsule)
                             .background(glassColors.onGlass)
                     },
                 )

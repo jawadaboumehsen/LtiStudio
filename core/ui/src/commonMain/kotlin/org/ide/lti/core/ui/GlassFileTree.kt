@@ -11,8 +11,13 @@
 
 package org.ide.lti.core.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,16 +32,24 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import org.ide.lti.core.designsystem.component.glassOutlineBorder
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
+import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.CornerRadius
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.model.filesystem.FileNode
 import org.ide.lti.core.model.filesystem.FileType
 
@@ -71,12 +84,14 @@ internal fun flattenFileTree(
 }
 
 /**
- * Lti file tree component for displaying hierarchical file structures.
+ * Lti file tree component for displaying hierarchical file structures with
+ * luminous selection and hover micro-interactions.
  *
  * @param rootNode The root node of the file tree
  * @param expandedNodes Set of expanded node paths
  * @param onNodeClick Callback when a node is clicked
  * @param modifier Modifier to be applied to the file tree
+ * @param selectedPath Optional path of the currently selected/active file
  */
 @Composable
 fun GlassFileTree(
@@ -84,6 +99,7 @@ fun GlassFileTree(
     expandedNodes: Set<String>,
     onNodeClick: (FileNode) -> Unit,
     modifier: Modifier = Modifier,
+    selectedPath: String? = null,
 ) {
     val visibleNodes = remember(rootNode, expandedNodes) {
         flattenFileTree(rootNode, expandedNodes)
@@ -91,6 +107,10 @@ fun GlassFileTree(
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
+        contentPadding = PaddingValues(
+            horizontal = Spacing.ExtraSmall,
+            vertical = Spacing.ExtraSmall,
+        ),
     ) {
         items(
             items = visibleNodes,
@@ -100,7 +120,8 @@ fun GlassFileTree(
             GlassFileTreeItem(
                 node = item.node,
                 level = item.level,
-                expandedNodes = expandedNodes,
+                isExpanded = item.node.path in expandedNodes,
+                isSelected = item.node.path == selectedPath,
                 onNodeClick = onNodeClick,
             )
         }
@@ -114,23 +135,57 @@ fun GlassFileTree(
 private fun GlassFileTreeItem(
     node: FileNode,
     level: Int,
-    expandedNodes: Set<String>,
+    isExpanded: Boolean,
     onNodeClick: (FileNode) -> Unit,
     modifier: Modifier = Modifier,
+    isSelected: Boolean = false,
 ) {
     val glassColors = GlassTheme.colors
+    val interactionSource = remember { MutableInteractionSource() }
+    val isHovered by interactionSource.collectIsHoveredAsState()
+
+    val itemShape = GlassShapes.Compact
+
+    val itemBackground = when {
+        isSelected -> glassColors.glassAccent.copy(alpha = AlphaTokens.Hover)
+        isHovered -> glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Subtle)
+        else -> Color.Transparent
+    }
+
+    val itemBorderColor = when {
+        isSelected -> glassColors.glassBorderHighlight.copy(alpha = AlphaTokens.Half)
+        isHovered -> glassColors.glassBorder.copy(alpha = AlphaTokens.Faint)
+        else -> Color.Transparent
+    }
 
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .padding(vertical = Spacing.ExtraExtraSmall)
+            .clip(itemShape)
+            .background(itemBackground)
+            .then(
+                if (isSelected || isHovered) {
+                    Modifier.glassOutlineBorder(
+                        width = StrokeWidth.Hairline,
+                        color = itemBorderColor,
+                        shape = itemShape,
+                    )
+                } else {
+                    Modifier
+                },
+            )
+            .hoverable(interactionSource = interactionSource)
             .clickable(
+                interactionSource = interactionSource,
+                indication = null,
                 role = Role.Button,
                 onClick = { onNodeClick(node) },
             )
             .padding(
                 start = Spacing.Medium * level + Spacing.Small,
-                top = Spacing.ExtraSmall,
-                bottom = Spacing.ExtraSmall,
+                top = Spacing.Compact,
+                bottom = Spacing.Compact,
                 end = Spacing.Small,
             ),
         verticalAlignment = Alignment.CenterVertically,
@@ -139,14 +194,14 @@ private fun GlassFileTreeItem(
         // Expansion indicator for directories
         if (node.type == FileType.DIRECTORY) {
             Icon(
-                painter = if (node.path in expandedNodes) {
+                painter = if (isExpanded) {
                     AppIcons.ChevronDownPainterResource()
                 } else {
                     AppIcons.ChevronRightPainterResource()
                 },
                 contentDescription = null,
                 modifier = Modifier.size(IconSize.Medium),
-                tint = glassColors.onGlassMuted,
+                tint = if (isSelected) glassColors.glassAccent else glassColors.onGlassMuted,
             )
             Spacer(modifier = Modifier.width(Spacing.ExtraSmall))
         } else {
@@ -156,7 +211,7 @@ private fun GlassFileTreeItem(
         // File/folder icon
         LtiFileIcon(
             fileType = node.type,
-            isExpanded = node.path in expandedNodes,
+            isExpanded = isExpanded,
         )
 
         Spacer(modifier = Modifier.width(Spacing.Small))
@@ -165,11 +220,15 @@ private fun GlassFileTreeItem(
         Text(
             text = node.name,
             style = MaterialTheme.typography.bodyMedium,
-            color = if (node.type == FileType.DIRECTORY) glassColors.onGlass else glassColors.onGlassSecondary,
-            fontWeight = if (node.type == FileType.DIRECTORY) {
-                FontWeight.Medium
-            } else {
-                FontWeight.Normal
+            color = when {
+                isSelected -> glassColors.onGlass
+                node.type == FileType.DIRECTORY -> glassColors.onGlass
+                else -> glassColors.onGlassSecondary
+            },
+            fontWeight = when {
+                isSelected -> FontWeight.SemiBold
+                node.type == FileType.DIRECTORY -> FontWeight.Medium
+                else -> FontWeight.Normal
             },
         )
     }

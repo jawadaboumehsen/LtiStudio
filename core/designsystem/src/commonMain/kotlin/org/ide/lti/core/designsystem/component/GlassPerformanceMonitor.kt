@@ -32,14 +32,15 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontFamily
 import com.kashif_e.backdrop.effects.blur
-import com.kyant.capsule.ContinuousCapsule
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.GlassEffects
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.PerformanceMonitorColors
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import kotlin.math.roundToInt
 
@@ -263,8 +264,7 @@ private fun PerformanceOverlay(
         modifier = modifier.width(ComponentSize.PerformanceMonitorWidth),
         contentPadding = Spacing.SmallMedium,
         borderColor = GlassTheme.colors.glassBorder,
-        // Lean stack (blur only) — this overlay redraws every frame, so keep it cheap.
-        effects = { blur(BackdropBlur.Subtle.toPx()) },
+        effects = GlassEffects.PerformanceMonitor,
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
             // Title
@@ -342,7 +342,7 @@ private fun PerformanceOverlay(
                     .height(ComponentSize.ProgressBarHeight)
                     .background(
                         color = metrics.performanceColor,
-                        shape = ContinuousCapsule,
+                        shape = GlassShapes.Capsule,
                     ),
             )
         }
@@ -367,7 +367,7 @@ private fun MetricRow(
         Text(
             value,
             style = MaterialTheme.typography.bodySmall.copy(
-                fontFamily = FontFamily.Monospace,
+                fontFamily = codeFontFamily(),
             ),
             color = valueColor,
         )

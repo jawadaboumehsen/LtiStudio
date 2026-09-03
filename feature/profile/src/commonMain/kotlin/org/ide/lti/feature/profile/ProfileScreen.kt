@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -31,16 +30,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import com.kyant.capsule.ContinuousCapsule
-import com.kyant.capsule.ContinuousRoundedRectangle
 import org.ide.lti.core.designsystem.component.GlassCard
+import org.ide.lti.core.designsystem.component.GlassHorizontalDivider
 import org.ide.lti.core.designsystem.component.GlassPrimaryButton
+import org.ide.lti.core.designsystem.component.GlassValueTile
 import org.ide.lti.core.designsystem.component.glassOutlineBorder
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -82,12 +82,12 @@ fun ProfileScreenContent(
                 Box(
                     modifier = Modifier
                         .size(IconSize.Avatar)
-                        .clip(ContinuousCapsule)
+                        .clip(GlassShapes.Capsule)
                         .background(GlassTheme.colors.glassSurfaceElevated.copy(alpha = AlphaTokens.Faint))
                         .glassOutlineBorder(
                             color = GlassTheme.colors.glassBorderHighlight.copy(alpha = AlphaTokens.Border),
                             width = StrokeWidth.Hairline,
-                            shape = ContinuousCapsule,
+                            shape = GlassShapes.Capsule,
                         ),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -120,41 +120,35 @@ fun ProfileScreenContent(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(ContinuousRoundedRectangle(CornerRadius.Medium))
+                        .clip(GlassShapes.Medium)
                         .background(GlassTheme.colors.glassSurfaceElevated.copy(alpha = AlphaTokens.Faint))
                         .glassOutlineBorder(
                             color = GlassTheme.colors.glassBorder,
                             width = StrokeWidth.Hairline,
-                            shape = ContinuousRoundedRectangle(CornerRadius.Medium),
+                            shape = GlassShapes.Medium,
                         )
                         .padding(Spacing.CardPadding),
                     verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
                 ) {
-                    ProfileInfoRow(
+                    GlassValueTile(
                         icon = AppIcons.User,
-                        label = "Username",
+                        title = "Username",
                         value = "developer",
                     )
 
-                    HorizontalDivider(
-                        color = GlassTheme.colors.glassBorder.copy(alpha = AlphaTokens.Faint),
-                        thickness = StrokeWidth.Hairline,
-                    )
+                    GlassHorizontalDivider()
 
-                    ProfileInfoRow(
+                    GlassValueTile(
                         icon = AppIcons.Contact,
-                        label = "Email",
+                        title = "Email",
                         value = "developer@lti.com",
                     )
 
-                    HorizontalDivider(
-                        color = GlassTheme.colors.glassBorder.copy(alpha = AlphaTokens.Faint),
-                        thickness = StrokeWidth.Hairline,
-                    )
+                    GlassHorizontalDivider()
 
-                    ProfileInfoRow(
+                    GlassValueTile(
                         icon = AppIcons.Locked,
-                        label = "Role",
+                        title = "Role",
                         value = "Administrator",
                     )
                 }
@@ -182,58 +176,3 @@ fun ProfileScreenContent(
     }
 }
 
-@Composable
-private fun ProfileInfoRow(
-    icon: AppIcon,
-    label: String,
-    value: String,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        when (icon) {
-            is AppIcon.Vector -> Icon(
-                imageVector = icon.imageVector,
-                contentDescription = null,
-                tint = GlassTheme.colors.glassAccent,
-                modifier = Modifier.size(IconSize.Medium),
-            )
-            is AppIcon.Painted -> Icon(
-                painter = icon.painter(),
-                contentDescription = null,
-                tint = GlassTheme.colors.glassAccent,
-                modifier = Modifier.size(IconSize.Medium),
-            )
-        }
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall,
-                color = GlassTheme.colors.onGlassSecondary,
-            )
-            Text(
-                text = value,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium,
-                color = GlassTheme.colors.onGlass,
-            )
-        }
-    }
-}
-
-@Composable
-private fun ProfileInfoRow(
-    icon: ImageVector,
-    label: String,
-    value: String,
-    modifier: Modifier = Modifier,
-) = ProfileInfoRow(
-    icon = AppIcon.Vector(icon),
-    label = label,
-    value = value,
-    modifier = modifier,
-)

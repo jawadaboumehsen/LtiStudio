@@ -36,7 +36,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import com.kyant.capsule.ContinuousRoundedRectangle
 import org.ide.lti.core.designsystem.component.GlassButton
 import org.ide.lti.core.designsystem.component.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.GlassIcon
@@ -46,6 +45,7 @@ import org.ide.lti.core.designsystem.component.GlassPrimaryButton
 import org.ide.lti.core.designsystem.component.GlassTextButton
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.CornerRadius
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -256,7 +256,7 @@ fun SectionContainer(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(ContinuousRoundedRectangle(CornerRadius.Card))
+            .clip(GlassShapes.Card)
             .background(GlassTheme.colors.glassSurfaceElevated)
             .padding(Spacing.Large),
         verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium)

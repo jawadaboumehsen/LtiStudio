@@ -21,23 +21,21 @@ import com.kashif_e.backdrop.BackdropEffectScope
 import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
+import com.kashif_e.backdrop.highlight.Highlight
 import com.kashif_e.backdrop.shadow.Shadow
-import com.kyant.capsule.ContinuousRoundedRectangle
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.CornerRadius
-import org.ide.lti.core.designsystem.theme.LensRefraction
+import org.ide.lti.core.designsystem.theme.GlassEffects
+import org.ide.lti.core.designsystem.theme.GlassHighlights
+import org.ide.lti.core.designsystem.theme.GlassShadows
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.Spacing
 
 /**
- * Card glass effect stack, adapted from the kmp-liquid-glass skill's "Glass card" recipe
- * (vibrancy + lens refraction): a blur pass is added and the lens amount reduced from the
- * doc's defaults, tuned for legibility over the denser IDE content this app's cards host.
+ * Card glass effect stack.
+ * Delegated to canonical [GlassEffects.Card].
  */
-val GlassCardEffects: BackdropEffectScope.() -> Unit = {
-    vibrancy()
-    blur(BackdropBlur.Card.toPx())
-    lens(LensRefraction.Card.height.toPx(), LensRefraction.Card.amount.toPx())
-}
+val GlassCardEffects: BackdropEffectScope.() -> Unit = GlassEffects.Card
 
 /**
  * Glass card component with rounded corners and padding.
@@ -51,35 +49,28 @@ val GlassCardEffects: BackdropEffectScope.() -> Unit = {
  *
  * @param modifier Modifier to be applied to the card
  * @param shape Shape of the card (default: [ContinuousRoundedRectangle] with 16dp radius)
- * @param effects Backdrop effect chain (default: [GlassCardEffects])
+ * @param effects Backdrop effect chain (default: [GlassEffects.Card])
  * @param backdrop Backdrop instance to use (default: from GlassTheme or create new)
  * @param surfaceColor Optional surface color overlay
  * @param tint Optional tint color
  * @param borderColor Optional border color
  * @param contentPadding Padding inside the card (default: 16dp)
+ * @param highlight Optional highlight decorator (default: [GlassHighlights.Default])
+ * @param shadow Optional shadow decorator (default: [GlassShadows.None])
  * @param content Content to display inside the card
- *
- * Example:
- * ```kotlin
- * GlassCard {
- *     Column {
- *         Text("Title", style = MaterialTheme.typography.titleLarge)
- *         Text("Description")
- *     }
- * }
- * ```
  */
 @Composable
 fun GlassCard(
     modifier: Modifier = Modifier,
-    shape: Shape = ContinuousRoundedRectangle(CornerRadius.Card),
-    effects: BackdropEffectScope.() -> Unit = GlassCardEffects,
+    shape: Shape = GlassShapes.Card,
+    effects: BackdropEffectScope.() -> Unit = GlassEffects.Card,
     backdrop: Backdrop? = null,
     surfaceColor: Color = Color.Unspecified,
     tint: Color = Color.Unspecified,
     borderColor: Color = Color.Unspecified,
     contentPadding: Dp = Spacing.Medium,
-    shadow: (() -> Shadow?)? = null,
+    highlight: () -> Highlight? = GlassHighlights.Default,
+    shadow: (() -> Shadow?)? = GlassShadows.None,
     content: @Composable () -> Unit,
 ) {
     GlassSurface(
@@ -90,6 +81,7 @@ fun GlassCard(
         surfaceColor = surfaceColor,
         tint = tint,
         borderColor = borderColor,
+        highlight = highlight,
         shadow = shadow,
     ) {
         Box(modifier = Modifier.padding(contentPadding)) {

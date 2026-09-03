@@ -15,7 +15,6 @@ plugins {
 
 kotlin {
     jvm("desktop") {
-        withJava()
         compilerOptions {
             freeCompilerArgs.add("-Xcontext-receivers")
             freeCompilerArgs.add("-Xskip-metadata-version-check")

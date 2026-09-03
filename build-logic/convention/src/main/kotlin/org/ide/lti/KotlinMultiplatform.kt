@@ -18,9 +18,8 @@ internal fun Project.configureKotlinMultiplatform() {
 
         jvmToolchain(21)
 
-        jvm("desktop") {
-            withJava()
-        }
+        jvm("desktop")
+
         sourceSets.all {
             languageSettings {
                 optIn("kotlin.ExperimentalStdlibApi")

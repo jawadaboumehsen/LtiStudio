@@ -13,6 +13,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -64,11 +65,13 @@ fun GlassScrollableTabRow(
 
     HorizontalPager(
         state = pagerState,
+        key = { page -> if (page in tabContents.indices) tabContents[page].tabName else page },
     ) {
         tabContents[it].content.invoke()
     }
 }
 
+@Immutable
 data class TabContent(
     val tabName: String,
     val content: @Composable () -> Unit,
