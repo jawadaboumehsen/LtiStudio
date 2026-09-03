@@ -43,23 +43,26 @@ import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.backdrops.LayerBackdrop
 import com.kashif_e.backdrop.backdrops.layerBackdrop
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
-import org.ide.lti.core.designsystem.component.GlassActionCard
-import org.ide.lti.core.designsystem.component.GlassButton
-import org.ide.lti.core.designsystem.component.GlassButtonVariant
-import org.ide.lti.core.designsystem.component.GlassCard
-import org.ide.lti.core.designsystem.component.GlassChip
-import org.ide.lti.core.designsystem.component.GlassEmptyState
-import org.ide.lti.core.designsystem.component.GlassEmptyStateOrientation
-import org.ide.lti.core.designsystem.component.GlassHorizontalDivider
-import org.ide.lti.core.designsystem.component.GlassItemCard
-import org.ide.lti.core.designsystem.component.GlassPanel
-import org.ide.lti.core.designsystem.component.GlassSecondaryButton
-import org.ide.lti.core.designsystem.component.GlassSidebarItem
-import org.ide.lti.core.designsystem.component.GlassStatusBar
-import org.ide.lti.core.designsystem.component.GlassTopBar
-import org.ide.lti.core.designsystem.component.GlassVerticalDivider
-import org.ide.lti.core.designsystem.component.LineEnding
-import org.ide.lti.core.designsystem.component.glassOutlineBorder
+import org.ide.lti.core.designsystem.component.actions.GlassActionCard
+import org.ide.lti.core.designsystem.component.actions.GlassButton
+import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
+import org.ide.lti.core.designsystem.component.display.GlassCard
+import org.ide.lti.core.designsystem.component.display.GlassChip
+import org.ide.lti.core.designsystem.component.display.GlassEmptyState
+import org.ide.lti.core.designsystem.component.display.GlassEmptyStateOrientation
+import org.ide.lti.core.designsystem.component.display.GlassHorizontalDivider
+import org.ide.lti.core.designsystem.component.actions.GlassItemCard
+import org.ide.lti.core.designsystem.component.display.GlassPanel
+import org.ide.lti.core.designsystem.component.actions.GlassIconButton
+import org.ide.lti.core.designsystem.component.actions.GlassSecondaryButton
+import org.ide.lti.core.designsystem.component.actions.WindowControlActions
+import org.ide.lti.core.designsystem.component.navigation.GlassSidebarItem
+import org.ide.lti.core.designsystem.component.layout.GlassTopBar
+import org.ide.lti.core.designsystem.component.layout.TopBarNavigation
+import org.ide.lti.core.designsystem.component.display.GlassVerticalDivider
+import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
+import org.ide.lti.core.model.filesystem.LineEnding
+import org.ide.lti.core.ui.WorkspaceStatusBar
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
@@ -127,17 +130,32 @@ fun SetupScreenContent(
         Column(modifier = Modifier.fillMaxSize()) {
             // Standard Unified Liquid Glass Top Bar (identical to workspace screen)
             GlassTopBar(
-                title = "LtiRom",
-                workspaceName = "Setup",
-                showMenuButton = false,
-                showPanelToggles = false,
-                showCommandPalette = false,
-                onSettingsClick = onOpenSettings,
-                onWindowMinimize = onMinimize,
-                onWindowMaximize = onMaximize,
-                onWindowClose = onClose,
-                onWindowDrag = onDrag,
-                isMaximized = isMaximized,
+                navigation = TopBarNavigation.Brand(
+                    title = "LtiRom",
+                    workspaceName = "Setup",
+                ),
+                search = null,
+                panelToggles = null,
+                actions = {
+                    GlassIconButton(
+                        onClick = onOpenSettings,
+                        size = ComponentSize.TopBarButtonSize,
+                        backdrop = resolvedBackdrop,
+                    ) {
+                        Icon(
+                            painter = AppIcons.SettingsPainterResource(),
+                            contentDescription = "Settings",
+                            modifier = Modifier.size(IconSize.Medium),
+                        )
+                    }
+                },
+                windowControls = WindowControlActions(
+                    onMinimize = onMinimize ?: {},
+                    onMaximize = onMaximize ?: {},
+                    onClose = onClose ?: {},
+                    onDragWindow = onDrag ?: {},
+                    isMaximized = { isMaximized ?: false },
+                ),
                 backdrop = resolvedBackdrop,
                 drawOwnChrome = true,
             )
@@ -314,7 +332,7 @@ fun SetupScreenContent(
         }
 
         // Bottom Unified Liquid Glass Status Bar
-        GlassStatusBar(
+        WorkspaceStatusBar(
             filePath = if (selectedTab == "workspaces") "Workspaces" else "Connections",
             branchName = "main",
             encoding = "UTF-8",

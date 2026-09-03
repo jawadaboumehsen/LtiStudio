@@ -27,16 +27,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import org.ide.lti.core.designsystem.component.GlassLayout
-import org.ide.lti.core.designsystem.component.GlassPanel
-import org.ide.lti.core.designsystem.component.GlassPanelContainer
-import org.ide.lti.core.designsystem.component.GlassPanelHeader
-import org.ide.lti.core.designsystem.component.GlassPrimaryButton
-import org.ide.lti.core.designsystem.component.GlassStatusBar
-import org.ide.lti.core.designsystem.component.GlassTextButton
-import org.ide.lti.core.designsystem.component.GlassTopBar
-import org.ide.lti.core.designsystem.component.LineEnding
-import org.ide.lti.core.designsystem.component.rememberLtiLayoutState
+import org.ide.lti.core.designsystem.component.layout.GlassLayout
+import org.ide.lti.core.designsystem.component.display.GlassPanel
+import org.ide.lti.core.designsystem.component.display.GlassPanelContainer
+import org.ide.lti.core.designsystem.component.display.GlassPanelHeader
+import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
+import org.ide.lti.core.designsystem.component.actions.GlassTextButton
+import org.ide.lti.core.designsystem.component.layout.GlassTopBar
+import org.ide.lti.core.designsystem.component.layout.TopBarNavigation
+import org.ide.lti.core.designsystem.component.layout.rememberLtiLayoutState
+import org.ide.lti.core.model.filesystem.LineEnding
+import org.ide.lti.core.ui.WorkspaceStatusBar
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius
@@ -90,8 +91,10 @@ fun LayoutTab() {
                     modifier = Modifier.fillMaxSize(),
                     topBar = {
                         GlassTopBar(
-                            title = "LtiRom Catalog Studio",
-                            workspaceName = "DesignSystem",
+                            navigation = TopBarNavigation.Brand(
+                                title = "LtiRom Catalog Studio",
+                                workspaceName = "DesignSystem",
+                            ),
                             drawOwnChrome = false,
                         )
                     },
@@ -146,7 +149,7 @@ fun LayoutTab() {
                         }
                     },
                     statusBar = {
-                        GlassStatusBar(
+                        WorkspaceStatusBar(
                             branchName = "feat/catalog-app",
                             cursorPosition = Pair(42, 18),
                             encoding = "UTF-8",

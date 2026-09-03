@@ -41,21 +41,21 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.runtime.mutableIntStateOf
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.backdrops.LayerBackdrop
-import com.kashif_e.backdrop.backdrops.layerBackdrop
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import org.ide.lti.core.data.settings.AppSettingsState
-import org.ide.lti.core.designsystem.component.GlassCard
-import org.ide.lti.core.designsystem.component.GlassChip
-import org.ide.lti.core.designsystem.component.GlassHorizontalDivider
-import org.ide.lti.core.designsystem.component.GlassIconButton
-import org.ide.lti.core.designsystem.component.GlassStatusBar
-import org.ide.lti.core.designsystem.component.GlassToggle
-import org.ide.lti.core.designsystem.component.GlassToggleTile
-import org.ide.lti.core.designsystem.component.GlassTopBar
-import org.ide.lti.core.designsystem.component.GlassValueTile
-import org.ide.lti.core.designsystem.component.LineEnding
+import org.ide.lti.core.designsystem.component.display.GlassCard
+import org.ide.lti.core.designsystem.component.display.GlassChip
+import org.ide.lti.core.designsystem.component.display.GlassHorizontalDivider
+import org.ide.lti.core.designsystem.component.actions.GlassIconButton
+import org.ide.lti.core.designsystem.component.inputs.GlassToggle
+import org.ide.lti.core.designsystem.component.display.GlassToggleTile
+import org.ide.lti.core.designsystem.component.layout.GlassTopBar
+import org.ide.lti.core.designsystem.component.layout.TopBarNavigation
+import org.ide.lti.core.designsystem.component.display.GlassValueTile
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
+import org.ide.lti.core.designsystem.theme.config.AppTheme
+import org.ide.lti.core.designsystem.theme.ThemeColors
 import org.ide.lti.core.designsystem.icon.ideGeneralLanguage
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
@@ -109,13 +109,11 @@ fun SettingsScreenContent(
         Column(modifier = Modifier.fillMaxSize()) {
             if (showHeader) {
                 GlassTopBar(
-                    title = "LtiRom",
-                    workspaceName = "Settings",
-                    onBackClick = onBackClick,
-                    showMenuButton = false,
-                    showPanelToggles = false,
-                    showCommandPalette = false,
-                    showSearchButton = false,
+                    navigation = TopBarNavigation.Back(
+                        onClick = onBackClick,
+                    ),
+                    search = null,
+                    panelToggles = null,
                     backdrop = resolvedBackdrop,
                     drawOwnChrome = true,
                 )
@@ -204,13 +202,41 @@ fun SettingsScreenContent(
                                         color = GlassTheme.colors.onGlass,
                                     )
 
-                                    GlassToggleTile(
-                                        icon = AppIcons.Sparkles,
-                                        title = "Dark Mode",
-                                        description = "AMOLED true-black surfaces with vibrant light-blue accents",
-                                        checked = appSettingsState.isDarkTheme,
-                                        onCheckedChange = { appSettingsState.isDarkTheme = it },
-                                    )
+                                    // Theme Selection Section
+                                    Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
+                                        Text(
+                                            text = "Theme",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Medium,
+                                            color = GlassTheme.colors.onGlass,
+                                        )
+                                        Text(
+                                            text = "Choose between signature Blue, layered Dark (Black, Dark Gray, Gray), or Light",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = GlassTheme.colors.onGlassSecondary,
+                                        )
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                        ) {
+                                            AppTheme.allThemes.forEach { theme ->
+                                                GlassChip(
+                                                    label = theme.displayName,
+                                                    selected = appSettingsState.theme == theme.id,
+                                                    onClick = { appSettingsState.theme = theme.id },
+                                                    leadingIcon = {
+                                                        Box(
+                                                            modifier = Modifier
+                                                                .size(IconSize.Indicator)
+                                                                .clip(GlassShapes.Capsule)
+                                                                .background(theme.indicatorColor),
+                                                        )
+                                                    },
+                                                )
+                                            }
+                                        }
+                                    }
 
                                     GlassHorizontalDivider()
 
@@ -241,14 +267,7 @@ fun SettingsScreenContent(
                                         value = "English (US)",
                                     )
 
-                                    GlassHorizontalDivider()
 
-                                    GlassValueTile(
-                                        icon = AppIcons.Sparkles,
-                                        title = "Accent Palette",
-                                        description = "Primary liquid glass highlight tone",
-                                        value = "Light Blue (#4FA8FF)",
-                                    )
                                 }
                             }
                         }
@@ -422,18 +441,6 @@ fun SettingsScreenContent(
                     }
                 }
             }
-
-            // Bottom Unified Liquid Glass Status Bar
-            GlassStatusBar(
-                filePath = "Settings",
-                branchName = "preferences",
-                encoding = "UTF-8",
-                lineEnding = LineEnding.LF,
-                fileType = "Configuration",
-                cursorPosition = null,
-                drawOwnChrome = true,
-                backdrop = resolvedBackdrop,
-            )
         }
     }
 }

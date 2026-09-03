@@ -15,13 +15,49 @@ import androidx.compose.runtime.setValue
 
 /**
  * Session-scoped in-memory state holder for application-wide settings.
+ *
+ * Stores theme preferences using decoupled identifier strings
+ * to preserve strict architectural modularization between data and design systems.
  */
 class AppSettingsState(
-    initialDarkTheme: Boolean = true,
+    initialTheme: String = THEME_BLUE,
     initialEffectsEnabled: Boolean = true,
     initialReducedMotion: Boolean = false,
 ) {
-    var isDarkTheme: Boolean by mutableStateOf(initialDarkTheme)
+    var theme: String by mutableStateOf(initialTheme)
     var effectsEnabled: Boolean by mutableStateOf(initialEffectsEnabled)
     var reducedMotion: Boolean by mutableStateOf(initialReducedMotion)
+
+    /**
+     * Backward-compatible constructor accepting boolean darkTheme.
+     */
+    constructor(
+        initialDarkTheme: Boolean,
+        initialEffectsEnabled: Boolean = true,
+        initialReducedMotion: Boolean = false,
+    ) : this(
+        initialTheme = if (initialDarkTheme) THEME_BLUE else THEME_LIGHT,
+        initialEffectsEnabled = initialEffectsEnabled,
+        initialReducedMotion = initialReducedMotion,
+    )
+
+    /**
+     * Backward-compatible property accessor for boolean dark mode.
+     */
+    var isDarkTheme: Boolean
+        get() = theme != THEME_LIGHT
+        set(value) {
+            theme = if (value) {
+                if (theme == THEME_LIGHT) THEME_BLUE else theme
+            } else {
+                THEME_LIGHT
+            }
+        }
+
+    companion object {
+        const val THEME_BLUE = "blue"
+        const val THEME_DARK = "dark"
+        const val THEME_LIGHT = "light"
+    }
 }
+

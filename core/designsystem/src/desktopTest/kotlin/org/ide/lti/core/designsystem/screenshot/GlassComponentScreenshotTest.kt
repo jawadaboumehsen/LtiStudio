@@ -38,28 +38,32 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
-import org.ide.lti.core.designsystem.component.GlassButton
-import org.ide.lti.core.designsystem.component.GlassButtonVariant
-import org.ide.lti.core.designsystem.component.GlassCard
-import org.ide.lti.core.designsystem.component.GlassLayout
-import org.ide.lti.core.designsystem.component.GlassPanelContainer
-import org.ide.lti.core.designsystem.component.GlassPanelHeader
-import org.ide.lti.core.designsystem.component.GlassPrimaryButton
-import org.ide.lti.core.designsystem.component.GlassSidePanelTab
-import org.ide.lti.core.designsystem.component.GlassSidePanelTabs
-import org.ide.lti.core.designsystem.component.GlassSlider
-import org.ide.lti.core.designsystem.component.GlassSurface
-import org.ide.lti.core.designsystem.component.GlassTextButton
-import org.ide.lti.core.designsystem.component.GlassTextField
-import org.ide.lti.core.designsystem.component.GlassToggle
-import org.ide.lti.core.designsystem.component.GlassTopBar
-import org.ide.lti.core.designsystem.component.SidePanelRailPosition
-import org.ide.lti.core.designsystem.component.WorkspacePanel
-import org.ide.lti.core.designsystem.component.rememberLtiLayoutState
+import org.ide.lti.core.designsystem.component.actions.GlassButton
+import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
+import org.ide.lti.core.designsystem.component.display.GlassCard
+import org.ide.lti.core.designsystem.component.layout.GlassLayout
+import org.ide.lti.core.designsystem.component.display.GlassPanelContainer
+import org.ide.lti.core.designsystem.component.display.GlassPanelHeader
+import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
+import org.ide.lti.core.designsystem.component.navigation.GlassSidePanelTab
+import org.ide.lti.core.designsystem.component.navigation.GlassSidePanelTabs
+import org.ide.lti.core.designsystem.component.inputs.GlassSlider
+import org.ide.lti.core.designsystem.component.primitives.GlassSurface
+import org.ide.lti.core.designsystem.component.actions.GlassTextButton
+import org.ide.lti.core.designsystem.component.inputs.GlassTextField
+import org.ide.lti.core.designsystem.component.inputs.TextFieldLeadingSlot
+import org.ide.lti.core.designsystem.component.inputs.GlassToggle
+import org.ide.lti.core.designsystem.component.layout.GlassTopBar
+import org.ide.lti.core.designsystem.component.layout.TopBarNavigation
+import org.ide.lti.core.designsystem.component.layout.TopBarPanelToggles
+import org.ide.lti.core.designsystem.component.navigation.SidePanelRailPosition
+import org.ide.lti.core.designsystem.component.layout.LayoutPanel
+import org.ide.lti.core.designsystem.component.layout.rememberLtiLayoutState
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ColorContrast
 import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.BlueGlassColorScheme
 import org.ide.lti.core.designsystem.theme.DarkGlassColorScheme
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LtiTheme
@@ -274,7 +278,7 @@ class GlassComponentScreenshotTest {
                             onValueChange = {},
                             label = "Branch Name",
                             placeholder = "Enter git branch",
-                            leadingIcon = {
+                            leading = TextFieldLeadingSlot.Custom {
                                 Icon(
                                     painter = AppIcons.SearchPainterResource(),
                                     contentDescription = null,
@@ -399,7 +403,7 @@ class GlassComponentScreenshotTest {
     fun testGlassColorSchemeSwatches() = runDesktopComposeUiTest(width = 480, height = 240) {
         setContent {
             LtiTheme(darkTheme = true) {
-                val scheme = DarkGlassColorScheme
+                val scheme = BlueGlassColorScheme
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -443,13 +447,17 @@ class GlassComponentScreenshotTest {
                     contentAlignment = Alignment.Center,
                 ) {
                     GlassTopBar(
-                        title = "LtiRom",
-                        workspaceName = "Workspace",
-                        isLeftPanelVisible = true,
-                        isMiddleDownPanelVisible = true,
-                        isRightPanelVisible = false,
-                        backdrop = backdrop,
-                    )
+                       navigation = TopBarNavigation.Brand(
+                           title = "LtiRom",
+                           workspaceName = "Workspace",
+                       ),
+                       panelToggles = TopBarPanelToggles(
+                           isLeftVisible = true,
+                           isBottomVisible = true,
+                           isRightVisible = false,
+                       ),
+                       backdrop = backdrop,
+                   )
                 }
             }
         }
@@ -680,7 +688,7 @@ class GlassComponentScreenshotTest {
         setContent {
             LtiTheme(darkTheme = true) {
                 val layoutState = rememberLtiLayoutState().apply {
-                    focusedPanel = WorkspacePanel.Editor
+                    focusedPanel = LayoutPanel.Center
                 }
                 Box(modifier = Modifier.fillMaxSize()) {
                     GlassLayout(

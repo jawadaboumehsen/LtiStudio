@@ -168,4 +168,40 @@ class AppSettingsStateWiringTest {
         assertEquals(false, settingsState.isDarkTheme)
         assertEquals(false, settingsState.effectsEnabled)
     }
+
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun testMultiThemeSwitchingChangesRendering() = runDesktopComposeUiTest(width = 800, height = 600) {
+        val settingsState = AppSettingsState(
+            initialTheme = AppSettingsState.THEME_BLUE,
+        )
+
+        setContent {
+            LtiSharedApp(
+                appSettingsState = settingsState,
+            )
+        }
+
+        waitForIdle()
+        val imageBlue = onRoot().captureToImage()
+
+        // Switch to layered Dark theme (Black base, Black-Gray surfaces, Gray elevated)
+        settingsState.theme = AppSettingsState.THEME_DARK
+        waitForIdle()
+        val imageDark = onRoot().captureToImage()
+
+        // Switch to Light theme
+        settingsState.theme = AppSettingsState.THEME_LIGHT
+        waitForIdle()
+        val imageLight = onRoot().captureToImage()
+
+        val (diffBlueVsDark, pctBlueVsDark) = computePixelDiffPercent(imageBlue, imageDark)
+        val (diffDarkVsLight, pctDarkVsLight) = computePixelDiffPercent(imageDark, imageLight)
+
+        println("[VERIFICATION] Blue vs Dark diff: $diffBlueVsDark pixels ($pctBlueVsDark%)")
+        println("[VERIFICATION] Dark vs Light diff: $diffDarkVsLight pixels ($pctDarkVsLight%)")
+
+        assertTrue(pctBlueVsDark > 0.0, "Blue and Dark themes must render differently")
+        assertTrue(pctDarkVsLight > 0.0, "Dark and Light themes must render differently")
+    }
 }

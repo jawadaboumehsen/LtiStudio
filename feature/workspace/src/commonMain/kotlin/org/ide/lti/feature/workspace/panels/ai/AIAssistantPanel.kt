@@ -39,13 +39,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
-import org.ide.lti.core.designsystem.component.GlassChip
-import org.ide.lti.core.designsystem.component.GlassHorizontalDivider
-import org.ide.lti.core.designsystem.component.GlassPanelContainer
-import org.ide.lti.core.designsystem.component.GlassPanelHeader
-import org.ide.lti.core.designsystem.component.GlassPanelHeaderAction
-import org.ide.lti.core.designsystem.component.GlassPrimaryButton
-import org.ide.lti.core.designsystem.component.glassOutlineBorder
+import org.ide.lti.core.designsystem.component.display.GlassChip
+import org.ide.lti.core.designsystem.component.display.GlassHorizontalDivider
+import org.ide.lti.core.designsystem.component.display.GlassPanelContainer
+import org.ide.lti.core.designsystem.component.display.GlassPanelHeader
+import org.ide.lti.core.designsystem.component.display.GlassPanelHeaderAction
+import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
+import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
@@ -80,7 +80,7 @@ fun AIAssistantPanel(
                 },
             )
         },
-        scrollEdgeFade = true,
+        scrollEdgeFade = false,
     ) {
         when (val state = uiState) {
             is AIAssistantUiState.Empty -> {
@@ -146,9 +146,9 @@ private fun EmptyAIChatView(
                     modifier = Modifier
                         .size(ComponentSize.EmptyStateBadgeSize)
                         .clip(GlassShapes.Capsule)
-                        .background(glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Hover))
+                        .background(glassColors.glassSurfaceElevated)
                         .glassOutlineBorder(
-                            color = glassColors.glassBorder.copy(alpha = AlphaTokens.Faint),
+                            color = glassColors.glassBorderHighlight,
                             width = StrokeWidth.Hairline,
                             shape = GlassShapes.Capsule,
                         ),

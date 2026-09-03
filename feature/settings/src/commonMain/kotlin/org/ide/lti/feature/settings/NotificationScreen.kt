@@ -36,12 +36,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
-import org.ide.lti.core.designsystem.component.GlassCard
-import org.ide.lti.core.designsystem.component.GlassEmptyState
-import org.ide.lti.core.designsystem.component.GlassItemCard
-import org.ide.lti.core.designsystem.component.GlassTopBar
-import org.ide.lti.core.designsystem.component.glassOutlineBorder
-import org.ide.lti.core.designsystem.component.GlassTextButton
+import org.ide.lti.core.designsystem.component.display.GlassCard
+import org.ide.lti.core.designsystem.component.display.GlassEmptyState
+import org.ide.lti.core.designsystem.component.actions.GlassItemCard
+import org.ide.lti.core.designsystem.component.layout.GlassTopBar
+import org.ide.lti.core.designsystem.component.layout.TopBarNavigation
+import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
+import org.ide.lti.core.designsystem.component.actions.GlassTextButton
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.ComponentSize
@@ -72,12 +73,11 @@ fun NotificationScreenContent(
 
     Column(modifier = modifier.fillMaxSize()) {
         GlassTopBar(
-            title = "LtiRom",
-            workspaceName = "Notifications",
-            onBackClick = onBackClick,
-            showMenuButton = false,
-            showPanelToggles = false,
-            showCommandPalette = false,
+            navigation = TopBarNavigation.Back(
+                onClick = onBackClick,
+            ),
+            search = null,
+            panelToggles = null,
             drawOwnChrome = true,
         )
 

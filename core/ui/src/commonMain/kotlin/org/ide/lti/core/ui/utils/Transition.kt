@@ -18,6 +18,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.navigation.NavBackStackEntry
+import org.ide.lti.core.designsystem.theme.MotionDuration
 import kotlin.jvm.JvmSuppressWildcards
 
 typealias EnterTransitionProvider =
@@ -36,19 +37,19 @@ typealias NonNullExitTransitionProvider =
  * The default transition time (in milliseconds) for all fade transitions in the
  * [TransitionProviders].
  */
-const val DEFAULT_FADE_TRANSITION_TIME_MS: Int = 300
+const val DEFAULT_FADE_TRANSITION_TIME_MS: Int = MotionDuration.Standard
 
 /**
  * The default transition time (in milliseconds) for all slide transitions in the
  * [TransitionProviders].
  */
-const val DEFAULT_SLIDE_TRANSITION_TIME_MS: Int = 450
+const val DEFAULT_SLIDE_TRANSITION_TIME_MS: Int = MotionDuration.Slow
 
 /**
  * The default transition time (in milliseconds) for all slide transitions in the
  * [TransitionProviders].
  */
-const val DEFAULT_PUSH_TRANSITION_TIME_MS: Int = 350
+const val DEFAULT_PUSH_TRANSITION_TIME_MS: Int = MotionDuration.Moderate
 
 /**
  * The default transition time (in milliseconds) for all "stay"/no-op transitions in the

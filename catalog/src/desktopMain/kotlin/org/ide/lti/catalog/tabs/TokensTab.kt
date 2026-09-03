@@ -30,8 +30,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import org.ide.lti.core.designsystem.component.glassOutlineBorder
+import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.BlueGlassColorScheme
 import org.ide.lti.core.designsystem.theme.BrandColors
 import org.ide.lti.core.designsystem.theme.ColorContrast
 import org.ide.lti.core.designsystem.theme.ComponentSize
@@ -52,6 +53,7 @@ import org.ide.lti.core.designsystem.theme.PerformanceMonitorColors
 import org.ide.lti.core.designsystem.theme.PreviewSampleColors
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.ThemeColors
 import org.ide.lti.core.designsystem.theme.ToggleColors
 import org.ide.lti.core.designsystem.theme.WindowControlColors
 
@@ -76,6 +78,22 @@ fun TokensTab() {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(Spacing.Medium)
         ) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(GlassShapes.Card)
+                    .background(BlueGlassColorScheme.glassSurface)
+                    .padding(Spacing.Medium)
+            ) {
+                Text(
+                    "BlueGlassColorScheme",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = BlueGlassColorScheme.onGlass
+                )
+                Spacer(Modifier.height(Spacing.Small))
+                ColorSchemeGrid(BlueGlassColorScheme)
+            }
+
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -279,6 +297,17 @@ private fun SpecializedColorsGrid() {
         "Preview.Orange" to PreviewSampleColors.Orange,
         "Preview.Green" to PreviewSampleColors.Green,
         "GlassLayout.PanelShadow" to GlassLayoutColors.PanelShadow,
+        "Theme.Blue" to ThemeColors.Blue,
+        "Theme.Dark" to ThemeColors.Dark,
+        "Theme.Light" to ThemeColors.Light,
+        "Theme.DarkLayerBase" to ThemeColors.DarkLayerBase,
+        "Theme.DarkLayerSurface" to ThemeColors.DarkLayerSurface,
+        "Theme.DarkLayerElevated" to ThemeColors.DarkLayerElevated,
+        "Theme.DarkLayerControl" to ThemeColors.DarkLayerControl,
+        "Theme.DarkLayerHighlight" to ThemeColors.DarkLayerHighlight,
+        "Theme.FleetBlue" to ThemeColors.FleetBlue,
+        "Theme.FleetFocusGlow" to ThemeColors.FleetFocusGlow,
+        "Theme.FleetCyan" to ThemeColors.FleetCyan,
     )
 
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {

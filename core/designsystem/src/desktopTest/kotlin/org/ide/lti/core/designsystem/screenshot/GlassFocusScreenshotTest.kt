@@ -34,11 +34,11 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.runDesktopComposeUiTest
-import org.ide.lti.core.designsystem.component.GlassButton
-import org.ide.lti.core.designsystem.component.GlassButtonVariant
-import org.ide.lti.core.designsystem.component.GlassIconButton
-import org.ide.lti.core.designsystem.component.GlassPrimaryButton
-import org.ide.lti.core.designsystem.component.GlassTextButton
+import org.ide.lti.core.designsystem.component.actions.GlassButton
+import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
+import org.ide.lti.core.designsystem.component.actions.GlassIconButton
+import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
+import org.ide.lti.core.designsystem.component.actions.GlassTextButton
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize

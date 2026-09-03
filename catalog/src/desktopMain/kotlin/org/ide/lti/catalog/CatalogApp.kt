@@ -37,7 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
-import org.ide.lti.core.designsystem.component.GlassChip
+import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.catalog.tabs.ButtonsTab
 import org.ide.lti.catalog.tabs.CoreUiTab
 import org.ide.lti.catalog.tabs.InputsTab
@@ -46,9 +46,10 @@ import org.ide.lti.catalog.tabs.ModalsTab
 import org.ide.lti.catalog.tabs.NavigationTab
 import org.ide.lti.catalog.tabs.SurfacesTab
 import org.ide.lti.catalog.tabs.TokensTab
-import org.ide.lti.core.designsystem.component.CosmicAuroraBackdrop
-import org.ide.lti.core.designsystem.component.GlassIconToggleButton
-import org.ide.lti.core.designsystem.component.GlassTopBar
+import org.ide.lti.core.designsystem.component.layout.GlassBackdrop
+import org.ide.lti.core.designsystem.component.actions.GlassIconToggleButton
+import org.ide.lti.core.designsystem.component.layout.GlassTopBar
+import org.ide.lti.core.designsystem.component.layout.TopBarNavigation
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
@@ -89,7 +90,7 @@ fun CatalogApp() {
         sharedBackdrop = backdrop,
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            CosmicAuroraBackdrop(backdrop = backdrop)
+            GlassBackdrop(backdrop = backdrop)
 
             Column(
                 modifier = Modifier
@@ -144,15 +145,13 @@ private fun CatalogTopBar(
     onToggleEffects: () -> Unit,
 ) {
     GlassTopBar(
-        title = "LtiRom Design System Catalog",
-        workspaceName = null,
-        showMenuButton = false,
-        showPanelToggles = false,
-        showCommandPalette = false,
-        showSearchButton = false,
-        onNotificationsClick = null,
-        onSettingsClick = null,
-        showWindowControls = false,
+        navigation = TopBarNavigation.Brand(
+            title = "LtiRom Design System Catalog",
+            workspaceName = null,
+        ),
+        search = null,
+        panelToggles = null,
+        windowControls = null,
         actions = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,

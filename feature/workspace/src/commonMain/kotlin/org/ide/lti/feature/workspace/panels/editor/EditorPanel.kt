@@ -35,20 +35,20 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import org.ide.lti.core.designsystem.component.GlassEmptyState
-import org.ide.lti.core.designsystem.component.GlassPanelContainer
-import org.ide.lti.core.designsystem.component.GlassPanelHeader
-import org.ide.lti.core.designsystem.component.GlassPanelHeaderAction
-import org.ide.lti.core.designsystem.component.GlassPrimaryButton
-import org.ide.lti.core.designsystem.component.GlassSecondaryButton
-import org.ide.lti.core.designsystem.component.GlassTabBar
-import org.ide.lti.core.designsystem.component.glassOutlineBorder
+import org.ide.lti.core.designsystem.component.display.GlassEmptyState
+import org.ide.lti.core.designsystem.component.display.GlassPanelContainer
+import org.ide.lti.core.designsystem.component.display.GlassPanelHeader
+import org.ide.lti.core.designsystem.component.display.GlassPanelHeaderAction
+import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
+import org.ide.lti.core.designsystem.component.actions.GlassSecondaryButton
+import org.ide.lti.core.designsystem.component.navigation.GlassTabBar
+import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
-import org.ide.lti.core.designsystem.theme.BrandColors
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius
+import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
@@ -192,14 +192,7 @@ private fun NoWorkspaceEditorView(
                 modifier = Modifier
                     .size(ComponentSize.EmptyStateBadgeSize)
                     .clip(GlassShapes.Medium)
-                    .background(
-                        Brush.linearGradient(
-                            listOf(
-                                glassColors.glassAccent,
-                                BrandColors.LogoGradientEnd,
-                            ),
-                        ),
-                    )
+                    .background(GlassTheme.branding.logoBadgeBrush)
                     .glassOutlineBorder(
                         width = StrokeWidth.Hairline,
                         color = glassColors.glassBorderHighlight,
@@ -290,14 +283,14 @@ private fun EditorShortcutHint(keys: String, label: String) {
         Box(
             modifier = Modifier
                 .clip(GlassShapes.ExtraSmall)
-                .background(glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Elevated))
+                .background(glassColors.glassSurfaceElevated)
                 .glassOutlineBorder(
                     width = StrokeWidth.Hairline,
-                    color = glassColors.glassBorderHighlight.copy(alpha = AlphaTokens.Hover),
+                    color = glassColors.glassBorderHighlight,
                     shape = GlassShapes.ExtraSmall,
                 )
                 .padding(
-                    horizontal = Spacing.SmallMedium,
+                    horizontal = Spacing.Small,
                     vertical = Spacing.ExtraExtraSmall,
                 ),
         ) {
@@ -305,7 +298,8 @@ private fun EditorShortcutHint(keys: String, label: String) {
                 text = keys,
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontFamily = codeFontFamily(),
-                    fontWeight = FontWeight.SemiBold,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = FontSize.Micro,
                 ),
                 color = glassColors.onGlass,
             )

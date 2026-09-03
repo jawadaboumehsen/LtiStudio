@@ -25,11 +25,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import org.ide.lti.core.designsystem.component.GlassEmptyState
-import org.ide.lti.core.designsystem.component.GlassPanelContainer
-import org.ide.lti.core.designsystem.component.GlassPanelHeader
-import org.ide.lti.core.designsystem.component.GlassPanelHeaderAction
-import org.ide.lti.core.designsystem.component.GlassSecondaryButton
+import org.ide.lti.core.designsystem.component.display.GlassEmptyState
+import org.ide.lti.core.designsystem.component.display.GlassPanelContainer
+import org.ide.lti.core.designsystem.component.display.GlassPanelHeader
+import org.ide.lti.core.designsystem.component.display.GlassPanelHeaderAction
+import org.ide.lti.core.designsystem.component.actions.GlassSecondaryButton
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.ComponentSize
@@ -68,7 +68,7 @@ fun ExplorerPanel(
                 },
             )
         },
-        scrollEdgeFade = true,
+        scrollEdgeFade = false,
     ) {
         when (val state = uiState) {
             is ExplorerUiState.Loading -> {

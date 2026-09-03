@@ -36,12 +36,14 @@ import dev.nucleusframework.application.LocalNucleusWindow
 import dev.nucleusframework.application.NucleusWindow
 import dev.nucleusframework.application.nucleusApplication
 import org.ide.lti.core.data.settings.AppSettingsState
-import org.ide.lti.core.designsystem.component.CosmicAuroraBackdrop
-import org.ide.lti.core.designsystem.component.GlassTopBar
-import org.ide.lti.core.designsystem.component.LocalWindowControlActions
-import org.ide.lti.core.designsystem.component.WindowControlActions
+import org.ide.lti.core.designsystem.component.layout.GlassBackdrop
+import org.ide.lti.core.designsystem.component.layout.GlassTopBar
+import org.ide.lti.core.designsystem.component.layout.TopBarNavigation
+import org.ide.lti.core.designsystem.component.actions.LocalWindowControlActions
+import org.ide.lti.core.designsystem.component.actions.WindowControlActions
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
+import org.ide.lti.core.designsystem.theme.config.AppTheme
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -131,25 +133,26 @@ fun main(args: Array<String>) = nucleusApplication(args) {
                 val backdrop = rememberLayerBackdrop()
 
                 LtiTheme(
-                    darkTheme = appSettingsState.isDarkTheme,
+                    appTheme = AppTheme.fromId(appSettingsState.theme),
                     effectsEnabled = appSettingsState.effectsEnabled,
                     reducedMotion = appSettingsState.reducedMotion,
                     sharedBackdrop = backdrop,
                 ) {
                     Box(modifier = Modifier.fillMaxSize()) {
-                        CosmicAuroraBackdrop(backdrop = backdrop)
+                        GlassBackdrop(backdrop = backdrop)
 
                         Column(
                             modifier = Modifier.fillMaxSize(),
                         ) {
                             GlassTopBar(
-                                title = "LtiRom",
-                                workspaceName = "Settings",
-                                onBackClick = { showSettingsWindow = false },
-                                showMenuButton = false,
-                                showPanelToggles = false,
-                                showCommandPalette = false,
-                                onClose = { showSettingsWindow = false },
+                                navigation = TopBarNavigation.Back(
+                                    onClick = { showSettingsWindow = false },
+                                ),
+                                search = null,
+                                panelToggles = null,
+                                windowControls = WindowControlActions(
+                                    onClose = { showSettingsWindow = false },
+                                ),
                                 backdrop = backdrop,
                                 drawOwnChrome = true,
                             )

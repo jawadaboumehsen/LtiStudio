@@ -39,9 +39,9 @@ import com.kashif_e.backdrop.effects.vibrancy
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import org.ide.lti.core.designsystem.component.GlassIconButton
-import org.ide.lti.core.designsystem.component.glassBorder
-import org.ide.lti.core.designsystem.component.glassEffect
+import org.ide.lti.core.designsystem.component.actions.GlassIconButton
+import org.ide.lti.core.designsystem.component.primitives.glassBorder
+import org.ide.lti.core.designsystem.component.primitives.glassEffect
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize

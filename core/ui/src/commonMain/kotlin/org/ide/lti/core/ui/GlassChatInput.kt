@@ -26,13 +26,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.text.TextStyle
-import org.ide.lti.core.designsystem.component.GlassIconButton
-import org.ide.lti.core.designsystem.component.GlassSurface
+import org.ide.lti.core.designsystem.component.actions.GlassIconButton
+import org.ide.lti.core.designsystem.component.primitives.GlassSurface
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.FontSize
@@ -58,13 +59,14 @@ fun GlassChatInput(
     placeholder: String = "Type a message...",
 ) {
     var inputText by remember { mutableStateOf("") }
+    var isFocused by remember { mutableStateOf(false) }
     val glassColors = GlassTheme.colors
 
     GlassSurface(
         modifier = modifier.fillMaxWidth(),
-        shape = GlassShapes.Capsule,
+        shape = GlassShapes.Pill,
         surfaceColor = glassColors.glassSurfaceElevated,
-        borderColor = glassColors.glassBorder,
+        borderColor = if (isFocused) glassColors.focusRing else glassColors.glassBorder,
         borderWidth = StrokeWidth.Hairline,
     ) {
         Row(
@@ -89,6 +91,7 @@ fun GlassChatInput(
                 enabled = enabled,
                 modifier = Modifier
                     .weight(1f)
+                    .onFocusChanged { isFocused = it.isFocused }
                     .onKeyEvent { keyEvent ->
                         if (keyEvent.key == Key.Enter && inputText.isNotBlank()) {
                             onSendMessage(inputText)

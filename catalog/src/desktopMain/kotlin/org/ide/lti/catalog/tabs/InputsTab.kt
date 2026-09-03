@@ -31,11 +31,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import org.ide.lti.core.designsystem.component.GlassOtpTextField
-import org.ide.lti.core.designsystem.component.GlassPasswordField
-import org.ide.lti.core.designsystem.component.GlassSlider
-import org.ide.lti.core.designsystem.component.GlassTextField
-import org.ide.lti.core.designsystem.component.GlassToggle
+import org.ide.lti.core.designsystem.component.inputs.GlassOtpTextField
+import org.ide.lti.core.designsystem.component.inputs.GlassPasswordField
+import org.ide.lti.core.designsystem.component.inputs.GlassSlider
+import org.ide.lti.core.designsystem.component.inputs.GlassTextField
+import org.ide.lti.core.designsystem.component.inputs.TextFieldLeadingSlot
+import org.ide.lti.core.designsystem.component.inputs.TextFieldState
+import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
@@ -75,10 +77,10 @@ fun InputsTab() {
                     onValueChange = { textValue = it },
                     label = "Workspace Name",
                     placeholder = "Enter workspace name",
-                    leadingIcon = {
+                    leading = TextFieldLeadingSlot.Custom {
                         Icon(painter = AppIcons.FolderPainterResource(), contentDescription = null, tint = GlassTheme.colors.onGlassSecondary, modifier = Modifier.size(IconSize.Medium))
                     },
-                    helperText = "Alphanumeric characters and hyphens only"
+                    state = TextFieldState.Helper("Alphanumeric characters and hyphens only")
                 )
 
                 GlassTextField(
@@ -86,7 +88,7 @@ fun InputsTab() {
                     onValueChange = { emailValue = it },
                     label = "Email Address",
                     placeholder = "developer@domain.com",
-                    leadingIcon = {
+                    leading = TextFieldLeadingSlot.Custom {
                         Icon(painter = AppIcons.InfoPainterResource(), contentDescription = null, tint = GlassTheme.colors.onGlassSecondary, modifier = Modifier.size(IconSize.Medium))
                     }
                 )
@@ -95,8 +97,8 @@ fun InputsTab() {
                     value = errorTextValue,
                     onValueChange = { errorTextValue = it },
                     label = "Verification Token",
-                    errorText = "Invalid signature token. Please regenerate.",
-                    leadingIcon = {
+                    state = TextFieldState.Error("Invalid signature token. Please regenerate."),
+                    leading = TextFieldLeadingSlot.Custom {
                         Icon(painter = AppIcons.LockedPainterResource(), contentDescription = null, tint = GlassTheme.colors.glassAccent, modifier = Modifier.size(IconSize.Medium))
                     }
                 )

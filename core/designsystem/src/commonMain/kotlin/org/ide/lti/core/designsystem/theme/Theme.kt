@@ -32,15 +32,22 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.graphics.Color
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import com.materialkolor.rememberDynamicColorScheme
+import org.ide.lti.core.designsystem.theme.config.AppTheme
+import org.ide.lti.core.designsystem.theme.config.BackdropConfiguration
+import org.ide.lti.core.designsystem.theme.config.BlueThemeConfig
+import org.ide.lti.core.designsystem.theme.config.BrandingConfiguration
+import org.ide.lti.core.designsystem.theme.config.PanelConfiguration
+import org.ide.lti.core.designsystem.theme.config.ThemeConfiguration
 
 /**
  * Composition local for the glass color scheme.
  */
 val LocalGlassColors = staticCompositionLocalOf {
-    DarkGlassColorScheme
+    BlueGlassColorScheme
 }
 
 /**
@@ -82,6 +89,20 @@ val LocalIsDarkTheme = staticCompositionLocalOf {
 }
 
 /**
+ * Composition local for the current active [AppTheme].
+ */
+val LocalAppTheme = staticCompositionLocalOf<AppTheme> {
+    AppTheme.Blue
+}
+
+/**
+ * Composition local for the current active [ThemeConfiguration].
+ */
+val LocalThemeConfiguration = staticCompositionLocalOf {
+    BlueThemeConfig
+}
+
+/**
  * Accessor object for glass theme values anywhere in the composable hierarchy.
  */
 object GlassTheme {
@@ -89,6 +110,31 @@ object GlassTheme {
         @Composable
         @ReadOnlyComposable
         get() = LocalIsDarkTheme.current
+
+    val appTheme: AppTheme
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalAppTheme.current
+
+    val configuration: ThemeConfiguration
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalThemeConfiguration.current
+
+    val panel: PanelConfiguration
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalThemeConfiguration.current.panelConfig
+
+    val backdropConfig: BackdropConfiguration
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalThemeConfiguration.current.backdropConfig
+
+    val branding: BrandingConfiguration
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalThemeConfiguration.current.brandingConfig
 
     val colors: GlassColorScheme
         @Composable
@@ -141,13 +187,15 @@ object GlassTheme {
 /**
  * Single unified Lti Glass Theme.
  *
- * Configures both Material 3 color & typography styling and GPU-accelerated Liquid Glass morphism.
+ * Configures both Material 3 color & typography styling and GPU-accelerated Liquid Glass morphism
+ * directly from the polymorphic [ThemeConfiguration].
  */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun LtiTheme(
     modifier: Modifier = Modifier,
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    appTheme: AppTheme = AppTheme.Blue,
+    darkTheme: Boolean = appTheme.isDark,
     glassColors: GlassColorScheme? = null,
     effectsEnabled: Boolean = true,
     reducedMotion: Boolean = false,
@@ -155,24 +203,22 @@ fun LtiTheme(
     sharedBackdrop: Backdrop? = null,
     content: @Composable () -> Unit,
 ) {
-    val colorScheme = materialColorScheme ?: rememberDynamicColorScheme(
-        seedColor = LtiSeedColor,
-        isDark = darkTheme,
-        isAmoled = darkTheme,
-    )
-    val resolvedGlassColors = glassColors ?: rememberDynamicGlassColorScheme(
-        colorScheme = colorScheme,
-        isDark = darkTheme,
-    )
+    val effectiveAppTheme = if (!darkTheme) AppTheme.Light else appTheme
+    val themeConfig = effectiveAppTheme.configuration
+
+    val resolvedMaterialScheme = materialColorScheme ?: themeConfig.materialColorScheme
+    val resolvedGlassColors = glassColors ?: themeConfig.glassColorScheme
     val backdrop = sharedBackdrop ?: rememberLayerBackdrop()
     var focusRingSuppressedByPointer by remember { mutableStateOf(false) }
 
     MaterialTheme(
-        colorScheme = colorScheme,
+        colorScheme = resolvedMaterialScheme,
         typography = appTypography(),
     ) {
         CompositionLocalProvider(
-            LocalIsDarkTheme provides darkTheme,
+            LocalIsDarkTheme provides themeConfig.isDark,
+            LocalAppTheme provides effectiveAppTheme,
+            LocalThemeConfiguration provides themeConfig,
             LocalGlassColors provides resolvedGlassColors,
             LocalGlassBackdrop provides backdrop,
             LocalGlassEffectsEnabled provides effectsEnabled,

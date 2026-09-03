@@ -16,7 +16,8 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import org.ide.lti.core.data.settings.AppSettingsState
-import org.ide.lti.core.designsystem.component.CosmicAuroraBackdrop
+import org.ide.lti.core.designsystem.component.layout.GlassBackdrop
+import org.ide.lti.core.designsystem.theme.config.AppTheme
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.feature.setup.SETUP_ROUTE
 import org.ide.lti.feature.workspace.WORKSPACE_ROUTE
@@ -46,13 +47,13 @@ private fun SharedApp(
     val backdrop = rememberLayerBackdrop()
 
     LtiTheme(
-        darkTheme = appSettingsState.isDarkTheme,
+        appTheme = AppTheme.fromId(appSettingsState.theme),
         effectsEnabled = appSettingsState.effectsEnabled,
         reducedMotion = appSettingsState.reducedMotion,
         sharedBackdrop = backdrop,
     ) {
         Box(modifier = modifier.fillMaxSize()) {
-            CosmicAuroraBackdrop(backdrop = backdrop)
+            GlassBackdrop(backdrop = backdrop)
 
             RootNavGraph(
                 navHostController = navController,

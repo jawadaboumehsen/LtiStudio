@@ -9,6 +9,8 @@
  */
 package org.ide.lti.feature.workspace
 
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -18,15 +20,20 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import org.ide.lti.core.common.event.PanelId
-import org.ide.lti.core.designsystem.component.GlassLayout
-import org.ide.lti.core.designsystem.component.GlassSidePanelRail
-import org.ide.lti.core.designsystem.component.GlassSidePanelTab
-import org.ide.lti.core.designsystem.component.GlassStatusBar
-import org.ide.lti.core.designsystem.component.GlassTopBar
-import org.ide.lti.core.designsystem.component.LineEnding
-import org.ide.lti.core.designsystem.component.SidePanelRailPosition
-import org.ide.lti.core.designsystem.component.WorkspacePanel
-import org.ide.lti.core.designsystem.component.rememberLtiLayoutState
+import org.ide.lti.core.designsystem.component.layout.GlassLayout
+import org.ide.lti.core.designsystem.component.navigation.GlassSidePanelRail
+import org.ide.lti.core.designsystem.component.navigation.GlassSidePanelTab
+import org.ide.lti.core.designsystem.component.actions.GlassIconButton
+import org.ide.lti.core.designsystem.component.layout.GlassTopBar
+import org.ide.lti.core.designsystem.component.layout.TopBarNavigation
+import org.ide.lti.core.designsystem.component.layout.TopBarPanelToggles
+import org.ide.lti.core.designsystem.component.navigation.SidePanelRailPosition
+import org.ide.lti.core.designsystem.component.layout.LayoutPanel
+import org.ide.lti.core.designsystem.component.layout.rememberLtiLayoutState
+import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.IconSize
+import org.ide.lti.core.model.filesystem.LineEnding
+import org.ide.lti.core.ui.WorkspaceStatusBar
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.feature.workspace.panels.ai.AIAssistantPanel
@@ -174,29 +181,58 @@ fun WorkspaceScreen(
         },
         topBar = {
             GlassTopBar(
-                workspaceName = workspaceName,
-                isLeftPanelVisible = ltiLayoutState.showLeft,
-                isRightPanelVisible = ltiLayoutState.showRight,
-                isMiddleDownPanelVisible = ltiLayoutState.showBottom,
-                onClickLeftPanelIcon = {
-                    ltiLayoutState.toggleLeft()
-                    viewModel.togglePanelVisibility(PanelId.LEFT)
+                navigation = TopBarNavigation.Brand(
+                    title = "LtiRom",
+                    workspaceName = workspaceName,
+                ),
+                panelToggles = TopBarPanelToggles(
+                    isLeftVisible = ltiLayoutState.showLeft,
+                    isRightVisible = ltiLayoutState.showRight,
+                    isBottomVisible = ltiLayoutState.showBottom,
+                    onToggleLeft = {
+                        ltiLayoutState.toggleLeft()
+                        viewModel.togglePanelVisibility(PanelId.LEFT)
+                    },
+                    onToggleRight = {
+                        ltiLayoutState.toggleRight()
+                        viewModel.togglePanelVisibility(PanelId.RIGHT)
+                    },
+                    onToggleBottom = {
+                        ltiLayoutState.toggleBottom()
+                        viewModel.togglePanelVisibility(PanelId.BOTTOM)
+                    },
+                ),
+                actions = {
+                    if (onOpenNotifications != null) {
+                        GlassIconButton(
+                            onClick = onOpenNotifications,
+                            size = ComponentSize.TopBarButtonSize,
+                        ) {
+                            Icon(
+                                painter = AppIcons.NotificationsPainterResource(),
+                                contentDescription = "Notifications",
+                                modifier = Modifier.size(IconSize.Small),
+                            )
+                        }
+                    }
+                    if (onOpenSettings != null) {
+                        GlassIconButton(
+                            onClick = onOpenSettings,
+                            size = ComponentSize.TopBarButtonSize,
+                        ) {
+                            Icon(
+                                painter = AppIcons.SettingsPainterResource(),
+                                contentDescription = "Settings",
+                                modifier = Modifier.size(IconSize.Small),
+                            )
+                        }
+                    }
                 },
-                onClickRightPanelIcon = {
-                    ltiLayoutState.toggleRight()
-                    viewModel.togglePanelVisibility(PanelId.RIGHT)
-                },
-                onClickMiddleDownPanelIcon = {
-                    ltiLayoutState.toggleBottom()
-                    viewModel.togglePanelVisibility(PanelId.BOTTOM)
-                },
-                onNotificationsClick = onOpenNotifications,
-                onSettingsClick = onOpenSettings,
                 drawOwnChrome = false,
             )
         },
         statusBar = {
-            GlassStatusBar(
+            WorkspaceStatusBar(
                 filePath = activeFilePath,
                 cursorPosition = cursorPosition,
                 encoding = "UTF-8",
@@ -209,11 +245,12 @@ fun WorkspaceScreen(
 }
 
 /**
- * Maps design-system layout [WorkspacePanel] identity to domain [PanelId] slot.
+ * Maps design-system layout [LayoutPanel] identity to domain [PanelId] slot.
  */
-private fun WorkspacePanel.toPanelId(): PanelId = when (this) {
-    WorkspacePanel.Explorer -> PanelId.LEFT
-    WorkspacePanel.Editor -> PanelId.MAIN
-    WorkspacePanel.Terminal -> PanelId.BOTTOM
-    WorkspacePanel.AiAssistant -> PanelId.RIGHT
+private fun LayoutPanel.toPanelId(): PanelId = when (this) {
+    LayoutPanel.Left -> PanelId.LEFT
+    LayoutPanel.Center -> PanelId.MAIN
+    LayoutPanel.Bottom -> PanelId.BOTTOM
+    LayoutPanel.Right -> PanelId.RIGHT
+    is LayoutPanel.Custom -> PanelId.MAIN
 }

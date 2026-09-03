@@ -19,6 +19,55 @@ import kotlin.test.assertTrue
 class GlassContrastTest {
 
     @Test
+    fun testBlueGlassColorSchemeContrastRatios() {
+        val scheme = BlueGlassColorScheme
+        val surface = scheme.glassSurface
+        val canvasSurface = scheme.canvasSurface
+
+        val onGlassContrast = contrastRatio(scheme.onGlass, surface)
+        val onGlassSecondaryContrast = contrastRatio(scheme.onGlassSecondary, surface)
+        val onGlassMutedContrast = contrastRatio(scheme.onGlassMuted, surface)
+        val glassAccentContrast = contrastRatio(scheme.glassAccent, surface)
+        val focusRingContrast = contrastRatio(scheme.focusRing, surface)
+
+        val onGlassCanvasContrast = contrastRatio(scheme.onGlass, canvasSurface)
+        val onGlassSecondaryCanvasContrast = contrastRatio(scheme.onGlassSecondary, canvasSurface)
+        val onGlassMutedCanvasContrast = contrastRatio(scheme.onGlassMuted, canvasSurface)
+
+        assertTrue(onGlassContrast >= 4.5, "Blue onGlass contrast $onGlassContrast must be >= 4.5:1")
+        assertTrue(onGlassSecondaryContrast >= 4.5, "Blue onGlassSecondary contrast $onGlassSecondaryContrast >= 4.5:1")
+        assertTrue(onGlassMutedContrast >= 3.0, "Blue onGlassMuted contrast $onGlassMutedContrast >= 3.0:1")
+        assertTrue(glassAccentContrast >= 3.0, "Blue glassAccent contrast $glassAccentContrast >= 3.0:1")
+        assertTrue(focusRingContrast >= 3.0, "Blue focusRing contrast $focusRingContrast >= 3.0:1")
+        assertTrue(onGlassCanvasContrast >= 4.5, "Blue onGlass canvas contrast $onGlassCanvasContrast >= 4.5:1")
+        assertTrue(
+            onGlassSecondaryCanvasContrast >= 4.5,
+            "Blue onGlassSecondary canvas $onGlassSecondaryCanvasContrast >= 4.5:1",
+        )
+        assertTrue(onGlassMutedCanvasContrast >= 3.0, "Blue onGlassMuted canvas $onGlassMutedCanvasContrast >= 3.0:1")
+
+        // Syntax Color Token Contrast Assertions against canvasSurface (WCAG AA >= 4.5:1)
+        val syntax = scheme.syntax
+        val keywordContrast = contrastRatio(syntax.keyword, canvasSurface)
+        val functionContrast = contrastRatio(syntax.function, canvasSurface)
+        val stringContrast = contrastRatio(syntax.string, canvasSurface)
+        val numberContrast = contrastRatio(syntax.number, canvasSurface)
+        val typeContrast = contrastRatio(syntax.type, canvasSurface)
+        val annotationContrast = contrastRatio(syntax.annotation, canvasSurface)
+        val commentContrast = contrastRatio(syntax.comment, canvasSurface)
+        val plainContrast = contrastRatio(syntax.plain, canvasSurface)
+
+        assertTrue(keywordContrast >= 4.5, "Blue keyword contrast $keywordContrast must be >= 4.5:1")
+        assertTrue(functionContrast >= 4.5, "Blue function contrast $functionContrast must be >= 4.5:1")
+        assertTrue(stringContrast >= 4.5, "Blue string contrast $stringContrast must be >= 4.5:1")
+        assertTrue(numberContrast >= 4.5, "Blue number contrast $numberContrast must be >= 4.5:1")
+        assertTrue(typeContrast >= 4.5, "Blue type contrast $typeContrast must be >= 4.5:1")
+        assertTrue(annotationContrast >= 4.5, "Blue annotation contrast $annotationContrast must be >= 4.5:1")
+        assertTrue(commentContrast >= 4.5, "Blue comment contrast $commentContrast must be >= 4.5:1")
+        assertTrue(plainContrast >= 4.5, "Blue plain contrast $plainContrast must be >= 4.5:1")
+    }
+
+    @Test
     fun testDarkGlassColorSchemeContrastRatios() {
         val scheme = DarkGlassColorScheme
         val surface = scheme.glassSurface

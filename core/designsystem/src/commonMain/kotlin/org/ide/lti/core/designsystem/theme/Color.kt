@@ -15,6 +15,8 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import com.materialkolor.dynamicColorScheme
+import org.ide.lti.core.designsystem.theme.config.AppTheme
+import org.ide.lti.core.designsystem.theme.config.createDarkFleetColorScheme
 
 /**
  * Brand seed color used to dynamically generate the Material3 color scheme and glass palette.
@@ -181,14 +183,15 @@ data class GlassColorScheme(
  * states, and focus rings. This samples the seed's real hue at a high, fixed chroma instead, the
  * same direct-HCT approach [deriveSyntaxColorScheme] already uses for syntax token colors.
  */
-private fun deriveVibrantAccent(isDark: Boolean): Color {
-    val seedArgb = ((LtiSeedColor.alpha * 255).toInt() shl 24) or
-        ((LtiSeedColor.red * 255).toInt() shl 16) or
-        ((LtiSeedColor.green * 255).toInt() shl 8) or
-        (LtiSeedColor.blue * 255).toInt()
-    val seedHue = com.materialkolor.hct.Hct.fromInt(seedArgb).hue
+fun deriveVibrantAccent(seedColor: Color = LtiSeedColor, isDark: Boolean): Color {
+    val seedArgb = ((seedColor.alpha * 255).toInt() shl 24) or
+        ((seedColor.red * 255).toInt() shl 16) or
+        ((seedColor.green * 255).toInt() shl 8) or
+        (seedColor.blue * 255).toInt()
+    val seedHct = com.materialkolor.hct.Hct.fromInt(seedArgb)
     val tone = if (isDark) 75.0 else 45.0
-    return Color(com.materialkolor.hct.Hct.from(seedHue, 90.0, tone).toInt())
+    val chroma = if (seedHct.chroma < 10.0) 0.0 else maxOf(seedHct.chroma, 60.0)
+    return Color(com.materialkolor.hct.Hct.from(seedHct.hue, chroma, tone).toInt())
 }
 
 /**
@@ -197,8 +200,10 @@ private fun deriveVibrantAccent(isDark: Boolean): Color {
 fun dynamicGlassColorScheme(
     colorScheme: ColorScheme,
     isDark: Boolean,
+    seedColor: Color = LtiSeedColor,
+    appTheme: AppTheme = AppTheme.Blue,
 ): GlassColorScheme {
-    val vibrantAccent = deriveVibrantAccent(isDark)
+    val vibrantAccent = deriveVibrantAccent(seedColor, isDark)
     val syntaxColors = deriveSyntaxColorScheme(
         primaryColor = colorScheme.primary,
         onSurfaceColor = colorScheme.onSurface,
@@ -208,25 +213,49 @@ fun dynamicGlassColorScheme(
         isDark = isDark,
     )
     return if (isDark) {
-        GlassColorScheme(
-            glassSurface = colorScheme.surface.copy(alpha = AlphaTokens.Elevated),
-            glassSurfaceElevated = colorScheme.surfaceContainerHigh.copy(alpha = AlphaTokens.Prominent),
-            chromeSurface = colorScheme.surfaceContainerLowest.copy(alpha = AlphaTokens.Elevated),
-            canvasSurface = colorScheme.surfaceContainerLow,
-            glassTint = colorScheme.primary.copy(alpha = AlphaTokens.Glow),
-            glassTintSecondary = colorScheme.secondary.copy(alpha = AlphaTokens.Glow),
-            glassBorder = colorScheme.onSurface.copy(alpha = AlphaTokens.Hover),
-            glassBorderHighlight = colorScheme.primary.copy(alpha = AlphaTokens.Prominent),
-            onGlass = colorScheme.onSurface,
-            onGlassSecondary = colorScheme.onSurfaceVariant,
-            onGlassMuted = colorScheme.onSurfaceVariant.copy(alpha = AlphaTokens.TextMuted),
-            glassHighlight = colorScheme.primary.copy(alpha = AlphaTokens.Medium),
-            glassShadow = colorScheme.scrim.copy(alpha = AlphaTokens.Prominent),
-            glassAccent = vibrantAccent,
-            focusRing = vibrantAccent,
-            syntax = syntaxColors,
-            diagnostics = diagnosticColors,
-        )
+        if (appTheme == AppTheme.Dark) {
+            // Fleet Neutral Dark Theme: Pure black canvas, black-gray surfaces, neutral hairline borders, Fleet electric blue accents
+            GlassColorScheme(
+                glassSurface = colorScheme.surface,
+                glassSurfaceElevated = colorScheme.surfaceContainer,
+                chromeSurface = colorScheme.surfaceContainerLowest,
+                canvasSurface = colorScheme.surfaceContainerLowest,
+                glassTint = Color.Transparent,
+                glassTintSecondary = Color.Transparent,
+                glassBorder = colorScheme.outline,
+                glassBorderHighlight = ThemeColors.FleetBlue,
+                onGlass = colorScheme.onSurface,
+                onGlassSecondary = colorScheme.onSurfaceVariant,
+                onGlassMuted = colorScheme.onSurfaceVariant.copy(alpha = AlphaTokens.TextMuted),
+                glassHighlight = Color(0x1AFFFFFF),
+                glassShadow = colorScheme.scrim.copy(alpha = AlphaTokens.Prominent),
+                glassAccent = ThemeColors.FleetBlue,
+                focusRing = ThemeColors.FleetFocusGlow,
+                syntax = syntaxColors,
+                diagnostics = diagnosticColors,
+            )
+        } else {
+            // Blue Theme: Signature vibrant glass tints, sky blue accents, cyan glow
+            GlassColorScheme(
+                glassSurface = colorScheme.surface.copy(alpha = AlphaTokens.Elevated),
+                glassSurfaceElevated = colorScheme.surfaceContainerHigh.copy(alpha = AlphaTokens.Prominent),
+                chromeSurface = colorScheme.surfaceContainerLowest.copy(alpha = AlphaTokens.Elevated),
+                canvasSurface = colorScheme.surfaceContainerLow,
+                glassTint = colorScheme.primary.copy(alpha = AlphaTokens.Glow),
+                glassTintSecondary = colorScheme.secondary.copy(alpha = AlphaTokens.Glow),
+                glassBorder = colorScheme.onSurface.copy(alpha = AlphaTokens.Hover),
+                glassBorderHighlight = colorScheme.primary.copy(alpha = AlphaTokens.Prominent),
+                onGlass = colorScheme.onSurface,
+                onGlassSecondary = colorScheme.onSurfaceVariant,
+                onGlassMuted = colorScheme.onSurfaceVariant.copy(alpha = AlphaTokens.TextMuted),
+                glassHighlight = colorScheme.primary.copy(alpha = AlphaTokens.Medium),
+                glassShadow = colorScheme.scrim.copy(alpha = AlphaTokens.Prominent),
+                glassAccent = vibrantAccent,
+                focusRing = vibrantAccent,
+                syntax = syntaxColors,
+                diagnostics = diagnosticColors,
+            )
+        }
     } else {
         GlassColorScheme(
             glassSurface = colorScheme.surface.copy(alpha = AlphaTokens.Elevated),
@@ -257,19 +286,34 @@ fun dynamicGlassColorScheme(
 fun rememberDynamicGlassColorScheme(
     colorScheme: ColorScheme,
     isDark: Boolean,
+    seedColor: Color = LtiSeedColor,
+    appTheme: AppTheme = AppTheme.Blue,
 ): GlassColorScheme {
-    return remember(colorScheme, isDark) {
-        dynamicGlassColorScheme(colorScheme, isDark)
+    return remember(colorScheme, isDark, seedColor, appTheme) {
+        dynamicGlassColorScheme(colorScheme, isDark, seedColor, appTheme)
     }
 }
 
 /**
- * Dynamically generated default Dark Glass Color Scheme.
+ * Dynamically generated default Blue Glass Color Scheme (Signature AMOLED).
  */
-val DarkGlassColorScheme: GlassColorScheme
+val BlueGlassColorScheme: GlassColorScheme
     get() = dynamicGlassColorScheme(
         colorScheme = dynamicColorScheme(seedColor = LtiSeedColor, isDark = true, isAmoled = true),
         isDark = true,
+        seedColor = LtiSeedColor,
+        appTheme = AppTheme.Blue,
+    )
+
+/**
+ * Dynamically generated default Dark Glass Color Scheme (Fleet Neutral Dark).
+ */
+val DarkGlassColorScheme: GlassColorScheme
+    get() = dynamicGlassColorScheme(
+        colorScheme = createDarkFleetColorScheme(),
+        isDark = true,
+        seedColor = Color(0xFF475569),
+        appTheme = AppTheme.Dark,
     )
 
 /**
@@ -279,6 +323,8 @@ val LightGlassColorScheme: GlassColorScheme
     get() = dynamicGlassColorScheme(
         colorScheme = dynamicColorScheme(seedColor = LtiSeedColor, isDark = false),
         isDark = false,
+        seedColor = LtiSeedColor,
+        appTheme = AppTheme.Light,
     )
 
 /**
@@ -293,6 +339,25 @@ object WindowControlColors {
  */
 object BrandColors {
     val LogoGradientEnd = Color(0xFF38BDF8)
+}
+
+/**
+ * Centralized theme indicator and layer token colors.
+ */
+object ThemeColors {
+    val Blue = Color(0xFF38BDF8)
+    val Dark = Color(0xFF131518)
+    val Light = Color(0xFFFFFFFF)
+
+    // Fleet-inspired Dark Theme Layer Architecture (Black base, Black-Gray surfaces, Gray elevated)
+    val DarkLayerBase = Color(0xFF000000)          // Pure Black base canvas & gutters (#000000)
+    val DarkLayerSurface = Color(0xFF131518)       // Black-Gray panel / editor / terminal surface (#131518)
+    val DarkLayerElevated = Color(0xFF1C1E23)      // Dark-Gray elevated card / dialog (#1C1E23)
+    val DarkLayerControl = Color(0xFF262931)       // Gray active tab / chip / button (#262931)
+    val DarkLayerHighlight = Color(0xFF353A45)     // Slate-Gray hairline divider & outline (#353A45)
+    val FleetBlue = Color(0xFF3574F0)              // Fleet Action & Primary Blue (#3574F0)
+    val FleetFocusGlow = Color(0xFF716BF6)         // Fleet Input & Focus Ring Glow (#716BF6)
+    val FleetCyan = Color(0xFF38BDF8)              // Fleet Cyan Gradient End (#38BDF8)
 }
 
 /**

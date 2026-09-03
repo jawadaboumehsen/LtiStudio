@@ -40,10 +40,11 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.cli.TerminalLine
-import org.ide.lti.core.designsystem.component.GlassIconButton
-import org.ide.lti.core.designsystem.component.GlassPanelContainer
-import org.ide.lti.core.designsystem.component.GlassPanelHeader
-import org.ide.lti.core.designsystem.component.GlassTextField
+import org.ide.lti.core.designsystem.component.actions.GlassIconButton
+import org.ide.lti.core.designsystem.component.display.GlassPanelContainer
+import org.ide.lti.core.designsystem.component.display.GlassPanelHeader
+import org.ide.lti.core.designsystem.component.inputs.GlassTextField
+import org.ide.lti.core.designsystem.component.inputs.TextFieldLeadingSlot
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
@@ -250,14 +251,13 @@ private fun TerminalInputRow(
                     }
                 },
             placeholder = "Type a command...",
-            leadingIcon = {
+            leading = TextFieldLeadingSlot.Custom {
                 Text(
                     text = "$",
                     style = monospaceStyle.copy(fontWeight = FontWeight.Bold),
                     color = glassColors.glassAccent,
                 )
             },
-            singleLine = true,
         )
 
         if (isRunning) {

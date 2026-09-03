@@ -32,15 +32,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.ide.lti.core.designsystem.component.GlassBottomSheetScaffold
-import org.ide.lti.core.designsystem.component.GlassDialog
-import org.ide.lti.core.designsystem.component.GlassLoadingDialog
-import org.ide.lti.core.designsystem.component.GlassPerformanceCollector
-import org.ide.lti.core.designsystem.component.GlassPerformanceMonitor
-import org.ide.lti.core.designsystem.component.GlassPrimaryButton
-import org.ide.lti.core.designsystem.component.GlassTextButton
-import org.ide.lti.core.designsystem.component.LoadingDialogState
-import org.ide.lti.core.designsystem.component.MonitorPosition
+import org.ide.lti.core.designsystem.component.feedback.GlassBottomSheetScaffold
+import org.ide.lti.core.designsystem.component.feedback.GlassDialog
+import org.ide.lti.core.designsystem.component.feedback.GlassLoadingDialog
+import org.ide.lti.core.designsystem.component.devtools.GlassPerformanceCollector
+import org.ide.lti.core.designsystem.component.devtools.GlassPerformanceMonitor
+import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
+import org.ide.lti.core.designsystem.component.actions.GlassTextButton
+import org.ide.lti.core.designsystem.component.feedback.LoadingDialogState
+import org.ide.lti.core.designsystem.component.devtools.MonitorPosition
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 

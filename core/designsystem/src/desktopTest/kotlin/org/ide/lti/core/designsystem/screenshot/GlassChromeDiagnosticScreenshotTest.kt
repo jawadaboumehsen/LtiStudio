@@ -40,12 +40,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.sp
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
-import org.ide.lti.core.designsystem.component.CosmicAuroraBackdrop
-import org.ide.lti.core.designsystem.component.GlassLayout
-import org.ide.lti.core.designsystem.component.GlassPanelContainer
-import org.ide.lti.core.designsystem.component.GlassPanelHeader
-import org.ide.lti.core.designsystem.component.GlassPanelHeaderAction
-import org.ide.lti.core.designsystem.component.rememberLtiLayoutState
+import org.ide.lti.core.designsystem.component.layout.GlassBackdrop
+import org.ide.lti.core.designsystem.component.layout.GlassLayout
+import org.ide.lti.core.designsystem.component.display.GlassPanelContainer
+import org.ide.lti.core.designsystem.component.display.GlassPanelHeader
+import org.ide.lti.core.designsystem.component.display.GlassPanelHeaderAction
+import org.ide.lti.core.designsystem.component.navigation.GlassSidePanelRail
+import org.ide.lti.core.designsystem.component.navigation.GlassSidePanelTab
+import org.ide.lti.core.designsystem.component.navigation.GlassSidePanelTabStrip
+import org.ide.lti.core.designsystem.component.navigation.SidePanelRailPosition
+import org.ide.lti.core.designsystem.component.layout.rememberLtiLayoutState
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.CornerRadius
@@ -356,31 +360,31 @@ class GlassChromeDiagnosticScreenshotTest {
                 )
 
                 val leftTabs = listOf(
-                    org.ide.lti.core.designsystem.component.GlassSidePanelTab(
+                    org.ide.lti.core.designsystem.component.navigation.GlassSidePanelTab(
                         icon = AppIcons.Folder,
                         label = "Explorer",
                     ) { MockExplorerPanel() },
                 )
 
                 val rightTabs = listOf(
-                    org.ide.lti.core.designsystem.component.GlassSidePanelTab(
+                    org.ide.lti.core.designsystem.component.navigation.GlassSidePanelTab(
                         icon = AppIcons.Sparkles,
                         label = "AI Assistant",
                     ) { MockAIAssistantPanel() },
                 )
 
                 Box(modifier = Modifier.fillMaxSize()) {
-                    CosmicAuroraBackdrop(backdrop = backdrop)
+                    GlassBackdrop(backdrop = backdrop)
 
                     GlassLayout(
                         state = layoutState,
                         modifier = Modifier.fillMaxSize(),
                         leftRail = {
-                            org.ide.lti.core.designsystem.component.GlassSidePanelRail(
+                            org.ide.lti.core.designsystem.component.navigation.GlassSidePanelRail(
                                 tabs = leftTabs,
                                 selectedIndex = 0,
                                 onSelectedIndexChange = {},
-                                railPosition = org.ide.lti.core.designsystem.component.SidePanelRailPosition.Left,
+                                railPosition = org.ide.lti.core.designsystem.component.navigation.SidePanelRailPosition.Left,
                             )
                         },
                         leftPanel = { MockExplorerPanel() },
@@ -388,11 +392,11 @@ class GlassChromeDiagnosticScreenshotTest {
                         bottomPanel = {},
                         rightPanel = { MockAIAssistantPanel() },
                         rightRail = {
-                            org.ide.lti.core.designsystem.component.GlassSidePanelRail(
+                            org.ide.lti.core.designsystem.component.navigation.GlassSidePanelRail(
                                 tabs = rightTabs,
                                 selectedIndex = 0,
                                 onSelectedIndexChange = {},
-                                railPosition = org.ide.lti.core.designsystem.component.SidePanelRailPosition.Right,
+                                railPosition = org.ide.lti.core.designsystem.component.navigation.SidePanelRailPosition.Right,
                             )
                         },
                     )
@@ -427,31 +431,31 @@ class GlassChromeDiagnosticScreenshotTest {
                 )
 
                 val leftTabs = listOf(
-                    org.ide.lti.core.designsystem.component.GlassSidePanelTab(
+                    org.ide.lti.core.designsystem.component.navigation.GlassSidePanelTab(
                         icon = AppIcons.Folder,
                         label = "Explorer",
                     ) { MockExplorerPanel() },
                 )
 
                 val rightTabs = listOf(
-                    org.ide.lti.core.designsystem.component.GlassSidePanelTab(
+                    org.ide.lti.core.designsystem.component.navigation.GlassSidePanelTab(
                         icon = AppIcons.Sparkles,
                         label = "AI Assistant",
                     ) { MockAIAssistantPanel() },
                 )
 
                 Box(modifier = Modifier.fillMaxSize()) {
-                    CosmicAuroraBackdrop(backdrop = backdrop)
+                    GlassBackdrop(backdrop = backdrop)
 
                     GlassLayout(
                         state = layoutState,
                         modifier = Modifier.fillMaxSize(),
                         leftRail = {
-                            org.ide.lti.core.designsystem.component.GlassSidePanelRail(
+                            org.ide.lti.core.designsystem.component.navigation.GlassSidePanelRail(
                                 tabs = leftTabs,
                                 selectedIndex = 0,
                                 onSelectedIndexChange = {},
-                                railPosition = org.ide.lti.core.designsystem.component.SidePanelRailPosition.Left,
+                                railPosition = org.ide.lti.core.designsystem.component.navigation.SidePanelRailPosition.Left,
                             )
                         },
                         leftPanel = { MockExplorerPanel() },
@@ -459,11 +463,11 @@ class GlassChromeDiagnosticScreenshotTest {
                         bottomPanel = {},
                         rightPanel = { MockAIAssistantPanel() },
                         rightRail = {
-                            org.ide.lti.core.designsystem.component.GlassSidePanelRail(
+                            org.ide.lti.core.designsystem.component.navigation.GlassSidePanelRail(
                                 tabs = rightTabs,
                                 selectedIndex = 0,
                                 onSelectedIndexChange = {},
-                                railPosition = org.ide.lti.core.designsystem.component.SidePanelRailPosition.Right,
+                                railPosition = org.ide.lti.core.designsystem.component.navigation.SidePanelRailPosition.Right,
                             )
                         },
                     )
@@ -477,7 +481,7 @@ class GlassChromeDiagnosticScreenshotTest {
 
     /**
      * Diagnostic Integration Offscreen Render & Screenshot Regression Test for the continuous
-     * frame combined with [org.ide.lti.core.designsystem.component.GlassSidePanelTabStrip], matching
+     * frame combined with [org.ide.lti.core.designsystem.component.navigation.GlassSidePanelTabStrip], matching
      * exactly how `WorkspaceScreen` wires the left/right panels in production.
      */
     @OptIn(ExperimentalTestApi::class)
@@ -499,28 +503,28 @@ class GlassChromeDiagnosticScreenshotTest {
                 )
 
                 val leftTabs = listOf(
-                    org.ide.lti.core.designsystem.component.GlassSidePanelTab(
+                    org.ide.lti.core.designsystem.component.navigation.GlassSidePanelTab(
                         icon = AppIcons.Folder,
                         label = "Files",
                     ) { MockExplorerPanel() },
                 )
 
                 val rightTabs = listOf(
-                    org.ide.lti.core.designsystem.component.GlassSidePanelTab(
+                    org.ide.lti.core.designsystem.component.navigation.GlassSidePanelTab(
                         icon = AppIcons.Sparkles,
                         label = "AI Assistant",
                     ) { MockAIAssistantPanel() },
                 )
 
                 Box(modifier = Modifier.fillMaxSize()) {
-                    CosmicAuroraBackdrop(backdrop = backdrop)
+                    GlassBackdrop(backdrop = backdrop)
 
                     GlassLayout(
                         state = layoutState,
                         modifier = Modifier.fillMaxSize(),
                         leftPanel = {
                             Column(modifier = Modifier.fillMaxSize()) {
-                                org.ide.lti.core.designsystem.component.GlassSidePanelTabStrip(
+                                org.ide.lti.core.designsystem.component.navigation.GlassSidePanelTabStrip(
                                     tabs = leftTabs,
                                     selectedIndex = 0,
                                     onSelectedIndexChange = {},
@@ -538,11 +542,11 @@ class GlassChromeDiagnosticScreenshotTest {
                         bottomPanel = {},
                         rightPanel = { MockAIAssistantPanel() },
                         rightRail = {
-                            org.ide.lti.core.designsystem.component.GlassSidePanelRail(
+                            org.ide.lti.core.designsystem.component.navigation.GlassSidePanelRail(
                                 tabs = rightTabs,
                                 selectedIndex = 0,
                                 onSelectedIndexChange = {},
-                                railPosition = org.ide.lti.core.designsystem.component.SidePanelRailPosition.Right,
+                                railPosition = org.ide.lti.core.designsystem.component.navigation.SidePanelRailPosition.Right,
                             )
                         },
                     )

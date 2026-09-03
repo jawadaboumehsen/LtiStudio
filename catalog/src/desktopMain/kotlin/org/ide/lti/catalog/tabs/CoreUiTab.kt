@@ -37,15 +37,15 @@ import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.model.ai.MessageRole
-import org.ide.lti.core.designsystem.component.GlassChip
+import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.model.filesystem.FileNode
 import org.ide.lti.core.model.filesystem.FileType
 import org.ide.lti.core.ui.GlassChatInput
 import org.ide.lti.core.ui.GlassCodeEditor
 import org.ide.lti.core.ui.GlassFileTree
 import org.ide.lti.core.ui.GlassMessageBubble
-import org.ide.lti.core.ui.GlassScrollableTabRow
-import org.ide.lti.core.ui.TabContent
+import org.ide.lti.core.designsystem.component.navigation.GlassScrollableTabRow
+import org.ide.lti.core.designsystem.component.navigation.TabContent
 import org.ide.lti.core.ui.syntax.SyntaxLanguage
 
 @Composable
