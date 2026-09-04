@@ -15,12 +15,19 @@ class TerminalCommandDispatcherImpl(
     initialCwd: String,
     private val shellExecutor: ShellExecutor,
     private val onToggleTheme: () -> Unit = {},
+    private val onSetTheme: (String) -> Boolean = { false },
+    private val getSettings: () -> Map<String, Any> = { emptyMap() },
+    private val onUpdateSetting: (String, String) -> Boolean = { _, _ -> false },
 ) : TerminalCommandDispatcher {
 
     private val _cwd = MutableStateFlow(resolveInitialCwd(initialCwd))
     override val cwd: StateFlow<String> = _cwd.asStateFlow()
 
-    private val builtInCommands = setOf("help", "clear", "echo", "version", "theme", "lti")
+    private val builtInCommands: Set<String> by lazy {
+        val dummyConsole = TerminalConsole()
+        val dummyRoot = LtiRootCommand(console = dummyConsole)
+        (dummyRoot.registeredSubcommands().map { it.commandName } + "lti").toSet()
+    }
 
     override fun dispatch(line: String): Flow<TerminalOutputEvent> {
         val trimmed = line.trim()
@@ -70,11 +77,18 @@ class TerminalCommandDispatcherImpl(
         val console = TerminalConsole()
         var clearRequested = false
 
-        val root = LtiRootCommand(
+        val commandContext = LtiCommandContext(
             console = console,
+            getCwd = { _cwd.value },
+            setCwd = { newCwd -> _cwd.value = newCwd },
             onToggleTheme = onToggleTheme,
+            onSetTheme = onSetTheme,
             onClear = { clearRequested = true },
+            getSettings = getSettings,
+            onUpdateSetting = onUpdateSetting,
         )
+
+        val root = LtiRootCommand(commandContext = commandContext)
 
         val parseTokens = if (tokens.first() == "lti") tokens.drop(1) else tokens
         val caughtError = parseCommand(root, parseTokens)

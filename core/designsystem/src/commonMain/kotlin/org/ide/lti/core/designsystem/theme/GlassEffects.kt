@@ -9,13 +9,23 @@
  */
 package org.ide.lti.core.designsystem.theme
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import com.kashif_e.backdrop.BackdropEffectScope
+import com.kashif_e.backdrop.effects.GlassMaterial
 import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.colorControls
+import com.kashif_e.backdrop.effects.frostedGrain
+import com.kashif_e.backdrop.effects.glassChrome
+import com.kashif_e.backdrop.effects.glassMaterial
+import com.kashif_e.backdrop.effects.glassRegular
+import com.kashif_e.backdrop.effects.glassThick
+import com.kashif_e.backdrop.effects.glassThin
+import com.kashif_e.backdrop.effects.glassUltraThin
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
 import com.kashif_e.backdrop.highlight.Highlight
+import com.kashif_e.backdrop.highlight.HighlightStyle
 import com.kashif_e.backdrop.shadow.Shadow
 
 /**
@@ -39,6 +49,7 @@ object GlassEffects {
         vibrancy()
         blur(BackdropBlur.TopBar.toPx())
         lens(LensRefraction.TopBar.height.toPx(), LensRefraction.TopBar.amount.toPx())
+        frostedGrain(0.015f)
     }
 
     /**
@@ -53,6 +64,7 @@ object GlassEffects {
     val DockedNav: BackdropEffectScope.() -> Unit = {
         vibrancy()
         blur(BackdropBlur.Panel.toPx())
+        frostedGrain(0.015f)
     }
 
     // ==================== 2. SURFACE & CONTAINER TIER ====================
@@ -63,7 +75,13 @@ object GlassEffects {
     val Standard: BackdropEffectScope.() -> Unit = {
         vibrancy()
         blur(BackdropBlur.Standard.toPx())
-        lens(LensRefraction.Surface.height.toPx(), LensRefraction.Surface.amount.toPx())
+        lens(
+            refractionHeight = LensRefraction.Surface.height.toPx(),
+            refractionAmount = LensRefraction.Surface.amount.toPx(),
+            depthEffect = true,
+            chromaticAberration = true,
+        )
+        frostedGrain(0.015f)
     }
 
     /**
@@ -72,7 +90,13 @@ object GlassEffects {
     val Card: BackdropEffectScope.() -> Unit = {
         vibrancy()
         blur(BackdropBlur.Card.toPx())
-        lens(LensRefraction.Card.height.toPx(), LensRefraction.Card.amount.toPx())
+        lens(
+            refractionHeight = LensRefraction.Card.height.toPx(),
+            refractionAmount = LensRefraction.Card.amount.toPx(),
+            depthEffect = true,
+            chromaticAberration = true,
+        )
+        frostedGrain(0.015f)
     }
 
     /**
@@ -81,7 +105,13 @@ object GlassEffects {
     val Panel: BackdropEffectScope.() -> Unit = {
         vibrancy()
         blur(BackdropBlur.Panel.toPx())
-        lens(LensRefraction.Panel.height.toPx(), LensRefraction.Panel.amount.toPx())
+        lens(
+            refractionHeight = LensRefraction.Panel.height.toPx(),
+            refractionAmount = LensRefraction.Panel.amount.toPx(),
+            depthEffect = true,
+            chromaticAberration = true,
+        )
+        frostedGrain(0.015f)
     }
 
     // ==================== 3. INTERACTIVE CONTROLS TIER ====================
@@ -92,7 +122,13 @@ object GlassEffects {
     val Button: BackdropEffectScope.() -> Unit = {
         vibrancy()
         blur(BackdropBlur.Button.toPx())
-        lens(LensRefraction.Button.height.toPx(), LensRefraction.Button.amount.toPx())
+        lens(
+            refractionHeight = LensRefraction.Button.height.toPx(),
+            refractionAmount = LensRefraction.Button.amount.toPx(),
+            depthEffect = false,
+            chromaticAberration = true,
+        )
+        frostedGrain(0.015f)
     }
 
     /**
@@ -101,7 +137,13 @@ object GlassEffects {
     val ButtonPill: BackdropEffectScope.() -> Unit = {
         vibrancy()
         blur(BackdropBlur.ButtonPill.toPx())
-        lens(LensRefraction.ButtonPill.height.toPx(), LensRefraction.ButtonPill.amount.toPx())
+        lens(
+            refractionHeight = LensRefraction.ButtonPill.height.toPx(),
+            refractionAmount = LensRefraction.ButtonPill.amount.toPx(),
+            depthEffect = false,
+            chromaticAberration = true,
+        )
+        frostedGrain(0.015f)
     }
 
     /**
@@ -216,6 +258,23 @@ object GlassEffects {
         vibrancy()
         blur(BackdropBlur.Scrim.toPx())
     }
+
+    // ==================== 5. STANDARDIZED GLASS MATERIALS ====================
+
+    /** Ultra-Thin glass material preset for floating HUDs and lightweight controls. */
+    val UltraThin: BackdropEffectScope.() -> Unit = { glassUltraThin(chromaticAberration = true) }
+
+    /** Thin glass material preset for cards, action sheets, and toolbars. */
+    val Thin: BackdropEffectScope.() -> Unit = { glassThin(chromaticAberration = true) }
+
+    /** Regular glass material preset for standard liquid glass modals and panels. */
+    val Regular: BackdropEffectScope.() -> Unit = { glassRegular(chromaticAberration = true) }
+
+    /** Thick glass material preset for control center widgets and bottom sheets. */
+    val Thick: BackdropEffectScope.() -> Unit = { glassThick(chromaticAberration = true) }
+
+    /** Chrome glass material preset for heavy window chrome and docked bars. */
+    val Chrome: BackdropEffectScope.() -> Unit = { glassChrome(chromaticAberration = true) }
 }
 
 /**
@@ -228,11 +287,18 @@ object GlassHighlights {
     /** Plain specular hairline highlight (default for surfaces and buttons). */
     val Plain: () -> Highlight? = { Highlight.Plain }
 
-    /** Default highlight profile. */
-    val Default: () -> Highlight? = { Highlight.Default }
+    /** Dual-tone physical glass bevel (specular top + counter shadow bottom). Canonical default. */
+    val Default: () -> Highlight? = { Highlight.GlassBevel }
 
     /** Soft omnidirectional ambient highlight (ideal for hover/selected states). */
     val Ambient: () -> Highlight? = { Highlight.Ambient }
+
+    /** Dual-tone physical glass bevel (specular top + counter shadow bottom). */
+    val Bevel: () -> Highlight? = { Highlight.GlassBevel }
+
+    /** Dynamic pointer-reactive specular highlight tracking mouse/cursor coordinates. */
+    fun interactive(pointerPosition: Offset): Highlight =
+        Highlight(style = HighlightStyle.PointerLight(pointerPosition = pointerPosition))
 }
 
 /**

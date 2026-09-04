@@ -18,9 +18,11 @@ import org.ide.lti.core.designsystem.component.layout.*
 import org.ide.lti.core.designsystem.component.feedback.*
 import org.ide.lti.core.designsystem.component.devtools.*
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -33,14 +35,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
+import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.StrokeWidth
 
 /**
  * Leading accessory slot for [GlassListTile].
@@ -153,19 +160,32 @@ fun GlassListTile(
                 .padding(end = Spacing.Medium),
         ) {
             if (leadingIcon != null) {
-                when (leadingIcon) {
-                    is AppIcon.Vector -> Icon(
-                        imageVector = leadingIcon.imageVector,
-                        contentDescription = null,
-                        tint = if (enabled) glassColors.glassAccent else glassColors.onGlassMuted,
-                        modifier = Modifier.size(IconSize.Large),
-                    )
-                    is AppIcon.Painted -> Icon(
-                        painter = leadingIcon.painter(),
-                        contentDescription = null,
-                        tint = if (enabled) glassColors.glassAccent else glassColors.onGlassMuted,
-                        modifier = Modifier.size(IconSize.Large),
-                    )
+                Box(
+                    modifier = Modifier
+                        .size(ComponentSize.ListTileBadgeSize)
+                        .clip(GlassShapes.Small)
+                        .background(glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Elevated))
+                        .glassOutlineBorder(
+                            width = StrokeWidth.Hairline,
+                            color = glassColors.glassBorder,
+                            shape = GlassShapes.Small,
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    when (leadingIcon) {
+                        is AppIcon.Vector -> Icon(
+                            imageVector = leadingIcon.imageVector,
+                            contentDescription = null,
+                            tint = if (enabled) glassColors.onGlassSecondary else glassColors.onGlassMuted,
+                            modifier = Modifier.size(IconSize.Medium),
+                        )
+                        is AppIcon.Painted -> Icon(
+                            painter = leadingIcon.painter(),
+                            contentDescription = null,
+                            tint = if (enabled) glassColors.onGlassSecondary else glassColors.onGlassMuted,
+                            modifier = Modifier.size(IconSize.Medium),
+                        )
+                    }
                 }
             }
 

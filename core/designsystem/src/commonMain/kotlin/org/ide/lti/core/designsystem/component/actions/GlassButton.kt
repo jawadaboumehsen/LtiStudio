@@ -385,12 +385,14 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawButtonSurface(
 fun GlassPrimaryButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    shape: Shape = GlassShapes.Capsule,
     enabled: Boolean = true,
     content: @Composable RowScope.() -> Unit,
 ) {
     GlassButton(
         onClick = onClick,
         modifier = modifier,
+        shape = shape,
         enabled = enabled,
         variant = GlassButtonVariant.Primary,
         content = content,
@@ -404,12 +406,14 @@ fun GlassPrimaryButton(
 fun GlassSecondaryButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    shape: Shape = GlassShapes.Capsule,
     enabled: Boolean = true,
     content: @Composable RowScope.() -> Unit,
 ) {
     GlassButton(
         onClick = onClick,
         modifier = modifier,
+        shape = shape,
         enabled = enabled,
         variant = GlassButtonVariant.Secondary,
         content = content,

@@ -33,9 +33,11 @@ import org.ide.lti.core.designsystem.component.actions.GlassSecondaryButton
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.config.AppTheme
 import org.ide.lti.core.model.filesystem.FileType
 import org.ide.lti.core.ui.GlassFileTree
 import org.koin.compose.viewmodel.koinViewModel
@@ -114,8 +116,10 @@ fun ExplorerPanel(
                         iconTint = glassColors.onGlassMuted,
                         action = {
                             Spacer(modifier = Modifier.height(Spacing.Medium))
+                            val buttonShape = if (GlassTheme.appTheme == AppTheme.Dark) GlassShapes.MediumSmall else GlassShapes.Capsule
                             GlassSecondaryButton(
                                 onClick = { viewModel.openFolder() },
+                                shape = buttonShape,
                             ) {
                                 Icon(
                                     painter = AppIcons.FolderOpenPainterResource(),

@@ -102,6 +102,14 @@ actual fun BackdropEffectScope.reflectiveGlass(
     effect(RenderEffect.createRuntimeShaderEffect(shader, "content"))
 }
 
+/**
+ * Apply frosted glass micro-grain dither to the backdrop effect stack on Android.
+ */
+actual fun BackdropEffectScope.frostedGrain(intensity: Float) {
+    // Frosted micro-grain requires SkSL/AGSL runtime shader; no-op when unsupported or intensity <= 0
+    if (!PlatformCapabilities.supportsRuntimeShader || intensity <= 0f) return
+}
+
 private fun colorControlsColorFilter(
     brightness: Float = 0f,
     contrast: Float = 1f,

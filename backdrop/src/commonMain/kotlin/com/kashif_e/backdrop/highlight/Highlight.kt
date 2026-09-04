@@ -43,5 +43,15 @@ data class Highlight(
          */
         @Stable
         val Plain: Highlight = Highlight(style = HighlightStyle.Plain)
+
+        /**
+         * Apple-style dual-tone physical glass bevel highlight.
+         */
+        @Stable
+        val GlassBevel: Highlight = Highlight(
+            width = 1.dp,
+            blurRadius = 0.5.dp,
+            style = HighlightStyle.GlassBevel,
+        )
     }
 }

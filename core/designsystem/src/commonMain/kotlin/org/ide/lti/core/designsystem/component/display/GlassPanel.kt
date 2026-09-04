@@ -309,7 +309,7 @@ fun GlassPanelContainer(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(StrokeWidth.Hairline)
+                        .height(StrokeWidth.Standard)
                         .background(GlassTheme.colors.glassBorder),
                 )
             }

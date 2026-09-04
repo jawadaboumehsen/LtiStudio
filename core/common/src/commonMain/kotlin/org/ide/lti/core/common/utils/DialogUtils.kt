@@ -9,29 +9,18 @@
  */
 package org.ide.lti.core.common.utils
 
-import javax.swing.JFileChooser
-import javax.swing.UIManager
+import io.github.vinceglb.filekit.core.FileKit
 
 object DialogUtils {
     /**
-     * Shows a native Windows/macOS/Linux system folder picker dialog
-     * and returns the selected directory path, or null if cancelled.
+     * Shows a native system folder picker dialog asynchronously
+     * without blocking the Compose UI thread, and returns the selected directory path,
+     * or null if cancelled or if an error occurs.
      */
-    fun selectDirectory(): String? {
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
-        } catch (_: Exception) {}
-
-        val chooser = JFileChooser().apply {
-            fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
-            dialogTitle = "Select Workspace Directory"
-            currentDirectory = java.io.File(System.getProperty("user.home"))
-        }
-
-        val result = chooser.showOpenDialog(null)
-        return if (result == JFileChooser.APPROVE_OPTION) {
-            chooser.selectedFile.absolutePath
-        } else {
+    suspend fun selectDirectory(title: String = "Select Workspace Directory"): String? {
+        return try {
+            FileKit.pickDirectory(title = title)?.path
+        } catch (_: Throwable) {
             null
         }
     }

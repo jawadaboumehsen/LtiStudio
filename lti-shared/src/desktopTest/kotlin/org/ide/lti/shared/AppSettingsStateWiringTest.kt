@@ -204,4 +204,41 @@ class AppSettingsStateWiringTest {
         assertTrue(pctBlueVsDark > 0.0, "Blue and Dark themes must render differently")
         assertTrue(pctDarkVsLight > 0.0, "Dark and Light themes must render differently")
     }
+
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun testSettingsScreenThemeCardSelection() = runDesktopComposeUiTest(width = 800, height = 600) {
+        val settingsState = AppSettingsState(
+            initialTheme = AppSettingsState.THEME_BLUE,
+        )
+
+        setContent {
+            SettingsScreenContent(
+                onBackClick = {},
+                appSettingsState = settingsState,
+            )
+        }
+
+        waitForIdle()
+        val imageBlueSettings = onRoot().captureToImage()
+        assertEquals(AppSettingsState.THEME_BLUE, settingsState.theme)
+
+        // Mutate theme to Dark
+        settingsState.theme = AppSettingsState.THEME_DARK
+        waitForIdle()
+        val imageDarkSettings = onRoot().captureToImage()
+        assertEquals(AppSettingsState.THEME_DARK, settingsState.theme)
+
+        val (diffPixels, diffPercent) = computePixelDiffPercent(imageBlueSettings, imageDarkSettings)
+        val formatted = "%.4f".format(diffPercent)
+        println("[VERIFICATION] SettingsScreen Blue vs Dark diff: $diffPixels pixels ($formatted%)")
+        assertTrue(diffPercent > 0.0, "SettingsScreen must render differently between Blue and Dark themes")
+    }
+
+    @Test
+    fun testTerminalViewModelCanBeResolvedFromKoin() {
+        val koin = org.koin.core.context.GlobalContext.get()
+        val terminalViewModel = koin.getOrNull<org.ide.lti.feature.workspace.panels.terminal.TerminalViewModel>()
+        kotlin.test.assertNotNull(terminalViewModel, "TerminalViewModel should be resolvable from Koin")
+    }
 }

@@ -57,7 +57,7 @@ private fun SharedApp(
 
             RootNavGraph(
                 navHostController = navController,
-                startDestination = WORKSPACE_ROUTE,
+                startDestination = SETUP_ROUTE,
                 onOpenSettings = onOpenSettings,
                 modifier = Modifier.fillMaxSize(),
             )

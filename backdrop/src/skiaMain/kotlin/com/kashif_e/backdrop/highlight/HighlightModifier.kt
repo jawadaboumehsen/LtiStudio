@@ -7,7 +7,6 @@ import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.node.DrawModifierNode
@@ -76,48 +75,54 @@ internal class HighlightNode(
             style = PaintingStyle.Stroke
         }
     private var clipPath: Path? = null
+    private var strokePath: Path? = null
     
     // Cache for compiled shaders
     private val shaderCache = mutableMapOf<String, PlatformRuntimeShader>()
 
     override fun ContentDrawScope.draw() {
         val highlight = highlight()
-        if (highlight == null || highlight.width.value <= 0f) {
+        if (highlight == null || highlight.width.value <= 0f || size.width <= 0f || size.height <= 0f) {
             return drawContent()
         }
 
         drawContent()
 
-        val highlightLayer = highlightLayer
-        if (highlightLayer != null) {
-            val size = size
-            val density: Density = this
-            val layoutDirection = layoutDirection
+        val size = size
+        val density: Density = this
+        val layoutDirection = layoutDirection
+        val outline = shapeProvider.shape.createOutline(size, layoutDirection, density)
+        val scratchPath = clipPath ?: Path().also { clipPath = it }
 
-            val safeSize =
-                IntSize(
-                    ceil(size.width).toInt() + 2,
-                    ceil(size.height).toInt() + 2
+        configurePaint(highlight)
+
+        if (highlight.style is HighlightStyle.Plain && highlight.blurRadius.value <= 0f) {
+            // Pristine Plain Highlight Fast-Path: draw directly to canvas with native anti-aliasing
+            paint.blendMode = highlight.style.blendMode
+            paint.color = highlight.style.color.copy(alpha = highlight.style.color.alpha * highlight.alpha)
+            val canvas = drawContext.canvas
+            canvas.save()
+            canvas.clipOutline(outline, scratchPath)
+            drawOutline(outline, paint)
+            canvas.restore()
+        } else {
+            val highlightLayer = highlightLayer
+            if (highlightLayer != null) {
+                val layerSize = IntSize(
+                    ceil(size.width).toInt().coerceAtLeast(1),
+                    ceil(size.height).toInt().coerceAtLeast(1)
                 )
 
-            val outline = shapeProvider.shape.createOutline(size, layoutDirection, density)
-            val scratchPath = clipPath ?: Path().also { clipPath = it }
-
-            configurePaint(highlight)
-
-            highlightLayer.alpha = highlight.alpha
-            highlightLayer.blendMode = highlight.style.blendMode
-            highlightLayer.record(safeSize) {
-                translate(1f, 1f) {
+                highlightLayer.alpha = highlight.alpha
+                highlightLayer.blendMode = highlight.style.blendMode
+                highlightLayer.record(layerSize) {
                     val canvas = drawContext.canvas
                     canvas.save()
                     canvas.clipOutline(outline, scratchPath)
                     drawOutline(outline, paint)
                     canvas.restore()
                 }
-            }
 
-            translate(-1f, -1f) {
                 drawLayer(highlightLayer)
             }
         }
@@ -135,14 +140,15 @@ internal class HighlightNode(
             highlightLayer = null
         }
         clipPath = null
+        strokePath = null
         shaderCache.clear()
     }
 
     private fun DrawScope.configurePaint(highlight: Highlight) {
         paint.color = highlight.style.color
         val minDimension = minOf(size.width, size.height)
-        paint.strokeWidth =
-            ceil(minOf(highlight.width.toPx(), minDimension / 2f)) * 2f
+        val strokeWidthPx = minOf(highlight.width.toPx(), minDimension / 2f)
+        paint.strokeWidth = strokeWidthPx * 2f
         val blurRadius = highlight.blurRadius.toPx()
         val maskFilter = PlatformBlurMaskFilter.create(blurRadius)
         paint.setPlatformMaskFilter(maskFilter)
@@ -177,8 +183,8 @@ internal class HighlightNode(
                         paint
                     )
                 } else {
-                    val path = clipPath ?: Path().also { clipPath = it }
-                    path.reset()
+                    val path = strokePath ?: Path().also { strokePath = it }
+                    path.rewind()
                     path.addRoundRect(roundRect)
                     drawContext.canvas.drawPath(path, paint)
                 }

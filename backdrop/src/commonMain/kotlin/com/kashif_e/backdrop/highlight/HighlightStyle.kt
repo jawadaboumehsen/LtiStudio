@@ -37,5 +37,11 @@ expect sealed interface HighlightStyle {
          */
         @Stable
         val Plain: HighlightStyle
+
+        /**
+         * Apple-style dual-tone physical glass bevel highlight.
+         */
+        @Stable
+        val GlassBevel: HighlightStyle
     }
 }

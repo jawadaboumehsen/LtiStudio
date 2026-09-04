@@ -80,22 +80,25 @@ val DarkThemeConfig: ThemeConfiguration by lazy {
         syntaxColorScheme = syntax,
         diagnosticColors = diagnostics,
         backdropConfig = BackdropConfiguration(
-            style = BackdropStyle.Solid(
-                color = ThemeColors.DarkLayerBase,
+            style = BackdropStyle.CosmicAurora(
+                nebulaTint = ThemeColors.FleetBlue.copy(alpha = AlphaTokens.Ambient),
+                secondaryTint = Color(0xFF716BF6).copy(alpha = AlphaTokens.Faded),
+                isAnimated = true,
             ),
             baseColor = ThemeColors.DarkLayerBase,
         ),
         panelConfig = PanelConfiguration(
             shape = RectangleShape,
-            surfaceColor = ThemeColors.DarkLayerSurface,
-            tint = Color.Transparent,
+            surfaceColor = ThemeColors.DarkLayerSurface.copy(alpha = AlphaTokens.GlassElevated),
+            tint = ThemeColors.FleetBlue.copy(alpha = AlphaTokens.UltraFaint),
             borderColor = Color.Transparent,
             borderWidth = Dp.Hairline,
             highlight = null,
             shadow = null,
-            effects = null,
+            effects = LtiLayoutDefaults.EnhancedPanelEffects,
             hasFloatingGaps = false,
             scrollEdgeFade = true,
+            focusedBorderColor = Color.Transparent,
         ),
         brandingConfig = BrandingConfiguration(
             logoBadgeBrush = Brush.linearGradient(

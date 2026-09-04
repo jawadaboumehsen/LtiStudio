@@ -162,4 +162,145 @@ class TerminalCommandDispatcherTest {
         assertEquals(0, events.size)
         assertEquals(File(System.getProperty("user.home")).canonicalPath, dispatcher.cwd.value)
     }
+
+    @Test
+    fun testThemeSetAndList() = runTest {
+        val fakeShell = FakeShellExecutor()
+        var selectedTheme: String? = null
+        val dispatcher = TerminalCommandDispatcherImpl(
+            initialCwd = System.getProperty("user.home"),
+            shellExecutor = fakeShell,
+            onSetTheme = { theme ->
+                selectedTheme = theme
+                true
+            },
+        )
+
+        val setEvents = dispatcher.dispatch("theme set --name dark").toList()
+        assertEquals("dark", selectedTheme)
+        assertEquals(1, setEvents.size)
+        assertEquals(TerminalOutputEvent.Output("Theme set to: dark"), setEvents[0])
+
+        val listEvents = dispatcher.dispatch("theme list").toList()
+        assertTrue(listEvents.any { it is TerminalOutputEvent.Output && it.text.contains("dark") })
+        assertTrue(listEvents.any { it is TerminalOutputEvent.Output && it.text.contains("blue") })
+    }
+
+    @Test
+    fun testSettingsListAndSet() = runTest {
+        val fakeShell = FakeShellExecutor()
+        val mockSettings = mutableMapOf<String, Any>("theme" to "dark", "effectsEnabled" to true)
+        val dispatcher = TerminalCommandDispatcherImpl(
+            initialCwd = System.getProperty("user.home"),
+            shellExecutor = fakeShell,
+            getSettings = { mockSettings },
+            onUpdateSetting = { k, v ->
+                mockSettings[k] = v
+                true
+            },
+        )
+
+        val listEvents = dispatcher.dispatch("settings list").toList()
+        assertTrue(listEvents.any { it is TerminalOutputEvent.Output && it.text.contains("theme = dark") })
+
+        val setEvents = dispatcher.dispatch("settings set -k theme -v blue").toList()
+        assertEquals(1, setEvents.size)
+        assertEquals(TerminalOutputEvent.Output("Setting 'theme' updated to 'blue'"), setEvents[0])
+        assertEquals("blue", mockSettings["theme"])
+    }
+
+    @Test
+    fun testWorkspaceInfoAndList() = runTest {
+        val fakeShell = FakeShellExecutor()
+        val tempDir = kotlin.io.path.createTempDirectory("test_ws_").toFile()
+        tempDir.deleteOnExit()
+        val subFile = File(tempDir, "sample.txt")
+        subFile.writeText("hello")
+        subFile.deleteOnExit()
+
+        val dispatcher = TerminalCommandDispatcherImpl(
+            initialCwd = tempDir.absolutePath,
+            shellExecutor = fakeShell,
+        )
+
+        val infoEvents = dispatcher.dispatch("workspace info").toList()
+        assertTrue(infoEvents.any { it is TerminalOutputEvent.Output && it.text.contains("Workspace Location:") })
+
+        val listEvents = dispatcher.dispatch("workspace list").toList()
+        assertTrue(listEvents.any { it is TerminalOutputEvent.Output && it.text.contains("sample.txt") })
+    }
+
+    @Test
+    fun testSystemMemoryAndInfo() = runTest {
+        val fakeShell = FakeShellExecutor()
+        val dispatcher = TerminalCommandDispatcherImpl(
+            initialCwd = System.getProperty("user.home"),
+            shellExecutor = fakeShell,
+        )
+
+        val memEvents = dispatcher.dispatch("system memory").toList()
+        assertTrue(memEvents.any { it is TerminalOutputEvent.Output && it.text.contains("JVM Memory:") })
+
+        val sysEvents = dispatcher.dispatch("system info").toList()
+        assertTrue(sysEvents.any { it is TerminalOutputEvent.Output && it.text.contains("OS:") })
+    }
+
+    @Test
+    fun testEchoFlags() = runTest {
+        val fakeShell = FakeShellExecutor()
+        val dispatcher = TerminalCommandDispatcherImpl(
+            initialCwd = System.getProperty("user.home"),
+            shellExecutor = fakeShell,
+        )
+
+        val errEvents = dispatcher.dispatch("echo -e error output").toList()
+        assertEquals(1, errEvents.size)
+        assertEquals(TerminalOutputEvent.Error("error output"), errEvents[0])
+    }
+
+    @Test
+    fun testVersionShort() = runTest {
+        val fakeShell = FakeShellExecutor()
+        val dispatcher = TerminalCommandDispatcherImpl(
+            initialCwd = System.getProperty("user.home"),
+            shellExecutor = fakeShell,
+        )
+
+        val events = dispatcher.dispatch("version -s").toList()
+        assertEquals(1, events.size)
+        assertEquals(TerminalOutputEvent.Output("0.0.1-beta"), events[0])
+    }
+
+    @Test
+    fun testDefaultCommandCompleter() {
+        val completer = DefaultCommandCompleter()
+
+        // Root completions
+        val rootCompletions = completer.complete("")
+        assertTrue(rootCompletions.contains("theme"))
+        assertTrue(rootCompletions.contains("settings"))
+        assertTrue(rootCompletions.contains("workspace"))
+        assertTrue(rootCompletions.contains("system"))
+
+        // Prefix matching
+        val tCompletions = completer.complete("th")
+        assertEquals(listOf("theme"), tCompletions)
+
+        // Subcommand completions
+        val themeSubcommands = completer.complete("theme ")
+        assertTrue(themeSubcommands.contains("set"))
+        assertTrue(themeSubcommands.contains("list"))
+        assertTrue(themeSubcommands.contains("toggle"))
+
+        // Option completions
+        val themeSetOptions = completer.complete("theme set ")
+        assertTrue(themeSetOptions.contains("--name"))
+        assertTrue(themeSetOptions.contains("-n"))
+
+        // Option values
+        val themeValues = completer.complete("theme set --name ")
+        assertTrue(themeValues.contains("dark"))
+        assertTrue(themeValues.contains("blue"))
+        assertTrue(themeValues.contains("light"))
+    }
 }

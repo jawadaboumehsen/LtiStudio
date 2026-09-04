@@ -74,7 +74,7 @@ internal fun GlassContentPanel(
     val panelConfig = GlassTheme.panel
 
     val currentBorderColor = if (isFocused) {
-        glassColors.focusRing
+        panelConfig.focusedBorderColor ?: glassColors.focusRing
     } else {
         panelConfig.borderColor
     }

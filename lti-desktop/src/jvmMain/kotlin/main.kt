@@ -15,7 +15,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -25,6 +27,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowState
@@ -45,6 +48,7 @@ import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.config.AppTheme
 import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.feature.settings.SettingsScreen
@@ -56,32 +60,63 @@ private fun buildWindowControlActions(
     windowState: WindowState,
     nucleusWin: NucleusWindow,
     onClose: () -> Unit,
-): WindowControlActions = WindowControlActions(
-    onMinimize = {
-        windowState.isMinimized = true
-        try { nucleusWin.setMinimized(true) } catch (_: Throwable) {}
-    },
-    onMaximize = {
-        windowState.placement = if (windowState.placement == WindowPlacement.Maximized) {
-            WindowPlacement.Floating
-        } else {
-            WindowPlacement.Maximized
-        }
-        try { nucleusWin.setMaximized(!nucleusWin.isMaximized) } catch (_: Throwable) {}
-    },
-    onClose = onClose,
-    onDragWindow = {
-        try { nucleusWin.unsafe.taoWindow?.dragWindow() } catch (_: Throwable) {}
-    },
-    isMaximized = {
-        windowState.placement == WindowPlacement.Maximized ||
-            try { nucleusWin.isMaximized } catch (_: Throwable) { false }
-    },
-)
+): WindowControlActions {
+    val awtWin = nucleusWin.unsafe.awtWindow
+    var dragStartMouseX = 0
+    var dragStartMouseY = 0
+    var dragStartWindowX = 0
+    var dragStartWindowY = 0
+
+    return WindowControlActions(
+        onMinimize = {
+            windowState.isMinimized = true
+            try { nucleusWin.setMinimized(true) } catch (_: Throwable) {}
+            try { awtWin?.extendedState = java.awt.Frame.ICONIFIED } catch (_: Throwable) {}
+        },
+        onMaximize = {
+            windowState.placement = if (windowState.placement == WindowPlacement.Maximized) {
+                WindowPlacement.Floating
+            } else {
+                WindowPlacement.Maximized
+            }
+            try { nucleusWin.setMaximized(!nucleusWin.isMaximized) } catch (_: Throwable) {}
+        },
+        onClose = onClose,
+        onDragWindow = {
+            try { nucleusWin.unsafe.taoWindow?.dragWindow() } catch (_: Throwable) {}
+            awtWin?.let { win ->
+                val mouseLoc = java.awt.MouseInfo.getPointerInfo()?.location
+                if (mouseLoc != null) {
+                    dragStartMouseX = mouseLoc.x
+                    dragStartMouseY = mouseLoc.y
+                    dragStartWindowX = win.x
+                    dragStartWindowY = win.y
+                }
+            }
+        },
+        onDragDelta = { _, _ ->
+            if (windowState.placement != WindowPlacement.Maximized) {
+                awtWin?.let { win ->
+                    val mouseLoc = java.awt.MouseInfo.getPointerInfo()?.location
+                    if (mouseLoc != null) {
+                        val newX = dragStartWindowX + (mouseLoc.x - dragStartMouseX)
+                        val newY = dragStartWindowY + (mouseLoc.y - dragStartMouseY)
+                        win.setLocation(newX, newY)
+                    }
+                }
+            }
+        },
+        isMaximized = {
+            windowState.placement == WindowPlacement.Maximized ||
+                try { nucleusWin.isMaximized } catch (_: Throwable) { false }
+        },
+    )
+}
 
 fun main(args: Array<String>) = nucleusApplication(args) {
     remember { initKoin() }
     var showSettingsWindow by remember { mutableStateOf(false) }
+    var settingsWinRef by remember { mutableStateOf<NucleusWindow?>(null) }
     val windowState = rememberWindowState(
         width = ComponentSize.MaxPanelWidth * 2,
         height = ComponentSize.MaxPanelHeight * 1.4f,
@@ -90,6 +125,34 @@ fun main(args: Array<String>) = nucleusApplication(args) {
         width = ComponentSize.SettingsWindowWidth,
         height = ComponentSize.SettingsWindowHeight,
     )
+
+    val bringSettingsToFront: () -> Unit = {
+        if (!showSettingsWindow) {
+            showSettingsWindow = true
+        } else {
+            settingsWindowState.isMinimized = false
+            settingsWinRef?.let { win ->
+                try { win.setMinimized(false) } catch (_: Throwable) {}
+                try { win.show() } catch (_: Throwable) {}
+                try { win.toFront() } catch (_: Throwable) {}
+                try { win.requestFocus() } catch (_: Throwable) {}
+                try {
+                    val awt = win.unsafe.awtWindow
+                    if (awt != null) {
+                        if ((awt.extendedState and java.awt.Frame.ICONIFIED) != 0) {
+                            awt.extendedState = awt.extendedState and java.awt.Frame.ICONIFIED.inv()
+                        }
+                        awt.isVisible = true
+                        awt.toFront()
+                        awt.requestFocus()
+                        // Ensure window pops to front above other windows on desktop
+                        awt.isAlwaysOnTop = true
+                        awt.isAlwaysOnTop = false
+                    }
+                } catch (_: Throwable) {}
+            }
+        }
+    }
 
     DecoratedWindow(
         onCloseRequest = ::exitApplication,
@@ -107,27 +170,39 @@ fun main(args: Array<String>) = nucleusApplication(args) {
             ),
         ) {
             LtiSharedApp(
-                onOpenSettings = { showSettingsWindow = true },
+                onOpenSettings = bringSettingsToFront,
             )
         }
     }
 
     if (showSettingsWindow) {
         DecoratedWindow(
-            onCloseRequest = { showSettingsWindow = false },
+            onCloseRequest = {
+                showSettingsWindow = false
+                settingsWinRef = null
+            },
             state = settingsWindowState,
             title = "Settings",
             icon = painterResource("icons/ic_launcher.png"),
             resizable = true,
         ) {
             val settingsWin = LocalNucleusWindow.current
+            DisposableEffect(settingsWin) {
+                settingsWinRef = settingsWin
+                onDispose {
+                    settingsWinRef = null
+                }
+            }
             val appSettingsState: AppSettingsState = koinInject()
 
             CompositionLocalProvider(
                 LocalWindowControlActions provides buildWindowControlActions(
                     windowState = settingsWindowState,
                     nucleusWin = settingsWin,
-                    onClose = { showSettingsWindow = false },
+                    onClose = {
+                        showSettingsWindow = false
+                        settingsWinRef = null
+                    },
                 ),
             ) {
                 val backdrop = rememberLayerBackdrop()
@@ -150,17 +225,23 @@ fun main(args: Array<String>) = nucleusApplication(args) {
                                 ),
                                 search = null,
                                 panelToggles = null,
-                                windowControls = WindowControlActions(
-                                    onClose = { showSettingsWindow = false },
-                                ),
                                 backdrop = backdrop,
                                 drawOwnChrome = true,
+                                centerContent = {
+                                    Text(
+                                        text = "Preferences",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = GlassTheme.colors.onGlass,
+                                    )
+                                },
                             )
 
                             SettingsScreen(
                                 onBackClick = { showSettingsWindow = false },
                                 modifier = Modifier.weight(1f),
                                 showHeader = false,
+                                backdrop = backdrop,
                                 appSettingsState = appSettingsState,
                             )
                         }

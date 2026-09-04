@@ -292,6 +292,23 @@ fun SetupScreenContent(
                                 subtitle = project.path,
                                 icon = AppIcon.Painted(AppIcons.FolderPainterResource),
                                 onClick = { onRecentProjectClick(project) },
+                                trailingContent = {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                                    ) {
+                                        GlassChip(
+                                            label = project.type.name.lowercase().replaceFirstChar { it.uppercase() },
+                                            selected = false,
+                                        )
+                                        Icon(
+                                            painter = AppIcons.ChevronRightPainterResource(),
+                                            contentDescription = "Open Project",
+                                            tint = GlassTheme.colors.onGlassSecondary,
+                                            modifier = Modifier.size(IconSize.Small),
+                                        )
+                                    }
+                                },
                             )
                         }
                     }

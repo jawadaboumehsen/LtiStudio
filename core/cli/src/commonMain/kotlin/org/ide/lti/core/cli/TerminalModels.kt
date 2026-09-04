@@ -17,3 +17,17 @@ sealed interface TerminalOutputEvent {
     data class Error(val text: String) : TerminalOutputEvent
     data object Clear : TerminalOutputEvent
 }
+
+/**
+ * Contextual state and service hooks passed to Clikt commands via Clikt Context.
+ */
+data class LtiCommandContext(
+    val console: TerminalConsole,
+    val getCwd: () -> String = { "" },
+    val setCwd: (String) -> Unit = {},
+    val onToggleTheme: () -> Unit = {},
+    val onSetTheme: (String) -> Boolean = { false },
+    val onClear: () -> Unit = {},
+    val getSettings: () -> Map<String, Any> = { emptyMap() },
+    val onUpdateSetting: (String, String) -> Boolean = { _, _ -> false },
+)

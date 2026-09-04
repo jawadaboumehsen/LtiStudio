@@ -10,35 +10,32 @@
 package org.ide.lti.feature.settings
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.runtime.mutableIntStateOf
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.backdrops.LayerBackdrop
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
@@ -46,25 +43,23 @@ import org.ide.lti.core.data.settings.AppSettingsState
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.display.GlassHorizontalDivider
-import org.ide.lti.core.designsystem.component.actions.GlassIconButton
-import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.component.display.GlassToggleTile
+import org.ide.lti.core.designsystem.component.display.GlassValueTile
+import org.ide.lti.core.designsystem.component.display.GlassVerticalDivider
+import org.ide.lti.core.designsystem.component.display.ThemePreviewCard
 import org.ide.lti.core.designsystem.component.layout.GlassTopBar
 import org.ide.lti.core.designsystem.component.layout.TopBarNavigation
-import org.ide.lti.core.designsystem.component.display.GlassValueTile
+import org.ide.lti.core.designsystem.component.navigation.GlassSidebarItem
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
-import org.ide.lti.core.designsystem.theme.config.AppTheme
-import org.ide.lti.core.designsystem.theme.ThemeColors
 import org.ide.lti.core.designsystem.icon.ideGeneralLanguage
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
-import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.config.AppTheme
 import org.koin.compose.koinInject
 
 @Composable
@@ -95,7 +90,6 @@ fun SettingsScreenContent(
     val localBackdrop = rememberLayerBackdrop()
     val resolvedBackdrop = (backdrop as? LayerBackdrop) ?: (GlassTheme.backdrop as? LayerBackdrop) ?: localBackdrop
     var selectedCategoryIndex by remember { mutableIntStateOf(0) }
-    val categories = remember { listOf("Appearance", "Editor", "Notifications", "About") }
 
     var pushEnabled by remember { mutableStateOf(true) }
     var soundEnabled by remember { mutableStateOf(false) }
@@ -119,126 +113,165 @@ fun SettingsScreenContent(
                 )
             }
 
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
-                contentAlignment = Alignment.TopCenter,
-            ) {
+            // Master-Detail Two-Pane Preferences Layout
+            Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                // Left Categories Navigation Sidebar
                 Column(
                     modifier = Modifier
-                        .widthIn(max = ComponentSize.SettingsMaxWidth)
-                        .fillMaxWidth()
+                        .width(ComponentSize.SettingsSidebarWidth)
+                        .fillMaxHeight()
+                        .background(GlassTheme.colors.glassSurface.copy(alpha = AlphaTokens.Hover))
+                        .padding(Spacing.PanelPadding),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                ) {
+                    Text(
+                        text = "PREFERENCES",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = GlassTheme.colors.onGlassMuted,
+                        modifier = Modifier.padding(horizontal = Spacing.SmallMedium, vertical = Spacing.ExtraSmall),
+                    )
+
+                    GlassSidebarItem(
+                        label = "Appearance",
+                        icon = AppIcons.Sparkles,
+                        selected = selectedCategoryIndex == 0,
+                        onClick = { selectedCategoryIndex = 0 },
+                    )
+
+                    GlassSidebarItem(
+                        label = "Editor",
+                        icon = AppIcons.Edit,
+                        selected = selectedCategoryIndex == 1,
+                        onClick = { selectedCategoryIndex = 1 },
+                    )
+
+                    GlassSidebarItem(
+                        label = "Notifications",
+                        icon = AppIcon.Painted(AppIcons.NotificationsPainterResource),
+                        selected = selectedCategoryIndex == 2,
+                        onClick = { selectedCategoryIndex = 2 },
+                    )
+
+                    GlassSidebarItem(
+                        label = "About",
+                        icon = AppIcons.Info,
+                        selected = selectedCategoryIndex == 3,
+                        onClick = { selectedCategoryIndex = 3 },
+                    )
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    GlassHorizontalDivider()
+                    Spacer(modifier = Modifier.height(Spacing.ExtraSmall))
+
+                    Column(
+                        modifier = Modifier.padding(horizontal = Spacing.SmallMedium, vertical = Spacing.ExtraSmall),
+                        verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
+                    ) {
+                        Text(
+                            text = "LtiRom Studio",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = GlassTheme.colors.onGlass,
+                        )
+                        Text(
+                            text = "v0.0.1-beta.0.118",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = GlassTheme.colors.onGlassMuted,
+                        )
+                    }
+                }
+
+                // Sleek Specular Hairline Vertical Divider
+                GlassVerticalDivider(specular = true)
+
+                // Right Detail Content Area
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
                         .padding(horizontal = Spacing.ScreenHorizontal, vertical = Spacing.ScreenVertical)
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(Spacing.SectionGap),
                 ) {
-                    // Header & Category Chips Bar
-                    Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
+                    when (selectedCategoryIndex) {
+                        0 -> {
+                            // Appearance & Interface
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
+                                    Text(
+                                        text = "Appearance & Interface",
+                                        style = MaterialTheme.typography.headlineMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = GlassTheme.colors.onGlass,
+                                    )
+                                    Text(
+                                        text = "Customize the visual theme, glass refraction, and motion ergonomics",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = GlassTheme.colors.onGlassSecondary,
+                                    )
+                                }
+
+                                GlassChip(
+                                    label = "Synced",
+                                    selected = false,
+                                    leadingIcon = {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(IconSize.Indicator)
+                                                .clip(GlassShapes.Capsule)
+                                                .background(GlassTheme.colors.glassAccent),
+                                        )
+                                    },
+                                )
+                            }
+
+                            // Theme Selection: Visual Theme Cards Grid
+                            Column(verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium)) {
                                 Text(
-                                    text = "Preferences",
-                                    style = MaterialTheme.typography.headlineMedium,
+                                    text = "Workspace Theme",
+                                    style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.SemiBold,
                                     color = GlassTheme.colors.onGlass,
                                 )
                                 Text(
-                                    text = "Configure your IDE environment, editor experience, and themes",
-                                    style = MaterialTheme.typography.bodyMedium,
+                                    text = "Select a bespoke visual palette. Blue features signature cosmic liquid glass, Dark provides high-contrast obsidian matte focus, and Light delivers clean frosted clarity.",
+                                    style = MaterialTheme.typography.bodySmall,
                                     color = GlassTheme.colors.onGlassSecondary,
                                 )
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
+                                ) {
+                                    AppTheme.allThemes.forEach { theme ->
+                                        ThemePreviewCard(
+                                            theme = theme,
+                                            isSelected = appSettingsState.theme == theme.id,
+                                            onClick = { appSettingsState.theme = theme.id },
+                                            modifier = Modifier.weight(1f),
+                                        )
+                                    }
+                                }
                             }
 
-                            GlassChip(
-                                label = "Synced",
-                                selected = false,
-                                leadingIcon = {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(IconSize.Indicator)
-                                            .clip(GlassShapes.Capsule)
-                                            .background(GlassTheme.colors.glassAccent),
-                                    )
-                                },
-                            )
-                        }
-
-                        // Category Tabs Row
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .horizontalScroll(rememberScrollState()),
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            categories.forEachIndexed { index, name ->
-                                GlassChip(
-                                    label = name,
-                                    selected = selectedCategoryIndex == index,
-                                    onClick = { selectedCategoryIndex = index },
-                                )
-                            }
-                        }
-                    }
-
-                    // Selected Category Content
-                    when (selectedCategoryIndex) {
-                        0 -> {
-                            // Appearance
+                            // Display & Glass Rendering Group
                             GlassCard(
                                 contentPadding = Spacing.CardPadding,
                                 modifier = Modifier.fillMaxWidth(),
+                                backdrop = resolvedBackdrop,
                             ) {
                                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.CardPadding)) {
                                     Text(
-                                        text = "Appearance & Interface",
+                                        text = "Display & Glass Rendering",
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.SemiBold,
                                         color = GlassTheme.colors.onGlass,
                                     )
-
-                                    // Theme Selection Section
-                                    Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-                                        Text(
-                                            text = "Theme",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            fontWeight = FontWeight.Medium,
-                                            color = GlassTheme.colors.onGlass,
-                                        )
-                                        Text(
-                                            text = "Choose between signature Blue, layered Dark (Black, Dark Gray, Gray), or Light",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = GlassTheme.colors.onGlassSecondary,
-                                        )
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                        ) {
-                                            AppTheme.allThemes.forEach { theme ->
-                                                GlassChip(
-                                                    label = theme.displayName,
-                                                    selected = appSettingsState.theme == theme.id,
-                                                    onClick = { appSettingsState.theme = theme.id },
-                                                    leadingIcon = {
-                                                        Box(
-                                                            modifier = Modifier
-                                                                .size(IconSize.Indicator)
-                                                                .clip(GlassShapes.Capsule)
-                                                                .background(theme.indicatorColor),
-                                                        )
-                                                    },
-                                                )
-                                            }
-                                        }
-                                    }
-
-                                    GlassHorizontalDivider()
 
                                     GlassToggleTile(
                                         icon = AppIcons.LayoutSplit,
@@ -251,36 +284,70 @@ fun SettingsScreenContent(
                                     GlassHorizontalDivider()
 
                                     GlassToggleTile(
-                                        icon = AppIcons.Info,
+                                        icon = AppIcons.Refresh,
                                         title = "Reduced Motion",
                                         description = "Disable non-essential spring and fluid animations for accessibility",
                                         checked = appSettingsState.reducedMotion,
                                         onCheckedChange = { appSettingsState.reducedMotion = it },
                                     )
+                                }
+                            }
 
-                                    GlassHorizontalDivider()
+                            // Localization & Environment Group
+                            GlassCard(
+                                contentPadding = Spacing.CardPadding,
+                                modifier = Modifier.fillMaxWidth(),
+                                backdrop = resolvedBackdrop,
+                            ) {
+                                Column(verticalArrangement = Arrangement.spacedBy(Spacing.CardPadding)) {
+                                    Text(
+                                        text = "Localization & Language",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = GlassTheme.colors.onGlass,
+                                    )
 
                                     GlassValueTile(
                                         icon = AppIcon.Painted(AppIcons.ideGeneralLanguage),
-                                        title = "Language",
-                                        description = "Display language for IDE interface",
+                                        title = "Interface Language",
+                                        description = "Display language for IDE menus, dialogs, and workspace panes",
                                         value = "English (US)",
                                     )
-
-
                                 }
                             }
                         }
 
                         1 -> {
-                            // Editor
+                            // Editor Preferences
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
+                                    Text(
+                                        text = "Editor Preferences",
+                                        style = MaterialTheme.typography.headlineMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = GlassTheme.colors.onGlass,
+                                    )
+                                    Text(
+                                        text = "Configure code typography, gutter elements, and bracket colorization",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = GlassTheme.colors.onGlassSecondary,
+                                    )
+                                }
+                            }
+
+                            // Typography & Formatting Group
                             GlassCard(
                                 contentPadding = Spacing.CardPadding,
                                 modifier = Modifier.fillMaxWidth(),
+                                backdrop = resolvedBackdrop,
                             ) {
                                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.CardPadding)) {
                                     Text(
-                                        text = "Editor Preferences",
+                                        text = "Typography & Spacing",
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.SemiBold,
                                         color = GlassTheme.colors.onGlass,
@@ -310,8 +377,22 @@ fun SettingsScreenContent(
                                         description = "Number of spaces per indentation level",
                                         value = "4 spaces",
                                     )
+                                }
+                            }
 
-                                    GlassHorizontalDivider()
+                            // Gutter & Delimiters Group
+                            GlassCard(
+                                contentPadding = Spacing.CardPadding,
+                                modifier = Modifier.fillMaxWidth(),
+                                backdrop = resolvedBackdrop,
+                            ) {
+                                Column(verticalArrangement = Arrangement.spacedBy(Spacing.CardPadding)) {
+                                    Text(
+                                        text = "Gutter & Syntax Display",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = GlassTheme.colors.onGlass,
+                                    )
 
                                     GlassToggleTile(
                                         icon = AppIcons.Show,
@@ -335,14 +416,35 @@ fun SettingsScreenContent(
                         }
 
                         2 -> {
-                            // Notifications
+                            // Notifications & Persistence
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
+                                    Text(
+                                        text = "Alerts & Notifications",
+                                        style = MaterialTheme.typography.headlineMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = GlassTheme.colors.onGlass,
+                                    )
+                                    Text(
+                                        text = "Manage system notifications, sound feedback, and file persistence",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = GlassTheme.colors.onGlassSecondary,
+                                    )
+                                }
+                            }
+
                             GlassCard(
                                 contentPadding = Spacing.CardPadding,
                                 modifier = Modifier.fillMaxWidth(),
+                                backdrop = resolvedBackdrop,
                             ) {
                                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.CardPadding)) {
                                     Text(
-                                        text = "Alerts & Notifications",
+                                        text = "System Alerts & Audio",
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.SemiBold,
                                         color = GlassTheme.colors.onGlass,
@@ -365,8 +467,21 @@ fun SettingsScreenContent(
                                         checked = soundEnabled,
                                         onCheckedChange = { soundEnabled = it },
                                     )
+                                }
+                            }
 
-                                    GlassHorizontalDivider()
+                            GlassCard(
+                                contentPadding = Spacing.CardPadding,
+                                modifier = Modifier.fillMaxWidth(),
+                                backdrop = resolvedBackdrop,
+                            ) {
+                                Column(verticalArrangement = Arrangement.spacedBy(Spacing.CardPadding)) {
+                                    Text(
+                                        text = "Persistence & Window Focus",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = GlassTheme.colors.onGlass,
+                                    )
 
                                     GlassToggleTile(
                                         icon = AppIcons.Save,
@@ -380,14 +495,35 @@ fun SettingsScreenContent(
                         }
 
                         3 -> {
-                            // About & Diagnostics
+                            // System & About
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
+                                    Text(
+                                        text = "System & Architecture",
+                                        style = MaterialTheme.typography.headlineMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = GlassTheme.colors.onGlass,
+                                    )
+                                    Text(
+                                        text = "Distribution build, graphics acceleration, and accessibility standard",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = GlassTheme.colors.onGlassSecondary,
+                                    )
+                                }
+                            }
+
                             GlassCard(
                                 contentPadding = Spacing.CardPadding,
                                 modifier = Modifier.fillMaxWidth(),
+                                backdrop = resolvedBackdrop,
                             ) {
                                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.CardPadding)) {
                                     Text(
-                                        text = "System & Architecture",
+                                        text = "Distribution",
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.SemiBold,
                                         color = GlassTheme.colors.onGlass,
@@ -408,8 +544,21 @@ fun SettingsScreenContent(
                                         description = "Current software distribution",
                                         value = "0.0.1-beta.0.118",
                                     )
+                                }
+                            }
 
-                                    GlassHorizontalDivider()
+                            GlassCard(
+                                contentPadding = Spacing.CardPadding,
+                                modifier = Modifier.fillMaxWidth(),
+                                backdrop = resolvedBackdrop,
+                            ) {
+                                Column(verticalArrangement = Arrangement.spacedBy(Spacing.CardPadding)) {
+                                    Text(
+                                        text = "Runtime Stack & Graphics",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = GlassTheme.colors.onGlass,
+                                    )
 
                                     GlassValueTile(
                                         icon = AppIcons.Settings,
@@ -439,9 +588,11 @@ fun SettingsScreenContent(
                             }
                         }
                     }
+
+                    // Generous bottom breathing room so cards never truncate against window bottom edge
+                    Spacer(modifier = Modifier.height(Spacing.ExtraExtraLarge))
                 }
             }
         }
     }
 }
-

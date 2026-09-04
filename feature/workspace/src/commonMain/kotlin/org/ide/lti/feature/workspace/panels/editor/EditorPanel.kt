@@ -55,6 +55,7 @@ import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
+import org.ide.lti.core.designsystem.theme.config.AppTheme
 import org.ide.lti.core.ui.GlassCodeEditor
 import org.ide.lti.core.ui.syntax.SyntaxLanguage
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -228,6 +229,8 @@ private fun NoWorkspaceEditorView(
 
             Spacer(modifier = Modifier.height(Spacing.Small))
 
+            val buttonShape = if (GlassTheme.appTheme == AppTheme.Dark) GlassShapes.MediumSmall else GlassShapes.Capsule
+
             // Action Buttons
             Row(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
@@ -235,6 +238,7 @@ private fun NoWorkspaceEditorView(
             ) {
                 GlassPrimaryButton(
                     onClick = onOpenFolder,
+                    shape = buttonShape,
                 ) {
                     Icon(
                         painter = AppIcons.FolderOpenPainterResource(),
@@ -247,6 +251,7 @@ private fun NoWorkspaceEditorView(
 
                 GlassSecondaryButton(
                     onClick = onCommandPalette,
+                    shape = buttonShape,
                 ) {
                     Icon(
                         painter = AppIcons.SearchPainterResource(),

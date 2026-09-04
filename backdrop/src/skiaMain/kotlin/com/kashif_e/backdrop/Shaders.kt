@@ -51,9 +51,9 @@ float2 gradSdRoundedRect(float2 coord, float2 halfSize, float radius) {
 
 /**
  * Lens/refraction shader for rounded rectangles.
- * Creates a glass-like distortion effect.
+ * Creates a physically accurate glass bevel distortion effect.
  */
-internal const val RoundedRectRefractionShaderString = """
+internal const val GlassRefractionShaderString = """
 uniform shader content;
 
 uniform float2 size;
@@ -65,8 +65,9 @@ uniform float depthEffect;
 
 $RoundedRectSDF
 
-float circleMap(float x) {
-    return 1.0 - sqrt(1.0 - x * x);
+float opticalBevel(float x) {
+    float t = clamp(x, 0.0, 1.0);
+    return t * t * (3.0 - 2.0 * t);
 }
 
 half4 main(float2 coord) {
@@ -83,19 +84,23 @@ half4 main(float2 coord) {
     }
     sd = min(sd, 0.0);
     
-    float d = circleMap(1.0 - -sd / refractionHeight) * refractionAmount;
+    float u = 1.0 - (-sd / refractionHeight);
+    float d = opticalBevel(u) * refractionAmount;
+    float edgeDamp = smoothstep(0.0, 1.5, -sd);
+    d *= edgeDamp;
+    
     float gradRadius = min(radius * 1.5, min(halfSize.x, halfSize.y));
     float2 grad = normalize(gradSdRoundedRect(centeredCoord, halfSize, gradRadius) + depthEffect * normalize(centeredCoord));
     
-    float2 refractedCoord = coord + d * grad;
+    float2 refractedCoord = coord - d * grad;
     return content.eval(refractedCoord);
 }"""
 
 /**
- * Lens/refraction shader with chromatic aberration (dispersion).
- * Creates rainbow-like color separation at edges.
+ * Lens/refraction shader with 7-band spectral dispersion (chromatic aberration).
+ * Creates prismatic color separation at bevel extremes.
  */
-internal const val RoundedRectRefractionWithDispersionShaderString = """
+internal const val GlassDispersionShaderString = """
 uniform shader content;
 
 uniform float2 size;
@@ -108,8 +113,9 @@ uniform float chromaticAberration;
 
 $RoundedRectSDF
 
-float circleMap(float x) {
-    return 1.0 - sqrt(1.0 - x * x);
+float opticalBevel(float x) {
+    float t = clamp(x, 0.0, 1.0);
+    return t * t * (3.0 - 2.0 * t);
 }
 
 half4 main(float2 coord) {
@@ -126,13 +132,17 @@ half4 main(float2 coord) {
     }
     sd = min(sd, 0.0);
     
-    float d = circleMap(1.0 - -sd / refractionHeight) * refractionAmount;
+    float u = 1.0 - (-sd / refractionHeight);
+    float d = opticalBevel(u) * refractionAmount;
+    float edgeDamp = smoothstep(0.0, 1.5, -sd);
+    d *= edgeDamp;
+    
     float gradRadius = min(radius * 1.5, min(halfSize.x, halfSize.y));
     float2 grad = normalize(gradSdRoundedRect(centeredCoord, halfSize, gradRadius) + depthEffect * normalize(centeredCoord));
     
-    float2 refractedCoord = coord + d * grad;
+    float2 refractedCoord = coord - d * grad;
     float dispersionIntensity = chromaticAberration * ((centeredCoord.x * centeredCoord.y) / (halfSize.x * halfSize.y));
-    float2 dispersedCoord = d * grad * dispersionIntensity;
+    float2 dispersedCoord = -d * grad * dispersionIntensity;
     
     half4 color = half4(0.0);
     
@@ -316,3 +326,90 @@ half4 main(float2 coord) {
     
     return col;
 }"""
+
+/**
+ * Dual-tone physical glass bevel shader for Apple-style 3D glass edge lighting.
+ * Generates top specular rim highlight and bottom counter-shadow in a single pass.
+ */
+internal const val GlassBevelShaderString = """
+uniform float2 size;
+uniform float4 cornerRadii;
+uniform float angle;
+uniform float falloff;
+uniform float specularAlpha;
+uniform float shadowAlpha;
+
+$RoundedRectSDF
+
+half4 main(float2 coord) {
+    float2 halfSize = size * 0.5;
+    float2 centeredCoord = coord - halfSize;
+    float radius = radiusAt(centeredCoord, cornerRadii);
+    
+    float gradRadius = min(radius * 1.5, min(halfSize.x, halfSize.y));
+    float2 grad = gradSdRoundedRect(centeredCoord, halfSize, gradRadius);
+    float2 lightDir = float2(cos(angle), sin(angle));
+    
+    float nDotL = dot(grad, lightDir);
+    float specular = pow(max(0.0, nDotL), falloff) * specularAlpha;
+    float shadow = pow(max(0.0, -nDotL), falloff) * shadowAlpha;
+    
+    float a = clamp(specular + shadow, 0.0, 1.0);
+    return half4(specular, specular, specular, a);
+}"""
+
+/**
+ * Interactive cursor/pointer tracking specular highlight shader.
+ * The specular glint dynamically tracks cursor position along the glass rim.
+ */
+internal const val GlassInteractiveHighlightShaderString = """
+uniform float2 size;
+uniform float4 cornerRadii;
+uniform float2 pointerPos;
+uniform float falloff;
+uniform float intensity;
+
+$RoundedRectSDF
+
+half4 main(float2 coord) {
+    float2 halfSize = size * 0.5;
+    float2 centeredCoord = coord - halfSize;
+    float radius = radiusAt(centeredCoord, cornerRadii);
+    
+    float gradRadius = min(radius * 1.5, min(halfSize.x, halfSize.y));
+    float2 grad = gradSdRoundedRect(centeredCoord, halfSize, gradRadius);
+    
+    float2 toLight = pointerPos - coord;
+    float dist = length(toLight);
+    float2 lightDir = dist > 0.001 ? normalize(toLight) : float2(0.0, 1.0);
+    
+    float nDotL = max(0.0, dot(grad, lightDir));
+    float maxDim = max(size.x, size.y);
+    float proximity = 1.0 - smoothstep(0.0, maxDim * 1.2, dist);
+    
+    float shine = pow(nDotL, falloff) * proximity * intensity;
+    return half4(shine, shine, shine, shine);
+}"""
+
+/**
+ * Procedural blue-noise micro-dither shader to eliminate 8-bit color banding
+ * on heavy blurred backdrops and impart a tactile frosted glass finish.
+ */
+internal const val GlassGrainShaderString = """
+uniform shader content;
+uniform float2 size;
+uniform float intensity;
+
+float hash(float2 p) {
+    float3 p3 = fract(float3(p.xyx) * 0.1031);
+    p3 += dot(p3, p3.yzx + 33.33);
+    return fract((p3.x + p3.y) * p3.z);
+}
+
+half4 main(float2 coord) {
+    half4 col = content.eval(coord);
+    float noise = (hash(coord) - 0.5) * 2.0 * intensity;
+    col.rgb += half3(noise);
+    return col;
+}"""
+

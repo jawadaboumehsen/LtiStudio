@@ -103,6 +103,65 @@ actual sealed interface HighlightStyle {
         }
     }
 
+    /**
+     * Apple-style dual-tone physical glass bevel highlight.
+     * Renders a top specular reflection and an opposing bottom counter-shadow.
+     */
+    @Immutable
+    data class GlassBevel(
+        val specularAlpha: Float = 0.75f,
+        val shadowAlpha: Float = 0.25f,
+        val angle: Float = 90f,
+        val falloff: Float = 1.6f,
+    ) : HighlightStyle {
+        override val color: Color = Color.White
+        override val blendMode: BlendMode = BlendMode.SrcOver
+
+        override fun DrawScope.createShader(
+            shape: Shape,
+            shaderCache: MutableMap<String, PlatformRuntimeShader>
+        ): Shader? {
+            val shader = shaderCache.getOrPut("GlassBevel") {
+                PlatformRuntimeShader.compile(com.kashif_e.backdrop.GlassBevelShaderString)
+            }
+            shader.setFloatUniform("size", size.width, size.height)
+            shader.setFloatUniform("cornerRadii", *getCornerRadii(shape))
+            shader.setFloatUniform("angle", angle * (PI / 180f).toFloat())
+            shader.setFloatUniform("falloff", falloff)
+            shader.setFloatUniform("specularAlpha", specularAlpha)
+            shader.setFloatUniform("shadowAlpha", shadowAlpha)
+            return shader.build()
+        }
+    }
+
+    /**
+     * Interactive cursor/pointer tracking specular highlight (visionOS style).
+     */
+    @Immutable
+    data class PointerLight(
+        val pointerPosition: androidx.compose.ui.geometry.Offset,
+        val intensity: Float = 0.6f,
+        val falloff: Float = 1.5f,
+    ) : HighlightStyle {
+        override val color: Color = Color.White
+        override val blendMode: BlendMode = BlendMode.Plus
+
+        override fun DrawScope.createShader(
+            shape: Shape,
+            shaderCache: MutableMap<String, PlatformRuntimeShader>
+        ): Shader? {
+            val shader = shaderCache.getOrPut("PointerLight") {
+                PlatformRuntimeShader.compile(com.kashif_e.backdrop.GlassInteractiveHighlightShaderString)
+            }
+            shader.setFloatUniform("size", size.width, size.height)
+            shader.setFloatUniform("cornerRadii", *getCornerRadii(shape))
+            shader.setFloatUniform("pointerPos", pointerPosition.x, pointerPosition.y)
+            shader.setFloatUniform("falloff", falloff)
+            shader.setFloatUniform("intensity", intensity)
+            return shader.build()
+        }
+    }
+
     actual companion object {
 
         @Stable
@@ -113,12 +172,19 @@ actual sealed interface HighlightStyle {
 
         @Stable
         actual val Plain: HighlightStyle = Plain()
+
+        @Stable
+        actual val GlassBevel: HighlightStyle = GlassBevel()
     }
 }
 
 private fun DrawScope.getCornerRadii(shape: Shape): FloatArray {
     val size = size
     val maxRadius = size.minDimension / 2f
+    val shapeClassName = shape::class.simpleName ?: ""
+    if (shapeClassName.contains("Capsule") || shapeClassName.contains("Circle")) {
+        return FloatArray(4) { maxRadius }
+    }
     val cornerShape = shape as? CornerBasedShape ?: return FloatArray(4) { maxRadius }
     val isLtr = layoutDirection == LayoutDirection.Ltr
     val topLeft =

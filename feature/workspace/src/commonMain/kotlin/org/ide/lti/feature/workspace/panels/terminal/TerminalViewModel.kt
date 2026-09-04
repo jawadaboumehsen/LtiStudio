@@ -52,6 +52,46 @@ class TerminalViewModel(
         onToggleTheme = {
             appSettingsState.isDarkTheme = !appSettingsState.isDarkTheme
         },
+        onSetTheme = { themeName ->
+            when (themeName.lowercase()) {
+                "blue" -> { appSettingsState.theme = AppSettingsState.THEME_BLUE; true }
+                "dark" -> { appSettingsState.theme = AppSettingsState.THEME_DARK; true }
+                "light" -> { appSettingsState.theme = AppSettingsState.THEME_LIGHT; true }
+                else -> false
+            }
+        },
+        getSettings = {
+            mapOf(
+                "theme" to appSettingsState.theme,
+                "effectsEnabled" to appSettingsState.effectsEnabled,
+                "reducedMotion" to appSettingsState.reducedMotion,
+            )
+        },
+        onUpdateSetting = { key, value ->
+            when (key) {
+                "theme" -> {
+                    when (value.lowercase()) {
+                        "blue" -> { appSettingsState.theme = AppSettingsState.THEME_BLUE; true }
+                        "dark" -> { appSettingsState.theme = AppSettingsState.THEME_DARK; true }
+                        "light" -> { appSettingsState.theme = AppSettingsState.THEME_LIGHT; true }
+                        else -> false
+                    }
+                }
+                "effectsEnabled" -> {
+                    value.toBooleanStrictOrNull()?.let {
+                        appSettingsState.effectsEnabled = it
+                        true
+                    } ?: false
+                }
+                "reducedMotion" -> {
+                    value.toBooleanStrictOrNull()?.let {
+                        appSettingsState.reducedMotion = it
+                        true
+                    } ?: false
+                }
+                else -> false
+            }
+        },
     )
 
     private val _uiState = MutableStateFlow(

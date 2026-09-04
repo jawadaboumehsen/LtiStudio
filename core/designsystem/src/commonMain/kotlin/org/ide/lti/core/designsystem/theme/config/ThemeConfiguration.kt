@@ -75,6 +75,7 @@ data class PanelConfiguration(
     val effects: (BackdropEffectScope.() -> Unit)? = null,
     val hasFloatingGaps: Boolean = false,
     val scrollEdgeFade: Boolean = false,
+    val focusedBorderColor: Color? = null,
 )
 
 /**

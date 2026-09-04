@@ -27,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
@@ -42,6 +43,7 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.config.AppTheme
 
 /**
  * Lti chat input field with send button.
@@ -57,6 +59,7 @@ fun GlassChatInput(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     placeholder: String = "Type a message...",
+    shape: Shape = if (GlassTheme.appTheme == AppTheme.Dark) GlassShapes.MediumSmall else GlassShapes.Pill,
 ) {
     var inputText by remember { mutableStateOf("") }
     var isFocused by remember { mutableStateOf(false) }
@@ -64,7 +67,7 @@ fun GlassChatInput(
 
     GlassSurface(
         modifier = modifier.fillMaxWidth(),
-        shape = GlassShapes.Pill,
+        shape = shape,
         surfaceColor = glassColors.glassSurfaceElevated,
         borderColor = if (isFocused) glassColors.focusRing else glassColors.glassBorder,
         borderWidth = StrokeWidth.Hairline,
@@ -115,6 +118,7 @@ fun GlassChatInput(
 
             Spacer(modifier = Modifier.width(Spacing.Small))
 
+            val sendButtonShape = if (GlassTheme.appTheme == AppTheme.Dark) GlassShapes.Small else GlassShapes.Capsule
             GlassIconButton(
                 onClick = {
                     if (inputText.isNotBlank()) {
@@ -123,6 +127,7 @@ fun GlassChatInput(
                     }
                 },
                 enabled = enabled && inputText.isNotBlank(),
+                shape = sendButtonShape,
                 size = ComponentSize.IconButtonSize,
             ) {
                 Icon(

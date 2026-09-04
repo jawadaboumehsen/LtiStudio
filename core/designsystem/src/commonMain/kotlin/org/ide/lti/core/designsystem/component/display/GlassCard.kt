@@ -24,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.unit.Dp
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.BackdropEffectScope
@@ -38,7 +39,9 @@ import org.ide.lti.core.designsystem.theme.GlassEffects
 import org.ide.lti.core.designsystem.theme.GlassHighlights
 import org.ide.lti.core.designsystem.theme.GlassShadows
 import org.ide.lti.core.designsystem.theme.GlassShapes
+import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.StrokeWidth
 
 /**
  * Card glass effect stack.
@@ -60,12 +63,12 @@ val GlassCardEffects: BackdropEffectScope.() -> Unit = GlassEffects.Card
  * @param shape Shape of the card (default: [ContinuousRoundedRectangle] with 16dp radius)
  * @param effects Backdrop effect chain (default: [GlassEffects.Card])
  * @param backdrop Backdrop instance to use (default: from GlassTheme or create new)
- * @param surfaceColor Optional surface color overlay
+ * @param surfaceColor Optional surface color overlay (default: [GlassTheme.colors.glassSurfaceElevated])
  * @param tint Optional tint color
- * @param borderColor Optional border color
+ * @param borderColor Optional border color (default: [GlassTheme.colors.glassBorder])
  * @param contentPadding Padding inside the card (default: 16dp)
  * @param highlight Optional highlight decorator (default: [GlassHighlights.Default])
- * @param shadow Optional shadow decorator (default: [GlassShadows.None])
+ * @param shadow Optional shadow decorator (default: [GlassShadows.Card])
  * @param content Content to display inside the card
  */
 @Composable
@@ -79,17 +82,19 @@ fun GlassCard(
     borderColor: Color = Color.Unspecified,
     contentPadding: Dp = Spacing.Medium,
     highlight: () -> Highlight? = GlassHighlights.Default,
-    shadow: (() -> Shadow?)? = GlassShadows.None,
+    shadow: (() -> Shadow?)? = GlassShadows.Card,
     content: @Composable () -> Unit,
 ) {
+    val glassColors = GlassTheme.colors
     GlassSurface(
         modifier = modifier,
         shape = shape,
         effects = effects,
         backdrop = backdrop,
-        surfaceColor = surfaceColor,
+        surfaceColor = if (surfaceColor.isSpecified) surfaceColor else glassColors.glassSurfaceElevated,
         tint = tint,
-        borderColor = borderColor,
+        borderColor = if (borderColor.isSpecified) borderColor else glassColors.glassBorder,
+        borderWidth = StrokeWidth.Hairline,
         highlight = highlight,
         shadow = shadow,
     ) {

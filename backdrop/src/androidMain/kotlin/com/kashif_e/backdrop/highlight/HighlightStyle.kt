@@ -53,20 +53,6 @@ actual sealed interface HighlightStyle {
         @param:FloatRange(from = 0.0) val falloff: Float = 1f
     ) : HighlightStyle {
 
-        @Deprecated(
-            "Use the constructor with color parameter instead.",
-            ReplaceWith("HighlightStyle.Default(color = Color.White.copy(alpha = intensity), angle = angle, falloff = falloff)")
-        )
-        constructor(
-            intensity: Float,
-            angle: Float = 45f,
-            falloff: Float = 1f
-        ) : this(
-            color = Color.White.copy(alpha = intensity),
-            angle = angle,
-            falloff = falloff
-        )
-
         @RequiresApi(Build.VERSION_CODES.S)
         override fun DrawScope.createShader(
             shape: Shape,
@@ -129,6 +115,9 @@ actual sealed interface HighlightStyle {
 
         @Stable
         actual val Plain: HighlightStyle = Plain()
+
+        @Stable
+        actual val GlassBevel: HighlightStyle = Default()
     }
 }
 

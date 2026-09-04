@@ -37,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.semantics.Role
@@ -81,6 +82,7 @@ sealed interface ChipMode {
 fun GlassChip(
     label: String,
     modifier: Modifier = Modifier,
+    shape: Shape = GlassShapes.Capsule,
     selected: Boolean = false,
     onClick: (() -> Unit)? = null,
     onSelectedChange: ((Boolean) -> Unit)? = null,
@@ -93,7 +95,7 @@ fun GlassChip(
     val glassColors = GlassTheme.colors
     val effectsEnabled = GlassTheme.effectsEnabled
     val actualBackdrop = backdrop ?: GlassTheme.backdrop
-    val chipShape = GlassShapes.Capsule
+    val chipShape = shape
 
     val targetBackground = when {
         selected && isHovered -> glassColors.glassAccent.copy(alpha = AlphaTokens.Elevated)
@@ -158,7 +160,7 @@ fun GlassChip(
                         backdrop = actualBackdrop,
                         shape = { chipShape },
                         effects = GlassEffects.Chip,
-                        highlight = { if (isHovered || selected) Highlight.Ambient else Highlight.Plain },
+                        highlight = { if (isHovered || selected) Highlight.Ambient else null },
                         onDrawSurface = {
                             drawRect(backgroundColor)
                         },

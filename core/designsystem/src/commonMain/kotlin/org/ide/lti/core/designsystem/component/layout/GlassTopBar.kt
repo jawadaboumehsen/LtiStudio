@@ -141,6 +141,7 @@ fun GlassTopBar(
 
     val effectiveWindowControls = windowControls ?: localControls
     val effectiveDrag = effectiveWindowControls.onDragWindow
+    val effectiveDragDelta = effectiveWindowControls.onDragDelta
 
     val backgroundModifier = if (drawOwnChrome) {
         if (effectsEnabled && actualBackdrop != null) {
@@ -183,7 +184,10 @@ fun GlassTopBar(
         modifier = modifier
             .fillMaxWidth()
             .height(ComponentSize.TopBarHeight)
-            .windowDragGesture(effectiveDrag)
+            .windowDragGesture(
+                onDrag = effectiveDrag,
+                onDragDelta = effectiveDragDelta,
+            )
             .then(backgroundModifier)
             .then(borderModifier)
             .padding(horizontal = Spacing.MediumSmall),
@@ -495,7 +499,7 @@ private fun SegmentedPanelLayoutToggle(
                 painter = AppIcons.leftPanelPainterResource(),
                 contentDescription = "Toggle Left Panel (Files)",
                 modifier = Modifier.size(IconSize.Segmented),
-                tint = if (toggles.isLeftVisible) glassColors.glassAccent else glassColors.onGlassMuted,
+                tint = if (toggles.isLeftVisible) glassColors.onGlass else glassColors.onGlassMuted,
             )
         }
 
@@ -510,7 +514,7 @@ private fun SegmentedPanelLayoutToggle(
                 painter = AppIcons.bottomPanelPainterResource(),
                 contentDescription = "Toggle Bottom Panel (Terminal)",
                 modifier = Modifier.size(IconSize.Segmented),
-                tint = if (toggles.isBottomVisible) glassColors.glassAccent else glassColors.onGlassMuted,
+                tint = if (toggles.isBottomVisible) glassColors.onGlass else glassColors.onGlassMuted,
             )
         }
 
@@ -525,7 +529,7 @@ private fun SegmentedPanelLayoutToggle(
                 painter = AppIcons.rightPanelPainterResource(),
                 contentDescription = "Toggle Right Panel (AI Assistant)",
                 modifier = Modifier.size(IconSize.Segmented),
-                tint = if (toggles.isRightVisible) glassColors.glassAccent else glassColors.onGlassMuted,
+                tint = if (toggles.isRightVisible) glassColors.onGlass else glassColors.onGlassMuted,
             )
         }
     }

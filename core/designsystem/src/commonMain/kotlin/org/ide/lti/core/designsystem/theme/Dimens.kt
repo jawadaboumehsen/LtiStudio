@@ -65,6 +65,7 @@ object CornerRadius {
  * Centralized icon size tokens across toolbars, buttons, and indicators.
  */
 object IconSize {
+    val MiniDot: Dp = 5.dp
     val Indicator: Dp = 6.dp
     val Small: Dp = 12.dp
     val WindowControl: Dp = 13.dp
@@ -111,6 +112,7 @@ object ComponentSize {
     val WindowControlHeight: Dp = 28.dp
     val PanelHeaderAction: Dp = 24.dp
     val PanelHeaderActionTouchTarget: Dp = 32.dp
+    val ListTileBadgeSize: Dp = 32.dp
     val TabBarHeight: Dp = 36.dp
     val TabItemHeight: Dp = 32.dp
     val OtpBoxSize: Dp = 48.dp
@@ -137,6 +139,9 @@ object ComponentSize {
     val ToggleButtonSpacing: Dp = 4.dp
     val DividerWidth: Dp = 8.dp
     val SetupSidebarWidth: Dp = 240.dp
+    val SettingsSidebarWidth: Dp = 210.dp
+    val ThemeCardMinWidth: Dp = 156.dp
+    val ThemePreviewHeight: Dp = 84.dp
     val ActionCardHeight: Dp = 120.dp
     val EmptyStateBadgeSize: Dp = 56.dp
     val SpinnerSize: Dp = 28.dp
@@ -144,8 +149,8 @@ object ComponentSize {
     val StatusDotSize: Dp = 8.dp
     val ModalCardMaxWidth: Dp = 440.dp
     val SettingsMaxWidth: Dp = 760.dp
-    val SettingsWindowWidth: Dp = 800.dp
-    val SettingsWindowHeight: Dp = 640.dp
+    val SettingsWindowWidth: Dp = 860.dp
+    val SettingsWindowHeight: Dp = 720.dp
     val ScrollEdgeFadeHeight: Dp = 24.dp
     val CommandPaletteMinWidth: Dp = 200.dp
     val CommandPaletteMaxWidth: Dp = 320.dp

@@ -305,6 +305,7 @@ private fun SpecializedColorsGrid() {
         "Theme.DarkLayerElevated" to ThemeColors.DarkLayerElevated,
         "Theme.DarkLayerControl" to ThemeColors.DarkLayerControl,
         "Theme.DarkLayerHighlight" to ThemeColors.DarkLayerHighlight,
+        "Theme.DarkLayerBorderSubtle" to ThemeColors.DarkLayerBorderSubtle,
         "Theme.FleetBlue" to ThemeColors.FleetBlue,
         "Theme.FleetFocusGlow" to ThemeColors.FleetFocusGlow,
         "Theme.FleetCyan" to ThemeColors.FleetCyan,

@@ -86,3 +86,13 @@ expect fun BackdropEffectScope.reflectiveGlass(
     chromaticAberration: Float = 0.02f,
     vignetteStrength: Float = 0.3f
 )
+
+/**
+ * Apply frosted glass micro-grain dither to the backdrop effect stack.
+ * 
+ * Simulates the microscopic tactile texture of etched/sandblasted physical glass
+ * and eliminates 8-bit color banding steps on deep blurred gradients.
+ * 
+ * @param intensity Perceptual noise intensity (typically 0.01f to 0.03f, default: 0.015f).
+ */
+expect fun BackdropEffectScope.frostedGrain(intensity: Float = 0.015f)

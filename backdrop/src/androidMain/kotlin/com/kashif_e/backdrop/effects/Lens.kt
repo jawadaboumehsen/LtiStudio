@@ -6,8 +6,8 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastCoerceAtLeast
 import androidx.compose.ui.util.fastCoerceAtMost
 import com.kashif_e.backdrop.BackdropEffectScope
-import com.kashif_e.backdrop.RoundedRectRefractionShaderString
-import com.kashif_e.backdrop.RoundedRectRefractionWithDispersionShaderString
+import com.kashif_e.backdrop.GlassDispersionShaderString
+import com.kashif_e.backdrop.GlassRefractionShaderString
 import com.kashif_e.backdrop.platform.PlatformCapabilities
 
 /**
@@ -42,12 +42,12 @@ actual fun BackdropEffectScope.lens(
                 if (!chromaticAberration) {
                     obtainRuntimeShader(
                         "Refraction",
-                        RoundedRectRefractionShaderString
+                        GlassRefractionShaderString
                     )
                 } else {
                     obtainRuntimeShader(
                         "RefractionWithDispersion",
-                        RoundedRectRefractionWithDispersionShaderString
+                        GlassDispersionShaderString
                     )
                 }
             shader.apply {

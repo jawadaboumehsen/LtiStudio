@@ -55,6 +55,7 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.config.AppTheme
 import org.ide.lti.core.ui.GlassChatInput
 import org.ide.lti.core.ui.GlassMessageBubble
 import org.koin.compose.viewmodel.koinViewModel
@@ -142,15 +143,16 @@ private fun EmptyAIChatView(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
             ) {
+                val badgeShape = if (GlassTheme.appTheme == AppTheme.Dark) GlassShapes.Small else GlassShapes.Capsule
                 Box(
                     modifier = Modifier
                         .size(ComponentSize.EmptyStateBadgeSize)
-                        .clip(GlassShapes.Capsule)
+                        .clip(badgeShape)
                         .background(glassColors.glassSurfaceElevated)
                         .glassOutlineBorder(
                             color = glassColors.glassBorderHighlight,
                             width = StrokeWidth.Hairline,
-                            shape = GlassShapes.Capsule,
+                            shape = badgeShape,
                         ),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -177,6 +179,7 @@ private fun EmptyAIChatView(
 
                 Spacer(modifier = Modifier.height(Spacing.ExtraSmall))
 
+                val chipShape = if (GlassTheme.appTheme == AppTheme.Dark) GlassShapes.Small else GlassShapes.Capsule
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(Spacing.Small, Alignment.CenterHorizontally),
                     verticalArrangement = Arrangement.spacedBy(Spacing.Small),
@@ -185,6 +188,7 @@ private fun EmptyAIChatView(
                     quickActions.forEach { action ->
                         GlassChip(
                             label = action,
+                            shape = chipShape,
                             onClick = { onSendMessage(action) },
                         )
                     }

@@ -70,6 +70,7 @@ data class WindowControlActions(
     val onMaximize: () -> Unit = {},
     val onClose: () -> Unit = {},
     val onDragWindow: () -> Unit = {},
+    val onDragDelta: (dx: Float, dy: Float) -> Unit = { _, _ -> },
     val isMaximized: () -> Boolean = { false },
 )
 
@@ -213,26 +214,41 @@ fun WindowControlButton(
  * Window drag gesture detector modifier that coordinates with OS window dragging.
  */
 @OptIn(ExperimentalComposeUiApi::class)
-fun Modifier.windowDragGesture(onDrag: () -> Unit): Modifier =
-    pointerInput(onDrag) {
+fun Modifier.windowDragGesture(
+    onDrag: () -> Unit,
+    onDragDelta: (dx: Float, dy: Float) -> Unit = { _, _ -> },
+): Modifier =
+    pointerInput(onDrag, onDragDelta) {
         awaitPointerEventScope {
             var pendingDrag = false
+            var isDragging = false
             while (true) {
                 val event = awaitPointerEvent(PointerEventPass.Main)
                 event.changes.forEach { change ->
                     if (!change.isConsumed) {
                         when (event.type) {
                             PointerEventType.Press -> {
-                                pendingDrag = event.button == PointerButton.Primary
+                                if (event.button == PointerButton.Primary) {
+                                    pendingDrag = true
+                                    isDragging = false
+                                }
                             }
                             PointerEventType.Move -> {
                                 if (pendingDrag) {
                                     onDrag()
                                     pendingDrag = false
+                                    isDragging = true
+                                }
+                                if (isDragging) {
+                                    val delta = change.position - change.previousPosition
+                                    if (delta.x != 0f || delta.y != 0f) {
+                                        onDragDelta(delta.x, delta.y)
+                                    }
                                 }
                             }
                             PointerEventType.Release -> {
                                 pendingDrag = false
+                                isDragging = false
                             }
                         }
                     }
