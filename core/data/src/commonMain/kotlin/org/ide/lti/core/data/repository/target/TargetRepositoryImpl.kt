@@ -4,7 +4,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.runBlocking
 import org.ide.lti.core.datastore.TargetPreferencesDataSource
 import org.ide.lti.core.domain.repository.target.TargetRepository
 import org.ide.lti.core.model.target.FirmwareAcquisitionMode
@@ -135,17 +134,11 @@ class TargetRepositoryImpl(
     private val _selectedTargetId: MutableStateFlow<String>
 
     init {
+        // Seed in-memory only - never block the constructing thread on I/O. If this is a
+        // fresh install (cache empty), the deterministic default is simply re-seeded the
+        // same way on every launch until the first real mutation persists it for real.
         val cachedTargets = preferencesDataSource.currentTargets
-        val initialTargets = if (cachedTargets.isEmpty()) {
-            val initial = listOf(defaultTarget)
-            runBlocking {
-                preferencesDataSource.saveTargets(initial)
-                preferencesDataSource.saveSelectedTargetId(defaultTarget.id)
-            }
-            initial
-        } else {
-            cachedTargets
-        }
+        val initialTargets = cachedTargets.ifEmpty { listOf(defaultTarget) }
         _targets = MutableStateFlow(initialTargets)
 
         val cachedSelectedId = preferencesDataSource.currentSelectedTargetId
