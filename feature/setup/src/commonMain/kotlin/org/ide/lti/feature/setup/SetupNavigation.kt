@@ -15,6 +15,19 @@ import androidx.navigation.NavOptions
 import androidx.navigation.compose.composable
 import org.ide.lti.core.model.workspace.Workspace
 
+enum class SetupTab(val id: String) {
+    PROJECTS("projects"),
+    ENVIRONMENT("environment"),
+    LAUNCHPAD("launchpad"),
+    CONNECTIONS("connections"),
+    DOCS("docs"),
+    PLUGINS("plugins");
+
+    companion object {
+        fun fromId(id: String): SetupTab = entries.firstOrNull { it.id == id } ?: PROJECTS
+    }
+}
+
 const val SETUP_ROUTE = "setup"
 
 fun NavController.navigateToSetup(navOptions: NavOptions? = null) {
