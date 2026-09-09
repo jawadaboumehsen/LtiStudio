@@ -39,7 +39,7 @@ import org.ide.lti.core.model.target.TargetDevice
 public class TargetPreferencesDataSource(
     private val settings: Settings = Settings(),
     private val json: Json = defaultJson(),
-    private val ioDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
     private val mutex = Mutex()
 
