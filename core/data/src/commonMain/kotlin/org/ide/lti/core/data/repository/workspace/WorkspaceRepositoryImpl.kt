@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Mifos Initiative
+ * Copyright 2026 Mifos Initiative
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -9,68 +9,96 @@
  */
 package org.ide.lti.core.data.repository.workspace
 
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
+import org.ide.lti.core.datastore.WorkspacePreferencesDataSource
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.core.model.workspace.Workspace
 import org.ide.lti.core.model.workspace.WorkspaceSession
 
 /**
- * Default implementation of WorkspaceRepository.
- * TODO: Implement actual file system persistence using datastore module.
+ * Clean Architecture implementation of [WorkspaceRepository].
+ *
+ * Persists workspaces and recent projects to [WorkspacePreferencesDataSource],
+ * dynamically discovers physical workspaces on disk using [WorkDirDiscoveryService],
+ * and manages workspace sessions.
  */
-class WorkspaceRepositoryImpl : WorkspaceRepository {
+public class WorkspaceRepositoryImpl(
+    private val preferencesDataSource: WorkspacePreferencesDataSource,
+    private val discoveryService: WorkDirDiscoveryService = WorkDirDiscoveryService(),
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+) : WorkspaceRepository {
 
-    private val workspaces = mutableMapOf<String, Workspace>()
     private val sessions = mutableMapOf<String, WorkspaceSession>()
-    private val recentProjects = mutableListOf<RecentProject>()
+    private val sessionMutex = Mutex()
 
     override fun getWorkspaces(): Flow<List<Workspace>> {
-        return flowOf(workspaces.values.toList())
+        return preferencesDataSource.workspaces
     }
 
     override suspend fun getWorkspace(id: String): Workspace? {
-        return workspaces[id]
+        return preferencesDataSource.getWorkspace(id)
     }
 
     override suspend fun saveWorkspace(workspace: Workspace) {
-        workspaces[workspace.id] = workspace
+        preferencesDataSource.saveWorkspace(workspace)
     }
 
     override suspend fun deleteWorkspace(id: String) {
-        workspaces.remove(id)
-        sessions.remove(id)
-    }
-
-    override suspend fun getWorkspaceSession(workspaceId: String): WorkspaceSession? {
-        return sessions[workspaceId]
-    }
-
-    override suspend fun saveWorkspaceSession(session: WorkspaceSession) {
-        sessions[session.workspaceId] = session
-    }
-
-    override fun getRecentProjects(): Flow<List<RecentProject>> {
-        return flowOf(recentProjects.toList())
-    }
-
-    override suspend fun addRecentProject(project: RecentProject) {
-        // Remove if already exists
-        recentProjects.removeAll { it.workspaceId == project.workspaceId }
-        // Add to front of list
-        recentProjects.add(0, project)
-        // Keep only last 10
-        if (recentProjects.size > 10) {
-            recentProjects.removeAt(recentProjects.size - 1)
+        preferencesDataSource.deleteWorkspace(id)
+        sessionMutex.withLock {
+            sessions.remove(id)
         }
     }
 
+    override suspend fun getWorkspaceSession(workspaceId: String): WorkspaceSession? {
+        return sessionMutex.withLock {
+            sessions[workspaceId]
+        }
+    }
+
+    override suspend fun saveWorkspaceSession(session: WorkspaceSession) {
+        sessionMutex.withLock {
+            sessions[session.workspaceId] = session
+        }
+    }
+
+    override fun getRecentProjects(): Flow<List<RecentProject>> {
+        return preferencesDataSource.recentProjects
+    }
+
+    override suspend fun addRecentProject(project: RecentProject) {
+        preferencesDataSource.addRecentProject(project)
+    }
+
     override suspend fun removeRecentProject(workspaceId: String) {
-        recentProjects.removeAll { it.workspaceId == workspaceId }
+        preferencesDataSource.removeRecentProject(workspaceId)
     }
 
     override suspend fun clearRecentProjects() {
-        recentProjects.clear()
+        preferencesDataSource.clearRecentProjects()
+    }
+
+    override suspend fun discoverWorkspacesInWorkDir(basePath: String?): List<RecentProject> = withContext(ioDispatcher) {
+        val discovered = discoveryService.discoverWorkspaces(basePath)
+        val currentRecents = preferencesDataSource.currentRecentProjects.associateBy { it.workspaceId }
+
+        // Merge: keep user's existing lastOpened if already in recents, else use discovered
+        val merged = discovered.map { disc ->
+            currentRecents[disc.workspaceId]?.copy(name = disc.name, path = disc.path, type = disc.type) ?: disc
+        }
+
+        // Include any user custom workspaces that aren't in discovered
+        val discoveredIds = discovered.map { it.workspaceId }.toSet()
+        val customRecents = preferencesDataSource.currentRecentProjects.filterNot { it.workspaceId in discoveredIds }
+        val allRecents = merged + customRecents
+
+        preferencesDataSource.saveRecentProjects(allRecents)
+        allRecents
     }
 }
