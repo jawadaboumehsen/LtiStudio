@@ -226,7 +226,7 @@ class SetupViewModel(
     ) { state, query, category ->
         var list = state.toolsMatrix
         if (category != "All") {
-            list = list.filter { it.category.equals(category, ignoreCase = true) }
+            list = list.filter { it.category.displayName.equals(category, ignoreCase = true) }
         }
         if (query.isNotBlank()) {
             list = list.filter {

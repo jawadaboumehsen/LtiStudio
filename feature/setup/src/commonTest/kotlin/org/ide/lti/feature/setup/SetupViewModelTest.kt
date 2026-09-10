@@ -820,7 +820,7 @@ class SetupViewModelTest {
             // Filter by Dynamic Partitions category (5 tools)
             viewModel.selectToolCategory("Dynamic Partitions")
             assertEquals(5, viewModel.filteredToolsMatrix.value.size)
-            assertTrue(viewModel.filteredToolsMatrix.value.all { it.category == "Dynamic Partitions" })
+            assertTrue(viewModel.filteredToolsMatrix.value.all { it.category.displayName == "Dynamic Partitions" })
 
             // Filter by query "lpmake"
             viewModel.onToolSearchQueryChange("lpmake")

@@ -36,6 +36,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,6 +48,8 @@ import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.TextFieldTrailingSlot
+import org.ide.lti.core.designsystem.component.navigation.GlassFilterChipItem
+import org.ide.lti.core.designsystem.component.navigation.GlassFilterChipRow
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
@@ -58,6 +61,7 @@ import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.domain.setup.StepStatus
+import org.ide.lti.core.domain.setup.ToolCategory
 import org.ide.lti.core.domain.setup.ToolComponentItem
 
 /**
@@ -90,15 +94,16 @@ fun ToolMatrixTable(
     val glassColors = GlassTheme.colors
     val diagnostics = glassColors.diagnostics
 
-    val categories = listOf(
-        "All",
-        "Dynamic Partitions",
-        "Filesystem & Images",
-        "Boot & Kernel",
-        "Signing & Security",
-        "Bridge & Flashing",
-        "Packaging & Tools",
-    )
+    val categoryChipItems = remember {
+        listOf(GlassFilterChipItem(label = "All", count = -1, value = "All")) +
+            ToolCategory.entries.map { cat ->
+                GlassFilterChipItem(
+                    label = cat.displayName,
+                    count = -1,
+                    value = cat.displayName,
+                )
+            }
+    }
 
     val readyCount = tools.count { it.status == StepStatus.SUCCESS }
     val totalCount = tools.size
@@ -173,20 +178,12 @@ fun ToolMatrixTable(
             }
 
             // Category Filter Strip
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+            GlassFilterChipRow(
+                items = categoryChipItems,
+                selectedValue = selectedCategory,
+                onSelect = onSelectCategory,
                 modifier = Modifier.fillMaxWidth(),
-            ) {
-                categories.forEach { category ->
-                    val isSelected = selectedCategory.equals(category, ignoreCase = true)
-                    GlassChip(
-                        label = category,
-                        selected = isSelected,
-                        onClick = { onSelectCategory(category) },
-                    )
-                }
-            }
+            )
 
             // Tools Item List / Grid
             if (tools.isEmpty()) {
@@ -331,7 +328,7 @@ private fun ToolMatrixItemRow(
                             )
                         }
                         GlassChip(
-                            label = tool.category,
+                            label = tool.category.displayName,
                             selected = false,
                         )
                     }
