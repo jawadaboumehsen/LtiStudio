@@ -40,12 +40,14 @@ import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenu
 import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenuHeader
 import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenuItem
+import org.ide.lti.core.designsystem.component.tooltip.GlassTooltipArea
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
+import org.ide.lti.core.designsystem.theme.MotionDuration
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
@@ -163,36 +165,41 @@ fun TargetSelectorCard(
             Box(
                 modifier = Modifier.onSizeChanged { anchorWidth = it.width },
             ) {
-                GlassSecondaryButton(
-                    onClick = {
-                        if (canSwitch) {
-                            isMenuOpen = !isMenuOpen
-                        }
-                    },
-                    enabled = canSwitch,
+                GlassTooltipArea(
+                    tooltipText = "Only one target device configured. Add another device from an open workspace to switch.",
+                    delayMillis = if (canSwitch) Int.MAX_VALUE else MotionDuration.TooltipDelay,
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                    GlassSecondaryButton(
+                        onClick = {
+                            if (canSwitch) {
+                                isMenuOpen = !isMenuOpen
+                            }
+                        },
+                        enabled = canSwitch,
                     ) {
-                        Text(
-                            text = "Switch Target",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = if (canSwitch) glassColors.onGlass else glassColors.onGlassMuted,
-                            maxLines = 1,
-                            softWrap = false,
-                        )
-                        if (canSwitch) {
-                            Icon(
-                                painter = if (isMenuOpen) {
-                                    AppIcons.ChevronUpPainterResource()
-                                } else {
-                                    AppIcons.ChevronDownPainterResource()
-                                },
-                                contentDescription = "Toggle Target Selection Menu",
-                                tint = glassColors.onGlassSecondary,
-                                modifier = Modifier.size(IconSize.Small),
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                        ) {
+                            Text(
+                                text = "Switch Target",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = if (canSwitch) glassColors.onGlass else glassColors.onGlassMuted,
+                                maxLines = 1,
+                                softWrap = false,
                             )
+                            if (canSwitch) {
+                                Icon(
+                                    painter = if (isMenuOpen) {
+                                        AppIcons.ChevronUpPainterResource()
+                                    } else {
+                                        AppIcons.ChevronDownPainterResource()
+                                    },
+                                    contentDescription = "Toggle Target Selection Menu",
+                                    tint = glassColors.onGlassSecondary,
+                                    modifier = Modifier.size(IconSize.Small),
+                                )
+                            }
                         }
                     }
                 }
