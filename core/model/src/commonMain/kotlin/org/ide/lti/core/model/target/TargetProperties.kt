@@ -41,7 +41,10 @@ data class TargetProperties(
     val targetBootFirmwareDevice: String = "",
     val targetBootFirmwareIncremental: String = "",
     val targetBootFirmwareSecurityPatch: String = "",
-    val romBuildTimestamp: String = "0",
+    // Left blank by default (not "0") - LtiRomKt/app/.../env/ConfigLoader.kt only treats this key
+    // as "provided" when non-blank, and auto-derives a real current epoch-seconds timestamp when
+    // it's absent/blank. A hardcoded placeholder here would suppress that and stamp every build "0".
+    val romBuildTimestamp: String = "",
     val romIsOfficial: Boolean = false,
 
     // 3. Firmware Acquisition
@@ -197,7 +200,7 @@ data class TargetProperties(
                 versionMinor = 0,
                 versionPatch = 0,
                 romVersion = "1.0.0",
-                romBuildTimestamp = "0",
+                romBuildTimestamp = "",
                 romIsOfficial = target.selectedFirmware.isOfficial,
                 targetFirmwareSource = sourceMode,
                 targetFirmwareSourceOtaUrl = otaUrl,
