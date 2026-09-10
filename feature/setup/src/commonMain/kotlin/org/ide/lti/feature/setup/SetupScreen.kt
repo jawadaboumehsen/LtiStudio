@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -35,6 +36,9 @@ import org.ide.lti.core.designsystem.component.actions.LocalWindowControlActions
 import org.ide.lti.core.designsystem.component.actions.WindowControlActions
 import org.ide.lti.core.designsystem.component.display.GlassPanel
 import org.ide.lti.core.designsystem.component.display.GlassVerticalDivider
+import org.ide.lti.core.designsystem.component.feedback.GlassBanner
+import org.ide.lti.core.designsystem.component.feedback.GlassBannerAction
+import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.component.layout.GlassTopBar
 import org.ide.lti.core.designsystem.component.layout.TopBarNavigation
 import org.ide.lti.core.designsystem.theme.ComponentSize
@@ -42,9 +46,8 @@ import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.MotionDuration
 import org.ide.lti.core.designsystem.theme.MotionEasing
-import org.ide.lti.core.model.filesystem.LineEnding
+import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.model.workspace.Workspace
-import org.ide.lti.core.ui.WorkspaceStatusBar
 import org.ide.lti.feature.setup.components.SetupJourneySidebar
 import org.ide.lti.feature.setup.steps.ConnectionsStepContent
 import org.ide.lti.feature.setup.steps.DocumentationStepContent
@@ -173,6 +176,18 @@ fun SetupScreenContent(
                 drawOwnChrome = true,
             )
 
+            if (state.environmentNotice != null) {
+                GlassBanner(
+                    severity = GlassBannerSeverity.WARNING,
+                    title = "Environment Verification Required",
+                    description = state.environmentNotice,
+                    primaryAction = GlassBannerAction(label = "Verify Now", onClick = actions.onNavigateToEnvironment),
+                    secondaryAction = GlassBannerAction(label = "Dismiss", onClick = actions.onDismissEnvironmentNotice),
+                    backdrop = resolvedBackdrop,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
+                )
+            }
+
             Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
                 // Modern Linear/Fleet-tier Left Setup Journey Sidebar
                 GlassPanel(
@@ -260,25 +275,6 @@ fun SetupScreenContent(
                     }
                 }
             }
-
-            // Bottom Unified Liquid Glass Status Bar
-            WorkspaceStatusBar(
-                filePath = when (effectiveTab) {
-                    SetupTab.PROJECTS -> "Projects & Launchpad Hub"
-                    SetupTab.ENVIRONMENT -> "WSL2 & Toolchain Provisioning"
-                    SetupTab.LAUNCHPAD -> "Studio Workspace Launchpad"
-                    SetupTab.CONNECTIONS -> "Server Daemon Bridge"
-                    SetupTab.DOCS -> "Documentation"
-                    SetupTab.PLUGINS -> "Extensions"
-                },
-                branchName = "main",
-                encoding = "UTF-8",
-                lineEnding = LineEnding.LF,
-                fileType = "LtiRom Desktop",
-                cursorPosition = null,
-                drawOwnChrome = true,
-                backdrop = resolvedBackdrop,
-            )
         }
     }
 }
