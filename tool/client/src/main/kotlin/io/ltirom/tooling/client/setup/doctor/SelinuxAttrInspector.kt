@@ -1,0 +1,39 @@
+package io.ltirom.tooling.client.setup.doctor
+
+import io.ltirom.tooling.client.wsl.WslCliExecutor
+import org.ide.lti.core.domain.setup.DiagnosticCategory
+import org.ide.lti.core.domain.setup.DiagnosticCheckItem
+import org.ide.lti.core.domain.setup.StepStatus
+
+/**
+ * Inspector verifying SELinux extended attribute utilities (attr, getfattr).
+ *
+ * Adheres to:
+ * - Single Responsibility Principle (SRP): Dedicated exclusively to validating SELinux tooling.
+ */
+public class SelinuxAttrInspector(
+    private val cli: WslCliExecutor = WslCliExecutor()
+) : SystemDiagnosticInspector {
+
+    override suspend fun inspect(context: DiagnosticContext): DiagnosticCheckItem {
+        val distro = context.distro
+        val hasAttr = cli.execute(distro, listOf("which", "attr")).exitCode == 0
+        val hasGetfattr = cli.execute(distro, listOf("which", "getfattr")).exitCode == 0
+        val attrOk = hasAttr && hasGetfattr
+        val attrCmd = if (attrOk) null else "sudo apt-get install -y attr"
+
+        return DiagnosticCheckItem(
+            id = "selinux_attr",
+            title = "SELinux Extended Attributes",
+            category = DiagnosticCategory.OS_UTILITIES,
+            status = if (attrOk) StepStatus.SUCCESS else StepStatus.FAILED,
+            detail = if (attrOk) {
+                "attr and getfattr utilities available for security.selinux context extraction."
+            } else {
+                "Missing: attr/getfattr (required by FirmwareImagePort to preserve SELinux file contexts)."
+            },
+            remediation = if (attrOk) null else "Run '$attrCmd' in WSL.",
+            copyableCommand = attrCmd
+        )
+    }
+}

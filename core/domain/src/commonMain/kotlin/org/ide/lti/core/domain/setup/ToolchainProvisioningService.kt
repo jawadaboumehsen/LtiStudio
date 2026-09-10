@@ -35,12 +35,39 @@ public enum class ToolScope(public val displayName: String) {
 }
 
 /**
+ * Categorization of a toolchain binary by its functional role in the ROM engineering pipeline.
+ */
+public enum class ToolCategory(public val displayName: String) {
+    DYNAMIC_PARTITIONS("Dynamic Partitions"),
+    FILESYSTEM_AND_IMAGES("Filesystem & Images"),
+    BOOT_AND_KERNEL("Boot & Kernel"),
+    SIGNING_AND_SECURITY("Signing & Security"),
+    BRIDGE_AND_FLASHING("Bridge & Flashing"),
+    PACKAGING_AND_TOOLS("Packaging & Tools"),
+}
+
+/**
+ * Categorization of a pre-flight doctor diagnostic check by the subsystem it verifies.
+ */
+public enum class DiagnosticCategory(public val displayName: String) {
+    COMPILERS("Compilers"),
+    LIBRARIES("Libraries"),
+    RUNTIMES("Runtimes"),
+    OS_UTILITIES("OS Utilities"),
+    KERNEL_AND_MOUNT("Kernel & Mount"),
+    STORAGE("Storage"),
+    SECURITY("Security"),
+    TOOLCHAIN("Toolchain"),
+    PERFORMANCE("Performance"),
+}
+
+/**
  * Individual tool component item modeled after Android Studio SDK Tools & JetBrains Toolchains.
  */
 public data class ToolComponentItem(
     val id: String,
     val name: String,
-    val category: String,
+    val category: ToolCategory,
     val binaryName: String,
     val scope: ToolScope = ToolScope.WSL2,
     val version: String? = null,
@@ -61,7 +88,7 @@ public data class DiagnosticCheckItem(
     val status: StepStatus = StepStatus.PENDING,
     val detail: String = "",
     val remediation: String? = null,
-    val category: String = "General",
+    val category: DiagnosticCategory = DiagnosticCategory.TOOLCHAIN,
     val copyableCommand: String? = null,
     val isOptionalForRuntime: Boolean = false
 )
@@ -171,80 +198,80 @@ public data class ToolchainSetupState(
             DiagnosticCheckItem(
                 id = "host_compilers",
                 title = "Host Compilers & Build Engine",
-                category = "Compilers",
+                category = DiagnosticCategory.COMPILERS,
                 detail = "cmake, make, clang/gcc, and clang++/g++ for compiling native C++ tools from source."
             ),
             DiagnosticCheckItem(
                 id = "host_libraries",
                 title = "Native C/C++ Build Dependencies",
-                category = "Libraries",
+                category = DiagnosticCategory.LIBRARIES,
                 detail = "pkg-config, protobuf, brotli, lz4, zstd, pcre2, libusb, uuid, and libfuse3 development headers."
             ),
             DiagnosticCheckItem(
                 id = "python_crypto",
                 title = "Python 3 Runtime & Cryptography",
-                category = "Runtimes",
+                category = DiagnosticCategory.RUNTIMES,
                 detail = "Python 3, pip, cryptography, and pyasn1 for AVB 2.0 signing, mkbootimg, and img2sdat."
             ),
             DiagnosticCheckItem(
                 id = "jdk_dual",
                 title = "Dual JDK Runtimes & Compiler",
-                category = "Runtimes",
+                category = DiagnosticCategory.RUNTIMES,
                 detail = "Java and javac compiler for OpenJDK 17 (apktool/signapk) and OpenJDK 21 (LtiRomKt)."
             ),
             DiagnosticCheckItem(
                 id = "selinux_attr",
                 title = "SELinux Extended Attributes",
-                category = "OS Utilities",
+                category = DiagnosticCategory.OS_UTILITIES,
                 detail = "attr and getfattr utilities for reading and preserving security.selinux file contexts."
             ),
             DiagnosticCheckItem(
                 id = "archive_tools",
                 title = "Archive & Compression Tools",
-                category = "OS Utilities",
+                category = DiagnosticCategory.OS_UTILITIES,
                 detail = "zip and unzip for firmware OTA unpacking and flashable recovery package generation."
             ),
             DiagnosticCheckItem(
                 id = "transfer_tools",
                 title = "Host Transfer & Sync Utilities",
-                category = "OS Utilities",
+                category = DiagnosticCategory.OS_UTILITIES,
                 detail = "curl, git, rsync, and tar for prebuilt tool acquisition and workspace synchronization."
             ),
             DiagnosticCheckItem(
                 id = "dev_fuse",
                 title = "Kernel FUSE & Userspace Runtime",
-                category = "Kernel & Mount",
+                category = DiagnosticCategory.KERNEL_AND_MOUNT,
                 detail = "/dev/fuse device node and fuse3/fusermount userspace tools for erofsfuse mounting."
             ),
             DiagnosticCheckItem(
                 id = "loop_mount",
                 title = "Linux Loop Devices & Mount Elevation",
-                category = "Kernel & Mount",
+                category = DiagnosticCategory.KERNEL_AND_MOUNT,
                 detail = "/dev/loop-control and non-interactive sudo elevation for ext4/f2fs partition mounting.",
                 isOptionalForRuntime = true
             ),
             DiagnosticCheckItem(
                 id = "disk_headroom",
                 title = "ext4 Storage Headroom (>= 45 GB)",
-                category = "Storage",
+                category = DiagnosticCategory.STORAGE,
                 detail = "Sufficient disk space in ~/LtiRomWorkDir for worktree staging."
             ),
             DiagnosticCheckItem(
                 id = "openssl_tools",
                 title = "OpenSSL Cryptography Tooling",
-                category = "Security",
+                category = DiagnosticCategory.SECURITY,
                 detail = "OpenSSL for AVB 2.0 RSA-4096 machine key generation and verification."
             ),
             DiagnosticCheckItem(
                 id = "toolchain_binaries",
                 title = "Compiled Toolchain Binaries Integrity",
-                category = "Toolchain",
+                category = DiagnosticCategory.TOOLCHAIN,
                 detail = "Integrity of the 14 core project tools in ~/LtiRomTools/bin."
             ),
             DiagnosticCheckItem(
                 id = "build_cache",
                 title = "Build Cache Accelerator (ccache)",
-                category = "Performance",
+                category = DiagnosticCategory.PERFORMANCE,
                 detail = "Optional compiler cache for accelerating C/C++ submodule rebuilds.",
                 isOptionalForRuntime = true
             )
@@ -255,7 +282,7 @@ public data class ToolchainSetupState(
             ToolComponentItem(
                 id = "lpmake",
                 name = "LP Make",
-                category = "Dynamic Partitions",
+                category = ToolCategory.DYNAMIC_PARTITIONS,
                 binaryName = "lpmake",
                 capabilities = listOf("create_super_image", "metadata_geometry", "extents"),
                 isCore = true
@@ -263,7 +290,7 @@ public data class ToolchainSetupState(
             ToolComponentItem(
                 id = "lpunpack",
                 name = "LP Unpack",
-                category = "Dynamic Partitions",
+                category = ToolCategory.DYNAMIC_PARTITIONS,
                 binaryName = "lpunpack",
                 capabilities = listOf("unpack_super_image", "extract_partitions"),
                 isCore = true
@@ -271,7 +298,7 @@ public data class ToolchainSetupState(
             ToolComponentItem(
                 id = "lpdump",
                 name = "LP Dump",
-                category = "Dynamic Partitions",
+                category = ToolCategory.DYNAMIC_PARTITIONS,
                 binaryName = "lpdump",
                 capabilities = listOf("dump_metadata", "slot_metadata", "verify_super"),
                 isCore = true
@@ -279,7 +306,7 @@ public data class ToolchainSetupState(
             ToolComponentItem(
                 id = "lpadd",
                 name = "LP Add",
-                category = "Dynamic Partitions",
+                category = ToolCategory.DYNAMIC_PARTITIONS,
                 binaryName = "lpadd",
                 capabilities = listOf("add_partition", "resize_group"),
                 isCore = false
@@ -287,7 +314,7 @@ public data class ToolchainSetupState(
             ToolComponentItem(
                 id = "lpflash",
                 name = "LP Flash",
-                category = "Dynamic Partitions",
+                category = ToolCategory.DYNAMIC_PARTITIONS,
                 binaryName = "lpflash",
                 capabilities = listOf("flash_partition", "dynamic_remap"),
                 isCore = false
@@ -297,7 +324,7 @@ public data class ToolchainSetupState(
             ToolComponentItem(
                 id = "mkfs.erofs",
                 name = "Make EROFS",
-                category = "Filesystem & Images",
+                category = ToolCategory.FILESYSTEM_AND_IMAGES,
                 binaryName = "mkfs.erofs",
                 capabilities = listOf("create_erofs_image", "lz4_compression", "dedupe"),
                 isCore = true
@@ -305,7 +332,7 @@ public data class ToolchainSetupState(
             ToolComponentItem(
                 id = "dump.erofs",
                 name = "Dump EROFS",
-                category = "Filesystem & Images",
+                category = ToolCategory.FILESYSTEM_AND_IMAGES,
                 binaryName = "dump.erofs",
                 capabilities = listOf("inspect_superblock", "list_inodes", "stats"),
                 isCore = true
@@ -313,7 +340,7 @@ public data class ToolchainSetupState(
             ToolComponentItem(
                 id = "fsck.erofs",
                 name = "FSCK EROFS",
-                category = "Filesystem & Images",
+                category = ToolCategory.FILESYSTEM_AND_IMAGES,
                 binaryName = "fsck.erofs",
                 capabilities = listOf("check_integrity", "validate_blocks"),
                 isCore = true
@@ -321,7 +348,7 @@ public data class ToolchainSetupState(
             ToolComponentItem(
                 id = "erofsfuse",
                 name = "EROFS FUSE",
-                category = "Filesystem & Images",
+                category = ToolCategory.FILESYSTEM_AND_IMAGES,
                 binaryName = "erofsfuse",
                 capabilities = listOf("userspace_mount", "read_only_vfs"),
                 isCore = true
@@ -329,7 +356,7 @@ public data class ToolchainSetupState(
             ToolComponentItem(
                 id = "mke2fs",
                 name = "Make EXT4",
-                category = "Filesystem & Images",
+                category = ToolCategory.FILESYSTEM_AND_IMAGES,
                 binaryName = "mke2fs",
                 capabilities = listOf("format_ext4", "journaling", "sparse_ext4"),
                 isCore = true
@@ -337,7 +364,7 @@ public data class ToolchainSetupState(
             ToolComponentItem(
                 id = "e2fsdroid",
                 name = "E2FS Droid",
-                category = "Filesystem & Images",
+                category = ToolCategory.FILESYSTEM_AND_IMAGES,
                 binaryName = "e2fsdroid",
                 capabilities = listOf("fs_config", "ext4_inject", "selinux_contexts"),
                 isCore = true
@@ -345,7 +372,7 @@ public data class ToolchainSetupState(
             ToolComponentItem(
                 id = "mkuserimg_mke2fs",
                 name = "Make UserImg EXT4",
-                category = "Filesystem & Images",
+                category = ToolCategory.FILESYSTEM_AND_IMAGES,
                 binaryName = "mkuserimg_mke2fs",
                 capabilities = listOf("build_ext4_image", "file_contexts"),
                 isCore = false
@@ -353,7 +380,7 @@ public data class ToolchainSetupState(
             ToolComponentItem(
                 id = "make_f2fs",
                 name = "Make F2FS",
-                category = "Filesystem & Images",
+                category = ToolCategory.FILESYSTEM_AND_IMAGES,
                 binaryName = "make_f2fs",
                 capabilities = listOf("format_f2fs", "flash_friendly_fs"),
                 isCore = false
@@ -361,7 +388,7 @@ public data class ToolchainSetupState(
             ToolComponentItem(
                 id = "mkf2fsuserimg",
                 name = "Make F2FS UserImg",
-                category = "Filesystem & Images",
+                category = ToolCategory.FILESYSTEM_AND_IMAGES,
                 binaryName = "mkf2fsuserimg",
                 capabilities = listOf("build_f2fs_image", "android_sparse"),
                 isCore = false
@@ -369,7 +396,7 @@ public data class ToolchainSetupState(
             ToolComponentItem(
                 id = "sload_f2fs",
                 name = "SLOAD F2FS",
-                category = "Filesystem & Images",
+                category = ToolCategory.FILESYSTEM_AND_IMAGES,
                 binaryName = "sload_f2fs",
                 capabilities = listOf("populate_f2fs", "selinux_injector"),
                 isCore = false
@@ -377,7 +404,7 @@ public data class ToolchainSetupState(
             ToolComponentItem(
                 id = "simg2img",
                 name = "SIMG to IMG",
-                category = "Filesystem & Images",
+                category = ToolCategory.FILESYSTEM_AND_IMAGES,
                 binaryName = "simg2img",
                 capabilities = listOf("unsparse", "raw_extents"),
                 isCore = true
@@ -385,7 +412,7 @@ public data class ToolchainSetupState(
             ToolComponentItem(
                 id = "img2simg",
                 name = "IMG to SIMG",
-                category = "Filesystem & Images",
+                category = ToolCategory.FILESYSTEM_AND_IMAGES,
                 binaryName = "img2simg",
                 capabilities = listOf("convert_sparse", "block_chunking"),
                 isCore = true
@@ -393,7 +420,7 @@ public data class ToolchainSetupState(
             ToolComponentItem(
                 id = "ext2simg",
                 name = "EXT2 to SIMG",
-                category = "Filesystem & Images",
+                category = ToolCategory.FILESYSTEM_AND_IMAGES,
                 binaryName = "ext2simg",
                 capabilities = listOf("convert_ext4_sparse"),
                 isCore = false
@@ -401,7 +428,7 @@ public data class ToolchainSetupState(
             ToolComponentItem(
                 id = "append2simg",
                 name = "Append to SIMG",
-                category = "Filesystem & Images",
+                category = ToolCategory.FILESYSTEM_AND_IMAGES,
                 binaryName = "append2simg",
                 capabilities = listOf("append_sparse_chunk"),
                 isCore = false
@@ -409,7 +436,7 @@ public data class ToolchainSetupState(
             ToolComponentItem(
                 id = "img2sdat",
                 name = "IMG to SDAT",
-                category = "Filesystem & Images",
+                category = ToolCategory.FILESYSTEM_AND_IMAGES,
                 binaryName = "img2sdat",
                 capabilities = listOf("convert_block_sparse", "transfer_list"),
                 isCore = true
@@ -419,7 +446,7 @@ public data class ToolchainSetupState(
             ToolComponentItem(
                 id = "mkbootimg",
                 name = "Make BootImg",
-                category = "Boot & Kernel",
+                category = ToolCategory.BOOT_AND_KERNEL,
                 binaryName = "mkbootimg",
                 capabilities = listOf("create_boot_image", "header_v4", "init_boot"),
                 isCore = true
@@ -427,7 +454,7 @@ public data class ToolchainSetupState(
             ToolComponentItem(
                 id = "unpack_bootimg",
                 name = "Unpack BootImg",
-                category = "Boot & Kernel",
+                category = ToolCategory.BOOT_AND_KERNEL,
                 binaryName = "unpack_bootimg",
                 capabilities = listOf("unpack_boot", "extract_kernel", "extract_ramdisk"),
                 isCore = true
@@ -435,7 +462,7 @@ public data class ToolchainSetupState(
             ToolComponentItem(
                 id = "repack_bootimg",
                 name = "Repack BootImg",
-                category = "Boot & Kernel",
+                category = ToolCategory.BOOT_AND_KERNEL,
                 binaryName = "repack_bootimg",
                 capabilities = listOf("repack_boot", "kernel_cmdline", "pagesize"),
                 isCore = true
@@ -443,7 +470,7 @@ public data class ToolchainSetupState(
             ToolComponentItem(
                 id = "mkbootfs",
                 name = "Make BootFS",
-                category = "Boot & Kernel",
+                category = ToolCategory.BOOT_AND_KERNEL,
                 binaryName = "mkbootfs",
                 capabilities = listOf("create_ramdisk", "cpio_archive"),
                 isCore = false
@@ -451,7 +478,7 @@ public data class ToolchainSetupState(
             ToolComponentItem(
                 id = "mkdtboimg",
                 name = "Make DTBO Img",
-                category = "Boot & Kernel",
+                category = ToolCategory.BOOT_AND_KERNEL,
                 binaryName = "mkdtboimg",
                 capabilities = listOf("create_dtbo_image", "device_tree_table"),
                 isCore = false
@@ -461,7 +488,7 @@ public data class ToolchainSetupState(
             ToolComponentItem(
                 id = "avbtool",
                 name = "AVB Tool",
-                category = "Signing & Security",
+                category = ToolCategory.SIGNING_AND_SECURITY,
                 binaryName = "avbtool",
                 capabilities = listOf("make_vbmeta_image", "add_hash_footer", "rsa4096_signing"),
                 isCore = true
@@ -469,7 +496,7 @@ public data class ToolchainSetupState(
             ToolComponentItem(
                 id = "signapk",
                 name = "Sign APK",
-                category = "Signing & Security",
+                category = ToolCategory.SIGNING_AND_SECURITY,
                 binaryName = "signapk",
                 capabilities = listOf("sign_apk", "sign_ota", "v1_v2_v3_signatures"),
                 isCore = true
@@ -477,7 +504,7 @@ public data class ToolchainSetupState(
             ToolComponentItem(
                 id = "fec",
                 name = "FEC",
-                category = "Signing & Security",
+                category = ToolCategory.SIGNING_AND_SECURITY,
                 binaryName = "fec",
                 capabilities = listOf("encode_forward_error_correction", "decode_fec"),
                 isCore = false
@@ -487,7 +514,7 @@ public data class ToolchainSetupState(
             ToolComponentItem(
                 id = "adb",
                 name = "Android Debug Bridge",
-                category = "Bridge & Flashing",
+                category = ToolCategory.BRIDGE_AND_FLASHING,
                 binaryName = "adb",
                 capabilities = listOf("devices", "push", "pull", "shell", "logcat"),
                 isCore = true
@@ -495,7 +522,7 @@ public data class ToolchainSetupState(
             ToolComponentItem(
                 id = "fastboot",
                 name = "Fastboot",
-                category = "Bridge & Flashing",
+                category = ToolCategory.BRIDGE_AND_FLASHING,
                 binaryName = "fastboot",
                 capabilities = listOf("flash", "boot", "getvar", "reboot_fastbootd"),
                 isCore = true
@@ -505,7 +532,7 @@ public data class ToolchainSetupState(
             ToolComponentItem(
                 id = "aapt2",
                 name = "AAPT2",
-                category = "Packaging & Tools",
+                category = ToolCategory.PACKAGING_AND_TOOLS,
                 binaryName = "aapt2",
                 capabilities = listOf("compile", "link", "dump_badging"),
                 isCore = true
@@ -513,7 +540,7 @@ public data class ToolchainSetupState(
             ToolComponentItem(
                 id = "apktool",
                 name = "Apktool",
-                category = "Packaging & Tools",
+                category = ToolCategory.PACKAGING_AND_TOOLS,
                 binaryName = "apktool",
                 capabilities = listOf("decode_resources", "build_apk", "smali_disasm"),
                 isCore = true
@@ -521,7 +548,7 @@ public data class ToolchainSetupState(
             ToolComponentItem(
                 id = "zipalign",
                 name = "ZipAlign",
-                category = "Packaging & Tools",
+                category = ToolCategory.PACKAGING_AND_TOOLS,
                 binaryName = "zipalign",
                 capabilities = listOf("align_zip_4byte", "page_align_so", "verify"),
                 isCore = true
@@ -529,7 +556,7 @@ public data class ToolchainSetupState(
             ToolComponentItem(
                 id = "payload-dumper-go",
                 name = "Payload Dumper Go",
-                category = "Packaging & Tools",
+                category = ToolCategory.PACKAGING_AND_TOOLS,
                 binaryName = "payload-dumper-go",
                 capabilities = listOf("extract_payload_bin", "concurrent_chunk_decompression"),
                 isCore = true
@@ -537,7 +564,7 @@ public data class ToolchainSetupState(
             ToolComponentItem(
                 id = "gh",
                 name = "GitHub CLI",
-                category = "Packaging & Tools",
+                category = ToolCategory.PACKAGING_AND_TOOLS,
                 binaryName = "gh",
                 capabilities = listOf("repo_clone", "release_download", "api"),
                 isCore = false
