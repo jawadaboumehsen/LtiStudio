@@ -97,6 +97,22 @@ class TargetPropertiesTest {
     }
 
     @Test
+    fun testTargetHasSystemExtMatchesFlashablePartitions() {
+        // LtiRomKt derives "does this target have a system_ext partition" from
+        // TARGET_FLASHABLE_PARTITIONS list membership (ModulesContext.readOnly()), not from
+        // TARGET_HAS_SYSTEM_EXT directly - the two must always agree or a config load fails.
+        val withSystemExt = TargetDevice.EMPTY.copy(
+            dynamicPartitions = listOf("system", "vendor", "system_ext"),
+        )
+        assertEquals(true, TargetProperties.fromTargetDevice(withSystemExt).targetHasSystemExt)
+
+        val withoutSystemExt = TargetDevice.EMPTY.copy(
+            dynamicPartitions = listOf("system", "vendor"),
+        )
+        assertEquals(false, TargetProperties.fromTargetDevice(withoutSystemExt).targetHasSystemExt)
+    }
+
+    @Test
     fun testToPropertiesStringParseRoundTrips() {
         val instance = TargetProperties(
             targetId = "TEST_ID",

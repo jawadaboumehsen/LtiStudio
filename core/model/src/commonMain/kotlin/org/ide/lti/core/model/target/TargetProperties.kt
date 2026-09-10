@@ -210,7 +210,11 @@ data class TargetProperties(
                 targetFirmwareSourceZipImageSha256 = "",
                 targetFirmwareSourceZipImageSha256Unavailable = false,
                 targetFsType = target.filesystemType,
-                targetHasSystemExt = true,
+                // Must agree with targetFlashablePartitions - LtiRomKt derives "does this target
+                // have a system_ext partition" from TARGET_FLASHABLE_PARTITIONS list membership
+                // (ModulesContext.readOnly()), not from this flag, and (once ConfigLoader.kt's
+                // consistency check lands) will reject a config where the two disagree.
+                targetHasSystemExt = "system_ext" in target.dynamicPartitions,
                 targetFlashablePartitions = target.dynamicPartitions.joinToString(" "),
                 targetFlashableBootPartitions = target.bootPartitions.joinToString(" "),
                 targetFlashableBootSlots = "a b",
