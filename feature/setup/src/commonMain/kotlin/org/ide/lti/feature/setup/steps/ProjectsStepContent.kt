@@ -60,9 +60,11 @@ import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolchainSetupState
+import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.feature.setup.SetupUiActions
 import org.ide.lti.feature.setup.SetupUiState
+import org.ide.lti.feature.setup.components.TargetSelectorCard
 
 /**
  * Structured overload for [ProjectsStepContent] utilizing [SetupUiState] and [SetupUiActions]
@@ -87,6 +89,9 @@ fun ProjectsStepContent(
         onOpenDefaultWorkspace = actions.onProceedToWorkspace,
         onRecentProjectClick = actions.onRecentProjectClick,
         toolchainSetupState = state.toolchainSetupState,
+        selectedTarget = state.selectedTarget,
+        availableTargets = state.availableTargets,
+        onSelectTargetAndLaunch = actions.onSelectTargetAndLaunch,
         onNavigateToEnvironment = onNavigateToEnvironment,
         resolvedBackdrop = resolvedBackdrop,
         modifier = modifier,
@@ -117,6 +122,9 @@ fun ProjectsStepContent(
     onNavigateToEnvironment: () -> Unit,
     resolvedBackdrop: LayerBackdrop,
     modifier: Modifier = Modifier,
+    selectedTarget: TargetDevice? = null,
+    availableTargets: List<TargetDevice> = emptyList(),
+    onSelectTargetAndLaunch: (TargetDevice) -> Unit = {},
 ) {
     val glassColors = GlassTheme.colors
     val diagnostics = glassColors.diagnostics
@@ -225,6 +233,16 @@ fun ProjectsStepContent(
                     }
                 }
             }
+        }
+
+        // Target Hardware Selector Card
+        item(key = "target_selector") {
+            TargetSelectorCard(
+                selectedTarget = selectedTarget,
+                availableTargets = availableTargets,
+                onSelectTargetAndLaunch = onSelectTargetAndLaunch,
+                backdrop = resolvedBackdrop,
+            )
         }
 
         // 3 Hero Quick Action Cards Symmetrically Balanced Across the Row

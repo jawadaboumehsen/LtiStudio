@@ -25,6 +25,7 @@ import org.ide.lti.core.model.workspace.RecentProject
 data class SetupUiState(
     val toolchainSetupState: ToolchainSetupState = ToolchainSetupState(),
     val selectedTarget: TargetDevice? = null,
+    val availableTargets: List<TargetDevice> = emptyList(),
     val recentProjects: List<RecentProject> = emptyList(),
     val filteredProjects: List<RecentProject> = emptyList(),
     val searchQuery: String = "",
@@ -52,6 +53,7 @@ data class SetupUiActions(
     val onRetrySetupStep: () -> Unit = {},
     val onProvisionAvbKey: () -> Unit = {},
     val onProceedToWorkspace: () -> Unit = {},
+    val onSelectTargetAndLaunch: (TargetDevice) -> Unit = {},
     val onAutoRemediateDoctor: () -> Unit = {},
     val onAutoRunEnvironmentSetup: () -> Unit = {},
     val onNavigateToEnvironment: () -> Unit = {},

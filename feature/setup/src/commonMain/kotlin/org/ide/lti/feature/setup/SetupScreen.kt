@@ -82,10 +82,12 @@ fun SetupScreen(
     val selectedTab by viewModel.selectedTab.collectAsState()
     val environmentNotice by viewModel.environmentNotice.collectAsState()
     val selectedTarget by viewModel.selectedTarget.collectAsState()
+    val availableTargets by viewModel.availableTargets.collectAsState()
 
     val uiState = SetupUiState(
         toolchainSetupState = toolchainSetupState,
         selectedTarget = selectedTarget,
+        availableTargets = availableTargets,
         recentProjects = recentProjects,
         filteredProjects = filteredProjects,
         searchQuery = searchQuery,
@@ -109,6 +111,7 @@ fun SetupScreen(
         onRetrySetupStep = viewModel::retrySetupStep,
         onProvisionAvbKey = viewModel::onProvisionAvbKey,
         onProceedToWorkspace = { viewModel.openDefaultWorkspace(onOpenWorkspace) },
+        onSelectTargetAndLaunch = { target -> viewModel.selectTargetAndLaunch(target, onOpenWorkspace) },
         onAutoRemediateDoctor = viewModel::autoRemediateDoctorIssues,
         onAutoRunEnvironmentSetup = viewModel::autoRunEnvironmentSetup,
         onSelectCockpitTab = viewModel::selectCockpitTab,
