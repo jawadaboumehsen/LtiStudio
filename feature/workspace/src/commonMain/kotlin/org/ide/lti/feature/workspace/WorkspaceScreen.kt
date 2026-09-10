@@ -19,17 +19,28 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.key.Key
 import org.ide.lti.core.common.event.PanelId
-import org.ide.lti.core.designsystem.component.layout.GlassLayout
-import org.ide.lti.core.designsystem.component.navigation.GlassSidePanelRail
-import org.ide.lti.core.designsystem.component.navigation.GlassSidePanelTab
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
+import org.ide.lti.core.designsystem.component.actions.onKeyShortcut
+import org.ide.lti.core.designsystem.component.layout.GlassLayout
 import org.ide.lti.core.designsystem.component.layout.GlassTopBar
+import org.ide.lti.core.designsystem.component.layout.LayoutPanel
 import org.ide.lti.core.designsystem.component.layout.TopBarNavigation
 import org.ide.lti.core.designsystem.component.layout.TopBarPanelToggles
-import org.ide.lti.core.designsystem.component.navigation.SidePanelRailPosition
-import org.ide.lti.core.designsystem.component.layout.LayoutPanel
+import org.ide.lti.core.designsystem.component.layout.TopBarSearch
 import org.ide.lti.core.designsystem.component.layout.rememberLtiLayoutState
+import org.ide.lti.core.designsystem.component.navigation.CommandCategory
+import org.ide.lti.core.designsystem.component.navigation.CommandItem
+import org.ide.lti.core.designsystem.component.navigation.GlassCommandPalette
+import org.ide.lti.core.designsystem.component.navigation.GlassSidePanelRail
+import org.ide.lti.core.designsystem.component.navigation.GlassSidePanelTab
+import org.ide.lti.core.designsystem.component.navigation.SidePanelRailPosition
+import org.ide.lti.core.model.target.TargetRegion
+import org.ide.lti.core.model.target.WirelessPairingRequest
+import org.ide.lti.feature.workspace.panels.target.GlassWifiPairingDialog
+import org.ide.lti.feature.workspace.panels.target.TargetNavSection
+import org.ide.lti.feature.workspace.panels.target.TargetRunConfigurationBar
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.model.filesystem.LineEnding
@@ -41,6 +52,8 @@ import org.ide.lti.feature.workspace.panels.editor.EditorPanel
 import org.ide.lti.feature.workspace.panels.editor.EditorViewModel
 import org.ide.lti.feature.workspace.panels.explorer.ExplorerPanel
 import org.ide.lti.feature.workspace.panels.explorer.ExplorerViewModel
+import org.ide.lti.feature.workspace.panels.target.TargetDetailPanel
+import org.ide.lti.feature.workspace.panels.target.TargetOptionsPanel
 import org.ide.lti.feature.workspace.panels.terminal.TerminalPanel
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -50,6 +63,7 @@ import org.koin.compose.viewmodel.koinViewModel
  * Features:
  * - Glass toolbar with navigation controls
  * - Glass file explorer panel (left)
+ * - Glass target device & ltikt.properties configuration cockpit (left)
  * - Glass code editor (center)
  * - Glass AI assistant panel (right)
  * - Glass terminal panel (bottom)
@@ -62,11 +76,18 @@ fun WorkspaceScreen(
     modifier: Modifier = Modifier,
     onOpenSettings: () -> Unit = {},
     onOpenNotifications: () -> Unit = {},
+    onOpenConfigurations: () -> Unit = {},
+    onOpenEditConfiguration: (String) -> Unit = { onOpenConfigurations() },
+    onOpenAddConfiguration: () -> Unit = onOpenConfigurations,
     viewModel: WorkspaceViewModel = koinViewModel(),
     editorViewModel: EditorViewModel = koinViewModel(),
     explorerViewModel: ExplorerViewModel = koinViewModel(),
 ) {
     val workspaceName by viewModel.workspaceName.collectAsState()
+    val selectedTarget by viewModel.selectedTarget.collectAsState()
+    val connectedDevices by viewModel.connectedDevices.collectAsState()
+    val selectedConnectedDevice by viewModel.selectedConnectedDevice.collectAsState()
+    val isRefreshingDevices by viewModel.isRefreshingDevices.collectAsState()
     val initialPanelsState = viewModel.panelsState.value
 
     val initialLeftState = initialPanelsState[PanelId.LEFT]
@@ -91,7 +112,250 @@ fun WorkspaceScreen(
     var activeFileType by remember { mutableStateOf<String?>(null) }
     var cursorPosition by remember { mutableStateOf<Pair<Int, Int>?>(null) }
 
-    val leftTabs = remember(editorViewModel, explorerViewModel) {
+    val availableTargets by viewModel.availableTargets.collectAsState()
+    val branch by viewModel.branch.collectAsState()
+    val deviceOperationStatus by viewModel.deviceOperationStatus.collectAsState()
+    var isCommandPaletteOpen by rememberSaveable { mutableStateOf(false) }
+    var isWifiPairingDialogOpen by rememberSaveable { mutableStateOf(false) }
+
+    val commands = remember(availableTargets, selectedTarget, ltiLayoutState, leftTabIndex) {
+        buildList {
+            // 1. Navigation
+            add(
+                CommandItem(
+                    id = "nav_files",
+                    title = "Open File Explorer",
+                    subtitle = "Browse workspace directory and source tree",
+                    category = CommandCategory.NAVIGATION,
+                    icon = AppIcon.Painted(AppIcons.FolderPainterResource),
+                    shortcut = "Ctrl+1",
+                ) {
+                    leftTabIndex = 0
+                    if (!ltiLayoutState.showLeft) {
+                        ltiLayoutState.toggleLeft()
+                        viewModel.togglePanelVisibility(PanelId.LEFT)
+                    }
+                },
+            )
+            add(
+                CommandItem(
+                    id = "nav_target",
+                    title = "Target Device & Config",
+                    subtitle = "Silicon telemetry, partition geometry, and BoardConfig",
+                    category = CommandCategory.NAVIGATION,
+                    icon = AppIcon.Painted(AppIcons.SettingsPainterResource),
+                    shortcut = "Ctrl+2",
+                ) {
+                    leftTabIndex = 1
+                    if (!ltiLayoutState.showLeft) {
+                        ltiLayoutState.toggleLeft()
+                        viewModel.togglePanelVisibility(PanelId.LEFT)
+                    }
+                },
+            )
+            add(
+                CommandItem(
+                    id = "nav_telemetry",
+                    title = "Hardware Telemetry",
+                    subtitle = "SoC platform, super container, and AVB status",
+                    category = CommandCategory.NAVIGATION,
+                    icon = AppIcon.Painted(AppIcons.SparklesPainterResource),
+                ) {
+                    leftTabIndex = 1
+                    viewModel.onSelectTargetNavSection(TargetNavSection.TELEMETRY)
+                    if (!ltiLayoutState.showLeft) {
+                        ltiLayoutState.toggleLeft()
+                        viewModel.togglePanelVisibility(PanelId.LEFT)
+                    }
+                },
+            )
+            add(
+                CommandItem(
+                    id = "nav_config",
+                    title = "Visual Config Form",
+                    subtitle = "Edit ltikt.properties keys, flags, and filesystem options",
+                    category = CommandCategory.NAVIGATION,
+                    icon = AppIcon.Painted(AppIcons.EditPainterResource),
+                ) {
+                    leftTabIndex = 1
+                    viewModel.onSelectTargetNavSection(TargetNavSection.PROPERTIES_FORM)
+                    if (!ltiLayoutState.showLeft) {
+                        ltiLayoutState.toggleLeft()
+                        viewModel.togglePanelVisibility(PanelId.LEFT)
+                    }
+                },
+            )
+            add(
+                CommandItem(
+                    id = "nav_raw",
+                    title = "Raw ltikt.properties Editor",
+                    subtitle = "Direct syntax-highlighted editor for ltikt.properties",
+                    category = CommandCategory.NAVIGATION,
+                    icon = AppIcon.Painted(AppIcons.FilePainterResource),
+                ) {
+                    leftTabIndex = 1
+                    viewModel.onSelectTargetNavSection(TargetNavSection.PROPERTIES_RAW)
+                    if (!ltiLayoutState.showLeft) {
+                        ltiLayoutState.toggleLeft()
+                        viewModel.togglePanelVisibility(PanelId.LEFT)
+                    }
+                },
+            )
+            add(
+                CommandItem(
+                    id = "nav_provision",
+                    title = "Target Directory Provisioning",
+                    subtitle = "Scaffold ~/LtiRomWorkDir/target/<codename> structure",
+                    category = CommandCategory.NAVIGATION,
+                    icon = AppIcon.Painted(AppIcons.HomePainterResource),
+                ) {
+                    leftTabIndex = 1
+                    viewModel.onSelectTargetNavSection(TargetNavSection.PROVISIONING)
+                    if (!ltiLayoutState.showLeft) {
+                        ltiLayoutState.toggleLeft()
+                        viewModel.togglePanelVisibility(PanelId.LEFT)
+                    }
+                },
+            )
+
+            // 2. Targets & Regions
+            availableTargets.forEach { target ->
+                add(
+                    CommandItem(
+                        id = "target_${target.id}",
+                        title = "Target: ${target.name}",
+                        subtitle = "Switch active target to ${target.codename} (${target.socPlatform})",
+                        category = CommandCategory.TARGET,
+                        icon = AppIcon.Painted(AppIcons.SettingsPainterResource),
+                    ) {
+                        viewModel.onSelectTarget(target.id)
+                    },
+                )
+            }
+            add(
+                CommandItem(
+                    id = "region_global",
+                    title = "Switch to Global OS",
+                    subtitle = "Official international firmware baseline (NP05J_GB / EEA)",
+                    category = CommandCategory.TARGET,
+                    icon = AppIcon.Painted(AppIcons.LinkPainterResource),
+                ) {
+                    viewModel.onSelectRegion(TargetRegion.GLOBAL)
+                },
+            )
+            add(
+                CommandItem(
+                    id = "region_china",
+                    title = "Switch to CN OS",
+                    subtitle = "Official China mainland firmware baseline (NP05J_CN / CN)",
+                    category = CommandCategory.TARGET,
+                    icon = AppIcon.Painted(AppIcons.LinkPainterResource),
+                ) {
+                    viewModel.onSelectRegion(TargetRegion.CHINA)
+                },
+            )
+
+            // 3. Configuration Actions
+            add(
+                CommandItem(
+                    id = "config_edit",
+                    title = "Edit Target Configurations...",
+                    subtitle = "Open Target & Run Configuration Studio",
+                    category = CommandCategory.CONFIG,
+                    icon = AppIcon.Painted(AppIcons.EditPainterResource),
+                ) {
+                    onOpenEditConfiguration(selectedTarget.id)
+                },
+            )
+            add(
+                CommandItem(
+                    id = "config_add",
+                    title = "Add Target Configuration...",
+                    subtitle = "Open Configuration Studio to scaffold a new device target",
+                    category = CommandCategory.CONFIG,
+                    icon = AppIcon.Painted(AppIcons.AddPainterResource),
+                ) {
+                    onOpenAddConfiguration()
+                },
+            )
+            add(
+                CommandItem(
+                    id = "action_save",
+                    title = "Save ltikt.properties",
+                    subtitle = "Persist current configuration to target workspace directory",
+                    category = CommandCategory.CONFIG,
+                    icon = AppIcon.Painted(AppIcons.SavePainterResource),
+                    shortcut = "Ctrl+S",
+                ) {
+                    viewModel.saveCurrentTargetProperties()
+                },
+            )
+            add(
+                CommandItem(
+                    id = "action_reset",
+                    title = "Reset to Baseline Defaults",
+                    subtitle = "Discard unsaved edits and reload hardware baseline",
+                    category = CommandCategory.CONFIG,
+                    icon = AppIcon.Painted(AppIcons.RefreshPainterResource),
+                ) {
+                    viewModel.resetTargetPropertiesToBaseline()
+                },
+            )
+            add(
+                CommandItem(
+                    id = "action_sync",
+                    title = "Sync Target Workspace",
+                    subtitle = "Scaffold directory structure and write ltikt.properties",
+                    category = CommandCategory.CONFIG,
+                    icon = AppIcon.Painted(AppIcons.SendPainterResource),
+                ) {
+                    viewModel.syncCurrentTargetWorkspace()
+                },
+            )
+
+            // 4. Panels & Docks
+            add(
+                CommandItem(
+                    id = "toggle_left",
+                    title = "Toggle Left Sidebar",
+                    subtitle = if (ltiLayoutState.showLeft) "Collapse left activity panel" else "Expand left activity panel",
+                    category = CommandCategory.PANELS,
+                    icon = AppIcon.Painted(AppIcons.leftPanelPainterResource),
+                    shortcut = "Ctrl+B",
+                ) {
+                    ltiLayoutState.toggleLeft()
+                    viewModel.togglePanelVisibility(PanelId.LEFT)
+                },
+            )
+            add(
+                CommandItem(
+                    id = "toggle_bottom",
+                    title = "Toggle Bottom Terminal",
+                    subtitle = if (ltiLayoutState.showBottom) "Hide build terminal drawer" else "Show build terminal drawer",
+                    category = CommandCategory.PANELS,
+                    icon = AppIcon.Painted(AppIcons.bottomPanelPainterResource),
+                    shortcut = "Ctrl+`",
+                ) {
+                    ltiLayoutState.toggleBottom()
+                    viewModel.togglePanelVisibility(PanelId.BOTTOM)
+                },
+            )
+            add(
+                CommandItem(
+                    id = "toggle_right",
+                    title = "Toggle AI Assistant",
+                    subtitle = if (ltiLayoutState.showRight) "Hide AI assistant drawer" else "Show AI assistant drawer",
+                    category = CommandCategory.PANELS,
+                    icon = AppIcon.Painted(AppIcons.rightPanelPainterResource),
+                ) {
+                    ltiLayoutState.toggleRight()
+                    viewModel.togglePanelVisibility(PanelId.RIGHT)
+                },
+            )
+        }
+    }
+
+    val leftTabs = remember(editorViewModel, explorerViewModel, viewModel) {
         listOf(
             GlassSidePanelTab(
                 icon = AppIcon.Painted(AppIcons.FolderPainterResource),
@@ -102,6 +366,14 @@ fun WorkspaceScreen(
                     onFileClick = { path ->
                         editorViewModel.openFile(path)
                     },
+                )
+            },
+            GlassSidePanelTab(
+                icon = AppIcon.Painted(AppIcons.SettingsPainterResource),
+                label = "Target & Config",
+            ) {
+                TargetOptionsPanel(
+                    viewModel = viewModel,
                 )
             },
         )
@@ -118,9 +390,14 @@ fun WorkspaceScreen(
         )
     }
 
+    val screenModifier = modifier
+        .onKeyShortcut(key = Key.K, isCtrlOrCmd = true) {
+            isCommandPaletteOpen = !isCommandPaletteOpen
+        }
+
     GlassLayout(
         state = ltiLayoutState,
-        modifier = modifier,
+        modifier = screenModifier,
         leftRail = {
             GlassSidePanelRail(
                 tabs = leftTabs,
@@ -144,17 +421,39 @@ fun WorkspaceScreen(
             leftTabs.getOrNull(leftTabIndex)?.content?.invoke()
         },
         mainContent = {
-            EditorPanel(
-                viewModel = editorViewModel,
-                onOpenFolder = { explorerViewModel.openFolder() },
-                onActiveFileChange = { path, language ->
-                    activeFilePath = path
-                    activeFileType = language
-                },
-                onCursorPositionChange = { line, col ->
-                    cursorPosition = line to col
-                },
-            )
+            when (leftTabIndex) {
+                0 -> {
+                    EditorPanel(
+                        viewModel = editorViewModel,
+                        onOpenFolder = { explorerViewModel.openFolder() },
+                        onActiveFileChange = { path, language ->
+                            activeFilePath = path
+                            activeFileType = language
+                        },
+                        onCursorPositionChange = { line, col ->
+                            cursorPosition = line to col
+                        },
+                    )
+                }
+                1 -> {
+                    TargetDetailPanel(
+                        viewModel = viewModel,
+                    )
+                }
+                else -> {
+                    EditorPanel(
+                        viewModel = editorViewModel,
+                        onOpenFolder = { explorerViewModel.openFolder() },
+                        onActiveFileChange = { path, language ->
+                            activeFilePath = path
+                            activeFileType = language
+                        },
+                        onCursorPositionChange = { line, col ->
+                            cursorPosition = line to col
+                        },
+                    )
+                }
+            }
         },
         bottomPanel = { TerminalPanel() },
         rightPanel = {
@@ -202,6 +501,30 @@ fun WorkspaceScreen(
                         viewModel.togglePanelVisibility(PanelId.BOTTOM)
                     },
                 ),
+                targetSelector = {
+                    TargetRunConfigurationBar(
+                        selectedTarget = selectedTarget,
+                        availableTargets = availableTargets,
+                        onSelectTarget = { targetId -> viewModel.onSelectTarget(targetId) },
+                        onSelectRegion = { region -> viewModel.onSelectRegion(region) },
+                        onSelectFirmware = { fw -> viewModel.onSelectFirmware(fw) },
+                        onOpenEditConfiguration = { onOpenEditConfiguration(selectedTarget.id) },
+                        onOpenAddConfiguration = onOpenAddConfiguration,
+                        onCloseWorkspace = { viewModel.closeWorkspace() },
+                        connectedDevices = connectedDevices,
+                        selectedConnectedDevice = selectedConnectedDevice,
+                        isRefreshingDevices = isRefreshingDevices,
+                        onSelectConnectedDevice = { serial -> viewModel.selectConnectedDevice(serial) },
+                        onRefreshConnectedDevices = { viewModel.refreshConnectedDevices() },
+                        onRebootConnectedDevice = { serial, mode -> viewModel.rebootConnectedDevice(serial, mode) },
+                        onOpenWifiPairing = { isWifiPairingDialogOpen = true },
+                    )
+                },
+                search = TopBarSearch(
+                    placeholder = "Search actions, targets, partitions (Ctrl+K)...",
+                    shortcut = "Ctrl K",
+                    onClick = { isCommandPaletteOpen = true },
+                ),
                 actions = {
                     if (onOpenNotifications != null) {
                         GlassIconButton(
@@ -233,14 +556,40 @@ fun WorkspaceScreen(
         },
         statusBar = {
             WorkspaceStatusBar(
-                filePath = activeFilePath,
+                branchName = branch,
+                module = "${selectedTarget.formattedSuperSize} • ${selectedTarget.filesystemType.uppercase()}",
+                filePath = activeFilePath ?: "Target: ${selectedTarget.name} (${selectedTarget.selectedRegion.code}) • AVB 2.0 Active",
                 cursorPosition = cursorPosition,
                 encoding = "UTF-8",
                 lineEnding = LineEnding.LF,
-                fileType = activeFileType,
+                fileType = activeFileType ?: selectedTarget.codename,
                 drawOwnChrome = false,
             )
         },
+    )
+
+    GlassCommandPalette(
+        isOpen = isCommandPaletteOpen,
+        onDismissRequest = { isCommandPaletteOpen = false },
+        commands = commands,
+    )
+
+    GlassWifiPairingDialog(
+        isOpen = isWifiPairingDialogOpen,
+        onDismissRequest = {
+            isWifiPairingDialogOpen = false
+            viewModel.clearDeviceOperationStatus()
+        },
+        onPairAndConnect = { host, port, code ->
+            viewModel.pairWirelessDevice(
+                WirelessPairingRequest(host, port, code)
+            ) { success, _ ->
+                if (success) {
+                    isWifiPairingDialogOpen = false
+                }
+            }
+        },
+        errorMessage = deviceOperationStatus,
     )
 }
 
