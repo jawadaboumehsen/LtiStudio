@@ -31,30 +31,26 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.key
-import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import com.kashif_e.backdrop.backdrops.LayerBackdrop
-import org.ide.lti.core.designsystem.component.actions.GlassIconButton
 import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
 import org.ide.lti.core.designsystem.component.actions.GlassSecondaryButton
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.GlassChip
+import org.ide.lti.core.designsystem.component.display.GlassDiagnosticItem
+import org.ide.lti.core.designsystem.component.display.GlassDiagnosticList
 import org.ide.lti.core.designsystem.component.navigation.GlassFilterChipItem
 import org.ide.lti.core.designsystem.component.navigation.GlassFilterChipRow
-import org.ide.lti.core.designsystem.component.tooltip.GlassTooltipArea
+import org.ide.lti.core.designsystem.component.progress.GlassStepStatus
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
@@ -63,7 +59,6 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
-import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.domain.setup.DiagnosticCategory
 import org.ide.lti.core.domain.setup.DiagnosticCheckItem
 import org.ide.lti.core.domain.setup.StepStatus
@@ -342,153 +337,28 @@ fun DoctorDiagnosticsDrawer(
                     )
 
                     // Checks List
-                    Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-                        filteredList.forEach { item ->
-                            key(item.id) {
-                                DiagnosticItemTile(item = item)
-                            }
-                        }
-                    }
+                    GlassDiagnosticList(
+                        items = filteredList.map { item ->
+                            GlassDiagnosticItem(
+                                id = item.id,
+                                title = item.title,
+                                detail = item.detail,
+                                status = item.status.toGlassStepStatus(),
+                                category = item.category.displayName,
+                                copyableCommand = item.copyableCommand,
+                            )
+                        },
+                    )
                 }
             }
         }
     }
 }
 
-/**
- * Individual diagnostic check list tile.
- */
-@Composable
-private fun DiagnosticItemTile(
-    item: DiagnosticCheckItem,
-    modifier: Modifier = Modifier,
-) {
-    val glassColors = GlassTheme.colors
-    val diagnostics = glassColors.diagnostics
-    @Suppress("DEPRECATION")
-    val clipboardManager = LocalClipboardManager.current
-    var isCopied by remember(item.id) { mutableStateOf(false) }
-
-    LaunchedEffect(isCopied) {
-        if (isCopied) {
-            delay(2000)
-            isCopied = false
-        }
-    }
-
-    val statusColor = when (item.status) {
-        StepStatus.SUCCESS -> diagnostics.success
-        StepStatus.WARNING -> diagnostics.warning
-        StepStatus.FAILED -> diagnostics.error
-        else -> glassColors.onGlassMuted
-    }
-
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(GlassShapes.Small)
-            .background(glassColors.glassSurface)
-            .border(width = StrokeWidth.Hairline, color = glassColors.glassBorder, shape = GlassShapes.Small)
-            .padding(Spacing.SmallMedium),
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .padding(end = ComponentSize.ButtonMinWidth),
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(IconSize.Indicator)
-                            .clip(GlassShapes.Capsule)
-                            .background(statusColor),
-                    )
-
-                    Text(
-                        text = item.title,
-                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
-                        color = glassColors.onGlass,
-                        maxLines = 1,
-                        softWrap = false,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false),
-                    )
-
-                    GlassChip(
-                        label = item.category.displayName,
-                        selected = false,
-                    )
-                }
-
-                Text(
-                    text = when (item.status) {
-                        StepStatus.SUCCESS -> "Verified"
-                        StepStatus.WARNING -> "Notice"
-                        StepStatus.FAILED -> "Missing"
-                        else -> "Unknown"
-                    },
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
-                    color = statusColor,
-                    maxLines = 1,
-                    softWrap = false,
-                    modifier = Modifier.align(Alignment.CenterEnd),
-                )
-            }
-
-            Text(
-                text = item.detail,
-                style = MaterialTheme.typography.labelSmall,
-                color = glassColors.onGlassSecondary,
-            )
-
-            // Copyable Command Pill if actionable
-            item.copyableCommand?.let { cmd ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(GlassShapes.Small)
-                        .background(glassColors.onGlass.copy(alpha = AlphaTokens.UltraFaint))
-                        .border(width = StrokeWidth.Hairline, color = glassColors.glassBorder, shape = GlassShapes.Small)
-                        .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraExtraSmall),
-                ) {
-                    Text(
-                        text = cmd,
-                        style = MaterialTheme.typography.labelSmall.copy(fontFamily = codeFontFamily()),
-                        color = glassColors.onGlass,
-                        maxLines = 1,
-                        softWrap = false,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier
-                            .align(Alignment.CenterStart)
-                            .padding(end = ComponentSize.PanelHeaderAction + Spacing.Small),
-                    )
-
-                    GlassTooltipArea(
-                        tooltipText = if (isCopied) "Copied to clipboard!" else "Copy bash command",
-                        modifier = Modifier.align(Alignment.CenterEnd),
-                    ) {
-                        GlassIconButton(
-                            onClick = {
-                                clipboardManager.setText(AnnotatedString(cmd))
-                                isCopied = true
-                            },
-                            size = ComponentSize.PanelHeaderAction,
-                        ) {
-                            Icon(
-                                painter = if (isCopied) AppIcons.CheckPainterResource() else AppIcons.CopyPainterResource(),
-                                contentDescription = "Copy",
-                                tint = if (isCopied) diagnostics.success else glassColors.onGlassSecondary,
-                                modifier = Modifier.size(IconSize.Small),
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
+private fun StepStatus.toGlassStepStatus(): GlassStepStatus = when (this) {
+    StepStatus.PENDING -> GlassStepStatus.PENDING
+    StepStatus.RUNNING -> GlassStepStatus.RUNNING
+    StepStatus.SUCCESS -> GlassStepStatus.SUCCESS
+    StepStatus.WARNING -> GlassStepStatus.WARNING
+    StepStatus.FAILED -> GlassStepStatus.FAILED
 }
