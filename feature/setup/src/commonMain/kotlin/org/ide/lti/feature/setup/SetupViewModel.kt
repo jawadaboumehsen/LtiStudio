@@ -35,6 +35,7 @@ import org.ide.lti.core.domain.usecase.workspace.OpenWorkspaceUseCase
 import org.ide.lti.core.domain.usecase.workspace.RemoveRecentWorkspaceUseCase
 import org.ide.lti.core.domain.usecase.workspace.SelectAndOpenDirectoryUseCase
 import org.ide.lti.core.domain.workspace.WorkspaceManager
+import org.ide.lti.core.model.target.DefaultTargetCatalog
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.target.TargetStatus
 import org.ide.lti.core.model.workspace.RecentProject
@@ -97,20 +98,7 @@ class SetupViewModel(
     )
 
     companion object {
-        val DEFAULT_OFFICIAL_TARGETS = listOf(
-            TargetDevice(
-                id = "PQ84P01",
-                name = "REDMAGIC Astra Gaming Tablet",
-                codename = "PQ84P01",
-                socPlatform = "Snapdragon 8 Elite (SM8750 / sun)",
-                filesystemType = "erofs",
-                dynamicPartitions = listOf("system", "vendor", "product", "system_ext", "odm", "vendor_dlkm", "system_dlkm"),
-                bootPartitions = listOf("boot", "init_boot", "vendor_boot", "dtbo"),
-                status = TargetStatus.QUALIFIED,
-                description = "Official Global & European retail baseline (NP05J_GB)",
-                isDefault = true,
-            ),
-        )
+        val DEFAULT_OFFICIAL_TARGETS = listOf(DefaultTargetCatalog.PQ84P01_DEFAULT)
     }
 
     private val _fallbackToolchainState = MutableStateFlow(
@@ -377,8 +365,9 @@ class SetupViewModel(
      * Selects an official target hardware device and launches directly into the workspace.
      */
     fun selectTargetAndLaunch(target: TargetDevice, onWorkspaceOpened: (Workspace) -> Unit) {
-        selectTarget(target)
+        _fallbackSelectedTarget.value = target
         viewModelScope.launch {
+            selectTargetUseCase?.invoke(target.id)
             val targetPath = "~/LtiRomWorkDir/target/${target.targetKey}"
             val result = openWorkspaceByPathUseCase(targetPath)
             result.onSuccess { workspace ->

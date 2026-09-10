@@ -36,13 +36,11 @@ fun NavController.navigateToSetup(navOptions: NavOptions? = null) {
 
 fun NavGraphBuilder.setupScreen(
     onOpenWorkspace: (Workspace) -> Unit,
-    onNavigateToConnections: () -> Unit,
     onOpenSettings: () -> Unit = {},
 ) {
     composable(route = SETUP_ROUTE) {
         SetupScreen(
             onOpenWorkspace = onOpenWorkspace,
-            onNavigateToConnections = onNavigateToConnections,
             onOpenSettings = onOpenSettings,
         )
     }

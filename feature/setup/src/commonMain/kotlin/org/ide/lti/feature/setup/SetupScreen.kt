@@ -62,7 +62,6 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun SetupScreen(
     onOpenWorkspace: (Workspace) -> Unit,
-    onNavigateToConnections: () -> Unit,
     modifier: Modifier = Modifier,
     onOpenSettings: () -> Unit = {},
     backdrop: Backdrop? = null,
@@ -114,7 +113,6 @@ fun SetupScreen(
         onSelectToolCategory = viewModel::selectToolCategory,
         onTestTool = viewModel::testTool,
         onRecompileTool = viewModel::recompileTool,
-        onNavigateToConnections = onNavigateToConnections,
         onNavigateToEnvironment = viewModel::navigateToEnvironment,
         onOpenSettings = onOpenSettings,
         onSelectTab = viewModel::selectTab,

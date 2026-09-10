@@ -54,7 +54,6 @@ data class SetupUiActions(
     val onProceedToWorkspace: () -> Unit = {},
     val onAutoRemediateDoctor: () -> Unit = {},
     val onAutoRunEnvironmentSetup: () -> Unit = {},
-    val onNavigateToConnections: () -> Unit = {},
     val onNavigateToEnvironment: () -> Unit = {},
     val onOpenSettings: () -> Unit = {},
     val onSearchQueryChange: (String) -> Unit = {},

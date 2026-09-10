@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import org.ide.lti.core.datastore.TargetPreferencesDataSource
 import org.ide.lti.core.domain.repository.target.TargetRepository
+import org.ide.lti.core.model.target.DefaultTargetCatalog
 import org.ide.lti.core.model.target.FirmwareAcquisitionMode
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.target.TargetFirmware
@@ -23,113 +24,6 @@ class TargetRepositoryImpl(
     private val preferencesDataSource: TargetPreferencesDataSource,
 ) : TargetRepository {
 
-    companion object {
-        val PQ84P01_GLOBAL_FIRMWARES = listOf(
-            TargetFirmware(
-                version = "REDMAGICOS10.5.15_NP05J_GB",
-                buildId = "PQ84P01:15/AQ3A.240812.002/20260311.222527",
-                androidVersion = "15",
-                securityPatch = "2026-02-01",
-                otaUrl = "https://rom.download.nubia.com/Europe&Asia/PQ84P01(NP05J)/REDMAGICOS10.5.15_NP05J_GB/update.zip",
-                isOfficial = true,
-                isRecommended = true,
-            ),
-            TargetFirmware(
-                version = "REDMAGICOS10.5.12_NP05J_GB",
-                buildId = "PQ84P01:15/AQ3A.240812.002/20260120.143210",
-                androidVersion = "15",
-                securityPatch = "2026-01-01",
-                otaUrl = "https://rom.download.nubia.com/Europe&Asia/PQ84P01(NP05J)/REDMAGICOS10.5.12_NP05J_GB/update.zip",
-                isOfficial = true,
-                isRecommended = false,
-            ),
-            TargetFirmware(
-                version = "REDMAGICOS10.5.8_NP05J_GB",
-                buildId = "PQ84P01:15/AQ3A.240812.002/20251115.110543",
-                androidVersion = "15",
-                securityPatch = "2025-11-01",
-                otaUrl = "https://rom.download.nubia.com/Europe&Asia/PQ84P01(NP05J)/REDMAGICOS10.5.8_NP05J_GB/update.zip",
-                isOfficial = true,
-                isRecommended = false,
-            ),
-        )
-
-        val PQ84P01_CHINA_FIRMWARES = listOf(
-            TargetFirmware(
-                version = "REDMAGICOS10.5.16_NP05J_CN",
-                buildId = "PQ84P01:15/AQ3A.240812.002/20260315.191244",
-                androidVersion = "15",
-                securityPatch = "2026-02-01",
-                otaUrl = "https://rom.download.nubia.com/China/PQ84P01(NP05J)/REDMAGICOS10.5.16_NP05J_CN/update.zip",
-                isOfficial = true,
-                isRecommended = true,
-            ),
-            TargetFirmware(
-                version = "REDMAGICOS10.5.12_NP05J_CN",
-                buildId = "PQ84P01:15/AQ3A.240812.002/20260125.102230",
-                androidVersion = "15",
-                securityPatch = "2026-01-01",
-                otaUrl = "https://rom.download.nubia.com/China/PQ84P01(NP05J)/REDMAGICOS10.5.12_NP05J_CN/update.zip",
-                isOfficial = true,
-                isRecommended = false,
-            ),
-            TargetFirmware(
-                version = "REDMAGICOS10.5.8_NP05J_CN",
-                buildId = "PQ84P01:15/AQ3A.240812.002/20251120.091512",
-                androidVersion = "15",
-                securityPatch = "2025-11-01",
-                otaUrl = "https://rom.download.nubia.com/China/PQ84P01(NP05J)/REDMAGICOS10.5.8_NP05J_CN/update.zip",
-                isOfficial = true,
-                isRecommended = false,
-            ),
-            TargetFirmware(
-                version = "REDMAGICOS10.5.16_MR01A",
-                buildId = "PQ84P01:15/AQ3A.240812.002/20260315.191244",
-                androidVersion = "15",
-                securityPatch = "2026-02-01",
-                otaUrl = "https://rom.download.nubia.com/China/PQ84P01/REDMAGICOS10.5.16_MR01A/update.zip",
-                isOfficial = true,
-                isRecommended = false,
-            ),
-        )
-
-        val PQ84P01_FIRMWARES = mapOf(
-            TargetRegion.GLOBAL to PQ84P01_GLOBAL_FIRMWARES,
-            TargetRegion.CHINA to PQ84P01_CHINA_FIRMWARES,
-        )
-
-        // Aliases for backward compatibility
-        val GLOBAL_FIRMWARES = PQ84P01_GLOBAL_FIRMWARES
-        val CHINA_FIRMWARES = PQ84P01_CHINA_FIRMWARES
-        val FIRMWARES_BY_REGION = PQ84P01_FIRMWARES
-    }
-
-    private val defaultTarget = TargetDevice(
-        id = "PQ84P01",
-        name = "REDMAGIC Astra Gaming Tablet",
-        codename = "PQ84P01",
-        selectedRegion = TargetRegion.GLOBAL,
-        availableRegions = listOf(TargetRegion.GLOBAL, TargetRegion.CHINA),
-        selectedFirmware = PQ84P01_GLOBAL_FIRMWARES.first(),
-        availableFirmwares = PQ84P01_FIRMWARES,
-        socPlatform = "Snapdragon 8 Elite (SM8750 / sun)",
-        filesystemType = "erofs",
-        superPartitionBytes = 17179869184L,
-        dynamicPartitions = listOf(
-            "system",
-            "vendor",
-            "product",
-            "system_ext",
-            "odm",
-            "vendor_dlkm",
-            "system_dlkm",
-        ),
-        bootPartitions = listOf("boot", "init_boot", "vendor_boot", "dtbo"),
-        status = TargetStatus.QUALIFIED,
-        description = "Official Global & European retail baseline (NP05J_GB)",
-        isDefault = true,
-    )
-
     private val _targets: MutableStateFlow<List<TargetDevice>>
     private val _selectedTargetId: MutableStateFlow<String>
 
@@ -138,7 +32,7 @@ class TargetRepositoryImpl(
         // fresh install (cache empty), the deterministic default is simply re-seeded the
         // same way on every launch until the first real mutation persists it for real.
         val cachedTargets = preferencesDataSource.currentTargets
-        val initialTargets = cachedTargets.ifEmpty { listOf(defaultTarget) }
+        val initialTargets = cachedTargets.ifEmpty { listOf(DefaultTargetCatalog.PQ84P01_DEFAULT) }
         _targets = MutableStateFlow(initialTargets)
 
         val cachedSelectedId = preferencesDataSource.currentSelectedTargetId
@@ -154,7 +48,7 @@ class TargetRepositoryImpl(
 
     override fun getSelectedTarget(): Flow<TargetDevice> {
         return _selectedTargetId.map { selectedId ->
-            _targets.value.find { it.id == selectedId } ?: defaultTarget
+            _targets.value.find { it.id == selectedId } ?: DefaultTargetCatalog.PQ84P01_DEFAULT
         }
     }
 
@@ -167,7 +61,7 @@ class TargetRepositoryImpl(
     }
 
     override suspend fun selectRegion(region: TargetRegion): Result<TargetDevice> {
-        val current = _targets.value.find { it.id == _selectedTargetId.value } ?: defaultTarget
+        val current = _targets.value.find { it.id == _selectedTargetId.value } ?: DefaultTargetCatalog.PQ84P01_DEFAULT
         val recommendedFirmware = current.availableFirmwares[region]?.firstOrNull { it.isRecommended }
             ?: current.availableFirmwares[region]?.firstOrNull()
             ?: current.selectedFirmware
@@ -189,7 +83,7 @@ class TargetRepositoryImpl(
     }
 
     override suspend fun selectFirmware(firmware: TargetFirmware): Result<TargetDevice> {
-        val current = _targets.value.find { it.id == _selectedTargetId.value } ?: defaultTarget
+        val current = _targets.value.find { it.id == _selectedTargetId.value } ?: DefaultTargetCatalog.PQ84P01_DEFAULT
         val updated = current.copy(
             selectedFirmware = firmware,
             status = if (firmware.isOfficial) TargetStatus.QUALIFIED else TargetStatus.EXPERIMENTAL,
@@ -206,7 +100,7 @@ class TargetRepositoryImpl(
         buildId: String?,
         otaUrl: String?,
     ): Result<TargetDevice> {
-        val current = _targets.value.find { it.id == _selectedTargetId.value } ?: defaultTarget
+        val current = _targets.value.find { it.id == _selectedTargetId.value } ?: DefaultTargetCatalog.PQ84P01_DEFAULT
         val customFirmware = TargetFirmware(
             version = version.trim(),
             buildId = buildId?.trim() ?: "${current.codename}:15/CUSTOM/${version.trim()}",
@@ -230,7 +124,7 @@ class TargetRepositoryImpl(
     }
 
     override suspend fun selectAcquisitionMode(mode: FirmwareAcquisitionMode): Result<TargetDevice> {
-        val current = _targets.value.find { it.id == _selectedTargetId.value } ?: defaultTarget
+        val current = _targets.value.find { it.id == _selectedTargetId.value } ?: DefaultTargetCatalog.PQ84P01_DEFAULT
         val updated = current.copy(acquisitionMode = mode)
         val updatedList = _targets.value.map { if (it.id == updated.id) updated else it }
         _targets.value = updatedList
