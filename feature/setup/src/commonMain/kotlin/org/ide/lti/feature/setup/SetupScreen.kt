@@ -229,19 +229,22 @@ fun SetupScreenContent(
                             }
                             SetupTab.CONNECTIONS -> {
                                 ConnectionsStepContent(
-                                    toolchainSetupState = state.toolchainSetupState,
-                                    onCheckEnvironment = actions.onCheckEnvironment,
+                                    state = state,
+                                    actions = actions,
                                     resolvedBackdrop = resolvedBackdrop,
                                 )
                             }
                             SetupTab.DOCS -> {
                                 DocumentationStepContent(
+                                    state = state,
+                                    actions = actions,
                                     resolvedBackdrop = resolvedBackdrop,
                                 )
                             }
                             SetupTab.PLUGINS -> {
                                 PluginsStepContent(
-                                    onOpenSettings = actions.onOpenSettings,
+                                    state = state,
+                                    actions = actions,
                                     resolvedBackdrop = resolvedBackdrop,
                                 )
                             }
