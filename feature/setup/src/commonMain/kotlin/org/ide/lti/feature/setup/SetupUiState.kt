@@ -70,5 +70,7 @@ data class SetupUiActions(
     val onRecompileTool: (String) -> Unit = {},
     val onSelectTab: (SetupTab) -> Unit = {},
     val onDismissEnvironmentNotice: () -> Unit = {},
+    val onSetAutoDoctorEnabled: (Boolean) -> Unit = {},
+    val onResetToolchainCache: () -> Unit = {},
 )
 

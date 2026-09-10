@@ -85,6 +85,9 @@ fun EnvironmentStepContent(
         filteredToolsMatrix = state.filteredToolsMatrix,
         onTestTool = actions.onTestTool,
         onRecompileTool = actions.onRecompileTool,
+        isAutoDoctorEnabled = state.isAutoDoctorEnabled,
+        onSetAutoDoctorEnabled = actions.onSetAutoDoctorEnabled,
+        onResetToolchainCache = actions.onResetToolchainCache,
     )
 }
 
@@ -128,6 +131,9 @@ fun EnvironmentStepContent(
     filteredToolsMatrix: List<ToolComponentItem> = toolchainSetupState.toolsMatrix,
     onTestTool: (String) -> Unit = {},
     onRecompileTool: (String) -> Unit = {},
+    isAutoDoctorEnabled: Boolean = true,
+    onSetAutoDoctorEnabled: (Boolean) -> Unit = {},
+    onResetToolchainCache: () -> Unit = {},
 ) {
     val glassColors = GlassTheme.colors
     val diagnostics = glassColors.diagnostics
@@ -185,6 +191,9 @@ fun EnvironmentStepContent(
             onCheckEnvironment = onCheckEnvironment,
             onAutoRemediateDoctor = onAutoRemediateDoctor,
             backdrop = resolvedBackdrop,
+            isAutoDoctorEnabled = isAutoDoctorEnabled,
+            onSetAutoDoctorEnabled = onSetAutoDoctorEnabled,
+            onResetToolchainCache = onResetToolchainCache,
         )
 
         ToolchainPipelineTracker(

@@ -122,6 +122,8 @@ fun SetupScreen(
         onOpenSettings = onOpenSettings,
         onSelectTab = viewModel::selectTab,
         onDismissEnvironmentNotice = viewModel::dismissEnvironmentNotice,
+        onSetAutoDoctorEnabled = viewModel::setAutoDoctorEnabled,
+        onResetToolchainCache = viewModel::resetToolchainCacheAndRecheck,
     )
 
     SetupScreenContent(
