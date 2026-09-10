@@ -21,6 +21,8 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -32,6 +34,7 @@ import androidx.compose.ui.Modifier
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.backdrops.LayerBackdrop
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
+import org.ide.lti.core.designsystem.component.actions.GlassIconButton
 import org.ide.lti.core.designsystem.component.actions.LocalWindowControlActions
 import org.ide.lti.core.designsystem.component.actions.WindowControlActions
 import org.ide.lti.core.designsystem.component.display.GlassPanel
@@ -39,11 +42,14 @@ import org.ide.lti.core.designsystem.component.display.GlassVerticalDivider
 import org.ide.lti.core.designsystem.component.feedback.GlassBanner
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerAction
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
+import org.ide.lti.core.designsystem.component.feedback.GlassBottomSheetScaffold
 import org.ide.lti.core.designsystem.component.layout.GlassTopBar
 import org.ide.lti.core.designsystem.component.layout.TopBarNavigation
+import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.MotionDuration
 import org.ide.lti.core.designsystem.theme.MotionEasing
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -152,6 +158,7 @@ fun SetupScreenContent(
     val resolvedBackdrop = (backdrop as? LayerBackdrop) ?: (GlassTheme.backdrop as? LayerBackdrop) ?: localBackdrop
     var localSelectedTab by remember { mutableStateOf(initialTab ?: state.selectedTab) }
     val effectiveTab = initialTab?.let { localSelectedTab } ?: state.selectedTab
+    var isHelpSheetOpen by remember { mutableStateOf(false) }
 
     val onTabChange: (SetupTab) -> Unit = { newTab ->
         if (initialTab != null) {
@@ -173,7 +180,15 @@ fun SetupScreenContent(
                 ),
                 search = null,
                 panelToggles = null,
-                actions = null,
+                actions = {
+                    GlassIconButton(onClick = { isHelpSheetOpen = true }) {
+                        Icon(
+                            painter = AppIcons.InfoPainterResource(),
+                            contentDescription = "Help & Documentation",
+                            modifier = Modifier.size(IconSize.Small),
+                        )
+                    }
+                },
                 windowControls = windowControls ?: LocalWindowControlActions.current,
                 backdrop = resolvedBackdrop,
                 drawOwnChrome = true,
@@ -202,7 +217,6 @@ fun SetupScreenContent(
                         currentStep = effectiveTab,
                         onStepSelected = onTabChange,
                         toolchainSetupState = state.toolchainSetupState,
-                        onOpenDocumentation = { onTabChange(SetupTab.DOCS) },
                         onOpenSettings = actions.onOpenSettings,
                     )
                 }
@@ -245,13 +259,6 @@ fun SetupScreenContent(
                                     resolvedBackdrop = resolvedBackdrop,
                                 )
                             }
-                            SetupTab.DOCS -> {
-                                DocumentationStepContent(
-                                    state = state,
-                                    actions = actions,
-                                    resolvedBackdrop = resolvedBackdrop,
-                                )
-                            }
                             SetupTab.PROJECTS -> {
                                 ProjectsStepContent(
                                     state = state,
@@ -265,5 +272,13 @@ fun SetupScreenContent(
                 }
             }
         }
+    }
+
+    GlassBottomSheetScaffold(
+        visible = isHelpSheetOpen,
+        onDismissRequest = { isHelpSheetOpen = false },
+        backdrop = resolvedBackdrop,
+    ) {
+        DocumentationStepContent(resolvedBackdrop = resolvedBackdrop)
     }
 }

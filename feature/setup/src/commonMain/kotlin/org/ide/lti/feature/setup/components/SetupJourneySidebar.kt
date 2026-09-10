@@ -75,7 +75,6 @@ fun SetupJourneySidebar(
     currentStep: SetupTab,
     onStepSelected: (SetupTab) -> Unit,
     toolchainSetupState: ToolchainSetupState,
-    onOpenDocumentation: () -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -203,25 +202,6 @@ fun SetupJourneySidebar(
                 enabled = !toolchainSetupState.isBusy || currentStep == SetupTab.LAUNCHPAD,
                 statusBadge = if (isEnvironmentReady && toolchainSetupState.isAvbKeyProvisioned) "Ready" else if (!toolchainSetupState.isAvbKeyProvisioned) "Key Needed" else null,
                 onClick = { onStepSelected(SetupTab.LAUNCHPAD) },
-            )
-
-            Spacer(modifier = Modifier.height(Spacing.Small))
-            GlassHorizontalDivider()
-            Spacer(modifier = Modifier.height(Spacing.ExtraSmall))
-
-            // Domain 3: RESOURCES
-            Text(
-                text = "RESOURCES",
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                color = glassColors.onGlassMuted,
-                modifier = Modifier.padding(horizontal = Spacing.SmallMedium, vertical = Spacing.ExtraSmall),
-            )
-
-            GlassSidebarItem(
-                label = "Documentation",
-                icon = AppIcons.File,
-                selected = currentStep == SetupTab.DOCS,
-                onClick = onOpenDocumentation,
             )
         }
 

@@ -12,8 +12,6 @@ package org.ide.lti.feature.setup.steps
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
@@ -28,8 +26,6 @@ import com.kashif_e.backdrop.backdrops.LayerBackdrop
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.feature.setup.SetupUiActions
-import org.ide.lti.feature.setup.SetupUiState
 import org.ide.lti.feature.setup.components.DocFeatureCard
 
 /**
@@ -40,8 +36,6 @@ import org.ide.lti.feature.setup.components.DocFeatureCard
  */
 @Composable
 fun DocumentationStepContent(
-    state: SetupUiState,
-    actions: SetupUiActions,
     resolvedBackdrop: LayerBackdrop,
     modifier: Modifier = Modifier,
 ) {
@@ -51,7 +45,6 @@ fun DocumentationStepContent(
         modifier = modifier
             .widthIn(max = ComponentSize.SetupMaxContentWidth)
             .fillMaxWidth()
-            .fillMaxHeight()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = Spacing.ScreenHorizontal, vertical = Spacing.ScreenVertical),
         verticalArrangement = Arrangement.spacedBy(Spacing.SectionGap),
