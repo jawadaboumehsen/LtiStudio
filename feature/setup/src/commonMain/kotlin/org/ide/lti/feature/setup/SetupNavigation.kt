@@ -19,7 +19,6 @@ enum class SetupTab(val id: String) {
     PROJECTS("projects"),
     ENVIRONMENT("environment"),
     LAUNCHPAD("launchpad"),
-    CONNECTIONS("connections"),
     DOCS("docs"),
     PLUGINS("plugins");
 

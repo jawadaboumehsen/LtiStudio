@@ -223,13 +223,6 @@ fun SetupJourneySidebar(
                 selected = currentStep == SetupTab.DOCS,
                 onClick = onOpenDocumentation,
             )
-
-            GlassSidebarItem(
-                label = "Daemon Bridge",
-                icon = AppIcons.Link,
-                selected = currentStep == SetupTab.CONNECTIONS,
-                onClick = { onStepSelected(SetupTab.CONNECTIONS) },
-            )
         }
 
         GlassHorizontalDivider()

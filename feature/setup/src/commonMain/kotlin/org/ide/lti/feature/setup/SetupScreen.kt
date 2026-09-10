@@ -49,7 +49,6 @@ import org.ide.lti.core.designsystem.theme.MotionEasing
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.model.workspace.Workspace
 import org.ide.lti.feature.setup.components.SetupJourneySidebar
-import org.ide.lti.feature.setup.steps.ConnectionsStepContent
 import org.ide.lti.feature.setup.steps.DocumentationStepContent
 import org.ide.lti.feature.setup.steps.EnvironmentStepContent
 import org.ide.lti.feature.setup.steps.LaunchpadStepContent
@@ -242,13 +241,6 @@ fun SetupScreenContent(
                                     state = state,
                                     actions = actions,
                                     onNavigateToEnvironment = { onTabChange(SetupTab.ENVIRONMENT) },
-                                    resolvedBackdrop = resolvedBackdrop,
-                                )
-                            }
-                            SetupTab.CONNECTIONS -> {
-                                ConnectionsStepContent(
-                                    state = state,
-                                    actions = actions,
                                     resolvedBackdrop = resolvedBackdrop,
                                 )
                             }
