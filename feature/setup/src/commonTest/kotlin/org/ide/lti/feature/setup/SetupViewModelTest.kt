@@ -657,6 +657,53 @@ class SetupViewModelTest {
     }
 
     @Test
+    fun testAutoRunEnvironmentSetupRechecksWhenPersistedVerificationIsStale() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        Dispatchers.setMain(testDispatcher)
+        try {
+            val repo = FakeWorkspaceRepository()
+            val manager = WorkspaceManager(repo, this)
+            val toolchainService = FakeToolchainProvisioningService()
+            val staleTimestamp = System.currentTimeMillis() - (25L * 60 * 60 * 1000) // 25h ago, past the 24h TTL
+            toolchainService._state.value = toolchainService._state.value.copy(
+                isAllReady = true,
+                lastVerifiedTimestamp = staleTimestamp,
+            )
+
+            val viewModel = SetupViewModel(manager, toolchainService)
+            testScheduler.advanceUntilIdle()
+
+            // Persisted state says ready, but the timestamp is stale -> must force a live recheck
+            // instead of trusting the flag forever.
+            assertEquals(1, toolchainService.checkStatusCount)
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun testAutoRunEnvironmentSetupSkipsRecheckWhenPersistedVerificationIsFresh() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        Dispatchers.setMain(testDispatcher)
+        try {
+            val repo = FakeWorkspaceRepository()
+            val manager = WorkspaceManager(repo, this)
+            val toolchainService = FakeToolchainProvisioningService()
+            toolchainService._state.value = toolchainService._state.value.copy(
+                isAllReady = true,
+                lastVerifiedTimestamp = System.currentTimeMillis(),
+            )
+
+            val viewModel = SetupViewModel(manager, toolchainService)
+            testScheduler.advanceUntilIdle()
+
+            assertEquals(0, toolchainService.checkStatusCount)
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
     fun testAutoRunEnvironmentSetupRespectsAutoDoctorDisabledToggle() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         Dispatchers.setMain(testDispatcher)

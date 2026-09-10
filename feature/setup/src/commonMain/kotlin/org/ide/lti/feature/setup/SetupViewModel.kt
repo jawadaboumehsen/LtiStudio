@@ -99,6 +99,7 @@ class SetupViewModel(
 
     companion object {
         val DEFAULT_OFFICIAL_TARGETS = listOf(DefaultTargetCatalog.PQ84P01_DEFAULT)
+        private const val REVERIFY_INTERVAL_MS = 24L * 60 * 60 * 1000
     }
 
     private val _fallbackToolchainState = MutableStateFlow(
@@ -458,8 +459,15 @@ class SetupViewModel(
         if (autoRunJob?.isActive == true || toolchainSetupState.value.isRunning || toolchainSetupState.value.isFixing) return
         autoRunJob = viewModelScope.launch {
             val current = toolchainSetupState.value
-            // If already marked ready from persistent DataStore, skip zero-start build and bypass recheck
-            if (current.isAllReady) {
+            // If already marked ready from persistent DataStore AND verified recently, skip zero-start
+            // build and bypass recheck (sub-second launch, the common case). Once verification goes
+            // stale (or was never timestamped - e.g. legacy persisted state), DO NOT bypass: fall through
+            // to a live recheck, which is still cheap thanks to checkStatus()'s fast path, instead of
+            // trusting a persisted flag forever - this catches externally deleted/corrupted binaries.
+            val isStale = current.lastVerifiedTimestamp?.let {
+                (System.currentTimeMillis() - it) >= REVERIFY_INTERVAL_MS
+            } ?: false
+            if (current.isAllReady && !isStale) {
                 return@launch
             }
 

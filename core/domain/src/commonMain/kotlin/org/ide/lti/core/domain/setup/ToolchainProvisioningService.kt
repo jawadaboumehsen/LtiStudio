@@ -1,0 +1,594 @@
+package org.ide.lti.core.domain.setup
+
+import kotlinx.coroutines.flow.StateFlow
+import org.ide.lti.core.model.target.TargetDevice
+import org.ide.lti.core.model.target.TargetProperties
+
+/**
+ * Stages in the environment check and toolchain provisioning pipeline.
+ */
+public enum class SetupStepStage(public val displayName: String) {
+    WSL_DETECTION("WSL 2 Runtime"),
+    SERVER_CONNECTIVITY("Server Bridge"),
+    SYSTEM_DIAGNOSTICS("Pre-Flight Doctor"),
+    REPO_SYNCHRONIZATION("Source Repositories"),
+    TOOLCHAIN_COMPILATION("Toolchain Binaries")
+}
+
+/**
+ * Execution status for an individual step or the overall setup pipeline.
+ */
+public enum class StepStatus {
+    PENDING,
+    RUNNING,
+    SUCCESS,
+    WARNING,
+    FAILED
+}
+
+/**
+ * Execution environment scope of a toolchain component.
+ */
+public enum class ToolScope(public val displayName: String) {
+    WSL2("WSL 2 Linux"),
+    HOST("Windows Host")
+}
+
+/**
+ * Individual tool component item modeled after Android Studio SDK Tools & JetBrains Toolchains.
+ */
+public data class ToolComponentItem(
+    val id: String,
+    val name: String,
+    val category: String,
+    val binaryName: String,
+    val scope: ToolScope = ToolScope.WSL2,
+    val version: String? = null,
+    val path: String? = null,
+    val status: StepStatus = StepStatus.PENDING,
+    val isCore: Boolean = true,
+    val sizeBytes: Long? = null,
+    val capabilities: List<String> = emptyList(),
+    val lastTested: String? = null,
+)
+
+/**
+ * Individual pre-flight diagnostic item mirroring LtiRomKt's `lti doctor`.
+ */
+public data class DiagnosticCheckItem(
+    val id: String,
+    val title: String,
+    val status: StepStatus = StepStatus.PENDING,
+    val detail: String = "",
+    val remediation: String? = null,
+    val category: String = "General",
+    val copyableCommand: String? = null,
+    val isOptionalForRuntime: Boolean = false
+)
+
+/**
+ * Detail metadata for a specific setup step.
+ */
+public data class SetupStepDetail(
+    val stage: SetupStepStage,
+    val title: String,
+    val description: String,
+    val status: StepStatus = StepStatus.PENDING,
+    val error: String? = null,
+    val durationMs: Long = 0L
+)
+
+/**
+ * Immutable reactive snapshot of the environment and toolchain setup status.
+ */
+public data class ToolchainSetupState(
+    val steps: List<SetupStepDetail> = defaultSteps(),
+    val diagnostics: List<DiagnosticCheckItem> = defaultDiagnostics(),
+    val isAvbKeyProvisioned: Boolean = false,
+    val avbKeyPath: String? = null,
+    val targetWorkspacePath: String? = null,
+    val currentStage: SetupStepStage? = null,
+    val isRunning: Boolean = false,
+    val isChecking: Boolean = false,
+    val isFixing: Boolean = false,
+    val isAllReady: Boolean = false,
+    val logs: List<String> = emptyList(),
+    val activeLogLine: String? = null,
+    val activeDistro: String? = "Ubuntu",
+    val installedDistros: List<String> = listOf("Ubuntu"),
+    val daemonPingMs: Long? = null,
+    /**
+     * Epoch millis of the last time the environment was actually confirmed ready via a live
+     * checkStatus() probe or a completed runFullSetup() - not merely restored from a persisted
+     * flag. Null means never verified in a way that recorded a timestamp. Used to gate automatic
+     * re-verification so a persisted "ready" state does not get trusted indefinitely.
+     */
+    val lastVerifiedTimestamp: Long? = null,
+    val toolsMatrix: List<ToolComponentItem> = defaultToolsMatrix(),
+) {
+    val isBusy: Boolean get() = isRunning || isChecking || isFixing
+
+    /**
+     * True if the local LtiRomServer daemon bridge is connected and responsive.
+     */
+    val isServerConnected: Boolean
+        get() = steps.firstOrNull { it.stage == SetupStepStage.SERVER_CONNECTIVITY }?.status == StepStatus.SUCCESS
+
+    /**
+     * True if native toolchain binaries have been built/verified in ~/LtiRomTools/bin.
+     */
+    val isToolsVerified: Boolean
+        get() = steps.firstOrNull { it.stage == SetupStepStage.TOOLCHAIN_COMPILATION }?.status == StepStatus.SUCCESS
+
+    /**
+     * True if workspace launch prerequisites are satisfied:
+     * - Restored/completed from persistent DataStore (isAllReady == true)
+     * - OR both server client bridge is connected AND tools are verified.
+     */
+    val canLaunchWorkspace: Boolean
+        get() = isAllReady || (isServerConnected && isToolsVerified)
+
+
+    val healthScorePercentage: Int
+        get() {
+            val total = diagnostics.size
+            if (total == 0) return 100
+            val passing = diagnostics.count { it.status == StepStatus.SUCCESS }
+            val warnings = diagnostics.count { it.status == StepStatus.WARNING }
+            return ((passing * 100 + warnings * 60) / total).coerceIn(0, 100)
+        }
+
+    public companion object {
+        public fun defaultSteps(): List<SetupStepDetail> = listOf(
+            SetupStepDetail(
+                stage = SetupStepStage.WSL_DETECTION,
+                title = "WSL 2 Runtime",
+                description = "Detect Windows Subsystem for Linux installation and active distribution."
+            ),
+            SetupStepDetail(
+                stage = SetupStepStage.SERVER_CONNECTIVITY,
+                title = "Server Bridge",
+                description = "Connect to local LtiRomServer daemon and verify API health."
+            ),
+            SetupStepDetail(
+                stage = SetupStepStage.SYSTEM_DIAGNOSTICS,
+                title = "Pre-Flight Doctor",
+                description = "Verify compilers, C++ build libraries, Python crypto, dual JDK, FUSE, and storage."
+            ),
+            SetupStepDetail(
+                stage = SetupStepStage.REPO_SYNCHRONIZATION,
+                title = "Source Repositories",
+                description = "Validate LtiRomTools/external and synchronize pinned submodules."
+            ),
+            SetupStepDetail(
+                stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+                title = "Toolchain Binaries",
+                description = "Verify and compile tool binaries in LtiRomTools/bin."
+            )
+        )
+
+        public fun defaultDiagnostics(): List<DiagnosticCheckItem> = listOf(
+            DiagnosticCheckItem(
+                id = "host_compilers",
+                title = "Host Compilers & Build Engine",
+                category = "Compilers",
+                detail = "cmake, make, clang/gcc, and clang++/g++ for compiling native C++ tools from source."
+            ),
+            DiagnosticCheckItem(
+                id = "host_libraries",
+                title = "Native C/C++ Build Dependencies",
+                category = "Libraries",
+                detail = "pkg-config, protobuf, brotli, lz4, zstd, pcre2, libusb, uuid, and libfuse3 development headers."
+            ),
+            DiagnosticCheckItem(
+                id = "python_crypto",
+                title = "Python 3 Runtime & Cryptography",
+                category = "Runtimes",
+                detail = "Python 3, pip, cryptography, and pyasn1 for AVB 2.0 signing, mkbootimg, and img2sdat."
+            ),
+            DiagnosticCheckItem(
+                id = "jdk_dual",
+                title = "Dual JDK Runtimes & Compiler",
+                category = "Runtimes",
+                detail = "Java and javac compiler for OpenJDK 17 (apktool/signapk) and OpenJDK 21 (LtiRomKt)."
+            ),
+            DiagnosticCheckItem(
+                id = "selinux_attr",
+                title = "SELinux Extended Attributes",
+                category = "OS Utilities",
+                detail = "attr and getfattr utilities for reading and preserving security.selinux file contexts."
+            ),
+            DiagnosticCheckItem(
+                id = "archive_tools",
+                title = "Archive & Compression Tools",
+                category = "OS Utilities",
+                detail = "zip and unzip for firmware OTA unpacking and flashable recovery package generation."
+            ),
+            DiagnosticCheckItem(
+                id = "transfer_tools",
+                title = "Host Transfer & Sync Utilities",
+                category = "OS Utilities",
+                detail = "curl, git, rsync, and tar for prebuilt tool acquisition and workspace synchronization."
+            ),
+            DiagnosticCheckItem(
+                id = "dev_fuse",
+                title = "Kernel FUSE & Userspace Runtime",
+                category = "Kernel & Mount",
+                detail = "/dev/fuse device node and fuse3/fusermount userspace tools for erofsfuse mounting."
+            ),
+            DiagnosticCheckItem(
+                id = "loop_mount",
+                title = "Linux Loop Devices & Mount Elevation",
+                category = "Kernel & Mount",
+                detail = "/dev/loop-control and non-interactive sudo elevation for ext4/f2fs partition mounting.",
+                isOptionalForRuntime = true
+            ),
+            DiagnosticCheckItem(
+                id = "disk_headroom",
+                title = "ext4 Storage Headroom (>= 45 GB)",
+                category = "Storage",
+                detail = "Sufficient disk space in ~/LtiRomWorkDir for worktree staging."
+            ),
+            DiagnosticCheckItem(
+                id = "openssl_tools",
+                title = "OpenSSL Cryptography Tooling",
+                category = "Security",
+                detail = "OpenSSL for AVB 2.0 RSA-4096 machine key generation and verification."
+            ),
+            DiagnosticCheckItem(
+                id = "toolchain_binaries",
+                title = "Compiled Toolchain Binaries Integrity",
+                category = "Toolchain",
+                detail = "Integrity of the 14 core project tools in ~/LtiRomTools/bin."
+            ),
+            DiagnosticCheckItem(
+                id = "build_cache",
+                title = "Build Cache Accelerator (ccache)",
+                category = "Performance",
+                detail = "Optional compiler cache for accelerating C/C++ submodule rebuilds.",
+                isOptionalForRuntime = true
+            )
+        )
+
+        public fun defaultToolsMatrix(): List<ToolComponentItem> = listOf(
+            // Dynamic Partitions
+            ToolComponentItem(
+                id = "lpmake",
+                name = "LP Make",
+                category = "Dynamic Partitions",
+                binaryName = "lpmake",
+                capabilities = listOf("create_super_image", "metadata_geometry", "extents"),
+                isCore = true
+            ),
+            ToolComponentItem(
+                id = "lpunpack",
+                name = "LP Unpack",
+                category = "Dynamic Partitions",
+                binaryName = "lpunpack",
+                capabilities = listOf("unpack_super_image", "extract_partitions"),
+                isCore = true
+            ),
+            ToolComponentItem(
+                id = "lpdump",
+                name = "LP Dump",
+                category = "Dynamic Partitions",
+                binaryName = "lpdump",
+                capabilities = listOf("dump_metadata", "slot_metadata", "verify_super"),
+                isCore = true
+            ),
+            ToolComponentItem(
+                id = "lpadd",
+                name = "LP Add",
+                category = "Dynamic Partitions",
+                binaryName = "lpadd",
+                capabilities = listOf("add_partition", "resize_group"),
+                isCore = false
+            ),
+            ToolComponentItem(
+                id = "lpflash",
+                name = "LP Flash",
+                category = "Dynamic Partitions",
+                binaryName = "lpflash",
+                capabilities = listOf("flash_partition", "dynamic_remap"),
+                isCore = false
+            ),
+
+            // Filesystem & Images
+            ToolComponentItem(
+                id = "mkfs.erofs",
+                name = "Make EROFS",
+                category = "Filesystem & Images",
+                binaryName = "mkfs.erofs",
+                capabilities = listOf("create_erofs_image", "lz4_compression", "dedupe"),
+                isCore = true
+            ),
+            ToolComponentItem(
+                id = "dump.erofs",
+                name = "Dump EROFS",
+                category = "Filesystem & Images",
+                binaryName = "dump.erofs",
+                capabilities = listOf("inspect_superblock", "list_inodes", "stats"),
+                isCore = true
+            ),
+            ToolComponentItem(
+                id = "fsck.erofs",
+                name = "FSCK EROFS",
+                category = "Filesystem & Images",
+                binaryName = "fsck.erofs",
+                capabilities = listOf("check_integrity", "validate_blocks"),
+                isCore = true
+            ),
+            ToolComponentItem(
+                id = "erofsfuse",
+                name = "EROFS FUSE",
+                category = "Filesystem & Images",
+                binaryName = "erofsfuse",
+                capabilities = listOf("userspace_mount", "read_only_vfs"),
+                isCore = true
+            ),
+            ToolComponentItem(
+                id = "mke2fs",
+                name = "Make EXT4",
+                category = "Filesystem & Images",
+                binaryName = "mke2fs",
+                capabilities = listOf("format_ext4", "journaling", "sparse_ext4"),
+                isCore = true
+            ),
+            ToolComponentItem(
+                id = "e2fsdroid",
+                name = "E2FS Droid",
+                category = "Filesystem & Images",
+                binaryName = "e2fsdroid",
+                capabilities = listOf("fs_config", "ext4_inject", "selinux_contexts"),
+                isCore = true
+            ),
+            ToolComponentItem(
+                id = "mkuserimg_mke2fs",
+                name = "Make UserImg EXT4",
+                category = "Filesystem & Images",
+                binaryName = "mkuserimg_mke2fs",
+                capabilities = listOf("build_ext4_image", "file_contexts"),
+                isCore = false
+            ),
+            ToolComponentItem(
+                id = "make_f2fs",
+                name = "Make F2FS",
+                category = "Filesystem & Images",
+                binaryName = "make_f2fs",
+                capabilities = listOf("format_f2fs", "flash_friendly_fs"),
+                isCore = false
+            ),
+            ToolComponentItem(
+                id = "mkf2fsuserimg",
+                name = "Make F2FS UserImg",
+                category = "Filesystem & Images",
+                binaryName = "mkf2fsuserimg",
+                capabilities = listOf("build_f2fs_image", "android_sparse"),
+                isCore = false
+            ),
+            ToolComponentItem(
+                id = "sload_f2fs",
+                name = "SLOAD F2FS",
+                category = "Filesystem & Images",
+                binaryName = "sload_f2fs",
+                capabilities = listOf("populate_f2fs", "selinux_injector"),
+                isCore = false
+            ),
+            ToolComponentItem(
+                id = "simg2img",
+                name = "SIMG to IMG",
+                category = "Filesystem & Images",
+                binaryName = "simg2img",
+                capabilities = listOf("unsparse", "raw_extents"),
+                isCore = true
+            ),
+            ToolComponentItem(
+                id = "img2simg",
+                name = "IMG to SIMG",
+                category = "Filesystem & Images",
+                binaryName = "img2simg",
+                capabilities = listOf("convert_sparse", "block_chunking"),
+                isCore = true
+            ),
+            ToolComponentItem(
+                id = "ext2simg",
+                name = "EXT2 to SIMG",
+                category = "Filesystem & Images",
+                binaryName = "ext2simg",
+                capabilities = listOf("convert_ext4_sparse"),
+                isCore = false
+            ),
+            ToolComponentItem(
+                id = "append2simg",
+                name = "Append to SIMG",
+                category = "Filesystem & Images",
+                binaryName = "append2simg",
+                capabilities = listOf("append_sparse_chunk"),
+                isCore = false
+            ),
+            ToolComponentItem(
+                id = "img2sdat",
+                name = "IMG to SDAT",
+                category = "Filesystem & Images",
+                binaryName = "img2sdat",
+                capabilities = listOf("convert_block_sparse", "transfer_list"),
+                isCore = true
+            ),
+
+            // Boot & Kernel
+            ToolComponentItem(
+                id = "mkbootimg",
+                name = "Make BootImg",
+                category = "Boot & Kernel",
+                binaryName = "mkbootimg",
+                capabilities = listOf("create_boot_image", "header_v4", "init_boot"),
+                isCore = true
+            ),
+            ToolComponentItem(
+                id = "unpack_bootimg",
+                name = "Unpack BootImg",
+                category = "Boot & Kernel",
+                binaryName = "unpack_bootimg",
+                capabilities = listOf("unpack_boot", "extract_kernel", "extract_ramdisk"),
+                isCore = true
+            ),
+            ToolComponentItem(
+                id = "repack_bootimg",
+                name = "Repack BootImg",
+                category = "Boot & Kernel",
+                binaryName = "repack_bootimg",
+                capabilities = listOf("repack_boot", "kernel_cmdline", "pagesize"),
+                isCore = true
+            ),
+            ToolComponentItem(
+                id = "mkbootfs",
+                name = "Make BootFS",
+                category = "Boot & Kernel",
+                binaryName = "mkbootfs",
+                capabilities = listOf("create_ramdisk", "cpio_archive"),
+                isCore = false
+            ),
+            ToolComponentItem(
+                id = "mkdtboimg",
+                name = "Make DTBO Img",
+                category = "Boot & Kernel",
+                binaryName = "mkdtboimg",
+                capabilities = listOf("create_dtbo_image", "device_tree_table"),
+                isCore = false
+            ),
+
+            // Signing & Security
+            ToolComponentItem(
+                id = "avbtool",
+                name = "AVB Tool",
+                category = "Signing & Security",
+                binaryName = "avbtool",
+                capabilities = listOf("make_vbmeta_image", "add_hash_footer", "rsa4096_signing"),
+                isCore = true
+            ),
+            ToolComponentItem(
+                id = "signapk",
+                name = "Sign APK",
+                category = "Signing & Security",
+                binaryName = "signapk",
+                capabilities = listOf("sign_apk", "sign_ota", "v1_v2_v3_signatures"),
+                isCore = true
+            ),
+            ToolComponentItem(
+                id = "fec",
+                name = "FEC",
+                category = "Signing & Security",
+                binaryName = "fec",
+                capabilities = listOf("encode_forward_error_correction", "decode_fec"),
+                isCore = false
+            ),
+
+            // Bridge & Flashing
+            ToolComponentItem(
+                id = "adb",
+                name = "Android Debug Bridge",
+                category = "Bridge & Flashing",
+                binaryName = "adb",
+                capabilities = listOf("devices", "push", "pull", "shell", "logcat"),
+                isCore = true
+            ),
+            ToolComponentItem(
+                id = "fastboot",
+                name = "Fastboot",
+                category = "Bridge & Flashing",
+                binaryName = "fastboot",
+                capabilities = listOf("flash", "boot", "getvar", "reboot_fastbootd"),
+                isCore = true
+            ),
+
+            // Packaging & Tools
+            ToolComponentItem(
+                id = "aapt2",
+                name = "AAPT2",
+                category = "Packaging & Tools",
+                binaryName = "aapt2",
+                capabilities = listOf("compile", "link", "dump_badging"),
+                isCore = true
+            ),
+            ToolComponentItem(
+                id = "apktool",
+                name = "Apktool",
+                category = "Packaging & Tools",
+                binaryName = "apktool",
+                capabilities = listOf("decode_resources", "build_apk", "smali_disasm"),
+                isCore = true
+            ),
+            ToolComponentItem(
+                id = "zipalign",
+                name = "ZipAlign",
+                category = "Packaging & Tools",
+                binaryName = "zipalign",
+                capabilities = listOf("align_zip_4byte", "page_align_so", "verify"),
+                isCore = true
+            ),
+            ToolComponentItem(
+                id = "payload-dumper-go",
+                name = "Payload Dumper Go",
+                category = "Packaging & Tools",
+                binaryName = "payload-dumper-go",
+                capabilities = listOf("extract_payload_bin", "concurrent_chunk_decompression"),
+                isCore = true
+            ),
+            ToolComponentItem(
+                id = "gh",
+                name = "GitHub CLI",
+                category = "Packaging & Tools",
+                binaryName = "gh",
+                capabilities = listOf("repo_clone", "release_download", "api"),
+                isCore = false
+            )
+        )
+    }
+}
+
+/**
+ * Domain Service contract for orchestrating environment validation and toolchain setup.
+ *
+ * Adheres to:
+ * - Single Responsibility Principle: coordinates environment checks and provisioning.
+ * - Dependency Inversion Principle: UI layers depend on this abstraction, not concrete WSL runners.
+ */
+public interface ToolchainProvisioningService {
+    /** Reactive stream of setup state updates */
+    public val state: StateFlow<ToolchainSetupState>
+
+    /** Probes current status without mutating environment */
+    public suspend fun checkStatus(): ToolchainSetupState
+
+    /** Executes full end-to-end setup sequence (probe, start daemon, sync repos, build tools) */
+    public suspend fun runFullSetup()
+
+    /** Retries the currently failed or pending step */
+    public suspend fun retryCurrentStep()
+
+    /** Provisions or verifies machine-local AVB 2.0 RSA-4096 signing key */
+    public suspend fun provisionAvbKey(): Boolean
+
+    /** Materializes and synchronizes the target directory structure at ~/LtiRomWorkDir/target/<target_codename> */
+    public suspend fun provisionTargetWorkspace(target: TargetDevice, customProperties: TargetProperties? = null): Boolean
+
+    /** Reads the target's ltikt.properties if present, returning raw text or null */
+    public suspend fun readTargetProperties(targetCodename: String): String? = null
+
+    /** Writes properties content to the target's ltikt.properties */
+    public suspend fun saveTargetProperties(targetCodename: String, content: String): Boolean = false
+
+    /** Automatically fixes and installs missing system packages and dependencies detected by the Doctor */
+    public suspend fun autoRemediateDoctor(): Boolean
+
+    /** Tests an individual tool binary (runs version/help verification). */
+    public suspend fun testIndividualTool(toolId: String): StepStatus = StepStatus.SUCCESS
+
+    /** Recompiles or re-acquires an individual tool binary. */
+    public suspend fun recompileTool(toolId: String): Boolean = true
+
+    /** Resets the persisted setup cache and restarts probing cleanly. */
+    public suspend fun resetSetupCache(): Unit = Unit
+}
+
+
