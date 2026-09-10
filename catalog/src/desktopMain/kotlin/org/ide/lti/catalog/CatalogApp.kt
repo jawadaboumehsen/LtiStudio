@@ -40,6 +40,7 @@ import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.catalog.tabs.ButtonsTab
 import org.ide.lti.catalog.tabs.CoreUiTab
+import org.ide.lti.catalog.tabs.DiagnosticsTab
 import org.ide.lti.catalog.tabs.InputsTab
 import org.ide.lti.catalog.tabs.LayoutTab
 import org.ide.lti.catalog.tabs.ModalsTab
@@ -69,7 +70,8 @@ enum class CatalogCategory(val title: String) {
     Navigation("Navigation & Tabs"),
     Modals("Modals & Feedback"),
     Layout("Workspace Layout"),
-    CoreUi("Core UI Widgets")
+    CoreUi("Core UI Widgets"),
+    Diagnostics("Diagnostics & Progress"),
 }
 
 @Composable
@@ -128,6 +130,7 @@ fun CatalogApp() {
                         CatalogCategory.Modals -> ModalsTab()
                         CatalogCategory.Layout -> LayoutTab()
                         CatalogCategory.CoreUi -> CoreUiTab()
+                        CatalogCategory.Diagnostics -> DiagnosticsTab()
                     }
                 }
             }
