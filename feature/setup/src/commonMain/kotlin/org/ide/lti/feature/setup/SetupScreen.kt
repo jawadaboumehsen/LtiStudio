@@ -52,7 +52,6 @@ import org.ide.lti.feature.setup.components.SetupJourneySidebar
 import org.ide.lti.feature.setup.steps.DocumentationStepContent
 import org.ide.lti.feature.setup.steps.EnvironmentStepContent
 import org.ide.lti.feature.setup.steps.LaunchpadStepContent
-import org.ide.lti.feature.setup.steps.PluginsStepContent
 import org.ide.lti.feature.setup.steps.ProjectsStepContent
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -248,13 +247,6 @@ fun SetupScreenContent(
                             }
                             SetupTab.DOCS -> {
                                 DocumentationStepContent(
-                                    state = state,
-                                    actions = actions,
-                                    resolvedBackdrop = resolvedBackdrop,
-                                )
-                            }
-                            SetupTab.PLUGINS -> {
-                                PluginsStepContent(
                                     state = state,
                                     actions = actions,
                                     resolvedBackdrop = resolvedBackdrop,

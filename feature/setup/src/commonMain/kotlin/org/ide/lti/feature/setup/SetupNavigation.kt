@@ -19,8 +19,7 @@ enum class SetupTab(val id: String) {
     PROJECTS("projects"),
     ENVIRONMENT("environment"),
     LAUNCHPAD("launchpad"),
-    DOCS("docs"),
-    PLUGINS("plugins");
+    DOCS("docs");
 
     companion object {
         fun fromId(id: String): SetupTab = entries.firstOrNull { it.id == id } ?: PROJECTS
