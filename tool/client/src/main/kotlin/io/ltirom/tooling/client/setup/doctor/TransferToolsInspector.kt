@@ -21,12 +21,18 @@ public class TransferToolsInspector(
         val hasGit = cli.execute(distro, listOf("which", "git")).exitCode == 0
         val hasRsync = cli.execute(distro, listOf("which", "rsync")).exitCode == 0
         val hasTar = cli.execute(distro, listOf("which", "tar")).exitCode == 0
+        val hasFile = cli.execute(distro, listOf("which", "file")).exitCode == 0
+        val hasXxd = cli.execute(distro, listOf("which", "xxd")).exitCode == 0
+        val hasTruncate = cli.execute(distro, listOf("which", "truncate")).exitCode == 0
 
         val missingTransfer = buildList {
             if (!hasCurl) add("curl")
             if (!hasGit) add("git")
             if (!hasRsync) add("rsync")
             if (!hasTar) add("tar")
+            if (!hasFile) add("file")
+            if (!hasXxd) add("xxd")
+            if (!hasTruncate) add("truncate")
         }
         val transferOk = missingTransfer.isEmpty()
         val transferCmd = if (transferOk) null else "sudo apt-get install -y ${missingTransfer.joinToString(" ")}"
@@ -37,7 +43,7 @@ public class TransferToolsInspector(
             category = DiagnosticCategory.OS_UTILITIES,
             status = if (transferOk) StepStatus.SUCCESS else StepStatus.FAILED,
             detail = if (transferOk) {
-                "curl, git, rsync, and tar utilities verified for repository sync and downloads."
+                "curl, git, rsync, tar, file, xxd, and truncate utilities verified for pipeline stages."
             } else {
                 "Missing transfer utilities: ${missingTransfer.joinToString(", ")}."
             },

@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
+import org.ide.lti.core.domain.ports.ToolPublicationPort
 import org.ide.lti.core.domain.repository.setup.ToolchainSetupRepository
 import org.ide.lti.core.domain.setup.*
 import org.ide.lti.core.domain.setup.doctor.SystemDoctorPort
@@ -44,10 +45,15 @@ public class WslToolchainProvisioner(
     private val detector: WslEnvironmentDetector = WslEnvironmentDetector(),
     private val cli: WslCliExecutor = WslCliExecutor(),
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
-    private val doctorPort: SystemDoctorPort = CompositeSystemDoctorEngine(cli = cli, detector = detector, dispatcher = dispatcher),
+    private val doctorPort: SystemDoctorPort = CompositeSystemDoctorEngine(
+        cli = cli,
+        detector = detector,
+        dispatcher = dispatcher
+    ),
     private val repository: ToolchainSetupRepository? = null,
     private val submoduleEngine: SubmoduleSyncEngine = SubmoduleSyncEngine(cli = cli, repository = repository),
     private val buildEngine: ToolchainBuildEngine = ToolchainBuildEngine(cli = cli, repository = repository),
+    private val toolPublicationPort: ToolPublicationPort? = null,
 ) : ToolchainProvisioningService {
 
     private val _state = MutableStateFlow(restoreInitialState())
@@ -557,10 +563,26 @@ public class WslToolchainProvisioner(
         repository?.markStageCompleted(SetupStepStage.TOOLCHAIN_COMPILATION, true)
         repository?.markSetupCompleted(true)
 
+        val publicationResult = toolPublicationPort?.publish(binDir)
+        val publishedIds = publicationResult?.published ?: emptySet()
+        val unpublishedIds = publicationResult?.skipped ?: emptySet()
+        if (toolPublicationPort != null) {
+            appendLog("[Step 5/5] Published ${publishedIds.size} tools to daemon (${unpublishedIds.size} skipped).")
+        }
+
         appendLog("[Step 5/5] Toolchain binaries successfully built and verified in $binDir.")
         setStepStatus(SetupStepStage.TOOLCHAIN_COMPILATION, StepStatus.SUCCESS, "Core tools ready in $binDir.")
         appendLog("=== LtiRom Environment & Toolchain Setup Complete! ===")
-        _state.update { it.copy(isRunning = false, isAllReady = true, toolsMatrix = updatedTools, lastVerifiedTimestamp = System.currentTimeMillis()) }
+        _state.update {
+            it.copy(
+                isRunning = false,
+                isAllReady = true,
+                toolsMatrix = updatedTools,
+                lastVerifiedTimestamp = System.currentTimeMillis(),
+                publishedToolIds = publishedIds,
+                unpublishedToolIds = unpublishedIds
+            )
+        }
 
     }
 

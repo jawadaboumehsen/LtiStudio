@@ -19,8 +19,14 @@ public class ArchiveToolsInspector(
         val distro = context.distro
         val hasZip = cli.execute(distro, listOf("which", "zip")).exitCode == 0
         val hasUnzip = cli.execute(distro, listOf("which", "unzip")).exitCode == 0
-        val archiveOk = hasZip && hasUnzip
-        val archiveCmd = if (archiveOk) null else "sudo apt-get install -y zip unzip"
+        val hasBrotli = cli.execute(distro, listOf("which", "brotli")).exitCode == 0
+        val missing = buildList {
+            if (!hasZip) add("zip")
+            if (!hasUnzip) add("unzip")
+            if (!hasBrotli) add("brotli")
+        }
+        val archiveOk = missing.isEmpty()
+        val archiveCmd = if (archiveOk) null else "sudo apt-get install -y ${missing.joinToString(" ")}"
 
         return DiagnosticCheckItem(
             id = "archive_tools",
@@ -28,9 +34,9 @@ public class ArchiveToolsInspector(
             category = DiagnosticCategory.OS_UTILITIES,
             status = if (archiveOk) StepStatus.SUCCESS else StepStatus.FAILED,
             detail = if (archiveOk) {
-                "zip and unzip utilities verified for OTA unpacking and recovery packages."
+                "zip, unzip, and brotli utilities verified for OTA unpacking and recovery packages."
             } else {
-                "Missing: ${listOfNotNull(if (!hasZip) "zip" else null, if (!hasUnzip) "unzip" else null).joinToString(", ")}."
+                "Missing: ${missing.joinToString(", ")}."
             },
             remediation = if (archiveOk) null else "Run '$archiveCmd' in WSL.",
             copyableCommand = archiveCmd

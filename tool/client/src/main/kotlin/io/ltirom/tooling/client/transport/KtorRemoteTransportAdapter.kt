@@ -118,6 +118,59 @@ public class KtorRemoteTransportAdapter(
         }
     }
 
+    override suspend fun refreshTools(): List<ToolStatusInfo> {
+        val conn = supervisor.ensureStarted()
+        val trace = TraceContext.create()
+        return try {
+            val response = httpClient.post("${conn.httpBaseUrl}/api/v1/tools/refresh") {
+                header(HttpHeaders.Authorization, "Bearer ${conn.token}")
+                header(TraceContext.HEADER_TRACE_ID, trace.traceId)
+            }
+            if (response.status.isSuccess()) {
+                response.body<List<ToolStatusInfo>>()
+            } else {
+                emptyList()
+            }
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
+    override suspend fun uploadFile(remotePath: String, content: ByteArray): Boolean {
+        val conn = supervisor.ensureStarted()
+        val trace = TraceContext.create()
+        return try {
+            val response = httpClient.post("${conn.httpBaseUrl}/api/v1/binary/upload") {
+                header(HttpHeaders.Authorization, "Bearer ${conn.token}")
+                header(TraceContext.HEADER_TRACE_ID, trace.traceId)
+                parameter("path", remotePath)
+                setBody(content)
+            }
+            response.status.isSuccess()
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    override suspend fun downloadFile(remotePath: String): ByteArray? {
+        val conn = supervisor.ensureStarted()
+        val trace = TraceContext.create()
+        return try {
+            val response = httpClient.get("${conn.httpBaseUrl}/api/v1/binary/download") {
+                header(HttpHeaders.Authorization, "Bearer ${conn.token}")
+                header(TraceContext.HEADER_TRACE_ID, trace.traceId)
+                parameter("path", remotePath)
+            }
+            if (response.status.isSuccess()) {
+                response.body<ByteArray>()
+            } else {
+                null
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     override suspend fun shutdown(): Boolean {
         return supervisor.shutdownDaemon()
     }

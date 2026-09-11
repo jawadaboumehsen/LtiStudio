@@ -132,6 +132,8 @@ public data class ToolchainSetupState(
      */
     val lastVerifiedTimestamp: Long? = null,
     val toolsMatrix: List<ToolComponentItem> = defaultToolsMatrix(),
+    val publishedToolIds: Set<String> = emptySet(),
+    val unpublishedToolIds: Set<String> = emptySet()
 ) {
     val isBusy: Boolean get() = isRunning || isChecking || isFixing
 
