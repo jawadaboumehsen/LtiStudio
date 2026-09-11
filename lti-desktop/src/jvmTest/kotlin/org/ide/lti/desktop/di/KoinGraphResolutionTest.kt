@@ -1,0 +1,78 @@
+package org.ide.lti.desktop.di
+
+import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
+import org.ide.lti.core.domain.ports.ToolPublicationPort
+import org.ide.lti.core.domain.ports.WorkspaceProvisioningPort
+import org.ide.lti.core.domain.repository.run.RunRepository
+import org.ide.lti.core.domain.repository.snapshot.SnapshotRepository
+import org.ide.lti.core.domain.setup.ToolchainProvisioningService
+import org.ide.lti.core.domain.usecase.workspace.CreateWorkspaceUseCase
+import org.ide.lti.core.domain.usecase.workspace.SaveConfigurationSnapshotUseCase
+import org.ide.lti.shared.di.KoinModules
+import org.koin.core.Koin
+import org.koin.core.context.startKoin
+import org.koin.core.context.stopKoin
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertNotNull
+
+/**
+ * Resolves every definition the desktop app reaches at startup and from the Setup / Workspace
+ * screens. Catches wiring regressions that unit tests with fakes cannot see, e.g. a `singleOf`
+ * whose constructor has a defaulted parameter Koin then tries (and fails) to resolve.
+ */
+class KoinGraphResolutionTest {
+
+    private lateinit var koin: Koin
+
+    @BeforeTest
+    fun setUp() {
+        stopKoin()
+        koin = startKoin {
+            modules(toolingModule)
+            modules(KoinModules.allModules)
+        }.koin
+    }
+
+    @AfterTest
+    fun tearDown() {
+        stopKoin()
+    }
+
+    @Test
+    fun portsAndRepositoriesResolve() {
+        assertNotNull(koin.get<ToolPublicationPort>())
+        assertNotNull(koin.get<EnvironmentReadinessPort>())
+        assertNotNull(koin.get<WorkspaceProvisioningPort>())
+        assertNotNull(koin.get<SnapshotRepository>())
+        assertNotNull(koin.get<RunRepository>())
+        assertNotNull(koin.get<ToolchainProvisioningService>())
+    }
+
+    @Test
+    fun workspaceUseCasesResolve() {
+        assertNotNull(koin.get<CreateWorkspaceUseCase>())
+        assertNotNull(koin.get<SaveConfigurationSnapshotUseCase>())
+    }
+
+    @Test
+    fun screenViewModelsResolve() {
+        // Feature modules are runtime-only dependencies of lti-desktop (via lti-shared), so the
+        // ViewModels are resolved by name; each must construct with the production graph.
+        SCREEN_VIEW_MODELS.forEach { className ->
+            val clazz = Class.forName(className).kotlin
+            assertNotNull(koin.get<Any>(clazz, qualifier = null, parameters = null), className)
+        }
+    }
+
+    private companion object {
+        val SCREEN_VIEW_MODELS = listOf(
+            "org.ide.lti.feature.setup.SetupViewModel",
+            "org.ide.lti.feature.workspace.WorkspaceViewModel",
+            "org.ide.lti.feature.workspace.panels.target.WorkspaceConfigurationViewModel",
+            "org.ide.lti.feature.workspace.creation.CreateWorkspaceViewModel",
+            "org.ide.lti.feature.configuration.ConfigurationViewModel",
+        )
+    }
+}

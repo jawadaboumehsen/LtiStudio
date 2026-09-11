@@ -21,10 +21,7 @@ import org.ide.lti.core.domain.setup.ToolchainProvisioningService
 import org.ide.lti.core.domain.setup.doctor.AutoRemediateEnvironmentUseCase
 import org.ide.lti.core.domain.setup.doctor.RunSystemDiagnosticsUseCase
 import org.ide.lti.core.domain.setup.doctor.SystemDoctorPort
-import org.ide.lti.core.domain.usecase.target.LoadTargetPropertiesUseCase
 import org.ide.lti.core.domain.usecase.target.ProvisionAvbKeyUseCase
-import org.ide.lti.core.domain.usecase.target.SaveTargetPropertiesUseCase
-import org.ide.lti.core.domain.usecase.workspace.SyncTargetWorkspaceUseCase
 import org.koin.dsl.bind
 import org.koin.dsl.module
 
@@ -77,9 +74,6 @@ public val toolingModule = module {
 
     // Toolchain-backed domain use cases
     single { ProvisionAvbKeyUseCase(get<ToolchainProvisioningService>()) }
-    single { SyncTargetWorkspaceUseCase(get<ToolchainProvisioningService>(), get()) }
-    single { LoadTargetPropertiesUseCase(get<ToolchainProvisioningService>()) }
-    single { SaveTargetPropertiesUseCase(get<ToolchainProvisioningService>()) }
     single { RunSystemDiagnosticsUseCase(get<SystemDoctorPort>()) }
     single { AutoRemediateEnvironmentUseCase(get<SystemDoctorPort>()) }
 

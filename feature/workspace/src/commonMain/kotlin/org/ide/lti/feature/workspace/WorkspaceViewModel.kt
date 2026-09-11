@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -33,13 +34,8 @@ import org.ide.lti.core.domain.usecase.device.SelectConnectedDeviceUseCase
 import org.ide.lti.core.domain.usecase.target.AddTargetUseCase
 import org.ide.lti.core.domain.usecase.target.GetAvailableTargetsUseCase
 import org.ide.lti.core.domain.usecase.target.GetSelectedTargetUseCase
-import org.ide.lti.core.domain.usecase.target.LoadTargetPropertiesUseCase
-import org.ide.lti.core.domain.usecase.target.SaveTargetPropertiesUseCase
-import org.ide.lti.core.domain.usecase.target.SelectAcquisitionModeUseCase
-import org.ide.lti.core.domain.usecase.target.SelectTargetFirmwareUseCase
-import org.ide.lti.core.domain.usecase.target.SelectTargetRegionUseCase
+import org.ide.lti.core.domain.repository.snapshot.SnapshotRepository
 import org.ide.lti.core.domain.usecase.target.SelectTargetUseCase
-import org.ide.lti.core.domain.usecase.workspace.SyncTargetWorkspaceUseCase
 import org.ide.lti.core.domain.workspace.WorkspaceManager
 import org.ide.lti.core.model.panels.PanelState
 import org.ide.lti.core.model.target.AdbDeviceState
@@ -47,14 +43,13 @@ import org.ide.lti.core.model.target.ConnectedTargetDevice
 import org.ide.lti.core.model.target.DeviceConnectionType
 import org.ide.lti.core.model.target.DeviceOperationResult
 import org.ide.lti.core.model.target.DeviceRebootMode
-import org.ide.lti.core.model.target.FirmwareAcquisitionMode
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.target.TargetFirmware
-import org.ide.lti.core.model.target.TargetProperties
 import org.ide.lti.core.model.target.TargetRegion
 import org.ide.lti.core.model.target.TargetStatus
 import org.ide.lti.core.model.target.WirelessPairingRequest
-import org.ide.lti.feature.workspace.panels.target.TargetNavSection
+import org.ide.lti.core.model.workspace.ConfigurationSnapshot
+import org.ide.lti.core.model.workspace.Workspace
 
 /**
  * Presentation ViewModel for the LtiRom Studio Workspace.
@@ -62,9 +57,7 @@ import org.ide.lti.feature.workspace.panels.target.TargetNavSection
  * Responsibilities:
  * - Layout, panel toggling, and tab orchestration (Explorer, Terminal, Editor, AI, Target Cockpit).
  * - Reactive workspace metadata & branch synchronization.
- * - Hardware Target Device Selection, Region Switching, and Firmware Baseline management.
- * - Full bidirectional `ltikt.properties` configuration loading, editing, resetting, and saving.
- * - Provisioning isolated target workspaces at `~/LtiRomWorkDir/target/<codename>/`.
+ * - Bound target profile resolution (workspace binding first, global selection as fallback).
  * - Hardware ADB / Fastboot device discovery, pairing, and reboot transitions.
  */
 class WorkspaceViewModel(
@@ -73,12 +66,7 @@ class WorkspaceViewModel(
     private val getAvailableTargetsUseCase: GetAvailableTargetsUseCase,
     private val getSelectedTargetUseCase: GetSelectedTargetUseCase,
     private val selectTargetUseCase: SelectTargetUseCase,
-    private val selectTargetRegionUseCase: SelectTargetRegionUseCase,
-    private val selectTargetFirmwareUseCase: SelectTargetFirmwareUseCase,
-    private val selectAcquisitionModeUseCase: SelectAcquisitionModeUseCase,
-    private val syncTargetWorkspaceUseCase: SyncTargetWorkspaceUseCase? = null,
-    private val loadTargetPropertiesUseCase: LoadTargetPropertiesUseCase? = null,
-    private val saveTargetPropertiesUseCase: SaveTargetPropertiesUseCase? = null,
+    private val snapshotRepository: SnapshotRepository? = null,
     private val addTargetUseCase: AddTargetUseCase? = null,
     private val getConnectedDevicesUseCase: GetConnectedDevicesUseCase? = null,
     private val getSelectedConnectedDeviceUseCase: GetSelectedConnectedDeviceUseCase? = null,
@@ -122,6 +110,16 @@ class WorkspaceViewModel(
         )
     }
 
+    val currentWorkspace: StateFlow<Workspace?> = workspaceManager.currentWorkspace
+
+    val effectiveSnapshot: StateFlow<ConfigurationSnapshot?> = workspaceManager.currentWorkspace
+        .map { ws -> ws?.effectiveSnapshotId?.let { snapshotRepository?.getSnapshot(it) } }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null,
+        )
+
     val workspaceName: StateFlow<String> = workspaceManager.currentWorkspace
         .map { it?.name ?: "Lti" }
         .stateIn(
@@ -142,33 +140,22 @@ class WorkspaceViewModel(
             initialValue = listOf(DEFAULT_TARGET),
         )
 
-    val selectedTarget: StateFlow<TargetDevice> = getSelectedTargetUseCase()
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = DEFAULT_TARGET,
-        )
-
-    // Target Properties State
-    private val _targetProperties = MutableStateFlow(TargetProperties.fromTargetDevice(DEFAULT_TARGET))
-    val targetProperties: StateFlow<TargetProperties> = _targetProperties.asStateFlow()
-
-    private val _isSyncingTarget = MutableStateFlow(false)
-    val isSyncingTarget: StateFlow<Boolean> = _isSyncingTarget.asStateFlow()
-
-    private val _isSavingProperties = MutableStateFlow(false)
-    val isSavingProperties: StateFlow<Boolean> = _isSavingProperties.asStateFlow()
-
-    private val _propertiesSaveStatus = MutableStateFlow<String?>(null)
-    val propertiesSaveStatus: StateFlow<String?> = _propertiesSaveStatus.asStateFlow()
-
-    // Target Navigation Section (Drives 2nd Layer -> 3rd Layer synchronization)
-    private val _selectedTargetNavSection = MutableStateFlow(TargetNavSection.TELEMETRY)
-    val selectedTargetNavSection: StateFlow<TargetNavSection> = _selectedTargetNavSection.asStateFlow()
-
-    fun onSelectTargetNavSection(section: TargetNavSection) {
-        _selectedTargetNavSection.value = section
-    }
+    /**
+     * The profile this workspace is bound to. Records without a binding (NEEDS_TARGET) fall back
+     * to the global selection until US5 lets the user bind them.
+     */
+    val selectedTarget: StateFlow<TargetDevice> = combine(
+        workspaceManager.currentWorkspace,
+        getAvailableTargetsUseCase(),
+        getSelectedTargetUseCase(),
+    ) { workspace, targets, globalSelection ->
+        val boundId = workspace?.targetBinding?.profileId
+        targets.firstOrNull { it.id == boundId } ?: globalSelection
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = DEFAULT_TARGET,
+    )
 
     // Connected ADB / Fastboot Physical & Emulated Devices
     private val _fallbackConnectedDevices = MutableStateFlow<List<ConnectedTargetDevice>>(emptyList())
@@ -306,18 +293,6 @@ class WorkspaceViewModel(
         _deviceOperationStatus.value = null
     }
 
-    init {
-        viewModelScope.launch {
-            selectedTarget.collectLatest { target ->
-                loadTargetProperties(target)
-            }
-        }
-    }
-
-    private suspend fun loadTargetProperties(target: TargetDevice) {
-        val loaded = loadTargetPropertiesUseCase?.invoke(target) ?: TargetProperties.fromTargetDevice(target)
-        _targetProperties.value = loaded
-    }
 
     fun onSelectTarget(targetId: String) {
         viewModelScope.launch {
@@ -338,76 +313,7 @@ class WorkspaceViewModel(
         }
     }
 
-    fun onSelectRegion(region: TargetRegion) {
-        viewModelScope.launch {
-            selectTargetRegionUseCase(region)
-        }
-    }
 
-    fun onSelectFirmware(firmware: TargetFirmware) {
-        viewModelScope.launch {
-            selectTargetFirmwareUseCase(firmware)
-        }
-    }
-
-    fun onSelectAcquisitionMode(mode: FirmwareAcquisitionMode) {
-        viewModelScope.launch {
-            selectAcquisitionModeUseCase(mode)
-        }
-    }
-
-    fun onSetCustomFirmware(version: String, buildId: String?, otaUrl: String?) {
-        val current = selectedTarget.value
-        val custom = TargetFirmware(
-            version = version,
-            buildId = buildId ?: "${current.codename}:15/CUSTOM/$version",
-            androidVersion = "15",
-            securityPatch = "Custom",
-            otaUrl = otaUrl,
-            isOfficial = false,
-            isRecommended = false,
-        )
-        viewModelScope.launch {
-            selectTargetFirmwareUseCase(custom)
-        }
-    }
-
-    fun updateTargetProperties(properties: TargetProperties) {
-        _targetProperties.value = properties
-        _propertiesSaveStatus.value = null
-    }
-
-    fun saveCurrentTargetProperties() {
-        val target = selectedTarget.value
-        val props = _targetProperties.value
-        _isSavingProperties.value = true
-        _propertiesSaveStatus.value = null
-        viewModelScope.launch {
-            val result = saveTargetPropertiesUseCase?.invoke(target, props)
-            _isSavingProperties.value = false
-            if (result?.isSuccess == true) {
-                _propertiesSaveStatus.value = "Saved successfully"
-            } else {
-                _propertiesSaveStatus.value = "Failed to save properties"
-            }
-        }
-    }
-
-    fun resetTargetPropertiesToBaseline() {
-        val target = selectedTarget.value
-        _targetProperties.value = TargetProperties.fromTargetDevice(target)
-        _propertiesSaveStatus.value = "Reset to baseline defaults"
-    }
-
-    fun syncCurrentTargetWorkspace() {
-        val target = selectedTarget.value
-        val props = _targetProperties.value
-        _isSyncingTarget.value = true
-        viewModelScope.launch {
-            syncTargetWorkspaceUseCase?.invoke(target, props)
-            _isSyncingTarget.value = false
-        }
-    }
 
     fun getPanelState(panelId: PanelId): StateFlow<PanelState?> {
         return panelsState.map { it[panelId] }

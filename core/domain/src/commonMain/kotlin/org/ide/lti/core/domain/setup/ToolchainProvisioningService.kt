@@ -1,8 +1,6 @@
 package org.ide.lti.core.domain.setup
 
 import kotlinx.coroutines.flow.StateFlow
-import org.ide.lti.core.model.target.TargetDevice
-import org.ide.lti.core.model.target.TargetProperties
 
 /**
  * Stages in the environment check and toolchain provisioning pipeline.
@@ -113,7 +111,6 @@ public data class ToolchainSetupState(
     val diagnostics: List<DiagnosticCheckItem> = defaultDiagnostics(),
     val isAvbKeyProvisioned: Boolean = false,
     val avbKeyPath: String? = null,
-    val targetWorkspacePath: String? = null,
     val currentStage: SetupStepStage? = null,
     val isRunning: Boolean = false,
     val isChecking: Boolean = false,
@@ -597,15 +594,6 @@ public interface ToolchainProvisioningService {
 
     /** Provisions or verifies machine-local AVB 2.0 RSA-4096 signing key */
     public suspend fun provisionAvbKey(): Boolean
-
-    /** Materializes and synchronizes the target directory structure at ~/LtiRomWorkDir/target/<target_codename> */
-    public suspend fun provisionTargetWorkspace(target: TargetDevice, customProperties: TargetProperties? = null): Boolean
-
-    /** Reads the target's ltikt.properties if present, returning raw text or null */
-    public suspend fun readTargetProperties(targetCodename: String): String? = null
-
-    /** Writes properties content to the target's ltikt.properties */
-    public suspend fun saveTargetProperties(targetCodename: String, content: String): Boolean = false
 
     /** Automatically fixes and installs missing system packages and dependencies detected by the Doctor */
     public suspend fun autoRemediateDoctor(): Boolean

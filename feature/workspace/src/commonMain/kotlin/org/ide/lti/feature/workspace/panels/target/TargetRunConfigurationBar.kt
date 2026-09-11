@@ -64,7 +64,6 @@ import org.ide.lti.core.model.target.AdbDeviceState
 import org.ide.lti.core.model.target.ConnectedTargetDevice
 import org.ide.lti.core.model.target.DeviceConnectionType
 import org.ide.lti.core.model.target.TargetDevice
-import org.ide.lti.core.model.target.TargetFirmware
 import org.ide.lti.core.model.target.TargetRegion
 
 /**
@@ -99,10 +98,8 @@ fun TargetDevice.getShortDisplayName(): String {
 @Composable
 fun TargetRunConfigurationBar(
     selectedTarget: TargetDevice,
-    availableTargets: List<TargetDevice>,
-    onSelectTarget: (String) -> Unit,
-    onSelectRegion: (TargetRegion) -> Unit,
-    onSelectFirmware: (TargetFirmware) -> Unit,
+    region: TargetRegion,
+    onOpenWorkspaceConfiguration: () -> Unit,
     onOpenEditConfiguration: () -> Unit,
     onOpenAddConfiguration: () -> Unit,
     onCloseWorkspace: () -> Unit = {},
@@ -142,14 +139,14 @@ fun TargetRunConfigurationBar(
             // e.g. [ 📱 REDMAGIC Astra • Global OS (NP05J_GB) ▾ ]
             // =========================================================================
             Box {
-                val streamCode = selectedTarget.getStreamCode()
-                val targetLabel = "${selectedTarget.getShortDisplayName()} • ${selectedTarget.selectedRegion.displayName} ($streamCode)"
+                val streamCode = selectedTarget.getStreamCode(region)
+                val targetLabel = "${selectedTarget.getShortDisplayName()} • ${region.displayName} ($streamCode)"
 
                 TargetPillButton(
                     emoji = "📱",
                     label = targetLabel,
                     isMenuOpen = isTargetMenuOpen,
-                    tooltipText = "Target ROM Configuration: ${selectedTarget.name} - ${selectedTarget.selectedRegion.displayName} ($streamCode)",
+                    tooltipText = "Workspace target: ${selectedTarget.name} - ${region.displayName} ($streamCode)",
                     onClick = {
                         isTargetMenuOpen = !isTargetMenuOpen
                         isDeviceMenuOpen = false
@@ -162,34 +159,40 @@ fun TargetRunConfigurationBar(
                     onDismissRequest = { isTargetMenuOpen = false },
                     offset = IntOffset(x = 0, y = 32),
                 ) {
-                    GlassDropdownMenuHeader(title = "Target ROM Configurations")
+                    GlassDropdownMenuHeader(title = "Workspace Target")
 
-                    availableTargets.forEach { target ->
-                        target.availableRegions.forEach { region ->
-                            val code = target.getStreamCode(region)
-                            val isSelected = target.id == selectedTarget.id && selectedTarget.selectedRegion == region
-                            val regionEmoji = if (region == TargetRegion.GLOBAL) "🌐" else "🇨🇳"
-
-                            GlassDropdownMenuItem(
-                                text = "${target.name} ($code)",
-                                subtitle = "${target.codename} • ${region.displayName} • ${target.socPlatform}",
-                                leadingIcon = {
-                                    Text(
-                                        text = regionEmoji,
-                                        style = MaterialTheme.typography.bodySmall,
-                                    )
-                                },
-                                isSelected = isSelected,
-                                onClick = {
-                                    if (target.id != selectedTarget.id) {
-                                        onSelectTarget(target.id)
-                                    }
-                                    onSelectRegion(region)
-                                    isTargetMenuOpen = false
-                                },
+                    // A workspace is bound to exactly one profile; region/firmware live in its
+                    // configuration snapshot, so the bound target is shown, not switched, here.
+                    GlassDropdownMenuItem(
+                        text = "${selectedTarget.name} ($streamCode)",
+                        subtitle = "${selectedTarget.codename} • ${region.displayName} • " +
+                            selectedTarget.socPlatform,
+                        leadingIcon = {
+                            Text(
+                                text = if (region == TargetRegion.GLOBAL) "🌐" else "🇨🇳",
+                                style = MaterialTheme.typography.bodySmall,
                             )
-                        }
-                    }
+                        },
+                        isSelected = true,
+                        onClick = { isTargetMenuOpen = false },
+                    )
+
+                    GlassDropdownMenuItem(
+                        text = "Configure Workspace...",
+                        subtitle = "Region, firmware, acquisition, signing and OTA settings",
+                        leadingIcon = {
+                            Icon(
+                                painter = AppIcons.SettingsPainterResource(),
+                                contentDescription = null,
+                                modifier = Modifier.size(IconSize.Small),
+                                tint = glassColors.glassAccent,
+                            )
+                        },
+                        onClick = {
+                            isTargetMenuOpen = false
+                            onOpenWorkspaceConfiguration()
+                        },
+                    )
 
                     GlassDropdownMenuDivider()
 

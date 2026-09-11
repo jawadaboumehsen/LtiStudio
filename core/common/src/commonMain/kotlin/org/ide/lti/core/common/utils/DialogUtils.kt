@@ -10,6 +10,7 @@
 package org.ide.lti.core.common.utils
 
 import io.github.vinceglb.filekit.core.FileKit
+import io.github.vinceglb.filekit.core.PickerMode
 
 object DialogUtils {
     /**
@@ -20,6 +21,19 @@ object DialogUtils {
     suspend fun selectDirectory(title: String = "Select Workspace Directory"): String? {
         return try {
             FileKit.pickDirectory(title = title)?.path
+        } catch (_: Throwable) {
+            null
+        }
+    }
+
+    /**
+     * Shows a native system file picker dialog asynchronously
+     * without blocking the Compose UI thread, and returns the selected [io.github.vinceglb.filekit.core.PlatformFile],
+     * or null if cancelled or if an error occurs.
+     */
+    suspend fun selectFile(title: String = "Select Firmware Archive"): io.github.vinceglb.filekit.core.PlatformFile? {
+        return try {
+            FileKit.pickFile(mode = PickerMode.Single, title = title)
         } catch (_: Throwable) {
             null
         }

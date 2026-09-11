@@ -36,10 +36,8 @@ import org.ide.lti.core.designsystem.component.navigation.GlassCommandPalette
 import org.ide.lti.core.designsystem.component.navigation.GlassSidePanelRail
 import org.ide.lti.core.designsystem.component.navigation.GlassSidePanelTab
 import org.ide.lti.core.designsystem.component.navigation.SidePanelRailPosition
-import org.ide.lti.core.model.target.TargetRegion
 import org.ide.lti.core.model.target.WirelessPairingRequest
 import org.ide.lti.feature.workspace.panels.target.GlassWifiPairingDialog
-import org.ide.lti.feature.workspace.panels.target.TargetNavSection
 import org.ide.lti.feature.workspace.panels.target.TargetRunConfigurationBar
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.IconSize
@@ -53,7 +51,7 @@ import org.ide.lti.feature.workspace.panels.editor.EditorViewModel
 import org.ide.lti.feature.workspace.panels.explorer.ExplorerPanel
 import org.ide.lti.feature.workspace.panels.explorer.ExplorerViewModel
 import org.ide.lti.feature.workspace.panels.target.TargetDetailPanel
-import org.ide.lti.feature.workspace.panels.target.TargetOptionsPanel
+import org.ide.lti.feature.workspace.panels.target.WorkspaceConfigurationPanel
 import org.ide.lti.feature.workspace.panels.terminal.TerminalPanel
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -85,6 +83,7 @@ fun WorkspaceScreen(
 ) {
     val workspaceName by viewModel.workspaceName.collectAsState()
     val selectedTarget by viewModel.selectedTarget.collectAsState()
+    val effectiveSnapshot by viewModel.effectiveSnapshot.collectAsState()
     val connectedDevices by viewModel.connectedDevices.collectAsState()
     val selectedConnectedDevice by viewModel.selectedConnectedDevice.collectAsState()
     val isRefreshingDevices by viewModel.isRefreshingDevices.collectAsState()
@@ -112,13 +111,12 @@ fun WorkspaceScreen(
     var activeFileType by remember { mutableStateOf<String?>(null) }
     var cursorPosition by remember { mutableStateOf<Pair<Int, Int>?>(null) }
 
-    val availableTargets by viewModel.availableTargets.collectAsState()
     val branch by viewModel.branch.collectAsState()
     val deviceOperationStatus by viewModel.deviceOperationStatus.collectAsState()
     var isCommandPaletteOpen by rememberSaveable { mutableStateOf(false) }
     var isWifiPairingDialogOpen by rememberSaveable { mutableStateOf(false) }
 
-    val commands = remember(availableTargets, selectedTarget, ltiLayoutState, leftTabIndex) {
+    val commands = remember(selectedTarget, ltiLayoutState, leftTabIndex) {
         buildList {
             // 1. Navigation
             add(
@@ -162,55 +160,6 @@ fun WorkspaceScreen(
                     icon = AppIcon.Painted(AppIcons.SparklesPainterResource),
                 ) {
                     leftTabIndex = 1
-                    viewModel.onSelectTargetNavSection(TargetNavSection.TELEMETRY)
-                    if (!ltiLayoutState.showLeft) {
-                        ltiLayoutState.toggleLeft()
-                        viewModel.togglePanelVisibility(PanelId.LEFT)
-                    }
-                },
-            )
-            add(
-                CommandItem(
-                    id = "nav_config",
-                    title = "Visual Config Form",
-                    subtitle = "Edit ltikt.properties keys, flags, and filesystem options",
-                    category = CommandCategory.NAVIGATION,
-                    icon = AppIcon.Painted(AppIcons.EditPainterResource),
-                ) {
-                    leftTabIndex = 1
-                    viewModel.onSelectTargetNavSection(TargetNavSection.PROPERTIES_FORM)
-                    if (!ltiLayoutState.showLeft) {
-                        ltiLayoutState.toggleLeft()
-                        viewModel.togglePanelVisibility(PanelId.LEFT)
-                    }
-                },
-            )
-            add(
-                CommandItem(
-                    id = "nav_raw",
-                    title = "Raw ltikt.properties Editor",
-                    subtitle = "Direct syntax-highlighted editor for ltikt.properties",
-                    category = CommandCategory.NAVIGATION,
-                    icon = AppIcon.Painted(AppIcons.FilePainterResource),
-                ) {
-                    leftTabIndex = 1
-                    viewModel.onSelectTargetNavSection(TargetNavSection.PROPERTIES_RAW)
-                    if (!ltiLayoutState.showLeft) {
-                        ltiLayoutState.toggleLeft()
-                        viewModel.togglePanelVisibility(PanelId.LEFT)
-                    }
-                },
-            )
-            add(
-                CommandItem(
-                    id = "nav_provision",
-                    title = "Target Directory Provisioning",
-                    subtitle = "Scaffold ~/LtiRomWorkDir/target/<codename> structure",
-                    category = CommandCategory.NAVIGATION,
-                    icon = AppIcon.Painted(AppIcons.HomePainterResource),
-                ) {
-                    leftTabIndex = 1
-                    viewModel.onSelectTargetNavSection(TargetNavSection.PROVISIONING)
                     if (!ltiLayoutState.showLeft) {
                         ltiLayoutState.toggleLeft()
                         viewModel.togglePanelVisibility(PanelId.LEFT)
@@ -218,40 +167,20 @@ fun WorkspaceScreen(
                 },
             )
 
-            // 2. Targets & Regions
-            availableTargets.forEach { target ->
-                add(
-                    CommandItem(
-                        id = "target_${target.id}",
-                        title = "Target: ${target.name}",
-                        subtitle = "Switch active target to ${target.codename} (${target.socPlatform})",
-                        category = CommandCategory.TARGET,
-                        icon = AppIcon.Painted(AppIcons.SettingsPainterResource),
-                    ) {
-                        viewModel.onSelectTarget(target.id)
-                    },
-                )
-            }
+            // 2. Workspace target configuration (the bound target is not switched from here)
             add(
                 CommandItem(
-                    id = "region_global",
-                    title = "Switch to Global OS",
-                    subtitle = "Official international firmware baseline (NP05J_GB / EEA)",
+                    id = "workspace_config",
+                    title = "Configure Workspace...",
+                    subtitle = "Region, firmware, acquisition, signing and OTA settings for this workspace",
                     category = CommandCategory.TARGET,
-                    icon = AppIcon.Painted(AppIcons.LinkPainterResource),
+                    icon = AppIcon.Painted(AppIcons.SettingsPainterResource),
                 ) {
-                    viewModel.onSelectRegion(TargetRegion.GLOBAL)
-                },
-            )
-            add(
-                CommandItem(
-                    id = "region_china",
-                    title = "Switch to CN OS",
-                    subtitle = "Official China mainland firmware baseline (NP05J_CN / CN)",
-                    category = CommandCategory.TARGET,
-                    icon = AppIcon.Painted(AppIcons.LinkPainterResource),
-                ) {
-                    viewModel.onSelectRegion(TargetRegion.CHINA)
+                    leftTabIndex = 1
+                    if (!ltiLayoutState.showLeft) {
+                        ltiLayoutState.toggleLeft()
+                        viewModel.togglePanelVisibility(PanelId.LEFT)
+                    }
                 },
             )
 
@@ -276,40 +205,6 @@ fun WorkspaceScreen(
                     icon = AppIcon.Painted(AppIcons.AddPainterResource),
                 ) {
                     onOpenAddConfiguration()
-                },
-            )
-            add(
-                CommandItem(
-                    id = "action_save",
-                    title = "Save ltikt.properties",
-                    subtitle = "Persist current configuration to target workspace directory",
-                    category = CommandCategory.CONFIG,
-                    icon = AppIcon.Painted(AppIcons.SavePainterResource),
-                    shortcut = "Ctrl+S",
-                ) {
-                    viewModel.saveCurrentTargetProperties()
-                },
-            )
-            add(
-                CommandItem(
-                    id = "action_reset",
-                    title = "Reset to Baseline Defaults",
-                    subtitle = "Discard unsaved edits and reload hardware baseline",
-                    category = CommandCategory.CONFIG,
-                    icon = AppIcon.Painted(AppIcons.RefreshPainterResource),
-                ) {
-                    viewModel.resetTargetPropertiesToBaseline()
-                },
-            )
-            add(
-                CommandItem(
-                    id = "action_sync",
-                    title = "Sync Target Workspace",
-                    subtitle = "Scaffold directory structure and write ltikt.properties",
-                    category = CommandCategory.CONFIG,
-                    icon = AppIcon.Painted(AppIcons.SendPainterResource),
-                ) {
-                    viewModel.syncCurrentTargetWorkspace()
                 },
             )
 
@@ -372,9 +267,7 @@ fun WorkspaceScreen(
                 icon = AppIcon.Painted(AppIcons.SettingsPainterResource),
                 label = "Target & Config",
             ) {
-                TargetOptionsPanel(
-                    viewModel = viewModel,
-                )
+                WorkspaceConfigurationPanel()
             },
         )
     }
@@ -504,10 +397,14 @@ fun WorkspaceScreen(
                 targetSelector = {
                     TargetRunConfigurationBar(
                         selectedTarget = selectedTarget,
-                        availableTargets = availableTargets,
-                        onSelectTarget = { targetId -> viewModel.onSelectTarget(targetId) },
-                        onSelectRegion = { region -> viewModel.onSelectRegion(region) },
-                        onSelectFirmware = { fw -> viewModel.onSelectFirmware(fw) },
+                        region = effectiveSnapshot?.region ?: selectedTarget.selectedRegion,
+                        onOpenWorkspaceConfiguration = {
+                            leftTabIndex = 1
+                            if (!ltiLayoutState.showLeft) {
+                                ltiLayoutState.toggleLeft()
+                                viewModel.togglePanelVisibility(PanelId.LEFT)
+                            }
+                        },
                         onOpenEditConfiguration = { onOpenEditConfiguration(selectedTarget.id) },
                         onOpenAddConfiguration = onOpenAddConfiguration,
                         onCloseWorkspace = { viewModel.closeWorkspace() },
@@ -555,10 +452,11 @@ fun WorkspaceScreen(
             )
         },
         statusBar = {
+            val activeRegionCode = effectiveSnapshot?.region?.code ?: selectedTarget.selectedRegion.code
             WorkspaceStatusBar(
                 branchName = branch,
                 module = "${selectedTarget.formattedSuperSize} • ${selectedTarget.filesystemType.uppercase()}",
-                filePath = activeFilePath ?: "Target: ${selectedTarget.name} (${selectedTarget.selectedRegion.code}) • AVB 2.0 Active",
+                filePath = activeFilePath ?: "Target: ${selectedTarget.name} ($activeRegionCode) • AVB 2.0 Active",
                 cursorPosition = cursorPosition,
                 encoding = "UTF-8",
                 lineEnding = LineEnding.LF,

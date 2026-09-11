@@ -24,5 +24,10 @@ kotlin {
             implementation(libs.kotlinx.serialization.json)
             implementation(compose.materialIconsExtended)
         }
+
+        commonTest.dependencies {
+            implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.kotlin.test)
+        }
     }
 }

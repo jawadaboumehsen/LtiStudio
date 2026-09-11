@@ -21,8 +21,6 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.ide.lti.core.domain.repository.target.TargetRepository
-import org.ide.lti.core.domain.setup.ToolchainProvisioningService
-import org.ide.lti.core.domain.setup.ToolchainSetupState
 import org.ide.lti.core.domain.usecase.target.AddTargetUseCase
 import org.ide.lti.core.domain.usecase.target.CreateTargetScaffoldUseCase
 import org.ide.lti.core.domain.usecase.target.DeleteTargetUseCase
@@ -33,12 +31,9 @@ import org.ide.lti.core.domain.usecase.target.SaveTargetConfigurationUseCase
 import org.ide.lti.core.domain.usecase.target.SelectTargetUseCase
 import org.ide.lti.core.domain.usecase.target.UpdateTargetUseCase
 import org.ide.lti.core.domain.usecase.target.ValidateTargetConfigurationUseCase
-import org.ide.lti.core.domain.usecase.workspace.SyncTargetWorkspaceUseCase
-import org.ide.lti.core.domain.usecase.workspace.SyncWorkspaceConfigUseCase
 import org.ide.lti.core.model.target.FirmwareAcquisitionMode
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.target.TargetFirmware
-import org.ide.lti.core.model.target.TargetProperties
 import org.ide.lti.core.model.target.TargetRegion
 import org.ide.lti.core.model.target.TargetStatus
 import org.ide.lti.core.model.target.TargetValidationError
@@ -93,25 +88,7 @@ class ConfigurationViewModelTest {
         override suspend fun setCustomFirmware(version: String, buildId: String?, otaUrl: String?): Result<TargetDevice> = Result.success(selectedTargetFlow.value)
     }
 
-    private class FakeToolchainService : ToolchainProvisioningService {
-        val stateFlow = MutableStateFlow(ToolchainSetupState())
-        override val state = stateFlow.asStateFlow()
-        var syncCount = 0
-
-        override suspend fun checkStatus(): ToolchainSetupState = stateFlow.value
-        override suspend fun runFullSetup() {}
-        override suspend fun retryCurrentStep() {}
-        override suspend fun provisionAvbKey(): Boolean = true
-        override suspend fun autoRemediateDoctor(): Boolean = true
-        override suspend fun provisionTargetWorkspace(target: TargetDevice, customProperties: TargetProperties?): Boolean {
-            syncCount++
-            return true
-        }
-        override suspend fun readTargetProperties(targetCodename: String): String? = null
-        override suspend fun saveTargetProperties(targetCodename: String, content: String): Boolean = true
-    }
-
-    private fun createTestFixture(): Triple<ConfigurationViewModel, FakeTargetRepository, FakeToolchainService> {
+    private fun createTestFixture(): Pair<ConfigurationViewModel, FakeTargetRepository> {
         val fw = TargetFirmware(
             version = "REDMAGICOS10.5.15_NP05J_GB",
             buildId = "PQ84P01:15/AQ3A.240812.002/20260311.222527",
@@ -152,9 +129,6 @@ class ConfigurationViewModelTest {
         )
 
         val repo = FakeTargetRepository(listOf(defaultDevice, secondaryDevice), defaultDevice)
-        val toolchain = FakeToolchainService()
-        val syncConfig = SyncWorkspaceConfigUseCase()
-        val syncTarget = SyncTargetWorkspaceUseCase(toolchain, syncConfig)
         val validateTarget = ValidateTargetConfigurationUseCase()
         val addTarget = AddTargetUseCase(repo)
         val updateTarget = UpdateTargetUseCase(repo)
@@ -167,7 +141,6 @@ class ConfigurationViewModelTest {
             addTargetUseCase = addTarget,
             updateTargetUseCase = updateTarget,
             selectTargetUseCase = selectTarget,
-            syncTargetWorkspaceUseCase = syncTarget,
         )
 
         val viewModel = ConfigurationViewModel(
@@ -181,7 +154,7 @@ class ConfigurationViewModelTest {
             saveTargetConfigurationUseCase = saveTarget,
         )
 
-        return Triple(viewModel, repo, toolchain)
+        return Pair(viewModel, repo)
     }
 
     @Test
@@ -189,7 +162,7 @@ class ConfigurationViewModelTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         Dispatchers.setMain(testDispatcher)
         try {
-            val (viewModel, _, _) = createTestFixture()
+            val (viewModel, _) = createTestFixture()
             val job = backgroundScope.launch(testDispatcher) { viewModel.uiState.collect() }
             testScheduler.advanceUntilIdle()
 
@@ -208,7 +181,7 @@ class ConfigurationViewModelTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         Dispatchers.setMain(testDispatcher)
         try {
-            val (viewModel, _, _) = createTestFixture()
+            val (viewModel, _) = createTestFixture()
             val job = backgroundScope.launch(testDispatcher) { viewModel.uiState.collect() }
             testScheduler.advanceUntilIdle()
 
@@ -228,7 +201,7 @@ class ConfigurationViewModelTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         Dispatchers.setMain(testDispatcher)
         try {
-            val (viewModel, _, _) = createTestFixture()
+            val (viewModel, _) = createTestFixture()
             val job = backgroundScope.launch(testDispatcher) { viewModel.uiState.collect() }
             testScheduler.advanceUntilIdle()
 
@@ -255,7 +228,7 @@ class ConfigurationViewModelTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         Dispatchers.setMain(testDispatcher)
         try {
-            val (viewModel, _, _) = createTestFixture()
+            val (viewModel, _) = createTestFixture()
             val job = backgroundScope.launch(testDispatcher) { viewModel.uiState.collect() }
             testScheduler.advanceUntilIdle()
 
@@ -283,7 +256,7 @@ class ConfigurationViewModelTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         Dispatchers.setMain(testDispatcher)
         try {
-            val (viewModel, _, _) = createTestFixture()
+            val (viewModel, _) = createTestFixture()
             val job = backgroundScope.launch(testDispatcher) { viewModel.uiState.collect() }
             testScheduler.advanceUntilIdle()
 
@@ -303,7 +276,7 @@ class ConfigurationViewModelTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         Dispatchers.setMain(testDispatcher)
         try {
-            val (viewModel, _, _) = createTestFixture()
+            val (viewModel, _) = createTestFixture()
             val job = backgroundScope.launch(testDispatcher) { viewModel.uiState.collect() }
             testScheduler.advanceUntilIdle()
 
@@ -343,11 +316,11 @@ class ConfigurationViewModelTest {
     }
 
     @Test
-    fun testApplyChangesPersistsAndSyncs() = runTest {
+    fun testApplyChangesPersists() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         Dispatchers.setMain(testDispatcher)
         try {
-            val (viewModel, repo, toolchain) = createTestFixture()
+            val (viewModel, repo) = createTestFixture()
             val job = backgroundScope.launch(testDispatcher) { viewModel.uiState.collect() }
             testScheduler.advanceUntilIdle()
 
@@ -361,7 +334,6 @@ class ConfigurationViewModelTest {
 
             assertTrue(successCalled)
             assertFalse(viewModel.uiState.value.isDirty)
-            assertEquals(1, toolchain.syncCount)
 
             val saved = repo.targetsFlow.value.find { it.id == "PQ84P01" }
             assertEquals("SM8750 Extreme Edition", saved?.socPlatform)
@@ -375,7 +347,7 @@ class ConfigurationViewModelTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         Dispatchers.setMain(testDispatcher)
         try {
-            val (viewModel, _, _) = createTestFixture()
+            val (viewModel, _) = createTestFixture()
             val job = backgroundScope.launch(testDispatcher) { viewModel.uiState.collect() }
             testScheduler.advanceUntilIdle()
 
@@ -400,7 +372,7 @@ class ConfigurationViewModelTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         Dispatchers.setMain(testDispatcher)
         try {
-            val (viewModel, _, _) = createTestFixture()
+            val (viewModel, _) = createTestFixture()
             val job = backgroundScope.launch(testDispatcher) { viewModel.uiState.collect() }
             testScheduler.advanceUntilIdle()
 
@@ -425,7 +397,7 @@ class ConfigurationViewModelTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         Dispatchers.setMain(testDispatcher)
         try {
-            val (viewModel, _, _) = createTestFixture()
+            val (viewModel, _) = createTestFixture()
             val job = backgroundScope.launch(testDispatcher) { viewModel.uiState.collect() }
             testScheduler.advanceUntilIdle()
 
@@ -491,10 +463,6 @@ class ConfigurationViewModelTest {
             )
 
             val repo = FakeTargetRepository(listOf(defaultDevice), defaultDevice)
-            val toolchain = FakeToolchainService()
-            val syncConfig = SyncWorkspaceConfigUseCase()
-            val syncTarget = SyncTargetWorkspaceUseCase(toolchain, syncConfig)
-
             val validateTarget = ValidateTargetConfigurationUseCase()
             val addTarget = AddTargetUseCase(repo)
             val updateTarget = UpdateTargetUseCase(repo)
@@ -507,7 +475,6 @@ class ConfigurationViewModelTest {
                 addTargetUseCase = addTarget,
                 updateTargetUseCase = updateTarget,
                 selectTargetUseCase = selectTarget,
-                syncTargetWorkspaceUseCase = syncTarget,
             )
 
             val viewModel = ConfigurationViewModel(
@@ -548,7 +515,7 @@ class ConfigurationViewModelTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         Dispatchers.setMain(testDispatcher)
         try {
-            val (viewModel, repo, _) = createTestFixture()
+            val (viewModel, repo) = createTestFixture()
             val job = backgroundScope.launch(testDispatcher) { viewModel.uiState.collect() }
             testScheduler.advanceUntilIdle()
 

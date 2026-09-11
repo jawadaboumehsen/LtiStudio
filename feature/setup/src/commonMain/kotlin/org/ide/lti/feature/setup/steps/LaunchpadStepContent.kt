@@ -215,15 +215,9 @@ fun LaunchpadStepContent(
                 GlassHorizontalDivider()
 
                 // Path Details
-                val defaultTargetPath = selectedTarget?.workspacePath ?: "/home/lti/LtiRomWorkDir/target/PQ84P01_GLOBAL_A15"
-                val linuxPath = toolchainSetupState.targetWorkspacePath ?: defaultTargetPath
+                val linuxPath = "~/LtiRomWorkDir"
                 val distro = toolchainSetupState.activeDistro ?: "Ubuntu"
-                val uncPath = if (linuxPath.startsWith("\\\\")) {
-                    linuxPath
-                } else {
-                    val normalized = linuxPath.removePrefix("~/").removePrefix("/home/lti/").removePrefix("/")
-                    "\\\\wsl.localhost\\$distro\\home\\lti\\$normalized"
-                }
+                val uncPath = "\\\\wsl.localhost\\$distro\\home\\lti\\LtiRomWorkDir"
                 val readyToolsCount = toolchainSetupState.toolsMatrix.count { it.status == StepStatus.SUCCESS }
                 val totalToolsCount = toolchainSetupState.toolsMatrix.size
                 val toolchainSummary = if (readyToolsCount > 0) {

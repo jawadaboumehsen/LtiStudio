@@ -20,10 +20,6 @@ import org.ide.lti.core.domain.ports.PublishedTools
 import org.ide.lti.core.domain.ports.ToolPublicationPort
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepStatus
-import org.ide.lti.core.model.target.TargetDevice
-import org.ide.lti.core.model.target.TargetFirmware
-import org.ide.lti.core.model.target.TargetRegion
-import org.ide.lti.core.model.target.TargetStatus
 import java.nio.charset.Charset
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -358,110 +354,6 @@ class WslToolchainProvisionerTest {
         provisioner.runFullSetup()
         assertTrue(fakeCli.existingPaths.contains("/home/lti/LtiRomWorkDir"))
         assertTrue(provisioner.state.value.logs.any { it.contains("Initialized workspace root directory at /home/lti/LtiRomWorkDir") })
-    }
-
-    @Test
-    fun `provisionTargetWorkspace materializes isolated directories for Global target`() = runTest {
-        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-        val fakeCli = FakeWslCliExecutor()
-        val detector = WslEnvironmentDetector(cli = fakeCli)
-        val supervisor = FakeDaemonSupervisor()
-        val transport = FakeRemoteTransport()
-
-        val provisioner = WslToolchainProvisioner(
-            supervisor = supervisor,
-            transport = transport,
-            detector = detector,
-            cli = fakeCli,
-            dispatcher = testDispatcher
-        )
-
-        val globalTarget = TargetDevice(
-            id = "PQ84P01_GLOBAL",
-            name = "REDMAGIC Astra Gaming Tablet",
-            codename = "PQ84P01",
-            selectedRegion = TargetRegion.GLOBAL,
-            selectedFirmware = TargetFirmware(
-                version = "REDMAGICOS10.5.15_NP05J_GB",
-                buildId = "PQ84P01:15/AQ3A.240812.002/20260311.222527",
-                androidVersion = "15",
-            ),
-            socPlatform = "Snapdragon 8 Elite (SM8750 / sun)",
-            filesystemType = "erofs",
-            dynamicPartitions = listOf("system", "vendor", "product"),
-            bootPartitions = listOf("boot", "init_boot"),
-            status = TargetStatus.QUALIFIED,
-            description = "Official Global baseline",
-            isDefault = true,
-        )
-
-        assertEquals("PQ84P01_GLOBAL_A15", globalTarget.targetKey)
-
-        val success = provisioner.provisionTargetWorkspace(globalTarget)
-        assertTrue(success)
-
-        val expectedTargetDir = "/home/lti/LtiRomWorkDir/target/PQ84P01_GLOBAL_A15"
-        assertTrue(fakeCli.existingPaths.contains(expectedTargetDir))
-        assertTrue(fakeCli.existingPaths.contains("$expectedTargetDir/mods"))
-        assertTrue(fakeCli.existingPaths.contains("$expectedTargetDir/patches"))
-        assertTrue(fakeCli.existingPaths.contains("/home/lti/LtiRomWorkDir/out/fw/PQ84P01_GLOBAL_A15"))
-        assertTrue(fakeCli.existingPaths.contains("/home/lti/LtiRomWorkDir/out/work/PQ84P01_GLOBAL_A15"))
-        assertTrue(fakeCli.existingPaths.contains("/home/lti/LtiRomWorkDir/out/apktool/PQ84P01_GLOBAL_A15"))
-        assertTrue(fakeCli.existingPaths.contains("/home/lti/LtiRomWorkDir/out/repack/PQ84P01_GLOBAL_A15"))
-        assertTrue(fakeCli.existingPaths.contains("/home/lti/LtiRomWorkDir/out/package/PQ84P01_GLOBAL_A15"))
-        assertTrue(fakeCli.existingPaths.contains("/home/lti/LtiRomWorkDir/out/target/PQ84P01_GLOBAL_A15/logs"))
-    }
-
-    @Test
-    fun `provisionTargetWorkspace materializes isolated directories for China target`() = runTest {
-        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-        val fakeCli = FakeWslCliExecutor()
-        val detector = WslEnvironmentDetector(cli = fakeCli)
-        val supervisor = FakeDaemonSupervisor()
-        val transport = FakeRemoteTransport()
-
-        val provisioner = WslToolchainProvisioner(
-            supervisor = supervisor,
-            transport = transport,
-            detector = detector,
-            cli = fakeCli,
-            dispatcher = testDispatcher
-        )
-
-        val chinaTarget = TargetDevice(
-            id = "PQ84P01_CN",
-            name = "REDMAGIC Astra Gaming Tablet",
-            codename = "PQ84P01",
-            selectedRegion = TargetRegion.CHINA,
-            selectedFirmware = TargetFirmware(
-                version = "REDMAGICOS10.5.16_NP05J_CN",
-                buildId = "PQ84P01:15/AQ3A.240812.002/20260315.191244",
-                androidVersion = "15",
-            ),
-            socPlatform = "Snapdragon 8 Elite (SM8750 / sun)",
-            filesystemType = "erofs",
-            dynamicPartitions = listOf("system", "vendor", "product"),
-            bootPartitions = listOf("boot", "init_boot"),
-            status = TargetStatus.QUALIFIED,
-            description = "Official China baseline",
-            isDefault = false,
-        )
-
-        assertEquals("PQ84P01_CN_A15", chinaTarget.targetKey)
-
-        val success = provisioner.provisionTargetWorkspace(chinaTarget)
-        assertTrue(success)
-
-        val expectedTargetDir = "/home/lti/LtiRomWorkDir/target/PQ84P01_CN_A15"
-        assertTrue(fakeCli.existingPaths.contains(expectedTargetDir))
-        assertTrue(fakeCli.existingPaths.contains("$expectedTargetDir/mods"))
-        assertTrue(fakeCli.existingPaths.contains("$expectedTargetDir/patches"))
-        assertTrue(fakeCli.existingPaths.contains("/home/lti/LtiRomWorkDir/out/fw/PQ84P01_CN_A15"))
-        assertTrue(fakeCli.existingPaths.contains("/home/lti/LtiRomWorkDir/out/work/PQ84P01_CN_A15"))
-        assertTrue(fakeCli.existingPaths.contains("/home/lti/LtiRomWorkDir/out/apktool/PQ84P01_CN_A15"))
-        assertTrue(fakeCli.existingPaths.contains("/home/lti/LtiRomWorkDir/out/repack/PQ84P01_CN_A15"))
-        assertTrue(fakeCli.existingPaths.contains("/home/lti/LtiRomWorkDir/out/package/PQ84P01_CN_A15"))
-        assertTrue(fakeCli.existingPaths.contains("/home/lti/LtiRomWorkDir/out/target/PQ84P01_CN_A15/logs"))
     }
 
     @Test

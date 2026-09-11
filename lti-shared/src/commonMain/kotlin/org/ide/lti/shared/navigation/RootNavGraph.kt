@@ -25,6 +25,8 @@ import org.ide.lti.feature.settings.navigateToNotification
 import org.ide.lti.feature.settings.notificationScreen
 import org.ide.lti.feature.setup.SETUP_ROUTE
 import org.ide.lti.feature.setup.setupScreen
+import org.ide.lti.feature.workspace.creation.createWorkspaceScreen
+import org.ide.lti.feature.workspace.creation.navigateToCreateWorkspace
 import org.ide.lti.feature.workspace.workspaceScreen
 import org.koin.compose.koinInject
 
@@ -67,6 +69,18 @@ internal fun RootNavGraph(
                 }
             },
             onOpenSettings = onOpenSettings,
+            onCreateWorkspace = { navHostController.navigateToCreateWorkspace() },
+        )
+
+        // Create Workspace Screen
+        createWorkspaceScreen(
+            onBackClick = { navHostController.popBackStack() },
+            onWorkspaceCreated = { _ ->
+                navHostController.navigate("workspace") {
+                    popUpTo(SETUP_ROUTE) { inclusive = false }
+                    launchSingleTop = true
+                }
+            },
         )
 
         // Workspace Screen (4-panel IDE layout)

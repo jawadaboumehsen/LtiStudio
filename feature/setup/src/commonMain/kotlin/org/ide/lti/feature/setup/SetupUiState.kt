@@ -72,5 +72,6 @@ data class SetupUiActions(
     val onDismissEnvironmentNotice: () -> Unit = {},
     val onSetAutoDoctorEnabled: (Boolean) -> Unit = {},
     val onResetToolchainCache: () -> Unit = {},
+    val onCreateWorkspace: () -> Unit = {},
 )
 

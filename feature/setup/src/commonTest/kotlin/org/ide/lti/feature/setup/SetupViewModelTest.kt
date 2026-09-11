@@ -25,7 +25,6 @@ import org.ide.lti.core.domain.usecase.workspace.OpenWorkspaceUseCase
 import org.ide.lti.core.domain.usecase.workspace.RemoveRecentWorkspaceUseCase
 import org.ide.lti.core.domain.workspace.WorkspaceManager
 import org.ide.lti.core.model.target.TargetDevice
-import org.ide.lti.core.model.target.TargetProperties
 import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.core.model.workspace.Workspace
 import org.ide.lti.core.model.workspace.WorkspaceSession
@@ -240,20 +239,6 @@ class SetupViewModelTest {
             _state.value = _state.value.copy(isAvbKeyProvisioned = true)
             return true
         }
-
-        var provisionTargetWorkspaceCount = 0
-        var lastProvisionedTarget: TargetDevice? = null
-
-        override suspend fun provisionTargetWorkspace(target: TargetDevice, customProperties: TargetProperties?): Boolean {
-            provisionTargetWorkspaceCount++
-            lastProvisionedTarget = target
-            _state.value = _state.value.copy(targetWorkspacePath = "~/LtiRomWorkDir/target/${target.targetKey}")
-            return true
-        }
-
-        override suspend fun readTargetProperties(targetCodename: String): String? = ""
-
-        override suspend fun saveTargetProperties(targetCodename: String, content: String): Boolean = true
 
         var autoRemediateDoctorCount = 0
 
@@ -492,7 +477,7 @@ class SetupViewModelTest {
             testScheduler.advanceUntilIdle()
 
             assertEquals("~/LtiRomWorkDir/target/PQ84P01_GLOBAL_A15", openedWorkspace?.path)
-            assertEquals("REDMAGIC Astra (PQ84P01 • Global • Android 15)", openedWorkspace?.name)
+            assertEquals("PQ84P01_GLOBAL_A15", openedWorkspace?.name)
         } finally {
             Dispatchers.resetMain()
         }
@@ -914,7 +899,7 @@ class SetupViewModelTest {
             testScheduler.advanceUntilIdle()
 
             assertEquals("~/LtiRomWorkDir/target/PQ84P01_GLOBAL_A15", openedWorkspace?.path)
-            assertEquals("REDMAGIC Astra (PQ84P01 • Global • Android 15)", openedWorkspace?.name)
+            assertEquals("PQ84P01_GLOBAL_A15", openedWorkspace?.name)
             assertEquals(openedWorkspace?.id, manager.currentWorkspace.value?.id)
         } finally {
             Dispatchers.resetMain()

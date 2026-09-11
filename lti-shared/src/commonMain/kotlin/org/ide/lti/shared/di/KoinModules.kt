@@ -13,10 +13,11 @@ import org.ide.lti.core.common.di.CommonModule
 import org.ide.lti.core.common.di.DispatchersModule
 import org.ide.lti.core.data.di.DataModule
 import org.ide.lti.core.domain.di.DomainModule
+import org.ide.lti.feature.configuration.ConfigurationViewModel
 import org.ide.lti.feature.setup.SetupViewModel
 import org.ide.lti.feature.workspace.di.workspaceModule
 import org.koin.core.context.startKoin
-import org.koin.core.module.dsl.viewModelOf
+import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.KoinAppDeclaration
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
@@ -46,7 +47,33 @@ object KoinModules {
         includes(
             workspaceModule,
         )
-        viewModelOf(::SetupViewModel)
+        viewModel {
+            SetupViewModel(
+                getRecentWorkspacesUseCase = get(),
+                discoverWorkdirWorkspacesUseCase = get(),
+                openWorkspaceUseCase = get(),
+                openWorkspaceByPathUseCase = get(),
+                selectAndOpenDirectoryUseCase = get(),
+                removeRecentWorkspaceUseCase = get(),
+                toolchainService = getOrNull(),
+                provisionAvbKeyUseCase = getOrNull(),
+                getAvailableTargetsUseCase = getOrNull(),
+                getSelectedTargetUseCase = getOrNull(),
+                selectTargetUseCase = getOrNull(),
+            )
+        }
+        viewModel {
+            ConfigurationViewModel(
+                getAvailableTargetsUseCase = get(),
+                getSelectedTargetUseCase = get(),
+                selectTargetUseCase = get(),
+                createTargetScaffoldUseCase = get(),
+                duplicateTargetUseCase = get(),
+                deleteTargetUseCase = get(),
+                validateTargetConfigurationUseCase = get(),
+                saveTargetConfigurationUseCase = get(),
+            )
+        }
     }
 
     val allModules = listOf(

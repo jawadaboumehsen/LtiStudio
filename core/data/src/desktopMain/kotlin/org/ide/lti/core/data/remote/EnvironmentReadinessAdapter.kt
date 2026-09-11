@@ -24,6 +24,7 @@ public class EnvironmentReadinessAdapter(
 ) : EnvironmentReadinessPort {
 
     public companion object {
+        public const val WORK_DIR_NAME: String = "LtiRomWorkDir"
         public val DEFAULT_REQUIRED_PRODUCT_TOOLS: Set<String> = setOf(
             "payload-dumper-go",
             "lpunpack",
@@ -107,7 +108,23 @@ public class EnvironmentReadinessAdapter(
 
     private suspend fun evaluateEnvironment(): EnvironmentReadiness {
         val failure = checkDistroAndDaemon() ?: checkToolsAndCompatibility()
-        return failure ?: EnvironmentReadiness(state = EnvironmentReadinessState.READY)
+        return failure ?: EnvironmentReadiness(
+            state = EnvironmentReadinessState.READY,
+            workDirLinuxPath = resolveWorkDir(),
+        )
+    }
+
+    /** Resolves `$HOME/LtiRomWorkDir` on the service host via coreutils; null when HOME is unknown. */
+    private suspend fun resolveWorkDir(): String? {
+        val res = transport.execute(
+            ToolExecutionRequest(
+                toolId = "printenv",
+                arguments = listOf("HOME"),
+                workingDirectory = "/"
+            )
+        )
+        val home = res.stdout.trim()
+        return if (res.exitCode == 0 && home.startsWith("/")) "$home/$WORK_DIR_NAME" else null
     }
 
     private suspend fun checkDistroAndDaemon(): EnvironmentReadiness? {

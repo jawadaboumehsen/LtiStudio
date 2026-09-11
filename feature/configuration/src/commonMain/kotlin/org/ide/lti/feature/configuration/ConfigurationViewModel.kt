@@ -207,10 +207,6 @@ class ConfigurationViewModel(
         }
     }
 
-    fun onToggleSyncOnApply(sync: Boolean) {
-        _uiState.update { it.copy(syncOnApply = sync) }
-    }
-
     fun onRevertChanges() {
         val original = _uiState.value.originalTarget ?: return
         _uiState.update {
@@ -237,7 +233,6 @@ class ConfigurationViewModel(
             val result = saveTargetConfigurationUseCase(
                 target = target,
                 isNew = isNew,
-                syncWorkspace = _uiState.value.syncOnApply,
             )
 
             _uiState.update { it.copy(isSyncing = false) }

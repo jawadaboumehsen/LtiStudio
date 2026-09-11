@@ -71,6 +71,7 @@ fun SetupScreen(
     onOpenWorkspace: (Workspace) -> Unit,
     modifier: Modifier = Modifier,
     onOpenSettings: () -> Unit = {},
+    onCreateWorkspace: () -> Unit = {},
     backdrop: Backdrop? = null,
     viewModel: SetupViewModel = koinViewModel(),
 ) {
@@ -129,6 +130,7 @@ fun SetupScreen(
         onDismissEnvironmentNotice = viewModel::dismissEnvironmentNotice,
         onSetAutoDoctorEnabled = viewModel::setAutoDoctorEnabled,
         onResetToolchainCache = viewModel::resetToolchainCacheAndRecheck,
+        onCreateWorkspace = onCreateWorkspace,
     )
 
     SetupScreenContent(

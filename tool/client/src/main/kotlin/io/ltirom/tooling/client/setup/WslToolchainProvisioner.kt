@@ -19,10 +19,7 @@ import org.ide.lti.core.domain.ports.ToolPublicationPort
 import org.ide.lti.core.domain.repository.setup.ToolchainSetupRepository
 import org.ide.lti.core.domain.setup.*
 import org.ide.lti.core.domain.setup.doctor.SystemDoctorPort
-import org.ide.lti.core.domain.usecase.workspace.SyncWorkspaceConfigUseCase
 import org.ide.lti.core.model.setup.ToolchainPersistenceState
-import org.ide.lti.core.model.target.TargetDevice
-import org.ide.lti.core.model.target.TargetProperties
 import java.io.File
 
 /**
@@ -92,7 +89,6 @@ public class WslToolchainProvisioner(
             toolsMatrix = restoredTools,
             isAvbKeyProvisioned = persisted.isAvbKeyProvisioned,
             avbKeyPath = persisted.avbKeyPath,
-            targetWorkspacePath = persisted.targetWorkspacePath,
             isAllReady = persisted.isSetupCompleted,
             activeDistro = persisted.activeDistro,
             lastVerifiedTimestamp = persisted.lastVerifiedTimestamp,
@@ -387,7 +383,6 @@ public class WslToolchainProvisioner(
             diagnostics = diagnosticsList.ifEmpty { _state.value.diagnostics },
             isAvbKeyProvisioned = hasAvbKey,
             avbKeyPath = if (hasAvbKey) avbKeyFile else null,
-            targetWorkspacePath = _state.value.targetWorkspacePath,
             isAllReady = allReady,
             activeDistro = distro,
             installedDistros = distros.ifEmpty { listOf(distro) },
@@ -635,142 +630,6 @@ public class WslToolchainProvisioner(
             appendLog("[AVB 2.0] Machine signing key successfully verified.")
         }
         verified
-    }
-
-    override suspend fun provisionTargetWorkspace(target: TargetDevice, customProperties: TargetProperties?): Boolean = withContext(dispatcher) {
-        if (_state.value.isBusy) return@withContext false
-        val distro = detector.getDefaultDistro() ?: "Ubuntu"
-        val home = detector.resolveWslUserHome(distro)
-        val workDir = "$home/LtiRomWorkDir"
-        val targetSlug = target.targetKey
-        val targetDir = "$workDir/target/$targetSlug"
-        val modsDir = "$targetDir/mods"
-        val patchesDir = "$targetDir/patches"
-        val releaseNotesFile = "$targetDir/release-notes.md"
-        val boardConfigFile = "$targetDir/REFERENCE_BoardConfig.mk"
-        val configFile = "$targetDir/ltikt.properties"
-        val configShFile = "$targetDir/config.sh"
-
-        val outDir = "$workDir/out"
-        val outFw = "$outDir/fw/$targetSlug"
-        val outWork = "$outDir/work/$targetSlug"
-        val outApktool = "$outDir/apktool/$targetSlug"
-        val outRepack = "$outDir/repack/$targetSlug"
-        val outPackage = "$outDir/package/$targetSlug"
-        val outTargetLogs = "$outDir/target/$targetSlug/logs"
-        val outTargetTmp = "$outDir/target/$targetSlug/tmp"
-        val outTargetCache = "$outDir/target/$targetSlug/cache"
-
-        appendLog("[Target Workspace] Materializing target '$targetSlug' at $targetDir...")
-
-        // 1. Create target directories and out/ pipeline staging directories
-        cli.execute(
-            distro,
-            listOf(
-                "mkdir", "-p",
-                targetDir, modsDir, patchesDir,
-                outFw, outWork, outApktool, outRepack, outPackage,
-                outTargetLogs, outTargetTmp, outTargetCache,
-            ),
-        )
-        appendLog("[Pipeline] Initialized pipeline staging tree under $outDir for $targetSlug.")
-
-        // 2. Provision release-notes.md if not present
-        val hasReleaseNotes = cli.execute(distro, listOf("test", "-f", releaseNotesFile)).exitCode == 0
-        if (!hasReleaseNotes) {
-            val defaultReleaseNotes = """
-                # Lti ${target.name} ($targetSlug)
-
-                - Target Codename: ${target.codename}
-                - Target Variant: ${target.selectedRegion.displayName}
-                - Android Version: ${target.selectedFirmware.androidVersion}
-                - Target Architecture: ${target.socPlatform}
-                - Filesystem: ${target.filesystemType}
-                - Super Container Size: ${target.superPartitionBytes} bytes
-                - Dynamic Partitions: ${target.dynamicPartitions.joinToString(" ")}
-                - Boot Partitions: ${target.bootPartitions.joinToString(" ")}
-                - Official Baseline: ${target.selectedFirmware.version}
-            """.trimIndent()
-            writeWslFile(distro, releaseNotesFile, defaultReleaseNotes)
-            appendLog("[Target Workspace] Generated $releaseNotesFile.")
-        }
-
-        // 3. Provision REFERENCE_BoardConfig.mk if not present
-        val hasBoardConfig = cli.execute(distro, listOf("test", "-f", boardConfigFile)).exitCode == 0
-        if (!hasBoardConfig) {
-            val defaultBoardConfig = """
-                # BoardConfig for $targetSlug (${target.name})
-                TARGET_ARCH := arm64
-                TARGET_ARCH_VARIANT := armv9-a
-                TARGET_CPU_ABI := arm64-v8a
-                BOARD_SUPER_PARTITION_SIZE := ${target.superPartitionBytes}
-                BOARD_SUPER_PARTITION_GROUPS := qti_dynamic_partitions_a
-                BOARD_QTI_DYNAMIC_PARTITIONS_A_SIZE := ${target.superGroupBytes}
-                BOARD_QTI_DYNAMIC_PARTITIONS_A_PARTITION_LIST := ${target.dynamicPartitions.joinToString(" ")}
-            """.trimIndent()
-            writeWslFile(distro, boardConfigFile, defaultBoardConfig)
-            appendLog("[Target Workspace] Generated $boardConfigFile.")
-        }
-
-        // 4. Generate and write ltikt.properties strictly to targetDir
-        val syncConfigUseCase = SyncWorkspaceConfigUseCase()
-        val configContent = customProperties?.toPropertiesString() ?: syncConfigUseCase(target)
-        writeWslFile(distro, configFile, configContent)
-
-        // Also generate config.sh for bash compatibility
-        val configShContent = """
-            # LtiRom target bash configuration for $targetSlug (${target.name})
-            export TARGET_ID="$targetSlug"
-            export TARGET_NAME="${target.name}"
-            export TARGET_CODENAME="${target.codename}"
-            export TARGET_REGION="${target.selectedRegion.name}"
-            export TARGET_ANDROID_VERSION="${target.selectedFirmware.androidVersion}"
-            export DEVICE_FASTBOOT_PRODUCT="sun"
-            export TARGET_FS_TYPE="${target.filesystemType}"
-            export SUPER_PARTITION_SIZE="${target.superPartitionBytes}"
-            export SUPER_GROUP_SIZE="${target.superGroupBytes}"
-        """.trimIndent()
-        writeWslFile(distro, configShFile, configShContent)
-
-        val verified = cli.execute(distro, listOf("test", "-d", targetDir)).exitCode == 0
-        if (verified) {
-            _state.update { s ->
-                s.copy(targetWorkspacePath = targetDir)
-            }
-            appendLog("[Target Workspace] Successfully materialized target '$targetSlug' at $targetDir.")
-        }
-        verified
-    }
-
-    private fun writeWslFile(distro: String, filePath: String, content: String): Boolean {
-        val b64 = java.util.Base64.getEncoder().encodeToString(content.toByteArray(Charsets.UTF_8))
-        val res = cli.execute(distro, listOf("bash", "-c", "echo '$b64' | base64 -d > '$filePath'"))
-        return res.exitCode == 0
-    }
-
-    override suspend fun readTargetProperties(targetCodename: String): String? = withContext(dispatcher) {
-        val distro = detector.getDefaultDistro() ?: "Ubuntu"
-        val home = detector.resolveWslUserHome(distro)
-        val primaryFile = "$home/LtiRomWorkDir/target/$targetCodename/ltikt.properties"
-        val res = cli.execute(distro, listOf("cat", primaryFile))
-        if (res.exitCode == 0) return@withContext res.output
-
-        val fallbackCodename = targetCodename.substringBefore("_")
-        if (fallbackCodename != targetCodename) {
-            val fallbackFile = "$home/LtiRomWorkDir/target/$fallbackCodename/ltikt.properties"
-            val fallbackRes = cli.execute(distro, listOf("cat", fallbackFile))
-            if (fallbackRes.exitCode == 0) return@withContext fallbackRes.output
-        }
-        null
-    }
-
-    override suspend fun saveTargetProperties(targetCodename: String, content: String): Boolean = withContext(dispatcher) {
-        val distro = detector.getDefaultDistro() ?: "Ubuntu"
-        val home = detector.resolveWslUserHome(distro)
-        val targetDir = "$home/LtiRomWorkDir/target/$targetCodename"
-        val configFile = "$targetDir/ltikt.properties"
-        cli.execute(distro, listOf("mkdir", "-p", targetDir))
-        writeWslFile(distro, configFile, content)
     }
 
     override suspend fun autoRemediateDoctor(): Boolean = withContext(dispatcher) {

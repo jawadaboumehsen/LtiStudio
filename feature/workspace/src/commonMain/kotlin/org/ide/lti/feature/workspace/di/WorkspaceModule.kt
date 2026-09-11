@@ -12,10 +12,13 @@ package org.ide.lti.feature.workspace.di
 import org.ide.lti.core.cli.DesktopShellExecutor
 import org.ide.lti.core.cli.ShellExecutor
 import org.ide.lti.feature.workspace.WorkspaceViewModel
+import org.ide.lti.feature.workspace.creation.CreateWorkspaceViewModel
 import org.ide.lti.feature.workspace.panels.ai.AIAssistantViewModel
 import org.ide.lti.feature.workspace.panels.editor.EditorViewModel
 import org.ide.lti.feature.workspace.panels.explorer.ExplorerViewModel
+import org.ide.lti.feature.workspace.panels.target.WorkspaceConfigurationViewModel
 import org.ide.lti.feature.workspace.panels.terminal.TerminalViewModel
+import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
@@ -24,7 +27,44 @@ val workspaceModule = module {
     single<ShellExecutor> { DesktopShellExecutor() }
 
     // Workspace ViewModels
-    viewModelOf(::WorkspaceViewModel)
+    viewModel {
+        WorkspaceViewModel(
+            workspaceManager = get(),
+            panelManager = get(),
+            getAvailableTargetsUseCase = get(),
+            getSelectedTargetUseCase = get(),
+            selectTargetUseCase = get(),
+            addTargetUseCase = getOrNull(),
+            getConnectedDevicesUseCase = get(),
+            getSelectedConnectedDeviceUseCase = get(),
+            selectConnectedDeviceUseCase = get(),
+            refreshConnectedDevicesUseCase = get(),
+            rebootConnectedDeviceUseCase = get(),
+            pairWirelessDeviceUseCase = get(),
+            connectWirelessDeviceUseCase = get(),
+            disconnectDeviceUseCase = get(),
+        )
+    }
+
+    // Explicit: the defaulted file-picker/reader lambdas must not be resolved through Koin.
+    viewModel {
+        WorkspaceConfigurationViewModel(
+            workspaceManager = get(),
+            snapshotRepository = get(),
+            targetRepository = get(),
+            saveConfigurationSnapshotUseCase = get(),
+            transport = getOrNull(),
+            readinessPort = getOrNull(),
+        )
+    }
+    viewModel {
+        CreateWorkspaceViewModel(
+            createWorkspaceUseCase = get(),
+            targetRepository = get(),
+            workspaceRepository = get(),
+            workspaceManager = get(),
+        )
+    }
 
     // Panel ViewModels
     viewModelOf(::AIAssistantViewModel)

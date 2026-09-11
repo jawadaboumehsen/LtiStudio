@@ -17,6 +17,35 @@ import org.ide.lti.core.domain.ai.AIServiceImpl
 import org.ide.lti.core.domain.connection.ConnectionManager
 import org.ide.lti.core.domain.panels.PanelManager
 import org.ide.lti.core.domain.terminal.TerminalManager
+import org.ide.lti.core.domain.usecase.device.ConnectWirelessDeviceUseCase
+import org.ide.lti.core.domain.usecase.device.DisconnectDeviceUseCase
+import org.ide.lti.core.domain.usecase.device.GetConnectedDevicesUseCase
+import org.ide.lti.core.domain.usecase.device.GetSelectedConnectedDeviceUseCase
+import org.ide.lti.core.domain.usecase.device.PairWirelessDeviceUseCase
+import org.ide.lti.core.domain.usecase.device.RebootConnectedDeviceUseCase
+import org.ide.lti.core.domain.usecase.device.RefreshConnectedDevicesUseCase
+import org.ide.lti.core.domain.usecase.device.SelectConnectedDeviceUseCase
+import org.ide.lti.core.domain.usecase.target.AddTargetUseCase
+import org.ide.lti.core.domain.usecase.target.CreateTargetScaffoldUseCase
+import org.ide.lti.core.domain.usecase.target.DeleteTargetUseCase
+import org.ide.lti.core.domain.usecase.target.DuplicateTargetUseCase
+import org.ide.lti.core.domain.usecase.target.GetAvailableTargetsUseCase
+import org.ide.lti.core.domain.usecase.target.GetSelectedTargetUseCase
+import org.ide.lti.core.domain.usecase.target.SaveTargetConfigurationUseCase
+import org.ide.lti.core.domain.usecase.target.SelectAcquisitionModeUseCase
+import org.ide.lti.core.domain.usecase.target.SelectTargetFirmwareUseCase
+import org.ide.lti.core.domain.usecase.target.SelectTargetRegionUseCase
+import org.ide.lti.core.domain.usecase.target.SelectTargetUseCase
+import org.ide.lti.core.domain.usecase.target.UpdateTargetUseCase
+import org.ide.lti.core.domain.usecase.target.ValidateTargetConfigurationUseCase
+import org.ide.lti.core.domain.usecase.workspace.CreateWorkspaceUseCase
+import org.ide.lti.core.domain.usecase.workspace.DiscoverWorkdirWorkspacesUseCase
+import org.ide.lti.core.domain.usecase.workspace.GetRecentWorkspacesUseCase
+import org.ide.lti.core.domain.usecase.workspace.OpenWorkspaceByPathUseCase
+import org.ide.lti.core.domain.usecase.workspace.OpenWorkspaceUseCase
+import org.ide.lti.core.domain.usecase.workspace.RemoveRecentWorkspaceUseCase
+import org.ide.lti.core.domain.usecase.workspace.SaveConfigurationSnapshotUseCase
+import org.ide.lti.core.domain.usecase.workspace.SelectAndOpenDirectoryUseCase
 import org.ide.lti.core.domain.workspace.WorkspaceManager
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf
@@ -32,4 +61,55 @@ val DomainModule = module {
     singleOf(::TerminalManager)
     singleOf(::ConnectionManager)
     singleOf(::AIServiceImpl) { bind<AIService>() }
+
+    // Workspace Use Cases
+    singleOf(::GetRecentWorkspacesUseCase)
+    singleOf(::DiscoverWorkdirWorkspacesUseCase)
+    singleOf(::OpenWorkspaceUseCase)
+    singleOf(::OpenWorkspaceByPathUseCase)
+    singleOf(::SelectAndOpenDirectoryUseCase)
+    // Explicit: `singleOf` would try to resolve the defaulted `appVersion: String` from Koin.
+    single {
+        CreateWorkspaceUseCase(
+            readinessPort = get(),
+            provisioningPort = get(),
+            workspaceRepository = get(),
+            snapshotRepository = get(),
+        )
+    }
+    singleOf(::SaveConfigurationSnapshotUseCase)
+    singleOf(::RemoveRecentWorkspaceUseCase)
+
+    // Target Use Cases (common)
+    singleOf(::GetAvailableTargetsUseCase)
+    singleOf(::GetSelectedTargetUseCase)
+    singleOf(::AddTargetUseCase)
+    singleOf(::UpdateTargetUseCase)
+    singleOf(::DeleteTargetUseCase)
+    singleOf(::SelectTargetUseCase)
+    singleOf(::SelectTargetRegionUseCase)
+    singleOf(::SelectTargetFirmwareUseCase)
+    singleOf(::SelectAcquisitionModeUseCase)
+    singleOf(::ValidateTargetConfigurationUseCase)
+    singleOf(::CreateTargetScaffoldUseCase)
+    singleOf(::DuplicateTargetUseCase)
+    single {
+        SaveTargetConfigurationUseCase(
+            validateTargetConfigurationUseCase = get(),
+            addTargetUseCase = get(),
+            updateTargetUseCase = get(),
+            selectTargetUseCase = get(),
+        )
+    }
+
+    // Connected ADB & Fastboot Device Use Cases
+    singleOf(::GetConnectedDevicesUseCase)
+    singleOf(::GetSelectedConnectedDeviceUseCase)
+    singleOf(::SelectConnectedDeviceUseCase)
+    singleOf(::RefreshConnectedDevicesUseCase)
+    singleOf(::RebootConnectedDeviceUseCase)
+    singleOf(::PairWirelessDeviceUseCase)
+    singleOf(::ConnectWirelessDeviceUseCase)
+    singleOf(::DisconnectDeviceUseCase)
 }
+

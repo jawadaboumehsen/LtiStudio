@@ -27,7 +27,6 @@ import org.ide.lti.core.domain.usecase.target.GetAvailableTargetsUseCase
 import org.ide.lti.core.domain.usecase.target.GetSelectedTargetUseCase
 import org.ide.lti.core.domain.usecase.target.ProvisionAvbKeyUseCase
 import org.ide.lti.core.domain.usecase.target.SelectTargetUseCase
-import org.ide.lti.core.domain.usecase.workspace.CloneGitWorkspaceUseCase
 import org.ide.lti.core.domain.usecase.workspace.DiscoverWorkdirWorkspacesUseCase
 import org.ide.lti.core.domain.usecase.workspace.GetRecentWorkspacesUseCase
 import org.ide.lti.core.domain.usecase.workspace.OpenWorkspaceByPathUseCase
@@ -54,7 +53,6 @@ class SetupViewModel(
     private val openWorkspaceUseCase: OpenWorkspaceUseCase,
     private val openWorkspaceByPathUseCase: OpenWorkspaceByPathUseCase,
     private val selectAndOpenDirectoryUseCase: SelectAndOpenDirectoryUseCase,
-    private val cloneGitWorkspaceUseCase: CloneGitWorkspaceUseCase,
     private val removeRecentWorkspaceUseCase: RemoveRecentWorkspaceUseCase,
     private val discoverWorkdirWorkspacesUseCase: DiscoverWorkdirWorkspacesUseCase? = null,
     private val toolchainService: ToolchainProvisioningService? = null,
@@ -84,10 +82,6 @@ class SetupViewModel(
         openWorkspaceUseCase = openWorkspaceUseCase ?: OpenWorkspaceUseCase(workspaceManager.repository, workspaceManager),
         openWorkspaceByPathUseCase = openWorkspaceByPathUseCase,
         selectAndOpenDirectoryUseCase = SelectAndOpenDirectoryUseCase(openWorkspaceByPathUseCase),
-        cloneGitWorkspaceUseCase = CloneGitWorkspaceUseCase(
-            openWorkspaceByPathUseCase,
-            SelectAndOpenDirectoryUseCase(openWorkspaceByPathUseCase),
-        ),
         removeRecentWorkspaceUseCase = removeRecentWorkspaceUseCase ?: RemoveRecentWorkspaceUseCase(workspaceManager.repository),
         discoverWorkdirWorkspacesUseCase = discoverWorkdirWorkspacesUseCase,
         toolchainService = toolchainService,
@@ -295,7 +289,17 @@ class SetupViewModel(
             return
         }
         viewModelScope.launch {
-            val result = cloneGitWorkspaceUseCase(url)
+            val targetPath = if (url != null) {
+                val projectName = url.substringAfterLast('/').removeSuffix(".git")
+                "~/LtiRomWorkDir/projects/$projectName"
+            } else {
+                null
+            }
+            val result = if (targetPath != null) {
+                openWorkspaceByPathUseCase(targetPath)
+            } else {
+                selectAndOpenDirectoryUseCase()
+            }
             result.onSuccess { workspace ->
                 if (workspace != null) {
                     onWorkspaceOpened(workspace)
@@ -341,7 +345,7 @@ class SetupViewModel(
         }
         viewModelScope.launch {
             val target = selectedTarget.value ?: DEFAULT_OFFICIAL_TARGETS.first()
-            val targetPath = toolchainSetupState.value.targetWorkspacePath ?: "~/LtiRomWorkDir/target/${target.targetKey}"
+            val targetPath = "~/LtiRomWorkDir/target/${target.targetKey}"
             val result = openWorkspaceByPathUseCase(targetPath)
             result.onSuccess { workspace ->
                 onWorkspaceOpened(workspace)

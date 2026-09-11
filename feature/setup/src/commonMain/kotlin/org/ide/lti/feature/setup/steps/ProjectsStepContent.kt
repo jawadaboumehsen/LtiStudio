@@ -87,6 +87,7 @@ fun ProjectsStepContent(
         onOpenFolder = actions.onOpenFolder,
         onCloneGit = actions.onCloneGit,
         onOpenDefaultWorkspace = actions.onProceedToWorkspace,
+        onCreateWorkspace = actions.onCreateWorkspace,
         onRecentProjectClick = actions.onRecentProjectClick,
         toolchainSetupState = state.toolchainSetupState,
         selectedTarget = state.selectedTarget,
@@ -125,6 +126,7 @@ fun ProjectsStepContent(
     selectedTarget: TargetDevice? = null,
     availableTargets: List<TargetDevice> = emptyList(),
     onSelectTargetAndLaunch: (TargetDevice) -> Unit = {},
+    onCreateWorkspace: () -> Unit = {},
 ) {
     val glassColors = GlassTheme.colors
     val diagnostics = glassColors.diagnostics
@@ -245,7 +247,7 @@ fun ProjectsStepContent(
             )
         }
 
-        // 3 Hero Quick Action Cards Symmetrically Balanced Across the Row
+        // Hero Quick Action Cards Symmetrically Balanced Across the Row
         item(key = "quick_actions") {
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
@@ -253,10 +255,20 @@ fun ProjectsStepContent(
                 verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
             ) {
                 GlassActionCard(
+                    title = "New Workspace",
+                    subtitle = "Create independent workspace for target",
+                    icon = AppIcons.Add,
+                    isPrimary = true,
+                    shortcut = "Ctrl+N",
+                    onClick = onCreateWorkspace,
+                    backdrop = resolvedBackdrop,
+                    modifier = Modifier.weight(1f, fill = false).widthIn(min = ComponentSize.MinPanelWidth),
+                )
+                GlassActionCard(
                     title = "Open Workspace",
                     subtitle = "Browse local directory or mount",
                     icon = AppIcon.Painted(AppIcons.ideWelcomeOpen),
-                    isPrimary = true,
+                    isPrimary = false,
                     shortcut = "Ctrl+O",
                     onClick = onOpenFolder,
                     backdrop = resolvedBackdrop,
@@ -370,6 +382,18 @@ fun ProjectsStepContent(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
                         ) {
+                            project.targetDisplayName?.takeIf { it.isNotBlank() }?.let { targetName ->
+                                GlassChip(
+                                    label = targetName,
+                                    selected = false,
+                                )
+                            }
+                            if (project.targetBinding == null) {
+                                GlassChip(
+                                    label = "Needs target",
+                                    selected = false,
+                                )
+                            }
                             GlassChip(
                                 label = formatRelativeTime(project.lastOpened),
                                 selected = false,
