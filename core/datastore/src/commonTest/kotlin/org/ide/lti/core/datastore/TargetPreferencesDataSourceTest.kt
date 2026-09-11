@@ -17,6 +17,7 @@ import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.target.TargetStatus
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -112,5 +113,53 @@ class TargetPreferencesDataSourceTest {
 
         assertTrue(dataSource.currentTargets.isEmpty())
         assertNull(dataSource.currentSelectedTargetId)
+    }
+
+    @Test
+    fun testBareArrayFallbackLoadsTargetsWithDefaultRevision() = runTest {
+        val settings = MapSettings()
+        val bareArrayJson = """
+            [
+                {
+                    "id": "LEGACY_T1",
+                    "name": "Legacy Target",
+                    "codename": "legacy_t1",
+                    "socPlatform": "Snapdragon 8 Elite",
+                    "filesystemType": "erofs",
+                    "dynamicPartitions": ["system", "vendor"],
+                    "bootPartitions": ["boot"],
+                    "status": "QUALIFIED",
+                    "description": "Legacy target profile"
+                }
+            ]
+        """.trimIndent()
+        settings.putString(TargetPreferencesDataSource.KEY_TARGETS, bareArrayJson)
+
+        val dataSource = TargetPreferencesDataSource(settings = settings, ioDispatcher = Dispatchers.Unconfined)
+        val targets = dataSource.targets.first()
+
+        assertEquals(1, targets.size)
+        assertEquals("LEGACY_T1", targets.first().id)
+        assertEquals(1, targets.first().revision)
+    }
+
+    @Test
+    fun testTargetListWrapperSchemaVersion2RoundTrips() = runTest {
+        val settings = MapSettings()
+        val dataSource = TargetPreferencesDataSource(settings = settings, ioDispatcher = Dispatchers.Unconfined)
+
+        val target = createSampleTarget("T_MODERN", "Modern Target").copy(revision = 3)
+        dataSource.saveTargets(listOf(target))
+
+        val raw = settings.getStringOrNull(TargetPreferencesDataSource.KEY_TARGETS)
+        assertNotNull(raw)
+        assertTrue(raw.contains(""""schemaVersion":2""") || raw.contains(""""schemaVersion": 2"""))
+        assertTrue(raw.contains(""""items""""))
+
+        val reloaded = TargetPreferencesDataSource(settings = settings, ioDispatcher = Dispatchers.Unconfined)
+        val reloadedTargets = reloaded.targets.first()
+        assertEquals(1, reloadedTargets.size)
+        assertEquals("T_MODERN", reloadedTargets.first().id)
+        assertEquals(3, reloadedTargets.first().revision)
     }
 }

@@ -53,6 +53,13 @@ enum class GlassStepStatus {
     SUCCESS,
     WARNING,
     FAILED,
+    SKIPPED,
+    CANCELLED,
+    INTERRUPTED,
+    ;
+
+    val isComplete: Boolean
+        get() = this == SUCCESS || this == SKIPPED
 }
 
 /**
@@ -91,6 +98,9 @@ object GlassStepperDefaults {
         GlassStepStatus.SUCCESS -> "Ready"
         GlassStepStatus.WARNING -> "Notice"
         GlassStepStatus.FAILED -> "Failed"
+        GlassStepStatus.SKIPPED -> "Skipped"
+        GlassStepStatus.CANCELLED -> "Cancelled"
+        GlassStepStatus.INTERRUPTED -> "Interrupted"
     }
 }
 
@@ -141,7 +151,7 @@ fun GlassStepper(
                         )
 
                         if (index < steps.size - 1) {
-                            val isPreviousComplete = step.status == GlassStepStatus.SUCCESS
+                            val isPreviousComplete = step.status.isComplete
                             Icon(
                                 painter = AppIcons.ChevronRightPainterResource(),
                                 contentDescription = null,
@@ -174,7 +184,7 @@ fun GlassStepper(
                         )
 
                         if (index < steps.size - 1) {
-                            val isPreviousComplete = step.status == GlassStepStatus.SUCCESS
+                            val isPreviousComplete = step.status.isComplete
                             Icon(
                                 painter = AppIcons.ChevronDownPainterResource(),
                                 contentDescription = null,
@@ -216,6 +226,9 @@ private fun GlassStepNode(
         GlassStepStatus.WARNING -> diagnostics.warning
         GlassStepStatus.FAILED -> diagnostics.error
         GlassStepStatus.PENDING -> glassColors.onGlassMuted
+        GlassStepStatus.SKIPPED -> glassColors.onGlassMuted
+        GlassStepStatus.CANCELLED -> glassColors.onGlassMuted
+        GlassStepStatus.INTERRUPTED -> glassColors.onGlassMuted
     }
 
     val backgroundColor = when {
@@ -302,6 +315,24 @@ private fun GlassStepNode(
                             text = "$index",
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                             color = glassColors.onGlassMuted,
+                        )
+                        GlassStepStatus.SKIPPED -> Icon(
+                            painter = AppIcons.ChevronRightPainterResource(),
+                            contentDescription = "Skipped",
+                            tint = glassColors.onGlassMuted,
+                            modifier = Modifier.size(IconSize.Small),
+                        )
+                        GlassStepStatus.CANCELLED -> Icon(
+                            painter = AppIcons.ClearPainterResource(),
+                            contentDescription = "Cancelled",
+                            tint = glassColors.onGlassMuted,
+                            modifier = Modifier.size(IconSize.Small),
+                        )
+                        GlassStepStatus.INTERRUPTED -> Icon(
+                            painter = AppIcons.ideStatusWarning(),
+                            contentDescription = "Interrupted",
+                            tint = glassColors.onGlassMuted,
+                            modifier = Modifier.size(IconSize.Small),
                         )
                     }
                 }

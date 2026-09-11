@@ -10,6 +10,8 @@
 package org.ide.lti.core.domain.repository.workspace
 
 import kotlinx.coroutines.flow.Flow
+import org.ide.lti.core.model.setup.WorkspaceReadiness
+import org.ide.lti.core.model.workspace.DecodeWarning
 import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.core.model.workspace.Workspace
 import org.ide.lti.core.model.workspace.WorkspaceSession
@@ -68,4 +70,21 @@ interface WorkspaceRepository {
      * Clear all recent projects.
      */
     suspend fun clearRecentProjects()
+
+    /**
+     * Scans and discovers physical workspaces present in the workdir on disk,
+     * updating persistent records and returning the discovered projects.
+     */
+    suspend fun discoverWorkspacesInWorkDir(basePath: String? = null): List<RecentProject>
+
+    /**
+     * Assesses the readiness of a workspace.
+     */
+    fun readinessOf(workspace: Workspace): WorkspaceReadiness =
+        if (workspace.targetBinding == null) WorkspaceReadiness.NEEDS_TARGET else WorkspaceReadiness.READY
+
+    /**
+     * Observes decode warnings produced when workspace data cannot be decoded and is quarantined.
+     */
+    fun observeDecodeWarnings(): Flow<DecodeWarning> = kotlinx.coroutines.flow.emptyFlow()
 }

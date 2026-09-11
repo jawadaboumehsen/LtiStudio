@@ -36,6 +36,7 @@ import org.ide.lti.core.designsystem.component.feedback.GlassBannerAction
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.component.navigation.GlassFilterChipItem
 import org.ide.lti.core.designsystem.component.navigation.GlassFilterChipRow
+import org.ide.lti.core.designsystem.component.progress.GlassConsoleDrawer
 import org.ide.lti.core.designsystem.component.progress.GlassStepInfo
 import org.ide.lti.core.designsystem.component.progress.GlassStepStatus
 import org.ide.lti.core.designsystem.component.progress.GlassStepper
@@ -87,12 +88,43 @@ fun DiagnosticsTab() {
                 status = GlassStepStatus.PENDING,
                 statusLabel = "Pending",
             ),
+            GlassStepInfo(
+                id = "skipped_step",
+                shortTitle = "Cache Skip",
+                status = GlassStepStatus.SKIPPED,
+                statusLabel = "Skipped",
+            ),
+            GlassStepInfo(
+                id = "cancelled_step",
+                shortTitle = "Abort",
+                status = GlassStepStatus.CANCELLED,
+                statusLabel = "Cancelled",
+            ),
+            GlassStepInfo(
+                id = "interrupted_step",
+                shortTitle = "Offline",
+                status = GlassStepStatus.INTERRUPTED,
+                statusLabel = "Interrupted",
+            ),
         )
     }
 
     // Banner Demo State
     var bannerStatusMessage by remember { mutableStateOf<String?>(null) }
     var showDismissableBanner by remember { mutableStateOf(true) }
+
+    // Console Drawer Demo State
+    var isConsoleRunning by remember { mutableStateOf(false) }
+    val consoleLogs = remember {
+        listOf(
+            "[INFO] Initializing toolchain diagnostic run...",
+            "[INFO] Step 1: WSL 2 runtime verified (kernel 5.15.153.1)",
+            "[INFO] Step 2: Daemon bridge connected at 127.0.0.1:42069 (latency 2ms)",
+            "[WARNING] Checksum header missing for firmware archive, falling back to SHA-256",
+            "[ERROR] NDK toolchain compiler not found in PATH",
+            "[INFO] Automated self-healing suggested: sudo apt-get install -y erofs-utils",
+        )
+    }
 
     // Filter Chip Demo State
     var selectedCategory by remember { mutableStateOf("All") }
@@ -302,6 +334,28 @@ fun DiagnosticsTab() {
                 description = "Status-badged inspection tiles with category chips, status labels, detail text, and copyable monospace bash command pills.",
             ) {
                 GlassDiagnosticList(items = diagnosticItems)
+            }
+
+            // Section 5: Glass Console Drawer
+            SectionContainer(
+                title = "5. Terminal Console Drawer (GlassConsoleDrawer)",
+                description = "Expandable monospaced log terminal with auto-scrolling during active runs, syntax highlights for log levels, and clipboard export.",
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
+                    GlassSecondaryButton(
+                        onClick = { isConsoleRunning = !isConsoleRunning },
+                    ) {
+                        Text(
+                            text = if (isConsoleRunning) "Status: Running (Click to toggle)" else "Status: Idle (Click to toggle)",
+                            style = MaterialTheme.typography.labelMedium,
+                        )
+                    }
+
+                    GlassConsoleDrawer(
+                        logs = consoleLogs,
+                        isRunning = isConsoleRunning,
+                    )
+                }
             }
         }
     }

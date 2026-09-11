@@ -85,6 +85,9 @@ object GlassDiagnosticDefaults {
         GlassStepStatus.FAILED -> "Missing"
         GlassStepStatus.RUNNING -> "Running"
         GlassStepStatus.PENDING -> "Pending"
+        GlassStepStatus.SKIPPED -> "Skipped"
+        GlassStepStatus.CANCELLED -> "Cancelled"
+        GlassStepStatus.INTERRUPTED -> "Interrupted"
     }
 }
 
@@ -121,6 +124,9 @@ fun GlassDiagnosticTile(
         GlassStepStatus.FAILED -> diagnostics.error
         GlassStepStatus.RUNNING -> glassColors.glassAccent
         GlassStepStatus.PENDING -> glassColors.onGlassMuted
+        GlassStepStatus.SKIPPED -> glassColors.onGlassMuted
+        GlassStepStatus.CANCELLED -> glassColors.onGlassMuted
+        GlassStepStatus.INTERRUPTED -> glassColors.onGlassMuted
     }
 
     CompositionLocalProvider(LocalContentColor provides glassColors.onGlass) {

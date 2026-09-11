@@ -26,5 +26,15 @@ kotlin {
             api(libs.jb.composeRuntime)
         }
 
+        desktopMain.dependencies {
+            implementation(projects.tool.core)
+        }
+
+        commonTest.dependencies {
+            implementation(libs.multiplatform.settings)
+            implementation(libs.multiplatform.settings.test)
+            implementation(libs.kotlin.test)
+            implementation(libs.kotlinx.coroutines.test)
+        }
     }
-}
+}

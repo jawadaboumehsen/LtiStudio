@@ -22,8 +22,24 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.serialization.Serializable
+import org.ide.lti.core.model.workspace.DecodeWarning
 import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.core.model.workspace.Workspace
+
+@Serializable
+public data class WorkspaceList(
+    val schemaVersion: Int = 2,
+    val items: List<Workspace> = emptyList(),
+)
+
+@Serializable
+public data class RecentProjectList(
+    val schemaVersion: Int = 2,
+    val items: List<RecentProject> = emptyList(),
+)
 
 /**
  * Thread-safe multiplatform persistent preferences data source for workspace state and recents.
@@ -42,6 +58,9 @@ public class WorkspacePreferencesDataSource(
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
     private val mutex = Mutex()
+
+    private val _decodeWarnings = MutableSharedFlow<DecodeWarning>(replay = 64, extraBufferCapacity = 64)
+    public val decodeWarnings: Flow<DecodeWarning> = _decodeWarnings.asSharedFlow()
 
     private val _recentProjects = MutableStateFlow(readRecentProjectsSafe())
     public val recentProjects: Flow<List<RecentProject>> = _recentProjects.asStateFlow()
@@ -143,23 +162,56 @@ public class WorkspacePreferencesDataSource(
         }
     }
 
+    private fun handleDecodeFailure(key: String, raw: String, message: String) {
+        val timestamp = System.currentTimeMillis()
+        val quarantineKey = "$key.quarantine.$timestamp"
+        try {
+            settings[quarantineKey] = raw
+        } catch (_: Exception) {}
+        val warning = DecodeWarning(
+            key = key,
+            quarantineKey = quarantineKey,
+            message = message,
+            timestampEpochMs = timestamp,
+        )
+        _decodeWarnings.tryEmit(warning)
+    }
+
     private fun readRecentProjectsSafe(): List<RecentProject> {
-        val raw = settings.getStringOrNull(KEY_RECENT_PROJECTS) ?: return emptyList()
+        val raw = settings.getStringOrNull(KEY_RECENT_PROJECTS)
+        val trimmed = raw?.trim().orEmpty()
+        if (trimmed.isEmpty()) return emptyList()
+
         return try {
-            val decoded = json.decodeFromString<List<RecentProject>>(raw)
-            val filtered = decoded.filterNot { isSystemStaging(it) }
-            if (filtered.size != decoded.size) {
+            val items = if (trimmed.startsWith("[")) {
+                json.decodeFromString<List<RecentProject>>(trimmed)
+            } else {
+                try {
+                    val wrapper = json.decodeFromString<RecentProjectList>(trimmed)
+                    wrapper.items
+                } catch (_: Exception) {
+                    json.decodeFromString<List<RecentProject>>(trimmed)
+                }
+            }
+            val filtered = items.filterNot { isSystemStaging(it) }
+            if (filtered.size != items.size) {
                 persistRecentProjectsInternal(filtered)
             }
             filtered
         } catch (_: Exception) {
+            handleDecodeFailure(
+                key = KEY_RECENT_PROJECTS,
+                raw = raw.orEmpty(),
+                message = "Recent projects could not be loaded; a backup was kept",
+            )
             emptyList()
         }
     }
 
     private fun persistRecentProjectsInternal(projects: List<RecentProject>) {
         try {
-            val encoded = json.encodeToString(projects)
+            val wrapper = RecentProjectList(schemaVersion = 2, items = projects)
+            val encoded = json.encodeToString(wrapper)
             settings[KEY_RECENT_PROJECTS] = encoded
         } catch (_: Exception) {
             // Keep in-memory
@@ -167,17 +219,35 @@ public class WorkspacePreferencesDataSource(
     }
 
     private fun readWorkspacesSafe(): List<Workspace> {
-        val raw = settings.getStringOrNull(KEY_WORKSPACES) ?: return emptyList()
+        val raw = settings.getStringOrNull(KEY_WORKSPACES)
+        val trimmed = raw?.trim().orEmpty()
+        if (trimmed.isEmpty()) return emptyList()
+
         return try {
-            json.decodeFromString<List<Workspace>>(raw)
+            if (trimmed.startsWith("[")) {
+                json.decodeFromString<List<Workspace>>(trimmed)
+            } else {
+                try {
+                    val wrapper = json.decodeFromString<WorkspaceList>(trimmed)
+                    wrapper.items
+                } catch (_: Exception) {
+                    json.decodeFromString<List<Workspace>>(trimmed)
+                }
+            }
         } catch (_: Exception) {
+            handleDecodeFailure(
+                key = KEY_WORKSPACES,
+                raw = raw.orEmpty(),
+                message = "Workspaces could not be loaded; a backup was kept",
+            )
             emptyList()
         }
     }
 
     private fun persistWorkspacesInternal(workspaces: List<Workspace>) {
         try {
-            val encoded = json.encodeToString(workspaces)
+            val wrapper = WorkspaceList(schemaVersion = 2, items = workspaces)
+            val encoded = json.encodeToString(wrapper)
             settings[KEY_WORKSPACES] = encoded
         } catch (_: Exception) {
             // Keep in-memory

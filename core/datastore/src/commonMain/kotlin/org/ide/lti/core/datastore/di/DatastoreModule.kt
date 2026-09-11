@@ -12,6 +12,7 @@ package org.ide.lti.core.datastore.di
 import com.russhwolf.settings.Settings
 import kotlinx.serialization.json.Json
 import org.ide.lti.core.datastore.LtiPreferencesDataSource
+import org.ide.lti.core.datastore.SnapshotPreferencesDataSource
 import org.ide.lti.core.datastore.TargetPreferencesDataSource
 import org.ide.lti.core.datastore.ToolchainPreferencesDataSource
 import org.ide.lti.core.datastore.WorkspacePreferencesDataSource
@@ -27,5 +28,6 @@ val DatastoreModule = module {
     single { ToolchainPreferencesDataSource(settings = get(), json = get()) }
     single { WorkspacePreferencesDataSource(settings = get(), json = get()) }
     single { TargetPreferencesDataSource(settings = get(), json = get()) }
+    single { SnapshotPreferencesDataSource(settings = get(), json = get()) }
 }
 

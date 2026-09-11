@@ -12,11 +12,17 @@ package org.ide.lti.core.data.repository.workspace
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import org.ide.lti.core.common.notification.NotificationLevel
+import org.ide.lti.core.common.notification.SystemNotification
+import org.ide.lti.core.common.notification.SystemNotifier
 import org.ide.lti.core.datastore.WorkspacePreferencesDataSource
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
+import org.ide.lti.core.model.setup.WorkspaceReadiness
+import org.ide.lti.core.model.workspace.DecodeWarning
 import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.core.model.workspace.Workspace
 import org.ide.lti.core.model.workspace.WorkspaceSession
@@ -31,6 +37,7 @@ import org.ide.lti.core.model.workspace.WorkspaceSession
 public class WorkspaceRepositoryImpl(
     private val preferencesDataSource: WorkspacePreferencesDataSource,
     private val discoveryService: WorkDirDiscoveryService = WorkDirDiscoveryService(),
+    private val notifier: SystemNotifier? = null,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : WorkspaceRepository {
 
@@ -84,7 +91,9 @@ public class WorkspaceRepositoryImpl(
         preferencesDataSource.clearRecentProjects()
     }
 
-    override suspend fun discoverWorkspacesInWorkDir(basePath: String?): List<RecentProject> = withContext(ioDispatcher) {
+    override suspend fun discoverWorkspacesInWorkDir(
+        basePath: String?,
+    ): List<RecentProject> = withContext(ioDispatcher) {
         val discovered = discoveryService.discoverWorkspaces(basePath)
         val currentRecents = preferencesDataSource.currentRecentProjects.associateBy { it.workspaceId }
 
@@ -100,5 +109,25 @@ public class WorkspaceRepositoryImpl(
 
         preferencesDataSource.saveRecentProjects(allRecents)
         allRecents
+    }
+
+    override fun readinessOf(workspace: Workspace): WorkspaceReadiness {
+        return if (workspace.targetBinding == null) {
+            WorkspaceReadiness.NEEDS_TARGET
+        } else {
+            WorkspaceReadiness.READY
+        }
+    }
+
+    override fun observeDecodeWarnings(): Flow<DecodeWarning> {
+        return preferencesDataSource.decodeWarnings.onEach { warning ->
+            notifier?.notify(
+                SystemNotification(
+                    title = "Data Store Warning",
+                    message = warning.message,
+                    level = NotificationLevel.Warning,
+                )
+            )
+        }
     }
 }

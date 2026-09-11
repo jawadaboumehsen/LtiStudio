@@ -20,9 +20,16 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.ide.lti.core.model.target.TargetDevice
+
+@Serializable
+public data class TargetList(
+    val schemaVersion: Int = 2,
+    val items: List<TargetDevice> = emptyList(),
+)
 
 /**
  * Thread-safe multiplatform persistent preferences data source for target device profiles
@@ -84,9 +91,21 @@ public class TargetPreferencesDataSource(
     }
 
     private fun readTargetsSafe(): List<TargetDevice> {
-        val raw = settings.getStringOrNull(KEY_TARGETS) ?: return emptyList()
+        val raw = settings.getStringOrNull(KEY_TARGETS)
+        val trimmed = raw?.trim().orEmpty()
+        if (trimmed.isEmpty()) return emptyList()
+
         return try {
-            json.decodeFromString<List<TargetDevice>>(raw)
+            if (trimmed.startsWith("[")) {
+                json.decodeFromString<List<TargetDevice>>(trimmed)
+            } else {
+                try {
+                    val wrapper = json.decodeFromString<TargetList>(trimmed)
+                    wrapper.items
+                } catch (_: Exception) {
+                    json.decodeFromString<List<TargetDevice>>(trimmed)
+                }
+            }
         } catch (_: Exception) {
             emptyList()
         }
@@ -94,7 +113,8 @@ public class TargetPreferencesDataSource(
 
     private fun persistTargetsInternal(targets: List<TargetDevice>) {
         try {
-            val encoded = json.encodeToString(targets)
+            val wrapper = TargetList(schemaVersion = 2, items = targets)
+            val encoded = json.encodeToString(wrapper)
             settings[KEY_TARGETS] = encoded
         } catch (_: Exception) {
             // Keep in-memory

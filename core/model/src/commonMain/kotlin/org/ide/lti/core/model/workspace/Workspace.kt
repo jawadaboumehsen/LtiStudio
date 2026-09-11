@@ -12,6 +12,18 @@ package org.ide.lti.core.model.workspace
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 
+import org.ide.lti.core.model.target.TargetBinding
+
+/**
+ * Identifier for the remote execution environment.
+ */
+@Serializable
+data class EnvironmentId(
+    val distro: String,
+    val user: String,
+    val daemonId: String,
+)
+
 /**
  * Represents a workspace/project in the IDR system.
  * A workspace is a directory containing files, configuration, and session state.
@@ -24,7 +36,16 @@ data class Workspace(
     val type: WorkspaceType = WorkspaceType.LOCAL,
     val lastOpened: Instant? = null,
     val settings: WorkspaceSettings = WorkspaceSettings(),
-)
+    val linuxPath: String? = null,
+    val targetBinding: TargetBinding? = null,
+    val environmentId: EnvironmentId? = null,
+    val layoutVersion: Int = 1,
+    val effectiveSnapshotId: String? = null,
+) {
+    init {
+        require(layoutVersion >= 1) { "layoutVersion must be >= 1, but was $layoutVersion" }
+    }
+}
 
 @Serializable
 enum class WorkspaceType {

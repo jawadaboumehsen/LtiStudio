@@ -12,6 +12,8 @@ package org.ide.lti.core.model.workspace
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 
+import org.ide.lti.core.model.target.TargetBinding
+
 /**
  * Represents a recently opened project for quick access.
  */
@@ -22,4 +24,6 @@ data class RecentProject(
     val path: String,
     val lastOpened: Instant,
     val type: WorkspaceType = WorkspaceType.LOCAL,
+    val targetBinding: TargetBinding? = null,
+    val targetDisplayName: String? = null,
 )

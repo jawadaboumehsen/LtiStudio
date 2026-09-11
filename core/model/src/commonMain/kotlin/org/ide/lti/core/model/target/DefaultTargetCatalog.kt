@@ -22,6 +22,9 @@ object DefaultTargetCatalog {
             otaUrl = "https://rom.download.nubia.com/Europe&Asia/PQ84P01(NP05J)/REDMAGICOS10.5.15_NP05J_GB/update.zip",
             isOfficial = true,
             isRecommended = true,
+            acquisitionUrl = "https://rom.download.nubia.com/Europe&Asia/PQ84P01(NP05J)/REDMAGICOS10.5.15_NP05J_GB/update.zip",
+            checksumUnavailable = true,
+            sourceKind = FirmwareSourceKind.OTA_ZIP,
         ),
         TargetFirmware(
             version = "REDMAGICOS10.5.12_NP05J_GB",
@@ -31,6 +34,9 @@ object DefaultTargetCatalog {
             otaUrl = "https://rom.download.nubia.com/Europe&Asia/PQ84P01(NP05J)/REDMAGICOS10.5.12_NP05J_GB/update.zip",
             isOfficial = true,
             isRecommended = false,
+            acquisitionUrl = "https://rom.download.nubia.com/Europe&Asia/PQ84P01(NP05J)/REDMAGICOS10.5.12_NP05J_GB/update.zip",
+            checksumUnavailable = true,
+            sourceKind = FirmwareSourceKind.OTA_ZIP,
         ),
         TargetFirmware(
             version = "REDMAGICOS10.5.8_NP05J_GB",
@@ -40,6 +46,9 @@ object DefaultTargetCatalog {
             otaUrl = "https://rom.download.nubia.com/Europe&Asia/PQ84P01(NP05J)/REDMAGICOS10.5.8_NP05J_GB/update.zip",
             isOfficial = true,
             isRecommended = false,
+            acquisitionUrl = "https://rom.download.nubia.com/Europe&Asia/PQ84P01(NP05J)/REDMAGICOS10.5.8_NP05J_GB/update.zip",
+            checksumUnavailable = true,
+            sourceKind = FirmwareSourceKind.OTA_ZIP,
         ),
     )
 
@@ -52,6 +61,9 @@ object DefaultTargetCatalog {
             otaUrl = "https://rom.download.nubia.com/China/PQ84P01(NP05J)/REDMAGICOS10.5.16_NP05J_CN/update.zip",
             isOfficial = true,
             isRecommended = true,
+            acquisitionUrl = "https://rom.download.nubia.com/China/PQ84P01(NP05J)/REDMAGICOS10.5.16_NP05J_CN/update.zip",
+            checksumUnavailable = true,
+            sourceKind = FirmwareSourceKind.OTA_ZIP,
         ),
         TargetFirmware(
             version = "REDMAGICOS10.5.12_NP05J_CN",
@@ -61,6 +73,9 @@ object DefaultTargetCatalog {
             otaUrl = "https://rom.download.nubia.com/China/PQ84P01(NP05J)/REDMAGICOS10.5.12_NP05J_CN/update.zip",
             isOfficial = true,
             isRecommended = false,
+            acquisitionUrl = "https://rom.download.nubia.com/China/PQ84P01(NP05J)/REDMAGICOS10.5.12_NP05J_CN/update.zip",
+            checksumUnavailable = true,
+            sourceKind = FirmwareSourceKind.OTA_ZIP,
         ),
         TargetFirmware(
             version = "REDMAGICOS10.5.8_NP05J_CN",
@@ -70,6 +85,9 @@ object DefaultTargetCatalog {
             otaUrl = "https://rom.download.nubia.com/China/PQ84P01(NP05J)/REDMAGICOS10.5.8_NP05J_CN/update.zip",
             isOfficial = true,
             isRecommended = false,
+            acquisitionUrl = "https://rom.download.nubia.com/China/PQ84P01(NP05J)/REDMAGICOS10.5.8_NP05J_CN/update.zip",
+            checksumUnavailable = true,
+            sourceKind = FirmwareSourceKind.OTA_ZIP,
         ),
         TargetFirmware(
             version = "REDMAGICOS10.5.16_MR01A",
@@ -79,6 +97,9 @@ object DefaultTargetCatalog {
             otaUrl = "https://rom.download.nubia.com/China/PQ84P01/REDMAGICOS10.5.16_MR01A/update.zip",
             isOfficial = true,
             isRecommended = false,
+            acquisitionUrl = "https://rom.download.nubia.com/China/PQ84P01/REDMAGICOS10.5.16_MR01A/update.zip",
+            checksumUnavailable = true,
+            sourceKind = FirmwareSourceKind.OTA_ZIP,
         ),
     )
 
@@ -91,6 +112,7 @@ object DefaultTargetCatalog {
         id = "PQ84P01",
         name = "REDMAGIC Astra Gaming Tablet",
         codename = "PQ84P01",
+        revision = 1,
         selectedRegion = TargetRegion.GLOBAL,
         availableRegions = listOf(TargetRegion.GLOBAL, TargetRegion.CHINA),
         selectedFirmware = PQ84P01_GLOBAL_FIRMWARES.first(),
@@ -111,5 +133,30 @@ object DefaultTargetCatalog {
         status = TargetStatus.QUALIFIED,
         description = "Official Global & European retail baseline (NP05J_GB)",
         isDefault = true,
+        productName = "PQ84P01",
+        fastbootProduct = "sun",
+        assertModels = listOf("PQ84P01"),
+        superMetadataSlots = 3,
+        superGroupName = "qti_dynamic_partitions",
+        virtualAb = true,
+        activeSlotSuffix = "_a",
+        hasStandaloneSystemExt = true,
+        bootDevicePath = "/dev/block/bootdevice/by-name",
+        packagePolicy = PackagePolicy(
+            flashablePartitions = listOf(
+                "system",
+                "vendor",
+                "product",
+                "system_ext",
+                "odm",
+                "vendor_dlkm",
+                "system_dlkm",
+            ),
+            flashableBootPartitions = listOf("boot", "init_boot", "vendor_boot", "dtbo"),
+            bootSlots = listOf("a", "b"),
+            excludeVbmeta = true,
+            recoverySystemMountPoint = "/system_root",
+            metadataPolicy = MetadataPolicy.DEVICE_FIRST_WITH_PACKAGE_FALLBACK,
+        ),
     )
 }

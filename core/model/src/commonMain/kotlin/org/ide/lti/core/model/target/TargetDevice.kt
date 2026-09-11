@@ -63,6 +63,38 @@ enum class FirmwareAcquisitionMode(
 }
 
 /**
+ * Metadata policy for dynamic partition recovery.
+ */
+@Serializable
+enum class MetadataPolicy {
+    DEVICE_FIRST_WITH_PACKAGE_FALLBACK,
+    PACKAGE_ONLY,
+    DEVICE_ONLY,
+}
+
+/**
+ * Packaging and flash policy for a target device profile.
+ */
+@Serializable
+data class PackagePolicy(
+    val flashablePartitions: List<String> = emptyList(),
+    val flashableBootPartitions: List<String> = emptyList(),
+    val bootSlots: List<String> = listOf("a", "b"),
+    val excludeVbmeta: Boolean = true,
+    val recoverySystemMountPoint: String = "/system_root",
+    val metadataPolicy: MetadataPolicy = MetadataPolicy.DEVICE_FIRST_WITH_PACKAGE_FALLBACK,
+)
+
+/**
+ * Firmware source kind (OTA payload or raw image dump).
+ */
+@Serializable
+enum class FirmwareSourceKind {
+    OTA_ZIP,
+    RAW_IMAGE_ZIP,
+}
+
+/**
  * Target baseline firmware specification.
  */
 @Serializable
@@ -74,6 +106,11 @@ data class TargetFirmware(
     val otaUrl: String? = null,
     val isOfficial: Boolean = true,
     val isRecommended: Boolean = false,
+    val sha256: String? = null,
+    val checksumUnavailable: Boolean = false,
+    val acquisitionUrl: String? = null,
+    val sourceKind: FirmwareSourceKind = FirmwareSourceKind.OTA_ZIP,
+    val fingerprintTriple: String? = null,
 )
 
 /**
@@ -85,8 +122,11 @@ data class TargetDevice(
     val id: String,
     val name: String,
     val codename: String,
+    val revision: Int = 1,
+    @Deprecated("Target selection moved to ConfigurationSnapshot")
     val selectedRegion: TargetRegion = TargetRegion.GLOBAL,
     val availableRegions: List<TargetRegion> = listOf(TargetRegion.GLOBAL, TargetRegion.CHINA),
+    @Deprecated("Target selection moved to ConfigurationSnapshot")
     val selectedFirmware: TargetFirmware = TargetFirmware(
         version = "REDMAGICOS10.5.15_NP05J_GB",
         buildId = "PQ84P01:15/AQ3A.240812.002/20260311.222527",
@@ -105,13 +145,35 @@ data class TargetDevice(
     val vendorBootPartitionBytes: Long = 100663296L,
     val initBootPartitionBytes: Long = 8388608L,
     val dtboPartitionBytes: Long = 25165824L,
+    @Deprecated("Target selection moved to ConfigurationSnapshot")
     val acquisitionMode: FirmwareAcquisitionMode = FirmwareAcquisitionMode.OTA,
     val dynamicPartitions: List<String>,
     val bootPartitions: List<String>,
     val status: TargetStatus,
     val description: String,
     val isDefault: Boolean = false,
+    val productName: String = codename,
+    val fastbootProduct: String = "sun",
+    val assertModels: List<String> = listOf(codename),
+    val superMetadataSlots: Int = 3,
+    val superGroupName: String = "qti_dynamic_partitions",
+    val virtualAb: Boolean = true,
+    val activeSlotSuffix: String = "_a",
+    val hasStandaloneSystemExt: Boolean = true,
+    val bootDevicePath: String = "/dev/block/bootdevice/by-name",
+    val packagePolicy: PackagePolicy = PackagePolicy(
+        flashablePartitions = dynamicPartitions,
+        flashableBootPartitions = bootPartitions,
+        bootSlots = listOf("a", "b"),
+        excludeVbmeta = true,
+        recoverySystemMountPoint = "/system_root",
+        metadataPolicy = MetadataPolicy.DEVICE_FIRST_WITH_PACKAGE_FALLBACK,
+    ),
 ) {
+    init {
+        require(revision >= 1) { "revision must be >= 1, but was $revision" }
+    }
+
     val formattedSuperSize: String
         get() = "${superPartitionBytes / (1024L * 1024L * 1024L)}.0 GB"
 
@@ -143,6 +205,7 @@ data class TargetDevice(
     val workspaceSlug: String
         get() = targetKey
 
+    @Deprecated("Workspace paths are managed by Workspace entity")
     val workspacePath: String
         get() = "~/LtiRomWorkDir/target/$targetKey"
 
@@ -157,6 +220,7 @@ data class TargetDevice(
             id = "",
             name = "",
             codename = "",
+            revision = 1,
             selectedRegion = TargetRegion.GLOBAL,
             availableRegions = listOf(TargetRegion.GLOBAL, TargetRegion.CHINA),
             selectedFirmware = TargetFirmware(
@@ -173,6 +237,23 @@ data class TargetDevice(
             status = TargetStatus.EXPERIMENTAL,
             description = "Default empty target profile",
             isDefault = false,
+            productName = "",
+            fastbootProduct = "",
+            assertModels = emptyList(),
+            superMetadataSlots = 3,
+            superGroupName = "qti_dynamic_partitions",
+            virtualAb = true,
+            activeSlotSuffix = "_a",
+            hasStandaloneSystemExt = true,
+            bootDevicePath = "/dev/block/bootdevice/by-name",
+            packagePolicy = PackagePolicy(
+                flashablePartitions = listOf("system", "vendor", "product", "system_ext", "odm"),
+                flashableBootPartitions = listOf("boot", "init_boot", "vendor_boot", "dtbo"),
+                bootSlots = listOf("a", "b"),
+                excludeVbmeta = true,
+                recoverySystemMountPoint = "/system_root",
+                metadataPolicy = MetadataPolicy.DEVICE_FIRST_WITH_PACKAGE_FALLBACK,
+            ),
         )
     }
 }

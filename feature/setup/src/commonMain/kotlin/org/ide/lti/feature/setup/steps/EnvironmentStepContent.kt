@@ -46,7 +46,7 @@ import org.ide.lti.feature.setup.SetupUiActions
 import org.ide.lti.feature.setup.SetupUiState
 import org.ide.lti.feature.setup.components.DoctorDiagnosticsDrawer
 import org.ide.lti.feature.setup.components.EnvironmentSubsystemHeader
-import org.ide.lti.feature.setup.components.SetupConsoleDrawer
+import org.ide.lti.core.designsystem.component.progress.GlassConsoleDrawer
 import org.ide.lti.feature.setup.components.ToolMatrixTable
 import org.ide.lti.feature.setup.components.ToolchainPipelineTracker
 
@@ -220,7 +220,7 @@ fun EnvironmentStepContent(
             backdrop = resolvedBackdrop,
         )
 
-        SetupConsoleDrawer(
+        GlassConsoleDrawer(
             logs = toolchainSetupState.logs,
             isRunning = toolchainSetupState.isBusy,
             backdrop = resolvedBackdrop,
