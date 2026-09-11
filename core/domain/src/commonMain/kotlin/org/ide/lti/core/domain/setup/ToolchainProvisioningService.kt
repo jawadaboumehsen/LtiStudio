@@ -92,6 +92,14 @@ public data class DiagnosticCheckItem(
 )
 
 /**
+ * Provenance of a setup step's result: restored from persistent history or measured live in this process.
+ */
+public enum class StepProvenance {
+    RESTORED,
+    LIVE
+}
+
+/**
  * Detail metadata for a specific setup step.
  */
 public data class SetupStepDetail(
@@ -100,7 +108,9 @@ public data class SetupStepDetail(
     val description: String,
     val status: StepStatus = StepStatus.PENDING,
     val error: String? = null,
-    val durationMs: Long = 0L
+    val durationMs: Long = 0L,
+    val provenance: StepProvenance = StepProvenance.LIVE,
+    val verifiedAtEpochMs: Long? = null,
 )
 
 /**
@@ -115,7 +125,6 @@ public data class ToolchainSetupState(
     val isRunning: Boolean = false,
     val isChecking: Boolean = false,
     val isFixing: Boolean = false,
-    val isAllReady: Boolean = false,
     val logs: List<String> = emptyList(),
     val activeLogLine: String? = null,
     val activeDistro: String? = "Ubuntu",
@@ -123,16 +132,24 @@ public data class ToolchainSetupState(
     val daemonPingMs: Long? = null,
     /**
      * Epoch millis of the last time the environment was actually confirmed ready via a live
-     * checkStatus() probe or a completed runFullSetup() - not merely restored from a persisted
-     * flag. Null means never verified in a way that recorded a timestamp. Used to gate automatic
-     * re-verification so a persisted "ready" state does not get trusted indefinitely.
+     * verifyEnvironment() probe or a completed runFullSetup() - not merely restored from a persisted
+     * flag. Null means never verified in a way that recorded a timestamp.
      */
     val lastVerifiedTimestamp: Long? = null,
     val toolsMatrix: List<ToolComponentItem> = defaultToolsMatrix(),
     val publishedToolIds: Set<String> = emptySet(),
-    val unpublishedToolIds: Set<String> = emptySet()
+    val unpublishedToolIds: Set<String> = emptySet(),
 ) {
     val isBusy: Boolean get() = isRunning || isChecking || isFixing
+
+    /**
+     * True if every step was verified live in this process and is SUCCESS or tolerated WARNING.
+     */
+    val isAllReady: Boolean
+        get() = steps.isNotEmpty() && steps.all { step ->
+            step.provenance == StepProvenance.LIVE &&
+                (step.status == StepStatus.SUCCESS || step.status == StepStatus.WARNING)
+        }
 
     /**
      * True if the local LtiRomServer daemon bridge is connected and responsive.
@@ -147,12 +164,10 @@ public data class ToolchainSetupState(
         get() = steps.firstOrNull { it.stage == SetupStepStage.TOOLCHAIN_COMPILATION }?.status == StepStatus.SUCCESS
 
     /**
-     * True if workspace launch prerequisites are satisfied:
-     * - Restored/completed from persistent DataStore (isAllReady == true)
-     * - OR both server client bridge is connected AND tools are verified.
+     * True if workspace launch prerequisites are satisfied (strictly equivalent to [isAllReady]).
      */
     val canLaunchWorkspace: Boolean
-        get() = isAllReady || (isServerConnected && isToolsVerified)
+        get() = isAllReady
 
 
     val healthScorePercentage: Int
@@ -583,8 +598,11 @@ public interface ToolchainProvisioningService {
     /** Reactive stream of setup state updates */
     public val state: StateFlow<ToolchainSetupState>
 
-    /** Probes current status without mutating environment */
-    public suspend fun checkStatus(): ToolchainSetupState
+    /** Verifies the environment using live probes and updates [state]. */
+    public suspend fun verifyEnvironment(): ToolchainSetupState
+
+    /** Probes current status without mutating environment. Delegates to [verifyEnvironment]. */
+    public suspend fun checkStatus(): ToolchainSetupState = verifyEnvironment()
 
     /** Executes full end-to-end setup sequence (probe, start daemon, sync repos, build tools) */
     public suspend fun runFullSetup()

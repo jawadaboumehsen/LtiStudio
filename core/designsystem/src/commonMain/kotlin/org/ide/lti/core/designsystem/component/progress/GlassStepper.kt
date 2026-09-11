@@ -56,6 +56,7 @@ enum class GlassStepStatus {
     SKIPPED,
     CANCELLED,
     INTERRUPTED,
+    RESTORED,
     ;
 
     val isComplete: Boolean
@@ -101,6 +102,7 @@ object GlassStepperDefaults {
         GlassStepStatus.SKIPPED -> "Skipped"
         GlassStepStatus.CANCELLED -> "Cancelled"
         GlassStepStatus.INTERRUPTED -> "Interrupted"
+        GlassStepStatus.RESTORED -> "Restored"
     }
 }
 
@@ -229,6 +231,7 @@ private fun GlassStepNode(
         GlassStepStatus.SKIPPED -> glassColors.onGlassMuted
         GlassStepStatus.CANCELLED -> glassColors.onGlassMuted
         GlassStepStatus.INTERRUPTED -> glassColors.onGlassMuted
+        GlassStepStatus.RESTORED -> glassColors.onGlassMuted
     }
 
     val backgroundColor = when {
@@ -334,6 +337,32 @@ private fun GlassStepNode(
                             tint = glassColors.onGlassMuted,
                             modifier = Modifier.size(IconSize.Small),
                         )
+                        GlassStepStatus.RESTORED -> Box(contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(IconSize.Small),
+                                strokeWidth = StrokeWidth.Hairline,
+                                color = glassColors.onGlassMuted,
+                            )
+                            Icon(
+                                painter = AppIcons.CheckPainterResource(),
+                                contentDescription = "Restored",
+                                tint = glassColors.onGlassMuted.copy(alpha = AlphaTokens.Muted),
+                                modifier = Modifier.size(IconSize.Indicator),
+                            )
+                        }
+                        GlassStepStatus.RESTORED -> Box(contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(IconSize.Small),
+                                strokeWidth = StrokeWidth.Hairline,
+                                color = glassColors.onGlassMuted,
+                            )
+                            Icon(
+                                painter = AppIcons.CheckPainterResource(),
+                                contentDescription = "Restored",
+                                tint = glassColors.onGlassMuted.copy(alpha = AlphaTokens.Muted),
+                                modifier = Modifier.size(IconSize.Indicator),
+                            )
+                        }
                     }
                 }
 

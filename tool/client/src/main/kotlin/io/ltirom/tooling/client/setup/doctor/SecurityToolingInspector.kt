@@ -17,7 +17,11 @@ public class SecurityToolingInspector(
 
     override suspend fun inspect(context: DiagnosticContext): DiagnosticCheckItem {
         val distro = context.distro
-        val hasOpenssl = cli.execute(distro, listOf("which", "openssl")).exitCode == 0
+        val hasOpenssl = if (context.availableCommands.isNotEmpty()) {
+            "openssl" in context.availableCommands
+        } else {
+            cli.execute(distro, listOf("which", "openssl")).exitCode == 0
+        }
         val opensslCmd = if (hasOpenssl) null else "sudo apt-get install -y openssl"
 
         return DiagnosticCheckItem(

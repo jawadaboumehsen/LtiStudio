@@ -12,9 +12,13 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.events.DefaultToolEventBus
 import io.ltirom.tooling.core.events.ToolEventBus
 import io.ltirom.tooling.core.ports.DaemonSupervisorPort
-import io.ltirom.tooling.core.ports.RemoteTransportPort
+import io.ltirom.tooling.client.setup.EnvironmentProbe
 import io.ltirom.tooling.client.setup.doctor.CompositeSystemDoctorEngine
+import io.ltirom.tooling.client.wsl.TransportCliExecutor
+import io.ltirom.tooling.client.wsl.WslEnvironmentDetector
 import io.ltirom.tooling.client.wsl.WslPresenceAdapter
+import io.ltirom.tooling.core.ports.RemoteTransportPort
+import org.ide.lti.core.domain.ports.EnvironmentProbePort
 import org.ide.lti.core.domain.ports.ToolPublicationPort
 import org.ide.lti.core.domain.ports.WslPresencePort
 import org.ide.lti.core.domain.setup.ToolchainProvisioningService
@@ -36,6 +40,15 @@ public val toolingModule = module {
     single<RemoteTransportPort> {
         val dm = get<WslDaemonManager>()
         KtorRemoteTransportAdapter(dm, dm.httpClient)
+    }
+    single { TransportCliExecutor(transport = get()) }
+    single<EnvironmentProbePort> {
+        EnvironmentProbe(
+            detector = WslEnvironmentDetector(),
+            supervisor = get<DaemonSupervisorPort>(),
+            transport = get<RemoteTransportPort>(),
+            toolPublicationPort = getOrNull<ToolPublicationPort>(),
+        )
     }
     single<SystemDoctorPort> {
         CompositeSystemDoctorEngine()

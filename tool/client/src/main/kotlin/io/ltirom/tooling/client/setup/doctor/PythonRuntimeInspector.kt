@@ -17,13 +17,21 @@ public class PythonRuntimeInspector(
 
     override suspend fun inspect(context: DiagnosticContext): DiagnosticCheckItem {
         val distro = context.distro
-        val hasPython3 = cli.execute(distro, listOf("which", "python3")).exitCode == 0
+        val hasPython3 = if (context.availableCommands.isNotEmpty()) {
+            "python3" in context.availableCommands
+        } else {
+            cli.execute(distro, listOf("which", "python3")).exitCode == 0
+        }
         val pyVersion = if (hasPython3) {
             val vOut = cli.execute(distro, listOf("python3", "--version")).output.trim()
             if (vOut.isNotBlank()) vOut else "Python 3"
         } else ""
-        val hasPip = cli.execute(distro, listOf("which", "pip3")).exitCode == 0 ||
-            cli.execute(distro, listOf("python3", "-m", "pip", "--version")).exitCode == 0
+        val hasPip = if (context.availableCommands.isNotEmpty()) {
+            "pip3" in context.availableCommands || "pip" in context.availableCommands
+        } else {
+            cli.execute(distro, listOf("which", "pip3")).exitCode == 0 ||
+                cli.execute(distro, listOf("python3", "-m", "pip", "--version")).exitCode == 0
+        }
         val pyCryptoOk = hasPython3 && cli.execute(distro, listOf("python3", "-c", "import cryptography, pyasn1")).exitCode == 0
 
         val pyStatus: StepStatus

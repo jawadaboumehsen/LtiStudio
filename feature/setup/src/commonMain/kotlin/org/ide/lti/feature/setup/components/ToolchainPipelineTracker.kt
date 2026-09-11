@@ -31,6 +31,7 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.domain.setup.SetupStepDetail
 import org.ide.lti.core.domain.setup.SetupStepStage
+import org.ide.lti.core.domain.setup.StepProvenance
 import org.ide.lti.core.domain.setup.StepStatus
 
 /**
@@ -93,6 +94,8 @@ fun ToolchainPipelineTracker(
             // 5 Stages Horizontal Pipeline Row
             GlassStepper(
                 steps = steps.map { step ->
+                    val isRestored = step.provenance == StepProvenance.RESTORED &&
+                        step.status == StepStatus.PENDING
                     GlassStepInfo(
                         id = step.stage.name,
                         shortTitle = when (step.stage) {
@@ -102,7 +105,12 @@ fun ToolchainPipelineTracker(
                             SetupStepStage.REPO_SYNCHRONIZATION -> "Submodules"
                             SetupStepStage.TOOLCHAIN_COMPILATION -> "Compilers"
                         },
-                        status = step.status.toGlassStepStatus(),
+                        status = if (isRestored) {
+                            GlassStepStatus.RESTORED
+                        } else {
+                            step.status.toGlassStepStatus()
+                        },
+                        statusLabel = if (isRestored) "Re-checking…" else null,
                     )
                 },
                 isBusy = isBusy,

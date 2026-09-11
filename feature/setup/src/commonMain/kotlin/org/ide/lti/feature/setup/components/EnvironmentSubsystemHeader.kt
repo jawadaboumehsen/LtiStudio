@@ -89,7 +89,9 @@ fun EnvironmentSubsystemHeader(
     val diagnostics = glassColors.diagnostics
 
     val isWslHealthy = state.steps.firstOrNull { it.stage.name == "WSL_DETECTION" }?.status == StepStatus.SUCCESS
-    val isServerConnected = state.steps.firstOrNull { it.stage.name == "SERVER_CONNECTIVITY" }?.status == StepStatus.SUCCESS
+    val isServerConnected =
+        state.steps.firstOrNull { it.stage.name == "SERVER_CONNECTIVITY" }?.status == StepStatus.SUCCESS
+    val isServerFailed = state.steps.firstOrNull { it.stage.name == "SERVER_CONNECTIVITY" }?.status == StepStatus.FAILED
     val hasDoctorFailures = state.diagnostics.any { it.status == StepStatus.FAILED }
 
     GlassCard(
@@ -113,142 +115,19 @@ fun EnvironmentSubsystemHeader(
                 verticalArrangement = Arrangement.spacedBy(Spacing.Small),
                 horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
             ) {
-                // WSL 2 Distro Badge
-                Box(
-                    modifier = Modifier
-                        .clip(GlassShapes.Medium)
-                        .background(glassColors.glassSurface)
-                        .border(
-                            width = StrokeWidth.Standard,
-                            color = if (isWslHealthy) diagnostics.success.copy(alpha = AlphaTokens.Border) else glassColors.glassBorder,
-                            shape = GlassShapes.Medium,
-                        )
-                        .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Small),
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(IconSize.Indicator)
-                                .clip(GlassShapes.Capsule)
-                                .background(
-                                    if (isWslHealthy) diagnostics.success else diagnostics.warning
-                                ),
-                        )
-                        Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
-                            Text(
-                                text = "WSL 2 Runtime",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = glassColors.onGlassMuted,
-                            )
-                            Text(
-                                text = state.activeDistro ?: "Ubuntu",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = glassColors.onGlass,
-                                maxLines = 1,
-                                softWrap = false,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
-                    }
-                }
-
-                // Daemon Bridge & Latency Meter
-                Box(
-                    modifier = Modifier
-                        .clip(GlassShapes.Medium)
-                        .background(glassColors.glassSurface)
-                        .border(
-                            width = StrokeWidth.Standard,
-                            color = if (isServerConnected) diagnostics.success.copy(alpha = AlphaTokens.Border) else glassColors.glassBorder,
-                            shape = GlassShapes.Medium,
-                        )
-                        .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Small),
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(IconSize.Indicator)
-                                .clip(GlassShapes.Capsule)
-                                .background(
-                                    if (isServerConnected) diagnostics.success else glassColors.onGlassMuted
-                                ),
-                        )
-                        Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
-                            Text(
-                                text = "Daemon Bridge",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = glassColors.onGlassMuted,
-                            )
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-                            ) {
-                                Text(
-                                    text = if (isServerConnected) "Connected" else "Idle",
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = glassColors.onGlass,
-                                    maxLines = 1,
-                                    softWrap = false,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
-                                state.daemonPingMs?.let { ping ->
-                                    GlassChip(
-                                        label = "${ping}ms",
-                                        selected = true,
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Storage Headroom Meter
-                Box(
-                    modifier = Modifier
-                        .clip(GlassShapes.Medium)
-                        .background(glassColors.glassSurface)
-                        .border(
-                            width = StrokeWidth.Standard,
-                            color = glassColors.glassBorder,
-                            shape = GlassShapes.Medium,
-                        )
-                        .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Small),
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
-                        Text(
-                            text = "Storage Headroom",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = glassColors.onGlassMuted,
-                        )
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                        ) {
-                            Text(
-                                text = "ext4 (>45GB)",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontFamily = codeFontFamily(),
-                                fontWeight = FontWeight.Medium,
-                                color = glassColors.onGlass,
-                                maxLines = 1,
-                                softWrap = false,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                            GlassChip(
-                                label = "Ready",
-                                selected = false,
-                            )
-                        }
-                    }
-                }
+                WslRuntimeBadge(
+                    isWslHealthy = isWslHealthy,
+                    activeDistro = state.activeDistro,
+                    glassColors = glassColors,
+                    diagnostics = diagnostics,
+                )
+                DaemonBridgeBadge(
+                    isServerConnected = isServerConnected,
+                    isServerFailed = isServerFailed,
+                    latencyMs = latencyMs,
+                    glassColors = glassColors,
+                    diagnostics = diagnostics,
+                )
             }
 
             // Right: Actions (Wrapping cleanly without collision)
@@ -256,6 +135,25 @@ fun EnvironmentSubsystemHeader(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
             ) {
+                if (isServerFailed) {
+                    GlassPrimaryButton(
+                        onClick = onCheckEnvironment,
+                        enabled = !state.isBusy,
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                        ) {
+                            Icon(
+                                painter = AppIcons.RefreshPainterResource(),
+                                contentDescription = null,
+                                modifier = Modifier.size(IconSize.Small),
+                            )
+                            Text("Retry Bridge", maxLines = 1, softWrap = false)
+                        }
+                    }
+                }
+
                 GlassSecondaryButton(
                     onClick = onCheckEnvironment,
                     enabled = !state.isBusy,
@@ -395,4 +293,173 @@ private fun formatRelativeTime(instant: Instant): String {
         duration.inWholeDays < 7 -> "${duration.inWholeDays}d ago"
         else -> "${duration.inWholeDays / 7}w ago"
     }
+}
+
+@Composable
+private fun WslRuntimeBadge(
+    isWslHealthy: Boolean,
+    activeDistro: String?,
+    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme,
+    diagnostics: org.ide.lti.core.designsystem.theme.DiagnosticColors,
+) {
+    // WSL 2 Distro Badge
+    Box(
+        modifier = Modifier
+            .clip(GlassShapes.Medium)
+            .background(glassColors.glassSurface)
+            .border(
+                width = StrokeWidth.Standard,
+                color = if (isWslHealthy) diagnostics.success.copy(alpha = AlphaTokens.Border)
+                    else glassColors.glassBorder,
+                shape = GlassShapes.Medium,
+            )
+            .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Small),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(IconSize.Indicator)
+                    .clip(GlassShapes.Capsule)
+                    .background(
+                        if (isWslHealthy) diagnostics.success else diagnostics.warning
+                    ),
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
+                Text(
+                    text = "WSL 2 Runtime",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = glassColors.onGlassMuted,
+                )
+                Text(
+                    text = state.activeDistro ?: "Ubuntu",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = glassColors.onGlass,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+    }
+
+}
+
+@Composable
+private fun DaemonBridgeBadge(
+    isServerConnected: Boolean,
+    isServerFailed: Boolean,
+    latencyMs: Long?,
+    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme,
+    diagnostics: org.ide.lti.core.designsystem.theme.DiagnosticColors,
+) {
+    // Daemon Bridge & Latency Meter
+    Box(
+        modifier = Modifier
+            .clip(GlassShapes.Medium)
+            .background(glassColors.glassSurface)
+            .border(
+                width = StrokeWidth.Standard,
+                color = when {
+                    isServerConnected -> diagnostics.success.copy(alpha = AlphaTokens.Border)
+                    isServerFailed -> diagnostics.error.copy(alpha = AlphaTokens.Border)
+                    else -> glassColors.glassBorder
+                },
+                shape = GlassShapes.Medium,
+            )
+            .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Small),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(IconSize.Indicator)
+                    .clip(GlassShapes.Capsule)
+                    .background(
+                        when {
+                            isServerConnected -> diagnostics.success
+                            isServerFailed -> diagnostics.error
+                            else -> glassColors.onGlassMuted
+                        }
+                    ),
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
+                Text(
+                    text = "Daemon Bridge",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = glassColors.onGlassMuted,
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                ) {
+                    Text(
+                        text = when {
+                            isServerConnected -> "Connected"
+                            isServerFailed -> "Failed"
+                            else -> "Idle"
+                        },
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (isServerFailed) diagnostics.error else glassColors.onGlass,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    state.daemonPingMs?.let { ping ->
+                        GlassChip(
+                            label = "${ping}ms",
+                            selected = true,
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    // Storage Headroom Meter
+    Box(
+        modifier = Modifier
+            .clip(GlassShapes.Medium)
+            .background(glassColors.glassSurface)
+            .border(
+                width = StrokeWidth.Standard,
+                color = glassColors.glassBorder,
+                shape = GlassShapes.Medium,
+            )
+            .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Small),
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
+            Text(
+                text = "Storage Headroom",
+                style = MaterialTheme.typography.labelSmall,
+                color = glassColors.onGlassMuted,
+            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+            ) {
+                Text(
+                    text = "ext4 (>45GB)",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontFamily = codeFontFamily(),
+                    fontWeight = FontWeight.Medium,
+                    color = glassColors.onGlass,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                GlassChip(
+                    label = "Ready",
+                    selected = false,
+                )
+            }
+        }
+    }
+
 }

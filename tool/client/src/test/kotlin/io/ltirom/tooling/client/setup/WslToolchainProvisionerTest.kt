@@ -61,6 +61,7 @@ class WslToolchainProvisionerTest {
     }
 
     private class FakeRemoteTransport(
+        val fakeCli: FakeWslCliExecutor? = null,
         var healthInfo: WslServerInfo? = WslServerInfo(
             status = "HEALTHY",
             distro = "Ubuntu",
@@ -69,6 +70,18 @@ class WslToolchainProvisionerTest {
             javaVersion = "21.0.11",
             serverUptimeMs = 100_000L,
             availableTools = listOf("adb", "fastboot")
+        ),
+        var publishedTools: MutableList<ToolStatusInfo> = mutableListOf(
+            ToolStatusInfo(tool = "payload-dumper-go", installed = true),
+            ToolStatusInfo(tool = "lpunpack", installed = true),
+            ToolStatusInfo(tool = "lpmake", installed = true),
+            ToolStatusInfo(tool = "simg2img", installed = true),
+            ToolStatusInfo(tool = "erofsfuse", installed = true),
+            ToolStatusInfo(tool = "mkfs.erofs", installed = true),
+            ToolStatusInfo(tool = "avbtool", installed = true),
+            ToolStatusInfo(tool = "unpack_bootimg", installed = true),
+            ToolStatusInfo(tool = "img2sdat", installed = true),
+            ToolStatusInfo(tool = "signapk", installed = true)
         )
     ) : RemoteTransportPort {
         var checkHealthCount = 0
@@ -79,12 +92,34 @@ class WslToolchainProvisionerTest {
         }
 
         override suspend fun execute(request: ToolExecutionRequest): ToolExecutionResponse {
-            return ToolExecutionResponse(0, "ok", "", 10L)
+            if (fakeCli != null) {
+                val fullCmd = listOf(request.toolId) + request.arguments
+                val res = fakeCli.execute("Ubuntu", fullCmd)
+                return ToolExecutionResponse(res.exitCode, res.output, res.error, 10L)
+            }
+            return when {
+                request.toolId == "find" && request.arguments.contains("-L") -> {
+                    val output = listOf(
+                        "payload-dumper-go", "lpunpack", "lpmake", "simg2img",
+                        "erofsfuse", "mkfs.erofs", "avbtool", "unpack_bootimg",
+                        "img2sdat", "signapk", "adb", "fastboot"
+                    ).joinToString("\n")
+                    ToolExecutionResponse(0, output, "", 10L)
+                }
+                request.toolId == "find" && request.arguments.any { it.contains("external") } -> {
+                    val output = listOf("android-tools", "apktool", "erofs-utils", "img2sdat", "signapk").joinToString("\n")
+                    ToolExecutionResponse(0, output, "", 10L)
+                }
+                request.toolId == "test" -> ToolExecutionResponse(0, "", "", 10L)
+                request.toolId == "dpkg-query" -> ToolExecutionResponse(0, "all ok installed", "", 2L)
+                request.toolId == "df" -> ToolExecutionResponse(0, "Filesystem 100G 50G 50G 50% /home/lti\n", "", 2L)
+                else -> ToolExecutionResponse(0, "ok", "", 10L)
+            }
         }
 
         override fun stream(request: ToolExecutionRequest): Flow<StreamEvent> = emptyFlow()
-        override suspend fun listTools(): List<ToolStatusInfo> = emptyList()
-        override suspend fun refreshTools(): List<ToolStatusInfo> = emptyList()
+        override suspend fun listTools(): List<ToolStatusInfo> = publishedTools
+        override suspend fun refreshTools(): List<ToolStatusInfo> = publishedTools
         override suspend fun uploadFile(remotePath: String, content: ByteArray): Boolean = true
         override suspend fun downloadFile(remotePath: String): ByteArray? = null
         override suspend fun shutdown(): Boolean = true
@@ -177,8 +212,14 @@ class WslToolchainProvisionerTest {
                     existingPaths.add(filePath)
                 }
             }
+            if (cmdStr.contains("openssl") && cmdStr.contains("-out")) {
+                val outIdx = command.indexOf("-out")
+                if (outIdx >= 0 && outIdx + 1 < command.size) {
+                    existingPaths.add(command[outIdx + 1])
+                }
+            }
             if (command.firstOrNull() == "find" && command.contains("-printf")) {
-                val dir = command[2].trimEnd('/')
+                val dir = (if (command.getOrNull(1) == "-L") command.getOrNull(2) else command.getOrNull(1))?.trimEnd('/') ?: ""
                 val names = existingPaths.filter { it.startsWith("$dir/") && !it.removePrefix("$dir/").contains('/') }
                     .map { it.removePrefix("$dir/") }
                 return CliExecutionResult(0, names.joinToString("\n"), "")
@@ -230,7 +271,7 @@ class WslToolchainProvisionerTest {
     }
 
     @Test
-    fun `checkStatus is ready with an idle daemon when the toolchain is installed`() = runTest {
+    fun `checkStatus fails when server daemon cannot be started`() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val fakeCli = FakeWslCliExecutor().apply {
             existingPaths.add("/home/lti/LtiRomWorkDir")
@@ -241,7 +282,7 @@ class WslToolchainProvisionerTest {
         }
         val provisioner = WslToolchainProvisioner(
             supervisor = FakeDaemonSupervisor(descriptor = null, isHealthyResult = false),
-            transport = FakeRemoteTransport(healthInfo = null),
+            transport = FakeRemoteTransport(fakeCli = fakeCli, healthInfo = null),
             detector = WslEnvironmentDetector(cli = fakeCli),
             cli = fakeCli,
             dispatcher = testDispatcher
@@ -249,20 +290,17 @@ class WslToolchainProvisionerTest {
 
         val state = provisioner.checkStatus()
 
-        assertEquals(StepStatus.PENDING, state.steps.first { it.stage == SetupStepStage.SERVER_CONNECTIVITY }.status)
-        assertTrue(state.isAllReady)
-        // The whole toolchain probe is a single `find` listing, not one process per binary.
-        assertEquals(1, fakeCli.commandLog.count { it.startsWith("WSL: find -L /home/lti/LtiRomTools/bin") })
-        assertTrue(fakeCli.commandLog.none { it.startsWith("WSL: test -x /home/lti/LtiRomTools/bin/") })
+        assertEquals(StepStatus.FAILED, state.steps.first { it.stage == SetupStepStage.SERVER_CONNECTIVITY }.status)
+        assertFalse(state.isAllReady)
     }
 
     @Test
-    fun `checkStatus reports idle when server daemon is not running`() = runTest {
+    fun `checkStatus reports failed when server daemon is not running`() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val fakeCli = FakeWslCliExecutor()
         val detector = WslEnvironmentDetector(cli = fakeCli)
         val supervisor = FakeDaemonSupervisor(descriptor = null, isHealthyResult = false)
-        val transport = FakeRemoteTransport(healthInfo = null)
+        val transport = FakeRemoteTransport(fakeCli = fakeCli, healthInfo = null)
 
         val provisioner = WslToolchainProvisioner(
             supervisor = supervisor,
@@ -278,7 +316,7 @@ class WslToolchainProvisionerTest {
         assertEquals(StepStatus.SUCCESS, wslStep.status)
 
         val serverStep = state.steps.first { it.stage == SetupStepStage.SERVER_CONNECTIVITY }
-        assertEquals(StepStatus.PENDING, serverStep.status)
+        assertEquals(StepStatus.FAILED, serverStep.status)
         assertFalse(state.isAllReady)
     }
 
@@ -300,7 +338,7 @@ class WslToolchainProvisionerTest {
         }
         val detector = WslEnvironmentDetector(cli = fakeCli)
         val supervisor = FakeDaemonSupervisor(isHealthyResult = true)
-        val transport = FakeRemoteTransport()
+        val transport = FakeRemoteTransport(fakeCli = fakeCli)
 
         val provisioner = WslToolchainProvisioner(
             supervisor = supervisor,
@@ -322,7 +360,7 @@ class WslToolchainProvisionerTest {
         val fakeCli = FakeWslCliExecutor()
         val detector = WslEnvironmentDetector(cli = fakeCli)
         val supervisor = FakeDaemonSupervisor()
-        val transport = FakeRemoteTransport()
+        val transport = FakeRemoteTransport(fakeCli = fakeCli)
 
         val provisioner = WslToolchainProvisioner(
             supervisor = supervisor,
@@ -347,7 +385,7 @@ class WslToolchainProvisionerTest {
         val fakeCli = FakeWslCliExecutor()
         val detector = WslEnvironmentDetector(cli = fakeCli)
         val supervisor = FakeDaemonSupervisor(shouldFailEnsureStarted = true)
-        val transport = FakeRemoteTransport()
+        val transport = FakeRemoteTransport(fakeCli = fakeCli)
 
         val provisioner = WslToolchainProvisioner(
             supervisor = supervisor,
@@ -374,7 +412,7 @@ class WslToolchainProvisionerTest {
         val fakeCli = FakeWslCliExecutor()
         val detector = WslEnvironmentDetector(cli = fakeCli)
         val supervisor = FakeDaemonSupervisor()
-        val transport = FakeRemoteTransport()
+        val transport = FakeRemoteTransport(fakeCli = fakeCli)
 
         val provisioner = WslToolchainProvisioner(
             supervisor = supervisor,
@@ -396,7 +434,7 @@ class WslToolchainProvisionerTest {
         val fakeCli = FakeWslCliExecutor()
         val detector = WslEnvironmentDetector(cli = fakeCli)
         val supervisor = FakeDaemonSupervisor()
-        val transport = FakeRemoteTransport()
+        val transport = FakeRemoteTransport(fakeCli = fakeCli)
         val fakePublication = FakeToolPublicationPort()
 
         val provisioner = WslToolchainProvisioner(

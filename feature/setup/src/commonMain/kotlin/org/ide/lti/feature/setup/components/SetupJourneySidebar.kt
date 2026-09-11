@@ -57,6 +57,8 @@ import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
+import kotlinx.datetime.Clock
+import org.ide.lti.core.domain.setup.StepProvenance
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolchainSetupState
 import org.ide.lti.feature.setup.SetupTab
@@ -82,9 +84,9 @@ fun SetupJourneySidebar(
     val diagnostics = glassColors.diagnostics
 
     val isEnvironmentReady = toolchainSetupState.isAllReady
-    val isEnvironmentRunning = toolchainSetupState.isRunning
-    val hasEnvironmentIssues = toolchainSetupState.steps.any { it.status == StepStatus.FAILED } ||
-        toolchainSetupState.diagnostics.any { it.status == StepStatus.FAILED }
+    val isAnyStepRunning = toolchainSetupState.hasAnyStepRunning()
+    val isEnvironmentBusy = toolchainSetupState.isRunning || isAnyStepRunning || toolchainSetupState.isFixing
+    val hasEnvironmentIssues = toolchainSetupState.hasAnyFailedSteps()
 
     Column(
         modifier = modifier
@@ -164,27 +166,13 @@ fun SetupJourneySidebar(
             JourneyStepCard(
                 stepNumber = "1",
                 title = "Environment & Tools",
-                subtitle = when {
-                    toolchainSetupState.isFixing -> "Fixing Packages..."
-                    toolchainSetupState.isChecking -> "Checking Health..."
-                    isEnvironmentRunning -> "Configuring..."
-                    isEnvironmentReady -> "All Checks Verified"
-                    hasEnvironmentIssues -> "Action Required"
-                    else -> "WSL2 & Compilers"
-                },
+                subtitle = computeSidebarSubtitle(toolchainSetupState),
                 isComplete = isEnvironmentReady && currentStep != SetupTab.ENVIRONMENT,
                 isActive = currentStep == SetupTab.ENVIRONMENT,
                 enabled = !toolchainSetupState.isBusy || currentStep == SetupTab.ENVIRONMENT,
-                isRunning = isEnvironmentRunning || toolchainSetupState.isChecking || toolchainSetupState.isFixing,
+                isRunning = isEnvironmentBusy,
                 isError = hasEnvironmentIssues && !toolchainSetupState.isBusy,
-                statusBadge = when {
-                    toolchainSetupState.isFixing -> "Fixing"
-                    toolchainSetupState.isChecking -> "Checking"
-                    isEnvironmentRunning -> "Running"
-                    isEnvironmentReady -> "Ready"
-                    hasEnvironmentIssues -> "Fix Needed"
-                    else -> "Pending"
-                },
+                statusBadge = computeSidebarBadge(toolchainSetupState),
                 onClick = { onStepSelected(SetupTab.ENVIRONMENT) },
             )
 
@@ -197,10 +185,18 @@ fun SetupJourneySidebar(
                     !toolchainSetupState.isAvbKeyProvisioned -> "AVB Key Required"
                     else -> "Machine Signing & Keys"
                 },
-                isComplete = isEnvironmentReady && toolchainSetupState.isAvbKeyProvisioned && currentStep != SetupTab.LAUNCHPAD,
+                isComplete = isEnvironmentReady && 
+                    toolchainSetupState.isAvbKeyProvisioned && 
+                    currentStep != SetupTab.LAUNCHPAD,
                 isActive = currentStep == SetupTab.LAUNCHPAD,
                 enabled = !toolchainSetupState.isBusy || currentStep == SetupTab.LAUNCHPAD,
-                statusBadge = if (isEnvironmentReady && toolchainSetupState.isAvbKeyProvisioned) "Ready" else if (!toolchainSetupState.isAvbKeyProvisioned) "Key Needed" else null,
+                statusBadge = if (isEnvironmentReady && toolchainSetupState.isAvbKeyProvisioned) {
+                    "Ready" 
+                } else if (!toolchainSetupState.isAvbKeyProvisioned) {
+                    "Key Needed" 
+                } else {
+                    null
+                },
                 onClick = { onStepSelected(SetupTab.LAUNCHPAD) },
             )
         }
@@ -239,17 +235,8 @@ private fun JourneyStepCard(
     val diagnostics = glassColors.diagnostics
     var isHovered by remember { mutableStateOf(false) }
 
-    val targetBackground = when {
-        isActive -> glassColors.glassAccent.copy(alpha = AlphaTokens.Glow)
-        isHovered && enabled -> glassColors.onGlass.copy(alpha = AlphaTokens.UltraFaint)
-        else -> Color.Transparent
-    }
-
-    val targetBorder = when {
-        isActive -> glassColors.glassAccent.copy(alpha = AlphaTokens.Faded)
-        isHovered && enabled -> glassColors.glassBorder.copy(alpha = AlphaTokens.Glow)
-        else -> Color.Transparent
-    }
+    val targetBackground = resolveStepBackgroundColor(isActive, isHovered, enabled, glassColors)
+    val targetBorder = resolveStepBorderColor(isActive, isHovered, enabled, glassColors)
 
     val backgroundColor by animateColorAsState(
         targetValue = targetBackground,
@@ -278,22 +265,10 @@ private fun JourneyStepCard(
             modifier = Modifier
                 .size(IconSize.Large)
                 .clip(GlassShapes.Capsule)
-                .background(
-                    when {
-                        isComplete -> diagnostics.success.copy(alpha = AlphaTokens.GlassSecondaryTint)
-                        isError -> diagnostics.error.copy(alpha = AlphaTokens.GlassSecondaryTint)
-                        isActive -> glassColors.glassAccent.copy(alpha = AlphaTokens.GlassSecondaryTint)
-                        else -> glassColors.onGlassMuted.copy(alpha = AlphaTokens.Faint)
-                    }
-                )
+                .background(resolveStepIconBackground(isComplete, isError, isActive, glassColors, diagnostics))
                 .border(
                     width = StrokeWidth.Hairline,
-                    color = when {
-                        isComplete -> diagnostics.success.copy(alpha = AlphaTokens.Border)
-                        isError -> diagnostics.error.copy(alpha = AlphaTokens.Border)
-                        isActive -> glassColors.glassAccent
-                        else -> glassColors.glassBorder
-                    },
+                    color = resolveStepIconBorder(isComplete, isError, isActive, glassColors, diagnostics),
                     shape = GlassShapes.Capsule,
                 ),
             contentAlignment = Alignment.Center,
@@ -365,4 +340,122 @@ private fun JourneyStepCard(
             )
         }
     }
+}
+
+fun formatRelativeAgo(epochMs: Long, nowEpochMs: Long = Clock.System.now().toEpochMilliseconds()): String {
+    val durationMs = (nowEpochMs - epochMs).coerceAtLeast(0L)
+    val minutes = durationMs / 60_000L
+    val hours = minutes / 60L
+    val days = hours / 24L
+    return when {
+        minutes < 1L -> "just now"
+        minutes < 60L -> "${minutes}m ago"
+        hours < 24L -> "${hours}h ago"
+        else -> "${days}d ago"
+    }
+}
+
+private fun ToolchainSetupState.hasAnyStepRunning(): Boolean =
+    steps.any { it.status == StepStatus.RUNNING } || isChecking
+private fun ToolchainSetupState.hasAnyFailedSteps(): Boolean =
+    steps.any { it.status == StepStatus.FAILED } || diagnostics.any { it.status == StepStatus.FAILED }
+private fun ToolchainSetupState.hasAnyRestoredSteps(): Boolean = steps.any { it.provenance == StepProvenance.RESTORED }
+private fun ToolchainSetupState.findLastVerifiedTime(): Long? =
+    steps.mapNotNull { it.verifiedAtEpochMs }.maxOrNull() ?: lastVerifiedTimestamp
+
+fun computeSidebarSubtitle(
+    state: ToolchainSetupState,
+    nowEpochMs: Long = Clock.System.now().toEpochMilliseconds(),
+): String {
+    val isAnyStepRunning = state.hasAnyStepRunning()
+    val hasFailedSteps = state.hasAnyFailedSteps()
+    val hasRestoredSteps = state.hasAnyRestoredSteps()
+
+    return when {
+        isAnyStepRunning -> "Verifying…"
+        state.isRunning -> "Configuring…"
+        state.isFixing -> "Fixing packages…"
+        state.isAllReady -> {
+            val ts = state.lastVerifiedTimestamp
+            if (ts != null && ts > 0) {
+                "Verified ${formatRelativeAgo(ts, nowEpochMs)}"
+            } else {
+                "Verified just now"
+            }
+        }
+        hasFailedSteps && !state.isBusy -> "Action required"
+        hasRestoredSteps -> {
+            val lastTime = state.findLastVerifiedTime()
+            if (lastTime != null && lastTime > 0) {
+                "Last verified ${formatRelativeAgo(lastTime, nowEpochMs)} — re-checking…"
+            } else {
+                "Last verified recently — re-checking…"
+            }
+        }
+        else -> "WSL2 & Compilers"
+    }
+}
+
+fun computeSidebarBadge(state: ToolchainSetupState): String {
+    val isAnyStepRunning = state.hasAnyStepRunning()
+    val hasFailedSteps = state.hasAnyFailedSteps()
+    val hasRestoredSteps = state.hasAnyRestoredSteps()
+
+    return when {
+        isAnyStepRunning -> "Checking"
+        state.isRunning -> "Running"
+        state.isFixing -> "Fixing"
+        state.isAllReady -> "Ready"
+        hasFailedSteps && !state.isBusy -> "Fix needed"
+        hasRestoredSteps -> "Checking"
+        else -> "Pending"
+    }
+}
+
+private fun resolveStepBackgroundColor(
+    isActive: Boolean,
+    isHovered: Boolean,
+    enabled: Boolean,
+    glassColors: org.ide.lti.core.designsystem.theme.GlassColorTokens
+): androidx.compose.ui.graphics.Color = when {
+    isActive -> glassColors.glassAccent.copy(alpha = AlphaTokens.Glow)
+    isHovered && enabled -> glassColors.onGlass.copy(alpha = AlphaTokens.UltraFaint)
+    else -> androidx.compose.ui.graphics.Color.Transparent
+}
+
+private fun resolveStepBorderColor(
+    isActive: Boolean,
+    isHovered: Boolean,
+    enabled: Boolean,
+    glassColors: org.ide.lti.core.designsystem.theme.GlassColorTokens
+): androidx.compose.ui.graphics.Color = when {
+    isActive -> glassColors.glassAccent.copy(alpha = AlphaTokens.Faded)
+    isHovered && enabled -> glassColors.glassBorder.copy(alpha = AlphaTokens.Glow)
+    else -> androidx.compose.ui.graphics.Color.Transparent
+}
+
+private fun resolveStepIconBackground(
+    isComplete: Boolean,
+    isError: Boolean,
+    isActive: Boolean,
+    glassColors: org.ide.lti.core.designsystem.theme.GlassColorTokens,
+    diagnostics: org.ide.lti.core.designsystem.theme.DiagnosticColors
+): androidx.compose.ui.graphics.Color = when {
+    isComplete -> diagnostics.success.copy(alpha = AlphaTokens.GlassSecondaryTint)
+    isError -> diagnostics.error.copy(alpha = AlphaTokens.GlassSecondaryTint)
+    isActive -> glassColors.glassAccent.copy(alpha = AlphaTokens.GlassSecondaryTint)
+    else -> glassColors.onGlassMuted.copy(alpha = AlphaTokens.Faint)
+}
+
+private fun resolveStepIconBorder(
+    isComplete: Boolean,
+    isError: Boolean,
+    isActive: Boolean,
+    glassColors: org.ide.lti.core.designsystem.theme.GlassColorTokens,
+    diagnostics: org.ide.lti.core.designsystem.theme.DiagnosticColors
+): androidx.compose.ui.graphics.Color = when {
+    isComplete -> diagnostics.success.copy(alpha = AlphaTokens.Border)
+    isError -> diagnostics.error.copy(alpha = AlphaTokens.Border)
+    isActive -> glassColors.glassAccent
+    else -> glassColors.glassBorder
 }

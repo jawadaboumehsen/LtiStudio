@@ -9,10 +9,14 @@
  */
 package org.ide.lti.feature.setup.steps
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -28,6 +32,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import com.kashif_e.backdrop.backdrops.LayerBackdrop
@@ -36,10 +41,14 @@ import org.ide.lti.core.designsystem.component.actions.GlassSecondaryButton
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.codeFontFamily
+import org.ide.lti.core.domain.setup.SetupStepStage
+import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolComponentItem
 import org.ide.lti.core.domain.setup.ToolchainSetupState
 import org.ide.lti.feature.setup.SetupUiActions
@@ -54,6 +63,7 @@ import org.ide.lti.feature.setup.components.ToolchainPipelineTracker
  * Structured overload for [EnvironmentStepContent] utilizing [SetupUiState] and [SetupUiActions]
  * to prevent parameter sprawl and ensure clean single-responsibility composition.
  */
+@Suppress("LongParameterList")
 @Composable
 fun EnvironmentStepContent(
     state: SetupUiState,
@@ -109,16 +119,17 @@ fun EnvironmentStepContent(
  * - Single Responsibility: Coordinates environment setup and toolchain provisioning cockpit.
  * - Design System Guardrails: 100% token usage (zero raw dp or alpha float literals).
  */
+@Suppress("LongParameterList")
 @Composable
 fun EnvironmentStepContent(
     toolchainSetupState: ToolchainSetupState,
-    onNavigateToProjects: (() -> Unit)? = null,
     onCheckEnvironment: () -> Unit,
     onRunFullSetup: () -> Unit,
     onRetrySetupStep: () -> Unit,
     onProceedToLaunchpad: () -> Unit,
     resolvedBackdrop: LayerBackdrop,
     modifier: Modifier = Modifier,
+    onNavigateToProjects: (() -> Unit)? = null,
     onAutoRemediateDoctor: (() -> Unit)? = null,
     onAutoRunEnvironmentSetup: (() -> Unit)? = null,
     autoRunOnLaunch: Boolean = true,
@@ -196,6 +207,20 @@ fun EnvironmentStepContent(
             onResetToolchainCache = onResetToolchainCache,
         )
 
+        val bridgeStep = toolchainSetupState.steps.firstOrNull { it.stage == SetupStepStage.SERVER_CONNECTIVITY }
+        if (bridgeStep?.status == StepStatus.FAILED) {
+            val launcherLogTail = toolchainSetupState.logs.takeLast(10)
+            BridgeFailureBanner(
+                bridgeStep = bridgeStep,
+                launcherLogTail = launcherLogTail,
+                resolvedBackdrop = resolvedBackdrop,
+                onCheckEnvironment = onCheckEnvironment,
+                isBusy = toolchainSetupState.isBusy,
+                diagnostics = diagnostics,
+                glassColors = glassColors
+            )
+        }
+
         ToolchainPipelineTracker(
             steps = toolchainSetupState.steps,
             onRetryStep = onRetrySetupStep,
@@ -203,123 +228,262 @@ fun EnvironmentStepContent(
             backdrop = resolvedBackdrop,
         )
 
-        DoctorDiagnosticsDrawer(
-            diagnosticsList = toolchainSetupState.diagnostics,
-            backdrop = resolvedBackdrop,
-            onAutoRemediateDoctor = onAutoRemediateDoctor,
+        val cockpitTabs = listOf(
+            org.ide.lti.core.designsystem.component.navigation.GlassTab(
+                id = "doctor",
+                title = "Doctor Diagnostics",
+            ),
+            org.ide.lti.core.designsystem.component.navigation.GlassTab(
+                id = "tools",
+                title = "Toolchain Matrix",
+            ),
+            org.ide.lti.core.designsystem.component.navigation.GlassTab(
+                id = "console",
+                title = "Pipeline Console",
+            )
         )
 
-        ToolMatrixTable(
-            tools = activeToolsList,
-            searchQuery = currentSearch,
-            onSearchQueryChange = onToolSearchQueryChange,
-            selectedCategory = currentCategory,
-            onSelectCategory = onSelectToolCategory,
-            onTestTool = onTestTool,
-            onRecompileTool = onRecompileTool,
-            backdrop = resolvedBackdrop,
-        )
-
-        GlassConsoleDrawer(
-            logs = toolchainSetupState.logs,
-            isRunning = toolchainSetupState.isBusy,
-            backdrop = resolvedBackdrop,
-        )
-
-        // Bottom Navigation Action Bar
-        GlassCard(
+        org.ide.lti.core.designsystem.component.navigation.GlassTabBar(
+            tabs = cockpitTabs,
+            selectedId = selectedCockpitTab,
+            onTabSelected = onSelectCockpitTab,
             modifier = Modifier.fillMaxWidth(),
             backdrop = resolvedBackdrop,
-            contentPadding = Spacing.CardPadding,
+        )
+
+        when (selectedCockpitTab) {
+            "doctor" -> {
+                DoctorDiagnosticsDrawer(
+                    diagnosticsList = toolchainSetupState.diagnostics,
+                    backdrop = resolvedBackdrop,
+                    onAutoRemediateDoctor = onAutoRemediateDoctor,
+                )
+            }
+            "tools" -> {
+                ToolMatrixTable(
+                    tools = activeToolsList,
+                    searchQuery = currentSearch,
+                    onSearchQueryChange = onToolSearchQueryChange,
+                    selectedCategory = currentCategory,
+                    onSelectCategory = onSelectToolCategory,
+                    onTestTool = onTestTool,
+                    onRecompileTool = onRecompileTool,
+                    backdrop = resolvedBackdrop,
+                )
+            }
+            "console" -> {
+                GlassConsoleDrawer(
+                    logs = toolchainSetupState.logs,
+                    isRunning = toolchainSetupState.isBusy,
+                    backdrop = resolvedBackdrop,
+                )
+            }
+        }
+
+        EnvironmentStepActionBar(
+            isBusy = toolchainSetupState.isBusy,
+            isAllReady = toolchainSetupState.isAllReady,
+            isFixing = toolchainSetupState.isFixing,
+            isChecking = toolchainSetupState.isChecking,
+            onNavigateToProjects = onNavigateToProjects,
+            onProceedToLaunchpad = onProceedToLaunchpad,
+            onRunFullSetup = onRunFullSetup,
+            resolvedBackdrop = resolvedBackdrop,
+            glassColors = glassColors
+        )
+    }
+}
+
+@Composable
+private fun EnvironmentStepActionBar(
+    isBusy: Boolean,
+    isAllReady: Boolean,
+    isFixing: Boolean,
+    isChecking: Boolean,
+    onNavigateToProjects: (() -> Unit)?,
+    onProceedToLaunchpad: () -> Unit,
+    onRunFullSetup: () -> Unit,
+    resolvedBackdrop: LayerBackdrop,
+    glassColors: org.ide.lti.core.designsystem.theme.GlassColorTokens
+) {
+    GlassCard(
+        modifier = Modifier.fillMaxWidth(),
+        backdrop = resolvedBackdrop,
+        contentPadding = Spacing.CardPadding,
+    ) {
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalArrangement = Arrangement.spacedBy(Spacing.Small),
         ) {
-            // Responsive Action Bar: SpaceBetween anchoring with auto-wrap to prevent resize overlap
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalArrangement = Arrangement.spacedBy(Spacing.Small),
-            ) {
-                if (onNavigateToProjects != null) {
-                    GlassSecondaryButton(
-                        onClick = onNavigateToProjects,
-                        enabled = !toolchainSetupState.isBusy,
+            if (onNavigateToProjects != null) {
+                GlassSecondaryButton(
+                    onClick = onNavigateToProjects,
+                    enabled = !isBusy,
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                        ) {
+                        Icon(
+                            painter = AppIcons.ChevronLeftPainterResource(),
+                            contentDescription = null,
+                            modifier = Modifier.size(IconSize.Small),
+                        )
+                        Text(
+                            text = "Back to Projects",
+                            maxLines = 1,
+                            softWrap = false,
+                        )
+                    }
+                }
+            }
+
+            if (isAllReady) {
+                GlassPrimaryButton(
+                    onClick = onProceedToLaunchpad,
+                    enabled = !isBusy,
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                    ) {
+                        Text(
+                            text = "Continue to Launchpad",
+                            maxLines = 1,
+                            softWrap = false,
+                        )
+                        Icon(
+                            painter = AppIcons.SendPainterResource(),
+                            contentDescription = null,
+                            modifier = Modifier.size(IconSize.Small),
+                        )
+                    }
+                }
+            } else {
+                GlassPrimaryButton(
+                    onClick = onRunFullSetup,
+                    enabled = !isBusy,
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                    ) {
+                        if (isBusy) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(IconSize.Small),
+                                strokeWidth = StrokeWidth.Hairline,
+                                color = glassColors.onGlass,
+                            )
+                            Text(
+                                text = when {
+                                    isFixing -> "Remediating Packages..."
+                                    isChecking -> "Checking Environment..."
+                                    else -> "Running Setup Pipeline..."
+                                },
+                                maxLines = 1,
+                                softWrap = false,
+                            )
+                        } else {
                             Icon(
-                                painter = AppIcons.ChevronLeftPainterResource(),
+                                painter = AppIcons.SparklesPainterResource(),
                                 contentDescription = null,
                                 modifier = Modifier.size(IconSize.Small),
                             )
                             Text(
-                                text = "Back to Projects",
+                                text = "Run Full Setup & Build",
                                 maxLines = 1,
                                 softWrap = false,
                             )
                         }
                     }
                 }
+            }
+        }
+    }
+}
 
-                if (toolchainSetupState.isAllReady) {
-                    GlassPrimaryButton(
-                        onClick = onProceedToLaunchpad,
-                        enabled = !toolchainSetupState.isBusy,
+@Composable
+private fun BridgeFailureBanner(
+    bridgeStep: org.ide.lti.core.domain.setup.ToolchainSetupStep,
+    launcherLogTail: List<String>,
+    resolvedBackdrop: org.ide.lti.core.designsystem.component.layout.LayerBackdrop,
+    onCheckEnvironment: () -> Unit,
+    isBusy: Boolean,
+    diagnostics: org.ide.lti.core.designsystem.theme.DiagnosticColors,
+    glassColors: org.ide.lti.core.designsystem.theme.GlassColorTokens
+) {
+    val failureReason = bridgeStep.description
+    GlassCard(
+        modifier = Modifier.fillMaxWidth(),
+        backdrop = resolvedBackdrop,
+        contentPadding = Spacing.CardPadding,
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+            ) {
+                Icon(
+                    painter = AppIcons.InfoPainterResource(),
+                    contentDescription = null,
+                    modifier = Modifier.size(IconSize.Medium),
+                    tint = diagnostics.error,
+                )
+                Text(
+                    text = "Server Daemon Bridge Failure",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = glassColors.onGlass,
+                )
+                Spacer(Modifier.weight(1f))
+                GlassPrimaryButton(
+                    onClick = onCheckEnvironment,
+                    enabled = !isBusy,
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                        ) {
-                            Text(
-                                text = "Continue to Launchpad",
-                                maxLines = 1,
-                                softWrap = false,
-                            )
-                            Icon(
-                                painter = AppIcons.SendPainterResource(),
-                                contentDescription = null,
-                                modifier = Modifier.size(IconSize.Small),
-                            )
-                        }
+                        Icon(
+                            painter = AppIcons.RefreshPainterResource(),
+                            contentDescription = null,
+                            modifier = Modifier.size(IconSize.Small),
+                        )
+                        Text("Retry Bridge", maxLines = 1, softWrap = false)
                     }
-                } else {
-                    GlassPrimaryButton(
-                        onClick = onRunFullSetup,
-                        enabled = !toolchainSetupState.isBusy,
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                        ) {
-                            if (toolchainSetupState.isBusy) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(IconSize.Small),
-                                    strokeWidth = StrokeWidth.Hairline,
-                                    color = glassColors.onGlass,
-                                )
-                                Text(
-                                    text = when {
-                                        toolchainSetupState.isFixing -> "Remediating Packages..."
-                                        toolchainSetupState.isChecking -> "Checking Environment..."
-                                        else -> "Running Setup Pipeline..."
-                                    },
-                                    maxLines = 1,
-                                    softWrap = false,
-                                )
-                            } else {
-                                Icon(
-                                    painter = AppIcons.SparklesPainterResource(),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(IconSize.Small),
-                                )
-                                Text(
-                                    text = "Run Full Setup & Build",
-                                    maxLines = 1,
-                                    softWrap = false,
-                                )
-                            }
-                        }
-                    }
+                }
+            }
+
+            Text(
+                text = failureReason,
+                style = MaterialTheme.typography.bodyMedium,
+                color = diagnostics.error,
+            )
+
+            if (launcherLogTail.isNotEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(GlassShapes.Small)
+                        .background(glassColors.glassSurface)
+                        .border(
+                            width = StrokeWidth.Standard,
+                            color = glassColors.glassBorder,
+                            shape = GlassShapes.Small,
+                        )
+                        .padding(Spacing.Small),
+                ) {
+                    Text(
+                        text = launcherLogTail.joinToString("\n"),
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontFamily = codeFontFamily(),
+                        ),
+                        color = glassColors.onGlassMuted,
+                    )
                 }
             }
         }

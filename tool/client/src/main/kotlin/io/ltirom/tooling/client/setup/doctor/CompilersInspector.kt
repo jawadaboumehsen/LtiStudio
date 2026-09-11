@@ -17,12 +17,18 @@ public class CompilersInspector(
 
     override suspend fun inspect(context: DiagnosticContext): DiagnosticCheckItem {
         val distro = context.distro
-        val hasCmake = cli.execute(distro, listOf("which", "cmake")).exitCode == 0
-        val hasMake = cli.execute(distro, listOf("which", "make")).exitCode == 0
-        val hasClang = cli.execute(distro, listOf("which", "clang")).exitCode == 0
-        val hasGcc = cli.execute(distro, listOf("which", "gcc")).exitCode == 0
-        val hasClangPlus = cli.execute(distro, listOf("which", "clang++")).exitCode == 0
-        val hasGplus = cli.execute(distro, listOf("which", "g++")).exitCode == 0
+        fun hasCommand(cmd: String): Boolean = if (context.availableCommands.isNotEmpty()) {
+            cmd in context.availableCommands
+        } else {
+            cli.execute(distro, listOf("which", cmd)).exitCode == 0
+        }
+
+        val hasCmake = hasCommand("cmake")
+        val hasMake = hasCommand("make")
+        val hasClang = hasCommand("clang")
+        val hasGcc = hasCommand("gcc")
+        val hasClangPlus = hasCommand("clang++")
+        val hasGplus = hasCommand("g++")
 
         val missingCompilers = buildList {
             if (!hasCmake) add("cmake")

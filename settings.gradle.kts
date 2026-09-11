@@ -58,3 +58,8 @@ include(":feature:setup")
 include(":feature:workspace")
 
 include(":catalog")
+
+include(":tool:core")
+include(":tool:adapters")
+include(":tool:client")
+include(":tool:codegen")

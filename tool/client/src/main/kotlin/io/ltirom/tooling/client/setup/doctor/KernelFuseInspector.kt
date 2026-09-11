@@ -17,9 +17,17 @@ public class KernelFuseInspector(
 
     override suspend fun inspect(context: DiagnosticContext): DiagnosticCheckItem {
         val distro = context.distro
-        val fuseDevOk = cli.execute(distro, listOf("test", "-r", "/dev/fuse")).exitCode == 0
-        val hasFuseCli = cli.execute(distro, listOf("which", "fusermount3")).exitCode == 0 ||
-            cli.execute(distro, listOf("which", "fusermount")).exitCode == 0
+        val fuseDevOk = if (context.availableCommands.isNotEmpty()) {
+            "fuse" in context.availableCommands
+        } else {
+            cli.execute(distro, listOf("test", "-r", "/dev/fuse")).exitCode == 0
+        }
+        val hasFuseCli = if (context.availableCommands.isNotEmpty()) {
+            "fusermount3" in context.availableCommands || "fusermount" in context.availableCommands
+        } else {
+            cli.execute(distro, listOf("which", "fusermount3")).exitCode == 0 ||
+                cli.execute(distro, listOf("which", "fusermount")).exitCode == 0
+        }
         val fuseOk = fuseDevOk && hasFuseCli
         val fuseCmd = if (fuseOk) null else "sudo apt-get install -y fuse3"
 

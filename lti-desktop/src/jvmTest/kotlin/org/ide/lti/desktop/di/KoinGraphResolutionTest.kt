@@ -49,6 +49,8 @@ class KoinGraphResolutionTest {
     fun portsAndRepositoriesResolve() {
         assertNotNull(koin.get<ToolPublicationPort>())
         assertNotNull(koin.get<EnvironmentReadinessPort>())
+        assertNotNull(koin.get<org.ide.lti.core.domain.ports.EnvironmentProbePort>())
+        assertNotNull(koin.get<io.ltirom.tooling.client.wsl.TransportCliExecutor>())
         assertNotNull(koin.get<WorkspaceProvisioningPort>())
         assertNotNull(koin.get<PipelineExecutionPort>())
         assertNotNull(koin.get<SnapshotRepository>())

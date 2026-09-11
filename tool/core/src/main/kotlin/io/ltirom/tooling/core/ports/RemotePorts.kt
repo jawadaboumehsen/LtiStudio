@@ -104,4 +104,10 @@ public interface DaemonSupervisorPort : AutoCloseable {
 
     /** Shuts down the daemon process cleanly. */
     public suspend fun shutdownDaemon(): Boolean
+
+    /** Whether the most recent ensureStarted() call adopted an existing lockfile daemon without launching a process. */
+    public val lastStartAdopted: Boolean get() = false
+
+    /** Recent launcher log tail if the most recent launch attempt failed. */
+    public val lastLaunchErrorLogTail: String? get() = null
 }

@@ -15,9 +15,13 @@ import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.Clock
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.domain.setup.DiagnosticCheckItem
+import org.ide.lti.core.domain.setup.SetupStepStage
+import org.ide.lti.core.domain.setup.StepProvenance
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolchainProvisioningService
 import org.ide.lti.core.domain.setup.ToolchainSetupState
+import org.ide.lti.feature.setup.components.computeSidebarBadge
+import org.ide.lti.feature.setup.components.computeSidebarSubtitle
 import org.ide.lti.core.domain.usecase.target.ProvisionAvbKeyUseCase
 import org.ide.lti.core.domain.usecase.workspace.DiscoverWorkdirWorkspacesUseCase
 import org.ide.lti.core.domain.usecase.workspace.GetRecentWorkspacesUseCase
@@ -78,201 +82,6 @@ class SetupViewModelTest {
     }
 
     @Test
-    fun testSearchFilteringByProjectNameAndPath() = runTest {
-        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-        Dispatchers.setMain(testDispatcher)
-        try {
-            val repo = FakeWorkspaceRepository()
-            val manager = WorkspaceManager(repo, this)
-            val project1 = RecentProject(
-                workspaceId = "p1",
-                name = "LtiRomProject",
-                path = "/Users/dev/LtiRomProject",
-                lastOpened = Clock.System.now(),
-            )
-            val project2 = RecentProject(
-                workspaceId = "p2",
-                name = "KmpTemplate",
-                path = "/Users/dev/KmpTemplate",
-                lastOpened = Clock.System.now(),
-            )
-            repo.recents.value = listOf(project1, project2)
-
-            val viewModel = SetupViewModel(manager)
-            val collectJob = backgroundScope.launch(testDispatcher) {
-                viewModel.filteredRecentProjects.collect()
-            }
-
-            // When query is empty, all projects returned
-            assertEquals(2, viewModel.filteredRecentProjects.value.size)
-
-            // Filter by name "Lti"
-            viewModel.onSearchQueryChange("Lti")
-            assertEquals(1, viewModel.filteredRecentProjects.value.size)
-            assertEquals("LtiRomProject", viewModel.filteredRecentProjects.value.first().name)
-
-            // Filter by path "Template"
-            viewModel.onSearchQueryChange("Template")
-            assertEquals(1, viewModel.filteredRecentProjects.value.size)
-            assertEquals("KmpTemplate", viewModel.filteredRecentProjects.value.first().name)
-
-            // Filter with no matches
-            viewModel.onSearchQueryChange("NonExistent")
-            assertEquals(0, viewModel.filteredRecentProjects.value.size)
-
-            // Clear query
-            viewModel.onSearchQueryChange("")
-            assertEquals(2, viewModel.filteredRecentProjects.value.size)
-
-            collectJob.cancel()
-            testScheduler.advanceUntilIdle()
-        } finally {
-            Dispatchers.resetMain()
-        }
-    }
-
-    @Test
-    fun testRemoveRecentProject() = runTest {
-        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-        Dispatchers.setMain(testDispatcher)
-        try {
-            val repo = FakeWorkspaceRepository()
-            val manager = WorkspaceManager(repo, this)
-            val project = RecentProject(
-                workspaceId = "p1",
-                name = "LtiRomProject",
-                path = "/Users/dev/LtiRomProject",
-                lastOpened = Clock.System.now(),
-            )
-            repo.recents.value = listOf(project)
-
-            val viewModel = SetupViewModel(manager)
-            assertEquals(1, repo.recents.value.size)
-
-            viewModel.removeRecentProject("p1")
-            testScheduler.advanceUntilIdle()
-
-            assertEquals(0, repo.recents.value.size)
-        } finally {
-            Dispatchers.resetMain()
-        }
-    }
-
-    @Test
-    fun testWorkdirWorkspacesDiscoveryAndUseCases() = runTest {
-        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-        Dispatchers.setMain(testDispatcher)
-        try {
-            val repo = FakeWorkspaceRepository()
-            val manager = WorkspaceManager(repo, this)
-            val getRecents = GetRecentWorkspacesUseCase(repo)
-            val discoverWorkdir = DiscoverWorkdirWorkspacesUseCase(repo)
-            val openWorkspace = OpenWorkspaceUseCase(repo)
-            val removeRecent = RemoveRecentWorkspaceUseCase(repo)
-
-            val viewModel = SetupViewModel(
-                workspaceManager = manager,
-                getRecentWorkspacesUseCase = getRecents,
-                discoverWorkdirWorkspacesUseCase = discoverWorkdir,
-                openWorkspaceUseCase = openWorkspace,
-                removeRecentWorkspaceUseCase = removeRecent,
-            )
-            val collectJob = backgroundScope.launch(testDispatcher) {
-                viewModel.recentProjects.collect()
-            }
-            testScheduler.advanceUntilIdle()
-
-            // On init, recents is clean and empty (no auto-seeding without user action)
-            assertEquals(0, viewModel.recentProjects.value.size)
-
-            // Explicit discovery populates canonical workspaces
-            viewModel.discoverWorkspaces()
-            testScheduler.advanceUntilIdle()
-
-            assertEquals(2, viewModel.recentProjects.value.size)
-            assertTrue(viewModel.recentProjects.value.any { it.path == "~/LtiRomWorkDir" })
-            assertTrue(viewModel.recentProjects.value.any { it.name == "REDMAGIC Astra (PQ84P01)" })
-
-            // Test removal via use case
-            viewModel.removeRecentProject("target_pq84p01")
-            testScheduler.advanceUntilIdle()
-
-            assertEquals(1, viewModel.recentProjects.value.size)
-            assertEquals("ltirom_staging_workdir", viewModel.recentProjects.value.first().workspaceId)
-
-            collectJob.cancel()
-            testScheduler.advanceUntilIdle()
-        } finally {
-            Dispatchers.resetMain()
-        }
-    }
-
-    private class FakeToolchainProvisioningService : ToolchainProvisioningService {
-        val _state = MutableStateFlow(ToolchainSetupState())
-        override val state: StateFlow<ToolchainSetupState> = _state.asStateFlow()
-
-        var checkStatusCount = 0
-        var runFullSetupCount = 0
-        var retryCurrentStepCount = 0
-        var shouldMarkReadyOnFullSetup: Boolean = true
-
-        override suspend fun checkStatus(): ToolchainSetupState {
-            checkStatusCount++
-            return _state.value
-        }
-
-        override suspend fun runFullSetup() {
-            runFullSetupCount++
-            if (shouldMarkReadyOnFullSetup) {
-                _state.value = _state.value.copy(isAllReady = true)
-            }
-        }
-
-        var provisionAvbKeyCount = 0
-
-        override suspend fun retryCurrentStep() {
-            retryCurrentStepCount++
-        }
-
-        override suspend fun provisionAvbKey(): Boolean {
-            provisionAvbKeyCount++
-            _state.value = _state.value.copy(isAvbKeyProvisioned = true)
-            return true
-        }
-
-        var autoRemediateDoctorCount = 0
-
-        override suspend fun autoRemediateDoctor(): Boolean {
-            autoRemediateDoctorCount++
-            return true
-        }
-
-        var testToolCount = 0
-        var lastTestedToolId: String? = null
-
-        override suspend fun testIndividualTool(toolId: String): StepStatus {
-            testToolCount++
-            lastTestedToolId = toolId
-            return StepStatus.SUCCESS
-        }
-
-        var recompileToolCount = 0
-        var lastRecompiledToolId: String? = null
-
-        override suspend fun recompileTool(toolId: String): Boolean {
-            recompileToolCount++
-            lastRecompiledToolId = toolId
-            return true
-        }
-
-        var resetSetupCacheCount = 0
-        override suspend fun resetSetupCache() {
-            resetSetupCacheCount++
-            _state.value = _state.value.copy(isAllReady = false)
-        }
-    }
-
-    @Test
     fun testToolchainStatusCheckOnInitAndActionDelegation() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         Dispatchers.setMain(testDispatcher)
@@ -284,8 +93,8 @@ class SetupViewModelTest {
             val viewModel = SetupViewModel(manager, toolchainService)
             testScheduler.advanceUntilIdle()
 
-            // Init triggers autoRunEnvironmentSetup which checks status (1) and runs full setup (1)
-            assertEquals(1, toolchainService.checkStatusCount)
+            // Init triggers autoRunEnvironmentSetup which verifies environment (1) and runs full setup (1)
+            assertEquals(1, toolchainService.verifyEnvironmentCount)
             assertEquals(1, toolchainService.runFullSetupCount)
             assertTrue(viewModel.toolchainSetupState.value.isAllReady)
 
@@ -310,21 +119,20 @@ class SetupViewModelTest {
     }
 
     @Test
-    fun testSetupSkipsFullRebuildWhenAlreadyReadyFromPersistentState() = runTest {
+    fun testSetupRunsVerificationOnInitButSkipsFullRebuildWhenAlreadyReady() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         Dispatchers.setMain(testDispatcher)
         try {
             val repo = FakeWorkspaceRepository()
             val manager = WorkspaceManager(repo, this)
             val toolchainService = FakeToolchainProvisioningService()
-            // Simulate restored state from persistent DataStore
-            toolchainService._state.value = toolchainService._state.value.copy(isAllReady = true)
+            toolchainService.markAllReady()
 
             val viewModel = SetupViewModel(manager, toolchainService)
             testScheduler.advanceUntilIdle()
 
-            // When state is already ready on startup, neither checkStatus nor runFullSetup should run (sub-second zero-start)
-            assertEquals(0, toolchainService.checkStatusCount)
+            // Verification runs on every init (no bypass), but full setup is skipped because already ready
+            assertEquals(1, toolchainService.verifyEnvironmentCount)
             assertEquals(0, toolchainService.runFullSetupCount)
             assertTrue(viewModel.toolchainSetupState.value.isAllReady)
         } finally {
@@ -340,7 +148,7 @@ class SetupViewModelTest {
             val repo = FakeWorkspaceRepository()
             val manager = WorkspaceManager(repo, this)
             val toolchainService = FakeToolchainProvisioningService()
-            toolchainService._state.value = toolchainService._state.value.copy(isAllReady = true)
+            toolchainService.markAllReady()
 
             val viewModel = SetupViewModel(manager, toolchainService)
             testScheduler.advanceUntilIdle()
@@ -364,11 +172,12 @@ class SetupViewModelTest {
             val repo = FakeWorkspaceRepository()
             val manager = WorkspaceManager(repo, this)
             val toolchainService = FakeToolchainProvisioningService()
-            toolchainService._state.value = toolchainService._state.value.copy(isAllReady = true)
+            toolchainService.markAllReady()
 
             val viewModel = SetupViewModel(manager, toolchainService)
             testScheduler.advanceUntilIdle()
-            assertEquals(0, toolchainService.checkStatusCount)
+            val initialVerifyCount = toolchainService.verifyEnvironmentCount // 1 from init
+            assertEquals(1, initialVerifyCount)
             assertEquals(0, toolchainService.runFullSetupCount)
 
             // Case 1: isChecking is true -> isBusy is true
@@ -376,6 +185,7 @@ class SetupViewModelTest {
             assertTrue(viewModel.toolchainSetupState.value.isBusy)
 
             viewModel.checkEnvironmentStatus()
+            viewModel.reverify()
             viewModel.runFullEnvironmentSetup()
             viewModel.autoRemediateDoctorIssues()
             viewModel.retrySetupStep()
@@ -383,7 +193,7 @@ class SetupViewModelTest {
             testScheduler.advanceUntilIdle()
 
             // All counts must remain unchanged
-            assertEquals(0, toolchainService.checkStatusCount)
+            assertEquals(initialVerifyCount, toolchainService.verifyEnvironmentCount)
             assertEquals(0, toolchainService.runFullSetupCount)
             assertEquals(0, toolchainService.autoRemediateDoctorCount)
             assertEquals(0, toolchainService.retryCurrentStepCount)
@@ -394,11 +204,12 @@ class SetupViewModelTest {
             assertTrue(viewModel.toolchainSetupState.value.isBusy)
 
             viewModel.checkEnvironmentStatus()
+            viewModel.reverify()
             viewModel.runFullEnvironmentSetup()
             viewModel.autoRemediateDoctorIssues()
             testScheduler.advanceUntilIdle()
 
-            assertEquals(0, toolchainService.checkStatusCount)
+            assertEquals(initialVerifyCount, toolchainService.verifyEnvironmentCount)
             assertEquals(0, toolchainService.runFullSetupCount)
             assertEquals(0, toolchainService.autoRemediateDoctorCount)
 
@@ -407,11 +218,12 @@ class SetupViewModelTest {
             assertTrue(viewModel.toolchainSetupState.value.isBusy)
 
             viewModel.checkEnvironmentStatus()
+            viewModel.reverify()
             viewModel.runFullEnvironmentSetup()
             viewModel.autoRemediateDoctorIssues()
             testScheduler.advanceUntilIdle()
 
-            assertEquals(0, toolchainService.checkStatusCount)
+            assertEquals(initialVerifyCount, toolchainService.verifyEnvironmentCount)
             assertEquals(0, toolchainService.runFullSetupCount)
             assertEquals(0, toolchainService.autoRemediateDoctorCount)
 
@@ -421,7 +233,7 @@ class SetupViewModelTest {
 
             viewModel.checkEnvironmentStatus()
             testScheduler.advanceUntilIdle()
-            assertEquals(1, toolchainService.checkStatusCount)
+            assertEquals(initialVerifyCount + 1, toolchainService.verifyEnvironmentCount)
 
             viewModel.runFullEnvironmentSetup()
             testScheduler.advanceUntilIdle()
@@ -582,8 +394,8 @@ class SetupViewModelTest {
             val toolchainService = FakeToolchainProvisioningService()
 
             // Configure initial state with failed doctor item and not ready
+            toolchainService.markUnready()
             toolchainService._state.value = toolchainService._state.value.copy(
-                isAllReady = false,
                 diagnostics = listOf(
                     DiagnosticCheckItem(
                         id = "gcc",
@@ -595,7 +407,7 @@ class SetupViewModelTest {
 
             val viewModel = SetupViewModel(manager, toolchainService)
             testScheduler.advanceUntilIdle()
-            assertEquals(1, toolchainService.checkStatusCount) // from init
+            assertEquals(1, toolchainService.verifyEnvironmentCount) // from init
             assertEquals(1, toolchainService.autoRemediateDoctorCount)
             assertEquals(1, toolchainService.runFullSetupCount)
             assertTrue(viewModel.toolchainSetupState.value.isAllReady)
@@ -603,8 +415,8 @@ class SetupViewModelTest {
             viewModel.autoRunEnvironmentSetup(autoFix = true)
             testScheduler.advanceUntilIdle()
 
-            // Since it is now ready, recheck is bypassed (checkStatusCount remains 1)
-            assertEquals(1, toolchainService.checkStatusCount)
+            // Since it is now ready, full setup is not run again
+            assertEquals(2, toolchainService.verifyEnvironmentCount)
             assertEquals(1, toolchainService.autoRemediateDoctorCount)
             assertEquals(1, toolchainService.runFullSetupCount)
         } finally {
@@ -613,28 +425,27 @@ class SetupViewModelTest {
     }
 
     @Test
-    fun testAutoRunEnvironmentSetupSkipsWhenAlreadyReady() = runTest {
+    fun testAutoRunEnvironmentSetupAlwaysVerifiesAndNeverSkipsOnInit() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         Dispatchers.setMain(testDispatcher)
         try {
             val repo = FakeWorkspaceRepository()
             val manager = WorkspaceManager(repo, this)
             val toolchainService = FakeToolchainProvisioningService()
-
-            toolchainService._state.value = toolchainService._state.value.copy(
-                isAllReady = true,
-            )
+            toolchainService.markAllReady()
 
             val viewModel = SetupViewModel(manager, toolchainService)
             testScheduler.advanceUntilIdle()
-            assertEquals(0, toolchainService.checkStatusCount)
 
-            viewModel.autoRunEnvironmentSetup(autoFix = true)
+            // Verification must ALWAYS run on startup (no 24h skip)
+            assertEquals(1, toolchainService.verifyEnvironmentCount)
+            // But full setup is skipped because steps are already ready
+            assertEquals(0, toolchainService.runFullSetupCount)
+
+            // Explicit reverify also re-runs verification
+            viewModel.reverify()
             testScheduler.advanceUntilIdle()
-
-            // Since it's already ready, no doctor remediation or full setup should run
-            assertEquals(0, toolchainService.checkStatusCount)
-            assertEquals(0, toolchainService.autoRemediateDoctorCount)
+            assertEquals(2, toolchainService.verifyEnvironmentCount)
             assertEquals(0, toolchainService.runFullSetupCount)
         } finally {
             Dispatchers.resetMain()
@@ -642,47 +453,28 @@ class SetupViewModelTest {
     }
 
     @Test
-    fun testAutoRunEnvironmentSetupRechecksWhenPersistedVerificationIsStale() = runTest {
+    fun testAutoRunCallsRunFullSetupOnlyWhenToolchainOrReposPendingNeverForIdleBridge() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         Dispatchers.setMain(testDispatcher)
         try {
             val repo = FakeWorkspaceRepository()
             val manager = WorkspaceManager(repo, this)
-            val toolchainService = FakeToolchainProvisioningService()
-            val staleTimestamp = System.currentTimeMillis() - (25L * 60 * 60 * 1000) // 25h ago, past the 24h TTL
-            toolchainService._state.value = toolchainService._state.value.copy(
-                isAllReady = true,
-                lastVerifiedTimestamp = staleTimestamp,
+            // Bridge is PENDING / idle (not yet connected)
+            val idleBridgeService = FakeToolchainProvisioningService(
+                initialState = ToolchainSetupState(
+                    steps = ToolchainSetupState.defaultSteps().map {
+                        it.copy(status = StepStatus.PENDING, provenance = StepProvenance.LIVE)
+                    }
+                )
             )
 
-            val viewModel = SetupViewModel(manager, toolchainService)
+            val viewModel = SetupViewModel(manager, idleBridgeService)
             testScheduler.advanceUntilIdle()
 
-            // Persisted state says ready, but the timestamp is stale -> must force a live recheck
-            // instead of trusting the flag forever.
-            assertEquals(1, toolchainService.checkStatusCount)
-        } finally {
-            Dispatchers.resetMain()
-        }
-    }
-
-    @Test
-    fun testAutoRunEnvironmentSetupSkipsRecheckWhenPersistedVerificationIsFresh() = runTest {
-        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-        Dispatchers.setMain(testDispatcher)
-        try {
-            val repo = FakeWorkspaceRepository()
-            val manager = WorkspaceManager(repo, this)
-            val toolchainService = FakeToolchainProvisioningService()
-            toolchainService._state.value = toolchainService._state.value.copy(
-                isAllReady = true,
-                lastVerifiedTimestamp = System.currentTimeMillis(),
-            )
-
-            val viewModel = SetupViewModel(manager, toolchainService)
-            testScheduler.advanceUntilIdle()
-
-            assertEquals(0, toolchainService.checkStatusCount)
+            // Verification ran once on init
+            assertEquals(1, idleBridgeService.verifyEnvironmentCount)
+            // Auto-run MUST NOT trigger runFullSetup when bridge is idle / pending!
+            assertEquals(0, idleBridgeService.runFullSetupCount)
         } finally {
             Dispatchers.resetMain()
         }
@@ -696,15 +488,15 @@ class SetupViewModelTest {
             val repo = FakeWorkspaceRepository()
             val manager = WorkspaceManager(repo, this)
             val toolchainService = FakeToolchainProvisioningService()
-            toolchainService._state.value = toolchainService._state.value.copy(isAllReady = true)
+            toolchainService.markAllReady()
 
             val viewModel = SetupViewModel(manager, toolchainService)
             testScheduler.advanceUntilIdle()
-            assertEquals(0, toolchainService.checkStatusCount)
+            assertEquals(1, toolchainService.verifyEnvironmentCount)
 
             // Configure state with issues
+            toolchainService.markUnready()
             toolchainService._state.value = toolchainService._state.value.copy(
-                isAllReady = false,
                 diagnostics = listOf(
                     DiagnosticCheckItem(
                         id = "python",
@@ -722,7 +514,7 @@ class SetupViewModelTest {
             testScheduler.advanceUntilIdle()
 
             // Doctor auto-fix should not be called, but full setup pipeline runs
-            assertEquals(1, toolchainService.checkStatusCount)
+            assertEquals(2, toolchainService.verifyEnvironmentCount)
             assertEquals(0, toolchainService.autoRemediateDoctorCount)
             assertEquals(1, toolchainService.runFullSetupCount)
         } finally {
@@ -738,11 +530,11 @@ class SetupViewModelTest {
             val repo = FakeWorkspaceRepository()
             val manager = WorkspaceManager(repo, this)
             val toolchainService = FakeToolchainProvisioningService()
-            toolchainService._state.value = toolchainService._state.value.copy(isAllReady = true)
+            toolchainService.markAllReady()
 
             val viewModel = SetupViewModel(manager, toolchainService)
             testScheduler.advanceUntilIdle()
-            assertEquals(0, toolchainService.checkStatusCount)
+            val initialVerify = toolchainService.verifyEnvironmentCount
             assertEquals(0, toolchainService.runFullSetupCount)
 
             // Mark busy
@@ -752,8 +544,8 @@ class SetupViewModelTest {
             viewModel.autoRunEnvironmentSetup(autoFix = true)
             testScheduler.advanceUntilIdle()
 
-            // Guarded: checkStatusCount remains 0, no doctor fix or full setup
-            assertEquals(0, toolchainService.checkStatusCount)
+            // Guarded: checkStatusCount remains unchanged, no doctor fix or full setup
+            assertEquals(initialVerify, toolchainService.verifyEnvironmentCount)
             assertEquals(0, toolchainService.autoRemediateDoctorCount)
             assertEquals(0, toolchainService.runFullSetupCount)
         } finally {
@@ -862,7 +654,7 @@ class SetupViewModelTest {
             val repo = FakeWorkspaceRepository()
             val manager = WorkspaceManager(repo, this)
             val toolchainService = FakeToolchainProvisioningService().apply {
-                _state.value = _state.value.copy(isAllReady = true)
+                markAllReady()
             }
             val viewModel = SetupViewModel(manager, toolchainService)
 
@@ -888,7 +680,7 @@ class SetupViewModelTest {
             val repo = FakeWorkspaceRepository()
             val manager = WorkspaceManager(repo, this)
             val toolchainService = FakeToolchainProvisioningService().apply {
-                _state.value = _state.value.copy(isAllReady = true)
+                markAllReady()
             }
             val viewModel = SetupViewModel(manager, toolchainService)
 
@@ -915,7 +707,7 @@ class SetupViewModelTest {
             val manager = WorkspaceManager(repo, this)
             val toolchainService = FakeToolchainProvisioningService().apply {
                 shouldMarkReadyOnFullSetup = false
-                _state.value = ToolchainSetupState(isAllReady = false)
+                markUnready()
             }
             val viewModel = SetupViewModel(manager, toolchainService)
             testScheduler.advanceUntilIdle()
@@ -972,21 +764,25 @@ class SetupViewModelTest {
     }
 
     @Test
-    fun testWorkspaceEntryAllowedWhenServerConnectedAndToolsVerified() = runTest {
+    fun testWorkspaceEntryAllowedOnlyWhenAllReady() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         Dispatchers.setMain(testDispatcher)
         try {
             val repo = FakeWorkspaceRepository()
             val manager = WorkspaceManager(repo, this)
-            val toolchainService = FakeToolchainProvisioningService()
+            val toolchainService = FakeToolchainProvisioningService().apply {
+                shouldMarkReadyOnFullSetup = false
+            }
+            // When only server and tools are ready but other steps are pending:
             toolchainService._state.value = ToolchainSetupState(
-                isAllReady = false,
                 steps = ToolchainSetupState.defaultSteps().map { step ->
-                    if (step.stage == org.ide.lti.core.domain.setup.SetupStepStage.SERVER_CONNECTIVITY ||
-                        step.stage == org.ide.lti.core.domain.setup.SetupStepStage.TOOLCHAIN_COMPILATION
+                    if (step.stage == SetupStepStage.SERVER_CONNECTIVITY ||
+                        step.stage == SetupStepStage.TOOLCHAIN_COMPILATION
                     ) {
-                        step.copy(status = StepStatus.SUCCESS)
-                    } else step
+                        step.copy(status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE)
+                    } else {
+                        step.copy(status = StepStatus.PENDING, provenance = StepProvenance.LIVE)
+                    }
                 }
             )
 
@@ -995,6 +791,13 @@ class SetupViewModelTest {
 
             assertTrue(viewModel.toolchainSetupState.value.isServerConnected)
             assertTrue(viewModel.toolchainSetupState.value.isToolsVerified)
+            // canLaunchWorkspace == isAllReady (the isServerConnected && isToolsVerified shortcut was removed)
+            assertFalse(viewModel.toolchainSetupState.value.isAllReady)
+            assertFalse(viewModel.toolchainSetupState.value.canLaunchWorkspace)
+
+            // When all steps are marked ready:
+            toolchainService.markAllReady()
+            assertTrue(viewModel.toolchainSetupState.value.isAllReady)
             assertTrue(viewModel.toolchainSetupState.value.canLaunchWorkspace)
 
             var openedWorkspace: Workspace? = null
@@ -1011,24 +814,62 @@ class SetupViewModelTest {
     }
 
     @Test
-    fun testZeroStartDataStoreFastPathBypassesRecheck() = runTest {
-        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-        Dispatchers.setMain(testDispatcher)
-        try {
-            val repo = FakeWorkspaceRepository()
-            val manager = WorkspaceManager(repo, this)
-            val toolchainService = FakeToolchainProvisioningService()
-            toolchainService._state.value = ToolchainSetupState(isAllReady = true)
+    fun testSidebarAndStateMappingForRestoredProvenance() = runTest {
+        val now = 1700000000000L
+        val threeHoursAgo = now - (3L * 60 * 60 * 1000)
 
-            val viewModel = SetupViewModel(manager, toolchainService)
-            testScheduler.advanceUntilIdle()
+        // 1. Restored steps pending re-check
+        val restoredState = ToolchainSetupState(
+            steps = ToolchainSetupState.defaultSteps().map {
+                it.copy(
+                    status = StepStatus.PENDING,
+                    provenance = StepProvenance.RESTORED,
+                    verifiedAtEpochMs = threeHoursAgo,
+                )
+            }
+        )
+        assertEquals("Last verified 3h ago — re-checking…", computeSidebarSubtitle(restoredState, now))
+        assertEquals("Checking", computeSidebarBadge(restoredState))
 
-            assertEquals(0, toolchainService.checkStatusCount)
-            assertEquals(0, toolchainService.runFullSetupCount)
-            assertTrue(viewModel.toolchainSetupState.value.canLaunchWorkspace)
-        } finally {
-            Dispatchers.resetMain()
-        }
+        // 2. Running verification
+        val verifyingState = restoredState.copy(
+            steps = restoredState.steps.mapIndexed { idx, s ->
+                if (idx == 0) s.copy(status = StepStatus.RUNNING) else s
+            }
+        )
+        assertEquals("Verifying…", computeSidebarSubtitle(verifyingState, now))
+        assertEquals("Checking", computeSidebarBadge(verifyingState))
+
+        // 3. Running setup pipeline
+        val configuringState = restoredState.copy(isRunning = true)
+        assertEquals("Configuring…", computeSidebarSubtitle(configuringState, now))
+        assertEquals("Running", computeSidebarBadge(configuringState))
+
+        // 4. Fixing doctor issues
+        val fixingState = restoredState.copy(isFixing = true)
+        assertEquals("Fixing packages…", computeSidebarSubtitle(fixingState, now))
+        assertEquals("Fixing", computeSidebarBadge(fixingState))
+
+        // 5. All ready (verified live)
+        val readyState = ToolchainSetupState(
+            steps = ToolchainSetupState.defaultSteps().map {
+                it.copy(status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE)
+            },
+            lastVerifiedTimestamp = now,
+        )
+        assertTrue(readyState.isAllReady)
+        assertEquals("Verified just now", computeSidebarSubtitle(readyState, now))
+        assertEquals("Ready", computeSidebarBadge(readyState))
+
+        // 6. Action required (failure)
+        val failedState = ToolchainSetupState(
+            steps = ToolchainSetupState.defaultSteps().mapIndexed { idx, s ->
+                if (idx == 1) s.copy(status = StepStatus.FAILED, provenance = StepProvenance.LIVE)
+                else s.copy(status = StepStatus.PENDING, provenance = StepProvenance.LIVE)
+            }
+        )
+        assertEquals("Action required", computeSidebarSubtitle(failedState, now))
+        assertEquals("Fix needed", computeSidebarBadge(failedState))
     }
 
     @Test

@@ -17,13 +17,19 @@ public class TransferToolsInspector(
 
     override suspend fun inspect(context: DiagnosticContext): DiagnosticCheckItem {
         val distro = context.distro
-        val hasCurl = cli.execute(distro, listOf("which", "curl")).exitCode == 0
-        val hasGit = cli.execute(distro, listOf("which", "git")).exitCode == 0
-        val hasRsync = cli.execute(distro, listOf("which", "rsync")).exitCode == 0
-        val hasTar = cli.execute(distro, listOf("which", "tar")).exitCode == 0
-        val hasFile = cli.execute(distro, listOf("which", "file")).exitCode == 0
-        val hasXxd = cli.execute(distro, listOf("which", "xxd")).exitCode == 0
-        val hasTruncate = cli.execute(distro, listOf("which", "truncate")).exitCode == 0
+        fun hasCommand(cmd: String): Boolean = if (context.availableCommands.isNotEmpty()) {
+            cmd in context.availableCommands
+        } else {
+            cli.execute(distro, listOf("which", cmd)).exitCode == 0
+        }
+
+        val hasCurl = hasCommand("curl")
+        val hasGit = hasCommand("git")
+        val hasRsync = hasCommand("rsync")
+        val hasTar = hasCommand("tar")
+        val hasFile = hasCommand("file")
+        val hasXxd = hasCommand("xxd")
+        val hasTruncate = hasCommand("truncate")
 
         val missingTransfer = buildList {
             if (!hasCurl) add("curl")

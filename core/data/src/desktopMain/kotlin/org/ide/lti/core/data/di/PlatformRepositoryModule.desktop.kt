@@ -36,7 +36,12 @@ internal actual val platformRepositoryModule = module {
     // the defaulted `Set<String>`/`Json` ones, which have no definition and crash at startup.
     single<ToolPublicationPort> { ToolPublicationAdapter(transport = get()) }
     single<EnvironmentReadinessPort> {
-        EnvironmentReadinessAdapter(wslPresence = get(), supervisor = get(), transport = get())
+        EnvironmentReadinessAdapter(
+            wslPresence = get(),
+            supervisor = get(),
+            transport = get(),
+            probePort = getOrNull(),
+        )
     }
     single { WorkspaceKeyProvisioner(transport = get()) }
     single<WorkspaceProvisioningPort> {

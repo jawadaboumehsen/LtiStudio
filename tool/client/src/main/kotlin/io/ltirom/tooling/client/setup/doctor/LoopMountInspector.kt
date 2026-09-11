@@ -17,10 +17,14 @@ public class LoopMountInspector(
 
     override suspend fun inspect(context: DiagnosticContext): DiagnosticCheckItem {
         val distro = context.distro
-        val hasLoopControl = cli.execute(distro, listOf("test", "-e", "/dev/loop-control")).exitCode == 0
-        val hasPasswordlessSudo = cli.execute(distro, listOf("sudo", "-n", "/bin/mount", "-V")).exitCode == 0 ||
-            cli.execute(distro, listOf("sudo", "-n", "mount", "-V")).exitCode == 0 ||
-            cli.execute(distro, listOf("sudo", "-n", "true")).exitCode == 0
+        val hasLoopControl = if (context.availableCommands.isNotEmpty()) {
+            "loop-control" in context.availableCommands
+        } else {
+            cli.execute(distro, listOf("test", "-e", "/dev/loop-control")).exitCode == 0
+        }
+        val hasPasswordlessSudo = cli.execute(distro, listOf("sudo", "-n", "true")).exitCode == 0 ||
+            cli.execute(distro, listOf("sudo", "-n", "/bin/mount", "-V")).exitCode == 0 ||
+            cli.execute(distro, listOf("sudo", "-n", "mount", "-V")).exitCode == 0
         val sudoMountCmd = "echo \"\$USER ALL=(ALL) NOPASSWD: /bin/mount, /bin/umount\" | sudo tee /etc/sudoers.d/ltirom-mount"
 
         return DiagnosticCheckItem(

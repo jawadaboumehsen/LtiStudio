@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolComponentItem
 import org.ide.lti.core.domain.setup.ToolchainProvisioningService
@@ -76,13 +77,17 @@ class SetupViewModel(
         discoverWorkdirWorkspacesUseCase: DiscoverWorkdirWorkspacesUseCase? = null,
         openWorkspaceUseCase: OpenWorkspaceUseCase? = null,
         removeRecentWorkspaceUseCase: RemoveRecentWorkspaceUseCase? = null,
-        openWorkspaceByPathUseCase: OpenWorkspaceByPathUseCase = OpenWorkspaceByPathUseCase(workspaceManager.repository, workspaceManager),
+        openWorkspaceByPathUseCase: OpenWorkspaceByPathUseCase =
+            OpenWorkspaceByPathUseCase(workspaceManager.repository, workspaceManager),
     ) : this(
-        getRecentWorkspacesUseCase = getRecentWorkspacesUseCase ?: GetRecentWorkspacesUseCase(workspaceManager.repository),
-        openWorkspaceUseCase = openWorkspaceUseCase ?: OpenWorkspaceUseCase(workspaceManager.repository, workspaceManager),
+        getRecentWorkspacesUseCase = getRecentWorkspacesUseCase ?:
+            GetRecentWorkspacesUseCase(workspaceManager.repository),
+        openWorkspaceUseCase = openWorkspaceUseCase ?:
+            OpenWorkspaceUseCase(workspaceManager.repository, workspaceManager),
         openWorkspaceByPathUseCase = openWorkspaceByPathUseCase,
         selectAndOpenDirectoryUseCase = SelectAndOpenDirectoryUseCase(openWorkspaceByPathUseCase),
-        removeRecentWorkspaceUseCase = removeRecentWorkspaceUseCase ?: RemoveRecentWorkspaceUseCase(workspaceManager.repository),
+        removeRecentWorkspaceUseCase = removeRecentWorkspaceUseCase ?:
+            RemoveRecentWorkspaceUseCase(workspaceManager.repository),
         discoverWorkdirWorkspacesUseCase = discoverWorkdirWorkspacesUseCase,
         toolchainService = toolchainService,
         provisionAvbKeyUseCase = provisionAvbKeyUseCase,
@@ -93,7 +98,6 @@ class SetupViewModel(
 
     companion object {
         val DEFAULT_OFFICIAL_TARGETS = listOf(DefaultTargetCatalog.PQ84P01_DEFAULT)
-        private const val REVERIFY_INTERVAL_MS = 24L * 60 * 60 * 1000
     }
 
     private val _fallbackToolchainState = MutableStateFlow(
@@ -265,7 +269,8 @@ class SetupViewModel(
 
     fun openFolder(onWorkspaceOpened: (Workspace) -> Unit) {
         if (!toolchainSetupState.value.canLaunchWorkspace) {
-            _environmentNotice.value = "LtiRomServer connection and native toolchain compilation must be verified before opening a workspace."
+            _environmentNotice.value = "LtiRomServer connection and native toolchain compilation must be " +
+                "verified before opening a workspace."
             navigateToEnvironment()
             return
         }
@@ -284,7 +289,8 @@ class SetupViewModel(
      */
     fun cloneGitRepository(url: String? = null, onWorkspaceOpened: (Workspace) -> Unit) {
         if (!toolchainSetupState.value.canLaunchWorkspace) {
-            _environmentNotice.value = "LtiRomServer connection and native toolchain compilation must be verified before cloning a workspace."
+            _environmentNotice.value = "LtiRomServer connection and native toolchain compilation must be " +
+                "verified before cloning a workspace."
             navigateToEnvironment()
             return
         }
@@ -310,7 +316,8 @@ class SetupViewModel(
 
     fun openRecentProject(project: RecentProject, onWorkspaceOpened: (Workspace) -> Unit) {
         if (!toolchainSetupState.value.canLaunchWorkspace) {
-            _environmentNotice.value = "LtiRomServer connection and native toolchain compilation must be verified before opening a recent workspace."
+            _environmentNotice.value = "LtiRomServer connection and native toolchain compilation must be " +
+                "verified before opening a recent workspace."
             navigateToEnvironment()
             return
         }
@@ -339,7 +346,8 @@ class SetupViewModel(
      */
     fun openDefaultWorkspace(onWorkspaceOpened: (Workspace) -> Unit) {
         if (!toolchainSetupState.value.canLaunchWorkspace) {
-            _environmentNotice.value = "LtiRomServer connection and native toolchain compilation must be verified before launching the workspace."
+            _environmentNotice.value = "LtiRomServer connection and native toolchain compilation must be " +
+                "verified before launching the workspace."
             navigateToEnvironment()
             return
         }
@@ -394,17 +402,24 @@ class SetupViewModel(
     }
 
     /**
-     * Probes environment & toolchain status without modifying the filesystem.
+     * Re-runs live environment verification without modifying the filesystem.
      */
-    fun checkEnvironmentStatus() {
+    fun reverify() {
         if (toolchainService == null) {
             _environmentNotice.value = "Toolchain service is not available in this session."
             return
         }
         if (toolchainSetupState.value.isBusy || autoRunJob?.isActive == true) return
         viewModelScope.launch {
-            toolchainService.checkStatus()
+            toolchainService.verifyEnvironment()
         }
+    }
+
+    /**
+     * Probes environment & toolchain status without modifying the filesystem.
+     */
+    fun checkEnvironmentStatus() {
+        reverify()
     }
 
     /**
@@ -455,28 +470,27 @@ class SetupViewModel(
 
     /**
      * Automatically coordinates environment verification, doctor remediation, and toolchain provisioning:
-     * 1. Probes current environment status.
+     * 1. Probes current environment status via [ToolchainProvisioningService.verifyEnvironment].
      * 2. If any doctor diagnostic issues or prerequisites fail, automatically runs root package remediation.
-     * 3. Runs full setup pipeline to ensure repositories and tools are compiled.
+     * 3. Runs full setup pipeline only if bridge is connected and toolchain compilation or submodules
+     *    synchronization is PENDING.
      */
     fun autoRunEnvironmentSetup(autoFix: Boolean = true) {
-        if (autoRunJob?.isActive == true || toolchainSetupState.value.isRunning || toolchainSetupState.value.isFixing) return
+        if (autoRunJob?.isActive == true ||
+            toolchainSetupState.value.isRunning ||
+            toolchainSetupState.value.isFixing
+        ) {
+            return
+        }
         autoRunJob = viewModelScope.launch {
-            val current = toolchainSetupState.value
-            // If already marked ready from persistent DataStore AND verified recently, skip zero-start
-            // build and bypass recheck (sub-second launch, the common case). Once verification goes
-            // stale (or was never timestamped - e.g. legacy persisted state), DO NOT bypass: fall through
-            // to a live recheck, which is still cheap thanks to checkStatus()'s fast path, instead of
-            // trusting a persisted flag forever - this catches externally deleted/corrupted binaries.
-            val isStale = current.lastVerifiedTimestamp?.let {
-                (System.currentTimeMillis() - it) >= REVERIFY_INTERVAL_MS
-            } ?: false
-            if (current.isAllReady && !isStale) {
-                return@launch
+            val status = toolchainService?.verifyEnvironment() ?: toolchainSetupState.value
+            val isBridgeReady = status.isServerConnected
+            val needsSetup = isBridgeReady && status.steps.any { step ->
+                (step.stage == SetupStepStage.TOOLCHAIN_COMPILATION ||
+                    step.stage == SetupStepStage.REPO_SYNCHRONIZATION) &&
+                    step.status == StepStatus.PENDING
             }
-
-            val status = toolchainService?.checkStatus() ?: toolchainSetupState.value
-            if (!status.isAllReady) {
+            if (needsSetup) {
                 val hasDoctorIssues = status.diagnostics.any {
                     it.status == StepStatus.FAILED || (it.status == StepStatus.WARNING && !it.isOptionalForRuntime)
                 }

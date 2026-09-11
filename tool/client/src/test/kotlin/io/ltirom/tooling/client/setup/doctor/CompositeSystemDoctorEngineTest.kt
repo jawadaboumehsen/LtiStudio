@@ -47,6 +47,40 @@ class CompositeSystemDoctorEngineTest {
                 simulateMissingPythonCrypto = false
             }
 
+            if (cmdStr.contains("find")) {
+                val tools = mutableListOf(
+                    "cmake", "make", "clang", "gcc", "clang++", "g++", "ccache",
+                    "zip", "unzip", "brotli", "curl", "git", "rsync", "tar", "file",
+                    "xxd", "truncate", "attr", "getfattr", "openssl", "python3", "pip3",
+                    "java", "javac", "fusermount3", "fuse", "loop-control",
+                    "java-17-openjdk-amd64", "java-21-openjdk-amd64"
+                )
+                if (!simulateMissingToolchainBinaries) {
+                    tools.addAll(ToolchainIntegrityInspector.DEFAULT_CORE_TOOLS)
+                }
+                if (simulateMissingCompilers) {
+                    tools.remove("cmake")
+                }
+                return CliExecutionResult(0, tools.joinToString("\n"), "")
+            }
+
+            if (cmdStr.contains("find")) {
+                val tools = mutableListOf(
+                    "cmake", "make", "clang", "gcc", "clang++", "g++", "ccache",
+                    "zip", "unzip", "brotli", "curl", "git", "rsync", "tar", "file",
+                    "xxd", "truncate", "attr", "getfattr", "openssl", "python3", "pip3",
+                    "java", "javac", "fusermount3", "fuse", "loop-control",
+                    "java-17-openjdk-amd64", "java-21-openjdk-amd64"
+                )
+                if (!simulateMissingToolchainBinaries) {
+                    tools.addAll(ToolchainIntegrityInspector.DEFAULT_CORE_TOOLS)
+                }
+                if (simulateMissingCompilers) {
+                    tools.remove("cmake")
+                }
+                return CliExecutionResult(0, tools.joinToString("\n"), "")
+            }
+
             if (cmdStr.contains("echo -n \$HOME")) {
                 return CliExecutionResult(0, "/home/lti", "")
             }
@@ -406,5 +440,24 @@ class CompositeSystemDoctorEngineTest {
         assertTrue(aptCmd.contains("rsync"))
         assertTrue(aptCmd.contains("file"))
         assertTrue(aptCmd.contains("xxd"))
+    }
+
+    @Test
+    fun `runDiagnostics on a healthy host issues at most 8 requests in total`() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val mockCli = MockWslCliExecutor()
+        val detector = WslEnvironmentDetector(cli = mockCli)
+        val engine = CompositeSystemDoctorEngine(
+            cli = mockCli,
+            detector = detector,
+            dispatcher = testDispatcher
+        )
+
+        val results = engine.runDiagnostics("Ubuntu", binariesPresent = true)
+        assertEquals(13, results.size)
+        assertTrue(
+            mockCli.executedCommands.size <= 8,
+            "Expected <= 8 commands, but was ${mockCli.executedCommands.size}: ${mockCli.executedCommands}"
+        )
     }
 }

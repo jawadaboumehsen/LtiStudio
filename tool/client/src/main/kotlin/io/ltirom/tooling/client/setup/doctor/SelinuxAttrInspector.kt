@@ -17,8 +17,16 @@ public class SelinuxAttrInspector(
 
     override suspend fun inspect(context: DiagnosticContext): DiagnosticCheckItem {
         val distro = context.distro
-        val hasAttr = cli.execute(distro, listOf("which", "attr")).exitCode == 0
-        val hasGetfattr = cli.execute(distro, listOf("which", "getfattr")).exitCode == 0
+        val hasAttr = if (context.availableCommands.isNotEmpty()) {
+            "attr" in context.availableCommands
+        } else {
+            cli.execute(distro, listOf("which", "attr")).exitCode == 0
+        }
+        val hasGetfattr = if (context.availableCommands.isNotEmpty()) {
+            "getfattr" in context.availableCommands
+        } else {
+            cli.execute(distro, listOf("which", "getfattr")).exitCode == 0
+        }
         val attrOk = hasAttr && hasGetfattr
         val attrCmd = if (attrOk) null else "sudo apt-get install -y attr"
 

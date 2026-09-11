@@ -17,14 +17,32 @@ public class DualJdkInspector(
 
     override suspend fun inspect(context: DiagnosticContext): DiagnosticCheckItem {
         val distro = context.distro
-        val hasJava = cli.execute(distro, listOf("which", "java")).exitCode == 0
-        val hasJavac = cli.execute(distro, listOf("which", "javac")).exitCode == 0
+        val hasJava = if (context.availableCommands.isNotEmpty()) {
+            "java" in context.availableCommands
+        } else {
+            cli.execute(distro, listOf("which", "java")).exitCode == 0
+        }
+        val hasJavac = if (context.availableCommands.isNotEmpty()) {
+            "javac" in context.availableCommands
+        } else {
+            cli.execute(distro, listOf("which", "javac")).exitCode == 0
+        }
         val javaVerOutput = if (hasJava) {
             cli.execute(distro, listOf("java", "-version")).let { it.output + "\n" + it.error }.trim()
         } else ""
         val detectedJavaVer = Regex("version\\s+\"([^\"]+)").find(javaVerOutput)?.groupValues?.get(1) ?: if (hasJava) "Active" else "None"
-        val hasJvm17 = cli.execute(distro, listOf("bash", "-c", "test -d /usr/lib/jvm/java-17-openjdk-amd64 || test -d /usr/lib/jvm/java-17-openjdk")).exitCode == 0
-        val hasJvm21 = cli.execute(distro, listOf("bash", "-c", "test -d /usr/lib/jvm/java-21-openjdk-amd64 || test -d /usr/lib/jvm/java-21-openjdk")).exitCode == 0
+        val hasJvm17 = if (context.availableCommands.isNotEmpty()) {
+            "java-17-openjdk-amd64" in context.availableCommands || "java-17-openjdk" in context.availableCommands
+        } else {
+            cli.execute(distro, listOf("test", "-d", "/usr/lib/jvm/java-17-openjdk-amd64")).exitCode == 0 ||
+                cli.execute(distro, listOf("test", "-d", "/usr/lib/jvm/java-17-openjdk")).exitCode == 0
+        }
+        val hasJvm21 = if (context.availableCommands.isNotEmpty()) {
+            "java-21-openjdk-amd64" in context.availableCommands || "java-21-openjdk" in context.availableCommands
+        } else {
+            cli.execute(distro, listOf("test", "-d", "/usr/lib/jvm/java-21-openjdk-amd64")).exitCode == 0 ||
+                cli.execute(distro, listOf("test", "-d", "/usr/lib/jvm/java-21-openjdk")).exitCode == 0
+        }
         val jdkCmd = "sudo apt-get install -y openjdk-17-jdk openjdk-21-jdk"
 
         val jdkStatus: StepStatus

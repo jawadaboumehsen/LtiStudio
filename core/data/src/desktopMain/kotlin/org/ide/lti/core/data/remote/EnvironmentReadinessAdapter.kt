@@ -6,6 +6,8 @@ import io.ltirom.tooling.core.remote.ToolExecutionRequest
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import org.ide.lti.core.domain.ports.DaemonProbeStatus
+import org.ide.lti.core.domain.ports.EnvironmentProbePort
 import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
 import org.ide.lti.core.domain.ports.WslPresencePort
 import org.ide.lti.core.model.setup.EnvironmentReadiness
@@ -19,6 +21,7 @@ public class EnvironmentReadinessAdapter(
     private val wslPresence: WslPresencePort,
     private val supervisor: DaemonSupervisorPort,
     private val transport: RemoteTransportPort,
+    private val probePort: EnvironmentProbePort? = null,
     private val requiredProductTools: Set<String> = DEFAULT_REQUIRED_PRODUCT_TOOLS,
     private val requiredHostPackages: Set<String> = DEFAULT_REQUIRED_HOST_PACKAGES
 ) : EnvironmentReadinessPort {
@@ -100,6 +103,52 @@ public class EnvironmentReadinessAdapter(
     }
 
     private suspend fun evaluateEnvironment(): EnvironmentReadiness {
+        if (probePort != null) {
+            val probeResult = probePort.probe()
+            if (probeResult.distro == null) {
+                return EnvironmentReadiness(
+                    state = EnvironmentReadinessState.ENV_ABSENT,
+                    failingCheck = "WSL 2 distribution not found",
+                    remediation = "Install WSL 2 and register an Ubuntu distribution"
+                )
+            }
+            if (probeResult.daemon is DaemonProbeStatus.Failed) {
+                val reason = (probeResult.daemon as DaemonProbeStatus.Failed).reason
+                return EnvironmentReadiness(
+                    state = EnvironmentReadinessState.SERVICE_UNREACHABLE,
+                    failingCheck = "LtiRomServer daemon unreachable: $reason",
+                    remediation = "Start the LtiRomServer daemon or verify WSL connectivity"
+                )
+            }
+            val missing = requiredProductTools - probeResult.publishedTools
+            if (missing.isNotEmpty()) {
+                return EnvironmentReadiness(
+                    state = EnvironmentReadinessState.TOOLS_MISSING,
+                    failingCheck = "Required tools missing: ${missing.sorted().joinToString(", ")}",
+                    remediation = "Run toolchain setup to compile and install missing tools",
+                    missingToolIds = missing
+                )
+            }
+            val erofsCheck = transport.execute(
+                ToolExecutionRequest(
+                    toolId = "mkfs.erofs",
+                    arguments = listOf("--help"),
+                    workingDirectory = "/"
+                )
+            )
+            if (!erofsCheck.stdout.contains("--fs-config-file")) {
+                return EnvironmentReadiness(
+                    state = EnvironmentReadinessState.TOOLS_INCOMPATIBLE,
+                    failingCheck = "mkfs.erofs lacks required --fs-config-file support",
+                    remediation = "Rebuild toolchain with vendored erofs-utils"
+                )
+            }
+            val workDir = probeResult.home?.let { "$it/$WORK_DIR_NAME" }
+            return EnvironmentReadiness(
+                state = EnvironmentReadinessState.READY,
+                workDirLinuxPath = workDir,
+            )
+        }
         val failure = checkDistroAndDaemon() ?: checkToolsAndCompatibility()
         return failure ?: EnvironmentReadiness(
             state = EnvironmentReadinessState.READY,

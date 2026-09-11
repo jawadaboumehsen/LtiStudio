@@ -17,9 +17,21 @@ public class ArchiveToolsInspector(
 
     override suspend fun inspect(context: DiagnosticContext): DiagnosticCheckItem {
         val distro = context.distro
-        val hasZip = cli.execute(distro, listOf("which", "zip")).exitCode == 0
-        val hasUnzip = cli.execute(distro, listOf("which", "unzip")).exitCode == 0
-        val hasBrotli = cli.execute(distro, listOf("which", "brotli")).exitCode == 0
+        val hasZip = if (context.availableCommands.isNotEmpty()) {
+            "zip" in context.availableCommands
+        } else {
+            cli.execute(distro, listOf("which", "zip")).exitCode == 0
+        }
+        val hasUnzip = if (context.availableCommands.isNotEmpty()) {
+            "unzip" in context.availableCommands
+        } else {
+            cli.execute(distro, listOf("which", "unzip")).exitCode == 0
+        }
+        val hasBrotli = if (context.availableCommands.isNotEmpty()) {
+            "brotli" in context.availableCommands
+        } else {
+            cli.execute(distro, listOf("which", "brotli")).exitCode == 0
+        }
         val missing = buildList {
             if (!hasZip) add("zip")
             if (!hasUnzip) add("unzip")
