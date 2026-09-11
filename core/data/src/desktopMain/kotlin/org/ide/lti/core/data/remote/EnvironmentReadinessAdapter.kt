@@ -38,17 +38,10 @@ public class EnvironmentReadinessAdapter(
             "signapk"
         )
 
+        /** contracts/pipeline-stages.md "Required tools": every host tool a stage invokes, plus `java` for signapk. */
         public val DEFAULT_REQUIRED_HOST_PACKAGES: Set<String> = setOf(
-            "curl",
-            "unzip",
-            "zip",
-            "sha256sum",
-            "rsync",
-            "getfattr",
-            "brotli",
-            "file",
-            "xxd",
-            "truncate"
+            "curl", "unzip", "zip", "sha256sum", "sha1sum", "rsync", "getfattr", "fusermount3", "brotli", "file",
+            "xxd", "truncate", "find", "stat", "cat", "test", "cp", "mv", "rm", "mkdir", "java"
         )
     }
 

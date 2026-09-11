@@ -1,11 +1,16 @@
 package org.ide.lti.desktop.di
 
+import org.ide.lti.core.domain.pipeline.PipelineOrchestrator
 import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
+import org.ide.lti.core.domain.ports.PipelineExecutionPort
 import org.ide.lti.core.domain.ports.ToolPublicationPort
+import org.ide.lti.core.domain.ports.VendoredFilePort
 import org.ide.lti.core.domain.ports.WorkspaceProvisioningPort
 import org.ide.lti.core.domain.repository.run.RunRepository
 import org.ide.lti.core.domain.repository.snapshot.SnapshotRepository
 import org.ide.lti.core.domain.setup.ToolchainProvisioningService
+import org.ide.lti.core.domain.usecase.build.ObserveRunUseCase
+import org.ide.lti.core.domain.usecase.build.StartPipelineRunUseCase
 import org.ide.lti.core.domain.usecase.workspace.CreateWorkspaceUseCase
 import org.ide.lti.core.domain.usecase.workspace.SaveConfigurationSnapshotUseCase
 import org.ide.lti.shared.di.KoinModules
@@ -45,6 +50,7 @@ class KoinGraphResolutionTest {
         assertNotNull(koin.get<ToolPublicationPort>())
         assertNotNull(koin.get<EnvironmentReadinessPort>())
         assertNotNull(koin.get<WorkspaceProvisioningPort>())
+        assertNotNull(koin.get<PipelineExecutionPort>())
         assertNotNull(koin.get<SnapshotRepository>())
         assertNotNull(koin.get<RunRepository>())
         assertNotNull(koin.get<ToolchainProvisioningService>())
@@ -54,6 +60,10 @@ class KoinGraphResolutionTest {
     fun workspaceUseCasesResolve() {
         assertNotNull(koin.get<CreateWorkspaceUseCase>())
         assertNotNull(koin.get<SaveConfigurationSnapshotUseCase>())
+        assertNotNull(koin.get<VendoredFilePort>())
+        assertNotNull(koin.get<PipelineOrchestrator>())
+        assertNotNull(koin.get<StartPipelineRunUseCase>())
+        assertNotNull(koin.get<ObserveRunUseCase>())
     }
 
     @Test
@@ -72,6 +82,7 @@ class KoinGraphResolutionTest {
             "org.ide.lti.feature.workspace.WorkspaceViewModel",
             "org.ide.lti.feature.workspace.panels.target.WorkspaceConfigurationViewModel",
             "org.ide.lti.feature.workspace.creation.CreateWorkspaceViewModel",
+            "org.ide.lti.feature.workspace.panels.run.BuildRunViewModel",
             "org.ide.lti.feature.configuration.ConfigurationViewModel",
         )
     }

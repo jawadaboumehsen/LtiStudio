@@ -20,6 +20,7 @@ import org.ide.lti.core.designsystem.generated.resources.ideActionsSplit
 import org.ide.lti.core.designsystem.generated.resources.ideAdd
 import org.ide.lti.core.designsystem.generated.resources.ideCheck
 import org.ide.lti.core.designsystem.generated.resources.ideChevronDown
+import org.ide.lti.core.designsystem.generated.resources.ideGeneralChevronUp
 import org.ide.lti.core.designsystem.generated.resources.ideChevronLeft
 import org.ide.lti.core.designsystem.generated.resources.ideChevronRight
 import org.ide.lti.core.designsystem.generated.resources.ideClose
@@ -41,6 +42,7 @@ import org.ide.lti.core.designsystem.generated.resources.ideSave
 import org.ide.lti.core.designsystem.generated.resources.ideSearch
 import org.ide.lti.core.designsystem.generated.resources.ideSettings
 import org.ide.lti.core.designsystem.generated.resources.ideShow
+import org.ide.lti.core.designsystem.generated.resources.ideRunRun
 import org.ide.lti.core.designsystem.generated.resources.ideToolwindowsToolWindowAskAI
 import org.ide.lti.core.designsystem.generated.resources.ideUser
 import org.ide.lti.core.designsystem.generated.resources.ideVcsArrowRight
@@ -79,6 +81,7 @@ object AppIcons {
     val ChevronRightPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideChevronRight) }
     val ChevronLeftPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideChevronLeft) }
     val ChevronDownPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideChevronDown) }
+    val ChevronUpPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideGeneralChevronUp) }
     val UserPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideUser) }
     val LockedPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideLocked) }
     val ShowPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideShow) }
@@ -95,6 +98,7 @@ object AppIcons {
     val HomePainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideNodesHomeFolder) }
     val ArrowBackPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideChevronLeft) }
     val LayoutSplitPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideActionsSplit) }
+    val PlayPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.ideRunRun) }
 
     val leftPanelPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.leftPanel_1) }
     val rightPanelPainterResource: @Composable () -> Painter = { painterResource(Res.drawable.rightPanel) }
@@ -121,6 +125,7 @@ object AppIcons {
     val ChevronRight: AppIcon = AppIcon.Painted(ChevronRightPainterResource)
     val ChevronLeft: AppIcon = AppIcon.Painted(ChevronLeftPainterResource)
     val ChevronDown: AppIcon = AppIcon.Painted(ChevronDownPainterResource)
+    val ChevronUp: AppIcon = AppIcon.Painted(ChevronUpPainterResource)
     val ArrowBack: AppIcon = AppIcon.Painted(ArrowBackPainterResource)
     val Send: AppIcon = AppIcon.Painted(SendPainterResource)
     val Link: AppIcon = AppIcon.Painted(LinkPainterResource)
@@ -151,6 +156,7 @@ object AppIcons {
     val LeftPanel: AppIcon = AppIcon.Painted(leftPanelPainterResource)
     val RightPanel: AppIcon = AppIcon.Painted(rightPanelPainterResource)
     val BottomPanel: AppIcon = AppIcon.Painted(bottomPanelPainterResource)
+    val Play: AppIcon = AppIcon.Painted(PlayPainterResource)
 
     // ==================== EMBEDDED PANEL ICONS ====================
 

@@ -16,7 +16,10 @@ import org.ide.lti.core.domain.ai.AIService
 import org.ide.lti.core.domain.ai.AIServiceImpl
 import org.ide.lti.core.domain.connection.ConnectionManager
 import org.ide.lti.core.domain.panels.PanelManager
+import org.ide.lti.core.domain.pipeline.PipelineOrchestrator
 import org.ide.lti.core.domain.terminal.TerminalManager
+import org.ide.lti.core.domain.usecase.build.ObserveRunUseCase
+import org.ide.lti.core.domain.usecase.build.StartPipelineRunUseCase
 import org.ide.lti.core.domain.usecase.device.ConnectWirelessDeviceUseCase
 import org.ide.lti.core.domain.usecase.device.DisconnectDeviceUseCase
 import org.ide.lti.core.domain.usecase.device.GetConnectedDevicesUseCase
@@ -79,6 +82,28 @@ val DomainModule = module {
     }
     singleOf(::SaveConfigurationSnapshotUseCase)
     singleOf(::RemoveRecentWorkspaceUseCase)
+
+    // Pipeline & Build Use Cases
+    single {
+        PipelineOrchestrator(
+            executionPort = get(),
+            runRepository = get(),
+            vendoredFiles = get(),
+        )
+    }
+    single {
+        StartPipelineRunUseCase(
+            workspaceRepository = get(),
+            snapshotRepository = get(),
+            targetRepository = get(),
+            readinessPort = get(),
+            executionPort = get(),
+            runRepository = get(),
+            orchestrator = get(),
+            scope = getOrNull(),
+        )
+    }
+    singleOf(::ObserveRunUseCase)
 
     // Target Use Cases (common)
     singleOf(::GetAvailableTargetsUseCase)

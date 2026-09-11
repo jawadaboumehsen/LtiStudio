@@ -48,4 +48,23 @@ public class InMemoryRunRepository : RunRepository {
             .maxByOrNull { it.startedAt }
 
     override suspend fun getRun(runId: String): BuildRun? = runs.value[runId]
+
+    override suspend fun claimDriver(runId: String, instanceId: String, now: Long): Boolean {
+        val run = getRun(runId) ?: return false
+        val currentDriver = run.driverInstanceId
+        val lastHeartbeat = run.driverHeartbeatEpochMs
+        val leaseExpired = lastHeartbeat == null || (now - lastHeartbeat >= 45_000L)
+        if (currentDriver == null || currentDriver == instanceId || leaseExpired) {
+            upsert(run.copy(driverInstanceId = instanceId, driverHeartbeatEpochMs = now))
+            return true
+        }
+        return false
+    }
+
+    override suspend fun heartbeatDriver(runId: String, instanceId: String, now: Long) {
+        val run = getRun(runId) ?: return
+        if (run.driverInstanceId == instanceId) {
+            upsert(run.copy(driverHeartbeatEpochMs = now))
+        }
+    }
 }

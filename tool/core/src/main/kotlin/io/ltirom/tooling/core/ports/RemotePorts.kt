@@ -73,6 +73,18 @@ public interface RemoteTransportPort {
 
     /** Replays buffered stream events from a session starting at sequence number [fromSeq]. */
     public suspend fun replaySession(sessionId: String, fromSeq: Long = 0L): List<SequencedStreamEvent> = emptyList()
+
+    /** Starts a durable execution run on the remote daemon. */
+    public suspend fun startRun(request: StartRunRequest): RunHandle = error("startRun not implemented")
+
+    /** Retrieves the status of a specific run by ID. */
+    public suspend fun getRun(runId: String): RunStatus? = null
+
+    /** Lists runs on the remote daemon, optionally filtered by workspace lock. */
+    public suspend fun listRuns(workspaceLock: String? = null): List<RunStatus> = emptyList()
+
+    /** Cancels a remote run by ID. */
+    public suspend fun cancelRun(runId: String, signal: String = "SIGTERM"): RunCancelResponse? = null
 }
 
 /**

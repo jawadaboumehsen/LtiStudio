@@ -45,4 +45,15 @@ interface RunRepository {
      * Retrieves a run by its ID.
      */
     suspend fun getRun(runId: String): BuildRun? = null
+
+    /**
+     * Attempts to claim the driver lease for a run.
+     * Returns true if claimed, or false when another live driver (heartbeat younger than 3 * 15 s) holds it.
+     */
+    suspend fun claimDriver(runId: String, instanceId: String, now: Long = System.currentTimeMillis()): Boolean
+
+    /**
+     * Updates the driver heartbeat timestamp for a run.
+     */
+    suspend fun heartbeatDriver(runId: String, instanceId: String, now: Long = System.currentTimeMillis())
 }

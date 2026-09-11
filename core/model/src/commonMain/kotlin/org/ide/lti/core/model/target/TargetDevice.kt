@@ -111,6 +111,7 @@ data class TargetFirmware(
     val acquisitionUrl: String? = null,
     val sourceKind: FirmwareSourceKind = FirmwareSourceKind.OTA_ZIP,
     val fingerprintTriple: String? = null,
+    val archiveSizeBytes: Long? = null,
 )
 
 /**

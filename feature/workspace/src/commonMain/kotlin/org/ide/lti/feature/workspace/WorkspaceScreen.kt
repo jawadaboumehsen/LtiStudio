@@ -50,6 +50,8 @@ import org.ide.lti.feature.workspace.panels.editor.EditorPanel
 import org.ide.lti.feature.workspace.panels.editor.EditorViewModel
 import org.ide.lti.feature.workspace.panels.explorer.ExplorerPanel
 import org.ide.lti.feature.workspace.panels.explorer.ExplorerViewModel
+import org.ide.lti.feature.workspace.panels.run.BuildRunViewModel
+import org.ide.lti.feature.workspace.panels.run.RunPanel
 import org.ide.lti.feature.workspace.panels.target.TargetDetailPanel
 import org.ide.lti.feature.workspace.panels.target.WorkspaceConfigurationPanel
 import org.ide.lti.feature.workspace.panels.terminal.TerminalPanel
@@ -80,6 +82,7 @@ fun WorkspaceScreen(
     viewModel: WorkspaceViewModel = koinViewModel(),
     editorViewModel: EditorViewModel = koinViewModel(),
     explorerViewModel: ExplorerViewModel = koinViewModel(),
+    buildRunViewModel: BuildRunViewModel = koinViewModel(),
 ) {
     val workspaceName by viewModel.workspaceName.collectAsState()
     val selectedTarget by viewModel.selectedTarget.collectAsState()
@@ -145,6 +148,22 @@ fun WorkspaceScreen(
                     shortcut = "Ctrl+2",
                 ) {
                     leftTabIndex = 1
+                    if (!ltiLayoutState.showLeft) {
+                        ltiLayoutState.toggleLeft()
+                        viewModel.togglePanelVisibility(PanelId.LEFT)
+                    }
+                },
+            )
+            add(
+                CommandItem(
+                    id = "nav_run",
+                    title = "ROM Build Pipeline",
+                    subtitle = "Start or monitor ROM build runs and verify artifacts",
+                    category = CommandCategory.NAVIGATION,
+                    icon = AppIcon.Painted(AppIcons.PlayPainterResource),
+                    shortcut = "Ctrl+3",
+                ) {
+                    leftTabIndex = 2
                     if (!ltiLayoutState.showLeft) {
                         ltiLayoutState.toggleLeft()
                         viewModel.togglePanelVisibility(PanelId.LEFT)
@@ -250,7 +269,7 @@ fun WorkspaceScreen(
         }
     }
 
-    val leftTabs = remember(editorViewModel, explorerViewModel, viewModel) {
+    val leftTabs = remember(editorViewModel, explorerViewModel, viewModel, buildRunViewModel) {
         listOf(
             GlassSidePanelTab(
                 icon = AppIcon.Painted(AppIcons.FolderPainterResource),
@@ -268,6 +287,12 @@ fun WorkspaceScreen(
                 label = "Target & Config",
             ) {
                 WorkspaceConfigurationPanel()
+            },
+            GlassSidePanelTab(
+                icon = AppIcon.Painted(AppIcons.PlayPainterResource),
+                label = "Run",
+            ) {
+                RunPanel(viewModel = buildRunViewModel)
             },
         )
     }
@@ -331,6 +356,11 @@ fun WorkspaceScreen(
                 1 -> {
                     TargetDetailPanel(
                         viewModel = viewModel,
+                    )
+                }
+                2 -> {
+                    RunPanel(
+                        viewModel = buildRunViewModel,
                     )
                 }
                 else -> {

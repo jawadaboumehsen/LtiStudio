@@ -202,6 +202,8 @@ class WorkspaceConfigurationViewModelTest {
         override suspend fun cachedEvents(runId: String, fromSeq: Long): List<String> = emptyList()
         override suspend fun latestActive(workspaceId: String): BuildRun? = activeRun
         override suspend fun getRun(runId: String): BuildRun? = runs[runId]
+        override suspend fun claimDriver(runId: String, instanceId: String, now: Long): Boolean = true
+        override suspend fun heartbeatDriver(runId: String, instanceId: String, now: Long) {}
     }
 
     private class FakeWorkspaceRepo : WorkspaceRepository {

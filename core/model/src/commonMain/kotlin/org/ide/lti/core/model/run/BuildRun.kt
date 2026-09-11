@@ -64,7 +64,20 @@ data class StageStep(
     val state: StepState = StepState.PENDING,
     val exitCode: Int? = null,
     val lastSeq: Long = 0L,
-)
+) {
+    companion object {
+        fun deriveIdempotencyKey(runId: String, stageId: Any, stepIndex: Int): String {
+            val stageName = when (stageId) {
+                is StageId -> stageId.name
+                else -> stageId.toString()
+            }
+            val raw = "$runId/$stageName/$stepIndex"
+            val md = java.security.MessageDigest.getInstance("SHA-256")
+            val hash = md.digest(raw.toByteArray(Charsets.UTF_8))
+            return hash.joinToString("") { "%02x".format(it) }
+        }
+    }
+}
 
 @Serializable
 enum class ArtifactKind {
@@ -111,4 +124,6 @@ data class BuildRun(
     val lastSeqByStep: Map<String, Long> = emptyMap(),
     val driverInstanceId: String? = null,
     val driverHeartbeatEpochMs: Long? = null,
+    /** Small captured step results (digests, sizes, dates) so a resumed driver can re-plan. */
+    val runtimeValues: Map<String, String> = emptyMap(),
 )

@@ -24,6 +24,11 @@ import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 
+import org.ide.lti.core.data.remote.ResourceVendoredFileAdapter
+import org.ide.lti.core.data.remote.StepExecutionAdapter
+import org.ide.lti.core.domain.ports.PipelineExecutionPort
+import org.ide.lti.core.domain.ports.VendoredFilePort
+
 internal actual val platformRepositoryModule = module {
     singleOf(::DesktopFileSystemRepository) { bind<FileSystemRepository>() }
     singleOf(::ConnectedDeviceRepositoryImpl) { bind<ConnectedDeviceRepository>() }
@@ -37,5 +42,9 @@ internal actual val platformRepositoryModule = module {
     single<WorkspaceProvisioningPort> {
         RemoteWorkspaceProvisioner(transport = get(), readinessPort = get(), keyProvisioner = get())
     }
+    single<PipelineExecutionPort> {
+        StepExecutionAdapter(transport = get())
+    }
+    single<VendoredFilePort> { ResourceVendoredFileAdapter() }
 }
 

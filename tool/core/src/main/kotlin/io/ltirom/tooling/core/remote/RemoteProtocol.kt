@@ -115,4 +115,3 @@ public data class SequencedStreamEvent(
     val event: StreamEvent
 )
 
-

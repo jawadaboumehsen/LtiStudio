@@ -16,6 +16,7 @@ import org.ide.lti.feature.workspace.creation.CreateWorkspaceViewModel
 import org.ide.lti.feature.workspace.panels.ai.AIAssistantViewModel
 import org.ide.lti.feature.workspace.panels.editor.EditorViewModel
 import org.ide.lti.feature.workspace.panels.explorer.ExplorerViewModel
+import org.ide.lti.feature.workspace.panels.run.BuildRunViewModel
 import org.ide.lti.feature.workspace.panels.target.WorkspaceConfigurationViewModel
 import org.ide.lti.feature.workspace.panels.terminal.TerminalViewModel
 import org.koin.core.module.dsl.viewModel
@@ -71,4 +72,12 @@ val workspaceModule = module {
     viewModelOf(::EditorViewModel)
     viewModelOf(::ExplorerViewModel)
     viewModelOf(::TerminalViewModel)
+    viewModel {
+        BuildRunViewModel(
+            workspaceManager = get(),
+            startPipelineRunUseCase = get(),
+            observeRunUseCase = get(),
+            runRepository = getOrNull(),
+        )
+    }
 }

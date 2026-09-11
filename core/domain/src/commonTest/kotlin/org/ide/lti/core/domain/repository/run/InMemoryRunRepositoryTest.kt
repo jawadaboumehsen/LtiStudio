@@ -14,8 +14,11 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
 import org.ide.lti.core.model.run.BuildRun
 import org.ide.lti.core.model.run.RunState
+import org.ide.lti.core.model.run.StageId
+import org.ide.lti.core.model.run.StageStep
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -93,5 +96,53 @@ class InMemoryRunRepositoryTest {
         val active3 = repo.latestActive("ws-1")
         assertNotNull(active3)
         assertEquals("r3", active3.id)
+    }
+
+    @Test
+    fun testClaimDriverAndHeartbeat() = runTest {
+        val repo = InMemoryRunRepository()
+        val run = createRun("r1", "ws-1", state = RunState.RUNNING)
+        repo.upsert(run)
+
+        val t0 = 100_000L
+        // Claim when free
+        val claimed1 = repo.claimDriver("r1", "driver-A", now = t0)
+        assertTrue(claimed1)
+        val afterClaim = repo.getRun("r1")
+        assertEquals("driver-A", afterClaim?.driverInstanceId)
+        assertEquals(t0, afterClaim?.driverHeartbeatEpochMs)
+
+        // Same driver claims again -> true
+        val claimedSame = repo.claimDriver("r1", "driver-A", now = t0 + 1000L)
+        assertTrue(claimedSame)
+
+        // Different driver attempts while heartbeat is fresh (10s < 45s) -> false
+        val claimedB = repo.claimDriver("r1", "driver-B", now = t0 + 10_000L)
+        assertFalse(claimedB)
+
+        // Heartbeat from current driver updates timestamp
+        repo.heartbeatDriver("r1", "driver-A", now = t0 + 20_000L)
+        assertEquals(t0 + 20_000L, repo.getRun("r1")?.driverHeartbeatEpochMs)
+
+        // Heartbeat from wrong driver does nothing
+        repo.heartbeatDriver("r1", "driver-B", now = t0 + 30_000L)
+        assertEquals(t0 + 20_000L, repo.getRun("r1")?.driverHeartbeatEpochMs)
+
+        // Lease expires after 45s (now > last + 45s) -> driver-B can claim
+        val claimedAfterExpiry = repo.claimDriver("r1", "driver-B", now = t0 + 70_000L)
+        assertTrue(claimedAfterExpiry)
+        assertEquals("driver-B", repo.getRun("r1")?.driverInstanceId)
+    }
+
+    @Test
+    fun testStageStepIdempotencyKeyDerivation() {
+        val key1 = StageStep.deriveIdempotencyKey("run-123", StageId.FIRMWARE_ACQUISITION, 0)
+        val key2 = StageStep.deriveIdempotencyKey("run-123", StageId.FIRMWARE_ACQUISITION, 0)
+        val key3 = StageStep.deriveIdempotencyKey("run-123", StageId.FIRMWARE_ACQUISITION, 1)
+
+        assertEquals(key1, key2)
+        assertTrue(key1.isNotBlank())
+        assertEquals(64, key1.length) // sha256 hex length
+        assertTrue(key1 != key3)
     }
 }

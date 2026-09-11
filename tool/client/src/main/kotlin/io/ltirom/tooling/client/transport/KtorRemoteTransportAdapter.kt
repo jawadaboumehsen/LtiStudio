@@ -234,5 +234,88 @@ public class KtorRemoteTransportAdapter(
             emptyList()
         }
     }
+
+    override suspend fun startRun(request: StartRunRequest): RunHandle {
+        return circuitBreaker.execute {
+            val conn = supervisor.ensureStarted()
+            val trace = TraceContext.create()
+            val response = httpClient.post("${conn.httpBaseUrl}/api/v1/runs") {
+                header(HttpHeaders.Authorization, "Bearer ${conn.token}")
+                header(TraceContext.HEADER_TRACE_ID, trace.traceId)
+                header(TraceContext.HEADER_SPAN_ID, trace.spanId)
+                header(HEADER_PROTOCOL_VERSION, PROTOCOL_VERSION)
+                contentType(ContentType.Application.Json)
+                setBody(request)
+            }
+            when (response.status) {
+                HttpStatusCode.Created, HttpStatusCode.OK -> response.body<RunHandle>()
+                HttpStatusCode.Conflict -> {
+                    val conflict = runCatching { response.body<RunConflict>() }.getOrNull()
+                    throw ToolingException("Run conflict: workspace locked by active run ${conflict?.existingRunId}")
+                }
+                HttpStatusCode.UnprocessableEntity -> {
+                    val err = runCatching { response.body<InvalidWorkingDirectory>() }.getOrNull()
+                    throw ToolingException("Invalid working directory: ${err?.path} (${err?.reason})")
+                }
+                else -> throw ToolingException("Failed to start run: status=${response.status}")
+            }
+        }
+    }
+
+    override suspend fun getRun(runId: String): RunStatus? {
+        return circuitBreaker.execute {
+            val conn = supervisor.ensureStarted()
+            val trace = TraceContext.create()
+            val response = httpClient.get("${conn.httpBaseUrl}/api/v1/runs/$runId") {
+                header(HttpHeaders.Authorization, "Bearer ${conn.token}")
+                header(TraceContext.HEADER_TRACE_ID, trace.traceId)
+                header(TraceContext.HEADER_SPAN_ID, trace.spanId)
+                header(HEADER_PROTOCOL_VERSION, PROTOCOL_VERSION)
+            }
+            if (response.status == HttpStatusCode.NotFound) {
+                null
+            } else {
+                response.body<RunStatus>()
+            }
+        }
+    }
+
+    override suspend fun listRuns(workspaceLock: String?): List<RunStatus> {
+        return circuitBreaker.execute {
+            val conn = supervisor.ensureStarted()
+            val trace = TraceContext.create()
+            val url = buildString {
+                append("${conn.httpBaseUrl}/api/v1/runs")
+                if (workspaceLock != null) {
+                    append("?workspaceLock=")
+                    append(workspaceLock.encodeURLParameter())
+                }
+            }
+            httpClient.get(url) {
+                header(HttpHeaders.Authorization, "Bearer ${conn.token}")
+                header(TraceContext.HEADER_TRACE_ID, trace.traceId)
+                header(TraceContext.HEADER_SPAN_ID, trace.spanId)
+                header(HEADER_PROTOCOL_VERSION, PROTOCOL_VERSION)
+            }.body()
+        }
+    }
+
+    override suspend fun cancelRun(runId: String, signal: String): RunCancelResponse? {
+        return circuitBreaker.execute {
+            val conn = supervisor.ensureStarted()
+            val trace = TraceContext.create()
+            val response = httpClient.post("${conn.httpBaseUrl}/api/v1/runs/$runId/cancel?signal=$signal") {
+                header(HttpHeaders.Authorization, "Bearer ${conn.token}")
+                header(TraceContext.HEADER_TRACE_ID, trace.traceId)
+                header(TraceContext.HEADER_SPAN_ID, trace.spanId)
+                header(HEADER_PROTOCOL_VERSION, PROTOCOL_VERSION)
+            }
+            if (response.status == HttpStatusCode.NotFound) {
+                null
+            } else {
+                response.body<RunCancelResponse>()
+            }
+        }
+    }
 }
 
