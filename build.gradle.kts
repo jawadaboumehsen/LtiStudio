@@ -1,4 +1,5 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
+import org.gradle.api.tasks.PathSensitivity
 
 plugins {
     alias(libs.plugins.kotlin.jvm) apply false
@@ -25,8 +26,12 @@ object DynamicVersion {
 
 tasks.register("versionFile") {
     val file = File(projectDir, "version.txt")
+    val versionProvider = provider { project.version.toString() }
+    outputs.file(file)
 
-    DynamicVersion.setDynamicVersion(file, project.version.toString())
+    doLast {
+        DynamicVersion.setDynamicVersion(file, versionProvider.get())
+    }
 }
 allprojects {
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>().configureEach {
@@ -61,8 +66,17 @@ allprojects {
 tasks.register("verifyDesignSystemGuardrails") {
     group = "verification"
     description = "Enforces design-system token usage and component-location boundaries."
-    outputs.upToDateWhen { false }
     val root = rootDir
+    inputs.files(
+        fileTree(root) {
+            include("**/*.kt")
+            exclude("**/build/**", ".gradle/**")
+        }
+    ).withPathSensitivity(PathSensitivity.RELATIVE)
+
+    val markerFile = layout.buildDirectory.file("reports/guardrails/verified.txt")
+    outputs.file(markerFile)
+    mustRunAfter(":tool:codegen:generateToolAdapters")
 
     doLast {
         val violations = mutableListOf<String>()
@@ -400,6 +414,10 @@ tasks.register("verifyDesignSystemGuardrails") {
                     violations.joinToString("\n") { "  - $it" },
             )
         }
+
+        val marker = markerFile.get().asFile
+        marker.parentFile.mkdirs()
+        marker.writeText("VERIFIED\n")
     }
 }
 
