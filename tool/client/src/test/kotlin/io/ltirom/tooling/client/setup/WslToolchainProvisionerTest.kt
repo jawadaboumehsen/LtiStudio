@@ -177,6 +177,12 @@ class WslToolchainProvisionerTest {
                     existingPaths.add(filePath)
                 }
             }
+            if (command.firstOrNull() == "find" && command.contains("-printf")) {
+                val dir = command[2].trimEnd('/')
+                val names = existingPaths.filter { it.startsWith("$dir/") && !it.removePrefix("$dir/").contains('/') }
+                    .map { it.removePrefix("$dir/") }
+                return CliExecutionResult(0, names.joinToString("\n"), "")
+            }
             if (cmdStr.contains("test -e") || cmdStr.contains("test -d") || cmdStr.contains("test -x") || cmdStr.contains("test -r") || cmdStr.contains("test -f")) {
                 if (cmdStr.contains("java-17-openjdk") || cmdStr.contains("java-21-openjdk")) {
                     return CliExecutionResult(0, "", "")
@@ -219,7 +225,35 @@ class WslToolchainProvisionerTest {
 
         val serverStep = state.steps.first { it.stage == SetupStepStage.SERVER_CONNECTIVITY }
         assertEquals(StepStatus.PENDING, serverStep.status)
+        // Not ready because the toolchain is absent in this fixture, not because the daemon is idle.
         assertFalse(state.isAllReady)
+    }
+
+    @Test
+    fun `checkStatus is ready with an idle daemon when the toolchain is installed`() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val fakeCli = FakeWslCliExecutor().apply {
+            existingPaths.add("/home/lti/LtiRomWorkDir")
+            existingPaths.add("/home/lti/LtiRomTools/external")
+            WslToolchainProvisioner.SUBMODULES.forEach { existingPaths.add("/home/lti/LtiRomTools/external/${it.name}") }
+            WslToolchainProvisioner.CORE_BINARIES.forEach { existingPaths.add("/home/lti/LtiRomTools/bin/$it") }
+            WslToolchainProvisioner.ALL_CORE_TOOLS.forEach { existingPaths.add("/home/lti/LtiRomTools/bin/$it") }
+        }
+        val provisioner = WslToolchainProvisioner(
+            supervisor = FakeDaemonSupervisor(descriptor = null, isHealthyResult = false),
+            transport = FakeRemoteTransport(healthInfo = null),
+            detector = WslEnvironmentDetector(cli = fakeCli),
+            cli = fakeCli,
+            dispatcher = testDispatcher
+        )
+
+        val state = provisioner.checkStatus()
+
+        assertEquals(StepStatus.PENDING, state.steps.first { it.stage == SetupStepStage.SERVER_CONNECTIVITY }.status)
+        assertTrue(state.isAllReady)
+        // The whole toolchain probe is a single `find` listing, not one process per binary.
+        assertEquals(1, fakeCli.commandLog.count { it.startsWith("WSL: find -L /home/lti/LtiRomTools/bin") })
+        assertTrue(fakeCli.commandLog.none { it.startsWith("WSL: test -x /home/lti/LtiRomTools/bin/") })
     }
 
     @Test

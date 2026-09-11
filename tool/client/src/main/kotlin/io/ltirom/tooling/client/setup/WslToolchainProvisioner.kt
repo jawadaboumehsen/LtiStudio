@@ -122,6 +122,16 @@ public class WslToolchainProvisioner(
     }
 
 
+    /** Names of the executable files in [binDir] (symlinks followed) via a single `find` call. */
+    private fun listExecutables(distro: String, binDir: String): Set<String> {
+        val result = cli.execute(
+            distro,
+            listOf("find", "-L", binDir, "-maxdepth", "1", "-type", "f", "-perm", "-u+x", "-printf", "%f\n"),
+        )
+        if (result.exitCode != 0) return emptySet()
+        return result.output.lineSequence().map { it.trim() }.filter { it.isNotEmpty() }.toSet()
+    }
+
     override suspend fun checkStatus(): ToolchainSetupState = withContext(dispatcher) {
         if (_state.value.isChecking) return@withContext _state.value
         _state.update { it.copy(isChecking = true) }
@@ -181,11 +191,9 @@ public class WslToolchainProvisioner(
         val extDir = "$toolsRoot/external"
         val avbKeyFile = "$workDir/security/avb/lti_rsa4096.pem"
         val binDir = "$toolsRoot/bin"
-        val binariesPresent = if (isWslOk) {
-            CORE_BINARIES.all { bin ->
-                cli.execute(distro, listOf("test", "-x", "$binDir/$bin")).exitCode == 0
-            }
-        } else false
+        // One `find` listing replaces ~47 sequential `wsl.exe … test -x` spawns (the slow "compilers" probe).
+        val executables = if (isWslOk) listExecutables(distro, binDir) else emptySet()
+        val binariesPresent = isWslOk && CORE_BINARIES.all { it in executables }
 
         // Fast-path: If setup was already completed and core binaries exist, avoid slow CLI re-probing
         val persisted = repository?.currentState
@@ -220,7 +228,7 @@ public class WslToolchainProvisioner(
                         lastTested = pTool.lastVerifiedTimestamp?.let { "Verified" } ?: "Ready"
                     )
                 } else {
-                    val exists = cli.execute(distro, listOf("test", "-x", toolPath)).exitCode == 0
+                    val exists = tool.binaryName in executables
                     tool.copy(
                         path = if (exists) toolPath else null,
                         status = if (exists) StepStatus.SUCCESS else StepStatus.PENDING
@@ -334,9 +342,7 @@ public class WslToolchainProvisioner(
                 status = StepStatus.PENDING
             )
         } else {
-            val missingBins = CORE_BINARIES.filter { bin ->
-                cli.execute(distro, listOf("test", "-x", "$binDir/$bin")).exitCode != 0
-            }
+            val missingBins = CORE_BINARIES.filterNot { it in executables }
             if (missingBins.isEmpty()) {
                 SetupStepDetail(
                     stage = SetupStepStage.TOOLCHAIN_COMPILATION,
@@ -355,7 +361,14 @@ public class WslToolchainProvisioner(
         }
 
         val steps = listOf(wslStep, serverStep, diagStep, repoStep, buildStep)
-        val allReady = steps.all { it.status == StepStatus.SUCCESS || it.status == StepStatus.WARNING }
+        // An idle daemon (launched on demand) must not force a full setup on every launch; only a
+        // FAILED bridge blocks readiness. Everything else has to be SUCCESS or a tolerated WARNING.
+        val allReady = steps.all { step ->
+            when {
+                step.stage == SetupStepStage.SERVER_CONNECTIVITY -> step.status != StepStatus.FAILED
+                else -> step.status == StepStatus.SUCCESS || step.status == StepStatus.WARNING
+            }
+        }
 
         val distros = if (isWslOk) detector.listDistros() else listOf("Ubuntu")
         val daemonPing = if (isWslOk) {
@@ -370,7 +383,7 @@ public class WslToolchainProvisioner(
         val updatedTools = if (isWslOk) {
             currentTools.map { tool ->
                 val toolPath = "$binDir/${tool.binaryName}"
-                val exists = cli.execute(distro, listOf("test", "-x", toolPath)).exitCode == 0
+                val exists = tool.binaryName in executables
                 tool.copy(
                     path = if (exists) toolPath else null,
                     status = if (exists) StepStatus.SUCCESS else StepStatus.PENDING
@@ -536,9 +549,10 @@ public class WslToolchainProvisioner(
 
         // Update tools matrix state and persist
         val currentTools = _state.value.toolsMatrix.ifEmpty { ToolchainSetupState.defaultToolsMatrix() }
+        val builtExecutables = listExecutables(distro, binDir)
         val updatedTools = currentTools.map { tool ->
             val toolPath = "$binDir/${tool.binaryName}"
-            val exists = cli.execute(distro, listOf("test", "-x", toolPath)).exitCode == 0
+            val exists = tool.binaryName in builtExecutables
             if (exists) {
                 repository?.updateTool(tool.id) { t ->
                     t.copy(
