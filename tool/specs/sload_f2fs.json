@@ -1,0 +1,115 @@
+{
+    "schemaVersion": 1,
+    "tool": "sload_f2fs",
+    "executable": "sload_f2fs",
+    "platform": [
+        "linux-x86_64"
+    ],
+    "sourceRevision": "HEAD",
+    "binarySha256": "5a5e2295296454f05fc10f6567aba98ffc408a809b557dac56319617d47cb30b",
+    "helpSha256": "6416f6da8dbe09d19bee87bb6a5306935621ec3fa9f43f72a88f456260d12b37",
+    "globalOptions": [
+        {
+            "name": "C",
+            "spelling": "-C",
+            "description": "fs_config",
+            "type": "STRING"
+        },
+        {
+            "name": "F",
+            "spelling": "-f",
+            "description": "source directory [path of the source directory]",
+            "type": "STRING"
+        },
+        {
+            "name": "P",
+            "spelling": "-p",
+            "description": "product out directory",
+            "type": "STRING"
+        },
+        {
+            "name": "S",
+            "spelling": "-s",
+            "description": "file_contexts",
+            "type": "STRING"
+        },
+        {
+            "name": "T",
+            "spelling": "-t",
+            "description": "mount point [prefix of target fs path, default:/]",
+            "type": "STRING"
+        },
+        {
+            "name": "L",
+            "spelling": "-L",
+            "description": "<log-of-blocks-per-cluster>, default 2",
+            "type": "STRING"
+        },
+        {
+            "name": "A",
+            "spelling": "-a",
+            "description": "<algorithm> compression algorithm, default LZ4",
+            "type": "STRING"
+        },
+        {
+            "name": "X",
+            "spelling": "-x",
+            "description": "<ext> compress files except for these extensions.",
+            "type": "STRING"
+        },
+        {
+            "name": "I",
+            "spelling": "-i",
+            "description": "<ext> compress files with these extensions only.",
+            "type": "STRING"
+        },
+        {
+            "name": "M",
+            "spelling": "-m",
+            "description": "<num> min compressed blocks per cluster",
+            "type": "STRING"
+        },
+        {
+            "name": "R",
+            "spelling": "-r",
+            "description": "read only (to release unused blocks) for compressed files",
+            "type": "BOOLEAN"
+        }
+    ],
+    "exitCodes": [
+        {
+            "code": 0,
+            "meaning": "Success",
+            "isSuccess": true
+        },
+        {
+            "code": 1,
+            "meaning": "Error/Failure",
+            "isSuccess": false
+        }
+    ],
+    "defaultTimeout": "30s",
+    "risk": "HOST_WRITE",
+    "commands": [
+        {
+            "name": "execute",
+            "subcommandPath": [
+                "_self"
+            ],
+            "description": "Execute the tool with its options and positional operands",
+            "arguments": [
+                {
+                    "name": "positionalArgs",
+                    "description": "Tool-specific positional operands",
+                    "type": "STRING",
+                    "required": false,
+                    "repeatable": true
+                }
+            ],
+            "risk": "HOST_WRITE",
+            "outputParser": "identity",
+            "outputType": "String",
+            "artifacts": []
+        }
+    ]
+}

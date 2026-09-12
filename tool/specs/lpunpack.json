@@ -1,0 +1,80 @@
+{
+    "schemaVersion": 1,
+    "tool": "lpunpack",
+    "executable": "lpunpack",
+    "platform": [
+        "linux-x86_64"
+    ],
+    "sourceRevision": "HEAD",
+    "binarySha256": "3e5f4ab16518462ca94bddc0ff58ea3909afefa0243c30a6b40a7c398f4567e2",
+    "helpSha256": "f75dd7e0a98d2b984c2d0b78b3bd8f170c51cafb6859fc540fdb2c6f70241ca7",
+    "globalOptions": [
+        {
+            "name": "image",
+            "spelling": "--image",
+            "aliases": [
+                "-i"
+            ],
+            "description": "Use the given file as an additional super image.",
+            "type": "STRING"
+        },
+        {
+            "name": "partition",
+            "spelling": "--partition",
+            "aliases": [
+                "-p"
+            ],
+            "description": "Extract the named partition. This can",
+            "type": "STRING",
+            "repeatable": true
+        },
+        {
+            "name": "slot",
+            "spelling": "--slot",
+            "aliases": [
+                "-S"
+            ],
+            "description": "Slot number (default is 0).",
+            "type": "STRING"
+        }
+    ],
+    "exitCodes": [
+        {
+            "code": 0,
+            "meaning": "Success",
+            "isSuccess": true
+        },
+        {
+            "code": 1,
+            "meaning": "Error/Failure",
+            "isSuccess": false
+        }
+    ],
+    "defaultTimeout": "30s",
+    "risk": "HOST_WRITE",
+    "commands": [
+        {
+            "name": "execute",
+            "subcommandPath": [
+                "_self"
+            ],
+            "description": "Execute the tool with its options and positional operands",
+            "arguments": [
+                {
+                    "name": "positionalArgs",
+                    "description": "Tool-specific positional operands",
+                    "type": "STRING",
+                    "required": false,
+                    "repeatable": true
+                }
+            ],
+            "risk": "HOST_WRITE",
+            "outputParser": "identity",
+            "outputType": "String",
+            "artifacts": [
+                {"name": "superImage", "parameter": "positionalArgs", "index": 0, "type": "FILE", "direction": "INPUT", "required": true},
+                {"name": "outputDirectory", "parameter": "positionalArgs", "index": 1, "type": "DIRECTORY", "direction": "OUTPUT", "required": false}
+            ]
+        }
+    ]
+}

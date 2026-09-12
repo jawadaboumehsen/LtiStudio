@@ -1,0 +1,4 @@
+dump chunks [options] files...
+
+Options:
+ --help                                            Displays this help menu

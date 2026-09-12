@@ -1,0 +1,5 @@
+e2fsdroid: invalid option -- '-'
+e2fsdroid [-B block_list] [-D basefs_out] [-T timestamp]
+	[-C fs_config] [-S file_contexts] [-p product_out]
+	[-a mountpoint] [-d basefs_in] [-f src_dir] [-e] [-s]
+	[-u uid-mapping] [-g gid-mapping] image

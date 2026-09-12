@@ -1,0 +1,83 @@
+{
+    "schemaVersion": 1,
+    "tool": "repack_bootimg",
+    "executable": "repack_bootimg",
+    "platform": [
+        "linux-x86_64"
+    ],
+    "sourceRevision": "HEAD",
+    "binarySha256": "eb02c40d1d85e8619e3b308459a3a7628ef28a7e2ceabe83c8060ad6378f1363",
+    "helpSha256": "bd874f43f48d3d9c0e9616dcde8567dbbacdfe697c31b0801485531b83fb3ffd",
+    "globalOptions": [
+        {
+            "name": "help",
+            "spelling": "--help",
+            "aliases": [
+                "-h"
+            ],
+            "description": "show this help message and exit",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "srcBootimg",
+            "spelling": "--src_bootimg",
+            "description": "filename to source boot image",
+            "type": "STRING"
+        },
+        {
+            "name": "local",
+            "spelling": "--local",
+            "description": "use local files as repack source",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "dstBootimg",
+            "spelling": "--dst_bootimg",
+            "description": "filename to destination boot image",
+            "type": "STRING"
+        },
+        {
+            "name": "ramdiskAdd",
+            "spelling": "--ramdisk_add",
+            "description": "a copy pair to copy into the ramdisk of --dst_bootimg (SRC_FILE:DST_FILE)",
+            "type": "STRING",
+            "repeatable": true
+        }
+    ],
+    "exitCodes": [
+        {
+            "code": 0,
+            "meaning": "Success",
+            "isSuccess": true
+        },
+        {
+            "code": 1,
+            "meaning": "Error/Failure",
+            "isSuccess": false
+        }
+    ],
+    "defaultTimeout": "30s",
+    "risk": "HOST_WRITE",
+    "commands": [
+        {
+            "name": "execute",
+            "subcommandPath": [
+                "_self"
+            ],
+            "description": "Execute the tool with its options and positional operands",
+            "arguments": [
+                {
+                    "name": "positionalArgs",
+                    "description": "Tool-specific positional operands",
+                    "type": "STRING",
+                    "required": false,
+                    "repeatable": true
+                }
+            ],
+            "risk": "HOST_WRITE",
+            "outputParser": "identity",
+            "outputType": "String",
+            "artifacts": []
+        }
+    ]
+}

@@ -1,0 +1,17 @@
+usage: avbtool verify_image [-h] --image IMAGE [--key KEY]
+                            [--expected_chain_partition PART_NAME:ROLLBACK_SLOT:KEY_PATH]
+                            [--follow_chain_partitions]
+                            [--accept_zeroed_hashtree]
+
+options:
+  -h, --help            show this help message and exit
+  --image IMAGE         Image to verify
+  --key KEY             Check embedded public key matches KEY
+  --expected_chain_partition PART_NAME:ROLLBACK_SLOT:KEY_PATH
+                        Expected chain partition
+  --follow_chain_partitions
+                        Follows chain partitions even when not specified with
+                        the --expected_chain_partition option
+  --accept_zeroed_hashtree
+                        Accept images where the hashtree or FEC data is zeroed
+                        out

@@ -1,0 +1,5 @@
+usage: avbtool zero_hashtree [-h] --image IMAGE
+
+options:
+  -h, --help     show this help message and exit
+  --image IMAGE  Image with a footer

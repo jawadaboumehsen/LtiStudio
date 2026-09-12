@@ -1,0 +1,4 @@
+dump overlayable [options] files...
+
+Options:
+ --help                                            Displays this help menu

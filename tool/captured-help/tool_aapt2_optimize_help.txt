@@ -1,0 +1,40 @@
+aapt2 optimize [options] files...
+
+Options:
+ --help                                            Displays this help menu
+ -o arg                                            Path to the output APK.
+ -d arg                                            Path to the output directory (for splits).
+ -x arg                                            Path to XML configuration file.
+ -p                                                Print the multi APK artifacts and exit.
+ --target-densities arg                            Comma separated list of the screen densities that the APK will be optimized for.
+                                                   All the resources that would be unused on devices of the given densities will be
+                                                   removed from the APK.
+ --resources-config-path arg                       Path to the resources.cfg file containing the list of resources and
+                                                   directives to each resource.
+                                                   Format: type/resource_name#[directive][,directive]
+ -c arg                                            Comma separated list of configurations to include. The default
+                                                   is all configurations.
+ --split arg                                       Split resources matching a set of configs out to a Split APK.
+                                                   Syntax: path/to/output.apk;<config>[,<config>[...]].
+                                                   On Windows, use a semicolon ';' separator instead.
+ --keep-artifacts arg                              Comma separated list of artifacts to keep. If none are specified,
+                                                   all artifacts will be kept.
+ --enable-sparse-encoding                          Enables encoding sparse entries using a binary search tree.
+                                                   This decreases APK size at the cost of resource retrieval performance.
+                                                   Only applies sparse encoding if minSdk of the APK is >= 32
+ --force-sparse-encoding                           Enables encoding sparse entries using a binary search tree.
+                                                   This decreases APK size at the cost of resource retrieval performance.
+                                                   Only applies sparse encoding if minSdk of the APK is >= 32 or is not set
+ --enable-compact-entries                          This decreases APK size by using compact resource entries for simple data types.
+ --collapse-resource-names                         Collapses resource names to a single value in the key string pool. Resources can
+                                                   be exempted using the "no_collapse" directive in a file specified by --resources-config-path.
+ --shorten-resource-paths                          Shortens the paths of resources inside the APK. Resources can be exempted using the
+                                                   "no_path_shorten" directive in a file specified by --resources-config-path.
+ --resource-path-shortening-map arg                [Deprecated]Path to output the map of old resource paths to shortened paths.
+ --save-obfuscation-map arg                        Path to output the map of original paths/names to obfuscated paths/names.
+ --deduplicate-entry-values                        Whether to deduplicate pairs of resource entry and value for simple resources.
+                                                   This is recommended to be used together with '--collapse-resource-names' flag or for
+                                                   APKs where resource names are manually collapsed. For such APKs this flag allows to
+                                                   store the same resource value only once in resource table which decreases APK size.
+                                                   Has no effect on APKs where resource names are kept.
+ -v                                                Enables verbose logging

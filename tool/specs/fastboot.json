@@ -1,0 +1,537 @@
+{
+  "schemaVersion": 1,
+  "tool": "fastboot",
+  "executable": "fastboot",
+  "platform": [
+    "linux-x86_64"
+  ],
+  "sourceRevision": "HEAD",
+  "binarySha256": "03fa73febcbd80d7aff8831228262a2030d2d5cb93720de353c86be2f87d2a39",
+  "versionText": "fastboot version 36.0.1-android-tools\nInstalled as fastboot",
+  "helpSha256": "fab4abc6dfed3a49c8e2f11db43322439a9a4ddadece20008add6d4ce2307ae1",
+  "globalOptions": [
+    {
+      "name": "disableFastbootInfo",
+      "spelling": "--disable-fastboot-info",
+      "description": "Will collects tasks from image list rather than fastboot-info.",
+      "type": "BOOLEAN"
+    },
+    {
+      "name": "disableSuperOptimization",
+      "spelling": "--disable-super-optimization",
+      "description": "Disables optimizations on flashing super partition.",
+      "type": "BOOLEAN"
+    },
+    {
+      "name": "disableVerification",
+      "spelling": "--disable-verification",
+      "description": "Sets disable-verification when flashing vbmeta.",
+      "type": "BOOLEAN"
+    },
+    {
+      "name": "disableVerity",
+      "spelling": "--disable-verity",
+      "description": "Sets disable-verity when flashing vbmeta.",
+      "type": "BOOLEAN"
+    },
+    {
+      "name": "excludeDynamicPartitions",
+      "spelling": "--exclude-dynamic-partitions",
+      "description": "Excludes flashing of dynamic partitions.",
+      "type": "BOOLEAN"
+    },
+    {
+      "name": "forceOperation",
+      "spelling": "--force",
+      "description": "Force a flash operation that may be unsafe.",
+      "type": "BOOLEAN"
+    },
+    {
+      "name": "fsOptions",
+      "spelling": "--fs-options",
+      "description": "Enable filesystem features. OPTION supports casefold, projid, compress",
+      "type": "STRING"
+    },
+    {
+      "name": "selectDevice",
+      "spelling": "-s",
+      "description": "Specify a USB device.",
+      "type": "STRING"
+    },
+    {
+      "name": "setActiveSlot",
+      "spelling": "--set-active",
+      "description": "Sets the active slot before rebooting.",
+      "type": "STRING"
+    },
+    {
+      "name": "skipReboot",
+      "spelling": "--skip-reboot",
+      "description": "Don't reboot device after flashing.",
+      "type": "BOOLEAN"
+    },
+    {
+      "name": "skipSecondarySlots",
+      "spelling": "--skip-secondary",
+      "description": "Don't flash secondary slots in flashall/update.",
+      "type": "BOOLEAN"
+    },
+    {
+      "name": "slotTarget",
+      "spelling": "--slot",
+      "description": "Use SLOT; 'all' for both slots, 'other' for the other slot.",
+      "type": "STRING"
+    },
+    {
+      "name": "sparseSize",
+      "spelling": "-S",
+      "description": "break into sparse files no larger than SIZE",
+      "type": "STRING"
+    },
+    {
+      "name": "unbufferedOutput",
+      "spelling": "--unbuffered",
+      "description": "Don't buffer input or output.",
+      "type": "BOOLEAN"
+    },
+    {
+      "name": "verboseMode",
+      "spelling": "--verbose",
+      "aliases": [
+        "-v"
+      ],
+      "description": "Verbose output.",
+      "type": "BOOLEAN"
+    },
+    {
+      "name": "wipeUserdata",
+      "spelling": "-w",
+      "description": "Wipe userdata.",
+      "type": "BOOLEAN"
+    }
+  ],
+  "commands": [
+    {
+      "name": "boot",
+      "subcommandPath": [
+        "boot"
+      ],
+      "description": "download and boot kernel",
+      "arguments": [
+        {
+          "name": "imagePath",
+          "description": "path to kernel image",
+          "type": "PATH",
+          "required": true
+        }
+      ],
+      "risk": "DEVICE_WRITE"
+    },
+    {
+      "name": "createLogicalPartition",
+      "subcommandPath": [
+        "create-logical-partition"
+      ],
+      "description": "create logical partition",
+      "arguments": [
+        {
+          "name": "name",
+          "description": "partition name",
+          "type": "STRING",
+          "required": true
+        },
+        {
+          "name": "size",
+          "description": "partition size",
+          "type": "STRING",
+          "required": true
+        }
+      ],
+      "risk": "DEVICE_WRITE",
+      "outputParser": "identity",
+      "outputType": "String"
+    },
+    {
+      "name": "deleteLogicalPartition",
+      "subcommandPath": [
+        "delete-logical-partition"
+      ],
+      "description": "delete logical partition",
+      "arguments": [
+        {
+          "name": "name",
+          "description": "partition name",
+          "type": "STRING",
+          "required": true
+        }
+      ],
+      "risk": "DEVICE_WRITE",
+      "outputParser": "identity",
+      "outputType": "String"
+    },
+    {
+      "name": "devices",
+      "subcommandPath": [
+        "devices"
+      ],
+      "description": "list bootloader devices",
+      "arguments": [],
+      "risk": "READ_ONLY",
+      "outputParser": "identity",
+      "outputType": "String"
+    },
+    {
+      "name": "erase",
+      "subcommandPath": [
+        "erase"
+      ],
+      "description": "erase a partition",
+      "arguments": [
+        {
+          "name": "partition",
+          "description": "partition name",
+          "type": "STRING",
+          "required": true
+        }
+      ],
+      "risk": "DEVICE_WRITE"
+    },
+    {
+      "name": "fetch",
+      "subcommandPath": [
+        "fetch"
+      ],
+      "description": "fetch a partition to file",
+      "arguments": [
+        {
+          "name": "partition",
+          "description": "partition name",
+          "type": "STRING",
+          "required": true
+        },
+        {
+          "name": "outputPath",
+          "description": "output file path",
+          "type": "PATH",
+          "required": true
+        }
+      ],
+      "risk": "HOST_WRITE"
+    },
+    {
+      "name": "flash",
+      "subcommandPath": [
+        "flash"
+      ],
+      "description": "flash partition with image",
+      "arguments": [
+        {
+          "name": "partition",
+          "description": "partition name",
+          "type": "STRING",
+          "required": true
+        },
+        {
+          "name": "imagePath",
+          "description": "path to image file (optional)",
+          "type": "PATH",
+          "required": false
+        }
+      ],
+      "risk": "DEVICE_WRITE"
+    },
+    {
+      "name": "flashRaw",
+      "subcommandPath": [
+        "flash:raw"
+      ],
+      "description": "create and flash a boot image",
+      "arguments": [
+        {
+          "name": "partition",
+          "description": "partition name",
+          "type": "STRING",
+          "required": true
+        },
+        {
+          "name": "kernel",
+          "description": "kernel image",
+          "type": "PATH",
+          "required": true
+        },
+        {
+          "name": "ramdisk",
+          "description": "optional ramdisk",
+          "type": "PATH",
+          "required": false
+        },
+        {
+          "name": "second",
+          "description": "optional second image",
+          "type": "PATH",
+          "required": false
+        }
+      ],
+      "risk": "DEVICE_WRITE",
+      "outputParser": "identity",
+      "outputType": "String"
+    },
+    {
+      "name": "flashall",
+      "subcommandPath": [
+        "flashall"
+      ],
+      "description": "flash all partitions",
+      "arguments": [],
+      "risk": "DEVICE_WRITE",
+      "outputParser": "identity",
+      "outputType": "String"
+    },
+    {
+      "name": "flashing",
+      "subcommandPath": [
+        "flashing"
+      ],
+      "description": "lock/unlock partitions",
+      "arguments": [
+        {
+          "name": "action",
+          "description": "lock, unlock, lock_critical, unlock_critical, get_unlock_ability",
+          "type": "STRING",
+          "required": true
+        }
+      ],
+      "risk": "IRREVERSIBLE"
+    },
+    {
+      "name": "format",
+      "subcommandPath": [
+        "format"
+      ],
+      "description": "format a partition",
+      "arguments": [
+        {
+          "name": "partition",
+          "description": "partition name",
+          "type": "STRING",
+          "required": true
+        }
+      ],
+      "risk": "DEVICE_WRITE"
+    },
+    {
+      "name": "getStaged",
+      "subcommandPath": [
+        "get_staged"
+      ],
+      "description": "retrieve staged file",
+      "arguments": [
+        {
+          "name": "output",
+          "description": "output file",
+          "type": "PATH",
+          "required": true
+        }
+      ],
+      "risk": "HOST_WRITE",
+      "outputParser": "identity",
+      "outputType": "String"
+    },
+    {
+      "name": "getvar",
+      "subcommandPath": [
+        "getvar"
+      ],
+      "description": "display a bootloader variable",
+      "arguments": [
+        {
+          "name": "variable",
+          "description": "variable name",
+          "type": "STRING",
+          "required": true
+        }
+      ],
+      "outputParser": "fastboot-vars",
+      "outputType": "Map<String, String>",
+      "risk": "READ_ONLY"
+    },
+    {
+      "name": "gsi",
+      "subcommandPath": [
+        "gsi"
+      ],
+      "description": "manage GSI installation",
+      "arguments": [
+        {
+          "name": "args",
+          "description": "GSI arguments",
+          "type": "STRING",
+          "required": false,
+          "repeatable": true
+        }
+      ],
+      "risk": "DEVICE_WRITE",
+      "outputParser": "identity",
+      "outputType": "String"
+    },
+    {
+      "name": "oem",
+      "subcommandPath": [
+        "oem"
+      ],
+      "description": "execute OEM command",
+      "arguments": [
+        {
+          "name": "oemCmd",
+          "description": "OEM command and arguments",
+          "type": "STRING",
+          "required": true,
+          "repeatable": true
+        }
+      ],
+      "risk": "IRREVERSIBLE"
+    },
+    {
+      "name": "reboot",
+      "subcommandPath": [
+        "reboot"
+      ],
+      "description": "reboot device",
+      "arguments": [
+        {
+          "name": "target",
+          "description": "reboot target: bootloader, recovery, fastboot",
+          "type": "STRING",
+          "required": false
+        }
+      ],
+      "risk": "DEVICE_WRITE"
+    },
+    {
+      "name": "resizeLogicalPartition",
+      "subcommandPath": [
+        "resize-logical-partition"
+      ],
+      "description": "resize logical partition",
+      "arguments": [
+        {
+          "name": "name",
+          "description": "partition name",
+          "type": "STRING",
+          "required": true
+        },
+        {
+          "name": "size",
+          "description": "partition size",
+          "type": "STRING",
+          "required": true
+        }
+      ],
+      "risk": "DEVICE_WRITE",
+      "outputParser": "identity",
+      "outputType": "String"
+    },
+    {
+      "name": "setActive",
+      "subcommandPath": [
+        "set_active"
+      ],
+      "description": "set active slot",
+      "arguments": [
+        {
+          "name": "slot",
+          "description": "slot name",
+          "type": "STRING",
+          "required": true
+        }
+      ],
+      "risk": "DEVICE_WRITE",
+      "outputParser": "identity",
+      "outputType": "String"
+    },
+    {
+      "name": "snapshotUpdate",
+      "subcommandPath": [
+        "snapshot-update"
+      ],
+      "description": "manage snapshot update",
+      "arguments": [
+        {
+          "name": "action",
+          "description": "cancel or merge",
+          "type": "STRING",
+          "required": true
+        }
+      ],
+      "risk": "IRREVERSIBLE",
+      "outputParser": "identity",
+      "outputType": "String"
+    },
+    {
+      "name": "stage",
+      "subcommandPath": [
+        "stage"
+      ],
+      "description": "stage a file",
+      "arguments": [
+        {
+          "name": "input",
+          "description": "input file",
+          "type": "PATH",
+          "required": true
+        }
+      ],
+      "risk": "DEVICE_WRITE",
+      "outputParser": "identity",
+      "outputType": "String"
+    },
+    {
+      "name": "update",
+      "subcommandPath": [
+        "update"
+      ],
+      "description": "flash device from update.zip",
+      "arguments": [
+        {
+          "name": "zipPath",
+          "description": "path to update zip file",
+          "type": "PATH",
+          "required": true
+        }
+      ],
+      "risk": "DEVICE_WRITE"
+    },
+    {
+      "name": "wipeSuper",
+      "subcommandPath": [
+        "wipe-super"
+      ],
+      "description": "wipe super partition",
+      "arguments": [
+        {
+          "name": "image",
+          "description": "optional empty super image",
+          "type": "PATH",
+          "required": false
+        }
+      ],
+      "risk": "DEVICE_WRITE",
+      "outputParser": "identity",
+      "outputType": "String"
+    }
+  ],
+  "exitCodes": [
+    {
+      "code": 0,
+      "meaning": "Success",
+      "isSuccess": true
+    },
+    {
+      "code": 1,
+      "meaning": "Error/Failure",
+      "isSuccess": false
+    }
+  ],
+  "defaultTimeout": "30s",
+  "risk": "READ_ONLY"
+}

@@ -1,0 +1,1232 @@
+{
+    "schemaVersion": 1,
+    "tool": "apktool",
+    "executable": "apktool",
+    "platform": [
+        "linux-x86_64"
+    ],
+    "sourceRevision": "HEAD",
+    "binarySha256": "17de374e5e34f90d4e6ac333b970814131b74750de1a1468c23ede19b7308f07",
+    "helpSha256": "03d2d5720a2c6c35cbd75f76220e6fd981231566384701b6a13a58a7ec3f109c",
+    "commands": [
+        {
+            "name": "d",
+            "subcommandPath": [
+                "d"
+            ],
+            "description": "Unrecognized option: -h",
+            "options": [
+                {
+                    "name": "quiet",
+                    "spelling": "--quiet",
+                    "aliases": [
+                        "-q"
+                    ],
+                    "description": "Suppress normal output.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "verbose",
+                    "spelling": "--verbose",
+                    "aliases": [
+                        "-v"
+                    ],
+                    "description": "Increase output verbosity.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "allSrc",
+                    "spelling": "--all-src",
+                    "aliases": [
+                        "-a"
+                    ],
+                    "description": "Decode all sources in the apk (includes unknown dex files).",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "force",
+                    "spelling": "--force",
+                    "aliases": [
+                        "-f"
+                    ],
+                    "description": "Force delete destination directory.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "ignoreRawValues",
+                    "spelling": "--ignore-raw-values",
+                    "description": "Ignore raw attribute values in XML resource files.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "jobs",
+                    "spelling": "--jobs",
+                    "aliases": [
+                        "-j"
+                    ],
+                    "description": "Set the number of jobs to execute in parallel to <num>.",
+                    "type": "INT"
+                },
+                {
+                    "name": "keepBrokenRes",
+                    "spelling": "--keep-broken-res",
+                    "description": "Use if there was an error and some resources were dropped, e.g. \"Invalid resource config detected. Dropping resources\", but you want to decode them anyway, even with errors. You will have to fix them manually before building.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "lib",
+                    "spelling": "--lib",
+                    "aliases": [
+                        "-l"
+                    ],
+                    "description": "Use shared library <package> located in <file>. Can be specified multiple times.",
+                    "type": "STRING",
+                    "repeatable": true
+                },
+                {
+                    "name": "matchOriginal",
+                    "spelling": "--match-original",
+                    "description": "Keep files closest to original as possible (prevents rebuild).",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "noAssets",
+                    "spelling": "--no-assets",
+                    "description": "Do not decode assets.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "noDebugInfo",
+                    "spelling": "--no-debug-info",
+                    "description": "Do not include debug info in sources (.local, .param, .line, etc.)",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "output",
+                    "spelling": "--output",
+                    "aliases": [
+                        "-o"
+                    ],
+                    "description": "Output decoded files to <dir>. (default: apk.out)",
+                    "type": "PATH",
+                    "valueType": "path"
+                },
+                {
+                    "name": "onlyManifest",
+                    "spelling": "--only-manifest",
+                    "description": "Only decode AndroidManifest.xml without resources.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "framePath",
+                    "spelling": "--frame-path",
+                    "aliases": [
+                        "-p"
+                    ],
+                    "description": "Use framework files located in <dir>.",
+                    "type": "PATH",
+                    "valueType": "path"
+                },
+                {
+                    "name": "noRes",
+                    "spelling": "--no-res",
+                    "aliases": [
+                        "-r"
+                    ],
+                    "description": "Do not decode resources.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "resResolveMode",
+                    "spelling": "--res-resolve-mode",
+                    "description": "Set the resolve mode for resources to <mode>. Possible values: 'default', 'greedy' or 'lazy'.",
+                    "type": "STRING"
+                },
+                {
+                    "name": "noSrc",
+                    "spelling": "--no-src",
+                    "aliases": [
+                        "-s"
+                    ],
+                    "description": "Do not decode sources.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "frameTag",
+                    "spelling": "--frame-tag",
+                    "aliases": [
+                        "-t"
+                    ],
+                    "description": "Use framework files tagged with <tag>.",
+                    "type": "STRING"
+                }
+            ],
+            "arguments": [
+                {
+                    "name": "apkFile",
+                    "description": "Positional apk-file accepted by the tool",
+                    "type": "PATH",
+                    "valueType": "path"
+                }
+            ],
+            "risk": "HOST_WRITE"
+        },
+        {
+            "name": "decode",
+            "subcommandPath": [
+                "decode"
+            ],
+            "description": "Unrecognized option: -h",
+            "options": [
+                {
+                    "name": "quiet",
+                    "spelling": "--quiet",
+                    "aliases": [
+                        "-q"
+                    ],
+                    "description": "Suppress normal output.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "verbose",
+                    "spelling": "--verbose",
+                    "aliases": [
+                        "-v"
+                    ],
+                    "description": "Increase output verbosity.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "allSrc",
+                    "spelling": "--all-src",
+                    "aliases": [
+                        "-a"
+                    ],
+                    "description": "Decode all sources in the apk (includes unknown dex files).",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "force",
+                    "spelling": "--force",
+                    "aliases": [
+                        "-f"
+                    ],
+                    "description": "Force delete destination directory.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "ignoreRawValues",
+                    "spelling": "--ignore-raw-values",
+                    "description": "Ignore raw attribute values in XML resource files.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "jobs",
+                    "spelling": "--jobs",
+                    "aliases": [
+                        "-j"
+                    ],
+                    "description": "Set the number of jobs to execute in parallel to <num>.",
+                    "type": "INT"
+                },
+                {
+                    "name": "keepBrokenRes",
+                    "spelling": "--keep-broken-res",
+                    "description": "Use if there was an error and some resources were dropped, e.g. \"Invalid resource config detected. Dropping resources\", but you want to decode them anyway, even with errors. You will have to fix them manually before building.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "lib",
+                    "spelling": "--lib",
+                    "aliases": [
+                        "-l"
+                    ],
+                    "description": "Use shared library <package> located in <file>. Can be specified multiple times.",
+                    "type": "STRING",
+                    "repeatable": true
+                },
+                {
+                    "name": "matchOriginal",
+                    "spelling": "--match-original",
+                    "description": "Keep files closest to original as possible (prevents rebuild).",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "noAssets",
+                    "spelling": "--no-assets",
+                    "description": "Do not decode assets.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "noDebugInfo",
+                    "spelling": "--no-debug-info",
+                    "description": "Do not include debug info in sources (.local, .param, .line, etc.)",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "output",
+                    "spelling": "--output",
+                    "aliases": [
+                        "-o"
+                    ],
+                    "description": "Output decoded files to <dir>. (default: apk.out)",
+                    "type": "PATH",
+                    "valueType": "path"
+                },
+                {
+                    "name": "onlyManifest",
+                    "spelling": "--only-manifest",
+                    "description": "Only decode AndroidManifest.xml without resources.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "framePath",
+                    "spelling": "--frame-path",
+                    "aliases": [
+                        "-p"
+                    ],
+                    "description": "Use framework files located in <dir>.",
+                    "type": "PATH",
+                    "valueType": "path"
+                },
+                {
+                    "name": "noRes",
+                    "spelling": "--no-res",
+                    "aliases": [
+                        "-r"
+                    ],
+                    "description": "Do not decode resources.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "resResolveMode",
+                    "spelling": "--res-resolve-mode",
+                    "description": "Set the resolve mode for resources to <mode>. Possible values: 'default', 'greedy' or 'lazy'.",
+                    "type": "STRING"
+                },
+                {
+                    "name": "noSrc",
+                    "spelling": "--no-src",
+                    "aliases": [
+                        "-s"
+                    ],
+                    "description": "Do not decode sources.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "frameTag",
+                    "spelling": "--frame-tag",
+                    "aliases": [
+                        "-t"
+                    ],
+                    "description": "Use framework files tagged with <tag>.",
+                    "type": "STRING"
+                }
+            ],
+            "arguments": [
+                {
+                    "name": "apkFile",
+                    "description": "Positional apk-file accepted by the tool",
+                    "type": "PATH",
+                    "valueType": "path"
+                }
+            ],
+            "risk": "HOST_WRITE"
+        },
+        {
+            "name": "b",
+            "subcommandPath": [
+                "b"
+            ],
+            "description": "Unrecognized option: -h",
+            "options": [
+                {
+                    "name": "quiet",
+                    "spelling": "--quiet",
+                    "aliases": [
+                        "-q"
+                    ],
+                    "description": "Suppress normal output.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "verbose",
+                    "spelling": "--verbose",
+                    "aliases": [
+                        "-v"
+                    ],
+                    "description": "Increase output verbosity.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "aapt",
+                    "spelling": "--aapt",
+                    "description": "Use aapt2 binary located in <file>.",
+                    "type": "PATH",
+                    "valueType": "path"
+                },
+                {
+                    "name": "copyOriginal",
+                    "spelling": "--copy-original",
+                    "description": "Copy original AndroidManifest.xml and META-INF. See project page for more info.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "debuggable",
+                    "spelling": "--debuggable",
+                    "description": "Set android:debuggable to \"true\" in AndroidManifest.xml for the built apk.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "force",
+                    "spelling": "--force",
+                    "aliases": [
+                        "-f"
+                    ],
+                    "description": "Skip changes detection and build all files.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "jobs",
+                    "spelling": "--jobs",
+                    "aliases": [
+                        "-j"
+                    ],
+                    "description": "Set the number of jobs to execute in parallel to <num>.",
+                    "type": "INT"
+                },
+                {
+                    "name": "lib",
+                    "spelling": "--lib",
+                    "aliases": [
+                        "-l"
+                    ],
+                    "description": "Use shared library <package> located in <file>. Can be specified multiple times.",
+                    "type": "STRING",
+                    "repeatable": true
+                },
+                {
+                    "name": "netSecConf",
+                    "spelling": "--net-sec-conf",
+                    "description": "Add a generic network security configuration file to the built apk.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "noApk",
+                    "spelling": "--no-apk",
+                    "description": "Disable repacking of the built files into a new apk.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "noCrunch",
+                    "spelling": "--no-crunch",
+                    "description": "Disable crunching of resource files during the build step.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "output",
+                    "spelling": "--output",
+                    "aliases": [
+                        "-o"
+                    ],
+                    "description": "Output the built apk to <file>. (default: dist/name.apk)",
+                    "type": "PATH",
+                    "valueType": "path"
+                },
+                {
+                    "name": "framePath",
+                    "spelling": "--frame-path",
+                    "aliases": [
+                        "-p"
+                    ],
+                    "description": "Use framework files located in <dir>.",
+                    "type": "PATH",
+                    "valueType": "path"
+                }
+            ],
+            "arguments": [
+                {
+                    "name": "apkDir",
+                    "description": "Positional apk-dir accepted by the tool",
+                    "type": "PATH",
+                    "valueType": "path"
+                }
+            ],
+            "risk": "HOST_WRITE"
+        },
+        {
+            "name": "build",
+            "subcommandPath": [
+                "build"
+            ],
+            "description": "Unrecognized option: -h",
+            "options": [
+                {
+                    "name": "quiet",
+                    "spelling": "--quiet",
+                    "aliases": [
+                        "-q"
+                    ],
+                    "description": "Suppress normal output.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "verbose",
+                    "spelling": "--verbose",
+                    "aliases": [
+                        "-v"
+                    ],
+                    "description": "Increase output verbosity.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "aapt",
+                    "spelling": "--aapt",
+                    "description": "Use aapt2 binary located in <file>.",
+                    "type": "PATH",
+                    "valueType": "path"
+                },
+                {
+                    "name": "copyOriginal",
+                    "spelling": "--copy-original",
+                    "description": "Copy original AndroidManifest.xml and META-INF. See project page for more info.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "debuggable",
+                    "spelling": "--debuggable",
+                    "description": "Set android:debuggable to \"true\" in AndroidManifest.xml for the built apk.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "force",
+                    "spelling": "--force",
+                    "aliases": [
+                        "-f"
+                    ],
+                    "description": "Skip changes detection and build all files.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "jobs",
+                    "spelling": "--jobs",
+                    "aliases": [
+                        "-j"
+                    ],
+                    "description": "Set the number of jobs to execute in parallel to <num>.",
+                    "type": "INT"
+                },
+                {
+                    "name": "lib",
+                    "spelling": "--lib",
+                    "aliases": [
+                        "-l"
+                    ],
+                    "description": "Use shared library <package> located in <file>. Can be specified multiple times.",
+                    "type": "STRING",
+                    "repeatable": true
+                },
+                {
+                    "name": "netSecConf",
+                    "spelling": "--net-sec-conf",
+                    "description": "Add a generic network security configuration file to the built apk.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "noApk",
+                    "spelling": "--no-apk",
+                    "description": "Disable repacking of the built files into a new apk.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "noCrunch",
+                    "spelling": "--no-crunch",
+                    "description": "Disable crunching of resource files during the build step.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "output",
+                    "spelling": "--output",
+                    "aliases": [
+                        "-o"
+                    ],
+                    "description": "Output the built apk to <file>. (default: dist/name.apk)",
+                    "type": "PATH",
+                    "valueType": "path"
+                },
+                {
+                    "name": "framePath",
+                    "spelling": "--frame-path",
+                    "aliases": [
+                        "-p"
+                    ],
+                    "description": "Use framework files located in <dir>.",
+                    "type": "PATH",
+                    "valueType": "path"
+                }
+            ],
+            "arguments": [
+                {
+                    "name": "apkDir",
+                    "description": "Positional apk-dir accepted by the tool",
+                    "type": "PATH",
+                    "valueType": "path"
+                }
+            ],
+            "risk": "HOST_WRITE"
+        },
+        {
+            "name": "ifCommand",
+            "subcommandPath": [
+                "if"
+            ],
+            "description": "Unrecognized option: -h",
+            "options": [
+                {
+                    "name": "quiet",
+                    "spelling": "--quiet",
+                    "aliases": [
+                        "-q"
+                    ],
+                    "description": "Suppress normal output.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "verbose",
+                    "spelling": "--verbose",
+                    "aliases": [
+                        "-v"
+                    ],
+                    "description": "Increase output verbosity.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "framePath",
+                    "spelling": "--frame-path",
+                    "aliases": [
+                        "-p"
+                    ],
+                    "description": "Set the path for framework files to <dir>.",
+                    "type": "PATH",
+                    "valueType": "path"
+                },
+                {
+                    "name": "frameTag",
+                    "spelling": "--frame-tag",
+                    "aliases": [
+                        "-t"
+                    ],
+                    "description": "Suffix framework files with <tag>.",
+                    "type": "STRING"
+                }
+            ],
+            "arguments": [
+                {
+                    "name": "apkFile",
+                    "description": "Positional apk-file accepted by the tool",
+                    "type": "PATH",
+                    "valueType": "path"
+                }
+            ],
+            "risk": "HOST_WRITE"
+        },
+        {
+            "name": "installFramework",
+            "subcommandPath": [
+                "install-framework"
+            ],
+            "description": "Unrecognized option: -h",
+            "options": [
+                {
+                    "name": "quiet",
+                    "spelling": "--quiet",
+                    "aliases": [
+                        "-q"
+                    ],
+                    "description": "Suppress normal output.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "verbose",
+                    "spelling": "--verbose",
+                    "aliases": [
+                        "-v"
+                    ],
+                    "description": "Increase output verbosity.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "framePath",
+                    "spelling": "--frame-path",
+                    "aliases": [
+                        "-p"
+                    ],
+                    "description": "Set the path for framework files to <dir>.",
+                    "type": "PATH",
+                    "valueType": "path"
+                },
+                {
+                    "name": "frameTag",
+                    "spelling": "--frame-tag",
+                    "aliases": [
+                        "-t"
+                    ],
+                    "description": "Suffix framework files with <tag>.",
+                    "type": "STRING"
+                }
+            ],
+            "arguments": [
+                {
+                    "name": "apkFile",
+                    "description": "Positional apk-file accepted by the tool",
+                    "type": "PATH",
+                    "valueType": "path"
+                }
+            ],
+            "risk": "HOST_WRITE"
+        },
+        {
+            "name": "cf",
+            "subcommandPath": [
+                "cf"
+            ],
+            "description": "Unrecognized option: -h",
+            "options": [
+                {
+                    "name": "quiet",
+                    "spelling": "--quiet",
+                    "aliases": [
+                        "-q"
+                    ],
+                    "description": "Suppress normal output.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "verbose",
+                    "spelling": "--verbose",
+                    "aliases": [
+                        "-v"
+                    ],
+                    "description": "Increase output verbosity.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "all",
+                    "spelling": "--all",
+                    "aliases": [
+                        "-a"
+                    ],
+                    "description": "Include all framework files regardless of tag.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "framePath",
+                    "spelling": "--frame-path",
+                    "aliases": [
+                        "-p"
+                    ],
+                    "description": "Set the path for framework files to <dir>.",
+                    "type": "PATH",
+                    "valueType": "path"
+                },
+                {
+                    "name": "frameTag",
+                    "spelling": "--frame-tag",
+                    "aliases": [
+                        "-t"
+                    ],
+                    "description": "Suffix framework files with <tag>.",
+                    "type": "STRING"
+                }
+            ],
+            "arguments": [
+                {
+                    "name": "brutAlllGmailCom",
+                    "description": "Positional brut.alll@gmail.com accepted by the tool",
+                    "type": "STRING"
+                }
+            ],
+            "risk": "HOST_WRITE"
+        },
+        {
+            "name": "cleanFrameworks",
+            "subcommandPath": [
+                "clean-frameworks"
+            ],
+            "description": "Unrecognized option: -h",
+            "options": [
+                {
+                    "name": "quiet",
+                    "spelling": "--quiet",
+                    "aliases": [
+                        "-q"
+                    ],
+                    "description": "Suppress normal output.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "verbose",
+                    "spelling": "--verbose",
+                    "aliases": [
+                        "-v"
+                    ],
+                    "description": "Increase output verbosity.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "all",
+                    "spelling": "--all",
+                    "aliases": [
+                        "-a"
+                    ],
+                    "description": "Include all framework files regardless of tag.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "framePath",
+                    "spelling": "--frame-path",
+                    "aliases": [
+                        "-p"
+                    ],
+                    "description": "Set the path for framework files to <dir>.",
+                    "type": "PATH",
+                    "valueType": "path"
+                },
+                {
+                    "name": "frameTag",
+                    "spelling": "--frame-tag",
+                    "aliases": [
+                        "-t"
+                    ],
+                    "description": "Suffix framework files with <tag>.",
+                    "type": "STRING"
+                }
+            ],
+            "arguments": [
+                {
+                    "name": "brutAlllGmailCom",
+                    "description": "Positional brut.alll@gmail.com accepted by the tool",
+                    "type": "STRING"
+                }
+            ],
+            "risk": "HOST_WRITE"
+        },
+        {
+            "name": "lf",
+            "subcommandPath": [
+                "lf"
+            ],
+            "description": "Unrecognized option: -h",
+            "options": [
+                {
+                    "name": "quiet",
+                    "spelling": "--quiet",
+                    "aliases": [
+                        "-q"
+                    ],
+                    "description": "Suppress normal output.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "verbose",
+                    "spelling": "--verbose",
+                    "aliases": [
+                        "-v"
+                    ],
+                    "description": "Increase output verbosity.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "all",
+                    "spelling": "--all",
+                    "aliases": [
+                        "-a"
+                    ],
+                    "description": "Include all framework files regardless of tag.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "framePath",
+                    "spelling": "--frame-path",
+                    "aliases": [
+                        "-p"
+                    ],
+                    "description": "Set the path for framework files to <dir>.",
+                    "type": "PATH",
+                    "valueType": "path"
+                },
+                {
+                    "name": "frameTag",
+                    "spelling": "--frame-tag",
+                    "aliases": [
+                        "-t"
+                    ],
+                    "description": "Suffix framework files with <tag>.",
+                    "type": "STRING"
+                }
+            ],
+            "arguments": [
+                {
+                    "name": "brutAlllGmailCom",
+                    "description": "Positional brut.alll@gmail.com accepted by the tool",
+                    "type": "STRING"
+                }
+            ],
+            "risk": "HOST_WRITE"
+        },
+        {
+            "name": "listFrameworks",
+            "subcommandPath": [
+                "list-frameworks"
+            ],
+            "description": "Unrecognized option: -h",
+            "options": [
+                {
+                    "name": "quiet",
+                    "spelling": "--quiet",
+                    "aliases": [
+                        "-q"
+                    ],
+                    "description": "Suppress normal output.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "verbose",
+                    "spelling": "--verbose",
+                    "aliases": [
+                        "-v"
+                    ],
+                    "description": "Increase output verbosity.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "all",
+                    "spelling": "--all",
+                    "aliases": [
+                        "-a"
+                    ],
+                    "description": "Include all framework files regardless of tag.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "framePath",
+                    "spelling": "--frame-path",
+                    "aliases": [
+                        "-p"
+                    ],
+                    "description": "Set the path for framework files to <dir>.",
+                    "type": "PATH",
+                    "valueType": "path"
+                },
+                {
+                    "name": "frameTag",
+                    "spelling": "--frame-tag",
+                    "aliases": [
+                        "-t"
+                    ],
+                    "description": "Suffix framework files with <tag>.",
+                    "type": "STRING"
+                }
+            ],
+            "arguments": [
+                {
+                    "name": "brutAlllGmailCom",
+                    "description": "Positional brut.alll@gmail.com accepted by the tool",
+                    "type": "STRING"
+                }
+            ],
+            "risk": "HOST_WRITE"
+        },
+        {
+            "name": "pr",
+            "subcommandPath": [
+                "pr"
+            ],
+            "description": "Unrecognized option: -h",
+            "options": [
+                {
+                    "name": "quiet",
+                    "spelling": "--quiet",
+                    "aliases": [
+                        "-q"
+                    ],
+                    "description": "Suppress normal output.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "verbose",
+                    "spelling": "--verbose",
+                    "aliases": [
+                        "-v"
+                    ],
+                    "description": "Increase output verbosity.",
+                    "type": "BOOLEAN"
+                }
+            ],
+            "arguments": [
+                {
+                    "name": "arscFile",
+                    "description": "Positional arsc-file accepted by the tool",
+                    "type": "PATH",
+                    "valueType": "path"
+                }
+            ],
+            "risk": "HOST_WRITE"
+        },
+        {
+            "name": "publicizeResources",
+            "subcommandPath": [
+                "publicize-resources"
+            ],
+            "description": "Unrecognized option: -h",
+            "options": [
+                {
+                    "name": "quiet",
+                    "spelling": "--quiet",
+                    "aliases": [
+                        "-q"
+                    ],
+                    "description": "Suppress normal output.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "verbose",
+                    "spelling": "--verbose",
+                    "aliases": [
+                        "-v"
+                    ],
+                    "description": "Increase output verbosity.",
+                    "type": "BOOLEAN"
+                }
+            ],
+            "arguments": [
+                {
+                    "name": "arscFile",
+                    "description": "Positional arsc-file accepted by the tool",
+                    "type": "PATH",
+                    "valueType": "path"
+                }
+            ],
+            "risk": "HOST_WRITE"
+        },
+        {
+            "name": "help",
+            "subcommandPath": [
+                "h"
+            ],
+            "description": "Show help",
+            "risk": "READ_ONLY"
+        },
+        {
+            "name": "version",
+            "subcommandPath": [
+                "v"
+            ],
+            "description": "Show version",
+            "risk": "READ_ONLY"
+        }
+    ],
+    "globalOptions": [
+        {
+            "name": "quiet",
+            "spelling": "--quiet",
+            "aliases": [
+                "-q"
+            ],
+            "description": "Suppress normal output.",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "verbose",
+            "spelling": "--verbose",
+            "aliases": [
+                "-v"
+            ],
+            "description": "Increase output verbosity.",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "allSrc",
+            "spelling": "--all-src",
+            "aliases": [
+                "-a"
+            ],
+            "description": "Decode all sources in the apk (includes unknown dex files).",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "force",
+            "spelling": "--force",
+            "aliases": [
+                "-f"
+            ],
+            "description": "Force delete destination directory.",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "ignoreRawValues",
+            "spelling": "--ignore-raw-values",
+            "description": "Ignore raw attribute values in XML resource files.",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "jobs",
+            "spelling": "--jobs",
+            "aliases": [
+                "-j"
+            ],
+            "description": "Set the number of jobs to execute in parallel to <num>.",
+            "type": "INT"
+        },
+        {
+            "name": "keepBrokenRes",
+            "spelling": "--keep-broken-res",
+            "description": "Use if there was an error and some resources were dropped, e.g. \"Invalid resource config detected. Dropping resources\", but you want to decode them anyway, even with errors. You will have to fix them manually before building.",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "lib",
+            "spelling": "--lib",
+            "aliases": [
+                "-l"
+            ],
+            "description": "Use shared library <package> located in <file>. Can be specified multiple times.",
+            "type": "STRING",
+            "repeatable": true
+        },
+        {
+            "name": "matchOriginal",
+            "spelling": "--match-original",
+            "description": "Keep files closest to original as possible (prevents rebuild).",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "noAssets",
+            "spelling": "--no-assets",
+            "description": "Do not decode assets.",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "noDebugInfo",
+            "spelling": "--no-debug-info",
+            "description": "Do not include debug info in sources (.local, .param, .line, etc.)",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "output",
+            "spelling": "--output",
+            "aliases": [
+                "-o"
+            ],
+            "description": "Output decoded files to <dir>. (default: apk.out)",
+            "type": "PATH",
+            "valueType": "path"
+        },
+        {
+            "name": "onlyManifest",
+            "spelling": "--only-manifest",
+            "description": "Only decode AndroidManifest.xml without resources.",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "framePath",
+            "spelling": "--frame-path",
+            "aliases": [
+                "-p"
+            ],
+            "description": "Use framework files located in <dir>.",
+            "type": "PATH",
+            "valueType": "path"
+        },
+        {
+            "name": "noRes",
+            "spelling": "--no-res",
+            "aliases": [
+                "-r"
+            ],
+            "description": "Do not decode resources.",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "resResolveMode",
+            "spelling": "--res-resolve-mode",
+            "description": "Set the resolve mode for resources to <mode>. Possible values: 'default', 'greedy' or 'lazy'.",
+            "type": "STRING"
+        },
+        {
+            "name": "noSrc",
+            "spelling": "--no-src",
+            "aliases": [
+                "-s"
+            ],
+            "description": "Do not decode sources.",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "frameTag",
+            "spelling": "--frame-tag",
+            "aliases": [
+                "-t"
+            ],
+            "description": "Use framework files tagged with <tag>.",
+            "type": "STRING"
+        },
+        {
+            "name": "aapt",
+            "spelling": "--aapt",
+            "description": "Use aapt2 binary located in <file>.",
+            "type": "PATH",
+            "valueType": "path"
+        },
+        {
+            "name": "copyOriginal",
+            "spelling": "--copy-original",
+            "description": "Copy original AndroidManifest.xml and META-INF. See project page for more info.",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "debuggable",
+            "spelling": "--debuggable",
+            "description": "Set android:debuggable to \"true\" in AndroidManifest.xml for the built apk.",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "netSecConf",
+            "spelling": "--net-sec-conf",
+            "description": "Add a generic network security configuration file to the built apk.",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "noApk",
+            "spelling": "--no-apk",
+            "description": "Disable repacking of the built files into a new apk.",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "noCrunch",
+            "spelling": "--no-crunch",
+            "description": "Disable crunching of resource files during the build step.",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "all",
+            "spelling": "--all",
+            "description": "Include all framework files regardless of tag.",
+            "type": "BOOLEAN"
+        }
+    ],
+    "exitCodes": [
+        {
+            "code": 0,
+            "meaning": "Success",
+            "isSuccess": true
+        },
+        {
+            "code": 1,
+            "meaning": "Error/Failure",
+            "isSuccess": false
+        }
+    ],
+    "defaultTimeout": "30s",
+    "risk": "HOST_WRITE"
+}

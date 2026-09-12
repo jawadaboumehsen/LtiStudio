@@ -1,0 +1,12 @@
+usage: avbtool make_cert_permanent_attributes [-h] [--output OUTPUT]
+                                              --root_authority_key
+                                              ROOT_AUTHORITY_KEY --product_id
+                                              PRODUCT_ID
+
+options:
+  -h, --help            show this help message and exit
+  --output OUTPUT       Write attributes to file
+  --root_authority_key ROOT_AUTHORITY_KEY
+                        Path to authority RSA public key file
+  --product_id PRODUCT_ID
+                        Path to Product ID file

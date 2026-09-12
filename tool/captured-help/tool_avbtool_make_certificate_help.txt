@@ -1,0 +1,27 @@
+usage: avbtool make_certificate [-h] [--output OUTPUT] --subject SUBJECT
+                                --subject_key SUBJECT_KEY
+                                [--subject_key_version SUBJECT_KEY_VERSION]
+                                [--subject_is_intermediate_authority | --usage USAGE | --usage_for_unlock]
+                                [--authority_key AUTHORITY_KEY]
+                                [--signing_helper APP]
+                                [--signing_helper_with_files APP]
+
+options:
+  -h, --help            show this help message and exit
+  --output OUTPUT       Write certificate to file
+  --subject SUBJECT     Path to subject file
+  --subject_key SUBJECT_KEY
+                        Path to subject RSA public key file
+  --subject_key_version SUBJECT_KEY_VERSION
+                        Version of the subject key
+  --subject_is_intermediate_authority
+                        Override usage with the value used for an intermediate
+                        authority
+  --usage USAGE         Override usage with a hash of the provided string
+  --usage_for_unlock    Override usage with the value used for authenticated
+                        unlock
+  --authority_key AUTHORITY_KEY
+                        Path to authority RSA private key file
+  --signing_helper APP  Path to helper used for signing
+  --signing_helper_with_files APP
+                        Path to helper used for signing using files

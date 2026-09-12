@@ -1,0 +1,50 @@
+{
+    "schemaVersion": 1,
+    "tool": "mkf2fsuserimg",
+    "executable": "mkf2fsuserimg",
+    "platform": [
+        "linux-x86_64"
+    ],
+    "sourceRevision": "HEAD",
+    "binarySha256": "73ee460e7609e127ae04d6f120e41bfcdb4ccf7451879148a7f8eea95542975c",
+    "helpSha256": "6154b8c7720a3f6b9f2352adb2a1f2f436f537df20a713e2bbd1f45f20aab2fa",
+    "exitCodes": [
+        {
+            "code": 0,
+            "meaning": "Success",
+            "isSuccess": true
+        },
+        {
+            "code": 1,
+            "meaning": "Error/Failure",
+            "isSuccess": false
+        }
+    ],
+    "defaultTimeout": "30s",
+    "risk": "HOST_WRITE",
+    "commands": [
+        {
+            "name": "execute",
+            "subcommandPath": [
+                "_self"
+            ],
+            "description": "Execute the tool with its options and positional operands",
+            "arguments": [
+                {
+                    "name": "positionalArgs",
+                    "description": "Tool-specific positional operands",
+                    "type": "STRING",
+                    "required": false,
+                    "repeatable": true
+                }
+            ],
+            "risk": "HOST_WRITE",
+            "outputParser": "identity",
+            "outputType": "String",
+            "artifacts": [
+                {"name": "outputImage", "parameter": "positionalArgs", "index": 0, "type": "FILE", "direction": "OUTPUT", "required": true},
+                {"name": "inputDirectory", "parameter": "positionalArgs", "index": 5, "type": "DIRECTORY", "direction": "INPUT", "required": true}
+            ]
+        }
+    ]
+}

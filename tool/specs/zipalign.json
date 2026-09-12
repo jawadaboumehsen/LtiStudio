@@ -1,0 +1,102 @@
+{
+    "schemaVersion": 1,
+    "tool": "zipalign",
+    "executable": "zipalign",
+    "platform": [
+        "linux-x86_64"
+    ],
+    "sourceRevision": "HEAD",
+    "binarySha256": "3f6c73cdc3f61ccc1dcc55a77eecc2f798a5410998ff1d756f210ae73790d0d6",
+    "helpSha256": "edd2426d9890527241575e83ef64f74af38ddc8844d161a970c6fa17d35363a1",
+    "globalOptions": [
+        {
+            "name": "checkOnly",
+            "spelling": "-c",
+            "description": "check alignment only (does not modify file)",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "overwrite",
+            "spelling": "-f",
+            "description": "overwrite existing outfile.zip",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "pageAlign",
+            "spelling": "-p",
+            "description": "4kb page-align uncompressed .so files",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "pageSizeKb",
+            "spelling": "-P",
+            "description": "Align uncompressed .so files to specified page size (4, 16, 64)",
+            "type": "INT"
+        },
+        {
+            "name": "verbose",
+            "spelling": "-v",
+            "description": "verbose output",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "zopfli",
+            "spelling": "-z",
+            "description": "recompress using Zopfli",
+            "type": "BOOLEAN"
+        }
+    ],
+    "commands": [
+        {
+            "name": "align",
+            "subcommandPath": [
+                "_self"
+            ],
+            "description": "align or verify zip file",
+            "arguments": [
+                {
+                    "name": "alignment",
+                    "description": "alignment in bytes (e.g. 4)",
+                    "type": "INT",
+                    "required": true
+                },
+                {
+                    "name": "infile",
+                    "description": "input zip file",
+                    "type": "PATH",
+                    "required": true
+                },
+                {
+                    "name": "outfile",
+                    "description": "output zip file (optional in check-only mode)",
+                    "type": "PATH",
+                    "required": false
+                }
+            ],
+            "risk": "HOST_WRITE",
+            "artifacts": [
+                {"name": "infile", "type": "FILE", "direction": "INPUT", "required": true},
+                {"name": "outfile", "type": "FILE", "direction": "OUTPUT", "required": false}
+            ]
+        }
+    ],
+    "exitCodes": [
+        {
+            "code": 0,
+            "meaning": "Success",
+            "isSuccess": true
+        },
+        {
+            "code": 1,
+            "meaning": "Error/Failure",
+            "isSuccess": false
+        },
+        {
+            "code": 2,
+            "meaning": "Usage/Syntax Error",
+            "isSuccess": false
+        }
+    ],
+    "defaultTimeout": "30s",
+    "risk": "HOST_WRITE"
+}

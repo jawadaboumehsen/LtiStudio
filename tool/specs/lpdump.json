@@ -1,0 +1,85 @@
+{
+    "schemaVersion": 1,
+    "tool": "lpdump",
+    "executable": "lpdump",
+    "platform": [
+        "linux-x86_64"
+    ],
+    "sourceRevision": "HEAD",
+    "binarySha256": "08653f76b6daec0a35f8869a03a4e6167f56d722ac5c216635def3ebe159ed0c",
+    "helpSha256": "3de31486a8841eab78f13fecc8ca769b531380a317733c1a4d0e7f112871c58f",
+    "globalOptions": [
+        {
+            "name": "slot",
+            "spelling": "--slot",
+            "aliases": [
+                "-s"
+            ],
+            "description": "Slot number or suffix.",
+            "type": "STRING"
+        },
+        {
+            "name": "json",
+            "spelling": "--json",
+            "aliases": [
+                "-j"
+            ],
+            "description": "Print in JSON format.",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "dumpMetadataSize",
+            "spelling": "--dump-metadata-size",
+            "aliases": [
+                "-d"
+            ],
+            "description": "Print the space reserved for metadata to stdout",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "all",
+            "spelling": "--all",
+            "aliases": [
+                "-a"
+            ],
+            "description": "Dump all slots (not available in JSON mode).",
+            "type": "BOOLEAN"
+        }
+    ],
+    "exitCodes": [
+        {
+            "code": 0,
+            "meaning": "Success",
+            "isSuccess": true
+        },
+        {
+            "code": 1,
+            "meaning": "Error/Failure",
+            "isSuccess": false
+        }
+    ],
+    "defaultTimeout": "30s",
+    "risk": "READ_ONLY",
+    "commands": [
+        {
+            "name": "execute",
+            "subcommandPath": [
+                "_self"
+            ],
+            "description": "Execute the tool with its options and positional operands",
+            "arguments": [
+                {
+                    "name": "positionalArgs",
+                    "description": "Tool-specific positional operands",
+                    "type": "STRING",
+                    "required": false,
+                    "repeatable": true
+                }
+            ],
+            "risk": null,
+            "outputParser": "lp-metadata",
+            "outputType": "io.ltirom.tooling.core.DynamicPartitionMetadata",
+            "artifacts": []
+        }
+    ]
+}

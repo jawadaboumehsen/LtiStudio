@@ -1,0 +1,1 @@
+Usage: signapk [-w] [-a <alignment>] [--align-file-size] [-providerClass <className>] [-providerArg <configureArg>] [-loadPrivateKeysFromKeyStore <keyStoreName>][-keyStorePin <pin>][--min-sdk-version <n>] [--disable-v2] [--enable-v4] publickey.x509[.pem] privatekey.pk8 [publickey2.x509[.pem] privatekey2.pk8 ...] input.jar output.jar [output-v4-file]

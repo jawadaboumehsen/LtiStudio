@@ -1,0 +1,9 @@
+usage: avbtool calculate_kernel_cmdline [-h] --image IMAGE
+                                        [--hashtree_disabled]
+                                        [--output OUTPUT]
+
+options:
+  -h, --help           show this help message and exit
+  --image IMAGE        Image to calculate kernel cmdline for
+  --hashtree_disabled  Return the cmdline for hashtree disabled
+  --output OUTPUT      Write cmdline to file (default: stdout)

@@ -1,0 +1,6 @@
+dump apc [options] files...
+
+Options:
+ --help                                            Displays this help menu
+ --no-values                                       Suppresses output of values when displaying resource tables.
+ -v                                                Enables verbose logging.

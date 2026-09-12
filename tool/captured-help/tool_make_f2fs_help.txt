@@ -1,0 +1,29 @@
+Usage: mkfs.f2fs [options] device [sectors]
+[options]:
+  -b filesystem block size [default:4096]
+  -c [device_name[@alias_filename]] up to 7 additional devices, except meta device
+  -d debug level [default:0]
+  -e [cold file ext list] e.g. "mp3,gif,mov"
+  -E [hot file ext list] e.g. "db"
+  -f force overwrite of the existing filesystem
+  -g add default options
+  -H support write hint
+  -i extended node bitmap, node ratio is 20% by default
+  -l label
+  -U uuid
+  -m support zoned block device [default:0]
+  -o overprovision percentage [default:auto]
+  -O feature1[,feature2,...] e.g. "encrypt"
+  -C [encoding[:flag1,...]] Support casefolding with optional flags
+  -q quiet mode
+  -r set checkpointing seed (srand()) to 0
+  -R root_owner [default: 0:0]
+  -s # of segments per section [default:1]
+  -S sparse mode
+  -t 0: nodiscard, 1: discard [default:1]
+  -T timestamps
+  -w wanted sector size
+  -z # of sections per zone [default:1]
+  -V print the version number and exit
+  -Z # of reserved sections [default:auto]
+sectors: number of sectors [default: determined by device size]

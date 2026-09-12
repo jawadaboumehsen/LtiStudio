@@ -1,0 +1,11 @@
+usage: avbtool append_vbmeta_image [-h] [--image IMAGE] --partition_size
+                                   PARTITION_SIZE
+                                   [--vbmeta_image VBMETA_IMAGE]
+
+options:
+  -h, --help            show this help message and exit
+  --image IMAGE         Image to append vbmeta blob to
+  --partition_size PARTITION_SIZE
+                        Partition size
+  --vbmeta_image VBMETA_IMAGE
+                        Image with vbmeta blob to append

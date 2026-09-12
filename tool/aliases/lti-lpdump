@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LTI_BIN="$DIR/lti"
+if [ ! -x "$LTI_BIN" ]; then
+    LTI_BIN="lti"
+fi
+exec "$LTI_BIN" tools lpdump "$@"

@@ -1,0 +1,50 @@
+{
+    "schemaVersion": 1,
+    "tool": "append2simg",
+    "executable": "append2simg",
+    "platform": [
+        "linux-x86_64"
+    ],
+    "sourceRevision": "HEAD",
+    "binarySha256": "ffc210a49c282a3b5adf98b5662d960465374701a3cfdad476f842867f510ce9",
+    "helpSha256": "4cf5334d12ebbd58c3dc1da150009ee4bd98757aa9b2896078ac07abb6072fd1",
+    "exitCodes": [
+        {
+            "code": 0,
+            "meaning": "Success",
+            "isSuccess": true
+        },
+        {
+            "code": 1,
+            "meaning": "Error/Failure",
+            "isSuccess": false
+        }
+    ],
+    "defaultTimeout": "30s",
+    "risk": "HOST_WRITE",
+    "commands": [
+        {
+            "name": "execute",
+            "subcommandPath": [
+                "_self"
+            ],
+            "description": "Execute the tool with its options and positional operands",
+            "arguments": [
+                {
+                    "name": "positionalArgs",
+                    "description": "Tool-specific positional operands",
+                    "type": "STRING",
+                    "required": false,
+                    "repeatable": true
+                }
+            ],
+            "risk": "HOST_WRITE",
+            "outputParser": "identity",
+            "outputType": "String",
+            "artifacts": [
+                {"name": "outputImage", "parameter": "positionalArgs", "index": 0, "type": "FILE", "direction": "IN_PLACE", "required": true},
+                {"name": "inputImage", "parameter": "positionalArgs", "index": 1, "type": "FILE", "direction": "INPUT", "required": true}
+            ]
+        }
+    ]
+}

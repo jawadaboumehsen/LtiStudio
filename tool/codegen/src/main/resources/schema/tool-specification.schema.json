@@ -1,0 +1,274 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ToolSpecification",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "enum": [1]
+    },
+    "tool": {
+      "type": "string"
+    },
+    "executable": {
+      "type": "string"
+    },
+    "aliases": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "platform": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "sourceRevision": {
+      "type": "string"
+    },
+    "binarySha256": {
+      "type": "string"
+    },
+    "versionText": {
+      "type": "string"
+    },
+    "helpSha256": {
+      "type": "string"
+    },
+    "commands": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/CommandSpec" }
+    },
+    "globalOptions": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/OptionSpec" }
+    },
+    "exitCodes": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/ExitCodeSpec" }
+    },
+    "defaultTimeout": {
+      "type": "string",
+      "pattern": "^[0-9]+[smh]$"
+    },
+    "risk": {
+      "type": "string",
+      "enum": ["READ_ONLY", "HOST_WRITE", "DEVICE_WRITE", "IRREVERSIBLE"]
+    },
+    "redactions": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/RedactionSpec" }
+    },
+    "outputParser": {
+      "type": "string"
+    },
+    "quirks": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "explicitExclusions": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "tool",
+    "executable",
+    "platform",
+    "commands",
+    "risk"
+  ],
+  "additionalProperties": false,
+  "definitions": {
+    "CommandSpec": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9]*$"
+        },
+        "subcommandPath": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "description": {
+          "type": "string"
+        },
+        "options": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/OptionSpec" }
+        },
+        "arguments": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/ArgumentSpec" }
+        },
+        "risk": {
+          "type": "string",
+          "enum": ["READ_ONLY", "HOST_WRITE", "DEVICE_WRITE", "IRREVERSIBLE"]
+        },
+        "timeout": {
+          "type": "string",
+          "pattern": "^[0-9]+[smh]$"
+        },
+        "outputParser": {
+          "type": "string"
+        },
+        "artifacts": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/ArtifactSpec" }
+        }
+      },
+      "required": ["name", "subcommandPath", "description"],
+      "additionalProperties": false
+    },
+    "OptionSpec": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9]*$"
+        },
+        "spelling": {
+          "type": "string"
+        },
+        "aliases": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "description": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["BOOLEAN", "STRING", "INT", "PATH", "CHOICE"]
+        },
+        "choices": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "default": {
+          "type": "string"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "repeatable": {
+          "type": "boolean"
+        },
+        "cardinality": {
+          "type": "string"
+        },
+        "mutuallyExclusiveGroup": {
+          "type": "string"
+        },
+        "requiredTogetherGroup": {
+          "type": "string"
+        },
+        "risk": {
+          "type": "string",
+          "enum": ["READ_ONLY", "HOST_WRITE", "DEVICE_WRITE", "IRREVERSIBLE"]
+        },
+        "valueType": {
+          "type": "string",
+          "enum": ["secret", "path", "device-path", "partition", "property", "url"]
+        },
+        "redact": {
+          "type": "boolean"
+        }
+      },
+      "required": ["name", "spelling", "description", "type"],
+      "additionalProperties": false
+    },
+    "ArgumentSpec": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9]*$"
+        },
+        "description": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["STRING", "INT", "PATH", "CHOICE"]
+        },
+        "choices": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "default": {
+          "type": "string"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "repeatable": {
+          "type": "boolean"
+        },
+        "valueType": {
+          "type": "string",
+          "enum": ["secret", "path", "device-path", "partition", "property", "url"]
+        }
+      },
+      "required": ["name", "description", "type"],
+      "additionalProperties": false
+    },
+    "ExitCodeSpec": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer"
+        },
+        "meaning": {
+          "type": "string"
+        },
+        "isSuccess": {
+          "type": "boolean"
+        }
+      },
+      "required": ["code", "meaning", "isSuccess"],
+      "additionalProperties": false
+    },
+    "RedactionSpec": {
+      "type": "object",
+      "properties": {
+        "pattern": {
+          "type": "string"
+        },
+        "placeholder": {
+          "type": "string"
+        }
+      },
+      "required": ["pattern"],
+      "additionalProperties": false
+    },
+    "ArtifactSpec": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["FILE", "DIRECTORY"]
+        },
+        "direction": {
+          "type": "string",
+          "enum": ["INPUT", "OUTPUT", "IN_PLACE"]
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "parameter": {
+          "type": "string"
+        },
+        "index": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": ["name", "type", "direction"],
+      "additionalProperties": false
+    }
+  }
+}

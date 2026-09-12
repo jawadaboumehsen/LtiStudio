@@ -1,0 +1,7 @@
+aapt2 apkinfo [options] -o arg files...
+
+Options:
+ --help                                            Displays this help menu
+ -o arg                                            Output path
+ --include-resource-table                          Include the resource table data into output.
+ --include-xml arg                                 Include an XML file content into output. Multiple XML files might be requested during single invocation.

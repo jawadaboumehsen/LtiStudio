@@ -1,0 +1,1183 @@
+{
+    "schemaVersion": 1,
+    "tool": "aapt2",
+    "executable": "aapt2",
+    "platform": [
+        "linux-x86_64"
+    ],
+    "sourceRevision": "HEAD",
+    "binarySha256": "df312db814c018019b2b79a993b041b738d7b76f4a8f28da25bc874a026368cc",
+    "helpSha256": "8cf392c47320ba50b7a7a10f49804867d76752d4069e3d51ceb660b8c3161b1b",
+    "commands": [
+        {
+            "name": "compile",
+            "subcommandPath": [
+                "compile"
+            ],
+            "description": "aapt2 compile [options] -o arg files...",
+            "options": [
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "description": "Displays this help menu",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "O",
+                    "spelling": "-o",
+                    "description": "arg                                            Output path",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "dir",
+                    "spelling": "--dir",
+                    "description": "arg                                         Directory to scan for resources",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "zip",
+                    "spelling": "--zip",
+                    "description": "arg                                         Zip file containing the res directory to scan for resources",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "outputTextSymbols",
+                    "spelling": "--output-text-symbols",
+                    "description": "arg                         Generates a text file containing the resource symbols in the",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "pseudoLocalize",
+                    "spelling": "--pseudo-localize",
+                    "description": "Generate resources for pseudo-locales (en-XA and ar-XB)",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "noCrunch",
+                    "spelling": "--no-crunch",
+                    "description": "Disables PNG processing",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "pngCompressionLevel",
+                    "spelling": "--png-compression-level",
+                    "description": "arg                       Set the zlib compression level for crunched PNG images, [0-9], 9 by default.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "legacy",
+                    "spelling": "--legacy",
+                    "description": "Treat errors that used to be valid in AAPT as warnings",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "preserveVisibilityOfStyleables",
+                    "spelling": "--preserve-visibility-of-styleables",
+                    "description": "If specified, apply the same visibility rules for",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "visibility",
+                    "spelling": "--visibility",
+                    "description": "arg                                  Sets the visibility of the compiled resources to the specified",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "V",
+                    "spelling": "-v",
+                    "description": "Enables verbose logging",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "traceFolder",
+                    "spelling": "--trace-folder",
+                    "description": "arg                                Generate systrace json trace fragment to specified folder.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "sourcePath",
+                    "spelling": "--source-path",
+                    "description": "arg                                 Sets the compiled resource file source file path to the given string.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "pseudoLocalizeGenderValues",
+                    "spelling": "--pseudo-localize-gender-values",
+                    "description": "arg               Sets the gender values to pick up for generating grammatical gender strings, gender values should be f, m, or n, which are shortcuts for feminine, masculine and neuter, and split with comma.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "pseudoLocalizeGenderRatio",
+                    "spelling": "--pseudo-localize-gender-ratio",
+                    "description": "arg                Sets the ratio of resources to generate grammatical gender strings for. The ratio has to be a float number between 0 and 1.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "filterProduct",
+                    "spelling": "--filter-product",
+                    "description": "arg                              Leave only resources specific to the given product. All other resources (including defaults) are removed.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "featureFlags",
+                    "spelling": "--feature-flags",
+                    "description": "arg                               Specify the values of feature flags. The pairs in the argument",
+                    "type": "BOOLEAN"
+                }
+            ],
+            "risk": "HOST_WRITE"
+        },
+        {
+            "name": "link",
+            "subcommandPath": [
+                "link"
+            ],
+            "description": "aapt2 link [options] -o arg --manifest arg files...",
+            "options": [
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "description": "Displays this help menu",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "O",
+                    "spelling": "-o",
+                    "description": "arg                                            Output path.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "manifest",
+                    "spelling": "--manifest",
+                    "description": "arg                                    Path to the Android manifest to build.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "I",
+                    "spelling": "-I",
+                    "description": "arg                                            Adds an Android APK to link against.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "A",
+                    "spelling": "-A",
+                    "description": "arg                                            An assets directory to include in the APK. These are unprocessed.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "R",
+                    "spelling": "-R",
+                    "description": "arg                                            Compilation unit to link, using `overlay` semantics.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "packageId",
+                    "spelling": "--package-id",
+                    "description": "arg                                  Specify the package ID to use for this app. Must be greater or equal to",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "java",
+                    "spelling": "--java",
+                    "description": "arg                                        Directory in which to generate R.java.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "proguard",
+                    "spelling": "--proguard",
+                    "description": "arg                                    Output file for generated Proguard rules.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "proguardMainDex",
+                    "spelling": "--proguard-main-dex",
+                    "description": "arg                           Output file for generated Proguard rules for the main dex.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "proguardConditionalKeepRules",
+                    "spelling": "--proguard-conditional-keep-rules",
+                    "description": "Generate conditional Proguard keep rules.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "proguardMinimalKeepRules",
+                    "spelling": "--proguard-minimal-keep-rules",
+                    "description": "Generate a minimal set of Proguard keep rules.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "noAutoVersion",
+                    "spelling": "--no-auto-version",
+                    "description": "Disables automatic style and layout SDK versioning.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "noVersionVectors",
+                    "spelling": "--no-version-vectors",
+                    "description": "Disables automatic versioning of vector drawables. Use this only",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "noVersionTransitions",
+                    "spelling": "--no-version-transitions",
+                    "description": "Disables automatic versioning of transition resources. Use this only",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "noResourceDeduping",
+                    "spelling": "--no-resource-deduping",
+                    "description": "Disables automatic deduping of resources with",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "noResourceRemoval",
+                    "spelling": "--no-resource-removal",
+                    "description": "Disables automatic removal of resources without",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "enableSparseEncoding",
+                    "spelling": "--enable-sparse-encoding",
+                    "description": "Enables encoding sparse entries using a binary search tree.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "enableCompactEntries",
+                    "spelling": "--enable-compact-entries",
+                    "description": "This decreases APK size by using compact resource entries for simple data types.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "X",
+                    "spelling": "-x",
+                    "description": "Legacy flag that specifies to use the package identifier 0x01.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "Z",
+                    "spelling": "-z",
+                    "description": "Require localization of strings marked 'suggested'.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "C",
+                    "spelling": "-c",
+                    "description": "arg                                            Comma separated list of configurations to include. The default",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "preferredDensity",
+                    "spelling": "--preferred-density",
+                    "description": "arg                           Selects the closest matching density and strips out all others.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "product",
+                    "spelling": "--product",
+                    "description": "arg                                     Comma separated list of product names to keep",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "outputToDir",
+                    "spelling": "--output-to-dir",
+                    "description": "Outputs the APK contents to a directory specified by -o.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "noXmlNamespaces",
+                    "spelling": "--no-xml-namespaces",
+                    "description": "Removes XML namespace prefix and URI information",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "minSdkVersion",
+                    "spelling": "--min-sdk-version",
+                    "description": "arg                             Default minimum SDK version to use for AndroidManifest.xml.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "targetSdkVersion",
+                    "spelling": "--target-sdk-version",
+                    "description": "arg                          Default target SDK version to use for AndroidManifest.xml.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "versionCode",
+                    "spelling": "--version-code",
+                    "description": "arg                                Version code (integer) to inject into the AndroidManifest.xml if none is",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "versionCodeMajor",
+                    "spelling": "--version-code-major",
+                    "description": "arg                          Version code major (integer) to inject into the AndroidManifest.xml if none is",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "versionName",
+                    "spelling": "--version-name",
+                    "description": "arg                                Version name to inject into the AndroidManifest.xml if none is present.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "revisionCode",
+                    "spelling": "--revision-code",
+                    "description": "arg                               Revision code (integer) to inject into the AndroidManifest.xml if none is",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "replaceVersion",
+                    "spelling": "--replace-version",
+                    "description": "If --version-code, --version-name, and/or --revision-code are specified, these",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "compileSdkVersionCode",
+                    "spelling": "--compile-sdk-version-code",
+                    "description": "arg                    Version code (integer) to inject into the AndroidManifest.xml if none is",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "compileSdkVersionName",
+                    "spelling": "--compile-sdk-version-name",
+                    "description": "arg                    Version name to inject into the AndroidManifest.xml if none is present.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "noCompileSdkMetadata",
+                    "spelling": "--no-compile-sdk-metadata",
+                    "description": "Suppresses output of compile SDK-related attributes in AndroidManifest.xml,",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "fingerprintPrefix",
+                    "spelling": "--fingerprint-prefix",
+                    "description": "arg                          Fingerprint prefix to add to install constraints.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "sharedLib",
+                    "spelling": "--shared-lib",
+                    "description": "Generates a shared Android runtime library.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "staticLib",
+                    "spelling": "--static-lib",
+                    "description": "Generate a static Android library.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "protoFormat",
+                    "spelling": "--proto-format",
+                    "description": "Generates compiled resources in Protobuf format.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "noStaticLibPackages",
+                    "spelling": "--no-static-lib-packages",
+                    "description": "Merge all library resources under the app's package.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "nonFinalIds",
+                    "spelling": "--non-final-ids",
+                    "description": "Generates R.java without the final modifier. This is implied when",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "noProguardLocationReference",
+                    "spelling": "--no-proguard-location-reference",
+                    "description": "Keep proguard rules files from having a reference to the source file",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "stableIds",
+                    "spelling": "--stable-ids",
+                    "description": "arg                                  File containing a list of name to ID mapping.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "emitIds",
+                    "spelling": "--emit-ids",
+                    "description": "arg                                    Emit a file at the given path with a list of name to ID mappings,",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "privateSymbols",
+                    "spelling": "--private-symbols",
+                    "description": "arg                             Package name to use when generating R.java for private symbols.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "customPackage",
+                    "spelling": "--custom-package",
+                    "description": "arg                              Custom Java package under which to generate R.java.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "extraPackages",
+                    "spelling": "--extra-packages",
+                    "description": "arg                              Generate the same R.java but with different package names.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "addJavadocAnnotation",
+                    "spelling": "--add-javadoc-annotation",
+                    "description": "arg                      Adds a JavaDoc annotation to all generated Java classes.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "outputTextSymbols",
+                    "spelling": "--output-text-symbols",
+                    "description": "arg                         Generates a text file containing the resource symbols of the R class in",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "allowReservedPackageId",
+                    "spelling": "--allow-reserved-package-id",
+                    "description": "Allows the use of a reserved package ID. This should on be used for",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "autoAddOverlay",
+                    "spelling": "--auto-add-overlay",
+                    "description": "Allows the addition of new resources in overlays without",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "overrideStylesInsteadOfOverlaying",
+                    "spelling": "--override-styles-instead-of-overlaying",
+                    "description": "Causes styles defined in -R resources to replace previous definitions",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "renameManifestPackage",
+                    "spelling": "--rename-manifest-package",
+                    "description": "arg                     Renames the package in AndroidManifest.xml.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "renameResourcesPackage",
+                    "spelling": "--rename-resources-package",
+                    "description": "arg                    Renames the package in resources table",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "renameInstrumentationTargetPackage",
+                    "spelling": "--rename-instrumentation-target-package",
+                    "description": "arg       Changes the name of the target package for instrumentation. Most useful",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "renameOverlayTargetPackage",
+                    "spelling": "--rename-overlay-target-package",
+                    "description": "arg               Changes the name of the target package for overlay. Most useful",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "renameOverlayCategory",
+                    "spelling": "--rename-overlay-category",
+                    "description": "arg                     Changes the category for the overlay.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "value0",
+                    "spelling": "-0",
+                    "description": "arg                                            File suffix not to compress.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "E",
+                    "spelling": "-e",
+                    "description": "arg                                            File containing list of extensions not to compress.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "noCompress",
+                    "spelling": "--no-compress",
+                    "description": "Do not compress any resources.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "keepRawValues",
+                    "spelling": "--keep-raw-values",
+                    "description": "Preserve raw attribute values in xml files.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "noCompressRegex",
+                    "spelling": "--no-compress-regex",
+                    "description": "arg                           Do not compress extensions matching the regular expression. Remember to",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "noCompressFonts",
+                    "spelling": "--no-compress-fonts",
+                    "description": "Do not compress files with common extensions for fonts.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "warnManifestValidation",
+                    "spelling": "--warn-manifest-validation",
+                    "description": "Treat manifest validation errors as warnings.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "split",
+                    "spelling": "--split",
+                    "description": "arg                                       Split resources matching a set of configs out to a Split APK.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "excludeConfigs",
+                    "spelling": "--exclude-configs",
+                    "description": "arg                             Excludes values of resources whose configs contain the specified qualifiers.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "debugMode",
+                    "spelling": "--debug-mode",
+                    "description": "Inserts android:debuggable=\"true\" in to the application node of the",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "strictVisibility",
+                    "spelling": "--strict-visibility",
+                    "description": "Do not allow overlays with different visibility levels.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "excludeSources",
+                    "spelling": "--exclude-sources",
+                    "description": "Do not serialize source file information when generating resources in",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "traceFolder",
+                    "spelling": "--trace-folder",
+                    "description": "arg                                Generate systrace json trace fragment to specified folder.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "mergeOnly",
+                    "spelling": "--merge-only",
+                    "description": "Only merge the resources, without verifying resource references. This flag",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "V",
+                    "spelling": "-v",
+                    "description": "Enables verbose logging.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "featureFlags",
+                    "spelling": "--feature-flags",
+                    "description": "arg                               Specify the values of feature flags. The pairs in the argument",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "nonUpdatableSystem",
+                    "spelling": "--non-updatable-system",
+                    "description": "Mark the app as a non-updatable system app. This inserts",
+                    "type": "BOOLEAN"
+                }
+            ],
+            "risk": "HOST_WRITE"
+        },
+        {
+            "name": "diff",
+            "subcommandPath": [
+                "diff"
+            ],
+            "description": "aapt2 diff [options] files...",
+            "options": [
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "description": "Displays this help menu",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "ignoreIdShift",
+                    "spelling": "--ignore-id-shift",
+                    "description": "Match the resources when their IDs shift, e.g. because of the added",
+                    "type": "BOOLEAN"
+                }
+            ],
+            "risk": "READ_ONLY"
+        },
+        {
+            "name": "optimize",
+            "subcommandPath": [
+                "optimize"
+            ],
+            "description": "aapt2 optimize [options] files...",
+            "options": [
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "description": "Displays this help menu",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "O",
+                    "spelling": "-o",
+                    "description": "arg                                            Path to the output APK.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "D",
+                    "spelling": "-d",
+                    "description": "arg                                            Path to the output directory (for splits).",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "X",
+                    "spelling": "-x",
+                    "description": "arg                                            Path to XML configuration file.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "P",
+                    "spelling": "-p",
+                    "description": "Print the multi APK artifacts and exit.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "targetDensities",
+                    "spelling": "--target-densities",
+                    "description": "arg                            Comma separated list of the screen densities that the APK will be optimized for.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "resourcesConfigPath",
+                    "spelling": "--resources-config-path",
+                    "description": "arg                       Path to the resources.cfg file containing the list of resources and",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "C",
+                    "spelling": "-c",
+                    "description": "arg                                            Comma separated list of configurations to include. The default",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "split",
+                    "spelling": "--split",
+                    "description": "arg                                       Split resources matching a set of configs out to a Split APK.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "keepArtifacts",
+                    "spelling": "--keep-artifacts",
+                    "description": "arg                              Comma separated list of artifacts to keep. If none are specified,",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "enableSparseEncoding",
+                    "spelling": "--enable-sparse-encoding",
+                    "description": "Enables encoding sparse entries using a binary search tree.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "forceSparseEncoding",
+                    "spelling": "--force-sparse-encoding",
+                    "description": "Enables encoding sparse entries using a binary search tree.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "enableCompactEntries",
+                    "spelling": "--enable-compact-entries",
+                    "description": "This decreases APK size by using compact resource entries for simple data types.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "collapseResourceNames",
+                    "spelling": "--collapse-resource-names",
+                    "description": "Collapses resource names to a single value in the key string pool. Resources can",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "shortenResourcePaths",
+                    "spelling": "--shorten-resource-paths",
+                    "description": "Shortens the paths of resources inside the APK. Resources can be exempted using the",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "resourcePathShorteningMap",
+                    "spelling": "--resource-path-shortening-map",
+                    "description": "arg                [Deprecated]Path to output the map of old resource paths to shortened paths.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "saveObfuscationMap",
+                    "spelling": "--save-obfuscation-map",
+                    "description": "arg                        Path to output the map of original paths/names to obfuscated paths/names.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "deduplicateEntryValues",
+                    "spelling": "--deduplicate-entry-values",
+                    "description": "Whether to deduplicate pairs of resource entry and value for simple resources.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "V",
+                    "spelling": "-v",
+                    "description": "Enables verbose logging",
+                    "type": "BOOLEAN"
+                }
+            ],
+            "risk": "HOST_WRITE"
+        },
+        {
+            "name": "convert",
+            "subcommandPath": [
+                "convert"
+            ],
+            "description": "aapt2 convert [options] -o arg files...",
+            "options": [
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "description": "Displays this help menu",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "O",
+                    "spelling": "-o",
+                    "description": "arg                                            Output path",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "outputFormat",
+                    "spelling": "--output-format",
+                    "description": "arg                               Format of the output. Accepted values are 'proto' and 'binary'. When not set, defaults to 'binary'.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "enableSparseEncoding",
+                    "spelling": "--enable-sparse-encoding",
+                    "description": "Enables encoding sparse entries using a binary search tree.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "forceSparseEncoding",
+                    "spelling": "--force-sparse-encoding",
+                    "description": "Enables encoding sparse entries using a binary search tree.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "enableCompactEntries",
+                    "spelling": "--enable-compact-entries",
+                    "description": "This decreases APK size by using compact resource entries for simple data types.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "keepRawValues",
+                    "spelling": "--keep-raw-values",
+                    "description": "Preserve raw attribute values in xml files when using the 'binary' output format",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "resourcesConfigPath",
+                    "spelling": "--resources-config-path",
+                    "description": "arg                       Path to the resources.cfg file containing the list of resources and",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "collapseResourceNames",
+                    "spelling": "--collapse-resource-names",
+                    "description": "Collapses resource names to a single value in the key string pool. Resources can",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "deduplicateEntryValues",
+                    "spelling": "--deduplicate-entry-values",
+                    "description": "Whether to deduplicate pairs of resource entry and value for simple resources.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "V",
+                    "spelling": "-v",
+                    "description": "Enables verbose logging",
+                    "type": "BOOLEAN"
+                }
+            ],
+            "risk": "HOST_WRITE"
+        },
+        {
+            "name": "version",
+            "subcommandPath": [
+                "version"
+            ],
+            "description": "aapt2 version [options] files...",
+            "options": [
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "description": "Displays this help menu",
+                    "type": "BOOLEAN"
+                }
+            ],
+            "risk": "READ_ONLY"
+        },
+        {
+            "name": "apkinfo",
+            "subcommandPath": [
+                "apkinfo"
+            ],
+            "description": "aapt2 apkinfo [options] -o arg files...",
+            "options": [
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "description": "Displays this help menu",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "O",
+                    "spelling": "-o",
+                    "description": "arg                                            Output path",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "includeResourceTable",
+                    "spelling": "--include-resource-table",
+                    "description": "Include the resource table data into output.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "includeXml",
+                    "spelling": "--include-xml",
+                    "description": "arg                                 Include an XML file content into output. Multiple XML files might be requested during single invocation.",
+                    "type": "BOOLEAN"
+                }
+            ],
+            "risk": "READ_ONLY"
+        },
+        {
+            "name": "daemon",
+            "subcommandPath": [
+                "daemon"
+            ],
+            "description": "aapt2 daemon [options] files...",
+            "options": [
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "description": "Displays this help menu",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "traceFolder",
+                    "spelling": "--trace_folder",
+                    "description": "arg                                Generate systrace json trace fragment to specified folder.",
+                    "type": "BOOLEAN"
+                }
+            ],
+            "risk": "READ_ONLY"
+        },
+        {
+            "name": "dumpApc",
+            "subcommandPath": [
+                "dump",
+                "apc"
+            ],
+            "description": "dump apc [options] files...",
+            "options": [
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "description": "Displays this help menu",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "noValues",
+                    "spelling": "--no-values",
+                    "description": "Suppresses output of values when displaying resource tables.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "V",
+                    "spelling": "-v",
+                    "description": "Enables verbose logging.",
+                    "type": "BOOLEAN"
+                }
+            ],
+            "risk": "READ_ONLY"
+        },
+        {
+            "name": "dumpBadging",
+            "subcommandPath": [
+                "dump",
+                "badging"
+            ],
+            "description": "dump badging [options] files...",
+            "options": [
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "description": "Displays this help menu",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "includeMetaData",
+                    "spelling": "--include-meta-data",
+                    "description": "Include meta-data information.",
+                    "type": "BOOLEAN"
+                }
+            ],
+            "arguments": [
+                {
+                    "name": "file",
+                    "description": "APK file to dump",
+                    "type": "PATH",
+                    "required": true
+                }
+            ],
+            "risk": "READ_ONLY"
+        },
+        {
+            "name": "dumpChunks",
+            "subcommandPath": [
+                "dump",
+                "chunks"
+            ],
+            "description": "dump chunks [options] files...",
+            "options": [
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "description": "Displays this help menu",
+                    "type": "BOOLEAN"
+                }
+            ],
+            "risk": "READ_ONLY"
+        },
+        {
+            "name": "dumpConfigurations",
+            "subcommandPath": [
+                "dump",
+                "configurations"
+            ],
+            "description": "dump configurations [options] files...",
+            "options": [
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "description": "Displays this help menu",
+                    "type": "BOOLEAN"
+                }
+            ],
+            "risk": "READ_ONLY"
+        },
+        {
+            "name": "dump",
+            "subcommandPath": [
+                "dump"
+            ],
+            "description": "aapt2 dump [subcommand] [options] files...",
+            "options": [
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "description": "Displays this help menu",
+                    "type": "BOOLEAN"
+                }
+            ],
+            "risk": "READ_ONLY"
+        },
+        {
+            "name": "dumpOverlayable",
+            "subcommandPath": [
+                "dump",
+                "overlayable"
+            ],
+            "description": "dump overlayable [options] files...",
+            "options": [
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "description": "Displays this help menu",
+                    "type": "BOOLEAN"
+                }
+            ],
+            "risk": "READ_ONLY"
+        },
+        {
+            "name": "dumpPackagename",
+            "subcommandPath": [
+                "dump",
+                "packagename"
+            ],
+            "description": "dump packagename [options] files...",
+            "options": [
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "description": "Displays this help menu",
+                    "type": "BOOLEAN"
+                }
+            ],
+            "risk": "READ_ONLY"
+        },
+        {
+            "name": "dumpPermissions",
+            "subcommandPath": [
+                "dump",
+                "permissions"
+            ],
+            "description": "dump permissions [options] files...",
+            "options": [
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "description": "Displays this help menu",
+                    "type": "BOOLEAN"
+                }
+            ],
+            "risk": "READ_ONLY"
+        },
+        {
+            "name": "dumpResources",
+            "subcommandPath": [
+                "dump",
+                "resources"
+            ],
+            "description": "dump resources [options] files...",
+            "options": [
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "description": "Displays this help menu",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "noValues",
+                    "spelling": "--no-values",
+                    "description": "Suppresses output of values when displaying resource tables.",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "V",
+                    "spelling": "-v",
+                    "description": "Enables verbose logging.",
+                    "type": "BOOLEAN"
+                }
+            ],
+            "risk": "READ_ONLY"
+        },
+        {
+            "name": "dumpStrings",
+            "subcommandPath": [
+                "dump",
+                "strings"
+            ],
+            "description": "dump strings [options] files...",
+            "options": [
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "description": "Displays this help menu",
+                    "type": "BOOLEAN"
+                }
+            ],
+            "risk": "READ_ONLY"
+        },
+        {
+            "name": "dumpStyleparents",
+            "subcommandPath": [
+                "dump",
+                "styleparents"
+            ],
+            "description": "dump styleparents [options] --style arg files...",
+            "options": [
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "description": "Displays this help menu",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "style",
+                    "spelling": "--style",
+                    "description": "arg                                       The name of the style to print",
+                    "type": "BOOLEAN"
+                }
+            ],
+            "risk": "READ_ONLY"
+        },
+        {
+            "name": "dumpXmlstrings",
+            "subcommandPath": [
+                "dump",
+                "xmlstrings"
+            ],
+            "description": "dump xmlstrings [options] --file arg files...",
+            "options": [
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "description": "Displays this help menu",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "file",
+                    "spelling": "--file",
+                    "description": "arg                                        A compiled xml file to print",
+                    "type": "BOOLEAN"
+                }
+            ],
+            "risk": "READ_ONLY"
+        },
+        {
+            "name": "dumpXmltree",
+            "subcommandPath": [
+                "dump",
+                "xmltree"
+            ],
+            "description": "dump xmltree [options] --file arg files...",
+            "options": [
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "description": "Displays this help menu",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "file",
+                    "spelling": "--file",
+                    "description": "arg                                        A compiled xml file to print",
+                    "type": "BOOLEAN"
+                }
+            ],
+            "risk": "READ_ONLY"
+        }
+    ],
+    "globalOptions": [
+        {
+            "name": "help",
+            "spelling": "--help",
+            "description": "Displays this help menu",
+            "type": "BOOLEAN"
+        }
+    ],
+    "exitCodes": [
+        {
+            "code": 0,
+            "meaning": "Success",
+            "isSuccess": true
+        },
+        {
+            "code": 1,
+            "meaning": "Error/Failure",
+            "isSuccess": false
+        }
+    ],
+    "defaultTimeout": "30s",
+    "risk": "READ_ONLY"
+}

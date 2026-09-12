@@ -1,0 +1,115 @@
+{
+    "schemaVersion": 1,
+    "tool": "dump.erofs",
+    "executable": "dump.erofs",
+    "platform": [
+        "linux-x86_64"
+    ],
+    "sourceRevision": "HEAD",
+    "binarySha256": "f0ebc440713aaf0f0960d9bff97b570de185bb73524c10b85752c55c60716c39",
+    "helpSha256": "fb5054a0c7a4722d2ffa0c4034b5cdb16917f847884919d48fb8d32229f17bdc",
+    "globalOptions": [
+        {
+            "name": "version",
+            "spelling": "--version",
+            "aliases": [
+                "-V"
+            ],
+            "description": "print the version number of dump.erofs and exit",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "help",
+            "spelling": "--help",
+            "aliases": [
+                "-h"
+            ],
+            "description": "display this help and exit",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "S",
+            "spelling": "-S",
+            "description": "show statistic information of the image",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "E",
+            "spelling": "-e",
+            "description": "show extent info (INODE required)",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "device",
+            "spelling": "--device",
+            "description": "specify an extra device to be used together",
+            "type": "STRING"
+        },
+        {
+            "name": "ls",
+            "spelling": "--ls",
+            "description": "show directory contents (INODE required)",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "cat",
+            "spelling": "--cat",
+            "description": "show file contents (INODE required)",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "nid",
+            "spelling": "--nid",
+            "description": "show the target inode info of nid #",
+            "type": "STRING"
+        },
+        {
+            "name": "offset",
+            "spelling": "--offset",
+            "description": "skip # bytes at the beginning of IMAGE",
+            "type": "STRING"
+        },
+        {
+            "name": "path",
+            "spelling": "--path",
+            "description": "show the target inode info of path X",
+            "type": "STRING"
+        }
+    ],
+    "exitCodes": [
+        {
+            "code": 0,
+            "meaning": "Success",
+            "isSuccess": true
+        },
+        {
+            "code": 1,
+            "meaning": "Error/Failure",
+            "isSuccess": false
+        }
+    ],
+    "defaultTimeout": "30s",
+    "risk": "READ_ONLY",
+    "commands": [
+        {
+            "name": "execute",
+            "subcommandPath": [
+                "_self"
+            ],
+            "description": "Execute the tool with its options and positional operands",
+            "arguments": [
+                {
+                    "name": "positionalArgs",
+                    "description": "Tool-specific positional operands",
+                    "type": "STRING",
+                    "required": false,
+                    "repeatable": true
+                }
+            ],
+            "risk": null,
+            "outputParser": "metadata",
+            "outputType": "io.ltirom.tooling.core.ParsedToolMetadata",
+            "artifacts": []
+        }
+    ]
+}

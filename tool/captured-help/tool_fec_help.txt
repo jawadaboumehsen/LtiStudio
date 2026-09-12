@@ -1,0 +1,19 @@
+fec: a tool for encoding and decoding files using RS(255, N).
+
+usage: fec <mode> [ <options> ] [ <data> <fec> [ <output> ] ]
+mode:
+  -e  --encode                      encode (default)
+  -d  --decode                      decode
+  -s, --print-fec-size=<data size>  print FEC size
+  -E, --get-ecc-start=data          print ECC offset in data
+  -V, --get-verity-start=data       print verity offset
+options:
+  -h                                show this help
+  -v                                enable verbose logging
+  -r, --roots=<bytes>               number of parity bytes
+  -j, --threads=<threads>           number of threads to use
+  -S                                treat data as a sparse file
+encoding options:
+  -p, --padding=<bytes>             add padding after ECC data
+decoding options:
+  -i, --inplace                     correct <data> in place

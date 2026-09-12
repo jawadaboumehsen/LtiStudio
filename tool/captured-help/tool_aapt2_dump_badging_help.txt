@@ -1,0 +1,5 @@
+dump badging [options] files...
+
+Options:
+ --help                                            Displays this help menu
+ --include-meta-data                               Include meta-data information.

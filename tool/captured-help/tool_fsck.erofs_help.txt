@@ -1,0 +1,31 @@
+Usage: fsck.erofs [OPTIONS] IMAGE
+Check erofs filesystem compatibility and integrity of IMAGE.
+
+This version of fsck.erofs is capable of checking images that use any of the
+following algorithms: lz4, lz4hc, lzma, deflate, zstd
+
+General options:
+ -V, --version          print the version number of fsck.erofs and exit
+ -h, --help             display this help and exit
+
+ -d<0-9>                set output verbosity; 0=quiet, 9=verbose (default=2)
+ -p                     print total compression ratio of all files
+ --device=X             specify an extra device to be used together
+ --extract[=X]          check if all files are well encoded, optionally
+                        extract to X
+ --offset=#             skip # bytes at the beginning of IMAGE
+ --[no-]xattrs          whether to dump extended attributes (default off)
+
+ -a, -A, -y             no-op, for compatibility with fsck of other filesystems
+
+Extraction options (--extract=X is required):
+ --force                allow extracting to root
+ --overwrite            overwrite files that already exist
+ --[no-]preserve        same as --[no-]preserve-owner --[no-]preserve-perms
+ --[no-]preserve-owner  whether to preserve the ownership from the
+                        filesystem (default for superuser), or to extract as
+                        yourself (default for ordinary users)
+ --[no-]preserve-perms  whether to preserve the exact permissions from the
+                        filesystem without applying umask (default for
+                        superuser), or to modify the permissions by applying
+                        umask (default for ordinary users)

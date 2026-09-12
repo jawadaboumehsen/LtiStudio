@@ -1,0 +1,70 @@
+{
+    "schemaVersion": 1,
+    "tool": "ext2simg",
+    "executable": "ext2simg",
+    "platform": [
+        "linux-x86_64"
+    ],
+    "sourceRevision": "HEAD",
+    "binarySha256": "c297420cee3474f5bddfb311818982a6b0435016d192f836e7c851684026db94",
+    "helpSha256": "322c157a69163fe87ed8fa2bb9fa938a07b910d9bc6baaf74b8fe560fc95cbd4",
+    "globalOptions": [
+        {
+            "name": "C",
+            "spelling": "-c",
+            "description": "include CRC block",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "Z",
+            "spelling": "-z",
+            "description": "gzip output",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "S",
+            "spelling": "-S",
+            "description": "don't use sparse output format",
+            "type": "BOOLEAN"
+        }
+    ],
+    "exitCodes": [
+        {
+            "code": 0,
+            "meaning": "Success",
+            "isSuccess": true
+        },
+        {
+            "code": 1,
+            "meaning": "Error/Failure",
+            "isSuccess": false
+        }
+    ],
+    "defaultTimeout": "30s",
+    "risk": "HOST_WRITE",
+    "commands": [
+        {
+            "name": "execute",
+            "subcommandPath": [
+                "_self"
+            ],
+            "description": "Execute the tool with its options and positional operands",
+            "arguments": [
+                {
+                    "name": "positionalArgs",
+                    "description": "Tool-specific positional operands",
+                    "type": "STRING",
+                    "required": false,
+                    "repeatable": true
+                }
+            ],
+            "risk": "HOST_WRITE",
+            "outputParser": "identity",
+            "outputType": "String",
+            "artifacts": [
+                {"name": "inputImage", "parameter": "positionalArgs", "index": 0, "type": "FILE", "direction": "INPUT", "required": true},
+                {"name": "outputImage", "parameter": "positionalArgs", "index": 1, "type": "FILE", "direction": "OUTPUT", "required": true}
+            ]
+        }
+    ]
+}

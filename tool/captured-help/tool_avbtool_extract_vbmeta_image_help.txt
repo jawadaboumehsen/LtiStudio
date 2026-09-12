@@ -1,0 +1,10 @@
+usage: avbtool extract_vbmeta_image [-h] --image IMAGE [--output OUTPUT]
+                                    [--padding_size NUMBER]
+
+options:
+  -h, --help            show this help message and exit
+  --image IMAGE         Image with footer
+  --output OUTPUT       Output file name
+  --padding_size NUMBER
+                        If non-zero, pads output with NUL bytes so its size is
+                        a multiple of NUMBER (default: 0)

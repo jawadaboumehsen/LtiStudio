@@ -1,0 +1,25 @@
+lpadd: unrecognized option '--help'
+lpadd - command-line tool for adding partitions to a super.img
+
+Usage:
+ lpadd [options] SUPER PARTNAME PARTGROUP [IMAGE]
+
+  SUPER                         Path to the super image. It can be sparsed or
+                                unsparsed. If sparsed, it will be unsparsed
+                                temporarily and re-sparsed over the original
+                                file. This will consume extra space during the
+                                execution of lpadd.
+  PARTNAME                      Name of the partition to add.
+  PARTGROUP                     Name of the partition group to use. If the
+                                partition can be updated over OTA, the group
+                                should match its updatable group.
+  IMAGE                         If specified, the contents of the given image
+                                will be added to the super image. If the image
+                                is sparsed, it will be temporarily unsparsed.
+                                If no image is specified, the partition will
+                                be zero-sized.
+
+Extra options:
+  --readonly                    The partition should be mapped read-only.
+  --replace                     The partition contents should be replaced with
+                                the input image.

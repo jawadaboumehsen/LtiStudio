@@ -1,0 +1,13 @@
+Usage: mkbootfs [-n FILE] [-d DIR|-f FILE] DIR...
+
+	-d, --dirname=DIR: fs-config directory
+	-f, --file=FILE: Canned configuration file
+	-h, --help: Print this help
+	-n, --nodes=FILE: Dev nodes description file
+
+Dev nodes description:
+	[dir|nod] [perms] [uid] [gid] [c|b] [major] [minor]
+	Example:
+		# My device nodes
+		dir dev 0755 0 0
+		nod dev/null 0600 0 0 c 1 3

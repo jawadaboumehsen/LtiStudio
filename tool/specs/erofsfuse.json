@@ -1,0 +1,110 @@
+{
+    "schemaVersion": 1,
+    "tool": "erofsfuse",
+    "executable": "erofsfuse",
+    "platform": [
+        "linux-x86_64"
+    ],
+    "sourceRevision": "HEAD",
+    "binarySha256": "006305913987975af059fccab8229b9df67280378c6d28bc825d1a6508c688e2",
+    "helpSha256": "fd336a9023002fad4f1370c57a57a7d740ce411d576c803b3f1d94fc7954a037",
+    "globalOptions": [
+        {
+            "name": "offset",
+            "spelling": "--offset",
+            "description": "skip # bytes at the beginning of IMAGE",
+            "type": "STRING"
+        },
+        {
+            "name": "dbglevel",
+            "spelling": "--dbglevel",
+            "description": "set output message level to # (maximum 9)",
+            "type": "STRING"
+        },
+        {
+            "name": "device",
+            "spelling": "--device",
+            "description": "specify an extra device to be used together",
+            "type": "STRING"
+        },
+        {
+            "name": "help",
+            "spelling": "--help",
+            "aliases": [
+                "-h"
+            ],
+            "description": "print help",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "version",
+            "spelling": "--version",
+            "aliases": [
+                "-V"
+            ],
+            "description": "print version",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "D",
+            "spelling": "-d",
+            "description": "debug          enable debug output (implies -f)",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "F",
+            "spelling": "-f",
+            "description": "foreground operation",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "S",
+            "spelling": "-s",
+            "description": "disable multi-threaded operation",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "O",
+            "spelling": "-o",
+            "description": "FUSE mount option (repeatable, e.g. -o clone_fd -o max_idle_threads=N)",
+            "type": "STRING",
+            "repeatable": true
+        }
+    ],
+    "exitCodes": [
+        {
+            "code": 0,
+            "meaning": "Success",
+            "isSuccess": true
+        },
+        {
+            "code": 1,
+            "meaning": "Error/Failure",
+            "isSuccess": false
+        }
+    ],
+    "defaultTimeout": "30s",
+    "risk": "HOST_WRITE",
+    "commands": [
+        {
+            "name": "execute",
+            "subcommandPath": [
+                "_self"
+            ],
+            "description": "Execute the tool with its options and positional operands",
+            "arguments": [
+                {
+                    "name": "positionalArgs",
+                    "description": "Tool-specific positional operands",
+                    "type": "STRING",
+                    "required": false,
+                    "repeatable": true
+                }
+            ],
+            "risk": "HOST_WRITE",
+            "outputParser": "identity",
+            "outputType": "String",
+            "artifacts": []
+        }
+    ]
+}

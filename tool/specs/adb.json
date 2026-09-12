@@ -1,0 +1,871 @@
+{
+  "schemaVersion": 1,
+  "tool": "adb",
+  "executable": "adb",
+  "platform": [
+    "linux-x86_64"
+  ],
+  "sourceRevision": "HEAD",
+  "binarySha256": "e853bd0ffb1a50df2772d9bc135fa30f567b88c093cf4c040f2e2b87ee5583cb",
+  "versionText": "Android Debug Bridge version 1.0.41\nVersion 36.0.1-android-tools\nInstalled as adb\nRunning on Linux 6.18.33.1-microsoft-standard-WSL2 (x86_64)",
+  "helpSha256": "95c0b801ea1909673b51f22f6bb70f5cb0954046bcf80e70a50e9c556f0c205d",
+  "globalOptions": [
+    {
+      "name": "listenAll",
+      "spelling": "-a",
+      "description": "listen on all network interfaces, not just localhost",
+      "type": "BOOLEAN"
+    },
+    {
+      "name": "useUsb",
+      "spelling": "-d",
+      "description": "use USB device (error if multiple devices connected)",
+      "type": "BOOLEAN"
+    },
+    {
+      "name": "useTcp",
+      "spelling": "-e",
+      "description": "use TCP/IP device (error if multiple TCP/IP devices available)",
+      "type": "BOOLEAN"
+    },
+    {
+      "name": "serial",
+      "spelling": "-s",
+      "description": "use device with given serial (overrides $ANDROID_SERIAL)",
+      "type": "STRING"
+    },
+    {
+      "name": "transportId",
+      "spelling": "-t",
+      "description": "use device with given transport id",
+      "type": "STRING"
+    },
+    {
+      "name": "serverHost",
+      "spelling": "-H",
+      "description": "name of adb server host [default=localhost]",
+      "type": "STRING"
+    },
+    {
+      "name": "serverPort",
+      "spelling": "-P",
+      "description": "port of adb server [default=5037]",
+      "type": "INT"
+    },
+    {
+      "name": "serverSocket",
+      "spelling": "-L",
+      "description": "listen on given socket for adb server [default=tcp:localhost:5037]",
+      "type": "STRING"
+    },
+    {
+      "name": "oneDevice",
+      "spelling": "--one-device",
+      "description": "only allowed with 'start-server' or 'server nodaemon', server will only connect to one USB device, specified by a serial number or USB device address.",
+      "type": "STRING"
+    },
+    {
+      "name": "exitOnWriteError",
+      "spelling": "--exit-on-write-error",
+      "description": "exit if stdout is closed",
+      "type": "BOOLEAN"
+    }
+  ],
+  "commands": [
+    {
+      "name": "attach",
+      "subcommandPath": [
+        "attach"
+      ],
+      "description": "attach a detached device",
+      "arguments": [],
+      "risk": "HOST_WRITE",
+      "outputParser": "identity",
+      "outputType": "String"
+    },
+    {
+      "name": "bugreport",
+      "subcommandPath": [
+        "bugreport"
+      ],
+      "description": "write a bug report",
+      "arguments": [
+        {
+          "name": "path",
+          "description": "bug report path",
+          "type": "PATH",
+          "required": false
+        }
+      ],
+      "risk": "HOST_WRITE",
+      "outputParser": "identity",
+      "outputType": "String"
+    },
+    {
+      "name": "connect",
+      "subcommandPath": [
+        "connect"
+      ],
+      "description": "connect to device via TCP/IP",
+      "arguments": [
+        {
+          "name": "host",
+          "description": "device hostname or host:port",
+          "type": "STRING",
+          "required": true
+        }
+      ],
+      "risk": "READ_ONLY"
+    },
+    {
+      "name": "detach",
+      "subcommandPath": [
+        "detach"
+      ],
+      "description": "detach a device",
+      "arguments": [],
+      "risk": "HOST_WRITE",
+      "outputParser": "identity",
+      "outputType": "String"
+    },
+    {
+      "name": "devices",
+      "subcommandPath": [
+        "devices"
+      ],
+      "description": "list connected devices",
+      "options": [
+        {
+          "name": "longListing",
+          "spelling": "-l",
+          "description": "long output listing",
+          "type": "BOOLEAN"
+        }
+      ],
+      "outputParser": "adb-devices",
+      "outputType": "List<String>",
+      "risk": "READ_ONLY"
+    },
+    {
+      "name": "disableVerity",
+      "subcommandPath": [
+        "disable-verity"
+      ],
+      "description": "disable dm-verity",
+      "arguments": [],
+      "risk": "DEVICE_WRITE",
+      "outputParser": "identity",
+      "outputType": "String"
+    },
+    {
+      "name": "disconnect",
+      "subcommandPath": [
+        "disconnect"
+      ],
+      "description": "disconnect from TCP/IP device",
+      "arguments": [
+        {
+          "name": "host",
+          "description": "device hostname or host:port (optional)",
+          "type": "STRING",
+          "required": false
+        }
+      ],
+      "risk": "READ_ONLY"
+    },
+    {
+      "name": "emu",
+      "subcommandPath": [
+        "emu"
+      ],
+      "description": "run emulator console command",
+      "arguments": [
+        {
+          "name": "args",
+          "description": "emulator arguments",
+          "type": "STRING",
+          "required": false,
+          "repeatable": true
+        }
+      ],
+      "risk": "DEVICE_WRITE",
+      "outputParser": "identity",
+      "outputType": "String"
+    },
+    {
+      "name": "enableVerity",
+      "subcommandPath": [
+        "enable-verity"
+      ],
+      "description": "enable dm-verity",
+      "arguments": [],
+      "risk": "DEVICE_WRITE",
+      "outputParser": "identity",
+      "outputType": "String"
+    },
+    {
+      "name": "execOut",
+      "subcommandPath": [
+        "exec-out"
+      ],
+      "description": "run remote command and output binary stream",
+      "arguments": [
+        {
+          "name": "command",
+          "description": "command to run",
+          "type": "STRING",
+          "required": false,
+          "repeatable": true
+        }
+      ],
+      "outputParser": "identity",
+      "outputType": "ByteArray",
+      "risk": "DEVICE_WRITE"
+    },
+    {
+      "name": "forward",
+      "subcommandPath": [
+        "forward"
+      ],
+      "description": "forward sockets",
+      "arguments": [
+        {
+          "name": "args",
+          "description": "forward arguments",
+          "type": "STRING",
+          "required": false,
+          "repeatable": true
+        }
+      ],
+      "risk": "DEVICE_WRITE",
+      "outputParser": "identity",
+      "outputType": "String"
+    },
+    {
+      "name": "getDevpath",
+      "subcommandPath": [
+        "get-devpath"
+      ],
+      "description": "get device path",
+      "arguments": [],
+      "risk": "READ_ONLY",
+      "outputParser": "identity",
+      "outputType": "String"
+    },
+    {
+      "name": "getSerialno",
+      "subcommandPath": [
+        "get-serialno"
+      ],
+      "description": "get device serial",
+      "arguments": [],
+      "risk": "READ_ONLY",
+      "outputParser": "identity",
+      "outputType": "String"
+    },
+    {
+      "name": "getState",
+      "subcommandPath": [
+        "get-state"
+      ],
+      "description": "get device state",
+      "outputParser": "identity",
+      "outputType": "String",
+      "risk": "READ_ONLY"
+    },
+    {
+      "name": "help",
+      "subcommandPath": [
+        "help"
+      ],
+      "description": "show help",
+      "arguments": [
+        {
+          "name": "args",
+          "description": "optional help arguments",
+          "type": "STRING",
+          "required": false,
+          "repeatable": true
+        }
+      ],
+      "risk": "READ_ONLY",
+      "outputParser": "identity",
+      "outputType": "String"
+    },
+    {
+      "name": "install",
+      "subcommandPath": [
+        "install"
+      ],
+      "description": "push package to device and install it",
+      "options": [
+        {
+          "name": "replace",
+          "spelling": "-r",
+          "description": "replace existing application",
+          "type": "BOOLEAN"
+        },
+        {
+          "name": "testPackages",
+          "spelling": "-t",
+          "description": "allow test packages",
+          "type": "BOOLEAN"
+        },
+        {
+          "name": "downgrade",
+          "spelling": "-d",
+          "description": "allow version code downgrade",
+          "type": "BOOLEAN"
+        },
+        {
+          "name": "grantPermissions",
+          "spelling": "-g",
+          "description": "grant all runtime permissions",
+          "type": "BOOLEAN"
+        }
+      ],
+      "arguments": [
+        {
+          "name": "packagePath",
+          "description": "path to APK package",
+          "type": "PATH",
+          "required": true
+        }
+      ],
+      "risk": "DEVICE_WRITE"
+    },
+    {
+      "name": "installMultiPackage",
+      "subcommandPath": [
+        "install-multi-package"
+      ],
+      "description": "install packages atomically",
+      "arguments": [
+        {
+          "name": "packages",
+          "description": "APK packages",
+          "type": "PATH",
+          "required": false,
+          "repeatable": true
+        }
+      ],
+      "risk": "DEVICE_WRITE",
+      "outputParser": "identity",
+      "outputType": "String"
+    },
+    {
+      "name": "installMultiple",
+      "subcommandPath": [
+        "install-multiple"
+      ],
+      "description": "install multiple APKs",
+      "arguments": [
+        {
+          "name": "packages",
+          "description": "APK packages",
+          "type": "PATH",
+          "required": false,
+          "repeatable": true
+        }
+      ],
+      "risk": "DEVICE_WRITE",
+      "outputParser": "identity",
+      "outputType": "String"
+    },
+    {
+      "name": "jdwp",
+      "subcommandPath": [
+        "jdwp"
+      ],
+      "description": "list JDWP processes",
+      "arguments": [],
+      "risk": "READ_ONLY",
+      "outputParser": "identity",
+      "outputType": "String"
+    },
+    {
+      "name": "keygen",
+      "subcommandPath": [
+        "keygen"
+      ],
+      "description": "generate adb keys",
+      "arguments": [
+        {
+          "name": "file",
+          "description": "private key output",
+          "type": "PATH",
+          "required": true
+        }
+      ],
+      "risk": "HOST_WRITE",
+      "outputParser": "identity",
+      "outputType": "String"
+    },
+    {
+      "name": "killServer",
+      "subcommandPath": [
+        "kill-server"
+      ],
+      "description": "stop adb server",
+      "arguments": [],
+      "risk": "HOST_WRITE",
+      "outputParser": "identity",
+      "outputType": "String"
+    },
+    {
+      "name": "logcat",
+      "subcommandPath": [
+        "logcat"
+      ],
+      "description": "view or clear device logs",
+      "options": [
+        {
+          "name": "clearLogs",
+          "spelling": "-c",
+          "description": "clear logs and exit",
+          "type": "BOOLEAN"
+        },
+        {
+          "name": "dumpLogs",
+          "spelling": "-d",
+          "description": "dump logs to stdout and exit",
+          "type": "BOOLEAN"
+        },
+        {
+          "name": "outputFile",
+          "spelling": "-f",
+          "description": "write logs to specified file",
+          "type": "PATH"
+        },
+        {
+          "name": "logFormat",
+          "spelling": "-v",
+          "description": "format style of logs",
+          "type": "STRING"
+        }
+      ],
+      "arguments": [
+        {
+          "name": "filters",
+          "description": "log filter specifications",
+          "type": "STRING",
+          "required": false,
+          "repeatable": true
+        }
+      ],
+      "outputParser": "identity",
+      "outputType": "String",
+      "risk": "READ_ONLY"
+    },
+    {
+      "name": "mdns",
+      "subcommandPath": [
+        "mdns"
+      ],
+      "description": "mdns discovery",
+      "arguments": [
+        {
+          "name": "args",
+          "description": "mdns arguments",
+          "type": "STRING",
+          "required": false,
+          "repeatable": true
+        }
+      ],
+      "risk": "READ_ONLY",
+      "outputParser": "identity",
+      "outputType": "String"
+    },
+    {
+      "name": "pair",
+      "subcommandPath": [
+        "pair"
+      ],
+      "description": "pair with a device",
+      "arguments": [
+        {
+          "name": "args",
+          "description": "host and pairing arguments",
+          "type": "STRING",
+          "required": false,
+          "repeatable": true
+        }
+      ],
+      "risk": "DEVICE_WRITE",
+      "outputParser": "identity",
+      "outputType": "String"
+    },
+    {
+      "name": "pull",
+      "subcommandPath": [
+        "pull"
+      ],
+      "description": "copy files/dirs from device",
+      "options": [
+        {
+          "name": "preserveMetadata",
+          "spelling": "-a",
+          "description": "preserve file timestamp and mode",
+          "type": "BOOLEAN"
+        },
+        {
+          "name": "compression",
+          "spelling": "-z",
+          "description": "enable compression with specified algorithm",
+          "type": "STRING"
+        },
+        {
+          "name": "disableCompression",
+          "spelling": "-Z",
+          "description": "disable compression",
+          "type": "BOOLEAN"
+        }
+      ],
+      "arguments": [
+        {
+          "name": "remote",
+          "description": "remote path on device",
+          "type": "STRING",
+          "required": true
+        },
+        {
+          "name": "local",
+          "description": "local path to pull to",
+          "type": "PATH",
+          "required": true
+        }
+      ],
+      "risk": "HOST_WRITE",
+      "outputParser": "adb-transfer-progress",
+      "outputType": "io.ltirom.tooling.core.AdbTransferProgress"
+    },
+    {
+      "name": "push",
+      "subcommandPath": [
+        "push"
+      ],
+      "description": "copy local files/directories to device",
+      "options": [
+        {
+          "name": "sync",
+          "spelling": "--sync",
+          "description": "only push files that have different timestamps on the host than the device",
+          "type": "BOOLEAN"
+        },
+        {
+          "name": "compression",
+          "spelling": "-z",
+          "description": "enable compression with specified algorithm",
+          "type": "STRING"
+        },
+        {
+          "name": "disableCompression",
+          "spelling": "-Z",
+          "description": "disable compression",
+          "type": "BOOLEAN"
+        }
+      ],
+      "arguments": [
+        {
+          "name": "local",
+          "description": "local path to push",
+          "type": "PATH",
+          "required": true
+        },
+        {
+          "name": "remote",
+          "description": "remote path on device",
+          "type": "STRING",
+          "required": true
+        }
+      ],
+      "risk": "DEVICE_WRITE",
+      "outputParser": "adb-transfer-progress",
+      "outputType": "io.ltirom.tooling.core.AdbTransferProgress"
+    },
+    {
+      "name": "reboot",
+      "subcommandPath": [
+        "reboot"
+      ],
+      "description": "reboot the device",
+      "arguments": [
+        {
+          "name": "target",
+          "description": "reboot target: bootloader, recovery, fastboot",
+          "type": "STRING",
+          "required": false
+        }
+      ],
+      "risk": "DEVICE_WRITE"
+    },
+    {
+      "name": "reconnect",
+      "subcommandPath": [
+        "reconnect"
+      ],
+      "description": "reconnect transport",
+      "arguments": [
+        {
+          "name": "args",
+          "description": "reconnect arguments",
+          "type": "STRING",
+          "required": false,
+          "repeatable": true
+        }
+      ],
+      "risk": "DEVICE_WRITE",
+      "outputParser": "identity",
+      "outputType": "String"
+    },
+    {
+      "name": "remount",
+      "subcommandPath": [
+        "remount"
+      ],
+      "description": "remount partitions",
+      "arguments": [
+        {
+          "name": "args",
+          "description": "remount arguments",
+          "type": "STRING",
+          "required": false,
+          "repeatable": true
+        }
+      ],
+      "risk": "DEVICE_WRITE",
+      "outputParser": "identity",
+      "outputType": "String"
+    },
+    {
+      "name": "reverse",
+      "subcommandPath": [
+        "reverse"
+      ],
+      "description": "reverse sockets",
+      "arguments": [
+        {
+          "name": "args",
+          "description": "reverse arguments",
+          "type": "STRING",
+          "required": false,
+          "repeatable": true
+        }
+      ],
+      "risk": "DEVICE_WRITE",
+      "outputParser": "identity",
+      "outputType": "String"
+    },
+    {
+      "name": "root",
+      "subcommandPath": [
+        "root"
+      ],
+      "description": "restart adbd with root",
+      "arguments": [],
+      "risk": "DEVICE_WRITE",
+      "outputParser": "identity",
+      "outputType": "String"
+    },
+    {
+      "name": "shell",
+      "subcommandPath": [
+        "shell"
+      ],
+      "description": "run remote shell command",
+      "options": [
+        {
+          "name": "escapeChar",
+          "spelling": "-e",
+          "description": "choose escape character",
+          "type": "STRING"
+        },
+        {
+          "name": "noStdin",
+          "spelling": "-n",
+          "description": "do not read from stdin",
+          "type": "BOOLEAN"
+        },
+        {
+          "name": "disablePty",
+          "spelling": "-T",
+          "description": "disable pty allocation",
+          "type": "BOOLEAN"
+        },
+        {
+          "name": "forcePty",
+          "spelling": "-t",
+          "description": "allocate a pty if on a tty",
+          "type": "BOOLEAN"
+        },
+        {
+          "name": "disableExitSeparation",
+          "spelling": "-x",
+          "description": "disable remote exit codes and stdout/stderr separation",
+          "type": "BOOLEAN"
+        }
+      ],
+      "arguments": [
+        {
+          "name": "command",
+          "description": "shell command to run",
+          "type": "STRING",
+          "required": false,
+          "repeatable": true
+        }
+      ],
+      "outputParser": "identity",
+      "outputType": "String",
+      "risk": "DEVICE_WRITE"
+    },
+    {
+      "name": "sideload",
+      "subcommandPath": [
+        "sideload"
+      ],
+      "description": "sideload package",
+      "arguments": [
+        {
+          "name": "packagePath",
+          "description": "path to zip/ota package",
+          "type": "PATH",
+          "required": true
+        }
+      ],
+      "risk": "DEVICE_WRITE"
+    },
+    {
+      "name": "startServer",
+      "subcommandPath": [
+        "start-server"
+      ],
+      "description": "start adb server",
+      "arguments": [],
+      "risk": "HOST_WRITE",
+      "outputParser": "identity",
+      "outputType": "String"
+    },
+    {
+      "name": "sync",
+      "subcommandPath": [
+        "sync"
+      ],
+      "description": "sync a local build",
+      "arguments": [
+        {
+          "name": "args",
+          "description": "sync arguments",
+          "type": "STRING",
+          "required": false,
+          "repeatable": true
+        }
+      ],
+      "risk": "DEVICE_WRITE",
+      "outputParser": "identity",
+      "outputType": "String"
+    },
+    {
+      "name": "tcpip",
+      "subcommandPath": [
+        "tcpip"
+      ],
+      "description": "restart adb over TCP",
+      "arguments": [
+        {
+          "name": "port",
+          "description": "TCP port",
+          "type": "STRING",
+          "required": true
+        }
+      ],
+      "risk": "DEVICE_WRITE",
+      "outputParser": "identity",
+      "outputType": "String"
+    },
+    {
+      "name": "uninstall",
+      "subcommandPath": [
+        "uninstall"
+      ],
+      "description": "remove an app",
+      "arguments": [
+        {
+          "name": "args",
+          "description": "package arguments",
+          "type": "STRING",
+          "required": false,
+          "repeatable": true
+        }
+      ],
+      "risk": "DEVICE_WRITE",
+      "outputParser": "identity",
+      "outputType": "String"
+    },
+    {
+      "name": "unroot",
+      "subcommandPath": [
+        "unroot"
+      ],
+      "description": "restart adbd without root",
+      "arguments": [],
+      "risk": "DEVICE_WRITE",
+      "outputParser": "identity",
+      "outputType": "String"
+    },
+    {
+      "name": "usb",
+      "subcommandPath": [
+        "usb"
+      ],
+      "description": "restart adb over USB",
+      "arguments": [],
+      "risk": "DEVICE_WRITE",
+      "outputParser": "identity",
+      "outputType": "String"
+    },
+    {
+      "name": "version",
+      "subcommandPath": [
+        "version"
+      ],
+      "description": "show version",
+      "arguments": [],
+      "risk": "READ_ONLY",
+      "outputParser": "identity",
+      "outputType": "String"
+    },
+    {
+      "name": "waitFor",
+      "subcommandPath": [
+        "wait-for"
+      ],
+      "description": "wait for a transport state",
+      "arguments": [
+        {
+          "name": "state",
+          "description": "transport state",
+          "type": "STRING",
+          "required": false,
+          "repeatable": true
+        }
+      ],
+      "risk": "READ_ONLY",
+      "outputParser": "identity",
+      "outputType": "String"
+    }
+  ],
+  "exitCodes": [
+    {
+      "code": 0,
+      "meaning": "Success",
+      "isSuccess": true
+    },
+    {
+      "code": 1,
+      "meaning": "Error/Failure",
+      "isSuccess": false
+    }
+  ],
+  "defaultTimeout": "30s",
+  "risk": "READ_ONLY"
+}
