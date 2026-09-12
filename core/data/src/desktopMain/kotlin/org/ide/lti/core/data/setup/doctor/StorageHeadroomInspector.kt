@@ -20,12 +20,24 @@ public class StorageHeadroomInspector(
         val home = context.home
         val dfRes = cli.execute(distro, listOf("df", "-BG", home))
         val freeGb = runCatching {
+            if (dfRes.exitCode != 0) return@runCatching null
             val lines = dfRes.output.lines()
             if (lines.size >= 2) {
                 val tokens = lines[1].trim().split("\\s+".toRegex())
-                tokens.getOrNull(3)?.removeSuffix("G")?.toLongOrNull() ?: 50L
-            } else 50L
-        }.getOrDefault(50L)
+                tokens.getOrNull(3)?.removeSuffix("G")?.toLongOrNull()
+            } else null
+        }.getOrNull()
+
+        if (freeGb == null) {
+            return DiagnosticCheckItem(
+                id = "disk_headroom",
+                title = "ext4 Storage Headroom (>= 45 GB)",
+                category = DiagnosticCategory.STORAGE,
+                status = StepStatus.FAILED,
+                detail = "Unable to measure available disk space in $home: ${dfRes.error.ifBlank { "df command failed" }}",
+                remediation = "Verify WSL filesystem permissions and available mount storage."
+            )
+        }
 
         val diskStatus = when {
             freeGb >= 45L -> StepStatus.SUCCESS

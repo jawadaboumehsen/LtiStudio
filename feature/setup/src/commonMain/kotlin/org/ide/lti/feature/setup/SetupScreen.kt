@@ -93,6 +93,7 @@ fun SetupScreen(
     val selectedTarget by viewModel.selectedTarget.collectAsState()
     val availableTargets by viewModel.availableTargets.collectAsState()
     val environmentReadiness by viewModel.environmentReadiness.collectAsState()
+    val activeOperation by viewModel.activeOperation.collectAsState()
 
     var isHelpSheetOpen by remember { mutableStateOf(false) }
 
@@ -113,6 +114,7 @@ fun SetupScreen(
         selectedDestination = SetupDestination.fromId(selectedTab.id),
         environmentNotice = environmentNotice,
         environmentReadiness = environmentReadiness,
+        activeOperation = activeOperation,
     )
 
     val uiActions = SetupUiActions(
@@ -152,6 +154,10 @@ fun SetupScreen(
             onOpenHelp()
             isHelpSheetOpen = true
         },
+        onPreviewSetup = viewModel::previewSetup,
+        onConfirmOperation = viewModel::confirmOperation,
+        onDismissPreview = viewModel::dismissPreview,
+        onRetryStage = viewModel::retryStage,
     )
 
     SetupScreenContent(

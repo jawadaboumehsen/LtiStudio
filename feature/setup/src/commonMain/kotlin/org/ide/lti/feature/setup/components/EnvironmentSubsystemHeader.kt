@@ -58,6 +58,7 @@ import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
+import org.ide.lti.core.domain.setup.StepProvenance
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolchainSetupState
 
@@ -230,8 +231,10 @@ fun EnvironmentSubsystemHeader(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalArrangement = Arrangement.spacedBy(Spacing.Small),
             ) {
+                val isRestored = state.steps.any { it.provenance == StepProvenance.RESTORED }
                 val lastVerifiedText = state.lastVerifiedTimestamp?.takeIf { it > 0 }?.let { millis ->
-                    "Last verified ${formatRelativeTime(Instant.fromEpochMilliseconds(millis))}"
+                    val relative = formatRelativeTime(Instant.fromEpochMilliseconds(millis))
+                    if (isRestored) "Last verified $relative (historical)" else "Last verified $relative"
                 } ?: "Not yet verified"
 
                 // Left: Last verified telemetry caption

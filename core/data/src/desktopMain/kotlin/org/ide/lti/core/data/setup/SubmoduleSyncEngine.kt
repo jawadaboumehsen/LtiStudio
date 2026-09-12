@@ -52,6 +52,7 @@ public class SubmoduleSyncEngine(
         distro: String,
         extDir: String,
         submodules: List<PinnedSubmodule> = DEFAULT_SUBMODULES,
+        onRunStarted: (SetupStepStage, String) -> Unit = { _, _ -> },
         log: (String) -> Unit = {},
     ): Result<Unit> {
         cli.execute(distro, listOf("mkdir", "-p", extDir))
@@ -83,6 +84,7 @@ public class SubmoduleSyncEngine(
                             idempotencyKey = idempotencyKey
                         )
                     )
+                    onRunStarted(SetupStepStage.REPO_SYNCHRONIZATION, runHandle.runId)
                     log("[Step 4/5] Attached to clone run ${runHandle.runId} for '${sub.name}'.")
                     var finishedExitCode: Int? = null
                     transport.attachRun(runHandle.runId).collect { seqEv ->

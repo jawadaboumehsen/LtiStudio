@@ -40,6 +40,7 @@ data class SetupUiState(
     val selectedDestination: SetupDestination = SetupDestination.WORKSPACES,
     val environmentNotice: String? = null,
     val environmentReadiness: EnvironmentReadiness? = null,
+    val activeOperation: SetupOperation? = null,
 )
 
 /**
@@ -77,4 +78,8 @@ data class SetupUiActions(
     val onCreateWorkspace: () -> Unit = {},
     val onOpenManageTargets: () -> Unit = {},
     val onOpenHelp: () -> Unit = {},
+    val onPreviewSetup: (org.ide.lti.core.domain.setup.SetupStepStage?) -> Unit = {},
+    val onConfirmOperation: () -> Unit = {},
+    val onDismissPreview: () -> Unit = {},
+    val onRetryStage: (org.ide.lti.core.domain.setup.SetupStepStage) -> Unit = {},
 )

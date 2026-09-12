@@ -6,6 +6,11 @@ import io.ltirom.tooling.client.wsl.WslEnvironmentDetector
 import io.ltirom.tooling.core.ports.DaemonSupervisorPort
 import io.ltirom.tooling.core.ports.RemoteTransportPort
 import io.ltirom.tooling.core.ports.ServerConnectionDescriptor
+import io.ltirom.tooling.core.remote.RunHandle
+import io.ltirom.tooling.core.remote.RunStatus
+import io.ltirom.tooling.core.remote.RunStatusValue
+import io.ltirom.tooling.core.remote.SequencedStreamEvent
+import io.ltirom.tooling.core.remote.StartRunRequest
 import io.ltirom.tooling.core.remote.StreamEvent
 import io.ltirom.tooling.core.remote.ToolExecutionRequest
 import io.ltirom.tooling.core.remote.ToolExecutionResponse
@@ -13,11 +18,14 @@ import io.ltirom.tooling.core.remote.ToolStatusInfo
 import io.ltirom.tooling.core.remote.WslServerInfo
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import org.ide.lti.core.data.setup.doctor.NativeLibrariesInspector
+import org.ide.lti.core.data.setup.doctor.ToolchainIntegrityInspector
 import org.ide.lti.core.domain.ports.PublishedTools
 import org.ide.lti.core.domain.ports.ToolPublicationPort
 import org.ide.lti.core.domain.repository.setup.ToolchainSetupRepository
@@ -65,9 +73,7 @@ class EnvironmentVerificationTest {
         override fun close() {}
     }
 
-    private class RecordingRemoteTransport : RemoteTransportPort {
-        val executedRequests = mutableListOf<ToolExecutionRequest>()
-        var toolsList = mutableListOf<ToolStatusInfo>()
+    private class RecordingRemoteTransport(
         var healthInfo: WslServerInfo? = WslServerInfo(
             status = "HEALTHY",
             distro = "Ubuntu",
@@ -77,10 +83,23 @@ class EnvironmentVerificationTest {
             serverUptimeMs = 50_000L,
             availableTools = listOf("adb", "fastboot")
         )
+    ) : RemoteTransportPort {
+        val executedRequests = mutableListOf<ToolExecutionRequest>()
+        var toolsList: MutableList<ToolStatusInfo> = mutableListOf()
 
         override suspend fun execute(request: ToolExecutionRequest): ToolExecutionResponse {
             executedRequests.add(request)
             return when {
+                request.toolId == "find" && (request.arguments.contains("/usr/bin") || request.arguments.contains("/bin")) -> {
+                    val systemTools = listOf(
+                        "cmake", "make", "clang", "gcc", "clang++", "g++", "ccache",
+                        "zip", "unzip", "gzip", "bzip2", "xz", "brotli", "curl", "wget", "git", "rsync", "tar", "file",
+                        "xxd", "truncate", "attr", "getfattr", "openssl", "keytool", "python3", "pip3", "pip",
+                        "java", "javac", "fusermount3", "fusermount", "fuse", "loop-control",
+                        "java-17-openjdk-amd64", "java-21-openjdk-amd64", "java-17-openjdk", "java-21-openjdk"
+                    ) + ToolchainIntegrityInspector.DEFAULT_CORE_TOOLS
+                    ToolExecutionResponse(0, systemTools.joinToString("\n"), "", 5L)
+                }
                 request.toolId == "find" && request.arguments.contains("-L") -> {
                     // binDir executables
                     val tools = listOf(
@@ -96,8 +115,12 @@ class EnvironmentVerificationTest {
                     ToolExecutionResponse(0, subs.joinToString("\n"), "", 5L)
                 }
                 request.toolId == "test" -> ToolExecutionResponse(0, "", "", 2L)
-                request.toolId == "dpkg-query" -> ToolExecutionResponse(0, "all ok installed", "", 2L)
-                request.toolId == "df" -> ToolExecutionResponse(0, "Filesystem 100G 50G 50G 50% /home/lti\n", "", 2L)
+                request.toolId == "dpkg-query" -> {
+                    val pkgs = NativeLibrariesInspector.DEFAULT_REQUIRED_DEV_PACKAGES
+                        .joinToString("\n") { "$it install ok installed" }
+                    ToolExecutionResponse(0, pkgs, "", 2L)
+                }
+                request.toolId == "df" -> ToolExecutionResponse(0, "Filesystem 1K-blocks Used Available Use% Mounted on\n/dev/sdb 100G 50G 50G 50% /home/lti\n", "", 2L)
                 else -> ToolExecutionResponse(0, "tool output", "", 5L)
             }
         }
@@ -109,6 +132,26 @@ class EnvironmentVerificationTest {
         override suspend fun uploadFile(remotePath: String, content: ByteArray): Boolean = true
         override suspend fun downloadFile(remotePath: String): ByteArray? = null
         override suspend fun shutdown(): Boolean = true
+
+        override suspend fun startRun(request: StartRunRequest): RunHandle {
+            return RunHandle(runId = "rec-run-123", status = RunStatusValue.RUNNING, startedAtEpochMs = 1000L)
+        }
+
+        override fun attachRun(runId: String, fromSequence: Long): Flow<SequencedStreamEvent> {
+            val events = listOf(
+                SequencedStreamEvent(1L, StreamEvent.OutputChunk("running...")),
+                SequencedStreamEvent(2L, StreamEvent.ExecutionFinished(0, 100L))
+            )
+            return events.asFlow()
+        }
+
+        override suspend fun getRun(runId: String): RunStatus = RunStatus(
+            runId = runId,
+            status = RunStatusValue.COMPLETED,
+            exitCode = 0,
+            startedAtEpochMs = 1000L,
+            endedAtEpochMs = 1100L
+        )
     }
 
     private class RecordingCliExecutor : WslCliExecutor() {
@@ -307,7 +350,7 @@ class EnvironmentVerificationTest {
     }
 
     @Test
-    fun `toolchain compilation calls ToolPublicationPort exactly once when manifests are missing`() = runTest {
+    fun `verifyEnvironment does not mutate or publish tools, publication occurs during full setup`() = runTest {
         val supervisor = RecordingDaemonSupervisor()
         val transport = RecordingRemoteTransport()
         val publicationPort = RecordingPublicationPort()
@@ -327,7 +370,10 @@ class EnvironmentVerificationTest {
         )
 
         provisioner.verifyEnvironment()
-        assertEquals(1, publicationPort.publishCount, "PublicationPort must be invoked exactly once")
+        assertEquals(0, publicationPort.publishCount, "Inspection probe must NEVER publish tools (zero mutation)")
+
+        provisioner.runFullSetup()
+        assertEquals(1, publicationPort.publishCount, "PublicationPort must be invoked during toolchain build setup")
     }
 
     @Test

@@ -38,7 +38,8 @@ public class ToolchainBuildEngine(
         arguments: List<String>,
         timeoutSeconds: Long,
         idempotencyKey: String,
-        log: (String) -> Unit
+        log: (String) -> Unit,
+        onRunStarted: (SetupStepStage, String) -> Unit = { _, _ -> },
     ): Boolean {
         if (transport != null) {
             val handle = transport.startRun(
@@ -52,6 +53,7 @@ public class ToolchainBuildEngine(
                     idempotencyKey = idempotencyKey
                 )
             )
+            onRunStarted(SetupStepStage.TOOLCHAIN_COMPILATION, handle.runId)
             log("[Step 5/5] Attached to build run ${handle.runId} ($idempotencyKey).")
             var finishedExitCode: Int? = null
             transport.attachRun(handle.runId).collect { seqEv ->
@@ -81,6 +83,7 @@ public class ToolchainBuildEngine(
         distro: String,
         extDir: String,
         binDir: String,
+        onRunStarted: (SetupStepStage, String) -> Unit = { _, _ -> },
         log: (String) -> Unit = {},
     ): Result<Unit> {
         cli.execute(distro, listOf("mkdir", "-p", binDir))
@@ -110,7 +113,8 @@ public class ToolchainBuildEngine(
                 ),
                 timeoutSeconds = 120,
                 idempotencyKey = "setup:build:android-tools:cmake",
-                log = log
+                log = log,
+                onRunStarted = onRunStarted
             )
             if (!cmakeOk) {
                 return Result.failure(IllegalStateException("android-tools cmake configuration failed"))
@@ -123,7 +127,8 @@ public class ToolchainBuildEngine(
                 arguments = listOf("-C", buildDir, "-j4"),
                 timeoutSeconds = 600,
                 idempotencyKey = "setup:build:android-tools:make",
-                log = log
+                log = log,
+                onRunStarted = onRunStarted
             )
             if (!makeOk) {
                 return Result.failure(IllegalStateException("android-tools make build failed"))
@@ -180,7 +185,8 @@ public class ToolchainBuildEngine(
                 arguments = listOf("-S", "build/cmake", "-B", "out", "-DMAX_BLOCK_SIZE=4096"),
                 timeoutSeconds = 300,
                 idempotencyKey = "setup:build:erofs-utils:cmake",
-                log = log
+                log = log,
+                onRunStarted = onRunStarted
             )
             if (!cmakeOk) {
                 return Result.failure(IllegalStateException("erofs-utils cmake configuration failed"))
@@ -193,7 +199,8 @@ public class ToolchainBuildEngine(
                 arguments = listOf("-C", outDir, "-j4"),
                 timeoutSeconds = 300,
                 idempotencyKey = "setup:build:erofs-utils:make",
-                log = log
+                log = log,
+                onRunStarted = onRunStarted
             )
             if (!makeOk) {
                 return Result.failure(IllegalStateException("erofs-utils make build failed"))

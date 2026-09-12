@@ -93,19 +93,10 @@ public class EnvironmentProbe(
                 emptySet()
             }
 
-            var publishedTools = transport.listTools()
+            val publishedTools = transport.listTools()
                 .filter { it.installed }
                 .map { it.tool }
                 .toSet()
-
-            val missingProductTools = expectedProductTools - publishedTools
-            if (missingProductTools.isNotEmpty() && executables.any { it in expectedProductTools }) {
-                toolPublicationPort?.publish(binDir)
-                publishedTools = transport.listTools()
-                    .filter { it.installed }
-                    .map { it.tool }
-                    .toSet()
-            }
 
             val extDir = "$home/LtiRomTools/external"
             val findExt = transport.execute(
@@ -140,6 +131,20 @@ public class EnvironmentProbe(
             )
             val avbKeyPresent = testAvb.exitCode == 0
 
+            val storageDf = transport.execute(
+                ToolExecutionRequest(
+                    toolId = "df",
+                    arguments = listOf("-B1", home),
+                    workingDirectory = "/",
+                )
+            )
+            val (storageAvailableBytes, storageMeasuredAt) = if (storageDf.exitCode == 0) {
+                val lines = storageDf.stdout.lines()
+                val tokens = if (lines.size >= 2) lines[1].trim().split("\\s+".toRegex()) else null
+                val bytes = tokens?.getOrNull(3)?.toLongOrNull()
+                if (bytes != null) Pair(bytes, System.currentTimeMillis()) else Pair(null, null)
+            } else Pair(null, null)
+
             EnvironmentProbeResult(
                 distro = distro,
                 home = home,
@@ -150,6 +155,8 @@ public class EnvironmentProbe(
                 workDirExists = workDirExists,
                 submodules = submodules,
                 avbKeyPresent = avbKeyPresent,
+                storageAvailableBytes = storageAvailableBytes,
+                storageMeasuredAt = storageMeasuredAt,
             )
         } catch (e: Exception) {
             val logTail = (supervisor as? WslDaemonManager)?.lastLaunchErrorLogTail

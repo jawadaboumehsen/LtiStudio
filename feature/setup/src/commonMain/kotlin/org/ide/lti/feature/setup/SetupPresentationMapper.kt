@@ -47,11 +47,11 @@ object SetupPresentationMapper {
         if (state.activeOperationId != null) return PrimaryAction.STAGE_PROGRESS
         if (state.isChecking) return PrimaryAction.CHECKING
         
-        val anyFailed = state.steps.any { it.status == StepStatus.FAILED }
-        if (anyFailed) return PrimaryAction.RETRY_STAGE
-        
         val serverFailed = state.steps.find { it.stage.name == "SERVER_CONNECTIVITY" }?.status == StepStatus.FAILED
         if (serverFailed) return PrimaryAction.RETRY_CONNECTION
+
+        val anyFailed = state.steps.any { it.status == StepStatus.FAILED }
+        if (anyFailed) return PrimaryAction.RETRY_STAGE
         
         if (state.isAllReady) return PrimaryAction.OPEN_WORKSPACES
         

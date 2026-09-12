@@ -103,10 +103,26 @@ fun DoctorDiagnosticsDrawer(
             }
     }
 
-    val filteredList = if (selectedCategory == "All") {
-        diagnosticsList
-    } else {
-        diagnosticsList.filter { it.category.displayName == selectedCategory }
+    val filteredList = remember(diagnosticsList, selectedCategory) {
+        val base = if (selectedCategory == "All") {
+            diagnosticsList
+        } else {
+            diagnosticsList.filter { it.category.displayName == selectedCategory }
+        }
+        base.sortedWith(
+            compareBy(
+                {
+                    when (it.status) {
+                        StepStatus.FAILED -> 0
+                        StepStatus.WARNING -> 1
+                        StepStatus.RUNNING -> 2
+                        StepStatus.PENDING -> 3
+                        StepStatus.SUCCESS -> 4
+                    }
+                },
+                { it.title },
+            )
+        )
     }
 
     GlassCard(
@@ -173,9 +189,8 @@ fun DoctorDiagnosticsDrawer(
             val passedChecksCount = diagnosticsList.count { it.status == StepStatus.SUCCESS }
             val warningChecksCount = diagnosticsList.count { it.status == StepStatus.WARNING }
             val failedChecksCount = diagnosticsList.count { it.status == StepStatus.FAILED }
-            val healthPercentage = if (totalChecks == 0) 100 else ((passedChecksCount * 100 + warningChecksCount * 60) / totalChecks).coerceIn(0, 100)
 
-            // Health Score Radar Banner
+            // Concise Measured Diagnostic Status Banner (replaces fake health percentage radar)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -192,7 +207,6 @@ fun DoctorDiagnosticsDrawer(
                     )
                     .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
             ) {
-                // Responsive SpaceBetween layout preventing overlap
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -216,7 +230,11 @@ fun DoctorDiagnosticsDrawer(
                                 .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.ExtraSmall),
                         ) {
                             Text(
-                                text = "$healthPercentage% Health",
+                                text = when {
+                                    failedChecksCount > 0 -> "$failedChecksCount Failed"
+                                    warningChecksCount > 0 -> "$warningChecksCount Warnings"
+                                    else -> "All Verified"
+                                },
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = when {
@@ -232,7 +250,10 @@ fun DoctorDiagnosticsDrawer(
                             verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
                         ) {
                             Text(
-                                text = "Host Environment Health Radar",
+                                text = when {
+                                    failedChecksCount > 0 || warningChecksCount > 0 -> "Pre-Flight Diagnostics Issues Detected"
+                                    else -> "Host Environment Checks Verified"
+                                },
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.SemiBold,
                                 color = glassColors.onGlass,

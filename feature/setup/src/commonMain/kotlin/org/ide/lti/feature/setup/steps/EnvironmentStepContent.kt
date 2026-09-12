@@ -55,9 +55,12 @@ import org.ide.lti.core.domain.setup.ToolComponentItem
 import org.ide.lti.core.domain.setup.ToolchainSetupState
 import org.ide.lti.feature.setup.SetupUiActions
 import org.ide.lti.feature.setup.SetupUiState
+import org.ide.lti.core.designsystem.component.progress.GlassConsoleDrawer
+import org.ide.lti.feature.setup.SetupOperation
+import org.ide.lti.feature.setup.SetupOperationState
 import org.ide.lti.feature.setup.components.DoctorDiagnosticsDrawer
 import org.ide.lti.feature.setup.components.EnvironmentSubsystemHeader
-import org.ide.lti.core.designsystem.component.progress.GlassConsoleDrawer
+import org.ide.lti.feature.setup.components.ProvisioningPreviewSheet
 import org.ide.lti.feature.setup.components.ToolMatrixTable
 import org.ide.lti.feature.setup.components.ToolchainPipelineTracker
 
@@ -78,10 +81,15 @@ fun EnvironmentStepContent(
 ) {
     EnvironmentStepContent(
         toolchainSetupState = state.toolchainSetupState,
+        activeOperation = state.activeOperation,
         onNavigateToProjects = onNavigateToProjects,
         onCheckEnvironment = actions.onCheckEnvironment,
         onRunFullSetup = actions.onRunFullSetup,
         onRetrySetupStep = actions.onRetrySetupStep,
+        onRetryStage = actions.onRetryStage,
+        onPreviewSetup = actions.onPreviewSetup,
+        onConfirmOperation = actions.onConfirmOperation,
+        onDismissPreview = actions.onDismissPreview,
         onProceedToLaunchpad = onProceedToLaunchpad,
         resolvedBackdrop = resolvedBackdrop,
         modifier = modifier,
@@ -131,6 +139,11 @@ fun EnvironmentStepContent(
     onProceedToLaunchpad: () -> Unit,
     resolvedBackdrop: LayerBackdrop,
     modifier: Modifier = Modifier,
+    activeOperation: SetupOperation? = null,
+    onRetryStage: (SetupStepStage) -> Unit = {},
+    onPreviewSetup: (SetupStepStage?) -> Unit = {},
+    onConfirmOperation: () -> Unit = {},
+    onDismissPreview: () -> Unit = {},
     onNavigateToProjects: (() -> Unit)? = null,
     onAutoRemediateDoctor: (() -> Unit)? = null,
     onAutoRunEnvironmentSetup: (() -> Unit)? = null,
@@ -156,25 +169,30 @@ fun EnvironmentStepContent(
     val activeToolsList = filteredToolsMatrix
 
     LaunchedEffect(autoRunOnLaunch) {
-        if (autoRunOnLaunch && !toolchainSetupState.isAllReady && !toolchainSetupState.isRunning) {
-            onAutoRunEnvironmentSetup?.invoke() ?: onRunFullSetup()
+        if (autoRunOnLaunch && !toolchainSetupState.isAllReady && !toolchainSetupState.isBusy && toolchainSetupState.lastVerifiedTimestamp == null) {
+            onCheckEnvironment()
         }
     }
 
-    Column(
+    Box(
         modifier = modifier
             .widthIn(max = ComponentSize.SetupCockpitMaxWidth)
             .fillMaxWidth()
-            .fillMaxHeight()
-            .verticalScroll(rememberScrollState())
-            .padding(
-                start = Spacing.ScreenHorizontal,
-                end = Spacing.ScreenHorizontal,
-                top = Spacing.Medium,
-                bottom = Spacing.ScreenVertical,
-            ),
-        verticalArrangement = Arrangement.spacedBy(Spacing.SectionGap),
+            .fillMaxHeight(),
     ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight()
+                .verticalScroll(rememberScrollState())
+                .padding(
+                    start = Spacing.ScreenHorizontal,
+                    end = Spacing.ScreenHorizontal,
+                    top = Spacing.Medium,
+                    bottom = Spacing.ScreenVertical,
+                ),
+            verticalArrangement = Arrangement.spacedBy(Spacing.SectionGap),
+        ) {
         // Header Row (FrameLayout / Box Anchored Layout)
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -250,6 +268,7 @@ fun EnvironmentStepContent(
             onRetryStep = onRetrySetupStep,
             isBusy = toolchainSetupState.isBusy,
             backdrop = resolvedBackdrop,
+            onRetryStage = onRetryStage,
         )
 
         val cockpitTabs = listOf(
@@ -305,31 +324,54 @@ fun EnvironmentStepContent(
         }
 
         EnvironmentStepActionBar(
-            isBusy = toolchainSetupState.isBusy,
-            isAllReady = toolchainSetupState.isAllReady,
-            isFixing = toolchainSetupState.isFixing,
-            isChecking = toolchainSetupState.isChecking,
+            toolchainSetupState = toolchainSetupState,
+            activeOperation = activeOperation,
             onNavigateToProjects = onNavigateToProjects,
             onProceedToLaunchpad = onProceedToLaunchpad,
-            onRunFullSetup = onRunFullSetup,
+            onCheckEnvironment = onCheckEnvironment,
+            onPreviewSetup = onPreviewSetup,
+            onRetryStage = onRetryStage,
             resolvedBackdrop = resolvedBackdrop,
-            glassColors = glassColors
+            glassColors = glassColors,
         )
+    }
+
+        if (activeOperation != null && activeOperation.executionState == SetupOperationState.PREVIEW) {
+            ProvisioningPreviewSheet(
+                plannedChanges = activeOperation.plannedChanges,
+                isAutoDoctorEnabled = isAutoDoctorEnabled,
+                onSetAutoDoctorEnabled = onSetAutoDoctorEnabled,
+                onConfirm = onConfirmOperation,
+                onDismiss = onDismissPreview,
+                backdrop = resolvedBackdrop,
+            )
+        }
     }
 }
 
 @Composable
 private fun EnvironmentStepActionBar(
-    isBusy: Boolean,
-    isAllReady: Boolean,
-    isFixing: Boolean,
-    isChecking: Boolean,
+    toolchainSetupState: ToolchainSetupState,
+    activeOperation: SetupOperation?,
     onNavigateToProjects: (() -> Unit)?,
     onProceedToLaunchpad: () -> Unit,
-    onRunFullSetup: () -> Unit,
+    onCheckEnvironment: () -> Unit,
+    onPreviewSetup: (SetupStepStage?) -> Unit,
+    onRetryStage: (SetupStepStage) -> Unit,
     resolvedBackdrop: LayerBackdrop,
-    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme
+    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme,
 ) {
+    val isChecking = toolchainSetupState.isChecking || (toolchainSetupState.isBusy && !toolchainSetupState.isRunning && !toolchainSetupState.isFixing)
+    val isRunning = toolchainSetupState.isRunning || toolchainSetupState.isFixing || activeOperation?.executionState == SetupOperationState.RUNNING
+    val isAllReady = toolchainSetupState.isAllReady
+    val offlineStep = toolchainSetupState.steps.firstOrNull {
+        (it.stage == SetupStepStage.SERVER_CONNECTIVITY || it.stage == SetupStepStage.WSL_DETECTION) &&
+            it.status == StepStatus.FAILED
+    }
+    val isOffline = offlineStep != null
+    val failedStep = toolchainSetupState.steps.firstOrNull { it.status == StepStatus.FAILED }
+    val isUnverified = toolchainSetupState.lastVerifiedTimestamp == null
+
     GlassCard(
         modifier = Modifier.fillMaxWidth(),
         backdrop = resolvedBackdrop,
@@ -343,7 +385,7 @@ private fun EnvironmentStepActionBar(
             if (onNavigateToProjects != null) {
                 GlassSecondaryButton(
                     onClick = onNavigateToProjects,
-                    enabled = !isBusy,
+                    enabled = !toolchainSetupState.isBusy,
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -363,59 +405,157 @@ private fun EnvironmentStepActionBar(
                 }
             }
 
-            if (isAllReady) {
-                GlassPrimaryButton(
-                    onClick = onProceedToLaunchpad,
-                    enabled = !isBusy,
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+            when {
+                isChecking -> {
+                    GlassPrimaryButton(
+                        onClick = {},
+                        enabled = false,
                     ) {
-                        Text(
-                            text = "Continue to Launchpad",
-                            maxLines = 1,
-                            softWrap = false,
-                        )
-                        Icon(
-                            painter = AppIcons.SendPainterResource(),
-                            contentDescription = null,
-                            modifier = Modifier.size(IconSize.Small),
-                        )
-                    }
-                }
-            } else {
-                GlassPrimaryButton(
-                    onClick = onRunFullSetup,
-                    enabled = !isBusy,
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                    ) {
-                        if (isBusy) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                        ) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(IconSize.Small),
                                 strokeWidth = StrokeWidth.Hairline,
                                 color = glassColors.onGlass,
                             )
                             Text(
-                                text = when {
-                                    isFixing -> "Remediating Packages..."
-                                    isChecking -> "Checking Environment..."
-                                    else -> "Running Setup Pipeline..."
-                                },
+                                text = "Checking...",
                                 maxLines = 1,
                                 softWrap = false,
                             )
-                        } else {
+                        }
+                    }
+                }
+                isRunning -> {
+                    GlassPrimaryButton(
+                        onClick = {},
+                        enabled = false,
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(IconSize.Small),
+                                strokeWidth = StrokeWidth.Hairline,
+                                color = glassColors.onGlass,
+                            )
+                            Text(
+                                text = if (toolchainSetupState.isFixing) "Remediating Packages..." else "Running Setup...",
+                                maxLines = 1,
+                                softWrap = false,
+                            )
+                        }
+                    }
+                }
+                isAllReady -> {
+                    GlassPrimaryButton(
+                        onClick = {
+                            if (onNavigateToProjects != null) onNavigateToProjects() else onProceedToLaunchpad()
+                        },
+                        enabled = !toolchainSetupState.isBusy,
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                        ) {
+                            Text(
+                                text = if (onNavigateToProjects != null) "Open Workspaces" else "Continue to Launchpad",
+                                maxLines = 1,
+                                softWrap = false,
+                            )
+                            Icon(
+                                painter = AppIcons.SendPainterResource(),
+                                contentDescription = null,
+                                modifier = Modifier.size(IconSize.Small),
+                            )
+                        }
+                    }
+                }
+                isOffline -> {
+                    GlassPrimaryButton(
+                        onClick = { onRetryStage(offlineStep.stage) },
+                        enabled = !toolchainSetupState.isBusy,
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                        ) {
+                            Icon(
+                                painter = AppIcons.RefreshPainterResource(),
+                                contentDescription = null,
+                                modifier = Modifier.size(IconSize.Small),
+                            )
+                            Text(
+                                text = "Retry Connection",
+                                maxLines = 1,
+                                softWrap = false,
+                            )
+                        }
+                    }
+                }
+                failedStep != null -> {
+                    GlassPrimaryButton(
+                        onClick = { onPreviewSetup(failedStep.stage) },
+                        enabled = !toolchainSetupState.isBusy,
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                        ) {
+                            Icon(
+                                painter = AppIcons.RefreshPainterResource(),
+                                contentDescription = null,
+                                modifier = Modifier.size(IconSize.Small),
+                            )
+                            Text(
+                                text = "Retry ${failedStep.stage.displayName}",
+                                maxLines = 1,
+                                softWrap = false,
+                            )
+                        }
+                    }
+                }
+                isUnverified -> {
+                    GlassPrimaryButton(
+                        onClick = onCheckEnvironment,
+                        enabled = !toolchainSetupState.isBusy,
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                        ) {
                             Icon(
                                 painter = AppIcons.SparklesPainterResource(),
                                 contentDescription = null,
                                 modifier = Modifier.size(IconSize.Small),
                             )
                             Text(
-                                text = "Run Full Setup & Build",
+                                text = "Check Environment",
+                                maxLines = 1,
+                                softWrap = false,
+                            )
+                        }
+                    }
+                }
+                else -> {
+                    GlassPrimaryButton(
+                        onClick = { onPreviewSetup(null) },
+                        enabled = !toolchainSetupState.isBusy,
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                        ) {
+                            Icon(
+                                painter = AppIcons.SparklesPainterResource(),
+                                contentDescription = null,
+                                modifier = Modifier.size(IconSize.Small),
+                            )
+                            Text(
+                                text = "Set Up Environment",
                                 maxLines = 1,
                                 softWrap = false,
                             )

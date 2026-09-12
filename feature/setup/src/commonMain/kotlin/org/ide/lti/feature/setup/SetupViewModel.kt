@@ -146,11 +146,18 @@ class SetupViewModel(
             initialValue = DEFAULT_OFFICIAL_TARGETS.firstOrNull(),
         )
 
-    internal val _isAutoDoctorEnabled = MutableStateFlow(true)
-    val isAutoDoctorEnabled: StateFlow<Boolean> = _isAutoDoctorEnabled.asStateFlow()
+    val environmentSetupState = EnvironmentSetupState(
+        scope = viewModelScope,
+        toolchainService = toolchainService,
+        environmentReadinessPort = environmentReadinessPort,
+    )
+
+    val isAutoDoctorEnabled: StateFlow<Boolean> = environmentSetupState.isAutoDoctorEnabled
+    val activeOperation: StateFlow<SetupOperation?> = environmentSetupState.activeOperation
+    val environmentPresentation: StateFlow<EnvironmentPresentation> = environmentSetupState.environmentPresentation
 
     init {
-        autoRunEnvironmentSetup(autoFix = true)
+        environmentSetupState.checkEnvironmentStatus()
     }
 
     val workspaceBrowserState = WorkspaceBrowserState(
@@ -184,17 +191,16 @@ class SetupViewModel(
         _selectedTab.value = tab
     }
 
-    internal val _environmentNotice = MutableStateFlow<String?>(null)
-    val environmentNotice: StateFlow<String?> = _environmentNotice.asStateFlow()
+    val environmentNotice: StateFlow<String?> = environmentSetupState.environmentNotice
 
     fun dismissEnvironmentNotice() {
-        _environmentNotice.value = null
+        environmentSetupState.dismissEnvironmentNotice()
     }
 
     fun navigateToEnvironment() {
         _selectedTab.value = SetupTab.ENVIRONMENT
         if (!toolchainSetupState.value.canLaunchWorkspace) {
-            autoRunEnvironmentSetup(autoFix = true)
+            checkEnvironmentStatus()
         }
     }
 
@@ -245,7 +251,7 @@ class SetupViewModel(
 
     fun testTool(toolId: String) {
         if (toolchainService == null) {
-            _environmentNotice.value = "Toolchain service is not available in this session."
+            environmentSetupState.setEnvironmentNotice("Toolchain service is not available in this session.")
             return
         }
         viewModelScope.launch {
@@ -255,7 +261,7 @@ class SetupViewModel(
 
     fun recompileTool(toolId: String) {
         if (toolchainService == null) {
-            _environmentNotice.value = "Toolchain service is not available in this session."
+            environmentSetupState.setEnvironmentNotice("Toolchain service is not available in this session.")
             return
         }
         viewModelScope.launch {
@@ -304,57 +310,56 @@ class SetupViewModel(
         }
     }
 
+    fun previewSetup(stage: SetupStepStage? = null) {
+        environmentSetupState.previewSetup(stage)
+    }
+
+    fun confirmSetupOperation() {
+        environmentSetupState.confirmOperation()
+    }
+
+    fun confirmOperation() {
+        confirmSetupOperation()
+    }
+
+    fun dismissPreview() {
+        environmentSetupState.dismissPreview()
+    }
+
+    fun retryStage(stage: SetupStepStage) {
+        environmentSetupState.retryStage(stage)
+    }
+
     /**
      * Re-runs live environment verification without modifying the filesystem.
      */
     fun reverify() {
-        if (toolchainService == null) {
-            _environmentNotice.value = "Toolchain service is not available in this session."
-            return
-        }
-        if (toolchainSetupState.value.isBusy || autoRunJob?.isActive == true) return
-        viewModelScope.launch {
-            toolchainService.verifyEnvironment()
-        }
+        environmentSetupState.reverify()
     }
 
     /**
      * Probes environment & toolchain status without modifying the filesystem.
      */
     fun checkEnvironmentStatus() {
-        reverify()
+        environmentSetupState.checkEnvironmentStatus()
     }
 
     /**
      * Executes end-to-end environment & toolchain setup pipeline (WSL, Server, Repos, Build).
      */
     fun runFullEnvironmentSetup() {
-        if (toolchainService == null) {
-            _environmentNotice.value = "Toolchain service is not available in this session."
-            return
-        }
-        if (toolchainSetupState.value.isBusy) return
-        viewModelScope.launch {
-            toolchainService.runFullSetup()
-        }
+        environmentSetupState.confirmOperation()
     }
 
     /**
      * Retries the current setup step that failed or is pending.
      */
     fun retrySetupStep() {
-        if (toolchainService == null) {
-            _environmentNotice.value = "Toolchain service is not available in this session."
-            return
-        }
-        if (toolchainSetupState.value.isBusy) return
         val stage = toolchainSetupState.value.steps.firstOrNull { it.status == StepStatus.FAILED }?.stage
             ?: toolchainSetupState.value.steps.firstOrNull { it.status == StepStatus.PENDING }?.stage
             ?: toolchainSetupState.value.steps.lastOrNull()?.stage
             ?: return
-        viewModelScope.launch {
-            toolchainService.retryStep(stage)
-        }
+        environmentSetupState.retryStage(stage)
     }
 
     /**
@@ -362,7 +367,7 @@ class SetupViewModel(
      */
     fun autoRemediateDoctorIssues() {
         if (toolchainService == null) {
-            _environmentNotice.value = "Toolchain service is not available in this session."
+            environmentSetupState.setEnvironmentNotice("Toolchain service is not available in this session.")
             return
         }
         if (toolchainSetupState.value.isBusy) return
@@ -372,26 +377,18 @@ class SetupViewModel(
     }
 
     fun setAutoDoctorEnabled(enabled: Boolean) {
-        _isAutoDoctorEnabled.value = enabled
+        environmentSetupState.setAutoDoctorEnabled(enabled)
     }
 
     /**
-     * Automatically coordinates environment verification, doctor remediation, and toolchain provisioning:
-     * 1. Probes current environment status via [ToolchainProvisioningService.verifyEnvironment].
-     * 2. If any doctor diagnostic issues or prerequisites fail, automatically runs root package remediation.
-     * 3. Runs full setup pipeline only if bridge is connected and toolchain compilation or submodules
-     *    synchronization is PENDING.
+     * Explicitly coordinates environment verification, doctor remediation, and toolchain provisioning
+     * only when confirmed/requested (FR-005).
      */
     fun autoRunEnvironmentSetup(autoFix: Boolean = true) {
-        if (autoRunJob?.isActive == true ||
-            toolchainSetupState.value.isRunning ||
-            toolchainSetupState.value.isFixing
-        ) {
-            return
-        }
-        autoRunJob = viewModelScope.launch {
+        if (toolchainSetupState.value.isBusy) return
+        viewModelScope.launch {
             try {
-                val status = toolchainService?.verifyEnvironment() ?: toolchainSetupState.value
+                val status = toolchainService?.checkStatus() ?: toolchainSetupState.value
                 val isBridgeReady = status.isServerConnected
                 val needsSetup = isBridgeReady && status.steps.any { step ->
                     (step.stage == SetupStepStage.TOOLCHAIN_COMPILATION ||
@@ -402,29 +399,21 @@ class SetupViewModel(
                     val hasDoctorIssues = status.diagnostics.any {
                         it.status == StepStatus.FAILED || (it.status == StepStatus.WARNING && !it.isOptionalForRuntime)
                     }
-                    if (autoFix && _isAutoDoctorEnabled.value && hasDoctorIssues) {
+                    if (autoFix && isAutoDoctorEnabled.value && hasDoctorIssues) {
                         toolchainService?.autoRemediateDoctor()
                     }
                     toolchainService?.runFullSetup()
                 }
             } catch (e: Exception) {
-                _environmentNotice.value = "Environment verification notice: ${e.message}"
+                environmentSetupState.setEnvironmentNotice("Environment verification notice: ${e.message}")
             }
         }
     }
 
     /**
-     * Purges the persistent setup cache and executes a clean rebuild from scratch.
+     * Purges the persistent setup cache and re-probes without automatic mutation.
      */
     fun resetToolchainCacheAndRecheck() {
-        if (toolchainService == null) {
-            _environmentNotice.value = "Toolchain service is not available in this session."
-            return
-        }
-        if (toolchainSetupState.value.isBusy) return
-        viewModelScope.launch {
-            toolchainService.resetSetupCache()
-            autoRunEnvironmentSetup(autoFix = true)
-        }
+        environmentSetupState.resetToolchainCacheAndRecheck()
     }
 }

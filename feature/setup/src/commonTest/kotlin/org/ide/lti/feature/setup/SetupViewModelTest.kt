@@ -218,15 +218,14 @@ class SetupViewModelTest {
             val viewModel = SetupViewModel(manager, toolchainService)
             testScheduler.advanceUntilIdle()
 
-            // Init triggers autoRunEnvironmentSetup which verifies environment (1) and runs full setup (1)
+            // Init triggers environment inspection only (1) and does NOT run full setup automatically (0)
             assertEquals(1, toolchainService.verifyEnvironmentCount)
-            assertEquals(1, toolchainService.runFullSetupCount)
-            assertTrue(viewModel.toolchainSetupState.value.isAllReady)
+            assertEquals(0, toolchainService.runFullSetupCount)
 
-            // runFullEnvironmentSetup should trigger runFullSetup again
+            // runFullEnvironmentSetup should trigger runFullSetup
             viewModel.runFullEnvironmentSetup()
             testScheduler.advanceUntilIdle()
-            assertEquals(2, toolchainService.runFullSetupCount)
+            assertEquals(1, toolchainService.runFullSetupCount)
             assertTrue(viewModel.toolchainSetupState.value.isAllReady)
 
             // retrySetupStep should trigger retryCurrentStep
@@ -283,7 +282,7 @@ class SetupViewModelTest {
             testScheduler.advanceUntilIdle()
 
             assertEquals(1, toolchainService.resetSetupCacheCount)
-            assertEquals(1, toolchainService.runFullSetupCount)
+            assertEquals(0, toolchainService.runFullSetupCount)
         } finally {
             Dispatchers.resetMain()
         }
@@ -475,18 +474,19 @@ class SetupViewModelTest {
 
             val viewModel = SetupViewModel(manager, toolchainService)
             testScheduler.advanceUntilIdle()
-            assertEquals(1, toolchainService.verifyEnvironmentCount) // from init
-            assertEquals(1, toolchainService.autoRemediateDoctorCount)
-            assertEquals(1, toolchainService.runFullSetupCount)
-            assertTrue(viewModel.toolchainSetupState.value.isAllReady)
+            // Init inspects only, no auto-mutation
+            assertEquals(1, toolchainService.verifyEnvironmentCount)
+            assertEquals(0, toolchainService.autoRemediateDoctorCount)
+            assertEquals(0, toolchainService.runFullSetupCount)
 
+            // Explicit execution of setup pipeline runs doctor remediation + setup
             viewModel.autoRunEnvironmentSetup(autoFix = true)
             testScheduler.advanceUntilIdle()
 
-            // Since it is now ready, full setup is not run again
             assertEquals(2, toolchainService.verifyEnvironmentCount)
             assertEquals(1, toolchainService.autoRemediateDoctorCount)
             assertEquals(1, toolchainService.runFullSetupCount)
+            assertTrue(viewModel.toolchainSetupState.value.isAllReady)
         } finally {
             Dispatchers.resetMain()
         }

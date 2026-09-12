@@ -269,20 +269,10 @@ public class WslToolchainProvisioner(
                 emptySet()
             }
 
-            var publishedTools = transport.listTools()
+            val publishedTools = transport.listTools()
                 .filter { it.installed }
                 .map { it.tool }
                 .toSet()
-
-            val expectedTools = EnvironmentProbe.DEFAULT_EXPECTED_PRODUCT_TOOLS
-            val missingExpected = expectedTools - publishedTools
-            if (missingExpected.isNotEmpty() && executables.any { it in expectedTools }) {
-                toolPublicationPort?.publish(binDir)
-                publishedTools = transport.listTools()
-                    .filter { it.installed }
-                    .map { it.tool }
-                    .toSet()
-            }
 
             val missingBins = CORE_BINARIES.filterNot { it in executables }
             val compilationStatus = if (missingBins.isEmpty()) StepStatus.SUCCESS else StepStatus.PENDING
@@ -374,6 +364,22 @@ public class WslToolchainProvisioner(
                 )
             }
 
+            val storageDf = runCatching {
+                transport.execute(
+                    ToolExecutionRequest(
+                        toolId = "df",
+                        arguments = listOf("-B1", home),
+                        workingDirectory = "/",
+                    )
+                )
+            }.getOrNull()
+            val (storageAvailableBytes, storageMeasuredAt) = if (storageDf != null && storageDf.exitCode == 0) {
+                val lines = storageDf.stdout.lines()
+                val tokens = if (lines.size >= 2) lines[1].trim().split("\\s+".toRegex()) else null
+                val bytes = tokens?.getOrNull(3)?.toLongOrNull()
+                if (bytes != null) Pair(bytes, System.currentTimeMillis()) else Pair(null, null)
+            } else Pair(null, null)
+
             val distros = if (alreadyVerifiedWsl) _state.value.installedDistros.ifEmpty { listOf(distro) } else detector.listDistros().ifEmpty { listOf(distro) }
             _state.update { s ->
                 s.copy(
@@ -385,7 +391,9 @@ public class WslToolchainProvisioner(
                     toolsMatrix = updatedTools,
                     currentStage = null,
                     isChecking = false,
-                    lastVerifiedTimestamp = if (s.isAllReady) System.currentTimeMillis() else s.lastVerifiedTimestamp
+                    lastVerifiedTimestamp = if (s.isAllReady) System.currentTimeMillis() else s.lastVerifiedTimestamp,
+                    storageAvailableBytes = storageAvailableBytes ?: s.storageAvailableBytes,
+                    storageMeasuredAt = storageMeasuredAt ?: s.storageMeasuredAt,
                 )
             }
             if (_state.value.isAllReady) {
@@ -457,215 +465,331 @@ public class WslToolchainProvisioner(
     override suspend fun runFullSetup(): Unit = withContext(dispatcher) {
         if (_state.value.isBusy) return@withContext
         _state.update { it.copy(isRunning = true, logs = emptyList()) }
+        try {
+            val distro = detector.getDefaultDistro() ?: "Ubuntu"
+            appendLog("=== Starting LtiRom Environment & Toolchain Setup ===")
+            appendLog("Target WSL Distribution: $distro")
 
-        val distro = detector.getDefaultDistro() ?: "Ubuntu"
-        appendLog("=== Starting LtiRom Environment & Toolchain Setup ===")
-        appendLog("Target WSL Distribution: $distro")
-
-        // -------------------------------------------------------------
-        // Step 1: WSL Detection
-        // -------------------------------------------------------------
-        setStepStatus(SetupStepStage.WSL_DETECTION, StepStatus.RUNNING)
-        appendLog("[Step 1/4] Probing Windows Subsystem for Linux (WSL 2)...")
-        val isWslInstalled = detector.isWslInstalled()
-        if (!isWslInstalled) {
-            val err = "WSL 2 is not installed or has no active distributions. Run 'wsl --install -d Ubuntu' in PowerShell."
-            appendLog("[Step 1/4] ERROR: $err")
-            setStepStatus(SetupStepStage.WSL_DETECTION, StepStatus.FAILED, error = err)
-            _state.update { it.copy(isRunning = false) }
-            return@withContext
-        }
-        val detectedDistros = detector.listDistros().ifEmpty { listOf(distro) }
-        _state.update { it.copy(activeDistro = distro, installedDistros = detectedDistros) }
-        appendLog("[Step 1/4] WSL 2 verified with distro '$distro'.")
-        setStepStatus(SetupStepStage.WSL_DETECTION, StepStatus.SUCCESS, "WSL 2 active with distro '$distro'.")
-
-        // -------------------------------------------------------------
-        // Step 2: Server-Client Bridge Connectivity
-        // -------------------------------------------------------------
-        setStepStatus(SetupStepStage.SERVER_CONNECTIVITY, StepStatus.RUNNING)
-        appendLog("[Step 2/4] Connecting to LtiRomServer daemon...")
-        val conn = runCatching { supervisor.ensureStarted() }.getOrNull()
-        if (conn == null) {
-            val err = "Failed to launch or attach to LtiRomServer in WSL distro '$distro'."
-            appendLog("[Step 2/4] ERROR: $err")
-            setStepStatus(SetupStepStage.SERVER_CONNECTIVITY, StepStatus.FAILED, error = err)
-            _state.update { it.copy(isRunning = false) }
-            return@withContext
-        }
-        val health = transport.checkHealth()
-        appendLog("[Step 2/5] Daemon bridge active on http://${conn.host}:${conn.port} [distro=${conn.distro}, pid=${conn.pid}].")
-        setStepStatus(SetupStepStage.SERVER_CONNECTIVITY, StepStatus.SUCCESS, "Connected to daemon at http://${conn.host}:${conn.port}.")
-
-        // -------------------------------------------------------------
-        // Service Phase: strictly via TransportCliExecutor and RemoteTransportPort
-        // -------------------------------------------------------------
-        val home = runCatching {
-            val res = transport.execute(ToolExecutionRequest(toolId = "printenv", arguments = listOf("HOME"), workingDirectory = "/"))
-            if (res.exitCode == 0 && res.stdout.trim().startsWith("/")) res.stdout.trim() else null
-        }.getOrNull() ?: detector.resolveWslUserHome(distro)
-
-        val serviceCli = TransportCliExecutor(transport, defaultWorkingDirectory = home)
-        val serviceDoctor = CompositeSystemDoctorEngine(
-            cli = serviceCli,
-            detector = WslEnvironmentDetector(serviceCli),
-            dispatcher = dispatcher,
-            inspectors = CompositeSystemDoctorEngine.defaultInspectors(serviceCli),
-            remediator = WslPackageRemediator(serviceCli),
-        )
-        val serviceSubmoduleEngine = SubmoduleSyncEngine(
-            cli = serviceCli,
-            repository = repository,
-            transport = transport
-        )
-        val serviceBuildEngine = ToolchainBuildEngine(
-            cli = serviceCli,
-            repository = repository,
-            transport = transport
-        )
-
-        // -------------------------------------------------------------
-        // Step 3: Pre-Flight Doctor Diagnostics & Automated Remediation
-        // -------------------------------------------------------------
-        setStepStatus(SetupStepStage.SYSTEM_DIAGNOSTICS, StepStatus.RUNNING)
-        appendLog("[Step 3/5] Running pre-flight system diagnostics...")
-        val preDiagnostics = serviceDoctor.runDiagnostics(distro, binariesPresent = false)
-        val hasBlockers = preDiagnostics.any { it.status == StepStatus.FAILED }
-        val hasWarnings = preDiagnostics.any { it.status == StepStatus.WARNING && !it.isOptionalForRuntime }
-
-        if (hasBlockers || hasWarnings) {
-            appendLog("[Step 3/5] Missing system dependencies detected. Initiating automated package remediation via non-interactive sudo...")
-            serviceDoctor.autoRemediate(distro) { logLine ->
-                appendLog("[Step 3/5] $logLine")
-            }
-        }
-
-        val finalDiagnostics = serviceDoctor.runDiagnostics(distro, binariesPresent = false)
-        _state.update { it.copy(diagnostics = finalDiagnostics) }
-
-        val anyFailed = finalDiagnostics.any { it.status == StepStatus.FAILED }
-        val anyWarn = finalDiagnostics.any { it.status == StepStatus.WARNING && !it.isOptionalForRuntime }
-        setStepStatus(
-            SetupStepStage.SYSTEM_DIAGNOSTICS,
-            when {
-                anyFailed -> StepStatus.FAILED
-                anyWarn -> StepStatus.WARNING
-                else -> StepStatus.SUCCESS
-            },
-            if (anyFailed) "Critical system requirements missing." else "Host runtimes, compilers, and dependencies verified."
-        )
-        if (anyFailed) {
-            val failedNames = finalDiagnostics.filter { it.status == StepStatus.FAILED }.joinToString { it.title }
-            val err = "Critical pre-flight requirements not met: $failedNames."
-            appendLog("[Step 3/5] ERROR: $err")
-            setStepStatus(SetupStepStage.SYSTEM_DIAGNOSTICS, StepStatus.FAILED, error = err)
-            _state.update { it.copy(isRunning = false) }
-            return@withContext
-        }
-
-
-        // -------------------------------------------------------------
-        // Step 4: Workspace Directory & Source Repositories Sync
-        // -------------------------------------------------------------
-        setStepStatus(SetupStepStage.REPO_SYNCHRONIZATION, StepStatus.RUNNING)
-        val workDir = "$home/LtiRomWorkDir"
-        val toolsRoot = "$home/LtiRomTools"
-        val extDir = "$toolsRoot/external"
-
-        appendLog("[Step 4/5] Ensuring workspace root directory exists at $workDir...")
-        serviceCli.execute(distro, listOf("mkdir", "-p", workDir))
-        appendLog("[Step 4/5] Initialized workspace root directory at $workDir.")
-
-        appendLog("[Step 4/5] Ensuring tools directory exists at $extDir...")
-        serviceCli.execute(distro, listOf("mkdir", "-p", extDir))
-
-        val syncRes = serviceSubmoduleEngine.syncAll(distro, extDir) { appendLog(it) }
-        if (syncRes.isFailure) {
-            val err = syncRes.exceptionOrNull()?.message ?: "Failed to synchronize submodules"
-            appendLog("[Step 4/5] ERROR: $err")
-            setStepStatus(SetupStepStage.REPO_SYNCHRONIZATION, StepStatus.FAILED, error = err)
-            _state.update { it.copy(isRunning = false) }
-            return@withContext
-        }
-        setStepStatus(SetupStepStage.REPO_SYNCHRONIZATION, StepStatus.SUCCESS, "All 5 submodules and $workDir ready.")
-
-        // -------------------------------------------------------------
-        // Step 5: Toolchain Compilation & AVB Key Provisioning
-        // -------------------------------------------------------------
-        setStepStatus(SetupStepStage.TOOLCHAIN_COMPILATION, StepStatus.RUNNING)
-        val binDir = "$toolsRoot/bin"
-        appendLog("[Step 5/5] Preparing binary directory at $binDir...")
-        serviceCli.execute(distro, listOf("mkdir", "-p", binDir))
-
-        val buildRes = serviceBuildEngine.buildAndDistributeAll(distro, extDir, binDir) { appendLog(it) }
-        if (buildRes.isFailure) {
-            val err = buildRes.exceptionOrNull()?.message ?: "Some core tool binaries are missing in $binDir after build."
-            appendLog("[Step 5/5] WARNING: $err")
-            setStepStatus(SetupStepStage.TOOLCHAIN_COMPILATION, StepStatus.WARNING, err)
-            _state.update { it.copy(isRunning = false) }
-            return@withContext
-        }
-
-        // Provision AVB key if not present
-        val avbKeyPath = "$workDir/security/avb/lti_rsa4096.pem"
-        val hasAvb = serviceCli.execute(distro, listOf("test", "-f", avbKeyPath)).exitCode == 0
-        if (!hasAvb) {
-            appendLog("[Step 5/5] Provisioning machine-local AVB 2.0 RSA-4096 key...")
-            provisionAvbKey(serviceCli = serviceCli, home = home, distroName = distro)
-        } else {
-            repository?.updateAvbKeyState(true, avbKeyPath)
-        }
-
-        // Update tools matrix state and persist
-        val currentTools = _state.value.toolsMatrix.ifEmpty { ToolchainSetupState.defaultToolsMatrix() }
-        val builtExecutables = listExecutables(distro, binDir, serviceCli)
-        val updatedTools = currentTools.map { tool ->
-            val toolPath = "$binDir/${tool.binaryName}"
-            val exists = tool.binaryName in builtExecutables
-            if (exists) {
-                repository?.updateTool(tool.id) { t ->
-                    t.copy(
-                        isCompiled = true,
-                        isVerified = true,
-                        binaryPath = toolPath,
-                        lastVerifiedTimestamp = System.currentTimeMillis()
+            val onRunStarted: (SetupStepStage, String) -> Unit = { stage, runId ->
+                _state.update { s ->
+                    s.copy(
+                        stepRunIds = s.stepRunIds + (stage to runId),
+                        steps = s.steps.map { if (it.stage == stage) it.copy(runId = runId) else it }
                     )
                 }
             }
-            tool.copy(
-                path = if (exists) toolPath else null,
-                status = if (exists) StepStatus.SUCCESS else StepStatus.PENDING
+
+            // -------------------------------------------------------------
+            // Step 1: WSL Detection
+            // -------------------------------------------------------------
+            setStepStatus(SetupStepStage.WSL_DETECTION, StepStatus.RUNNING)
+            appendLog("[Step 1/4] Probing Windows Subsystem for Linux (WSL 2)...")
+            val isWslInstalled = detector.isWslInstalled()
+            if (!isWslInstalled) {
+                val err = "WSL 2 is not installed or has no active distributions. Run 'wsl --install -d Ubuntu' in PowerShell."
+                appendLog("[Step 1/4] ERROR: $err")
+                setStepStatus(SetupStepStage.WSL_DETECTION, StepStatus.FAILED, error = err)
+                return@withContext
+            }
+            val detectedDistros = detector.listDistros().ifEmpty { listOf(distro) }
+            _state.update { it.copy(activeDistro = distro, installedDistros = detectedDistros) }
+            appendLog("[Step 1/4] WSL 2 verified with distro '$distro'.")
+            setStepStatus(SetupStepStage.WSL_DETECTION, StepStatus.SUCCESS, "WSL 2 active with distro '$distro'.")
+
+            // -------------------------------------------------------------
+            // Step 2: Server-Client Bridge Connectivity
+            // -------------------------------------------------------------
+            setStepStatus(SetupStepStage.SERVER_CONNECTIVITY, StepStatus.RUNNING)
+            appendLog("[Step 2/4] Connecting to LtiRomServer daemon...")
+            val conn = runCatching { supervisor.ensureStarted() }.getOrNull()
+            if (conn == null) {
+                val err = "Failed to launch or attach to LtiRomServer in WSL distro '$distro'."
+                appendLog("[Step 2/4] ERROR: $err")
+                setStepStatus(SetupStepStage.SERVER_CONNECTIVITY, StepStatus.FAILED, error = err)
+                return@withContext
+            }
+            val health = transport.checkHealth()
+            appendLog("[Step 2/5] Daemon bridge active on http://${conn.host}:${conn.port} [distro=${conn.distro}, pid=${conn.pid}].")
+            setStepStatus(SetupStepStage.SERVER_CONNECTIVITY, StepStatus.SUCCESS, "Connected to daemon at http://${conn.host}:${conn.port}.")
+
+            // -------------------------------------------------------------
+            // Service Phase: strictly via TransportCliExecutor and RemoteTransportPort
+            // -------------------------------------------------------------
+            val home = runCatching {
+                val res = transport.execute(ToolExecutionRequest(toolId = "printenv", arguments = listOf("HOME"), workingDirectory = "/"))
+                if (res.exitCode == 0 && res.stdout.trim().startsWith("/")) res.stdout.trim() else null
+            }.getOrNull() ?: detector.resolveWslUserHome(distro)
+
+            val serviceCli = TransportCliExecutor(transport, defaultWorkingDirectory = home)
+            val serviceDoctor = CompositeSystemDoctorEngine(
+                cli = serviceCli,
+                detector = WslEnvironmentDetector(serviceCli),
+                dispatcher = dispatcher,
+                inspectors = CompositeSystemDoctorEngine.defaultInspectors(serviceCli),
+                remediator = WslPackageRemediator(serviceCli),
             )
-        }
-
-        repository?.markStageCompleted(SetupStepStage.TOOLCHAIN_COMPILATION.name, true)
-        repository?.markSetupCompleted(true)
-
-        val publicationResult = toolPublicationPort?.publish(binDir)
-        val publishedIds = publicationResult?.published ?: emptySet()
-        val unpublishedIds = publicationResult?.skipped ?: emptySet()
-        if (toolPublicationPort != null) {
-            appendLog("[Step 5/5] Published ${publishedIds.size} tools to daemon (${unpublishedIds.size} skipped).")
-        }
-
-        appendLog("[Step 5/5] Toolchain binaries successfully built and verified in $binDir.")
-        setStepStatus(SetupStepStage.TOOLCHAIN_COMPILATION, StepStatus.SUCCESS, "Core tools ready in $binDir.")
-        appendLog("=== LtiRom Environment & Toolchain Setup Complete! ===")
-        _state.update {
-            it.copy(
-                isRunning = false,
-                toolsMatrix = updatedTools,
-                lastVerifiedTimestamp = System.currentTimeMillis(),
-                publishedToolIds = publishedIds,
-                unpublishedToolIds = unpublishedIds
+            val serviceSubmoduleEngine = SubmoduleSyncEngine(
+                cli = serviceCli,
+                repository = repository,
+                transport = transport
             )
+            val serviceBuildEngine = ToolchainBuildEngine(
+                cli = serviceCli,
+                repository = repository,
+                transport = transport
+            )
+
+            // -------------------------------------------------------------
+            // Step 3: Pre-Flight Doctor Diagnostics & Automated Remediation
+            // -------------------------------------------------------------
+            setStepStatus(SetupStepStage.SYSTEM_DIAGNOSTICS, StepStatus.RUNNING)
+            appendLog("[Step 3/5] Running pre-flight system diagnostics...")
+            val preDiagnostics = serviceDoctor.runDiagnostics(distro, binariesPresent = false)
+            val hasBlockers = preDiagnostics.any { it.status == StepStatus.FAILED }
+            val hasWarnings = preDiagnostics.any { it.status == StepStatus.WARNING && !it.isOptionalForRuntime }
+
+            if (hasBlockers || hasWarnings) {
+                appendLog("[Step 3/5] Missing system dependencies detected. Initiating automated package remediation via non-interactive sudo...")
+                serviceDoctor.autoRemediate(distro) { logLine ->
+                    appendLog("[Step 3/5] $logLine")
+                }
+            }
+
+            val finalDiagnostics = serviceDoctor.runDiagnostics(distro, binariesPresent = false)
+            _state.update { it.copy(diagnostics = finalDiagnostics) }
+
+            val anyFailed = finalDiagnostics.any { it.status == StepStatus.FAILED }
+            val anyWarn = finalDiagnostics.any { it.status == StepStatus.WARNING && !it.isOptionalForRuntime }
+            setStepStatus(
+                SetupStepStage.SYSTEM_DIAGNOSTICS,
+                when {
+                    anyFailed -> StepStatus.FAILED
+                    anyWarn -> StepStatus.WARNING
+                    else -> StepStatus.SUCCESS
+                },
+                if (anyFailed) "Critical system requirements missing." else "Host runtimes, compilers, and dependencies verified."
+            )
+            if (anyFailed) {
+                val failedNames = finalDiagnostics.filter { it.status == StepStatus.FAILED }.joinToString { it.title }
+                val err = "Critical pre-flight requirements not met: $failedNames."
+                appendLog("[Step 3/5] ERROR: $err")
+                setStepStatus(SetupStepStage.SYSTEM_DIAGNOSTICS, StepStatus.FAILED, error = err)
+                return@withContext
+            }
+
+            // -------------------------------------------------------------
+            // Step 4: Workspace Directory & Source Repositories Sync
+            // -------------------------------------------------------------
+            setStepStatus(SetupStepStage.REPO_SYNCHRONIZATION, StepStatus.RUNNING)
+            val workDir = "$home/LtiRomWorkDir"
+            val toolsRoot = "$home/LtiRomTools"
+            val extDir = "$toolsRoot/external"
+
+            appendLog("[Step 4/5] Ensuring workspace root directory exists at $workDir...")
+            serviceCli.execute(distro, listOf("mkdir", "-p", workDir))
+            appendLog("[Step 4/5] Initialized workspace root directory at $workDir.")
+
+            appendLog("[Step 4/5] Ensuring tools directory exists at $extDir...")
+            serviceCli.execute(distro, listOf("mkdir", "-p", extDir))
+
+            val syncRes = serviceSubmoduleEngine.syncAll(distro, extDir, onRunStarted = onRunStarted) { appendLog(it) }
+            if (syncRes.isFailure) {
+                val err = syncRes.exceptionOrNull()?.message ?: "Failed to synchronize submodules"
+                appendLog("[Step 4/5] ERROR: $err")
+                setStepStatus(SetupStepStage.REPO_SYNCHRONIZATION, StepStatus.FAILED, error = err)
+                return@withContext
+            }
+            setStepStatus(SetupStepStage.REPO_SYNCHRONIZATION, StepStatus.SUCCESS, "All 5 submodules and $workDir ready.")
+
+            // -------------------------------------------------------------
+            // Step 5: Toolchain Compilation & AVB Key Provisioning
+            // -------------------------------------------------------------
+            setStepStatus(SetupStepStage.TOOLCHAIN_COMPILATION, StepStatus.RUNNING)
+            val binDir = "$toolsRoot/bin"
+            appendLog("[Step 5/5] Preparing binary directory at $binDir...")
+            serviceCli.execute(distro, listOf("mkdir", "-p", binDir))
+
+            val buildRes = serviceBuildEngine.buildAndDistributeAll(distro, extDir, binDir, onRunStarted = onRunStarted) { appendLog(it) }
+            if (buildRes.isFailure) {
+                val err = buildRes.exceptionOrNull()?.message ?: "Some core tool binaries are missing in $binDir after build."
+                appendLog("[Step 5/5] WARNING: $err")
+                setStepStatus(SetupStepStage.TOOLCHAIN_COMPILATION, StepStatus.WARNING, err)
+                return@withContext
+            }
+
+            // Provision AVB key if not present
+            val avbKeyPath = "$workDir/security/avb/lti_rsa4096.pem"
+            val hasAvb = serviceCli.execute(distro, listOf("test", "-f", avbKeyPath)).exitCode == 0
+            if (!hasAvb) {
+                appendLog("[Step 5/5] Provisioning machine-local AVB 2.0 RSA-4096 key...")
+                provisionAvbKey(serviceCli = serviceCli, home = home, distroName = distro)
+            } else {
+                repository?.updateAvbKeyState(true, avbKeyPath)
+            }
+
+            // Update tools matrix state and persist
+            val currentTools = _state.value.toolsMatrix.ifEmpty { ToolchainSetupState.defaultToolsMatrix() }
+            val builtExecutables = listExecutables(distro, binDir, serviceCli)
+            val updatedTools = currentTools.map { tool ->
+                val toolPath = "$binDir/${tool.binaryName}"
+                val exists = tool.binaryName in builtExecutables
+                if (exists) {
+                    repository?.updateTool(tool.id) { t ->
+                        t.copy(
+                            isCompiled = true,
+                            isVerified = true,
+                            binaryPath = toolPath,
+                            lastVerifiedTimestamp = System.currentTimeMillis()
+                        )
+                    }
+                }
+                tool.copy(
+                    path = if (exists) toolPath else null,
+                    status = if (exists) StepStatus.SUCCESS else StepStatus.PENDING
+                )
+            }
+
+            repository?.markStageCompleted(SetupStepStage.TOOLCHAIN_COMPILATION.name, true)
+            repository?.markSetupCompleted(true)
+
+            val publicationResult = toolPublicationPort?.publish(binDir)
+            val publishedIds = publicationResult?.published ?: emptySet()
+            val unpublishedIds = publicationResult?.skipped ?: emptySet()
+            if (toolPublicationPort != null) {
+                appendLog("[Step 5/5] Published ${publishedIds.size} tools to daemon (${unpublishedIds.size} skipped).")
+            }
+
+            appendLog("[Step 5/5] Toolchain binaries successfully built and verified in $binDir.")
+            setStepStatus(SetupStepStage.TOOLCHAIN_COMPILATION, StepStatus.SUCCESS, "Core tools ready in $binDir.")
+            appendLog("=== LtiRom Environment & Toolchain Setup Complete! ===")
+            _state.update {
+                it.copy(
+                    toolsMatrix = updatedTools,
+                    lastVerifiedTimestamp = System.currentTimeMillis(),
+                    publishedToolIds = publishedIds,
+                    unpublishedToolIds = unpublishedIds
+                )
+            }
+            verifyEnvironment()
+        } finally {
+            _state.update { it.copy(isRunning = false, currentStage = null) }
         }
-        verifyEnvironment()
     }
 
-    override suspend fun retryStep(stage: SetupStepStage) {
-        if (_state.value.isBusy) return
-        runFullSetup()
+    override suspend fun retryStep(stage: SetupStepStage): Unit = withContext(dispatcher) {
+        if (_state.value.isBusy) return@withContext
+        _state.update { it.copy(isRunning = true, currentStage = stage) }
+        try {
+            val distro = _state.value.activeDistro ?: detector.getDefaultDistro() ?: "Ubuntu"
+            val home = runCatching {
+                val res = transport.execute(ToolExecutionRequest(toolId = "printenv", arguments = listOf("HOME"), workingDirectory = "/"))
+                if (res.exitCode == 0 && res.stdout.trim().startsWith("/")) res.stdout.trim() else null
+            }.getOrNull() ?: detector.resolveWslUserHome(distro)
+            val toolsRoot = "$home/LtiRomTools"
+            val binDir = "$toolsRoot/bin"
+            val extDir = "$toolsRoot/external"
+            val workDir = "$home/LtiRomWorkDir"
+            val serviceCli = TransportCliExecutor(transport, defaultWorkingDirectory = home)
+
+            val onRunStarted: (SetupStepStage, String) -> Unit = { stg, runId ->
+                _state.update { s ->
+                    s.copy(
+                        stepRunIds = s.stepRunIds + (stg to runId),
+                        steps = s.steps.map { if (it.stage == stg) it.copy(runId = runId) else it }
+                    )
+                }
+            }
+
+            when (stage) {
+                SetupStepStage.WSL_DETECTION -> {
+                    setStepRunning(SetupStepStage.WSL_DETECTION)
+                    val isInstalled = detector.isWslInstalled()
+                    if (isInstalled) {
+                        val d = detector.getDefaultDistro() ?: "Ubuntu"
+                        setStepStatus(SetupStepStage.WSL_DETECTION, StepStatus.SUCCESS, "WSL 2 active with default distribution '$d'.")
+                    } else {
+                        setStepStatus(SetupStepStage.WSL_DETECTION, StepStatus.FAILED, "WSL 2 not detected or no distribution found.", "WSL 2 is not installed.")
+                    }
+                }
+                SetupStepStage.SERVER_CONNECTIVITY -> {
+                    setStepRunning(SetupStepStage.SERVER_CONNECTIVITY)
+                    val conn = supervisor.ensureStarted()
+                    val health = transport.checkHealth()
+                    if (health != null) {
+                        setStepStatus(SetupStepStage.SERVER_CONNECTIVITY, StepStatus.SUCCESS, "Connected to daemon at http://${conn.host}:${conn.port}.")
+                    } else {
+                        setStepStatus(SetupStepStage.SERVER_CONNECTIVITY, StepStatus.FAILED, "Daemon bridge failed: health check returned null.")
+                    }
+                }
+                SetupStepStage.SYSTEM_DIAGNOSTICS -> {
+                    setStepRunning(SetupStepStage.SYSTEM_DIAGNOSTICS)
+                    val doctorEngine = CompositeSystemDoctorEngine(
+                        cli = serviceCli,
+                        detector = WslEnvironmentDetector(serviceCli),
+                        dispatcher = dispatcher,
+                        inspectors = CompositeSystemDoctorEngine.defaultInspectors(serviceCli),
+                        remediator = WslPackageRemediator(serviceCli),
+                    )
+                    val diagnostics = doctorEngine.runDiagnostics(distro, binariesPresent = false)
+                    _state.update { it.copy(diagnostics = diagnostics) }
+                    val anyFailed = diagnostics.any { it.status == StepStatus.FAILED }
+                    val anyWarn = diagnostics.any { it.status == StepStatus.WARNING && !it.isOptionalForRuntime }
+                    setStepStatus(
+                        SetupStepStage.SYSTEM_DIAGNOSTICS,
+                        when {
+                            anyFailed -> StepStatus.FAILED
+                            anyWarn -> StepStatus.WARNING
+                            else -> StepStatus.SUCCESS
+                        },
+                        if (anyFailed) "${diagnostics.count { it.status == StepStatus.FAILED }} critical checks failed."
+                        else "Host runtimes, compilers, and dependencies verified."
+                    )
+                }
+                SetupStepStage.REPO_SYNCHRONIZATION -> {
+                    setStepRunning(SetupStepStage.REPO_SYNCHRONIZATION)
+                    serviceCli.execute(distro, listOf("mkdir", "-p", extDir, workDir))
+                    val serviceSubmoduleEngine = SubmoduleSyncEngine(
+                        cli = serviceCli,
+                        repository = repository,
+                        transport = transport
+                    )
+                    val syncRes = serviceSubmoduleEngine.syncAll(distro, extDir, onRunStarted = onRunStarted) { appendLog(it) }
+                    if (syncRes.isSuccess) {
+                        setStepStatus(SetupStepStage.REPO_SYNCHRONIZATION, StepStatus.SUCCESS, "All 5 submodules and $workDir ready.")
+                    } else {
+                        setStepStatus(SetupStepStage.REPO_SYNCHRONIZATION, StepStatus.FAILED, syncRes.exceptionOrNull()?.message ?: "Submodule sync failed.")
+                    }
+                }
+                SetupStepStage.TOOLCHAIN_COMPILATION -> {
+                    setStepRunning(SetupStepStage.TOOLCHAIN_COMPILATION)
+                    serviceCli.execute(distro, listOf("mkdir", "-p", binDir))
+                    val serviceBuildEngine = ToolchainBuildEngine(
+                        cli = serviceCli,
+                        repository = repository,
+                        transport = transport
+                    )
+                    val buildRes = serviceBuildEngine.buildAndDistributeAll(distro, extDir, binDir, onRunStarted = onRunStarted) { appendLog(it) }
+                    if (buildRes.isSuccess) {
+                        val pubRes = toolPublicationPort?.publish(binDir)
+                        val publishedIds = pubRes?.published ?: emptySet()
+                        val unpublishedIds = pubRes?.skipped ?: emptySet()
+                        _state.update {
+                            it.copy(
+                                publishedToolIds = publishedIds,
+                                unpublishedToolIds = unpublishedIds
+                            )
+                        }
+                        setStepStatus(SetupStepStage.TOOLCHAIN_COMPILATION, StepStatus.SUCCESS, "Core tools ready in $binDir.")
+                    } else {
+                        setStepStatus(SetupStepStage.TOOLCHAIN_COMPILATION, StepStatus.FAILED, buildRes.exceptionOrNull()?.message ?: "Toolchain build failed.")
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            setStepStatus(stage, StepStatus.FAILED, "Retry failed: ${e.message}", error = e.message)
+        } finally {
+            _state.update { it.copy(isRunning = false, currentStage = null) }
+        }
     }
 
     override suspend fun provisionAvbKey(): Boolean = provisionAvbKey(serviceCli = null, home = null, distroName = null)
@@ -735,14 +859,14 @@ public class WslToolchainProvisioner(
         appendLog("Target Distribution: $distro (Executing via WSL root elevation)")
         _state.update { it.copy(isRunning = true, isFixing = true) }
         val success = try {
-            doctorPort.autoRemediate(distro) { logLine ->
+            val res = doctorPort.autoRemediate(distro) { logLine ->
                 appendLog("[Remediate] $logLine")
             }
+            checkStatus()
+            res
         } finally {
-            _state.update { it.copy(isFixing = false) }
+            _state.update { it.copy(isRunning = false, isFixing = false) }
         }
-        checkStatus()
-        _state.update { it.copy(isRunning = false) }
         success
     }
 
