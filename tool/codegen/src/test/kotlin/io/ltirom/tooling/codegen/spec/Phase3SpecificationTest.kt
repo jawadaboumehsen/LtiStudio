@@ -16,7 +16,7 @@ class Phase3SpecificationTest {
     private fun projectRoot(): File {
         var dir: File? = File(".").canonicalFile
         while (dir != null &&
-            (!File(dir, "tooling/specs").isDirectory || !File(dir, "settings.gradle.kts").isFile)
+            (!File(dir, "tool/specs").isDirectory || !File(dir, "settings.gradle.kts").isFile)
         ) dir = dir.parentFile
         return assertNotNull(dir)
     }
@@ -24,7 +24,7 @@ class Phase3SpecificationTest {
     @Test
     fun everyManagedToolHasAnInvokableSpecAndUseCase() {
         val root = projectRoot()
-        val files = File(root, "tooling/specs").listFiles { _, n -> n.endsWith(".json") }!!.toList()
+        val files = File(root, "tool/specs").listFiles { _, n -> n.endsWith(".json") }!!.toList()
         assertEquals(ToolId.entries.size, files.size)
 
         for (file in files) {
@@ -37,7 +37,7 @@ class Phase3SpecificationTest {
             val packageName = spec.tool.lowercase().replace("-", "").replace(".", "")
             for (cmd in spec.commands) {
                 val useCaseName = cmd.name.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() } + "UseCase.kt"
-                val useCaseFile = File(root, "tooling-adapters/src/main/kotlin/io/ltirom/tooling/adapters/$packageName/$useCaseName")
+                val useCaseFile = File(root, "tool/adapters/src/main/kotlin/io/ltirom/tooling/adapters/$packageName/$useCaseName")
                 assertTrue(useCaseFile.isFile, "Missing generated use case $useCaseName for ${spec.tool}")
             }
         }
@@ -57,7 +57,7 @@ class Phase3SpecificationTest {
         for (tool in mustWrite) {
             val spec = json.decodeFromString(
                 ToolSpecification.serializer(),
-                File(root, "tooling/specs/$tool.json").readText()
+                File(root, "tool/specs/$tool.json").readText()
             )
             assertFalse(
                 spec.risk == ToolRisk.READ_ONLY && spec.commands.all { (it.risk ?: spec.risk) == ToolRisk.READ_ONLY },
@@ -75,7 +75,7 @@ class Phase3SpecificationTest {
         val root = projectRoot()
         val generated = File(
             root,
-            "tooling-adapters/src/main/kotlin/io/ltirom/tooling/adapters/aapt2/DumpBadgingCommand.kt"
+            "tool/adapters/src/main/kotlin/io/ltirom/tooling/adapters/aapt2/DumpBadgingCommand.kt"
         ).readText()
         assertEquals(
             true,
