@@ -416,7 +416,7 @@ private fun resolveStepBackgroundColor(
     isActive: Boolean,
     isHovered: Boolean,
     enabled: Boolean,
-    glassColors: org.ide.lti.core.designsystem.theme.GlassColorTokens
+    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme
 ): androidx.compose.ui.graphics.Color = when {
     isActive -> glassColors.glassAccent.copy(alpha = AlphaTokens.Glow)
     isHovered && enabled -> glassColors.onGlass.copy(alpha = AlphaTokens.UltraFaint)
@@ -427,7 +427,7 @@ private fun resolveStepBorderColor(
     isActive: Boolean,
     isHovered: Boolean,
     enabled: Boolean,
-    glassColors: org.ide.lti.core.designsystem.theme.GlassColorTokens
+    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme
 ): androidx.compose.ui.graphics.Color = when {
     isActive -> glassColors.glassAccent.copy(alpha = AlphaTokens.Faded)
     isHovered && enabled -> glassColors.glassBorder.copy(alpha = AlphaTokens.Glow)
@@ -438,7 +438,7 @@ private fun resolveStepIconBackground(
     isComplete: Boolean,
     isError: Boolean,
     isActive: Boolean,
-    glassColors: org.ide.lti.core.designsystem.theme.GlassColorTokens,
+    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme,
     diagnostics: org.ide.lti.core.designsystem.theme.DiagnosticColors
 ): androidx.compose.ui.graphics.Color = when {
     isComplete -> diagnostics.success.copy(alpha = AlphaTokens.GlassSecondaryTint)
@@ -451,7 +451,7 @@ private fun resolveStepIconBorder(
     isComplete: Boolean,
     isError: Boolean,
     isActive: Boolean,
-    glassColors: org.ide.lti.core.designsystem.theme.GlassColorTokens,
+    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme,
     diagnostics: org.ide.lti.core.designsystem.theme.DiagnosticColors
 ): androidx.compose.ui.graphics.Color = when {
     isComplete -> diagnostics.success.copy(alpha = AlphaTokens.Border)

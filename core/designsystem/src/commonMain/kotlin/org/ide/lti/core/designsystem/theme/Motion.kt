@@ -30,6 +30,9 @@ object MotionDuration {
 
     /** Slow transition for prominent page slides and large surface sweeps (450ms). */
     const val Slow: Int = 450
+
+    /** Hover delay before a tooltip appears (500ms). */
+    const val TooltipDelay: Int = 500
 }
 
 /**

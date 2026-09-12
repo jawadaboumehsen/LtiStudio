@@ -304,7 +304,7 @@ private fun EnvironmentStepActionBar(
     onProceedToLaunchpad: () -> Unit,
     onRunFullSetup: () -> Unit,
     resolvedBackdrop: LayerBackdrop,
-    glassColors: org.ide.lti.core.designsystem.theme.GlassColorTokens
+    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme
 ) {
     GlassCard(
         modifier = Modifier.fillMaxWidth(),
@@ -405,13 +405,13 @@ private fun EnvironmentStepActionBar(
 
 @Composable
 private fun BridgeFailureBanner(
-    bridgeStep: org.ide.lti.core.domain.setup.ToolchainSetupStep,
+    bridgeStep: org.ide.lti.core.domain.setup.SetupStepDetail,
     launcherLogTail: List<String>,
-    resolvedBackdrop: org.ide.lti.core.designsystem.component.layout.LayerBackdrop,
+    resolvedBackdrop: LayerBackdrop,
     onCheckEnvironment: () -> Unit,
     isBusy: Boolean,
     diagnostics: org.ide.lti.core.designsystem.theme.DiagnosticColors,
-    glassColors: org.ide.lti.core.designsystem.theme.GlassColorTokens
+    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme
 ) {
     val failureReason = bridgeStep.description
     GlassCard(
