@@ -38,6 +38,7 @@ import dev.nucleusframework.application.DecoratedWindow
 import dev.nucleusframework.application.LocalNucleusWindow
 import dev.nucleusframework.application.NucleusWindow
 import dev.nucleusframework.application.nucleusApplication
+import androidx.compose.ui.window.FrameWindowScope
 import org.ide.lti.core.data.settings.AppSettingsState
 import org.ide.lti.core.designsystem.component.layout.GlassBackdrop
 import org.ide.lti.core.designsystem.component.layout.GlassTopBar
@@ -53,6 +54,12 @@ import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.feature.settings.SettingsScreen
 import org.ide.lti.desktop.di.toolingModule
+import org.ide.lti.desktop.key.WindowKeyShortcutHandler
+import org.ide.lti.desktop.menu.dispatcher.DefaultStudioActionDispatcher
+import org.ide.lti.desktop.menu.model.StudioAction
+import org.ide.lti.desktop.menu.model.StudioMenuState
+import org.ide.lti.desktop.menu.ui.StudioMenuBar
+import org.ide.lti.desktop.tray.AppTray
 import org.ide.lti.desktop.window.restoreWindow
 import org.ide.lti.shared.LtiSharedApp
 import org.ide.lti.shared.di.initKoin
@@ -123,6 +130,7 @@ fun main(args: Array<String>) = nucleusApplication(args) {
     }
     var showSettingsWindow by remember { mutableStateOf(false) }
     var settingsWinRef by remember { mutableStateOf<NucleusWindow?>(null) }
+    var mainWinRef by remember { mutableStateOf<NucleusWindow?>(null) }
     val windowState = rememberWindowState(
         width = ComponentSize.MaxPanelWidth * 2,
         height = ComponentSize.MaxPanelHeight * 1.4f,
@@ -140,21 +148,60 @@ fun main(args: Array<String>) = nucleusApplication(args) {
         }
     }
 
+    val actionDispatcher = remember { DefaultStudioActionDispatcher() }
+
+    AppTray(
+        onOpenStudio = { restoreWindow(windowState, mainWinRef) },
+        onOpenSettings = bringSettingsToFront,
+        onExit = ::exitApplication,
+    )
+
     DecoratedWindow(
         onCloseRequest = ::exitApplication,
         state = windowState,
         title = "LtiRom Studio",
         icon = painterResource("icons/ic_launcher.png"),
         minimumSize = DpSize(ComponentSize.MainWindowMinWidth, ComponentSize.MainWindowMinHeight),
+        onPreviewKeyEvent = { event -> WindowKeyShortcutHandler.handleKeyEvent(event, actionDispatcher) },
     ) {
         val nucleusWin = LocalNucleusWindow.current
+        val windowControlActions = buildWindowControlActions(
+            windowState = windowState,
+            nucleusWin = nucleusWin,
+            onClose = ::exitApplication,
+        )
+
+        DisposableEffect(nucleusWin) {
+            mainWinRef = nucleusWin
+            onDispose { mainWinRef = null }
+        }
+
+        DisposableEffect(actionDispatcher, windowControlActions) {
+            actionDispatcher.register(StudioAction.OPEN_SETTINGS) { bringSettingsToFront() }
+            actionDispatcher.register(StudioAction.EXIT) { exitApplication() }
+            actionDispatcher.register(StudioAction.MINIMIZE_WINDOW) { windowControlActions.onMinimize() }
+            actionDispatcher.register(StudioAction.ZOOM_WINDOW) { windowControlActions.onMaximize() }
+            actionDispatcher.register(StudioAction.BRING_ALL_TO_FRONT) {
+                restoreWindow(windowState, nucleusWin)
+                settingsWinRef?.let { restoreWindow(settingsWindowState, it) }
+            }
+            onDispose {
+                actionDispatcher.unregister(StudioAction.OPEN_SETTINGS)
+                actionDispatcher.unregister(StudioAction.EXIT)
+                actionDispatcher.unregister(StudioAction.MINIMIZE_WINDOW)
+                actionDispatcher.unregister(StudioAction.ZOOM_WINDOW)
+                actionDispatcher.unregister(StudioAction.BRING_ALL_TO_FRONT)
+            }
+        }
+
         CompositionLocalProvider(
-            LocalWindowControlActions provides buildWindowControlActions(
-                windowState = windowState,
-                nucleusWin = nucleusWin,
-                onClose = ::exitApplication,
-            ),
+            LocalWindowControlActions provides windowControlActions,
         ) {
+            (this@DecoratedWindow as? FrameWindowScope)?.let { frameScope ->
+                with(frameScope) {
+                    StudioMenuBar(state = StudioMenuState(), dispatcher = actionDispatcher)
+                }
+            }
             LtiSharedApp(
                 onOpenSettings = bringSettingsToFront,
             )

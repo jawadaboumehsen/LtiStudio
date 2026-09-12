@@ -10,9 +10,13 @@
 package org.ide.lti.core.common.di
 
 import org.ide.lti.core.common.event.PanelEventBus
+import org.ide.lti.core.common.notification.DelegatingSystemNotifier
+import org.ide.lti.core.common.notification.SystemNotifier
+import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 
 val CommonModule = module {
     singleOf(::PanelEventBus)
+    singleOf(::DelegatingSystemNotifier) { bind<SystemNotifier>() }
 }
