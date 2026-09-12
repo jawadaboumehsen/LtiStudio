@@ -24,6 +24,7 @@ import org.ide.lti.core.domain.repository.setup.ToolchainSetupRepository
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepProvenance
 import org.ide.lti.core.domain.setup.StepStatus
+import org.ide.lti.core.model.setup.PersistedSubmoduleState
 import org.ide.lti.core.model.setup.PersistedToolState
 import org.ide.lti.core.model.setup.ToolchainPersistenceState
 import java.nio.charset.Charset
@@ -150,16 +151,16 @@ class EnvironmentVerificationTest {
     ) : ToolchainSetupRepository {
         var state = initialState
 
-        override val persistenceState: Flow<ToolchainPersistenceState> get() = flowOf(state)
+        override val toolchainState: Flow<ToolchainPersistenceState> get() = flowOf(state)
         override val currentState: ToolchainPersistenceState get() = state
-        override suspend fun saveState(state: ToolchainPersistenceState) { this.state = state }
-        override suspend fun markStageCompleted(stage: SetupStepStage, completed: Boolean) {}
-        override suspend fun markSetupCompleted(completed: Boolean) {}
+        override suspend fun saveToolchainState(state: ToolchainPersistenceState) { this.state = state }
+        override suspend fun markStageCompleted(stageName: String, completed: Boolean) {}
+        override suspend fun markSetupCompleted(completed: Boolean, timestamp: Long?) {}
         override suspend fun updateTool(toolId: String, transform: (PersistedToolState) -> PersistedToolState) {}
-        override suspend fun updateSubmodule(name: String, isSynced: Boolean, commit: String?) {}
+        override suspend fun updateSubmodule(name: String, transform: (PersistedSubmoduleState) -> PersistedSubmoduleState) {}
         override suspend fun updateDiagnosticsSnapshot(passedIds: Set<String>) {}
-        override suspend fun updateAvbKeyState(provisioned: Boolean, path: String?) {}
-        override suspend fun reset() {}
+        override suspend fun updateAvbKeyState(provisioned: Boolean, keyPath: String?) {}
+        override suspend fun clearToolchainState() {}
     }
 
     @Test
