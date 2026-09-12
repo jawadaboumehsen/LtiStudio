@@ -102,11 +102,11 @@ fun WorkspaceConfigurationPanel(
             ConfigurationNotices(uiState)
             uiState.currentTarget?.let { TargetProfileCard(it) }
             GlassHorizontalDivider()
-            RegionSection(uiState.availableRegions, draft.region, viewModel::selectRegion)
+            RegionSection(uiState.availableRegions, draft.region, viewModel::updateDraftRegion)
             FirmwareSection(
                 firmwares = uiState.availableFirmwares[draft.region].orEmpty(),
                 selected = draft.firmware,
-                onSelect = viewModel::selectFirmware,
+                onSelect = viewModel::updateDraftFirmware,
             )
             GlassHorizontalDivider()
             AcquisitionSection(draft, uiState.isUploadingArchive, viewModel)

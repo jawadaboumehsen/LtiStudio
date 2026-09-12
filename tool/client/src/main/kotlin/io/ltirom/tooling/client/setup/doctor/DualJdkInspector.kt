@@ -65,7 +65,7 @@ public class DualJdkInspector(
             }
             !hasJvm17 || !hasJvm21 -> {
                 jdkStatus = StepStatus.WARNING
-                jdkDetail = "Java ($detectedJavaVer) with javac verified. OpenJDK 17 (apktool) & OpenJDK 21 (LtiRomKt) recommended."
+                jdkDetail = "Java ($detectedJavaVer) with javac verified. OpenJDK 17 (apktool) & OpenJDK 21 (toolchain build) recommended."
                 jdkRemediation = "Run '$jdkCmd' in WSL."
                 jdkCopyCmd = jdkCmd
             }

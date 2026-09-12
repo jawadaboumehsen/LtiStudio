@@ -9,8 +9,10 @@ import org.ide.lti.core.domain.setup.StepStatus
  *
  * Adheres to:
  * - Single Responsibility Principle (SRP): Resolves, batches, and installs missing packages via root elevation.
- * - Non-Interactive Automation: Uses WSL 2's `-u root` execution flag to execute `apt-get` and configure
- *   elevations without TTY password prompt blocking.
+ * - Non-Interactive Automation & Security: Uses passwordless `sudo -n` elevation to execute `apt-get`
+ *   and system configuration without TTY password prompts. Refuses execution if passwordless sudo is not configured,
+ *   and NEVER falls back to `wsl -u root`.
+ * - No Shell Chains: All commands execute as discrete arguments without `bash -c` or `&&`.
  */
 public class WslPackageRemediator(
     private val cli: WslCliExecutor = WslCliExecutor()
@@ -77,17 +79,31 @@ public class WslPackageRemediator(
             }
         }
 
-        // 1. Batch APT Package Installation via WSL Root
+        val requiresSudo = aptPackages.isNotEmpty() || needsLoopSudoers
+        if (requiresSudo) {
+            val sudoCheck = cli.execute(distro, listOf("sudo", "-n", "true"), timeoutSeconds = 5)
+            if (sudoCheck.exitCode != 0) {
+                onProgress("Error: Passwordless non-interactive sudo is not configured in $distro. Cannot run automated package remediation.")
+                onProgress("Please run the following one-time command in your WSL terminal to configure sudo:")
+                onProgress("echo \"\$USER ALL=(ALL) NOPASSWD: ALL\" | sudo tee /etc/sudoers.d/ltirom")
+                return false
+            }
+        }
+
+        // 1. Batch APT Package Installation via non-interactive sudo (never wsl -u root)
         if (aptPackages.isNotEmpty()) {
             onProgress("Updating package index (apt-get update)...")
-            cli.execute(distro, listOf("apt-get", "update"), timeoutSeconds = 120, user = "root")
+            cli.execute(
+                distro = distro,
+                command = listOf("sudo", "-n", "apt-get", "update"),
+                timeoutSeconds = 120
+            )
 
-            onProgress("Installing ${aptPackages.size} package(s) via root: ${aptPackages.sorted().joinToString(", ")}...")
+            onProgress("Installing ${aptPackages.size} package(s) via sudo: ${aptPackages.sorted().joinToString(", ")}...")
             val installRes = cli.execute(
                 distro = distro,
-                command = listOf("apt-get", "install", "-y") + aptPackages.sorted(),
-                timeoutSeconds = 600,
-                user = "root"
+                command = listOf("sudo", "-n", "apt-get", "install", "-y") + aptPackages.sorted(),
+                timeoutSeconds = 600
             )
             if (installRes.exitCode != 0) {
                 onProgress("Warning: apt-get encountered errors: ${installRes.error.take(200)}")
@@ -96,7 +112,7 @@ public class WslPackageRemediator(
             }
         }
 
-        // 2. Python Cryptography & PyASN1 via pip3
+        // 2. Python Cryptography & PyASN1 via pip3 (with sudo -n apt-get fallback)
         if (needsPipCrypto) {
             onProgress("Installing Python cryptography and pyasn1 packages...")
             val pipRes = cli.execute(
@@ -110,9 +126,8 @@ public class WslPackageRemediator(
                 // Fallback attempt via APT
                 cli.execute(
                     distro = distro,
-                    command = listOf("apt-get", "install", "-y", "python3-cryptography", "python3-pyasn1"),
-                    timeoutSeconds = 180,
-                    user = "root"
+                    command = listOf("sudo", "-n", "apt-get", "install", "-y", "python3-cryptography", "python3-pyasn1"),
+                    timeoutSeconds = 180
                 )
             }
         }
@@ -123,29 +138,45 @@ public class WslPackageRemediator(
             cli.execute(
                 distro = distro,
                 command = listOf(
-                    "bash", "-c",
-                    "echo \"ALL ALL=(ALL) NOPASSWD: /bin/mount, /bin/umount\" > /etc/sudoers.d/ltirom-mount && chmod 0440 /etc/sudoers.d/ltirom-mount"
+                    "sudo", "-n", "python3", "-c",
+                    "open('/etc/sudoers.d/ltirom-mount', 'w').write('ALL ALL=(ALL) NOPASSWD: /bin/mount, /bin/umount\\n')"
                 ),
-                timeoutSeconds = 30,
-                user = "root"
+                timeoutSeconds = 30
+            )
+            cli.execute(
+                distro = distro,
+                command = listOf("sudo", "-n", "chmod", "0440", "/etc/sudoers.d/ltirom-mount"),
+                timeoutSeconds = 10
             )
             onProgress("Loop mount elevation configured.")
         }
 
-        // 4. Toolchain Binaries Synchronization
+        // 4. Toolchain Binaries Synchronization (no bash -c, pure sequential commands)
         if (needsToolchainSync) {
             onProgress("Materializing missing toolchain binaries in ~/LtiRomTools/bin...")
             val toolsRoot = "${context.home}/LtiRomTools"
             val binDir = context.binDir
             val extDir = "$toolsRoot/external"
             cli.execute(distro, listOf("mkdir", "-p", binDir))
-            cli.execute(distro, listOf("bash", "-c", "test -d $extDir/bin && cp -a $extDir/bin/* $binDir/ 2>/dev/null || true"))
-            cli.execute(distro, listOf("bash", "-c", "test -f $extDir/payload-dumper-go/payload-dumper-go && cp -a $extDir/payload-dumper-go/payload-dumper-go $binDir/ 2>/dev/null || true"))
-            cli.execute(distro, listOf("bash", "-c", "test -f $extDir/signapk/signapk/build/libs/signapk.jar && cp -a $extDir/signapk/signapk/build/libs/signapk.jar $binDir/signapk.jar 2>/dev/null || true"))
-            cli.execute(distro, listOf("bash", "-c", "test -f $binDir/fuse.erofs && ln -sf fuse.erofs $binDir/erofsfuse || true"))
-            cli.execute(distro, listOf("bash", "-c", "test -f $binDir/mkbootimg.py && ln -sf mkbootimg.py $binDir/mkbootimg || true"))
-            cli.execute(distro, listOf("bash", "-c", "test -f $binDir/mke2fs.android && ln -sf mke2fs.android $binDir/mke2fs || true"))
-            cli.execute(distro, listOf("bash", "-c", "chmod +x $binDir/* 2>/dev/null || true"))
+
+            if (cli.execute(distro, listOf("test", "-d", "$extDir/bin")).exitCode == 0) {
+                cli.execute(distro, listOf("cp", "-a", "$extDir/bin/.", "$binDir/"))
+            }
+            if (cli.execute(distro, listOf("test", "-f", "$extDir/payload-dumper-go/payload-dumper-go")).exitCode == 0) {
+                cli.execute(distro, listOf("cp", "-a", "$extDir/payload-dumper-go/payload-dumper-go", "$binDir/payload-dumper-go"))
+            }
+            if (cli.execute(distro, listOf("test", "-f", "$extDir/signapk/signapk/build/libs/signapk.jar")).exitCode == 0) {
+                cli.execute(distro, listOf("cp", "-a", "$extDir/signapk/signapk/build/libs/signapk.jar", "$binDir/signapk.jar"))
+            }
+            if (cli.execute(distro, listOf("test", "-f", "$binDir/fuse.erofs")).exitCode == 0) {
+                cli.execute(distro, listOf("ln", "-sf", "fuse.erofs", "$binDir/erofsfuse"))
+            }
+            if (cli.execute(distro, listOf("test", "-f", "$binDir/mkbootimg.py")).exitCode == 0) {
+                cli.execute(distro, listOf("ln", "-sf", "mkbootimg.py", "$binDir/mkbootimg"))
+            }
+            if (cli.execute(distro, listOf("test", "-f", "$binDir/mke2fs.android")).exitCode == 0) {
+                cli.execute(distro, listOf("ln", "-sf", "mke2fs.android", "$binDir/mke2fs"))
+            }
             onProgress("Toolchain binaries synchronized.")
         }
 

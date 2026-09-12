@@ -36,7 +36,6 @@ import org.ide.lti.core.domain.workspace.WorkspaceManager
 import org.ide.lti.core.model.setup.EnvironmentReadiness
 import org.ide.lti.core.model.setup.EnvironmentReadinessState
 import org.ide.lti.core.model.setup.WorkspaceReadiness
-import org.ide.lti.core.model.target.FirmwareAcquisitionMode
 import org.ide.lti.core.model.target.PackagePolicy
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.target.TargetFirmware
@@ -104,21 +103,6 @@ class CreateWorkspaceViewModelTest {
                 Result.failure(IllegalArgumentException("Target not found: $targetId"))
             }
         }
-
-        override suspend fun selectRegion(region: TargetRegion): Result<TargetDevice> =
-            Result.success(selectedTargetFlow.value!!)
-
-        override suspend fun selectFirmware(firmware: TargetFirmware): Result<TargetDevice> =
-            Result.success(selectedTargetFlow.value!!)
-
-        override suspend fun selectAcquisitionMode(mode: FirmwareAcquisitionMode): Result<TargetDevice> =
-            Result.success(selectedTargetFlow.value!!)
-
-        override suspend fun setCustomFirmware(
-            version: String,
-            buildId: String?,
-            otaUrl: String?,
-        ): Result<TargetDevice> = Result.success(selectedTargetFlow.value!!)
 
         override suspend fun addTarget(target: TargetDevice): Result<TargetDevice> = Result.success(target)
         override suspend fun updateTarget(target: TargetDevice): Result<TargetDevice> = Result.success(target)

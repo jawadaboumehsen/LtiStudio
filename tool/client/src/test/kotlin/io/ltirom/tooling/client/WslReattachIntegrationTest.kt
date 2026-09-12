@@ -1,6 +1,7 @@
 package io.ltirom.tooling.client
 
 import kotlinx.coroutines.runBlocking
+import org.junit.Assume.assumeTrue
 import kotlin.system.measureTimeMillis
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -10,6 +11,7 @@ class WslReattachIntegrationTest {
 
     @Test
     fun `ensureStarted reattaches to running WSL server with near zero latency`() = runBlocking {
+        assumeTrue("Live WSL tests enabled only when LTI_LIVE_WSL=1", System.getenv("LTI_LIVE_WSL") == "1")
         val manager = WslDaemonManager(WslDaemonConfig(distroName = "Ubuntu"))
 
         try {

@@ -31,7 +31,6 @@ import org.ide.lti.core.domain.usecase.target.SaveTargetConfigurationUseCase
 import org.ide.lti.core.domain.usecase.target.SelectTargetUseCase
 import org.ide.lti.core.domain.usecase.target.UpdateTargetUseCase
 import org.ide.lti.core.domain.usecase.target.ValidateTargetConfigurationUseCase
-import org.ide.lti.core.model.target.FirmwareAcquisitionMode
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.target.TargetFirmware
 import org.ide.lti.core.model.target.TargetRegion
@@ -81,11 +80,6 @@ class ConfigurationViewModelTest {
             targetsFlow.value = list
             return Result.success(Unit)
         }
-
-        override suspend fun selectRegion(region: TargetRegion): Result<TargetDevice> = Result.success(selectedTargetFlow.value)
-        override suspend fun selectFirmware(firmware: TargetFirmware): Result<TargetDevice> = Result.success(selectedTargetFlow.value)
-        override suspend fun selectAcquisitionMode(mode: FirmwareAcquisitionMode): Result<TargetDevice> = Result.success(selectedTargetFlow.value)
-        override suspend fun setCustomFirmware(version: String, buildId: String?, otaUrl: String?): Result<TargetDevice> = Result.success(selectedTargetFlow.value)
     }
 
     private fun createTestFixture(): Pair<ConfigurationViewModel, FakeTargetRepository> {
@@ -98,9 +92,7 @@ class ConfigurationViewModelTest {
             id = "PQ84P01",
             name = "REDMAGIC Astra Gaming Tablet",
             codename = "PQ84P01",
-            selectedRegion = TargetRegion.GLOBAL,
             availableRegions = listOf(TargetRegion.GLOBAL),
-            selectedFirmware = fw,
             availableFirmwares = mapOf(TargetRegion.GLOBAL to listOf(fw)),
             socPlatform = "Snapdragon 8 Elite",
             filesystemType = "erofs",
@@ -115,9 +107,7 @@ class ConfigurationViewModelTest {
             id = "NX789J",
             name = "REDMAGIC 10 Pro+",
             codename = "NX789J",
-            selectedRegion = TargetRegion.GLOBAL,
             availableRegions = listOf(TargetRegion.GLOBAL),
-            selectedFirmware = fw,
             availableFirmwares = mapOf(TargetRegion.GLOBAL to listOf(fw)),
             socPlatform = "Snapdragon 8 Elite",
             filesystemType = "erofs",
@@ -432,9 +422,7 @@ class ConfigurationViewModelTest {
                 id = "PQ84P01",
                 name = "Astra",
                 codename = "PQ84P01",
-                selectedRegion = TargetRegion.GLOBAL,
                 availableRegions = listOf(TargetRegion.GLOBAL),
-                selectedFirmware = fw,
                 availableFirmwares = mapOf(TargetRegion.GLOBAL to listOf(fw)),
                 socPlatform = "Snapdragon 8 Elite",
                 filesystemType = "erofs",
@@ -449,9 +437,7 @@ class ConfigurationViewModelTest {
                 id = "NX789J",
                 name = "REDMAGIC 10 Pro+",
                 codename = "NX789J",
-                selectedRegion = TargetRegion.GLOBAL,
                 availableRegions = listOf(TargetRegion.GLOBAL),
-                selectedFirmware = fw,
                 availableFirmwares = mapOf(TargetRegion.GLOBAL to listOf(fw)),
                 socPlatform = "Snapdragon 8 Elite",
                 filesystemType = "erofs",

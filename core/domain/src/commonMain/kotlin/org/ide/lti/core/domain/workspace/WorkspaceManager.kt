@@ -118,7 +118,7 @@ class WorkspaceManager(
      * projects. Used as a best-effort fallback when the full [openWorkspace] flow fails but the
      * workspace itself was already persisted.
      */
-    fun setCurrentWorkspace(workspace: Workspace) {
+    fun setCurrentWorkspace(workspace: Workspace?) {
         _currentWorkspace.value = workspace
     }
 

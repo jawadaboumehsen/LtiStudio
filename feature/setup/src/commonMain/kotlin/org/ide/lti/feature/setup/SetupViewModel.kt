@@ -19,6 +19,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
+import org.ide.lti.core.model.setup.EnvironmentReadiness
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolComponentItem
@@ -61,6 +63,7 @@ class SetupViewModel(
     private val getAvailableTargetsUseCase: GetAvailableTargetsUseCase? = null,
     private val getSelectedTargetUseCase: GetSelectedTargetUseCase? = null,
     private val selectTargetUseCase: SelectTargetUseCase? = null,
+    private val environmentReadinessPort: EnvironmentReadinessPort? = null,
 ) : ViewModel() {
 
     /**
@@ -79,6 +82,7 @@ class SetupViewModel(
         removeRecentWorkspaceUseCase: RemoveRecentWorkspaceUseCase? = null,
         openWorkspaceByPathUseCase: OpenWorkspaceByPathUseCase =
             OpenWorkspaceByPathUseCase(workspaceManager.repository, workspaceManager),
+        environmentReadinessPort: EnvironmentReadinessPort? = null,
     ) : this(
         getRecentWorkspacesUseCase = getRecentWorkspacesUseCase ?:
             GetRecentWorkspacesUseCase(workspaceManager.repository),
@@ -94,6 +98,7 @@ class SetupViewModel(
         getAvailableTargetsUseCase = getAvailableTargetsUseCase,
         getSelectedTargetUseCase = getSelectedTargetUseCase,
         selectTargetUseCase = selectTargetUseCase,
+        environmentReadinessPort = environmentReadinessPort,
     )
 
     companion object {
@@ -112,6 +117,11 @@ class SetupViewModel(
             }
         )
     )
+
+    val environmentReadiness: StateFlow<EnvironmentReadiness?> =
+        environmentReadinessPort?.observe()
+            ?.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+            ?: MutableStateFlow<EnvironmentReadiness?>(null).asStateFlow()
 
     val toolchainSetupState: StateFlow<ToolchainSetupState> = toolchainService?.state
         ?: _fallbackToolchainState.asStateFlow()
@@ -268,12 +278,6 @@ class SetupViewModel(
     }
 
     fun openFolder(onWorkspaceOpened: (Workspace) -> Unit) {
-        if (!toolchainSetupState.value.canLaunchWorkspace) {
-            _environmentNotice.value = "LtiRomServer connection and native toolchain compilation must be " +
-                "verified before opening a workspace."
-            navigateToEnvironment()
-            return
-        }
         viewModelScope.launch {
             val result = selectAndOpenDirectoryUseCase()
             result.onSuccess { workspace ->
@@ -284,43 +288,9 @@ class SetupViewModel(
         }
     }
 
-    /**
-     * Initiates Git clone workflow or opens destination workspace.
-     */
-    fun cloneGitRepository(url: String? = null, onWorkspaceOpened: (Workspace) -> Unit) {
-        if (!toolchainSetupState.value.canLaunchWorkspace) {
-            _environmentNotice.value = "LtiRomServer connection and native toolchain compilation must be " +
-                "verified before cloning a workspace."
-            navigateToEnvironment()
-            return
-        }
-        viewModelScope.launch {
-            val targetPath = if (url != null) {
-                val projectName = url.substringAfterLast('/').removeSuffix(".git")
-                "~/LtiRomWorkDir/projects/$projectName"
-            } else {
-                null
-            }
-            val result = if (targetPath != null) {
-                openWorkspaceByPathUseCase(targetPath)
-            } else {
-                selectAndOpenDirectoryUseCase()
-            }
-            result.onSuccess { workspace ->
-                if (workspace != null) {
-                    onWorkspaceOpened(workspace)
-                }
-            }
-        }
-    }
+
 
     fun openRecentProject(project: RecentProject, onWorkspaceOpened: (Workspace) -> Unit) {
-        if (!toolchainSetupState.value.canLaunchWorkspace) {
-            _environmentNotice.value = "LtiRomServer connection and native toolchain compilation must be " +
-                "verified before opening a recent workspace."
-            navigateToEnvironment()
-            return
-        }
         viewModelScope.launch {
             val result = openWorkspaceUseCase(project.workspaceId)
             result.onSuccess { workspace ->
@@ -335,33 +305,7 @@ class SetupViewModel(
         }
     }
 
-    private fun fallbackTargetWorkspace(target: TargetDevice, targetPath: String): Workspace = Workspace(
-        id = "target_${target.targetKey.lowercase()}",
-        name = target.friendlyTitle,
-        path = targetPath,
-    )
 
-    /**
-     * Opens the target device workspace (~/LtiRomWorkDir/target/<targetKey>) once setup is complete.
-     */
-    fun openDefaultWorkspace(onWorkspaceOpened: (Workspace) -> Unit) {
-        if (!toolchainSetupState.value.canLaunchWorkspace) {
-            _environmentNotice.value = "LtiRomServer connection and native toolchain compilation must be " +
-                "verified before launching the workspace."
-            navigateToEnvironment()
-            return
-        }
-        viewModelScope.launch {
-            val target = selectedTarget.value ?: DEFAULT_OFFICIAL_TARGETS.first()
-            val targetPath = "~/LtiRomWorkDir/target/${target.targetKey}"
-            val result = openWorkspaceByPathUseCase(targetPath)
-            result.onSuccess { workspace ->
-                onWorkspaceOpened(workspace)
-            }.onFailure {
-                onWorkspaceOpened(fallbackTargetWorkspace(target, targetPath))
-            }
-        }
-    }
 
 
     /**
@@ -374,22 +318,7 @@ class SetupViewModel(
         }
     }
 
-    /**
-     * Selects an official target hardware device and launches directly into the workspace.
-     */
-    fun selectTargetAndLaunch(target: TargetDevice, onWorkspaceOpened: (Workspace) -> Unit) {
-        _fallbackSelectedTarget.value = target
-        viewModelScope.launch {
-            selectTargetUseCase?.invoke(target.id)
-            val targetPath = "~/LtiRomWorkDir/target/${target.targetKey}"
-            val result = openWorkspaceByPathUseCase(targetPath)
-            result.onSuccess { workspace ->
-                onWorkspaceOpened(workspace)
-            }.onFailure {
-                onWorkspaceOpened(fallbackTargetWorkspace(target, targetPath))
-            }
-        }
-    }
+
 
     /**
      * Provisions or verifies the machine-local AVB 2.0 RSA-4096 signing key.
@@ -483,21 +412,25 @@ class SetupViewModel(
             return
         }
         autoRunJob = viewModelScope.launch {
-            val status = toolchainService?.verifyEnvironment() ?: toolchainSetupState.value
-            val isBridgeReady = status.isServerConnected
-            val needsSetup = isBridgeReady && status.steps.any { step ->
-                (step.stage == SetupStepStage.TOOLCHAIN_COMPILATION ||
-                    step.stage == SetupStepStage.REPO_SYNCHRONIZATION) &&
-                    step.status == StepStatus.PENDING
-            }
-            if (needsSetup) {
-                val hasDoctorIssues = status.diagnostics.any {
-                    it.status == StepStatus.FAILED || (it.status == StepStatus.WARNING && !it.isOptionalForRuntime)
+            try {
+                val status = toolchainService?.verifyEnvironment() ?: toolchainSetupState.value
+                val isBridgeReady = status.isServerConnected
+                val needsSetup = isBridgeReady && status.steps.any { step ->
+                    (step.stage == SetupStepStage.TOOLCHAIN_COMPILATION ||
+                        step.stage == SetupStepStage.REPO_SYNCHRONIZATION) &&
+                        step.status == StepStatus.PENDING
                 }
-                if (autoFix && _isAutoDoctorEnabled.value && hasDoctorIssues) {
-                    toolchainService?.autoRemediateDoctor()
+                if (needsSetup) {
+                    val hasDoctorIssues = status.diagnostics.any {
+                        it.status == StepStatus.FAILED || (it.status == StepStatus.WARNING && !it.isOptionalForRuntime)
+                    }
+                    if (autoFix && _isAutoDoctorEnabled.value && hasDoctorIssues) {
+                        toolchainService?.autoRemediateDoctor()
+                    }
+                    toolchainService?.runFullSetup()
                 }
-                toolchainService?.runFullSetup()
+            } catch (e: Exception) {
+                _environmentNotice.value = "Environment verification notice: ${e.message}"
             }
         }
     }

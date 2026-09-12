@@ -17,7 +17,11 @@ public class BuildCacheInspector(
 
     override suspend fun inspect(context: DiagnosticContext): DiagnosticCheckItem {
         val distro = context.distro
-        val hasCcache = cli.execute(distro, listOf("which", "ccache")).exitCode == 0
+        val hasCcache = if (context.availableCommands.isNotEmpty()) {
+            "ccache" in context.availableCommands
+        } else {
+            cli.execute(distro, listOf("which", "ccache")).exitCode == 0
+        }
         val ccacheCmd = if (hasCcache) null else "sudo apt-get install -y ccache"
 
         return DiagnosticCheckItem(

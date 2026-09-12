@@ -174,7 +174,7 @@ public interface BinaryToolCommand<out R> : ToolCommand<R> {
         parseBinaryResult(result.stdoutBytes ?: result.stdout.toByteArray(Charsets.ISO_8859_1), result.stderr)
 }
 
-internal class RawToolCommand(
+public class RawToolCommand(
     override val toolId: ToolId,
     private val args: List<String>,
     override val risk: ToolRisk = ToolRisk.READ_ONLY,

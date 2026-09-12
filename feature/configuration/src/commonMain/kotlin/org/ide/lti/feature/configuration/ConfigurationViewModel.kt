@@ -230,8 +230,9 @@ class ConfigurationViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isSyncing = true) }
             val isNew = _uiState.value.originalTarget == null
+            val toSave = if (isNew) target else target.copy(revision = target.revision + 1)
             val result = saveTargetConfigurationUseCase(
-                target = target,
+                target = toSave,
                 isNew = isNew,
             )
 
@@ -240,7 +241,9 @@ class ConfigurationViewModel(
             if (result.isSuccess) {
                 _uiState.update {
                     it.copy(
-                        originalTarget = target,
+                        originalTarget = toSave,
+                        editingTarget = toSave,
+                        selectedTargetId = toSave.id,
                         isDirty = false,
                         validationErrors = emptyList(),
                         statusMessage = "Configuration saved successfully",

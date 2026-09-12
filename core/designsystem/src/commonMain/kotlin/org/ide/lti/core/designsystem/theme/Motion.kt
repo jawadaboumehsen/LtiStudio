@@ -33,6 +33,15 @@ object MotionDuration {
 
     /** Hover delay before a tooltip appears (500ms). */
     const val TooltipDelay: Int = 500
+
+    /** Damped step interpolation duration for splash progress bar (350ms). */
+    const val SplashProgress: Int = 350
+
+    /** Continuous ambient breathing cycle duration for splash volumetric aura (2200ms). */
+    const val AmbientBreathing: Int = 2200
+
+    /** Specular sweep duration across brand emblem (2400ms). */
+    const val SpecularSweep: Int = 2400
 }
 
 /**
@@ -59,6 +68,9 @@ object MotionEasing {
 
     /** Emphasized decelerate curve (0.4, 0.4, 0.17, 0.9) for reveal and swipe transitions. */
     val EmphasizedDecelerate: CubicBezierEasing = CubicBezierEasing(0.4f, 0.4f, 0.17f, 0.9f)
+
+    /** Emphasized accelerate curve (0.3, 0.0, 0.8, 0.15) for dismiss and exit transitions. */
+    val EmphasizedAccelerate: CubicBezierEasing = CubicBezierEasing(0.3f, 0.0f, 0.8f, 0.15f)
 }
 
 /**

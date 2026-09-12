@@ -122,6 +122,8 @@ class DesktopFileSystemRepository : FileSystemRepository {
             while (isActive && keepWatching) {
                 val key = try {
                     watchService.take()
+                } catch (_: java.nio.file.ClosedWatchServiceException) {
+                    null
                 } catch (e: Exception) {
                     logger.e(e) { "Error taking watch event key for directory: $path" }
                     null

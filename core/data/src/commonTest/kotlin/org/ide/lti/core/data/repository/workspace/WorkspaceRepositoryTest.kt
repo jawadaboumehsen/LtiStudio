@@ -152,7 +152,7 @@ class WorkspaceRepositoryTest {
         val ws = Workspace(
             id = "ws_test",
             name = "Custom Target",
-            path = "~/LtiRomWorkDir/target/custom",
+            path = "~/LtiRomWorkDir/workspaces/ws_test",
             type = WorkspaceType.REMOTE_WSL,
         )
 
@@ -163,13 +163,13 @@ class WorkspaceRepositoryTest {
 
         val session = WorkspaceSession(
             workspaceId = "ws_test",
-            openFiles = listOf(org.ide.lti.core.model.workspace.OpenFile(path = "ltikt.properties")),
+            openFiles = listOf(org.ide.lti.core.model.workspace.OpenFile(path = "workspace.json")),
             activeFileIndex = 0,
         )
         repo.saveWorkspaceSession(session)
         val fetchedSession = repo.getWorkspaceSession("ws_test")
         assertNotNull(fetchedSession)
-        assertEquals("ltikt.properties", fetchedSession.openFiles.first().path)
+        assertEquals("workspace.json", fetchedSession.openFiles.first().path)
 
         repo.deleteWorkspace("ws_test")
         assertNull(repo.getWorkspace("ws_test"))

@@ -29,6 +29,7 @@ class FakeWorkspaceRepository : WorkspaceRepository {
     override suspend fun addRecentProject(project: RecentProject) {}
     override suspend fun removeRecentProject(workspaceId: String) {}
     override suspend fun clearRecentProjects() {}
+    override suspend fun discoverWorkspacesInWorkDir(basePath: String?): List<RecentProject> = emptyList()
 }
 
 class FakeShellExecutor(

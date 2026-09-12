@@ -36,12 +36,12 @@ import org.ide.lti.core.designsystem.component.navigation.GlassCommandPalette
 import org.ide.lti.core.designsystem.component.navigation.GlassSidePanelRail
 import org.ide.lti.core.designsystem.component.navigation.GlassSidePanelTab
 import org.ide.lti.core.designsystem.component.navigation.SidePanelRailPosition
+import org.ide.lti.core.model.target.TargetRegion
 import org.ide.lti.core.model.target.WirelessPairingRequest
 import org.ide.lti.feature.workspace.panels.target.GlassWifiPairingDialog
 import org.ide.lti.feature.workspace.panels.target.TargetRunConfigurationBar
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.model.filesystem.LineEnding
 import org.ide.lti.core.ui.WorkspaceStatusBar
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
@@ -63,7 +63,7 @@ import org.koin.compose.viewmodel.koinViewModel
  * Features:
  * - Glass toolbar with navigation controls
  * - Glass file explorer panel (left)
- * - Glass target device & ltikt.properties configuration cockpit (left)
+ * - Glass target device configuration cockpit (left)
  * - Glass code editor (center)
  * - Glass AI assistant panel (right)
  * - Glass terminal panel (bottom)
@@ -79,6 +79,7 @@ fun WorkspaceScreen(
     onOpenConfigurations: () -> Unit = {},
     onOpenEditConfiguration: (String) -> Unit = { onOpenConfigurations() },
     onOpenAddConfiguration: () -> Unit = onOpenConfigurations,
+    onNavigateToSetup: () -> Unit = {},
     viewModel: WorkspaceViewModel = koinViewModel(),
     editorViewModel: EditorViewModel = koinViewModel(),
     explorerViewModel: ExplorerViewModel = koinViewModel(),
@@ -292,7 +293,7 @@ fun WorkspaceScreen(
                 icon = AppIcon.Painted(AppIcons.PlayPainterResource),
                 label = "Run",
             ) {
-                RunPanel(viewModel = buildRunViewModel)
+                RunPanel(viewModel = buildRunViewModel, onNavigateToSetup = onNavigateToSetup)
             },
         )
     }
@@ -427,7 +428,7 @@ fun WorkspaceScreen(
                 centerContent = {
                     TargetRunConfigurationBar(
                         selectedTarget = selectedTarget,
-                        region = effectiveSnapshot?.region ?: selectedTarget.selectedRegion,
+                        region = effectiveSnapshot?.region ?: TargetRegion.GLOBAL,
                         onOpenWorkspaceConfiguration = {
                             leftTabIndex = 1
                             if (!ltiLayoutState.showLeft) {
@@ -482,14 +483,12 @@ fun WorkspaceScreen(
             )
         },
         statusBar = {
-            val activeRegionCode = effectiveSnapshot?.region?.code ?: selectedTarget.selectedRegion.code
+            val activeRegionCode = effectiveSnapshot?.region?.code ?: TargetRegion.GLOBAL.code
             WorkspaceStatusBar(
                 branchName = branch,
                 module = "${selectedTarget.formattedSuperSize} • ${selectedTarget.filesystemType.uppercase()}",
                 filePath = activeFilePath ?: "Target: ${selectedTarget.name} ($activeRegionCode) • AVB 2.0 Active",
                 cursorPosition = cursorPosition,
-                encoding = "UTF-8",
-                lineEnding = LineEnding.LF,
                 fileType = activeFileType ?: selectedTarget.codename,
                 drawOwnChrome = false,
             )

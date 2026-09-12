@@ -76,9 +76,9 @@ fun DocumentationStepContent(
                 backdrop = resolvedBackdrop,
             )
             DocFeatureCard(
-                title = "Workspace Target Root",
-                badge = "~/LtiRomWorkDir/target",
-                description = "High-performance ext4 Linux workspace directory for target-specific ROM unpacking, git worktrees, and staging.",
+                title = "Workspaces Root",
+                badge = "~/LtiRomWorkDir/workspaces",
+                description = "High-performance ext4 Linux directory for isolated ROM workspaces, manifests, and staging.",
                 modifier = Modifier.weight(1f, fill = false).widthIn(min = ComponentSize.MinPanelWidth),
                 backdrop = resolvedBackdrop,
             )

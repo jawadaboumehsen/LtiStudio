@@ -85,14 +85,12 @@ fun ProjectsStepContent(
         onSearchQueryChange = actions.onSearchQueryChange,
         onRemoveRecentProject = actions.onRemoveRecentProject,
         onOpenFolder = actions.onOpenFolder,
-        onCloneGit = actions.onCloneGit,
-        onOpenDefaultWorkspace = actions.onProceedToWorkspace,
         onCreateWorkspace = actions.onCreateWorkspace,
         onRecentProjectClick = actions.onRecentProjectClick,
         toolchainSetupState = state.toolchainSetupState,
         selectedTarget = state.selectedTarget,
         availableTargets = state.availableTargets,
-        onSelectTargetAndLaunch = actions.onSelectTargetAndLaunch,
+        onSelectTarget = actions.onSelectTarget,
         onNavigateToEnvironment = onNavigateToEnvironment,
         resolvedBackdrop = resolvedBackdrop,
         modifier = modifier,
@@ -116,8 +114,6 @@ fun ProjectsStepContent(
     onSearchQueryChange: (String) -> Unit,
     onRemoveRecentProject: (String) -> Unit,
     onOpenFolder: () -> Unit,
-    onCloneGit: () -> Unit,
-    onOpenDefaultWorkspace: () -> Unit,
     onRecentProjectClick: (RecentProject) -> Unit,
     toolchainSetupState: ToolchainSetupState,
     onNavigateToEnvironment: () -> Unit,
@@ -125,7 +121,7 @@ fun ProjectsStepContent(
     modifier: Modifier = Modifier,
     selectedTarget: TargetDevice? = null,
     availableTargets: List<TargetDevice> = emptyList(),
-    onSelectTargetAndLaunch: (TargetDevice) -> Unit = {},
+    onSelectTarget: (TargetDevice) -> Unit = {},
     onCreateWorkspace: () -> Unit = {},
 ) {
     val glassColors = GlassTheme.colors
@@ -242,7 +238,8 @@ fun ProjectsStepContent(
             TargetSelectorCard(
                 selectedTarget = selectedTarget,
                 availableTargets = availableTargets,
-                onSelectTargetAndLaunch = onSelectTargetAndLaunch,
+                onSelectTarget = onSelectTarget,
+                onCreateWorkspace = onCreateWorkspace,
                 backdrop = resolvedBackdrop,
             )
         }
@@ -271,26 +268,6 @@ fun ProjectsStepContent(
                     isPrimary = false,
                     shortcut = "Ctrl+O",
                     onClick = onOpenFolder,
-                    backdrop = resolvedBackdrop,
-                    modifier = Modifier.weight(1f, fill = false).widthIn(min = ComponentSize.MinPanelWidth),
-                )
-                GlassActionCard(
-                    title = "Clone Git",
-                    subtitle = "Pull device manifests or trees",
-                    icon = AppIcon.Painted(AppIcons.ideWelcomeFromVCSTab),
-                    isPrimary = false,
-                    shortcut = "Ctrl+Shift+G",
-                    onClick = onCloneGit,
-                    backdrop = resolvedBackdrop,
-                    modifier = Modifier.weight(1f, fill = false).widthIn(min = ComponentSize.MinPanelWidth),
-                )
-                GlassActionCard(
-                    title = "Staging WorkDir",
-                    subtitle = "Default ~/LtiRomWorkDir WSL setup",
-                    icon = AppIcons.Home,
-                    isPrimary = false,
-                    shortcut = "Ctrl+Shift+W",
-                    onClick = onOpenDefaultWorkspace,
                     backdrop = resolvedBackdrop,
                     modifier = Modifier.weight(1f, fill = false).widthIn(min = ComponentSize.MinPanelWidth),
                 )

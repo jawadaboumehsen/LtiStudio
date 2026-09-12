@@ -13,7 +13,7 @@ public fun main(args: Array<String>) {
     val command = args[0]
     val startDir = File(System.getProperty("user.dir")).absoluteFile
     
-    // Find LtiRomKt root by traversing upwards until settings.gradle.kts is found
+    // Find project root by traversing upwards until settings.gradle.kts is found
     var current = startDir
     var rootDir = startDir
     while (current != null) {

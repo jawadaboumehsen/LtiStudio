@@ -10,10 +10,11 @@
 package org.ide.lti.core.data.repository.workspace
 
 import kotlinx.datetime.Clock
+import kotlinx.serialization.json.Json
 import okio.FileSystem
 import okio.Path
 import okio.Path.Companion.toPath
-import kotlinx.serialization.json.Json
+import org.ide.lti.core.model.workspace.EnvironmentId
 import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.core.model.workspace.WorkspaceManifest
 import org.ide.lti.core.model.workspace.WorkspaceType
@@ -21,17 +22,26 @@ import org.ide.lti.core.model.workspace.WorkspaceType
 /**
  * Service that detects physical workspaces on disk inside LtiRomWorkDir.
  *
- * Resolves both native host filesystem paths and WSL hypervisor UNC paths:
- * - Windows WSL: \\wsl.localhost\\Ubuntu\\home\\lti\\LtiRomWorkDir
- * - Linux Host: /home/lti/LtiRomWorkDir or ~/LtiRomWorkDir
- * - Local fallback: ${user.home}/LtiRomWorkDir
+ * Dynamically resolves execution environment paths based on [EnvironmentId] or configuration:
+ * - WSL hypervisor UNC paths: \\wsl.localhost\<distro>\<home>\LtiRomWorkDir and \\wsl$\<distro>\<home>\LtiRomWorkDir
+ * - Direct Linux host paths: /<home>/LtiRomWorkDir
+ * - Local filesystem fallback: ${user.home}/LtiRomWorkDir
+ *
+ * Does not contain hard-coded Ubuntu or lti distribution paths.
  */
 public class WorkDirDiscoveryService(
     private val fileSystem: FileSystem = FileSystem.SYSTEM,
     private val json: Json = Json { ignoreUnknownKeys = true },
+    private val environmentId: EnvironmentId? = null,
+    private val defaultDistro: String? = null,
+    private val defaultUser: String? = null,
+    private val workDirLinuxPath: String? = null,
 ) {
-    public fun discoverWorkspaces(basePathOverride: String? = null): List<RecentProject> {
-        val physicalDir = resolvePhysicalWorkDir(basePathOverride)
+    public fun discoverWorkspaces(
+        basePathOverride: String? = null,
+        environmentIdOverride: EnvironmentId? = null,
+    ): List<RecentProject> {
+        val physicalDir = resolvePhysicalWorkDir(basePathOverride, environmentIdOverride)
         if (physicalDir == null || !safeExists(physicalDir)) {
             return emptyList()
         }
@@ -39,7 +49,7 @@ public class WorkDirDiscoveryService(
         val discovered = mutableListOf<RecentProject>()
         val now = Clock.System.now()
 
-        // Scan workspaces/* subdirectories with workspace.json
+        // Scan exclusively workspaces/* subdirectories containing a valid workspace.json
         val workspacesDir = physicalDir / "workspaces"
         if (safeExists(workspacesDir)) {
             safeList(workspacesDir).forEach { wsSubDir ->
@@ -62,7 +72,7 @@ public class WorkDirDiscoveryService(
                                 )
                             )
                         } catch (_: Exception) {
-                            // Skip invalid/unparseable workspace
+                            // Skip invalid or unparseable workspace
                         }
                     }
                 }
@@ -72,7 +82,10 @@ public class WorkDirDiscoveryService(
         return discovered
     }
 
-    private fun resolvePhysicalWorkDir(basePathOverride: String?): Path? {
+    private fun resolvePhysicalWorkDir(
+        basePathOverride: String?,
+        environmentIdOverride: EnvironmentId? = null,
+    ): Path? {
         if (!basePathOverride.isNullOrBlank()) {
             try {
                 val candidate = basePathOverride.toPath()
@@ -80,12 +93,39 @@ public class WorkDirDiscoveryService(
             } catch (_: Exception) {}
         }
 
-        val candidates = listOf(
-            "\\\\wsl.localhost\\Ubuntu\\home\\lti\\LtiRomWorkDir",
-            "\\\\wsl$\\Ubuntu\\home\\lti\\LtiRomWorkDir",
-            "/home/lti/LtiRomWorkDir",
-            "${System.getProperty("user.home")}/LtiRomWorkDir",
-        )
+        val env = environmentIdOverride ?: environmentId
+        val distro = env?.distro?.ifBlank { null } ?: defaultDistro?.ifBlank { null }
+        val user = env?.user?.ifBlank { null } ?: defaultUser?.ifBlank { null }
+
+        val candidates = mutableListOf<String>()
+
+        if (distro != null && user != null) {
+            val linuxHome = if (user == "root") "root" else "home/$user"
+            val effectiveWorkDir = workDirLinuxPath?.trimStart('/') ?: "$linuxHome/LtiRomWorkDir"
+            val uncPart = effectiveWorkDir.replace('/', '\\')
+
+            candidates.add("\\\\wsl.localhost\\$distro\\$uncPart")
+            candidates.add("\\\\wsl$\\$distro\\$uncPart")
+            candidates.add("/$effectiveWorkDir")
+        } else if (distro != null) {
+            if (!workDirLinuxPath.isNullOrBlank()) {
+                val uncPart = workDirLinuxPath.trimStart('/').replace('/', '\\')
+                candidates.add("\\\\wsl.localhost\\$distro\\$uncPart")
+                candidates.add("\\\\wsl$\\$distro\\$uncPart")
+                candidates.add(workDirLinuxPath)
+            }
+        } else if (!workDirLinuxPath.isNullOrBlank()) {
+            candidates.add(workDirLinuxPath)
+        }
+
+        val userHome = try {
+            System.getProperty("user.home")
+        } catch (_: Throwable) {
+            null
+        }
+        if (!userHome.isNullOrBlank()) {
+            candidates.add("$userHome/LtiRomWorkDir")
+        }
 
         for (candidateStr in candidates) {
             try {

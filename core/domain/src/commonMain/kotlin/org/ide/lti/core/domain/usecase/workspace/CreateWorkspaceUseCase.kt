@@ -26,6 +26,7 @@ import org.ide.lti.core.model.setup.EnvironmentReadinessState
 import org.ide.lti.core.model.target.PackagePolicy
 import org.ide.lti.core.model.target.TargetBinding
 import org.ide.lti.core.model.target.TargetDevice
+import org.ide.lti.core.model.target.TargetFirmware
 import org.ide.lti.core.model.target.TargetRegion
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 import org.ide.lti.core.model.workspace.RecentProject
@@ -125,11 +126,15 @@ class CreateWorkspaceUseCase(
 
     /** Profile defaults: recommended firmware for the default region, DOWNLOAD, profile package policy. */
     private fun initialSnapshot(target: TargetDevice, workspaceId: String, snapshotId: String): ConfigurationSnapshot {
-        val region = target.selectedRegion ?: target.availableRegions.firstOrNull() ?: TargetRegion.GLOBAL
+        val region = target.availableRegions.firstOrNull() ?: TargetRegion.GLOBAL
         val firmwareList = target.availableFirmwares[region].orEmpty()
         val firmware = firmwareList.firstOrNull { it.isRecommended }
             ?: firmwareList.firstOrNull()
-            ?: target.selectedFirmware
+            ?: TargetFirmware(
+                version = "1.0.0",
+                buildId = "${target.codename}:15/AQ3A.240812.002/20260101.000000",
+                isOfficial = false,
+            )
         val packagePolicy = target.packagePolicy ?: PackagePolicy(
             flashablePartitions = target.dynamicPartitions,
             flashableBootPartitions = target.bootPartitions,

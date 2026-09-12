@@ -15,25 +15,28 @@ class ValidateTargetConfigurationUseCase {
         val errors = mutableListOf<TargetValidationError>()
 
         if (target.id.isBlank()) {
-            errors += TargetValidationError("id", "Target ID cannot be blank.")
+            errors += TargetValidationError.EmptyId
         }
         if (target.name.isBlank()) {
-            errors += TargetValidationError("name", "Target name cannot be blank.")
+            errors += TargetValidationError.EmptyName
         }
         if (target.codename.isBlank()) {
-            errors += TargetValidationError("codename", "Target codename cannot be blank.")
+            errors += TargetValidationError.EmptyCodename
         }
         if (target.socPlatform.isBlank()) {
-            errors += TargetValidationError("socPlatform", "SoC platform cannot be blank.")
+            errors += TargetValidationError.EmptySocPlatform
         }
         if (target.filesystemType.isBlank()) {
-            errors += TargetValidationError("filesystemType", "Filesystem type cannot be blank.")
+            errors += TargetValidationError.EmptyFilesystemType
+        }
+        if (target.superPartitionBytes <= 0L) {
+            errors += TargetValidationError.InvalidSuperPartitionSize
         }
         if (target.dynamicPartitions.isEmpty()) {
-            errors += TargetValidationError("dynamicPartitions", "At least one dynamic partition is required.")
+            errors += TargetValidationError.EmptyDynamicPartitions
         }
         if (target.bootPartitions.isEmpty()) {
-            errors += TargetValidationError("bootPartitions", "At least one boot partition is required.")
+            errors += TargetValidationError.EmptyBootPartitions
         }
 
         return errors

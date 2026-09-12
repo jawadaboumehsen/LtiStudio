@@ -12,7 +12,6 @@ package org.ide.lti.core.data.di
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import org.ide.lti.core.data.repository.run.InMemoryRunRepository
 import org.ide.lti.core.data.repository.setup.ToolchainSetupRepositoryImpl
 import org.ide.lti.core.data.repository.snapshot.SnapshotRepositoryImpl
 import org.ide.lti.core.data.repository.target.TargetRepositoryImpl
@@ -67,8 +66,6 @@ val DataModule = module {
     singleOf(::TargetRepositoryImpl) { bind<TargetRepository>() }
     singleOf(::ToolchainSetupRepositoryImpl) { bind<ToolchainSetupRepository>() }
     single<SnapshotRepository> { SnapshotRepositoryImpl(dataSource = get()) }
-    // Replaced by the durable RunRepositoryImpl in US4 (T090).
-    single<RunRepository> { InMemoryRunRepository() }
 }
 
 

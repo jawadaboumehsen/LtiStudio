@@ -10,7 +10,9 @@
 package org.ide.lti.core.domain.repository.run
 
 import kotlinx.coroutines.flow.Flow
+import org.ide.lti.core.model.run.Artifact
 import org.ide.lti.core.model.run.BuildRun
+import org.ide.lti.core.model.run.Presence
 
 /**
  * Port interface for managing build runs, stages, steps, events, and artifacts.
@@ -45,6 +47,22 @@ interface RunRepository {
      * Retrieves a run by its ID.
      */
     suspend fun getRun(runId: String): BuildRun? = null
+
+    /**
+     * Deletes a run record and all its associated events and cache files.
+     */
+    suspend fun deleteRun(runId: String) {}
+
+    /**
+     * Refreshes the artifact presence status for runs in [workspaceId]
+     * using the given [checker] function.
+     */
+    suspend fun refreshPresence(workspaceId: String, checker: suspend (Artifact) -> Presence) {}
+
+    /**
+     * Prunes missing artifacts from the specified run.
+     */
+    suspend fun pruneArtifacts(runId: String) {}
 
     /**
      * Attempts to claim the driver lease for a run.

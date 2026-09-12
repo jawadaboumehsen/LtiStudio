@@ -165,8 +165,8 @@ fun GeneralConfigTab(
                         modifier = Modifier.weight(1f),
                     )
                     TargetSpecBadge(
-                        label = "Target Region",
-                        value = "${target.selectedRegion.displayName} (${target.selectedRegion.shortName})",
+                        label = "Available Regions",
+                        value = target.availableRegions.joinToString { it.shortName },
                         modifier = Modifier.weight(1f),
                     )
                 }

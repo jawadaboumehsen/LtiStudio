@@ -20,4 +20,6 @@ public data class ToolchainPersistenceState(
     val activeDistro: String? = null,
 ) {
     public fun isStageCompleted(stageName: String): Boolean = stageName in completedStages
+    public fun isSubmoduleSynced(name: String): Boolean = submodules[name]?.isSynced == true
+    public fun isToolCompiled(name: String): Boolean = tools[name]?.isCompiled == true
 }

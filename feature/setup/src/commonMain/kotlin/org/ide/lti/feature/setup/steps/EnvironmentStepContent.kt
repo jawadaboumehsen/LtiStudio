@@ -39,6 +39,8 @@ import com.kashif_e.backdrop.backdrops.LayerBackdrop
 import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
 import org.ide.lti.core.designsystem.component.actions.GlassSecondaryButton
 import org.ide.lti.core.designsystem.component.display.GlassCard
+import org.ide.lti.core.designsystem.component.feedback.GlassBanner
+import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
@@ -218,6 +220,28 @@ fun EnvironmentStepContent(
                 isBusy = toolchainSetupState.isBusy,
                 diagnostics = diagnostics,
                 glassColors = glassColors
+            )
+        }
+
+        val sudoDiag = toolchainSetupState.diagnostics.firstOrNull { it.id == "sudo_noninteractive" }
+        if (sudoDiag != null && sudoDiag.status != StepStatus.SUCCESS) {
+            val cmd = sudoDiag.copyableCommand ?: "echo \"\$USER ALL=(ALL) NOPASSWD: ALL\" | sudo tee /etc/sudoers.d/ltirom"
+            GlassBanner(
+                severity = GlassBannerSeverity.WARNING,
+                title = "Non-Interactive Sudo Configuration Required",
+                description = "Automated package remediation requires passwordless sudo without interactive TTY prompts. Run in WSL terminal:\n$cmd",
+                backdrop = resolvedBackdrop,
+            )
+        }
+
+        val activeRunIds = toolchainSetupState.stepRunIds.filterValues { it.isNotBlank() }
+        if (activeRunIds.isNotEmpty()) {
+            val runSummary = activeRunIds.entries.joinToString(", ") { "${it.key.displayName}: ${it.value}" }
+            GlassBanner(
+                severity = GlassBannerSeverity.INFO,
+                title = "Active Durable Run",
+                description = "Executing durable background run ($runSummary). Reattaches automatically across session restarts.",
+                backdrop = resolvedBackdrop,
             )
         }
 

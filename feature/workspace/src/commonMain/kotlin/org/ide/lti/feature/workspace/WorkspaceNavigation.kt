@@ -26,6 +26,7 @@ fun NavGraphBuilder.workspaceScreen(
     onOpenConfigurations: () -> Unit = {},
     onOpenEditConfiguration: (String) -> Unit = { onOpenConfigurations() },
     onOpenAddConfiguration: () -> Unit = onOpenConfigurations,
+    onNavigateToSetup: () -> Unit = {},
 ) {
     composable(route = WORKSPACE_ROUTE) {
         WorkspaceScreen(
@@ -34,6 +35,7 @@ fun NavGraphBuilder.workspaceScreen(
             onOpenConfigurations = onOpenConfigurations,
             onOpenEditConfiguration = onOpenEditConfiguration,
             onOpenAddConfiguration = onOpenAddConfiguration,
+            onNavigateToSetup = onNavigateToSetup,
         )
     }
 }

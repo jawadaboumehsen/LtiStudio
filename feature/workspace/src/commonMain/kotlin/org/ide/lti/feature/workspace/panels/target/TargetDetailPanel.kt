@@ -123,7 +123,7 @@ private fun BreadcrumbTrail(
             softWrap = false,
         )
         Text(
-            text = "${selectedTarget.codename} • ${selectedTarget.selectedRegion.displayName}",
+            text = "${selectedTarget.name} (${selectedTarget.codename})",
             style = MaterialTheme.typography.bodyMedium.copy(fontFamily = codeFontFamily()),
             fontWeight = FontWeight.SemiBold,
             color = glassColors.glassAccent,

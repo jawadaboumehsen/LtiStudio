@@ -81,7 +81,7 @@ class CompositeSystemDoctorEngineTest {
                 return CliExecutionResult(0, tools.joinToString("\n"), "")
             }
 
-            if (cmdStr.contains("echo -n \$HOME")) {
+            if (cmdStr.contains("echo -n \$HOME") || cmdStr.contains("printenv HOME") || cmdStr.contains("printenv")) {
                 return CliExecutionResult(0, "/home/lti", "")
             }
 
@@ -146,7 +146,7 @@ class CompositeSystemDoctorEngineTest {
     }
 
     @Test
-    fun `runDiagnostics evaluates all 13 inspectors concurrently and returns success when environment is healthy`() = runTest {
+    fun `runDiagnostics evaluates all 14 inspectors concurrently and returns success when environment is healthy`() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val mockCli = MockWslCliExecutor()
         val detector = WslEnvironmentDetector(cli = mockCli)
@@ -159,12 +159,12 @@ class CompositeSystemDoctorEngineTest {
 
         val results = engine.runDiagnostics("Ubuntu", binariesPresent = true)
 
-        assertEquals(13, results.size, "Expected 13 diagnostic check items")
+        assertEquals(14, results.size, "Expected 14 diagnostic check items")
         val ids = results.map { it.id }.toSet()
         val expectedIds = setOf(
             "host_compilers", "host_libraries", "python_crypto", "jdk_dual",
-            "selinux_attr", "archive_tools", "transfer_tools", "dev_fuse",
-            "loop_mount", "disk_headroom", "openssl_tools", "toolchain_binaries",
+            "selinux_attr", "archive_tools", "transfer_tools", "sudo_noninteractive",
+            "dev_fuse", "loop_mount", "disk_headroom", "openssl_tools", "toolchain_binaries",
             "build_cache"
         )
         assertEquals(expectedIds, ids)
@@ -247,7 +247,7 @@ class CompositeSystemDoctorEngineTest {
         val useCase = RunSystemDiagnosticsUseCase(engine)
 
         val results = useCase("Ubuntu", binariesPresent = true)
-        assertEquals(13, results.size)
+        assertEquals(14, results.size)
     }
 
     @Test
@@ -270,7 +270,8 @@ class CompositeSystemDoctorEngineTest {
         assertTrue(success)
         assertTrue(mockCli.executedCommands.any { it.contains("apt-get update") })
         assertTrue(mockCli.executedCommands.any { it.contains("apt-get install -y") && it.contains("cmake") })
-        assertTrue(mockCli.executedUsers.contains("root"), "Must execute with root privileges in WSL")
+        assertTrue(mockCli.executedCommands.any { it.startsWith("sudo -n apt-get") }, "Must execute via non-interactive sudo")
+        assertTrue(mockCli.executedUsers.none { it == "root" }, "Must never fall back to direct wsl -u root")
         assertTrue(progressLogs.isNotEmpty())
     }
 
@@ -443,7 +444,7 @@ class CompositeSystemDoctorEngineTest {
     }
 
     @Test
-    fun `runDiagnostics on a healthy host issues at most 8 requests in total`() = runTest {
+    fun `runDiagnostics on a healthy host issues at most 10 requests in total`() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val mockCli = MockWslCliExecutor()
         val detector = WslEnvironmentDetector(cli = mockCli)
@@ -454,10 +455,10 @@ class CompositeSystemDoctorEngineTest {
         )
 
         val results = engine.runDiagnostics("Ubuntu", binariesPresent = true)
-        assertEquals(13, results.size)
+        assertEquals(14, results.size)
         assertTrue(
-            mockCli.executedCommands.size <= 8,
-            "Expected <= 8 commands, but was ${mockCli.executedCommands.size}: ${mockCli.executedCommands}"
+            mockCli.executedCommands.size <= 10,
+            "Expected <= 10 commands, but was ${mockCli.executedCommands.size}: ${mockCli.executedCommands}"
         )
     }
 }

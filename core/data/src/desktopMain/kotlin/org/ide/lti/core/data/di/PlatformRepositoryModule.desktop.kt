@@ -26,8 +26,10 @@ import org.koin.dsl.module
 
 import org.ide.lti.core.data.remote.ResourceVendoredFileAdapter
 import org.ide.lti.core.data.remote.StepExecutionAdapter
+import org.ide.lti.core.data.repository.run.RunRepositoryImpl
 import org.ide.lti.core.domain.ports.PipelineExecutionPort
 import org.ide.lti.core.domain.ports.VendoredFilePort
+import org.ide.lti.core.domain.repository.run.RunRepository
 
 internal actual val platformRepositoryModule = module {
     singleOf(::DesktopFileSystemRepository) { bind<FileSystemRepository>() }
@@ -51,5 +53,12 @@ internal actual val platformRepositoryModule = module {
         StepExecutionAdapter(transport = get())
     }
     single<VendoredFilePort> { ResourceVendoredFileAdapter() }
+    single<RunRepository> {
+        RunRepositoryImpl(
+            runRecordDataSource = get(),
+            workspaceRepository = getOrNull(),
+            executionPort = getOrNull(),
+        )
+    }
 }
 

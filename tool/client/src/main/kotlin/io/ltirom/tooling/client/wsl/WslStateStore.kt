@@ -1,43 +1,34 @@
 package io.ltirom.tooling.client.wsl
 
 import io.ltirom.tooling.core.ports.ServerConnectionDescriptor
+import kotlinx.serialization.json.*
 
 /**
- * Reads the LtiRomServer daemon's lockfile written on its own (Linux) side, enabling
- * instant zero-latency reconnection to an already-running daemon (VS Code Remote pattern).
- *
- * Format is defined by `LockfileStateStore` in the `LtiRomServer` project:
- * `~/.ltirom/server.state` — `{"port":N,"token":"...","pid":N,"distro":"...","startTimeEpochMs":N}`.
- * This store never writes the file; only the server process does.
+ * Single Responsibility: Reading and parsing ~/.ltirom/server.state lockfile from WSL
+ * for zero-latency warm client re-attachment.
  */
 public class WslStateStore(
     private val cli: WslCliExecutor = WslCliExecutor(),
+    private val json: Json = Json { ignoreUnknownKeys = true }
 ) {
     public fun readState(distro: String, wslIp: String): ServerConnectionDescriptor? {
-        val result = cli.execute(distro, listOf("cat", "\$HOME/.ltirom/server.state"), timeoutSeconds = 5)
-        if (result.exitCode != 0 || result.output.isBlank()) return null
+        val res = cli.execute(distro, listOf("bash", "-c", "cat ~/.ltirom/server.state 2>/dev/null"), timeoutSeconds = 3)
+        val text = res.output.trim()
+        if (text.isBlank() || !text.startsWith("{")) return null
 
         return runCatching {
-            val port = extractInt(result.output, "port") ?: return null
-            val token = extractString(result.output, "token") ?: return null
-            val pid = extractLong(result.output, "pid") ?: return null
-            val stateDistro = extractString(result.output, "distro") ?: distro
+            val root = json.parseToJsonElement(text).jsonObject
+            val port = root["port"]?.jsonPrimitive?.intOrNull ?: return null
+            val token = root["token"]?.jsonPrimitive?.content ?: return null
+            val pid = root["pid"]?.jsonPrimitive?.longOrNull ?: -1L
+
             ServerConnectionDescriptor(
                 host = wslIp,
                 port = port,
                 token = token,
                 pid = pid,
-                distro = stateDistro,
+                distro = distro
             )
         }.getOrNull()
     }
-
-    private fun extractInt(json: String, key: String): Int? =
-        Regex("\"$key\"\\s*:\\s*(\\d+)").find(json)?.groupValues?.get(1)?.toIntOrNull()
-
-    private fun extractLong(json: String, key: String): Long? =
-        Regex("\"$key\"\\s*:\\s*(\\d+)").find(json)?.groupValues?.get(1)?.toLongOrNull()
-
-    private fun extractString(json: String, key: String): String? =
-        Regex("\"$key\"\\s*:\\s*\"([^\"]*)\"").find(json)?.groupValues?.get(1)
 }

@@ -14,6 +14,7 @@ Examples:
 - Base glass surfaces and containers (`GlassSurface.kt`, `GlassCard.kt`, `GlassPanel.kt`)
 - Interactive glass controls (`GlassButton.kt`, `GlassTextField.kt`, `GlassSlider.kt`, `GlassToggle.kt`)
 - Layout scaffolding (`GlassLayout.kt`, `GlassTopBar.kt`, `GlassStatusBar.kt`, `GlassBottomSheet.kt`)
+- Progress & timeline visualization (`GlassStepper.kt`, `GlassProgressBar.kt`)
 - Developer tools (`GlassPerformanceMonitor.kt`)
 
 Add to `core:ui` when:
@@ -541,6 +542,25 @@ GlassTextField(
 
 - `GlassNavigationBar`, `GlassNavigationBarItem`: Material 3 glass bottom navigation bar.
 - `GlassNavigationRail`, `GlassNavigationRailItem`: Material 3 glass vertical navigation rail.
+
+### 6. `GlassStepper.kt` (`core:designsystem/component/progress`)
+
+Liquid glass step-progress visualizer for multi-stage pipelines (Setup Doctor, ROM Build Pipeline, Workspace Provisioning).
+- Orientation: `GlassStepperOrientation.Horizontal`, `GlassStepperOrientation.Vertical`.
+- Statuses (`GlassStepStatus`):
+  - `PENDING`: Waiting to run, muted outline, step number displayed.
+  - `RUNNING`: Actively executing, accent outline, animated spinner indicator.
+  - `SUCCESS`: Completed successfully, green accent, checkmark indicator.
+  - `WARNING`: Completed with non-fatal warnings, amber status icon.
+  - `FAILED`: Errored stage, red error indicator, retry action button (`onRetryStep`).
+  - `SKIPPED`: Cache hit / bypassed, muted checkmark indicator.
+  - `CANCELLED`: User or signal cancellation, muted stop badge.
+  - `INTERRUPTED`: Daemon / connection dropped mid-execution, warning indicator.
+  - `RESTORED`: Snapshot restored from previous session, cyan recovery badge.
+- Model: `GlassStepInfo(id, shortTitle, status, statusLabel)`.
+- Helpers: `GlassStepperDefaults.defaultStatusLabel(status)`.
+- Composables:
+  - `GlassStepper(steps, modifier, orientation, isBusy, onRetryStep, onStepClick, backdrop)`
 
 ## Modal & Developer Utilities
 

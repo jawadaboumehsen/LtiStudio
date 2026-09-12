@@ -48,6 +48,9 @@ class SimulatedExecutionPort(private val wsRoot: String) : PipelineExecutionPort
     fun text(rel: String): String? = files["$wsRoot/$rel"]?.decodeToString()
     fun has(rel: String): Boolean = files.containsKey("$wsRoot/$rel")
 
+    val statuses = mutableMapOf<String, StepStatus>()
+    val observedFlows = mutableMapOf<String, (Long) -> Flow<StepEvent>>()
+
     override suspend fun startStep(ws: Workspace, step: StepCommand, idempotencyKey: String): RunHandle {
         durableSteps += step
         val id = "srv-${++handleCounter}"
@@ -56,11 +59,15 @@ class SimulatedExecutionPort(private val wsRoot: String) : PipelineExecutionPort
     }
 
     override fun observe(serverRunId: String, fromSeq: Long): Flow<StepEvent> {
+        val custom = observedFlows[serverRunId]
+        if (custom != null) {
+            return custom(fromSeq)
+        }
         val result = pending.remove(serverRunId) ?: return flowOf(StepEvent.Finished(-1))
         return flowOf(StepEvent.Output(1L, result.stdout), StepEvent.Heartbeat, StepEvent.Finished(result.exitCode))
     }
 
-    override suspend fun status(serverRunId: String): StepStatus? = null
+    override suspend fun status(serverRunId: String): StepStatus? = statuses[serverRunId]
     override suspend fun cancel(serverRunId: String): Boolean = true
 
     override suspend fun uploadFile(ws: Workspace, relPath: String, bytes: ByteArray): Boolean {

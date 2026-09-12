@@ -7,11 +7,7 @@ import kotlinx.coroutines.flow.map
 import org.ide.lti.core.datastore.TargetPreferencesDataSource
 import org.ide.lti.core.domain.repository.target.TargetRepository
 import org.ide.lti.core.model.target.DefaultTargetCatalog
-import org.ide.lti.core.model.target.FirmwareAcquisitionMode
 import org.ide.lti.core.model.target.TargetDevice
-import org.ide.lti.core.model.target.TargetFirmware
-import org.ide.lti.core.model.target.TargetRegion
-import org.ide.lti.core.model.target.TargetStatus
 
 /**
  * Production implementation of [TargetRepository] managing target device profiles
@@ -58,78 +54,6 @@ class TargetRepositoryImpl(
         _selectedTargetId.value = target.id
         preferencesDataSource.saveSelectedTargetId(target.id)
         return Result.success(target)
-    }
-
-    override suspend fun selectRegion(region: TargetRegion): Result<TargetDevice> {
-        val current = _targets.value.find { it.id == _selectedTargetId.value } ?: DefaultTargetCatalog.PQ84P01_DEFAULT
-        val recommendedFirmware = current.availableFirmwares[region]?.firstOrNull { it.isRecommended }
-            ?: current.availableFirmwares[region]?.firstOrNull()
-            ?: current.selectedFirmware
-
-        val updated = current.copy(
-            selectedRegion = region,
-            selectedFirmware = recommendedFirmware,
-            status = if (recommendedFirmware.isOfficial) TargetStatus.QUALIFIED else TargetStatus.EXPERIMENTAL,
-            description = when (region) {
-                TargetRegion.GLOBAL -> "Official Global & European retail baseline (${current.codename}_GB / NP05J_GB)"
-                TargetRegion.CHINA -> "Official China mainland retail baseline (${current.codename}_CN / NP05J_CN)"
-            },
-        )
-
-        val updatedList = _targets.value.map { if (it.id == updated.id) updated else it }
-        _targets.value = updatedList
-        preferencesDataSource.saveTargets(updatedList)
-        return Result.success(updated)
-    }
-
-    override suspend fun selectFirmware(firmware: TargetFirmware): Result<TargetDevice> {
-        val current = _targets.value.find { it.id == _selectedTargetId.value } ?: DefaultTargetCatalog.PQ84P01_DEFAULT
-        val updated = current.copy(
-            selectedFirmware = firmware,
-            status = if (firmware.isOfficial) TargetStatus.QUALIFIED else TargetStatus.EXPERIMENTAL,
-        )
-
-        val updatedList = _targets.value.map { if (it.id == updated.id) updated else it }
-        _targets.value = updatedList
-        preferencesDataSource.saveTargets(updatedList)
-        return Result.success(updated)
-    }
-
-    override suspend fun setCustomFirmware(
-        version: String,
-        buildId: String?,
-        otaUrl: String?,
-    ): Result<TargetDevice> {
-        val current = _targets.value.find { it.id == _selectedTargetId.value } ?: DefaultTargetCatalog.PQ84P01_DEFAULT
-        val customFirmware = TargetFirmware(
-            version = version.trim(),
-            buildId = buildId?.trim() ?: "${current.codename}:15/CUSTOM/${version.trim()}",
-            androidVersion = "15",
-            securityPatch = "Custom",
-            otaUrl = otaUrl?.trim(),
-            isOfficial = false,
-            isRecommended = false,
-        )
-
-        val updated = current.copy(
-            selectedFirmware = customFirmware,
-            status = TargetStatus.EXPERIMENTAL,
-            description = "Custom firmware build (${customFirmware.version})",
-        )
-
-        val updatedList = _targets.value.map { if (it.id == updated.id) updated else it }
-        _targets.value = updatedList
-        preferencesDataSource.saveTargets(updatedList)
-        return Result.success(updated)
-    }
-
-    override suspend fun selectAcquisitionMode(mode: FirmwareAcquisitionMode): Result<TargetDevice> {
-        val current = _targets.value.find { it.id == _selectedTargetId.value } ?: DefaultTargetCatalog.PQ84P01_DEFAULT
-        val updated = current.copy(acquisitionMode = mode)
-        val updatedList = _targets.value.map { if (it.id == updated.id) updated else it }
-        _targets.value = updatedList
-        preferencesDataSource.saveTargets(updatedList)
-        return Result.success(updated)
     }
 
     override suspend fun addTarget(target: TargetDevice): Result<TargetDevice> {

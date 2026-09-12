@@ -44,10 +44,8 @@ fun TargetTelemetryCard(
             TelemetryRow("Boot Partition", target.formattedBootSize)
             TelemetryRow("Vendor Boot", target.formattedVendorBootSize)
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
-                @Suppress("DEPRECATION")
-                GlassChip(label = target.selectedFirmware.version, selected = false)
-                @Suppress("DEPRECATION")
-                GlassChip(label = target.acquisitionMode.name, selected = false)
+                GlassChip(label = target.status.displayName, selected = false)
+                GlassChip(label = "${target.availableRegions.size} Regions", selected = false)
                 GlassChip(label = if (target.virtualAb) "Virtual A/B" else "A/B", selected = false)
             }
         }

@@ -43,7 +43,6 @@ import org.ide.lti.core.domain.workspace.WorkspaceManager
 import org.ide.lti.core.model.setup.EnvironmentReadiness
 import org.ide.lti.core.model.setup.EnvironmentReadinessState
 import org.ide.lti.core.model.setup.WorkspaceReadiness
-import org.ide.lti.core.model.target.FirmwareAcquisitionMode
 import org.ide.lti.core.model.target.PackagePolicy
 import org.ide.lti.core.model.target.TargetBinding
 import org.ide.lti.core.model.target.TargetDevice
@@ -116,44 +115,6 @@ class WorkspaceConfigurationViewModelTest {
             } else {
                 Result.failure(IllegalArgumentException("Target not found: $targetId"))
             }
-        }
-        override suspend fun selectRegion(region: TargetRegion): Result<TargetDevice> {
-            val current = selectedTargetFlow.value
-            val fw = current.availableFirmwares[region]?.firstOrNull() ?: current.selectedFirmware
-            val updated = current.copy(selectedRegion = region, selectedFirmware = fw)
-            selectedTargetFlow.value = updated
-            return Result.success(updated)
-        }
-        override suspend fun selectFirmware(firmware: TargetFirmware): Result<TargetDevice> {
-            val current = selectedTargetFlow.value
-            val updated = current.copy(selectedFirmware = firmware)
-            selectedTargetFlow.value = updated
-            return Result.success(updated)
-        }
-        override suspend fun selectAcquisitionMode(mode: FirmwareAcquisitionMode): Result<TargetDevice> {
-            val current = selectedTargetFlow.value
-            val updated = current.copy(acquisitionMode = mode)
-            selectedTargetFlow.value = updated
-            return Result.success(updated)
-        }
-        override suspend fun setCustomFirmware(
-            version: String,
-            buildId: String?,
-            otaUrl: String?,
-        ): Result<TargetDevice> {
-            val current = selectedTargetFlow.value
-            val custom = TargetFirmware(
-                version = version,
-                buildId = buildId ?: "${current.codename}:15/CUSTOM/$version",
-                androidVersion = "15",
-                securityPatch = "Custom",
-                otaUrl = otaUrl,
-                isOfficial = false,
-                isRecommended = false,
-            )
-            val updated = current.copy(selectedFirmware = custom, status = TargetStatus.EXPERIMENTAL)
-            selectedTargetFlow.value = updated
-            return Result.success(updated)
         }
         override suspend fun addTarget(target: TargetDevice): Result<TargetDevice> {
             val list = targetsFlow.value.toMutableList()
@@ -312,7 +273,7 @@ class WorkspaceConfigurationViewModelTest {
             assertFalse(state.isDirty)
 
             // Local edit: switch to CN
-            viewModel.selectRegion(TargetRegion.CHINA)
+            viewModel.updateDraftRegion(TargetRegion.CHINA)
             assertTrue(viewModel.uiState.value.isDirty)
             assertEquals(TargetRegion.CHINA, viewModel.uiState.value.draft?.region)
             // initial snapshot is still GLOBAL

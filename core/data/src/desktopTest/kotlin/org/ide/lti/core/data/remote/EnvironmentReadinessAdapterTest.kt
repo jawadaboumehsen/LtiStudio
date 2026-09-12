@@ -238,4 +238,94 @@ class EnvironmentReadinessAdapterTest {
         assertEquals(EnvironmentReadinessState.WORKSPACE_INVALID, readiness.state)
         assertNotNull(readiness.failingCheck)
     }
+
+    @Test
+    fun testWorkspaceInvalidWhenLayoutVersionDrift() = runTest {
+        val wsl = FakeWslPresence()
+        val supervisor = FakeDaemonSupervisor()
+        val transport = FakeRemoteTransport()
+        transport.toolsList = healthyToolsList()
+        transport.customExecuteHandler = { req ->
+            if (req.toolId == "mkfs.erofs" && req.arguments.contains("--help")) {
+                ToolExecutionResponse(exitCode = 0, stdout = "--fs-config-file", stderr = "", durationMs = 5L)
+            } else {
+                ToolExecutionResponse(exitCode = 0, stdout = "ok", stderr = "", durationMs = 5L)
+            }
+        }
+
+        val adapter = EnvironmentReadinessAdapter(wsl, supervisor, transport)
+        val ws = Workspace(
+            id = "drift-ws",
+            name = "Drift Workspace",
+            path = "C:\\test",
+            linuxPath = "/home/lti/LtiRomWorkDir/workspaces/drift-ws",
+            layoutVersion = 2,
+        )
+        val readiness = adapter.forWorkspace(ws)
+
+        assertEquals(EnvironmentReadinessState.WORKSPACE_INVALID, readiness.state)
+        assertTrue(readiness.failingCheck?.contains("layout version drift") == true)
+    }
+
+    @Test
+    fun testWorkspaceInvalidWhenKeysMissing() = runTest {
+        val wsl = FakeWslPresence()
+        val supervisor = FakeDaemonSupervisor()
+        val transport = FakeRemoteTransport()
+        transport.toolsList = healthyToolsList()
+        transport.customExecuteHandler = { req ->
+            if (req.toolId == "mkfs.erofs" && req.arguments.contains("--help")) {
+                ToolExecutionResponse(exitCode = 0, stdout = "--fs-config-file", stderr = "", durationMs = 5L)
+            } else if (req.toolId == "test" && req.arguments.contains("-f")) {
+                val path = req.arguments.last()
+                if (path.contains("keys/avb")) {
+                    ToolExecutionResponse(exitCode = 1, stdout = "", stderr = "not found", durationMs = 5L)
+                } else {
+                    ToolExecutionResponse(exitCode = 0, stdout = "ok", stderr = "", durationMs = 5L)
+                }
+            } else {
+                ToolExecutionResponse(exitCode = 0, stdout = "ok", stderr = "", durationMs = 5L)
+            }
+        }
+
+        val adapter = EnvironmentReadinessAdapter(wsl, supervisor, transport)
+        val ws = Workspace(
+            id = "nokeys-ws",
+            name = "No Keys Workspace",
+            path = "C:\\test",
+            linuxPath = "/home/lti/LtiRomWorkDir/workspaces/nokeys-ws",
+        )
+        val readiness = adapter.forWorkspace(ws)
+
+        assertEquals(EnvironmentReadinessState.WORKSPACE_INVALID, readiness.state)
+        assertTrue(readiness.failingCheck?.contains("cryptographic signing keys") == true)
+    }
+
+    @Test
+    fun testWorkspaceReadyWhenAllFilesAndKeysPresent() = runTest {
+        val wsl = FakeWslPresence()
+        val supervisor = FakeDaemonSupervisor()
+        val transport = FakeRemoteTransport()
+        transport.toolsList = healthyToolsList()
+        transport.customExecuteHandler = { req ->
+            if (req.toolId == "mkfs.erofs" && req.arguments.contains("--help")) {
+                ToolExecutionResponse(exitCode = 0, stdout = "--fs-config-file", stderr = "", durationMs = 5L)
+            } else if (req.toolId == "test" && req.arguments.contains("-f")) {
+                ToolExecutionResponse(exitCode = 0, stdout = "ok", stderr = "", durationMs = 5L)
+            } else {
+                ToolExecutionResponse(exitCode = 0, stdout = "ok", stderr = "", durationMs = 5L)
+            }
+        }
+
+        val adapter = EnvironmentReadinessAdapter(wsl, supervisor, transport)
+        val ws = Workspace(
+            id = "valid-ws",
+            name = "Valid Workspace",
+            path = "C:\\test",
+            linuxPath = "/home/lti/LtiRomWorkDir/workspaces/valid-ws",
+        )
+        val readiness = adapter.forWorkspace(ws)
+
+        assertEquals(EnvironmentReadinessState.READY, readiness.state)
+    }
 }

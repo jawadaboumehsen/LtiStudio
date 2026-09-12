@@ -41,6 +41,7 @@ public class CompositeSystemDoctorEngine(
             SelinuxAttrInspector(cli),
             ArchiveToolsInspector(cli),
             TransferToolsInspector(cli),
+            SudoNoninteractiveInspector(cli),
             KernelFuseInspector(cli),
             LoopMountInspector(cli),
             StorageHeadroomInspector(cli),
@@ -50,11 +51,18 @@ public class CompositeSystemDoctorEngine(
         )
     }
 
+    private fun resolveHome(distro: String): String {
+        val res = cli.execute(distro, listOf("printenv", "HOME"))
+        val path = res.output.trim()
+        if (res.exitCode == 0 && path.startsWith("/")) return path
+        return detector.resolveWslUserHome(distro)
+    }
+
     override suspend fun runDiagnostics(
         distro: String,
         binariesPresent: Boolean
     ): List<DiagnosticCheckItem> {
-        val home = detector.resolveWslUserHome(distro)
+        val home = resolveHome(distro)
         val binDir = "$home/LtiRomTools/bin"
         val findRes = cli.execute(
             distro,
@@ -94,7 +102,7 @@ public class CompositeSystemDoctorEngine(
         distro: String,
         onProgress: (String) -> Unit
     ): Boolean = withContext(dispatcher) {
-        val home = detector.resolveWslUserHome(distro)
+        val home = resolveHome(distro)
         val binDir = "$home/LtiRomTools/bin"
         val context = DiagnosticContext(
             distro = distro,
@@ -108,7 +116,7 @@ public class CompositeSystemDoctorEngine(
         val hasIssues = currentResults.any { it.status == StepStatus.FAILED || it.status == StepStatus.WARNING }
 
         if (!hasIssues) {
-            onProgress("All 13 system diagnostic checks are already satisfied. No packages to install.")
+            onProgress("All system diagnostic checks are already satisfied. No packages to install.")
             return@withContext true
         }
 

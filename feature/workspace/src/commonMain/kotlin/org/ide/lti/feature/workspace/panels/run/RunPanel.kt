@@ -1,3 +1,12 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.feature.workspace.panels.run
 
 import androidx.compose.foundation.layout.*
@@ -7,6 +16,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import org.ide.lti.core.designsystem.component.actions.GlassButton
@@ -14,16 +26,68 @@ import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.display.GlassHorizontalDivider
+import org.ide.lti.core.designsystem.component.feedback.GlassBanner
+import org.ide.lti.core.designsystem.component.feedback.GlassBannerAction
+import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
+import org.ide.lti.core.designsystem.component.navigation.GlassTab
+import org.ide.lti.core.designsystem.component.navigation.GlassTabBar
 import org.ide.lti.core.designsystem.component.progress.GlassConsoleDrawer
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.model.run.Artifact
 import org.ide.lti.core.model.run.ArtifactKind
+import org.ide.lti.core.model.run.RunState
 import org.ide.lti.core.model.run.VerificationState
+import org.ide.lti.core.model.setup.EnvironmentReadinessState
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 public fun RunPanel(
     viewModel: BuildRunViewModel,
+    historyViewModel: RunHistoryViewModel = koinViewModel(),
+    onNavigateToSetup: (() -> Unit)? = null,
+    modifier: Modifier = Modifier,
+) {
+    var selectedTab by rememberSaveable { mutableStateOf("run") }
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(Spacing.Medium),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+    ) {
+        GlassTabBar(
+            tabs = listOf(
+                GlassTab(id = "run", title = "Run"),
+                GlassTab(id = "history", title = "History"),
+            ),
+            selectedId = selectedTab,
+            onTabSelected = { selectedTab = it },
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        when (selectedTab) {
+            "history" -> {
+                RunHistoryPanel(
+                    viewModel = historyViewModel,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+            else -> {
+                ActiveRunContent(
+                    viewModel = viewModel,
+                    onNavigateToSetup = onNavigateToSetup,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ActiveRunContent(
+    viewModel: BuildRunViewModel,
+    onNavigateToSetup: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -31,22 +95,20 @@ public fun RunPanel(
     val typography = GlassTheme.typography
 
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(Spacing.Medium),
-        verticalArrangement = Arrangement.spacedBy(Spacing.Medium)
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
         // Top action bar
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Column {
                 Text(
                     text = "ROM Build Pipeline",
                     style = typography.titleMedium,
-                    color = glassColors.onGlass
+                    color = glassColors.onGlass,
                 )
                 Text(
                     text = if (uiState.currentWorkspace != null) {
@@ -55,20 +117,78 @@ public fun RunPanel(
                         "No workspace opened"
                     },
                     style = typography.bodySmall,
-                    color = glassColors.onGlassSecondary
+                    color = glassColors.onGlassSecondary,
                 )
             }
 
-            GlassButton(
-                onClick = { viewModel.startBuild() },
-                enabled = !uiState.isRunDisabled,
-                variant = GlassButtonVariant.Primary
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    text = if (uiState.isRunning) "Building..." else "Start Pipeline",
-                    style = typography.labelMedium
-                )
+                if (uiState.canCancelRun) {
+                    GlassButton(
+                        onClick = { viewModel.cancelBuild() },
+                        enabled = !uiState.isCancelling,
+                        variant = GlassButtonVariant.Secondary,
+                    ) {
+                        Text(
+                            text = if (uiState.isCancelling) "Cancelling..." else "Cancel",
+                            style = typography.labelMedium,
+                        )
+                    }
+                }
+
+                GlassButton(
+                    onClick = { viewModel.startBuild() },
+                    enabled = !uiState.isRunDisabled,
+                    variant = GlassButtonVariant.Primary,
+                ) {
+                    Text(
+                        text = if (uiState.isRunning) "Building..." else "Start Pipeline",
+                        style = typography.labelMedium,
+                    )
+                }
             }
+        }
+
+        // State Banners
+        if (uiState.environmentReadiness != null && uiState.environmentReadiness?.state != EnvironmentReadinessState.READY) {
+            GlassBanner(
+                severity = GlassBannerSeverity.WARNING,
+                title = uiState.failingCheck ?: "Build Environment Unavailable",
+                description = uiState.remediation ?: "The build environment or service daemon is currently unavailable.",
+                primaryAction = if (onNavigateToSetup != null) GlassBannerAction("Go to Setup") { onNavigateToSetup() } else null,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        } else if (uiState.isPaused) {
+            GlassBanner(
+                severity = GlassBannerSeverity.WARNING,
+                title = "Build paused waiting for application",
+                description = "Reattach to resume execution from the current stage boundary.",
+                primaryAction = GlassBannerAction("Resume") { viewModel.reattachBuild() },
+                modifier = Modifier.fillMaxWidth(),
+            )
+        } else if (uiState.isInterrupted) {
+            GlassBanner(
+                severity = GlassBannerSeverity.WARNING,
+                title = "Build interrupted (outcome unknown)",
+                description = "Execution service or process terminated unexpectedly.",
+                modifier = Modifier.fillMaxWidth(),
+            )
+        } else if (uiState.isCancelling || uiState.latestRun?.state == RunState.CANCELLING) {
+            GlassBanner(
+                severity = GlassBannerSeverity.INFO,
+                title = "Cancelling build run...",
+                description = "Waiting for stage processes to terminate cleanly.",
+                modifier = Modifier.fillMaxWidth(),
+            )
+        } else if (uiState.latestRun?.state == RunState.CANCELLED) {
+            GlassBanner(
+                severity = GlassBannerSeverity.INFO,
+                title = "Build run cancelled",
+                description = "Run was cancelled by user. Partial artifacts are unverified.",
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
 
         // Error message banner
@@ -79,16 +199,16 @@ public fun RunPanel(
                 Row(
                     modifier = Modifier.padding(Spacing.Small),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
                         text = uiState.errorMessage ?: "",
                         style = typography.bodySmall,
-                        color = glassColors.diagnostics.error
+                        color = glassColors.diagnostics.error,
                     )
                     GlassChip(
                         label = "Dismiss",
-                        onClick = { viewModel.clearError() }
+                        onClick = { viewModel.clearError() },
                     )
                 }
             }
@@ -98,7 +218,7 @@ public fun RunPanel(
         StagePipelineView(
             latestRun = uiState.latestRun,
             isBusy = uiState.isRunning,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
 
         GlassHorizontalDivider()
@@ -107,7 +227,7 @@ public fun RunPanel(
         Text(
             text = "Verified Artifacts",
             style = typography.titleSmall,
-            color = glassColors.onGlass
+            color = glassColors.onGlass,
         )
 
         val artifacts = uiState.latestRun?.artifacts ?: emptyList()
@@ -115,14 +235,14 @@ public fun RunPanel(
             Text(
                 text = if (uiState.isRunning) "Artifacts will appear after build completes." else "No build artifacts produced yet.",
                 style = typography.bodySmall,
-                color = glassColors.onGlassSecondary
+                color = glassColors.onGlassSecondary,
             )
         } else {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f, fill = false),
-                verticalArrangement = Arrangement.spacedBy(Spacing.Small)
+                verticalArrangement = Arrangement.spacedBy(Spacing.Small),
             ) {
                 items(artifacts) { artifact ->
                     ArtifactItem(artifact = artifact)
@@ -136,7 +256,7 @@ public fun RunPanel(
         GlassConsoleDrawer(
             logs = uiState.logs,
             isRunning = uiState.isRunning,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }
@@ -147,21 +267,21 @@ private fun ArtifactItem(artifact: Artifact) {
     val typography = GlassTheme.typography
 
     GlassCard(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
     ) {
         Column(
             modifier = Modifier.padding(Spacing.Small),
-            verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)
+            verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = artifact.linuxPath.substringAfterLast("/"),
                     style = typography.labelMedium,
-                    color = glassColors.onGlass
+                    color = glassColors.onGlass,
                 )
                 GlassChip(
                     label = when (artifact.kind) {
@@ -169,13 +289,13 @@ private fun ArtifactItem(artifact: Artifact) {
                         ArtifactKind.OTA_MANIFEST -> "MANIFEST"
                         ArtifactKind.CHECKSUM -> "SHA256"
                         ArtifactKind.IMAGE -> "IMG"
-                    }
+                    },
                 )
             }
 
             Row(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 val size = artifact.sizeBytes
                 if (size != null) {
@@ -192,7 +312,7 @@ private fun ArtifactItem(artifact: Artifact) {
                         VerificationState.FAILED -> "INVALID"
                         VerificationState.NOT_VERIFIED -> "UNVERIFIED"
                     },
-                    selected = artifact.verification == VerificationState.VERIFIED
+                    selected = artifact.verification == VerificationState.VERIFIED,
                 )
             }
         }

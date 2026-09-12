@@ -50,6 +50,7 @@ import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.display.GlassHorizontalDivider
 import org.ide.lti.core.designsystem.component.feedback.GlassBanner
+import org.ide.lti.core.designsystem.component.feedback.GlassBannerAction
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenu
@@ -68,6 +69,7 @@ import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.domain.ports.KeySource
+import org.ide.lti.core.model.setup.EnvironmentReadinessState
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.Workspace
 import org.koin.compose.viewmodel.koinViewModel
@@ -87,6 +89,7 @@ import org.koin.compose.viewmodel.koinViewModel
 fun CreateWorkspaceScreen(
     onBackClick: () -> Unit,
     onWorkspaceCreated: (Workspace) -> Unit,
+    onNavigateToSetup: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     viewModel: CreateWorkspaceViewModel = koinViewModel(),
 ) {
@@ -107,6 +110,17 @@ fun CreateWorkspaceScreen(
     ) {
         CreateWorkspaceHeader(onBackClick = onBackClick, enabled = !uiState.isProvisioning)
         GlassHorizontalDivider()
+        AnimatedVisibility(visible = uiState.environmentReadiness != null && uiState.environmentReadiness?.state != EnvironmentReadinessState.READY) {
+            GlassBanner(
+                severity = GlassBannerSeverity.WARNING,
+                title = uiState.failingCheck ?: "Environment Unavailable",
+                description = uiState.remediation ?: "The build environment or service daemon is currently unreachable.",
+                primaryAction = GlassBannerAction("Go to Setup") {
+                    if (onNavigateToSetup != null) onNavigateToSetup() else onBackClick()
+                },
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
         AnimatedVisibility(visible = uiState.errorMessage != null) {
             uiState.errorMessage?.let { errorMsg ->
                 GlassBanner(
@@ -372,7 +386,7 @@ private fun CreateWorkspaceActions(
         GlassButton(
             onClick = { viewModel.startCreation() },
             variant = GlassButtonVariant.Primary,
-            enabled = !uiState.isProvisioning && uiState.name.isNotBlank() && uiState.selectedTarget != null,
+            enabled = !uiState.isProvisioning && uiState.name.isNotBlank() && uiState.selectedTarget != null && uiState.canCreate,
         ) {
             if (uiState.isProvisioning) {
                 CircularProgressIndicator(

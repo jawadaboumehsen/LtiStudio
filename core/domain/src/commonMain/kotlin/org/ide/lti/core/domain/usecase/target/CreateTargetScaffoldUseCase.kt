@@ -12,9 +12,9 @@ import org.ide.lti.core.model.target.TargetStatus
  */
 class CreateTargetScaffoldUseCase {
     operator fun invoke(index: Int) = DefaultTargetCatalog.PQ84P01_DEFAULT.copy(
-        id = "custom_target_$index",
+        id = "TARGET_NEW_$index",
         name = "New Target $index",
-        codename = "",
+        codename = "target_$index",
         status = TargetStatus.EXPERIMENTAL,
         isDefault = false,
         description = "Unconfigured custom target profile.",

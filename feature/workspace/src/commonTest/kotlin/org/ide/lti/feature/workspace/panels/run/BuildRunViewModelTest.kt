@@ -109,10 +109,6 @@ class BuildRunViewModelTest {
         override suspend fun selectTarget(targetId: String): Result<TargetDevice> = Result.success(targets.first { it.id == targetId })
         override suspend fun addTarget(target: TargetDevice): Result<TargetDevice> = Result.success(target)
         override suspend fun updateTarget(target: TargetDevice): Result<TargetDevice> = Result.success(target)
-        override suspend fun selectRegion(region: TargetRegion): Result<TargetDevice> = Result.success(selectedFlow.value)
-        override suspend fun selectFirmware(firmware: TargetFirmware): Result<TargetDevice> = Result.success(selectedFlow.value)
-        override suspend fun selectAcquisitionMode(mode: FirmwareAcquisitionMode): Result<TargetDevice> = Result.success(selectedFlow.value)
-        override suspend fun setCustomFirmware(version: String, buildId: String?, otaUrl: String?): Result<TargetDevice> = Result.success(selectedFlow.value)
         override suspend fun deleteTarget(targetId: String): Result<Unit> = Result.success(Unit)
     }
 
@@ -169,14 +165,7 @@ class BuildRunViewModelTest {
             id = "PQ84P01",
             name = "Test Target",
             codename = "PQ84P01",
-            selectedRegion = TargetRegion.GLOBAL,
             availableRegions = listOf(TargetRegion.GLOBAL),
-            selectedFirmware = TargetFirmware(
-                version = "V1.0",
-                buildId = "test.build",
-                isOfficial = true,
-                isRecommended = true
-            ),
             availableFirmwares = mapOf(
                 TargetRegion.GLOBAL to listOf(
                     TargetFirmware("V1.0", "test.build", isOfficial = true, isRecommended = true)
@@ -246,7 +235,7 @@ class BuildRunViewModelTest {
             workspaceId = id,
             profileRevision = 1,
             region = TargetRegion.GLOBAL,
-            firmware = target.selectedFirmware,
+            firmware = target.availableFirmwares[TargetRegion.GLOBAL]!!.first(),
             acquisitionMode = SnapshotAcquisitionMode.DOWNLOAD,
             packagePolicy = target.packagePolicy,
             createdAt = Instant.fromEpochMilliseconds(1000L),

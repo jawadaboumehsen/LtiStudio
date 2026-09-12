@@ -71,24 +71,70 @@ public class EnvironmentReadinessAdapter(
 
     private suspend fun validateWorkspace(workspace: Workspace): EnvironmentReadiness {
         val linuxPath = workspace.linuxPath
-        return when {
-            linuxPath.isNullOrBlank() -> EnvironmentReadiness(
+        if (linuxPath.isNullOrBlank()) {
+            return EnvironmentReadiness(
                 state = EnvironmentReadinessState.WORKSPACE_INVALID,
                 failingCheck = "Workspace Linux path is missing",
                 remediation = "Specify a valid Linux path for the workspace"
             )
-            !hasFile(linuxPath, "workspace.json") -> EnvironmentReadiness(
+        }
+
+        if (workspace.layoutVersion != 1) {
+            return EnvironmentReadiness(
+                state = EnvironmentReadinessState.WORKSPACE_INVALID,
+                failingCheck = "Workspace layout version drift: expected 1, found ${workspace.layoutVersion}",
+                remediation = "Upgrade or re-provision the workspace"
+            )
+        }
+
+        if (!hasFile(linuxPath, "workspace.json")) {
+            return EnvironmentReadiness(
                 state = EnvironmentReadinessState.WORKSPACE_INVALID,
                 failingCheck = "Missing workspace manifest at $linuxPath/workspace.json",
                 remediation = "Re-provision workspace for target"
             )
-            !hasFile(linuxPath, "config.json") -> EnvironmentReadiness(
+        }
+
+        val manifestContent = readFileContent(linuxPath, "workspace.json")
+        if (manifestContent != null) {
+            val match = Regex("\"layoutVersion\"\\s*:\\s*(\\d+)").find(manifestContent)
+            if (match != null && match.groupValues[1] != "1") {
+                return EnvironmentReadiness(
+                    state = EnvironmentReadinessState.WORKSPACE_INVALID,
+                    failingCheck = "Workspace manifest layoutVersion drift: expected 1, found ${match.groupValues[1]}",
+                    remediation = "Upgrade or re-provision the workspace"
+                )
+            }
+        }
+
+        if (!hasFile(linuxPath, "config.json")) {
+            return EnvironmentReadiness(
                 state = EnvironmentReadinessState.WORKSPACE_INVALID,
                 failingCheck = "Missing configuration snapshot at $linuxPath/config.json",
                 remediation = "Save a valid configuration snapshot"
             )
-            else -> EnvironmentReadiness(state = EnvironmentReadinessState.READY)
         }
+
+        if (!hasFile(linuxPath, "keys/avb.pem") && !hasFile(linuxPath, "keys/avb.avbpubkey")) {
+            return EnvironmentReadiness(
+                state = EnvironmentReadinessState.WORKSPACE_INVALID,
+                failingCheck = "Missing cryptographic signing keys at $linuxPath/keys",
+                remediation = "Provision signing keys for workspace"
+            )
+        }
+
+        return EnvironmentReadiness(state = EnvironmentReadinessState.READY)
+    }
+
+    private suspend fun readFileContent(linuxPath: String, fileName: String): String? {
+        val res = transport.execute(
+            ToolExecutionRequest(
+                toolId = "cat",
+                arguments = listOf("$linuxPath/$fileName"),
+                workingDirectory = "/"
+            )
+        )
+        return if (res.exitCode == 0) res.stdout else null
     }
 
     private suspend fun hasFile(linuxPath: String, fileName: String): Boolean {

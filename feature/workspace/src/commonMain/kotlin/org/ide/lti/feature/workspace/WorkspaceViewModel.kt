@@ -93,9 +93,7 @@ class WorkspaceViewModel(
             id = "PQ84P01",
             name = "REDMAGIC Astra Gaming Tablet",
             codename = "PQ84P01",
-            selectedRegion = TargetRegion.GLOBAL,
             availableRegions = listOf(TargetRegion.GLOBAL, TargetRegion.CHINA),
-            selectedFirmware = DEFAULT_GLOBAL_FIRMWARE,
             availableFirmwares = mapOf(
                 TargetRegion.GLOBAL to listOf(DEFAULT_GLOBAL_FIRMWARE),
             ),

@@ -12,6 +12,7 @@ package org.ide.lti.feature.setup
 import androidx.compose.runtime.Immutable
 import org.ide.lti.core.domain.setup.ToolComponentItem
 import org.ide.lti.core.domain.setup.ToolchainSetupState
+import org.ide.lti.core.model.setup.EnvironmentReadiness
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.RecentProject
 
@@ -36,9 +37,8 @@ data class SetupUiState(
     val isAutoDoctorEnabled: Boolean = true,
     val selectedTab: SetupTab = SetupTab.PROJECTS,
     val environmentNotice: String? = null,
-) {
-    val canLaunchWorkspace: Boolean get() = toolchainSetupState.canLaunchWorkspace
-}
+    val environmentReadiness: EnvironmentReadiness? = null,
+)
 
 /**
  * Cohesive bundle of user actions and navigation events dispatched from the Setup Screen.
@@ -52,8 +52,7 @@ data class SetupUiActions(
     val onRunFullSetup: () -> Unit = {},
     val onRetrySetupStep: () -> Unit = {},
     val onProvisionAvbKey: () -> Unit = {},
-    val onProceedToWorkspace: () -> Unit = {},
-    val onSelectTargetAndLaunch: (TargetDevice) -> Unit = {},
+    val onSelectTarget: (TargetDevice) -> Unit = {},
     val onAutoRemediateDoctor: () -> Unit = {},
     val onAutoRunEnvironmentSetup: () -> Unit = {},
     val onNavigateToEnvironment: () -> Unit = {},
@@ -61,7 +60,6 @@ data class SetupUiActions(
     val onSearchQueryChange: (String) -> Unit = {},
     val onRemoveRecentProject: (String) -> Unit = {},
     val onOpenFolder: () -> Unit = {},
-    val onCloneGit: () -> Unit = {},
     val onRecentProjectClick: (RecentProject) -> Unit = {},
     val onSelectCockpitTab: (String) -> Unit = {},
     val onToolSearchQueryChange: (String) -> Unit = {},

@@ -354,6 +354,8 @@ class EnvironmentVerificationTest {
             it.contains("wsl.exe --status") ||
                 it.contains("--status") ||
                 it.contains("echo -n \$HOME") ||
+                it.contains("printenv HOME") ||
+                it.contains("printenv") ||
                 it.contains("wsl.exe -l") ||
                 it.contains("-l -q")
         }

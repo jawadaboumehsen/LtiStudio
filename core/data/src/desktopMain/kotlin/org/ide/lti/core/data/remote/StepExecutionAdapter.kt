@@ -57,35 +57,33 @@ public class StepExecutionAdapter(
     }
 
     /**
-     * Polls the durable run: drains new sequenced events, then checks the run status. Emits exactly
-     * one [StepEvent.Finished] once the run is terminal; a still-running step yields heartbeats.
+     * Attaches to the durable run via WebSocket: streams past replayed events and live events,
+     * emits heartbeats, and terminates with [StepEvent.Finished]. Maps INTERRUPTED status correctly.
      */
     override fun observe(serverRunId: String, fromSeq: Long): Flow<StepEvent> = flow {
-        var nextSeq = fromSeq
-        while (true) {
-            nextSeq = drain(serverRunId, nextSeq)
-            val run = transport.getRun(serverRunId)
-            if (run != null && run.status in TERMINAL) {
-                drain(serverRunId, nextSeq)
-                emit(StepEvent.Finished(run.exitCode ?: -1))
-                return@flow
+        val startSeq = fromSeq.coerceAtLeast(0L)
+        transport.attachRun(serverRunId, startSeq).collect { sequenced ->
+            when (val event = sequenced.event) {
+                is CoreStreamEvent.OutputChunk -> {
+                    emit(StepEvent.Output(sequenced.seq, event.text, event.isError))
+                }
+                is CoreStreamEvent.Heartbeat -> {
+                    emit(StepEvent.Heartbeat)
+                }
+                is CoreStreamEvent.ExecutionFinished -> {
+                    val run = runCatching { transport.getRun(serverRunId) }.getOrNull()
+                    val exitCode = if (run?.status == RunStatusValue.INTERRUPTED) {
+                        -1
+                    } else {
+                        event.exitCode
+                    }
+                    emit(StepEvent.Finished(exitCode))
+                }
+                is CoreStreamEvent.ProgressUpdate -> {
+                    // Ignored for pipeline steps
+                }
             }
-            emit(StepEvent.Heartbeat)
-            delay(pollIntervalMs)
         }
-    }
-
-    /** Emits every output chunk with `seq >= from` and returns the next sequence to ask for. */
-    private suspend fun FlowCollector<StepEvent>.drain(serverRunId: String, from: Long): Long {
-        var next = from
-        val events = runCatching { transport.replaySession(serverRunId, from) }.getOrDefault(emptyList())
-        for (sequenced in events) {
-            if (sequenced.seq < next) continue
-            next = sequenced.seq + 1
-            val event = sequenced.event
-            if (event is CoreStreamEvent.OutputChunk) emit(StepEvent.Output(sequenced.seq, event.text, event.isError))
-        }
-        return next
     }
 
     override suspend fun status(serverRunId: String): StepStatus? {

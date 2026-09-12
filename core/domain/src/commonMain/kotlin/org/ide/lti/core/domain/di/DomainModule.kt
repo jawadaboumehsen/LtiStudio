@@ -18,7 +18,10 @@ import org.ide.lti.core.domain.connection.ConnectionManager
 import org.ide.lti.core.domain.panels.PanelManager
 import org.ide.lti.core.domain.pipeline.PipelineOrchestrator
 import org.ide.lti.core.domain.terminal.TerminalManager
+import org.ide.lti.core.domain.usecase.build.CancelRunUseCase
+import org.ide.lti.core.domain.usecase.build.GetRunHistoryUseCase
 import org.ide.lti.core.domain.usecase.build.ObserveRunUseCase
+import org.ide.lti.core.domain.usecase.build.ReattachRunUseCase
 import org.ide.lti.core.domain.usecase.build.StartPipelineRunUseCase
 import org.ide.lti.core.domain.usecase.device.ConnectWirelessDeviceUseCase
 import org.ide.lti.core.domain.usecase.device.DisconnectDeviceUseCase
@@ -35,9 +38,6 @@ import org.ide.lti.core.domain.usecase.target.DuplicateTargetUseCase
 import org.ide.lti.core.domain.usecase.target.GetAvailableTargetsUseCase
 import org.ide.lti.core.domain.usecase.target.GetSelectedTargetUseCase
 import org.ide.lti.core.domain.usecase.target.SaveTargetConfigurationUseCase
-import org.ide.lti.core.domain.usecase.target.SelectAcquisitionModeUseCase
-import org.ide.lti.core.domain.usecase.target.SelectTargetFirmwareUseCase
-import org.ide.lti.core.domain.usecase.target.SelectTargetRegionUseCase
 import org.ide.lti.core.domain.usecase.target.SelectTargetUseCase
 import org.ide.lti.core.domain.usecase.target.UpdateTargetUseCase
 import org.ide.lti.core.domain.usecase.target.ValidateTargetConfigurationUseCase
@@ -103,7 +103,31 @@ val DomainModule = module {
             scope = getOrNull(),
         )
     }
+    single {
+        CancelRunUseCase(
+            runRepository = get(),
+            executionPort = get(),
+            workspaceRepository = getOrNull(),
+        )
+    }
+    single {
+        ReattachRunUseCase(
+            workspaceRepository = get(),
+            snapshotRepository = get(),
+            targetRepository = get(),
+            runRepository = get(),
+            orchestrator = get(),
+            scope = getOrNull(),
+        )
+    }
     singleOf(::ObserveRunUseCase)
+    single {
+        GetRunHistoryUseCase(
+            runRepository = get(),
+            workspaceRepository = getOrNull(),
+            executionPort = getOrNull(),
+        )
+    }
 
     // Target Use Cases (common)
     singleOf(::GetAvailableTargetsUseCase)
@@ -112,9 +136,6 @@ val DomainModule = module {
     singleOf(::UpdateTargetUseCase)
     singleOf(::DeleteTargetUseCase)
     singleOf(::SelectTargetUseCase)
-    singleOf(::SelectTargetRegionUseCase)
-    singleOf(::SelectTargetFirmwareUseCase)
-    singleOf(::SelectAcquisitionModeUseCase)
     singleOf(::ValidateTargetConfigurationUseCase)
     singleOf(::CreateTargetScaffoldUseCase)
     singleOf(::DuplicateTargetUseCase)

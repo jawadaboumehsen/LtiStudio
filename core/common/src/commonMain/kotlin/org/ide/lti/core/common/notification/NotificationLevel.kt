@@ -7,4 +7,5 @@ public enum class NotificationLevel {
     Info,
     Warning,
     Error,
+    None,
 }

@@ -35,12 +35,14 @@ fun NavGraphBuilder.setupScreen(
     onOpenWorkspace: (Workspace) -> Unit,
     onOpenSettings: () -> Unit = {},
     onCreateWorkspace: () -> Unit = {},
+    onOpenConfigurations: () -> Unit = {},
 ) {
     composable(route = SETUP_ROUTE) {
         SetupScreen(
             onOpenWorkspace = onOpenWorkspace,
             onOpenSettings = onOpenSettings,
             onCreateWorkspace = onCreateWorkspace,
+            onOpenConfigurations = onOpenConfigurations,
         )
     }
 }

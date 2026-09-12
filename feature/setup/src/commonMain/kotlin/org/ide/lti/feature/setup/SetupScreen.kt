@@ -72,6 +72,7 @@ fun SetupScreen(
     modifier: Modifier = Modifier,
     onOpenSettings: () -> Unit = {},
     onCreateWorkspace: () -> Unit = {},
+    onOpenConfigurations: () -> Unit = {},
     backdrop: Backdrop? = null,
     viewModel: SetupViewModel = koinViewModel(),
 ) {
@@ -88,6 +89,7 @@ fun SetupScreen(
     val environmentNotice by viewModel.environmentNotice.collectAsState()
     val selectedTarget by viewModel.selectedTarget.collectAsState()
     val availableTargets by viewModel.availableTargets.collectAsState()
+    val environmentReadiness by viewModel.environmentReadiness.collectAsState()
 
     val uiState = SetupUiState(
         toolchainSetupState = toolchainSetupState,
@@ -103,20 +105,19 @@ fun SetupScreen(
         isAutoDoctorEnabled = isAutoDoctorEnabled,
         selectedTab = selectedTab,
         environmentNotice = environmentNotice,
+        environmentReadiness = environmentReadiness,
     )
 
     val uiActions = SetupUiActions(
         onSearchQueryChange = viewModel::onSearchQueryChange,
         onRemoveRecentProject = viewModel::removeRecentProject,
         onOpenFolder = { viewModel.openFolder(onOpenWorkspace) },
-        onCloneGit = { viewModel.cloneGitRepository(onWorkspaceOpened = onOpenWorkspace) },
         onRecentProjectClick = { viewModel.openRecentProject(it, onOpenWorkspace) },
         onCheckEnvironment = viewModel::checkEnvironmentStatus,
         onRunFullSetup = viewModel::runFullEnvironmentSetup,
         onRetrySetupStep = viewModel::retrySetupStep,
         onProvisionAvbKey = viewModel::onProvisionAvbKey,
-        onProceedToWorkspace = { viewModel.openDefaultWorkspace(onOpenWorkspace) },
-        onSelectTargetAndLaunch = { target -> viewModel.selectTargetAndLaunch(target, onOpenWorkspace) },
+        onSelectTarget = viewModel::selectTarget,
         onAutoRemediateDoctor = viewModel::autoRemediateDoctorIssues,
         onAutoRunEnvironmentSetup = viewModel::autoRunEnvironmentSetup,
         onSelectCockpitTab = viewModel::selectCockpitTab,
@@ -136,6 +137,7 @@ fun SetupScreen(
     SetupScreenContent(
         state = uiState,
         actions = uiActions,
+        onOpenConfigurations = onOpenConfigurations,
         backdrop = backdrop,
         modifier = modifier,
     )
@@ -152,6 +154,7 @@ fun SetupScreenContent(
     state: SetupUiState,
     actions: SetupUiActions,
     modifier: Modifier = Modifier,
+    onOpenConfigurations: () -> Unit = {},
     windowControls: WindowControlActions? = null,
     backdrop: Backdrop? = null,
     initialTab: SetupTab? = null,
@@ -183,6 +186,27 @@ fun SetupScreenContent(
                 search = null,
                 panelToggles = null,
                 actions = {
+                    GlassIconButton(onClick = onOpenConfigurations) {
+                        Icon(
+                            painter = AppIcons.EditPainterResource(),
+                            contentDescription = "Target Configuration",
+                            modifier = Modifier.size(IconSize.Small),
+                        )
+                    }
+                    GlassIconButton(onClick = actions.onNavigateToEnvironment) {
+                        Icon(
+                            painter = AppIcons.SparklesPainterResource(),
+                            contentDescription = "Environment & Doctor",
+                            modifier = Modifier.size(IconSize.Small),
+                        )
+                    }
+                    GlassIconButton(onClick = actions.onOpenSettings) {
+                        Icon(
+                            painter = AppIcons.SettingsPainterResource(),
+                            contentDescription = "Settings",
+                            modifier = Modifier.size(IconSize.Small),
+                        )
+                    }
                     GlassIconButton(onClick = { isHelpSheetOpen = true }) {
                         Icon(
                             painter = AppIcons.InfoPainterResource(),

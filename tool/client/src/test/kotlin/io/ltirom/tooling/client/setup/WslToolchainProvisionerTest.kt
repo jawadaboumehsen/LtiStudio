@@ -6,6 +6,11 @@ import io.ltirom.tooling.client.wsl.WslEnvironmentDetector
 import io.ltirom.tooling.core.ports.DaemonSupervisorPort
 import io.ltirom.tooling.core.ports.RemoteTransportPort
 import io.ltirom.tooling.core.ports.ServerConnectionDescriptor
+import io.ltirom.tooling.core.remote.RunHandle
+import io.ltirom.tooling.core.remote.RunStatus
+import io.ltirom.tooling.core.remote.RunStatusValue
+import io.ltirom.tooling.core.remote.SequencedStreamEvent
+import io.ltirom.tooling.core.remote.StartRunRequest
 import io.ltirom.tooling.core.remote.StreamEvent
 import io.ltirom.tooling.core.remote.ToolExecutionRequest
 import io.ltirom.tooling.core.remote.ToolExecutionResponse
@@ -13,6 +18,7 @@ import io.ltirom.tooling.core.remote.ToolStatusInfo
 import io.ltirom.tooling.core.remote.WslServerInfo
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -118,6 +124,32 @@ class WslToolchainProvisionerTest {
         }
 
         override fun stream(request: ToolExecutionRequest): Flow<StreamEvent> = emptyFlow()
+
+        override suspend fun startRun(request: StartRunRequest): RunHandle {
+            if (fakeCli != null) {
+                if (request.request.toolId == "git" && request.request.arguments.firstOrNull() == "clone") {
+                    val targetDir = request.request.arguments.lastOrNull() ?: ""
+                    if (targetDir.isNotBlank()) {
+                        fakeCli.existingPaths.add(targetDir)
+                    }
+                }
+            }
+            return RunHandle(runId = "fake-run-${request.idempotencyKey}", status = RunStatusValue.RUNNING, startedAtEpochMs = 1000L)
+        }
+
+        override fun attachRun(runId: String, fromSeq: Long): Flow<SequencedStreamEvent> = listOf(
+            SequencedStreamEvent(1L, StreamEvent.OutputChunk("running...")),
+            SequencedStreamEvent(2L, StreamEvent.ExecutionFinished(0, 100L))
+        ).asFlow()
+
+        override suspend fun getRun(runId: String): RunStatus = RunStatus(
+            runId = runId,
+            status = RunStatusValue.COMPLETED,
+            exitCode = 0,
+            startedAtEpochMs = 1000L,
+            endedAtEpochMs = 1100L
+        )
+
         override suspend fun listTools(): List<ToolStatusInfo> = publishedTools
         override suspend fun refreshTools(): List<ToolStatusInfo> = publishedTools
         override suspend fun uploadFile(remotePath: String, content: ByteArray): Boolean = true
@@ -168,7 +200,7 @@ class WslToolchainProvisionerTest {
         override fun execute(distro: String, command: List<String>, timeoutSeconds: Long, charset: Charset, user: String?): CliExecutionResult {
             val cmdStr = command.joinToString(" ")
             commandLog.add("WSL: $cmdStr")
-            if (cmdStr.contains("echo -n \$HOME")) {
+            if (cmdStr.contains("echo -n \$HOME") || cmdStr.contains("printenv HOME") || cmdStr.contains("printenv")) {
                 return CliExecutionResult(0, userHome, "")
             }
             if (cmdStr.contains("dpkg-query")) {

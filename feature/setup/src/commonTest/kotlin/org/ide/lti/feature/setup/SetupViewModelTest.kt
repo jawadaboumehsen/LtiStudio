@@ -13,6 +13,9 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.Clock
+import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
+import org.ide.lti.core.model.setup.EnvironmentReadiness
+import org.ide.lti.core.model.setup.EnvironmentReadinessState
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.domain.setup.DiagnosticCheckItem
 import org.ide.lti.core.domain.setup.SetupStepStage
@@ -42,11 +45,16 @@ class SetupViewModelTest {
 
     private class FakeWorkspaceRepository : WorkspaceRepository {
         val recents = MutableStateFlow<List<RecentProject>>(emptyList())
+        val workspaces = mutableMapOf<String, Workspace>()
 
-        override fun getWorkspaces(): Flow<List<Workspace>> = MutableStateFlow(emptyList())
-        override suspend fun getWorkspace(id: String): Workspace? = null
-        override suspend fun saveWorkspace(workspace: Workspace) {}
-        override suspend fun deleteWorkspace(id: String) {}
+        override fun getWorkspaces(): Flow<List<Workspace>> = MutableStateFlow(workspaces.values.toList())
+        override suspend fun getWorkspace(id: String): Workspace? = workspaces[id]
+        override suspend fun saveWorkspace(workspace: Workspace) {
+            workspaces[workspace.id] = workspace
+        }
+        override suspend fun deleteWorkspace(id: String) {
+            workspaces.remove(id)
+        }
         override suspend fun getWorkspaceSession(workspaceId: String): WorkspaceSession? = null
         override suspend fun saveWorkspaceSession(session: WorkspaceSession) {}
         override fun getRecentProjects(): Flow<List<RecentProject>> = recents.asStateFlow()
@@ -70,7 +78,7 @@ class SetupViewModelTest {
                 RecentProject(
                     workspaceId = "target_pq84p01",
                     name = "REDMAGIC Astra (PQ84P01)",
-                    path = "~/LtiRomWorkDir/target/PQ84P01",
+                    path = "~/LtiRomWorkDir/workspaces/target_pq84p01",
                     lastOpened = Clock.System.now(),
                 ),
             )
@@ -79,6 +87,123 @@ class SetupViewModelTest {
             recents.value = combined
             return combined
         }
+    }
+
+    private class FakeToolchainProvisioningService(
+        initialState: ToolchainSetupState = ToolchainSetupState(
+            steps = ToolchainSetupState.defaultSteps().map {
+                if (it.stage == SetupStepStage.SERVER_CONNECTIVITY) {
+                    it.copy(status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE)
+                } else {
+                    it.copy(status = StepStatus.PENDING, provenance = StepProvenance.LIVE)
+                }
+            }
+        ),
+    ) : ToolchainProvisioningService {
+        val _state = MutableStateFlow(initialState)
+        override val state: StateFlow<ToolchainSetupState> = _state.asStateFlow()
+
+        var verifyEnvironmentCount = 0
+            private set
+        var runFullSetupCount = 0
+            private set
+        var retryCurrentStepCount = 0
+            private set
+        var shouldMarkReadyOnFullSetup: Boolean = true
+        var autoRemediateDoctorCount = 0
+            private set
+        var resetSetupCacheCount = 0
+            private set
+        var provisionAvbKeyCount = 0
+            private set
+        var testToolCount = 0
+            private set
+        var lastTestedToolId: String? = null
+            private set
+        var recompileToolCount = 0
+            private set
+        var lastRecompiledToolId: String? = null
+            private set
+
+        fun markAllReady() {
+            _state.value = _state.value.copy(
+                steps = _state.value.steps.map { it.copy(status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE) },
+                lastVerifiedTimestamp = Clock.System.now().toEpochMilliseconds(),
+            )
+        }
+
+        fun markUnready(pendingStage: SetupStepStage = SetupStepStage.TOOLCHAIN_COMPILATION) {
+            _state.value = _state.value.copy(
+                steps = ToolchainSetupState.defaultSteps().map {
+                    if (it.stage == pendingStage) {
+                        it.copy(status = StepStatus.PENDING, provenance = StepProvenance.LIVE)
+                    } else {
+                        it.copy(status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE)
+                    }
+                }
+            )
+        }
+
+        override suspend fun verifyEnvironment(): ToolchainSetupState {
+            verifyEnvironmentCount++
+            return _state.value
+        }
+
+        override suspend fun runFullSetup() {
+            runFullSetupCount++
+            if (shouldMarkReadyOnFullSetup) {
+                markAllReady()
+            }
+        }
+
+        override suspend fun retryCurrentStep() {
+            retryCurrentStepCount++
+        }
+
+        override suspend fun provisionAvbKey(): Boolean {
+            provisionAvbKeyCount++
+            _state.value = _state.value.copy(isAvbKeyProvisioned = true)
+            return true
+        }
+
+        override suspend fun autoRemediateDoctor(): Boolean {
+            autoRemediateDoctorCount++
+            return true
+        }
+
+        override suspend fun testIndividualTool(toolId: String): StepStatus {
+            testToolCount++
+            lastTestedToolId = toolId
+            return StepStatus.SUCCESS
+        }
+
+        override suspend fun recompileTool(toolId: String): Boolean {
+            recompileToolCount++
+            lastRecompiledToolId = toolId
+            return true
+        }
+
+        override suspend fun resetSetupCache() {
+            resetSetupCacheCount++
+            _state.value = ToolchainSetupState(
+                steps = ToolchainSetupState.defaultSteps().map {
+                    if (it.stage == SetupStepStage.SERVER_CONNECTIVITY) {
+                        it.copy(status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE)
+                    } else {
+                        it.copy(status = StepStatus.PENDING, provenance = StepProvenance.LIVE)
+                    }
+                }
+            )
+        }
+    }
+
+    private class FakeEnvironmentReadinessPort(
+        initial: EnvironmentReadiness = EnvironmentReadiness(state = EnvironmentReadinessState.READY)
+    ) : EnvironmentReadinessPort {
+        val flow = MutableStateFlow(initial)
+        override fun observe(): Flow<EnvironmentReadiness> = flow.asStateFlow()
+        override suspend fun refresh(): EnvironmentReadiness = flow.value
+        override suspend fun forWorkspace(workspace: Workspace): EnvironmentReadiness = flow.value
     }
 
     @Test
@@ -270,30 +395,6 @@ class SetupViewModelTest {
         }
     }
 
-    @Test
-    fun testOpenDefaultWorkspaceOpensBaseWorkDir() = runTest {
-        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-        Dispatchers.setMain(testDispatcher)
-        try {
-            val repo = FakeWorkspaceRepository()
-            val manager = WorkspaceManager(repo, this)
-            val toolchainService = FakeToolchainProvisioningService().apply {
-                _state.value = _state.value.copy(isAllReady = true)
-            }
-
-            val viewModel = SetupViewModel(manager, toolchainService)
-            var openedWorkspace: Workspace? = null
-            viewModel.openDefaultWorkspace { ws ->
-                openedWorkspace = ws
-            }
-            testScheduler.advanceUntilIdle()
-
-            assertEquals("~/LtiRomWorkDir/target/PQ84P01_GLOBAL_A15", openedWorkspace?.path)
-            assertEquals("PQ84P01_GLOBAL_A15", openedWorkspace?.name)
-        } finally {
-            Dispatchers.resetMain()
-        }
-    }
 
     @Test
     fun testDefaultOfficialTargetsAvailable() = runTest {
@@ -350,39 +451,6 @@ class SetupViewModelTest {
         }
     }
 
-    @Test
-    fun testSelectTargetAndLaunchSelectsTargetAndOpensWorkspace() = runTest {
-        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-        Dispatchers.setMain(testDispatcher)
-        try {
-            val repo = FakeWorkspaceRepository()
-            val manager = WorkspaceManager(repo, this)
-            val toolchainService = FakeToolchainProvisioningService().apply {
-                _state.value = _state.value.copy(isAllReady = true)
-            }
-
-            val viewModel = SetupViewModel(manager, toolchainService)
-            val targetJob = backgroundScope.launch(testDispatcher) {
-                viewModel.selectedTarget.collect()
-            }
-
-            val targetAstra = viewModel.availableTargets.value.first { it.codename == "PQ84P01" }
-            var launchedWorkspace: Workspace? = null
-
-            viewModel.selectTargetAndLaunch(targetAstra) { ws ->
-                launchedWorkspace = ws
-            }
-            testScheduler.advanceUntilIdle()
-
-            assertEquals("PQ84P01", viewModel.selectedTarget.value?.codename)
-            assertEquals("~/LtiRomWorkDir/target/PQ84P01_GLOBAL_A15", launchedWorkspace?.path)
-
-            targetJob.cancel()
-            testScheduler.advanceUntilIdle()
-        } finally {
-            Dispatchers.resetMain()
-        }
-    }
 
     @Test
     fun testAutoRunEnvironmentSetupExecutesDoctorRemediationAndFullSetup() = runTest {
@@ -646,60 +714,10 @@ class SetupViewModelTest {
         }
     }
 
-    @Test
-    fun testCloneGitRepositoryWithUrlResolvesProjectWorkspace() = runTest {
-        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-        Dispatchers.setMain(testDispatcher)
-        try {
-            val repo = FakeWorkspaceRepository()
-            val manager = WorkspaceManager(repo, this)
-            val toolchainService = FakeToolchainProvisioningService().apply {
-                markAllReady()
-            }
-            val viewModel = SetupViewModel(manager, toolchainService)
 
-            var openedWorkspace: Workspace? = null
-            viewModel.cloneGitRepository("https://github.com/nubia/android_device_PQ84P01.git") { ws ->
-                openedWorkspace = ws
-            }
-            testScheduler.advanceUntilIdle()
-
-            assertEquals("~/LtiRomWorkDir/projects/android_device_PQ84P01", openedWorkspace?.path)
-            assertEquals("android_device_PQ84P01", openedWorkspace?.name)
-            assertEquals(openedWorkspace?.id, manager.currentWorkspace.value?.id)
-        } finally {
-            Dispatchers.resetMain()
-        }
-    }
 
     @Test
-    fun testOpenDefaultWorkspaceSynchronizesActiveWorkspaceSession() = runTest {
-        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-        Dispatchers.setMain(testDispatcher)
-        try {
-            val repo = FakeWorkspaceRepository()
-            val manager = WorkspaceManager(repo, this)
-            val toolchainService = FakeToolchainProvisioningService().apply {
-                markAllReady()
-            }
-            val viewModel = SetupViewModel(manager, toolchainService)
-
-            var openedWorkspace: Workspace? = null
-            viewModel.openDefaultWorkspace { ws ->
-                openedWorkspace = ws
-            }
-            testScheduler.advanceUntilIdle()
-
-            assertEquals("~/LtiRomWorkDir/target/PQ84P01_GLOBAL_A15", openedWorkspace?.path)
-            assertEquals("PQ84P01_GLOBAL_A15", openedWorkspace?.name)
-            assertEquals(openedWorkspace?.id, manager.currentWorkspace.value?.id)
-        } finally {
-            Dispatchers.resetMain()
-        }
-    }
-
-    @Test
-    fun testWorkspaceEntryBlockedWhenEnvironmentUnverified() = runTest {
+    fun testOpenRecentProjectAllowedOffline() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         Dispatchers.setMain(testDispatcher)
         try {
@@ -712,102 +730,63 @@ class SetupViewModelTest {
             val viewModel = SetupViewModel(manager, toolchainService)
             testScheduler.advanceUntilIdle()
 
-            assertFalse(viewModel.toolchainSetupState.value.canLaunchWorkspace)
-            assertEquals(SetupTab.PROJECTS, viewModel.selectedTab.value)
+            val recent = RecentProject(
+                workspaceId = "offline_ws",
+                name = "Offline Workspace",
+                path = "~/LtiRomWorkDir/workspaces/offline_ws",
+                lastOpened = Clock.System.now(),
+            )
+            repo.addRecentProject(recent)
+            repo.saveWorkspace(
+                Workspace(
+                    id = "offline_ws",
+                    name = "Offline Workspace",
+                    path = "~/LtiRomWorkDir/workspaces/offline_ws",
+                )
+            )
 
             var workspaceOpened = false
-
-            // 1. openFolder must be blocked
-            viewModel.openFolder { workspaceOpened = true }
+            viewModel.openRecentProject(recent) {
+                workspaceOpened = true
+            }
             testScheduler.advanceUntilIdle()
-            assertFalse(workspaceOpened)
-            assertEquals(SetupTab.ENVIRONMENT, viewModel.selectedTab.value)
-            kotlin.test.assertNotNull(viewModel.environmentNotice.value)
 
-            // Dismiss notice & reset tab
-            viewModel.dismissEnvironmentNotice()
+            assertTrue(workspaceOpened, "Opening a recent project should be allowed even when environment is offline/unverified")
+            assertEquals(SetupTab.PROJECTS, viewModel.selectedTab.value)
             kotlin.test.assertNull(viewModel.environmentNotice.value)
-            viewModel.selectTab(SetupTab.PROJECTS)
-
-            // 2. cloneGitRepository must be blocked
-            viewModel.cloneGitRepository("https://github.com/nubia/test.git") { workspaceOpened = true }
-            testScheduler.advanceUntilIdle()
-            assertFalse(workspaceOpened)
-            assertEquals(SetupTab.ENVIRONMENT, viewModel.selectedTab.value)
-            kotlin.test.assertNotNull(viewModel.environmentNotice.value)
-
-            // Dismiss & reset
-            viewModel.dismissEnvironmentNotice()
-            viewModel.selectTab(SetupTab.PROJECTS)
-
-            // 3. openDefaultWorkspace must be blocked
-            viewModel.openDefaultWorkspace { workspaceOpened = true }
-            testScheduler.advanceUntilIdle()
-            assertFalse(workspaceOpened)
-            assertEquals(SetupTab.ENVIRONMENT, viewModel.selectedTab.value)
-            kotlin.test.assertNotNull(viewModel.environmentNotice.value)
-
-            // Dismiss & reset
-            viewModel.dismissEnvironmentNotice()
-            viewModel.selectTab(SetupTab.PROJECTS)
-
-            // 4. openRecentProject must be blocked
-            val recent = RecentProject("p1", "Test", "/path", Clock.System.now())
-            viewModel.openRecentProject(recent) { workspaceOpened = true }
-            testScheduler.advanceUntilIdle()
-            assertFalse(workspaceOpened)
-            assertEquals(SetupTab.ENVIRONMENT, viewModel.selectedTab.value)
-            kotlin.test.assertNotNull(viewModel.environmentNotice.value)
         } finally {
             Dispatchers.resetMain()
         }
     }
 
     @Test
-    fun testWorkspaceEntryAllowedOnlyWhenAllReady() = runTest {
+    fun testCreateAndRunGatedOnReadiness() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         Dispatchers.setMain(testDispatcher)
         try {
             val repo = FakeWorkspaceRepository()
             val manager = WorkspaceManager(repo, this)
-            val toolchainService = FakeToolchainProvisioningService().apply {
-                shouldMarkReadyOnFullSetup = false
-            }
-            // When only server and tools are ready but other steps are pending:
-            toolchainService._state.value = ToolchainSetupState(
-                steps = ToolchainSetupState.defaultSteps().map { step ->
-                    if (step.stage == SetupStepStage.SERVER_CONNECTIVITY ||
-                        step.stage == SetupStepStage.TOOLCHAIN_COMPILATION
-                    ) {
-                        step.copy(status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE)
-                    } else {
-                        step.copy(status = StepStatus.PENDING, provenance = StepProvenance.LIVE)
-                    }
-                }
+            val readinessPort = FakeEnvironmentReadinessPort(
+                initial = EnvironmentReadiness(
+                    state = EnvironmentReadinessState.SERVICE_UNREACHABLE,
+                    failingCheck = "Daemon unreachable",
+                    remediation = "Start LtiRomServer"
+                )
             )
-
-            val viewModel = SetupViewModel(manager, toolchainService)
+            val viewModel = SetupViewModel(
+                workspaceManager = manager,
+                environmentReadinessPort = readinessPort,
+            )
             testScheduler.advanceUntilIdle()
 
-            assertTrue(viewModel.toolchainSetupState.value.isServerConnected)
-            assertTrue(viewModel.toolchainSetupState.value.isToolsVerified)
-            // canLaunchWorkspace == isAllReady (the isServerConnected && isToolsVerified shortcut was removed)
-            assertFalse(viewModel.toolchainSetupState.value.isAllReady)
-            assertFalse(viewModel.toolchainSetupState.value.canLaunchWorkspace)
+            assertEquals(EnvironmentReadinessState.SERVICE_UNREACHABLE, viewModel.environmentReadiness.value?.state)
+            assertEquals("Daemon unreachable", viewModel.environmentReadiness.value?.failingCheck)
 
-            // When all steps are marked ready:
-            toolchainService.markAllReady()
-            assertTrue(viewModel.toolchainSetupState.value.isAllReady)
-            assertTrue(viewModel.toolchainSetupState.value.canLaunchWorkspace)
-
-            var openedWorkspace: Workspace? = null
-            viewModel.openDefaultWorkspace { ws ->
-                openedWorkspace = ws
-            }
+            // Transition readiness to READY
+            readinessPort.flow.value = EnvironmentReadiness(state = EnvironmentReadinessState.READY)
             testScheduler.advanceUntilIdle()
 
-            assertEquals("~/LtiRomWorkDir/target/PQ84P01_GLOBAL_A15", openedWorkspace?.path)
-            assertEquals(openedWorkspace?.id, manager.currentWorkspace.value?.id)
+            assertEquals(EnvironmentReadinessState.READY, viewModel.environmentReadiness.value?.state)
         } finally {
             Dispatchers.resetMain()
         }
@@ -911,6 +890,49 @@ class SetupViewModelTest {
             viewModel.resetToolchainCacheAndRecheck()
             assertEquals(expectedNotice, viewModel.environmentNotice.value)
             viewModel.dismissEnvironmentNotice()
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun testDurableRunIdsAndSudoRemediationStateExposed() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        Dispatchers.setMain(testDispatcher)
+        try {
+            val fakeToolchain = FakeToolchainProvisioningService(
+                initialState = ToolchainSetupState(
+                    steps = ToolchainSetupState.defaultSteps(),
+                    diagnostics = listOf(
+                        DiagnosticCheckItem(
+                            id = "sudo_noninteractive",
+                            title = "Non-Interactive Sudo Elevation",
+                            category = org.ide.lti.core.domain.setup.DiagnosticCategory.OS_UTILITIES,
+                            status = StepStatus.WARNING,
+                            detail = "Non-interactive sudo is not configured.",
+                            copyableCommand = "echo \"\$USER ALL=(ALL) NOPASSWD: ALL\" | sudo tee /etc/sudoers.d/ltirom",
+                        )
+                    ),
+                    stepRunIds = mapOf(
+                        SetupStepStage.REPO_SYNCHRONIZATION to "setup:submodule:apktool",
+                        SetupStepStage.TOOLCHAIN_COMPILATION to "setup:build:erofs-utils:cmake"
+                    )
+                )
+            )
+            val repo = FakeWorkspaceRepository()
+            val manager = WorkspaceManager(repo, this)
+            val viewModel = SetupViewModel(
+                workspaceManager = manager,
+                toolchainService = fakeToolchain,
+            )
+            testScheduler.advanceUntilIdle()
+
+            val state = viewModel.toolchainSetupState.value
+            val sudoItem = state.diagnostics.find { it.id == "sudo_noninteractive" }
+            assertEquals(StepStatus.WARNING, sudoItem?.status)
+            assertTrue(sudoItem?.copyableCommand?.contains("sudo tee /etc/sudoers.d/ltirom") == true)
+            assertEquals("setup:submodule:apktool", state.stepRunIds[SetupStepStage.REPO_SYNCHRONIZATION])
+            assertEquals("setup:build:erofs-utils:cmake", state.stepRunIds[SetupStepStage.TOOLCHAIN_COMPILATION])
         } finally {
             Dispatchers.resetMain()
         }

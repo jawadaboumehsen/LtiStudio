@@ -127,3 +127,34 @@ data class BuildRun(
     /** Small captured step results (digests, sizes, dates) so a resumed driver can re-plan. */
     val runtimeValues: Map<String, String> = emptyMap(),
 )
+
+@Serializable
+public data class BuildRunSummary(
+    val id: String,
+    val workspaceId: String,
+    val snapshotId: String,
+    val state: RunState,
+    val startedAt: Instant,
+    val endedAt: Instant? = null,
+    val exitCode: Int? = null,
+    val artifacts: List<Artifact> = emptyList(),
+    val steps: List<StageStep> = emptyList(),
+)
+
+@Serializable
+public data class RunIndex(
+    val schemaVersion: Int = 1,
+    val items: List<BuildRunSummary> = emptyList(),
+)
+
+public fun BuildRun.toSummary(): BuildRunSummary = BuildRunSummary(
+    id = id,
+    workspaceId = workspaceId,
+    snapshotId = snapshotId,
+    state = state,
+    startedAt = startedAt,
+    endedAt = endedAt,
+    exitCode = steps.lastOrNull()?.exitCode ?: if (state == RunState.SUCCEEDED) 0 else null,
+    artifacts = artifacts,
+    steps = steps,
+)

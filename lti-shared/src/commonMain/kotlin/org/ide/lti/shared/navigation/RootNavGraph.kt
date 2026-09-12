@@ -70,6 +70,7 @@ internal fun RootNavGraph(
             },
             onOpenSettings = onOpenSettings,
             onCreateWorkspace = { navHostController.navigateToCreateWorkspace() },
+            onOpenConfigurations = { navHostController.navigateToConfiguration() },
         )
 
         // Create Workspace Screen
@@ -78,6 +79,11 @@ internal fun RootNavGraph(
             onWorkspaceCreated = { _ ->
                 navHostController.navigate("workspace") {
                     popUpTo(SETUP_ROUTE) { inclusive = false }
+                    launchSingleTop = true
+                }
+            },
+            onNavigateToSetup = {
+                navHostController.navigate(SETUP_ROUTE) {
                     launchSingleTop = true
                 }
             },
@@ -95,6 +101,11 @@ internal fun RootNavGraph(
             },
             onOpenAddConfiguration = {
                 navHostController.navigateToCreateConfiguration()
+            },
+            onNavigateToSetup = {
+                navHostController.navigate(SETUP_ROUTE) {
+                    launchSingleTop = true
+                }
             },
         )
 

@@ -12,10 +12,13 @@ package org.ide.lti.core.datastore.di
 import com.russhwolf.settings.Settings
 import kotlinx.serialization.json.Json
 import org.ide.lti.core.datastore.LtiPreferencesDataSource
+import org.ide.lti.core.datastore.RunFileStorage
+import org.ide.lti.core.datastore.RunRecordDataSource
 import org.ide.lti.core.datastore.SnapshotPreferencesDataSource
 import org.ide.lti.core.datastore.TargetPreferencesDataSource
 import org.ide.lti.core.datastore.ToolchainPreferencesDataSource
 import org.ide.lti.core.datastore.WorkspacePreferencesDataSource
+import org.ide.lti.core.datastore.defaultRunFileStorage
 import org.koin.dsl.module
 
 /**
@@ -24,10 +27,12 @@ import org.koin.dsl.module
 val DatastoreModule = module {
     single<Settings> { Settings() }
     single<Json> { ToolchainPreferencesDataSource.defaultJson() }
+    single<RunFileStorage> { defaultRunFileStorage() }
     single { LtiPreferencesDataSource(settings = get()) }
     single { ToolchainPreferencesDataSource(settings = get(), json = get()) }
     single { WorkspacePreferencesDataSource(settings = get(), json = get()) }
     single { TargetPreferencesDataSource(settings = get(), json = get()) }
     single { SnapshotPreferencesDataSource(settings = get(), json = get()) }
+    single { RunRecordDataSource(settings = get(), json = get(), fileStorage = get()) }
 }
 

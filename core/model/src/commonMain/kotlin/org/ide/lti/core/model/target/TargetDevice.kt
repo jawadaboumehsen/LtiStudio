@@ -124,19 +124,7 @@ data class TargetDevice(
     val name: String,
     val codename: String,
     val revision: Int = 1,
-    @Deprecated("Target selection moved to ConfigurationSnapshot")
-    val selectedRegion: TargetRegion = TargetRegion.GLOBAL,
     val availableRegions: List<TargetRegion> = listOf(TargetRegion.GLOBAL, TargetRegion.CHINA),
-    @Deprecated("Target selection moved to ConfigurationSnapshot")
-    val selectedFirmware: TargetFirmware = TargetFirmware(
-        version = "REDMAGICOS10.5.15_NP05J_GB",
-        buildId = "PQ84P01:15/AQ3A.240812.002/20260311.222527",
-        androidVersion = "15",
-        securityPatch = "2026-02-01",
-        otaUrl = "https://rom.download.nubia.com/Europe&Asia/PQ84P01(NP05J)/REDMAGICOS10.5.15_NP05J_GB/update.zip",
-        isOfficial = true,
-        isRecommended = true,
-    ),
     val availableFirmwares: Map<TargetRegion, List<TargetFirmware>> = emptyMap(),
     val socPlatform: String,
     val filesystemType: String,
@@ -146,8 +134,6 @@ data class TargetDevice(
     val vendorBootPartitionBytes: Long = 100663296L,
     val initBootPartitionBytes: Long = 8388608L,
     val dtboPartitionBytes: Long = 25165824L,
-    @Deprecated("Target selection moved to ConfigurationSnapshot")
-    val acquisitionMode: FirmwareAcquisitionMode = FirmwareAcquisitionMode.OTA,
     val dynamicPartitions: List<String>,
     val bootPartitions: List<String>,
     val status: TargetStatus,
@@ -194,27 +180,16 @@ data class TargetDevice(
         get() = "${dtboPartitionBytes / (1024L * 1024L)} MB"
 
     val targetKey: String
-        get() {
-            val regionSlug = when (selectedRegion) {
-                TargetRegion.GLOBAL -> "GLOBAL"
-                TargetRegion.CHINA -> "CN"
-            }
-            val androidSlug = "A${selectedFirmware.androidVersion.ifBlank { "15" }}"
-            return "${codename.uppercase()}_${regionSlug}_$androidSlug"
-        }
+        get() = codename.uppercase()
 
     val workspaceSlug: String
         get() = targetKey
 
-    @Deprecated("Workspace paths are managed by Workspace entity")
-    val workspacePath: String
-        get() = "~/LtiRomWorkDir/target/$targetKey"
-
     val friendlyTitle: String
-        get() = "$name ($codename • ${selectedRegion.displayName} • Android ${selectedFirmware.androidVersion})"
+        get() = "$name ($codename)"
 
     val displayLabel: String
-        get() = "$codename (${selectedRegion.displayName} • Android ${selectedFirmware.androidVersion})"
+        get() = "$name ($codename)"
 
     companion object {
         val EMPTY = TargetDevice(
@@ -222,13 +197,7 @@ data class TargetDevice(
             name = "",
             codename = "",
             revision = 1,
-            selectedRegion = TargetRegion.GLOBAL,
             availableRegions = listOf(TargetRegion.GLOBAL, TargetRegion.CHINA),
-            selectedFirmware = TargetFirmware(
-                version = "1.0.0",
-                buildId = "TARGET:15/AQ3A.240812.002/20260101.000000",
-                isOfficial = false,
-            ),
             availableFirmwares = emptyMap(),
             socPlatform = "Snapdragon 8 Elite",
             filesystemType = "erofs",

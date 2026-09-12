@@ -24,11 +24,13 @@ fun NavController.navigateToCreateWorkspace(navOptions: NavOptions? = null) {
 fun NavGraphBuilder.createWorkspaceScreen(
     onBackClick: () -> Unit,
     onWorkspaceCreated: (Workspace) -> Unit,
+    onNavigateToSetup: (() -> Unit)? = null,
 ) {
     composable(route = CREATE_WORKSPACE_ROUTE) {
         CreateWorkspaceScreen(
             onBackClick = onBackClick,
             onWorkspaceCreated = onWorkspaceCreated,
+            onNavigateToSetup = onNavigateToSetup ?: onBackClick,
         )
     }
 }

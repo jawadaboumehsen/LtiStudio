@@ -82,7 +82,7 @@ fun LaunchpadStepContent(
     LaunchpadStepContent(
         toolchainSetupState = state.toolchainSetupState,
         selectedTarget = state.selectedTarget,
-        onProceedToWorkspace = actions.onProceedToWorkspace,
+        onCreateWorkspace = actions.onCreateWorkspace,
         onNavigateToEnvironment = onNavigateToEnvironment,
         onProvisionAvbKey = actions.onProvisionAvbKey,
         resolvedBackdrop = resolvedBackdrop,
@@ -96,7 +96,7 @@ fun LaunchpadStepContent(
  * Implements Time-to-First-Value:
  * - Summarizes configured workspace directory and UNC paths
  * - Verifies machine-local AVB 2.0 RSA-4096 signing key
- * - Provides high-visibility "Launch Studio Workspace" hero call to action
+ * - Provides high-visibility "Create Studio Workspace" hero call to action
  *
  * Adheres strictly to:
  * - Single Responsibility: Final workspace verification and IDE launch transition.
@@ -106,7 +106,7 @@ fun LaunchpadStepContent(
 fun LaunchpadStepContent(
     toolchainSetupState: ToolchainSetupState,
     selectedTarget: TargetDevice? = null,
-    onProceedToWorkspace: () -> Unit,
+    onCreateWorkspace: () -> Unit,
     onNavigateToEnvironment: () -> Unit,
     onProvisionAvbKey: () -> Unit,
     resolvedBackdrop: LayerBackdrop,
@@ -416,7 +416,7 @@ fun LaunchpadStepContent(
 
                 if (canLaunchWorkspace) {
                     GlassPrimaryButton(
-                        onClick = onProceedToWorkspace,
+                        onClick = onCreateWorkspace,
                         enabled = !toolchainSetupState.isBusy,
                     ) {
                         Row(
@@ -425,7 +425,7 @@ fun LaunchpadStepContent(
                             modifier = Modifier.padding(horizontal = Spacing.Small),
                         ) {
                             Text(
-                                text = "Launch Studio Workspace",
+                                text = "Create Studio Workspace",
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold,
                                 maxLines = 1,

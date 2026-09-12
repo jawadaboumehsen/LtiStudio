@@ -1,60 +1,82 @@
 package io.ltirom.tooling.client.resilience
 
+import io.ltirom.tooling.core.ToolingException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
+public class CircuitBreakerOpenException(
+    message: String = "Circuit breaker is OPEN. Fast-failing calls until cooldown expires."
+) : ToolingException(message)
+
+public enum class CircuitState {
+    CLOSED,
+    OPEN,
+    HALF_OPEN
+}
+
 /**
- * Minimal circuit breaker guarding calls to the remote WSL daemon bridge.
- *
- * Reconstruction note: no surviving call site pinned the failure threshold or reset
- * timeout, only the `execute { ... }` call shape. These defaults (5 consecutive
- * failures trips the breaker, 30s cooldown before a half-open retry) are a judgment
- * call, not a recovered value — revisit if the daemon bridge shows different real
- * tuning needs.
+ * Circuit Breaker pattern to protect against cascading remote connection failures.
+ * If consecutive failures exceed [failureThreshold], trips to [CircuitState.OPEN] to
+ * fail-fast immediately without waiting for long network timeouts.
  */
 public class CircuitBreaker(
-    private val failureThreshold: Int = 5,
-    private val resetTimeoutMs: Long = 30_000L,
+    public val failureThreshold: Int = 3,
+    public val resetTimeoutMs: Long = 10_000L,
+    private val clock: () -> Long = { System.currentTimeMillis() }
 ) {
-    private enum class State { CLOSED, OPEN, HALF_OPEN }
-
     private val mutex = Mutex()
-    private var state = State.CLOSED
-    private var consecutiveFailures = 0
-    private var openedAtMs = 0L
+    private var failureCount = 0
+    private var lastFailureEpochMs = 0L
+    private var state = CircuitState.CLOSED
+
+    public suspend fun getState(): CircuitState = mutex.withLock { checkState() }
+
+    private fun checkState(): CircuitState {
+        val now = clock()
+        if (state == CircuitState.OPEN && now - lastFailureEpochMs > resetTimeoutMs) {
+            state = CircuitState.HALF_OPEN
+        }
+        return state
+    }
 
     public suspend fun <T> execute(block: suspend () -> T): T {
         mutex.withLock {
-            if (state == State.OPEN) {
-                val elapsed = System.currentTimeMillis() - openedAtMs
-                if (elapsed >= resetTimeoutMs) {
-                    state = State.HALF_OPEN
-                } else {
+            when (checkState()) {
+                CircuitState.OPEN -> {
                     throw CircuitBreakerOpenException(
-                        "Circuit breaker is open; retry in ${resetTimeoutMs - elapsed}ms"
+                        "Circuit breaker is OPEN ($failureCount consecutive failures). Cooldown active for ${resetTimeoutMs - (clock() - lastFailureEpochMs)} ms"
                     )
                 }
+                CircuitState.CLOSED, CircuitState.HALF_OPEN -> { /* Allow execution */ }
             }
         }
 
         return try {
             val result = block()
-            mutex.withLock {
-                consecutiveFailures = 0
-                state = State.CLOSED
-            }
+            onSuccess()
             result
-        } catch (e: Exception) {
-            mutex.withLock {
-                consecutiveFailures++
-                if (consecutiveFailures >= failureThreshold || state == State.HALF_OPEN) {
-                    state = State.OPEN
-                    openedAtMs = System.currentTimeMillis()
-                }
-            }
+        } catch (e: Throwable) {
+            onFailure()
             throw e
         }
     }
-}
 
-public class CircuitBreakerOpenException(message: String) : Exception(message)
+    private suspend fun onSuccess() = mutex.withLock {
+        failureCount = 0
+        state = CircuitState.CLOSED
+    }
+
+    private suspend fun onFailure() = mutex.withLock {
+        failureCount++
+        lastFailureEpochMs = clock()
+        if (failureCount >= failureThreshold || state == CircuitState.HALF_OPEN) {
+            state = CircuitState.OPEN
+        }
+    }
+
+    public suspend fun reset() = mutex.withLock {
+        failureCount = 0
+        lastFailureEpochMs = 0L
+        state = CircuitState.CLOSED
+    }
+}

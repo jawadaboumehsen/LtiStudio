@@ -42,6 +42,8 @@ import org.ide.lti.core.designsystem.component.actions.GlassSecondaryButton
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.display.GlassHorizontalDivider
+import org.ide.lti.core.designsystem.component.feedback.GlassBanner
+import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.component.tooltip.GlassTooltipArea
 import kotlinx.datetime.Clock
@@ -208,6 +210,17 @@ fun EnvironmentSubsystemHeader(
                 }
             }
         }
+
+        val sudoDiag = state.diagnostics.firstOrNull { it.id == "sudo_noninteractive" }
+            if (sudoDiag != null && sudoDiag.status != StepStatus.SUCCESS) {
+                val cmd = sudoDiag.copyableCommand ?: "echo \"\$USER ALL=(ALL) NOPASSWD: ALL\" | sudo tee /etc/sudoers.d/ltirom"
+                GlassBanner(
+                    severity = GlassBannerSeverity.WARNING,
+                    title = "Non-Interactive Sudo Required",
+                    description = "Run in WSL terminal: $cmd",
+                    backdrop = backdrop,
+                )
+            }
 
             GlassHorizontalDivider()
 

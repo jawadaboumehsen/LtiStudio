@@ -18,6 +18,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
@@ -25,10 +29,10 @@ import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.model.target.FirmwareAcquisitionMode
 import org.ide.lti.core.model.target.TargetDevice
+import org.ide.lti.core.model.target.TargetFirmware
+import org.ide.lti.core.model.target.TargetRegion
 
-@Suppress("DEPRECATION")
 @Composable
 fun OsStreamsConfigTab(
     target: TargetDevice,
@@ -36,6 +40,24 @@ fun OsStreamsConfigTab(
     modifier: Modifier = Modifier,
 ) {
     val glassColors = GlassTheme.colors
+    var activeRegion by remember(target.id) {
+        mutableStateOf(target.availableRegions.firstOrNull() ?: TargetRegion.GLOBAL)
+    }
+
+    val firmwares = target.availableFirmwares[activeRegion].orEmpty()
+    val currentFirmware = firmwares.firstOrNull() ?: TargetFirmware(
+        version = "1.0.0",
+        buildId = "${target.codename}:15/AQ3A.240812.002/20260101.000000",
+        isOfficial = false,
+    )
+
+    fun updateFirmware(updated: TargetFirmware) {
+        val updatedMap = target.availableFirmwares.toMutableMap().apply {
+            val existing = get(activeRegion).orEmpty()
+            put(activeRegion, listOf(updated) + existing.drop(1))
+        }
+        onTargetChange(target.copy(availableFirmwares = updatedMap))
+    }
 
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -64,9 +86,9 @@ fun OsStreamsConfigTab(
                     horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
                 ) {
                     target.availableRegions.forEach { region ->
-                        val isSelected = target.selectedRegion == region
+                        val isSelected = activeRegion == region
                         GlassButton(
-                            onClick = { onTargetChange(target.copy(selectedRegion = region)) },
+                            onClick = { activeRegion = region },
                             modifier = Modifier.weight(1f),
                             variant = if (isSelected) GlassButtonVariant.Primary else GlassButtonVariant.Standard,
                         ) {
@@ -86,12 +108,12 @@ fun OsStreamsConfigTab(
                 verticalArrangement = Arrangement.spacedBy(Spacing.Small),
             ) {
                 Text(
-                    text = "Baseline Firmware Stream",
+                    text = "Baseline Firmware Stream (${activeRegion.displayName})",
                     style = MaterialTheme.typography.titleSmall,
                     color = glassColors.onGlass,
                 )
                 Text(
-                    text = "Firmware identity used to acquire and verify the baseline OTA/image dump.",
+                    text = "Firmware identity used to acquire and verify the baseline OTA/image dump for this region.",
                     style = MaterialTheme.typography.bodySmall,
                     color = glassColors.onGlassSecondary,
                 )
@@ -99,16 +121,16 @@ fun OsStreamsConfigTab(
                 Spacer(modifier = Modifier.height(Spacing.ExtraSmall))
 
                 GlassTextField(
-                    value = target.selectedFirmware.version,
-                    onValueChange = { onTargetChange(target.copy(selectedFirmware = target.selectedFirmware.copy(version = it))) },
+                    value = currentFirmware.version,
+                    onValueChange = { updateFirmware(currentFirmware.copy(version = it)) },
                     label = "Firmware Version",
                     placeholder = "e.g. REDMAGICOS10.5.15_NP05J_GB",
                     modifier = Modifier.fillMaxWidth(),
                 )
 
                 GlassTextField(
-                    value = target.selectedFirmware.buildId,
-                    onValueChange = { onTargetChange(target.copy(selectedFirmware = target.selectedFirmware.copy(buildId = it))) },
+                    value = currentFirmware.buildId,
+                    onValueChange = { updateFirmware(currentFirmware.copy(buildId = it)) },
                     label = "Build Fingerprint",
                     placeholder = "e.g. PQ84P01:15/AQ3A.240812.002/20260311.222527",
                     modifier = Modifier.fillMaxWidth(),
@@ -119,15 +141,15 @@ fun OsStreamsConfigTab(
                     horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
                 ) {
                     GlassTextField(
-                        value = target.selectedFirmware.androidVersion,
-                        onValueChange = { onTargetChange(target.copy(selectedFirmware = target.selectedFirmware.copy(androidVersion = it))) },
+                        value = currentFirmware.androidVersion,
+                        onValueChange = { updateFirmware(currentFirmware.copy(androidVersion = it)) },
                         label = "Android Version",
                         placeholder = "15",
                         modifier = Modifier.weight(1f),
                     )
                     GlassTextField(
-                        value = target.selectedFirmware.securityPatch,
-                        onValueChange = { onTargetChange(target.copy(selectedFirmware = target.selectedFirmware.copy(securityPatch = it))) },
+                        value = currentFirmware.securityPatch,
+                        onValueChange = { updateFirmware(currentFirmware.copy(securityPatch = it)) },
                         label = "Security Patch",
                         placeholder = "2026-02-01",
                         modifier = Modifier.weight(1f),
@@ -135,8 +157,8 @@ fun OsStreamsConfigTab(
                 }
 
                 GlassTextField(
-                    value = target.selectedFirmware.otaUrl.orEmpty(),
-                    onValueChange = { onTargetChange(target.copy(selectedFirmware = target.selectedFirmware.copy(otaUrl = it.ifBlank { null }))) },
+                    value = currentFirmware.otaUrl.orEmpty(),
+                    onValueChange = { updateFirmware(currentFirmware.copy(otaUrl = it.ifBlank { null })) },
                     label = "OTA / Acquisition URL",
                     placeholder = "https://rom.download.nubia.com/...",
                     modifier = Modifier.fillMaxWidth(),
@@ -150,37 +172,12 @@ fun OsStreamsConfigTab(
                 verticalArrangement = Arrangement.spacedBy(Spacing.Small),
             ) {
                 Text(
-                    text = "Acquisition Mode",
+                    text = "Firmware Acquisition Policy",
                     style = MaterialTheme.typography.titleSmall,
                     color = glassColors.onGlass,
                 )
                 Text(
-                    text = "How the baseline firmware stream is fetched prior to unpacking.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = glassColors.onGlassSecondary,
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                ) {
-                    FirmwareAcquisitionMode.entries.forEach { mode ->
-                        val isSelected = target.acquisitionMode == mode
-                        GlassButton(
-                            onClick = { onTargetChange(target.copy(acquisitionMode = mode)) },
-                            modifier = Modifier.weight(1f),
-                            variant = if (isSelected) GlassButtonVariant.Primary else GlassButtonVariant.Standard,
-                        ) {
-                            Text(
-                                text = mode.displayName,
-                                style = MaterialTheme.typography.labelSmall,
-                            )
-                        }
-                    }
-                }
-
-                Text(
-                    text = target.acquisitionMode.description,
+                    text = "Baseline firmware acquisition mode (official OTA download or raw archive import) is bound per-workspace inside Configuration Snapshots.",
                     style = MaterialTheme.typography.bodySmall,
                     color = glassColors.onGlassSecondary,
                 )

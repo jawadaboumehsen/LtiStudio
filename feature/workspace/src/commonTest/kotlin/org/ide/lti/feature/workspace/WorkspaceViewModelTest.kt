@@ -32,7 +32,6 @@ import org.ide.lti.core.domain.usecase.target.GetAvailableTargetsUseCase
 import org.ide.lti.core.domain.usecase.target.GetSelectedTargetUseCase
 import org.ide.lti.core.domain.usecase.target.SelectTargetUseCase
 import org.ide.lti.core.domain.workspace.WorkspaceManager
-import org.ide.lti.core.model.target.FirmwareAcquisitionMode
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.target.TargetFirmware
 import org.ide.lti.core.model.target.TargetRegion
@@ -111,48 +110,6 @@ class WorkspaceViewModelTest {
             return addTarget(target)
         }
 
-        override suspend fun selectRegion(region: TargetRegion): Result<TargetDevice> {
-            val current = selectedTargetFlow.value
-            val fw = current.availableFirmwares[region]?.firstOrNull() ?: current.selectedFirmware
-            val updated = current.copy(selectedRegion = region, selectedFirmware = fw)
-            selectedTargetFlow.value = updated
-            return Result.success(updated)
-        }
-
-        override suspend fun selectFirmware(firmware: TargetFirmware): Result<TargetDevice> {
-            val current = selectedTargetFlow.value
-            val updated = current.copy(selectedFirmware = firmware)
-            selectedTargetFlow.value = updated
-            return Result.success(updated)
-        }
-
-        override suspend fun selectAcquisitionMode(mode: FirmwareAcquisitionMode): Result<TargetDevice> {
-            val current = selectedTargetFlow.value
-            val updated = current.copy(acquisitionMode = mode)
-            selectedTargetFlow.value = updated
-            return Result.success(updated)
-        }
-
-        override suspend fun setCustomFirmware(
-            version: String,
-            buildId: String?,
-            otaUrl: String?,
-        ): Result<TargetDevice> {
-            val current = selectedTargetFlow.value
-            val custom = TargetFirmware(
-                version = version,
-                buildId = buildId ?: "${current.codename}:15/CUSTOM/$version",
-                androidVersion = "15",
-                securityPatch = "Custom",
-                otaUrl = otaUrl,
-                isOfficial = false,
-                isRecommended = false,
-            )
-            val updated = current.copy(selectedFirmware = custom, status = TargetStatus.EXPERIMENTAL)
-            selectedTargetFlow.value = updated
-            return Result.success(updated)
-        }
-
         override suspend fun deleteTarget(targetId: String): Result<Unit> {
             val list = targetsFlow.value.toMutableList()
             list.removeAll { it.id == targetId }
@@ -185,9 +142,7 @@ class WorkspaceViewModelTest {
             id = "PQ84P01",
             name = "REDMAGIC Astra Gaming Tablet",
             codename = "PQ84P01",
-            selectedRegion = TargetRegion.GLOBAL,
             availableRegions = listOf(TargetRegion.GLOBAL, TargetRegion.CHINA),
-            selectedFirmware = globalFw,
             availableFirmwares = mapOf(
                 TargetRegion.GLOBAL to listOf(globalFw),
                 TargetRegion.CHINA to listOf(chinaFw),
@@ -243,7 +198,6 @@ class WorkspaceViewModelTest {
             ConnectedTargetDevice(
                 serial = "PQ84P01-ASTRA-01",
                 modelName = "REDMAGIC Astra",
-                codename = "PQ84P01",
                 state = AdbDeviceState.ONLINE,
                 connectionType = DeviceConnectionType.USB,
             )
@@ -252,18 +206,16 @@ class WorkspaceViewModelTest {
         val devicesFlow = MutableStateFlow(initialDevices)
         val selectedDeviceFlow = MutableStateFlow(initialDevices.firstOrNull())
 
-        override val connectedDevices: StateFlow<List<ConnectedTargetDevice>> = devicesFlow.asStateFlow()
-        override val selectedDevice: StateFlow<ConnectedTargetDevice?> = selectedDeviceFlow.asStateFlow()
+        override fun getConnectedDevices(): StateFlow<List<ConnectedTargetDevice>> = devicesFlow.asStateFlow()
+        override fun getSelectedConnectedDevice(): StateFlow<ConnectedTargetDevice?> = selectedDeviceFlow.asStateFlow()
 
-        override suspend fun selectDevice(serial: String?) {
+        override suspend fun selectConnectedDevice(serial: String?) {
             selectedDeviceFlow.value = devicesFlow.value.find { it.serial == serial }
         }
 
-        override suspend fun refreshDevices(): Result<List<ConnectedTargetDevice>> {
-            return Result.success(devicesFlow.value)
-        }
+        override suspend fun refreshConnectedDevices() {}
 
-        override suspend fun rebootDevice(serial: String, mode: DeviceRebootMode): Result<DeviceOperationResult> {
+        override suspend fun rebootConnectedDevice(serial: String, mode: DeviceRebootMode): Result<DeviceOperationResult> {
             val targetState = when (mode) {
                 DeviceRebootMode.BOOTLOADER, DeviceRebootMode.FASTBOOTD -> AdbDeviceState.FASTBOOT
                 DeviceRebootMode.RECOVERY -> AdbDeviceState.RECOVERY
@@ -284,7 +236,7 @@ class WorkspaceViewModelTest {
                 serial = "${request.host}:${request.port}",
                 modelName = "Wireless Device (${request.host})",
                 state = AdbDeviceState.ONLINE,
-                connectionType = DeviceConnectionType.WIFI,
+                connectionType = DeviceConnectionType.WIRELESS,
             )
             devicesFlow.value = devicesFlow.value + newDevice
             selectedDeviceFlow.value = newDevice
@@ -295,16 +247,11 @@ class WorkspaceViewModelTest {
             return Result.success(DeviceOperationResult(isSuccess = true, message = "Connected to $host:$port"))
         }
 
-        override suspend fun disconnectDevice(target: String): Result<DeviceOperationResult> {
+        override suspend fun disconnectDevice(target: String) {
             devicesFlow.value = devicesFlow.value.filterNot { it.serial == target }
             if (selectedDeviceFlow.value?.serial == target) {
                 selectedDeviceFlow.value = devicesFlow.value.firstOrNull()
             }
-            return Result.success(DeviceOperationResult(isSuccess = true, message = "Disconnected $target"))
-        }
-
-        override suspend fun getDeviceProperties(serial: String): Result<Map<String, String>> {
-            return Result.success(mapOf("ro.build.version.release" to "15"))
         }
     }
 
@@ -320,7 +267,7 @@ class WorkspaceViewModelTest {
 
             assertEquals("PQ84P01", viewModel.selectedTarget.value.id)
             assertEquals("PQ84P01", viewModel.selectedTarget.value.codename)
-            assertEquals(TargetRegion.GLOBAL, viewModel.selectedTarget.value.selectedRegion)
+            assertTrue(viewModel.selectedTarget.value.availableRegions.contains(TargetRegion.GLOBAL))
         } finally {
             Dispatchers.resetMain()
         }
@@ -381,9 +328,7 @@ class WorkspaceViewModelTest {
                 id = "NX769J",
                 name = "REDMAGIC 9 Pro",
                 codename = "NX769J",
-                selectedRegion = TargetRegion.GLOBAL,
                 availableRegions = listOf(TargetRegion.GLOBAL),
-                selectedFirmware = customFw,
                 availableFirmwares = mapOf(TargetRegion.GLOBAL to listOf(customFw)),
                 socPlatform = "Snapdragon 8 Gen 3 (SM8650 / pineapple)",
                 filesystemType = "erofs",
@@ -506,7 +451,7 @@ class WorkspaceViewModelTest {
             assertTrue(callbackInvoked)
             assertEquals(2, viewModel.connectedDevices.value.size)
             assertEquals("192.168.1.55:38521", viewModel.selectedConnectedDevice.value?.serial)
-            assertEquals(DeviceConnectionType.WIFI, viewModel.selectedConnectedDevice.value?.connectionType)
+            assertEquals(DeviceConnectionType.WIRELESS, viewModel.selectedConnectedDevice.value?.connectionType)
         } finally {
             Dispatchers.resetMain()
         }

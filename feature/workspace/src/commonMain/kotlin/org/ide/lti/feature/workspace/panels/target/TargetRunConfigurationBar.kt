@@ -69,7 +69,7 @@ import org.ide.lti.core.model.target.TargetRegion
 /**
  * Resolves the official OS stream codename for a target device (e.g. NP05J_GB, NP05J_CN).
  */
-fun TargetDevice.getStreamCode(region: TargetRegion = selectedRegion): String {
+fun TargetDevice.getStreamCode(region: TargetRegion = TargetRegion.GLOBAL): String {
     return when {
         codename == "PQ84P01" -> if (region == TargetRegion.GLOBAL) "NP05J_GB" else "NP05J_CN"
         else -> "${codename}_${region.code}"

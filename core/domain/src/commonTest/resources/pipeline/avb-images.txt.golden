@@ -1,0 +1,7 @@
+odm size=100000000 sha256=sha_odm public_key_sha1=key_sha1
+product size=200000000 sha256=sha_product public_key_sha1=key_sha1
+system size=300000000 sha256=sha_system public_key_sha1=key_sha1
+system_dlkm size=50000000 sha256=sha_system_dlkm public_key_sha1=key_sha1
+system_ext size=150000000 sha256=sha_system_ext public_key_sha1=key_sha1
+vendor size=250000000 sha256=sha_vendor public_key_sha1=key_sha1
+vendor_dlkm size=60000000 sha256=sha_vendor_dlkm public_key_sha1=key_sha1

@@ -40,6 +40,47 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalCoroutinesApi::class)
 class SetupViewModelWorkspaceTest {
 
+    private class FakeWorkspaceRepository : WorkspaceRepository {
+        val recents = MutableStateFlow<List<RecentProject>>(emptyList())
+
+        override fun getWorkspaces(): Flow<List<Workspace>> = MutableStateFlow(emptyList())
+        override suspend fun getWorkspace(id: String): Workspace? = null
+        override suspend fun saveWorkspace(workspace: Workspace) {}
+        override suspend fun deleteWorkspace(id: String) {}
+        override suspend fun getWorkspaceSession(workspaceId: String): WorkspaceSession? = null
+        override suspend fun saveWorkspaceSession(session: WorkspaceSession) {}
+        override fun getRecentProjects(): Flow<List<RecentProject>> = recents.asStateFlow()
+        override suspend fun addRecentProject(project: RecentProject) {
+            recents.value = listOf(project) + recents.value.filter { it.workspaceId != project.workspaceId }
+        }
+        override suspend fun removeRecentProject(workspaceId: String) {
+            recents.value = recents.value.filter { it.workspaceId != workspaceId }
+        }
+        override suspend fun clearRecentProjects() {
+            recents.value = emptyList()
+        }
+        override suspend fun discoverWorkspacesInWorkDir(basePath: String?): List<RecentProject> {
+            val defaults = listOf(
+                RecentProject(
+                    workspaceId = "ltirom_staging_workdir",
+                    name = "LtiRom Staging WorkDir",
+                    path = "~/LtiRomWorkDir",
+                    lastOpened = Clock.System.now(),
+                ),
+                RecentProject(
+                    workspaceId = "target_pq84p01",
+                    name = "REDMAGIC Astra (PQ84P01)",
+                    path = "~/LtiRomWorkDir/workspaces/target_pq84p01",
+                    lastOpened = Clock.System.now(),
+                ),
+            )
+            val current = recents.value
+            val combined = (current + defaults).distinctBy { it.workspaceId }
+            recents.value = combined
+            return combined
+        }
+    }
+
     @Test
     fun testSearchFilteringByProjectNameAndPath() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
@@ -170,12 +211,10 @@ class SetupViewModelWorkspaceTest {
         }
     }
 
-    } else {
-                        it.copy(status = StepStatus.PENDING, provenance = StepProvenance.LIVE)
-                    }
-                }
-            )
-        )
+    private class FakeToolchainProvisioningService(
+        initialState: ToolchainSetupState = ToolchainSetupState(),
+    ) : ToolchainProvisioningService {
+        val _state = MutableStateFlow(initialState)
         override val state: StateFlow<ToolchainSetupState> = _state.asStateFlow()
 
         var checkStatusCount = 0

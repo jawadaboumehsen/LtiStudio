@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
 import org.ide.lti.core.domain.ports.KeySource
 import org.ide.lti.core.domain.ports.ProvisioningEvent
 import org.ide.lti.core.domain.repository.target.TargetRepository
@@ -27,6 +28,8 @@ import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.domain.usecase.workspace.CreateWorkspaceParams
 import org.ide.lti.core.domain.usecase.workspace.CreateWorkspaceUseCase
 import org.ide.lti.core.domain.workspace.WorkspaceManager
+import org.ide.lti.core.model.setup.EnvironmentReadiness
+import org.ide.lti.core.model.setup.EnvironmentReadinessState
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.Workspace
 
@@ -57,6 +60,10 @@ data class CreateWorkspaceUiState(
     val logs: List<String> = emptyList(),
     val errorMessage: String? = null,
     val createdWorkspace: Workspace? = null,
+    val canCreate: Boolean = true,
+    val failingCheck: String? = null,
+    val remediation: String? = null,
+    val environmentReadiness: EnvironmentReadiness? = null,
 )
 
 /**
@@ -68,6 +75,7 @@ class CreateWorkspaceViewModel(
     private val targetRepository: TargetRepository,
     private val workspaceRepository: WorkspaceRepository,
     private val workspaceManager: WorkspaceManager? = null,
+    private val readinessPort: EnvironmentReadinessPort? = null,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CreateWorkspaceUiState())
@@ -77,6 +85,21 @@ class CreateWorkspaceViewModel(
 
     init {
         loadTargets()
+        if (readinessPort != null) {
+            viewModelScope.launch {
+                readinessPort.observe().collectLatest { readiness ->
+                    val isReady = readiness.state == EnvironmentReadinessState.READY
+                    _uiState.update { s ->
+                        s.copy(
+                            environmentReadiness = readiness,
+                            canCreate = isReady,
+                            failingCheck = readiness.failingCheck,
+                            remediation = readiness.remediation,
+                        )
+                    }
+                }
+            }
+        }
     }
 
     private fun loadTargets() {
@@ -106,6 +129,13 @@ class CreateWorkspaceViewModel(
 
     fun startCreation() {
         val state = _uiState.value
+        if (!state.canCreate) {
+            _uiState.update {
+                it.copy(errorMessage = state.remediation ?: state.failingCheck ?: "Environment is not ready")
+            }
+            return
+        }
+
         if (state.name.isBlank()) {
             _uiState.update { it.copy(nameError = "Workspace name cannot be blank") }
             return

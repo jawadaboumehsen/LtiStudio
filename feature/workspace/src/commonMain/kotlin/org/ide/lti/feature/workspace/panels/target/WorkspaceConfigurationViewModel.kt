@@ -135,7 +135,7 @@ class WorkspaceConfigurationViewModel(
         }
     }
 
-    fun selectRegion(region: TargetRegion) {
+    fun updateDraftRegion(region: TargetRegion) {
         _uiState.update { state ->
             val draft = state.draft ?: return@update state
             val firmwares = state.availableFirmwares[region].orEmpty()
@@ -150,7 +150,7 @@ class WorkspaceConfigurationViewModel(
         }
     }
 
-    fun selectFirmware(firmware: TargetFirmware) {
+    fun updateDraftFirmware(firmware: TargetFirmware) {
         _uiState.update { state ->
             val draft = state.draft ?: return@update state
             state.copy(

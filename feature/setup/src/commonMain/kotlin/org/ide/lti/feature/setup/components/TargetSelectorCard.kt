@@ -34,6 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import com.kashif_e.backdrop.backdrops.LayerBackdrop
+import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
 import org.ide.lti.core.designsystem.component.actions.GlassSecondaryButton
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.GlassChip
@@ -52,7 +53,6 @@ import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.model.target.TargetDevice
-import org.ide.lti.core.model.target.TargetRegion
 
 /**
  * Compact target hardware selector card for the Setup dashboard tab.
@@ -69,8 +69,9 @@ import org.ide.lti.core.model.target.TargetRegion
 fun TargetSelectorCard(
     selectedTarget: TargetDevice?,
     availableTargets: List<TargetDevice>,
-    onSelectTargetAndLaunch: (TargetDevice) -> Unit,
+    onSelectTarget: (TargetDevice) -> Unit,
     modifier: Modifier = Modifier,
+    onCreateWorkspace: (() -> Unit)? = null,
     backdrop: LayerBackdrop? = null,
 ) {
     if (selectedTarget == null) return
@@ -135,7 +136,7 @@ fun TargetSelectorCard(
                         )
 
                         GlassChip(
-                            label = selectedTarget.selectedRegion.displayName,
+                            label = selectedTarget.status.displayName,
                             selected = false,
                         )
                     }
@@ -150,7 +151,7 @@ fun TargetSelectorCard(
                     )
 
                     Text(
-                        text = "Firmware: ${selectedTarget.selectedFirmware.version}",
+                        text = "${selectedTarget.socPlatform} • ${selectedTarget.filesystemType.uppercase()}",
                         style = MaterialTheme.typography.bodySmall.copy(
                             fontFamily = codeFontFamily(),
                         ),
@@ -161,10 +162,27 @@ fun TargetSelectorCard(
                 }
             }
 
-            // Trailing Switch Target Action & Dropdown
-            Box(
-                modifier = Modifier.onSizeChanged { anchorWidth = it.width },
+            // Trailing Actions (Switch Target + New Workspace)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
             ) {
+                if (onCreateWorkspace != null) {
+                    GlassPrimaryButton(
+                        onClick = onCreateWorkspace,
+                    ) {
+                        Text(
+                            text = "New Workspace…",
+                            style = MaterialTheme.typography.labelMedium,
+                            maxLines = 1,
+                            softWrap = false,
+                        )
+                    }
+                }
+
+                Box(
+                    modifier = Modifier.onSizeChanged { anchorWidth = it.width },
+                ) {
                 GlassTooltipArea(
                     tooltipText = "Only one target device configured. Add another device from an open workspace to switch.",
                     delayMillis = if (canSwitch) Int.MAX_VALUE else MotionDuration.TooltipDelay,
@@ -220,26 +238,26 @@ fun TargetSelectorCard(
 
                         availableTargets.forEach { target ->
                             val isSelected = target.id == selectedTarget.id
-                            val regionEmoji = if (target.selectedRegion == TargetRegion.GLOBAL) "🌐" else "🇨🇳"
 
                             GlassDropdownMenuItem(
                                 text = "${target.name} (${target.codename})",
-                                subtitle = "${target.selectedRegion.displayName} • ${target.selectedFirmware.version}",
+                                subtitle = "${target.socPlatform} • ${target.filesystemType.uppercase()}",
                                 leadingIcon = {
                                     Text(
-                                        text = regionEmoji,
-                                        style = MaterialTheme.typography.bodySmall,
+                                        text = "📱",
+                                        style = MaterialTheme.typography.bodyMedium,
                                     )
                                 },
                                 isSelected = isSelected,
                                 onClick = {
                                     isMenuOpen = false
-                                    onSelectTargetAndLaunch(target)
+                                    onSelectTarget(target)
                                 },
                             )
                         }
                     }
                 }
+            }
             }
         }
     }
