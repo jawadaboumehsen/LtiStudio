@@ -29,5 +29,14 @@ kotlin {
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.kotlin.test)
         }
+
+        desktopTest.dependencies {
+            implementation(compose.desktop.uiTestJUnit4)
+            implementation(compose.desktop.currentOs)
+        }
     }
+}
+
+tasks.register("test") {
+    dependsOn("desktopTest")
 }
