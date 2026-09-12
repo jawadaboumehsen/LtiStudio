@@ -14,6 +14,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -25,7 +26,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Icon
+import androidx.compose.foundation.focusable
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,6 +36,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.semantics.paneTitle
+import androidx.compose.ui.semantics.semantics
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.backdrops.LayerBackdrop
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
@@ -189,11 +202,31 @@ fun SetupScreenContent(
     isHelpSheetOpen: Boolean = false,
     onDismissHelpSheet: () -> Unit = {},
 ) {
-    val localBackdrop = rememberLayerBackdrop()
-    val resolvedBackdrop = (backdrop as? LayerBackdrop) ?: (GlassTheme.backdrop as? LayerBackdrop) ?: localBackdrop
+    val ambientBackdrop = (backdrop as? LayerBackdrop) ?: (GlassTheme.backdrop as? LayerBackdrop)
+    val resolvedBackdrop = ambientBackdrop ?: rememberLayerBackdrop()
     var localSelectedTab by remember { mutableStateOf(initialTab ?: state.selectedTab) }
     val effectiveTab = initialTab?.let { localSelectedTab } ?: state.selectedTab
     var internalHelpSheetOpen by remember { mutableStateOf(isHelpSheetOpen) }
+
+    val rootFocusRequester = remember { FocusRequester() }
+    val searchFocusRequester = remember { FocusRequester() }
+    val helpButtonFocusRequester = remember { FocusRequester() }
+    var lastInvokingFocusRequester by remember { mutableStateOf<FocusRequester?>(null) }
+    var pendingSearchFocus by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        rootFocusRequester.requestFocus()
+    }
+
+    LaunchedEffect(effectiveTab) {
+        // ProjectsStepContent owns the actual requestFocus() call on mount (via
+        // focusSearchOnMount below) to avoid racing its own mount-time focus grab;
+        // this only clears the one-shot intent once the switch has been observed so a
+        // later, unrelated re-entry into the Workspaces tab doesn't steal focus again.
+        if (effectiveTab == SetupTab.PROJECTS) {
+            pendingSearchFocus = false
+        }
+    }
 
     val onTabChange: (SetupTab) -> Unit = { newTab ->
         if (initialTab != null) {
@@ -202,7 +235,56 @@ fun SetupScreenContent(
         actions.onSelectTab(newTab)
     }
 
-    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+    BoxWithConstraints(
+        modifier = modifier
+            .fillMaxSize()
+            .widthIn(min = SetupTokens.MinWindowWidth)
+            .focusRequester(rootFocusRequester)
+            .focusable()
+            .onKeyEvent { event ->
+                if (event.type == KeyEventType.KeyDown) {
+                    if (event.isCtrlPressed) {
+                        when (event.key) {
+                            Key.N -> {
+                                actions.onCreateWorkspace()
+                                true
+                            }
+                            Key.O -> {
+                                actions.onOpenFolder()
+                                true
+                            }
+                            Key.F -> {
+                                if (effectiveTab != SetupTab.PROJECTS) {
+                                    pendingSearchFocus = true
+                                    onTabChange(SetupTab.PROJECTS)
+                                } else {
+                                    searchFocusRequester.requestFocus()
+                                }
+                                true
+                            }
+                            else -> false
+                        }
+                    } else if (event.key == Key.Escape) {
+                        val showHelp = isHelpSheetOpen || internalHelpSheetOpen
+                        if (showHelp) {
+                            internalHelpSheetOpen = false
+                            onDismissHelpSheet()
+                            (lastInvokingFocusRequester ?: rootFocusRequester).requestFocus()
+                            true
+                        } else if (state.activeOperation?.executionState == SetupOperationState.PREVIEW) {
+                            actions.onDismissPreview()
+                            true
+                        } else {
+                            false
+                        }
+                    } else {
+                        false
+                    }
+                } else {
+                    false
+                }
+            },
+    ) {
         val isCompact = maxWidth < SetupTokens.CompactBreakpoint
         val sidebarWidth = if (isCompact) SetupTokens.SidebarWidthCompact else SetupTokens.SidebarWidthWide
         val gutter = if (isCompact) SetupTokens.GutterCompact else SetupTokens.GutterWide
@@ -238,10 +320,14 @@ fun SetupScreenContent(
                             modifier = Modifier.size(IconSize.Small),
                         )
                     }
-                    GlassIconButton(onClick = {
-                        internalHelpSheetOpen = true
-                        actions.onOpenHelp()
-                    }) {
+                    GlassIconButton(
+                        onClick = {
+                            lastInvokingFocusRequester = helpButtonFocusRequester
+                            internalHelpSheetOpen = true
+                            actions.onOpenHelp()
+                        },
+                        modifier = Modifier.focusRequester(helpButtonFocusRequester),
+                    ) {
                         Icon(
                             painter = AppIcons.InfoPainterResource(),
                             contentDescription = "Help & Documentation",
@@ -280,6 +366,7 @@ fun SetupScreenContent(
                         onOpenSettings = actions.onOpenSettings,
                         onOpenManageTargets = actions.onOpenManageTargets,
                         onOpenHelp = {
+                            lastInvokingFocusRequester = helpButtonFocusRequester
                             internalHelpSheetOpen = true
                             actions.onOpenHelp()
                         },
@@ -293,7 +380,14 @@ fun SetupScreenContent(
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .fillMaxHeight(),
+                        .fillMaxHeight()
+                        .background(
+                            if (SetupTokens.IsReducedTransparency) {
+                                SetupTokens.OpaqueSurfaceColor
+                            } else {
+                                SetupTokens.ContentSurfaceColor
+                            },
+                        ),
                     contentAlignment = Alignment.TopCenter,
                 ) {
                     val fadeDuration = SetupTokens.DurationFadeMs
@@ -328,6 +422,8 @@ fun SetupScreenContent(
                                     actions = actions,
                                     resolvedBackdrop = resolvedBackdrop,
                                     onNavigateToEnvironment = { onTabChange(SetupTab.ENVIRONMENT) },
+                                    searchFocusRequester = searchFocusRequester,
+                                    focusSearchOnMount = pendingSearchFocus,
                                 )
                             }
                         }
@@ -343,6 +439,10 @@ fun SetupScreenContent(
         onDismissRequest = {
             internalHelpSheetOpen = false
             onDismissHelpSheet()
+            (lastInvokingFocusRequester ?: rootFocusRequester).requestFocus()
+        },
+        modifier = Modifier.semantics {
+            paneTitle = "Help & Documentation"
         },
         backdrop = resolvedBackdrop,
     ) {

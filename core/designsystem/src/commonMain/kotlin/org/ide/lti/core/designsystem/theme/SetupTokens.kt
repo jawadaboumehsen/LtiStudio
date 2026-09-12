@@ -40,24 +40,45 @@ object SetupTokens {
         @ReadOnlyComposable
         get() = if (GlassTheme.reducedMotion) 0 else 220
 
+    fun contentSurfaceColor(theme: AppTheme): Color = when (theme) {
+        AppTheme.Light -> Color(0xFFF0F0F0) // Porcelain
+        AppTheme.Dark -> Color(0xFF2C2C2C)  // Graphite
+        AppTheme.Blue -> Color(0xFF1E3A8A)  // Deep Blue
+        is AppTheme.Custom -> Color(0xFF2C2C2C)
+    }
+
+    fun textNeutralColor(theme: AppTheme): Color = when (theme) {
+        AppTheme.Light -> Color(0xFF424242) // Neutral text
+        else -> Color(0xFFF5F5F5)
+    }
+
+    fun opaqueSurfaceColor(theme: AppTheme): Color = when (theme) {
+        AppTheme.Light -> Color(0xFFFFFFFF)
+        AppTheme.Dark -> Color(0xFF1E1E1E)
+        AppTheme.Blue -> Color(0xFF0F1E4A)
+        is AppTheme.Custom -> Color(0xFF1E1E1E)
+    }
+
     val ContentSurfaceColor: Color
         @Composable
         @ReadOnlyComposable
-        get() = when (GlassTheme.appTheme) {
-            AppTheme.Light -> Color(0xFFF0F0F0) // Porcelain
-            AppTheme.Dark -> Color(0xFF2C2C2C)  // Graphite
-            AppTheme.Blue -> Color(0xFF1E3A8A)  // Deep Blue
-            is AppTheme.Custom -> Color(0xFF2C2C2C)
-        }
+        get() = contentSurfaceColor(GlassTheme.appTheme)
 
     val TextNeutralColor: Color
         @Composable
         @ReadOnlyComposable
-        get() = when (GlassTheme.appTheme) {
-            AppTheme.Light -> Color(0xFF424242) // Neutral text
-            else -> Color(0xFFF5F5F5)
-        }
-        
+        get() = textNeutralColor(GlassTheme.appTheme)
+
+    val OpaqueSurfaceColor: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = opaqueSurfaceColor(GlassTheme.appTheme)
+
+    val IsReducedTransparency: Boolean
+        @Composable
+        @ReadOnlyComposable
+        get() = !GlassTheme.effectsEnabled
+
     val DiagnosticSuccess = Color(0xFF4CAF50)
     val DiagnosticWarning = Color(0xFFFF9800)
     val DiagnosticError = Color(0xFFF44336)

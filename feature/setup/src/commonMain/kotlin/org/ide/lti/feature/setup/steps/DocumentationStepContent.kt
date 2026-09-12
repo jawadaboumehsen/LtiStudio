@@ -23,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import com.kashif_e.backdrop.backdrops.LayerBackdrop
+import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -32,7 +33,7 @@ import org.ide.lti.feature.setup.components.DocFeatureCard
  * Documentation & Architecture guides tab content.
  *
  * Summarizes WSL2 runtime bridge, workspace targets, dynamic partitions, and native toolchains.
- * Adheres strictly to Design System Guardrails (100% token usage, 0 raw literals).
+ * Adheres strictly to Design System Guardrails (100% token usage, 0 raw literals, vector icons).
  */
 @Composable
 fun DocumentationStepContent(
@@ -57,7 +58,7 @@ fun DocumentationStepContent(
                 color = glassColors.onGlass,
             )
             Text(
-                text = "Comprehensive architecture guides for WSL2 runtime, ROM packaging, and toolchain development",
+                text = "Comprehensive architecture guides for WSL2 runtime, ROM packaging, and toolchains",
                 style = MaterialTheme.typography.bodyMedium,
                 color = glassColors.onGlassSecondary,
             )
@@ -72,13 +73,15 @@ fun DocumentationStepContent(
                 title = "WSL2 Daemon Bridge",
                 badge = "Architecture",
                 description = "Windows client communicates via local HTTP/SSE bridge to LtiRomServer running natively in WSL2.",
+                iconPainter = AppIcons.SparklesPainterResource(),
                 modifier = Modifier.weight(1f, fill = false).widthIn(min = ComponentSize.MinPanelWidth),
                 backdrop = resolvedBackdrop,
             )
             DocFeatureCard(
-                title = "Workspaces Root",
-                badge = "~/LtiRomWorkDir/workspaces",
+                title = "Workspaces Storage",
+                badge = "Linux ext4",
                 description = "High-performance ext4 Linux directory for isolated ROM workspaces, manifests, and staging.",
+                iconPainter = AppIcons.FolderPainterResource(),
                 modifier = Modifier.weight(1f, fill = false).widthIn(min = ComponentSize.MinPanelWidth),
                 backdrop = resolvedBackdrop,
             )
@@ -86,13 +89,15 @@ fun DocumentationStepContent(
                 title = "Dynamic Partitions",
                 badge = "super.img",
                 description = "EROFS and EXT4 dynamic partition extraction, resizing, and repackaging using erofs-utils and mke2fs.android.",
+                iconPainter = AppIcons.LayoutSplitPainterResource(),
                 modifier = Modifier.weight(1f, fill = false).widthIn(min = ComponentSize.MinPanelWidth),
                 backdrop = resolvedBackdrop,
             )
             DocFeatureCard(
-                title = "Native Toolchain",
-                badge = "5 Submodules",
-                description = "Pre-compiled host binaries (adb, fastboot, img2sdat, signapk, avbtool) managed automatically in ~/LtiRomTools/bin/.",
+                title = "Native Toolchains",
+                badge = "Host Binaries",
+                description = "Host-compiled binaries (adb, fastboot, img2sdat, signapk, avbtool) managed automatically in the Linux environment.",
+                iconPainter = AppIcons.SettingsPainterResource(),
                 modifier = Modifier.weight(1f, fill = false).widthIn(min = ComponentSize.MinPanelWidth),
                 backdrop = resolvedBackdrop,
             )

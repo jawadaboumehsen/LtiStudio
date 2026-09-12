@@ -167,6 +167,7 @@ fun GlassTextField(
     effects: BackdropEffectScope.() -> Unit = GlassTextFieldEffects,
     backdrop: Backdrop? = null,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    focusRequester: FocusRequester? = null,
 ) {
     val isFocused by interactionSource.collectIsFocusedAsState()
     val isError = state is TextFieldState.Error
@@ -263,18 +264,12 @@ fun GlassTextField(
                 }
 
                 Box(modifier = Modifier.weight(1f)) {
-                    if (value.isEmpty() && placeholder != null) {
-                        Text(
-                            text = placeholder,
-                            style = textStyle,
-                            color = GlassTheme.colors.onGlassMuted,
-                        )
-                    }
-
                     BasicTextField(
                         value = value,
                         onValueChange = onValueChange,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier),
                         enabled = enabled,
                         readOnly = readOnly,
                         textStyle = textStyle.copy(
@@ -287,6 +282,18 @@ fun GlassTextField(
                         maxLines = config.maxLines,
                         interactionSource = interactionSource,
                         cursorBrush = SolidColor(GlassTheme.colors.glassAccent),
+                        decorationBox = { innerTextField ->
+                            Box {
+                                if (value.isEmpty() && placeholder != null) {
+                                    Text(
+                                        text = placeholder,
+                                        style = textStyle,
+                                        color = GlassTheme.colors.onGlassMuted,
+                                    )
+                                }
+                                innerTextField()
+                            }
+                        },
                     )
                 }
 

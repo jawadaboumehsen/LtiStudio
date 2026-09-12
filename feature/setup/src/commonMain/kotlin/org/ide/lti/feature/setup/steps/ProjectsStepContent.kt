@@ -97,15 +97,23 @@ fun ProjectsStepContent(
     resolvedBackdrop: LayerBackdrop,
     modifier: Modifier = Modifier,
     onNavigateToEnvironment: () -> Unit = {},
+    searchFocusRequester: FocusRequester = remember { FocusRequester() },
+    focusSearchOnMount: Boolean = false,
 ) {
     val glassColors = GlassTheme.colors
     @Suppress("DEPRECATION")
     val clipboardManager = LocalClipboardManager.current
-    val searchFocusRequester = remember { FocusRequester() }
     val rootFocusRequester = remember { FocusRequester() }
 
     LaunchedEffect(Unit) {
-        rootFocusRequester.requestFocus()
+        // Decided once, deterministically, on mount: honor a caller's pending Ctrl+F
+        // search-focus intent (set right before switching to this destination) instead
+        // of racing it against this composable's own default root-focus grab.
+        if (focusSearchOnMount) {
+            searchFocusRequester.requestFocus()
+        } else {
+            rootFocusRequester.requestFocus()
+        }
     }
 
     Column(
@@ -150,7 +158,10 @@ fun ProjectsStepContent(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
+            Column(
+                modifier = Modifier.weight(1f, fill = false).padding(end = Spacing.Medium),
+                verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+            ) {
                 Text(
                     text = "Workspaces",
                     fontSize = SetupTokens.TextTitle,
@@ -257,7 +268,7 @@ fun ProjectsStepContent(
                         TextFieldTrailingSlot.None
                     },
                     backdrop = resolvedBackdrop,
-                    modifier = Modifier.focusRequester(searchFocusRequester),
+                    focusRequester = searchFocusRequester,
                 )
             }
         }
