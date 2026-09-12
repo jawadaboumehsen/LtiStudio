@@ -12,8 +12,12 @@ import io.ltirom.tooling.core.TraceContext
 import io.ltirom.tooling.core.ports.DaemonSupervisorPort
 import io.ltirom.tooling.core.ports.RemoteTransportPort
 import io.ltirom.tooling.core.remote.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -31,6 +35,7 @@ public class KtorRemoteTransportAdapter(
     public companion object {
         public const val PROTOCOL_VERSION: String = "1.2.0"
         public const val HEADER_PROTOCOL_VERSION: String = "X-LtiRom-Protocol-Version"
+        public const val DEFAULT_HEARTBEAT_TIMEOUT_MS: Long = 45_000L
     }
 
     override suspend fun execute(request: ToolExecutionRequest): ToolExecutionResponse {
@@ -59,6 +64,7 @@ public class KtorRemoteTransportAdapter(
         val conn = supervisor.ensureStarted()
         val trace = TraceContext.create()
         val requestJson = json.encodeToString(request)
+        var finished = false
 
         try {
             httpClient.webSocket(
@@ -75,6 +81,7 @@ public class KtorRemoteTransportAdapter(
                         if (event != null) {
                             emit(event)
                             if (event is StreamEvent.ExecutionFinished) {
+                                finished = true
                                 break
                             }
                         }
@@ -82,8 +89,44 @@ public class KtorRemoteTransportAdapter(
                 }
             }
         } finally {
-            // Signal cancellation to daemon if flow terminates prematurely
-            runCatching { cancel(trace.traceId) }
+            if (!finished) {
+                runCatching { cancel(trace.traceId, "INTERRUPT") }
+            }
+        }
+    }
+
+    override fun streamSequenced(request: ToolExecutionRequest): Flow<SequencedStreamEvent> = flow {
+        val conn = supervisor.ensureStarted()
+        val trace = TraceContext.create()
+        val requestJson = json.encodeToString(request)
+        var finished = false
+
+        try {
+            httpClient.webSocket(
+                urlString = "${conn.wsBaseUrl}/api/v1/tools/stream?token=${conn.token}&traceId=${trace.traceId}&sequenced=true"
+            ) {
+                send(Frame.Text(requestJson))
+                for (frame in incoming) {
+                    if (frame is Frame.Text) {
+                        val text = frame.readText()
+                        val event = runCatching {
+                            json.decodeFromString<SequencedStreamEvent>(text)
+                        }.getOrNull()
+
+                        if (event != null) {
+                            emit(event)
+                            if (event.event is StreamEvent.ExecutionFinished) {
+                                finished = true
+                                break
+                            }
+                        }
+                    }
+                }
+            }
+        } finally {
+            if (!finished) {
+                runCatching { cancel(trace.traceId, "INTERRUPT") }
+            }
         }
     }
 
@@ -316,6 +359,89 @@ public class KtorRemoteTransportAdapter(
                 response.body<RunCancelResponse>()
             }
         }
+    }
+
+    override fun attachRun(runId: String, fromSeq: Long): Flow<SequencedStreamEvent> =
+        attachRun(runId, fromSeq, DEFAULT_HEARTBEAT_TIMEOUT_MS)
+
+    public fun attachRun(
+        runId: String,
+        fromSeq: Long = 1L,
+        heartbeatTimeoutMs: Long = DEFAULT_HEARTBEAT_TIMEOUT_MS
+    ): Flow<SequencedStreamEvent> = flow {
+        var lastSeq = fromSeq - 1
+        var finished = false
+
+        while (!finished) {
+            val conn = supervisor.ensureStarted()
+            val currentFromSeq = lastSeq + 1
+            val socketUrl = "${conn.wsBaseUrl}/api/v1/runs/$runId/attach?fromSeq=$currentFromSeq&token=${conn.token}"
+            var shouldReconnect = false
+
+            try {
+                httpClient.webSocket(urlString = socketUrl) {
+                    while (true) {
+                        val frame = try {
+                            withTimeout(heartbeatTimeoutMs) {
+                                incoming.receiveCatching().getOrNull()
+                            }
+                        } catch (_: TimeoutCancellationException) {
+                            // Watchdog triggered: 3 missed heartbeats -> reconnect from lastSeq + 1
+                            shouldReconnect = true
+                            runCatching { close(CloseReason(CloseReason.Codes.GOING_AWAY, "Watchdog timeout")) }
+                            break
+                        }
+
+                        if (frame == null) {
+                            val reason = runCatching { closeReason.await() }.getOrNull()
+                            if (reason?.message?.contains("not found", ignoreCase = true) == true) {
+                                throw ToolingException("Run '$runId' not found on remote server")
+                            }
+                            shouldReconnect = !finished
+                            break
+                        }
+
+                        if (frame is Frame.Text) {
+                            val text = frame.readText()
+                            val seqEvent = runCatching {
+                                json.decodeFromString<SequencedStreamEvent>(text)
+                            }.getOrNull()
+
+                            if (seqEvent != null) {
+                                if (seqEvent.seq == 0L || seqEvent.event is StreamEvent.Heartbeat) {
+                                    emit(seqEvent)
+                                } else if (seqEvent.seq > lastSeq) {
+                                    lastSeq = seqEvent.seq
+                                    emit(seqEvent)
+                                    if (seqEvent.event is StreamEvent.ExecutionFinished) {
+                                        finished = true
+                                        break
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (_: TimeoutCancellationException) {
+                shouldReconnect = true
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: ToolingException) {
+                throw e
+            } catch (_: Exception) {
+                if (finished) break
+                shouldReconnect = true
+                delay(100)
+            }
+
+            if (!shouldReconnect || finished) {
+                break
+            }
+        }
+    }
+
+    override suspend fun shutdownDaemon(force: Boolean): Boolean {
+        return supervisor.shutdownDaemon(force)
     }
 }
 

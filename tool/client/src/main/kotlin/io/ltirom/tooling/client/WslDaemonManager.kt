@@ -4,6 +4,7 @@ import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.plugins.logging.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.client.request.*
 import io.ktor.http.*
@@ -73,6 +74,10 @@ public class WslDaemonManager(
                 json(this@WslDaemonManager.json)
             }
             install(WebSockets)
+            install(Logging) {
+                logger = Logger.DEFAULT
+                level = LogLevel.NONE
+            }
         }
     }
 
@@ -174,31 +179,38 @@ public class WslDaemonManager(
         return prober.getAvailableTools(info)
     }
 
-    override suspend fun shutdownDaemon(): Boolean = mutex.withLock {
+    override suspend fun shutdownDaemon(): Boolean = shutdownDaemon(force = false)
+
+    override suspend fun shutdownDaemon(force: Boolean): Boolean = mutex.withLock {
         val info = connectionInfo ?: return@withLock true
         var stoppedCleanly = false
         try {
-            val response = httpClient.post("${info.httpBaseUrl}/api/v1/system/shutdown") {
+            val response = httpClient.post("${info.httpBaseUrl}/api/v1/system/shutdown?force=$force") {
                 header(HttpHeaders.Authorization, "Bearer ${info.token}")
             }
             stoppedCleanly = response.status.isSuccess()
         } catch (_: Exception) {}
 
-        process?.let { p ->
-            if (p.isAlive) {
-                p.waitFor(2, TimeUnit.SECONDS)
-                if (p.isAlive) p.destroyForcibly()
+        if (stoppedCleanly || force) {
+            process?.let { p ->
+                if (p.isAlive) {
+                    p.waitFor(2, TimeUnit.SECONDS)
+                    if (p.isAlive) p.destroyForcibly()
+                }
             }
+            process = null
+            connectionInfo = null
         }
-        process = null
-        connectionInfo = null
         stoppedCleanly
     }
 
+    /**
+     * Closes only this manager's local HTTP client -- deliberately does NOT call
+     * [shutdownDaemon]. The remote daemon is meant to outlive a single GUI session
+     * (VS Code Remote-style lockfile reconnection via [WslStateStore.readState]/
+     * [checkExistingDaemon]), so closing this manager must not kill it.
+     */
     override fun close() {
-        runBlocking {
-            runCatching { shutdownDaemon() }
-            runCatching { httpClient.close() }
-        }
+        runCatching { httpClient.close() }
     }
 }

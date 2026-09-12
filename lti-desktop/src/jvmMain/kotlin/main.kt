@@ -52,6 +52,8 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.feature.settings.SettingsScreen
+import org.ide.lti.desktop.di.toolingModule
+import org.ide.lti.desktop.window.restoreWindow
 import org.ide.lti.shared.LtiSharedApp
 import org.ide.lti.shared.di.initKoin
 import org.koin.compose.koinInject
@@ -114,7 +116,11 @@ private fun buildWindowControlActions(
 }
 
 fun main(args: Array<String>) = nucleusApplication(args) {
-    remember { initKoin() }
+    remember {
+        initKoin {
+            modules(toolingModule)
+        }
+    }
     var showSettingsWindow by remember { mutableStateOf(false) }
     var settingsWinRef by remember { mutableStateOf<NucleusWindow?>(null) }
     val windowState = rememberWindowState(
@@ -130,27 +136,7 @@ fun main(args: Array<String>) = nucleusApplication(args) {
         if (!showSettingsWindow) {
             showSettingsWindow = true
         } else {
-            settingsWindowState.isMinimized = false
-            settingsWinRef?.let { win ->
-                try { win.setMinimized(false) } catch (_: Throwable) {}
-                try { win.show() } catch (_: Throwable) {}
-                try { win.toFront() } catch (_: Throwable) {}
-                try { win.requestFocus() } catch (_: Throwable) {}
-                try {
-                    val awt = win.unsafe.awtWindow
-                    if (awt != null) {
-                        if ((awt.extendedState and java.awt.Frame.ICONIFIED) != 0) {
-                            awt.extendedState = awt.extendedState and java.awt.Frame.ICONIFIED.inv()
-                        }
-                        awt.isVisible = true
-                        awt.toFront()
-                        awt.requestFocus()
-                        // Ensure window pops to front above other windows on desktop
-                        awt.isAlwaysOnTop = true
-                        awt.isAlwaysOnTop = false
-                    }
-                } catch (_: Throwable) {}
-            }
+            restoreWindow(settingsWindowState, settingsWinRef)
         }
     }
 

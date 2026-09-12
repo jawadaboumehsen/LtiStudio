@@ -1,74 +1,153 @@
 package io.ltirom.tooling.client.setup
 
 import io.ltirom.tooling.client.wsl.WslCliExecutor
+import io.ltirom.tooling.core.ports.RemoteTransportPort
+import io.ltirom.tooling.core.remote.RunStatusValue
+import io.ltirom.tooling.core.remote.StartRunRequest
+import io.ltirom.tooling.core.remote.StreamEvent
+import io.ltirom.tooling.core.remote.ToolExecutionRequest
 import org.ide.lti.core.domain.repository.setup.ToolchainSetupRepository
-import org.ide.lti.core.model.setup.PersistedSubmoduleState
+import org.ide.lti.core.domain.setup.SetupStepStage
 
 /**
- * Synchronizes the LtiRom project's external tool source repositories into the WSL
- * workspace (`<extDir>/<name>`), so [ToolchainBuildEngine] can compile them.
+ * Dedicated engine for synchronizing external git submodules.
  *
- * The 5 submodules and their URLs are the real, current entries in `LtiRom/.gitmodules`
- * (`external/apktool`, `external/android-tools`, `external/signapk`,
- * `external/erofs-utils`, `external/img2sdat`) — this is not a guessed list.
+ * Adheres to:
+ * - Single Responsibility Principle: Exclusively manages git clone, checkout, and verification
+ *   for external tool repositories.
+ * - Incremental Execution & Durable Runs: Consults [ToolchainSetupRepository] and local filesystem
+ *   to skip redundant clones. When [RemoteTransportPort] is provided, executes clone operations as
+ *   durable runs with idempotency keys (`setup:submodule:<name>`), reattaching to in-flight runs on reconnect.
+ * - No Shell Chains: All commands execute as discrete arguments without `bash -c` or `&&`.
  */
 public class SubmoduleSyncEngine(
     private val cli: WslCliExecutor = WslCliExecutor(),
     private val repository: ToolchainSetupRepository? = null,
+    private val transport: RemoteTransportPort? = null,
 ) {
-    public data class SubmoduleSpec(val name: String, val url: String)
+    public data class PinnedSubmodule(
+        val name: String,
+        val url: String,
+        val commit: String,
+    )
 
     public companion object {
-        public val SUBMODULES: List<SubmoduleSpec> = listOf(
-            SubmoduleSpec("apktool", "https://github.com/iBotPeaches/Apktool.git"),
-            SubmoduleSpec("android-tools", "https://github.com/UN1CA/external_android-tools.git"),
-            SubmoduleSpec("signapk", "https://github.com/UN1CA/external_signapk.git"),
-            SubmoduleSpec("erofs-utils", "https://github.com/sekaiacg/erofs-utils.git"),
-            SubmoduleSpec("img2sdat", "https://github.com/UN1CA/external_img2sdat.git"),
+        public val DEFAULT_SUBMODULES: List<PinnedSubmodule> = listOf(
+            PinnedSubmodule("android-tools", "https://github.com/UN1CA/external_android-tools.git", "2c5e1b7c192f30ec3d50ec5f983618bb87b9895c"),
+            PinnedSubmodule("apktool", "https://github.com/iBotPeaches/Apktool.git", "1c1d15b070c2138d958fa8b685d430c49c4bb117"),
+            PinnedSubmodule("erofs-utils", "https://github.com/sekaiacg/erofs-utils.git", "24ebe947b889fabcd72f802e4f184b0f807a0e0e"),
+            PinnedSubmodule("img2sdat", "https://github.com/UN1CA/external_img2sdat.git", "601317ed0bf502eb8facdd048f2d75dc75ffcd53"),
+            PinnedSubmodule("signapk", "https://github.com/UN1CA/external_signapk.git", "cb88f4b27d8a07ca101eade5d40a6893920cb55e")
         )
     }
 
+    /**
+     * Synchronizes all required submodules into [extDir].
+     *
+     * For each submodule:
+     * - If marked synced in [ToolchainSetupRepository] AND directory exists in WSL, skipping clone.
+     * - If missing, clones recursively (via durable run or CLI), checks out pinned commit, and updates repository.
+     */
     public suspend fun syncAll(
         distro: String,
         extDir: String,
-        onProgress: (String) -> Unit,
+        submodules: List<PinnedSubmodule> = DEFAULT_SUBMODULES,
+        log: (String) -> Unit = {},
     ): Result<Unit> {
-        for (spec in SUBMODULES) {
-            val repoDir = "$extDir/${spec.name}"
-            val exists = cli.execute(distro, listOf("test", "-d", "$repoDir/.git")).exitCode == 0
+        cli.execute(distro, listOf("mkdir", "-p", extDir))
 
-            if (exists) {
-                onProgress("Updating ${spec.name}...")
-                val fetch = cli.execute(
-                    distro,
-                    listOf("git", "-C", repoDir, "fetch", "--depth", "1", "origin"),
-                    timeoutSeconds = 120,
-                )
-                if (fetch.exitCode != 0) {
-                    return Result.failure(IllegalStateException("Failed to fetch ${spec.name}: ${fetch.error.take(200)}"))
+        val persisted = repository?.currentState
+
+        for (sub in submodules) {
+            val subDir = "$extDir/${sub.name}"
+            val dirExists = cli.execute(distro, listOf("test", "-d", subDir)).exitCode == 0
+            val isRecordedSynced = persisted?.submodules?.get(sub.name)?.isSynced == true
+
+            if (isRecordedSynced && dirExists) {
+                log("[Step 4/5] Submodule '${sub.name}' is already synced and persisted. Skipping clone.")
+                continue
+            }
+
+            if (!dirExists) {
+                log("[Step 4/5] Cloning submodule '${sub.name}' from ${sub.url}...")
+                if (transport != null) {
+                    val idempotencyKey = "setup:submodule:${sub.name}"
+                    val runHandle = transport.startRun(
+                        StartRunRequest(
+                            request = ToolExecutionRequest(
+                                toolId = "git",
+                                arguments = listOf("clone", "--recursive", sub.url, subDir),
+                                workingDirectory = extDir,
+                                timeoutMs = 300_000L
+                            ),
+                            idempotencyKey = idempotencyKey
+                        )
+                    )
+                    log("[Step 4/5] Attached to clone run ${runHandle.runId} for '${sub.name}'.")
+                    var finishedExitCode: Int? = null
+                    transport.attachRun(runHandle.runId).collect { seqEv ->
+                        when (val ev = seqEv.event) {
+                            is StreamEvent.OutputChunk -> log("[${sub.name}] ${ev.text.trimEnd()}")
+                            is StreamEvent.ExecutionFinished -> finishedExitCode = ev.exitCode
+                            else -> {}
+                        }
+                    }
+                    val status = transport.getRun(runHandle.runId)
+                    val finalCode = finishedExitCode ?: status?.exitCode
+                        ?: if (status?.status == RunStatusValue.COMPLETED) 0 else 1
+                    if (finalCode != 0) {
+                        val err = "Failed to clone ${sub.name}: exit code $finalCode"
+                        return Result.failure(IllegalStateException(err))
+                    }
+                } else {
+                    val cloneRes = cli.execute(
+                        distro = distro,
+                        command = listOf("git", "clone", "--recursive", sub.url, subDir),
+                        timeoutSeconds = 300,
+                    )
+                    if (cloneRes.exitCode != 0) {
+                        val err = "Failed to clone ${sub.name}: ${cloneRes.error.ifBlank { cloneRes.output }}"
+                        return Result.failure(IllegalStateException(err))
+                    }
                 }
-                cli.execute(distro, listOf("git", "-C", repoDir, "submodule", "update", "--init", "--recursive"), timeoutSeconds = 180)
+                val checkoutRes = cli.execute(distro, listOf("git", "-C", subDir, "checkout", "-f", sub.commit))
+                if (checkoutRes.exitCode != 0) {
+                    val err = "Failed to check out ${sub.name} at ${sub.commit}: ${checkoutRes.error.ifBlank { checkoutRes.output }}"
+                    return Result.failure(IllegalStateException(err))
+                }
+                log("[Step 4/5] Checked out '${sub.name}' at pinned commit ${sub.commit.take(8)}.")
             } else {
-                onProgress("Cloning ${spec.name}...")
-                val clone = cli.execute(
-                    distro,
-                    listOf("git", "clone", "--recurse-submodules", "--depth", "1", spec.url, repoDir),
-                    timeoutSeconds = 300,
-                )
-                if (clone.exitCode != 0) {
-                    return Result.failure(IllegalStateException("Failed to clone ${spec.name}: ${clone.error.take(200)}"))
+                log("[Step 4/5] Submodule directory '${sub.name}' detected. Verifying pinned commit ${sub.commit.take(8)}...")
+                var checkoutRes = cli.execute(distro, listOf("git", "-C", subDir, "checkout", "-f", sub.commit))
+                if (checkoutRes.exitCode != 0) {
+                    log("[Step 4/5] Pinned commit not present locally for '${sub.name}'; fetching...")
+                    cli.execute(distro, listOf("git", "-C", subDir, "fetch", "--all"), timeoutSeconds = 120)
+                    checkoutRes = cli.execute(distro, listOf("git", "-C", subDir, "checkout", "-f", sub.commit))
+                }
+                if (checkoutRes.exitCode != 0) {
+                    val err = "Failed to check out ${sub.name} at ${sub.commit} even after fetch: " +
+                        checkoutRes.error.ifBlank { checkoutRes.output }
+                    return Result.failure(IllegalStateException(err))
                 }
             }
 
-            val commitResult = cli.execute(distro, listOf("git", "-C", repoDir, "rev-parse", "--short", "HEAD"))
-            val commit = commitResult.output.trim().ifBlank { null }
-
-            repository?.updateSubmodule(spec.name) { current: PersistedSubmoduleState ->
-                current.copy(isSynced = true, commit = commit)
-            }
-            onProgress("${spec.name} ready${commit?.let { " ($it)" } ?: ""}.")
+            repository?.updateSubmodule(sub.name) { it.copy(isSynced = true, commit = sub.commit) }
         }
 
+        repository?.markStageCompleted(SetupStepStage.REPO_SYNCHRONIZATION.name, true)
         return Result.success(Unit)
+    }
+
+    /**
+     * Checks which submodules are currently missing on disk.
+     */
+    public suspend fun findMissingSubmodules(
+        distro: String,
+        extDir: String,
+        submodules: List<PinnedSubmodule> = DEFAULT_SUBMODULES,
+    ): List<PinnedSubmodule> {
+        return submodules.filter { sub ->
+            cli.execute(distro, listOf("test", "-d", "$extDir/${sub.name}")).exitCode != 0
+        }
     }
 }

@@ -39,7 +39,9 @@ public class InMemoryRunRepository : RunRepository {
 
     override suspend fun cachedEvents(runId: String, fromSeq: Long): List<String> {
         val list = events[runId] ?: return emptyList()
-        return list.drop(fromSeq.toInt().coerceIn(0, list.size))
+        if (fromSeq <= 0L) return list
+        // fromSeq is 1-based and inclusive: list index 0 corresponds to seq 1.
+        return list.drop((fromSeq - 1).coerceIn(0L, list.size.toLong()).toInt())
     }
 
     override suspend fun latestActive(workspaceId: String): BuildRun? =

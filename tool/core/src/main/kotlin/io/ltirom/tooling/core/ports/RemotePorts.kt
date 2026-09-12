@@ -1,7 +1,9 @@
 package io.ltirom.tooling.core.ports
 
 import io.ltirom.tooling.core.remote.*
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 
 /**
  * Domain descriptor for remote server connection parameters.
@@ -85,6 +87,51 @@ public interface RemoteTransportPort {
 
     /** Cancels a remote run by ID. */
     public suspend fun cancelRun(runId: String, signal: String = "SIGTERM"): RunCancelResponse? = null
+
+    /** Streams tool command output remotely as a reactive [Flow] of [SequencedStreamEvent]s. */
+    public fun streamSequenced(request: ToolExecutionRequest): Flow<SequencedStreamEvent> = flow {
+        var seq = 1L
+        stream(request).collect { ev ->
+            emit(SequencedStreamEvent(seq++, ev))
+        }
+    }
+
+    /** Attaches to an execution run, replaying buffered events from [fromSeq] and streaming live events. */
+    public fun attachRun(runId: String, fromSeq: Long = 1L): Flow<SequencedStreamEvent> = flow {
+        var nextSeq = fromSeq
+        val initial = runCatching { replaySession(runId, nextSeq) }.getOrDefault(emptyList())
+        for (ev in initial) {
+            if (ev.seq >= nextSeq) {
+                emit(ev)
+                nextSeq = ev.seq + 1
+            }
+        }
+        var pollDelayMs = 50L
+        while (true) {
+            val run = runCatching { getRun(runId) }.getOrNull()
+            if (run != null && run.status in setOf(RunStatusValue.COMPLETED, RunStatusValue.FAILED, RunStatusValue.CANCELLED, RunStatusValue.INTERRUPTED)) {
+                val more = runCatching { replaySession(runId, nextSeq) }.getOrDefault(emptyList())
+                for (ev in more) {
+                    if (ev.seq >= nextSeq) {
+                        emit(ev)
+                        nextSeq = ev.seq + 1
+                    }
+                }
+                val exitCode = run.exitCode ?: if (run.status == RunStatusValue.FAILED) 1 else 0
+                emit(SequencedStreamEvent(nextSeq, StreamEvent.ExecutionFinished(exitCode, 0L)))
+                return@flow
+            }
+            emit(SequencedStreamEvent(nextSeq, StreamEvent.Heartbeat(System.currentTimeMillis())))
+            delay(pollDelayMs)
+            // Capped exponential backoff: fast polling while a run is likely still starting,
+            // settling to a 2s cadence for long-running builds instead of hammering getRun()
+            // every 50ms for the run's entire duration.
+            pollDelayMs = (pollDelayMs * 2).coerceAtMost(2_000L)
+        }
+    }
+
+    /** Requests graceful shutdown of the remote server, optionally forcing even with active runs. */
+    public suspend fun shutdownDaemon(force: Boolean = false): Boolean = shutdown()
 }
 
 /**
@@ -104,6 +151,9 @@ public interface DaemonSupervisorPort : AutoCloseable {
 
     /** Shuts down the daemon process cleanly. */
     public suspend fun shutdownDaemon(): Boolean
+
+    /** Shuts down the daemon process cleanly, optionally forcing shutdown even if runs are active. */
+    public suspend fun shutdownDaemon(force: Boolean = false): Boolean = shutdownDaemon()
 
     /** Whether the most recent ensureStarted() call adopted an existing lockfile daemon without launching a process. */
     public val lastStartAdopted: Boolean get() = false
