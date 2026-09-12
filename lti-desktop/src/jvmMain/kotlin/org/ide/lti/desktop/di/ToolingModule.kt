@@ -6,9 +6,13 @@ import io.ltirom.tooling.client.WslDaemonManager
 import io.ltirom.tooling.client.resilience.ConnectionStateHolder
 import io.ltirom.tooling.client.setup.WslToolchainProvisioner
 import io.ltirom.tooling.client.transport.KtorRemoteTransportAdapter
+import io.ltirom.tooling.core.DefaultToolResolver
+import io.ltirom.tooling.core.ProcessEnvironment
 import io.ltirom.tooling.core.ProcessToolRepository
+import io.ltirom.tooling.core.Redactor
 import io.ltirom.tooling.core.StreamingToolRepository
 import io.ltirom.tooling.core.ToolRepository
+import io.ltirom.tooling.core.ToolSafetyPolicy
 import io.ltirom.tooling.core.events.DefaultToolEventBus
 import io.ltirom.tooling.core.events.ToolEventBus
 import io.ltirom.tooling.core.ports.DaemonSupervisorPort
@@ -28,6 +32,7 @@ import org.ide.lti.core.domain.setup.doctor.SystemDoctorPort
 import org.ide.lti.core.domain.usecase.target.ProvisionAvbKeyUseCase
 import org.koin.dsl.bind
 import org.koin.dsl.module
+import java.io.File
 
 /**
  * Composition Root DI Module for the tooling subsystem.
@@ -65,7 +70,18 @@ public val toolingModule = module {
 
     single { ConnectionStateHolder() }
     single<ToolEventBus> { DefaultToolEventBus() }
-    single { ProcessToolRepository() }
+    single {
+        val resolver = DefaultToolResolver(
+            toolsBinDir = File(System.getProperty("user.home"), "LtiRomTools/bin"),
+            allowPathFallback = true,
+        )
+        ProcessToolRepository(
+            binaryResolver = resolver::resolve,
+            environment = ProcessEnvironment(cwd = File(System.getProperty("user.home"))),
+            safetyPolicy = ToolSafetyPolicy(),
+            redactor = Redactor(),
+        )
+    }
     single {
         RemoteWslToolRepository(
             transport = get<RemoteTransportPort>(),
