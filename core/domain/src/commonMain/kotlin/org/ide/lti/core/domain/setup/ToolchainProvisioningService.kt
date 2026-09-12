@@ -78,7 +78,7 @@ public data class ToolComponentItem(
 )
 
 /**
- * Individual pre-flight diagnostic item mirroring LtiRomKt's `lti doctor`.
+ * Individual pre-flight diagnostic item mirroring the system doctor.
  */
 public data class DiagnosticCheckItem(
     val id: String,
@@ -111,6 +111,7 @@ public data class SetupStepDetail(
     val durationMs: Long = 0L,
     val provenance: StepProvenance = StepProvenance.LIVE,
     val verifiedAtEpochMs: Long? = null,
+    val runId: String? = null,
 )
 
 /**
@@ -139,6 +140,11 @@ public data class ToolchainSetupState(
     val toolsMatrix: List<ToolComponentItem> = defaultToolsMatrix(),
     val publishedToolIds: Set<String> = emptySet(),
     val unpublishedToolIds: Set<String> = emptySet(),
+    // TODO: not yet populated by any ToolchainProvisioningService implementation -- the durable-run
+    // reattach indicator UI that reads this (EnvironmentStepContent.kt) will always see an empty map
+    // until WslToolchainProvisioner threads RunHandle.runId out of SubmoduleSyncEngine/
+    // ToolchainBuildEngine's startRun() calls and into a _state.update.
+    val stepRunIds: Map<SetupStepStage, String> = emptyMap(),
 ) {
     val isBusy: Boolean get() = isRunning || isChecking || isFixing
 
@@ -231,7 +237,7 @@ public data class ToolchainSetupState(
                 id = "jdk_dual",
                 title = "Dual JDK Runtimes & Compiler",
                 category = DiagnosticCategory.RUNTIMES,
-                detail = "Java and javac compiler for OpenJDK 17 (apktool/signapk) and OpenJDK 21 (LtiRomKt)."
+                detail = "Java and javac compiler for OpenJDK 17 (apktool/signapk) and OpenJDK 21 (toolchain build)."
             ),
             DiagnosticCheckItem(
                 id = "selinux_attr",
@@ -250,6 +256,13 @@ public data class ToolchainSetupState(
                 title = "Host Transfer & Sync Utilities",
                 category = DiagnosticCategory.OS_UTILITIES,
                 detail = "curl, git, rsync, and tar for prebuilt tool acquisition and workspace synchronization."
+            ),
+            DiagnosticCheckItem(
+                id = "sudo_noninteractive",
+                title = "Non-Interactive Sudo Elevation",
+                category = DiagnosticCategory.OS_UTILITIES,
+                detail = "Non-interactive passwordless sudo for headless package management and automated system configuration.",
+                isOptionalForRuntime = true
             ),
             DiagnosticCheckItem(
                 id = "dev_fuse",

@@ -19,7 +19,7 @@ public data class WslProcessLaunchResult(
  * Single Responsibility: Spawns the LtiRomServer process in WSL and parses the handshake.
  */
 public open class WslProcessLauncher(
-    private val startupTimeoutMs: Long = 20_000L,
+    internal val startupTimeoutMs: Long = 20_000L,
 ) {
     public var lastLogTail: String? = null
         private set

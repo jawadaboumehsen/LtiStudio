@@ -68,6 +68,9 @@ public val toolingModule = module {
         )
     }
 
+    // TODO: DaemonHeartbeatMonitor (tool:client/resilience) actively polls and updates this holder,
+    // but nothing constructs/starts one here yet, and nothing reads this holder's state either --
+    // wiring it up means both starting the monitor AND adding a real UI consumer of ConnectionState.
     single { ConnectionStateHolder() }
     single<ToolEventBus> { DefaultToolEventBus() }
     single {
