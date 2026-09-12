@@ -9,6 +9,7 @@
  */
 plugins {
     alias(libs.plugins.kmp.library.convention)
+    id("kotlinx-serialization")
 }
 
 kotlin {
@@ -16,6 +17,7 @@ kotlin {
         commonMain.dependencies {
             implementation(projects.core.common)
             api(projects.core.model)
+            implementation(libs.kotlinx.serialization.json)
         }
         commonTest.dependencies {
             implementation(libs.kotlinx.coroutines.test)

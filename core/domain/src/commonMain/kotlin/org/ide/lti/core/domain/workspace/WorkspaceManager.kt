@@ -26,7 +26,7 @@ import org.ide.lti.core.model.workspace.WorkspaceSession
  * Handles opening, closing, and switching between workspaces.
  */
 class WorkspaceManager(
-    private val repository: WorkspaceRepository,
+    val repository: WorkspaceRepository,
     private val coroutineScope: CoroutineScope,
 ) {
     private val _currentWorkspace = MutableStateFlow<Workspace?>(null)
@@ -111,6 +111,15 @@ class WorkspaceManager(
         } else {
             Result.success(null)
         }
+    }
+
+    /**
+     * Sets the current workspace directly, without loading a session or touching recent
+     * projects. Used as a best-effort fallback when the full [openWorkspace] flow fails but the
+     * workspace itself was already persisted.
+     */
+    fun setCurrentWorkspace(workspace: Workspace) {
+        _currentWorkspace.value = workspace
     }
 
     /**
