@@ -133,6 +133,9 @@ object ComponentSize {
     val MinPanelHeight: Dp = 100.dp
     val MaxPanelHeight: Dp = 600.dp
     val DialogDefaultHeight: Dp = 400.dp
+    val DropdownMenuMinWidth: Dp = 240.dp
+    val SetupCockpitMaxWidth: Dp = 960.dp
+    val SetupMaxContentWidth: Dp = 840.dp
     val MainWindowMinWidth: Dp = 960.dp
     val MainWindowMinHeight: Dp = 640.dp
     val ToggleButtonTopPadding: Dp = 48.dp
@@ -141,6 +144,7 @@ object ComponentSize {
     val DividerWidth: Dp = 8.dp
     val SetupSidebarWidth: Dp = 240.dp
     val SettingsSidebarWidth: Dp = 210.dp
+    val ConfigurationSidebarWidth: Dp = 260.dp
     val ThemeCardMinWidth: Dp = 156.dp
     val ThemePreviewHeight: Dp = 84.dp
     val ActionCardHeight: Dp = 120.dp

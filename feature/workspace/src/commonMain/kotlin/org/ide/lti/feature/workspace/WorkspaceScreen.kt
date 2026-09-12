@@ -424,7 +424,7 @@ fun WorkspaceScreen(
                         viewModel.togglePanelVisibility(PanelId.BOTTOM)
                     },
                 ),
-                targetSelector = {
+                centerContent = {
                     TargetRunConfigurationBar(
                         selectedTarget = selectedTarget,
                         region = effectiveSnapshot?.region ?: selectedTarget.selectedRegion,

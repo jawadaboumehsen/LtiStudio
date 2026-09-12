@@ -136,7 +136,7 @@ class SetupViewModel(
             initialValue = DEFAULT_OFFICIAL_TARGETS.firstOrNull(),
         )
 
-    private val _isAutoDoctorEnabled = MutableStateFlow(true)
+    internal val _isAutoDoctorEnabled = MutableStateFlow(true)
     val isAutoDoctorEnabled: StateFlow<Boolean> = _isAutoDoctorEnabled.asStateFlow()
 
     init {
@@ -150,7 +150,7 @@ class SetupViewModel(
             initialValue = emptyList(),
         )
 
-    private val _searchQuery = MutableStateFlow("")
+    internal val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
     val filteredRecentProjects: StateFlow<List<RecentProject>> = combine(
@@ -175,14 +175,14 @@ class SetupViewModel(
         _searchQuery.value = query
     }
 
-    private val _selectedTab = MutableStateFlow(SetupTab.PROJECTS)
+    internal val _selectedTab = MutableStateFlow(SetupTab.PROJECTS)
     val selectedTab: StateFlow<SetupTab> = _selectedTab.asStateFlow()
 
     fun selectTab(tab: SetupTab) {
         _selectedTab.value = tab
     }
 
-    private val _environmentNotice = MutableStateFlow<String?>(null)
+    internal val _environmentNotice = MutableStateFlow<String?>(null)
     val environmentNotice: StateFlow<String?> = _environmentNotice.asStateFlow()
 
     fun dismissEnvironmentNotice() {
@@ -196,21 +196,21 @@ class SetupViewModel(
         }
     }
 
-    private val _selectedCockpitTab = MutableStateFlow("doctor")
+    internal val _selectedCockpitTab = MutableStateFlow("doctor")
     val selectedCockpitTab: StateFlow<String> = _selectedCockpitTab.asStateFlow()
 
     fun selectCockpitTab(tab: String) {
         _selectedCockpitTab.value = tab
     }
 
-    private val _toolSearchQuery = MutableStateFlow("")
+    internal val _toolSearchQuery = MutableStateFlow("")
     val toolSearchQuery: StateFlow<String> = _toolSearchQuery.asStateFlow()
 
     fun onToolSearchQueryChange(query: String) {
         _toolSearchQuery.value = query
     }
 
-    private val _selectedToolCategory = MutableStateFlow("All")
+    internal val _selectedToolCategory = MutableStateFlow("All")
     val selectedToolCategory: StateFlow<String> = _selectedToolCategory.asStateFlow()
 
     fun selectToolCategory(category: String) {

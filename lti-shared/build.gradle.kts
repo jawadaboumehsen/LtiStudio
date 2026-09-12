@@ -33,6 +33,7 @@ kotlin {
             implementation(projects.feature.settings)
             implementation(projects.feature.setup)
             implementation(projects.feature.workspace)
+            implementation(projects.feature.configuration)
 
 
             //put your multiplatform dependencies here

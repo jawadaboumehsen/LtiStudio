@@ -71,6 +71,7 @@ import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
  * @param onClick Invoked when the card is clicked.
  * @param modifier Optional modifier.
  * @param isPrimary Whether this is the primary hero action (accent rim and elevated glow).
+ * @param shortcut Optional keyboard shortcut hint shown beside the subtitle (e.g. "Ctrl+N").
  * @param backdrop Optional backdrop instance.
  */
 @OptIn(ExperimentalComposeUiApi::class)
@@ -82,6 +83,7 @@ fun GlassActionCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     isPrimary: Boolean = false,
+    shortcut: String? = null,
     backdrop: Backdrop? = null,
 ) {
     var isHovered by remember { mutableStateOf(false) }
@@ -169,6 +171,15 @@ fun GlassActionCard(
                 color = glassColors.onGlassSecondary,
                 maxLines = 1,
             )
+            if (shortcut != null) {
+                Spacer(modifier = Modifier.height(Spacing.ExtraExtraSmall))
+                Text(
+                    text = shortcut,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = glassColors.onGlassMuted,
+                    maxLines = 1,
+                )
+            }
         }
     }
 }
@@ -184,6 +195,7 @@ fun GlassActionCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     isPrimary: Boolean = false,
+    shortcut: String? = null,
     backdrop: Backdrop? = null,
 ) = GlassActionCard(
     title = title,
@@ -192,6 +204,7 @@ fun GlassActionCard(
     onClick = onClick,
     modifier = modifier,
     isPrimary = isPrimary,
+    shortcut = shortcut,
     backdrop = backdrop,
 )
 

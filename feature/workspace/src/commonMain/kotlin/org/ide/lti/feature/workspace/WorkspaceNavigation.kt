@@ -23,11 +23,17 @@ fun NavController.navigateToWorkspace(navOptions: NavOptions? = null) {
 fun NavGraphBuilder.workspaceScreen(
     onOpenSettings: () -> Unit = {},
     onOpenNotifications: () -> Unit = {},
+    onOpenConfigurations: () -> Unit = {},
+    onOpenEditConfiguration: (String) -> Unit = { onOpenConfigurations() },
+    onOpenAddConfiguration: () -> Unit = onOpenConfigurations,
 ) {
     composable(route = WORKSPACE_ROUTE) {
         WorkspaceScreen(
             onOpenSettings = onOpenSettings,
             onOpenNotifications = onOpenNotifications,
+            onOpenConfigurations = onOpenConfigurations,
+            onOpenEditConfiguration = onOpenEditConfiguration,
+            onOpenAddConfiguration = onOpenAddConfiguration,
         )
     }
 }

@@ -124,7 +124,7 @@ fun EnvironmentSubsystemHeader(
                 DaemonBridgeBadge(
                     isServerConnected = isServerConnected,
                     isServerFailed = isServerFailed,
-                    latencyMs = latencyMs,
+                    latencyMs = state.daemonPingMs,
                     glassColors = glassColors,
                     diagnostics = diagnostics,
                 )
@@ -334,7 +334,7 @@ private fun WslRuntimeBadge(
                     color = glassColors.onGlassMuted,
                 )
                 Text(
-                    text = state.activeDistro ?: "Ubuntu",
+                    text = activeDistro ?: "Ubuntu",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = glassColors.onGlass,
@@ -411,7 +411,7 @@ private fun DaemonBridgeBadge(
                         softWrap = false,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    state.daemonPingMs?.let { ping ->
+                    latencyMs?.let { ping ->
                         GlassChip(
                             label = "${ping}ms",
                             selected = true,
