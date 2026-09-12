@@ -50,6 +50,10 @@ kotlin {
             implementation(libs.nucleus.fs.watcher)
             implementation(libs.composenativetray)
         }
+
+        jvmTest.dependencies {
+            implementation(libs.kotlin.test)
+        }
     }
 }
 
