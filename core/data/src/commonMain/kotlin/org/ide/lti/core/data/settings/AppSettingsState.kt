@@ -9,24 +9,77 @@
  */
 package org.ide.lti.core.data.settings
 
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import org.ide.lti.core.domain.repository.user.UserDataRepository
+import org.ide.lti.core.model.user.EditorSettings
+import org.ide.lti.core.model.user.NotificationSettings
 
 /**
  * Session-scoped in-memory state holder for application-wide settings.
  *
  * Stores theme preferences using decoupled identifier strings
  * to preserve strict architectural modularization between data and design systems.
+ *
+ * When [userDataRepository] and [coroutineScope] are supplied, mutations are persisted
+ * asynchronously; both are optional so this class stays usable as a plain in-memory holder
+ * (e.g. in tests/previews).
  */
 class AppSettingsState(
     initialTheme: String = THEME_BLUE,
     initialEffectsEnabled: Boolean = true,
     initialReducedMotion: Boolean = false,
+    initialEditorSettings: EditorSettings = EditorSettings(),
+    initialNotificationSettings: NotificationSettings = NotificationSettings(),
+    private val userDataRepository: UserDataRepository? = null,
+    private val coroutineScope: CoroutineScope? = null,
 ) {
-    var theme: String by mutableStateOf(initialTheme)
-    var effectsEnabled: Boolean by mutableStateOf(initialEffectsEnabled)
-    var reducedMotion: Boolean by mutableStateOf(initialReducedMotion)
+    private val themeState = mutableStateOf(initialTheme)
+    var theme: String
+        get() = themeState.value
+        set(value) {
+            themeState.value = value
+            persist { setTheme(value) }
+        }
+
+    private val effectsEnabledState = mutableStateOf(initialEffectsEnabled)
+    var effectsEnabled: Boolean
+        get() = effectsEnabledState.value
+        set(value) {
+            effectsEnabledState.value = value
+            persist { setEffectsEnabled(value) }
+        }
+
+    private val reducedMotionState = mutableStateOf(initialReducedMotion)
+    var reducedMotion: Boolean
+        get() = reducedMotionState.value
+        set(value) {
+            reducedMotionState.value = value
+            persist { setReducedMotion(value) }
+        }
+
+    private val editorSettingsState = mutableStateOf(initialEditorSettings)
+    var editorSettings: EditorSettings
+        get() = editorSettingsState.value
+        set(value) {
+            editorSettingsState.value = value
+            persist { setEditorSettings(value) }
+        }
+
+    private val notificationSettingsState = mutableStateOf(initialNotificationSettings)
+    var notificationSettings: NotificationSettings
+        get() = notificationSettingsState.value
+        set(value) {
+            notificationSettingsState.value = value
+            persist { setNotificationSettings(value) }
+        }
+
+    private fun persist(action: suspend UserDataRepository.() -> Unit) {
+        val repository = userDataRepository ?: return
+        val scope = coroutineScope ?: return
+        scope.launch { repository.action() }
+    }
 
     /**
      * Backward-compatible constructor accepting boolean darkTheme.
