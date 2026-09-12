@@ -377,7 +377,7 @@ public class WslToolchainProvisioner(
             if (_state.value.isAllReady) {
                 val now = _state.value.lastVerifiedTimestamp
                 repository?.let { repo ->
-                    repo.saveState(repo.currentState.copy(lastVerifiedTimestamp = now))
+                    repo.saveToolchainState(repo.currentState.copy(lastVerifiedTimestamp = now))
                 }
             }
             _state.value
@@ -585,7 +585,7 @@ public class WslToolchainProvisioner(
             )
         }
 
-        repository?.markStageCompleted(SetupStepStage.TOOLCHAIN_COMPILATION, true)
+        repository?.markStageCompleted(SetupStepStage.TOOLCHAIN_COMPILATION.name, true)
         repository?.markSetupCompleted(true)
 
         val publicationResult = toolPublicationPort?.publish(binDir)
@@ -738,7 +738,7 @@ public class WslToolchainProvisioner(
     }
 
     override suspend fun resetSetupCache(): Unit = withContext(dispatcher) {
-        repository?.reset()
+        repository?.clearToolchainState()
         _state.value = ToolchainSetupState()
         appendLog("[Cache] Reset toolchain persistence cache to clean default.")
     }
