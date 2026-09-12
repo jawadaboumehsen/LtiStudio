@@ -12,33 +12,49 @@ package org.ide.lti.feature.setup.steps
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import com.kashif_e.backdrop.backdrops.LayerBackdrop
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import org.ide.lti.core.designsystem.component.actions.GlassActionCard
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
-import org.ide.lti.core.designsystem.component.actions.GlassItemCard
+import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
+import org.ide.lti.core.designsystem.component.actions.GlassSecondaryButton
 import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.display.GlassEmptyState
 import org.ide.lti.core.designsystem.component.display.GlassEmptyStateOrientation
@@ -46,96 +62,80 @@ import org.ide.lti.core.designsystem.component.display.GlassHorizontalDivider
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.TextFieldLeadingSlot
 import org.ide.lti.core.designsystem.component.inputs.TextFieldTrailingSlot
-import org.ide.lti.core.designsystem.icon.AppIcon
+import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenu
+import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenuItem
+import org.ide.lti.core.designsystem.component.tooltip.GlassTooltipArea
 import org.ide.lti.core.designsystem.icon.AppIcons
-import org.ide.lti.core.designsystem.icon.ideWelcomeFromVCSTab
-import org.ide.lti.core.designsystem.icon.ideWelcomeOpen
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
+import org.ide.lti.core.designsystem.theme.SetupTokens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
-import org.ide.lti.core.domain.setup.StepStatus
-import org.ide.lti.core.domain.setup.ToolchainSetupState
-import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.feature.setup.SetupUiActions
 import org.ide.lti.feature.setup.SetupUiState
-import org.ide.lti.feature.setup.components.TargetSelectorCard
 
 /**
- * Structured overload for [ProjectsStepContent] utilizing [SetupUiState] and [SetupUiActions]
- * to prevent parameter sprawl and ensure single-responsibility composition.
+ * Workspaces destination content for Setup (US1 - Workspaces, P1 MVP).
+ *
+ * Implements Apple-inspired clean developer experience:
+ * - Title + New/Open toolbar with shortcut hints (Ctrl+N, Ctrl+O).
+ * - Labeled search field with clear action and shortcut hint (Ctrl+F).
+ * - Virtualized recents list with target device badge, relative timestamps, selection, and context menu.
+ * - Distinct empty state and no-match state.
+ * - Strict design-system token discipline using SetupTokens (zero raw dp/Color/alpha literals).
+ * - No global target switch, fake clone, or staging actions (FR-001, FR-002, FR-003, FR-011).
  */
 @Composable
 fun ProjectsStepContent(
     state: SetupUiState,
     actions: SetupUiActions,
-    onNavigateToEnvironment: () -> Unit,
     resolvedBackdrop: LayerBackdrop,
     modifier: Modifier = Modifier,
-) {
-    ProjectsStepContent(
-        recentProjects = state.recentProjects,
-        filteredProjects = state.filteredProjects,
-        searchQuery = state.searchQuery,
-        onSearchQueryChange = actions.onSearchQueryChange,
-        onRemoveRecentProject = actions.onRemoveRecentProject,
-        onOpenFolder = actions.onOpenFolder,
-        onCreateWorkspace = actions.onCreateWorkspace,
-        onRecentProjectClick = actions.onRecentProjectClick,
-        toolchainSetupState = state.toolchainSetupState,
-        selectedTarget = state.selectedTarget,
-        availableTargets = state.availableTargets,
-        onSelectTarget = actions.onSelectTarget,
-        onNavigateToEnvironment = onNavigateToEnvironment,
-        resolvedBackdrop = resolvedBackdrop,
-        modifier = modifier,
-    )
-}
-
-/**
- * Projects & Launchpad Hub - The premier welcome screen cockpit for LtiRom Studio.
- *
- * Implements modern developer experience benchmarks (JetBrains Fleet/IntelliJ, Zed, Cursor, Linear):
- * - Hero Quick Action Cards with keyboard shortcut hints.
- * - Live Ambient Doctor Health Badge.
- * - Reactive workspace search and filtering with token-compliant glass inputs.
- * - Recent project list with device target metadata chips, relative timestamps, and deletion controls.
- */
-@Composable
-fun ProjectsStepContent(
-    recentProjects: List<RecentProject>,
-    filteredProjects: List<RecentProject>,
-    searchQuery: String,
-    onSearchQueryChange: (String) -> Unit,
-    onRemoveRecentProject: (String) -> Unit,
-    onOpenFolder: () -> Unit,
-    onRecentProjectClick: (RecentProject) -> Unit,
-    toolchainSetupState: ToolchainSetupState,
-    onNavigateToEnvironment: () -> Unit,
-    resolvedBackdrop: LayerBackdrop,
-    modifier: Modifier = Modifier,
-    selectedTarget: TargetDevice? = null,
-    availableTargets: List<TargetDevice> = emptyList(),
-    onSelectTarget: (TargetDevice) -> Unit = {},
-    onCreateWorkspace: () -> Unit = {},
+    onNavigateToEnvironment: () -> Unit = {},
 ) {
     val glassColors = GlassTheme.colors
-    val diagnostics = glassColors.diagnostics
+    @Suppress("DEPRECATION")
+    val clipboardManager = LocalClipboardManager.current
+    val searchFocusRequester = remember { FocusRequester() }
+    val rootFocusRequester = remember { FocusRequester() }
 
-    val isToolchainReady = toolchainSetupState.isAllReady
-    val totalSteps = toolchainSetupState.steps.size
-    val readySteps = toolchainSetupState.steps.count { it.status == StepStatus.SUCCESS }
+    LaunchedEffect(Unit) {
+        rootFocusRequester.requestFocus()
+    }
 
-    LazyColumn(
+    Column(
         modifier = modifier
-            .widthIn(max = ComponentSize.SetupCockpitMaxWidth)
+            .widthIn(max = SetupTokens.ContentMaxWidth)
             .fillMaxWidth()
             .fillMaxHeight()
+            .focusRequester(rootFocusRequester)
+            .focusable()
+            .onKeyEvent { event ->
+                if (event.type == KeyEventType.KeyDown && event.isCtrlPressed) {
+                    when (event.key) {
+                        Key.N -> {
+                            actions.onCreateWorkspace()
+                            true
+                        }
+                        Key.O -> {
+                            actions.onOpenFolder()
+                            true
+                        }
+                        Key.F -> {
+                            searchFocusRequester.requestFocus()
+                            true
+                        }
+                        else -> false
+                    }
+                } else {
+                    false
+                }
+            }
             .padding(
                 start = Spacing.ScreenHorizontal,
                 end = Spacing.ScreenHorizontal,
@@ -144,244 +144,353 @@ fun ProjectsStepContent(
             ),
         verticalArrangement = Arrangement.spacedBy(Spacing.SectionGap),
     ) {
-        // Hero Header Row with Ambient Doctor Badge (FrameLayout / Box Anchored Layout)
-        item(key = "hero_header") {
+        // 1. Title + New/Open Toolbar Row
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
+                Text(
+                    text = "Workspaces",
+                    fontSize = SetupTokens.TextTitle,
+                    fontWeight = FontWeight.Bold,
+                    color = glassColors.onGlass,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = "Open an existing workspace or create an independent target environment",
+                    fontSize = SetupTokens.TextBody,
+                    color = glassColors.onGlassSecondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column(
-                    modifier = Modifier.weight(1f, fill = false),
-                    verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-                ) {
-                    Text(
-                        text = "LtiRom Studio",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = glassColors.onGlass,
-                        maxLines = 1,
-                        softWrap = false,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Text(
-                        text = "Ultra-clean Android ROM engineering, partition disassembly, and signed flashing cockpit",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = glassColors.onGlassSecondary,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-
-                // Live Ambient Toolchain & Doctor Health Badge
-                val badgeStatusColor = when {
-                    toolchainSetupState.isBusy -> glassColors.glassAccent
-                    isToolchainReady -> diagnostics.success
-                    else -> diagnostics.warning
-                }
-                val badgeText = when {
-                    toolchainSetupState.isFixing -> "Doctor Auto-Fixing Packages..."
-                    toolchainSetupState.isRunning -> "Auto-Provisioning Tools ($readySteps/$totalSteps)..."
-                    toolchainSetupState.isChecking -> "Doctor Checking Health..."
-                    isToolchainReady -> "Doctor Verified & Ready ($readySteps/$totalSteps)"
-                    else -> "Doctor Setup & Auto-Fix ($readySteps/$totalSteps)"
-                }
-
-                Box(
-                    modifier = Modifier
-                        .clip(GlassShapes.Capsule)
-                        .background(badgeStatusColor.copy(alpha = AlphaTokens.Glow))
-                        .border(
-                            width = StrokeWidth.Hairline,
-                            color = badgeStatusColor.copy(alpha = AlphaTokens.Border),
-                            shape = GlassShapes.Capsule,
-                        )
-                        .clickable(onClick = onNavigateToEnvironment)
-                        .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Small),
+                GlassSecondaryButton(
+                    onClick = actions.onOpenFolder,
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
                     ) {
-                        if (toolchainSetupState.isBusy) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(IconSize.Small),
-                                strokeWidth = StrokeWidth.Hairline,
-                                color = badgeStatusColor,
-                            )
-                        } else {
-                            Box(
-                                modifier = Modifier
-                                    .size(IconSize.Indicator)
-                                    .clip(GlassShapes.Capsule)
-                                    .background(badgeStatusColor),
-                            )
-                        }
+                        Icon(
+                            painter = AppIcons.FolderOpenPainterResource(),
+                            contentDescription = null,
+                            modifier = Modifier.size(IconSize.Small),
+                        )
+                        Text("Open Workspace", fontSize = SetupTokens.TextBody)
                         Text(
-                            text = badgeText,
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontFamily = codeFontFamily(),
-                                fontWeight = FontWeight.SemiBold,
-                            ),
-                            color = badgeStatusColor,
-                            maxLines = 1,
-                            softWrap = false,
-                            overflow = TextOverflow.Ellipsis,
+                            text = "Ctrl+O",
+                            fontSize = SetupTokens.TextMetadata,
+                            color = glassColors.onGlassMuted,
+                        )
+                    }
+                }
+
+                GlassPrimaryButton(
+                    onClick = actions.onCreateWorkspace,
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                    ) {
+                        Icon(
+                            painter = AppIcons.AddPainterResource(),
+                            contentDescription = null,
+                            modifier = Modifier.size(IconSize.Small),
+                        )
+                        Text("New Workspace", fontSize = SetupTokens.TextBody)
+                        Text(
+                            text = "Ctrl+N",
+                            fontSize = SetupTokens.TextMetadata,
+                            color = glassColors.onGlassMuted,
                         )
                     }
                 }
             }
         }
 
-        // Target Hardware Selector Card
-        item(key = "target_selector") {
-            TargetSelectorCard(
-                selectedTarget = selectedTarget,
-                availableTargets = availableTargets,
-                onSelectTarget = onSelectTarget,
-                onCreateWorkspace = onCreateWorkspace,
-                backdrop = resolvedBackdrop,
-            )
-        }
+        GlassHorizontalDivider()
 
-        // Hero Quick Action Cards Symmetrically Balanced Across the Row
-        item(key = "quick_actions") {
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
-                verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+        // 2. Recent Workspaces Header & Labeled Search
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Row(
+                modifier = Modifier.padding(vertical = Spacing.ExtraSmall),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
             ) {
-                GlassActionCard(
-                    title = "New Workspace",
-                    subtitle = "Create independent workspace for target",
-                    icon = AppIcons.Add,
-                    isPrimary = true,
-                    shortcut = "Ctrl+N",
-                    onClick = onCreateWorkspace,
-                    backdrop = resolvedBackdrop,
-                    modifier = Modifier.weight(1f, fill = false).widthIn(min = ComponentSize.MinPanelWidth),
+                Text(
+                    text = "Recent Workspaces",
+                    fontSize = SetupTokens.TextSection,
+                    fontWeight = FontWeight.SemiBold,
+                    color = glassColors.onGlass,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
-                GlassActionCard(
-                    title = "Open Workspace",
-                    subtitle = "Browse local directory or mount",
-                    icon = AppIcon.Painted(AppIcons.ideWelcomeOpen),
-                    isPrimary = false,
-                    shortcut = "Ctrl+O",
-                    onClick = onOpenFolder,
+                GlassChip(
+                    label = "${state.recentProjects.size}",
+                    selected = false,
+                )
+            }
+
+            Box(
+                modifier = Modifier.widthIn(max = ComponentSize.CommandPaletteMaxWidth),
+            ) {
+                GlassTextField(
+                    value = state.searchQuery,
+                    onValueChange = actions.onSearchQueryChange,
+                    placeholder = "Search workspaces... (Ctrl+F)",
+                    leading = TextFieldLeadingSlot.Icon(AppIcons.Search),
+                    trailing = if (state.searchQuery.isNotBlank()) {
+                        TextFieldTrailingSlot.Clear(onClear = { actions.onSearchQueryChange("") })
+                    } else {
+                        TextFieldTrailingSlot.None
+                    },
                     backdrop = resolvedBackdrop,
-                    modifier = Modifier.weight(1f, fill = false).widthIn(min = ComponentSize.MinPanelWidth),
+                    modifier = Modifier.focusRequester(searchFocusRequester),
                 )
             }
         }
 
-        item(key = "divider") {
-            GlassHorizontalDivider()
-        }
-
-        // Recent Workspaces Section Header & Search Input (FrameLayout / Box Anchored Layout)
-        item(key = "recent_header") {
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+        // 3. Virtualized Recents List / Distinct Empty State
+        if (state.filteredProjects.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = Spacing.Large),
+                contentAlignment = Alignment.Center,
             ) {
-                Row(
-                    modifier = Modifier.padding(vertical = Spacing.ExtraSmall),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                ) {
-                    Text(
-                        text = "Recent Workspaces",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = glassColors.onGlass,
-                        maxLines = 1,
-                        softWrap = false,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    GlassChip(
-                        label = "${recentProjects.size}",
-                        selected = false,
-                    )
-                }
-
-                Box(
-                    modifier = Modifier.widthIn(max = ComponentSize.CommandPaletteMaxWidth),
-                ) {
-                    GlassTextField(
-                        value = searchQuery,
-                        onValueChange = onSearchQueryChange,
-                        placeholder = "Filter projects... (Ctrl+F)",
-                        leading = TextFieldLeadingSlot.Icon(AppIcons.Search),
-                        trailing = if (searchQuery.isNotBlank()) {
-                            TextFieldTrailingSlot.Clear(onClear = { onSearchQueryChange("") })
-                        } else {
-                            TextFieldTrailingSlot.None
-                        },
-                        backdrop = resolvedBackdrop,
-                    )
-                }
-            }
-        }
-
-        // Recent Projects List or Empty State
-        if (filteredProjects.isEmpty()) {
-            item(key = "empty_state") {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = Spacing.Large),
-                    contentAlignment = Alignment.Center,
-                ) {
+                if (state.searchQuery.isNotBlank()) {
                     GlassEmptyState(
                         icon = AppIcons.Folder,
-                        title = if (searchQuery.isNotBlank()) "No Matching Workspaces" else "No Recent Workspaces",
-                        description = if (searchQuery.isNotBlank()) "No workspace matches '$searchQuery'. Try refining your filter."
-                        else "Get started by scaffolding a new ROM or opening an existing directory.",
+                        title = "No Matching Workspaces",
+                        description = "No workspace matches '${state.searchQuery}'. Try refining your search query.",
+                        orientation = GlassEmptyStateOrientation.Vertical,
+                    )
+                } else {
+                    GlassEmptyState(
+                        icon = AppIcons.Folder,
+                        title = "No Recent Workspaces",
+                        description = "Get started by creating a new workspace or opening an existing directory.",
                         orientation = GlassEmptyStateOrientation.Vertical,
                     )
                 }
             }
         } else {
-            items(
-                items = filteredProjects,
-                key = { it.workspaceId },
-                contentType = { "recent_project" },
-            ) { project ->
-                GlassItemCard(
-                    title = project.name,
-                    subtitle = project.path,
-                    icon = AppIcons.Folder,
-                    onClick = { onRecentProjectClick(project) },
-                    backdrop = resolvedBackdrop,
-                    trailingContent = {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                        ) {
-                            project.targetDisplayName?.takeIf { it.isNotBlank() }?.let { targetName ->
-                                GlassChip(
-                                    label = targetName,
-                                    selected = false,
-                                )
-                            }
-                            if (project.targetBinding == null) {
-                                GlassChip(
-                                    label = "Needs target",
-                                    selected = false,
-                                )
-                            }
-                            GlassChip(
-                                label = formatRelativeTime(project.lastOpened),
-                                selected = false,
-                            )
-                            GlassIconButton(
-                                icon = AppIcons.Close,
-                                onClick = { onRemoveRecentProject(project.workspaceId) },
-                            )
-                        }
-                    },
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f, fill = false),
+                verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+            ) {
+                items(
+                    items = state.filteredProjects,
+                    key = { it.workspaceId },
+                    contentType = { "workspace_row" },
+                ) { project ->
+                    WorkspaceRowItem(
+                        project = project,
+                        isSelected = state.selectedWorkspaceId == project.workspaceId,
+                        onSelect = { actions.onSelectWorkspace(project.workspaceId) },
+                        onOpen = { actions.onRecentProjectClick(project) },
+                        onRemove = { actions.onRemoveRecentProject(project.workspaceId) },
+                        onCopyPath = {
+                            clipboardManager.setText(AnnotatedString(project.path))
+                        },
+                        resolvedBackdrop = resolvedBackdrop,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun WorkspaceRowItem(
+    project: RecentProject,
+    isSelected: Boolean,
+    onSelect: () -> Unit,
+    onOpen: () -> Unit,
+    onRemove: () -> Unit,
+    onCopyPath: () -> Unit,
+    resolvedBackdrop: LayerBackdrop,
+    modifier: Modifier = Modifier,
+) {
+    val glassColors = GlassTheme.colors
+    var isMenuExpanded by remember { mutableStateOf(false) }
+
+    val borderColor = if (isSelected) {
+        glassColors.focusRing
+    } else {
+        glassColors.glassBorder
+    }
+
+    val backgroundColor = if (isSelected) {
+        glassColors.glassSurfaceElevated
+    } else {
+        glassColors.glassSurface
+    }
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(GlassShapes.Card)
+            .background(backgroundColor)
+            .border(
+                width = if (isSelected) StrokeWidth.Focused else StrokeWidth.Standard,
+                color = borderColor,
+                shape = GlassShapes.Card,
+            )
+            .clickable(onClick = {
+                onSelect()
+                onOpen()
+            })
+            .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Row(
+                modifier = Modifier.weight(1f, fill = false),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(ComponentSize.SidePanelRailButtonSize)
+                        .clip(GlassShapes.Medium)
+                        .background(glassColors.glassAccent.copy(alpha = AlphaTokens.Glow)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        painter = AppIcons.FolderPainterResource(),
+                        contentDescription = null,
+                        tint = glassColors.glassAccent,
+                        modifier = Modifier.size(IconSize.Medium),
+                    )
+                }
+
+                Column(
+                    modifier = Modifier.weight(1f, fill = false),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
+                ) {
+                    Text(
+                        text = project.name,
+                        fontSize = SetupTokens.TextSection,
+                        fontWeight = FontWeight.SemiBold,
+                        color = glassColors.onGlass,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        text = project.path,
+                        fontSize = SetupTokens.TextMetadata,
+                        fontFamily = codeFontFamily(),
+                        color = glassColors.onGlassSecondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+            ) {
+                project.targetDisplayName?.takeIf { it.isNotBlank() }?.let { targetName ->
+                    GlassChip(
+                        label = targetName,
+                        selected = false,
+                    )
+                }
+                if (project.targetBinding == null) {
+                    GlassChip(
+                        label = "Needs target",
+                        selected = false,
+                    )
+                }
+                GlassChip(
+                    label = formatRelativeTime(project.lastOpened),
+                    selected = false,
                 )
+
+                Box {
+                    GlassTooltipArea(tooltipText = "More actions") {
+                        GlassIconButton(
+                            icon = AppIcons.MoreVert,
+                            onClick = { isMenuExpanded = true },
+                            size = ComponentSize.PanelHeaderAction,
+                        )
+                    }
+
+                    GlassDropdownMenu(
+                        expanded = isMenuExpanded,
+                        onDismissRequest = { isMenuExpanded = false },
+                    ) {
+                        GlassDropdownMenuItem(
+                            text = "Open Workspace",
+                            leadingIcon = {
+                                Icon(
+                                    painter = AppIcons.FolderOpenPainterResource(),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(IconSize.Small),
+                                )
+                            },
+                            onClick = {
+                                isMenuExpanded = false
+                                onOpen()
+                            },
+                        )
+                        GlassDropdownMenuItem(
+                            text = "Copy Path",
+                            leadingIcon = {
+                                Icon(
+                                    painter = AppIcons.CopyPainterResource(),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(IconSize.Small),
+                                )
+                            },
+                            onClick = {
+                                isMenuExpanded = false
+                                onCopyPath()
+                            },
+                        )
+                        GlassDropdownMenuItem(
+                            text = "Remove from Recents",
+                            leadingIcon = {
+                                Icon(
+                                    painter = AppIcons.DeletePainterResource(),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(IconSize.Small),
+                                )
+                            },
+                            onClick = {
+                                isMenuExpanded = false
+                                onRemove()
+                            },
+                        )
+                    }
+                }
+
+                GlassTooltipArea(tooltipText = "Remove from Recents") {
+                    GlassIconButton(
+                        icon = AppIcons.Close,
+                        onClick = onRemove,
+                        size = ComponentSize.PanelHeaderAction,
+                    )
+                }
             }
         }
     }

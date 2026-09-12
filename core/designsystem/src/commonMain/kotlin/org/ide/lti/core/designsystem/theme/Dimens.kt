@@ -142,7 +142,6 @@ object ComponentSize {
     val ToggleButtonEndPadding: Dp = 8.dp
     val ToggleButtonSpacing: Dp = 4.dp
     val DividerWidth: Dp = 8.dp
-    val SetupSidebarWidth: Dp = 240.dp
     val SettingsSidebarWidth: Dp = 210.dp
     val ConfigurationSidebarWidth: Dp = 260.dp
     val ThemeCardMinWidth: Dp = 156.dp

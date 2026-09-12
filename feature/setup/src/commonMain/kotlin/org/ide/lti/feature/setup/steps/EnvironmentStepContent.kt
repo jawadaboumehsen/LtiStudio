@@ -70,9 +70,9 @@ import org.ide.lti.feature.setup.components.ToolchainPipelineTracker
 fun EnvironmentStepContent(
     state: SetupUiState,
     actions: SetupUiActions,
-    onProceedToLaunchpad: () -> Unit,
     resolvedBackdrop: LayerBackdrop,
     modifier: Modifier = Modifier,
+    onProceedToLaunchpad: () -> Unit = {},
     onNavigateToProjects: (() -> Unit)? = null,
     autoRunOnLaunch: Boolean = true,
 ) {

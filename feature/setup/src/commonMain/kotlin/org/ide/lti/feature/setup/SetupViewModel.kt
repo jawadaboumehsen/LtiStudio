@@ -153,36 +153,28 @@ class SetupViewModel(
         autoRunEnvironmentSetup(autoFix = true)
     }
 
-    val recentProjects: StateFlow<List<RecentProject>> = getRecentWorkspacesUseCase()
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList(),
-        )
-
-    internal val _searchQuery = MutableStateFlow("")
-    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
-
-    val filteredRecentProjects: StateFlow<List<RecentProject>> = combine(
-        recentProjects,
-        searchQuery,
-    ) { projects, query ->
-        if (query.isBlank()) {
-            projects
-        } else {
-            projects.filter { project ->
-                project.name.contains(query, ignoreCase = true) ||
-                    project.path.contains(query, ignoreCase = true)
-            }
-        }
-    }.stateIn(
+    val workspaceBrowserState = WorkspaceBrowserState(
         scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = emptyList(),
+        getRecentWorkspacesUseCase = getRecentWorkspacesUseCase,
+        openWorkspaceUseCase = openWorkspaceUseCase,
+        removeRecentWorkspaceUseCase = removeRecentWorkspaceUseCase,
+        openWorkspaceByPathUseCase = openWorkspaceByPathUseCase,
+        selectAndOpenDirectoryUseCase = selectAndOpenDirectoryUseCase,
+        discoverWorkdirWorkspacesUseCase = discoverWorkdirWorkspacesUseCase,
+        environmentReadinessPort = environmentReadinessPort,
     )
 
+    val recentProjects: StateFlow<List<RecentProject>> = workspaceBrowserState.recentProjects
+    val searchQuery: StateFlow<String> = workspaceBrowserState.searchQuery
+    val filteredRecentProjects: StateFlow<List<RecentProject>> = workspaceBrowserState.filteredProjects
+    val selectedWorkspaceId: StateFlow<String?> = workspaceBrowserState.selectedWorkspaceId
+
     fun onSearchQueryChange(query: String) {
-        _searchQuery.value = query
+        workspaceBrowserState.onSearchQueryChange(query)
+    }
+
+    fun selectWorkspace(workspaceId: String?) {
+        workspaceBrowserState.selectWorkspace(workspaceId)
     }
 
     internal val _selectedTab = MutableStateFlow(SetupTab.PROJECTS)
@@ -272,37 +264,19 @@ class SetupViewModel(
     }
 
     fun removeRecentProject(workspaceId: String) {
-        viewModelScope.launch {
-            removeRecentWorkspaceUseCase(workspaceId)
-        }
+        workspaceBrowserState.removeRecentProject(workspaceId)
     }
 
     fun openFolder(onWorkspaceOpened: (Workspace) -> Unit) {
-        viewModelScope.launch {
-            val result = selectAndOpenDirectoryUseCase()
-            result.onSuccess { workspace ->
-                if (workspace != null) {
-                    onWorkspaceOpened(workspace)
-                }
-            }
-        }
+        workspaceBrowserState.openFolder(onWorkspaceOpened)
     }
 
-
-
     fun openRecentProject(project: RecentProject, onWorkspaceOpened: (Workspace) -> Unit) {
-        viewModelScope.launch {
-            val result = openWorkspaceUseCase(project.workspaceId)
-            result.onSuccess { workspace ->
-                onWorkspaceOpened(workspace)
-            }
-        }
+        workspaceBrowserState.openRecentProject(project, onWorkspaceOpened)
     }
 
     fun discoverWorkspaces() {
-        viewModelScope.launch {
-            discoverWorkdirWorkspacesUseCase?.invoke()
-        }
+        workspaceBrowserState.discoverWorkspaces()
     }
 
 

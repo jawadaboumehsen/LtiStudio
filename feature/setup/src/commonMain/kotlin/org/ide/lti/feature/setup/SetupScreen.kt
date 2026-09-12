@@ -15,6 +15,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -22,6 +23,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -46,23 +48,21 @@ import org.ide.lti.core.designsystem.component.feedback.GlassBottomSheetScaffold
 import org.ide.lti.core.designsystem.component.layout.GlassTopBar
 import org.ide.lti.core.designsystem.component.layout.TopBarNavigation
 import org.ide.lti.core.designsystem.icon.AppIcons
-import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.MotionDuration
 import org.ide.lti.core.designsystem.theme.MotionEasing
+import org.ide.lti.core.designsystem.theme.SetupTokens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.model.workspace.Workspace
 import org.ide.lti.feature.setup.components.SetupJourneySidebar
 import org.ide.lti.feature.setup.steps.DocumentationStepContent
 import org.ide.lti.feature.setup.steps.EnvironmentStepContent
-import org.ide.lti.feature.setup.steps.LaunchpadStepContent
 import org.ide.lti.feature.setup.steps.ProjectsStepContent
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
- * Top-level entry composable for Setup and Workspace Launchpad.
+ * Top-level entry composable for Setup and Workspaces screen.
  *
  * Gathers Presentation UI state and binds actions to [SetupViewModel].
  */
@@ -73,6 +73,8 @@ fun SetupScreen(
     onOpenSettings: () -> Unit = {},
     onCreateWorkspace: () -> Unit = {},
     onOpenConfigurations: () -> Unit = {},
+    onOpenManageTargets: () -> Unit = onOpenConfigurations,
+    onOpenHelp: () -> Unit = {},
     backdrop: Backdrop? = null,
     viewModel: SetupViewModel = koinViewModel(),
 ) {
@@ -80,6 +82,7 @@ fun SetupScreen(
     val recentProjects by viewModel.recentProjects.collectAsState()
     val filteredProjects by viewModel.filteredRecentProjects.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
+    val selectedWorkspaceId by viewModel.selectedWorkspaceId.collectAsState()
     val selectedCockpitTab by viewModel.selectedCockpitTab.collectAsState()
     val toolSearchQuery by viewModel.toolSearchQuery.collectAsState()
     val selectedToolCategory by viewModel.selectedToolCategory.collectAsState()
@@ -91,6 +94,8 @@ fun SetupScreen(
     val availableTargets by viewModel.availableTargets.collectAsState()
     val environmentReadiness by viewModel.environmentReadiness.collectAsState()
 
+    var isHelpSheetOpen by remember { mutableStateOf(false) }
+
     val uiState = SetupUiState(
         toolchainSetupState = toolchainSetupState,
         selectedTarget = selectedTarget,
@@ -98,12 +103,14 @@ fun SetupScreen(
         recentProjects = recentProjects,
         filteredProjects = filteredProjects,
         searchQuery = searchQuery,
+        selectedWorkspaceId = selectedWorkspaceId,
         selectedCockpitTab = selectedCockpitTab,
         toolSearchQuery = toolSearchQuery,
         selectedToolCategory = selectedToolCategory,
         filteredToolsMatrix = filteredToolsMatrix,
         isAutoDoctorEnabled = isAutoDoctorEnabled,
         selectedTab = selectedTab,
+        selectedDestination = SetupDestination.fromId(selectedTab.id),
         environmentNotice = environmentNotice,
         environmentReadiness = environmentReadiness,
     )
@@ -113,6 +120,7 @@ fun SetupScreen(
         onRemoveRecentProject = viewModel::removeRecentProject,
         onOpenFolder = { viewModel.openFolder(onOpenWorkspace) },
         onRecentProjectClick = { viewModel.openRecentProject(it, onOpenWorkspace) },
+        onSelectWorkspace = viewModel::selectWorkspace,
         onCheckEnvironment = viewModel::checkEnvironmentStatus,
         onRunFullSetup = viewModel::runFullEnvironmentSetup,
         onRetrySetupStep = viewModel::retrySetupStep,
@@ -128,10 +136,22 @@ fun SetupScreen(
         onNavigateToEnvironment = viewModel::navigateToEnvironment,
         onOpenSettings = onOpenSettings,
         onSelectTab = viewModel::selectTab,
+        onSelectDestination = { dest ->
+            when (dest) {
+                SetupDestination.WORKSPACES -> viewModel.selectTab(SetupTab.PROJECTS)
+                SetupDestination.ENVIRONMENT -> viewModel.selectTab(SetupTab.ENVIRONMENT)
+                SetupDestination.TOOLS -> {}
+            }
+        },
         onDismissEnvironmentNotice = viewModel::dismissEnvironmentNotice,
         onSetAutoDoctorEnabled = viewModel::setAutoDoctorEnabled,
         onResetToolchainCache = viewModel::resetToolchainCacheAndRecheck,
         onCreateWorkspace = onCreateWorkspace,
+        onOpenManageTargets = onOpenManageTargets,
+        onOpenHelp = {
+            onOpenHelp()
+            isHelpSheetOpen = true
+        },
     )
 
     SetupScreenContent(
@@ -140,14 +160,16 @@ fun SetupScreen(
         onOpenConfigurations = onOpenConfigurations,
         backdrop = backdrop,
         modifier = modifier,
+        isHelpSheetOpen = isHelpSheetOpen,
+        onDismissHelpSheet = { isHelpSheetOpen = false },
     )
 }
 
 /**
- * Modern Clean Architecture layout composable for Setup & Welcome screen.
+ * Modern Clean Architecture layout composable for Setup & Workspaces screen.
  *
- * Encapsulates state and actions into cohesive [SetupUiState] and [SetupUiActions] models,
- * keeping the parameter list clean and recomposition overhead minimal.
+ * Encapsulates state and actions into cohesive [SetupUiState] and [SetupUiActions] models.
+ * Implements adaptive sidebar and gutters (SetupTokens.SidebarWidthWide / Compact, GutterWide / Compact).
  */
 @Composable
 fun SetupScreenContent(
@@ -158,12 +180,14 @@ fun SetupScreenContent(
     windowControls: WindowControlActions? = null,
     backdrop: Backdrop? = null,
     initialTab: SetupTab? = null,
+    isHelpSheetOpen: Boolean = false,
+    onDismissHelpSheet: () -> Unit = {},
 ) {
     val localBackdrop = rememberLayerBackdrop()
     val resolvedBackdrop = (backdrop as? LayerBackdrop) ?: (GlassTheme.backdrop as? LayerBackdrop) ?: localBackdrop
     var localSelectedTab by remember { mutableStateOf(initialTab ?: state.selectedTab) }
     val effectiveTab = initialTab?.let { localSelectedTab } ?: state.selectedTab
-    var isHelpSheetOpen by remember { mutableStateOf(false) }
+    var internalHelpSheetOpen by remember { mutableStateOf(isHelpSheetOpen) }
 
     val onTabChange: (SetupTab) -> Unit = { newTab ->
         if (initialTab != null) {
@@ -172,10 +196,11 @@ fun SetupScreenContent(
         actions.onSelectTab(newTab)
     }
 
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        val isCompact = maxWidth < SetupTokens.CompactBreakpoint
+        val sidebarWidth = if (isCompact) SetupTokens.SidebarWidthCompact else SetupTokens.SidebarWidthWide
+        val gutter = if (isCompact) SetupTokens.GutterCompact else SetupTokens.GutterWide
 
-    Box(
-        modifier = modifier.fillMaxSize(),
-    ) {
         Column(modifier = Modifier.fillMaxSize()) {
             // Standard Unified Liquid Glass Top Bar
             GlassTopBar(
@@ -186,7 +211,7 @@ fun SetupScreenContent(
                 search = null,
                 panelToggles = null,
                 actions = {
-                    GlassIconButton(onClick = onOpenConfigurations) {
+                    GlassIconButton(onClick = actions.onOpenManageTargets) {
                         Icon(
                             painter = AppIcons.EditPainterResource(),
                             contentDescription = "Target Configuration",
@@ -207,7 +232,10 @@ fun SetupScreenContent(
                             modifier = Modifier.size(IconSize.Small),
                         )
                     }
-                    GlassIconButton(onClick = { isHelpSheetOpen = true }) {
+                    GlassIconButton(onClick = {
+                        internalHelpSheetOpen = true
+                        actions.onOpenHelp()
+                    }) {
                         Icon(
                             painter = AppIcons.InfoPainterResource(),
                             contentDescription = "Help & Documentation",
@@ -233,9 +261,9 @@ fun SetupScreenContent(
             }
 
             Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                // Modern Linear/Fleet-tier Left Setup Journey Sidebar
+                // Adaptive Left Setup Journey Sidebar
                 GlassPanel(
-                    width = ComponentSize.SetupSidebarWidth,
+                    width = sidebarWidth,
                     shape = GlassShapes.None,
                     modifier = Modifier.fillMaxHeight(),
                 ) {
@@ -244,27 +272,38 @@ fun SetupScreenContent(
                         onStepSelected = onTabChange,
                         toolchainSetupState = state.toolchainSetupState,
                         onOpenSettings = actions.onOpenSettings,
+                        onOpenManageTargets = actions.onOpenManageTargets,
+                        onOpenHelp = {
+                            internalHelpSheetOpen = true
+                            actions.onOpenHelp()
+                        },
                     )
                 }
 
                 // Sleek Specular Hairline Vertical Divider
                 GlassVerticalDivider(specular = true)
 
-                // Main Content Area (Center-constrained for proportional layout)
+                // Main Content Area with adaptive gutter padding and max content width constraint
                 Box(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight(),
                     contentAlignment = Alignment.TopCenter,
                 ) {
+                    val fadeDuration = SetupTokens.DurationFadeMs
+                    val feedbackDuration = SetupTokens.DurationFeedbackMs
+
                     AnimatedContent(
                         targetState = effectiveTab,
                         transitionSpec = {
-                            fadeIn(animationSpec = tween(durationMillis = MotionDuration.Moderate, easing = MotionEasing.Standard))
-                                .togetherWith(fadeOut(animationSpec = tween(durationMillis = MotionDuration.Fast, easing = MotionEasing.Standard)))
+                            fadeIn(animationSpec = tween(durationMillis = fadeDuration, easing = MotionEasing.Standard))
+                                .togetherWith(fadeOut(animationSpec = tween(durationMillis = feedbackDuration, easing = MotionEasing.Standard)))
                         },
-                        label = "SetupTabTransition",
-                        modifier = Modifier.fillMaxSize(),
+                        label = "SetupDestinationTransition",
+                        modifier = Modifier
+                            .widthIn(max = SetupTokens.ContentMaxWidth)
+                            .fillMaxSize()
+                            .padding(horizontal = gutter),
                         contentAlignment = Alignment.TopCenter,
                     ) { currentTab ->
                         when (currentTab) {
@@ -273,24 +312,16 @@ fun SetupScreenContent(
                                     state = state,
                                     actions = actions,
                                     onNavigateToProjects = { onTabChange(SetupTab.PROJECTS) },
-                                    onProceedToLaunchpad = { onTabChange(SetupTab.LAUNCHPAD) },
                                     resolvedBackdrop = resolvedBackdrop,
                                 )
                             }
-                            SetupTab.LAUNCHPAD -> {
-                                LaunchpadStepContent(
-                                    state = state,
-                                    actions = actions,
-                                    onNavigateToEnvironment = { onTabChange(SetupTab.ENVIRONMENT) },
-                                    resolvedBackdrop = resolvedBackdrop,
-                                )
-                            }
-                            SetupTab.PROJECTS -> {
+                            SetupTab.PROJECTS, SetupTab.LAUNCHPAD -> {
+                                // Legacy launchpad tab resolves to Workspaces content
                                 ProjectsStepContent(
                                     state = state,
                                     actions = actions,
-                                    onNavigateToEnvironment = { onTabChange(SetupTab.ENVIRONMENT) },
                                     resolvedBackdrop = resolvedBackdrop,
+                                    onNavigateToEnvironment = { onTabChange(SetupTab.ENVIRONMENT) },
                                 )
                             }
                         }
@@ -300,9 +331,13 @@ fun SetupScreenContent(
         }
     }
 
+    val showHelp = isHelpSheetOpen || internalHelpSheetOpen
     GlassBottomSheetScaffold(
-        visible = isHelpSheetOpen,
-        onDismissRequest = { isHelpSheetOpen = false },
+        visible = showHelp,
+        onDismissRequest = {
+            internalHelpSheetOpen = false
+            onDismissHelpSheet()
+        },
         backdrop = resolvedBackdrop,
     ) {
         DocumentationStepContent(resolvedBackdrop = resolvedBackdrop)

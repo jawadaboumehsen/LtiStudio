@@ -36,7 +36,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.foundation.rememberScrollState
@@ -61,16 +60,18 @@ import kotlinx.datetime.Clock
 import org.ide.lti.core.domain.setup.StepProvenance
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolchainSetupState
+import org.ide.lti.feature.setup.SetupDestination
 import org.ide.lti.feature.setup.SetupTab
 
 /**
- * Modern Linear/Fleet-tier Left Sidebar presenting the cohesive setup journey:
- * 1. Environment & Toolchain
- * 2. Workspace Launchpad
+ * Clean Setup Navigation Sidebar (FR-001, FR-003, FR-011, FR-012).
  *
- * Adheres strictly to:
- * - Single Responsibility: Manages setup navigation and journey step states.
- * - Design System Guardrails: 100% token usage (zero raw dp or alpha float literals).
+ * Provides:
+ * - Workspaces destination navigation.
+ * - Environment destination navigation with live status.
+ * - Destination actions: Manage Targets, Settings, and Help.
+ * - Environment status summary when navigating outside Environment.
+ * - Launchpad step removed; Tools kept unexposed until US3.
  */
 @Composable
 fun SetupJourneySidebar(
@@ -79,6 +80,16 @@ fun SetupJourneySidebar(
     toolchainSetupState: ToolchainSetupState,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
+    onOpenManageTargets: () -> Unit = {},
+    onOpenHelp: () -> Unit = {},
+    selectedDestination: SetupDestination = SetupDestination.fromId(currentStep.id),
+    onDestinationSelected: (SetupDestination) -> Unit = { dest ->
+        when (dest) {
+            SetupDestination.WORKSPACES -> onStepSelected(SetupTab.PROJECTS)
+            SetupDestination.ENVIRONMENT -> onStepSelected(SetupTab.ENVIRONMENT)
+            SetupDestination.TOOLS -> {}
+        }
+    },
 ) {
     val glassColors = GlassTheme.colors
     val diagnostics = glassColors.diagnostics
@@ -88,13 +99,16 @@ fun SetupJourneySidebar(
     val isEnvironmentBusy = toolchainSetupState.isRunning || isAnyStepRunning || toolchainSetupState.isFixing
     val hasEnvironmentIssues = toolchainSetupState.hasAnyFailedSteps()
 
+    val isWorkspacesActive = selectedDestination == SetupDestination.WORKSPACES || currentStep == SetupTab.PROJECTS
+    val isEnvironmentActive = selectedDestination == SetupDestination.ENVIRONMENT || currentStep == SetupTab.ENVIRONMENT
+
     Column(
         modifier = modifier
             .fillMaxHeight()
             .padding(Spacing.PanelPadding),
         verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
     ) {
-        // Brand Header (Linear style)
+        // Brand Header
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.Compact),
@@ -119,7 +133,7 @@ fun SetupJourneySidebar(
             )
             Spacer(Modifier.weight(1f))
             GlassChip(
-                label = if (isEnvironmentReady) "Ready" else "v0.0.1",
+                label = if (isEnvironmentReady) "Ready" else "Setup",
                 selected = isEnvironmentReady,
             )
         }
@@ -135,74 +149,89 @@ fun SetupJourneySidebar(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
         ) {
-            // Domain 1: WORKSPACE
             Text(
-                text = "WORKSPACE",
+                text = "DESTINATIONS",
                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
                 color = glassColors.onGlassMuted,
                 modifier = Modifier.padding(horizontal = Spacing.SmallMedium, vertical = Spacing.ExtraSmall),
             )
 
+            // Workspaces Destination
             GlassSidebarItem(
-                label = "Projects Hub",
+                label = "Workspaces",
                 icon = AppIcons.FolderOpen,
-                selected = currentStep == SetupTab.PROJECTS,
-                onClick = { onStepSelected(SetupTab.PROJECTS) },
+                selected = isWorkspacesActive,
+                onClick = {
+                    onDestinationSelected(SetupDestination.WORKSPACES)
+                    onStepSelected(SetupTab.PROJECTS)
+                },
             )
 
             Spacer(modifier = Modifier.height(Spacing.Small))
-            GlassHorizontalDivider()
-            Spacer(modifier = Modifier.height(Spacing.ExtraSmall))
 
-            // Domain 2: SYSTEM HEALTH
-            Text(
-                text = "SYSTEM HEALTH",
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                color = glassColors.onGlassMuted,
-                modifier = Modifier.padding(horizontal = Spacing.SmallMedium, vertical = Spacing.ExtraSmall),
-            )
-
-            // Step 1: Environment & Toolchain
+            // Environment Destination
             JourneyStepCard(
-                stepNumber = "1",
-                title = "Environment & Tools",
+                stepNumber = "2",
+                title = "Environment",
                 subtitle = computeSidebarSubtitle(toolchainSetupState),
-                isComplete = isEnvironmentReady && currentStep != SetupTab.ENVIRONMENT,
-                isActive = currentStep == SetupTab.ENVIRONMENT,
-                enabled = !toolchainSetupState.isBusy || currentStep == SetupTab.ENVIRONMENT,
+                isComplete = isEnvironmentReady && !isEnvironmentActive,
+                isActive = isEnvironmentActive,
+                enabled = !toolchainSetupState.isBusy || isEnvironmentActive,
                 isRunning = isEnvironmentBusy,
                 isError = hasEnvironmentIssues && !toolchainSetupState.isBusy,
                 statusBadge = computeSidebarBadge(toolchainSetupState),
-                onClick = { onStepSelected(SetupTab.ENVIRONMENT) },
+                onClick = {
+                    onDestinationSelected(SetupDestination.ENVIRONMENT)
+                    onStepSelected(SetupTab.ENVIRONMENT)
+                },
             )
+        }
 
-            // Step 2: Machine Security & Launchpad
-            JourneyStepCard(
-                stepNumber = "2",
-                title = "Security & Keys",
-                subtitle = when {
-                    isEnvironmentReady && toolchainSetupState.isAvbKeyProvisioned -> "Ready to Launch"
-                    !toolchainSetupState.isAvbKeyProvisioned -> "AVB Key Required"
-                    else -> "Machine Signing & Keys"
-                },
-                isComplete = isEnvironmentReady && 
-                    toolchainSetupState.isAvbKeyProvisioned && 
-                    currentStep != SetupTab.LAUNCHPAD,
-                isActive = currentStep == SetupTab.LAUNCHPAD,
-                enabled = !toolchainSetupState.isBusy || currentStep == SetupTab.LAUNCHPAD,
-                statusBadge = if (isEnvironmentReady && toolchainSetupState.isAvbKeyProvisioned) {
-                    "Ready" 
-                } else if (!toolchainSetupState.isAvbKeyProvisioned) {
-                    "Key Needed" 
-                } else {
-                    null
-                },
-                onClick = { onStepSelected(SetupTab.LAUNCHPAD) },
-            )
+        // Summary Status outside Environment
+        if (!isEnvironmentActive) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.ExtraSmall),
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(IconSize.Indicator)
+                            .clip(GlassShapes.Capsule)
+                            .background(
+                                when {
+                                    isEnvironmentReady -> diagnostics.success
+                                    hasEnvironmentIssues -> diagnostics.error
+                                    isEnvironmentBusy -> glassColors.glassAccent
+                                    else -> glassColors.onGlassMuted
+                                }
+                            ),
+                    )
+                    Text(
+                        text = "Env: ${computeSidebarBadge(toolchainSetupState)}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = glassColors.onGlassSecondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
         }
 
         GlassHorizontalDivider()
         Spacer(modifier = Modifier.height(Spacing.ExtraSmall))
+
+        // Actions: Manage Targets, Settings, Help
+        GlassSidebarItem(
+            label = "Manage Targets",
+            icon = AppIcon.Painted(AppIcons.EditPainterResource),
+            selected = false,
+            onClick = onOpenManageTargets,
+        )
 
         GlassSidebarItem(
             label = "Settings",
@@ -210,12 +239,16 @@ fun SetupJourneySidebar(
             selected = false,
             onClick = onOpenSettings,
         )
+
+        GlassSidebarItem(
+            label = "Help",
+            icon = AppIcon.Painted(AppIcons.InfoPainterResource),
+            selected = false,
+            onClick = onOpenHelp,
+        )
     }
 }
 
-/**
- * Rich, high-density Journey Step Card for the setup sidebar navigation.
- */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun JourneyStepCard(
@@ -260,7 +293,6 @@ private fun JourneyStepCard(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
     ) {
-        // Step Indicator Icon/Badge
         Box(
             modifier = Modifier
                 .size(IconSize.Large)
@@ -287,19 +319,19 @@ private fun JourneyStepCard(
                     modifier = Modifier.size(IconSize.Small),
                 )
             } else {
-                Text(
-                    text = stepNumber,
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                    color = when {
+                Icon(
+                    painter = AppIcons.SparklesPainterResource(),
+                    contentDescription = null,
+                    tint = when {
                         isError -> diagnostics.error
                         isActive -> glassColors.glassAccent
                         else -> glassColors.onGlassMuted
                     },
+                    modifier = Modifier.size(IconSize.Small),
                 )
             }
         }
 
-        // Title and Subtitle with integrated status badge
         Column(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),

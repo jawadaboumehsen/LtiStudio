@@ -57,6 +57,8 @@ fun NavGraphBuilder.setupScreen(
     onOpenSettings: () -> Unit = {},
     onCreateWorkspace: () -> Unit = {},
     onOpenConfigurations: () -> Unit = {},
+    onOpenManageTargets: () -> Unit = onOpenConfigurations,
+    onOpenHelp: () -> Unit = {},
 ) {
     composable(route = SETUP_ROUTE) {
         SetupScreen(
@@ -64,6 +66,8 @@ fun NavGraphBuilder.setupScreen(
             onOpenSettings = onOpenSettings,
             onCreateWorkspace = onCreateWorkspace,
             onOpenConfigurations = onOpenConfigurations,
+            onOpenManageTargets = onOpenManageTargets,
+            onOpenHelp = onOpenHelp,
         )
     }
 }

@@ -71,6 +71,7 @@ internal fun RootNavGraph(
             onOpenSettings = onOpenSettings,
             onCreateWorkspace = { navHostController.navigateToCreateWorkspace() },
             onOpenConfigurations = { navHostController.navigateToConfiguration() },
+            onOpenManageTargets = { navHostController.navigateToConfiguration() },
         )
 
         // Create Workspace Screen
