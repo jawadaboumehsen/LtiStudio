@@ -20,6 +20,7 @@ kotlin {
             implementation(libs.multiplatform.settings.coroutines)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.core)
+            implementation(libs.kotlinx.serialization.json)
             implementation(projects.core.model)
             implementation(projects.core.common)
         }
