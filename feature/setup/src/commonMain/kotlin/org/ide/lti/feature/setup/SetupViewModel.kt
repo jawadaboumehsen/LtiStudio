@@ -257,7 +257,7 @@ class SetupViewModel(
             return
         }
         viewModelScope.launch {
-            toolchainService.testIndividualTool(toolId)
+            toolchainService.testTool(toolId)
         }
     }
 
@@ -267,7 +267,7 @@ class SetupViewModel(
             return
         }
         viewModelScope.launch {
-            toolchainService.recompileTool(toolId)
+            toolchainService.repairTool(toolId)
         }
     }
 
@@ -374,8 +374,12 @@ class SetupViewModel(
             return
         }
         if (toolchainSetupState.value.isBusy) return
+        val stage = toolchainSetupState.value.steps.firstOrNull { it.status == StepStatus.FAILED }?.stage
+            ?: toolchainSetupState.value.steps.firstOrNull { it.status == StepStatus.PENDING }?.stage
+            ?: toolchainSetupState.value.steps.lastOrNull()?.stage
+            ?: return
         viewModelScope.launch {
-            toolchainService.retryCurrentStep()
+            toolchainService.retryStep(stage)
         }
     }
 

@@ -145,8 +145,11 @@ public data class ToolchainSetupState(
     // until WslToolchainProvisioner threads RunHandle.runId out of SubmoduleSyncEngine/
     // ToolchainBuildEngine's startRun() calls and into a _state.update.
     val stepRunIds: Map<SetupStepStage, String> = emptyMap(),
+    val storageAvailableBytes: Long? = null,
+    val storageMeasuredAt: Long? = null,
+    val activeOperationId: String? = null,
 ) {
-    val isBusy: Boolean get() = isRunning || isChecking || isFixing
+    val isBusy: Boolean get() = isRunning || isChecking || isFixing || activeOperationId != null
 
     /**
      * True if every step was verified live in this process and is SUCCESS or tolerated WARNING.
@@ -620,8 +623,8 @@ public interface ToolchainProvisioningService {
     /** Executes full end-to-end setup sequence (probe, start daemon, sync repos, build tools) */
     public suspend fun runFullSetup()
 
-    /** Retries the currently failed or pending step */
-    public suspend fun retryCurrentStep()
+    /** Retries a specific step */
+    public suspend fun retryStep(stage: SetupStepStage)
 
     /** Provisions or verifies machine-local AVB 2.0 RSA-4096 signing key */
     public suspend fun provisionAvbKey(): Boolean
@@ -630,10 +633,10 @@ public interface ToolchainProvisioningService {
     public suspend fun autoRemediateDoctor(): Boolean
 
     /** Tests an individual tool binary (runs version/help verification). */
-    public suspend fun testIndividualTool(toolId: String): StepStatus = StepStatus.SUCCESS
+    public suspend fun testTool(toolId: String): StepStatus = StepStatus.SUCCESS
 
     /** Recompiles or re-acquires an individual tool binary. */
-    public suspend fun recompileTool(toolId: String): Boolean = true
+    public suspend fun repairTool(toolId: String): Boolean = true
 
     /** Resets the persisted setup cache and restarts probing cleanly. */
     public suspend fun resetSetupCache(): Unit = Unit

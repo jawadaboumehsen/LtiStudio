@@ -1,10 +1,10 @@
-package io.ltirom.tooling.client.setup
+package org.ide.lti.core.data.setup
 
 import io.ltirom.tooling.client.WslDaemonManager
-import io.ltirom.tooling.client.setup.doctor.CompositeSystemDoctorEngine
-import io.ltirom.tooling.client.setup.doctor.NativeLibrariesInspector
-import io.ltirom.tooling.client.setup.doctor.ToolchainIntegrityInspector
-import io.ltirom.tooling.client.setup.doctor.WslPackageRemediator
+import org.ide.lti.core.data.setup.doctor.CompositeSystemDoctorEngine
+import org.ide.lti.core.data.setup.doctor.NativeLibrariesInspector
+import org.ide.lti.core.data.setup.doctor.ToolchainIntegrityInspector
+import org.ide.lti.core.data.setup.doctor.WslPackageRemediator
 import io.ltirom.tooling.client.wsl.WslCliExecutor
 import io.ltirom.tooling.client.wsl.WslEnvironmentDetector
 import io.ltirom.tooling.core.ports.DaemonSupervisorPort
@@ -663,7 +663,7 @@ public class WslToolchainProvisioner(
         verifyEnvironment()
     }
 
-    override suspend fun retryCurrentStep() {
+    override suspend fun retryStep(stage: SetupStepStage) {
         if (_state.value.isBusy) return
         runFullSetup()
     }
@@ -746,15 +746,17 @@ public class WslToolchainProvisioner(
         success
     }
 
-    override suspend fun testIndividualTool(toolId: String): StepStatus = withContext(dispatcher) {
+    override suspend fun testTool(toolId: String): StepStatus = withContext(dispatcher) {
+        val toolItem = _state.value.toolsMatrix.firstOrNull { it.id == toolId }
+            ?: return@withContext StepStatus.FAILED
+        if (_state.value.isBusy) return@withContext StepStatus.FAILED
         val distro = detector.getDefaultDistro() ?: "Ubuntu"
         val userHome = runCatching {
             val res = transport.execute(ToolExecutionRequest(toolId = "printenv", arguments = listOf("HOME"), workingDirectory = "/"))
             if (res.exitCode == 0 && res.stdout.trim().startsWith("/")) res.stdout.trim() else null
         }.getOrNull() ?: detector.resolveWslUserHome(distro)
         val binDir = "$userHome/LtiRomTools/bin"
-        val toolItem = _state.value.toolsMatrix.firstOrNull { it.id == toolId }
-        val binaryName = toolItem?.binaryName ?: toolId
+        val binaryName = toolItem.binaryName
         val binaryPath = "$binDir/$binaryName"
 
         _state.update { s ->
@@ -798,9 +800,10 @@ public class WslToolchainProvisioner(
         testStatus
     }
 
-    override suspend fun recompileTool(toolId: String): Boolean = withContext(dispatcher) {
+    override suspend fun repairTool(toolId: String): Boolean = withContext(dispatcher) {
+        if (_state.value.toolsMatrix.none { it.id == toolId }) return@withContext false
         appendLog("[Tool Matrix] Verifying & recompiling tool component: $toolId...")
-        val status = testIndividualTool(toolId)
+        val status = testTool(toolId)
         status == StepStatus.SUCCESS
     }
 

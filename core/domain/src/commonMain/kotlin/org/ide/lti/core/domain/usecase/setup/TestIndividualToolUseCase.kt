@@ -9,5 +9,5 @@ import org.ide.lti.core.domain.setup.ToolchainProvisioningService
 class TestIndividualToolUseCase(
     private val toolchainService: ToolchainProvisioningService,
 ) {
-    suspend operator fun invoke(toolId: String): StepStatus = toolchainService.testIndividualTool(toolId)
+    suspend operator fun invoke(toolId: String): StepStatus = toolchainService.testTool(toolId)
 }

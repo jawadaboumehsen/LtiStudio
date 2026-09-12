@@ -263,7 +263,7 @@ class SetupViewModelWorkspaceTest {
 
         var provisionAvbKeyCount = 0
 
-        override suspend fun retryCurrentStep() {
+        override suspend fun retryStep(stage: SetupStepStage) {
             retryCurrentStepCount++
         }
 
@@ -283,7 +283,7 @@ class SetupViewModelWorkspaceTest {
         var testToolCount = 0
         var lastTestedToolId: String? = null
 
-        override suspend fun testIndividualTool(toolId: String): StepStatus {
+        override suspend fun testTool(toolId: String): StepStatus {
             testToolCount++
             lastTestedToolId = toolId
             return StepStatus.SUCCESS
@@ -292,7 +292,7 @@ class SetupViewModelWorkspaceTest {
         var recompileToolCount = 0
         var lastRecompiledToolId: String? = null
 
-        override suspend fun recompileTool(toolId: String): Boolean {
+        override suspend fun repairTool(toolId: String): Boolean {
             recompileToolCount++
             lastRecompiledToolId = toolId
             return true

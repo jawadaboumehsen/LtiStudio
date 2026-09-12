@@ -35,6 +35,8 @@ public data class EnvironmentProbeResult(
     val workDirExists: Boolean,
     val submodules: Set<String>,
     val avbKeyPresent: Boolean,
+    val storageAvailableBytes: Long? = null,
+    val storageMeasuredAt: Long? = null,
 )
 
 /**

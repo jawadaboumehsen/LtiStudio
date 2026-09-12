@@ -1,4 +1,4 @@
-package io.ltirom.tooling.client.setup.doctor
+package org.ide.lti.core.data.setup.doctor
 
 import io.ltirom.tooling.client.wsl.CliExecutionResult
 import io.ltirom.tooling.client.wsl.WslCliExecutor

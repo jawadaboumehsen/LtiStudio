@@ -4,7 +4,7 @@ import io.ltirom.tooling.client.RemoteWslToolRepository
 import io.ltirom.tooling.client.SmartToolRepository
 import io.ltirom.tooling.client.WslDaemonManager
 import io.ltirom.tooling.client.resilience.ConnectionStateHolder
-import io.ltirom.tooling.client.setup.WslToolchainProvisioner
+import org.ide.lti.core.data.setup.WslToolchainProvisioner
 import io.ltirom.tooling.client.transport.KtorRemoteTransportAdapter
 import io.ltirom.tooling.core.DefaultToolResolver
 import io.ltirom.tooling.core.ProcessEnvironment
@@ -16,8 +16,8 @@ import io.ltirom.tooling.core.ToolSafetyPolicy
 import io.ltirom.tooling.core.events.DefaultToolEventBus
 import io.ltirom.tooling.core.events.ToolEventBus
 import io.ltirom.tooling.core.ports.DaemonSupervisorPort
-import io.ltirom.tooling.client.setup.EnvironmentProbe
-import io.ltirom.tooling.client.setup.doctor.CompositeSystemDoctorEngine
+import org.ide.lti.core.data.setup.EnvironmentProbe
+import org.ide.lti.core.data.setup.doctor.CompositeSystemDoctorEngine
 import io.ltirom.tooling.client.wsl.TransportCliExecutor
 import io.ltirom.tooling.client.wsl.WslEnvironmentDetector
 import io.ltirom.tooling.client.wsl.WslPresenceAdapter

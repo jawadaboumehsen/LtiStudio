@@ -1,4 +1,4 @@
-package io.ltirom.tooling.client.setup.doctor
+package org.ide.lti.core.data.setup.doctor
 
 /**
  * Execution context provided to all system diagnostic inspectors.

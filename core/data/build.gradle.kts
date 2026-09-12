@@ -28,6 +28,14 @@ kotlin {
 
         desktopMain.dependencies {
             implementation(projects.tool.core)
+            implementation(projects.tool.client)
+        }
+
+        val desktopTest by getting {
+            dependencies {
+                implementation(libs.kotlin.test)
+                implementation(libs.kotlinx.coroutines.test)
+            }
         }
 
         commonTest.dependencies {

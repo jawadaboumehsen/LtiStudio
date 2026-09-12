@@ -1,4 +1,4 @@
-package io.ltirom.tooling.client.setup
+package org.ide.lti.core.data.setup
 
 import io.ltirom.tooling.client.WslDaemonManager
 import io.ltirom.tooling.client.wsl.WslEnvironmentDetector

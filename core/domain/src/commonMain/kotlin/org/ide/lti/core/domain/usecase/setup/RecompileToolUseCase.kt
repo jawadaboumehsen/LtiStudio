@@ -8,5 +8,5 @@ import org.ide.lti.core.domain.setup.ToolchainProvisioningService
 class RecompileToolUseCase(
     private val toolchainService: ToolchainProvisioningService,
 ) {
-    suspend operator fun invoke(toolId: String): Boolean = toolchainService.recompileTool(toolId)
+    suspend operator fun invoke(toolId: String): Boolean = toolchainService.repairTool(toolId)
 }
