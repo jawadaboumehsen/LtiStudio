@@ -34,6 +34,7 @@ kotlin {
             implementation(projects.core.datastore)
             implementation(projects.core.designsystem)
             implementation(projects.feature.settings)
+            implementation(projects.feature.setup)
             implementation(projects.tool.client)
 
             implementation(projects.ltiShared)
@@ -49,6 +50,7 @@ kotlin {
             implementation(libs.nucleus.decorated.window)
             implementation(libs.nucleus.fs.watcher)
             implementation(libs.composenativetray)
+            implementation("org.slf4j:slf4j-simple:2.0.16")
         }
 
         jvmTest.dependencies {

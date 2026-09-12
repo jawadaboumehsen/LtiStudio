@@ -9,6 +9,7 @@
  */
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,7 +22,9 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -61,6 +64,8 @@ import org.ide.lti.desktop.menu.model.StudioMenuState
 import org.ide.lti.desktop.menu.ui.StudioMenuBar
 import org.ide.lti.desktop.tray.AppTray
 import org.ide.lti.desktop.window.restoreWindow
+import org.ide.lti.feature.setup.splash.LtiRomSplashScreen
+import org.ide.lti.feature.setup.splash.SplashInitializationBridge
 import org.ide.lti.shared.LtiSharedApp
 import org.ide.lti.shared.di.initKoin
 import org.koin.compose.koinInject
@@ -150,6 +155,10 @@ fun main(args: Array<String>) = nucleusApplication(args) {
 
     val actionDispatcher = remember { DefaultStudioActionDispatcher() }
 
+    var showSplash by remember { mutableStateOf(true) }
+    val splashScope = rememberCoroutineScope()
+    val splashBridge = remember { SplashInitializationBridge(scope = splashScope) }
+
     AppTray(
         onOpenStudio = { restoreWindow(windowState, mainWinRef) },
         onOpenSettings = bringSettingsToFront,
@@ -194,6 +203,8 @@ fun main(args: Array<String>) = nucleusApplication(args) {
             }
         }
 
+        val appSettingsState: AppSettingsState = koinInject()
+
         CompositionLocalProvider(
             LocalWindowControlActions provides windowControlActions,
         ) {
@@ -202,9 +213,27 @@ fun main(args: Array<String>) = nucleusApplication(args) {
                     StudioMenuBar(state = StudioMenuState(), dispatcher = actionDispatcher)
                 }
             }
-            LtiSharedApp(
-                onOpenSettings = bringSettingsToFront,
-            )
+            if (showSplash) {
+                LtiTheme(
+                    appTheme = AppTheme.fromId(appSettingsState.theme),
+                    effectsEnabled = appSettingsState.effectsEnabled,
+                    reducedMotion = appSettingsState.reducedMotion,
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize().background(GlassTheme.colors.canvasSurface),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        LtiRomSplashScreen(
+                            bridge = splashBridge,
+                            onDismissed = { showSplash = false },
+                        )
+                    }
+                }
+            } else {
+                LtiSharedApp(
+                    onOpenSettings = bringSettingsToFront,
+                )
+            }
         }
     }
 
