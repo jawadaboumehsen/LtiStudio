@@ -401,16 +401,19 @@ fun SetupScreenContent(
                 // Sleek Specular Hairline Vertical Divider
                 GlassVerticalDivider(specular = true)
 
-                // Main Content Area with adaptive gutter padding and max content width constraint
+                // Main Content Area with adaptive gutter padding and max content width constraint.
+                // Only reduced transparency paints an opaque surface here; otherwise the shared
+                // glass backdrop must remain visible through this pane, as it did before this
+                // toggle was introduced.
                 Box(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
-                        .background(
+                        .then(
                             if (SetupTokens.IsReducedTransparency) {
-                                SetupTokens.OpaqueSurfaceColor
+                                Modifier.background(SetupTokens.OpaqueSurfaceColor)
                             } else {
-                                SetupTokens.ContentSurfaceColor
+                                Modifier
                             },
                         ),
                     contentAlignment = Alignment.TopCenter,
