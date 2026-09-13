@@ -11,9 +11,14 @@ package org.ide.lti.feature.setup
 
 import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.performKeyInput
 import java.io.File
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -22,6 +27,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import org.junit.Rule
 
 /**
@@ -29,10 +36,12 @@ import org.junit.Rule
  *
  * Verifies:
  * - Default startup remains completely unchanged when LTI_SETUP_BENCHMARK is absent.
- * - Benchmark mode loads exactly 100 recents, 100 tool fixtures, and 10,000 log lines.
+ * - Benchmark mode loads exactly 100 recents, 100 tool fixtures, and 12,000 log lines (steady cap at 10k).
  * - Keyboard-accessible "Start capture scenario" action and HUD overlay are rendered when enabled.
+ * - Modal provisioning preview open and close cycle is functional.
  * - Segment markers JSON file is serialized deterministically.
  */
+@OptIn(ExperimentalTestApi::class)
 class SetupPerformanceScenarioTest {
 
     @get:Rule
@@ -87,9 +96,69 @@ class SetupPerformanceScenarioTest {
         assertTrue(categories.size >= 5, "Tool fixtures must span across multiple categories")
 
         val logs = createBenchmarkLogs()
-        assertEquals(10_000, logs.size, "Benchmark harness must preload exactly 10,000 activity lines")
+        assertEquals(12_000, logs.size, "Benchmark harness must generate 12,000 activity lines to exercise steady cap")
         assertTrue(logs.first().contains("00000"), "First log line format must be deterministic")
-        assertTrue(logs.last().contains("09999"), "Last log line format must be deterministic")
+        assertTrue(logs.last().contains("11999"), "Last log line format must be deterministic")
+
+        val previewOp = createBenchmarkPreviewOperation()
+        assertEquals("bench-op-preview-01", previewOp.operationId)
+        assertEquals(SetupOperationKind.FULL_SETUP, previewOp.kind)
+        assertEquals(SetupOperationState.PREVIEW, previewOp.executionState)
+        assertTrue(previewOp.plannedChanges.requiresElevation)
+    }
+
+    @Test
+    fun testBoundedSteadyCapLogsHoldsAtCapWhenExceedingLimit() {
+        val activityState = SetupActivityState(
+            scope = CoroutineScope(Dispatchers.Unconfined),
+            maxBufferSize = 10_000,
+        )
+        val initialLogs = createBenchmarkLogs(12_000)
+        activityState.setLogs(initialLogs)
+        assertEquals(10_000, activityState.lines.size, "Activity state must cap visible lines at 10,000")
+        assertEquals(2_000, activityState.droppedLineCount.value, "Activity state must record 2,000 dropped lines")
+
+        // Stream additional 500 lines past limit
+        val additional = List(500) { "[EXTRA] Streamed event line $it" }
+        activityState.appendLines(additional)
+        assertEquals(10_000, activityState.lines.size, "Activity state must remain capped at 10,000 lines")
+        assertEquals(2_500, activityState.droppedLineCount.value, "Dropped count must increment by 500")
+    }
+
+    @Test
+    fun testBenchmarkModeExercisesPreviewModalOpenAndClose() {
+        SetupBenchmarkConfig.overrideBenchmarkActive = true
+        SetupBenchmarkConfig.warmupDurationMs = 10_000L
+
+        composeTestRule.setContent {
+            SetupPerformanceScenarioHook(
+                modifier = Modifier,
+                defaultContent = {
+                    Text("Default Setup Content Should Not Render")
+                },
+            )
+        }
+
+        composeTestRule.onNodeWithText("BENCHMARK HARNESS").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Provisioning Preview").assertDoesNotExist()
+
+        // Trigger modal preview using shortcut Ctrl+Shift+P
+        composeTestRule.onRoot().performKeyInput {
+            keyDown(Key.CtrlLeft)
+            keyDown(Key.ShiftLeft)
+            keyDown(Key.P)
+            keyUp(Key.P)
+            keyUp(Key.ShiftLeft)
+            keyUp(Key.CtrlLeft)
+        }
+
+        // Modal should open
+        composeTestRule.onNodeWithText("Provisioning Preview").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Confirm & Set Up").assertIsDisplayed()
+
+        // Dismiss modal using Cancel button
+        composeTestRule.onNodeWithText("Cancel").performClick()
+        composeTestRule.onNodeWithText("Provisioning Preview").assertDoesNotExist()
     }
 
     @Test

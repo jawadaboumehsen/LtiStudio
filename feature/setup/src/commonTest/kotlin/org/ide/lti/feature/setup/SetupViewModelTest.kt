@@ -48,14 +48,21 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
+@Suppress("LargeClass")
 class SetupViewModelTest {
 
     private class FakeWorkspaceRepository : WorkspaceRepository {
         val recents = MutableStateFlow<List<RecentProject>>(emptyList())
         val workspaces = mutableMapOf<String, Workspace>()
 
+        var shouldThrowOnGet = false
+        var throwMessage = "Disk I/O error"
+
         override fun getWorkspaces(): Flow<List<Workspace>> = MutableStateFlow(workspaces.values.toList())
-        override suspend fun getWorkspace(id: String): Workspace? = workspaces[id]
+        override suspend fun getWorkspace(id: String): Workspace? {
+            if (shouldThrowOnGet) throw IllegalStateException(throwMessage)
+            return workspaces[id]
+        }
         override suspend fun saveWorkspace(workspace: Workspace) {
             workspaces[workspace.id] = workspace
         }
@@ -212,8 +219,15 @@ class SetupViewModelTest {
         }
         override fun observe(): Flow<SetupOutcome?> = flowOf(null)
         override fun observeActivity(): Flow<SetupLogEvent> = emptyFlow()
-        override suspend fun recover(attemptId: String?): SetupOutcome =
-            SetupOutcome.Failed(stage = null, reason = "fake service has no journal")
+        var recoverCount = 0
+            private set
+        var lastRecoverAttemptId: String? = null
+            private set
+        override suspend fun recover(attemptId: String?): SetupOutcome {
+            recoverCount++
+            lastRecoverAttemptId = attemptId
+            return SetupOutcome.Failed(stage = null, reason = "fake service has no journal")
+        }
         override suspend fun cancel(): SetupOutcome =
             SetupOutcome.Failed(stage = null, reason = "fake service has nothing to cancel")
 
@@ -942,6 +956,82 @@ class SetupViewModelTest {
             assertTrue(sudoItem?.copyableCommand?.contains("sudo tee /etc/sudoers.d/ltirom") == true)
             assertEquals("setup:submodule:apktool", state.stepRunIds[SetupStepStage.REPO_SYNCHRONIZATION])
             assertEquals("setup:build:erofs-utils:cmake", state.stepRunIds[SetupStepStage.TOOLCHAIN_COMPILATION])
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun testReconnectPendingAttemptDelegatesToServiceOrShowsNotice() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        Dispatchers.setMain(testDispatcher)
+        try {
+            // Case 1: No pending attempt -> sets notice
+            val fakeToolchain1 = FakeToolchainProvisioningService()
+            val repo1 = FakeWorkspaceRepository()
+            val manager1 = WorkspaceManager(repo1, this)
+            val viewModel1 = SetupViewModel(
+                workspaceManager = manager1,
+                toolchainService = fakeToolchain1,
+            )
+            testScheduler.advanceUntilIdle()
+
+            viewModel1.reconnectPendingAttempt()
+            assertEquals("Nothing to reconnect: no journaled attempt is pending.", viewModel1.environmentNotice.value)
+            assertEquals(0, fakeToolchain1.recoverCount)
+
+            // Case 2: Pending attempt present -> invokes recover
+            val fakeToolchain2 = FakeToolchainProvisioningService(
+                initialState = ToolchainSetupState(
+                    pendingAttemptId = "attempt_rec_42",
+                    recoveryBlockReason = "Crash during stage execution",
+                )
+            )
+            val repo2 = FakeWorkspaceRepository()
+            val manager2 = WorkspaceManager(repo2, this)
+            val viewModel2 = SetupViewModel(
+                workspaceManager = manager2,
+                toolchainService = fakeToolchain2,
+            )
+            testScheduler.advanceUntilIdle()
+
+            viewModel2.reconnectPendingAttempt()
+            testScheduler.advanceUntilIdle()
+
+            assertTrue(fakeToolchain2.recoverCount >= 1, "reconnectPendingAttempt must delegate to recover on service")
+            assertEquals("attempt_rec_42", fakeToolchain2.lastRecoverAttemptId)
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun testDismissWorkspaceErrorClearsErrorState() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        Dispatchers.setMain(testDispatcher)
+        try {
+            val repo = FakeWorkspaceRepository()
+            repo.shouldThrowOnGet = true
+            repo.throwMessage = "Simulated disk corruption"
+            val manager = WorkspaceManager(repo, this)
+            val project = RecentProject(
+                workspaceId = "p_err",
+                name = "ErrorProject",
+                path = "/home/user/error_project",
+                lastOpened = Clock.System.now(),
+            )
+            repo.recents.value = listOf(project)
+
+            val viewModel = SetupViewModel(workspaceManager = manager)
+            testScheduler.advanceUntilIdle()
+
+            viewModel.openRecentProject(project) {}
+            testScheduler.advanceUntilIdle()
+
+            assertTrue(viewModel.workspaceError.value != null, "Error must be recorded in workspaceError state")
+
+            viewModel.dismissWorkspaceError()
+            assertNull(viewModel.workspaceError.value, "dismissWorkspaceError must clear workspaceError state to null")
         } finally {
             Dispatchers.resetMain()
         }

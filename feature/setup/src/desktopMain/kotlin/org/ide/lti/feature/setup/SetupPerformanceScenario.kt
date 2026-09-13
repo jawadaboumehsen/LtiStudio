@@ -133,11 +133,12 @@ fun SetupPerformanceScenarioDriver(
     // 1. Synthetic Fixture Data Preloaded at Presentation Boundary
     val benchmarkRecents = remember { createBenchmarkRecents() }
     val benchmarkTools = remember { createBenchmarkTools() }
-    val benchmarkLogs = remember { createBenchmarkLogs() }
+    val benchmarkLogs = remember { createBenchmarkLogs(12_000) }
 
     var currentTab by remember { mutableStateOf(SetupTab.PROJECTS) }
     var selectedCockpitTab by remember { mutableStateOf("console") }
     var selectedWorkspaceId by remember { mutableStateOf<String?>(benchmarkRecents.firstOrNull()?.workspaceId) }
+    var activeOperation by remember { mutableStateOf<SetupOperation?>(null) }
 
     val workspacesListState = rememberLazyListState()
     val toolsScrollState = rememberScrollState()
@@ -153,7 +154,7 @@ fun SetupPerformanceScenarioDriver(
     var isRunningScenario by remember { mutableStateOf(false) }
     var activeSegmentName by remember { mutableStateOf<String?>(null) }
     var isCompleted by remember { mutableStateOf(false) }
-    var statusMessage by remember { mutableStateOf("Preloaded 100 recents, 100 tools, 10k logs") }
+    var statusMessage by remember { mutableStateOf("Preloaded 100 recents, 100 tools, 12k logs (capped at 10k)") }
 
     // Warmup countdown
     LaunchedEffect(Unit) {
@@ -243,7 +244,7 @@ fun SetupPerformanceScenarioDriver(
                     ),
                 )
 
-                // Segment 3: Environment Activity Scroll (20 - 30s)
+                // Segment 3: Environment Activity Scroll & Preview Modal (20 - 30s)
                 currentTab = SetupTab.ENVIRONMENT
                 selectedCockpitTab = "console"
                 activeSegmentName = "Environment"
@@ -253,6 +254,8 @@ fun SetupPerformanceScenarioDriver(
 
                 val seg3Job = launch {
                     var direction = 1f
+                    var streamCounter = 12_000
+                    var tick = 0
                     while (isActive) {
                         activityListState.scrollBy(20f * direction)
                         val firstVisible = activityListState.firstVisibleItemIndex
@@ -261,10 +264,33 @@ fun SetupPerformanceScenarioDriver(
                         } else if (firstVisible == 0 && activityListState.firstVisibleItemScrollOffset == 0) {
                             direction = 1f
                         }
+                        // Periodically feed additional lines to exercise bounded steady-cap retention while scrolling
+                        tick++
+                        if (tick % 60 == 0) {
+                            activityState.appendLines(List(25) {
+                                val padded = (streamCounter++).toString().padStart(5, '0')
+                                "[$padded] [STREAM] Live benchmark event while scrolling"
+                            })
+                        }
                         delay(16)
                     }
                 }
-                delay(segmentDuration)
+
+                // Modal Preview open/close cycle inside Segment 3 (open at 60%, hold for 25% of segment duration)
+                val modalOpenDelay = (segmentDuration * 0.6).toLong()
+                val modalDisplayDuration = (segmentDuration * 0.25).toLong()
+                val remainingSegmentDuration = segmentDuration - modalOpenDelay - modalDisplayDuration
+
+                delay(modalOpenDelay)
+                activeOperation = createBenchmarkPreviewOperation()
+                statusMessage = "Segment 3/3: Exercising Provisioning Preview Modal"
+                delay(modalDisplayDuration)
+                activeOperation = null
+                statusMessage = "Segment 3/3: Resuming Environment Activity Scroll"
+                if (remainingSegmentDuration > 0) {
+                    delay(remainingSegmentDuration)
+                }
+
                 seg3Job.cancel()
                 val seg3EndNanos = System.nanoTime()
                 println("[SetupBenchmark] Segment 'Environment' ended at monotonic nanos: $seg3EndNanos")
@@ -315,7 +341,16 @@ fun SetupPerformanceScenarioDriver(
         selectedTab = currentTab,
         selectedDestination = SetupDestination.fromId(currentTab.id),
         environmentNotice = null,
+        activeOperation = activeOperation,
     )
+
+    val toggleModalPreview: () -> Unit = {
+        activeOperation = if (activeOperation == null) {
+            createBenchmarkPreviewOperation()
+        } else {
+            null
+        }
+    }
 
     val syntheticUiActions = SetupUiActions(
         onSearchQueryChange = {},
@@ -349,9 +384,15 @@ fun SetupPerformanceScenarioDriver(
         onCreateWorkspace = {},
         onOpenManageTargets = {},
         onOpenHelp = {},
-        onPreviewSetup = {},
-        onConfirmOperation = {},
-        onDismissPreview = {},
+        onPreviewSetup = {
+            activeOperation = createBenchmarkPreviewOperation()
+        },
+        onConfirmOperation = {
+            activeOperation = null
+        },
+        onDismissPreview = {
+            activeOperation = null
+        },
         onRetryStage = {},
     )
 
@@ -361,11 +402,19 @@ fun SetupPerformanceScenarioDriver(
             .onKeyEvent { event ->
                 if (event.type == KeyEventType.KeyDown &&
                     event.isCtrlPressed &&
-                    event.isShiftPressed &&
-                    event.key == Key.B
+                    event.isShiftPressed
                 ) {
-                    startScenario()
-                    true
+                    when (event.key) {
+                        Key.B -> {
+                            startScenario()
+                            true
+                        }
+                        Key.P -> {
+                            toggleModalPreview()
+                            true
+                        }
+                        else -> false
+                    }
                 } else {
                     false
                 }
@@ -506,18 +555,39 @@ fun createBenchmarkTools(): List<ToolComponentItem> {
 }
 
 /**
- * Generates 10,000 synthetic log lines for bounded activity viewport benchmarking.
+ * Generates synthetic log lines for bounded activity viewport benchmarking (default: 12,000 to exercise steady cap).
  */
-fun createBenchmarkLogs(): List<String> {
-    return List(10_000) { i ->
+fun createBenchmarkLogs(count: Int = 12_000): List<String> {
+    return List(count) { i ->
+        val padded = i.toString().padStart(5, '0')
         when (i % 5) {
-            0 -> String.format("[%05d] [INFO] Subsystem kernel readiness validated on WSL2 instance", i)
-            1 -> String.format("[%05d] [BUILD] Compiling native binary partition-tools-%d target: [OK]", i, i)
-            2 -> String.format("[%05d] [WARNING] Minor headroom delta detected on /dev/sdb, 14200MB available", i)
-            3 -> String.format("[%05d] [STAGE] Pre-flight system doctor verified 24 diagnostic rules", i)
-            else -> String.format("[%05d] [SUCCESS] Completed step execution with zero exit code", i)
+            0 -> "[$padded] [INFO] Subsystem kernel readiness validated on WSL2 instance"
+            1 -> "[$padded] [BUILD] Compiling native binary partition-tools-$i target: [OK]"
+            2 -> "[$padded] [WARNING] Minor headroom delta detected on /dev/sdb, 14200MB available"
+            3 -> "[$padded] [STAGE] Pre-flight system doctor verified 24 diagnostic rules"
+            else -> "[$padded] [SUCCESS] Completed step execution with zero exit code"
         }
     }
+}
+
+/**
+ * Creates a synthetic confirmable SetupOperation preview for performance benchmarking.
+ */
+fun createBenchmarkPreviewOperation(): SetupOperation {
+    return SetupOperation(
+        operationId = "bench-op-preview-01",
+        kind = SetupOperationKind.FULL_SETUP,
+        plannedChanges = PlannedSetupChanges(
+            packagesToInstall = listOf("cmake", "ninja-build", "ccache"),
+            submodulesToSync = listOf("android-tools", "erofs-utils"),
+            toolsToCompile = listOf("adb", "fastboot", "mkfs.erofs"),
+            toolsToPublish = listOf("adb", "fastboot", "mkfs.erofs"),
+            requiresElevation = true,
+            elevationReason = "Package installation and udev rule deployment",
+            autoDoctorRemediation = true,
+        ),
+        executionState = SetupOperationState.PREVIEW,
+    )
 }
 
 /**
