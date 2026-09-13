@@ -346,6 +346,14 @@ class SetupViewModel(
     }
 
     /**
+     * Reconciles the journaled pending attempt against server truth (US3). Reconnect reuses the
+     * attemptId; it never resubmits and never starts new work.
+     */
+    fun reconnectPendingAttempt() {
+        environmentSetupState.reconcilePendingAttempt()
+    }
+
+    /**
      * Retries the current failed/pending setup step. Retry is a mutation: it opens a preview that the
      * user confirms explicitly; it never executes directly (FR-003).
      */

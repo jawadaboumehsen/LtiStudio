@@ -2,9 +2,6 @@ package org.ide.lti.core.data.setup
 
 import io.ltirom.tooling.client.wsl.WslCliExecutor
 import io.ltirom.tooling.core.ports.RemoteTransportPort
-import io.ltirom.tooling.core.remote.RunStatusValue
-import io.ltirom.tooling.core.remote.StartRunRequest
-import io.ltirom.tooling.core.remote.StreamEvent
 import io.ltirom.tooling.core.remote.ToolExecutionRequest
 import org.ide.lti.core.domain.repository.setup.ToolchainSetupRepository
 import org.ide.lti.core.domain.setup.SetupStepStage
@@ -17,7 +14,8 @@ import org.ide.lti.core.domain.setup.SetupStepStage
  *   for external tool repositories.
  * - Incremental Execution & Durable Runs: Consults [ToolchainSetupRepository] and local filesystem
  *   to skip redundant clones. When [RemoteTransportPort] is provided, executes clone operations as
- *   durable runs with idempotency keys (`setup:submodule:<name>`), reattaching to in-flight runs on reconnect.
+ *   durable runs through [JournaledRunLauncher]: every run is journaled under environment/attempt/child
+ *   identity before submission (no static idempotency keys), and an unjournaled durable run is refused.
  * - No Shell Chains: All commands execute as discrete arguments without `bash -c` or `&&`.
  */
 public class SubmoduleSyncEngine(
@@ -52,6 +50,7 @@ public class SubmoduleSyncEngine(
         distro: String,
         extDir: String,
         submodules: List<PinnedSubmodule> = DEFAULT_SUBMODULES,
+        journal: SetupJournalContext? = null,
         onRunStarted: (SetupStepStage, String) -> Unit = { _, _ -> },
         log: (String) -> Unit = {},
     ): Result<Unit> {
@@ -72,31 +71,35 @@ public class SubmoduleSyncEngine(
             if (!dirExists) {
                 log("[Step 4/5] Cloning submodule '${sub.name}' from ${sub.url}...")
                 if (transport != null) {
-                    val idempotencyKey = "setup:submodule:${sub.name}"
-                    val runHandle = transport.startRun(
-                        StartRunRequest(
-                            request = ToolExecutionRequest(
-                                toolId = "git",
-                                arguments = listOf("clone", "--recursive", sub.url, subDir),
-                                workingDirectory = extDir,
-                                timeoutMs = 300_000L
-                            ),
-                            idempotencyKey = idempotencyKey
+                    val launcher = journaledLauncher(journal) ?: return Result.failure(
+                        IllegalStateException(
+                            "Durable clone of '${sub.name}' requires a journaled attempt; " +
+                                "refusing an unjournaled server run."
                         )
                     )
-                    onRunStarted(SetupStepStage.REPO_SYNCHRONIZATION, runHandle.runId)
-                    log("[Step 4/5] Attached to clone run ${runHandle.runId} for '${sub.name}'.")
-                    var finishedExitCode: Int? = null
-                    transport.attachRun(runHandle.runId).collect { seqEv ->
-                        when (val ev = seqEv.event) {
-                            is StreamEvent.OutputChunk -> log("[${sub.name}] ${ev.text.trimEnd()}")
-                            is StreamEvent.ExecutionFinished -> finishedExitCode = ev.exitCode
-                            else -> {}
-                        }
+                    val runResult = launcher.run(
+                        stage = SetupStepStage.REPO_SYNCHRONIZATION,
+                        actionId = "submodule:${sub.name}",
+                        request = ToolExecutionRequest(
+                            toolId = "git",
+                            arguments = listOf("clone", "--recursive", sub.url, subDir),
+                            workingDirectory = extDir,
+                            timeoutMs = 300_000L
+                        ),
+                        recipeRevision = sub.commit,
+                        onRunStarted = { stage, runId ->
+                            onRunStarted(stage, runId)
+                            log("[Step 4/5] Attached to clone run $runId for '${sub.name}'.")
+                        },
+                        log = log,
+                    )
+                    val finalCode = when (runResult) {
+                        is JournaledRunResult.Finished -> runResult.exitCode
+                        is JournaledRunResult.JournalRejected ->
+                            return Result.failure(IllegalStateException(runResult.reason))
+                        is JournaledRunResult.Interrupted ->
+                            return Result.failure(IllegalStateException(runResult.reason))
                     }
-                    val status = transport.getRun(runHandle.runId)
-                    val finalCode = finishedExitCode ?: status?.exitCode
-                        ?: if (status?.status == RunStatusValue.COMPLETED) 0 else 1
                     if (finalCode != 0) {
                         val err = "Failed to clone ${sub.name}: exit code $finalCode"
                         return Result.failure(IllegalStateException(err))
@@ -138,6 +141,12 @@ public class SubmoduleSyncEngine(
 
         repository?.markStageCompleted(SetupStepStage.REPO_SYNCHRONIZATION.name, true)
         return Result.success(Unit)
+    }
+
+    private fun journaledLauncher(journal: SetupJournalContext?): JournaledRunLauncher? {
+        val port = transport
+        val repo = repository
+        return if (port != null && repo != null && journal != null) JournaledRunLauncher(port, repo, journal) else null
     }
 
     /**

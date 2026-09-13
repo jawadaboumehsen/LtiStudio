@@ -93,6 +93,7 @@ fun EnvironmentStepContent(
         activeOperation = state.activeOperation,
         onNavigateToProjects = onNavigateToProjects,
         onCheckEnvironment = actions.onCheckEnvironment,
+        onReconnect = actions.onReconnect,
         onRetrySetupStep = actions.onRetrySetupStep,
         onRetryStage = actions.onRetryStage,
         onPreviewSetup = actions.onPreviewSetup,
@@ -149,6 +150,7 @@ fun EnvironmentStepContent(
     modifier: Modifier = Modifier,
     environmentPresentation: EnvironmentPresentation? = null,
     activeOperation: SetupOperation? = null,
+    onReconnect: () -> Unit = {},
     onRetryStage: (SetupStepStage) -> Unit = {},
     onPreviewSetup: (SetupStepStage?) -> Unit = {},
     onConfirmOperation: () -> Unit = {},
@@ -302,6 +304,7 @@ fun EnvironmentStepContent(
             onNavigateToProjects = onNavigateToProjects,
             onProceedToLaunchpad = onProceedToLaunchpad,
             onCheckEnvironment = onCheckEnvironment,
+            onReconnect = onReconnect,
             onPreviewSetup = onPreviewSetup,
             onRetryStage = onRetryStage,
             resolvedBackdrop = resolvedBackdrop,
@@ -432,6 +435,7 @@ private fun EnvironmentStepActionBar(
     onNavigateToProjects: (() -> Unit)?,
     onProceedToLaunchpad: () -> Unit,
     onCheckEnvironment: () -> Unit,
+    onReconnect: () -> Unit,
     onPreviewSetup: (SetupStepStage?) -> Unit,
     onRetryStage: (SetupStepStage) -> Unit,
     resolvedBackdrop: LayerBackdrop,
@@ -460,6 +464,7 @@ private fun EnvironmentStepActionBar(
                 onNavigateToProjects = onNavigateToProjects,
                 onProceedToLaunchpad = onProceedToLaunchpad,
                 onCheckEnvironment = onCheckEnvironment,
+                onReconnect = onReconnect,
                 onPreviewSetup = onPreviewSetup,
                 onRetryStage = onRetryStage,
                 glassColors = glassColors,
@@ -502,6 +507,7 @@ private fun EnvironmentPrimaryActionButton(
     onNavigateToProjects: (() -> Unit)?,
     onProceedToLaunchpad: () -> Unit,
     onCheckEnvironment: () -> Unit,
+    onReconnect: () -> Unit,
     onPreviewSetup: (SetupStepStage?) -> Unit,
     onRetryStage: (SetupStepStage) -> Unit,
     glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme,
@@ -519,6 +525,10 @@ private fun EnvironmentPrimaryActionButton(
             enabled = !isBusy,
             presentation = presentation,
             onRetryStage = onRetryStage,
+        )
+        PrimaryAction.RECONNECT -> ReconnectActionButton(
+            enabled = !isBusy,
+            onReconnect = onReconnect,
         )
         PrimaryAction.RETRY_STAGE -> RetryStageActionButton(
             enabled = !isBusy,
@@ -602,6 +612,29 @@ private fun OpenWorkspacesActionButton(
                 contentDescription = null,
                 modifier = Modifier.size(IconSize.Small),
             )
+        }
+    }
+}
+
+@Composable
+private fun ReconnectActionButton(
+    enabled: Boolean,
+    onReconnect: () -> Unit,
+) {
+    GlassPrimaryButton(
+        onClick = onReconnect,
+        enabled = enabled,
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+        ) {
+            Icon(
+                painter = AppIcons.RefreshPainterResource(),
+                contentDescription = null,
+                modifier = Modifier.size(IconSize.Small),
+            )
+            Text(text = "Reconnect", maxLines = 1, softWrap = false)
         }
     }
 }

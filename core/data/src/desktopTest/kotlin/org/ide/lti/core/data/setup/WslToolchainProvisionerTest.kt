@@ -287,6 +287,7 @@ class WslToolchainProvisionerTest {
         val provisioner = WslToolchainProvisioner(
             supervisor = supervisor,
             transport = transport,
+            repository = inMemoryToolchainRepository(),
             detector = detector,
             cli = fakeCli,
             dispatcher = testDispatcher
@@ -317,6 +318,7 @@ class WslToolchainProvisionerTest {
         val provisioner = WslToolchainProvisioner(
             supervisor = FakeDaemonSupervisor(descriptor = null, isHealthyResult = false),
             transport = FakeRemoteTransport(fakeCli = fakeCli, healthInfo = null),
+            repository = inMemoryToolchainRepository(),
             detector = WslEnvironmentDetector(cli = fakeCli),
             cli = fakeCli,
             dispatcher = testDispatcher
@@ -339,6 +341,7 @@ class WslToolchainProvisionerTest {
         val provisioner = WslToolchainProvisioner(
             supervisor = supervisor,
             transport = transport,
+            repository = inMemoryToolchainRepository(),
             detector = detector,
             cli = fakeCli,
             dispatcher = testDispatcher
@@ -377,6 +380,7 @@ class WslToolchainProvisionerTest {
         val provisioner = WslToolchainProvisioner(
             supervisor = supervisor,
             transport = transport,
+            repository = inMemoryToolchainRepository(),
             detector = detector,
             cli = fakeCli,
             dispatcher = testDispatcher
@@ -399,6 +403,7 @@ class WslToolchainProvisionerTest {
         val provisioner = WslToolchainProvisioner(
             supervisor = supervisor,
             transport = transport,
+            repository = inMemoryToolchainRepository(),
             detector = detector,
             cli = fakeCli,
             dispatcher = testDispatcher
@@ -428,6 +433,7 @@ class WslToolchainProvisionerTest {
         val provisioner = WslToolchainProvisioner(
             supervisor = supervisor,
             transport = transport,
+            repository = inMemoryToolchainRepository(),
             detector = detector,
             cli = fakeCli,
             dispatcher = testDispatcher,
@@ -458,6 +464,7 @@ class WslToolchainProvisionerTest {
         val provisioner = WslToolchainProvisioner(
             supervisor = supervisor,
             transport = transport,
+            repository = inMemoryToolchainRepository(),
             detector = detector,
             cli = fakeCli,
             dispatcher = testDispatcher
@@ -492,6 +499,7 @@ class WslToolchainProvisionerTest {
         val provisioner = WslToolchainProvisioner(
             supervisor = supervisor,
             transport = transport,
+            repository = inMemoryToolchainRepository(),
             detector = detector,
             cli = fakeCli,
             dispatcher = testDispatcher,

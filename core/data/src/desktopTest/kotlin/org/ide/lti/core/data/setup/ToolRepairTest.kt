@@ -137,6 +137,7 @@ class ToolRepairTest {
         val provisioner = WslToolchainProvisioner(
             supervisor = SpyDaemonSupervisor(),
             transport = transport,
+            repository = inMemoryToolchainRepository(),
             cli = StubCliExecutor(),
             dispatcher = UnconfinedTestDispatcher(testScheduler),
         )
@@ -161,6 +162,7 @@ class ToolRepairTest {
         val provisioner = WslToolchainProvisioner(
             supervisor = SpyDaemonSupervisor(),
             transport = transport,
+            repository = inMemoryToolchainRepository(),
             cli = StubCliExecutor(),
             dispatcher = UnconfinedTestDispatcher(testScheduler),
         )
@@ -175,6 +177,7 @@ class ToolRepairTest {
         val provisioner = WslToolchainProvisioner(
             supervisor = SpyDaemonSupervisor(),
             transport = transport,
+            repository = inMemoryToolchainRepository(),
             cli = StubCliExecutor(),
             dispatcher = UnconfinedTestDispatcher(testScheduler),
         )
@@ -198,6 +201,7 @@ class ToolRepairTest {
         val provisioner = WslToolchainProvisioner(
             supervisor = SpyDaemonSupervisor(),
             transport = transport,
+            repository = inMemoryToolchainRepository(),
             cli = StubCliExecutor(),
             dispatcher = UnconfinedTestDispatcher(testScheduler),
             coordinator = coordinator,
@@ -243,6 +247,7 @@ class ToolRepairTest {
         val provisioner = WslToolchainProvisioner(
             supervisor = SpyDaemonSupervisor(),
             transport = transport,
+            repository = inMemoryToolchainRepository(),
             cli = StubCliExecutor(),
             dispatcher = UnconfinedTestDispatcher(testScheduler),
         )

@@ -53,6 +53,7 @@ data class SetupUiState(
 @Immutable
 data class SetupUiActions(
     val onCheckEnvironment: () -> Unit = {},
+    val onReconnect: () -> Unit = {},
     val onRetrySetupStep: () -> Unit = {},
     val onProvisionAvbKey: () -> Unit = {},
     val onSelectTarget: (TargetDevice) -> Unit = {},

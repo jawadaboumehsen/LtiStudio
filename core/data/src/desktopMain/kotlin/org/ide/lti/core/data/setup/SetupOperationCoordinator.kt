@@ -6,6 +6,7 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import org.ide.lti.core.domain.repository.setup.ToolchainSetupRepository
 import org.ide.lti.core.domain.setup.SetupOutcome
 import java.util.concurrent.ConcurrentHashMap
 
@@ -18,8 +19,18 @@ import java.util.concurrent.ConcurrentHashMap
  * - "Lock admission atomically, release lock before IO; concurrent mutation/test/reset returns Busy with owner."
  * - "Cleanup occurs on every terminal path." (FR-005, FR-006)
  * - "CancellationException is rethrown after cleanup; durable detach and explicit cancel are distinct." (FR-006)
+ * - "Fresh retry requires persisted authoritative terminal proof for every possibly submitted child;
+ *    cancellation acknowledgement alone never unlocks mutation." (US3)
  */
-public class SetupOperationCoordinator {
+public class SetupOperationCoordinator(
+    private val repository: ToolchainSetupRepository? = null,
+) {
+    public companion object {
+        /** Operation kinds admitted while the journal still holds an unreconciled attempt or a recovery block. */
+        public const val KIND_CHECK: String = "CHECK"
+        public const val KIND_RECOVERY: String = "RECOVERY"
+        public const val KIND_CACHE_RESET: String = "CACHE_RESET"
+    }
 
     public data class OperationOwner(
         val operationId: String,
@@ -42,12 +53,15 @@ public class SetupOperationCoordinator {
      * Attempts atomic admission for an operation on [environmentKey].
      * Admission decision is held only momentarily; lock is released before invoking [block].
      */
+    @Suppress("ReturnCount") // admission has three distinct early exits: journal gate, busy owner, outcome
     public suspend fun withAdmission(
         environmentKey: String,
         operationId: String,
         kind: String,
         block: suspend () -> SetupOutcome,
     ): SetupOutcome {
+        journalGate(environmentKey, kind)?.let { return it }
+
         val job = currentCoroutineContext()[Job]
         val existing = synchronized(admissionLock) {
             val current = activeOwners[environmentKey]
@@ -80,6 +94,37 @@ public class SetupOperationCoordinator {
             synchronized(admissionLock) {
                 activeOwners.remove(environmentKey)
             }
+        }
+    }
+
+    /**
+     * Journal gate (US3): a mutation is admitted only when the journal holds no unreconciled attempt and no
+     * recovery block. Checks, recovery itself and the explicitly confirmed cache reset (the user-directed
+     * escape from an unreconcilable journal) pass through. Reads only in-memory journal state - no IO.
+     * Enforces "Fresh retry requires persisted authoritative terminal proof for every possibly submitted child".
+     */
+    @Suppress("ReturnCount") // each early return is one distinct gate verdict
+    private fun journalGate(environmentKey: String, kind: String): SetupOutcome? {
+        val repo = repository ?: return null
+        if (kind == KIND_CHECK || kind == KIND_RECOVERY || kind == KIND_CACHE_RESET) return null
+        val state = repo.currentState
+        if (state.recoveryBlocked) {
+            return SetupOutcome.Interrupted(
+                state.recoveryBlockReason ?: "Environment '$environmentKey' is recovery-blocked.",
+            )
+        }
+        val active = state.activeAttempt ?: return null
+        val unproven = active.unprovenIntents
+        return when {
+            unproven.isNotEmpty() -> SetupOutcome.Interrupted(
+                "Unresolved prior execution: '${unproven.first().actionId}' of attempt ${active.attemptId} " +
+                    "lacks authoritative terminal proof; reconnect before starting new work.",
+            )
+            active.isActive -> SetupOutcome.Interrupted(
+                "Attempt ${active.attemptId} is still journaled as ${active.status}; " +
+                    "reconnect before starting new work.",
+            )
+            else -> null
         }
     }
 

@@ -151,6 +151,14 @@ public data class ToolchainSetupState(
     val storageAvailableBytes: Long? = null,
     val storageMeasuredAt: Long? = null,
     val activeOperationId: String? = null,
+    /**
+     * Journaled attempt that has not been reconciled against server truth yet (US3). Non-null after a
+     * restart or dropped connection until [ToolchainProvisioningService.recover] archives it; while set,
+     * every mutation is refused with a typed Interrupted outcome. Reconnect reuses this attemptId.
+     */
+    val pendingAttemptId: String? = null,
+    /** Durable recovery block reason: the journal is ambiguous and needs user-directed recovery. */
+    val recoveryBlockReason: String? = null,
 ) {
     val isBusy: Boolean get() = isRunning || isChecking || isFixing || activeOperationId != null
 

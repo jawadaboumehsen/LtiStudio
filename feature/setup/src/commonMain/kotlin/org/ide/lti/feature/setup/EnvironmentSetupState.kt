@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -50,6 +51,7 @@ enum class SetupOperationState {
     SUCCEEDED,
     FAILED,
     CANCELLED,
+    INTERRUPTED,
 }
 
 /**
@@ -98,6 +100,7 @@ data class SetupOperation(
  * - Cleans up busy/mutation state in finally blocks on error/cancellation (FR-007).
  * - Preserves execution state across Setup destination navigation during a session (FR-004, FR-007).
  */
+@Suppress("TooManyFunctions") // one state holder for check/preview/confirm/observe/recover of the environment
 class EnvironmentSetupState(
     private val scope: CoroutineScope,
     private val toolchainService: ToolchainProvisioningService? = null,
@@ -157,23 +160,60 @@ class EnvironmentSetupState(
     private var currentExecutionJob: Job? = null
 
     init {
-        // Reconnect to an already-running mutation on state-holder (re)creation, e.g. after
-        // navigating away and back to the Environment destination during a session (FR-007).
         val initial = toolchainSetupState.value
-        if (initial.isRunning) {
-            val stage = initial.currentStage
-            val runId = stage?.let { initial.stepRunIds[it] }
-            if (runId != null) {
-                attachToDurableRun(runId, stage)
-            } else {
-                _activeOperation.value = SetupOperation(
-                    kind = if (stage != null) SetupOperationKind.RETRY_STAGE else SetupOperationKind.FULL_SETUP,
-                    stageId = stage,
-                    executionState = SetupOperationState.RECONNECTING,
-                    autoDoctorEnabled = _isAutoDoctorEnabled.value,
-                )
+        when {
+            // A journaled attempt survived a restart or a dropped connection: reconcile it against server
+            // truth before anything else is offered (US3 T023). Reconnect reuses the attemptId.
+            initial.pendingAttemptId != null -> reconcilePendingAttempt()
+            // Reconnect to an already-running mutation on state-holder (re)creation, e.g. after
+            // navigating away and back to the Environment destination during a session (FR-007).
+            initial.isRunning -> {
+                val stage = initial.currentStage
+                val runId = stage?.let { initial.stepRunIds[it] } ?: initial.activeOperationId
+                if (runId != null) {
+                    attachToDurableRun(runId, stage)
+                } else {
+                    _activeOperation.value = SetupOperation(
+                        kind = if (stage != null) SetupOperationKind.RETRY_STAGE else SetupOperationKind.FULL_SETUP,
+                        stageId = stage,
+                        executionState = SetupOperationState.RECONNECTING,
+                        autoDoctorEnabled = _isAutoDoctorEnabled.value,
+                    )
+                }
             }
         }
+    }
+
+    /**
+     * True while the durable journal still holds an unreconciled attempt or a recovery block. New mutations
+     * are refused until [reconcilePendingAttempt] archives the attempt, or the user confirms a cache reset
+     * (the explicit, user-directed recovery for an unreconcilable journal, FR-008).
+     */
+    private val journalNeedsRecovery: Boolean
+        get() = toolchainSetupState.value.pendingAttemptId != null ||
+            toolchainSetupState.value.recoveryBlockReason != null
+
+    private fun refuseWhileJournalNeedsRecovery(): Boolean {
+        if (!journalNeedsRecovery) return false
+        val state = toolchainSetupState.value
+        _environmentNotice.value = state.recoveryBlockReason?.let { "Recovery required: $it" }
+            ?: "Attempt ${state.pendingAttemptId} is still being reconciled; reconnect before starting new work."
+        return true
+    }
+
+    /**
+     * Single admission check for a new preview: the service must be bound, the journal must not need
+     * recovery, and nothing may be running. Each refusal leaves a notice where it matters.
+     */
+    private fun canStartPreview(): Boolean {
+        val serviceBound = toolchainService != null
+        if (!serviceBound) {
+            // Nothing can be planned or confirmed without the service; never synthesize a preview.
+            _environmentNotice.value = "Toolchain service is not available in this session."
+        }
+        return serviceBound &&
+            !refuseWhileJournalNeedsRecovery() &&
+            !(toolchainSetupState.value.isBusy || currentExecutionJob?.isActive == true)
     }
 
     /**
@@ -207,12 +247,7 @@ class EnvironmentSetupState(
      * Previews planned changes and required elevation without executing any mutation (FR-005).
      */
     fun previewSetup(stage: SetupStepStage? = null) {
-        if (toolchainService == null) {
-            // Nothing can be planned or confirmed without the service; never synthesize a preview.
-            _environmentNotice.value = "Toolchain service is not available in this session."
-            return
-        }
-        if (toolchainSetupState.value.isBusy || currentExecutionJob?.isActive == true) return
+        if (!canStartPreview()) return
         if (stage != null) {
             _selectedStage.value = stage
         }
@@ -322,6 +357,8 @@ class EnvironmentSetupState(
             _environmentNotice.value = "No setup plan available to confirm. Please preview the operation first."
             return
         }
+        // The confirmed cache reset is the user-directed recovery for an unreconcilable journal (FR-008).
+        if (plan.kind != SetupPlanKind.CACHE_RESET && refuseWhileJournalNeedsRecovery()) return
         if (toolchainSetupState.value.isBusy || currentExecutionJob?.isActive == true) {
             return
         }
@@ -367,7 +404,7 @@ class EnvironmentSetupState(
                     }
                     is SetupOutcome.Interrupted -> {
                         _activeOperation.value = _activeOperation.value?.copy(
-                            executionState = SetupOperationState.FAILED,
+                            executionState = SetupOperationState.INTERRUPTED,
                             failure = outcome.reason,
                         )
                         _environmentNotice.value = "Operation interrupted: ${outcome.reason}"
@@ -404,16 +441,14 @@ class EnvironmentSetupState(
      * Retries a specific setup stage with targeted execution (FR-006, FR-007).
      */
     fun retryStage(stage: SetupStepStage) {
-        if (toolchainService == null) {
-            _environmentNotice.value = "Toolchain service is not available in this session."
-            return
-        }
-        if (toolchainSetupState.value.isBusy || currentExecutionJob?.isActive == true) return
+        if (!canStartPreview()) return
         previewSetup(stage)
     }
 
     /**
-     * Attaches to an existing durable operation ID from feature-001 (FR-007).
+     * Attaches to a mutation that the application-lifetime operation owner is still running (FR-007).
+     * The operation is not restarted and not re-owned: this state holder only observes it to its typed
+     * terminal outcome.
      */
     fun attachToDurableRun(runId: String, stage: SetupStepStage? = null) {
         if (runId.isBlank()) return
@@ -424,6 +459,93 @@ class EnvironmentSetupState(
             executionState = SetupOperationState.RECONNECTING,
             autoDoctorEnabled = _isAutoDoctorEnabled.value,
         )
+        val service = toolchainService
+        // Only an operation the owner is actually running can be observed to its end; otherwise the
+        // reconnecting marker stays until the owner reports something.
+        if (service == null || !toolchainSetupState.value.isRunning || currentExecutionJob?.isActive == true) return
+        currentExecutionJob = scope.launch {
+            try {
+                toolchainSetupState.first { !it.isRunning }
+                applyTerminalOutcome(service.observe().first(), "Reconnected operation")
+            } finally {
+                currentExecutionJob = null
+            }
+        }
+    }
+
+    /**
+     * Reconciles the journaled pending attempt against server truth (US3 T023): known runs are re-attached
+     * from their committed cursor, lost receipts are matched by their unique child lock, and anything
+     * ambiguous is reported as interrupted without resubmission. Reconnect reuses the attemptId; a fresh
+     * retry afterwards is a separate preview and a new attempt.
+     */
+    fun reconcilePendingAttempt() {
+        val service = toolchainService
+        val attemptId = toolchainSetupState.value.pendingAttemptId
+        if (attemptId == null && toolchainSetupState.value.recoveryBlockReason == null) {
+            _environmentNotice.value = "Nothing to reconnect: no journaled attempt is pending."
+        }
+        if (service == null || !journalNeedsRecovery || currentExecutionJob?.isActive == true) return
+        _activeOperation.value = SetupOperation(
+            operationId = attemptId,
+            executionState = SetupOperationState.RECONNECTING,
+            autoDoctorEnabled = _isAutoDoctorEnabled.value,
+        )
+        currentExecutionJob = scope.launch {
+            try {
+                applyTerminalOutcome(service.recover(attemptId), "Recovery")
+            } catch (e: CancellationException) {
+                _activeOperation.value = _activeOperation.value?.copy(
+                    executionState = SetupOperationState.CANCELLED,
+                    failure = "Operation cancelled",
+                )
+                throw e
+            } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
+                _activeOperation.value = _activeOperation.value?.copy(
+                    executionState = SetupOperationState.INTERRUPTED,
+                    failure = e.message,
+                )
+                _environmentNotice.value = "Recovery failed: ${e.message}"
+            } finally {
+                currentExecutionJob = null
+            }
+        }
+    }
+
+    /** Maps a typed outcome onto the active operation; every branch is distinct, nothing is generic success. */
+    private fun applyTerminalOutcome(outcome: SetupOutcome?, subject: String) {
+        when (outcome) {
+            null -> _activeOperation.value = null
+            is SetupOutcome.Succeeded -> _activeOperation.value = null
+            is SetupOutcome.Cancelled -> {
+                _activeOperation.value = _activeOperation.value?.copy(
+                    executionState = SetupOperationState.CANCELLED,
+                    failure = "Operation cancelled",
+                )
+                _environmentNotice.value = "$subject was cancelled"
+            }
+            is SetupOutcome.Failed -> {
+                _activeOperation.value = _activeOperation.value?.copy(
+                    executionState = SetupOperationState.FAILED,
+                    failure = outcome.reason,
+                )
+                _environmentNotice.value = "$subject failed: ${outcome.reason}"
+            }
+            is SetupOutcome.Busy -> {
+                _activeOperation.value = _activeOperation.value?.copy(
+                    executionState = SetupOperationState.FAILED,
+                    failure = "Environment is busy with owner: ${outcome.ownerId}",
+                )
+                _environmentNotice.value = "$subject rejected: environment is busy (${outcome.ownerId})"
+            }
+            is SetupOutcome.Interrupted -> {
+                _activeOperation.value = _activeOperation.value?.copy(
+                    executionState = SetupOperationState.INTERRUPTED,
+                    failure = outcome.reason,
+                )
+                _environmentNotice.value = "$subject interrupted: ${outcome.reason}"
+            }
+        }
     }
 
     /**

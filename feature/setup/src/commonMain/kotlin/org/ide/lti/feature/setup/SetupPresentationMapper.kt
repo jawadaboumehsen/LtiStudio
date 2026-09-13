@@ -19,7 +19,7 @@ data class StagePresentation(
 )
 
 enum class PrimaryAction {
-    CHECK, CHECKING, SET_UP, STAGE_PROGRESS, RETRY_STAGE, RETRY_CONNECTION, OPEN_WORKSPACES
+    CHECK, CHECKING, SET_UP, STAGE_PROGRESS, RETRY_STAGE, RETRY_CONNECTION, RECONNECT, OPEN_WORKSPACES
 }
 
 /**
@@ -34,7 +34,8 @@ enum class PrimaryAction {
  * - [Unavailable]: Connection unavailable / daemon unreachable / null service
  * - [Restored]: Restored from persistence, not live-verified (never presented as live-ready)
  * - [MutationRunning]: Active setup/repair mutation in progress
- * - [Reconnecting]: Reconnecting to existing durable run
+ * - [Reconnecting]: Reconnecting to a journaled attempt / existing durable run (reuses the attemptId)
+ * - [Interrupted]: Reconciliation stopped or is blocked; user-directed recovery (reconnect or reset) required
  */
 sealed interface EnvironmentState {
     data object Unknown : EnvironmentState
@@ -65,6 +66,9 @@ sealed interface EnvironmentState {
     ) : EnvironmentState
     data class Reconnecting(
         val operationId: String,
+    ) : EnvironmentState
+    data class Interrupted(
+        val reason: String,
     ) : EnvironmentState
 }
 
@@ -107,6 +111,7 @@ object SetupPresentationMapper {
         is EnvironmentState.Restored -> PrimaryAction.CHECK
         is EnvironmentState.MutationRunning -> PrimaryAction.STAGE_PROGRESS
         is EnvironmentState.Reconnecting -> PrimaryAction.STAGE_PROGRESS
+        is EnvironmentState.Interrupted -> PrimaryAction.RECONNECT
     }
 
     private fun isMutating(state: ToolchainSetupState, activeOperation: SetupOperation?): Boolean {
@@ -119,24 +124,45 @@ object SetupPresentationMapper {
         return state.isChecking || nonMutationBusy
     }
 
+    /**
+     * Journal truth outranks evidence (US3): a durable recovery block needs user-directed recovery and an
+     * unreconciled attempt is reconnecting - neither is ever presented as ready or needs-setup.
+     */
+    private fun checkJournal(state: ToolchainSetupState, activeOperation: SetupOperation?): EnvironmentState? {
+        val blockReason = state.recoveryBlockReason
+        val pendingAttempt = state.pendingAttemptId
+        return when {
+            blockReason != null -> EnvironmentState.Interrupted(blockReason)
+            activeOperation?.executionState == SetupOperationState.INTERRUPTED -> {
+                EnvironmentState.Interrupted(activeOperation.failure ?: "Operation was interrupted.")
+            }
+            activeOperation?.executionState == SetupOperationState.RECONNECTING -> {
+                EnvironmentState.Reconnecting(activeOperation.operationId ?: pendingAttempt ?: "reconnecting")
+            }
+            pendingAttempt != null && !state.isRunning -> EnvironmentState.Reconnecting(pendingAttempt)
+            else -> null
+        }
+    }
+
     private fun checkActiveTransitions(
         state: ToolchainSetupState,
         isToolchainBound: Boolean,
         activeOperation: SetupOperation?,
-    ): EnvironmentState? = when {
-        !isToolchainBound -> EnvironmentState.Unavailable("Toolchain service is not available in this session.")
-        activeOperation?.executionState == SetupOperationState.RECONNECTING -> {
-            EnvironmentState.Reconnecting(activeOperation.operationId ?: "reconnecting")
+    ): EnvironmentState? {
+        if (!isToolchainBound) {
+            return EnvironmentState.Unavailable("Toolchain service is not available in this session.")
         }
-        isMutating(state, activeOperation) -> {
-            val opId = state.activeOperationId ?: activeOperation?.operationId ?: "running"
-            EnvironmentState.MutationRunning(
-                operationId = opId,
-                stage = state.currentStage ?: activeOperation?.stageId
-            )
+        return checkJournal(state, activeOperation) ?: when {
+            isMutating(state, activeOperation) -> {
+                val opId = state.activeOperationId ?: activeOperation?.operationId ?: "running"
+                EnvironmentState.MutationRunning(
+                    operationId = opId,
+                    stage = state.currentStage ?: activeOperation?.stageId
+                )
+            }
+            isCheckingState(state) -> EnvironmentState.Checking
+            else -> null
         }
-        isCheckingState(state) -> EnvironmentState.Checking
-        else -> null
     }
 
     private fun checkFailures(state: ToolchainSetupState): EnvironmentState? {

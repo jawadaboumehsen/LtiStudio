@@ -13,10 +13,15 @@ import io.ltirom.tooling.core.remote.ToolExecutionRequest
 import io.ltirom.tooling.core.remote.ToolExecutionResponse
 import io.ltirom.tooling.core.remote.ToolStatusInfo
 import io.ltirom.tooling.core.remote.WslServerInfo
+import com.russhwolf.settings.MapSettings
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.runTest
+import org.ide.lti.core.data.repository.setup.ToolchainSetupRepositoryImpl
+import org.ide.lti.core.datastore.ToolchainPreferencesDataSource
+import org.ide.lti.core.model.setup.SetupAttemptRecord
 import java.nio.charset.Charset
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -82,26 +87,67 @@ class ToolchainBuildEngineTest {
         override suspend fun shutdown(): Boolean = true
     }
 
+    private suspend fun journaledRepository(attemptId: String): ToolchainSetupRepositoryImpl {
+        val repo = ToolchainSetupRepositoryImpl(
+            ToolchainPreferencesDataSource(settings = MapSettings(), ioDispatcher = Dispatchers.Unconfined),
+        )
+        repo.recordAttemptAuthorized(
+            SetupAttemptRecord(
+                attemptId = attemptId,
+                environmentKey = "Ubuntu",
+                planId = "plan-1",
+                planRevisionHash = "rev-1",
+                planKind = "FULL_SETUP",
+            ),
+        ).getOrThrow()
+        return repo
+    }
+
     @Test
     fun `buildAndDistributeAll executes explicit sequential commands without bash -c or ampersands`() = runTest {
         val cli = RecordingCli()
         val transport = RecordingTransport()
-        val engine = ToolchainBuildEngine(cli = cli, transport = transport)
+        val repo = journaledRepository("att-build-1")
+        val engine = ToolchainBuildEngine(cli = cli, repository = repo, transport = transport)
 
         val result = engine.buildAndDistributeAll(
             distro = "Ubuntu",
             extDir = "/home/lti/LtiRomTools/external",
-            binDir = "/home/lti/LtiRomTools/bin"
+            binDir = "/home/lti/LtiRomTools/bin",
+            journal = SetupJournalContext("Ubuntu", "att-build-1"),
         )
 
         assertTrue(result.isSuccess, "buildAndDistributeAll must succeed: ${result.exceptionOrNull()?.message}")
 
         // Check started runs and idempotency keys
         val idempotencyKeys = transport.startedRuns.map { it.idempotencyKey }
-        assertTrue(idempotencyKeys.contains("setup:build:android-tools:cmake"), "Must run android-tools cmake with idempotency key")
-        assertTrue(idempotencyKeys.contains("setup:build:android-tools:make"), "Must run android-tools make with idempotency key")
-        assertTrue(idempotencyKeys.contains("setup:build:erofs-utils:cmake"), "Must run erofs-utils cmake with idempotency key")
-        assertTrue(idempotencyKeys.contains("setup:build:erofs-utils:make"), "Must run erofs-utils make with idempotency key")
+        assertTrue(
+            idempotencyKeys.contains("Ubuntu:att-build-1:build:android-tools:cmake"),
+            "android-tools cmake runs under attempt identity",
+        )
+        assertTrue(
+            idempotencyKeys.contains("Ubuntu:att-build-1:build:android-tools:make"),
+            "android-tools make runs under attempt identity",
+        )
+        assertTrue(
+            idempotencyKeys.contains("Ubuntu:att-build-1:build:erofs-utils:cmake"),
+            "erofs-utils cmake runs under attempt identity",
+        )
+        assertTrue(
+            idempotencyKeys.contains("Ubuntu:att-build-1:build:erofs-utils:make"),
+            "erofs-utils make runs under attempt identity",
+        )
+        assertTrue(idempotencyKeys.none { it.startsWith("setup:") }, "No static idempotency keys remain")
+        assertEquals(
+            4,
+            repo.currentState.activeAttempt?.orderedIntents?.size,
+            "Every server command is a journaled child",
+        )
+        assertEquals(
+            4,
+            repo.currentState.activeAttempt?.terminalProofs?.size,
+            "Every child has authoritative terminal proof",
+        )
 
         // Assert attachRun was invoked for each long step
         assertEquals(4, transport.attachedRunIds.size)
@@ -129,17 +175,35 @@ class ToolchainBuildEngineTest {
     fun `buildAndDistributeAll reattaches to in-flight build run without restarting`() = runTest {
         val cli = RecordingCli()
         val transport = RecordingTransport()
-        val engine = ToolchainBuildEngine(cli = cli, transport = transport)
+        val repo = journaledRepository("att-build-2")
+        val engine = ToolchainBuildEngine(cli = cli, repository = repo, transport = transport)
 
         val logs = mutableListOf<String>()
         val result = engine.buildAndDistributeAll(
             distro = "Ubuntu",
             extDir = "/home/lti/LtiRomTools/external",
-            binDir = "/home/lti/LtiRomTools/bin"
+            binDir = "/home/lti/LtiRomTools/bin",
+            journal = SetupJournalContext("Ubuntu", "att-build-2"),
         ) { logs.add(it) }
 
         assertTrue(result.isSuccess)
         assertTrue(logs.any { it.contains("Attached to build run") })
         assertTrue(logs.any { it.contains("Compiling target...") })
+    }
+
+    @Test
+    fun `buildAndDistributeAll refuses an unjournaled durable run`() = runTest {
+        val cli = RecordingCli()
+        val transport = RecordingTransport()
+        val engine = ToolchainBuildEngine(cli = cli, transport = transport)
+
+        val result = engine.buildAndDistributeAll(
+            distro = "Ubuntu",
+            extDir = "/home/lti/LtiRomTools/external",
+            binDir = "/home/lti/LtiRomTools/bin",
+        )
+
+        assertTrue(result.isFailure, "A durable build step without a journal is refused")
+        assertEquals(0, transport.startedRuns.size, "Nothing is submitted under a static key")
     }
 }

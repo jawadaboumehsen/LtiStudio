@@ -221,6 +221,7 @@ class SetupConsentTest {
         val provisioner = WslToolchainProvisioner(
             supervisor = supervisor,
             transport = transport,
+            repository = inMemoryToolchainRepository(),
             detector = detector,
             cli = cli,
             toolPublicationPort = publicationPort,
@@ -287,6 +288,7 @@ class SetupConsentTest {
         val provisioner = WslToolchainProvisioner(
             supervisor = supervisor,
             transport = transport,
+            repository = inMemoryToolchainRepository(),
             detector = detector,
             cli = cli,
             toolPublicationPort = publicationPort,
@@ -317,25 +319,46 @@ class SetupConsentTest {
         val cli = SpyCliExecutor()
         val detector = WslEnvironmentDetector(cli)
 
+        val repository = inMemoryToolchainRepository()
         val provisioner = WslToolchainProvisioner(
             supervisor = supervisor,
             transport = transport,
+            repository = repository,
             detector = detector,
             cli = cli,
             dispatcher = UnconfinedTestDispatcher(testScheduler)
         )
 
-        // A non-cancellation exception inside a confirmed run is a typed Failed, never a hang or a
-        // leaked owner.
+        // A non-cancellation exception inside a confirmed run is never a hang, a leaked owner or a
+        // synthesized success. The child intent was journaled before startRun threw, so the receipt is
+        // ambiguous: the outcome is typed Interrupted, the journal is recovery-blocked, and nothing is
+        // resubmitted until reconciliation (FR-006, FR-008).
         val plan = provisioner.prepare(SetupPlanKind.FULL_SETUP, autoDoctorEnabled = false)
         val outcome = provisioner.confirm(plan.planId, plan.revisionHash)
-        assertTrue(outcome is SetupOutcome.Failed, "Exception must map to typed Failed: $outcome")
+        assertTrue(outcome is SetupOutcome.Interrupted, "Ambiguous receipt must map to typed Interrupted: $outcome")
+        assertTrue(repository.currentState.recoveryBlocked, "an unproven journaled child blocks recovery")
+        assertEquals(1, transport.startedRuns.size, "the exploding submission was attempted exactly once")
 
         val state = provisioner.state.value
         assertFalse(state.isBusy, "isBusy must be cleaned up to false in finally block")
         assertFalse(state.isRunning, "isRunning must be cleaned up to false in finally block")
         assertNull(state.currentStage, "currentStage must be cleared in finally block")
         assertNull(state.activeOperationId, "operation owner must be released in finally block")
+        assertNotNull(state.recoveryBlockReason, "the block reason is published to the observable state")
+
+        // A fresh mutation is refused while the journal needs recovery; no second startRun happens.
+        val refused = provisioner.prepare(SetupPlanKind.FULL_SETUP, autoDoctorEnabled = false)
+        val refusedOutcome = provisioner.confirm(refused.planId, refused.revisionHash)
+        assertTrue(refusedOutcome is SetupOutcome.Interrupted, "journal gate refuses new work: $refusedOutcome")
+        assertEquals(1, transport.startedRuns.size, "no blind resubmission while blocked")
+
+        // Reconciliation inside the deduplication window finds no server run holding the child lock:
+        // the command was never accepted, the child is closed and the attempt is archived as interrupted.
+        val recovered = provisioner.recover(null)
+        assertTrue(recovered is SetupOutcome.Interrupted, "unfinished planned work is never success: $recovered")
+        assertFalse(repository.currentState.recoveryBlocked, "reconciliation lifts the block")
+        assertNull(repository.currentState.activeAttempt, "the attempt is history after reconciliation")
+        assertEquals(1, transport.startedRuns.size, "reconciliation never resubmits")
     }
 
     @Test
@@ -349,6 +372,7 @@ class SetupConsentTest {
         val provisioner = WslToolchainProvisioner(
             supervisor = supervisor,
             transport = transport,
+            repository = inMemoryToolchainRepository(),
             detector = detector,
             cli = cli,
             toolPublicationPort = publicationPort,
@@ -379,6 +403,7 @@ class SetupConsentTest {
         val provisioner = WslToolchainProvisioner(
             supervisor = supervisor,
             transport = transport,
+            repository = inMemoryToolchainRepository(),
             detector = detector,
             cli = cli,
             toolPublicationPort = publicationPort,
@@ -407,6 +432,7 @@ class SetupConsentTest {
         val provisioner = WslToolchainProvisioner(
             supervisor = supervisor,
             transport = transport,
+            repository = inMemoryToolchainRepository(),
             detector = detector,
             cli = cli,
             dispatcher = UnconfinedTestDispatcher(testScheduler)
@@ -432,6 +458,7 @@ class SetupConsentTest {
         val provisioner = WslToolchainProvisioner(
             supervisor = supervisor,
             transport = transport,
+            repository = inMemoryToolchainRepository(),
             detector = detector,
             cli = cli,
             dispatcher = UnconfinedTestDispatcher(testScheduler)
@@ -468,6 +495,7 @@ class SetupConsentTest {
         val provisioner = WslToolchainProvisioner(
             supervisor = supervisor,
             transport = transport,
+            repository = inMemoryToolchainRepository(),
             detector = detector,
             cli = cli,
             toolPublicationPort = publicationPort,
@@ -502,6 +530,7 @@ class SetupConsentTest {
         val provisioner = WslToolchainProvisioner(
             supervisor = supervisor,
             transport = transport,
+            repository = inMemoryToolchainRepository(),
             detector = detector,
             cli = cli,
             toolPublicationPort = publicationPort,
@@ -528,6 +557,7 @@ class SetupConsentTest {
         val provisioner = WslToolchainProvisioner(
             supervisor = supervisor,
             transport = transport,
+            repository = inMemoryToolchainRepository(),
             detector = detector,
             cli = cli,
             toolPublicationPort = publicationPort,
@@ -585,6 +615,7 @@ class SetupConsentTest {
         val provisioner = WslToolchainProvisioner(
             supervisor = supervisor,
             transport = transport,
+            repository = inMemoryToolchainRepository(),
             detector = detector,
             cli = cli,
             toolPublicationPort = publicationPort,
@@ -629,6 +660,7 @@ class SetupConsentTest {
         val provisioner = WslToolchainProvisioner(
             supervisor = supervisor,
             transport = transport,
+            repository = inMemoryToolchainRepository(),
             detector = detector,
             cli = cli,
             toolPublicationPort = publicationPort,

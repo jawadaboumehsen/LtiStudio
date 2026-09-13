@@ -140,6 +140,7 @@ fun SetupScreen(
         onRecentProjectClick = { viewModel.openRecentProject(it, onOpenWorkspace) },
         onSelectWorkspace = viewModel::selectWorkspace,
         onCheckEnvironment = viewModel::checkEnvironmentStatus,
+        onReconnect = viewModel::reconnectPendingAttempt,
         onRetrySetupStep = viewModel::retrySetupStep,
         onProvisionAvbKey = viewModel::onProvisionAvbKey,
         onSelectTarget = viewModel::selectTarget,

@@ -217,6 +217,7 @@ class SetupExecutionPathTest {
         val provisioner = WslToolchainProvisioner(
             supervisor = supervisor,
             transport = transport,
+            repository = inMemoryToolchainRepository(),
             detector = detector,
             cli = spyCli,
             toolPublicationPort = publicationPort,

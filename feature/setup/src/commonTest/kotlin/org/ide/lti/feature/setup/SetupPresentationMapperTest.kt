@@ -340,4 +340,56 @@ class SetupPresentationMapperTest {
             "Empty tool inventory must never become Ready"
         )
     }
+
+    @Test
+    fun testInterruptedActiveOperationMapsToInterruptedAndReconnect() {
+        val state = ToolchainSetupState()
+        val interruptedOp = SetupOperation(
+            operationId = "interrupted-op-123",
+            executionState = SetupOperationState.INTERRUPTED,
+            failure = "Daemon connection lost mid-flight",
+        )
+        val presentation = SetupPresentationMapper.mapEnvironment(
+            state = state,
+            isToolchainBound = true,
+            activeOperation = interruptedOp,
+        )
+        val envState = presentation.environmentState
+        assertTrue(envState is EnvironmentState.Interrupted)
+        assertEquals(
+            "Daemon connection lost mid-flight",
+            envState.reason,
+        )
+        assertEquals(PrimaryAction.RECONNECT, presentation.primaryAction)
+    }
+
+    @Test
+    fun testJournalTruthOutranksEvidenceBlockedThenPending() {
+        val liveReady = ToolchainSetupState(
+            steps = ToolchainSetupState.defaultSteps().map {
+                it.copy(status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE)
+            },
+            checkedAt = 1_000L,
+            lastReadyAt = 1_000L,
+        )
+        val blocked = SetupPresentationMapper.mapEnvironment(
+            state = liveReady.copy(pendingAttemptId = "attempt-9", recoveryBlockReason = "ambiguous receipt"),
+        )
+        val blockedState = blocked.environmentState
+        assertTrue(
+            blockedState is EnvironmentState.Interrupted,
+            "A recovery block is never presented as ready: $blockedState",
+        )
+        assertEquals("ambiguous receipt", blockedState.reason)
+        assertEquals(PrimaryAction.RECONNECT, blocked.primaryAction)
+
+        val pending = SetupPresentationMapper.mapEnvironment(state = liveReady.copy(pendingAttemptId = "attempt-9"))
+        val pendingState = pending.environmentState
+        assertTrue(
+            pendingState is EnvironmentState.Reconnecting,
+            "An unreconciled attempt is reconnecting, not ready: $pendingState",
+        )
+        assertEquals("attempt-9", pendingState.operationId)
+        assertEquals(PrimaryAction.STAGE_PROGRESS, pending.primaryAction)
+    }
 }

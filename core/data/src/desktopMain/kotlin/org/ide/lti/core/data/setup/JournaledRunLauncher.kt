@@ -1,0 +1,211 @@
+package org.ide.lti.core.data.setup
+
+import io.ltirom.tooling.core.ports.RemoteTransportPort
+import io.ltirom.tooling.core.remote.RunStatusValue
+import io.ltirom.tooling.core.remote.StartRunRequest
+import io.ltirom.tooling.core.remote.StreamEvent
+import io.ltirom.tooling.core.remote.ToolExecutionRequest
+import kotlinx.coroutines.CancellationException
+import org.ide.lti.core.domain.repository.setup.ToolchainSetupRepository
+import org.ide.lti.core.domain.setup.SetupStepStage
+import org.ide.lti.core.model.setup.ChildIntentRecord
+import org.ide.lti.core.model.setup.ChildTerminalProof
+import org.ide.lti.core.model.setup.PersistedExecutionRequest
+
+/**
+ * Journal identity of the attempt on whose behalf server commands are submitted.
+ */
+public data class SetupJournalContext(
+    val environmentKey: String,
+    val attemptId: String,
+)
+
+/**
+ * Typed result of one journaled server command.
+ */
+public sealed interface JournaledRunResult {
+    /** The run reached an authoritative terminal state; [exitCode] is the server-reported code. */
+    public data class Finished(val runId: String, val status: RunStatusValue, val exitCode: Int) : JournaledRunResult
+
+    /** The journal could not be written before submission: nothing was submitted. */
+    public data class JournalRejected(val reason: String) : JournaledRunResult
+
+    /**
+     * The command may have been submitted but its identity or evidence could not be durably recorded, or the
+     * stream ended without an authoritative terminal state. Recovery is blocked until reconciled.
+     */
+    public data class Interrupted(val reason: String) : JournaledRunResult
+}
+
+/**
+ * Submits server commands under journal-backed identity, in this exact order:
+ * 1. append the child intent (exact request, attempt-scoped idempotency key, unique child lock) — a write
+ *    failure means nothing is submitted ("Journal write failure prevents submission");
+ * 2. `startRun`;
+ * 3. persist the runId ("persist runId before acknowledging attachment") — a write failure blocks recovery
+ *    instead of continuing on an unrecorded run;
+ * 4. attach from the committed cursor + 1, committing every output line together with its sequence
+ *    ("Persisted lastSeq never advances beyond durably stored replay evidence"); heartbeats never advance it;
+ * 5. record the authoritative terminal proof.
+ *
+ * Idempotency keys and locks are derived from environment/attempt/child action identity, never static.
+ */
+public class JournaledRunLauncher(
+    private val transport: RemoteTransportPort,
+    private val repository: ToolchainSetupRepository,
+    private val context: SetupJournalContext,
+) {
+    public companion object {
+        public val TERMINAL_STATUSES: Set<RunStatusValue> = setOf(
+            RunStatusValue.COMPLETED,
+            RunStatusValue.FAILED,
+            RunStatusValue.CANCELLED,
+            RunStatusValue.INTERRUPTED,
+        )
+
+        public fun idempotencyKey(context: SetupJournalContext, actionId: String): String =
+            "${context.environmentKey}:${context.attemptId}:$actionId"
+
+        public fun workspaceLock(context: SetupJournalContext, actionId: String): String =
+            "lock:${context.environmentKey}:${context.attemptId}:$actionId"
+    }
+
+    @Suppress("ReturnCount")
+    public suspend fun run(
+        stage: SetupStepStage,
+        actionId: String,
+        request: ToolExecutionRequest,
+        recipeRevision: String? = null,
+        onRunStarted: (SetupStepStage, String) -> Unit = { _, _ -> },
+        log: (String) -> Unit = {},
+    ): JournaledRunResult {
+        val idempotencyKey = idempotencyKey(context, actionId)
+        val workspaceLock = workspaceLock(context, actionId)
+        val intent = ChildIntentRecord(
+            childIndex = -1,
+            stage = stage.name,
+            actionId = actionId,
+            recipeRevision = recipeRevision,
+            request = PersistedExecutionRequest(
+                toolId = request.toolId,
+                arguments = request.arguments,
+                workingDirectory = request.workingDirectory ?: "/",
+                environment = request.environment,
+                timeoutMs = request.timeoutMs,
+            ),
+            idempotencyKey = idempotencyKey,
+            workspaceLock = workspaceLock,
+        )
+        val childIndex = repository.appendChildIntent(context.attemptId, intent).getOrElse { failure ->
+            return JournaledRunResult.JournalRejected(
+                "Journal write failed before submitting '$actionId'; nothing was submitted: ${failure.message}",
+            )
+        }
+
+        val handle = transport.startRun(
+            StartRunRequest(request = request, idempotencyKey = idempotencyKey, workspaceLock = workspaceLock),
+        )
+
+        repository.recordChildRunId(context.attemptId, childIndex, handle.runId).onFailure { failure ->
+            val reason = "Run '${handle.runId}' for '$actionId' started but its identity could not be journaled: " +
+                failure.message
+            repository.setRecoveryBlocked(true, reason)
+            return JournaledRunResult.Interrupted(reason)
+        }
+        onRunStarted(stage, handle.runId)
+
+        return attachAndCommit(
+            childIndex = childIndex,
+            runId = handle.runId,
+            fromSeq = 1L,
+            actionId = actionId,
+            log = log,
+        )
+    }
+
+    /**
+     * Attaches to [runId] from [fromSeq], committing evidence and cursor atomically per event, and records
+     * the authoritative terminal proof. Shared by first execution and by reconnection.
+     */
+    @Suppress("ReturnCount")
+    public suspend fun attachAndCommit(
+        childIndex: Int,
+        runId: String,
+        fromSeq: Long,
+        actionId: String,
+        log: (String) -> Unit,
+    ): JournaledRunResult {
+        var streamedExitCode: Int? = null
+        try {
+            transport.attachRun(runId, fromSeq).collect { sequenced ->
+                val event = sequenced.event
+                if (event is StreamEvent.ExecutionFinished) streamedExitCode = event.exitCode
+                commitEvent(childIndex, actionId, sequenced.seq, event, log)
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: JournalCommitException) {
+            val reason = "Streaming '$actionId' (run $runId) stopped: ${e.message}"
+            repository.setRecoveryBlocked(true, reason)
+            return JournaledRunResult.Interrupted(reason)
+        } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
+            val reason = "Connection to run '$runId' for '$actionId' was lost: ${e.message}"
+            repository.setRecoveryBlocked(true, reason)
+            return JournaledRunResult.Interrupted(reason)
+        }
+
+        val status = transport.getRun(runId)
+        val terminalStatus = status?.status?.takeIf { it in TERMINAL_STATUSES }
+            ?: streamedExitCode?.let { if (it == 0) RunStatusValue.COMPLETED else RunStatusValue.FAILED }
+        if (terminalStatus == null) {
+            val reason = "Run '$runId' for '$actionId' has no authoritative terminal state after the stream ended."
+            repository.setRecoveryBlocked(true, reason)
+            return JournaledRunResult.Interrupted(reason)
+        }
+        val exitCode = status?.exitCode ?: streamedExitCode ?: if (terminalStatus == RunStatusValue.COMPLETED) 0 else 1
+
+        repository.recordChildTerminalProof(
+            ChildTerminalProof(
+                environmentKey = context.environmentKey,
+                attemptId = context.attemptId,
+                runId = runId,
+                authoritativeTerminalStatus = terminalStatus.name,
+                observedAtEpochMs = System.currentTimeMillis(),
+            ),
+        ).onFailure { failure ->
+            val reason = "Terminal proof for run '$runId' could not be journaled: ${failure.message}"
+            repository.setRecoveryBlocked(true, reason)
+            return JournaledRunResult.Interrupted(reason)
+        }
+        return JournaledRunResult.Finished(runId = runId, status = terminalStatus, exitCode = exitCode)
+    }
+
+    /**
+     * Commits one stream event with its sequence in a single durable write. Heartbeats carry no
+     * evidence and never move the cursor; every other event advances it only once its evidence is stored.
+     */
+    private suspend fun commitEvent(
+        childIndex: Int,
+        actionId: String,
+        seq: Long,
+        event: StreamEvent,
+        log: (String) -> Unit,
+    ) {
+        val commit: Result<Unit> = when (event) {
+            is StreamEvent.OutputChunk -> {
+                val text = event.text.trimEnd()
+                log("[$actionId] $text")
+                repository.commitChildCursorAndEvidence(context.attemptId, childIndex, seq, text)
+            }
+            is StreamEvent.ExecutionFinished,
+            is StreamEvent.ProgressUpdate ->
+                repository.commitChildCursorAndEvidence(context.attemptId, childIndex, seq, null)
+            is StreamEvent.Heartbeat -> return
+        }
+        commit.onFailure { failure ->
+            throw JournalCommitException("Durable commit failed at seq $seq: ${failure.message}")
+        }
+    }
+
+    private class JournalCommitException(message: String) : RuntimeException(message)
+}

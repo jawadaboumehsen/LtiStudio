@@ -10,8 +10,6 @@
 package org.ide.lti.core.datastore
 
 import com.russhwolf.settings.Settings
-import com.russhwolf.settings.get
-import com.russhwolf.settings.set
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -22,26 +20,34 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import org.ide.lti.core.model.setup.AttemptStatus
+import org.ide.lti.core.model.setup.ChildIntentRecord
+import org.ide.lti.core.model.setup.ChildTerminalProof
 import org.ide.lti.core.model.setup.PersistedSubmoduleState
 import org.ide.lti.core.model.setup.PersistedToolState
+import org.ide.lti.core.model.setup.SetupAttemptRecord
 import org.ide.lti.core.model.setup.ToolchainPersistenceState
 
 /**
- * Thread-safe multiplatform persistent preferences data source for toolchain state.
+ * Thread-safe multiplatform persistent preferences data source for toolchain state and recovery journal.
  *
- * Backed by [Settings] and [Json] serialization.
+ * Backed by a [ToolchainJournalStorage] document and [Json] serialization. The preference [Settings]
+ * key is only the legacy location read once when the durable document does not exist yet.
  *
- * Adheres to:
- * - Single Responsibility Principle: Exclusively manages persistence, serialization,
- *   and reactive streams for toolchain state.
- * - Robustness / Error Resilience: Automatically recovers from corrupted JSON payloads
- *   without throwing fatal exceptions.
- * - Thread Safety: Uses [Mutex] to guard concurrent state updates across background coroutines.
+ * Enforces:
+ * - Acknowledged durable journal writes: returns [Result] for mutations so failures surface to callers.
+ * - "Journal write failure prevents submission; an ambiguous receipt is reconciled or blocked,
+ *   never blindly resubmitted."
+ * - "Persisted lastSeq never advances beyond durably stored replay evidence."
+ * - "Corrupt journal fails closed with recoveryBlocked = true."
+ * - "Reset protection: reset cannot erase an active attempt without explicit authorization."
  */
+@Suppress("TooManyFunctions") // one persistence surface: setup evidence plus the attempt journal (US3)
 public class ToolchainPreferencesDataSource(
     private val settings: Settings = Settings(),
     private val json: Json = defaultJson(),
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val storage: ToolchainJournalStorage = SettingsToolchainJournalStorage(settings),
 ) {
     private val mutex = Mutex()
     private val _toolchainState = MutableStateFlow(readCurrentStateSafe())
@@ -59,10 +65,13 @@ public class ToolchainPreferencesDataSource(
     /**
      * Atomically saves or replaces the complete [ToolchainPersistenceState].
      */
-    public suspend fun saveToolchainState(state: ToolchainPersistenceState): Unit = withContext(ioDispatcher) {
+    public suspend fun saveToolchainState(state: ToolchainPersistenceState): Result<Unit> = withContext(ioDispatcher) {
         mutex.withLock {
-            persistStateInternal(state)
-            _toolchainState.value = state
+            val persistResult = persistStateInternal(state)
+            if (persistResult.isSuccess) {
+                _toolchainState.value = state
+            }
+            persistResult
         }
     }
 
@@ -72,7 +81,7 @@ public class ToolchainPreferencesDataSource(
     public suspend fun updateTool(
         toolId: String,
         transform: (PersistedToolState) -> PersistedToolState,
-    ): Unit = withContext(ioDispatcher) {
+    ): Result<Unit> = withContext(ioDispatcher) {
         mutex.withLock {
             val current = _toolchainState.value
             val existingTool = current.tools[toolId] ?: PersistedToolState(id = toolId, binaryName = toolId)
@@ -81,8 +90,11 @@ public class ToolchainPreferencesDataSource(
                 tools = current.tools + (toolId to updatedTool),
                 lastVerifiedTimestamp = updatedTool.lastVerifiedTimestamp ?: current.lastVerifiedTimestamp,
             )
-            persistStateInternal(updated)
-            _toolchainState.value = updated
+            val persistResult = persistStateInternal(updated)
+            if (persistResult.isSuccess) {
+                _toolchainState.value = updated
+            }
+            persistResult
         }
     }
 
@@ -92,7 +104,7 @@ public class ToolchainPreferencesDataSource(
     public suspend fun updateSubmodule(
         name: String,
         transform: (PersistedSubmoduleState) -> PersistedSubmoduleState,
-    ): Unit = withContext(ioDispatcher) {
+    ): Result<Unit> = withContext(ioDispatcher) {
         mutex.withLock {
             val current = _toolchainState.value
             val existing = current.submodules[name] ?: PersistedSubmoduleState(name = name)
@@ -100,15 +112,18 @@ public class ToolchainPreferencesDataSource(
             val updated = current.copy(
                 submodules = current.submodules + (name to updatedSub),
             )
-            persistStateInternal(updated)
-            _toolchainState.value = updated
+            val persistResult = persistStateInternal(updated)
+            if (persistResult.isSuccess) {
+                _toolchainState.value = updated
+            }
+            persistResult
         }
     }
 
     /**
      * Records a setup stage as completed or pending.
      */
-    public suspend fun markStageCompleted(stageName: String, completed: Boolean): Unit = withContext(ioDispatcher) {
+    public suspend fun markStageCompleted(stageName: String, completed: Boolean): Result<Unit> = withContext(ioDispatcher) {
         mutex.withLock {
             val current = _toolchainState.value
             val updatedStages = if (completed) {
@@ -117,80 +132,338 @@ public class ToolchainPreferencesDataSource(
                 current.completedStages - stageName
             }
             val updated = current.copy(completedStages = updatedStages)
-            persistStateInternal(updated)
-            _toolchainState.value = updated
+            val persistResult = persistStateInternal(updated)
+            if (persistResult.isSuccess) {
+                _toolchainState.value = updated
+            }
+            persistResult
         }
     }
 
     /**
      * Records overall toolchain setup completion status with timestamp.
      */
-    public suspend fun markSetupCompleted(completed: Boolean, timestamp: Long? = null): Unit = withContext(ioDispatcher) {
+    public suspend fun markSetupCompleted(completed: Boolean, timestamp: Long? = null): Result<Unit> = withContext(ioDispatcher) {
         mutex.withLock {
             val current = _toolchainState.value
             val updated = current.copy(
                 isSetupCompleted = completed,
                 lastCompletedTimestamp = if (completed) (timestamp ?: current.lastCompletedTimestamp) else null,
             )
-            persistStateInternal(updated)
-            _toolchainState.value = updated
+            val persistResult = persistStateInternal(updated)
+            if (persistResult.isSuccess) {
+                _toolchainState.value = updated
+            }
+            persistResult
         }
     }
 
     /**
      * Records passing doctor diagnostic item IDs.
      */
-    public suspend fun updateDiagnosticsSnapshot(passedIds: Set<String>): Unit = withContext(ioDispatcher) {
+    public suspend fun updateDiagnosticsSnapshot(passedIds: Set<String>): Result<Unit> = withContext(ioDispatcher) {
         mutex.withLock {
             val current = _toolchainState.value
             val updated = current.copy(passedDiagnosticIds = passedIds)
-            persistStateInternal(updated)
-            _toolchainState.value = updated
+            val persistResult = persistStateInternal(updated)
+            if (persistResult.isSuccess) {
+                _toolchainState.value = updated
+            }
+            persistResult
         }
     }
 
     /**
      * Records AVB 2.0 key provisioning status and path.
      */
-    public suspend fun updateAvbKeyState(provisioned: Boolean, keyPath: String?): Unit = withContext(ioDispatcher) {
+    public suspend fun updateAvbKeyState(provisioned: Boolean, keyPath: String?): Result<Unit> = withContext(ioDispatcher) {
         mutex.withLock {
             val current = _toolchainState.value
             val updated = current.copy(
                 isAvbKeyProvisioned = provisioned,
                 avbKeyPath = keyPath,
             )
-            persistStateInternal(updated)
-            _toolchainState.value = updated
+            val persistResult = persistStateInternal(updated)
+            if (persistResult.isSuccess) {
+                _toolchainState.value = updated
+            }
+            persistResult
         }
     }
 
     /**
-     * Atomically clears all persisted toolchain state and resets to empty default.
+     * Atomically clears persisted toolchain state and resets to the empty default.
+     * Reset protection: an active attempt or a recovery block is never erased unless [force] is true,
+     * which is the explicit, user-confirmed authorization to discard it.
      */
-    public suspend fun clearToolchainState(): Unit = withContext(ioDispatcher) {
-        mutex.withLock {
-            settings.remove(KEY_TOOLCHAIN_PERSISTENCE_STATE)
-            val resetState = ToolchainPersistenceState()
-            _toolchainState.value = resetState
+    public suspend fun clearToolchainState(force: Boolean = false): Result<Unit> = mutate { current ->
+        val active = current.activeAttempt
+        if (!force && active != null && active.isActive) {
+            return@mutate Result.failure(
+                IllegalStateException(
+                    "Cannot reset toolchain state while attempt '${active.attemptId}' is active. " +
+                        "Explicit authorization required."
+                )
+            )
         }
+        if (!force && current.recoveryBlocked) {
+            return@mutate Result.failure(
+                IllegalStateException(
+                    "Cannot reset toolchain state while recovery is blocked: " +
+                        "${current.recoveryBlockReason ?: "unresolved prior attempt"}. Explicit authorization required."
+                )
+            )
+        }
+        Result.success(ToolchainPersistenceState())
+    }
+
+    // ---- Durable ledger and attempt operations (003 US3) ----
+
+    /**
+     * Journals an authorized attempt before any submission. At most one active attempt per environment.
+     */
+    public suspend fun recordAttemptAuthorized(attempt: SetupAttemptRecord): Result<Unit> = mutate { current ->
+        if (current.recoveryBlocked) {
+            return@mutate Result.failure(
+                IllegalStateException("Recovery blocked: ${current.recoveryBlockReason ?: "unresolved prior attempt"}")
+            )
+        }
+        val active = current.activeAttempt
+        if (active != null && active.isActive) {
+            return@mutate Result.failure(
+                IllegalStateException("Another attempt '${active.attemptId}' is already active.")
+            )
+        }
+        val now = System.currentTimeMillis()
+        // A reconciled-but-unarchived leftover is history, never silently dropped.
+        val history = if (active != null) current.attemptHistory + active else current.attemptHistory
+        Result.success(
+            current.copy(
+                activeAttempt = attempt.copy(
+                    createdAtEpochMs = if (attempt.createdAtEpochMs > 0L) attempt.createdAtEpochMs else now,
+                    updatedAtEpochMs = now,
+                ),
+                attemptHistory = history,
+            )
+        )
+    }
+
+    public suspend fun updateAttemptStatus(attemptId: String, status: AttemptStatus): Result<Unit> =
+        mutateActiveAttempt(attemptId) { active -> Result.success(active.copy(status = status)) }
+
+    /**
+     * Enforces "Persist child intent before startRun": the intent is durably appended and its index
+     * returned before the caller may submit anything.
+     */
+    public suspend fun appendChildIntent(attemptId: String, intent: ChildIntentRecord): Result<Int> {
+        var assignedIndex = -1
+        val result = mutateActiveAttempt(attemptId) { active ->
+            assignedIndex = active.orderedIntents.size
+            val journaled = intent.copy(
+                childIndex = assignedIndex,
+                submissionTimestampEpochMs = if (intent.submissionTimestampEpochMs > 0L) {
+                    intent.submissionTimestampEpochMs
+                } else {
+                    System.currentTimeMillis()
+                },
+            )
+            Result.success(
+                active.copy(
+                    orderedIntents = active.orderedIntents + journaled,
+                    activeChildIndex = assignedIndex,
+                    status = AttemptStatus.RUNNING,
+                )
+            )
+        }
+        return result.map { assignedIndex }
+    }
+
+    /**
+     * Enforces "Persist runId before acknowledging attachment".
+     */
+    public suspend fun recordChildRunId(
+        attemptId: String,
+        childIndex: Int,
+        runId: String,
+    ): Result<Unit> = mutateChild(attemptId, childIndex) { intent -> intent.copy(runId = runId) }
+
+    /**
+     * Enforces "Persisted lastSeq never advances beyond durably stored replay evidence": the cursor and
+     * the evidence line it proves are written in one durable commit, and the cursor never moves backwards.
+     */
+    public suspend fun commitChildCursorAndEvidence(
+        attemptId: String,
+        childIndex: Int,
+        lastSeq: Long,
+        evidenceLine: String? = null,
+    ): Result<Unit> = mutateChild(attemptId, childIndex) { intent ->
+        intent.copy(
+            lastSeq = maxOf(intent.lastSeq, lastSeq),
+            replayLogs = if (evidenceLine != null) intent.replayLogs + evidenceLine else intent.replayLogs,
+        )
+    }
+
+    /**
+     * Records an authoritative terminal state for one child run. When every possibly submitted child of
+     * the active attempt is proven, a previously set recovery block is lifted.
+     * Enforces "Fresh retry requires persisted authoritative terminal proof for every possibly submitted
+     * child; cancellation acknowledgement alone never unlocks mutation."
+     */
+    public suspend fun recordChildTerminalProof(proof: ChildTerminalProof): Result<Unit> = mutate { current ->
+        val active = current.activeAttempt
+        val updatedActive = if (active != null && active.attemptId == proof.attemptId) {
+            active.copy(
+                orderedIntents = active.orderedIntents.map { intent ->
+                    if (intent.runId == proof.runId) {
+                        intent.copy(terminalStatus = proof.authoritativeTerminalStatus)
+                    } else {
+                        intent
+                    }
+                },
+                terminalProofs = active.terminalProofs.filterNot { it.runId == proof.runId } + proof,
+                updatedAtEpochMs = System.currentTimeMillis(),
+            )
+        } else {
+            active
+        }
+        val unblock = current.recoveryBlocked && updatedActive != null && updatedActive.unprovenIntents.isEmpty()
+        Result.success(
+            current.copy(
+                activeAttempt = updatedActive,
+                recoveryBlocked = if (unblock) false else current.recoveryBlocked,
+                recoveryBlockReason = if (unblock) null else current.recoveryBlockReason,
+            )
+        )
+    }
+
+    /**
+     * Closes a child the server never accepted. No runId exists, so no proof can be recorded; the explicit
+     * terminal status is the authoritative record that nothing was submitted.
+     */
+    public suspend fun recordChildNotSubmitted(attemptId: String, childIndex: Int, terminalStatus: String): Result<Unit> =
+        mutateChild(attemptId, childIndex) { intent -> intent.copy(terminalStatus = terminalStatus) }
+
+    public suspend fun recordPlanActionCompleted(attemptId: String, actionId: String): Result<Unit> =
+        mutateActiveAttempt(attemptId) { active ->
+            Result.success(active.copy(completedActionIds = (active.completedActionIds + actionId).distinct()))
+        }
+
+    /**
+     * Archives the active attempt into [ToolchainPersistenceState.attemptHistory] with its terminal result.
+     */
+    public suspend fun recordAttemptTerminal(
+        attemptId: String,
+        status: AttemptStatus,
+        outcomeName: String,
+        outcomeReason: String? = null,
+    ): Result<Unit> = mutate { current ->
+        val active = current.activeAttempt
+        if (active == null || active.attemptId != attemptId) {
+            return@mutate Result.failure(IllegalStateException("No active attempt matching $attemptId"))
+        }
+        val terminal = active.copy(
+            status = status,
+            terminalOutcome = outcomeName,
+            terminalReason = outcomeReason,
+            activeChildIndex = null,
+            updatedAtEpochMs = System.currentTimeMillis(),
+        )
+        // Archiving is the end of reconciliation: whatever block the attempt carried is resolved with it.
+        Result.success(
+            current.copy(
+                activeAttempt = null,
+                attemptHistory = current.attemptHistory + terminal,
+                recoveryBlocked = false,
+                recoveryBlockReason = null,
+            )
+        )
+    }
+
+    /**
+     * Durably sets or clears the environment recovery block.
+     */
+    public suspend fun setRecoveryBlocked(blocked: Boolean, reason: String?): Result<Unit> = mutate { current ->
+        Result.success(
+            current.copy(
+                recoveryBlocked = blocked,
+                recoveryBlockReason = if (blocked) reason else null,
+                activeAttempt = current.activeAttempt?.let { attempt ->
+                    attempt.copy(
+                        recoveryBlocked = blocked,
+                        status = if (blocked) AttemptStatus.INTERRUPTED else attempt.status,
+                        updatedAtEpochMs = System.currentTimeMillis(),
+                    )
+                },
+            )
+        )
+    }
+
+    /**
+     * Single durable-write path: computes the new state under the mutex, persists it, and only then
+     * publishes it in memory. A failed persist leaves both the store and the in-memory state untouched.
+     */
+    private suspend fun mutate(
+        transform: (ToolchainPersistenceState) -> Result<ToolchainPersistenceState>,
+    ): Result<Unit> = withContext(ioDispatcher) {
+        mutex.withLock {
+            val current = _toolchainState.value
+            val updated = transform(current).getOrElse { return@withLock Result.failure(it) }
+            val persistResult = persistStateInternal(updated)
+            if (persistResult.isSuccess) {
+                _toolchainState.value = updated
+            }
+            persistResult
+        }
+    }
+
+    private suspend fun mutateActiveAttempt(
+        attemptId: String,
+        transform: (SetupAttemptRecord) -> Result<SetupAttemptRecord>,
+    ): Result<Unit> = mutate { current ->
+        val active = current.activeAttempt
+        if (active == null || active.attemptId != attemptId) {
+            return@mutate Result.failure(IllegalStateException("No active attempt matching $attemptId"))
+        }
+        transform(active).map { updated ->
+            current.copy(activeAttempt = updated.copy(updatedAtEpochMs = System.currentTimeMillis()))
+        }
+    }
+
+    private suspend fun mutateChild(
+        attemptId: String,
+        childIndex: Int,
+        transform: (ChildIntentRecord) -> ChildIntentRecord,
+    ): Result<Unit> = mutateActiveAttempt(attemptId) { active ->
+        val intent = active.orderedIntents.getOrNull(childIndex)
+            ?: return@mutateActiveAttempt Result.failure(
+                IllegalStateException("Child index $childIndex not found in attempt")
+            )
+        val updatedIntents = active.orderedIntents.toMutableList()
+        updatedIntents[childIndex] = transform(intent)
+        Result.success(active.copy(orderedIntents = updatedIntents))
     }
 
     private fun readCurrentStateSafe(): ToolchainPersistenceState {
-        val raw = settings.getStringOrNull(KEY_TOOLCHAIN_PERSISTENCE_STATE) ?: return ToolchainPersistenceState()
+        // Durable document first; the preference key is the pre-journal legacy location, read only
+        // until the first durable write migrates it.
+        val raw = storage.read()
+            ?: settings.getStringOrNull(KEY_TOOLCHAIN_PERSISTENCE_STATE)
+            ?: return ToolchainPersistenceState()
         return try {
             json.decodeFromString<ToolchainPersistenceState>(raw)
         } catch (e: Exception) {
-            // Corruption or schema evolution fallback
-            ToolchainPersistenceState()
+            // Corrupt journal fails closed with recoveryBlocked = true
+            ToolchainPersistenceState(
+                recoveryBlocked = true,
+                recoveryBlockReason = "Corrupt toolchain persistence journal: ${e.message}"
+            )
         }
     }
 
-    private fun persistStateInternal(state: ToolchainPersistenceState) {
-        try {
+    private fun persistStateInternal(state: ToolchainPersistenceState): Result<Unit> {
+        return runCatching {
             val encoded = json.encodeToString(state)
-            settings[KEY_TOOLCHAIN_PERSISTENCE_STATE] = encoded
-        } catch (_: Exception) {
-            // Logically silent; state will remain in memory
+            storage.write(encoded)
         }
     }
 

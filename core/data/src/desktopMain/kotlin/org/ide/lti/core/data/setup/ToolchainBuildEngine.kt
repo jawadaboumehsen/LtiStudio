@@ -2,9 +2,6 @@ package org.ide.lti.core.data.setup
 
 import io.ltirom.tooling.client.wsl.WslCliExecutor
 import io.ltirom.tooling.core.ports.RemoteTransportPort
-import io.ltirom.tooling.core.remote.RunStatusValue
-import io.ltirom.tooling.core.remote.StartRunRequest
-import io.ltirom.tooling.core.remote.StreamEvent
 import io.ltirom.tooling.core.remote.ToolExecutionRequest
 import org.ide.lti.core.domain.repository.setup.ToolchainSetupRepository
 import org.ide.lti.core.domain.setup.SetupStepStage
@@ -17,7 +14,8 @@ import org.ide.lti.core.domain.setup.SetupStepStage
  *   for native C/C++ and auxiliary tool binaries.
  * - Incremental Execution & Durable Runs: Checks [ToolchainSetupRepository] and `$binDir` executables
  *   to skip redundant compilations. When [RemoteTransportPort] is provided, executes CMake and Make
- *   as durable runs with idempotency keys (`setup:build:<tool>:<action>`), surviving GUI restarts.
+ *   as durable runs through [JournaledRunLauncher] under environment/attempt/child identity (no static
+ *   idempotency keys); an unjournaled durable run is refused.
  * - No Shell Chains: All commands execute as discrete arguments without `bash -c` or `&&`.
  */
 public class ToolchainBuildEngine(
@@ -31,46 +29,52 @@ public class ToolchainBuildEngine(
         )
     }
 
+    @Suppress("ReturnCount") // local CLI path, unjournaled refusal and journaled verdict are three distinct exits
     private suspend fun executeBuildCommand(
         distro: String,
         workingDir: String,
         toolId: String,
         arguments: List<String>,
         timeoutSeconds: Long,
-        idempotencyKey: String,
+        actionName: String,
+        journal: SetupJournalContext? = null,
         log: (String) -> Unit,
         onRunStarted: (SetupStepStage, String) -> Unit = { _, _ -> },
-    ): Boolean {
-        if (transport != null) {
-            val handle = transport.startRun(
-                StartRunRequest(
-                    request = ToolExecutionRequest(
-                        toolId = toolId,
-                        arguments = arguments,
-                        workingDirectory = workingDir,
-                        timeoutMs = timeoutSeconds * 1000L
-                    ),
-                    idempotencyKey = idempotencyKey
-                )
-            )
-            onRunStarted(SetupStepStage.TOOLCHAIN_COMPILATION, handle.runId)
-            log("[Step 5/5] Attached to build run ${handle.runId} ($idempotencyKey).")
-            var finishedExitCode: Int? = null
-            transport.attachRun(handle.runId).collect { seqEv ->
-                when (val ev = seqEv.event) {
-                    is StreamEvent.OutputChunk -> log("[$toolId] ${ev.text.trimEnd()}")
-                    is StreamEvent.ExecutionFinished -> finishedExitCode = ev.exitCode
-                    else -> {}
-                }
-            }
-            val status = transport.getRun(handle.runId)
-            val exitCode = finishedExitCode ?: status?.exitCode
-                ?: if (status?.status == RunStatusValue.COMPLETED) 0 else 1
-            return exitCode == 0
-        } else {
+    ): Result<Boolean> {
+        if (transport == null) {
             val res = cli.execute(distro, listOf(toolId) + arguments, timeoutSeconds = timeoutSeconds)
             log("[$toolId] ${res.output.takeLast(300)}")
-            return res.exitCode == 0
+            return Result.success(res.exitCode == 0)
+        }
+        val repo = repository
+        val ctx = journal
+        if (repo == null || ctx == null) {
+            return Result.failure(
+                IllegalStateException(
+                    "Durable build step '$actionName' requires a journaled attempt; " +
+                        "refusing an unjournaled server run."
+                )
+            )
+        }
+        val runResult = JournaledRunLauncher(transport, repo, ctx).run(
+            stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+            actionId = "build:$actionName",
+            request = ToolExecutionRequest(
+                toolId = toolId,
+                arguments = arguments,
+                workingDirectory = workingDir,
+                timeoutMs = timeoutSeconds * 1000L
+            ),
+            onRunStarted = { stage, runId ->
+                onRunStarted(stage, runId)
+                log("[Step 5/5] Attached to build run $runId ($actionName).")
+            },
+            log = log,
+        )
+        return when (runResult) {
+            is JournaledRunResult.Finished -> Result.success(runResult.exitCode == 0)
+            is JournaledRunResult.JournalRejected -> Result.failure(IllegalStateException(runResult.reason))
+            is JournaledRunResult.Interrupted -> Result.failure(IllegalStateException(runResult.reason))
         }
     }
 
@@ -83,6 +87,7 @@ public class ToolchainBuildEngine(
         distro: String,
         extDir: String,
         binDir: String,
+        journal: SetupJournalContext? = null,
         onRunStarted: (SetupStepStage, String) -> Unit = { _, _ -> },
         log: (String) -> Unit = {},
     ): Result<Unit> {
@@ -112,11 +117,12 @@ public class ToolchainBuildEngine(
                     "-DANDROID_TOOLS_PATCH_VENDOR=OFF"
                 ),
                 timeoutSeconds = 120,
-                idempotencyKey = "setup:build:android-tools:cmake",
+                actionName = "android-tools:cmake",
+                journal = journal,
                 log = log,
                 onRunStarted = onRunStarted
             )
-            if (!cmakeOk) {
+            if (!cmakeOk.getOrElse { return Result.failure(it) }) {
                 return Result.failure(IllegalStateException("android-tools cmake configuration failed"))
             }
 
@@ -126,11 +132,12 @@ public class ToolchainBuildEngine(
                 toolId = "make",
                 arguments = listOf("-C", buildDir, "-j4"),
                 timeoutSeconds = 600,
-                idempotencyKey = "setup:build:android-tools:make",
+                actionName = "android-tools:make",
+                journal = journal,
                 log = log,
                 onRunStarted = onRunStarted
             )
-            if (!makeOk) {
+            if (!makeOk.getOrElse { return Result.failure(it) }) {
                 return Result.failure(IllegalStateException("android-tools make build failed"))
             }
 
@@ -184,11 +191,12 @@ public class ToolchainBuildEngine(
                 toolId = "cmake",
                 arguments = listOf("-S", "build/cmake", "-B", "out", "-DMAX_BLOCK_SIZE=4096"),
                 timeoutSeconds = 300,
-                idempotencyKey = "setup:build:erofs-utils:cmake",
+                actionName = "erofs-utils:cmake",
+                journal = journal,
                 log = log,
                 onRunStarted = onRunStarted
             )
-            if (!cmakeOk) {
+            if (!cmakeOk.getOrElse { return Result.failure(it) }) {
                 return Result.failure(IllegalStateException("erofs-utils cmake configuration failed"))
             }
 
@@ -198,11 +206,12 @@ public class ToolchainBuildEngine(
                 toolId = "make",
                 arguments = listOf("-C", outDir, "-j4"),
                 timeoutSeconds = 300,
-                idempotencyKey = "setup:build:erofs-utils:make",
+                actionName = "erofs-utils:make",
+                journal = journal,
                 log = log,
                 onRunStarted = onRunStarted
             )
-            if (!makeOk) {
+            if (!makeOk.getOrElse { return Result.failure(it) }) {
                 return Result.failure(IllegalStateException("erofs-utils make build failed"))
             }
 

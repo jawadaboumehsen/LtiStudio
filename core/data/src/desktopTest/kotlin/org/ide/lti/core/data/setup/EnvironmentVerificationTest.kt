@@ -36,6 +36,10 @@ import org.ide.lti.core.domain.setup.StepProvenance
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.model.setup.PersistedSubmoduleState
 import org.ide.lti.core.model.setup.PersistedToolState
+import org.ide.lti.core.model.setup.AttemptStatus
+import org.ide.lti.core.model.setup.ChildIntentRecord
+import org.ide.lti.core.model.setup.ChildTerminalProof
+import org.ide.lti.core.model.setup.SetupAttemptRecord
 import org.ide.lti.core.model.setup.ToolchainPersistenceState
 import java.nio.charset.Charset
 import kotlin.test.Test
@@ -199,14 +203,58 @@ class EnvironmentVerificationTest {
 
         override val toolchainState: Flow<ToolchainPersistenceState> get() = flowOf(state)
         override val currentState: ToolchainPersistenceState get() = state
-        override suspend fun saveToolchainState(state: ToolchainPersistenceState) { this.state = state }
-        override suspend fun markStageCompleted(stageName: String, completed: Boolean) {}
-        override suspend fun markSetupCompleted(completed: Boolean, timestamp: Long?) {}
-        override suspend fun updateTool(toolId: String, transform: (PersistedToolState) -> PersistedToolState) {}
-        override suspend fun updateSubmodule(name: String, transform: (PersistedSubmoduleState) -> PersistedSubmoduleState) {}
-        override suspend fun updateDiagnosticsSnapshot(passedIds: Set<String>) {}
-        override suspend fun updateAvbKeyState(provisioned: Boolean, keyPath: String?) {}
-        override suspend fun clearToolchainState() {}
+        override suspend fun saveToolchainState(state: ToolchainPersistenceState): Result<Unit> {
+            this.state = state
+            return Result.success(Unit)
+        }
+        override suspend fun markStageCompleted(stageName: String, completed: Boolean): Result<Unit> = ok()
+        override suspend fun markSetupCompleted(completed: Boolean, timestamp: Long?): Result<Unit> = ok()
+        override suspend fun updateTool(
+            toolId: String,
+            transform: (PersistedToolState) -> PersistedToolState,
+        ): Result<Unit> = ok()
+        override suspend fun updateSubmodule(
+            name: String,
+            transform: (PersistedSubmoduleState) -> PersistedSubmoduleState,
+        ): Result<Unit> = ok()
+        override suspend fun updateDiagnosticsSnapshot(passedIds: Set<String>): Result<Unit> = ok()
+        override suspend fun updateAvbKeyState(provisioned: Boolean, keyPath: String?): Result<Unit> = ok()
+        override suspend fun clearToolchainState(force: Boolean): Result<Unit> = ok()
+        override suspend fun recordAttemptAuthorized(attempt: SetupAttemptRecord): Result<Unit> {
+            state = state.copy(activeAttempt = attempt)
+            return ok()
+        }
+        override suspend fun updateAttemptStatus(attemptId: String, status: AttemptStatus): Result<Unit> = ok()
+        override suspend fun appendChildIntent(attemptId: String, intent: ChildIntentRecord): Result<Int> =
+            Result.success(0)
+        override suspend fun recordChildRunId(attemptId: String, childIndex: Int, runId: String): Result<Unit> = ok()
+        override suspend fun commitChildCursorAndEvidence(
+            attemptId: String,
+            childIndex: Int,
+            lastSeq: Long,
+            evidenceLine: String?,
+        ): Result<Unit> = ok()
+        override suspend fun recordChildTerminalProof(proof: ChildTerminalProof): Result<Unit> = ok()
+        override suspend fun recordChildNotSubmitted(
+            attemptId: String,
+            childIndex: Int,
+            terminalStatus: String,
+        ): Result<Unit> = ok()
+        override suspend fun recordPlanActionCompleted(attemptId: String, actionId: String): Result<Unit> = ok()
+        override suspend fun recordAttemptTerminal(
+            attemptId: String,
+            status: AttemptStatus,
+            outcome: SetupOutcome,
+        ): Result<Unit> {
+            state = state.copy(activeAttempt = null)
+            return ok()
+        }
+        override suspend fun setRecoveryBlocked(blocked: Boolean, reason: String?): Result<Unit> {
+            state = state.copy(recoveryBlocked = blocked, recoveryBlockReason = reason)
+            return ok()
+        }
+
+        private fun ok(): Result<Unit> = Result.success(Unit)
     }
 
     @Test

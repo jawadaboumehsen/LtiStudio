@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.setup
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -113,8 +114,12 @@ class EnvironmentSetupStateTest {
         private val preparedPlans = mutableMapOf<String, SetupPlan>()
 
         // 003 plan contract: fakes never synthesize success for behaviour the test does not drive.
+        var lastPreparedKind: SetupPlanKind? = null
+            private set
+
         override suspend fun prepare(kind: SetupPlanKind, targetId: String?, autoDoctorEnabled: Boolean): SetupPlan {
             prepareCount++
+            lastPreparedKind = kind
             // Actions are derived from the fake's own state the way the real factory does, so the
             // preview the state holder shows is exactly what this fake would execute.
             val snapshot = _state.value
@@ -158,9 +163,21 @@ class EnvironmentSetupStateTest {
             return confirmOutcome
         }
 
-        override fun observe(): Flow<SetupOutcome?> = flowOf(null)
-        override suspend fun recover(attemptId: String?): SetupOutcome =
-            SetupOutcome.Failed(stage = null, reason = "fake service has no journal")
+        val observedOutcomes = MutableStateFlow<SetupOutcome?>(null)
+        override fun observe(): Flow<SetupOutcome?> = observedOutcomes.asStateFlow()
+
+        var recoverOutcome: SetupOutcome? = null
+        var recoverCount = 0
+            private set
+        var lastRecoverAttemptId: String? = null
+            private set
+        val recoverDeferred = CompletableDeferred<SetupOutcome>()
+
+        override suspend fun recover(attemptId: String?): SetupOutcome {
+            recoverCount++
+            lastRecoverAttemptId = attemptId
+            return recoverOutcome ?: recoverDeferred.await()
+        }
         override suspend fun cancel(): SetupOutcome =
             SetupOutcome.Failed(stage = null, reason = "fake service has nothing to cancel")
 
@@ -643,13 +660,110 @@ class EnvironmentSetupStateTest {
                     assertTrue(matchesBusy)
                 }
                 is SetupOutcome.Interrupted -> {
-                    assertEquals(SetupOperationState.FAILED, op.executionState)
+                    assertEquals(SetupOperationState.INTERRUPTED, op.executionState)
                     assertTrue(op.failure?.contains("Bridge communication lost") == true)
                 }
                 is SetupOutcome.Succeeded -> {}
             }
         }
     }
+
+    @Test
+    fun testPendingJournaledAttemptIsReconciledOnStartupReusingItsAttemptId() = runEnvironmentTest { envScope ->
+        val spyService = SpyToolchainProvisioningService(
+            initialState = ToolchainSetupState(pendingAttemptId = "attempt-journaled-7"),
+        )
+        spyService.recoverOutcome = SetupOutcome.Succeeded()
+        val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)
+
+        // Before the reconciliation completes the shell shows Reconnecting, never Ready / needs-setup.
+        val before = SetupPresentationMapper.mapEnvironment(
+            state = spyService._state.value,
+            isToolchainBound = true,
+            activeOperation = stateHolder.activeOperation.value,
+        )
+        assertTrue(before.environmentState is EnvironmentState.Reconnecting, "$before")
+        assertEquals(PrimaryAction.STAGE_PROGRESS, before.primaryAction)
+
+        testScheduler.advanceUntilIdle()
+
+        // "Reconnect reuses attemptId": startup reconciliation is recovery of that journaled attempt, not new work.
+        assertEquals(1, spyService.recoverCount)
+        assertEquals("attempt-journaled-7", spyService.lastRecoverAttemptId)
+        assertEquals(0, spyService.prepareCount, "Startup reconciliation never prepares or confirms new work")
+        assertEquals(0, spyService.confirmCount)
+        assertNull(
+            stateHolder.activeOperation.value,
+            "A reconciled, succeeded attempt is history, not an active operation",
+        )
+    }
+
+    @Test
+    fun testBlockedJournalRefusesMutationsUntilExplicitResetPreview() = runEnvironmentTest { envScope ->
+        val spyService = SpyToolchainProvisioningService(
+            initialState = ToolchainSetupState(
+                pendingAttemptId = "attempt-ambiguous-1",
+                recoveryBlockReason = "2 server runs hold lock 'lock:Ubuntu:attempt-ambiguous-1:submodule:apktool'",
+            ),
+        )
+        spyService.recoverOutcome =
+            SetupOutcome.Interrupted("Recovery of attempt attempt-ambiguous-1 is blocked: 2 server runs hold the lock")
+        val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)
+        testScheduler.advanceUntilIdle()
+
+        val presentation = stateHolder.environmentPresentation.value
+        assertTrue(presentation.environmentState is EnvironmentState.Interrupted, "$presentation")
+        assertEquals(PrimaryAction.RECONNECT, presentation.primaryAction)
+        val op = stateHolder.activeOperation.value
+        assertNotNull(op)
+        assertEquals(SetupOperationState.INTERRUPTED, op.executionState)
+
+        // Journal truth gates new mutations: nothing is prepared or confirmed while recovery is blocked.
+        stateHolder.previewSetup()
+        testScheduler.advanceUntilIdle()
+        assertTrue(stateHolder.environmentNotice.value?.contains("Recovery required", ignoreCase = true) == true)
+        stateHolder.retryStage(SetupStepStage.TOOLCHAIN_COMPILATION)
+        stateHolder.confirmOperation()
+        testScheduler.advanceUntilIdle()
+        assertEquals(0, spyService.prepareCount, "previewSetup/retryStage are refused while the journal needs recovery")
+        assertEquals(0, spyService.confirmCount)
+
+        // Reconnect is offered and reuses the attemptId; it is the only recovery path besides reset.
+        stateHolder.reconcilePendingAttempt()
+        testScheduler.advanceUntilIdle()
+        assertEquals(2, spyService.recoverCount)
+        assertEquals("attempt-ambiguous-1", spyService.lastRecoverAttemptId)
+
+        // The explicit cache reset preview is the user-directed escape and must stay reachable (FR-008).
+        stateHolder.previewResetToolchainCache()
+        testScheduler.advanceUntilIdle()
+        assertEquals(1, spyService.prepareCount, "Cache reset preview is allowed while recovery is blocked")
+        assertEquals(SetupPlanKind.CACHE_RESET, spyService.lastPreparedKind)
+    }
+
+    @Test
+    fun testReconciledInterruptedHistoryAllowsFreshPreviewAsNewAttempt() = runEnvironmentTest { envScope ->
+        val spyService = SpyToolchainProvisioningService(
+            initialState = ToolchainSetupState(pendingAttemptId = "attempt-partial-3"),
+        )
+        spyService.recoverOutcome = SetupOutcome.Interrupted(
+            "Attempt attempt-partial-3 was reconciled but 1 planned action(s) (build-recipes) never ran; " +
+                "preview again to start a new attempt.",
+        )
+        val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)
+        testScheduler.advanceUntilIdle()
+        assertEquals("attempt-partial-3", spyService.lastRecoverAttemptId)
+        assertEquals(SetupOperationState.INTERRUPTED, stateHolder.activeOperation.value?.executionState)
+
+        // The adapter archived the attempt: the journal is clean again.
+        spyService._state.value = spyService._state.value.copy(pendingAttemptId = null, recoveryBlockReason = null)
+        testScheduler.advanceUntilIdle()
+
+        // "Explicit retry allocates a new attemptId": a fresh preview is a separate, newly confirmed plan.
+        stateHolder.previewSetup()
+        testScheduler.advanceUntilIdle()
+        assertEquals(1, spyService.prepareCount)
+        assertEquals(SetupOperationState.PREVIEW, stateHolder.activeOperation.value?.executionState)
+        assertEquals(0, spyService.confirmCount, "Preview alone never executes")
+    }
 }
-
-

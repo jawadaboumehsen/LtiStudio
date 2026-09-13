@@ -37,7 +37,10 @@ import org.ide.lti.core.domain.setup.ToolComponentItem
 import org.ide.lti.core.domain.setup.ToolEvidence
 import org.ide.lti.core.domain.setup.ToolchainProvisioningService
 import org.ide.lti.core.domain.setup.ToolchainSetupState
+import org.ide.lti.core.model.setup.AttemptStatus
+import org.ide.lti.core.model.setup.SetupAttemptRecord
 import org.ide.lti.core.model.setup.ToolchainPersistenceState
+import java.util.UUID
 import java.io.File
 
 /**
@@ -64,8 +67,11 @@ public class WslToolchainProvisioner(
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val repository: ToolchainSetupRepository? = null,
     private val toolPublicationPort: ToolPublicationPort? = null,
-    private val coordinator: SetupOperationCoordinator = SetupOperationCoordinator(),
+    private val coordinator: SetupOperationCoordinator = SetupOperationCoordinator(repository),
 ) : ToolchainProvisioningService {
+
+    /** Journal reconciliation engine (US3); absent without a repository, in which case nothing is durable. */
+    private val recovery: SetupRunRecovery? = repository?.let { SetupRunRecovery(transport, it) }
 
     /**
      * Last prepared plan. "Plans are session-scoped before confirmation": a confirmation consumes it,
@@ -93,8 +99,14 @@ public class WslToolchainProvisioner(
 
     private fun restoreInitialState(): ToolchainSetupState {
         val persisted = repository?.currentState ?: return ToolchainSetupState()
+        // An unreconciled attempt or a recovery block is restored first: it is the journal's truth about
+        // possibly-running server work and must be visible before any evidence (US3 T023).
+        val journal = ToolchainSetupState(
+            pendingAttemptId = persisted.activeAttempt?.attemptId,
+            recoveryBlockReason = persisted.recoveryBlockReason?.takeIf { persisted.recoveryBlocked },
+        )
         if (!persisted.isSetupCompleted && persisted.completedStages.isEmpty() && persisted.tools.isEmpty()) {
-            return ToolchainSetupState()
+            return journal
         }
 
         val lastVerified = persisted.lastVerifiedTimestamp
@@ -136,7 +148,20 @@ public class WslToolchainProvisioner(
             lastVerifiedTimestamp = persisted.lastVerifiedTimestamp,
             checkedAt = null,
             lastReadyAt = persisted.lastVerifiedTimestamp,
+            pendingAttemptId = journal.pendingAttemptId,
+            recoveryBlockReason = journal.recoveryBlockReason,
         )
+    }
+
+    /** Mirrors the journal's active-attempt / block state into the observable setup state. */
+    private fun publishJournalState() {
+        val persisted = repository?.currentState ?: return
+        _state.update {
+            it.copy(
+                pendingAttemptId = persisted.activeAttempt?.attemptId,
+                recoveryBlockReason = persisted.recoveryBlockReason?.takeIf { _ -> persisted.recoveryBlocked },
+            )
+        }
     }
 
 
@@ -682,8 +707,17 @@ public class WslToolchainProvisioner(
             operationId = opId,
             kind = "REPAIR_TOOL",
         ) {
+            val journal = openAttempt(
+                environmentKey = distro,
+                planId = opId,
+                revisionHash = SetupPlanFactory.computeRevisionHash(_state.value, false),
+                kind = SetupPlanKind.REPAIR_TOOL,
+                plannedActionIds = listOf("build-recipes"),
+            ).getOrElse {
+                return@withAdmission SetupOutcome.Interrupted(it.message ?: "Attempt could not be journaled.")
+            }
             _state.update { it.copy(isRunning = true, activeOperationId = opId) }
-            try {
+            val repairOutcome: SetupOutcome = try {
                 _state.update { s ->
                     s.copy(
                         toolsMatrix = s.toolsMatrix.map {
@@ -706,7 +740,13 @@ public class WslToolchainProvisioner(
                     transport = transport,
                 )
 
-                val buildRes = buildEngine.buildAndDistributeAll(distro, extDir, binDir, log = { appendLog(it) })
+                val buildRes = buildEngine.buildAndDistributeAll(
+                    distro,
+                    extDir,
+                    binDir,
+                    journal = journal,
+                    log = { appendLog(it) },
+                )
                 if (buildRes.isFailure) {
                     appendLog("[Tool Matrix] Build failed for $toolId: ${buildRes.exceptionOrNull()?.message}")
                     _state.update { s ->
@@ -716,45 +756,47 @@ public class WslToolchainProvisioner(
                             }
                         )
                     }
-                    return@withAdmission SetupOutcome.Failed(
+                    SetupOutcome.Failed(
                         "TOOLCHAIN_COMPILATION",
                         buildRes.exceptionOrNull()?.message ?: "Build failed",
                     )
-                }
+                } else {
+                    // Verify the repaired binary using real exit codes (FR-009)
+                    val toolItem = _state.value.toolsMatrix.firstOrNull { it.id == toolId }
+                    val binaryName = toolItem?.binaryName ?: toolId
+                    val binaryPath = "$binDir/$binaryName"
+                    val exists = effectiveCli.execute(distro, listOf("test", "-x", binaryPath)).exitCode == 0
+                    val execRes = if (exists) effectiveCli.execute(distro, listOf(binaryPath, "--help"), timeoutSeconds = 5) else null
+                    val isOk = exists && execRes?.exitCode == 0
 
-                // Verify the repaired binary using real exit codes (FR-009)
-                val toolItem = _state.value.toolsMatrix.firstOrNull { it.id == toolId }
-                val binaryName = toolItem?.binaryName ?: toolId
-                val binaryPath = "$binDir/$binaryName"
-                val exists = effectiveCli.execute(distro, listOf("test", "-x", binaryPath)).exitCode == 0
-                val execRes = if (exists) effectiveCli.execute(distro, listOf(binaryPath, "--help"), timeoutSeconds = 5) else null
-                val isOk = exists && execRes?.exitCode == 0
-
-                _state.update { s ->
-                    s.copy(
-                        toolsMatrix = s.toolsMatrix.map {
-                            if (it.id == toolId) it.copy(
-                                status = if (isOk) StepStatus.SUCCESS else StepStatus.FAILED,
-                                path = if (exists) binaryPath else null,
-                                lastTested = if (isOk) "Just now" else it.lastTested
-                            ) else it
-                        }
-                    )
-                }
-                if (isOk) {
-                    repository?.updateTool(toolId) { tool ->
-                        tool.copy(
-                            isVerified = true,
-                            isCompiled = true,
-                            binaryPath = binaryPath,
-                            lastVerifiedTimestamp = System.currentTimeMillis()
+                    _state.update { s ->
+                        s.copy(
+                            toolsMatrix = s.toolsMatrix.map {
+                                if (it.id == toolId) it.copy(
+                                    status = if (isOk) StepStatus.SUCCESS else StepStatus.FAILED,
+                                    path = if (exists) binaryPath else null,
+                                    lastTested = if (isOk) "Just now" else it.lastTested
+                                ) else it
+                            }
                         )
                     }
-                    SetupOutcome.Succeeded()
-                } else {
-                    SetupOutcome.Failed("TOOLCHAIN_COMPILATION", "Repair verification failed")
+                    if (isOk) {
+                        repository?.updateTool(toolId) { tool ->
+                            tool.copy(
+                                isVerified = true,
+                                isCompiled = true,
+                                binaryPath = binaryPath,
+                                lastVerifiedTimestamp = System.currentTimeMillis()
+                            )
+                        }
+                        journal?.let { repository?.recordPlanActionCompleted(it.attemptId, "build-recipes") }
+                        SetupOutcome.Succeeded()
+                    } else {
+                        SetupOutcome.Failed("TOOLCHAIN_COMPILATION", "Repair verification failed")
+                    }
                 }
             } catch (e: CancellationException) {
+                journal?.let { archiveAttempt(it.attemptId, SetupOutcome.Cancelled) }
                 throw e
             } catch (e: Exception) {
                 appendLog("[Tool Matrix] Exception during repair of $toolId: ${e.message}")
@@ -769,6 +811,9 @@ public class WslToolchainProvisioner(
             } finally {
                 _state.update { it.copy(isRunning = false, activeOperationId = null) }
             }
+            val archived = journal?.let { archiveAttempt(it.attemptId, repairOutcome) } ?: repairOutcome
+            publishJournalState()
+            archived
         }
         outcome.isSuccess
     }
@@ -778,9 +823,8 @@ public class WslToolchainProvisioner(
     // Every mutation is previewed by [prepare] and executed only by [confirm]. A plan is derived
     // from the real current state (never mutating anything); confirmation enforces the plan ID /
     // revision invariant, revalidates the live evidence and environment, freezes the Auto Doctor
-    // policy carried by the plan, and runs under the single environment operation owner. Journal-
-    // backed recovery is owned by 003 US3 (T019-T023); until it lands [recover] returns a typed
-    // Failed with the reason - never a synthesized Succeeded.
+    // policy carried by the plan, and runs under the single environment operation owner. Every
+    // attempt is journaled before submission and reconciled by [recover] (003 US3).
 
     override suspend fun prepare(
         kind: SetupPlanKind,
@@ -800,6 +844,7 @@ public class WslToolchainProvisioner(
         plan
     }
 
+    @Suppress("CyclomaticComplexMethod") // plan validation, per-kind execution, cancel/failure archiving and post-check
     override suspend fun confirm(
         planId: String,
         revisionHash: String,
@@ -837,11 +882,22 @@ public class WslToolchainProvisioner(
             operationId = currentPlan.planId,
             kind = currentPlan.kind.name,
         ) {
+            val journal = openAttempt(
+                environmentKey = distro,
+                planId = currentPlan.planId,
+                revisionHash = currentPlan.revisionHash,
+                kind = currentPlan.kind,
+                plannedActionIds = currentPlan.orderedActions.map { it.actionId() },
+            ).getOrElse {
+                return@withAdmission SetupOutcome.Interrupted(it.message ?: "Attempt could not be journaled.")
+            }
+            val newAttemptId = journal?.attemptId ?: currentPlan.planId
+
             // The plan is consumed by this attempt: a second confirmation must preview again.
             activePlan = null
             _state.update { it.copy(isRunning = true, activeOperationId = currentPlan.planId) }
             try {
-                when (currentPlan.kind) {
+                val planOutcome = when (currentPlan.kind) {
                     SetupPlanKind.CACHE_RESET -> executeCacheReset()
                     SetupPlanKind.FULL_SETUP,
                     SetupPlanKind.STAGE_RETRY,
@@ -854,12 +910,32 @@ public class WslToolchainProvisioner(
                                 reason = "Daemon bridge failed: health check returned null.",
                             )
                         } else {
-                            executePlan(currentPlan, distro)
+                            executePlan(currentPlan, distro, journal)
                         }
                     }
                 }
+                archiveAttempt(newAttemptId, planOutcome)
+            } catch (ce: CancellationException) {
+                // Explicit cancel: the attempt is archived as cancelled only if every submitted child is
+                // proven; otherwise it stays journaled for reconciliation ("cancellation acknowledgement
+                // alone never unlocks mutation").
+                archiveAttempt(newAttemptId, SetupOutcome.Cancelled)
+                throw ce
+            } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
+                // Transport/adapter failure escaping the plan is a typed Failed, but the attempt is only
+                // archived when every submitted child has terminal proof; otherwise it stays journaled and
+                // recovery is blocked until reconciled (never a silent retry).
+                appendLog("[Plan] ERROR: ${e.message}")
+                archiveAttempt(
+                    newAttemptId,
+                    SetupOutcome.Failed(
+                        stage = _state.value.currentStage?.name,
+                        reason = e.message ?: "Plan execution failed",
+                    ),
+                )
             } finally {
                 _state.update { it.copy(isRunning = false, activeOperationId = null, currentStage = null) }
+                publishJournalState()
             }
         }.let { outcome ->
             // "On success verify required facts": readiness after a mutation is measured by a live
@@ -878,10 +954,89 @@ public class WslToolchainProvisioner(
      * is no direct entry point (FR-003). A cleared state is Unknown, never Ready.
      */
     private suspend fun executeCacheReset(): SetupOutcome {
-        repository?.clearToolchainState()
+        // A confirmed CACHE_RESET is the explicit, user-directed authorization to discard an
+        // unreconcilable journal (FR-008 "unknown run requires user-directed recovery").
+        repository?.clearToolchainState(force = true)?.onFailure { failure ->
+            return SetupOutcome.Failed(stage = null, reason = "Cache reset was not persisted: ${failure.message}")
+        }
         _state.value = ToolchainSetupState()
         appendLog("[Cache] Reset toolchain persistence cache to clean default.")
         return SetupOutcome.Succeeded(evidence = emptyMap())
+    }
+
+    /**
+     * Archives the attempt with its typed outcome. Succeeded/Failed/Cancelled are only recorded when every
+     * journaled child has authoritative terminal proof; otherwise the attempt stays active for recovery.
+     */
+    @Suppress("ReturnCount") // no-journal, foreign attempt, unproven children and write failure are distinct verdicts
+    private suspend fun archiveAttempt(attemptId: String, outcome: SetupOutcome): SetupOutcome {
+        val repo = repository ?: return outcome
+        val active = repo.currentState.activeAttempt
+        if (active == null || active.attemptId != attemptId) return outcome
+        if (active.unprovenIntents.isNotEmpty()) {
+            val reason = "Attempt $attemptId ended (${outcome::class.simpleName}) while " +
+                "${active.unprovenIntents.size} journaled command(s) lack terminal proof; reconnect to reconcile."
+            repo.setRecoveryBlocked(true, reason)
+            return SetupOutcome.Interrupted(reason)
+        }
+        val status = when (outcome) {
+            is SetupOutcome.Succeeded -> AttemptStatus.SUCCEEDED
+            is SetupOutcome.Cancelled -> AttemptStatus.CANCELLED
+            is SetupOutcome.Failed -> AttemptStatus.FAILED
+            is SetupOutcome.Interrupted -> AttemptStatus.INTERRUPTED
+            is SetupOutcome.Busy -> AttemptStatus.INTERRUPTED
+        }
+        repo.recordAttemptTerminal(attemptId, status, outcome).onFailure { failure ->
+            return SetupOutcome.Interrupted("Attempt $attemptId finished but could not be archived: ${failure.message}")
+        }
+        return outcome
+    }
+
+    /**
+     * Journals a new attempt before anything is submitted ("Journal write failure prevents submission").
+     * Returns the journal context, or null when no repository is configured (nothing durable exists, and the
+     * engines then refuse durable server runs). Every mutation - confirmed plans and tool repair alike -
+     * opens its attempt here, so "explicit retry allocates a new attemptId" holds for all of them.
+     */
+    private suspend fun openAttempt(
+        environmentKey: String,
+        planId: String,
+        revisionHash: String,
+        kind: SetupPlanKind,
+        plannedActionIds: List<String>,
+    ): Result<SetupJournalContext?> {
+        val repo = repository ?: return Result.success(null)
+        val attemptId = UUID.randomUUID().toString()
+        val record = SetupAttemptRecord(
+            attemptId = attemptId,
+            environmentKey = environmentKey,
+            planId = planId,
+            planRevisionHash = revisionHash,
+            planKind = kind.name,
+            status = AttemptStatus.AUTHORIZED,
+            plannedActionIds = plannedActionIds,
+        )
+        return repo.recordAttemptAuthorized(record).fold(
+            onSuccess = {
+                publishJournalState()
+                Result.success(SetupJournalContext(environmentKey, attemptId))
+            },
+            onFailure = { failure ->
+                Result.failure(
+                    IllegalStateException(
+                        "Attempt could not be journaled; nothing was started: ${failure.message}",
+                        failure,
+                    ),
+                )
+            },
+        )
+    }
+
+    private fun SetupPlanAction.actionId(): String = when (this) {
+        is SetupPlanAction.InstallPackages -> "packages"
+        is SetupPlanAction.SyncSources -> "sync-sources"
+        is SetupPlanAction.BuildRecipes -> "build-recipes"
+        is SetupPlanAction.PublishTools -> "publish-tools"
     }
 
     private fun recordRunStarted(stage: SetupStepStage, runId: String) {
@@ -900,7 +1055,11 @@ public class WslToolchainProvisioner(
      * a discarded Boolean or a command that merely returned.
      */
     @Suppress("ReturnCount", "LongMethod", "CyclomaticComplexMethod")
-    private suspend fun executePlan(currentPlan: SetupPlan, distro: String): SetupOutcome {
+    private suspend fun executePlan(
+        currentPlan: SetupPlan,
+        distro: String,
+        journal: SetupJournalContext?,
+    ): SetupOutcome {
         val home = runCatching {
             val res = transport.execute(ToolExecutionRequest(toolId = "printenv", arguments = listOf("HOME"), workingDirectory = "/"))
             if (res.exitCode == 0 && res.stdout.trim().startsWith("/")) res.stdout.trim() else null
@@ -935,6 +1094,7 @@ public class WslToolchainProvisioner(
                     val syncRes = syncEngine.syncAll(
                         distro,
                         extDir,
+                        journal = journal,
                         onRunStarted = ::recordRunStarted,
                     ) { appendLog(it) }
                     if (syncRes.isFailure) {
@@ -963,6 +1123,7 @@ public class WslToolchainProvisioner(
                         distro,
                         extDir,
                         binDir,
+                        journal = journal,
                         onRunStarted = ::recordRunStarted,
                     ) { appendLog(it) }
                     if (buildRes.isFailure) {
@@ -987,6 +1148,14 @@ public class WslToolchainProvisioner(
                         "[Step 5/5] Published ${publishedIds.size} tools to daemon " +
                             "(${unpublishedIds.size} skipped)."
                     )
+                }
+            }
+            if (journal != null) {
+                repository?.recordPlanActionCompleted(journal.attemptId, action.actionId())?.onFailure { failure ->
+                    val reason = "Plan action '${action.actionId()}' completed but could not be journaled: " +
+                        failure.message
+                    appendLog("[Journal] ERROR: $reason")
+                    return SetupOutcome.Interrupted(reason)
                 }
             }
         }
@@ -1096,11 +1265,32 @@ public class WslToolchainProvisioner(
 
     override fun observe(): Flow<SetupOutcome?> = _operationOutcome.asStateFlow()
 
-    override suspend fun recover(attemptId: String?): SetupOutcome = SetupOutcome.Failed(
-        stage = null,
-        reason = "No attempt journal exists yet (003 US3 T019-T023); " +
-            (attemptId?.let { "attempt '$it' cannot be reconciled." } ?: "nothing to reconcile."),
-    )
+    override suspend fun recover(attemptId: String?): SetupOutcome = withContext(dispatcher) {
+        val distro = resolveEnvironmentKey()
+        val engine = recovery
+            ?: return@withContext SetupOutcome.Failed(
+                stage = null,
+                reason = "No durable journal is configured; nothing to recover.",
+            )
+        val pending = repository?.currentState?.activeAttempt?.attemptId
+        coordinator.withAdmission(
+            environmentKey = distro,
+            operationId = attemptId ?: pending ?: "recovery",
+            kind = SetupOperationCoordinator.KIND_RECOVERY,
+        ) {
+            _state.update { it.copy(isRunning = true, activeOperationId = attemptId ?: pending) }
+            try {
+                engine.recover(distro, attemptId) { appendLog(it) }
+            } finally {
+                _state.update { it.copy(isRunning = false, activeOperationId = null, currentStage = null) }
+                publishJournalState()
+            }
+        }.let { outcome ->
+            // Reconciled work is measured, never asserted: readiness comes from a live check afterwards.
+            if (outcome is SetupOutcome.Succeeded) verifyEnvironment()
+            outcome
+        }.also { _operationOutcome.value = it }
+    }
 
     override suspend fun cancel(): SetupOutcome = withContext(dispatcher) {
         val outcome = coordinator.cancelActiveOperation(resolveEnvironmentKey())
