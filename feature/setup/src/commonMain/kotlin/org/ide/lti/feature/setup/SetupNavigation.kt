@@ -19,7 +19,8 @@ import org.ide.lti.core.model.workspace.Workspace
 enum class SetupTab(val id: String) {
     PROJECTS("projects"),
     ENVIRONMENT("environment"),
-    LAUNCHPAD("launchpad");
+    LAUNCHPAD("launchpad"),
+    TOOLS("tools");
 
     companion object {
         fun fromId(id: String): SetupTab = entries.firstOrNull { it.id == id } ?: PROJECTS

@@ -47,6 +47,7 @@ import org.ide.lti.core.designsystem.component.display.GlassHorizontalDivider
 import org.ide.lti.core.designsystem.component.navigation.GlassSidebarItem
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
+import org.ide.lti.core.designsystem.icon.ideToolwindowsBuild
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
@@ -87,7 +88,7 @@ fun SetupJourneySidebar(
         when (dest) {
             SetupDestination.WORKSPACES -> onStepSelected(SetupTab.PROJECTS)
             SetupDestination.ENVIRONMENT -> onStepSelected(SetupTab.ENVIRONMENT)
-            SetupDestination.TOOLS -> {}
+            SetupDestination.TOOLS -> onStepSelected(SetupTab.TOOLS)
         }
     },
 ) {
@@ -101,6 +102,7 @@ fun SetupJourneySidebar(
 
     val isWorkspacesActive = selectedDestination == SetupDestination.WORKSPACES || currentStep == SetupTab.PROJECTS
     val isEnvironmentActive = selectedDestination == SetupDestination.ENVIRONMENT || currentStep == SetupTab.ENVIRONMENT
+    val isToolsActive = selectedDestination == SetupDestination.TOOLS || currentStep == SetupTab.TOOLS
 
     Column(
         modifier = modifier
@@ -183,6 +185,19 @@ fun SetupJourneySidebar(
                 onClick = {
                     onDestinationSelected(SetupDestination.ENVIRONMENT)
                     onStepSelected(SetupTab.ENVIRONMENT)
+                },
+            )
+
+            Spacer(modifier = Modifier.height(Spacing.Small))
+
+            // Tools Destination
+            GlassSidebarItem(
+                label = "Tools",
+                icon = AppIcon.Painted(AppIcons.ideToolwindowsBuild),
+                selected = isToolsActive,
+                onClick = {
+                    onDestinationSelected(SetupDestination.TOOLS)
+                    onStepSelected(SetupTab.TOOLS)
                 },
             )
         }

@@ -60,9 +60,13 @@ import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import org.ide.lti.core.designsystem.component.tooltip.GlassTooltipArea
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolCategory
 import org.ide.lti.core.domain.setup.ToolComponentItem
+import org.ide.lti.feature.setup.ToolBrowserState
 
 /**
  * 35-Tool Interactive Matrix Table modeled after Android Studio SDK Tools & JetBrains Toolchains.
@@ -89,6 +93,8 @@ fun ToolMatrixTable(
     onTestTool: (String) -> Unit,
     onRecompileTool: (String) -> Unit,
     modifier: Modifier = Modifier,
+    isBusy: Boolean = false,
+    searchFocusRequester: FocusRequester? = null,
     backdrop: LayerBackdrop? = null,
 ) {
     val glassColors = GlassTheme.colors
@@ -172,7 +178,15 @@ fun ToolMatrixTable(
                         } else {
                             TextFieldTrailingSlot.None
                         },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .then(
+                                if (searchFocusRequester != null) {
+                                    Modifier.focusRequester(searchFocusRequester)
+                                } else {
+                                    Modifier
+                                },
+                            ),
                     )
                 }
             }
@@ -209,6 +223,7 @@ fun ToolMatrixTable(
                     items(tools, key = { it.id }) { tool ->
                         ToolMatrixItemRow(
                             tool = tool,
+                            isBusy = isBusy,
                             onTest = { onTestTool(tool.id) },
                             onRecompile = { onRecompileTool(tool.id) },
                         )
@@ -223,12 +238,16 @@ fun ToolMatrixTable(
 @Composable
 private fun ToolMatrixItemRow(
     tool: ToolComponentItem,
+    isBusy: Boolean,
     onTest: () -> Unit,
     onRecompile: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val glassColors = GlassTheme.colors
     val diagnostics = glassColors.diagnostics
+
+    val isRecipeSupported = ToolBrowserState.isRecipeSupported(tool.id)
+    val isRunning = tool.status == StepStatus.RUNNING || isBusy
 
     val statusColor = when (tool.status) {
         StepStatus.SUCCESS -> diagnostics.success
@@ -375,6 +394,16 @@ private fun ToolMatrixItemRow(
                             }
                         }
                     }
+
+                    if (!isRecipeSupported) {
+                        Text(
+                            text = ToolBrowserState.REPAIR_UNAVAILABLE_REASON,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = diagnostics.warning,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
             }
 
@@ -386,7 +415,7 @@ private fun ToolMatrixItemRow(
             ) {
                 GlassSecondaryButton(
                     onClick = onTest,
-                    enabled = tool.status != StepStatus.RUNNING,
+                    enabled = !isRunning,
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -401,21 +430,31 @@ private fun ToolMatrixItemRow(
                     }
                 }
 
-                GlassSecondaryButton(
-                    onClick = onRecompile,
-                    enabled = tool.status != StepStatus.RUNNING,
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                val rebuildButton = @Composable {
+                    GlassSecondaryButton(
+                        onClick = onRecompile,
+                        enabled = !isRunning && isRecipeSupported,
                     ) {
-                        Icon(
-                            painter = AppIcons.RefreshPainterResource(),
-                            contentDescription = null,
-                            modifier = Modifier.size(IconSize.Small),
-                        )
-                        Text("Rebuild", maxLines = 1, softWrap = false)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                        ) {
+                            Icon(
+                                painter = AppIcons.RefreshPainterResource(),
+                                contentDescription = null,
+                                modifier = Modifier.size(IconSize.Small),
+                            )
+                            Text("Rebuild", maxLines = 1, softWrap = false)
+                        }
                     }
+                }
+
+                if (!isRecipeSupported) {
+                    GlassTooltipArea(tooltipText = ToolBrowserState.REPAIR_UNAVAILABLE_REASON) {
+                        rebuildButton()
+                    }
+                } else {
+                    rebuildButton()
                 }
             }
         }

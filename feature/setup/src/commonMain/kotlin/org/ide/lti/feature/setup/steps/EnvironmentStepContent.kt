@@ -61,8 +61,10 @@ import org.ide.lti.feature.setup.SetupOperationState
 import org.ide.lti.feature.setup.components.DoctorDiagnosticsDrawer
 import org.ide.lti.feature.setup.components.EnvironmentSubsystemHeader
 import org.ide.lti.feature.setup.components.ProvisioningPreviewSheet
+import org.ide.lti.feature.setup.components.SetupActivityPanel
 import org.ide.lti.feature.setup.components.ToolMatrixTable
 import org.ide.lti.feature.setup.components.ToolchainPipelineTracker
+import org.ide.lti.feature.setup.SetupActivityState
 
 /**
  * Structured overload for [EnvironmentStepContent] utilizing [SetupUiState] and [SetupUiActions]
@@ -78,6 +80,7 @@ fun EnvironmentStepContent(
     onProceedToLaunchpad: () -> Unit = {},
     onNavigateToProjects: (() -> Unit)? = null,
     autoRunOnLaunch: Boolean = true,
+    activityState: SetupActivityState? = null,
 ) {
     EnvironmentStepContent(
         toolchainSetupState = state.toolchainSetupState,
@@ -108,6 +111,7 @@ fun EnvironmentStepContent(
         isAutoDoctorEnabled = state.isAutoDoctorEnabled,
         onSetAutoDoctorEnabled = actions.onSetAutoDoctorEnabled,
         onResetToolchainCache = actions.onResetToolchainCache,
+        activityState = activityState,
     )
 }
 
@@ -160,6 +164,7 @@ fun EnvironmentStepContent(
     isAutoDoctorEnabled: Boolean = true,
     onSetAutoDoctorEnabled: (Boolean) -> Unit = {},
     onResetToolchainCache: () -> Unit = {},
+    activityState: SetupActivityState? = null,
 ) {
     val glassColors = GlassTheme.colors
     val diagnostics = glassColors.diagnostics
@@ -315,11 +320,20 @@ fun EnvironmentStepContent(
                 )
             }
             "console" -> {
-                GlassConsoleDrawer(
-                    logs = toolchainSetupState.logs,
-                    isRunning = toolchainSetupState.isBusy,
-                    backdrop = resolvedBackdrop,
-                )
+                if (activityState != null) {
+                    SetupActivityPanel(
+                        activityState = activityState,
+                        title = "Execution Terminal Logs",
+                        isRunning = toolchainSetupState.isBusy,
+                        backdrop = resolvedBackdrop,
+                    )
+                } else {
+                    GlassConsoleDrawer(
+                        logs = toolchainSetupState.logs,
+                        isRunning = toolchainSetupState.isBusy,
+                        backdrop = resolvedBackdrop,
+                    )
+                }
             }
         }
 

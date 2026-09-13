@@ -149,6 +149,14 @@ public class WslToolchainProvisioner(
         public val ALL_CORE_TOOLS: List<String> = ToolchainIntegrityInspector.DEFAULT_CORE_TOOLS
 
         public val REQUIRED_DEV_PACKAGES: List<String> = NativeLibrariesInspector.DEFAULT_REQUIRED_DEV_PACKAGES
+
+        public val SUPPORTED_RECIPES: Set<String> = setOf(
+            "adb", "fastboot", "mke2fs", "avbtool", "mkbootimg", "lpmake", "lpunpack", "lpdump",
+            "mkfs.erofs", "dump.erofs", "fsck.erofs", "erofsfuse", "img2sdat",
+            "apktool", "signapk", "payload-dumper-go"
+        )
+
+        public fun isRecipeSupported(toolId: String): Boolean = toolId in SUPPORTED_RECIPES
     }
 
 
@@ -893,9 +901,10 @@ public class WslToolchainProvisioner(
 
         val effectiveCli = TransportCliExecutor(transport, defaultWorkingDirectory = userHome)
         val exists = effectiveCli.execute(distro, listOf("test", "-x", binaryPath)).exitCode == 0
+        // Real process exit code: do NOT infer success from stdout text alone (FR-009)
         val testStatus = if (exists) {
             val execRes = effectiveCli.execute(distro, listOf(binaryPath, "--help"), timeoutSeconds = 5)
-            if (execRes.exitCode == 0 || execRes.output.isNotBlank()) StepStatus.SUCCESS else StepStatus.WARNING
+            if (execRes.exitCode == 0) StepStatus.SUCCESS else StepStatus.FAILED
         } else {
             StepStatus.FAILED
         }
@@ -906,7 +915,7 @@ public class WslToolchainProvisioner(
                     if (it.id == toolId) it.copy(
                         status = testStatus,
                         path = if (exists) binaryPath else null,
-                        lastTested = "Just now"
+                        lastTested = if (testStatus == StepStatus.SUCCESS) "Just now" else it.lastTested
                     ) else it
                 }
             )
@@ -925,10 +934,96 @@ public class WslToolchainProvisioner(
     }
 
     override suspend fun repairTool(toolId: String): Boolean = withContext(dispatcher) {
-        if (_state.value.toolsMatrix.none { it.id == toolId }) return@withContext false
-        appendLog("[Tool Matrix] Verifying & recompiling tool component: $toolId...")
-        val status = testTool(toolId)
-        status == StepStatus.SUCCESS
+        if (!isRecipeSupported(toolId)) {
+            appendLog("[Tool Matrix] Repair unavailable for '$toolId': Repair requires a supported recipe; otherwise the action is unavailable with a reason.")
+            return@withContext false
+        }
+        if (_state.value.isBusy) {
+            appendLog("[Tool Matrix] Cannot repair '$toolId': another setup mutation is currently active.")
+            return@withContext false
+        }
+        val opId = "repair-$toolId-${System.currentTimeMillis()}"
+        _state.update { it.copy(isRunning = true, activeOperationId = opId) }
+        try {
+            _state.update { s ->
+                s.copy(
+                    toolsMatrix = s.toolsMatrix.map {
+                        if (it.id == toolId) it.copy(status = StepStatus.RUNNING) else it
+                    }
+                )
+            }
+            appendLog("[Tool Matrix] Executing rebuild recipe for tool: $toolId...")
+            val distro = detector.getDefaultDistro() ?: "Ubuntu"
+            val userHome = runCatching {
+                val res = transport.execute(ToolExecutionRequest(toolId = "printenv", arguments = listOf("HOME"), workingDirectory = "/"))
+                if (res.exitCode == 0 && res.stdout.trim().startsWith("/")) res.stdout.trim() else null
+            }.getOrNull() ?: detector.resolveWslUserHome(distro)
+            val toolsRoot = "$userHome/LtiRomTools"
+            val extDir = "$toolsRoot/external"
+            val binDir = "$toolsRoot/bin"
+            val effectiveCli = TransportCliExecutor(transport, defaultWorkingDirectory = userHome)
+            val buildEngine = ToolchainBuildEngine(
+                cli = effectiveCli,
+                repository = repository,
+                transport = transport,
+            )
+
+            val buildRes = buildEngine.buildAndDistributeAll(distro, extDir, binDir, log = { appendLog(it) })
+            if (buildRes.isFailure) {
+                appendLog("[Tool Matrix] Build failed for $toolId: ${buildRes.exceptionOrNull()?.message}")
+                _state.update { s ->
+                    s.copy(
+                        toolsMatrix = s.toolsMatrix.map {
+                            if (it.id == toolId) it.copy(status = StepStatus.FAILED) else it
+                        }
+                    )
+                }
+                return@withContext false
+            }
+
+            // Verify the repaired binary using real exit codes (FR-009)
+            val toolItem = _state.value.toolsMatrix.firstOrNull { it.id == toolId }
+            val binaryName = toolItem?.binaryName ?: toolId
+            val binaryPath = "$binDir/$binaryName"
+            val exists = effectiveCli.execute(distro, listOf("test", "-x", binaryPath)).exitCode == 0
+            val execRes = if (exists) effectiveCli.execute(distro, listOf(binaryPath, "--help"), timeoutSeconds = 5) else null
+            val isOk = exists && execRes?.exitCode == 0
+
+            _state.update { s ->
+                s.copy(
+                    toolsMatrix = s.toolsMatrix.map {
+                        if (it.id == toolId) it.copy(
+                            status = if (isOk) StepStatus.SUCCESS else StepStatus.FAILED,
+                            path = if (exists) binaryPath else null,
+                            lastTested = if (isOk) "Just now" else it.lastTested
+                        ) else it
+                    }
+                )
+            }
+            if (isOk) {
+                repository?.updateTool(toolId) { tool ->
+                    tool.copy(
+                        isVerified = true,
+                        isCompiled = true,
+                        binaryPath = binaryPath,
+                        lastVerifiedTimestamp = System.currentTimeMillis()
+                    )
+                }
+            }
+            isOk
+        } catch (e: Exception) {
+            appendLog("[Tool Matrix] Exception during repair of $toolId: ${e.message}")
+            _state.update { s ->
+                s.copy(
+                    toolsMatrix = s.toolsMatrix.map {
+                        if (it.id == toolId) it.copy(status = StepStatus.FAILED) else it
+                    }
+                )
+            }
+            false
+        } finally {
+            _state.update { it.copy(isRunning = false, activeOperationId = null) }
+        }
     }
 
     override suspend fun resetSetupCache(): Unit = withContext(dispatcher) {

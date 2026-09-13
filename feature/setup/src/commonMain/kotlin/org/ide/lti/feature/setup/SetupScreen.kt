@@ -72,6 +72,7 @@ import org.ide.lti.feature.setup.components.SetupJourneySidebar
 import org.ide.lti.feature.setup.steps.DocumentationStepContent
 import org.ide.lti.feature.setup.steps.EnvironmentStepContent
 import org.ide.lti.feature.setup.steps.ProjectsStepContent
+import org.ide.lti.feature.setup.steps.ToolsStepContent
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -155,7 +156,7 @@ fun SetupScreen(
             when (dest) {
                 SetupDestination.WORKSPACES -> viewModel.selectTab(SetupTab.PROJECTS)
                 SetupDestination.ENVIRONMENT -> viewModel.selectTab(SetupTab.ENVIRONMENT)
-                SetupDestination.TOOLS -> {}
+                SetupDestination.TOOLS -> viewModel.selectTab(SetupTab.TOOLS)
             }
         },
         onDismissEnvironmentNotice = viewModel::dismissEnvironmentNotice,
@@ -181,6 +182,8 @@ fun SetupScreen(
         modifier = modifier,
         isHelpSheetOpen = isHelpSheetOpen,
         onDismissHelpSheet = { isHelpSheetOpen = false },
+        toolBrowserState = viewModel.toolBrowserState,
+        activityState = viewModel.setupActivityState,
     )
 }
 
@@ -201,6 +204,8 @@ fun SetupScreenContent(
     initialTab: SetupTab? = null,
     isHelpSheetOpen: Boolean = false,
     onDismissHelpSheet: () -> Unit = {},
+    toolBrowserState: ToolBrowserState? = null,
+    activityState: SetupActivityState? = null,
 ) {
     val ambientBackdrop = (backdrop as? LayerBackdrop) ?: (GlassTheme.backdrop as? LayerBackdrop)
     val resolvedBackdrop = ambientBackdrop ?: rememberLayerBackdrop()
@@ -210,6 +215,7 @@ fun SetupScreenContent(
 
     val rootFocusRequester = remember { FocusRequester() }
     val searchFocusRequester = remember { FocusRequester() }
+    val toolSearchFocusRequester = remember { FocusRequester() }
     val helpButtonFocusRequester = remember { FocusRequester() }
     var lastInvokingFocusRequester by remember { mutableStateOf<FocusRequester?>(null) }
     var pendingSearchFocus by remember { mutableStateOf(false) }
@@ -219,11 +225,9 @@ fun SetupScreenContent(
     }
 
     LaunchedEffect(effectiveTab) {
-        // ProjectsStepContent owns the actual requestFocus() call on mount (via
-        // focusSearchOnMount below) to avoid racing its own mount-time focus grab;
-        // this only clears the one-shot intent once the switch has been observed so a
-        // later, unrelated re-entry into the Workspaces tab doesn't steal focus again.
-        if (effectiveTab == SetupTab.PROJECTS) {
+        // ProjectsStepContent and ToolsStepContent own the actual requestFocus() call on mount
+        // via focusSearchOnMount; this only clears the one-shot intent once observed.
+        if (effectiveTab == SetupTab.PROJECTS || effectiveTab == SetupTab.TOOLS) {
             pendingSearchFocus = false
         }
     }
@@ -254,11 +258,17 @@ fun SetupScreenContent(
                                 true
                             }
                             Key.F -> {
-                                if (effectiveTab != SetupTab.PROJECTS) {
-                                    pendingSearchFocus = true
-                                    onTabChange(SetupTab.PROJECTS)
-                                } else {
-                                    searchFocusRequester.requestFocus()
+                                when (effectiveTab) {
+                                    SetupTab.PROJECTS, SetupTab.LAUNCHPAD -> {
+                                        searchFocusRequester.requestFocus()
+                                    }
+                                    SetupTab.TOOLS -> {
+                                        toolSearchFocusRequester.requestFocus()
+                                    }
+                                    else -> {
+                                        pendingSearchFocus = true
+                                        onTabChange(SetupTab.PROJECTS)
+                                    }
                                 }
                                 true
                             }
@@ -413,6 +423,7 @@ fun SetupScreenContent(
                                     actions = actions,
                                     onNavigateToProjects = { onTabChange(SetupTab.PROJECTS) },
                                     resolvedBackdrop = resolvedBackdrop,
+                                    activityState = activityState,
                                 )
                             }
                             SetupTab.PROJECTS, SetupTab.LAUNCHPAD -> {
@@ -423,6 +434,17 @@ fun SetupScreenContent(
                                     resolvedBackdrop = resolvedBackdrop,
                                     onNavigateToEnvironment = { onTabChange(SetupTab.ENVIRONMENT) },
                                     searchFocusRequester = searchFocusRequester,
+                                    focusSearchOnMount = pendingSearchFocus,
+                                )
+                            }
+                            SetupTab.TOOLS -> {
+                                ToolsStepContent(
+                                    state = state,
+                                    actions = actions,
+                                    resolvedBackdrop = resolvedBackdrop,
+                                    toolBrowserState = toolBrowserState,
+                                    activityState = activityState,
+                                    searchFocusRequester = toolSearchFocusRequester,
                                     focusSearchOnMount = pendingSearchFocus,
                                 )
                             }

@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
@@ -152,12 +153,27 @@ class SetupViewModel(
         environmentReadinessPort = environmentReadinessPort,
     )
 
+    val toolBrowserState = ToolBrowserState(
+        scope = viewModelScope,
+        toolchainService = toolchainService,
+        environmentSetupState = environmentSetupState,
+    )
+
+    val setupActivityState = SetupActivityState(
+        scope = viewModelScope,
+    )
+
     val isAutoDoctorEnabled: StateFlow<Boolean> = environmentSetupState.isAutoDoctorEnabled
     val activeOperation: StateFlow<SetupOperation?> = environmentSetupState.activeOperation
     val environmentPresentation: StateFlow<EnvironmentPresentation> = environmentSetupState.environmentPresentation
 
     init {
         environmentSetupState.checkEnvironmentStatus()
+        viewModelScope.launch {
+            toolchainSetupState.collect { state ->
+                setupActivityState.setLogs(state.logs)
+            }
+        }
     }
 
     val workspaceBrowserState = WorkspaceBrowserState(
@@ -211,43 +227,25 @@ class SetupViewModel(
         _selectedCockpitTab.value = tab
     }
 
-    internal val _toolSearchQuery = MutableStateFlow("")
-    val toolSearchQuery: StateFlow<String> = _toolSearchQuery.asStateFlow()
+    val toolSearchQuery: StateFlow<String> = toolBrowserState.searchQuery
 
     fun onToolSearchQueryChange(query: String) {
-        _toolSearchQuery.value = query
+        toolBrowserState.onSearchQueryChange(query)
     }
 
-    internal val _selectedToolCategory = MutableStateFlow("All")
-    val selectedToolCategory: StateFlow<String> = _selectedToolCategory.asStateFlow()
+    val selectedToolCategory: StateFlow<String> = toolBrowserState.selectedCategory
 
     fun selectToolCategory(category: String) {
-        _selectedToolCategory.value = category
+        toolBrowserState.selectCategory(category)
     }
 
-    val filteredToolsMatrix: StateFlow<List<ToolComponentItem>> = combine(
-        toolchainSetupState,
-        toolSearchQuery,
-        selectedToolCategory,
-    ) { state, query, category ->
-        var list = state.toolsMatrix
-        if (category != "All") {
-            list = list.filter { it.category.displayName.equals(category, ignoreCase = true) }
-        }
-        if (query.isNotBlank()) {
-            list = list.filter {
-                it.name.contains(query, ignoreCase = true) ||
-                    it.id.contains(query, ignoreCase = true) ||
-                    it.binaryName.contains(query, ignoreCase = true) ||
-                    it.capabilities.any { cap -> cap.contains(query, ignoreCase = true) }
-            }
-        }
-        list
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = ToolchainSetupState.defaultToolsMatrix(),
-    )
+    val filteredToolsMatrix: StateFlow<List<ToolComponentItem>> = toolBrowserState.filteredTools
+        .map { list -> list.map { it.tool } }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Eagerly,
+            initialValue = ToolchainSetupState.defaultToolsMatrix(),
+        )
 
     fun testTool(toolId: String) {
         if (toolchainService == null) {
@@ -255,7 +253,7 @@ class SetupViewModel(
             return
         }
         viewModelScope.launch {
-            toolchainService.testTool(toolId)
+            toolBrowserState.testTool(toolId)
         }
     }
 
@@ -265,7 +263,10 @@ class SetupViewModel(
             return
         }
         viewModelScope.launch {
-            toolchainService.repairTool(toolId)
+            val success = toolBrowserState.repairTool(toolId)
+            if (!success && !ToolBrowserState.isRecipeSupported(toolId)) {
+                environmentSetupState.setEnvironmentNotice(ToolBrowserState.REPAIR_UNAVAILABLE_REASON)
+            }
         }
     }
 
