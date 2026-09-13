@@ -671,6 +671,12 @@ public interface ToolchainProvisioningService {
     public fun observe(): Flow<SetupOutcome?>
 
     /**
+     * Observes the stream of log events from environment checks, mutations, and tool tests.
+     * Bounded to at most 10,000 lines and 8 MiB payload (FR-011, FR-012).
+     */
+    public fun observeActivity(): Flow<SetupLogEvent>
+
+    /**
      * Attempts to reconcile an in-flight or interrupted attempt against durable/server truth.
      * Never resubmits an ambiguous receipt.
      */

@@ -36,6 +36,7 @@ public class SetupRunRecovery(
     private val transport: RemoteTransportPort,
     private val repository: ToolchainSetupRepository,
     private val clock: () -> Long = System::currentTimeMillis,
+    private val activity: SetupActivitySink? = null,
 ) {
     public companion object {
         /** Server-side idempotency deduplication window (research.md). */
@@ -85,7 +86,7 @@ public class SetupRunRecovery(
         val launcher = JournaledRunLauncher(
             transport = transport,
             repository = repository,
-            context = SetupJournalContext(environmentKey, active.attemptId),
+            context = SetupJournalContext(environmentKey, active.attemptId, activity),
         )
         var worstStatus: String? = null
         for (intent in active.orderedIntents) {

@@ -99,12 +99,6 @@ fun ToolsStepContent(
     val fallbackActivityState = remember { SetupActivityState(scope = coroutineScope) }
     val resolvedActivityState = activityState ?: fallbackActivityState
 
-    // Keep activity logs in sync with setup state logs
-    LaunchedEffect(state.toolchainSetupState.logs) {
-        if (state.toolchainSetupState.logs.isNotEmpty()) {
-            resolvedActivityState.setLogs(state.toolchainSetupState.logs)
-        }
-    }
 
     Column(
         modifier = modifier

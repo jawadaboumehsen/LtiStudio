@@ -18,6 +18,12 @@ import org.ide.lti.core.model.setup.PersistedExecutionRequest
 public data class SetupJournalContext(
     val environmentKey: String,
     val attemptId: String,
+    /**
+     * Optional bounded activity sink. When present, streamed output is recorded with its real
+     * journal identity (attemptId, childRunId, sequence) so replay/reconnect deduplicates instead
+     * of re-appending the same lines under a synthetic counter (FR-011, FR-012).
+     */
+    val activity: SetupActivitySink? = null,
 )
 
 /**
@@ -140,7 +146,7 @@ public class JournaledRunLauncher(
             transport.attachRun(runId, fromSeq).collect { sequenced ->
                 val event = sequenced.event
                 if (event is StreamEvent.ExecutionFinished) streamedExitCode = event.exitCode
-                commitEvent(childIndex, actionId, sequenced.seq, event, log)
+                commitEvent(childIndex, runId, actionId, sequenced.seq, event, log)
             }
         } catch (e: CancellationException) {
             throw e
@@ -186,6 +192,7 @@ public class JournaledRunLauncher(
      */
     private suspend fun commitEvent(
         childIndex: Int,
+        runId: String,
         actionId: String,
         seq: Long,
         event: StreamEvent,
@@ -194,7 +201,9 @@ public class JournaledRunLauncher(
         val commit: Result<Unit> = when (event) {
             is StreamEvent.OutputChunk -> {
                 val text = event.text.trimEnd()
-                log("[$actionId] $text")
+                val line = "[$actionId] $text"
+                val sink = context.activity
+                if (sink != null) sink.record(context.attemptId, runId, seq, line) else log(line)
                 repository.commitChildCursorAndEvidence(context.attemptId, childIndex, seq, text)
             }
             is StreamEvent.ExecutionFinished,

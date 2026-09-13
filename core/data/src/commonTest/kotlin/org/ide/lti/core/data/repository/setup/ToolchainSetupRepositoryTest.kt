@@ -25,6 +25,7 @@ import org.ide.lti.core.model.setup.ChildIntentRecord
 import org.ide.lti.core.model.setup.ChildTerminalProof
 import org.ide.lti.core.model.setup.PersistedExecutionRequest
 import org.ide.lti.core.model.setup.SetupAttemptRecord
+import org.ide.lti.core.model.setup.SetupLogBounds
 import org.ide.lti.core.model.setup.ToolchainPersistenceState
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -170,6 +171,46 @@ class ToolchainSetupRepositoryTest {
             activeIntent?.replayLogs,
             "Replay logs must not commit without durable persistence",
         )
+    }
+
+    @Test
+    fun testPersistedReplayEvidenceObeysLineAndByteBounds() = runTest {
+        val dataSource = ToolchainPreferencesDataSource(settings = MapSettings(), ioDispatcher = Dispatchers.Unconfined)
+        val repository = ToolchainSetupRepositoryImpl(dataSource)
+        val legacyHistory = List(SetupLogBounds.MAX_BUFFER_LINES) { "legacy $it" }
+        repository.recordAttemptAuthorized(
+            SetupAttemptRecord(
+                attemptId = "attempt-bounded",
+                environmentKey = "Ubuntu",
+                planId = "plan-1",
+                planRevisionHash = "rev-1",
+                planKind = "FULL_SETUP",
+                status = AttemptStatus.RUNNING,
+                orderedIntents = listOf(
+                    ChildIntentRecord(
+                        childIndex = 0,
+                        stage = "REPO_SYNCHRONIZATION",
+                        actionId = "android-tools",
+                        request = PersistedExecutionRequest(toolId = "git"),
+                        idempotencyKey = "key-1",
+                        workspaceLock = "lock-1",
+                        lastSeq = legacyHistory.size.toLong(),
+                        replayLogs = legacyHistory,
+                    ),
+                ),
+            ),
+        ).getOrThrow()
+
+        val oversized = "日".repeat(SetupLogBounds.MAX_LINE_BYTES) // 3-byte code points, ~48 KiB
+        repository.commitChildCursorAndEvidence("attempt-bounded", 0, legacyHistory.size + 1L, oversized).getOrThrow()
+
+        val intent = repository.currentState.activeAttempt?.orderedIntents?.single()
+        val logs = intent?.replayLogs.orEmpty()
+        assertEquals(SetupLogBounds.MAX_BUFFER_LINES, logs.size, "Journal keeps at most the newest 10,000 lines")
+        assertEquals("legacy 1", logs.first(), "The oldest line is evicted, never the newest evidence")
+        assertTrue(logs.last().encodeToByteArray().size <= SetupLogBounds.MAX_LINE_BYTES)
+        assertTrue(logs.last().endsWith(SetupLogBounds.TRUNCATION_MARKER))
+        assertEquals(legacyHistory.size + 1L, intent?.lastSeq, "Cursor advances with its (bounded) evidence")
     }
 
     @Test

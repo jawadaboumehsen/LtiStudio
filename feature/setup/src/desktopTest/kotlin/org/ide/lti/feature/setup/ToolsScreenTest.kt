@@ -185,7 +185,11 @@ class ToolsScreenTest {
         val lines = (1..10_500).map { "Log entry line $it" }
         activityState.appendLines(lines)
 
-        assertEquals(10_000, activityState.visibleLines.value.size, "Visible lines buffer must be capped at 10,000 lines")
+        assertEquals(
+            10_000,
+            activityState.visibleEvents.value.size,
+            "Visible lines buffer must be capped at 10,000 lines",
+        )
         assertEquals(500, activityState.droppedLineCount.value, "Dropped lines must be exactly 500")
 
         setContent {
@@ -255,15 +259,16 @@ class ToolsScreenTest {
         }
 
         // Initially 0 selected lines
-        assertTrue(activityState.selectedIndices.value.isEmpty())
+        assertTrue(activityState.selectedEventIds.value.isEmpty())
 
-        // Click on "Alpha log entry"
+        // Click on "Alpha log entry": selection is keyed by the event id, not a list index
         onNodeWithText("Alpha log entry").assertIsDisplayed().performClick()
-        assertEquals(setOf(0), activityState.selectedIndices.value)
+        val alphaId = activityState.visibleEvents.value.first { it.text == "Alpha log entry" }.id
+        assertEquals(setOf(alphaId), activityState.selectedEventIds.value)
         onNodeWithText("Copy selection (1)").assertIsDisplayed()
 
         // Clear selection via Clear button
         onNodeWithContentDescription("Clear selection").assertIsDisplayed().performClick()
-        assertTrue(activityState.selectedIndices.value.isEmpty())
+        assertTrue(activityState.selectedEventIds.value.isEmpty())
     }
 }

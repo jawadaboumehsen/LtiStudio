@@ -26,6 +26,7 @@ import org.ide.lti.core.model.setup.ChildTerminalProof
 import org.ide.lti.core.model.setup.PersistedSubmoduleState
 import org.ide.lti.core.model.setup.PersistedToolState
 import org.ide.lti.core.model.setup.SetupAttemptRecord
+import org.ide.lti.core.model.setup.SetupLogBounds
 import org.ide.lti.core.model.setup.ToolchainPersistenceState
 
 /**
@@ -297,9 +298,18 @@ public class ToolchainPreferencesDataSource(
         lastSeq: Long,
         evidenceLine: String? = null,
     ): Result<Unit> = mutateChild(attemptId, childIndex) { intent ->
+        // Persisted replay evidence obeys the same line/byte bounds as the live buffers (FR-011); the
+        // newest evidence is always retained, so the committed cursor never outruns stored evidence.
+        val safeLine = evidenceLine?.let { SetupLogBounds.truncateToUtf8Bytes(it) }
+        val updatedLogs = if (safeLine != null) {
+            val total = intent.replayLogs + safeLine
+            if (total.size > SetupLogBounds.MAX_BUFFER_LINES) total.takeLast(SetupLogBounds.MAX_BUFFER_LINES) else total
+        } else {
+            intent.replayLogs
+        }
         intent.copy(
             lastSeq = maxOf(intent.lastSeq, lastSeq),
-            replayLogs = if (evidenceLine != null) intent.replayLogs + evidenceLine else intent.replayLogs,
+            replayLogs = updatedLogs,
         )
     }
 

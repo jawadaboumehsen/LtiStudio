@@ -225,6 +225,38 @@ class SetupRecoveryTest {
     }
 
     @Test
+    fun reattachedOutputIsRecordedWithJournalIdentityAndReplayIsDeduplicated() = runTest {
+        val server = PersistentFakeServer()
+        val settings = MapSettings()
+        val before = reopen(settings)
+        authorize(before)
+        val index = journalIntent(before)
+        server.registerRun("server-run-9", RunStatusValue.RUNNING, LOCK)
+        server.addEvents("server-run-9", StreamEvent.OutputChunk("line 1"))
+        before.recordChildRunId(ATTEMPT, index, "server-run-9").getOrThrow()
+        before.commitChildCursorAndEvidence(ATTEMPT, index, 1L, "line 1").getOrThrow()
+        server.addEvents("server-run-9", StreamEvent.OutputChunk("line 2"), StreamEvent.ExecutionFinished(0, 3L))
+        server.runs["server-run-9"] =
+            server.runs.getValue("server-run-9").copy(status = RunStatusValue.COMPLETED, exitCode = 0)
+
+        val activity = SetupLogBuffer()
+        val narration = mutableListOf<String>()
+        SetupRunRecovery(server, reopen(settings), activity = activity).recover(ENV) { narration.add(it) }
+
+        val recorded = activity.snapshot().single()
+        assertEquals(ATTEMPT, recorded.attemptId)
+        assertEquals("server-run-9", recorded.childRunId, "Activity identity is the real child run id")
+        assertEquals(2L, recorded.sequence, "Activity identity is the server sequence, not a local counter")
+        assertEquals("[$ACTION] line 2", recorded.text)
+        assertTrue(narration.none { it.contains("line 2") }, "Run output is not also narrated under a synthetic id")
+        assertFalse(
+            activity.append(ATTEMPT, "server-run-9", 2L, "[$ACTION] line 2"),
+            "A replayed (runId, seq) is rejected instead of duplicating the line",
+        )
+        assertEquals(1, activity.size)
+    }
+
+    @Test
     fun streamingCrashResumesFromCommittedCursorWithoutDuplicateLogSequences() = runTest {
         val server = PersistentFakeServer()
         val settings = MapSettings()

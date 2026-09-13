@@ -19,6 +19,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.produceIn
+import org.ide.lti.core.domain.setup.SetupLogEvent
 import kotlinx.coroutines.launch
 import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
 import org.ide.lti.core.model.setup.EnvironmentReadiness
@@ -172,8 +174,15 @@ class SetupViewModel(
     init {
         environmentSetupState.checkEnvironmentStatus()
         viewModelScope.launch {
-            toolchainSetupState.collect { state ->
-                setupActivityState.setLogs(state.logs)
+            // The single activity subscription (FR-012). Events already queued are drained into one
+            // batch so a burst costs one snapshot publish, not one per line.
+            val events = toolchainService?.observeActivity()?.produceIn(this) ?: return@launch
+            for (first in events) {
+                val batch = ArrayList<SetupLogEvent>().apply { add(first) }
+                while (true) {
+                    batch += events.tryReceive().getOrNull() ?: break
+                }
+                setupActivityState.appendEvents(batch)
             }
         }
     }

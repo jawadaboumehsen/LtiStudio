@@ -25,6 +25,7 @@ import org.ide.lti.core.domain.ports.ToolPublicationPort
 import org.ide.lti.core.domain.repository.setup.ToolchainSetupRepository
 import org.ide.lti.core.domain.setup.DiagnosticCategory
 import org.ide.lti.core.domain.setup.DiagnosticCheckItem
+import org.ide.lti.core.domain.setup.SetupLogEvent
 import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.domain.setup.SetupPlan
 import org.ide.lti.core.domain.setup.SetupPlanAction
@@ -72,7 +73,9 @@ public class WslToolchainProvisioner(
 ) : ToolchainProvisioningService {
 
     /** Journal reconciliation engine (US3); absent without a repository, in which case nothing is durable. */
-    private val recovery: SetupRunRecovery? = repository?.let { SetupRunRecovery(transport, it) }
+    /** Bounded activity history (FR-011); run output is recorded here with real journal identity. */
+    private val logBuffer = SetupLogBuffer(onRecorded = { event -> publishLogTail(event.text) })
+    private val recovery: SetupRunRecovery? = repository?.let { SetupRunRecovery(transport, it, activity = logBuffer) }
 
     /**
      * Last prepared plan. "Plans are session-scoped before confirmation": a confirmation consumes it,
@@ -171,6 +174,9 @@ public class WslToolchainProvisioner(
 
     public companion object {
         private const val DEFAULT_DISTRO: String = "Ubuntu"
+        private const val STATE_LOG_TAIL_LINES: Int = 100
+        private const val LOCAL_ATTEMPT_ID: String = "local"
+        private const val PROVISIONER_CHILD_ID: String = "provisioner"
 
         public data class PinnedSubmodule(
             val name: String,
@@ -916,7 +922,7 @@ public class WslToolchainProvisioner(
         return repo.recordAttemptAuthorized(record).fold(
             onSuccess = {
                 publishJournalState()
-                Result.success(SetupJournalContext(environmentKey, attemptId))
+                Result.success(SetupJournalContext(environmentKey, attemptId, activity = logBuffer))
             },
             onFailure = { failure ->
                 Result.failure(
@@ -1265,6 +1271,8 @@ public class WslToolchainProvisioner(
 
     override fun observe(): Flow<SetupOutcome?> = _operationOutcome.asStateFlow()
 
+    override fun observeActivity(): Flow<SetupLogEvent> = logBuffer.observe()
+
     override suspend fun recover(attemptId: String?): SetupOutcome = withContext(dispatcher) {
         val distro = resolveEnvironmentKey()
         val engine = recovery
@@ -1318,11 +1326,22 @@ public class WslToolchainProvisioner(
         }
     }
 
+    /**
+     * Provisioner-originated narration (not server run output). Streamed run output reaches
+     * [logBuffer] through [SetupJournalContext.activity] with its real journal identity instead.
+     */
     private fun appendLog(line: String) {
+        val attemptId = repository?.currentState?.activeAttempt?.attemptId ?: LOCAL_ATTEMPT_ID
+        logBuffer.append(text = line, attemptId = attemptId, childRunId = PROVISIONER_CHILD_ID)
+        publishLogTail(line)
+    }
+
+    /** Keeps only a short tail on the immutable snapshot; the full bounded history lives in [logBuffer]. */
+    private fun publishLogTail(line: String) {
         _state.update { s ->
             s.copy(
-                logs = s.logs + line,
-                activeLogLine = line
+                logs = (s.logs + line).takeLast(STATE_LOG_TAIL_LINES),
+                activeLogLine = line,
             )
         }
     }

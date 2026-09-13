@@ -27,7 +27,9 @@ import org.ide.lti.core.domain.setup.DiagnosticCategory
 import org.ide.lti.core.domain.setup.DiagnosticCheckItem
 import org.ide.lti.core.domain.setup.SetupOutcome
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
+import org.ide.lti.core.domain.setup.SetupLogEvent
 import org.ide.lti.core.domain.setup.SetupPlan
 import org.ide.lti.core.domain.setup.SetupPlanAction
 import org.ide.lti.core.domain.setup.SetupPlanKind
@@ -164,6 +166,7 @@ class EnvironmentSetupStateTest {
 
         val observedOutcomes = MutableStateFlow<SetupOutcome?>(null)
         override fun observe(): Flow<SetupOutcome?> = observedOutcomes.asStateFlow()
+        override fun observeActivity(): Flow<SetupLogEvent> = emptyFlow()
 
         var recoverOutcome: SetupOutcome? = null
         var recoverCount = 0

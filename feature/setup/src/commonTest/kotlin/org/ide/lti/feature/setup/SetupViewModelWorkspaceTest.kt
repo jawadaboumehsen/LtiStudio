@@ -16,7 +16,9 @@ import kotlinx.datetime.Clock
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.domain.setup.DiagnosticCheckItem
 import org.ide.lti.core.domain.setup.SetupOutcome
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
+import org.ide.lti.core.domain.setup.SetupLogEvent
 import org.ide.lti.core.domain.setup.SetupPlan
 import org.ide.lti.core.domain.setup.SetupPlanKind
 import org.ide.lti.core.domain.setup.SetupStepStage
@@ -258,6 +260,7 @@ class SetupViewModelWorkspaceTest {
         override suspend fun confirm(planId: String, revisionHash: String): SetupOutcome =
             SetupOutcome.Failed(stage = null, reason = "fake service does not execute plans")
         override fun observe(): Flow<SetupOutcome?> = flowOf(null)
+        override fun observeActivity(): Flow<SetupLogEvent> = emptyFlow()
         override suspend fun recover(attemptId: String?): SetupOutcome =
             SetupOutcome.Failed(stage = null, reason = "fake service has no journal")
         override suspend fun cancel(): SetupOutcome =
