@@ -468,6 +468,11 @@ class WslToolchainProvisionerTest {
         val supervisor = FakeDaemonSupervisor()
         val transport = FakeRemoteTransport(fakeCli = fakeCli)
         val fakePublication = FakeToolPublicationPort()
+        // The daemon's live listing is the publication fact surfaced in state, so the fake daemon
+        // must report exactly what the publication port published.
+        transport.publishedTools = fakePublication.publishedResult.published
+            .map { ToolStatusInfo(tool = it, installed = true) }
+            .toMutableList()
 
         val provisioner = WslToolchainProvisioner(
             supervisor = supervisor,

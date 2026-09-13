@@ -40,6 +40,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -105,7 +106,7 @@ class EnvironmentVerificationTest {
                     val tools = listOf(
                         "payload-dumper-go", "lpunpack", "lpmake", "simg2img",
                         "erofsfuse", "mkfs.erofs", "avbtool", "unpack_bootimg",
-                        "img2sdat", "signapk", "adb", "fastboot"
+                        "img2sdat", "signapk", "adb", "fastboot", "mke2fs", "dump.erofs"
                     )
                     ToolExecutionResponse(0, tools.joinToString("\n"), "", 5L)
                 }
@@ -457,5 +458,92 @@ class EnvironmentVerificationTest {
                 }
             }
         }
+    }
+
+    @Test
+    fun `null health check in probe fails closed with SERVER_CONNECTIVITY FAILED`() = runTest {
+        val supervisor = RecordingDaemonSupervisor()
+        val transport = RecordingRemoteTransport(healthInfo = null) // Null health!
+        val cli = RecordingCliExecutor()
+        val detector = WslEnvironmentDetector(cli)
+
+        val provisioner = WslToolchainProvisioner(
+            supervisor = supervisor,
+            transport = transport,
+            detector = detector,
+            cli = cli,
+            dispatcher = UnconfinedTestDispatcher(testScheduler)
+        )
+
+        val state = provisioner.verifyEnvironment()
+        val bridgeStep = state.steps.first { it.stage == SetupStepStage.SERVER_CONNECTIVITY }
+        assertEquals(StepStatus.FAILED, bridgeStep.status, "Null daemon health must fail closed")
+        assertFalse(state.isAllReady)
+    }
+
+    @Test
+    fun `absent publication in probe prevents ready`() = runTest {
+        val supervisor = RecordingDaemonSupervisor()
+        val transport = RecordingRemoteTransport()
+        transport.toolsList = mutableListOf() // No published tools!
+        val cli = RecordingCliExecutor()
+        val detector = WslEnvironmentDetector(cli)
+
+        val provisioner = WslToolchainProvisioner(
+            supervisor = supervisor,
+            transport = transport,
+            detector = detector,
+            cli = cli,
+            dispatcher = UnconfinedTestDispatcher(testScheduler)
+        )
+
+        val state = provisioner.verifyEnvironment()
+        assertNull(state.lastReadyAt, "Absent tool publication must prevent lastReadyAt")
+        assertFalse(state.publishedToolIds.containsAll(ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS))
+    }
+
+    @Test
+    fun `only completed live check updates checkedAt and only fully ready updates lastReadyAt`() = runTest {
+        val supervisor = RecordingDaemonSupervisor()
+        val transport = RecordingRemoteTransport()
+        transport.toolsList = mutableListOf() // Missing tools
+        val cli = RecordingCliExecutor()
+        val detector = WslEnvironmentDetector(cli)
+
+        val provisioner = WslToolchainProvisioner(
+            supervisor = supervisor,
+            transport = transport,
+            detector = detector,
+            cli = cli,
+            dispatcher = UnconfinedTestDispatcher(testScheduler)
+        )
+
+        // Before live check
+        assertNull(provisioner.state.value.checkedAt)
+        assertNull(provisioner.state.value.lastReadyAt)
+
+        // Run live check (incomplete environment)
+        val stateAfterCheck = provisioner.verifyEnvironment()
+        assertNotNull(stateAfterCheck.checkedAt, "Completed live check must update checkedAt")
+        assertNull(stateAfterCheck.lastReadyAt, "Incomplete environment must NOT update lastReadyAt")
+
+        // Now populate all tools and publish
+        transport.toolsList = mutableListOf(
+            ToolStatusInfo(tool = "payload-dumper-go", installed = true),
+            ToolStatusInfo(tool = "lpunpack", installed = true),
+            ToolStatusInfo(tool = "lpmake", installed = true),
+            ToolStatusInfo(tool = "simg2img", installed = true),
+            ToolStatusInfo(tool = "erofsfuse", installed = true),
+            ToolStatusInfo(tool = "mkfs.erofs", installed = true),
+            ToolStatusInfo(tool = "avbtool", installed = true),
+            ToolStatusInfo(tool = "unpack_bootimg", installed = true),
+            ToolStatusInfo(tool = "img2sdat", installed = true),
+            ToolStatusInfo(tool = "signapk", installed = true)
+        )
+
+        val readyState = provisioner.verifyEnvironment()
+        assertNotNull(readyState.checkedAt)
+        assertNotNull(readyState.lastReadyAt, "Fully ready environment must update lastReadyAt")
+        assertTrue(readyState.lastReadyAt!! <= readyState.checkedAt!!)
     }
 }

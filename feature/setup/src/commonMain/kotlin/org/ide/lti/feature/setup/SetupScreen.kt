@@ -108,6 +108,7 @@ fun SetupScreen(
     val availableTargets by viewModel.availableTargets.collectAsState()
     val environmentReadiness by viewModel.environmentReadiness.collectAsState()
     val activeOperation by viewModel.activeOperation.collectAsState()
+    val environmentPresentation by viewModel.environmentPresentation.collectAsState()
 
     var isHelpSheetOpen by remember { mutableStateOf(false) }
 
@@ -129,6 +130,7 @@ fun SetupScreen(
         environmentNotice = environmentNotice,
         environmentReadiness = environmentReadiness,
         activeOperation = activeOperation,
+        environmentPresentation = environmentPresentation,
     )
 
     val uiActions = SetupUiActions(

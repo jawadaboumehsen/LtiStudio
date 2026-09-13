@@ -17,6 +17,7 @@ import org.ide.lti.core.model.setup.EnvironmentReadinessState
 import org.ide.lti.core.model.workspace.Workspace
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -68,8 +69,18 @@ class EnvironmentReadinessAdapterTest {
             )
         }
 
+        var healthInfo: WslServerInfo? = WslServerInfo(
+            status = "HEALTHY",
+            distro = "Ubuntu",
+            kernelRelease = "5.15.0",
+            architecture = "x86_64",
+            javaVersion = "21.0.11",
+            serverUptimeMs = 50_000L,
+            availableTools = listOf("adb", "fastboot")
+        )
+
         override fun stream(request: ToolExecutionRequest): Flow<StreamEvent> = emptyFlow()
-        override suspend fun checkHealth(): WslServerInfo? = null
+        override suspend fun checkHealth(): WslServerInfo? = healthInfo
         override suspend fun listTools(): List<ToolStatusInfo> = toolsList
         override suspend fun refreshTools(): List<ToolStatusInfo> = toolsList
         override suspend fun uploadFile(remotePath: String, content: ByteArray): Boolean = true
@@ -327,5 +338,145 @@ class EnvironmentReadinessAdapterTest {
         val readiness = adapter.forWorkspace(ws)
 
         assertEquals(EnvironmentReadinessState.READY, readiness.state)
+    }
+
+    @Test
+    fun testNullHealthFailsClosedServiceUnreachable() = runTest {
+        val wsl = FakeWslPresence()
+        val supervisor = FakeDaemonSupervisor()
+        val transport = FakeRemoteTransport()
+        transport.healthInfo = null // Null daemon health!
+        transport.toolsList = healthyToolsList()
+
+        val adapter = EnvironmentReadinessAdapter(wsl, supervisor, transport)
+        val readiness = adapter.refresh()
+
+        assertEquals(
+            EnvironmentReadinessState.SERVICE_UNREACHABLE,
+            readiness.state,
+            "Null daemon health must fail closed to SERVICE_UNREACHABLE"
+        )
+        assertNotNull(readiness.failingCheck)
+        assertFalse(readiness.state == EnvironmentReadinessState.READY)
+    }
+
+    @Test
+    fun testUnhealthyDaemonStatusFailsClosed() = runTest {
+        val wsl = FakeWslPresence()
+        val supervisor = FakeDaemonSupervisor()
+        val transport = FakeRemoteTransport()
+        transport.healthInfo = transport.healthInfo?.copy(status = "DEGRADED")
+        transport.toolsList = healthyToolsList()
+
+        val adapter = EnvironmentReadinessAdapter(wsl, supervisor, transport)
+        val readiness = adapter.refresh()
+
+        assertEquals(EnvironmentReadinessState.SERVICE_UNREACHABLE, readiness.state)
+        val check = readiness.failingCheck ?: ""
+        assertTrue(check.contains("unhealthy") || check.contains("status") || check.contains("DEGRADED"))
+    }
+
+    @Test
+    fun testJavaVersionMismatchFailsClosedToolsIncompatible() = runTest {
+        val wsl = FakeWslPresence()
+        val supervisor = FakeDaemonSupervisor()
+        val transport = FakeRemoteTransport()
+        transport.healthInfo = transport.healthInfo?.copy(javaVersion = "11.0.2") // Incompatible Java < 17
+        transport.toolsList = healthyToolsList()
+
+        val adapter = EnvironmentReadinessAdapter(wsl, supervisor, transport)
+        val readiness = adapter.refresh()
+
+        assertEquals(EnvironmentReadinessState.TOOLS_INCOMPATIBLE, readiness.state)
+        val check = readiness.failingCheck ?: ""
+        assertTrue(check.contains("Java") || check.contains("version"))
+    }
+
+    @Test
+    fun testAbsentPublicationFailsClosedToolsMissing() = runTest {
+        val wsl = FakeWslPresence()
+        val supervisor = FakeDaemonSupervisor()
+        val transport = FakeRemoteTransport()
+        // Missing "signapk" from publication list
+        transport.toolsList = healthyToolsList().filter { it.tool != "signapk" }
+
+        val adapter = EnvironmentReadinessAdapter(wsl, supervisor, transport)
+        val readiness = adapter.refresh()
+
+        assertEquals(EnvironmentReadinessState.TOOLS_MISSING, readiness.state)
+        assertTrue(readiness.missingToolIds.contains("signapk"))
+    }
+
+    @Test
+    fun testFailedProbeFailsClosedToolsIncompatible() = runTest {
+        val wsl = FakeWslPresence()
+        val supervisor = FakeDaemonSupervisor()
+        val transport = FakeRemoteTransport()
+        transport.toolsList = healthyToolsList()
+        transport.customExecuteHandler = { req ->
+            if (req.toolId == "mkfs.erofs" && req.arguments.contains("--help")) {
+                ToolExecutionResponse(exitCode = 1, stdout = "", stderr = "exec error", durationMs = 5L)
+            } else {
+                ToolExecutionResponse(exitCode = 0, stdout = "--fs-config-file", stderr = "", durationMs = 5L)
+            }
+        }
+
+        val adapter = EnvironmentReadinessAdapter(wsl, supervisor, transport)
+        val readiness = adapter.refresh()
+
+        assertEquals(EnvironmentReadinessState.TOOLS_INCOMPATIBLE, readiness.state)
+        assertNotNull(readiness.failingCheck)
+    }
+
+    @Test
+    fun testStaleResultFailsClosed() = runTest {
+        // A previously READY result must not survive a later live check that fails:
+        // readiness is re-measured on every refresh, never served from the stale cached value.
+        val wsl = FakeWslPresence()
+        val supervisor = FakeDaemonSupervisor()
+        val transport = FakeRemoteTransport()
+        transport.toolsList = healthyToolsList()
+        transport.customExecuteHandler = { req ->
+            val stdout = if (req.toolId == "mkfs.erofs" && req.arguments.contains("--help")) {
+                "Usage: mkfs.erofs --fs-config-file"
+            } else {
+                "/usr/bin/tool"
+            }
+            ToolExecutionResponse(exitCode = 0, stdout = stdout, stderr = "", durationMs = 5L)
+        }
+        val adapter = EnvironmentReadinessAdapter(wsl, supervisor, transport)
+
+        assertEquals(
+            EnvironmentReadinessState.ENV_ABSENT,
+            adapter.observe().first().state,
+            "No READY before any live check"
+        )
+        assertEquals(EnvironmentReadinessState.READY, adapter.refresh().state)
+
+        transport.healthInfo = null // daemon went away after the earlier READY result
+        val rechecked = adapter.refresh()
+
+        assertEquals(EnvironmentReadinessState.SERVICE_UNREACHABLE, rechecked.state, "Stale READY must not be reused")
+        assertEquals(rechecked, adapter.observe().first(), "Observed readiness must reflect the latest live check")
+    }
+
+    @Test
+    fun testEmptyRequiredInventoryFailsClosed() = runTest {
+        val wsl = FakeWslPresence()
+        val supervisor = FakeDaemonSupervisor()
+        val transport = FakeRemoteTransport()
+        transport.toolsList = healthyToolsList()
+
+        val adapter = EnvironmentReadinessAdapter(
+            wslPresence = wsl,
+            supervisor = supervisor,
+            transport = transport,
+            requiredProductTools = emptySet() // Empty inventory
+        )
+        val readiness = adapter.refresh()
+
+        // Empty inventory cannot become ready (fails closed)
+        assertFalse(readiness.state == EnvironmentReadinessState.READY, "Empty inventory must never be READY")
+        assertEquals(EnvironmentReadinessState.TOOLS_MISSING, readiness.state)
     }
 }

@@ -6,6 +6,7 @@ import io.ltirom.tooling.core.remote.ToolExecutionRequest
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import org.ide.lti.core.data.setup.ToolchainReadinessPolicy
 import org.ide.lti.core.domain.ports.DaemonProbeStatus
 import org.ide.lti.core.domain.ports.EnvironmentProbePort
 import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
@@ -28,24 +29,8 @@ public class EnvironmentReadinessAdapter(
 
     public companion object {
         public const val WORK_DIR_NAME: String = "LtiRomWorkDir"
-        public val DEFAULT_REQUIRED_PRODUCT_TOOLS: Set<String> = setOf(
-            "payload-dumper-go",
-            "lpunpack",
-            "lpmake",
-            "simg2img",
-            "erofsfuse",
-            "mkfs.erofs",
-            "avbtool",
-            "unpack_bootimg",
-            "img2sdat",
-            "signapk"
-        )
-
-        /** contracts/pipeline-stages.md "Required tools": every host tool a stage invokes, plus `java` for signapk. */
-        public val DEFAULT_REQUIRED_HOST_PACKAGES: Set<String> = setOf(
-            "curl", "unzip", "zip", "sha256sum", "sha1sum", "rsync", "getfattr", "fusermount3", "brotli", "file",
-            "xxd", "truncate", "find", "stat", "cat", "test", "cp", "mv", "rm", "mkdir", "java"
-        )
+        public val DEFAULT_REQUIRED_PRODUCT_TOOLS: Set<String> = ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS
+        public val DEFAULT_REQUIRED_HOST_PACKAGES: Set<String> = ToolchainReadinessPolicy.REQUIRED_HOST_PACKAGES
     }
 
     private val _readiness = MutableStateFlow(
@@ -149,6 +134,14 @@ public class EnvironmentReadinessAdapter(
     }
 
     private suspend fun evaluateEnvironment(): EnvironmentReadiness {
+        if (requiredProductTools.isEmpty()) {
+            return EnvironmentReadiness(
+                state = EnvironmentReadinessState.TOOLS_MISSING,
+                failingCheck = "Required product tools inventory is empty",
+                remediation = "Configure required product tools inventory"
+            )
+        }
+
         if (probePort != null) {
             val probeResult = probePort.probe()
             if (probeResult.distro == null) {
@@ -182,10 +175,10 @@ public class EnvironmentReadinessAdapter(
                     workingDirectory = "/"
                 )
             )
-            if (!erofsCheck.stdout.contains("--fs-config-file")) {
+            if (erofsCheck.exitCode != 0 || !erofsCheck.stdout.contains(ToolchainReadinessPolicy.EROFS_REQUIRED_FLAG)) {
                 return EnvironmentReadiness(
                     state = EnvironmentReadinessState.TOOLS_INCOMPATIBLE,
-                    failingCheck = "mkfs.erofs lacks required --fs-config-file support",
+                    failingCheck = "mkfs.erofs lacks required ${ToolchainReadinessPolicy.EROFS_REQUIRED_FLAG} support",
                     remediation = "Rebuild toolchain with vendored erofs-utils"
                 )
             }
@@ -223,16 +216,38 @@ public class EnvironmentReadinessAdapter(
                 remediation = "Install WSL 2 and register an Ubuntu distribution"
             )
         }
+        return evaluateDaemonHealth()
+    }
 
+    private suspend fun evaluateDaemonHealth(): EnvironmentReadiness? {
         val started = runCatching { supervisor.ensureStarted() }
-        return if (started.isFailure) {
-            EnvironmentReadiness(
+        if (started.isFailure) {
+            return EnvironmentReadiness(
                 state = EnvironmentReadinessState.SERVICE_UNREACHABLE,
                 failingCheck = "LtiRomServer daemon unreachable: ${started.exceptionOrNull()?.message}",
                 remediation = "Start the LtiRomServer daemon or verify WSL connectivity"
             )
-        } else {
-            null
+        }
+
+        val health = transport.checkHealth()
+        return when {
+            health == null -> EnvironmentReadiness(
+                state = EnvironmentReadinessState.SERVICE_UNREACHABLE,
+                failingCheck = "Daemon health check failed: response was null",
+                remediation = "Start the LtiRomServer daemon or verify WSL connectivity"
+            )
+            health.status != "HEALTHY" -> EnvironmentReadiness(
+                state = EnvironmentReadinessState.SERVICE_UNREACHABLE,
+                failingCheck = "Daemon reported unhealthy status: ${health.status}",
+                remediation = "Check daemon logs and restart the daemon"
+            )
+            !ToolchainReadinessPolicy.isJavaVersionSupported(health.javaVersion) -> EnvironmentReadiness(
+                state = EnvironmentReadinessState.TOOLS_INCOMPATIBLE,
+                failingCheck = "Unsupported daemon Java runtime version: ${health.javaVersion}. " +
+                    "Requires Java >= ${ToolchainReadinessPolicy.MIN_JAVA_VERSION}",
+                remediation = "Install Java ${ToolchainReadinessPolicy.MIN_JAVA_VERSION}+ in WSL distribution"
+            )
+            else -> null
         }
     }
 
@@ -254,10 +269,12 @@ public class EnvironmentReadinessAdapter(
                 workingDirectory = "/"
             )
         )
-        return if (!erofsCheck.stdout.contains("--fs-config-file")) {
+        val missingFlag = !erofsCheck.stdout.contains(ToolchainReadinessPolicy.EROFS_REQUIRED_FLAG)
+        return if (erofsCheck.exitCode != 0 || missingFlag) {
             EnvironmentReadiness(
                 state = EnvironmentReadinessState.TOOLS_INCOMPATIBLE,
-                failingCheck = "mkfs.erofs lacks required --fs-config-file support",
+                failingCheck = "mkfs.erofs probe failed or lacks required " +
+                    "${ToolchainReadinessPolicy.EROFS_REQUIRED_FLAG} support",
                 remediation = "Rebuild toolchain with vendored erofs-utils"
             )
         } else {

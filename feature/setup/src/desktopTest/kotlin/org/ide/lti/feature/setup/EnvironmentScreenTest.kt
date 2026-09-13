@@ -25,6 +25,8 @@ import org.ide.lti.core.domain.setup.SetupStepDetail
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepProvenance
 import org.ide.lti.core.domain.setup.StepStatus
+import org.ide.lti.core.domain.setup.ToolCategory
+import org.ide.lti.core.domain.setup.ToolComponentItem
 import org.ide.lti.core.domain.setup.ToolchainSetupState
 import org.ide.lti.feature.setup.steps.EnvironmentStepContent
 import org.junit.Test
@@ -231,8 +233,23 @@ class EnvironmentScreenTest {
             SetupStepDetail(stage = SetupStepStage.REPO_SYNCHRONIZATION, title = "Repos", description = "", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
             SetupStepDetail(stage = SetupStepStage.TOOLCHAIN_COMPILATION, title = "Build", description = "", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
         )
+        val readyTools = listOf(
+            ToolComponentItem(
+                id = "lpunpack",
+                name = "LP Unpack",
+                category = ToolCategory.DYNAMIC_PARTITIONS,
+                binaryName = "lpunpack",
+                status = StepStatus.SUCCESS,
+                lastTested = "2026-09-13",
+                isCore = true,
+            ),
+        )
         val state = ToolchainSetupState(
             steps = readySteps,
+            toolsMatrix = readyTools,
+            publishedToolIds = setOf("lpunpack"),
+            checkedAt = 1700000000000L,
+            lastReadyAt = 1700000000000L,
             lastVerifiedTimestamp = 1700000000000L,
         )
 

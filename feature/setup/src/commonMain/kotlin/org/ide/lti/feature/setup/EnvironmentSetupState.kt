@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -91,33 +92,43 @@ class EnvironmentSetupState(
     private val toolchainService: ToolchainProvisioningService? = null,
     private val environmentReadinessPort: EnvironmentReadinessPort? = null,
 ) {
+    private val isToolchainBound: Boolean = toolchainService != null
+
     private val _fallbackToolchainState = MutableStateFlow(
         ToolchainSetupState(
             steps = ToolchainSetupState.defaultSteps().map { step ->
-                if (toolchainService == null) {
-                    step.copy(
-                        status = StepStatus.WARNING,
-                        description = "Toolchain service not bound in DI. Running in preview/host mode.",
-                    )
-                } else step
-            }
+                step.copy(
+                    status = StepStatus.FAILED,
+                    description = "Toolchain service not bound in DI.",
+                )
+            },
+            checkedAt = null,
+            lastReadyAt = null,
         )
     )
 
     val toolchainSetupState: StateFlow<ToolchainSetupState> =
         toolchainService?.state ?: _fallbackToolchainState.asStateFlow()
 
-    val environmentPresentation: StateFlow<EnvironmentPresentation> =
-        toolchainSetupState
-            .map { SetupPresentationMapper.mapEnvironment(it) }
-            .stateIn(
-                scope = scope,
-                started = SharingStarted.WhileSubscribed(5000),
-                initialValue = SetupPresentationMapper.mapEnvironment(toolchainSetupState.value),
-            )
-
     private val _activeOperation = MutableStateFlow<SetupOperation?>(null)
     val activeOperation: StateFlow<SetupOperation?> = _activeOperation.asStateFlow()
+
+    val environmentPresentation: StateFlow<EnvironmentPresentation> =
+        combine(toolchainSetupState, _activeOperation) { state, op ->
+            SetupPresentationMapper.mapEnvironment(
+                state = state,
+                isToolchainBound = isToolchainBound,
+                activeOperation = op,
+            )
+        }.stateIn(
+            scope = scope,
+            started = SharingStarted.Eagerly,
+            initialValue = SetupPresentationMapper.mapEnvironment(
+                state = toolchainSetupState.value,
+                isToolchainBound = isToolchainBound,
+                activeOperation = _activeOperation.value,
+            ),
+        )
 
     private val _isAutoDoctorEnabled = MutableStateFlow(true)
     val isAutoDoctorEnabled: StateFlow<Boolean> = _isAutoDoctorEnabled.asStateFlow()

@@ -133,6 +133,8 @@ public class WslToolchainProvisioner(
             avbKeyPath = persisted.avbKeyPath,
             activeDistro = persisted.activeDistro,
             lastVerifiedTimestamp = persisted.lastVerifiedTimestamp,
+            checkedAt = null,
+            lastReadyAt = persisted.lastVerifiedTimestamp,
         )
     }
 
@@ -400,7 +402,10 @@ public class WslToolchainProvisioner(
             } else Pair(null, null)
 
             val distros = if (alreadyVerifiedWsl) _state.value.installedDistros.ifEmpty { listOf(distro) } else detector.listDistros().ifEmpty { listOf(distro) }
+            val now = System.currentTimeMillis()
             _state.update { s ->
+                val allPublished = publishedTools.containsAll(ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS)
+                val isFullyReady = s.isAllReady && allPublished
                 s.copy(
                     diagnostics = diagnosticsList.ifEmpty { s.diagnostics },
                     isAvbKeyProvisioned = hasAvbKey,
@@ -410,7 +415,11 @@ public class WslToolchainProvisioner(
                     toolsMatrix = updatedTools,
                     currentStage = null,
                     isChecking = false,
-                    lastVerifiedTimestamp = if (s.isAllReady) System.currentTimeMillis() else s.lastVerifiedTimestamp,
+                    lastVerifiedTimestamp = if (isFullyReady) now else s.lastVerifiedTimestamp,
+                    checkedAt = now,
+                    lastReadyAt = if (isFullyReady) now else s.lastReadyAt,
+                    // Live daemon listing is the publication fact; it replaces any earlier/restored set.
+                    publishedToolIds = publishedTools,
                     storageAvailableBytes = storageAvailableBytes ?: s.storageAvailableBytes,
                     storageMeasuredAt = storageMeasuredAt ?: s.storageMeasuredAt,
                 )
@@ -456,6 +465,7 @@ public class WslToolchainProvisioner(
     }
 
     private fun shortCircuitRemaining(failedStage: SetupStepStage, reason: String) {
+        val now = System.currentTimeMillis()
         _state.update { s ->
             var markPending = false
             val updatedSteps = s.steps.map { step ->
@@ -476,7 +486,8 @@ public class WslToolchainProvisioner(
             s.copy(
                 steps = updatedSteps,
                 currentStage = null,
-                isChecking = false
+                isChecking = false,
+                checkedAt = now,
             )
         }
     }

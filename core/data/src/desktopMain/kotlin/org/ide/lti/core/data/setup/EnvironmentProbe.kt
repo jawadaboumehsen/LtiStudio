@@ -25,34 +25,24 @@ public class EnvironmentProbe(
 ) : EnvironmentProbePort {
 
     public companion object {
-        public val DEFAULT_EXPECTED_PRODUCT_TOOLS: Set<String> = setOf(
-            "payload-dumper-go",
-            "lpunpack",
-            "lpmake",
-            "simg2img",
-            "erofsfuse",
-            "mkfs.erofs",
-            "avbtool",
-            "unpack_bootimg",
-            "img2sdat",
-            "signapk",
-        )
+        public val DEFAULT_EXPECTED_PRODUCT_TOOLS: Set<String> = ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS
     }
 
-    override suspend fun probe(): EnvironmentProbeResult {
-        if (!detector.isWslInstalled()) {
-            return absentWslResult()
-        }
-        return probeRunningEnvironment()
+    override suspend fun probe(): EnvironmentProbeResult = when {
+        expectedProductTools.isEmpty() -> emptyInventoryResult()
+        !detector.isWslInstalled() -> absentWslResult()
+        else -> probeRunningEnvironment()
     }
 
-    private fun absentWslResult(): EnvironmentProbeResult = EnvironmentProbeResult(
-        distro = null,
-        home = null,
-        daemon = DaemonProbeStatus.Failed(
-            reason = "WSL 2 is not installed or has no distributions",
-            logTail = null,
-        ),
+    private fun failedProbeResult(
+        distro: String?,
+        home: String?,
+        reason: String,
+        logTail: String? = null,
+    ): EnvironmentProbeResult = EnvironmentProbeResult(
+        distro = distro,
+        home = home,
+        daemon = DaemonProbeStatus.Failed(reason = reason, logTail = logTail),
         pingMs = null,
         executables = emptySet(),
         publishedTools = emptySet(),
@@ -61,6 +51,45 @@ public class EnvironmentProbe(
         avbKeyPresent = false,
     )
 
+    private fun emptyInventoryResult(): EnvironmentProbeResult = failedProbeResult(
+        distro = null,
+        home = null,
+        reason = "Expected product tools inventory is empty",
+    )
+
+    private fun absentWslResult(): EnvironmentProbeResult = failedProbeResult(
+        distro = null,
+        home = null,
+        reason = "WSL 2 is not installed or has no distributions",
+    )
+
+    private suspend fun validateDaemonHealth(distro: String, home: String?): EnvironmentProbeResult? {
+        val health = transport.checkHealth()
+        val logTail = (supervisor as? WslDaemonManager)?.lastLaunchErrorLogTail
+        return when {
+            health == null -> failedProbeResult(
+                distro = distro,
+                home = home,
+                reason = "Daemon health check returned null or transport unreachable",
+                logTail = logTail,
+            )
+            health.status != "HEALTHY" -> failedProbeResult(
+                distro = distro,
+                home = home,
+                reason = "Daemon reported unhealthy status: ${health.status}",
+                logTail = logTail,
+            )
+            !ToolchainReadinessPolicy.isJavaVersionSupported(health.javaVersion) -> failedProbeResult(
+                distro = distro,
+                home = home,
+                reason = "Daemon Java version unsupported: ${health.javaVersion}. " +
+                    "Requires >= ${ToolchainReadinessPolicy.MIN_JAVA_VERSION}",
+                logTail = null,
+            )
+            else -> null
+        }
+    }
+
     private suspend fun probeRunningEnvironment(): EnvironmentProbeResult {
         val distro = detector.getDefaultDistro() ?: "Ubuntu"
         val home = detector.resolveWslUserHome(distro)
@@ -68,9 +97,10 @@ public class EnvironmentProbe(
         return try {
             val startMs = System.currentTimeMillis()
             val desc = supervisor.ensureStarted()
-            val health = transport.checkHealth()
-            val pingMs = if (health != null) (System.currentTimeMillis() - startMs).coerceAtLeast(1L) else null
+            val healthFailure = validateDaemonHealth(distro, home)
+            if (healthFailure != null) return healthFailure
 
+            val pingMs = (System.currentTimeMillis() - startMs).coerceAtLeast(1L)
             val daemonStatus = if (supervisor.lastStartAdopted) {
                 DaemonProbeStatus.Adopted(pid = desc.pid, port = desc.port, host = desc.host)
             } else {

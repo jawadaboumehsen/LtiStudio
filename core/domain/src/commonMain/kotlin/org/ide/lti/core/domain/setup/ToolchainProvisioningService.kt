@@ -138,6 +138,8 @@ public data class ToolchainSetupState(
      * flag. Null means never verified in a way that recorded a timestamp.
      */
     val lastVerifiedTimestamp: Long? = null,
+    val checkedAt: Long? = null,
+    val lastReadyAt: Long? = null,
     val toolsMatrix: List<ToolComponentItem> = defaultToolsMatrix(),
     val publishedToolIds: Set<String> = emptySet(),
     val unpublishedToolIds: Set<String> = emptySet(),

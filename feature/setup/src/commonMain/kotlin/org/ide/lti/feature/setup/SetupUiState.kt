@@ -41,6 +41,7 @@ data class SetupUiState(
     val environmentNotice: String? = null,
     val environmentReadiness: EnvironmentReadiness? = null,
     val activeOperation: SetupOperation? = null,
+    val environmentPresentation: EnvironmentPresentation = SetupPresentationMapper.mapEnvironment(toolchainSetupState),
 )
 
 /**

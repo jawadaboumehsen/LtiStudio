@@ -332,4 +332,168 @@ class EnvironmentSetupStateTest {
         val presentation = stateHolder.environmentPresentation.value
         assertEquals(5, presentation.stages.size)
     }
+
+    @Test
+    fun testFreshCheckOffersSetUpAfterOneCheck_SC001() = runEnvironmentTest { envScope ->
+        // Fresh healthy runtime with missing tools/repos
+        val initialSteps = ToolchainSetupState.defaultSteps().map {
+            it.copy(status = StepStatus.PENDING, provenance = StepProvenance.LIVE)
+        }
+        val spyService = SpyToolchainProvisioningService(
+            initialState = ToolchainSetupState(
+                steps = initialSteps,
+                checkedAt = null,
+                lastReadyAt = null,
+            )
+        )
+        val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)
+
+        // Before check: state is Unknown, action is CHECK
+        val initialPresentation = stateHolder.environmentPresentation.value
+        assertEquals(EnvironmentState.Unknown, initialPresentation.environmentState)
+        assertEquals(PrimaryAction.CHECK, initialPresentation.primaryAction)
+
+        // When check executes: simulate live check completing with missing tools/repos
+        // checkStatus updates checkedAt but NOT lastReadyAt
+        val checkTime = 1700000000000L
+        spyService._state.value = ToolchainSetupState(
+            checkedAt = checkTime,
+            lastReadyAt = null,
+            steps = listOf(
+                SetupStepDetail(
+                    stage = SetupStepStage.WSL_DETECTION,
+                    title = "WSL",
+                    description = "",
+                    status = StepStatus.SUCCESS,
+                    provenance = StepProvenance.LIVE,
+                ),
+                SetupStepDetail(
+                    stage = SetupStepStage.SERVER_CONNECTIVITY,
+                    title = "Server",
+                    description = "",
+                    status = StepStatus.SUCCESS,
+                    provenance = StepProvenance.LIVE,
+                ),
+                SetupStepDetail(
+                    stage = SetupStepStage.SYSTEM_DIAGNOSTICS,
+                    title = "Doctor",
+                    description = "",
+                    status = StepStatus.SUCCESS,
+                    provenance = StepProvenance.LIVE,
+                ),
+                SetupStepDetail(
+                    stage = SetupStepStage.REPO_SYNCHRONIZATION,
+                    title = "Repos",
+                    description = "",
+                    status = StepStatus.PENDING,
+                    provenance = StepProvenance.LIVE,
+                ),
+                SetupStepDetail(
+                    stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+                    title = "Tools",
+                    description = "",
+                    status = StepStatus.PENDING,
+                    provenance = StepProvenance.LIVE,
+                ),
+            )
+        )
+        stateHolder.checkEnvironmentStatus()
+        testScheduler.advanceUntilIdle()
+
+        // After ONE check: Set Up is offered immediately (SC-001)
+        val postCheckPresentation = stateHolder.environmentPresentation.value
+        assertTrue(postCheckPresentation.environmentState is EnvironmentState.CheckedNeedsSetup)
+        assertEquals(PrimaryAction.SET_UP, postCheckPresentation.primaryAction)
+        assertEquals(checkTime, postCheckPresentation.checkedAt)
+        assertNull(postCheckPresentation.lastVerifiedAt, "lastReadyAt must remain null when tools are missing")
+    }
+
+    @Test
+    fun testNullServiceProducesUnavailableStateNotWarningFallback() = runEnvironmentTest { envScope ->
+        // No toolchain service bound in DI
+        val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = null)
+        testScheduler.advanceUntilIdle()
+
+        assertFalse(stateHolder.toolchainSetupState.value.isAllReady, "Missing service must NEVER be ready")
+        val presentation = stateHolder.environmentPresentation.value
+        assertTrue(
+            presentation.environmentState is EnvironmentState.Unavailable,
+            "Missing service must be Unavailable, never ready-warning fallback"
+        )
+        assertEquals(PrimaryAction.RETRY_CONNECTION, presentation.primaryAction)
+    }
+
+    @Test
+    fun testRestoredStateRequiresCheckAndIsNotPresentedAsReady() = runEnvironmentTest { envScope ->
+        val persistedTimestamp = 1690000000000L
+        val restoredSteps = ToolchainSetupState.defaultSteps().map {
+            it.copy(
+                status = StepStatus.PENDING,
+                provenance = StepProvenance.RESTORED,
+                verifiedAtEpochMs = persistedTimestamp
+            )
+        }
+        val spyService = SpyToolchainProvisioningService(
+            initialState = ToolchainSetupState(
+                steps = restoredSteps,
+                lastVerifiedTimestamp = persistedTimestamp,
+                checkedAt = null, // No live check in this session
+                lastReadyAt = null,
+            )
+        )
+        val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)
+        testScheduler.advanceUntilIdle()
+
+        assertFalse(stateHolder.toolchainSetupState.value.isAllReady, "Restored state must not be isAllReady")
+        val presentation = stateHolder.environmentPresentation.value
+        assertTrue(presentation.environmentState is EnvironmentState.Restored, "State must be Restored")
+        assertNull(presentation.checkedAt, "Restored state has null checkedAt")
+        assertEquals(
+            PrimaryAction.CHECK,
+            presentation.primaryAction,
+            "Restored state must offer Check, not live-ready or Set Up"
+        )
+    }
+
+    @Test
+    fun testCheckedAtVsLastReadyAtSeparation() = runEnvironmentTest { envScope ->
+        val liveCheckTime = 1700000100000L
+        val spyService = SpyToolchainProvisioningService(
+            initialState = ToolchainSetupState(
+                checkedAt = liveCheckTime,
+                lastReadyAt = null,
+                steps = listOf(
+                    SetupStepDetail(
+                        stage = SetupStepStage.WSL_DETECTION,
+                        title = "WSL",
+                        description = "",
+                        status = StepStatus.SUCCESS,
+                        provenance = StepProvenance.LIVE,
+                    ),
+                    SetupStepDetail(
+                        stage = SetupStepStage.SERVER_CONNECTIVITY,
+                        title = "Server",
+                        description = "",
+                        status = StepStatus.SUCCESS,
+                        provenance = StepProvenance.LIVE,
+                    ),
+                    SetupStepDetail(
+                        stage = SetupStepStage.REPO_SYNCHRONIZATION,
+                        title = "Repos",
+                        description = "",
+                        status = StepStatus.PENDING,
+                        provenance = StepProvenance.LIVE,
+                    ),
+                )
+            )
+        )
+        val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)
+        testScheduler.advanceUntilIdle()
+
+        val p = stateHolder.environmentPresentation.value
+        assertEquals(liveCheckTime, p.checkedAt)
+        assertNull(p.lastVerifiedAt)
+        assertEquals(PrimaryAction.SET_UP, p.primaryAction)
+    }
 }
+
