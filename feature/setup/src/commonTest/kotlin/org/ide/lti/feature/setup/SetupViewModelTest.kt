@@ -42,6 +42,7 @@ import org.ide.lti.core.model.workspace.WorkspaceSession
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -109,15 +110,14 @@ class SetupViewModelTest {
 
         var verifyEnvironmentCount = 0
             private set
-        var runFullSetupCount = 0
-            private set
-        var retryCurrentStepCount = 0
-            private set
+        /** Plans that were confirmed (executed), in order. The only path that can mutate. */
+        val executedPlans = mutableListOf<SetupPlan>()
+        val fullSetupCount: Int get() = executedPlans.count { it.kind == SetupPlanKind.FULL_SETUP }
+        val stageRetryCount: Int get() = executedPlans.count { it.kind == SetupPlanKind.STAGE_RETRY }
+        val cacheResetCount: Int get() = executedPlans.count { it.kind == SetupPlanKind.CACHE_RESET }
+        val remediationCount: Int
+            get() = executedPlans.count { it.targetStageOrToolId == SetupStepStage.SYSTEM_DIAGNOSTICS.name }
         var shouldMarkReadyOnFullSetup: Boolean = true
-        var autoRemediateDoctorCount = 0
-            private set
-        var resetSetupCacheCount = 0
-            private set
         var provisionAvbKeyCount = 0
             private set
         var testToolCount = 0
@@ -153,35 +153,61 @@ class SetupViewModelTest {
             return _state.value
         }
 
-        override suspend fun runFullSetup() {
-            runFullSetupCount++
-            if (shouldMarkReadyOnFullSetup) {
-                markAllReady()
-            }
-        }
-
-        override suspend fun retryStep(stage: SetupStepStage) {
-            retryCurrentStepCount++
-        }
-
         override suspend fun provisionAvbKey(): Boolean {
             provisionAvbKeyCount++
             _state.value = _state.value.copy(isAvbKeyProvisioned = true)
             return true
         }
 
-        override suspend fun autoRemediateDoctor(): Boolean {
-            autoRemediateDoctorCount++
-            return true
-        }
-
+        var prepareCount = 0
+            private set
+        var lastPreparedKind: SetupPlanKind? = null
+            private set
+        var lastPreparedTargetId: String? = null
+            private set
+        var lastPreparedAutoDoctor: Boolean? = null
+            private set
+        var confirmCount = 0
+            private set
 
         // 003 plan contract: fakes never synthesize success for behaviour the test does not drive.
-        override suspend fun prepare(kind: SetupPlanKind, targetId: String?, autoDoctorEnabled: Boolean): SetupPlan =
-            SetupPlan(planId = "fake-plan", revisionHash = "fake-rev", environmentKey = "fake-env", kind = kind,
-                targetStageOrToolId = targetId, autoDoctorEnabled = autoDoctorEnabled)
-        override suspend fun confirm(planId: String, revisionHash: String): SetupOutcome =
-            SetupOutcome.Failed(stage = null, reason = "fake service does not execute plans")
+        override suspend fun prepare(kind: SetupPlanKind, targetId: String?, autoDoctorEnabled: Boolean): SetupPlan {
+            prepareCount++
+            lastPreparedKind = kind
+            lastPreparedTargetId = targetId
+            lastPreparedAutoDoctor = autoDoctorEnabled
+            return SetupPlan(planId = "fake-plan-$prepareCount", revisionHash = "fake-rev", environmentKey = "fake-env",
+                kind = kind, targetStageOrToolId = targetId, autoDoctorEnabled = autoDoctorEnabled)
+                .also { lastPreparedPlan = it }
+        }
+        private var lastPreparedPlan: SetupPlan? = null
+        override suspend fun confirm(planId: String, revisionHash: String): SetupOutcome {
+            confirmCount++
+            val plan = lastPreparedPlan
+            if (plan == null || planId != plan.planId || revisionHash != plan.revisionHash) {
+                return SetupOutcome.Failed(
+                    stage = null,
+                    reason = "Confirmation requires the displayed plan ID and unchanged revision hash.",
+                )
+            }
+            // Confirmed execution is the ONLY path that mutates in this fake.
+            executedPlans += plan
+            when (plan.kind) {
+                SetupPlanKind.CACHE_RESET -> _state.value = ToolchainSetupState(
+                    steps = ToolchainSetupState.defaultSteps().map {
+                        if (it.stage == SetupStepStage.SERVER_CONNECTIVITY) {
+                            it.copy(status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE)
+                        } else {
+                            it.copy(status = StepStatus.PENDING, provenance = StepProvenance.LIVE)
+                        }
+                    }
+                )
+                SetupPlanKind.FULL_SETUP,
+                SetupPlanKind.STAGE_RETRY,
+                SetupPlanKind.REPAIR_TOOL -> if (shouldMarkReadyOnFullSetup) markAllReady()
+            }
+            return SetupOutcome.Succeeded()
+        }
         override fun observe(): Flow<SetupOutcome?> = flowOf(null)
         override suspend fun recover(attemptId: String?): SetupOutcome =
             SetupOutcome.Failed(stage = null, reason = "fake service has no journal")
@@ -198,20 +224,6 @@ class SetupViewModelTest {
             recompileToolCount++
             lastRecompiledToolId = toolId
             return true
-        }
-
-        override suspend fun resetSetupCache(): SetupOutcome {
-            resetSetupCacheCount++
-            _state.value = ToolchainSetupState(
-                steps = ToolchainSetupState.defaultSteps().map {
-                    if (it.stage == SetupStepStage.SERVER_CONNECTIVITY) {
-                        it.copy(status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE)
-                    } else {
-                        it.copy(status = StepStatus.PENDING, provenance = StepProvenance.LIVE)
-                    }
-                }
-            )
-            return SetupOutcome.Succeeded()
         }
     }
 
@@ -238,23 +250,39 @@ class SetupViewModelTest {
 
             // Init triggers environment inspection only (1) and does NOT run full setup automatically (0)
             assertEquals(1, toolchainService.verifyEnvironmentCount)
-            assertEquals(0, toolchainService.runFullSetupCount)
+            assertEquals(0, toolchainService.fullSetupCount)
 
-            // runFullEnvironmentSetup should trigger runFullSetup
-            viewModel.runFullEnvironmentSetup()
+            // Set Up opens a preview (prepare) and mutates nothing until the plan is confirmed (FR-003).
+            viewModel.previewSetup()
             testScheduler.advanceUntilIdle()
-            assertEquals(1, toolchainService.runFullSetupCount)
+            assertEquals(1, toolchainService.prepareCount)
+            assertEquals(SetupPlanKind.FULL_SETUP, toolchainService.lastPreparedKind)
+            assertEquals(0, toolchainService.fullSetupCount)
+            assertEquals(SetupOperationState.PREVIEW, viewModel.activeOperation.value?.executionState)
+
+            // Only the explicit confirmation of the displayed plan executes it.
+            viewModel.confirmOperation()
+            testScheduler.advanceUntilIdle()
+            assertEquals(1, toolchainService.confirmCount)
+            assertEquals(1, toolchainService.fullSetupCount)
             assertTrue(viewModel.toolchainSetupState.value.isAllReady)
 
-            // retrySetupStep should trigger retryCurrentStep
+            // Retry is a mutation: it previews a stage plan, it never calls the legacy direct entry point.
             viewModel.retrySetupStep()
             testScheduler.advanceUntilIdle()
-            assertEquals(1, toolchainService.retryCurrentStepCount)
+            assertEquals(2, toolchainService.prepareCount)
+            assertEquals(SetupPlanKind.STAGE_RETRY, toolchainService.lastPreparedKind)
+            assertEquals(0, toolchainService.stageRetryCount)
+            viewModel.dismissPreview()
 
-            // autoRemediateDoctorIssues should trigger autoRemediateDoctor
+            // Auto-Fix previews a diagnostics remediation plan; nothing runs without confirmation.
             viewModel.autoRemediateDoctorIssues()
             testScheduler.advanceUntilIdle()
-            assertEquals(1, toolchainService.autoRemediateDoctorCount)
+            assertEquals(3, toolchainService.prepareCount)
+            assertEquals(SetupStepStage.SYSTEM_DIAGNOSTICS.name, toolchainService.lastPreparedTargetId)
+            assertEquals(true, toolchainService.lastPreparedAutoDoctor)
+            assertEquals(0, toolchainService.remediationCount)
+            assertEquals(1, toolchainService.confirmCount)
         } finally {
             Dispatchers.resetMain()
         }
@@ -275,7 +303,7 @@ class SetupViewModelTest {
 
             // Verification runs on every init (no bypass), but full setup is skipped because already ready
             assertEquals(1, toolchainService.verifyEnvironmentCount)
-            assertEquals(0, toolchainService.runFullSetupCount)
+            assertEquals(0, toolchainService.fullSetupCount)
             assertTrue(viewModel.toolchainSetupState.value.isAllReady)
         } finally {
             Dispatchers.resetMain()
@@ -294,13 +322,28 @@ class SetupViewModelTest {
 
             val viewModel = SetupViewModel(manager, toolchainService)
             testScheduler.advanceUntilIdle()
-            assertEquals(0, toolchainService.runFullSetupCount)
+            assertEquals(0, toolchainService.fullSetupCount)
+            val verifiesBefore = toolchainService.verifyEnvironmentCount
 
-            viewModel.resetToolchainCacheAndRecheck()
+            // Reset is a mutation: it is previewed as a CACHE_RESET plan and nothing is cleared yet.
+            viewModel.previewResetToolchainCache()
             testScheduler.advanceUntilIdle()
+            assertEquals(SetupPlanKind.CACHE_RESET, toolchainService.lastPreparedKind)
+            assertEquals(0, toolchainService.cacheResetCount, "Preview must not clear the cache")
+            assertEquals(SetupOperationKind.CACHE_RESET, viewModel.activeOperation.value?.kind)
+            assertTrue(viewModel.toolchainSetupState.value.isAllReady, "State untouched before confirmation")
 
-            assertEquals(1, toolchainService.resetSetupCacheCount)
-            assertEquals(0, toolchainService.runFullSetupCount)
+            // Explicit confirmation clears the cache and re-checks the environment live.
+            viewModel.confirmOperation()
+            testScheduler.advanceUntilIdle()
+            assertEquals(1, toolchainService.cacheResetCount)
+            assertEquals(0, toolchainService.fullSetupCount)
+            assertFalse(viewModel.toolchainSetupState.value.isAllReady, "Cleared cache is not ready")
+            assertEquals(
+                verifiesBefore + 1,
+                toolchainService.verifyEnvironmentCount,
+                "Reset is followed by a live check",
+            )
         } finally {
             Dispatchers.resetMain()
         }
@@ -320,7 +363,7 @@ class SetupViewModelTest {
             testScheduler.advanceUntilIdle()
             val initialVerifyCount = toolchainService.verifyEnvironmentCount // 1 from init
             assertEquals(1, initialVerifyCount)
-            assertEquals(0, toolchainService.runFullSetupCount)
+            assertEquals(0, toolchainService.fullSetupCount)
 
             // Case 1: isChecking is true -> isBusy is true
             toolchainService._state.value = toolchainService._state.value.copy(isChecking = true)
@@ -328,7 +371,8 @@ class SetupViewModelTest {
 
             viewModel.checkEnvironmentStatus()
             viewModel.reverify()
-            viewModel.runFullEnvironmentSetup()
+            viewModel.previewSetup()
+            viewModel.confirmOperation()
             viewModel.autoRemediateDoctorIssues()
             viewModel.retrySetupStep()
             viewModel.onProvisionAvbKey()
@@ -336,9 +380,11 @@ class SetupViewModelTest {
 
             // All counts must remain unchanged
             assertEquals(initialVerifyCount, toolchainService.verifyEnvironmentCount)
-            assertEquals(0, toolchainService.runFullSetupCount)
-            assertEquals(0, toolchainService.autoRemediateDoctorCount)
-            assertEquals(0, toolchainService.retryCurrentStepCount)
+            assertEquals(0, toolchainService.prepareCount)
+            assertEquals(0, toolchainService.confirmCount)
+            assertEquals(0, toolchainService.fullSetupCount)
+            assertEquals(0, toolchainService.remediationCount)
+            assertEquals(0, toolchainService.stageRetryCount)
             assertEquals(0, toolchainService.provisionAvbKeyCount)
 
             // Case 2: isFixing is true -> isBusy is true
@@ -347,13 +393,15 @@ class SetupViewModelTest {
 
             viewModel.checkEnvironmentStatus()
             viewModel.reverify()
-            viewModel.runFullEnvironmentSetup()
+            viewModel.previewSetup()
+            viewModel.confirmOperation()
             viewModel.autoRemediateDoctorIssues()
             testScheduler.advanceUntilIdle()
 
             assertEquals(initialVerifyCount, toolchainService.verifyEnvironmentCount)
-            assertEquals(0, toolchainService.runFullSetupCount)
-            assertEquals(0, toolchainService.autoRemediateDoctorCount)
+            assertEquals(0, toolchainService.prepareCount)
+            assertEquals(0, toolchainService.fullSetupCount)
+            assertEquals(0, toolchainService.remediationCount)
 
             // Case 3: isRunning is true -> isBusy is true
             toolchainService._state.value = toolchainService._state.value.copy(isFixing = false, isRunning = true)
@@ -361,13 +409,15 @@ class SetupViewModelTest {
 
             viewModel.checkEnvironmentStatus()
             viewModel.reverify()
-            viewModel.runFullEnvironmentSetup()
+            viewModel.previewSetup()
+            viewModel.confirmOperation()
             viewModel.autoRemediateDoctorIssues()
             testScheduler.advanceUntilIdle()
 
             assertEquals(initialVerifyCount, toolchainService.verifyEnvironmentCount)
-            assertEquals(0, toolchainService.runFullSetupCount)
-            assertEquals(0, toolchainService.autoRemediateDoctorCount)
+            assertEquals(0, toolchainService.prepareCount)
+            assertEquals(0, toolchainService.fullSetupCount)
+            assertEquals(0, toolchainService.remediationCount)
 
             // Case 4: Idle -> actions execute normally
             toolchainService._state.value = toolchainService._state.value.copy(isRunning = false)
@@ -377,9 +427,12 @@ class SetupViewModelTest {
             testScheduler.advanceUntilIdle()
             assertEquals(initialVerifyCount + 1, toolchainService.verifyEnvironmentCount)
 
-            viewModel.runFullEnvironmentSetup()
+            viewModel.previewSetup()
+            viewModel.confirmOperation()
             testScheduler.advanceUntilIdle()
-            assertEquals(1, toolchainService.runFullSetupCount)
+            assertEquals(1, toolchainService.prepareCount)
+            assertEquals(1, toolchainService.confirmCount)
+            assertEquals(1, toolchainService.fullSetupCount)
         } finally {
             Dispatchers.resetMain()
         }
@@ -470,47 +523,6 @@ class SetupViewModelTest {
 
 
     @Test
-    fun testAutoRunEnvironmentSetupExecutesDoctorRemediationAndFullSetup() = runTest {
-        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-        Dispatchers.setMain(testDispatcher)
-        try {
-            val repo = FakeWorkspaceRepository()
-            val manager = WorkspaceManager(repo, this)
-            val toolchainService = FakeToolchainProvisioningService()
-
-            // Configure initial state with failed doctor item and not ready
-            toolchainService.markUnready()
-            toolchainService._state.value = toolchainService._state.value.copy(
-                diagnostics = listOf(
-                    DiagnosticCheckItem(
-                        id = "gcc",
-                        title = "GCC Compiler",
-                        status = StepStatus.FAILED,
-                    )
-                )
-            )
-
-            val viewModel = SetupViewModel(manager, toolchainService)
-            testScheduler.advanceUntilIdle()
-            // Init inspects only, no auto-mutation
-            assertEquals(1, toolchainService.verifyEnvironmentCount)
-            assertEquals(0, toolchainService.autoRemediateDoctorCount)
-            assertEquals(0, toolchainService.runFullSetupCount)
-
-            // Explicit execution of setup pipeline runs doctor remediation + setup
-            viewModel.autoRunEnvironmentSetup(autoFix = true)
-            testScheduler.advanceUntilIdle()
-
-            assertEquals(2, toolchainService.verifyEnvironmentCount)
-            assertEquals(1, toolchainService.autoRemediateDoctorCount)
-            assertEquals(1, toolchainService.runFullSetupCount)
-            assertTrue(viewModel.toolchainSetupState.value.isAllReady)
-        } finally {
-            Dispatchers.resetMain()
-        }
-    }
-
-    @Test
     fun testAutoRunEnvironmentSetupAlwaysVerifiesAndNeverSkipsOnInit() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         Dispatchers.setMain(testDispatcher)
@@ -526,13 +538,13 @@ class SetupViewModelTest {
             // Verification must ALWAYS run on startup (no 24h skip)
             assertEquals(1, toolchainService.verifyEnvironmentCount)
             // But full setup is skipped because steps are already ready
-            assertEquals(0, toolchainService.runFullSetupCount)
+            assertEquals(0, toolchainService.fullSetupCount)
 
             // Explicit reverify also re-runs verification
             viewModel.reverify()
             testScheduler.advanceUntilIdle()
             assertEquals(2, toolchainService.verifyEnvironmentCount)
-            assertEquals(0, toolchainService.runFullSetupCount)
+            assertEquals(0, toolchainService.fullSetupCount)
         } finally {
             Dispatchers.resetMain()
         }
@@ -560,27 +572,20 @@ class SetupViewModelTest {
             // Verification ran once on init
             assertEquals(1, idleBridgeService.verifyEnvironmentCount)
             // Auto-run MUST NOT trigger runFullSetup when bridge is idle / pending!
-            assertEquals(0, idleBridgeService.runFullSetupCount)
+            assertEquals(0, idleBridgeService.fullSetupCount)
         } finally {
             Dispatchers.resetMain()
         }
     }
 
     @Test
-    fun testAutoRunEnvironmentSetupRespectsAutoDoctorDisabledToggle() = runTest {
+    fun testAutoDoctorDisabledPreventsAutoFixPreviewAndAnyRemediation() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         Dispatchers.setMain(testDispatcher)
         try {
             val repo = FakeWorkspaceRepository()
             val manager = WorkspaceManager(repo, this)
             val toolchainService = FakeToolchainProvisioningService()
-            toolchainService.markAllReady()
-
-            val viewModel = SetupViewModel(manager, toolchainService)
-            testScheduler.advanceUntilIdle()
-            assertEquals(1, toolchainService.verifyEnvironmentCount)
-
-            // Configure state with issues
             toolchainService.markUnready()
             toolchainService._state.value = toolchainService._state.value.copy(
                 diagnostics = listOf(
@@ -592,48 +597,31 @@ class SetupViewModelTest {
                 )
             )
 
-            // Disable auto doctor
+            val viewModel = SetupViewModel(manager, toolchainService)
+            testScheduler.advanceUntilIdle()
+            assertEquals(1, toolchainService.verifyEnvironmentCount)
+
             viewModel.setAutoDoctorEnabled(false)
             assertFalse(viewModel.isAutoDoctorEnabled.value)
 
-            viewModel.autoRunEnvironmentSetup(autoFix = true)
+            // Auto-Fix with Auto Doctor disabled: no plan, no remediation, an explicit notice (FR-004).
+            viewModel.autoRemediateDoctorIssues()
             testScheduler.advanceUntilIdle()
+            assertEquals(0, toolchainService.prepareCount)
+            assertEquals(0, toolchainService.remediationCount)
+            assertEquals(0, toolchainService.fullSetupCount)
+            assertNull(viewModel.activeOperation.value)
+            assertEquals(
+                "Auto Doctor is disabled; enable it to preview automatic remediation.",
+                viewModel.environmentNotice.value,
+            )
 
-            // Doctor auto-fix should not be called, but full setup pipeline runs
-            assertEquals(2, toolchainService.verifyEnvironmentCount)
-            assertEquals(0, toolchainService.autoRemediateDoctorCount)
-            assertEquals(1, toolchainService.runFullSetupCount)
-        } finally {
-            Dispatchers.resetMain()
-        }
-    }
-
-    @Test
-    fun testAutoRunEnvironmentSetupGuardedWhenBusy() = runTest {
-        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-        Dispatchers.setMain(testDispatcher)
-        try {
-            val repo = FakeWorkspaceRepository()
-            val manager = WorkspaceManager(repo, this)
-            val toolchainService = FakeToolchainProvisioningService()
-            toolchainService.markAllReady()
-
-            val viewModel = SetupViewModel(manager, toolchainService)
+            // A full setup preview still binds the disabled policy into the plan.
+            viewModel.previewSetup()
             testScheduler.advanceUntilIdle()
-            val initialVerify = toolchainService.verifyEnvironmentCount
-            assertEquals(0, toolchainService.runFullSetupCount)
-
-            // Mark busy
-            toolchainService._state.value = toolchainService._state.value.copy(isRunning = true)
-            assertTrue(viewModel.toolchainSetupState.value.isBusy)
-
-            viewModel.autoRunEnvironmentSetup(autoFix = true)
-            testScheduler.advanceUntilIdle()
-
-            // Guarded: checkStatusCount remains unchanged, no doctor fix or full setup
-            assertEquals(initialVerify, toolchainService.verifyEnvironmentCount)
-            assertEquals(0, toolchainService.autoRemediateDoctorCount)
-            assertEquals(0, toolchainService.runFullSetupCount)
+            assertEquals(1, toolchainService.prepareCount)
+            assertEquals(false, toolchainService.lastPreparedAutoDoctor)
+            assertEquals(false, viewModel.activeOperation.value?.autoDoctorEnabled)
         } finally {
             Dispatchers.resetMain()
         }
@@ -885,7 +873,11 @@ class SetupViewModelTest {
             assertEquals(expectedNotice, viewModel.environmentNotice.value)
             viewModel.dismissEnvironmentNotice()
 
-            viewModel.runFullEnvironmentSetup()
+            viewModel.previewSetup()
+            assertEquals(expectedNotice, viewModel.environmentNotice.value)
+            viewModel.dismissEnvironmentNotice()
+
+            viewModel.confirmOperation()
             assertEquals(expectedNotice, viewModel.environmentNotice.value)
             viewModel.dismissEnvironmentNotice()
 
@@ -905,7 +897,7 @@ class SetupViewModelTest {
             assertEquals(expectedNotice, viewModel.environmentNotice.value)
             viewModel.dismissEnvironmentNotice()
 
-            viewModel.resetToolchainCacheAndRecheck()
+            viewModel.previewResetToolchainCache()
             assertEquals(expectedNotice, viewModel.environmentNotice.value)
             viewModel.dismissEnvironmentNotice()
         } finally {

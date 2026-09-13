@@ -75,10 +75,7 @@ class ToolBrowserStateTest {
 
         override suspend fun verifyEnvironment(): ToolchainSetupState = _state.value
         override suspend fun checkStatus(): ToolchainSetupState = _state.value
-        override suspend fun runFullSetup() {}
-        override suspend fun retryStep(stage: SetupStepStage) {}
         override suspend fun provisionAvbKey(): Boolean = true
-        override suspend fun autoRemediateDoctor(): Boolean = true
 
         // 003 plan contract: fakes never synthesize success for behaviour the test does not drive.
         override suspend fun prepare(kind: SetupPlanKind, targetId: String?, autoDoctorEnabled: Boolean): SetupPlan =
@@ -91,8 +88,6 @@ class ToolBrowserStateTest {
             SetupOutcome.Failed(stage = null, reason = "fake service has no journal")
         override suspend fun cancel(): SetupOutcome =
             SetupOutcome.Failed(stage = null, reason = "fake service has nothing to cancel")
-        override suspend fun resetSetupCache(): SetupOutcome =
-            SetupOutcome.Failed(stage = null, reason = "fake service does not reset cache")
 
         override suspend fun testTool(toolId: String): SetupOutcome {
             testToolCallCount++

@@ -24,6 +24,8 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.ide.lti.core.domain.ports.PublishedTools
 import org.ide.lti.core.domain.ports.ToolPublicationPort
+import org.ide.lti.core.domain.setup.SetupOutcome
+import org.ide.lti.core.domain.setup.SetupPlanKind
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepStatus
 import java.nio.charset.Charset
@@ -387,7 +389,7 @@ class WslToolchainProvisionerTest {
     }
 
     @Test
-    fun `runFullSetup executes end-to-end pipeline and marks state ready`() = runTest {
+    fun `confirmed FULL_SETUP plan executes end-to-end pipeline and live check marks state ready`() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val fakeCli = FakeWslCliExecutor()
         val detector = WslEnvironmentDetector(cli = fakeCli)
@@ -402,44 +404,51 @@ class WslToolchainProvisionerTest {
             dispatcher = testDispatcher
         )
 
-        provisioner.runFullSetup()
+        val plan = provisioner.prepare(SetupPlanKind.FULL_SETUP)
+        val outcome = provisioner.confirm(plan.planId, plan.revisionHash)
 
+        assertTrue(outcome is SetupOutcome.Succeeded, "Confirmed plan must succeed: $outcome")
         val finalState = provisioner.state.value
         assertTrue(finalState.isAllReady)
         assertFalse(finalState.isRunning)
         assertEquals(5, finalState.steps.filter { it.status == StepStatus.SUCCESS }.size)
-        assertTrue(finalState.logs.any { it.contains("Complete") || it.contains("successfully built") })
+        assertTrue(finalState.logs.any { it.contains("completed") })
+        assertEquals(finalState.checkedAt, finalState.lastReadyAt, "Readiness after setup comes from the live check")
     }
 
     @Test
-    fun `runFullSetup halts when daemon cannot be started`() = runTest {
+    fun `confirmed plan fails closed at SERVER_CONNECTIVITY when daemon health is null`() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val fakeCli = FakeWslCliExecutor()
         val detector = WslEnvironmentDetector(cli = fakeCli)
-        val supervisor = FakeDaemonSupervisor(shouldFailEnsureStarted = true)
+        val supervisor = FakeDaemonSupervisor()
         val transport = FakeRemoteTransport(fakeCli = fakeCli)
+        val publication = FakeToolPublicationPort()
 
         val provisioner = WslToolchainProvisioner(
             supervisor = supervisor,
             transport = transport,
             detector = detector,
             cli = fakeCli,
-            dispatcher = testDispatcher
+            dispatcher = testDispatcher,
+            toolPublicationPort = publication,
         )
 
-        provisioner.runFullSetup()
+        val plan = provisioner.prepare(SetupPlanKind.FULL_SETUP)
+        transport.healthInfo = null
+        val outcome = provisioner.confirm(plan.planId, plan.revisionHash)
 
+        assertTrue(outcome is SetupOutcome.Failed, "Null health is a terminal prerequisite failure: $outcome")
+        assertEquals(SetupStepStage.SERVER_CONNECTIVITY.name, outcome.stage)
+        assertEquals(0, publication.publishCallCount, "Nothing may run after a failed health prerequisite")
         val finalState = provisioner.state.value
         assertFalse(finalState.isAllReady)
         assertFalse(finalState.isRunning)
-
-        val serverStep = finalState.steps.first { it.stage == SetupStepStage.SERVER_CONNECTIVITY }
-        assertEquals(StepStatus.FAILED, serverStep.status)
-        assertTrue(serverStep.error?.contains("Failed to launch or attach") == true)
+        assertFalse(finalState.isBusy, "Owner and busy flags must be released on the failure path")
     }
 
     @Test
-    fun `runFullSetup creates LtiRomWorkDir if not present`() = runTest {
+    fun `confirmed FULL_SETUP plan creates LtiRomWorkDir if not present`() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val fakeCli = FakeWslCliExecutor()
         val detector = WslEnvironmentDetector(cli = fakeCli)
@@ -455,13 +464,19 @@ class WslToolchainProvisionerTest {
         )
 
         assertFalse(fakeCli.existingPaths.contains("/home/lti/LtiRomWorkDir"))
-        provisioner.runFullSetup()
+        val plan = provisioner.prepare(SetupPlanKind.FULL_SETUP)
+        val outcome = provisioner.confirm(plan.planId, plan.revisionHash)
+        assertTrue(outcome is SetupOutcome.Succeeded, "$outcome")
         assertTrue(fakeCli.existingPaths.contains("/home/lti/LtiRomWorkDir"))
-        assertTrue(provisioner.state.value.logs.any { it.contains("Initialized workspace root directory at /home/lti/LtiRomWorkDir") })
+        assertTrue(
+            provisioner.state.value.logs.any {
+                it.contains("Ensuring workspace root directory exists at /home/lti/LtiRomWorkDir")
+            }
+        )
     }
 
     @Test
-    fun `runFullSetup invokes toolPublicationPort and surfaces published tool IDs in state`() = runTest {
+    fun `confirmed FULL_SETUP plan invokes toolPublicationPort and surfaces published tool IDs in state`() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val fakeCli = FakeWslCliExecutor()
         val detector = WslEnvironmentDetector(cli = fakeCli)
@@ -483,7 +498,9 @@ class WslToolchainProvisionerTest {
             toolPublicationPort = fakePublication
         )
 
-        provisioner.runFullSetup()
+        val plan = provisioner.prepare(SetupPlanKind.FULL_SETUP)
+        val outcome = provisioner.confirm(plan.planId, plan.revisionHash)
+        assertTrue(outcome is SetupOutcome.Succeeded, "$outcome")
 
         val finalState = provisioner.state.value
         assertTrue(finalState.isAllReady)

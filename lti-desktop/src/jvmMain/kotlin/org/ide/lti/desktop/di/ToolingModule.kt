@@ -26,7 +26,6 @@ import org.ide.lti.core.domain.ports.EnvironmentProbePort
 import org.ide.lti.core.domain.ports.ToolPublicationPort
 import org.ide.lti.core.domain.ports.WslPresencePort
 import org.ide.lti.core.domain.setup.ToolchainProvisioningService
-import org.ide.lti.core.domain.setup.doctor.AutoRemediateEnvironmentUseCase
 import org.ide.lti.core.domain.setup.doctor.RunSystemDiagnosticsUseCase
 import org.ide.lti.core.domain.setup.doctor.SystemDoctorPort
 import org.ide.lti.core.domain.usecase.target.ProvisionAvbKeyUseCase
@@ -62,7 +61,6 @@ public val toolingModule = module {
         WslToolchainProvisioner(
             supervisor = get<DaemonSupervisorPort>(),
             transport = get<RemoteTransportPort>(),
-            doctorPort = get<SystemDoctorPort>(),
             repository = getOrNull(),
             toolPublicationPort = getOrNull<ToolPublicationPort>(),
         )
@@ -107,13 +105,9 @@ public val toolingModule = module {
     // Toolchain-backed domain use cases
     single { ProvisionAvbKeyUseCase(get<ToolchainProvisioningService>()) }
     single { RunSystemDiagnosticsUseCase(get<SystemDoctorPort>()) }
-    single { AutoRemediateEnvironmentUseCase(get<SystemDoctorPort>()) }
 
     // Setup & Toolchain lifecycle use cases
     single { org.ide.lti.core.domain.usecase.setup.CheckEnvironmentStatusUseCase(get<ToolchainProvisioningService>()) }
-    single { org.ide.lti.core.domain.usecase.setup.RunIncrementalSetupUseCase(get<ToolchainProvisioningService>()) }
     single { org.ide.lti.core.domain.usecase.setup.TestIndividualToolUseCase(get<ToolchainProvisioningService>()) }
-    single { org.ide.lti.core.domain.usecase.setup.RecompileToolUseCase(get<ToolchainProvisioningService>()) }
-    single { org.ide.lti.core.domain.usecase.setup.ResetToolchainSetupUseCase(get<ToolchainProvisioningService>(), getOrNull()) }
 }
 

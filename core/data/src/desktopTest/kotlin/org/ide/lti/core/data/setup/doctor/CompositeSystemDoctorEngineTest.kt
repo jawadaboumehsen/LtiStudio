@@ -7,7 +7,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.ide.lti.core.domain.setup.StepStatus
-import org.ide.lti.core.domain.setup.doctor.AutoRemediateEnvironmentUseCase
 import org.ide.lti.core.domain.setup.doctor.RunSystemDiagnosticsUseCase
 import java.nio.charset.Charset
 import kotlin.test.Test
@@ -273,27 +272,6 @@ class CompositeSystemDoctorEngineTest {
         assertTrue(mockCli.executedCommands.any { it.startsWith("sudo -n apt-get") }, "Must execute via non-interactive sudo")
         assertTrue(mockCli.executedUsers.none { it == "root" }, "Must never fall back to direct wsl -u root")
         assertTrue(progressLogs.isNotEmpty())
-    }
-
-    @Test
-    fun `AutoRemediateEnvironmentUseCase delegates to doctorPort`() = runTest {
-        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-        val mockCli = MockWslCliExecutor().apply {
-            simulateMissingCompilers = true
-        }
-        val detector = WslEnvironmentDetector(cli = mockCli)
-        val engine = CompositeSystemDoctorEngine(
-            cli = mockCli,
-            detector = detector,
-            dispatcher = testDispatcher
-        )
-        val useCase = AutoRemediateEnvironmentUseCase(engine)
-
-        val progressLogs = mutableListOf<String>()
-        val result = useCase("Ubuntu") { progressLogs.add(it) }
-
-        assertTrue(result)
-        assertTrue(mockCli.executedCommands.any { it.contains("apt-get install") })
     }
 
     @Test

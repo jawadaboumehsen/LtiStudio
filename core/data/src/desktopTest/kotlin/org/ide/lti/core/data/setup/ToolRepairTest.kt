@@ -194,22 +194,45 @@ class ToolRepairTest {
     @Test
     fun testSingleFlightMutationBlocksConcurrentToolRepair() = runTest {
         val transport = SpyRemoteTransport()
+        val coordinator = SetupOperationCoordinator()
         val provisioner = WslToolchainProvisioner(
             supervisor = SpyDaemonSupervisor(),
             transport = transport,
             cli = StubCliExecutor(),
             dispatcher = UnconfinedTestDispatcher(testScheduler),
+            coordinator = coordinator,
         )
 
-        // Simulate an already-running setup operation
-        val stateField = provisioner::class.java.getDeclaredField("_state")
-        stateField.isAccessible = true
-        @Suppress("UNCHECKED_CAST")
-        val stateFlow = stateField.get(provisioner) as kotlinx.coroutines.flow.MutableStateFlow<ToolchainSetupState>
-        stateFlow.value = stateFlow.value.copy(isRunning = true)
+        // A real operation holds the environment owner in the shared coordinator; repair must be
+        // refused by admission (Busy), not by a flag the test flips.
+        val started = java.util.concurrent.CountDownLatch(1)
+        val release = java.util.concurrent.CountDownLatch(1)
+        val ownerThread = Thread {
+            kotlinx.coroutines.runBlocking {
+                coordinator.withAdmission("Ubuntu", "setup-in-flight", "FULL_SETUP") {
+                    started.countDown()
+                    release.await()
+                    SetupOutcome.Succeeded()
+                }
+            }
+        }
+        ownerThread.start()
+        try {
+            started.await()
+            assertTrue(coordinator.isBusy("Ubuntu"))
 
-        val result = provisioner.repairTool("lpmake")
-        assertFalse(result, "At most one setup mutation is active per environment; concurrent repair must be blocked")
+            val result = provisioner.repairTool("lpmake")
+            assertFalse(
+                result,
+                "At most one setup mutation is active per environment; concurrent repair must be blocked",
+            )
+            assertTrue(transport.startedRuns.isEmpty(), "A refused repair must not start any build run")
+            assertEquals("setup-in-flight", coordinator.currentOwner("Ubuntu")?.operationId)
+        } finally {
+            release.countDown()
+            ownerThread.join()
+        }
+        assertFalse(coordinator.isBusy("Ubuntu"))
     }
 
     @Test

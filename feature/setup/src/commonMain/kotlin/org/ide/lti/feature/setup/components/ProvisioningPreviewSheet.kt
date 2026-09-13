@@ -63,6 +63,8 @@ import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
+import org.ide.lti.core.domain.setup.SetupPlan
+import org.ide.lti.core.domain.setup.SetupPlanKind
 import org.ide.lti.feature.setup.PlannedSetupChanges
 
 /**
@@ -70,6 +72,7 @@ import org.ide.lti.feature.setup.PlannedSetupChanges
  * Discloses planned system packages, git submodules, toolchains to compile, and elevation requirements.
  * Dismisses on Escape key or outside scrim click; traps confirmation until explicitly approved.
  */
+@Suppress("LongMethod", "LongParameterList", "CyclomaticComplexMethod")
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ProvisioningPreviewSheet(
@@ -80,6 +83,7 @@ fun ProvisioningPreviewSheet(
     onDismiss: () -> Unit,
     backdrop: LayerBackdrop,
     modifier: Modifier = Modifier,
+    plan: SetupPlan? = null,
 ) {
     val glassColors = GlassTheme.colors
     val focusRequester = remember { FocusRequester() }
@@ -143,7 +147,7 @@ fun ProvisioningPreviewSheet(
                             color = glassColors.onGlass,
                         )
                         Text(
-                            text = "Review required mutations before running environment setup",
+                            text = previewSubtitle(plan),
                             style = MaterialTheme.typography.bodySmall,
                             color = glassColors.onGlassSecondary,
                         )
@@ -196,6 +200,14 @@ fun ProvisioningPreviewSheet(
                                 text = plannedChanges.targetDistro,
                                 style = MaterialTheme.typography.labelMedium.copy(fontFamily = codeFontFamily()),
                                 color = glassColors.onGlass,
+                            )
+                        }
+                        if (plan != null) {
+                            Spacer(Modifier.weight(1f))
+                            Text(
+                                text = "Plan: ${plan.planId.take(8)}",
+                                style = MaterialTheme.typography.labelSmall.copy(fontFamily = codeFontFamily()),
+                                color = glassColors.onGlassMuted,
                             )
                         }
                     }
@@ -324,12 +336,33 @@ fun ProvisioningPreviewSheet(
                         }
                     }
 
-                    if (plannedChanges.packagesToInstall.isEmpty() &&
-                        plannedChanges.submodulesToSync.isEmpty() &&
-                        plannedChanges.toolsToCompile.isEmpty()
-                    ) {
+                    // Tools to publish to the daemon registry
+                    if (plannedChanges.toolsToPublish.isNotEmpty()) {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+                        ) {
+                            Text(
+                                text = "Tools to Publish (${plannedChanges.toolsToPublish.size})",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = glassColors.onGlass,
+                            )
+                            Text(
+                                text = plannedChanges.toolsToPublish.joinToString(", "),
+                                style = MaterialTheme.typography.bodySmall.copy(fontFamily = codeFontFamily()),
+                                color = glassColors.onGlassSecondary,
+                            )
+                        }
+                    }
+
+                    if (plannedChanges.isEmpty) {
                         Text(
-                            text = "No system packages or toolchain compilations required for this operation.",
+                            text = if (plan?.kind == SetupPlanKind.CACHE_RESET) {
+                                "Persisted setup evidence for this environment will be cleared and the " +
+                                    "environment re-checked. No packages, sources or binaries change."
+                            } else {
+                                "No system packages or toolchain compilations required for this operation."
+                            },
                             style = MaterialTheme.typography.bodyMedium,
                             color = glassColors.onGlassMuted,
                         )
@@ -397,4 +430,13 @@ fun ProvisioningPreviewSheet(
             }
         }
     }
+}
+
+/** One-line description of what confirming [plan] does; the plan kind is the only source. */
+private fun previewSubtitle(plan: SetupPlan?): String = when (plan?.kind) {
+    null, SetupPlanKind.FULL_SETUP -> "Review required mutations before running environment setup"
+    SetupPlanKind.STAGE_RETRY ->
+        "Review the mutations for retrying ${plan.targetStageOrToolId ?: "the selected stage"}"
+    SetupPlanKind.REPAIR_TOOL -> "Review the rebuild for ${plan.targetStageOrToolId ?: "the selected tool"}"
+    SetupPlanKind.CACHE_RESET -> "Review the cache reset before clearing persisted setup evidence"
 }

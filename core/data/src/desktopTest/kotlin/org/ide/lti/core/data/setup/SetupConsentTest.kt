@@ -37,12 +37,17 @@ import org.ide.lti.core.data.setup.doctor.StorageHeadroomInspector
 import org.ide.lti.core.data.setup.doctor.ToolchainIntegrityInspector
 import org.ide.lti.core.domain.ports.PublishedTools
 import org.ide.lti.core.domain.ports.ToolPublicationPort
-import org.ide.lti.core.domain.setup.DiagnosticCategory
+import org.ide.lti.core.domain.setup.DiagnosticCheckItem
+import org.ide.lti.core.domain.setup.SetupOutcome
+import org.ide.lti.core.domain.setup.SetupPlan
+import org.ide.lti.core.domain.setup.SetupPlanAction
+import org.ide.lti.core.domain.setup.SetupPlanKind
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepStatus
 import java.nio.charset.Charset
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -71,6 +76,7 @@ class SetupConsentTest {
     private class SpyRemoteTransport(
         var dfBytes: Long = 100_000_000_000L,
         var dfFails: Boolean = false,
+        var missingPackages: Boolean = false,
         var runIdGenerator: (String) -> String = { "durable-run-$it" }
     ) : RemoteTransportPort {
         val executedRequests = mutableListOf<ToolExecutionRequest>()
@@ -87,8 +93,16 @@ class SetupConsentTest {
             availableTools = listOf("adb", "fastboot")
         )
 
+        @Suppress("CyclomaticComplexMethod")
         override suspend fun execute(request: ToolExecutionRequest): ToolExecutionResponse {
             executedRequests.add(request)
+            val isAptInstall = request.toolId == "sudo" &&
+                request.arguments.contains("apt-get") &&
+                request.arguments.contains("install")
+            if (isAptInstall) {
+                // The fake package manager "installs" the packages: subsequent dpkg-query probes see them.
+                missingPackages = false
+            }
             return when {
                 request.toolId == "df" && dfFails -> ToolExecutionResponse(1, "", "df: failed to query mount", 2L)
                 request.toolId == "df" -> {
@@ -109,11 +123,17 @@ class SetupConsentTest {
                     ToolExecutionResponse(0, "payload-dumper-go\nlpunpack\nlpmake\nsimg2img\nerofsfuse\nmkfs.erofs\navbtool\nunpack_bootimg\nimg2sdat\nsignapk\nadb\nfastboot", "", 2L)
                 }
                 request.toolId == "find" -> ToolExecutionResponse(0, "android-tools\napktool\nerofs-utils\nimg2sdat\nsignapk", "", 2L)
+                request.toolId == "dpkg-query" && missingPackages -> {
+                    ToolExecutionResponse(1, "", "dpkg-query: no packages found", 2L)
+                }
                 request.toolId == "dpkg-query" -> {
                     val pkgs = NativeLibrariesInspector.DEFAULT_REQUIRED_DEV_PACKAGES
                         .joinToString("\n") { "$it install ok installed" }
                     ToolExecutionResponse(0, pkgs, "", 2L)
                 }
+                // No machine signing key exists in this environment; every other path probe succeeds.
+                request.toolId == "test" && request.arguments.any { it.endsWith("lti_rsa4096.pem") } ->
+                    ToolExecutionResponse(1, "", "", 1L)
                 request.toolId == "test" -> ToolExecutionResponse(0, "", "", 1L)
                 request.toolId == "printenv" -> ToolExecutionResponse(0, "/home/lti\n", "", 1L)
                 else -> ToolExecutionResponse(0, "ok", "", 1L)
@@ -252,6 +272,10 @@ class SetupConsentTest {
         assertTrue(resultFail.detail.contains("Unable to measure available disk space"), "Detail must report failure instead of fabricated 50L: ${resultFail.detail}")
     }
 
+    /** Commands executed through the daemon service transport, rendered as "tool arg arg...". */
+    private fun SpyRemoteTransport.commandLines(): List<String> =
+        executedRequests.map { (listOf(it.toolId) + it.arguments).joinToString(" ") }
+
     @Test
     fun testTargetedPerStageRetryExecutesOnlyRequestedStage() = runTest {
         val supervisor = SpyDaemonSupervisor()
@@ -269,8 +293,14 @@ class SetupConsentTest {
             dispatcher = UnconfinedTestDispatcher(testScheduler)
         )
 
-        // Retry compilation stage only
-        provisioner.retryStep(SetupStepStage.TOOLCHAIN_COMPILATION)
+        // Retry compilation stage only: the retry is previewed as a STAGE_RETRY plan and confirmed.
+        val plan = provisioner.prepare(SetupPlanKind.STAGE_RETRY, SetupStepStage.TOOLCHAIN_COMPILATION.name)
+        assertTrue(
+            plan.orderedActions.none { it is SetupPlanAction.SyncSources || it is SetupPlanAction.InstallPackages },
+            "A compilation retry plan must not expand into sync or remediation: ${plan.orderedActions}"
+        )
+        val outcome = provisioner.confirm(plan.planId, plan.revisionHash)
+        assertTrue(outcome is SetupOutcome.Succeeded, "$outcome")
 
         // Publication port is invoked during compilation retry
         assertEquals(1, publicationPort.publishCount, "Retrying TOOLCHAIN_COMPILATION must invoke tool publication")
@@ -282,8 +312,8 @@ class SetupConsentTest {
 
     @Test
     fun testFailureCleanupFinallyRestoresBusyState() = runTest {
-        val supervisor = SpyDaemonSupervisor(shouldThrow = true)
-        val transport = SpyRemoteTransport()
+        val supervisor = SpyDaemonSupervisor()
+        val transport = SpyRemoteTransport(runIdGenerator = { throw IllegalStateException("startRun exploded") })
         val cli = SpyCliExecutor()
         val detector = WslEnvironmentDetector(cli)
 
@@ -295,13 +325,17 @@ class SetupConsentTest {
             dispatcher = UnconfinedTestDispatcher(testScheduler)
         )
 
-        provisioner.runFullSetup()
+        // A non-cancellation exception inside a confirmed run is a typed Failed, never a hang or a
+        // leaked owner.
+        val plan = provisioner.prepare(SetupPlanKind.FULL_SETUP, autoDoctorEnabled = false)
+        val outcome = provisioner.confirm(plan.planId, plan.revisionHash)
+        assertTrue(outcome is SetupOutcome.Failed, "Exception must map to typed Failed: $outcome")
 
         val state = provisioner.state.value
         assertFalse(state.isBusy, "isBusy must be cleaned up to false in finally block")
         assertFalse(state.isRunning, "isRunning must be cleaned up to false in finally block")
         assertNull(state.currentStage, "currentStage must be cleared in finally block")
-        assertEquals(StepStatus.FAILED, state.steps.first { it.stage == SetupStepStage.SERVER_CONNECTIVITY }.status)
+        assertNull(state.activeOperationId, "operation owner must be released in finally block")
     }
 
     @Test
@@ -321,8 +355,10 @@ class SetupConsentTest {
             dispatcher = UnconfinedTestDispatcher(testScheduler)
         )
 
-        // Execute full setup which triggers durable runs with idempotency keys
-        provisioner.runFullSetup()
+        // Execute a confirmed full setup, which triggers durable runs with idempotency keys
+        val plan = provisioner.prepare(SetupPlanKind.FULL_SETUP)
+        val outcome = provisioner.confirm(plan.planId, plan.revisionHash)
+        assertTrue(outcome is SetupOutcome.Succeeded, "$outcome")
 
         val state = provisioner.state.value
         // Verify durable run IDs were recorded in stepRunIds and steps
@@ -331,4 +367,292 @@ class SetupConsentTest {
         val compilationStep = state.steps.first { it.stage == SetupStepStage.TOOLCHAIN_COMPILATION }
         assertEquals(state.stepRunIds[SetupStepStage.TOOLCHAIN_COMPILATION], compilationStep.runId)
     }
+
+    @Test
+    fun testStalePlanRevisionHashChangedRejectsConfirmation() = runTest {
+        val supervisor = SpyDaemonSupervisor()
+        val transport = SpyRemoteTransport()
+        val publicationPort = SpyPublicationPort()
+        val cli = SpyCliExecutor()
+        val detector = WslEnvironmentDetector(cli)
+
+        val provisioner = WslToolchainProvisioner(
+            supervisor = supervisor,
+            transport = transport,
+            detector = detector,
+            cli = cli,
+            toolPublicationPort = publicationPort,
+            dispatcher = UnconfinedTestDispatcher(testScheduler)
+        )
+
+        val plan = provisioner.prepare(SetupPlanKind.FULL_SETUP)
+        val outcome = provisioner.confirm(plan.planId, "stale-revision-hash-999")
+
+        assertFalse(outcome.isSuccess, "Stale confirmation must not succeed")
+        assertTrue(outcome is SetupOutcome.Failed, "Stale confirmation must yield SetupOutcome.Failed")
+        assertEquals(
+            "Confirmation requires the displayed plan ID and unchanged revision hash.",
+            outcome.reason
+        )
+        assertEquals(0, publicationPort.publishCount, "No tool publication must occur on stale confirmation")
+    }
+
+    @Test
+    fun testNoPreviewAtAllConfirmWithoutPrepareRejectsConfirmation() = runTest {
+        val supervisor = SpyDaemonSupervisor()
+        val transport = SpyRemoteTransport()
+        val cli = SpyCliExecutor()
+        val detector = WslEnvironmentDetector(cli)
+
+        val provisioner = WslToolchainProvisioner(
+            supervisor = supervisor,
+            transport = transport,
+            detector = detector,
+            cli = cli,
+            dispatcher = UnconfinedTestDispatcher(testScheduler)
+        )
+
+        val outcome = provisioner.confirm("unprepared-plan-1", "unprepared-hash-1")
+
+        assertFalse(outcome.isSuccess, "Confirm without prepare must not succeed")
+        assertTrue(outcome is SetupOutcome.Failed, "Confirm without prepare must yield SetupOutcome.Failed")
+        assertEquals(
+            "Confirmation requires the displayed plan ID and unchanged revision hash.",
+            outcome.reason
+        )
+    }
+
+    @Test
+    fun testPolicyChangeAfterPreviewRejectsConfirmation() = runTest {
+        val supervisor = SpyDaemonSupervisor()
+        val transport = SpyRemoteTransport()
+        val cli = SpyCliExecutor()
+        val detector = WslEnvironmentDetector(cli)
+
+        val provisioner = WslToolchainProvisioner(
+            supervisor = supervisor,
+            transport = transport,
+            detector = detector,
+            cli = cli,
+            dispatcher = UnconfinedTestDispatcher(testScheduler)
+        )
+
+        // Preview with Auto Doctor OFF, then flip the policy and preview again: the first plan is
+        // superseded, so confirming it must be rejected instead of running with the new policy.
+        val plan = provisioner.prepare(SetupPlanKind.FULL_SETUP, autoDoctorEnabled = false)
+        assertFalse(plan.autoDoctorEnabled)
+        val replan = provisioner.prepare(SetupPlanKind.FULL_SETUP, autoDoctorEnabled = true)
+        assertTrue(replan.autoDoctorEnabled)
+        assertNotEquals(plan.revisionHash, replan.revisionHash, "Policy is part of the revision hash")
+
+        val outcome = provisioner.confirm(plan.planId, plan.revisionHash)
+        assertTrue(outcome is SetupOutcome.Failed, "Superseded plan must be rejected: $outcome")
+        assertEquals(
+            "Confirmation requires the displayed plan ID and unchanged revision hash.",
+            outcome.reason
+        )
+        assertTrue(
+            (transport.commandLines() + cli.executedCommands).none { it.contains("apt-get") },
+            "No remediation may run from a superseded plan"
+        )
+    }
+
+    @Test
+    fun testEvidenceChangedAfterPreviewRejectsConfirmationUntilNewPreview() = runTest {
+        val supervisor = SpyDaemonSupervisor()
+        val transport = SpyRemoteTransport()
+        val publicationPort = SpyPublicationPort()
+        val cli = SpyCliExecutor()
+        val detector = WslEnvironmentDetector(cli)
+
+        val provisioner = WslToolchainProvisioner(
+            supervisor = supervisor,
+            transport = transport,
+            detector = detector,
+            cli = cli,
+            toolPublicationPort = publicationPort,
+            dispatcher = UnconfinedTestDispatcher(testScheduler)
+        )
+
+        // Plan previewed against the initial (unchecked) evidence.
+        val plan = provisioner.prepare(SetupPlanKind.FULL_SETUP, autoDoctorEnabled = true)
+        // A live check afterwards changes stage/tool evidence, so the previewed plan is stale.
+        provisioner.verifyEnvironment()
+
+        val stale = provisioner.confirm(plan.planId, plan.revisionHash)
+        assertTrue(stale is SetupOutcome.Failed, "Stale plan must not execute: $stale")
+        assertTrue(stale.reason.contains("preview again"), stale.reason)
+        assertEquals(0, publicationPort.publishCount, "No mutation may run from a stale plan")
+
+        // A fresh preview against the new evidence is confirmable.
+        val fresh = provisioner.prepare(SetupPlanKind.FULL_SETUP, autoDoctorEnabled = true)
+        assertNotEquals(plan.revisionHash, fresh.revisionHash)
+        val outcome = provisioner.confirm(fresh.planId, fresh.revisionHash)
+        assertTrue(outcome.isSuccess, "Fresh plan must execute: $outcome")
+    }
+
+    @Test
+    fun testConfirmedPlanIsConsumedAndCannotBeReExecuted() = runTest {
+        val supervisor = SpyDaemonSupervisor()
+        val transport = SpyRemoteTransport()
+        val publicationPort = SpyPublicationPort()
+        val cli = SpyCliExecutor()
+        val detector = WslEnvironmentDetector(cli)
+
+        val provisioner = WslToolchainProvisioner(
+            supervisor = supervisor,
+            transport = transport,
+            detector = detector,
+            cli = cli,
+            toolPublicationPort = publicationPort,
+            dispatcher = UnconfinedTestDispatcher(testScheduler)
+        )
+
+        val plan = provisioner.prepare(SetupPlanKind.FULL_SETUP, autoDoctorEnabled = true)
+        assertTrue(provisioner.confirm(plan.planId, plan.revisionHash).isSuccess)
+        val publishesAfterFirstRun = publicationPort.publishCount
+
+        val second = provisioner.confirm(plan.planId, plan.revisionHash)
+        assertTrue(second is SetupOutcome.Failed, "Re-confirming a consumed plan must be rejected: $second")
+        assertEquals(publishesAfterFirstRun, publicationPort.publishCount, "Consumed plan must not run twice")
+    }
+
+    @Test
+    fun testPackageSummaryParityPreviewListsExactlyWhatExecutionRuns() = runTest {
+        val supervisor = SpyDaemonSupervisor()
+        val transport = SpyRemoteTransport(missingPackages = true)
+        val publicationPort = SpyPublicationPort()
+        val cli = SpyCliExecutor()
+        val detector = WslEnvironmentDetector(cli)
+
+        val provisioner = WslToolchainProvisioner(
+            supervisor = supervisor,
+            transport = transport,
+            detector = detector,
+            cli = cli,
+            toolPublicationPort = publicationPort,
+            dispatcher = UnconfinedTestDispatcher(testScheduler)
+        )
+
+        // Seed doctor state with a failed package requirement
+        provisioner.verifyEnvironment()
+
+        val plan = provisioner.prepare(SetupPlanKind.FULL_SETUP, autoDoctorEnabled = true)
+        val installAction = plan.orderedActions.filterIsInstance<SetupPlanAction.InstallPackages>().firstOrNull()
+        assertNotNull(installAction, "Plan must contain InstallPackages action when packages need remediation")
+
+        // The previewed packages must be concrete package names, not diagnostic category IDs
+        val previewedPackages = installAction.packages
+        assertTrue(
+            previewedPackages.isNotEmpty(),
+            "Plan package preview must list concrete packages to install"
+        )
+
+        // Confirm and execute the plan
+        val outcome = provisioner.confirm(plan.planId, plan.revisionHash)
+        assertTrue(outcome.isSuccess, "Confirmed plan must execute and succeed: $outcome")
+
+        // Execution parity: apt-get ran through the daemon service transport (never the raw host wsl.exe
+        // executor) with exactly the previewed apt package set.
+        val aptCalls = transport.commandLines().filter { it.contains("apt-get") && it.contains("install") }
+        assertTrue(aptCalls.isNotEmpty(), "apt-get install must be executed through the service transport")
+        assertTrue(
+            cli.executedCommands.none { it.contains("apt-get") },
+            "Remediation must not bypass the daemon transport via the host wsl.exe executor: ${cli.executedCommands}"
+        )
+        val installedArgs = transport.executedRequests
+            .first { it.toolId == "sudo" && it.arguments.contains("install") }
+            .arguments
+            .dropWhile { it != "-y" }
+            .drop(1)
+        assertEquals(previewedPackages, installedArgs, "Execution must install exactly the previewed apt packages")
+        val pipCalls = transport.executedRequests.filter { it.toolId == "pip3" }
+        assertEquals(
+            installAction.pipPackages.isNotEmpty(),
+            pipCalls.isNotEmpty(),
+            "pip packages run only when the preview listed them: preview=${installAction.pipPackages}, calls=$pipCalls"
+        )
+    }
+
+    @Test
+    fun testNoGlobalSigningNoAvbOrMachineKeyGeneratedBySetup() = runTest {
+        val supervisor = SpyDaemonSupervisor()
+        val transport = SpyRemoteTransport()
+        val publicationPort = SpyPublicationPort()
+        val cli = SpyCliExecutor()
+        val detector = WslEnvironmentDetector(cli)
+
+        val provisioner = WslToolchainProvisioner(
+            supervisor = supervisor,
+            transport = transport,
+            detector = detector,
+            cli = cli,
+            toolPublicationPort = publicationPort,
+            dispatcher = UnconfinedTestDispatcher(testScheduler)
+        )
+
+        val plan = provisioner.prepare(SetupPlanKind.FULL_SETUP, autoDoctorEnabled = true)
+        val outcome = provisioner.confirm(plan.planId, plan.revisionHash)
+
+        assertTrue(outcome.isSuccess, "Confirmed plan must succeed")
+
+        // Verify that NO AVB or machine RSA signing key was created on either execution path.
+        // (A read-only `test -f <key>` existence probe during the post-setup live check is inspection,
+        // not generation, and is explicitly allowed.)
+        val signingCommands = (cli.executedCommands + transport.commandLines()).filter { line ->
+            val isReadOnlyProbe = line.startsWith("test ")
+            !isReadOnlyProbe && (
+                line.contains("openssl") ||
+                    line.contains("genpkey") ||
+                    line.contains("rsa_keygen") ||
+                    line.contains("lti_rsa4096.pem")
+                )
+        }
+        assertTrue(
+            signingCommands.isEmpty(),
+            "Setup must NEVER generate global signing keys (FR-003, FR-004): found $signingCommands"
+        )
+        assertFalse(
+            provisioner.state.value.isAvbKeyProvisioned,
+            "Setup must not provision AVB key implicitly"
+        )
+    }
+
+    @Test
+    fun testAutoDoctorDisabledExecutesZeroPackageRemediation() = runTest {
+        val supervisor = SpyDaemonSupervisor()
+        val transport = SpyRemoteTransport()
+        val publicationPort = SpyPublicationPort()
+        val cli = SpyCliExecutor()
+        val detector = WslEnvironmentDetector(cli)
+
+        val provisioner = WslToolchainProvisioner(
+            supervisor = supervisor,
+            transport = transport,
+            detector = detector,
+            cli = cli,
+            toolPublicationPort = publicationPort,
+            dispatcher = UnconfinedTestDispatcher(testScheduler)
+        )
+
+        // Prepare with Auto Doctor OFF
+        val plan = provisioner.prepare(SetupPlanKind.FULL_SETUP, autoDoctorEnabled = false)
+        assertFalse(plan.autoDoctorEnabled)
+
+        // Plan must NOT contain InstallPackages
+        val hasInstallAction = plan.orderedActions.any { it is SetupPlanAction.InstallPackages }
+        assertFalse(hasInstallAction, "Plan must NOT have InstallPackages when Auto Doctor is disabled")
+
+        // Confirm plan
+        val outcome = provisioner.confirm(plan.planId, plan.revisionHash)
+        assertTrue(outcome.isSuccess, "Plan with Auto Doctor off must execute remaining actions")
+
+        // Zero apt-get calls on either execution path
+        val aptCalls = (cli.executedCommands + transport.commandLines()).filter { it.contains("apt-get") }
+        assertTrue(
+            aptCalls.isEmpty(),
+            "When Auto Doctor is disabled, zero apt-get calls must be made: found $aptCalls"
+        )
+    }
 }
+

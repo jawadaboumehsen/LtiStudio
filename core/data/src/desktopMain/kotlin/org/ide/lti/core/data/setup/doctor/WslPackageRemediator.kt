@@ -17,78 +17,118 @@ import org.ide.lti.core.domain.setup.StepStatus
 public class WslPackageRemediator(
     private val cli: WslCliExecutor = WslCliExecutor()
 ) {
+    /**
+     * Concrete remediation derived from diagnostic results. This is the single source that both the
+     * setup-plan preview and the remediation execution read, so what the user sees is exactly what runs
+     * (FR-004 package-summary parity).
+     */
+    public data class RemediationPlan(
+        val aptPackages: List<String> = emptyList(),
+        val pipPackages: List<String> = emptyList(),
+        val configureLoopMountElevation: Boolean = false,
+        val syncToolchainBinaries: Boolean = false,
+    ) {
+        public val isEmpty: Boolean
+            get() = aptPackages.isEmpty() && pipPackages.isEmpty() &&
+                !configureLoopMountElevation && !syncToolchainBinaries
+
+        public val requiresElevation: Boolean
+            get() = aptPackages.isNotEmpty() || configureLoopMountElevation
+    }
+
+    public companion object {
+        /** Python packages installed through pip when the `python_crypto` check is not satisfied. */
+        public val PYTHON_CRYPTO_PIP_PACKAGES: List<String> = listOf("cryptography", "pyasn1")
+
+        /**
+         * Resolves the remediation for every FAILED/WARNING diagnostic. Pure: no IO, no side effects.
+         */
+        @Suppress("CyclomaticComplexMethod")
+        public fun resolve(diagnosticItems: List<DiagnosticCheckItem>): RemediationPlan {
+            val failedOrWarning = diagnosticItems.filter {
+                it.status == StepStatus.FAILED || it.status == StepStatus.WARNING
+            }
+            val aptPackages = linkedSetOf<String>()
+            var needsPipCrypto = false
+            var needsLoopSudoers = false
+            var needsToolchainSync = false
+
+            for (item in failedOrWarning) {
+                when (item.id) {
+                    "host_compilers" -> aptPackages.addAll(listOf("build-essential", "cmake", "make", "clang"))
+                    "host_libraries" -> aptPackages.addAll(NativeLibrariesInspector.DEFAULT_REQUIRED_DEV_PACKAGES)
+                    "python_crypto" -> {
+                        aptPackages.addAll(listOf("python3", "python3-pip"))
+                        needsPipCrypto = true
+                    }
+                    "jdk_dual" -> aptPackages.addAll(listOf("openjdk-17-jdk", "openjdk-21-jdk"))
+                    "selinux_attr" -> aptPackages.add("attr")
+                    "archive_tools" -> aptPackages.addAll(listOf("zip", "unzip", "brotli"))
+                    "transfer_tools" -> aptPackages.addAll(listOf("curl", "git", "rsync", "tar", "file", "xxd"))
+                    "dev_fuse" -> aptPackages.addAll(listOf("fuse3", "libfuse3-dev"))
+                    "loop_mount" -> needsLoopSudoers = true
+                    "openssl_tools" -> aptPackages.add("openssl")
+                    "build_cache" -> aptPackages.add("ccache")
+                    "toolchain_binaries" -> needsToolchainSync = true
+                }
+            }
+            return RemediationPlan(
+                aptPackages = aptPackages.sorted(),
+                pipPackages = if (needsPipCrypto) PYTHON_CRYPTO_PIP_PACKAGES else emptyList(),
+                configureLoopMountElevation = needsLoopSudoers,
+                syncToolchainBinaries = needsToolchainSync,
+            )
+        }
+    }
+
     public suspend fun remediate(
         context: DiagnosticContext,
         diagnosticItems: List<DiagnosticCheckItem>,
         onProgress: (String) -> Unit = {}
-    ): Boolean {
-        val distro = context.distro
-        val failedOrWarning = diagnosticItems.filter {
-            it.status == StepStatus.FAILED || it.status == StepStatus.WARNING
-        }
+    ): Boolean = remediate(context, resolve(diagnosticItems), onProgress)
 
-        if (failedOrWarning.isEmpty()) {
+    /**
+     * Executes exactly [plan]. Callers that previewed a plan pass the same instance so execution can
+     * never drift from what was displayed.
+     */
+    public suspend fun remediate(
+        context: DiagnosticContext,
+        plan: RemediationPlan,
+        onProgress: (String) -> Unit = {}
+    ): Boolean = when {
+        plan.isEmpty -> {
             onProgress("All diagnostic checks are already satisfied. No remediation needed.")
-            return true
+            true
         }
-
-        val aptPackages = mutableSetOf<String>()
-        var needsPipCrypto = false
-        var needsLoopSudoers = false
-        var needsToolchainSync = false
-
-        for (item in failedOrWarning) {
-            when (item.id) {
-                "host_compilers" -> {
-                    aptPackages.addAll(listOf("build-essential", "cmake", "make", "clang"))
-                }
-                "host_libraries" -> {
-                    aptPackages.addAll(NativeLibrariesInspector.DEFAULT_REQUIRED_DEV_PACKAGES)
-                }
-                "python_crypto" -> {
-                    aptPackages.addAll(listOf("python3", "python3-pip"))
-                    needsPipCrypto = true
-                }
-                "jdk_dual" -> {
-                    aptPackages.addAll(listOf("openjdk-17-jdk", "openjdk-21-jdk"))
-                }
-                "selinux_attr" -> {
-                    aptPackages.add("attr")
-                }
-                "archive_tools" -> {
-                    aptPackages.addAll(listOf("zip", "unzip", "brotli"))
-                }
-                "transfer_tools" -> {
-                    aptPackages.addAll(listOf("curl", "git", "rsync", "tar", "file", "xxd"))
-                }
-                "dev_fuse" -> {
-                    aptPackages.addAll(listOf("fuse3", "libfuse3-dev"))
-                }
-                "loop_mount" -> {
-                    needsLoopSudoers = true
-                }
-                "openssl_tools" -> {
-                    aptPackages.add("openssl")
-                }
-                "build_cache" -> {
-                    aptPackages.add("ccache")
-                }
-                "toolchain_binaries" -> {
-                    needsToolchainSync = true
-                }
-            }
+        plan.requiresElevation && !hasPasswordlessSudo(context.distro, onProgress) -> false
+        else -> {
+            applyRemediation(context, plan, onProgress)
+            true
         }
+    }
 
-        val requiresSudo = aptPackages.isNotEmpty() || needsLoopSudoers
-        if (requiresSudo) {
-            val sudoCheck = cli.execute(distro, listOf("sudo", "-n", "true"), timeoutSeconds = 5)
-            if (sudoCheck.exitCode != 0) {
-                onProgress("Error: Passwordless non-interactive sudo is not configured in $distro. Cannot run automated package remediation.")
-                onProgress("Please run the following one-time command in your WSL terminal to configure sudo:")
-                onProgress("echo \"\$USER ALL=(ALL) NOPASSWD: ALL\" | sudo tee /etc/sudoers.d/ltirom")
-                return false
-            }
+    private fun hasPasswordlessSudo(distro: String, onProgress: (String) -> Unit): Boolean {
+        val sudoCheck = cli.execute(distro, listOf("sudo", "-n", "true"), timeoutSeconds = 5)
+        if (sudoCheck.exitCode != 0) {
+            onProgress("Error: Passwordless non-interactive sudo is not configured in $distro. Cannot run automated package remediation.")
+            onProgress("Please run the following one-time command in your WSL terminal to configure sudo:")
+            onProgress("echo \"\$USER ALL=(ALL) NOPASSWD: ALL\" | sudo tee /etc/sudoers.d/ltirom")
+            return false
         }
+        return true
+    }
+
+    @Suppress("LongMethod")
+    private fun applyRemediation(
+        context: DiagnosticContext,
+        plan: RemediationPlan,
+        onProgress: (String) -> Unit,
+    ) {
+        val distro = context.distro
+        val aptPackages = plan.aptPackages
+        val needsPipCrypto = plan.pipPackages.isNotEmpty()
+        val needsLoopSudoers = plan.configureLoopMountElevation
+        val needsToolchainSync = plan.syncToolchainBinaries
 
         // 1. Batch APT Package Installation via non-interactive sudo (never wsl -u root)
         if (aptPackages.isNotEmpty()) {
@@ -99,10 +139,10 @@ public class WslPackageRemediator(
                 timeoutSeconds = 120
             )
 
-            onProgress("Installing ${aptPackages.size} package(s) via sudo: ${aptPackages.sorted().joinToString(", ")}...")
+            onProgress("Installing ${aptPackages.size} package(s) via sudo: ${aptPackages.joinToString(", ")}...")
             val installRes = cli.execute(
                 distro = distro,
-                command = listOf("sudo", "-n", "apt-get", "install", "-y") + aptPackages.sorted(),
+                command = listOf("sudo", "-n", "apt-get", "install", "-y") + aptPackages,
                 timeoutSeconds = 600
             )
             if (installRes.exitCode != 0) {
@@ -114,10 +154,10 @@ public class WslPackageRemediator(
 
         // 2. Python Cryptography & PyASN1 via pip3 (with sudo -n apt-get fallback)
         if (needsPipCrypto) {
-            onProgress("Installing Python cryptography and pyasn1 packages...")
+            onProgress("Installing Python ${plan.pipPackages.joinToString(" and ")} packages...")
             val pipRes = cli.execute(
                 distro = distro,
-                command = listOf("pip3", "install", "--break-system-packages", "cryptography", "pyasn1"),
+                command = listOf("pip3", "install", "--break-system-packages") + plan.pipPackages,
                 timeoutSeconds = 180
             )
             if (pipRes.exitCode == 0) {
@@ -179,7 +219,5 @@ public class WslPackageRemediator(
             }
             onProgress("Toolchain binaries synchronized.")
         }
-
-        return true
     }
 }

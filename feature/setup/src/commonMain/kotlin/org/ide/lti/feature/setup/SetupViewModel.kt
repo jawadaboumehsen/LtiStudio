@@ -346,14 +346,8 @@ class SetupViewModel(
     }
 
     /**
-     * Executes end-to-end environment & toolchain setup pipeline (WSL, Server, Repos, Build).
-     */
-    fun runFullEnvironmentSetup() {
-        environmentSetupState.confirmOperation()
-    }
-
-    /**
-     * Retries the current setup step that failed or is pending.
+     * Retries the current failed/pending setup step. Retry is a mutation: it opens a preview that the
+     * user confirms explicitly; it never executes directly (FR-003).
      */
     fun retrySetupStep() {
         val stage = toolchainSetupState.value.steps.firstOrNull { it.status == StepStatus.FAILED }?.stage
@@ -364,17 +358,11 @@ class SetupViewModel(
     }
 
     /**
-     * Runs automated package remediation via root elevation to resolve doctor diagnostic notices.
+     * Previews Auto-Fix (doctor remediation) as a confirmable plan; runs nothing until confirmed and
+     * never when Auto Doctor is disabled (FR-003, FR-004).
      */
     fun autoRemediateDoctorIssues() {
-        if (toolchainService == null) {
-            environmentSetupState.setEnvironmentNotice("Toolchain service is not available in this session.")
-            return
-        }
-        if (toolchainSetupState.value.isBusy) return
-        viewModelScope.launch {
-            toolchainService.autoRemediateDoctor()
-        }
+        environmentSetupState.previewAutoFix()
     }
 
     fun setAutoDoctorEnabled(enabled: Boolean) {
@@ -382,39 +370,10 @@ class SetupViewModel(
     }
 
     /**
-     * Explicitly coordinates environment verification, doctor remediation, and toolchain provisioning
-     * only when confirmed/requested (FR-005).
+     * Previews a cache reset as a confirmable plan. Reset is a mutation: nothing is purged until the
+     * user confirms the preview, and the environment is re-probed afterwards (FR-003, FR-006).
      */
-    fun autoRunEnvironmentSetup(autoFix: Boolean = true) {
-        if (toolchainSetupState.value.isBusy) return
-        viewModelScope.launch {
-            try {
-                val status = toolchainService?.checkStatus() ?: toolchainSetupState.value
-                val isBridgeReady = status.isServerConnected
-                val needsSetup = isBridgeReady && status.steps.any { step ->
-                    (step.stage == SetupStepStage.TOOLCHAIN_COMPILATION ||
-                        step.stage == SetupStepStage.REPO_SYNCHRONIZATION) &&
-                        step.status == StepStatus.PENDING
-                }
-                if (needsSetup) {
-                    val hasDoctorIssues = status.diagnostics.any {
-                        it.status == StepStatus.FAILED || (it.status == StepStatus.WARNING && !it.isOptionalForRuntime)
-                    }
-                    if (autoFix && isAutoDoctorEnabled.value && hasDoctorIssues) {
-                        toolchainService?.autoRemediateDoctor()
-                    }
-                    toolchainService?.runFullSetup()
-                }
-            } catch (e: Exception) {
-                environmentSetupState.setEnvironmentNotice("Environment verification notice: ${e.message}")
-            }
-        }
-    }
-
-    /**
-     * Purges the persistent setup cache and re-probes without automatic mutation.
-     */
-    fun resetToolchainCacheAndRecheck() {
-        environmentSetupState.resetToolchainCacheAndRecheck()
+    fun previewResetToolchainCache() {
+        environmentSetupState.previewResetToolchainCache()
     }
 }

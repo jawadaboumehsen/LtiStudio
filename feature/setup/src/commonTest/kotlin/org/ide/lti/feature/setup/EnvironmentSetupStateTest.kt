@@ -28,6 +28,7 @@ import org.ide.lti.core.domain.setup.SetupOutcome
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import org.ide.lti.core.domain.setup.SetupPlan
+import org.ide.lti.core.domain.setup.SetupPlanAction
 import org.ide.lti.core.domain.setup.SetupPlanKind
 import org.ide.lti.core.domain.setup.SetupStepDetail
 import org.ide.lti.core.domain.setup.SetupStepStage
@@ -71,16 +72,13 @@ class EnvironmentSetupStateTest {
 
         var verifyEnvironmentCount = 0
             private set
-        var runFullSetupCount = 0
-            private set
-        var retryStepCount = 0
-            private set
-        var lastRetriedStage: SetupStepStage? = null
-            private set
-        var autoRemediateDoctorCount = 0
-            private set
-        var resetSetupCacheCount = 0
-            private set
+        /** Plans that were confirmed (executed), in order. The only path that can mutate. */
+        val executedPlans = mutableListOf<SetupPlan>()
+        val fullSetupCount: Int get() = executedPlans.count { it.kind == SetupPlanKind.FULL_SETUP }
+        val stageRetryCount: Int get() = executedPlans.count { it.kind == SetupPlanKind.STAGE_RETRY }
+        val cacheResetCount: Int get() = executedPlans.count { it.kind == SetupPlanKind.CACHE_RESET }
+        val remediationCount: Int
+            get() = executedPlans.count { plan -> plan.orderedActions.any { it is SetupPlanAction.InstallPackages } }
         var testToolCount = 0
             private set
         var repairToolCount = 0
@@ -96,32 +94,70 @@ class EnvironmentSetupStateTest {
             return _state.value
         }
 
-        override suspend fun runFullSetup() {
-            runFullSetupCount++
-            _state.value = _state.value.copy(
-                steps = _state.value.steps.map { it.copy(status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE) }
-            )
-        }
-
-        override suspend fun retryStep(stage: SetupStepStage) {
-            retryStepCount++
-            lastRetriedStage = stage
-        }
-
         override suspend fun provisionAvbKey(): Boolean = true
 
-        override suspend fun autoRemediateDoctor(): Boolean {
-            autoRemediateDoctorCount++
-            return true
-        }
 
+        var prepareCount = 0
+            private set
+        var confirmCount = 0
+            private set
+        var lastConfirmedPlanId: String? = null
+            private set
+        var lastConfirmedRevisionHash: String? = null
+            private set
+        var confirmOutcome: SetupOutcome = SetupOutcome.Failed(
+            stage = null,
+            reason = "fake service does not execute plans",
+        )
+
+        private val preparedPlans = mutableMapOf<String, SetupPlan>()
 
         // 003 plan contract: fakes never synthesize success for behaviour the test does not drive.
-        override suspend fun prepare(kind: SetupPlanKind, targetId: String?, autoDoctorEnabled: Boolean): SetupPlan =
-            SetupPlan(planId = "fake-plan", revisionHash = "fake-rev", environmentKey = "fake-env", kind = kind,
-                targetStageOrToolId = targetId, autoDoctorEnabled = autoDoctorEnabled)
-        override suspend fun confirm(planId: String, revisionHash: String): SetupOutcome =
-            SetupOutcome.Failed(stage = null, reason = "fake service does not execute plans")
+        override suspend fun prepare(kind: SetupPlanKind, targetId: String?, autoDoctorEnabled: Boolean): SetupPlan {
+            prepareCount++
+            // Actions are derived from the fake's own state the way the real factory does, so the
+            // preview the state holder shows is exactly what this fake would execute.
+            val snapshot = _state.value
+            val actions = buildList {
+                val hasFailedDiagnostics = snapshot.diagnostics.any { it.status == StepStatus.FAILED }
+                if (autoDoctorEnabled && hasFailedDiagnostics) {
+                    add(SetupPlanAction.InstallPackages(listOf("build-essential", "cmake")))
+                }
+                val repoPending = snapshot.steps.any {
+                    it.stage == SetupStepStage.REPO_SYNCHRONIZATION && it.status != StepStatus.SUCCESS
+                }
+                if (repoPending) add(SetupPlanAction.SyncSources(listOf("android-tools")))
+            }
+            return SetupPlan(
+                planId = "fake-plan-$prepareCount",
+                revisionHash = "fake-rev-${snapshot.hashCode()}-$autoDoctorEnabled",
+                environmentKey = snapshot.activeDistro ?: "fake-env",
+                kind = kind,
+                targetStageOrToolId = targetId,
+                autoDoctorEnabled = autoDoctorEnabled,
+                orderedActions = if (kind == SetupPlanKind.CACHE_RESET) emptyList() else actions,
+            ).also { preparedPlans[it.planId] = it }
+        }
+
+        override suspend fun confirm(planId: String, revisionHash: String): SetupOutcome {
+            confirmCount++
+            lastConfirmedPlanId = planId
+            lastConfirmedRevisionHash = revisionHash
+            // Like the real adapter: a plan that was never prepared, or whose hash changed, does not run.
+            val plan = preparedPlans[planId]
+            if (plan == null || plan.revisionHash != revisionHash) {
+                return SetupOutcome.Failed(
+                    stage = null,
+                    reason = "Confirmation requires the displayed plan ID and unchanged revision hash.",
+                )
+            }
+            executedPlans += plan
+            if (plan.kind == SetupPlanKind.CACHE_RESET && confirmOutcome is SetupOutcome.Succeeded) {
+                _state.value = ToolchainSetupState()
+            }
+            return confirmOutcome
+        }
+
         override fun observe(): Flow<SetupOutcome?> = flowOf(null)
         override suspend fun recover(attemptId: String?): SetupOutcome =
             SetupOutcome.Failed(stage = null, reason = "fake service has no journal")
@@ -137,11 +173,6 @@ class EnvironmentSetupStateTest {
             repairToolCount++
             return true
         }
-
-        override suspend fun resetSetupCache(): SetupOutcome {
-            resetSetupCacheCount++
-            return SetupOutcome.Succeeded()
-        }
     }
 
     @Test
@@ -155,9 +186,9 @@ class EnvironmentSetupStateTest {
 
         // Verify that only inspection/probing occurred
         assertEquals(1, spyService.verifyEnvironmentCount, "Inspection must be executed exactly once")
-        assertEquals(0, spyService.runFullSetupCount, "Initial check must NEVER trigger full setup automatically")
-        assertEquals(0, spyService.autoRemediateDoctorCount, "Initial check must NEVER auto-install packages")
-        assertEquals(0, spyService.retryStepCount, "Initial check must NEVER retry steps")
+        assertEquals(0, spyService.fullSetupCount, "Initial check must NEVER trigger full setup automatically")
+        assertEquals(0, spyService.remediationCount, "Initial check must NEVER auto-install packages")
+        assertEquals(0, spyService.stageRetryCount, "Initial check must NEVER retry steps")
         assertNull(stateHolder.activeOperation.value, "Initial check must not leave an active mutation operation")
     }
 
@@ -194,8 +225,8 @@ class EnvironmentSetupStateTest {
         assertNotNull(changes.elevationReason, "Elevation reason must be clearly explained")
 
         // Zero mutation during preview
-        assertEquals(0, spyService.runFullSetupCount, "Preview must NOT execute full setup")
-        assertEquals(0, spyService.autoRemediateDoctorCount, "Preview must NOT mutate packages")
+        assertEquals(0, spyService.fullSetupCount, "Preview must NOT execute full setup")
+        assertEquals(0, spyService.remediationCount, "Preview must NOT mutate packages")
 
         // Dismiss preview
         stateHolder.dismissPreview()
@@ -219,9 +250,9 @@ class EnvironmentSetupStateTest {
 
         // All mutation counts must remain 0
         assertEquals(0, spyService.verifyEnvironmentCount)
-        assertEquals(0, spyService.runFullSetupCount)
-        assertEquals(0, spyService.retryStepCount)
-        assertEquals(0, spyService.autoRemediateDoctorCount)
+        assertEquals(0, spyService.fullSetupCount)
+        assertEquals(0, spyService.stageRetryCount)
+        assertEquals(0, spyService.remediationCount)
     }
 
     @Test
@@ -247,8 +278,8 @@ class EnvironmentSetupStateTest {
         stateHolder.confirmOperation()
         testScheduler.advanceUntilIdle()
 
-        assertEquals(1, spyService.autoRemediateDoctorCount, "Auto doctor remediation must run when enabled")
-        assertEquals(1, spyService.runFullSetupCount, "Full setup must run on confirmed operation")
+        assertEquals(1, spyService.remediationCount, "Auto doctor remediation must run when enabled")
+        assertEquals(1, spyService.fullSetupCount, "Full setup must run on confirmed operation")
 
         // Reset service state and configure Case 2: Auto Doctor disabled
         spyService._state.value = ToolchainSetupState(
@@ -271,9 +302,9 @@ class EnvironmentSetupStateTest {
         stateHolder.confirmOperation()
         testScheduler.advanceUntilIdle()
 
-        // autoRemediateDoctorCount should remain 1 (from Case 1), NOT incremented in Case 2!
-        assertEquals(1, spyService.autoRemediateDoctorCount, "Auto doctor remediation must NOT run when disabled")
-        assertEquals(2, spyService.runFullSetupCount, "Full setup runs even with auto doctor disabled")
+        // remediationCount should remain 1 (from Case 1), NOT incremented in Case 2!
+        assertEquals(1, spyService.remediationCount, "Auto doctor remediation must NOT run when disabled")
+        assertEquals(2, spyService.fullSetupCount, "Full setup runs even with auto doctor disabled")
     }
 
     @Test
@@ -312,8 +343,8 @@ class EnvironmentSetupStateTest {
         assertEquals("durable-run-existing-123", op.operationId)
         assertEquals(SetupStepStage.REPO_SYNCHRONIZATION, op.stageId)
         assertEquals(SetupOperationState.RECONNECTING, op.executionState)
-        assertEquals(0, spyService.runFullSetupCount, "Reconnecting must not start a new mutation")
-        assertEquals(0, spyService.retryStepCount, "Reconnecting must not start a new mutation")
+        assertEquals(0, spyService.fullSetupCount, "Reconnecting must not start a new mutation")
+        assertEquals(0, spyService.stageRetryCount, "Reconnecting must not start a new mutation")
     }
 
     @Test
@@ -495,5 +526,130 @@ class EnvironmentSetupStateTest {
         assertNull(p.lastVerifiedAt)
         assertEquals(PrimaryAction.SET_UP, p.primaryAction)
     }
+
+    @Test
+    fun testRetryRequiresSeparateConfirmation_FR003() = runEnvironmentTest { envScope ->
+        val spyService = SpyToolchainProvisioningService()
+        val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)
+
+        // Calling retryStage must ONLY enter PREVIEW; it must NOT auto-confirm or mutate!
+        stateHolder.retryStage(SetupStepStage.REPO_SYNCHRONIZATION)
+        testScheduler.advanceUntilIdle()
+
+        val op = stateHolder.activeOperation.value
+        assertNotNull(op, "retryStage must generate an active operation in PREVIEW")
+        assertEquals(SetupOperationState.PREVIEW, op.executionState)
+        assertEquals(SetupStepStage.REPO_SYNCHRONIZATION, op.stageId)
+        assertEquals(0, spyService.stageRetryCount, "retryStage must NOT mutate service before confirmation")
+        assertEquals(0, spyService.confirmCount, "retryStage must NOT auto-confirm")
+
+        // Now user explicitly confirms
+        spyService.confirmOutcome = SetupOutcome.Succeeded()
+        stateHolder.confirmOperation()
+        testScheduler.advanceUntilIdle()
+
+        assertEquals(1, spyService.confirmCount, "confirmOperation must invoke service confirm")
+        assertEquals("fake-plan-1", spyService.lastConfirmedPlanId, "The displayed plan ID must be confirmed")
+        assertTrue(
+            spyService.lastConfirmedRevisionHash!!.startsWith("fake-rev-"),
+            "The displayed revision must be confirmed",
+        )
+    }
+
+    @Test
+    fun testConfirmWithoutPlanIsRejected_FR003() = runEnvironmentTest { envScope ->
+        val spyService = SpyToolchainProvisioningService()
+        val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)
+
+        // Ensure no plan has been previewed
+        assertNull(stateHolder.activeOperation.value)
+
+        // Attempting to confirm without a previewed plan must be rejected (no fallback synthesized!)
+        stateHolder.confirmOperation()
+        testScheduler.advanceUntilIdle()
+
+        assertEquals(0, spyService.confirmCount, "Confirm without plan must NOT call service confirm")
+        assertEquals(0, spyService.fullSetupCount, "Confirm without plan must NOT run full setup")
+        assertNotNull(stateHolder.environmentNotice.value, "Rejection notice must be presented")
+        assertTrue(
+            stateHolder.environmentNotice.value!!.contains("plan", ignoreCase = true) ||
+                stateHolder.environmentNotice.value!!.contains("preview", ignoreCase = true) ||
+                stateHolder.environmentNotice.value!!.contains("available", ignoreCase = true)
+        )
+    }
+
+    @Test
+    fun testStaleConfirmationRejected_FR003_FR004() = runEnvironmentTest { envScope ->
+        val spyService = SpyToolchainProvisioningService()
+        spyService.confirmOutcome = SetupOutcome.Failed(
+            stage = null,
+            reason = "Confirmation requires the displayed plan ID and unchanged revision hash.",
+        )
+        val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)
+
+        stateHolder.previewSetup()
+        testScheduler.advanceUntilIdle()
+
+        stateHolder.confirmOperation()
+        testScheduler.advanceUntilIdle()
+
+        val op = stateHolder.activeOperation.value
+        assertNotNull(op)
+        assertEquals(SetupOperationState.FAILED, op.executionState)
+        val expectedReason = "Confirmation requires the displayed plan ID and unchanged revision hash."
+        assertTrue(op.failure?.contains(expectedReason) == true)
+        assertFalse(stateHolder.toolchainSetupState.value.isAllReady)
+    }
+
+    @Test
+    fun testTypedTerminalOutcomesPresentedDistinctlyNeverAsGenericSuccess_FR006() = runEnvironmentTest { envScope ->
+        val outcomesToTest = listOf(
+            SetupOutcome.Failed("WSL_DETECTION", "Distribution missing"),
+            SetupOutcome.Cancelled,
+            SetupOutcome.Busy("owner-process-999"),
+            SetupOutcome.Interrupted("Bridge communication lost mid-operation"),
+        )
+
+        for (terminalOutcome in outcomesToTest) {
+            val spyService = SpyToolchainProvisioningService()
+            spyService.confirmOutcome = terminalOutcome
+            val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)
+
+            stateHolder.previewSetup()
+            testScheduler.advanceUntilIdle()
+
+            stateHolder.confirmOperation()
+            testScheduler.advanceUntilIdle()
+
+            val op = stateHolder.activeOperation.value
+            assertNotNull(op, "Terminal outcome must produce an operation record for $terminalOutcome")
+            assertFalse(
+                op.executionState == SetupOperationState.SUCCEEDED,
+                "$terminalOutcome must NEVER be presented as SUCCEEDED"
+            )
+
+            when (terminalOutcome) {
+                is SetupOutcome.Cancelled -> {
+                    assertEquals(SetupOperationState.CANCELLED, op.executionState)
+                }
+                is SetupOutcome.Failed -> {
+                    assertEquals(SetupOperationState.FAILED, op.executionState)
+                    assertTrue(op.failure?.contains("Distribution missing") == true)
+                }
+                is SetupOutcome.Busy -> {
+                    assertEquals(SetupOperationState.FAILED, op.executionState)
+                    val matchesBusy = op.failure?.contains("owner-process-999") == true ||
+                        op.failure?.contains("busy", ignoreCase = true) == true
+                    assertTrue(matchesBusy)
+                }
+                is SetupOutcome.Interrupted -> {
+                    assertEquals(SetupOperationState.FAILED, op.executionState)
+                    assertTrue(op.failure?.contains("Bridge communication lost") == true)
+                }
+                is SetupOutcome.Succeeded -> {}
+            }
+        }
+    }
 }
+
 

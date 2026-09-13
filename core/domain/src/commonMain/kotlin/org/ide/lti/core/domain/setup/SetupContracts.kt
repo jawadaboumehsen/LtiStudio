@@ -157,13 +157,13 @@ public data class CheckSnapshot(
 }
 
 /**
- * Kind of setup plan.
+ * Kind of setup plan. Every environment mutation (including cache reset) is previewed as one of these;
+ * a tool test acquires operation ownership without a mutation preview and therefore has no plan kind.
  */
 public enum class SetupPlanKind {
     FULL_SETUP,
     STAGE_RETRY,
     REPAIR_TOOL,
-    TEST_TOOL,
     CACHE_RESET,
 }
 
@@ -174,8 +174,25 @@ public enum class SetupPlanKind {
 public sealed interface SetupPlanAction {
     public val description: String
 
-    public data class InstallPackages(val packages: List<String>) : SetupPlanAction {
-        override val description: String = "Install packages: ${packages.joinToString()}"
+    /**
+     * System package remediation. [packages] are apt packages installed through non-interactive sudo,
+     * [pipPackages] are Python packages installed through pip, and [configureLoopMountElevation] records
+     * the sudoers mount/umount rule that loop-device mounting needs. Preview and execution both read this
+     * one action, so the elevation summary can never differ from what runs.
+     */
+    public data class InstallPackages(
+        val packages: List<String>,
+        val pipPackages: List<String> = emptyList(),
+        val configureLoopMountElevation: Boolean = false,
+    ) : SetupPlanAction {
+        public val requiresElevation: Boolean
+            get() = packages.isNotEmpty() || configureLoopMountElevation
+
+        override val description: String = buildString {
+            append("Install packages: ")
+            append((packages + pipPackages.map { "$it (pip)" }).joinToString())
+            if (configureLoopMountElevation) append("; configure loop-mount elevation")
+        }
     }
 
     public data class SyncSources(val submodules: List<String>) : SetupPlanAction {

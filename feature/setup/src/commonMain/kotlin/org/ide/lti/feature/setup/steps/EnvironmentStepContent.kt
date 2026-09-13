@@ -93,7 +93,6 @@ fun EnvironmentStepContent(
         activeOperation = state.activeOperation,
         onNavigateToProjects = onNavigateToProjects,
         onCheckEnvironment = actions.onCheckEnvironment,
-        onRunFullSetup = actions.onRunFullSetup,
         onRetrySetupStep = actions.onRetrySetupStep,
         onRetryStage = actions.onRetryStage,
         onPreviewSetup = actions.onPreviewSetup,
@@ -103,7 +102,6 @@ fun EnvironmentStepContent(
         resolvedBackdrop = resolvedBackdrop,
         modifier = modifier,
         onAutoRemediateDoctor = actions.onAutoRemediateDoctor,
-        onAutoRunEnvironmentSetup = actions.onAutoRunEnvironmentSetup,
         autoRunOnLaunch = autoRunOnLaunch,
         selectedCockpitTab = state.selectedCockpitTab,
         onSelectCockpitTab = actions.onSelectCockpitTab,
@@ -145,7 +143,6 @@ fun EnvironmentStepContent(
 fun EnvironmentStepContent(
     toolchainSetupState: ToolchainSetupState,
     onCheckEnvironment: () -> Unit,
-    onRunFullSetup: () -> Unit,
     onRetrySetupStep: () -> Unit,
     onProceedToLaunchpad: () -> Unit,
     resolvedBackdrop: LayerBackdrop,
@@ -158,7 +155,6 @@ fun EnvironmentStepContent(
     onDismissPreview: () -> Unit = {},
     onNavigateToProjects: (() -> Unit)? = null,
     onAutoRemediateDoctor: (() -> Unit)? = null,
-    onAutoRunEnvironmentSetup: (() -> Unit)? = null,
     autoRunOnLaunch: Boolean = true,
     selectedCockpitTab: String = "doctor",
     onSelectCockpitTab: (String) -> Unit = {},
@@ -321,6 +317,7 @@ fun EnvironmentStepContent(
                 onConfirm = onConfirmOperation,
                 onDismiss = onDismissPreview,
                 backdrop = resolvedBackdrop,
+                plan = activeOperation.plan,
             )
         }
     }

@@ -53,12 +53,10 @@ data class SetupUiState(
 @Immutable
 data class SetupUiActions(
     val onCheckEnvironment: () -> Unit = {},
-    val onRunFullSetup: () -> Unit = {},
     val onRetrySetupStep: () -> Unit = {},
     val onProvisionAvbKey: () -> Unit = {},
     val onSelectTarget: (TargetDevice) -> Unit = {},
     val onAutoRemediateDoctor: () -> Unit = {},
-    val onAutoRunEnvironmentSetup: () -> Unit = {},
     val onNavigateToEnvironment: () -> Unit = {},
     val onOpenSettings: () -> Unit = {},
     val onSearchQueryChange: (String) -> Unit = {},

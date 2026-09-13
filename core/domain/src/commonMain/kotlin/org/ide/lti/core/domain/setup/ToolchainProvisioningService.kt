@@ -623,24 +623,22 @@ public interface ToolchainProvisioningService {
     /** Probes current status without mutating environment. Delegates to [verifyEnvironment]. */
     public suspend fun checkStatus(): ToolchainSetupState = verifyEnvironment()
 
-    /** Executes full end-to-end setup sequence (probe, start daemon, sync repos, build tools) */
-    public suspend fun runFullSetup()
-
-    /** Retries a specific step */
-    public suspend fun retryStep(stage: SetupStepStage)
-
-    /** Provisions or verifies machine-local AVB 2.0 RSA-4096 signing key */
+    /**
+     * Provisions or verifies the machine-local AVB 2.0 RSA-4096 signing key. This is an explicit,
+     * user-initiated action only: no setup, retry, remediation or repair plan ever invokes it
+     * (FR-003 "Setup never silently creates legacy machine keys").
+     */
     public suspend fun provisionAvbKey(): Boolean
 
-    /** Automatically fixes and installs missing system packages and dependencies detected by the Doctor */
-    public suspend fun autoRemediateDoctor(): Boolean
-
-    // ---- Plan-driven operation contract (003 US2/US3 own the real behaviour) ----
+    // ---- Plan-driven operation contract ----
     //
-    // These members are deliberately abstract: no default body may fabricate a plan or report
-    // success on an implementer's behalf. "A normal return is not success unless the typed
-    // outcome is Succeeded." An implementation that has not wired a behaviour yet must return a
-    // typed non-success outcome with a reason, never a synthesized [SetupOutcome.Succeeded].
+    // Every environment mutation (full setup, stage retry, Auto-Fix remediation, tool repair, cache
+    // reset) is previewed with [prepare] and executed only by [confirm]; there is no no-argument
+    // entry point that starts an unpreviewed mutation. These members are deliberately abstract: no
+    // default body may fabricate a plan or report success on an implementer's behalf. "A normal
+    // return is not success unless the typed outcome is Succeeded." An implementation that has not
+    // wired a behaviour yet must return a typed non-success outcome with a reason, never a
+    // synthesized [SetupOutcome.Succeeded].
 
     /**
      * Prepares an immutable [SetupPlan] describing the changes a confirmed operation would make.
@@ -673,14 +671,15 @@ public interface ToolchainProvisioningService {
     /** Explicitly cancels the active operation via the run cancel API; detach is not cancel. */
     public suspend fun cancel(): SetupOutcome
 
-    /** Tests an individual tool binary; success only from an executed probe with an accepted exit code. */
+    /**
+     * Tests an individual tool binary; success only from an executed probe with an accepted exit code.
+     * A test acquires the environment operation owner (Busy when another operation is active) but
+     * needs no mutation preview.
+     */
     public suspend fun testTool(toolId: String): SetupOutcome
 
     /** Recompiles or re-acquires an individual tool binary. Boolean result is retired in 003 US4. */
     public suspend fun repairTool(toolId: String): Boolean
-
-    /** Resets the persisted setup cache and restarts probing cleanly with typed admission. */
-    public suspend fun resetSetupCache(): SetupOutcome
 }
 
 

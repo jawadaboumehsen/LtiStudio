@@ -29,6 +29,8 @@ import org.ide.lti.core.data.setup.doctor.ToolchainIntegrityInspector
 import org.ide.lti.core.domain.ports.PublishedTools
 import org.ide.lti.core.domain.ports.ToolPublicationPort
 import org.ide.lti.core.domain.repository.setup.ToolchainSetupRepository
+import org.ide.lti.core.domain.setup.SetupOutcome
+import org.ide.lti.core.domain.setup.SetupPlanKind
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepProvenance
 import org.ide.lti.core.domain.setup.StepStatus
@@ -373,8 +375,15 @@ class EnvironmentVerificationTest {
         provisioner.verifyEnvironment()
         assertEquals(0, publicationPort.publishCount, "Inspection probe must NEVER publish tools (zero mutation)")
 
-        provisioner.runFullSetup()
-        assertEquals(1, publicationPort.publishCount, "PublicationPort must be invoked during toolchain build setup")
+        val plan = provisioner.prepare(SetupPlanKind.FULL_SETUP)
+        assertEquals(0, publicationPort.publishCount, "Preparing a plan must NEVER publish tools")
+        val outcome = provisioner.confirm(plan.planId, plan.revisionHash)
+        assertTrue(outcome is SetupOutcome.Succeeded, "Confirmed plan must succeed: $outcome")
+        assertEquals(
+            1,
+            publicationPort.publishCount,
+            "PublicationPort must be invoked by the confirmed toolchain build plan",
+        )
     }
 
     @Test

@@ -24,6 +24,8 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.ide.lti.core.domain.ports.PublishedTools
 import org.ide.lti.core.domain.ports.ToolPublicationPort
+import org.ide.lti.core.domain.setup.SetupOutcome
+import org.ide.lti.core.domain.setup.SetupPlanKind
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepStatus
 import java.nio.charset.Charset
@@ -108,6 +110,9 @@ class SetupExecutionPathTest {
         val executedRequests = mutableListOf<ToolExecutionRequest>()
         val startedRuns = mutableListOf<StartRunRequest>()
 
+        /** One submodule is missing until a durable run has synchronised the sources. */
+        private var sourcesSynced = false
+
         override suspend fun checkHealth(): WslServerInfo = WslServerInfo(
             status = "HEALTHY",
             distro = "Ubuntu",
@@ -118,6 +123,7 @@ class SetupExecutionPathTest {
             availableTools = listOf("adb", "fastboot", "mkfs.erofs")
         )
 
+        @Suppress("CyclomaticComplexMethod")
         override suspend fun execute(request: ToolExecutionRequest): ToolExecutionResponse {
             executedRequests.add(request)
             return when {
@@ -125,7 +131,8 @@ class SetupExecutionPathTest {
                     ToolExecutionResponse(0, "/home/lti\n", "", 2L)
                 }
                 request.toolId == "find" && request.arguments.any { it.contains("external") } -> {
-                    val subs = listOf("android-tools", "apktool", "erofs-utils", "img2sdat", "signapk")
+                    val subs = listOf("android-tools", "apktool", "erofs-utils", "img2sdat") +
+                        (if (sourcesSynced) listOf("signapk") else emptyList())
                     ToolExecutionResponse(0, subs.joinToString("\n"), "", 5L)
                 }
                 request.toolId == "find" -> {
@@ -153,6 +160,9 @@ class SetupExecutionPathTest {
                 request.toolId == "df" -> {
                     ToolExecutionResponse(0, "Filesystem 1K-blocks Used Available Use% Mounted on\n/dev/sdb 100G 50G 50G 50% /home/lti\n", "", 2L)
                 }
+                request.toolId == "test" && !sourcesSynced &&
+                    request.arguments.any { it.endsWith("/external/signapk") } ->
+                    ToolExecutionResponse(1, "", "", 1L)
                 request.toolId == "test" -> ToolExecutionResponse(0, "", "", 1L)
                 request.toolId == "which" -> ToolExecutionResponse(0, "/usr/bin/${request.arguments.firstOrNull()}", "", 1L)
                 request.toolId == "sudo" && request.arguments.contains("true") -> ToolExecutionResponse(0, "", "", 1L)
@@ -162,6 +172,7 @@ class SetupExecutionPathTest {
 
         override suspend fun startRun(request: StartRunRequest): RunHandle {
             startedRuns.add(request)
+            sourcesSynced = true
             return RunHandle(runId = "run-${startedRuns.size}", status = RunStatusValue.RUNNING, startedAtEpochMs = 1000L)
         }
 
@@ -212,7 +223,12 @@ class SetupExecutionPathTest {
             dispatcher = UnconfinedTestDispatcher(testScheduler)
         )
 
-        provisioner.runFullSetup()
+        // Product flow: a live Check establishes WSL/bridge evidence (the only host wsl.exe calls),
+        // then the plan is previewed and confirmed against that evidence.
+        provisioner.verifyEnvironment()
+        val plan = provisioner.prepare(SetupPlanKind.FULL_SETUP)
+        val outcome = provisioner.confirm(plan.planId, plan.revisionHash)
+        assertTrue(outcome is SetupOutcome.Succeeded, "Confirmed plan must succeed: $outcome")
 
         // Assert setup finished successfully
         val finalState = provisioner.state.value

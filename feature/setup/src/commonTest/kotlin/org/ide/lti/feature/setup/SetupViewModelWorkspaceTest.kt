@@ -223,9 +223,6 @@ class SetupViewModelWorkspaceTest {
 
         var checkStatusCount = 0
         var verifyEnvironmentCount = 0
-        var runFullSetupCount = 0
-        var retryCurrentStepCount = 0
-        var shouldMarkReadyOnFullSetup: Boolean = true
 
         fun markAllReady() {
             _state.value = _state.value.copy(
@@ -233,18 +230,6 @@ class SetupViewModelWorkspaceTest {
                     it.copy(status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE)
                 },
                 lastVerifiedTimestamp = Clock.System.now().toEpochMilliseconds(),
-            )
-        }
-
-        fun markUnready(pendingStage: SetupStepStage = SetupStepStage.TOOLCHAIN_COMPILATION) {
-            _state.value = _state.value.copy(
-                steps = ToolchainSetupState.defaultSteps().map {
-                    if (it.stage == pendingStage) {
-                        it.copy(status = StepStatus.PENDING, provenance = StepProvenance.LIVE)
-                    } else {
-                        it.copy(status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE)
-                    }
-                }
             )
         }
 
@@ -258,32 +243,13 @@ class SetupViewModelWorkspaceTest {
             return verifyEnvironment()
         }
 
-        override suspend fun runFullSetup() {
-            runFullSetupCount++
-            if (shouldMarkReadyOnFullSetup) {
-                markAllReady()
-            }
-        }
-
         var provisionAvbKeyCount = 0
-
-        override suspend fun retryStep(stage: SetupStepStage) {
-            retryCurrentStepCount++
-        }
 
         override suspend fun provisionAvbKey(): Boolean {
             provisionAvbKeyCount++
             _state.value = _state.value.copy(isAvbKeyProvisioned = true)
             return true
         }
-
-        var autoRemediateDoctorCount = 0
-
-        override suspend fun autoRemediateDoctor(): Boolean {
-            autoRemediateDoctorCount++
-            return true
-        }
-
 
         // 003 plan contract: fakes never synthesize success for behaviour the test does not drive.
         override suspend fun prepare(kind: SetupPlanKind, targetId: String?, autoDoctorEnabled: Boolean): SetupPlan =
@@ -315,12 +281,6 @@ class SetupViewModelWorkspaceTest {
             return true
         }
 
-        var resetSetupCacheCount = 0
-        override suspend fun resetSetupCache(): SetupOutcome {
-            resetSetupCacheCount++
-            markUnready()
-            return SetupOutcome.Succeeded()
-        }
     }
 
 }

@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.setup
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,6 +21,10 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
+import org.ide.lti.core.domain.setup.SetupOutcome
+import org.ide.lti.core.domain.setup.SetupPlan
+import org.ide.lti.core.domain.setup.SetupPlanAction
+import org.ide.lti.core.domain.setup.SetupPlanKind
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolchainProvisioningService
@@ -32,7 +37,7 @@ enum class SetupOperationKind {
     FULL_SETUP,
     RETRY_STAGE,
     REPAIR_TOOL,
-    TEST_TOOL,
+    CACHE_RESET,
 }
 
 /**
@@ -59,7 +64,12 @@ data class PlannedSetupChanges(
     val elevationReason: String? = null,
     val targetDistro: String = "Ubuntu",
     val autoDoctorRemediation: Boolean = true,
-)
+) {
+    /** True when the plan installs, syncs, compiles and publishes nothing (e.g. a cache reset). */
+    val isEmpty: Boolean
+        get() = packagesToInstall.isEmpty() && submodulesToSync.isEmpty() &&
+            toolsToCompile.isEmpty() && toolsToPublish.isEmpty()
+}
 
 /**
  * Encapsulation of an active or previewed setup operation.
@@ -73,6 +83,7 @@ data class SetupOperation(
     val executionState: SetupOperationState = SetupOperationState.PREVIEW,
     val autoDoctorEnabled: Boolean = true,
     val failure: String? = null,
+    val plan: SetupPlan? = null,
 )
 
 /**
@@ -196,23 +207,94 @@ class EnvironmentSetupState(
      * Previews planned changes and required elevation without executing any mutation (FR-005).
      */
     fun previewSetup(stage: SetupStepStage? = null) {
+        if (toolchainService == null) {
+            // Nothing can be planned or confirmed without the service; never synthesize a preview.
+            _environmentNotice.value = "Toolchain service is not available in this session."
+            return
+        }
         if (toolchainSetupState.value.isBusy || currentExecutionJob?.isActive == true) return
-
-        val state = toolchainSetupState.value
-        val distro = state.activeDistro ?: "Ubuntu"
-        val planned = computePlannedChanges(stage, state, distro)
-
-        _activeOperation.value = SetupOperation(
-            operationId = null,
-            kind = if (stage != null) SetupOperationKind.RETRY_STAGE else SetupOperationKind.FULL_SETUP,
-            stageId = stage,
-            plannedChanges = planned,
-            executionState = SetupOperationState.PREVIEW,
-            autoDoctorEnabled = _isAutoDoctorEnabled.value,
-        )
         if (stage != null) {
             _selectedStage.value = stage
         }
+
+        val kind = if (stage != null) SetupPlanKind.STAGE_RETRY else SetupPlanKind.FULL_SETUP
+        launchPreview(kind, stage?.name, stage)
+    }
+
+    /**
+     * Requests a domain plan and shows it as the preview. The plan is the only source of the preview:
+     * what it lists is exactly what a confirmation executes (FR-004 package-summary parity).
+     */
+    private fun launchPreview(kind: SetupPlanKind, targetId: String?, stage: SetupStepStage?) {
+        val service = toolchainService ?: return
+        scope.launch {
+            try {
+                val plan = service.prepare(kind, targetId, _isAutoDoctorEnabled.value)
+                _activeOperation.value = SetupOperation(
+                    operationId = null,
+                    kind = plan.kind.toOperationKind(),
+                    stageId = stage,
+                    plannedChanges = plan.toPlannedChanges(),
+                    executionState = SetupOperationState.PREVIEW,
+                    autoDoctorEnabled = plan.autoDoctorEnabled,
+                    plan = plan,
+                )
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _environmentNotice.value = "Failed to preview setup: ${e.message}"
+            }
+        }
+    }
+
+    /**
+     * Previews Auto-Fix (automatic doctor remediation) as an explicitly confirmable plan (FR-003).
+     * Automatic remediation never runs when Auto Doctor is disabled (FR-004).
+     */
+    fun previewAutoFix() {
+        if (!_isAutoDoctorEnabled.value) {
+            _environmentNotice.value = "Auto Doctor is disabled; enable it to preview automatic remediation."
+            return
+        }
+        previewSetup(SetupStepStage.SYSTEM_DIAGNOSTICS)
+    }
+
+    private fun SetupPlan.toPlannedChanges(): PlannedSetupChanges {
+        val installs = orderedActions.filterIsInstance<SetupPlanAction.InstallPackages>()
+        val aptPackages = installs.flatMap { it.packages }.distinct()
+        val pipPackages = installs.flatMap { it.pipPackages }.distinct()
+        val loopMountElevation = installs.any { it.configureLoopMountElevation }
+        val requiresElevation = installs.any { it.requiresElevation }
+        val elevationReason = when {
+            aptPackages.isNotEmpty() && loopMountElevation ->
+                "Automated package installation and loop-mount sudoers rule via passwordless " +
+                    "non-interactive sudo (sudo -n)"
+            aptPackages.isNotEmpty() ->
+                "Automated package installation via passwordless non-interactive sudo (sudo -n apt-get)"
+            loopMountElevation ->
+                "Loop-mount sudoers rule via passwordless non-interactive sudo (sudo -n)"
+            else -> null
+        }
+        return PlannedSetupChanges(
+            packagesToInstall = aptPackages + pipPackages.map { "$it (pip)" },
+            submodulesToSync = orderedActions.filterIsInstance<SetupPlanAction.SyncSources>()
+                .flatMap { it.submodules }.distinct(),
+            toolsToCompile = orderedActions.filterIsInstance<SetupPlanAction.BuildRecipes>()
+                .flatMap { it.recipeGroups }.distinct(),
+            toolsToPublish = orderedActions.filterIsInstance<SetupPlanAction.PublishTools>()
+                .flatMap { it.toolIds }.distinct(),
+            requiresElevation = requiresElevation,
+            elevationReason = elevationReason,
+            targetDistro = environmentKey,
+            autoDoctorRemediation = autoDoctorEnabled,
+        )
+    }
+
+    private fun SetupPlanKind.toOperationKind(): SetupOperationKind = when (this) {
+        SetupPlanKind.FULL_SETUP -> SetupOperationKind.FULL_SETUP
+        SetupPlanKind.STAGE_RETRY -> SetupOperationKind.RETRY_STAGE
+        SetupPlanKind.REPAIR_TOOL -> SetupOperationKind.REPAIR_TOOL
+        SetupPlanKind.CACHE_RESET -> SetupOperationKind.CACHE_RESET
     }
 
     /**
@@ -228,62 +310,77 @@ class EnvironmentSetupState(
      * Confirms and starts the active or requested setup operation (FR-005, FR-007).
      * Single-flight: repeated activations while running will not queue duplicate operations.
      */
+    @Suppress("ReturnCount", "CyclomaticComplexMethod")
     fun confirmOperation() {
         if (toolchainService == null) {
             _environmentNotice.value = "Toolchain service is not available in this session."
+            return
+        }
+        val currentOp = _activeOperation.value
+        val plan = currentOp?.plan
+        if (currentOp == null || plan == null || currentOp.executionState != SetupOperationState.PREVIEW) {
+            _environmentNotice.value = "No setup plan available to confirm. Please preview the operation first."
             return
         }
         if (toolchainSetupState.value.isBusy || currentExecutionJob?.isActive == true) {
             return
         }
 
-        val currentOp = _activeOperation.value ?: run {
-            val planned = computePlannedChanges(null, toolchainSetupState.value, toolchainSetupState.value.activeDistro ?: "Ubuntu")
-            SetupOperation(
-                kind = SetupOperationKind.FULL_SETUP,
-                plannedChanges = planned,
-                executionState = SetupOperationState.PREVIEW,
-                autoDoctorEnabled = _isAutoDoctorEnabled.value,
-            )
-        }
-
-        val opId = currentOp.operationId ?: "op-${System.currentTimeMillis()}"
+        val opId = currentOp.operationId ?: plan.planId
         _activeOperation.value = currentOp.copy(
             operationId = opId,
             executionState = SetupOperationState.RUNNING,
-            autoDoctorEnabled = _isAutoDoctorEnabled.value,
+            autoDoctorEnabled = plan.autoDoctorEnabled,
         )
 
         currentExecutionJob = scope.launch {
+            var recheckAfterReset = false
             try {
-                when (currentOp.kind) {
-                    SetupOperationKind.FULL_SETUP -> {
-                        if (_isAutoDoctorEnabled.value) {
-                            val status = toolchainSetupState.value
-                            val hasDoctorIssues = status.diagnostics.any {
-                                it.status == StepStatus.FAILED || (it.status == StepStatus.WARNING && !it.isOptionalForRuntime)
-                            }
-                            if (hasDoctorIssues) {
-                                toolchainService.autoRemediateDoctor()
-                            }
-                        }
-                        toolchainService.runFullSetup()
+                val outcome = toolchainService.confirm(plan.planId, plan.revisionHash)
+                when (outcome) {
+                    is SetupOutcome.Succeeded -> {
+                        _activeOperation.value = _activeOperation.value?.copy(
+                            executionState = SetupOperationState.SUCCEEDED,
+                        )
+                        recheckAfterReset = plan.kind == SetupPlanKind.CACHE_RESET
                     }
-                    SetupOperationKind.RETRY_STAGE -> {
-                        val stage = currentOp.stageId ?: SetupStepStage.WSL_DETECTION
-                        if (stage == SetupStepStage.SYSTEM_DIAGNOSTICS && _isAutoDoctorEnabled.value) {
-                            toolchainService.autoRemediateDoctor()
-                        }
-                        toolchainService.retryStep(stage)
+                    is SetupOutcome.Cancelled -> {
+                        _activeOperation.value = _activeOperation.value?.copy(
+                            executionState = SetupOperationState.CANCELLED,
+                            failure = "Operation cancelled",
+                        )
+                        _environmentNotice.value = "Operation was cancelled"
                     }
-                    SetupOperationKind.REPAIR_TOOL -> {
-                        currentOp.toolId?.let { toolchainService.repairTool(it) }
+                    is SetupOutcome.Failed -> {
+                        _activeOperation.value = _activeOperation.value?.copy(
+                            executionState = SetupOperationState.FAILED,
+                            failure = outcome.reason,
+                        )
+                        _environmentNotice.value = "Operation failed: ${outcome.reason}"
                     }
-                    SetupOperationKind.TEST_TOOL -> {
-                        currentOp.toolId?.let { toolchainService.testTool(it) }
+                    is SetupOutcome.Busy -> {
+                        _activeOperation.value = _activeOperation.value?.copy(
+                            executionState = SetupOperationState.FAILED,
+                            failure = "Environment is busy with owner: ${outcome.ownerId}",
+                        )
+                        _environmentNotice.value = "Operation rejected: environment is busy (${outcome.ownerId})"
+                    }
+                    is SetupOutcome.Interrupted -> {
+                        _activeOperation.value = _activeOperation.value?.copy(
+                            executionState = SetupOperationState.FAILED,
+                            failure = outcome.reason,
+                        )
+                        _environmentNotice.value = "Operation interrupted: ${outcome.reason}"
                     }
                 }
-                _activeOperation.value = _activeOperation.value?.copy(executionState = SetupOperationState.SUCCEEDED)
+            } catch (e: CancellationException) {
+                // Explicit cancellation is a distinct terminal outcome, never presented as failure.
+                _activeOperation.value = _activeOperation.value?.copy(
+                    executionState = SetupOperationState.CANCELLED,
+                    failure = "Operation cancelled",
+                )
+                _environmentNotice.value = "Operation was cancelled"
+                throw e
             } catch (e: Exception) {
                 _activeOperation.value = _activeOperation.value?.copy(
                     executionState = SetupOperationState.FAILED,
@@ -295,6 +392,10 @@ class EnvironmentSetupState(
                 if (_activeOperation.value?.executionState == SetupOperationState.SUCCEEDED) {
                     _activeOperation.value = null
                 }
+            }
+            if (recheckAfterReset) {
+                // The cleared cache is Unknown until a live check measures it (FR-001).
+                checkEnvironmentStatus()
             }
         }
     }
@@ -309,7 +410,6 @@ class EnvironmentSetupState(
         }
         if (toolchainSetupState.value.isBusy || currentExecutionJob?.isActive == true) return
         previewSetup(stage)
-        confirmOperation()
     }
 
     /**
@@ -326,15 +426,16 @@ class EnvironmentSetupState(
         )
     }
 
+    /**
+     * Toggling Auto Doctor regenerates an open preview so package/elevation summaries reflect the
+     * policy the confirmed attempt will freeze (FR-004).
+     */
     fun setAutoDoctorEnabled(enabled: Boolean) {
         _isAutoDoctorEnabled.value = enabled
-        _activeOperation.value?.let { op ->
-            if (op.executionState == SetupOperationState.PREVIEW) {
-                _activeOperation.value = op.copy(
-                    autoDoctorEnabled = enabled,
-                    plannedChanges = op.plannedChanges.copy(autoDoctorRemediation = enabled),
-                )
-            }
+        val op = _activeOperation.value
+        val plan = op?.plan
+        if (op != null && plan != null && op.executionState == SetupOperationState.PREVIEW) {
+            launchPreview(plan.kind, plan.targetStageOrToolId, op.stageId)
         }
     }
 
@@ -346,86 +447,17 @@ class EnvironmentSetupState(
         _environmentNotice.value = null
     }
 
-    fun resetToolchainCacheAndRecheck() {
+    /**
+     * Previews a cache reset. Reset is a mutation: it is shown as a confirmable plan and executes only
+     * on explicit confirmation (FR-003); after a confirmed reset the environment is re-checked so the
+     * cleared state is measured live rather than assumed.
+     */
+    fun previewResetToolchainCache() {
         if (toolchainService == null) {
             _environmentNotice.value = "Toolchain service is not available in this session."
             return
         }
         if (toolchainSetupState.value.isBusy || currentExecutionJob?.isActive == true) return
-        scope.launch {
-            try {
-                toolchainService.resetSetupCache()
-                checkEnvironmentStatus()
-            } catch (e: Exception) {
-                _environmentNotice.value = "Cache reset notice: ${e.message}"
-            }
-        }
-    }
-
-    private fun computePlannedChanges(
-        stage: SetupStepStage?,
-        state: ToolchainSetupState,
-        distro: String,
-    ): PlannedSetupChanges {
-        val packages = mutableListOf<String>()
-        val submodules = mutableListOf<String>()
-        val tools = mutableListOf<String>()
-        val publications = mutableListOf<String>()
-        var requiresElevation = false
-        var elevationReason: String? = null
-
-        val autoDoc = _isAutoDoctorEnabled.value
-
-        if (stage == null || stage == SetupStepStage.SYSTEM_DIAGNOSTICS) {
-            if (autoDoc) {
-                val issues = state.diagnostics.filter {
-                    it.status == StepStatus.FAILED || (it.status == StepStatus.WARNING && !it.isOptionalForRuntime)
-                }
-                for (item in issues) {
-                    when (item.id) {
-                        "host_compilers" -> packages.addAll(listOf("build-essential", "cmake", "make", "clang"))
-                        "host_libraries" -> packages.addAll(listOf("liblz4-dev", "libprotobuf-dev", "libzstd-dev"))
-                        "python_crypto" -> packages.addAll(listOf("python3", "python3-pip", "cryptography"))
-                        "jdk_dual" -> packages.addAll(listOf("openjdk-17-jdk", "openjdk-21-jdk"))
-                        "selinux_attr" -> packages.add("attr")
-                        "archive_tools" -> packages.addAll(listOf("zip", "unzip", "brotli"))
-                        "transfer_tools" -> packages.addAll(listOf("curl", "git", "rsync", "tar"))
-                        "dev_fuse" -> packages.addAll(listOf("fuse3", "libfuse3-dev"))
-                        "openssl_tools" -> packages.add("openssl")
-                        "build_cache" -> packages.add("ccache")
-                    }
-                }
-                if (packages.isNotEmpty()) {
-                    requiresElevation = true
-                    elevationReason = "Automated package installation via passwordless non-interactive sudo (sudo -n apt-get)"
-                }
-            }
-        }
-
-        if (stage == null || stage == SetupStepStage.REPO_SYNCHRONIZATION) {
-            val repoStep = state.steps.firstOrNull { it.stage == SetupStepStage.REPO_SYNCHRONIZATION }
-            if (repoStep?.status != StepStatus.SUCCESS) {
-                submodules.addAll(listOf("android-tools", "apktool", "erofs-utils", "img2sdat", "signapk"))
-            }
-        }
-
-        if (stage == null || stage == SetupStepStage.TOOLCHAIN_COMPILATION) {
-            val toolStep = state.steps.firstOrNull { it.stage == SetupStepStage.TOOLCHAIN_COMPILATION }
-            if (toolStep?.status != StepStatus.SUCCESS) {
-                tools.addAll(listOf("adb", "fastboot", "mke2fs", "dump.erofs", "mkfs.erofs", "img2sdat"))
-                publications.addAll(listOf("lpmake", "lpunpack", "avbtool", "unpack_bootimg", "payload-dumper-go"))
-            }
-        }
-
-        return PlannedSetupChanges(
-            packagesToInstall = packages.distinct(),
-            submodulesToSync = submodules.distinct(),
-            toolsToCompile = tools.distinct(),
-            toolsToPublish = publications.distinct(),
-            requiresElevation = requiresElevation,
-            elevationReason = elevationReason,
-            targetDistro = distro,
-            autoDoctorRemediation = autoDoc,
-        )
+        launchPreview(SetupPlanKind.CACHE_RESET, null, null)
     }
 }
