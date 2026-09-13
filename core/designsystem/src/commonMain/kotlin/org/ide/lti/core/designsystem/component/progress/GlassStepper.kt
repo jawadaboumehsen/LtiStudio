@@ -12,6 +12,7 @@ package org.ide.lti.core.designsystem.component.progress
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +20,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
@@ -138,7 +141,9 @@ fun GlassStepper(
         when (orientation) {
             GlassStepperOrientation.Horizontal -> {
                 Row(
-                    modifier = modifier.fillMaxWidth(),
+                    modifier = modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -149,7 +154,12 @@ fun GlassStepper(
                             isBusy = isBusy,
                             onRetry = onRetryStep?.let { retry -> { retry(step.id) } },
                             onClick = onStepClick?.let { click -> { click(step.id) } },
-                            modifier = Modifier.weight(1f),
+                            // Fixed floor, no weight(): weight() cannot combine with the
+                            // Row's horizontalScroll (weight needs bounded max width, a
+                            // scrollable row measures children unbounded). Below this floor
+                            // the row scrolls instead of squeezing nodes into illegible
+                            // slivers; above it, nodes simply keep their natural width.
+                            modifier = Modifier.widthIn(min = ComponentSize.StepNodeMinWidth),
                         )
 
                         if (index < steps.size - 1) {
@@ -337,19 +347,6 @@ private fun GlassStepNode(
                             tint = glassColors.onGlassMuted,
                             modifier = Modifier.size(IconSize.Small),
                         )
-                        GlassStepStatus.RESTORED -> Box(contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(IconSize.Small),
-                                strokeWidth = StrokeWidth.Hairline,
-                                color = glassColors.onGlassMuted,
-                            )
-                            Icon(
-                                painter = AppIcons.CheckPainterResource(),
-                                contentDescription = "Restored",
-                                tint = glassColors.onGlassMuted.copy(alpha = AlphaTokens.Muted),
-                                modifier = Modifier.size(IconSize.Indicator),
-                            )
-                        }
                         GlassStepStatus.RESTORED -> Box(contentAlignment = Alignment.Center) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(IconSize.Small),

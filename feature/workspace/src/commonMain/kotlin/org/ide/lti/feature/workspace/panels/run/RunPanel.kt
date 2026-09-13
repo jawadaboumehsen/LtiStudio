@@ -21,6 +21,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.GlassCard
@@ -104,11 +105,16 @@ private fun ActiveRunContent(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column {
+            // weight(fill = false): this title/subtitle column is the flexible side of the
+            // header — it truncates first at narrow widths so the action buttons on the
+            // right (fixed content, never wrapped) always keep the space they need.
+            Column(modifier = Modifier.weight(1f, fill = false)) {
                 Text(
                     text = "ROM Build Pipeline",
                     style = typography.titleMedium,
                     color = glassColors.onGlass,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
                 Text(
                     text = if (uiState.currentWorkspace != null) {
@@ -118,6 +124,8 @@ private fun ActiveRunContent(
                     },
                     style = typography.bodySmall,
                     color = glassColors.onGlassSecondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
 
@@ -134,6 +142,9 @@ private fun ActiveRunContent(
                         Text(
                             text = if (uiState.isCancelling) "Cancelling..." else "Cancel",
                             style = typography.labelMedium,
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = TextOverflow.Ellipsis,
                         )
                     }
                 }
@@ -146,6 +157,9 @@ private fun ActiveRunContent(
                     Text(
                         text = if (uiState.isRunning) "Building..." else "Start Pipeline",
                         style = typography.labelMedium,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
