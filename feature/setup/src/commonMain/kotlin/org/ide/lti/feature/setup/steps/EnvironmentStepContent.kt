@@ -81,6 +81,7 @@ fun EnvironmentStepContent(
     onNavigateToProjects: (() -> Unit)? = null,
     autoRunOnLaunch: Boolean = true,
     activityState: SetupActivityState? = null,
+    activityListState: androidx.compose.foundation.lazy.LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
 ) {
     EnvironmentStepContent(
         toolchainSetupState = state.toolchainSetupState,
@@ -112,6 +113,7 @@ fun EnvironmentStepContent(
         onSetAutoDoctorEnabled = actions.onSetAutoDoctorEnabled,
         onResetToolchainCache = actions.onResetToolchainCache,
         activityState = activityState,
+        activityListState = activityListState,
     )
 }
 
@@ -165,6 +167,7 @@ fun EnvironmentStepContent(
     onSetAutoDoctorEnabled: (Boolean) -> Unit = {},
     onResetToolchainCache: () -> Unit = {},
     activityState: SetupActivityState? = null,
+    activityListState: androidx.compose.foundation.lazy.LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
 ) {
     val glassColors = GlassTheme.colors
     val diagnostics = glassColors.diagnostics
@@ -326,6 +329,7 @@ fun EnvironmentStepContent(
                         title = "Execution Terminal Logs",
                         isRunning = toolchainSetupState.isBusy,
                         backdrop = resolvedBackdrop,
+                        listState = activityListState,
                     )
                 } else {
                     GlassConsoleDrawer(

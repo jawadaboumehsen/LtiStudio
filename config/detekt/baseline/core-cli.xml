@@ -1,0 +1,9 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues></ManuallySuppressedIssues>
+  <CurrentIssues>
+    <ID>CyclomaticComplexMethod:CommandCompleter.kt$DefaultCommandCompleter$override fun complete(input: String): List&lt;String&gt;</ID>
+    <ID>MaxLineLength:CommandCompleter.kt$DefaultCommandCompleter$candidates.addAll(currentNode.subcommands.keys.filter { it.startsWith(currentToken, ignoreCase = true) })</ID>
+    <ID>ReturnCount:CommandCompleter.kt$DefaultCommandCompleter$override fun complete(input: String): List&lt;String&gt;</ID>
+  </CurrentIssues>
+</SmellBaseline>

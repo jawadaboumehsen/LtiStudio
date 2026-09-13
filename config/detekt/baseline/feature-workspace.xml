@@ -1,5 +1,71 @@
 <?xml version="1.0" ?>
 <SmellBaseline>
   <ManuallySuppressedIssues></ManuallySuppressedIssues>
-  <CurrentIssues></CurrentIssues>
+  <CurrentIssues>
+    <ID>ComposableParamOrder:CreateWorkspaceScreen.kt$CreateWorkspaceScreen</ID>
+    <ID>ComposableParamOrder:RunPanel.kt$ActiveRunContent</ID>
+    <ID>ComposableParamOrder:RunPanel.kt$RunPanel</ID>
+    <ID>ComposableParamOrder:TargetRunConfigurationBar.kt$TargetRunConfigurationBar</ID>
+    <ID>CyclomaticComplexMethod:CreateWorkspaceViewModel.kt$CreateWorkspaceViewModel$fun startCreation()</ID>
+    <ID>CyclomaticComplexMethod:RunPanel.kt$@Composable private fun ActiveRunContent( viewModel: BuildRunViewModel, onNavigateToSetup: (() -&gt; Unit)? = null, modifier: Modifier = Modifier, )</ID>
+    <ID>CyclomaticComplexMethod:StagePipelineView.kt$@Composable public fun StagePipelineView( latestRun: BuildRun?, isBusy: Boolean, modifier: Modifier = Modifier, orientation: GlassStepperOrientation = GlassStepperOrientation.Horizontal, )</ID>
+    <ID>CyclomaticComplexMethod:WorkspaceScreen.kt$@Composable fun WorkspaceScreen( modifier: Modifier = Modifier, onOpenSettings: () -&gt; Unit = {}, onOpenNotifications: () -&gt; Unit = {}, onOpenConfigurations: () -&gt; Unit = {}, onOpenEditConfiguration: (String) -&gt; Unit = { onOpenConfigurations() }, onOpenAddConfiguration: () -&gt; Unit = onOpenConfigurations, onNavigateToSetup: () -&gt; Unit = {}, viewModel: WorkspaceViewModel = koinViewModel(), editorViewModel: EditorViewModel = koinViewModel(), explorerViewModel: ExplorerViewModel = koinViewModel(), buildRunViewModel: BuildRunViewModel = koinViewModel(), )</ID>
+    <ID>LongMethod:RunPanel.kt$@Composable private fun ActiveRunContent( viewModel: BuildRunViewModel, onNavigateToSetup: (() -&gt; Unit)? = null, modifier: Modifier = Modifier, )</ID>
+    <ID>LongMethod:TargetRunConfigurationBar.kt$@Composable fun TargetRunConfigurationBar( selectedTarget: TargetDevice, region: TargetRegion, onOpenWorkspaceConfiguration: () -&gt; Unit, onOpenEditConfiguration: () -&gt; Unit, onOpenAddConfiguration: () -&gt; Unit, onCloseWorkspace: () -&gt; Unit = {}, // Connected Device / ADB Parameters connectedDevices: List&lt;ConnectedTargetDevice&gt; = emptyList(), selectedConnectedDevice: ConnectedTargetDevice? = null, isRefreshingDevices: Boolean = false, onSelectConnectedDevice: (String?) -&gt; Unit = {}, onRefreshConnectedDevices: () -&gt; Unit = {}, onRebootConnectedDevice: (String, String) -&gt; Unit = { _, _ -&gt; }, onOpenWifiPairing: () -&gt; Unit = {}, modifier: Modifier = Modifier, )</ID>
+    <ID>LongMethod:WorkspaceScreen.kt$@Composable fun WorkspaceScreen( modifier: Modifier = Modifier, onOpenSettings: () -&gt; Unit = {}, onOpenNotifications: () -&gt; Unit = {}, onOpenConfigurations: () -&gt; Unit = {}, onOpenEditConfiguration: (String) -&gt; Unit = { onOpenConfigurations() }, onOpenAddConfiguration: () -&gt; Unit = onOpenConfigurations, onNavigateToSetup: () -&gt; Unit = {}, viewModel: WorkspaceViewModel = koinViewModel(), editorViewModel: EditorViewModel = koinViewModel(), explorerViewModel: ExplorerViewModel = koinViewModel(), buildRunViewModel: BuildRunViewModel = koinViewModel(), )</ID>
+    <ID>MaxLineLength:BuildRunReattachTest.kt$BuildRunReattachTest$val</ID>
+    <ID>MaxLineLength:BuildRunReattachTest.kt$BuildRunReattachTest$workspaceRepo</ID>
+    <ID>MaxLineLength:BuildRunReattachTest.kt$BuildRunReattachTest.&lt;no name provided&gt;$override suspend</ID>
+    <ID>MaxLineLength:BuildRunReattachTest.kt$BuildRunReattachTest.FakeReadinessPort$override fun observe(): Flow&lt;EnvironmentReadiness&gt;</ID>
+    <ID>MaxLineLength:BuildRunReattachTest.kt$BuildRunReattachTest.FakeReadinessPort$override suspend fun forWorkspace(workspace: Workspace): EnvironmentReadiness</ID>
+    <ID>MaxLineLength:BuildRunReattachTest.kt$BuildRunReattachTest.FakeReadinessPort$override suspend fun refresh(): EnvironmentReadiness</ID>
+    <ID>MaxLineLength:BuildRunReattachTest.kt$BuildRunReattachTest.FakeTargetRepository$override suspend fun selectTarget(targetId: String): Result&lt;TargetDevice&gt;</ID>
+    <ID>MaxLineLength:BuildRunViewModel.kt$BuildRunViewModel$?:</ID>
+    <ID>MaxLineLength:BuildRunViewModel.kt$BuildRunViewModel$val currentIsReady = state.environmentReadiness?.state?.let { it == EnvironmentReadinessState.READY } ?: true</ID>
+    <ID>MaxLineLength:BuildRunViewModelTest.kt$BuildRunViewModelTest$val orchestrator = PipelineOrchestrator(executionPort = executionPort, runRepository = runRepo, vendoredFiles = NoVendoredFiles)</ID>
+    <ID>MaxLineLength:BuildRunViewModelTest.kt$BuildRunViewModelTest.FakeReadinessPort$override fun observe(): Flow&lt;EnvironmentReadiness&gt;</ID>
+    <ID>MaxLineLength:BuildRunViewModelTest.kt$BuildRunViewModelTest.FakeReadinessPort$override suspend fun forWorkspace(workspace: Workspace): EnvironmentReadiness</ID>
+    <ID>MaxLineLength:BuildRunViewModelTest.kt$BuildRunViewModelTest.FakeReadinessPort$override suspend fun refresh(): EnvironmentReadiness</ID>
+    <ID>MaxLineLength:BuildRunViewModelTest.kt$BuildRunViewModelTest.FakeTargetRepository$override suspend fun selectTarget(targetId: String): Result&lt;TargetDevice&gt;</ID>
+    <ID>MaxLineLength:CreateWorkspaceScreen.kt$AnimatedVisibility</ID>
+    <ID>MaxLineLength:CreateWorkspaceScreen.kt$description = uiState.remediation ?: "The build environment or service daemon is currently unreachable."</ID>
+    <ID>MaxLineLength:CreateWorkspaceScreen.kt$enabled = !uiState.isProvisioning &amp;&amp; uiState.name.isNotBlank() &amp;&amp; uiState.selectedTarget != null &amp;&amp; uiState.canCreate</ID>
+    <ID>MaxLineLength:ExplorerPanel.kt$val buttonShape = if (GlassTheme.appTheme == AppTheme.Dark) GlassShapes.MediumSmall else GlassShapes.Capsule</ID>
+    <ID>MaxLineLength:OfflineWorkspaceTest.kt$OfflineWorkspaceTest.TestPipelineExecutionPort$override suspend fun stat(ws: Workspace, relPath: String): FileStat</ID>
+    <ID>MaxLineLength:OfflineWorkspaceTest.kt$OfflineWorkspaceTest.TestTargetRepository$override suspend fun selectTarget(targetId: String): Result&lt;TargetDevice&gt;</ID>
+    <ID>MaxLineLength:RunPanel.kt$description = uiState.remediation ?: "The build environment or service daemon is currently unavailable."</ID>
+    <ID>MaxLineLength:RunPanel.kt$if</ID>
+    <ID>MaxLineLength:RunPanel.kt$primaryAction = if (onNavigateToSetup != null) GlassBannerAction("Go to Setup") { onNavigateToSetup() } else null</ID>
+    <ID>MaxLineLength:RunPanel.kt$text = if (uiState.isRunning) "Artifacts will appear after build completes." else "No build artifacts produced yet."</ID>
+    <ID>MaxLineLength:TargetRunConfigurationBar.kt$"Active Deployment Target: ${dev.modelName} (${dev.serial}) via ${dev.connectionType.displayName} • Status: ${dev.state.displayName}"</ID>
+    <ID>MaxLineLength:TargetRunConfigurationBar.kt$val statusNote = "${dev.serial} • ${dev.connectionType.displayName} • Android ${dev.androidVersion ?: "15"}"</ID>
+    <ID>MaxLineLength:WorkspaceScreen.kt$subtitle = if (ltiLayoutState.showBottom) "Hide build terminal drawer" else "Show build terminal drawer"</ID>
+    <ID>MaxLineLength:WorkspaceScreen.kt$subtitle = if (ltiLayoutState.showLeft) "Collapse left activity panel" else "Expand left activity panel"</ID>
+    <ID>MaxLineLength:WorkspaceViewModel.kt$WorkspaceViewModel.Companion$dynamicPartitions = listOf("system", "vendor", "product", "system_ext", "odm", "vendor_dlkm", "system_dlkm")</ID>
+    <ID>MaxLineLength:WorkspaceViewModelTest.kt$WorkspaceViewModelTest$assertEquals(org.ide.lti.core.model.target.AdbDeviceState.FASTBOOT, viewModel.selectedConnectedDevice.value?.state)</ID>
+    <ID>MaxLineLength:WorkspaceViewModelTest.kt$WorkspaceViewModelTest$assertEquals(org.ide.lti.core.model.target.AdbDeviceState.ONLINE, viewModel.selectedConnectedDevice.value?.state)</ID>
+    <ID>MaxLineLength:WorkspaceViewModelTest.kt$WorkspaceViewModelTest$assertEquals(org.ide.lti.core.model.target.AdbDeviceState.RECOVERY, viewModel.selectedConnectedDevice.value?.state)</ID>
+    <ID>MaxLineLength:WorkspaceViewModelTest.kt$WorkspaceViewModelTest.FakeConnectedDeviceRepository$override suspend</ID>
+    <ID>ModifierMissing:GlassWifiPairingDialog.kt$GlassWifiPairingDialog</ID>
+    <ID>ReturnCount:BuildRunViewModel.kt$BuildRunViewModel$public fun cancelBuild()</ID>
+    <ID>ReturnCount:BuildRunViewModel.kt$BuildRunViewModel$public fun reattachBuild()</ID>
+    <ID>ReturnCount:CreateWorkspaceViewModel.kt$CreateWorkspaceViewModel$fun startCreation()</ID>
+    <ID>UnusedPrivateProperty:WorkspaceViewModelTest.kt$WorkspaceViewModelTest$val collectAvailable = backgroundScope.launch(testDispatcher) { viewModel.availableTargets.collect() }</ID>
+    <ID>UnusedPrivateProperty:WorkspaceViewModelTest.kt$WorkspaceViewModelTest$val collectDevices = backgroundScope.launch(testDispatcher) { viewModel.connectedDevices.collect() }</ID>
+    <ID>UnusedPrivateProperty:WorkspaceViewModelTest.kt$WorkspaceViewModelTest$val collectSelected = backgroundScope.launch(testDispatcher) { viewModel.selectedConnectedDevice.collect() }</ID>
+    <ID>UnusedPrivateProperty:WorkspaceViewModelTest.kt$WorkspaceViewModelTest$val collectTarget = backgroundScope.launch(testDispatcher) { viewModel.selectedTarget.collect() }</ID>
+    <ID>WildcardImport:BuildRunReattachTest.kt$import kotlin.test.*</ID>
+    <ID>WildcardImport:BuildRunReattachTest.kt$import org.ide.lti.core.domain.ports.*</ID>
+    <ID>WildcardImport:BuildRunReattachTest.kt$import org.ide.lti.core.model.run.*</ID>
+    <ID>WildcardImport:BuildRunReattachTest.kt$import org.ide.lti.core.model.target.*</ID>
+    <ID>WildcardImport:BuildRunReattachTest.kt$import org.ide.lti.core.model.workspace.*</ID>
+    <ID>WildcardImport:BuildRunViewModel.kt$import kotlinx.coroutines.flow.*</ID>
+    <ID>WildcardImport:BuildRunViewModelTest.kt$import kotlin.test.*</ID>
+    <ID>WildcardImport:BuildRunViewModelTest.kt$import org.ide.lti.core.domain.ports.*</ID>
+    <ID>WildcardImport:BuildRunViewModelTest.kt$import org.ide.lti.core.model.run.*</ID>
+    <ID>WildcardImport:BuildRunViewModelTest.kt$import org.ide.lti.core.model.target.*</ID>
+    <ID>WildcardImport:BuildRunViewModelTest.kt$import org.ide.lti.core.model.workspace.*</ID>
+    <ID>WildcardImport:RunHistoryPanel.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:RunPanel.kt$import androidx.compose.foundation.layout.*</ID>
+  </CurrentIssues>
 </SmellBaseline>

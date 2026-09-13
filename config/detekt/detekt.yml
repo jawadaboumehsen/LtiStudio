@@ -445,6 +445,7 @@ naming:
         "**/androidTest/**",
         "**/commonTest/**",
         "**/jvmTest/**",
+        "**/desktopTest/**",
         "**/androidUnitTest/**",
         "**/androidInstrumentedTest/**",
         "**/jsTest/**",

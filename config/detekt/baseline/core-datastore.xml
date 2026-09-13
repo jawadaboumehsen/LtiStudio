@@ -1,0 +1,10 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues></ManuallySuppressedIssues>
+  <CurrentIssues>
+    <ID>MatchingDeclarationName:RunFileStorage.desktop.kt$DesktopRunFileStorage : RunFileStorage</ID>
+    <ID>MaxLineLength:LtiPreferencesDataSource.kt$LtiPreferencesDataSource$suspend fun setEditorSettings(editorSettings: EditorSettings)</ID>
+    <ID>MaxLineLength:ToolchainPreferencesDataSource.kt$ToolchainPreferencesDataSource$public suspend</ID>
+    <ID>MaxLineLength:ToolchainPreferencesDataSourceTest.kt$ToolchainPreferencesDataSourceTest$settings.putString(ToolchainPreferencesDataSource.KEY_TOOLCHAIN_PERSISTENCE_STATE, "{ corrupt_invalid_json: true ...")</ID>
+  </CurrentIssues>
+</SmellBaseline>

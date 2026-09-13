@@ -87,6 +87,7 @@ fun SetupActivityPanel(
     isRunning: Boolean = false,
     defaultExpanded: Boolean = true,
     backdrop: LayerBackdrop? = null,
+    listState: androidx.compose.foundation.lazy.LazyListState = rememberLazyListState(),
 ) {
     val glassColors = GlassTheme.colors
     val diagnostics = glassColors.diagnostics
@@ -101,7 +102,6 @@ fun SetupActivityPanel(
     var isExpanded by remember { mutableStateOf(defaultExpanded) }
     var isCopiedAll by remember { mutableStateOf(false) }
     var isCopiedSelection by remember { mutableStateOf(false) }
-    val listState = rememberLazyListState()
 
     LaunchedEffect(isCopiedAll) {
         if (isCopiedAll) {

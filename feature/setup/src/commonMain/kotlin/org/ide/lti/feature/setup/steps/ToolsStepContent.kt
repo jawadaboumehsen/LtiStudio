@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -63,6 +64,7 @@ fun ToolsStepContent(
     activityState: SetupActivityState? = null,
     searchFocusRequester: FocusRequester = remember { FocusRequester() },
     focusSearchOnMount: Boolean = false,
+    scrollState: ScrollState = rememberScrollState(),
 ) {
     val glassColors = GlassTheme.colors
     val coroutineScope = rememberCoroutineScope()
@@ -113,7 +115,7 @@ fun ToolsStepContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight()
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollState)
                 .padding(
                     start = Spacing.ScreenHorizontal,
                     end = Spacing.ScreenHorizontal,

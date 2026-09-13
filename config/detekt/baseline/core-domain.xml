@@ -1,5 +1,64 @@
 <?xml version="1.0" ?>
 <SmellBaseline>
   <ManuallySuppressedIssues></ManuallySuppressedIssues>
-  <CurrentIssues></CurrentIssues>
+  <CurrentIssues>
+    <ID>ComplexCondition:PipelineOrchestrator.kt$PipelineOrchestrator$status == null || status.status == "INTERRUPTED" || (status.status == "RUNNING" &amp;&amp; status.pid == null &amp;&amp; status.endedAtEpochMs != null)</ID>
+    <ID>CyclomaticComplexMethod:GetRunHistoryUseCase.kt$GetRunHistoryUseCase$public open suspend operator fun invoke( workspaceId: String, refreshArtifactPresence: Boolean = true, ): List&lt;BuildRun&gt;</ID>
+    <ID>CyclomaticComplexMethod:PipelineOrchestrator.kt$PipelineOrchestrator$private suspend fun executeStage(driver: Driver, stage: StageDefinition, isResumeStage: Boolean = false)</ID>
+    <ID>CyclomaticComplexMethod:PipelineOrchestrator.kt$PipelineOrchestrator$private suspend fun reconcileRecordedToolStep( driver: Driver, stage: StageDefinition, index: Int, step: PipelineStep.Tool, recorded: StageStep, ): Boolean</ID>
+    <ID>CyclomaticComplexMethod:PipelineOrchestrator.kt$PipelineOrchestrator$public fun drive(runId: String, ctx: StageContext, driverInstanceId: String): Flow&lt;PipelineEvent&gt;</ID>
+    <ID>CyclomaticComplexMethod:PipelineOrchestrator.kt$PipelineOrchestrator$public fun resume(run: BuildRun, ctx: StageContext, driverInstanceId: String): Flow&lt;PipelineEvent&gt;</ID>
+    <ID>LongMethod:ToolchainProvisioningService.kt$ToolchainSetupState.Companion$public fun defaultToolsMatrix(): List&lt;ToolComponentItem&gt;</ID>
+    <ID>MaxLineLength:PipelineOrchestrator.kt$PipelineOrchestrator$driver.persist { it.withStage(index) { s -&gt; s.copy(state = StageState.RUNNING, startedAt = startedStage) } }</ID>
+    <ID>MaxLineLength:PipelineOrchestrator.kt$PipelineOrchestrator$throw StageFailure(index, exitCode, "${step.label}: expected '$missing' in ${step.command.toolId} output")</ID>
+    <ID>MaxLineLength:PipelineResumeTest.kt$PipelineResumeTest$assertEquals(PipelineEvent.StageInterrupted(StageId.FIRMWARE_ACQUISITION), events.filterIsInstance&lt;PipelineEvent.StageInterrupted&gt;().single())</ID>
+    <ID>MaxLineLength:PipelineResumeTest.kt$PipelineResumeTest$command = StepCommand("curl", listOf("-fL", "--retry", "3", "-C", "-", "-o", "$ws/$archiveRel.partial", "https://url"))</ID>
+    <ID>MaxLineLength:PipelineResumeTest.kt$PipelineResumeTest$stages = listOf(StageOutcome(stageId = StageId.FIRMWARE_ACQUISITION, state = StageState.RUNNING, startedAt = now))</ID>
+    <ID>MaxLineLength:StageDefinitionsTest.kt$StageDefinitionsTest$"# file: $mnt\nsecurity.selinux=\"u:object_r:rootfs:s0\"\n\n# file: $mnt/bin/run-as\nsecurity.selinux=\"u:object_r:runas_exec:s0\"\n"</ID>
+    <ID>MaxLineLength:StageDefinitionsTest.kt$StageDefinitionsTest$"--fs-config-file"</ID>
+    <ID>MaxLineLength:StageDefinitionsTest.kt$StageDefinitionsTest$RuntimeKeys.selinuxDump("odm") to "# file: $ws/firmware/extracted/odm_mnt\nsecurity.selinux=\"u:object_r:vendor_file:s0\""</ID>
+    <ID>MaxLineLength:StageDefinitionsTest.kt$StageDefinitionsTest$assertEquals(listOf("$ws/firmware/extracted/odm.img", "$ws/firmware/extracted/odm_mnt"), s2tools.first { it.toolId == "erofsfuse" }.args)</ID>
+    <ID>MaxLineLength:StageDefinitionsTest.kt$StageDefinitionsTest$assertEquals(listOf("-a", "--delete", "$ws/firmware/extracted/odm/", "$ws/work/odm/"), tools(s3).first { it.toolId == "rsync" }.args)</ID>
+    <ID>MaxLineLength:StageDefinitionsTest.kt$StageDefinitionsTest$assertEquals(listOf("-o", "$ws/firmware/downloaded/NP05J_CN.zip", "-d", "$ws/firmware/raw"), s2.first { it.toolId == "unzip" }.args)</ID>
+    <ID>MaxLineLength:StageDefinitionsTest.kt$StageDefinitionsTest$assertEquals(listOf("-o", "$ws/firmware/extracted", "$ws/firmware/payload.bin"), s2tools.single { it.toolId == "payload-dumper-go" }.args)</ID>
+    <ID>MaxLineLength:StageDefinitionsTest.kt$StageDefinitionsTest$assertEquals(listOf("erase_footer", "--image", "$ws/work/kernel/boot.img"), tools(erased).first { it.args.firstOrNull() == "erase_footer" }.args)</ID>
+    <ID>MaxLineLength:StageDefinitionsTest.kt$StageDefinitionsTest$assertTrue(result.fileContextContent.contains("""/system/app\[test\]/v1\.0\+beta u:object_r:app_data_file:s0"""))</ID>
+    <ID>MaxLineLength:StageDefinitionsTest.kt$StageDefinitionsTest$assertTrue(s2tools.any { it.toolId == "cp" &amp;&amp; it.args == listOf("-a", "-T", "$ws/firmware/extracted/odm_mnt", "$ws/firmware/extracted/odm") })</ID>
+    <ID>MaxLineLength:StageDefinitionsTest.kt$StageDefinitionsTest$assertTrue(s2tools.any { it.toolId == "getfattr" &amp;&amp; it.args.containsAll(listOf("-R", "-h", "-n", "security.selinux", "--absolute-names")) })</ID>
+    <ID>MaxLineLength:StageDefinitionsTest.kt$StageDefinitionsTest$listOf("-fL", "--retry", "3", "-C", "-", "-o", "$ws/firmware/downloaded/NP05J_GB.zip.partial", "https://update.redmagic.gg/firmware/NP05J_GB.zip")</ID>
+    <ID>MaxLineLength:StageDefinitionsTest.kt$StageDefinitionsTest$private fun tools(steps: List&lt;PipelineStep&gt;): List&lt;StepCommand&gt;</ID>
+    <ID>MaxLineLength:StageDefinitionsTest.kt$StageDefinitionsTest$val erased = WorkTreeAssemblyStage().plan(ctx.copy(runtimeValues = mapOf(RuntimeKeys.exitOf(RuntimeKeys.kernelInfo("boot")) to "0")))</ID>
+    <ID>MaxLineLength:StageDefinitionsTest.kt$StageDefinitionsTest$val key3DifferentVersion = CacheKeys.stage3AssemblyKey(key2, testTargetGlobal, ctx1.snapshot.copy(romVersion = "2.0.0"))</ID>
+    <ID>MaxLineLength:StageDefinitionsTest.kt$StageDefinitionsTest$val key6DifferentBase = CacheKeys.stage6ManifestKey(key5, ctx1.snapshot.copy(otaBaseUrl = "https://ota.new.org"))</ID>
+    <ID>MaxLineLength:StageDefinitionsTest.kt$StageDefinitionsTest$val raw = tools(FirmwareExtractionStage().plan(ctx.copy(runtimeValues = mapOf(RuntimeKeys.SUPER_MAGIC to "0000"))))</ID>
+    <ID>MaxLineLength:StageDefinitionsTest.kt$StageDefinitionsTest$val sparse = tools(FirmwareExtractionStage().plan(ctx.copy(runtimeValues = mapOf(RuntimeKeys.SUPER_MAGIC to "3aff26ed"))))</ID>
+    <ID>MaxLineLength:StageDefinitionsTest.kt$StageDefinitionsTest$val withSha = FirmwareAcquisitionStage().plan(ctx.copy(runtimeValues = mapOf(RuntimeKeys.ARCHIVE_SHA256 to "abc x")))</ID>
+    <ID>MaxLineLength:ToolchainProvisioningService.kt$ToolchainSetupState.Companion$detail = "Non-interactive passwordless sudo for headless package management and automated system configuration."</ID>
+    <ID>MaxLineLength:ToolchainProvisioningService.kt$ToolchainSetupState.Companion$detail = "pkg-config, protobuf, brotli, lz4, zstd, pcre2, libusb, uuid, and libfuse3 development headers."</ID>
+    <ID>MaxLineLength:UpdaterScriptWriter.kt$UpdaterScriptWriter$sb.append("assert(\n $assertions ||\n abort(\"E3004: This package is for \\\"${target.assertModels.joinToString(",")}\\\" devices; this is a \\\"\" + getprop(\"ro.product.device\") + \"\\\".\");\n);\n\n")</ID>
+    <ID>MaxLineLength:UpdaterScriptWriter.kt$UpdaterScriptWriter$sb.append("block_image_update(map_partition(\"$part\"), package_extract_file(\"$part.transfer.list\"), \"$part.new.dat.br\", \"$part.patch.dat\");\n")</ID>
+    <ID>MaxLineLength:UpdaterScriptWriter.kt$UpdaterScriptWriter$sb.append("run_program(\"/system/bin/sh\", \"-c\", \"if /system/bin/mountpoint -q $mp; then /system/bin/umount $mp; fi\");\n")</ID>
+    <ID>MaxLineLength:UpdaterScriptWriter.kt$UpdaterScriptWriter$sb.append("update_dynamic_partitions(package_extract_file(\"dynamic_partitions_op_list\"), package_extract_file(\"unsparse_super_empty.img\"));\n\n")</ID>
+    <ID>ReturnCount:GetRunHistoryUseCase.kt$GetRunHistoryUseCase$public open suspend operator fun invoke( workspaceId: String, refreshArtifactPresence: Boolean = true, ): List&lt;BuildRun&gt;</ID>
+    <ID>ReturnCount:InMemoryRunRepository.kt$InMemoryRunRepository$override suspend fun claimDriver(runId: String, instanceId: String, now: Long): Boolean</ID>
+    <ID>ReturnCount:OpenWorkspaceUseCase.kt$OpenWorkspaceUseCase$suspend operator fun invoke(workspaceId: String): Result&lt;Workspace&gt;</ID>
+    <ID>ReturnCount:PipelineOrchestrator.kt$PipelineOrchestrator$private suspend fun reconcileRecordedToolStep( driver: Driver, stage: StageDefinition, index: Int, step: PipelineStep.Tool, recorded: StageStep, ): Boolean</ID>
+    <ID>ReturnCount:PipelineOrchestrator.kt$PipelineOrchestrator$public suspend fun pause(runId: String): Boolean</ID>
+    <ID>ReturnCount:ReattachRunUseCase.kt$ReattachRunUseCase$public open suspend operator fun invoke( workspaceId: String, runId: String? = null, driverInstanceId: String = "driver_${UUID.randomUUID()}", ): Flow&lt;PipelineEvent&gt;?</ID>
+    <ID>ReturnCount:SaveTargetConfigurationUseCase.kt$SaveTargetConfigurationUseCase$suspend operator fun invoke( target: TargetDevice, isNew: Boolean = false, ): Result&lt;TargetConfigurationResult&gt;</ID>
+    <ID>ThrowsCount:PipelineOrchestrator.kt$PipelineOrchestrator$private suspend fun reconcileRecordedToolStep( driver: Driver, stage: StageDefinition, index: Int, step: PipelineStep.Tool, recorded: StageStep, ): Boolean</ID>
+    <ID>UnusedPrivateProperty:StageDefinitionsTest.kt$StageDefinitionsTest$private val testSnapshotGlobalOta get() = fx.snapshotGlobalOta</ID>
+    <ID>UseCheckOrError:GetRunHistoryUseCaseTest.kt$GetRunHistoryUseCaseTest.FakePipelineExecutionPort$throw IllegalStateException("Transport disconnected")</ID>
+    <ID>WildcardImport:PipelineResumeTest.kt$import kotlin.test.*</ID>
+    <ID>WildcardImport:PipelineResumeTest.kt$import org.ide.lti.core.model.run.*</ID>
+    <ID>WildcardImport:StageDefinitionsTest.kt$import kotlin.test.*</ID>
+    <ID>WildcardImport:StageDefinitionsTest.kt$import org.ide.lti.core.domain.pipeline.stages.*</ID>
+    <ID>WildcardImport:StageDefinitionsTest.kt$import org.ide.lti.core.domain.pipeline.text.*</ID>
+    <ID>WildcardImport:StageDefinitionsTest.kt$import org.ide.lti.core.model.target.*</ID>
+    <ID>WildcardImport:StageDefinitionsTest.kt$import org.ide.lti.core.model.workspace.*</ID>
+    <ID>WildcardImport:StartPipelineRunUseCaseTest.kt$import kotlin.test.*</ID>
+    <ID>WildcardImport:StartPipelineRunUseCaseTest.kt$import org.ide.lti.core.domain.ports.*</ID>
+    <ID>WildcardImport:StartPipelineRunUseCaseTest.kt$import org.ide.lti.core.model.target.*</ID>
+    <ID>WildcardImport:StartPipelineRunUseCaseTest.kt$import org.ide.lti.core.model.workspace.*</ID>
+  </CurrentIssues>
 </SmellBaseline>

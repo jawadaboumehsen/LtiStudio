@@ -99,6 +99,7 @@ fun ProjectsStepContent(
     onNavigateToEnvironment: () -> Unit = {},
     searchFocusRequester: FocusRequester = remember { FocusRequester() },
     focusSearchOnMount: Boolean = false,
+    lazyListState: androidx.compose.foundation.lazy.LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
 ) {
     val glassColors = GlassTheme.colors
     @Suppress("DEPRECATION")
@@ -299,6 +300,7 @@ fun ProjectsStepContent(
             }
         } else {
             LazyColumn(
+                state = lazyListState,
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f, fill = false),

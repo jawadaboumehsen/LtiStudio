@@ -1,0 +1,29 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues></ManuallySuppressedIssues>
+  <CurrentIssues>
+    <ID>ComposableParamOrder:ConfigurationScreen.kt$ConfigurationScreen</ID>
+    <ID>LongMethod:GeneralConfigTab.kt$@Composable fun GeneralConfigTab( target: TargetDevice, onTargetChange: (TargetDevice) -&gt; Unit, modifier: Modifier = Modifier, )</ID>
+    <ID>LongMethod:HardwareConfigTab.kt$@Composable fun HardwareConfigTab( target: TargetDevice, onTargetChange: (TargetDevice) -&gt; Unit, modifier: Modifier = Modifier, )</ID>
+    <ID>MatchingDeclarationName:ConfigurationNavigation.kt$ConfigurationNavMode</ID>
+    <ID>MaxLineLength:ConfigurationNavigation.kt$private</ID>
+    <ID>MaxLineLength:ConfigurationNavigation.kt$private const val CONFIGURATION_ROUTE_PATTERN = "$CONFIGURATION_ROUTE?$TARGET_ID_ARG={$TARGET_ID_ARG}&amp;$MODE_ARG={$MODE_ARG}"</ID>
+    <ID>MaxLineLength:ConfigurationViewModel.kt$ConfigurationViewModel$val</ID>
+    <ID>MaxLineLength:ConfigurationViewModelTest.kt$ConfigurationViewModelTest$assertTrue(viewModel.uiState.value.validationErrors.any { it is TargetValidationError.EmptyDynamicPartitions })</ID>
+    <ID>MaxLineLength:ConfigurationViewModelTest.kt$ConfigurationViewModelTest$assertTrue(viewModel.uiState.value.validationErrors.any { it is TargetValidationError.InvalidSuperPartitionSize })</ID>
+    <ID>MaxLineLength:GeneralConfigTab.kt$"Qualified: Verified for production builds, OTA payload unpack, EROFS conversion, and direct fastboot flashing."</ID>
+    <ID>MaxLineLength:GeneralConfigTab.kt$"Unverified: Draft target profile. Manual partition geometry verification is required prior to flashing."</ID>
+    <ID>MaxLineLength:HardwareConfigTab.kt$onValueChange = { raw -&gt; raw.toIntOrNull()?.let { onTargetChange(target.copy(superMetadataSlots = it)) } }</ID>
+    <ID>MaxLineLength:HardwareConfigTab.kt$onValueChange = { raw -&gt; raw.toLongOrNull()?.let { onTargetChange(target.copy(superGroupBytes = it)) } }</ID>
+    <ID>MaxLineLength:HardwareConfigTab.kt$onValueChange = { raw -&gt; raw.toLongOrNull()?.let { onTargetChange(target.copy(superPartitionBytes = it)) } }</ID>
+    <ID>MaxLineLength:OsStreamsConfigTab.kt$text = "Baseline firmware acquisition mode (official OTA download or raw archive import) is bound per-workspace inside Configuration Snapshots."</ID>
+    <ID>MaxLineLength:PartitionsConfigTab.kt$onTargetChange(target.copy(packagePolicy = target.packagePolicy.copy(recoverySystemMountPoint = it)))</ID>
+    <ID>MaxLineLength:PartitionsConfigTab.kt$onValueChange = { raw -&gt; raw.toLongOrNull()?.let { onTargetChange(target.copy(bootPartitionBytes = it)) } }</ID>
+    <ID>MaxLineLength:PartitionsConfigTab.kt$onValueChange = { raw -&gt; raw.toLongOrNull()?.let { onTargetChange(target.copy(dtboPartitionBytes = it)) } }</ID>
+    <ID>MaxLineLength:PartitionsConfigTab.kt$onValueChange = { raw -&gt; raw.toLongOrNull()?.let { onTargetChange(target.copy(initBootPartitionBytes = it)) } }</ID>
+    <ID>MaxLineLength:PartitionsConfigTab.kt$onValueChange = { raw -&gt; raw.toLongOrNull()?.let { onTargetChange(target.copy(vendorBootPartitionBytes = it)) } }</ID>
+    <ID>UnusedPrivateProperty:ConfigurationViewModel.kt$ConfigurationViewModel$private val getSelectedTargetUseCase: GetSelectedTargetUseCase</ID>
+    <ID>UnusedPrivateProperty:ConfigurationViewModel.kt$ConfigurationViewModel$private val selectTargetUseCase: SelectTargetUseCase</ID>
+    <ID>UnusedPrivateProperty:ConfigurationViewModelTest.kt$ConfigurationViewModelTest$val job = backgroundScope.launch(testDispatcher) { viewModel.uiState.collect() }</ID>
+  </CurrentIssues>
+</SmellBaseline>

@@ -174,17 +174,29 @@ fun SetupScreen(
         onRetryStage = viewModel::retryStage,
     )
 
-    SetupScreenContent(
-        state = uiState,
-        actions = uiActions,
-        onOpenConfigurations = onOpenConfigurations,
-        backdrop = backdrop,
+    SetupPerformanceScenarioHook(
         modifier = modifier,
-        isHelpSheetOpen = isHelpSheetOpen,
-        onDismissHelpSheet = { isHelpSheetOpen = false },
-        toolBrowserState = viewModel.toolBrowserState,
-        activityState = viewModel.setupActivityState,
-    )
+        onOpenWorkspace = onOpenWorkspace,
+        onOpenSettings = onOpenSettings,
+        onCreateWorkspace = onCreateWorkspace,
+        onOpenConfigurations = onOpenConfigurations,
+        onOpenManageTargets = onOpenManageTargets,
+        onOpenHelp = onOpenHelp,
+        backdrop = backdrop,
+        viewModel = viewModel,
+    ) {
+        SetupScreenContent(
+            state = uiState,
+            actions = uiActions,
+            onOpenConfigurations = onOpenConfigurations,
+            backdrop = backdrop,
+            modifier = modifier,
+            isHelpSheetOpen = isHelpSheetOpen,
+            onDismissHelpSheet = { isHelpSheetOpen = false },
+            toolBrowserState = viewModel.toolBrowserState,
+            activityState = viewModel.setupActivityState,
+        )
+    }
 }
 
 /**
@@ -206,6 +218,9 @@ fun SetupScreenContent(
     onDismissHelpSheet: () -> Unit = {},
     toolBrowserState: ToolBrowserState? = null,
     activityState: SetupActivityState? = null,
+    workspacesListState: androidx.compose.foundation.lazy.LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
+    toolsScrollState: androidx.compose.foundation.ScrollState = androidx.compose.foundation.rememberScrollState(),
+    activityListState: androidx.compose.foundation.lazy.LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
 ) {
     val ambientBackdrop = (backdrop as? LayerBackdrop) ?: (GlassTheme.backdrop as? LayerBackdrop)
     val resolvedBackdrop = ambientBackdrop ?: rememberLayerBackdrop()
@@ -424,6 +439,7 @@ fun SetupScreenContent(
                                     onNavigateToProjects = { onTabChange(SetupTab.PROJECTS) },
                                     resolvedBackdrop = resolvedBackdrop,
                                     activityState = activityState,
+                                    activityListState = activityListState,
                                 )
                             }
                             SetupTab.PROJECTS, SetupTab.LAUNCHPAD -> {
@@ -435,6 +451,7 @@ fun SetupScreenContent(
                                     onNavigateToEnvironment = { onTabChange(SetupTab.ENVIRONMENT) },
                                     searchFocusRequester = searchFocusRequester,
                                     focusSearchOnMount = pendingSearchFocus,
+                                    lazyListState = workspacesListState,
                                 )
                             }
                             SetupTab.TOOLS -> {
@@ -446,6 +463,7 @@ fun SetupScreenContent(
                                     activityState = activityState,
                                     searchFocusRequester = toolSearchFocusRequester,
                                     focusSearchOnMount = pendingSearchFocus,
+                                    scrollState = toolsScrollState,
                                 )
                             }
                         }
