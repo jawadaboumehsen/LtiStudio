@@ -1,6 +1,6 @@
 package org.ide.lti.core.domain.usecase.setup
 
-import org.ide.lti.core.domain.setup.StepStatus
+import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.domain.setup.ToolchainProvisioningService
 
 /**
@@ -9,5 +9,5 @@ import org.ide.lti.core.domain.setup.ToolchainProvisioningService
 class TestIndividualToolUseCase(
     private val toolchainService: ToolchainProvisioningService,
 ) {
-    suspend operator fun invoke(toolId: String): StepStatus = toolchainService.testTool(toolId)
+    suspend operator fun invoke(toolId: String): SetupOutcome = toolchainService.testTool(toolId)
 }

@@ -11,6 +11,7 @@ import io.ltirom.tooling.core.ports.DaemonSupervisorPort
 import io.ltirom.tooling.core.ports.RemoteTransportPort
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,11 +23,16 @@ import org.ide.lti.core.domain.ports.ToolPublicationPort
 import org.ide.lti.core.domain.repository.setup.ToolchainSetupRepository
 import org.ide.lti.core.domain.setup.DiagnosticCategory
 import org.ide.lti.core.domain.setup.DiagnosticCheckItem
+import org.ide.lti.core.domain.setup.SetupOutcome
+import org.ide.lti.core.domain.setup.SetupPlan
+import org.ide.lti.core.domain.setup.SetupPlanAction
+import org.ide.lti.core.domain.setup.SetupPlanKind
 import org.ide.lti.core.domain.setup.SetupStepDetail
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepProvenance
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolComponentItem
+import org.ide.lti.core.domain.setup.ToolEvidence
 import org.ide.lti.core.domain.setup.ToolchainProvisioningService
 import org.ide.lti.core.domain.setup.ToolchainSetupState
 import org.ide.lti.core.domain.setup.doctor.SystemDoctorPort
@@ -47,6 +53,7 @@ import java.io.File
  * - Persistence & Incremental Execution: Leverages [ToolchainSetupRepository] to eliminate redundant
  *   zero-start builds, Git clones, and native compilations across launches.
  */
+@Suppress("TooManyFunctions")
 public class WslToolchainProvisioner(
     private val supervisor: DaemonSupervisorPort,
     private val transport: RemoteTransportPort,
@@ -61,6 +68,10 @@ public class WslToolchainProvisioner(
     private val repository: ToolchainSetupRepository? = null,
     private val toolPublicationPort: ToolPublicationPort? = null,
 ) : ToolchainProvisioningService {
+
+    /** Last prepared plan; session-scoped until US2's SetupPlanFactory/coordinator replace it. */
+    private var activePlan: SetupPlan? = null
+    private val _operationOutcome = MutableStateFlow<SetupOutcome?>(null)
 
     private val _state = MutableStateFlow(restoreInitialState())
     override val state: StateFlow<ToolchainSetupState> = _state.asStateFlow()
@@ -878,10 +889,19 @@ public class WslToolchainProvisioner(
         success
     }
 
-    override suspend fun testTool(toolId: String): StepStatus = withContext(dispatcher) {
+    @Suppress("CyclomaticComplexMethod")
+    override suspend fun testTool(toolId: String): SetupOutcome = withContext(dispatcher) {
         val toolItem = _state.value.toolsMatrix.firstOrNull { it.id == toolId }
-            ?: return@withContext StepStatus.FAILED
-        if (_state.value.isBusy) return@withContext StepStatus.FAILED
+            ?: return@withContext SetupOutcome.Failed(
+                stage = SetupStepStage.TOOLCHAIN_COMPILATION.name,
+                reason = "Tool $toolId not found in tools matrix",
+            )
+        if (_state.value.isBusy) {
+            return@withContext SetupOutcome.Failed(
+                stage = SetupStepStage.TOOLCHAIN_COMPILATION.name,
+                reason = "Cannot test $toolId while another operation is active",
+            )
+        }
         val distro = detector.getDefaultDistro() ?: "Ubuntu"
         val userHome = runCatching {
             val res = transport.execute(ToolExecutionRequest(toolId = "printenv", arguments = listOf("HOME"), workingDirectory = "/"))
@@ -909,6 +929,7 @@ public class WslToolchainProvisioner(
             StepStatus.FAILED
         }
 
+        val now = System.currentTimeMillis()
         _state.update { s ->
             s.copy(
                 toolsMatrix = s.toolsMatrix.map {
@@ -926,11 +947,28 @@ public class WslToolchainProvisioner(
                     isVerified = true,
                     isCompiled = true,
                     binaryPath = if (exists) binaryPath else tool.binaryPath,
-                    lastVerifiedTimestamp = System.currentTimeMillis()
+                    lastVerifiedTimestamp = now
                 )
             }
-        }
-        testStatus
+            SetupOutcome.Succeeded(
+                evidence = mapOf(
+                    toolId to ToolEvidence(
+                        toolId = toolId,
+                        probeArgv = listOf(binaryPath, "--help"),
+                        acceptedExitCodes = setOf(0),
+                        isInstalled = exists,
+                        isVerified = true,
+                        isFailedExecution = false,
+                        lastVerifiedTimestamp = now
+                    )
+                )
+            )
+        } else {
+            SetupOutcome.Failed(
+                stage = SetupStepStage.TOOLCHAIN_COMPILATION.name,
+                reason = "Tool $toolId verification probe failed"
+            )
+        }.also { _operationOutcome.value = it }
     }
 
     override suspend fun repairTool(toolId: String): Boolean = withContext(dispatcher) {
@@ -1026,10 +1064,151 @@ public class WslToolchainProvisioner(
         }
     }
 
-    override suspend fun resetSetupCache(): Unit = withContext(dispatcher) {
+    override suspend fun resetSetupCache(): SetupOutcome = withContext(dispatcher) {
         repository?.clearToolchainState()
         _state.value = ToolchainSetupState()
         appendLog("[Cache] Reset toolchain persistence cache to clean default.")
+        val outcome = SetupOutcome.Succeeded(evidence = emptyMap())
+        _operationOutcome.value = outcome
+        outcome
+    }
+
+    // ---- Plan-driven operation contract (003 Phase 2 foundation) ----
+    //
+    // Only the parts that can be truthful today are implemented: a plan is derived from the real
+    // current state (never mutating anything), and confirmation enforces the plan ID / revision
+    // invariant. Executing a confirmed plan, cancelling a run through the server cancel API and
+    // journal-backed recovery are owned by 003 US2 (T013-T016) and US3 (T019-T023). Until those
+    // land, every such call returns a typed non-success outcome with the reason - never a
+    // synthesized Succeeded, and never a mutation the user did not preview.
+
+    override suspend fun prepare(
+        kind: SetupPlanKind,
+        targetId: String?,
+        autoDoctorEnabled: Boolean,
+    ): SetupPlan = withContext(dispatcher) {
+        val snapshot = _state.value
+        val distro = detector.getDefaultDistro() ?: snapshot.activeDistro ?: "Ubuntu"
+        val plan = SetupPlan(
+            planId = "plan-${kind.name.lowercase()}-${System.currentTimeMillis()}",
+            // The revision binds the plan to the evidence it was derived from: any later probe
+            // that changes stage status or tool state produces a different hash.
+            revisionHash = "rev-" + snapshot.steps.joinToString("|") { "${it.stage}=${it.status}" }
+                .plus("|tools=" + snapshot.toolsMatrix.joinToString(",") { "${it.id}:${it.status}" })
+                .hashCode().toUInt().toString(16),
+            environmentKey = distro,
+            kind = kind,
+            targetStageOrToolId = targetId,
+            autoDoctorEnabled = autoDoctorEnabled,
+            orderedActions = deriveActions(kind, targetId, snapshot),
+            prerequisiteEvidenceRevision = snapshot.lastVerifiedTimestamp?.toString(),
+        )
+        activePlan = plan
+        plan
+    }
+
+    /**
+     * Derives the preview actions from real state facts. Only stages/tools that are not already
+     * SUCCESS produce an action, so a ready environment previews an empty plan.
+     */
+    private fun deriveActions(
+        kind: SetupPlanKind,
+        targetId: String?,
+        snapshot: ToolchainSetupState,
+    ): List<SetupPlanAction> = when (kind) {
+        SetupPlanKind.FULL_SETUP -> deriveFullSetupActions(snapshot)
+        SetupPlanKind.STAGE_RETRY -> deriveStageRetryActions(targetId, snapshot)
+        SetupPlanKind.REPAIR_TOOL -> listOfNotNull(
+            targetId?.let { SetupPlanAction.BuildRecipes(listOf(it)) },
+            targetId?.let { SetupPlanAction.PublishTools(listOf(it)) },
+        )
+        SetupPlanKind.TEST_TOOL, SetupPlanKind.CACHE_RESET -> emptyList()
+    }
+
+    private fun ToolchainSetupState.stageNeedsWork(stage: SetupStepStage): Boolean =
+        steps.firstOrNull { it.stage == stage }?.status != StepStatus.SUCCESS
+
+    private fun ToolchainSetupState.missingPackageIds(): List<String> = diagnostics
+        .filter { it.status == StepStatus.FAILED && !it.remediation.isNullOrBlank() }
+        .map { it.id }
+
+    private fun ToolchainSetupState.unbuiltToolIds(): List<String> =
+        toolsMatrix.filter { it.status != StepStatus.SUCCESS }.map { it.id }
+
+    private fun deriveFullSetupActions(snapshot: ToolchainSetupState): List<SetupPlanAction> = buildList {
+        val packages = snapshot.missingPackageIds()
+        val unbuilt = snapshot.unbuiltToolIds()
+        val unpublished = snapshot.toolsMatrix.map { it.id }.filter { it !in snapshot.publishedToolIds }
+        if (snapshot.stageNeedsWork(SetupStepStage.SYSTEM_DIAGNOSTICS) && packages.isNotEmpty()) {
+            add(SetupPlanAction.InstallPackages(packages))
+        }
+        if (snapshot.stageNeedsWork(SetupStepStage.REPO_SYNCHRONIZATION)) {
+            add(SetupPlanAction.SyncSources(SUBMODULES.map { it.name }))
+        }
+        if (snapshot.stageNeedsWork(SetupStepStage.TOOLCHAIN_COMPILATION) && unbuilt.isNotEmpty()) {
+            add(SetupPlanAction.BuildRecipes(unbuilt))
+        }
+        if (unpublished.isNotEmpty()) add(SetupPlanAction.PublishTools(unpublished))
+    }
+
+    private fun deriveStageRetryActions(targetId: String?, snapshot: ToolchainSetupState): List<SetupPlanAction> {
+        val stage = SetupStepStage.entries.firstOrNull { it.name == targetId } ?: return emptyList()
+        return when (stage) {
+            SetupStepStage.SYSTEM_DIAGNOSTICS -> snapshot.missingPackageIds()
+                .takeIf { it.isNotEmpty() }?.let { listOf(SetupPlanAction.InstallPackages(it)) }
+            SetupStepStage.REPO_SYNCHRONIZATION -> listOf(SetupPlanAction.SyncSources(SUBMODULES.map { it.name }))
+            SetupStepStage.TOOLCHAIN_COMPILATION -> snapshot.unbuiltToolIds()
+                .takeIf { it.isNotEmpty() }?.let { listOf(SetupPlanAction.BuildRecipes(it)) }
+            SetupStepStage.WSL_DETECTION, SetupStepStage.SERVER_CONNECTIVITY -> null
+        }.orEmpty()
+    }
+
+    override suspend fun confirm(
+        planId: String,
+        revisionHash: String,
+    ): SetupOutcome = withContext(dispatcher) {
+        val currentPlan = activePlan
+        val matches = currentPlan != null &&
+            currentPlan.planId == planId &&
+            currentPlan.revisionHash == revisionHash
+        val outcome = if (currentPlan == null || !matches) {
+            SetupOutcome.Failed(
+                stage = null,
+                reason = "Confirmation requires the displayed plan ID and unchanged revision hash.",
+            )
+        } else {
+            SetupOutcome.Failed(
+                stage = null,
+                reason = "Plan '${currentPlan.planId}' (${currentPlan.kind}) is confirmed but plan execution " +
+                    "is not wired yet (003 US2 T015); no mutation was performed.",
+            )
+        }
+        _operationOutcome.value = outcome
+        outcome
+    }
+
+    override fun observe(): Flow<SetupOutcome?> = _operationOutcome.asStateFlow()
+
+    override suspend fun recover(attemptId: String?): SetupOutcome = SetupOutcome.Failed(
+        stage = null,
+        reason = "No attempt journal exists yet (003 US3 T019-T023); " +
+            (attemptId?.let { "attempt '$it' cannot be reconciled." } ?: "nothing to reconcile."),
+    )
+
+    override suspend fun cancel(): SetupOutcome = withContext(dispatcher) {
+        val snapshot = _state.value
+        // Flipping busy flags would only hide a still-running operation; that is not cancellation.
+        val outcome = if (!snapshot.isBusy) {
+            SetupOutcome.Failed(stage = null, reason = "No active operation to cancel.")
+        } else {
+            SetupOutcome.Failed(
+                stage = snapshot.currentStage?.name,
+                reason = "Explicit cancellation through the run cancel API is not wired yet (003 US2); " +
+                    "the active operation keeps running.",
+            )
+        }
+        _operationOutcome.value = outcome
+        outcome
     }
 
 

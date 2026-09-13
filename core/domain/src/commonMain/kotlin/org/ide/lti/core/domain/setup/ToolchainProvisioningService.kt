@@ -1,5 +1,6 @@
 package org.ide.lti.core.domain.setup
 
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -632,14 +633,52 @@ public interface ToolchainProvisioningService {
     /** Automatically fixes and installs missing system packages and dependencies detected by the Doctor */
     public suspend fun autoRemediateDoctor(): Boolean
 
-    /** Tests an individual tool binary (runs version/help verification). */
-    public suspend fun testTool(toolId: String): StepStatus = StepStatus.SUCCESS
+    // ---- Plan-driven operation contract (003 US2/US3 own the real behaviour) ----
+    //
+    // These members are deliberately abstract: no default body may fabricate a plan or report
+    // success on an implementer's behalf. "A normal return is not success unless the typed
+    // outcome is Succeeded." An implementation that has not wired a behaviour yet must return a
+    // typed non-success outcome with a reason, never a synthesized [SetupOutcome.Succeeded].
 
-    /** Recompiles or re-acquires an individual tool binary. */
-    public suspend fun repairTool(toolId: String): Boolean = true
+    /**
+     * Prepares an immutable [SetupPlan] describing the changes a confirmed operation would make.
+     * Preparing never mutates the environment.
+     */
+    public suspend fun prepare(
+        kind: SetupPlanKind,
+        targetId: String? = null,
+        autoDoctorEnabled: Boolean = true,
+    ): SetupPlan
 
-    /** Resets the persisted setup cache and restarts probing cleanly. */
-    public suspend fun resetSetupCache(): Unit = Unit
+    /**
+     * Confirms and executes the operation described by [planId] and [revisionHash].
+     * "Confirmation requires the displayed plan ID and unchanged revision hash."
+     */
+    public suspend fun confirm(
+        planId: String,
+        revisionHash: String,
+    ): SetupOutcome
+
+    /** Observes the most recent typed outcome of the operation owner; null while nothing has run. */
+    public fun observe(): Flow<SetupOutcome?>
+
+    /**
+     * Attempts to reconcile an in-flight or interrupted attempt against durable/server truth.
+     * Never resubmits an ambiguous receipt.
+     */
+    public suspend fun recover(attemptId: String? = null): SetupOutcome
+
+    /** Explicitly cancels the active operation via the run cancel API; detach is not cancel. */
+    public suspend fun cancel(): SetupOutcome
+
+    /** Tests an individual tool binary; success only from an executed probe with an accepted exit code. */
+    public suspend fun testTool(toolId: String): SetupOutcome
+
+    /** Recompiles or re-acquires an individual tool binary. Boolean result is retired in 003 US4. */
+    public suspend fun repairTool(toolId: String): Boolean
+
+    /** Resets the persisted setup cache and restarts probing cleanly with typed admission. */
+    public suspend fun resetSetupCache(): SetupOutcome
 }
 
 

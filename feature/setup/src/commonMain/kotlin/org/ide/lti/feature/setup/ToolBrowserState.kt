@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolComponentItem
 import org.ide.lti.core.domain.setup.ToolchainProvisioningService
@@ -151,8 +152,13 @@ class ToolBrowserState(
     /**
      * Executes tool verification on the selected tool component.
      */
-    suspend fun testTool(toolId: String): StepStatus {
-        if (toolchainService == null) return StepStatus.FAILED
+    suspend fun testTool(toolId: String): SetupOutcome {
+        if (toolchainService == null) {
+            return SetupOutcome.Failed(
+                stage = null,
+                reason = "Toolchain service unavailable",
+            )
+        }
         return toolchainService.testTool(toolId)
     }
 

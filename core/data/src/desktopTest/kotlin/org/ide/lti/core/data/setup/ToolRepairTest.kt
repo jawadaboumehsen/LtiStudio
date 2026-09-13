@@ -29,6 +29,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolchainSetupState
 import java.nio.charset.Charset
@@ -141,16 +142,15 @@ class ToolRepairTest {
         )
 
         val status = provisioner.testTool("lpmake")
-        assertEquals(
-            StepStatus.FAILED,
-            status,
+        assertTrue(
+            status is SetupOutcome.Failed,
             "Tool test must not infer success from non-empty stdout when exit code is non-zero (FR-009)",
         )
 
         // When exit code is 0, status must be SUCCESS
         transport.helpExitCode = 0
         val successStatus = provisioner.testTool("lpmake")
-        assertEquals(StepStatus.SUCCESS, successStatus)
+        assertTrue(successStatus is SetupOutcome.Succeeded)
     }
 
     @Test
@@ -166,7 +166,7 @@ class ToolRepairTest {
         )
 
         val status = provisioner.testTool("lpmake")
-        assertEquals(StepStatus.FAILED, status, "Tool test must fail when binary is not found or not executable")
+        assertTrue(status is SetupOutcome.Failed, "Tool test must fail when binary is not found or not executable")
     }
 
     @Test

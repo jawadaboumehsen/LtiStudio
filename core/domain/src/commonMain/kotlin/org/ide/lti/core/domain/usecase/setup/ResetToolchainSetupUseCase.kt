@@ -1,6 +1,7 @@
 package org.ide.lti.core.domain.usecase.setup
 
 import org.ide.lti.core.domain.repository.setup.ToolchainSetupRepository
+import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.domain.setup.ToolchainProvisioningService
 
 /**
@@ -10,8 +11,9 @@ class ResetToolchainSetupUseCase(
     private val toolchainService: ToolchainProvisioningService,
     private val repository: ToolchainSetupRepository? = null,
 ) {
-    suspend operator fun invoke() {
-        toolchainService.resetSetupCache()
+    suspend operator fun invoke(): SetupOutcome {
+        val outcome = toolchainService.resetSetupCache()
         repository?.clearToolchainState()
+        return outcome
     }
 }

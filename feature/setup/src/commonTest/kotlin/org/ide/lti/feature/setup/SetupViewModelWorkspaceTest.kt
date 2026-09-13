@@ -15,6 +15,10 @@ import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.Clock
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.domain.setup.DiagnosticCheckItem
+import org.ide.lti.core.domain.setup.SetupOutcome
+import kotlinx.coroutines.flow.flowOf
+import org.ide.lti.core.domain.setup.SetupPlan
+import org.ide.lti.core.domain.setup.SetupPlanKind
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepProvenance
 import org.ide.lti.core.domain.setup.StepStatus
@@ -280,13 +284,26 @@ class SetupViewModelWorkspaceTest {
             return true
         }
 
+
+        // 003 plan contract: fakes never synthesize success for behaviour the test does not drive.
+        override suspend fun prepare(kind: SetupPlanKind, targetId: String?, autoDoctorEnabled: Boolean): SetupPlan =
+            SetupPlan(planId = "fake-plan", revisionHash = "fake-rev", environmentKey = "fake-env", kind = kind,
+                targetStageOrToolId = targetId, autoDoctorEnabled = autoDoctorEnabled)
+        override suspend fun confirm(planId: String, revisionHash: String): SetupOutcome =
+            SetupOutcome.Failed(stage = null, reason = "fake service does not execute plans")
+        override fun observe(): Flow<SetupOutcome?> = flowOf(null)
+        override suspend fun recover(attemptId: String?): SetupOutcome =
+            SetupOutcome.Failed(stage = null, reason = "fake service has no journal")
+        override suspend fun cancel(): SetupOutcome =
+            SetupOutcome.Failed(stage = null, reason = "fake service has nothing to cancel")
+
         var testToolCount = 0
         var lastTestedToolId: String? = null
 
-        override suspend fun testTool(toolId: String): StepStatus {
+        override suspend fun testTool(toolId: String): SetupOutcome {
             testToolCount++
             lastTestedToolId = toolId
-            return StepStatus.SUCCESS
+            return SetupOutcome.Succeeded()
         }
 
         var recompileToolCount = 0
@@ -299,9 +316,10 @@ class SetupViewModelWorkspaceTest {
         }
 
         var resetSetupCacheCount = 0
-        override suspend fun resetSetupCache() {
+        override suspend fun resetSetupCache(): SetupOutcome {
             resetSetupCacheCount++
             markUnready()
+            return SetupOutcome.Succeeded()
         }
     }
 
