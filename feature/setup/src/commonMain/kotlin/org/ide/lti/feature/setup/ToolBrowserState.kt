@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.setup
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -18,7 +19,9 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.ide.lti.core.domain.setup.SetupOutcome
+import org.ide.lti.core.domain.setup.SetupPlanKind
 import org.ide.lti.core.domain.setup.StepStatus
+import org.ide.lti.core.domain.setup.ToolCapabilities
 import org.ide.lti.core.domain.setup.ToolComponentItem
 import org.ide.lti.core.domain.setup.ToolchainProvisioningService
 import org.ide.lti.core.domain.setup.ToolchainSetupState
@@ -33,6 +36,12 @@ data class ToolPresentation(
     val isRepairSupported: Boolean,
     val repairUnavailableReason: String? = null,
     val isBusy: Boolean = false,
+    /** The binary exists on disk (file discovery). */
+    val isInstalled: Boolean,
+    /** An execution probe with an accepted exit code succeeded (live or restored evidence). */
+    val isTested: Boolean,
+    /** The daemon lists the tool as published. */
+    val isPublished: Boolean,
 )
 
 /**
@@ -55,19 +64,14 @@ class ToolBrowserState(
          * Set of tools with real, automated build and distribution recipes in the toolchain engine.
          * Tools outside this set cannot be repaired automatically and report an unavailable reason.
          */
-        val SUPPORTED_RECIPE_TOOL_IDS: Set<String> = setOf(
-            "adb", "fastboot", "mke2fs", "avbtool", "mkbootimg", "lpmake", "lpunpack", "lpdump",
-            "mkfs.erofs", "dump.erofs", "fsck.erofs", "erofsfuse", "img2sdat",
-            "apktool", "signapk", "payload-dumper-go"
-        )
+        val SUPPORTED_RECIPE_TOOL_IDS: Set<String>
+            get() = ToolCapabilities.SUPPORTED_TOOL_IDS
 
-        const val REPAIR_UNAVAILABLE_REASON =
-            "Repair requires a supported recipe; otherwise the action is unavailable with a reason."
+        const val REPAIR_UNAVAILABLE_REASON: String = ToolCapabilities.REPAIR_UNAVAILABLE_REASON
 
-        fun isRecipeSupported(toolId: String): Boolean = toolId in SUPPORTED_RECIPE_TOOL_IDS
+        fun isRecipeSupported(toolId: String): Boolean = ToolCapabilities.isRecipeSupported(toolId)
 
-        fun unavailableReasonFor(toolId: String): String? =
-            if (isRecipeSupported(toolId)) null else REPAIR_UNAVAILABLE_REASON
+        fun unavailableReasonFor(toolId: String): String? = ToolCapabilities.unavailableReasonFor(toolId)
     }
 
     private val _searchQuery = MutableStateFlow("")
@@ -109,23 +113,33 @@ class ToolBrowserState(
         }
 
         list.map { tool ->
-            val supported = isRecipeSupported(tool.id)
+            val supported = ToolCapabilities.isRecipeSupported(tool.id)
+            val isInstalled = tool.path != null
+            val isTested = tool.status == StepStatus.SUCCESS && tool.lastTested != null
+            val isPublished = state.publishedToolIds.contains(tool.id)
             ToolPresentation(
                 tool = tool,
                 isRepairSupported = supported,
-                repairUnavailableReason = if (supported) null else REPAIR_UNAVAILABLE_REASON,
+                repairUnavailableReason = ToolCapabilities.unavailableReasonFor(tool.id),
                 isBusy = tool.status == StepStatus.RUNNING || state.isRunning,
+                isInstalled = isInstalled,
+                isTested = isTested,
+                isPublished = isPublished,
             )
         }
     }.stateIn(
         scope = scope,
         started = SharingStarted.Eagerly,
         initialValue = ToolchainSetupState.defaultToolsMatrix().map { tool ->
-            val supported = isRecipeSupported(tool.id)
+            val supported = ToolCapabilities.isRecipeSupported(tool.id)
             ToolPresentation(
                 tool = tool,
                 isRepairSupported = supported,
-                repairUnavailableReason = if (supported) null else REPAIR_UNAVAILABLE_REASON,
+                repairUnavailableReason = ToolCapabilities.unavailableReasonFor(tool.id),
+                isBusy = false,
+                isInstalled = tool.path != null,
+                isTested = tool.status == StepStatus.SUCCESS && tool.lastTested != null,
+                isPublished = false,
             )
         },
     )
@@ -159,7 +173,17 @@ class ToolBrowserState(
                 reason = "Toolchain service unavailable",
             )
         }
-        return toolchainService.testTool(toolId)
+        return try {
+            toolchainService.testTool(toolId)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // A probe that throws is a failed verification, never an implicit success (FR-006).
+            SetupOutcome.Failed(
+                stage = null,
+                reason = e.message ?: "Test failed with exception",
+            )
+        }
     }
 
     fun launchTestTool(toolId: String) {
@@ -172,18 +196,35 @@ class ToolBrowserState(
      * Invokes the real rebuild/acquisition recipe for the selected tool (FR-009).
      * Enforces single-flight serialization and rejects unsupported recipes.
      */
-    suspend fun repairTool(toolId: String): Boolean {
-        if (!isRecipeSupported(toolId)) {
-            return false
+    @Suppress("ReturnCount")
+    suspend fun repairTool(toolId: String): SetupOutcome {
+        if (!ToolCapabilities.isRecipeSupported(toolId)) {
+            return SetupOutcome.Failed(
+                stage = null,
+                reason = ToolCapabilities.unavailableReasonFor(toolId) ?: ToolCapabilities.REPAIR_UNAVAILABLE_REASON,
+            )
         }
         val isServiceBusy = toolchainStateFlow.value.isBusy
         if (isServiceBusy) {
-            return false
+            return SetupOutcome.Busy("Operation already in progress")
         }
         if (toolchainService == null) {
-            return false
+            return SetupOutcome.Failed(
+                stage = null,
+                reason = "Toolchain service unavailable",
+            )
         }
-        return toolchainService.repairTool(toolId)
+        return try {
+            val plan = toolchainService.prepare(SetupPlanKind.REPAIR_TOOL, targetId = toolId)
+            toolchainService.confirm(plan.planId, plan.revisionHash)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            SetupOutcome.Failed(
+                stage = null,
+                reason = e.message ?: "Repair failed with exception",
+            )
+        }
     }
 
     fun launchRepairTool(toolId: String) {

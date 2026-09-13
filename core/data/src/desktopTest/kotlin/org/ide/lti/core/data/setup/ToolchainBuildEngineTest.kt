@@ -206,4 +206,60 @@ class ToolchainBuildEngineTest {
         assertTrue(result.isFailure, "A durable build step without a journal is refused")
         assertEquals(0, transport.startedRuns.size, "Nothing is submitted under a static key")
     }
+
+    @Test
+    fun `buildAndDistributeAll with targetRecipeGroups builds only requested group`() = runTest {
+        val cli = RecordingCli()
+        val transport = RecordingTransport()
+        val repo = journaledRepository("att-build-3")
+        val engine = ToolchainBuildEngine(cli = cli, repository = repo, transport = transport)
+
+        val result = engine.buildAndDistributeAll(
+            distro = "Ubuntu",
+            extDir = "/home/lti/LtiRomTools/external",
+            binDir = "/home/lti/LtiRomTools/bin",
+            journal = SetupJournalContext("Ubuntu", "att-build-3"),
+            targetRecipeGroups = setOf("android-tools"),
+        )
+
+        assertTrue(result.isSuccess, "Scoped build of android-tools must succeed: ${result.exceptionOrNull()?.message}")
+        val idempotencyKeys = transport.startedRuns.map { it.idempotencyKey }
+        assertTrue(
+            idempotencyKeys.any { it.contains("android-tools") },
+            "android-tools recipes must be executed",
+        )
+        assertFalse(
+            idempotencyKeys.any { it.contains("erofs-utils") },
+            "erofs-utils must not be executed when only android-tools is targeted (FR-009)",
+        )
+    }
+
+    @Test
+    fun `buildAndDistributeAll with forceRebuild ignores sentinels for requested group`() = runTest {
+        val cli = RecordingCli()
+        val transport = RecordingTransport()
+        val repo = journaledRepository("att-build-4")
+        // adb sentinel is recorded as compiled
+        repo.updateTool("adb") {
+            it.copy(isCompiled = true, isVerified = true, binaryPath = "/home/lti/LtiRomTools/bin/adb")
+        }
+
+        val engine = ToolchainBuildEngine(cli = cli, repository = repo, transport = transport)
+
+        val result = engine.buildAndDistributeAll(
+            distro = "Ubuntu",
+            extDir = "/home/lti/LtiRomTools/external",
+            binDir = "/home/lti/LtiRomTools/bin",
+            journal = SetupJournalContext("Ubuntu", "att-build-4"),
+            targetRecipeGroups = setOf("android-tools"),
+            forceRebuild = true,
+        )
+
+        assertTrue(result.isSuccess)
+        val idempotencyKeys = transport.startedRuns.map { it.idempotencyKey }
+        assertTrue(
+            idempotencyKeys.any { it.contains("android-tools:cmake") },
+            "forceRebuild must force android-tools compilation despite existing adb sentinel (FR-009)",
+        )
+    }
 }

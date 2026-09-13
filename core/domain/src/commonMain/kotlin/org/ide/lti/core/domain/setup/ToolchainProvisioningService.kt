@@ -685,9 +685,6 @@ public interface ToolchainProvisioningService {
      * needs no mutation preview.
      */
     public suspend fun testTool(toolId: String): SetupOutcome
-
-    /** Recompiles or re-acquires an individual tool binary. Boolean result is retired in 003 US4. */
-    public suspend fun repairTool(toolId: String): Boolean
 }
 
 

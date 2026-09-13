@@ -9,7 +9,9 @@
  */
 package org.ide.lti.feature.setup
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
@@ -78,39 +80,72 @@ class ToolBrowserStateTest {
         override suspend fun provisionAvbKey(): Boolean = true
 
         // 003 plan contract: fakes never synthesize success for behaviour the test does not drive.
-        override suspend fun prepare(kind: SetupPlanKind, targetId: String?, autoDoctorEnabled: Boolean): SetupPlan =
-            SetupPlan(planId = "fake-plan", revisionHash = "fake-rev", environmentKey = "fake-env", kind = kind,
-                targetStageOrToolId = targetId, autoDoctorEnabled = autoDoctorEnabled)
-        override suspend fun confirm(planId: String, revisionHash: String): SetupOutcome =
-            SetupOutcome.Failed(stage = null, reason = "fake service does not execute plans")
+        override suspend fun prepare(kind: SetupPlanKind, targetId: String?, autoDoctorEnabled: Boolean): SetupPlan {
+            if (kind == SetupPlanKind.REPAIR_TOOL) {
+                repairToolCallCount++
+                lastRepairedToolId = targetId
+            }
+            return SetupPlan(
+                planId = "fake-plan",
+                revisionHash = "fake-rev",
+                environmentKey = "fake-env",
+                kind = kind,
+                targetStageOrToolId = targetId,
+                autoDoctorEnabled = autoDoctorEnabled,
+            )
+        }
+
+        @Suppress("ReturnCount")
+        override suspend fun confirm(planId: String, revisionHash: String): SetupOutcome {
+            if (lastRepairedToolId != null) {
+                val toolId = lastRepairedToolId!!
+                if (repairToolResult) {
+                    _state.value = _state.value.copy(
+                        toolsMatrix = _state.value.toolsMatrix.map {
+                            if (it.id == toolId) it.copy(status = StepStatus.SUCCESS, path = "~/LtiRomTools/bin/$toolId") else it
+                        }
+                    )
+                    return SetupOutcome.Succeeded()
+                } else {
+                    return SetupOutcome.Failed(
+                        stage = SetupStepStage.TOOLCHAIN_COMPILATION.name,
+                        reason = "Repair failed",
+                    )
+                }
+            }
+            return SetupOutcome.Failed(stage = null, reason = "fake service does not execute plans")
+        }
         override fun observe(): Flow<SetupOutcome?> = flowOf(null)
         override suspend fun recover(attemptId: String?): SetupOutcome =
             SetupOutcome.Failed(stage = null, reason = "fake service has no journal")
         override suspend fun cancel(): SetupOutcome =
             SetupOutcome.Failed(stage = null, reason = "fake service has nothing to cancel")
 
+        var testToolOutcome: SetupOutcome = SetupOutcome.Succeeded()
+        var testToolException: Throwable? = null
+
         override suspend fun testTool(toolId: String): SetupOutcome {
             testToolCallCount++
             lastTestedToolId = toolId
-            _state.value = _state.value.copy(
-                toolsMatrix = _state.value.toolsMatrix.map {
-                    if (it.id == toolId) it.copy(status = StepStatus.SUCCESS, lastTested = "Just now") else it
-                }
-            )
-            return SetupOutcome.Succeeded()
-        }
-
-        override suspend fun repairTool(toolId: String): Boolean {
-            repairToolCallCount++
-            lastRepairedToolId = toolId
-            if (repairToolResult) {
+            testToolException?.let { throw it }
+            if (testToolOutcome is SetupOutcome.Succeeded) {
                 _state.value = _state.value.copy(
                     toolsMatrix = _state.value.toolsMatrix.map {
-                        if (it.id == toolId) it.copy(status = StepStatus.SUCCESS, path = "~/LtiRomTools/bin/$toolId") else it
+                        if (it.id == toolId) it.copy(status = StepStatus.SUCCESS, lastTested = "Just now") else it
+                    }
+                )
+            } else {
+                _state.value = _state.value.copy(
+                    toolsMatrix = _state.value.toolsMatrix.map {
+                        if (it.id == toolId) {
+                            it.copy(status = StepStatus.FAILED, lastTested = "Failed with exit code 1")
+                        } else {
+                            it
+                        }
                     }
                 )
             }
-            return repairToolResult
+            return testToolOutcome
         }
     }
 
@@ -172,12 +207,12 @@ class ToolBrowserStateTest {
 
         // Invoking repair on unsupported tool must not execute service repair
         val repairAttempt = browserState.repairTool("gh")
-        assertFalse(repairAttempt, "Repair on unsupported recipe must be rejected")
+        assertTrue(repairAttempt is SetupOutcome.Failed, "Repair on unsupported recipe must be rejected")
         assertEquals(0, service.repairToolCallCount, "Service repair must not be called for unsupported tool")
 
         // Invoking repair on supported tool invokes service repair
         val supportedRepairAttempt = browserState.repairTool("lpmake")
-        assertTrue(supportedRepairAttempt, "Repair on supported recipe must succeed")
+        assertTrue(supportedRepairAttempt is SetupOutcome.Succeeded, "Repair on supported recipe must succeed")
         assertEquals(1, service.repairToolCallCount)
         assertEquals("lpmake", service.lastRepairedToolId)
     }
@@ -211,7 +246,7 @@ class ToolBrowserStateTest {
 
         // When environment is already busy with a mutation, tool repair must be blocked
         val result = browserState.repairTool("lpmake")
-        assertFalse(result, "Repair should be rejected when environment mutation is active")
+        assertTrue(result is SetupOutcome.Busy, "Repair should be rejected when environment mutation is active")
         assertEquals(0, service.repairToolCallCount, "Service repair must not run concurrently")
     }
 
@@ -234,4 +269,156 @@ class ToolBrowserStateTest {
         assertEquals("mkfs.erofs", browserState.selectedToolId.value)
         assertEquals(Pair(3, 120), browserState.getListPosition())
     }
+
+    @Test
+    fun testProbeFailureAndExceptionsYieldTypedFailedNeverJustTested() = runToolBrowserTest { scope ->
+        val service = SpyToolchainService()
+        service.testToolOutcome = SetupOutcome.Failed(
+            stage = SetupStepStage.TOOLCHAIN_COMPILATION.name,
+            reason = "Tool mke2fs verification probe failed with exit code 1",
+        )
+        val browserState = ToolBrowserState(
+            scope = scope,
+            toolchainService = service,
+        )
+
+        val failureOutcome = browserState.testTool("mke2fs")
+        assertTrue(failureOutcome is SetupOutcome.Failed, "Probe failure must map to typed Failed (FR-006)")
+        assertEquals("Tool mke2fs verification probe failed with exit code 1", failureOutcome.reason)
+
+        val failedTool = browserState.filteredTools.value.first { it.tool.id == "mke2fs" }
+        assertEquals(StepStatus.FAILED, failedTool.tool.status)
+        assertFalse(
+            failedTool.tool.lastTested == "Just now",
+            "Failed verification must never be labeled 'Just now' or 'Just tested' (FR-010)",
+        )
+
+        // Probe exception must also yield typed Failed
+        service.testToolException = IllegalStateException("Transport connection dropped")
+        val exceptionOutcome = browserState.testTool("mke2fs")
+        assertTrue(exceptionOutcome is SetupOutcome.Failed, "Probe exception must map to typed Failed")
+    }
+
+    @Test
+    fun testPresentationSeparatesInstalledTestedAndPublishedFacts() = runToolBrowserTest { scope ->
+        fun tool(id: String, status: StepStatus, path: String?, lastTested: String?) = ToolComponentItem(
+            id = id,
+            name = id,
+            category = ToolCategory.FILESYSTEM_AND_IMAGES,
+            binaryName = id,
+            status = status,
+            path = path,
+            lastTested = lastTested,
+        )
+        val service = SpyToolchainService(
+            initialState = ToolchainSetupState(
+                toolsMatrix = listOf(
+                    // exists on disk, never probed, not published
+                    tool("mke2fs", StepStatus.SUCCESS, "/home/lti/LtiRomTools/bin/mke2fs", null),
+                    // exists, probe passed, published by the daemon
+                    tool("mkfs.erofs", StepStatus.SUCCESS, "/home/lti/LtiRomTools/bin/mkfs.erofs", "Just now"),
+                    // exists but its execution probe failed
+                    tool("lpmake", StepStatus.FAILED, "/home/lti/LtiRomTools/bin/lpmake", null),
+                    // not installed at all
+                    tool("simg2img", StepStatus.PENDING, null, null),
+                ),
+                publishedToolIds = setOf("mkfs.erofs"),
+            )
+        )
+        val browserState = ToolBrowserState(scope = scope, toolchainService = service)
+        val byId = browserState.filteredTools.value.associateBy { it.tool.id }
+
+        assertEquals(Triple(true, false, false), byId.getValue("mke2fs").facts(), "installed but untested")
+        assertEquals(Triple(true, true, true), byId.getValue("mkfs.erofs").facts(), "installed, tested, published")
+        assertEquals(Triple(true, false, false), byId.getValue("lpmake").facts(), "failed probe: installed, not tested")
+        assertEquals(Triple(false, false, false), byId.getValue("simg2img").facts(), "absent binary")
+    }
+
+    private fun ToolPresentation.facts() = Triple(isInstalled, isTested, isPublished)
+
+    @Test
+    fun testSharedBusyFromCoordinatorSurfacesInToolPresentation() = runToolBrowserTest { scope ->
+        val service = SpyToolchainService(
+            initialState = ToolchainSetupState(isRunning = true)
+        )
+        val browserState = ToolBrowserState(
+            scope = scope,
+            toolchainService = service,
+        )
+
+        // Shared busy state surfaces on every tool presentation
+        val tools = browserState.filteredTools.value
+        assertTrue(tools.isNotEmpty())
+        assertTrue(
+            tools.all { it.isBusy },
+            "Shared busy from coordinator must surface on all tool presentations (FR-005)",
+        )
+    }
+
+    @Test
+    fun testOperationSurvivesNavigatingAwayFromToolsDestination() = runToolBrowserTest { scope ->
+        val gate = CompletableDeferred<Unit>()
+        val service = object : ToolchainProvisioningService by SpyToolchainService() {
+            var confirmCalls = 0
+            override suspend fun confirm(planId: String, revisionHash: String): SetupOutcome {
+                confirmCalls++
+                gate.await() // the repair is in flight until the test releases it
+                return SetupOutcome.Succeeded()
+            }
+        }
+        val browserState = ToolBrowserState(scope = scope, toolchainService = service)
+        val destinationScope = CoroutineScope(scope.coroutineContext + SupervisorJob())
+        val appJob = requireNotNull(scope.coroutineContext[Job])
+        val before = appJob.children.toSet() // state-flow collectors already owned by the app scope
+
+        browserState.launchRepairTool("lpmake")
+
+        val repairJob = (appJob.children.toSet() - before).single()
+        assertTrue(repairJob.isActive, "Repair must be a child of the application scope, not the destination")
+        assertEquals(1, service.confirmCalls)
+
+        // The user leaves the Tools destination: only the destination-owned scope dies.
+        destinationScope.cancel()
+        assertTrue(repairJob.isActive, "Leaving the destination must not cancel the repair")
+
+        gate.complete(Unit)
+        testScheduler.runCurrent()
+        assertTrue(repairJob.isCompleted && !repairJob.isCancelled, "The repair completes normally")
+    }
+
+    @Test
+    fun testFileRefreshPreservesFailedExecutionVerification() = runToolBrowserTest { scope ->
+        val service = SpyToolchainService(
+            initialState = ToolchainSetupState(
+                toolsMatrix = listOf(
+                    ToolComponentItem(
+                        id = "mke2fs",
+                        name = "Make EXT4",
+                        category = ToolCategory.FILESYSTEM_AND_IMAGES,
+                        binaryName = "mke2fs",
+                        status = StepStatus.FAILED,
+                    )
+                )
+            )
+        )
+        val browserState = ToolBrowserState(scope = scope, toolchainService = service)
+        val before = browserState.filteredTools.value.first { it.tool.id == "mke2fs" }
+        assertFalse(before.isInstalled)
+        assertFalse(before.isTested)
+
+        // A discovery scan learns the path; it carries no execution evidence.
+        service._state.value = service._state.value.copy(
+            toolsMatrix = service._state.value.toolsMatrix.map {
+                it.copy(path = "/home/lti/LtiRomTools/bin/mke2fs")
+            }
+        )
+
+        val after = browserState.filteredTools.value.first { it.tool.id == "mke2fs" }
+        assertTrue(after.isInstalled, "Discovery updates the installed fact")
+        assertEquals(StepStatus.FAILED, after.tool.status, "Failed execution verification is preserved (FR-010)")
+        assertFalse(after.isTested, "A path alone never counts as tested")
+        assertNull(after.tool.lastTested, "Discovery must never label a failed probe as tested")
+    }
+
 }
+

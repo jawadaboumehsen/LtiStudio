@@ -22,8 +22,10 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
 import org.ide.lti.core.model.setup.EnvironmentReadiness
+import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepStatus
+import org.ide.lti.core.domain.setup.ToolCapabilities
 import org.ide.lti.core.domain.setup.ToolComponentItem
 import org.ide.lti.core.domain.setup.ToolchainProvisioningService
 import org.ide.lti.core.domain.setup.ToolchainSetupState
@@ -252,9 +254,7 @@ class SetupViewModel(
             environmentSetupState.setEnvironmentNotice("Toolchain service is not available in this session.")
             return
         }
-        viewModelScope.launch {
-            toolBrowserState.testTool(toolId)
-        }
+        toolBrowserState.launchTestTool(toolId)
     }
 
     fun recompileTool(toolId: String) {
@@ -263,9 +263,11 @@ class SetupViewModel(
             return
         }
         viewModelScope.launch {
-            val success = toolBrowserState.repairTool(toolId)
-            if (!success && !ToolBrowserState.isRecipeSupported(toolId)) {
-                environmentSetupState.setEnvironmentNotice(ToolBrowserState.REPAIR_UNAVAILABLE_REASON)
+            val outcome = toolBrowserState.repairTool(toolId)
+            if (outcome is SetupOutcome.Failed && !ToolCapabilities.isRecipeSupported(toolId)) {
+                environmentSetupState.setEnvironmentNotice(
+                    ToolCapabilities.unavailableReasonFor(toolId) ?: ToolCapabilities.REPAIR_UNAVAILABLE_REASON
+                )
             }
         }
     }

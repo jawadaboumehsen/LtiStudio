@@ -3,6 +3,7 @@ package org.ide.lti.core.data.remote
 import io.ltirom.tooling.core.ports.DaemonSupervisorPort
 import io.ltirom.tooling.core.ports.RemoteTransportPort
 import io.ltirom.tooling.core.remote.ToolExecutionRequest
+import io.ltirom.tooling.core.remote.ToolExecutionResponse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -11,6 +12,7 @@ import org.ide.lti.core.domain.ports.DaemonProbeStatus
 import org.ide.lti.core.domain.ports.EnvironmentProbePort
 import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
 import org.ide.lti.core.domain.ports.WslPresencePort
+import org.ide.lti.core.domain.setup.ToolCapabilities
 import org.ide.lti.core.model.setup.EnvironmentReadiness
 import org.ide.lti.core.model.setup.EnvironmentReadinessState
 import org.ide.lti.core.model.workspace.Workspace
@@ -31,6 +33,7 @@ public class EnvironmentReadinessAdapter(
         public const val WORK_DIR_NAME: String = "LtiRomWorkDir"
         public val DEFAULT_REQUIRED_PRODUCT_TOOLS: Set<String> = ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS
         public val DEFAULT_REQUIRED_HOST_PACKAGES: Set<String> = ToolchainReadinessPolicy.REQUIRED_HOST_PACKAGES
+        private const val EROFS_TOOL_ID: String = "mkfs.erofs"
     }
 
     private val _readiness = MutableStateFlow(
@@ -168,14 +171,8 @@ public class EnvironmentReadinessAdapter(
                     missingToolIds = missing
                 )
             }
-            val erofsCheck = transport.execute(
-                ToolExecutionRequest(
-                    toolId = "mkfs.erofs",
-                    arguments = listOf("--help"),
-                    workingDirectory = "/"
-                )
-            )
-            if (erofsCheck.exitCode != 0 || !erofsCheck.stdout.contains(ToolchainReadinessPolicy.EROFS_REQUIRED_FLAG)) {
+            val erofsCheck = probeErofs()
+            if (!isErofsCompatible(erofsCheck)) {
                 return EnvironmentReadiness(
                     state = EnvironmentReadinessState.TOOLS_INCOMPATIBLE,
                     failingCheck = "mkfs.erofs lacks required ${ToolchainReadinessPolicy.EROFS_REQUIRED_FLAG} support",
@@ -262,15 +259,8 @@ public class EnvironmentReadinessAdapter(
             )
         }
 
-        val erofsCheck = transport.execute(
-            ToolExecutionRequest(
-                toolId = "mkfs.erofs",
-                arguments = listOf("--help"),
-                workingDirectory = "/"
-            )
-        )
-        val missingFlag = !erofsCheck.stdout.contains(ToolchainReadinessPolicy.EROFS_REQUIRED_FLAG)
-        return if (erofsCheck.exitCode != 0 || missingFlag) {
+        val erofsCheck = probeErofs()
+        return if (!isErofsCompatible(erofsCheck)) {
             EnvironmentReadiness(
                 state = EnvironmentReadinessState.TOOLS_INCOMPATIBLE,
                 failingCheck = "mkfs.erofs probe failed or lacks required " +
@@ -281,6 +271,20 @@ public class EnvironmentReadinessAdapter(
             null
         }
     }
+
+    /** Executes the domain-defined `mkfs.erofs` probe over the daemon transport. */
+    private suspend fun probeErofs() = transport.execute(
+        ToolExecutionRequest(
+            toolId = EROFS_TOOL_ID,
+            arguments = ToolCapabilities.probeArgumentsFor(EROFS_TOOL_ID),
+            workingDirectory = "/"
+        )
+    )
+
+    /** Accepted exit code from the capability inventory plus the vendored-flag policy. */
+    private fun isErofsCompatible(result: ToolExecutionResponse): Boolean =
+        ToolCapabilities.isAcceptedExitCode(EROFS_TOOL_ID, result.exitCode) &&
+            result.stdout.contains(ToolchainReadinessPolicy.EROFS_REQUIRED_FLAG)
 
     private suspend fun checkMissingTools(): Set<String> {
         val availableServerTools = transport.listTools()

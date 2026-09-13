@@ -272,14 +272,6 @@ class SetupViewModelWorkspaceTest {
             return SetupOutcome.Succeeded()
         }
 
-        var recompileToolCount = 0
-        var lastRecompiledToolId: String? = null
-
-        override suspend fun repairTool(toolId: String): Boolean {
-            recompileToolCount++
-            lastRecompiledToolId = toolId
-            return true
-        }
 
     }
 

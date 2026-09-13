@@ -162,18 +162,14 @@ fun ToolsStepContent(
                 },
                 onTestTool = { toolId ->
                     if (toolBrowserState != null) {
-                        coroutineScope.launch {
-                            toolBrowserState.testTool(toolId)
-                        }
+                        toolBrowserState.launchTestTool(toolId)
                     } else {
                         actions.onTestTool(toolId)
                     }
                 },
                 onRecompileTool = { toolId ->
                     if (toolBrowserState != null) {
-                        coroutineScope.launch {
-                            toolBrowserState.repairTool(toolId)
-                        }
+                        toolBrowserState.launchRepairTool(toolId)
                     } else {
                         actions.onRecompileTool(toolId)
                     }

@@ -33,6 +33,7 @@ import org.ide.lti.core.domain.setup.SetupStepDetail
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepProvenance
 import org.ide.lti.core.domain.setup.StepStatus
+import org.ide.lti.core.domain.setup.ToolCapabilities
 import org.ide.lti.core.domain.setup.ToolComponentItem
 import org.ide.lti.core.domain.setup.ToolEvidence
 import org.ide.lti.core.domain.setup.ToolchainProvisioningService
@@ -130,11 +131,13 @@ public class WslToolchainProvisioner(
         val restoredTools = defaultTools.map { tool ->
             val pTool = persisted.tools[tool.id]
             if (pTool != null && pTool.isCompiled) {
+                // Installed is a persisted fact; "tested" only restores from a real verification
+                // timestamp, never from the binary's mere existence (FR-010).
                 tool.copy(
                     status = StepStatus.SUCCESS,
                     path = pTool.binaryPath,
                     version = pTool.version,
-                    lastTested = pTool.lastVerifiedTimestamp?.let { "Restored" } ?: "Ready"
+                    lastTested = pTool.lastVerifiedTimestamp?.takeIf { pTool.isVerified }?.let { "Restored" },
                 )
             } else tool
         }
@@ -191,13 +194,9 @@ public class WslToolchainProvisioner(
 
         public val REQUIRED_DEV_PACKAGES: List<String> = NativeLibrariesInspector.DEFAULT_REQUIRED_DEV_PACKAGES
 
-        public val SUPPORTED_RECIPES: Set<String> = setOf(
-            "adb", "fastboot", "mke2fs", "avbtool", "mkbootimg", "lpmake", "lpunpack", "lpdump",
-            "mkfs.erofs", "dump.erofs", "fsck.erofs", "erofsfuse", "img2sdat",
-            "apktool", "signapk", "payload-dumper-go"
-        )
+        public val SUPPORTED_RECIPES: Set<String> get() = ToolCapabilities.SUPPORTED_TOOL_IDS
 
-        public fun isRecipeSupported(toolId: String): Boolean = toolId in SUPPORTED_RECIPES
+        public fun isRecipeSupported(toolId: String): Boolean = ToolCapabilities.isRecipeSupported(toolId)
     }
 
 
@@ -414,10 +413,15 @@ public class WslToolchainProvisioner(
             val updatedTools = currentTools.map { tool ->
                 val toolPath = "$binDir/${tool.binaryName}"
                 val exists = tool.binaryName in executables
+                val newStatus = when {
+                    !exists -> StepStatus.PENDING
+                    tool.status == StepStatus.FAILED -> StepStatus.FAILED
+                    else -> StepStatus.SUCCESS
+                }
                 tool.copy(
                     path = if (exists) toolPath else null,
-                    status = if (exists) StepStatus.SUCCESS else StepStatus.PENDING,
-                    lastTested = if (exists) "Just now" else tool.lastTested
+                    status = newStatus,
+                    lastTested = tool.lastTested,
                 )
             }
 
@@ -637,185 +641,78 @@ public class WslToolchainProvisioner(
                 )
             }
 
-            val effectiveCli = TransportCliExecutor(transport, defaultWorkingDirectory = userHome)
-            val exists = effectiveCli.execute(distro, listOf("test", "-x", binaryPath)).exitCode == 0
-            // Real process exit code: do NOT infer success from stdout text alone (FR-009)
-            val testStatus = if (exists) {
-                val execRes = effectiveCli.execute(distro, listOf(binaryPath, "--help"), timeoutSeconds = 5)
-                if (execRes.exitCode == 0) StepStatus.SUCCESS else StepStatus.FAILED
-            } else {
-                StepStatus.FAILED
-            }
+            try {
+                val effectiveCli = TransportCliExecutor(transport, defaultWorkingDirectory = userHome)
+                val exists = effectiveCli.execute(distro, listOf("test", "-x", binaryPath)).exitCode == 0
+                val probeArgv = ToolCapabilities.probeArgumentsFor(toolId, binaryPath)
+                val acceptedExitCodes = ToolCapabilities.acceptedExitCodesFor(toolId)
+                var exitCode = -1
+                // Real process exit code: do NOT infer success from stdout text alone (FR-009)
+                val testStatus = if (exists) {
+                    val execRes = effectiveCli.execute(distro, probeArgv, timeoutSeconds = 5)
+                    exitCode = execRes.exitCode
+                    if (exitCode in acceptedExitCodes) StepStatus.SUCCESS else StepStatus.FAILED
+                } else {
+                    StepStatus.FAILED
+                }
 
-            val now = System.currentTimeMillis()
-            _state.update { s ->
-                s.copy(
-                    toolsMatrix = s.toolsMatrix.map {
-                        if (it.id == toolId) it.copy(
-                            status = testStatus,
-                            path = if (exists) binaryPath else null,
-                            lastTested = if (testStatus == StepStatus.SUCCESS) "Just now" else it.lastTested
-                        ) else it
-                    }
-                )
-            }
-            if (testStatus == StepStatus.SUCCESS) {
-                repository?.updateTool(toolId) { tool ->
-                    tool.copy(
-                        isVerified = true,
-                        isCompiled = true,
-                        binaryPath = if (exists) binaryPath else tool.binaryPath,
-                        lastVerifiedTimestamp = now
+                val now = System.currentTimeMillis()
+                _state.update { s ->
+                    s.copy(
+                        toolsMatrix = s.toolsMatrix.map {
+                            if (it.id == toolId) it.copy(
+                                status = testStatus,
+                                path = if (exists) binaryPath else null,
+                                // A failed probe replaces any earlier success evidence (FR-010).
+                                lastTested = if (testStatus == StepStatus.SUCCESS) "Just now" else null,
+                            ) else it
+                        }
                     )
                 }
-                SetupOutcome.Succeeded(
-                    evidence = mapOf(
-                        toolId to ToolEvidence(
-                            toolId = toolId,
-                            probeArgv = listOf(binaryPath, "--help"),
-                            acceptedExitCodes = setOf(0),
-                            isInstalled = exists,
+                if (testStatus == StepStatus.SUCCESS) {
+                    repository?.updateTool(toolId) { tool ->
+                        tool.copy(
                             isVerified = true,
-                            isFailedExecution = false,
+                            isCompiled = true,
+                            binaryPath = if (exists) binaryPath else tool.binaryPath,
                             lastVerifiedTimestamp = now
                         )
-                    )
-                )
-            } else {
-                SetupOutcome.Failed(
-                    stage = SetupStepStage.TOOLCHAIN_COMPILATION.name,
-                    reason = "Tool $toolId verification probe failed"
-                )
-            }
-        }.also { _operationOutcome.value = it }
-    }
-
-    override suspend fun repairTool(toolId: String): Boolean = withContext(dispatcher) {
-        if (!isRecipeSupported(toolId)) {
-            appendLog("[Tool Matrix] Repair unavailable for '$toolId': Repair requires a supported recipe; otherwise the action is unavailable with a reason.")
-            return@withContext false
-        }
-        if (_state.value.isChecking) {
-            appendLog("[Tool Matrix] Cannot repair '$toolId' while an environment check is running.")
-            return@withContext false
-        }
-        val distro = resolveEnvironmentKey()
-        val opId = "repair-$toolId-${System.currentTimeMillis()}"
-
-        val outcome = coordinator.withAdmission(
-            environmentKey = distro,
-            operationId = opId,
-            kind = "REPAIR_TOOL",
-        ) {
-            val journal = openAttempt(
-                environmentKey = distro,
-                planId = opId,
-                revisionHash = SetupPlanFactory.computeRevisionHash(_state.value, false),
-                kind = SetupPlanKind.REPAIR_TOOL,
-                plannedActionIds = listOf("build-recipes"),
-            ).getOrElse {
-                return@withAdmission SetupOutcome.Interrupted(it.message ?: "Attempt could not be journaled.")
-            }
-            _state.update { it.copy(isRunning = true, activeOperationId = opId) }
-            val repairOutcome: SetupOutcome = try {
-                _state.update { s ->
-                    s.copy(
-                        toolsMatrix = s.toolsMatrix.map {
-                            if (it.id == toolId) it.copy(status = StepStatus.RUNNING) else it
-                        }
-                    )
-                }
-                appendLog("[Tool Matrix] Executing rebuild recipe for tool: $toolId...")
-                val userHome = runCatching {
-                    val res = transport.execute(ToolExecutionRequest(toolId = "printenv", arguments = listOf("HOME"), workingDirectory = "/"))
-                    if (res.exitCode == 0 && res.stdout.trim().startsWith("/")) res.stdout.trim() else null
-                }.getOrNull() ?: detector.resolveWslUserHome(distro)
-                val toolsRoot = "$userHome/LtiRomTools"
-                val extDir = "$toolsRoot/external"
-                val binDir = "$toolsRoot/bin"
-                val effectiveCli = TransportCliExecutor(transport, defaultWorkingDirectory = userHome)
-                val buildEngine = ToolchainBuildEngine(
-                    cli = effectiveCli,
-                    repository = repository,
-                    transport = transport,
-                )
-
-                val buildRes = buildEngine.buildAndDistributeAll(
-                    distro,
-                    extDir,
-                    binDir,
-                    journal = journal,
-                    log = { appendLog(it) },
-                )
-                if (buildRes.isFailure) {
-                    appendLog("[Tool Matrix] Build failed for $toolId: ${buildRes.exceptionOrNull()?.message}")
-                    _state.update { s ->
-                        s.copy(
-                            toolsMatrix = s.toolsMatrix.map {
-                                if (it.id == toolId) it.copy(status = StepStatus.FAILED) else it
-                            }
-                        )
                     }
-                    SetupOutcome.Failed(
-                        "TOOLCHAIN_COMPILATION",
-                        buildRes.exceptionOrNull()?.message ?: "Build failed",
+                    SetupOutcome.Succeeded(
+                        evidence = mapOf(
+                            toolId to ToolEvidence(
+                                toolId = toolId,
+                                recipeGroup = ToolCapabilities.recipeGroupFor(toolId),
+                                probeArgv = probeArgv,
+                                acceptedExitCodes = acceptedExitCodes,
+                                isInstalled = exists,
+                                isVerified = true,
+                                isFailedExecution = false,
+                                lastVerifiedTimestamp = now
+                            )
+                        )
                     )
                 } else {
-                    // Verify the repaired binary using real exit codes (FR-009)
-                    val toolItem = _state.value.toolsMatrix.firstOrNull { it.id == toolId }
-                    val binaryName = toolItem?.binaryName ?: toolId
-                    val binaryPath = "$binDir/$binaryName"
-                    val exists = effectiveCli.execute(distro, listOf("test", "-x", binaryPath)).exitCode == 0
-                    val execRes = if (exists) effectiveCli.execute(distro, listOf(binaryPath, "--help"), timeoutSeconds = 5) else null
-                    val isOk = exists && execRes?.exitCode == 0
-
-                    _state.update { s ->
-                        s.copy(
-                            toolsMatrix = s.toolsMatrix.map {
-                                if (it.id == toolId) it.copy(
-                                    status = if (isOk) StepStatus.SUCCESS else StepStatus.FAILED,
-                                    path = if (exists) binaryPath else null,
-                                    lastTested = if (isOk) "Just now" else it.lastTested
-                                ) else it
-                            }
-                        )
-                    }
-                    if (isOk) {
-                        repository?.updateTool(toolId) { tool ->
-                            tool.copy(
-                                isVerified = true,
-                                isCompiled = true,
-                                binaryPath = binaryPath,
-                                lastVerifiedTimestamp = System.currentTimeMillis()
-                            )
-                        }
-                        journal?.let { repository?.recordPlanActionCompleted(it.attemptId, "build-recipes") }
-                        SetupOutcome.Succeeded()
-                    } else {
-                        SetupOutcome.Failed("TOOLCHAIN_COMPILATION", "Repair verification failed")
-                    }
+                    // Persisted verification evidence is withdrawn so a restart cannot restore it.
+                    repository?.updateTool(toolId) { tool -> tool.copy(isVerified = false) }
+                    SetupOutcome.Failed(
+                        stage = SetupStepStage.TOOLCHAIN_COMPILATION.name,
+                        reason = if (!exists) "Tool $toolId binary not found or not executable"
+                            else "Tool $toolId verification probe failed with exit code $exitCode"
+                    )
                 }
-            } catch (e: CancellationException) {
-                journal?.let { archiveAttempt(it.attemptId, SetupOutcome.Cancelled) }
-                throw e
-            } catch (e: Exception) {
-                appendLog("[Tool Matrix] Exception during repair of $toolId: ${e.message}")
+            } finally {
                 _state.update { s ->
                     s.copy(
                         toolsMatrix = s.toolsMatrix.map {
-                            if (it.id == toolId) it.copy(status = StepStatus.FAILED) else it
+                            if (it.id == toolId && it.status == StepStatus.RUNNING) {
+                                it.copy(status = StepStatus.FAILED)
+                            } else it
                         }
                     )
                 }
-                SetupOutcome.Failed("TOOLCHAIN_COMPILATION", e.message ?: "Repair exception")
-            } finally {
-                _state.update { it.copy(isRunning = false, activeOperationId = null) }
             }
-            val archived = journal?.let { archiveAttempt(it.attemptId, repairOutcome) } ?: repairOutcome
-            publishJournalState()
-            archived
-        }
-        outcome.isSuccess
+        }.also { _operationOutcome.value = it }
     }
 
     // ---- Plan-driven operation contract (003 US2) ----
@@ -1054,7 +951,7 @@ public class WslToolchainProvisioner(
      * status comes from a verified fact (re-run diagnostics, engine result, real listing), never from
      * a discarded Boolean or a command that merely returned.
      */
-    @Suppress("ReturnCount", "LongMethod", "CyclomaticComplexMethod")
+    @Suppress("ReturnCount", "LongMethod", "CyclomaticComplexMethod", "NestedBlockDepth")
     private suspend fun executePlan(
         currentPlan: SetupPlan,
         distro: String,
@@ -1069,6 +966,39 @@ public class WslToolchainProvisioner(
         val binDir = "$toolsRoot/bin"
         val workDir = "$home/LtiRomWorkDir"
         val serviceCli = TransportCliExecutor(transport, defaultWorkingDirectory = home)
+
+        val targetTool = currentPlan.targetStageOrToolId
+        if (currentPlan.kind == SetupPlanKind.REPAIR_TOOL) {
+            if (targetTool == null || !ToolCapabilities.isRecipeSupported(targetTool)) {
+                val reason = ToolCapabilities.unavailableReasonFor(targetTool ?: "")
+                    ?: ToolCapabilities.REPAIR_UNAVAILABLE_REASON
+                appendLog("[Tool Matrix] Repair unavailable for '$targetTool': $reason")
+                return SetupOutcome.Failed(
+                    stage = SetupStepStage.TOOLCHAIN_COMPILATION.name,
+                    reason = reason,
+                )
+            }
+            val group = ToolCapabilities.recipeGroupFor(targetTool)
+            if (group != null) {
+                val affectedTools = ToolCapabilities.toolsForRecipeGroup(group)
+                // Invalidate only owning recipe group tools in repository and state (FR-009)
+                for (toolId in affectedTools) {
+                    repository?.updateTool(toolId) { it.copy(isVerified = false) }
+                }
+                _state.update { s ->
+                    s.copy(
+                        toolsMatrix = s.toolsMatrix.map {
+                            if (it.id in affectedTools) {
+                                it.copy(
+                                    status = if (it.id == targetTool) StepStatus.RUNNING else StepStatus.PENDING,
+                                    lastTested = null,
+                                )
+                            } else it
+                        }
+                    )
+                }
+            }
+        }
 
         for (action in currentPlan.orderedActions) {
             when (action) {
@@ -1119,19 +1049,88 @@ public class WslToolchainProvisioner(
                         repository = repository,
                         transport = transport,
                     )
+                    val isRepair = currentPlan.kind == SetupPlanKind.REPAIR_TOOL
                     val buildRes = buildEngine.buildAndDistributeAll(
-                        distro,
-                        extDir,
-                        binDir,
+                        distro = distro,
+                        extDir = extDir,
+                        binDir = binDir,
                         journal = journal,
+                        targetRecipeGroups = if (isRepair) action.recipeGroups.toSet() else null,
+                        forceRebuild = isRepair,
                         onRunStarted = ::recordRunStarted,
                     ) { appendLog(it) }
                     if (buildRes.isFailure) {
                         val err = buildRes.exceptionOrNull()?.message ?: "Some core tool binaries are missing in $binDir after build."
                         appendLog("[Step 5/5] ERROR: $err")
                         setStepStatus(SetupStepStage.TOOLCHAIN_COMPILATION, StepStatus.FAILED, error = err)
+                        if (isRepair && targetTool != null) {
+                            val group = ToolCapabilities.recipeGroupFor(targetTool)
+                            val affected = group?.let { ToolCapabilities.toolsForRecipeGroup(it) } ?: setOf(targetTool)
+                            _state.update { s ->
+                                s.copy(
+                                    toolsMatrix = s.toolsMatrix.map {
+                                        if (it.id in affected) it.copy(status = StepStatus.FAILED) else it
+                                    }
+                                )
+                            }
+                        }
                         return SetupOutcome.Failed(SetupStepStage.TOOLCHAIN_COMPILATION.name, err)
                     }
+
+                    if (isRepair && targetTool != null) {
+                        // Verifies all sibling required tools of that group via domain probe argv + accepted exit codes
+                        val group = ToolCapabilities.recipeGroupFor(targetTool)
+                        if (group != null) {
+                            val siblingTools = ToolCapabilities.toolsForRecipeGroup(group)
+                            val requiredTools = ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS
+                            for (siblingId in siblingTools) {
+                                val item = _state.value.toolsMatrix.firstOrNull { it.id == siblingId } ?: continue
+                                val binaryPath = "$binDir/${item.binaryName}"
+                                val exists = serviceCli.execute(distro, listOf("test", "-x", binaryPath)).exitCode == 0
+                                val probeArgv = ToolCapabilities.probeArgumentsFor(siblingId, binaryPath)
+                                val acceptedExitCodes = ToolCapabilities.acceptedExitCodesFor(siblingId)
+                                val execRes = if (exists) {
+                                    serviceCli.execute(distro, probeArgv, timeoutSeconds = 5)
+                                } else {
+                                    null
+                                }
+                                val isOk = exists && execRes != null && execRes.exitCode in acceptedExitCodes
+
+                                _state.update { s ->
+                                    s.copy(
+                                        toolsMatrix = s.toolsMatrix.map {
+                                            if (it.id == siblingId) it.copy(
+                                                status = if (isOk) StepStatus.SUCCESS else StepStatus.FAILED,
+                                                path = if (exists) binaryPath else null,
+                                                lastTested = if (isOk) "Just now" else null,
+                                            ) else it
+                                        }
+                                    )
+                                }
+                                if (isOk) {
+                                    repository?.updateTool(siblingId) { tool ->
+                                        tool.copy(
+                                            isVerified = true,
+                                            isCompiled = true,
+                                            binaryPath = binaryPath,
+                                            lastVerifiedTimestamp = System.currentTimeMillis(),
+                                        )
+                                    }
+                                } else if (siblingId in requiredTools || siblingId == targetTool) {
+                                    setStepStatus(
+                                        SetupStepStage.TOOLCHAIN_COMPILATION,
+                                        StepStatus.FAILED,
+                                        "Tool $siblingId verification probe failed",
+                                    )
+                                    return SetupOutcome.Failed(
+                                        stage = SetupStepStage.TOOLCHAIN_COMPILATION.name,
+                                        reason = "Tool $siblingId verification probe failed",
+                                    )
+                                }
+                            }
+                        }
+                    }
+
                     setStepStatus(SetupStepStage.TOOLCHAIN_COMPILATION, StepStatus.SUCCESS, "Core tools ready in $binDir.")
                 }
                 is SetupPlanAction.PublishTools -> {
@@ -1192,8 +1191,9 @@ public class WslToolchainProvisioner(
             .associate { tool ->
                 tool.id to ToolEvidence(
                     toolId = tool.id,
-                    probeArgv = listOf("$binDir/${tool.binaryName}", "--help"),
-                    acceptedExitCodes = setOf(0),
+                    recipeGroup = ToolCapabilities.recipeGroupFor(tool.id),
+                    probeArgv = ToolCapabilities.probeArgumentsFor(tool.id, "$binDir/${tool.binaryName}"),
+                    acceptedExitCodes = ToolCapabilities.acceptedExitCodesFor(tool.id),
                     isInstalled = true,
                     isVerified = tool.lastTested != null,
                     isFailedExecution = false,

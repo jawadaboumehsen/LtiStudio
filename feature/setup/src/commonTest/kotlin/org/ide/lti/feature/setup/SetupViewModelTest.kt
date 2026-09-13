@@ -124,10 +124,10 @@ class SetupViewModelTest {
             private set
         var lastTestedToolId: String? = null
             private set
-        var recompileToolCount = 0
-            private set
-        var lastRecompiledToolId: String? = null
-            private set
+        val recompileToolCount: Int
+            get() = executedPlans.count { it.kind == SetupPlanKind.REPAIR_TOOL }
+        val lastRecompiledToolId: String?
+            get() = executedPlans.lastOrNull { it.kind == SetupPlanKind.REPAIR_TOOL }?.targetStageOrToolId
 
         fun markAllReady() {
             _state.value = _state.value.copy(
@@ -220,11 +220,6 @@ class SetupViewModelTest {
             return SetupOutcome.Succeeded()
         }
 
-        override suspend fun repairTool(toolId: String): Boolean {
-            recompileToolCount++
-            lastRecompiledToolId = toolId
-            return true
-        }
     }
 
     private class FakeEnvironmentReadinessPort(

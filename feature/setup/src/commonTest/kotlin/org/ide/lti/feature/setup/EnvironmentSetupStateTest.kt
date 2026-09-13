@@ -82,8 +82,7 @@ class EnvironmentSetupStateTest {
             get() = executedPlans.count { plan -> plan.orderedActions.any { it is SetupPlanAction.InstallPackages } }
         var testToolCount = 0
             private set
-        var repairToolCount = 0
-            private set
+
 
         override suspend fun verifyEnvironment(): ToolchainSetupState {
             verifyEnvironmentCount++
@@ -186,10 +185,6 @@ class EnvironmentSetupStateTest {
             return SetupOutcome.Succeeded()
         }
 
-        override suspend fun repairTool(toolId: String): Boolean {
-            repairToolCount++
-            return true
-        }
     }
 
     @Test

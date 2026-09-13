@@ -6,6 +6,7 @@ import org.ide.lti.core.domain.setup.SetupPlanAction
 import org.ide.lti.core.domain.setup.SetupPlanKind
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepStatus
+import org.ide.lti.core.domain.setup.ToolCapabilities
 import org.ide.lti.core.domain.setup.ToolchainSetupState
 
 /**
@@ -69,10 +70,18 @@ public object SetupPlanFactory {
     ): List<SetupPlanAction> = when (kind) {
         SetupPlanKind.FULL_SETUP -> deriveFullSetupActions(snapshot, autoDoctorEnabled)
         SetupPlanKind.STAGE_RETRY -> deriveStageRetryActions(targetId, snapshot, autoDoctorEnabled)
-        SetupPlanKind.REPAIR_TOOL -> listOfNotNull(
-            targetId?.let { SetupPlanAction.BuildRecipes(listOf(it)) },
-            targetId?.let { SetupPlanAction.PublishTools(listOf(it)) },
-        )
+        SetupPlanKind.REPAIR_TOOL -> {
+            val group = targetId?.let { ToolCapabilities.recipeGroupFor(it) }
+            if (group != null && ToolCapabilities.isRecipeSupported(targetId)) {
+                val affectedTools = ToolCapabilities.toolsForRecipeGroup(group).toList()
+                listOf(
+                    SetupPlanAction.BuildRecipes(listOf(group)),
+                    SetupPlanAction.PublishTools(affectedTools),
+                )
+            } else {
+                emptyList()
+            }
+        }
         // A cache reset clears persisted evidence; it installs, syncs, builds and publishes nothing.
         SetupPlanKind.CACHE_RESET -> emptyList()
     }
