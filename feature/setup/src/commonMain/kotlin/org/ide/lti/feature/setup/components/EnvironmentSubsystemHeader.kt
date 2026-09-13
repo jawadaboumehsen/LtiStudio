@@ -82,7 +82,6 @@ fun EnvironmentSubsystemHeader(
     state: ToolchainSetupState,
     onCheckEnvironment: () -> Unit,
     modifier: Modifier = Modifier,
-    onAutoRemediateDoctor: (() -> Unit)? = null,
     backdrop: LayerBackdrop? = null,
     isAutoDoctorEnabled: Boolean = true,
     onSetAutoDoctorEnabled: (Boolean) -> Unit = {},
@@ -95,7 +94,6 @@ fun EnvironmentSubsystemHeader(
     val isServerConnected =
         state.steps.firstOrNull { it.stage.name == "SERVER_CONNECTIVITY" }?.status == StepStatus.SUCCESS
     val isServerFailed = state.steps.firstOrNull { it.stage.name == "SERVER_CONNECTIVITY" }?.status == StepStatus.FAILED
-    val hasDoctorFailures = state.diagnostics.any { it.status == StepStatus.FAILED }
 
     GlassCard(
         modifier = modifier.fillMaxWidth(),
@@ -133,30 +131,11 @@ fun EnvironmentSubsystemHeader(
                 )
             }
 
-            // Right: Actions (Wrapping cleanly without collision)
+            // Right: Probing action (Primary mutations owned exclusively by SetupPresentationMapper / ActionBar)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
             ) {
-                if (isServerFailed) {
-                    GlassPrimaryButton(
-                        onClick = onCheckEnvironment,
-                        enabled = !state.isBusy,
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                        ) {
-                            Icon(
-                                painter = AppIcons.RefreshPainterResource(),
-                                contentDescription = null,
-                                modifier = Modifier.size(IconSize.Small),
-                            )
-                            Text("Retry Bridge", maxLines = 1, softWrap = false)
-                        }
-                    }
-                }
-
                 GlassSecondaryButton(
                     onClick = onCheckEnvironment,
                     enabled = !state.isBusy,
@@ -179,34 +158,6 @@ fun EnvironmentSubsystemHeader(
                             )
                         }
                         Text("Probe Subsystem", maxLines = 1, softWrap = false)
-                    }
-                }
-
-                if (hasDoctorFailures && onAutoRemediateDoctor != null) {
-                    GlassPrimaryButton(
-                        onClick = onAutoRemediateDoctor,
-                        enabled = !state.isBusy,
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                        ) {
-                            if (state.isFixing) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(IconSize.Small),
-                                    strokeWidth = StrokeWidth.Hairline,
-                                    color = glassColors.onGlass,
-                                )
-                                Text("Remediating...", maxLines = 1, softWrap = false)
-                            } else {
-                                Icon(
-                                    painter = AppIcons.SparklesPainterResource(),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(IconSize.Small),
-                                )
-                                Text("Elevated Root Fix", maxLines = 1, softWrap = false)
-                            }
-                        }
                     }
                 }
             }

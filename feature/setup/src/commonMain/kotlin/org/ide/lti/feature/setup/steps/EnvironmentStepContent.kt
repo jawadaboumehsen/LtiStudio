@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -64,9 +66,7 @@ import org.ide.lti.feature.setup.SetupOperation
 import org.ide.lti.feature.setup.SetupOperationState
 import org.ide.lti.feature.setup.components.DoctorDiagnosticsDrawer
 import org.ide.lti.feature.setup.components.EnvironmentSubsystemHeader
-import org.ide.lti.feature.setup.components.ProvisioningPreviewSheet
 import org.ide.lti.feature.setup.components.SetupActivityPanel
-import org.ide.lti.feature.setup.components.ToolMatrixTable
 import org.ide.lti.feature.setup.components.ToolchainPipelineTracker
 import org.ide.lti.feature.setup.SetupActivityState
 
@@ -86,6 +86,7 @@ fun EnvironmentStepContent(
     autoRunOnLaunch: Boolean = true,
     activityState: SetupActivityState? = null,
     activityListState: androidx.compose.foundation.lazy.LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
+    previewInvokerFocusRequester: FocusRequester? = null,
 ) {
     EnvironmentStepContent(
         toolchainSetupState = state.toolchainSetupState,
@@ -97,8 +98,6 @@ fun EnvironmentStepContent(
         onRetrySetupStep = actions.onRetrySetupStep,
         onRetryStage = actions.onRetryStage,
         onPreviewSetup = actions.onPreviewSetup,
-        onConfirmOperation = actions.onConfirmOperation,
-        onDismissPreview = actions.onDismissPreview,
         onProceedToLaunchpad = onProceedToLaunchpad,
         resolvedBackdrop = resolvedBackdrop,
         modifier = modifier,
@@ -106,18 +105,12 @@ fun EnvironmentStepContent(
         autoRunOnLaunch = autoRunOnLaunch,
         selectedCockpitTab = state.selectedCockpitTab,
         onSelectCockpitTab = actions.onSelectCockpitTab,
-        toolSearchQuery = state.toolSearchQuery,
-        onToolSearchQueryChange = actions.onToolSearchQueryChange,
-        selectedToolCategory = state.selectedToolCategory,
-        onSelectToolCategory = actions.onSelectToolCategory,
-        filteredToolsMatrix = state.filteredToolsMatrix,
-        onTestTool = actions.onTestTool,
-        onRecompileTool = actions.onRecompileTool,
         isAutoDoctorEnabled = state.isAutoDoctorEnabled,
         onSetAutoDoctorEnabled = actions.onSetAutoDoctorEnabled,
         onResetToolchainCache = actions.onResetToolchainCache,
         activityState = activityState,
         activityListState = activityListState,
+        previewInvokerFocusRequester = previewInvokerFocusRequester,
     )
 }
 
@@ -131,9 +124,8 @@ fun EnvironmentStepContent(
  * 1. Interactive Subsystem & Runtime Header: WSL2 distro, daemon bridge ping latency, and ext4 storage meter.
  * 2. Toolchain Provisioning Pipeline: 5-stage sequential progress tracker with per-stage status and retry.
  * 3. Doctor Diagnostics Drawer: Categorized pre-flight system checks with 1-click automated remediation.
- * 4. Tools Matrix Table: 35-tool interactive table with category filter, search, test & rebuild actions.
- * 5. Setup Console Drawer: Real-time daemon execution logs with auto-scroll and run state.
- * 6. Bottom Navigation Action Bar.
+ * 4. Setup Console Drawer: Real-time daemon execution logs with auto-scroll and run state.
+ * 5. Bottom Navigation Action Bar.
  *
  * Adheres strictly to:
  * - Single Responsibility: Coordinates environment setup and toolchain provisioning cockpit.
@@ -153,32 +145,21 @@ fun EnvironmentStepContent(
     onReconnect: () -> Unit = {},
     onRetryStage: (SetupStepStage) -> Unit = {},
     onPreviewSetup: (SetupStepStage?) -> Unit = {},
-    onConfirmOperation: () -> Unit = {},
-    onDismissPreview: () -> Unit = {},
     onNavigateToProjects: (() -> Unit)? = null,
     onAutoRemediateDoctor: (() -> Unit)? = null,
     autoRunOnLaunch: Boolean = true,
     selectedCockpitTab: String = "doctor",
     onSelectCockpitTab: (String) -> Unit = {},
-    toolSearchQuery: String = "",
-    onToolSearchQueryChange: (String) -> Unit = {},
-    selectedToolCategory: String = "All",
-    onSelectToolCategory: (String) -> Unit = {},
-    filteredToolsMatrix: List<ToolComponentItem> = toolchainSetupState.toolsMatrix,
-    onTestTool: (String) -> Unit = {},
-    onRecompileTool: (String) -> Unit = {},
     isAutoDoctorEnabled: Boolean = true,
     onSetAutoDoctorEnabled: (Boolean) -> Unit = {},
     onResetToolchainCache: () -> Unit = {},
     activityState: SetupActivityState? = null,
     activityListState: androidx.compose.foundation.lazy.LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
+    previewInvokerFocusRequester: FocusRequester? = null,
 ) {
     val glassColors = GlassTheme.colors
     val diagnostics = glassColors.diagnostics
 
-    val currentSearch = toolSearchQuery
-    val currentCategory = selectedToolCategory
-    val activeToolsList = filteredToolsMatrix
     val presentation = environmentPresentation ?: SetupPresentationMapper.mapEnvironment(
         state = toolchainSetupState,
         activeOperation = activeOperation,
@@ -236,7 +217,6 @@ fun EnvironmentStepContent(
         EnvironmentSubsystemHeader(
             state = toolchainSetupState,
             onCheckEnvironment = onCheckEnvironment,
-            onAutoRemediateDoctor = onAutoRemediateDoctor,
             backdrop = resolvedBackdrop,
             isAutoDoctorEnabled = isAutoDoctorEnabled,
             onSetAutoDoctorEnabled = onSetAutoDoctorEnabled,
@@ -265,10 +245,6 @@ fun EnvironmentStepContent(
                 title = "Doctor Diagnostics",
             ),
             org.ide.lti.core.designsystem.component.navigation.GlassTab(
-                id = "tools",
-                title = "Toolchain Matrix",
-            ),
-            org.ide.lti.core.designsystem.component.navigation.GlassTab(
                 id = "console",
                 title = "Pipeline Console",
             )
@@ -285,13 +261,6 @@ fun EnvironmentStepContent(
         EnvironmentCockpitTabContent(
             selectedCockpitTab = selectedCockpitTab,
             toolchainSetupState = toolchainSetupState,
-            activeToolsList = activeToolsList,
-            currentSearch = currentSearch,
-            onToolSearchQueryChange = onToolSearchQueryChange,
-            currentCategory = currentCategory,
-            onSelectToolCategory = onSelectToolCategory,
-            onTestTool = onTestTool,
-            onRecompileTool = onRecompileTool,
             onAutoRemediateDoctor = onAutoRemediateDoctor,
             activityState = activityState,
             activityListState = activityListState,
@@ -309,22 +278,12 @@ fun EnvironmentStepContent(
             onRetryStage = onRetryStage,
             resolvedBackdrop = resolvedBackdrop,
             glassColors = glassColors,
+            previewInvokerFocusRequester = previewInvokerFocusRequester,
         )
     }
-
-        if (activeOperation != null && activeOperation.executionState == SetupOperationState.PREVIEW) {
-            ProvisioningPreviewSheet(
-                plannedChanges = activeOperation.plannedChanges,
-                isAutoDoctorEnabled = isAutoDoctorEnabled,
-                onSetAutoDoctorEnabled = onSetAutoDoctorEnabled,
-                onConfirm = onConfirmOperation,
-                onDismiss = onDismissPreview,
-                backdrop = resolvedBackdrop,
-                plan = activeOperation.plan,
-            )
-        }
-    }
 }
+}
+
 
 @Composable
 private fun EnvironmentStatusBanners(
@@ -371,18 +330,10 @@ private fun EnvironmentStatusBanners(
     }
 }
 
-@Suppress("LongParameterList")
 @Composable
 private fun EnvironmentCockpitTabContent(
     selectedCockpitTab: String,
     toolchainSetupState: ToolchainSetupState,
-    activeToolsList: List<ToolComponentItem>,
-    currentSearch: String,
-    onToolSearchQueryChange: (String) -> Unit,
-    currentCategory: String,
-    onSelectToolCategory: (String) -> Unit,
-    onTestTool: (String) -> Unit,
-    onRecompileTool: (String) -> Unit,
     onAutoRemediateDoctor: (() -> Unit)?,
     activityState: SetupActivityState?,
     activityListState: androidx.compose.foundation.lazy.LazyListState,
@@ -394,18 +345,6 @@ private fun EnvironmentCockpitTabContent(
                 diagnosticsList = toolchainSetupState.diagnostics,
                 backdrop = resolvedBackdrop,
                 onAutoRemediateDoctor = onAutoRemediateDoctor,
-            )
-        }
-        "tools" -> {
-            ToolMatrixTable(
-                tools = activeToolsList,
-                searchQuery = currentSearch,
-                onSearchQueryChange = onToolSearchQueryChange,
-                selectedCategory = currentCategory,
-                onSelectCategory = onSelectToolCategory,
-                onTestTool = onTestTool,
-                onRecompileTool = onRecompileTool,
-                backdrop = resolvedBackdrop,
             )
         }
         "console" -> {
@@ -440,6 +379,7 @@ private fun EnvironmentStepActionBar(
     onRetryStage: (SetupStepStage) -> Unit,
     resolvedBackdrop: LayerBackdrop,
     glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme,
+    previewInvokerFocusRequester: FocusRequester? = null,
 ) {
     GlassCard(
         modifier = Modifier.fillMaxWidth(),
@@ -460,6 +400,7 @@ private fun EnvironmentStepActionBar(
 
             EnvironmentPrimaryActionButton(
                 toolchainSetupState = toolchainSetupState,
+                previewInvokerFocusRequester = previewInvokerFocusRequester,
                 presentation = presentation,
                 onNavigateToProjects = onNavigateToProjects,
                 onProceedToLaunchpad = onProceedToLaunchpad,
@@ -511,11 +452,12 @@ private fun EnvironmentPrimaryActionButton(
     onPreviewSetup: (SetupStepStage?) -> Unit,
     onRetryStage: (SetupStepStage) -> Unit,
     glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme,
+    previewInvokerFocusRequester: FocusRequester? = null,
 ) {
     val isBusy = toolchainSetupState.isBusy
     when (presentation.primaryAction) {
         PrimaryAction.CHECKING -> CheckingActionButton(glassColors)
-        PrimaryAction.STAGE_PROGRESS -> StageProgressActionButton(toolchainSetupState.isFixing, glassColors)
+        PrimaryAction.STAGE_PROGRESS -> StageProgressActionButton(glassColors)
         PrimaryAction.OPEN_WORKSPACES -> OpenWorkspacesActionButton(
             enabled = !isBusy,
             onNavigateToProjects = onNavigateToProjects,
@@ -535,6 +477,7 @@ private fun EnvironmentPrimaryActionButton(
             presentation = presentation,
             toolchainSetupState = toolchainSetupState,
             onPreviewSetup = onPreviewSetup,
+            focusRequester = previewInvokerFocusRequester,
         )
         PrimaryAction.CHECK -> CheckActionButton(
             enabled = !isBusy,
@@ -543,6 +486,7 @@ private fun EnvironmentPrimaryActionButton(
         PrimaryAction.SET_UP -> SetUpActionButton(
             enabled = !isBusy,
             onPreviewSetup = onPreviewSetup,
+            focusRequester = previewInvokerFocusRequester,
         )
     }
 }
@@ -566,7 +510,6 @@ private fun CheckingActionButton(glassColors: org.ide.lti.core.designsystem.them
 
 @Composable
 private fun StageProgressActionButton(
-    isFixing: Boolean,
     glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme,
 ) {
     GlassPrimaryButton(onClick = {}, enabled = false) {
@@ -580,7 +523,7 @@ private fun StageProgressActionButton(
                 color = glassColors.onGlass,
             )
             Text(
-                text = if (isFixing) "Remediating Packages..." else "Running Setup...",
+                text = "Running Setup...",
                 maxLines = 1,
                 softWrap = false,
             )
@@ -673,6 +616,7 @@ private fun RetryStageActionButton(
     presentation: EnvironmentPresentation,
     toolchainSetupState: ToolchainSetupState,
     onPreviewSetup: (SetupStepStage?) -> Unit,
+    focusRequester: FocusRequester? = null,
 ) {
     val failedStage = when (val env = presentation.environmentState) {
         is EnvironmentState.Failed -> env.stage
@@ -681,6 +625,7 @@ private fun RetryStageActionButton(
     GlassPrimaryButton(
         onClick = { onPreviewSetup(failedStage) },
         enabled = enabled,
+        modifier = if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier,
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -727,10 +672,12 @@ private fun CheckActionButton(
 private fun SetUpActionButton(
     enabled: Boolean,
     onPreviewSetup: (SetupStepStage?) -> Unit,
+    focusRequester: FocusRequester? = null,
 ) {
     GlassPrimaryButton(
         onClick = { onPreviewSetup(null) },
         enabled = enabled,
+        modifier = if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier,
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,

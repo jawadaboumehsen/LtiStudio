@@ -202,6 +202,7 @@ class SetupViewModel(
     val searchQuery: StateFlow<String> = workspaceBrowserState.searchQuery
     val filteredRecentProjects: StateFlow<List<RecentProject>> = workspaceBrowserState.filteredProjects
     val selectedWorkspaceId: StateFlow<String?> = workspaceBrowserState.selectedWorkspaceId
+    val workspaceError: StateFlow<WorkspaceError?> = workspaceBrowserState.workspaceError
 
     fun onSearchQueryChange(query: String) {
         workspaceBrowserState.onSearchQueryChange(query)
@@ -209,6 +210,10 @@ class SetupViewModel(
 
     fun selectWorkspace(workspaceId: String?) {
         workspaceBrowserState.selectWorkspace(workspaceId)
+    }
+
+    fun dismissWorkspaceError() {
+        workspaceBrowserState.clearWorkspaceError()
     }
 
     internal val _selectedTab = MutableStateFlow(SetupTab.PROJECTS)

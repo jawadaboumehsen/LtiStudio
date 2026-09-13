@@ -116,11 +116,11 @@ object SetupPresentationMapper {
 
     private fun isMutating(state: ToolchainSetupState, activeOperation: SetupOperation?): Boolean {
         val opRunning = activeOperation?.executionState == SetupOperationState.RUNNING
-        return state.activeOperationId != null || opRunning || state.isRunning || state.isFixing
+        return state.activeOperationId != null || opRunning || state.isRunning
     }
 
     private fun isCheckingState(state: ToolchainSetupState): Boolean {
-        val nonMutationBusy = state.isBusy && !state.isRunning && !state.isFixing
+        val nonMutationBusy = state.isBusy && !state.isRunning
         return state.isChecking || nonMutationBusy
     }
 

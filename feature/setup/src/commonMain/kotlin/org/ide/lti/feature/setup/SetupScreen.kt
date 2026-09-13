@@ -59,6 +59,7 @@ import org.ide.lti.core.designsystem.component.feedback.GlassBannerAction
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.component.feedback.GlassBottomSheetScaffold
 import org.ide.lti.core.designsystem.component.layout.GlassTopBar
+import org.ide.lti.feature.setup.components.ProvisioningPreviewSheet
 import org.ide.lti.core.designsystem.component.layout.TopBarNavigation
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.GlassShapes
@@ -109,6 +110,7 @@ fun SetupScreen(
     val environmentReadiness by viewModel.environmentReadiness.collectAsState()
     val activeOperation by viewModel.activeOperation.collectAsState()
     val environmentPresentation by viewModel.environmentPresentation.collectAsState()
+    val workspaceError by viewModel.workspaceError.collectAsState()
 
     var isHelpSheetOpen by remember { mutableStateOf(false) }
 
@@ -131,6 +133,7 @@ fun SetupScreen(
         environmentReadiness = environmentReadiness,
         activeOperation = activeOperation,
         environmentPresentation = environmentPresentation,
+        workspaceError = workspaceError,
     )
 
     val uiActions = SetupUiActions(
@@ -173,6 +176,7 @@ fun SetupScreen(
         onConfirmOperation = viewModel::confirmOperation,
         onDismissPreview = viewModel::dismissPreview,
         onRetryStage = viewModel::retryStage,
+        onDismissWorkspaceError = viewModel::dismissWorkspaceError,
     )
 
     SetupPerformanceScenarioHook(
@@ -233,11 +237,23 @@ fun SetupScreenContent(
     val searchFocusRequester = remember { FocusRequester() }
     val toolSearchFocusRequester = remember { FocusRequester() }
     val helpButtonFocusRequester = remember { FocusRequester() }
+    val previewInvokerFocusRequester = remember { FocusRequester() }
     var lastInvokingFocusRequester by remember { mutableStateOf<FocusRequester?>(null) }
     var pendingSearchFocus by remember { mutableStateOf(false) }
 
+    val isPreviewOpen = state.activeOperation?.executionState == SetupOperationState.PREVIEW
+
     LaunchedEffect(Unit) {
         rootFocusRequester.requestFocus()
+    }
+
+    LaunchedEffect(isPreviewOpen) {
+        // The Set Up / Retry Stage buttons that open the preview share previewInvokerFocusRequester
+        // (attached in EnvironmentStepContent); record it as the invoker so Escape/Cancel/Confirm
+        // restore focus to the button that actually opened the modal, not just the root.
+        if (isPreviewOpen) {
+            lastInvokingFocusRequester = previewInvokerFocusRequester
+        }
     }
 
     LaunchedEffect(effectiveTab) {
@@ -263,6 +279,16 @@ fun SetupScreenContent(
             .focusable()
             .onKeyEvent { event ->
                 if (event.type == KeyEventType.KeyDown) {
+                    val isPreviewOpen = state.activeOperation?.executionState == SetupOperationState.PREVIEW
+                    val showHelp = isHelpSheetOpen || internalHelpSheetOpen
+                    val isModalOpen = isPreviewOpen || showHelp
+
+                    if (isModalOpen && event.isCtrlPressed) {
+                        when (event.key) {
+                            Key.N, Key.O, Key.F -> return@onKeyEvent true
+                        }
+                    }
+
                     if (event.isCtrlPressed) {
                         when (event.key) {
                             Key.N -> {
@@ -291,14 +317,14 @@ fun SetupScreenContent(
                             else -> false
                         }
                     } else if (event.key == Key.Escape) {
-                        val showHelp = isHelpSheetOpen || internalHelpSheetOpen
-                        if (showHelp) {
+                        if (isPreviewOpen) {
+                            actions.onDismissPreview()
+                            (lastInvokingFocusRequester ?: rootFocusRequester).requestFocus()
+                            true
+                        } else if (showHelp) {
                             internalHelpSheetOpen = false
                             onDismissHelpSheet()
                             (lastInvokingFocusRequester ?: rootFocusRequester).requestFocus()
-                            true
-                        } else if (state.activeOperation?.executionState == SetupOperationState.PREVIEW) {
-                            actions.onDismissPreview()
                             true
                         } else {
                             false
@@ -444,6 +470,7 @@ fun SetupScreenContent(
                                     resolvedBackdrop = resolvedBackdrop,
                                     activityState = activityState,
                                     activityListState = activityListState,
+                                    previewInvokerFocusRequester = previewInvokerFocusRequester,
                                 )
                             }
                             SetupTab.PROJECTS, SetupTab.LAUNCHPAD -> {
@@ -491,5 +518,25 @@ fun SetupScreenContent(
         backdrop = resolvedBackdrop,
     ) {
         DocumentationStepContent(resolvedBackdrop = resolvedBackdrop)
+    }
+
+    val activeOperationForPreview = state.activeOperation
+    if (isPreviewOpen && activeOperationForPreview != null) {
+        ProvisioningPreviewSheet(
+            plannedChanges = activeOperationForPreview.plannedChanges,
+            isAutoDoctorEnabled = state.isAutoDoctorEnabled,
+            onSetAutoDoctorEnabled = actions.onSetAutoDoctorEnabled,
+            onConfirm = {
+                actions.onConfirmOperation()
+                (lastInvokingFocusRequester ?: rootFocusRequester).requestFocus()
+            },
+            onDismiss = {
+                actions.onDismissPreview()
+                (lastInvokingFocusRequester ?: rootFocusRequester).requestFocus()
+            },
+            backdrop = resolvedBackdrop,
+            plan = activeOperationForPreview.plan,
+            contextualError = activeOperationForPreview.failure,
+        )
     }
 }

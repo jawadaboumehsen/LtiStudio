@@ -59,6 +59,9 @@ import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.display.GlassEmptyState
 import org.ide.lti.core.designsystem.component.display.GlassEmptyStateOrientation
 import org.ide.lti.core.designsystem.component.display.GlassHorizontalDivider
+import org.ide.lti.core.designsystem.component.feedback.GlassBanner
+import org.ide.lti.core.designsystem.component.feedback.GlassBannerAction
+import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.TextFieldLeadingSlot
 import org.ide.lti.core.designsystem.component.inputs.TextFieldTrailingSlot
@@ -78,6 +81,7 @@ import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.feature.setup.SetupUiActions
 import org.ide.lti.feature.setup.SetupUiState
+import org.ide.lti.feature.setup.WorkspaceAction
 
 /**
  * Workspaces destination content for Setup (US1 - Workspaces, P1 MVP).
@@ -154,150 +158,42 @@ fun ProjectsStepContent(
         verticalArrangement = Arrangement.spacedBy(Spacing.SectionGap),
     ) {
         // 1. Title + New/Open Toolbar Row
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(
-                modifier = Modifier.weight(1f, fill = false).padding(end = Spacing.Medium),
-                verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-            ) {
-                Text(
-                    text = "Workspaces",
-                    fontSize = SetupTokens.TextTitle,
-                    fontWeight = FontWeight.Bold,
-                    color = glassColors.onGlass,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    text = "Open an existing workspace or create an independent target environment",
-                    fontSize = SetupTokens.TextBody,
-                    color = glassColors.onGlassSecondary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                GlassSecondaryButton(
-                    onClick = actions.onOpenFolder,
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                    ) {
-                        Icon(
-                            painter = AppIcons.FolderOpenPainterResource(),
-                            contentDescription = null,
-                            modifier = Modifier.size(IconSize.Small),
-                        )
-                        Text("Open Workspace", fontSize = SetupTokens.TextBody)
-                        Text(
-                            text = "Ctrl+O",
-                            fontSize = SetupTokens.TextMetadata,
-                            color = glassColors.onGlassMuted,
-                        )
-                    }
-                }
-
-                GlassPrimaryButton(
-                    onClick = actions.onCreateWorkspace,
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                    ) {
-                        Icon(
-                            painter = AppIcons.AddPainterResource(),
-                            contentDescription = null,
-                            modifier = Modifier.size(IconSize.Small),
-                        )
-                        Text("New Workspace", fontSize = SetupTokens.TextBody)
-                        Text(
-                            text = "Ctrl+N",
-                            fontSize = SetupTokens.TextMetadata,
-                            color = glassColors.onGlassMuted,
-                        )
-                    }
-                }
-            }
-        }
+        WorkspaceHeaderSection(
+            onCreateWorkspace = actions.onCreateWorkspace,
+            onOpenFolder = actions.onOpenFolder,
+        )
 
         GlassHorizontalDivider()
 
-        // 2. Recent Workspaces Header & Labeled Search
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Row(
-                modifier = Modifier.padding(vertical = Spacing.ExtraSmall),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-            ) {
-                Text(
-                    text = "Recent Workspaces",
-                    fontSize = SetupTokens.TextSection,
-                    fontWeight = FontWeight.SemiBold,
-                    color = glassColors.onGlass,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                GlassChip(
-                    label = "${state.recentProjects.size}",
-                    selected = false,
-                )
-            }
-
-            Box(
-                modifier = Modifier.widthIn(max = ComponentSize.CommandPaletteMaxWidth),
-            ) {
-                GlassTextField(
-                    value = state.searchQuery,
-                    onValueChange = actions.onSearchQueryChange,
-                    placeholder = "Search workspaces... (Ctrl+F)",
-                    leading = TextFieldLeadingSlot.Icon(AppIcons.Search),
-                    trailing = if (state.searchQuery.isNotBlank()) {
-                        TextFieldTrailingSlot.Clear(onClear = { actions.onSearchQueryChange("") })
-                    } else {
-                        TextFieldTrailingSlot.None
-                    },
-                    backdrop = resolvedBackdrop,
-                    focusRequester = searchFocusRequester,
-                )
-            }
+        state.workspaceError?.let { error ->
+            GlassBanner(
+                severity = GlassBannerSeverity.ERROR,
+                title = workspaceErrorTitle(error.action),
+                description = error.reason + (error.workspacePath?.let { " ($it)" } ?: ""),
+                primaryAction = error.retryAction?.let { retry ->
+                    GlassBannerAction(
+                        label = "Retry",
+                        onClick = retry,
+                    )
+                },
+                onDismiss = actions.onDismissWorkspaceError,
+                backdrop = resolvedBackdrop,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
+
+        // 2. Recent Workspaces Header & Labeled Search
+        WorkspaceSearchSection(
+            searchQuery = state.searchQuery,
+            onSearchQueryChange = actions.onSearchQueryChange,
+            totalCount = state.recentProjects.size,
+            searchFocusRequester = searchFocusRequester,
+            resolvedBackdrop = resolvedBackdrop,
+        )
 
         // 3. Virtualized Recents List / Distinct Empty State
         if (state.filteredProjects.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = Spacing.Large),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (state.searchQuery.isNotBlank()) {
-                    GlassEmptyState(
-                        icon = AppIcons.Folder,
-                        title = "No Matching Workspaces",
-                        description = "No workspace matches '${state.searchQuery}'. Try refining your search query.",
-                        orientation = GlassEmptyStateOrientation.Vertical,
-                    )
-                } else {
-                    GlassEmptyState(
-                        icon = AppIcons.Folder,
-                        title = "No Recent Workspaces",
-                        description = "Get started by creating a new workspace or opening an existing directory.",
-                        orientation = GlassEmptyStateOrientation.Vertical,
-                    )
-                }
-            }
+            WorkspaceEmptyStateSection(searchQuery = state.searchQuery)
         } else {
             LazyColumn(
                 state = lazyListState,
@@ -509,6 +405,13 @@ private fun WorkspaceRowItem(
     }
 }
 
+private fun workspaceErrorTitle(action: WorkspaceAction): String = when (action) {
+    WorkspaceAction.OPEN -> "Failed to open workspace"
+    WorkspaceAction.CREATE -> "Failed to create workspace"
+    WorkspaceAction.REMOVE -> "Failed to remove workspace"
+    WorkspaceAction.BROWSE -> "Failed to browse workspaces"
+}
+
 private fun formatRelativeTime(instant: Instant): String {
     val now = Clock.System.now()
     val duration = now - instant
@@ -518,5 +421,166 @@ private fun formatRelativeTime(instant: Instant): String {
         duration.inWholeHours < 24 -> "${duration.inWholeHours}h ago"
         duration.inWholeDays < 7 -> "${duration.inWholeDays}d ago"
         else -> "${duration.inWholeDays / 7}w ago"
+    }
+}
+
+@Composable
+private fun WorkspaceHeaderSection(
+    onCreateWorkspace: () -> Unit,
+    onOpenFolder: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val glassColors = GlassTheme.colors
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(
+            modifier = Modifier.weight(1f, fill = false).padding(end = Spacing.Medium),
+            verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+        ) {
+            Text(
+                text = "Workspaces",
+                fontSize = SetupTokens.TextTitle,
+                fontWeight = FontWeight.Bold,
+                color = glassColors.onGlass,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = "Open an existing workspace or create an independent target environment",
+                fontSize = SetupTokens.TextBody,
+                color = glassColors.onGlassSecondary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            GlassSecondaryButton(onClick = onOpenFolder) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                ) {
+                    Icon(
+                        painter = AppIcons.FolderOpenPainterResource(),
+                        contentDescription = null,
+                        modifier = Modifier.size(IconSize.Small),
+                    )
+                    Text("Open Workspace", fontSize = SetupTokens.TextBody)
+                    Text(
+                        text = "Ctrl+O",
+                        fontSize = SetupTokens.TextMetadata,
+                        color = glassColors.onGlassMuted,
+                    )
+                }
+            }
+
+            GlassPrimaryButton(onClick = onCreateWorkspace) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                ) {
+                    Icon(
+                        painter = AppIcons.AddPainterResource(),
+                        contentDescription = null,
+                        modifier = Modifier.size(IconSize.Small),
+                    )
+                    Text("New Workspace", fontSize = SetupTokens.TextBody)
+                    Text(
+                        text = "Ctrl+N",
+                        fontSize = SetupTokens.TextMetadata,
+                        color = glassColors.onGlassMuted,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun WorkspaceSearchSection(
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
+    totalCount: Int,
+    searchFocusRequester: FocusRequester,
+    resolvedBackdrop: LayerBackdrop,
+    modifier: Modifier = Modifier,
+) {
+    val glassColors = GlassTheme.colors
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Row(
+            modifier = Modifier.padding(vertical = Spacing.ExtraSmall),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+        ) {
+            Text(
+                text = "Recent Workspaces",
+                fontSize = SetupTokens.TextSection,
+                fontWeight = FontWeight.SemiBold,
+                color = glassColors.onGlass,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            GlassChip(
+                label = "$totalCount",
+                selected = false,
+            )
+        }
+
+        Box(
+            modifier = Modifier.widthIn(max = ComponentSize.CommandPaletteMaxWidth),
+        ) {
+            GlassTextField(
+                value = searchQuery,
+                onValueChange = onSearchQueryChange,
+                placeholder = "Search workspaces... (Ctrl+F)",
+                leading = TextFieldLeadingSlot.Icon(AppIcons.Search),
+                trailing = if (searchQuery.isNotBlank()) {
+                    TextFieldTrailingSlot.Clear(onClear = { onSearchQueryChange("") })
+                } else {
+                    TextFieldTrailingSlot.None
+                },
+                backdrop = resolvedBackdrop,
+                focusRequester = searchFocusRequester,
+            )
+        }
+    }
+}
+
+@Composable
+private fun WorkspaceEmptyStateSection(
+    searchQuery: String,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = Spacing.Large),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (searchQuery.isNotBlank()) {
+            GlassEmptyState(
+                icon = AppIcons.Folder,
+                title = "No Matching Workspaces",
+                description = "No workspace matches '$searchQuery'. Try refining your search query.",
+                orientation = GlassEmptyStateOrientation.Vertical,
+            )
+        } else {
+            GlassEmptyState(
+                icon = AppIcons.Folder,
+                title = "No Recent Workspaces",
+                description = "Get started by creating a new workspace or opening an existing directory.",
+                orientation = GlassEmptyStateOrientation.Vertical,
+            )
+        }
     }
 }

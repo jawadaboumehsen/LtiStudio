@@ -96,6 +96,7 @@ fun ToolMatrixTable(
     isBusy: Boolean = false,
     searchFocusRequester: FocusRequester? = null,
     backdrop: LayerBackdrop? = null,
+    publishedToolIds: Set<String> = emptySet(),
 ) {
     val glassColors = GlassTheme.colors
     val diagnostics = glassColors.diagnostics
@@ -224,6 +225,7 @@ fun ToolMatrixTable(
                         ToolMatrixItemRow(
                             tool = tool,
                             isBusy = isBusy,
+                            isPublished = publishedToolIds.contains(tool.id),
                             onTest = { onTestTool(tool.id) },
                             onRecompile = { onRecompileTool(tool.id) },
                         )
@@ -239,6 +241,7 @@ fun ToolMatrixTable(
 private fun ToolMatrixItemRow(
     tool: ToolComponentItem,
     isBusy: Boolean,
+    isPublished: Boolean,
     onTest: () -> Unit,
     onRecompile: () -> Unit,
     modifier: Modifier = Modifier,
@@ -248,6 +251,10 @@ private fun ToolMatrixItemRow(
 
     val isRecipeSupported = ToolBrowserState.isRecipeSupported(tool.id)
     val isRunning = tool.status == StepStatus.RUNNING || isBusy
+    // Installed/tested are measured facts, not derived from pipeline status alone -- must match
+    // ToolBrowserState.ToolPresentation's definitions exactly so the two never disagree.
+    val isInstalled = tool.path != null
+    val isTested = tool.status == StepStatus.SUCCESS && tool.lastTested != null
 
     val statusColor = when (tool.status) {
         StepStatus.SUCCESS -> diagnostics.success
@@ -273,11 +280,7 @@ private fun ToolMatrixItemRow(
             )
             .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
     ) {
-        // FrameLayout / Box Anchored Layout
-        Box(
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            // Left: Status Icon, Tool Title, Binary Name, Path & Capabilities
+        Box(modifier = Modifier.fillMaxWidth()) {
             Row(
                 modifier = Modifier
                     .align(Alignment.CenterStart)
@@ -286,177 +289,238 @@ private fun ToolMatrixItemRow(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
             ) {
-                // Status Indicator
-                Box(
-                    modifier = Modifier
-                        .size(ComponentSize.SegmentedButtonSize)
-                        .clip(GlassShapes.Small)
-                        .background(statusColor.copy(alpha = AlphaTokens.Hover))
-                        .border(
-                            width = StrokeWidth.Standard,
-                            color = statusColor.copy(alpha = AlphaTokens.Border),
-                            shape = GlassShapes.Small,
-                        ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    if (tool.status == StepStatus.RUNNING) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(IconSize.Small),
-                            strokeWidth = StrokeWidth.Hairline,
-                            color = glassColors.onGlass,
-                        )
-                    } else {
-                        Box(
-                            modifier = Modifier
-                                .size(IconSize.Indicator)
-                                .clip(GlassShapes.Capsule)
-                                .background(statusColor),
-                        )
-                    }
-                }
+                ToolStatusIndicator(
+                    status = tool.status,
+                    statusColor = statusColor,
+                )
 
-                Column(
+                ToolItemDetails(
+                    tool = tool,
+                    isInstalled = isInstalled,
+                    isTested = isTested,
+                    isPublished = isPublished,
+                    isRecipeSupported = isRecipeSupported,
                     modifier = Modifier.weight(1f, fill = false),
-                    verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
-                ) {
-                    FlowRow(
-                        verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                    ) {
-                        Text(
-                            text = tool.name,
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = glassColors.onGlass,
-                            maxLines = 1,
-                            softWrap = false,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Text(
-                            text = tool.binaryName,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontFamily = codeFontFamily(),
-                            color = glassColors.onGlassSecondary,
-                            maxLines = 1,
-                            softWrap = false,
-                        )
-                        if (tool.isCore) {
-                            GlassChip(
-                                label = "Core",
-                                selected = false,
-                            )
-                        }
-                        GlassChip(
-                            label = tool.category.displayName,
-                            selected = false,
-                        )
-                    }
-
-                    // Path & Capabilities Chips
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                    ) {
-                        Text(
-                            text = tool.path ?: "~/LtiRomTools/bin/${tool.binaryName}",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontFamily = codeFontFamily(),
-                            color = if (tool.status == StepStatus.SUCCESS) glassColors.onGlassSecondary else glassColors.onGlassMuted,
-                            maxLines = 1,
-                            softWrap = false,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-
-                        tool.lastTested?.let { last ->
-                            Text(
-                                text = "· $last",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = diagnostics.success,
-                                maxLines = 1,
-                                softWrap = false,
-                            )
-                        }
-                    }
-
-                    if (tool.capabilities.isNotEmpty()) {
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-                            verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
-                        ) {
-                            tool.capabilities.take(4).forEach { cap ->
-                                Text(
-                                    text = "#$cap",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = glassColors.onGlassMuted,
-                                    maxLines = 1,
-                                    softWrap = false,
-                                )
-                            }
-                        }
-                    }
-
-                    if (!isRecipeSupported) {
-                        Text(
-                            text = ToolBrowserState.REPAIR_UNAVAILABLE_REASON,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = diagnostics.warning,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                }
+                )
             }
 
-            // Right: Interactive Test & Recompile Action Buttons (FrameLayout / Box Anchored Layout)
-            Row(
+            ToolItemActionButtons(
+                isRunning = isRunning,
+                isRecipeSupported = isRecipeSupported,
+                onTest = onTest,
+                onRecompile = onRecompile,
                 modifier = Modifier.align(Alignment.CenterEnd),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+            )
+        }
+    }
+}
+
+@Composable
+private fun ToolStatusIndicator(
+    status: StepStatus,
+    statusColor: androidx.compose.ui.graphics.Color,
+    modifier: Modifier = Modifier,
+) {
+    val glassColors = GlassTheme.colors
+    Box(
+        modifier = modifier
+            .size(ComponentSize.SegmentedButtonSize)
+            .clip(GlassShapes.Small)
+            .background(statusColor.copy(alpha = AlphaTokens.Hover))
+            .border(
+                width = StrokeWidth.Standard,
+                color = statusColor.copy(alpha = AlphaTokens.Border),
+                shape = GlassShapes.Small,
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (status == StepStatus.RUNNING) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(IconSize.Small),
+                strokeWidth = StrokeWidth.Hairline,
+                color = glassColors.onGlass,
+            )
+        } else {
+            Box(
+                modifier = Modifier
+                    .size(IconSize.Indicator)
+                    .clip(GlassShapes.Capsule)
+                    .background(statusColor),
+            )
+        }
+    }
+}
+
+@Composable
+private fun ToolItemDetails(
+    tool: ToolComponentItem,
+    isInstalled: Boolean,
+    isTested: Boolean,
+    isPublished: Boolean,
+    isRecipeSupported: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val glassColors = GlassTheme.colors
+    val diagnostics = glassColors.diagnostics
+
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
+    ) {
+        FlowRow(
+            verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+        ) {
+            Text(
+                text = tool.name,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = glassColors.onGlass,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = tool.binaryName,
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = codeFontFamily(),
+                color = glassColors.onGlassSecondary,
+                maxLines = 1,
+                softWrap = false,
+            )
+            if (tool.isCore) {
+                GlassChip(
+                    label = "Core",
+                    selected = false,
+                )
+            }
+            GlassChip(
+                label = tool.category.displayName,
+                selected = false,
+            )
+            GlassChip(
+                label = if (isInstalled) "Installed" else "Missing",
+                selected = isInstalled,
+            )
+            GlassChip(
+                label = if (isTested) "Tested" else "Untested",
+                selected = isTested,
+            )
+            GlassChip(
+                label = if (isPublished) "Published" else "Unpublished",
+                selected = isPublished,
+            )
+        }
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+        ) {
+            Text(
+                text = tool.path ?: "~/LtiRomTools/bin/${tool.binaryName}",
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = codeFontFamily(),
+                color = if (tool.status == StepStatus.SUCCESS) glassColors.onGlassSecondary else glassColors.onGlassMuted,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis,
+            )
+
+            tool.lastTested?.let { last ->
+                Text(
+                    text = "· $last",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = diagnostics.success,
+                    maxLines = 1,
+                    softWrap = false,
+                )
+            }
+        }
+
+        if (tool.capabilities.isNotEmpty()) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
             ) {
-                GlassSecondaryButton(
-                    onClick = onTest,
-                    enabled = !isRunning,
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-                    ) {
-                        Icon(
-                            painter = AppIcons.CheckPainterResource(),
-                            contentDescription = null,
-                            modifier = Modifier.size(IconSize.Small),
-                        )
-                        Text("Test", maxLines = 1, softWrap = false)
-                    }
-                }
-
-                val rebuildButton = @Composable {
-                    GlassSecondaryButton(
-                        onClick = onRecompile,
-                        enabled = !isRunning && isRecipeSupported,
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-                        ) {
-                            Icon(
-                                painter = AppIcons.RefreshPainterResource(),
-                                contentDescription = null,
-                                modifier = Modifier.size(IconSize.Small),
-                            )
-                            Text("Rebuild", maxLines = 1, softWrap = false)
-                        }
-                    }
-                }
-
-                if (!isRecipeSupported) {
-                    GlassTooltipArea(tooltipText = ToolBrowserState.REPAIR_UNAVAILABLE_REASON) {
-                        rebuildButton()
-                    }
-                } else {
-                    rebuildButton()
+                tool.capabilities.take(4).forEach { cap ->
+                    Text(
+                        text = "#$cap",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = glassColors.onGlassMuted,
+                        maxLines = 1,
+                        softWrap = false,
+                    )
                 }
             }
+        }
+
+        if (!isRecipeSupported) {
+            Text(
+                text = ToolBrowserState.REPAIR_UNAVAILABLE_REASON,
+                style = MaterialTheme.typography.labelSmall,
+                color = diagnostics.warning,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ToolItemActionButtons(
+    isRunning: Boolean,
+    isRecipeSupported: Boolean,
+    onTest: () -> Unit,
+    onRecompile: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+    ) {
+        GlassSecondaryButton(
+            onClick = onTest,
+            enabled = !isRunning,
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+            ) {
+                Icon(
+                    painter = AppIcons.CheckPainterResource(),
+                    contentDescription = null,
+                    modifier = Modifier.size(IconSize.Small),
+                )
+                Text("Test", maxLines = 1, softWrap = false)
+            }
+        }
+
+        val rebuildButton = @Composable {
+            GlassSecondaryButton(
+                onClick = onRecompile,
+                enabled = !isRunning && isRecipeSupported,
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                ) {
+                    Icon(
+                        painter = AppIcons.RefreshPainterResource(),
+                        contentDescription = null,
+                        modifier = Modifier.size(IconSize.Small),
+                    )
+                    Text("Rebuild", maxLines = 1, softWrap = false)
+                }
+            }
+        }
+
+        if (!isRecipeSupported) {
+            GlassTooltipArea(tooltipText = ToolBrowserState.REPAIR_UNAVAILABLE_REASON) {
+                rebuildButton()
+            }
+        } else {
+            rebuildButton()
         }
     }
 }

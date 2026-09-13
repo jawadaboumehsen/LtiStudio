@@ -29,6 +29,16 @@ import org.ide.lti.core.model.setup.EnvironmentReadinessState
 import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.core.model.workspace.Workspace
 
+enum class WorkspaceAction { OPEN, CREATE, REMOVE, BROWSE }
+
+data class WorkspaceError(
+    val action: WorkspaceAction,
+    val workspaceId: String? = null,
+    val workspacePath: String? = null,
+    val reason: String,
+    val retryAction: (() -> Unit)? = null,
+)
+
 /**
  * Feature-local state holder for workspace browsing in the Setup destination.
  *
@@ -62,6 +72,13 @@ class WorkspaceBrowserState(
 
     private val _selectedWorkspaceId = MutableStateFlow<String?>(null)
     val selectedWorkspaceId: StateFlow<String?> = _selectedWorkspaceId.asStateFlow()
+
+    private val _workspaceError = MutableStateFlow<WorkspaceError?>(null)
+    val workspaceError: StateFlow<WorkspaceError?> = _workspaceError.asStateFlow()
+
+    fun clearWorkspaceError() {
+        _workspaceError.value = null
+    }
 
     var scrollIndex: Int = 0
         private set
@@ -104,41 +121,81 @@ class WorkspaceBrowserState(
 
     fun openRecentProject(project: RecentProject, onWorkspaceOpened: (Workspace) -> Unit = {}) {
         scope.launch {
-            val result = openWorkspaceUseCase(project.workspaceId)
-            result.onSuccess { workspace ->
-                onWorkspaceOpened(workspace)
-            }
+            val result = runCatching { openWorkspaceUseCase(project.workspaceId) }.getOrElse { Result.failure(it) }
+            result.fold(
+                onSuccess = { workspace ->
+                    _workspaceError.value = null
+                    onWorkspaceOpened(workspace)
+                },
+                onFailure = { error ->
+                    _workspaceError.value = WorkspaceError(
+                        action = WorkspaceAction.OPEN,
+                        workspaceId = project.workspaceId,
+                        workspacePath = project.path,
+                        reason = error.message ?: "Failed to open workspace ${project.name}",
+                        retryAction = { openRecentProject(project, onWorkspaceOpened) },
+                    )
+                },
+            )
         }
     }
 
     fun openFolder(onWorkspaceOpened: (Workspace) -> Unit = {}) {
         if (selectAndOpenDirectoryUseCase == null) return
         scope.launch {
-            val result = selectAndOpenDirectoryUseCase()
-            result.onSuccess { workspace ->
-                if (workspace != null) {
-                    onWorkspaceOpened(workspace)
-                }
-            }
+            val result = runCatching { selectAndOpenDirectoryUseCase() }.getOrElse { Result.failure(it) }
+            result.fold(
+                onSuccess = { workspace ->
+                    if (workspace != null) {
+                        _workspaceError.value = null
+                        onWorkspaceOpened(workspace)
+                    }
+                },
+                onFailure = { error ->
+                    _workspaceError.value = WorkspaceError(
+                        action = WorkspaceAction.OPEN,
+                        workspaceId = null,
+                        workspacePath = null,
+                        reason = error.message ?: "Failed to open selected directory",
+                        retryAction = { openFolder(onWorkspaceOpened) },
+                    )
+                },
+            )
         }
     }
 
     fun removeRecentProject(workspaceId: String) {
         val currentFiltered = filteredProjects.value
         val removedIndex = currentFiltered.indexOfFirst { it.workspaceId == workspaceId }
+        val removedProject = currentFiltered.getOrNull(removedIndex)
         val wasSelected = _selectedWorkspaceId.value == workspaceId
 
         scope.launch {
-            removeRecentWorkspaceUseCase(workspaceId)
-            if (wasSelected && removedIndex >= 0) {
-                val remaining = currentFiltered.filter { it.workspaceId != workspaceId }
-                if (remaining.isNotEmpty()) {
-                    val newIndex = removedIndex.coerceAtMost(remaining.lastIndex)
-                    _selectedWorkspaceId.value = remaining[newIndex].workspaceId
-                } else {
-                    _selectedWorkspaceId.value = null
-                }
-            }
+            val result = runCatching { removeRecentWorkspaceUseCase(workspaceId) }
+            result.fold(
+                onSuccess = {
+                    _workspaceError.value = null
+                    if (wasSelected && removedIndex >= 0) {
+                        val remaining = currentFiltered.filter { it.workspaceId != workspaceId }
+                        if (remaining.isNotEmpty()) {
+                            val newIndex = removedIndex.coerceAtMost(remaining.lastIndex)
+                            _selectedWorkspaceId.value = remaining[newIndex].workspaceId
+                        } else {
+                            _selectedWorkspaceId.value = null
+                        }
+                    }
+                },
+                onFailure = { error ->
+                    _workspaceError.value = WorkspaceError(
+                        action = WorkspaceAction.REMOVE,
+                        workspaceId = workspaceId,
+                        workspacePath = removedProject?.path,
+                        reason = error.message
+                            ?: "Failed to remove ${removedProject?.name ?: "workspace"} from recents",
+                        retryAction = { removeRecentProject(workspaceId) },
+                    )
+                },
+            )
         }
     }
 

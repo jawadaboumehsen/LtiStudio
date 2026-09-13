@@ -42,6 +42,7 @@ data class SetupUiState(
     val environmentReadiness: EnvironmentReadiness? = null,
     val activeOperation: SetupOperation? = null,
     val environmentPresentation: EnvironmentPresentation = SetupPresentationMapper.mapEnvironment(toolchainSetupState),
+    val workspaceError: WorkspaceError? = null,
 )
 
 /**
@@ -82,4 +83,5 @@ data class SetupUiActions(
     val onConfirmOperation: () -> Unit = {},
     val onDismissPreview: () -> Unit = {},
     val onRetryStage: (org.ide.lti.core.domain.setup.SetupStepStage) -> Unit = {},
+    val onDismissWorkspaceError: () -> Unit = {},
 )

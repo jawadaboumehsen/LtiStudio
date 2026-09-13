@@ -73,9 +73,6 @@ class SetupOperationsTest {
         val stateChecking = ToolchainSetupState(isChecking = true)
         assertTrue(stateChecking.isBusy, "isChecking should make state busy")
 
-        val stateFixing = ToolchainSetupState(isFixing = true)
-        assertTrue(stateFixing.isBusy, "isFixing should make state busy")
-
         val stateWithOp = ToolchainSetupState(activeOperationId = "op-123")
         assertTrue(stateWithOp.isBusy, "activeOperationId should make state busy")
     }

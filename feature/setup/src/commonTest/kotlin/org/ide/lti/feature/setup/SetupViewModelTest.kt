@@ -385,8 +385,11 @@ class SetupViewModelTest {
             assertEquals(0, toolchainService.stageRetryCount)
             assertEquals(0, toolchainService.provisionAvbKeyCount)
 
-            // Case 2: isFixing is true -> isBusy is true
-            toolchainService._state.value = toolchainService._state.value.copy(isChecking = false, isFixing = true)
+            // Case 2: activeOperationId is set -> isBusy is true
+            toolchainService._state.value = toolchainService._state.value.copy(
+                isChecking = false,
+                activeOperationId = "op-busy",
+            )
             assertTrue(viewModel.toolchainSetupState.value.isBusy)
 
             viewModel.checkEnvironmentStatus()
@@ -402,7 +405,10 @@ class SetupViewModelTest {
             assertEquals(0, toolchainService.remediationCount)
 
             // Case 3: isRunning is true -> isBusy is true
-            toolchainService._state.value = toolchainService._state.value.copy(isFixing = false, isRunning = true)
+            toolchainService._state.value = toolchainService._state.value.copy(
+                activeOperationId = null,
+                isRunning = true,
+            )
             assertTrue(viewModel.toolchainSetupState.value.isBusy)
 
             viewModel.checkEnvironmentStatus()
@@ -828,12 +834,7 @@ class SetupViewModelTest {
         assertEquals("Configuring…", computeSidebarSubtitle(configuringState, now))
         assertEquals("Running", computeSidebarBadge(configuringState))
 
-        // 4. Fixing doctor issues
-        val fixingState = restoredState.copy(isFixing = true)
-        assertEquals("Fixing packages…", computeSidebarSubtitle(fixingState, now))
-        assertEquals("Fixing", computeSidebarBadge(fixingState))
-
-        // 5. All ready (verified live)
+        // 4. All ready (verified live)
         val readyState = ToolchainSetupState(
             steps = ToolchainSetupState.defaultSteps().map {
                 it.copy(status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE)

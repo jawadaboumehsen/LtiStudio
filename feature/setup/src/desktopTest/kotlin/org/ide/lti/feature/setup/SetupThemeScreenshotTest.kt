@@ -9,8 +9,12 @@
  */
 package org.ide.lti.feature.setup
 
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
@@ -378,6 +382,50 @@ class SetupThemeScreenshotTest {
             assertEquals(1120, image.width)
             assertEquals(700, image.height)
             saveScreenshotReport("offline_state_${appTheme.id}", image)
+        }
+    }
+
+    // Renders at every (scale x theme) combination at each of the two SC-005 logical window
+    // sizes; each is its own @Test because runDesktopComposeUiTest fixes the virtual window
+    // size for its whole body. This proves the shell renders without crashing across the
+    // scale/theme/window matrix -- it does NOT itself measure contrast (see GlassContrastTest,
+    // core:designsystem) or cover the six presentation states (unknown/needs-setup/ready/
+    // running/failed/reconnecting), which remain BLOCKED pending real-render verification.
+    @Test
+    fun testThemeAndDensityMatrixAt1440x900() =
+        runDesktopComposeUiTest(width = 1440, height = 900) {
+            assertThemeAndDensityMatrixRenders()
+        }
+
+    @Test
+    fun testThemeAndDensityMatrixAt900x600() =
+        runDesktopComposeUiTest(width = 900, height = 600) {
+            assertThemeAndDensityMatrixRenders()
+        }
+
+    private fun androidx.compose.ui.test.DesktopComposeUiTest.assertThemeAndDensityMatrixRenders() {
+        val scales = listOf(1.0f, 1.5f, 2.0f)
+        val themes = listOf(AppTheme.Dark, AppTheme.Light, AppTheme.Blue)
+
+        for (scale in scales) {
+            for (appTheme in themes) {
+                setContent {
+                    val backdrop = rememberLayerBackdrop()
+                    CompositionLocalProvider(
+                        LocalDensity provides Density(density = scale, fontScale = scale),
+                    ) {
+                        LtiTheme(appTheme = appTheme, sharedBackdrop = backdrop) {
+                            SetupScreenContent(
+                                state = SetupUiState(selectedTab = SetupTab.ENVIRONMENT),
+                                actions = SetupUiActions(),
+                                backdrop = backdrop,
+                            )
+                        }
+                    }
+                }
+
+                onRoot().assertIsDisplayed()
+            }
         }
     }
 

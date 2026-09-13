@@ -48,11 +48,21 @@ class SetupViewModelWorkspaceTest {
 
     private class FakeWorkspaceRepository : WorkspaceRepository {
         val recents = MutableStateFlow<List<RecentProject>>(emptyList())
+        val workspaces = mutableMapOf<String, Workspace>()
+        var shouldThrowOnGet = false
+        var throwMessage = "Disk I/O error"
 
-        override fun getWorkspaces(): Flow<List<Workspace>> = MutableStateFlow(emptyList())
-        override suspend fun getWorkspace(id: String): Workspace? = null
-        override suspend fun saveWorkspace(workspace: Workspace) {}
-        override suspend fun deleteWorkspace(id: String) {}
+        override fun getWorkspaces(): Flow<List<Workspace>> = MutableStateFlow(workspaces.values.toList())
+        override suspend fun getWorkspace(id: String): Workspace? {
+            if (shouldThrowOnGet) throw IllegalStateException(throwMessage)
+            return workspaces[id]
+        }
+        override suspend fun saveWorkspace(workspace: Workspace) {
+            workspaces[workspace.id] = workspace
+        }
+        override suspend fun deleteWorkspace(id: String) {
+            workspaces.remove(id)
+        }
         override suspend fun getWorkspaceSession(workspaceId: String): WorkspaceSession? = null
         override suspend fun saveWorkspaceSession(session: WorkspaceSession) {}
         override fun getRecentProjects(): Flow<List<RecentProject>> = recents.asStateFlow()
@@ -212,6 +222,206 @@ class SetupViewModelWorkspaceTest {
 
             collectJob.cancel()
             testScheduler.advanceUntilIdle()
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun testContextualOpenFailureSetsWorkspaceErrorWithContextAndRetry() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        Dispatchers.setMain(testDispatcher)
+        try {
+            val repo = FakeWorkspaceRepository()
+            repo.shouldThrowOnGet = true
+            repo.throwMessage = "Corrupted workspace XML on disk"
+            val manager = WorkspaceManager(repo, this)
+            val project = RecentProject(
+                workspaceId = "p_corrupt",
+                name = "CorruptedProject",
+                path = "/Users/dev/CorruptedProject",
+                lastOpened = Clock.System.now(),
+            )
+            repo.recents.value = listOf(project)
+
+            val viewModel = SetupViewModel(manager)
+            var openedWorkspace: Workspace? = null
+
+            viewModel.openRecentProject(project) { ws ->
+                openedWorkspace = ws
+            }
+            testScheduler.advanceUntilIdle()
+
+            // Strict assertion: failure never invokes success callback
+            assertEquals(null, openedWorkspace, "Failure must never invoke onWorkspaceOpened callback")
+
+            // Contextual error must be recorded
+            val error = viewModel.workspaceError.value
+            assertTrue(error != null, "workspaceError must be populated on open failure")
+            assertEquals(WorkspaceAction.OPEN, error.action)
+            assertEquals("p_corrupt", error.workspaceId)
+            assertEquals("/Users/dev/CorruptedProject", error.workspacePath)
+            assertTrue(
+                error.reason.contains("Corrupted workspace XML on disk"),
+                "Error reason must preserve root cause: ${error.reason}",
+            )
+            assertTrue(error.retryAction != null, "Contextual retry action must be provided")
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun testRemovedOrMissingWorkspacePathFailsContextuallyWithoutSuccessNavigation() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        Dispatchers.setMain(testDispatcher)
+        try {
+            val repo = FakeWorkspaceRepository()
+            // Workspace is NOT present in repo.workspaces (simulating removed/deleted workspace directory)
+            val manager = WorkspaceManager(repo, this)
+            val project = RecentProject(
+                workspaceId = "p_missing",
+                name = "DeletedFolderProject",
+                path = "/Users/dev/DeletedFolderProject",
+                lastOpened = Clock.System.now(),
+            )
+            repo.recents.value = listOf(project)
+
+            val viewModel = SetupViewModel(manager)
+            var navigationCalled = false
+
+            viewModel.openRecentProject(project) {
+                navigationCalled = true
+            }
+            testScheduler.advanceUntilIdle()
+
+            assertFalse(navigationCalled, "Opening missing workspace directory must never trigger navigation")
+            val error = viewModel.workspaceError.value
+            assertTrue(error != null, "Missing workspace must set workspaceError")
+            assertEquals(WorkspaceAction.OPEN, error.action)
+            assertEquals("p_missing", error.workspaceId)
+            assertEquals("/Users/dev/DeletedFolderProject", error.workspacePath)
+            assertTrue(
+                error.reason.contains("not found", ignoreCase = true),
+                "Reason must explain workspace was not found: ${error.reason}",
+            )
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun testWorkspaceErrorRetryActionSucceedsWhenErrorConditionResolves() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        Dispatchers.setMain(testDispatcher)
+        try {
+            val repo = FakeWorkspaceRepository()
+            repo.shouldThrowOnGet = true
+            repo.throwMessage = "Transient lock timeout"
+            val manager = WorkspaceManager(repo, this)
+            val targetWorkspace = Workspace(
+                id = "p_retry",
+                name = "RetryableProject",
+                path = "/Users/dev/RetryableProject",
+            )
+            repo.workspaces[targetWorkspace.id] = targetWorkspace
+            val project = RecentProject(
+                workspaceId = "p_retry",
+                name = "RetryableProject",
+                path = "/Users/dev/RetryableProject",
+                lastOpened = Clock.System.now(),
+            )
+            repo.recents.value = listOf(project)
+
+            val viewModel = SetupViewModel(manager)
+            var openedWorkspace: Workspace? = null
+
+            viewModel.openRecentProject(project) { ws ->
+                openedWorkspace = ws
+            }
+            testScheduler.advanceUntilIdle()
+
+            assertEquals(null, openedWorkspace)
+            val error = viewModel.workspaceError.value
+            assertTrue(error != null, "Initial failure must set workspaceError")
+
+            // Resolve error condition and invoke retryAction
+            repo.shouldThrowOnGet = false
+            error.retryAction?.invoke()
+            testScheduler.advanceUntilIdle()
+
+            assertEquals(targetWorkspace, openedWorkspace, "Successful retry must invoke onWorkspaceOpened")
+            assertEquals(null, viewModel.workspaceError.value, "workspaceError must be cleared on success")
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun testOfflineCachedBrowsingWorksWhenReadinessPortUnavailable() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        Dispatchers.setMain(testDispatcher)
+        try {
+            val repo = FakeWorkspaceRepository()
+            val project1 = RecentProject(
+                workspaceId = "cached_1",
+                name = "AlphaRom",
+                path = "/data/AlphaRom",
+                lastOpened = Clock.System.now(),
+            )
+            val project2 = RecentProject(
+                workspaceId = "cached_2",
+                name = "BetaRom",
+                path = "/data/BetaRom",
+                lastOpened = Clock.System.now(),
+            )
+            repo.recents.value = listOf(project1, project2)
+            val manager = WorkspaceManager(repo, this)
+
+            val failingReadinessPort = object : org.ide.lti.core.domain.ports.EnvironmentReadinessPort {
+                override fun observe():
+                    kotlinx.coroutines.flow.Flow<org.ide.lti.core.model.setup.EnvironmentReadiness> =
+                    kotlinx.coroutines.flow.emptyFlow()
+
+                override suspend fun refresh(): org.ide.lti.core.model.setup.EnvironmentReadiness {
+                    return org.ide.lti.core.model.setup.EnvironmentReadiness(
+                        state = org.ide.lti.core.model.setup.EnvironmentReadinessState.SERVICE_UNREACHABLE,
+                        failingCheck = "WSL2 daemon bridge unreachable",
+                    )
+                }
+
+                override suspend fun forWorkspace(
+                    workspace: Workspace,
+                ): org.ide.lti.core.model.setup.EnvironmentReadiness = refresh()
+            }
+
+            val viewModel = SetupViewModel(
+                workspaceManager = manager,
+                environmentReadinessPort = failingReadinessPort,
+            )
+            val collectJob = backgroundScope.launch(testDispatcher) {
+                viewModel.filteredRecentProjects.collect()
+            }
+            testScheduler.advanceUntilIdle()
+
+            // Cached browsing works offline:
+            assertEquals(2, viewModel.filteredRecentProjects.value.size)
+
+            // Filtering works offline:
+            viewModel.onSearchQueryChange("Alpha")
+            assertEquals(1, viewModel.filteredRecentProjects.value.size)
+            assertEquals("cached_1", viewModel.filteredRecentProjects.value.first().workspaceId)
+
+            // Selection works offline:
+            viewModel.selectWorkspace("cached_1")
+            assertEquals("cached_1", viewModel.selectedWorkspaceId.value)
+
+            // Creation prerequisites check fails indicating live daemon is required:
+            val prereqResult = viewModel.workspaceBrowserState.checkCreationPrerequisites()
+            assertTrue(prereqResult.isFailure, "Creation prerequisite must fail when environment is offline")
+            assertTrue(prereqResult.exceptionOrNull()?.message?.contains("WSL2 daemon bridge unreachable") == true)
+
+            collectJob.cancel()
         } finally {
             Dispatchers.resetMain()
         }

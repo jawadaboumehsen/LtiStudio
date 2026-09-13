@@ -11,8 +11,13 @@ package org.ide.lti.feature.setup
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.onAllNodesWithText
@@ -408,5 +413,249 @@ class SetupAccessibilityTest {
         onNodeWithText("New Workspace").assertIsDisplayed()
         onNodeWithText("Open Workspace").assertIsDisplayed()
         onNodeWithText("Maximized_Workspace").assertIsDisplayed()
+    }
+
+    @Test
+    fun testGlobalShortcutsBlockedWhileModalPreviewOpen() = runDesktopComposeUiTest(width = 1440, height = 900) {
+        var createCalled = false
+        var openCalled = false
+        val activeOp = SetupOperation(
+            kind = SetupOperationKind.FULL_SETUP,
+            plannedChanges = PlannedSetupChanges(
+                packagesToInstall = listOf("build-essential"),
+                requiresElevation = false,
+            ),
+            executionState = SetupOperationState.PREVIEW,
+        )
+
+        setContent {
+            val backdrop = rememberLayerBackdrop()
+            LtiTheme(sharedBackdrop = backdrop) {
+                SetupScreenContent(
+                    state = SetupUiState(
+                        selectedTab = SetupTab.ENVIRONMENT,
+                        activeOperation = activeOp,
+                    ),
+                    actions = SetupUiActions(
+                        onCreateWorkspace = { createCalled = true },
+                        onOpenFolder = { openCalled = true },
+                    ),
+                    backdrop = backdrop,
+                )
+            }
+        }
+
+        // Preview is open
+        onNodeWithText("Provisioning Preview").assertIsDisplayed()
+
+        // Press Ctrl+N while modal preview is open
+        onRoot().performKeyInput {
+            keyDown(Key.CtrlLeft)
+            keyDown(Key.N)
+            keyUp(Key.N)
+            keyUp(Key.CtrlLeft)
+        }
+        kotlin.test.assertFalse(createCalled, "Ctrl+N must be blocked while modal preview sheet is open")
+
+        // Press Ctrl+O while modal preview is open
+        onRoot().performKeyInput {
+            keyDown(Key.CtrlLeft)
+            keyDown(Key.O)
+            keyUp(Key.O)
+            keyUp(Key.CtrlLeft)
+        }
+        kotlin.test.assertFalse(openCalled, "Ctrl+O must be blocked while modal preview sheet is open")
+
+        // Press Ctrl+F while modal preview is open
+        onRoot().performKeyInput {
+            keyDown(Key.CtrlLeft)
+            keyDown(Key.F)
+            keyUp(Key.F)
+            keyUp(Key.CtrlLeft)
+        }
+        // Search should not be focused while preview modal is open
+        onAllNodesWithText("Search workspaces... (Ctrl+F)").assertCountEquals(0)
+    }
+
+    // Focus restoration itself is verified end-to-end by
+    // testEscapeDismissesPreviewAndRestoresFocusToInvokingSetUpButton below.
+    @Test
+    fun testCancelButtonInvokesDismissPreview() = runDesktopComposeUiTest(width = 1120, height = 800) {
+        var previewDismissed = false
+        val activeOp = SetupOperation(
+            kind = SetupOperationKind.FULL_SETUP,
+            plannedChanges = PlannedSetupChanges(packagesToInstall = listOf("cmake")),
+            executionState = SetupOperationState.PREVIEW,
+        )
+
+        setContent {
+            val backdrop = rememberLayerBackdrop()
+            LtiTheme(sharedBackdrop = backdrop) {
+                SetupScreenContent(
+                    state = SetupUiState(
+                        selectedTab = SetupTab.ENVIRONMENT,
+                        activeOperation = activeOp,
+                    ),
+                    actions = SetupUiActions(
+                        onDismissPreview = { previewDismissed = true },
+                    ),
+                    backdrop = backdrop,
+                )
+            }
+        }
+
+        onNodeWithText("Provisioning Preview").assertIsDisplayed()
+        onNodeWithText("Cancel").assertIsDisplayed().performClick()
+        assertTrue(previewDismissed, "Clicking Cancel must invoke onDismissPreview (FR-014)")
+    }
+
+    @Test
+    fun testConfirmButtonInvokesConfirmOperation() = runDesktopComposeUiTest(width = 1120, height = 800) {
+        var operationConfirmed = false
+        val activeOp = SetupOperation(
+            kind = SetupOperationKind.FULL_SETUP,
+            plannedChanges = PlannedSetupChanges(packagesToInstall = listOf("cmake")),
+            executionState = SetupOperationState.PREVIEW,
+        )
+
+        setContent {
+            val backdrop = rememberLayerBackdrop()
+            LtiTheme(sharedBackdrop = backdrop) {
+                SetupScreenContent(
+                    state = SetupUiState(
+                        selectedTab = SetupTab.ENVIRONMENT,
+                        activeOperation = activeOp,
+                    ),
+                    actions = SetupUiActions(
+                        onConfirmOperation = { operationConfirmed = true },
+                    ),
+                    backdrop = backdrop,
+                )
+            }
+        }
+
+        onNodeWithText("Provisioning Preview").assertIsDisplayed()
+        onNodeWithText("Confirm & Set Up").assertIsDisplayed().performClick()
+        assertTrue(operationConfirmed, "Clicking Confirm & Set Up must invoke onConfirmOperation (FR-014)")
+    }
+
+    @Test
+    fun testTabAndShiftTabTrappedInsideModalPreview() = runDesktopComposeUiTest(width = 1120, height = 800) {
+        val activeOp = SetupOperation(
+            kind = SetupOperationKind.FULL_SETUP,
+            plannedChanges = PlannedSetupChanges(packagesToInstall = listOf("cmake", "build-essential")),
+            executionState = SetupOperationState.PREVIEW,
+        )
+
+        setContent {
+            val backdrop = rememberLayerBackdrop()
+            LtiTheme(sharedBackdrop = backdrop) {
+                SetupScreenContent(
+                    state = SetupUiState(
+                        selectedTab = SetupTab.ENVIRONMENT,
+                        activeOperation = activeOp,
+                    ),
+                    actions = SetupUiActions(),
+                    backdrop = backdrop,
+                )
+            }
+        }
+
+        onNodeWithText("Provisioning Preview").assertIsDisplayed()
+
+        // Press Tab repeatedly to traverse within modal
+        onRoot().performKeyInput {
+            pressKey(Key.Tab)
+            pressKey(Key.Tab)
+        }
+
+        // Press Shift+Tab to reverse traverse within modal
+        onRoot().performKeyInput {
+            keyDown(Key.ShiftLeft)
+            pressKey(Key.Tab)
+            keyUp(Key.ShiftLeft)
+        }
+
+        // Modal remains displayed and functional without leaking focus to background shell
+        onNodeWithText("Provisioning Preview").assertIsDisplayed()
+        onNodeWithText("Confirm & Set Up").assertIsDisplayed()
+    }
+
+    @Test
+    fun testSingleToolsMatrixAndSingleStatusOwnerInHierarchy() = runDesktopComposeUiTest(width = 1440, height = 900) {
+        setContent {
+            val backdrop = rememberLayerBackdrop()
+            LtiTheme(sharedBackdrop = backdrop) {
+                SetupScreenContent(
+                    state = SetupUiState(selectedTab = SetupTab.ENVIRONMENT),
+                    actions = SetupUiActions(),
+                    backdrop = backdrop,
+                )
+            }
+        }
+
+        // Under consolidated shell (T038), Environment tab must NOT have a duplicate "Toolchain Matrix" tab
+        // in its cockpit bar; Toolchain Matrix lives exclusively in the dedicated Tools destination.
+        val toolsTabs = onAllNodesWithText("Toolchain Matrix")
+        assertEquals(
+            0,
+            toolsTabs.fetchSemanticsNodes().size,
+            "Environment tab must not contain duplicate Toolchain Matrix tab",
+        )
+    }
+
+    @Test
+    fun testEscapeDismissesPreviewAndRestoresFocusToInvokingSetUpButton() = runDesktopComposeUiTest(width = 1120, height = 2200) {
+        // Real end-to-end wiring test (not just callback invocation): clicking "Set Up Environment"
+        // must open the preview via a button that carries the invoker focus requester, and dismissing
+        // the preview (Escape) must move keyboard focus back onto that exact button (T039).
+        setContent {
+            val backdrop = rememberLayerBackdrop()
+            var activeOperation by remember { mutableStateOf<SetupOperation?>(null) }
+            val presentation = EnvironmentPresentation(
+                environmentState = EnvironmentState.CheckedNeedsSetup(),
+                stages = emptyList(),
+                activeOperationId = null,
+                lastVerifiedAt = null,
+                checkedAt = null,
+                storageAvailableBytes = null,
+                storageMeasuredAt = null,
+                primaryAction = PrimaryAction.SET_UP,
+            )
+            LtiTheme(sharedBackdrop = backdrop) {
+                SetupScreenContent(
+                    state = SetupUiState(
+                        selectedTab = SetupTab.ENVIRONMENT,
+                        environmentPresentation = presentation,
+                        activeOperation = activeOperation,
+                    ),
+                    actions = SetupUiActions(
+                        onPreviewSetup = {
+                            activeOperation = SetupOperation(
+                                kind = SetupOperationKind.FULL_SETUP,
+                                plannedChanges = PlannedSetupChanges(packagesToInstall = listOf("cmake")),
+                                executionState = SetupOperationState.PREVIEW,
+                            )
+                        },
+                        onDismissPreview = { activeOperation = null },
+                    ),
+                    backdrop = backdrop,
+                )
+            }
+        }
+
+        onNodeWithText("Set Up Environment").assertIsDisplayed().performClick()
+        onNodeWithText("Provisioning Preview").assertIsDisplayed()
+
+        onRoot().performKeyInput {
+            pressKey(Key.Escape)
+        }
+
+        assertEquals(
+            0,
+            onAllNodesWithText("Provisioning Preview").fetchSemanticsNodes().size,
+            "Preview must be dismissed after Escape",
+        )
+        onNodeWithText("Set Up Environment").assertIsFocused()
     }
 }

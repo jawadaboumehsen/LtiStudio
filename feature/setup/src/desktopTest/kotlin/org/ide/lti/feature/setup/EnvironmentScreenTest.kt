@@ -188,19 +188,19 @@ class EnvironmentScreenTest {
         setContent {
             val backdrop = rememberLayerBackdrop()
             LtiTheme(sharedBackdrop = backdrop) {
-                EnvironmentStepContent(
+                SetupScreenContent(
                     state = SetupUiState(
                         toolchainSetupState = ToolchainSetupState(lastVerifiedTimestamp = 1700000000000L),
                         activeOperation = activeOp,
                         isAutoDoctorEnabled = true,
+                        selectedTab = SetupTab.ENVIRONMENT,
                     ),
                     actions = SetupUiActions(
                         onConfirmOperation = { confirmed = true },
                         onDismissPreview = { dismissed = true },
                         onSetAutoDoctorEnabled = { autoDoctorToggled = it },
                     ),
-                    resolvedBackdrop = backdrop,
-                    autoRunOnLaunch = false,
+                    backdrop = backdrop,
                 )
             }
         }

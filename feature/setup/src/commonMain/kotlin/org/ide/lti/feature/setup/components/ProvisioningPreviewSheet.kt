@@ -28,6 +28,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -37,13 +39,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import com.kashif_e.backdrop.backdrops.LayerBackdrop
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
@@ -60,6 +65,7 @@ import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
+import org.ide.lti.core.designsystem.theme.SetupTokens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
@@ -68,9 +74,10 @@ import org.ide.lti.core.domain.setup.SetupPlanKind
 import org.ide.lti.feature.setup.PlannedSetupChanges
 
 /**
- * Modal preview sheet presenting planned environment provisioning changes before mutation execution (FR-005).
+ * Modal preview sheet presenting planned environment provisioning changes before mutation execution (FR-005, FR-014).
  * Discloses planned system packages, git submodules, toolchains to compile, and elevation requirements.
- * Dismisses on Escape key or outside scrim click; traps confirmation until explicitly approved.
+ * Dismisses on Escape key or outside scrim click; traps Tab/Shift-Tab and confirmation until explicitly approved.
+ * Bounded and virtualized via LazyColumn; supports reduced motion and reduced transparency (SC-005).
  */
 @Suppress("LongMethod", "LongParameterList", "CyclomaticComplexMethod")
 @OptIn(ExperimentalLayoutApi::class)
@@ -84,8 +91,10 @@ fun ProvisioningPreviewSheet(
     backdrop: LayerBackdrop,
     modifier: Modifier = Modifier,
     plan: SetupPlan? = null,
+    contextualError: String? = null,
 ) {
     val glassColors = GlassTheme.colors
+    val focusManager = LocalFocusManager.current
     val focusRequester = remember { FocusRequester() }
 
     LaunchedEffect(Unit) {
@@ -104,9 +113,17 @@ fun ProvisioningPreviewSheet(
             .focusRequester(focusRequester)
             .focusable()
             .onPreviewKeyEvent { event ->
-                if (event.key == Key.Escape && event.type == KeyEventType.KeyUp) {
-                    onDismiss()
-                    true
+                if (event.type == KeyEventType.KeyDown) {
+                    if (event.key == Key.Escape) {
+                        onDismiss()
+                        true
+                    } else if (event.key == Key.Tab) {
+                        val direction = if (event.isShiftPressed) FocusDirection.Previous else FocusDirection.Next
+                        focusManager.moveFocus(direction)
+                        true
+                    } else {
+                        false
+                    }
                 } else {
                     false
                 }
@@ -118,6 +135,13 @@ fun ProvisioningPreviewSheet(
                 .widthIn(max = ComponentSize.MaxPanelWidth)
                 .fillMaxWidth()
                 .padding(Spacing.Medium)
+                .then(
+                    if (SetupTokens.IsReducedTransparency) {
+                        Modifier.background(SetupTokens.OpaqueSurfaceColor, GlassShapes.Card)
+                    } else {
+                        Modifier
+                    },
+                )
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -168,94 +192,114 @@ fun ProvisioningPreviewSheet(
 
                 GlassHorizontalDivider()
 
-                // Scrollable Content
-                Column(
+                // Bounded and Virtualized Action Lists
+                LazyColumn(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .verticalScroll(rememberScrollState()),
+                        .heightIn(max = ComponentSize.MaxPanelHeight),
                     verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
                 ) {
-                    // Target Environment Badge
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                    ) {
-                        Text(
-                            text = "Target Subsystem:",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = glassColors.onGlassMuted,
-                        )
-                        Box(
-                            modifier = Modifier
-                                .clip(GlassShapes.Small)
-                                .background(glassColors.glassSurface)
-                                .border(
-                                    width = StrokeWidth.Standard,
-                                    color = glassColors.glassBorder,
-                                    shape = GlassShapes.Small,
-                                )
-                                .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),
-                        ) {
-                            Text(
-                                text = plannedChanges.targetDistro,
-                                style = MaterialTheme.typography.labelMedium.copy(fontFamily = codeFontFamily()),
-                                color = glassColors.onGlass,
+                    if (contextualError != null) {
+                        item(key = "contextual_error") {
+                            GlassBanner(
+                                severity = GlassBannerSeverity.ERROR,
+                                title = "Operation Warning / Error",
+                                description = contextualError,
+                                backdrop = backdrop,
                             )
                         }
-                        if (plan != null) {
-                            Spacer(Modifier.weight(1f))
+                    }
+
+                    // Target Environment Badge
+                    item(key = "target_subsystem") {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                        ) {
                             Text(
-                                text = "Plan: ${plan.planId.take(8)}",
-                                style = MaterialTheme.typography.labelSmall.copy(fontFamily = codeFontFamily()),
+                                text = "Target Subsystem:",
+                                style = MaterialTheme.typography.labelMedium,
                                 color = glassColors.onGlassMuted,
                             )
+                            Box(
+                                modifier = Modifier
+                                    .clip(GlassShapes.Small)
+                                    .background(glassColors.glassSurface)
+                                    .border(
+                                        width = StrokeWidth.Standard,
+                                        color = glassColors.glassBorder,
+                                        shape = GlassShapes.Small,
+                                    )
+                                    .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),
+                            ) {
+                                Text(
+                                    text = plannedChanges.targetDistro,
+                                    style = MaterialTheme.typography.labelMedium.copy(fontFamily = codeFontFamily()),
+                                    color = glassColors.onGlass,
+                                )
+                            }
+                            if (plan != null) {
+                                Spacer(Modifier.weight(1f))
+                                Text(
+                                    text = "Plan: ${plan.planId.take(8)}",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontFamily = codeFontFamily()),
+                                    color = glassColors.onGlassMuted,
+                                )
+                            }
                         }
                     }
 
                     // Elevation Banner if required
                     if (plannedChanges.requiresElevation) {
-                        GlassBanner(
-                            severity = GlassBannerSeverity.WARNING,
-                            title = "Root / Sudo Elevation Required",
-                            description = "System packages or toolchain binaries require administrative permissions: " +
-                                (plannedChanges.elevationReason ?: "sudo apt-get install / system configuration"),
-                            backdrop = backdrop,
-                        )
+                        item(key = "elevation_banner") {
+                            val reason = plannedChanges.elevationReason
+                                ?: "sudo apt-get install / system configuration"
+                            GlassBanner(
+                                severity = GlassBannerSeverity.WARNING,
+                                title = "Root / Sudo Elevation Required",
+                                description =
+                                    "System packages or toolchain binaries require administrative permissions: " +
+                                        reason,
+                                backdrop = backdrop,
+                            )
+                        }
                     }
 
                     // System Packages to install
                     if (plannedChanges.packagesToInstall.isNotEmpty()) {
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(Spacing.Small),
-                        ) {
-                            Text(
-                                text = "System Packages (${plannedChanges.packagesToInstall.size})",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = glassColors.onGlass,
-                            )
-                            FlowRow(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                        item(key = "packages_section") {
+                            Column(
                                 verticalArrangement = Arrangement.spacedBy(Spacing.Small),
                             ) {
-                                for (pkg in plannedChanges.packagesToInstall) {
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(GlassShapes.Small)
-                                            .background(glassColors.glassSurface)
-                                            .border(
-                                                width = StrokeWidth.Hairline,
-                                                color = glassColors.glassBorder,
-                                                shape = GlassShapes.Small,
+                                Text(
+                                    text = "System Packages (${plannedChanges.packagesToInstall.size})",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = glassColors.onGlass,
+                                )
+                                FlowRow(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                                    verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+                                ) {
+                                    for (pkg in plannedChanges.packagesToInstall) {
+                                        Box(
+                                            modifier = Modifier
+                                                .clip(GlassShapes.Small)
+                                                .background(glassColors.glassSurface)
+                                                .border(
+                                                    width = StrokeWidth.Hairline,
+                                                    color = glassColors.glassBorder,
+                                                    shape = GlassShapes.Small,
+                                                )
+                                                .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),
+                                        ) {
+                                            Text(
+                                                text = pkg,
+                                                style = MaterialTheme.typography.bodySmall.copy(fontFamily = codeFontFamily()),
+                                                color = glassColors.onGlassSecondary,
                                             )
-                                            .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),
-                                    ) {
-                                        Text(
-                                            text = pkg,
-                                            style = MaterialTheme.typography.bodySmall.copy(fontFamily = codeFontFamily()),
-                                            color = glassColors.onGlassSecondary,
-                                        )
+                                        }
                                     }
                                 }
                             }
@@ -264,69 +308,32 @@ fun ProvisioningPreviewSheet(
 
                     // Submodules to sync
                     if (plannedChanges.submodulesToSync.isNotEmpty()) {
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(Spacing.Small),
-                        ) {
-                            Text(
-                                text = "Git Submodules (${plannedChanges.submodulesToSync.size})",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = glassColors.onGlass,
-                            )
+                        item(key = "submodules_section") {
                             Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(GlassShapes.Small)
-                                    .background(glassColors.glassSurface)
-                                    .border(
-                                        width = StrokeWidth.Hairline,
-                                        color = glassColors.glassBorder,
-                                        shape = GlassShapes.Small,
-                                    )
-                                    .padding(Spacing.Small),
-                                verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-                            ) {
-                                for (sub in plannedChanges.submodulesToSync) {
-                                    Text(
-                                        text = sub,
-                                        style = MaterialTheme.typography.bodySmall.copy(fontFamily = codeFontFamily()),
-                                        color = glassColors.onGlassSecondary,
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    // Tools to compile
-                    if (plannedChanges.toolsToCompile.isNotEmpty()) {
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(Spacing.Small),
-                        ) {
-                            Text(
-                                text = "Tools to Compile (${plannedChanges.toolsToCompile.size})",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = glassColors.onGlass,
-                            )
-                            FlowRow(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
                                 verticalArrangement = Arrangement.spacedBy(Spacing.Small),
                             ) {
-                                for (tool in plannedChanges.toolsToCompile) {
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(GlassShapes.Small)
-                                            .background(glassColors.glassSurface)
-                                            .border(
-                                                width = StrokeWidth.Hairline,
-                                                color = glassColors.glassBorder,
-                                                shape = GlassShapes.Small,
-                                            )
-                                            .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),
-                                    ) {
+                                Text(
+                                    text = "Git Submodules (${plannedChanges.submodulesToSync.size})",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = glassColors.onGlass,
+                                )
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(GlassShapes.Small)
+                                        .background(glassColors.glassSurface)
+                                        .border(
+                                            width = StrokeWidth.Hairline,
+                                            color = glassColors.glassBorder,
+                                            shape = GlassShapes.Small,
+                                        )
+                                        .padding(Spacing.Small),
+                                    verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                                ) {
+                                    for (sub in plannedChanges.submodulesToSync) {
                                         Text(
-                                            text = tool,
+                                            text = sub,
                                             style = MaterialTheme.typography.bodySmall.copy(fontFamily = codeFontFamily()),
                                             color = glassColors.onGlassSecondary,
                                         )
@@ -336,63 +343,110 @@ fun ProvisioningPreviewSheet(
                         }
                     }
 
+                    // Tools to compile
+                    if (plannedChanges.toolsToCompile.isNotEmpty()) {
+                        item(key = "tools_to_compile_section") {
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+                            ) {
+                                Text(
+                                    text = "Tools to Compile (${plannedChanges.toolsToCompile.size})",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = glassColors.onGlass,
+                                )
+                                FlowRow(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                                    verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+                                ) {
+                                    for (tool in plannedChanges.toolsToCompile) {
+                                        Box(
+                                            modifier = Modifier
+                                                .clip(GlassShapes.Small)
+                                                .background(glassColors.glassSurface)
+                                                .border(
+                                                    width = StrokeWidth.Hairline,
+                                                    color = glassColors.glassBorder,
+                                                    shape = GlassShapes.Small,
+                                                )
+                                                .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),
+                                        ) {
+                                            Text(
+                                                text = tool,
+                                                style = MaterialTheme.typography.bodySmall.copy(fontFamily = codeFontFamily()),
+                                                color = glassColors.onGlassSecondary,
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     // Tools to publish to the daemon registry
                     if (plannedChanges.toolsToPublish.isNotEmpty()) {
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(Spacing.Small),
-                        ) {
-                            Text(
-                                text = "Tools to Publish (${plannedChanges.toolsToPublish.size})",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = glassColors.onGlass,
-                            )
-                            Text(
-                                text = plannedChanges.toolsToPublish.joinToString(", "),
-                                style = MaterialTheme.typography.bodySmall.copy(fontFamily = codeFontFamily()),
-                                color = glassColors.onGlassSecondary,
-                            )
+                        item(key = "tools_to_publish_section") {
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+                            ) {
+                                Text(
+                                    text = "Tools to Publish (${plannedChanges.toolsToPublish.size})",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = glassColors.onGlass,
+                                )
+                                Text(
+                                    text = plannedChanges.toolsToPublish.joinToString(", "),
+                                    style = MaterialTheme.typography.bodySmall.copy(fontFamily = codeFontFamily()),
+                                    color = glassColors.onGlassSecondary,
+                                )
+                            }
                         }
                     }
 
                     if (plannedChanges.isEmpty) {
-                        Text(
-                            text = if (plan?.kind == SetupPlanKind.CACHE_RESET) {
-                                "Persisted setup evidence for this environment will be cleared and the " +
-                                    "environment re-checked. No packages, sources or binaries change."
-                            } else {
-                                "No system packages or toolchain compilations required for this operation."
-                            },
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = glassColors.onGlassMuted,
-                        )
+                        item(key = "empty_changes_notice") {
+                            Text(
+                                text = if (plan?.kind == SetupPlanKind.CACHE_RESET) {
+                                    "Persisted setup evidence for this environment will be cleared and the " +
+                                        "environment re-checked. No packages, sources or binaries change."
+                                } else {
+                                    "No system packages or toolchain compilations required for this operation."
+                                },
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = glassColors.onGlassMuted,
+                            )
+                        }
                     }
 
                     // Auto Doctor Remediation Option
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
-                    ) {
-                        GlassToggle(
-                            checked = isAutoDoctorEnabled,
-                            onCheckedChange = onSetAutoDoctorEnabled,
-                        )
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                    item(key = "auto_doctor_toggle") {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
                         ) {
-                            Text(
-                                text = "Automated Doctor Remediation",
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Medium,
-                                color = glassColors.onGlass,
+                            GlassToggle(
+                                checked = isAutoDoctorEnabled,
+                                onCheckedChange = onSetAutoDoctorEnabled,
                             )
-                            Text(
-                                text = "Automatically fix non-interactive package prerequisites during setup",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = glassColors.onGlassSecondary,
-                            )
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                            ) {
+                                Text(
+                                    text = "Automated Doctor Remediation",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Medium,
+                                    color = glassColors.onGlass,
+                                )
+                                Text(
+                                    text = "Automatically fix non-interactive package prerequisites during setup",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = glassColors.onGlassSecondary,
+                                )
+                            }
                         }
                     }
                 }

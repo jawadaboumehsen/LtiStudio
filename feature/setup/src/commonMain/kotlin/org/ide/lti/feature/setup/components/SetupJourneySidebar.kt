@@ -97,7 +97,7 @@ fun SetupJourneySidebar(
 
     val isEnvironmentReady = toolchainSetupState.isAllReady
     val isAnyStepRunning = toolchainSetupState.hasAnyStepRunning()
-    val isEnvironmentBusy = toolchainSetupState.isRunning || isAnyStepRunning || toolchainSetupState.isFixing
+    val isEnvironmentBusy = toolchainSetupState.isRunning || isAnyStepRunning
     val hasEnvironmentIssues = toolchainSetupState.hasAnyFailedSteps()
 
     val isWorkspacesActive = selectedDestination == SetupDestination.WORKSPACES || currentStep == SetupTab.PROJECTS
@@ -421,7 +421,6 @@ fun computeSidebarSubtitle(
     return when {
         isAnyStepRunning -> "Verifying…"
         state.isRunning -> "Configuring…"
-        state.isFixing -> "Fixing packages…"
         state.isAllReady -> {
             val ts = state.lastVerifiedTimestamp
             if (ts != null && ts > 0) {
@@ -451,7 +450,6 @@ fun computeSidebarBadge(state: ToolchainSetupState): String {
     return when {
         isAnyStepRunning -> "Checking"
         state.isRunning -> "Running"
-        state.isFixing -> "Fixing"
         state.isAllReady -> "Ready"
         hasFailedSteps && !state.isBusy -> "Fix needed"
         hasRestoredSteps -> "Checking"

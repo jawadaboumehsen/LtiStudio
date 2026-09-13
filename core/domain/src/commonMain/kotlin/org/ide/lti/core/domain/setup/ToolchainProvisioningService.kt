@@ -126,7 +126,6 @@ public data class ToolchainSetupState(
     val currentStage: SetupStepStage? = null,
     val isRunning: Boolean = false,
     val isChecking: Boolean = false,
-    val isFixing: Boolean = false,
     val logs: List<String> = emptyList(),
     val activeLogLine: String? = null,
     val activeDistro: String? = "Ubuntu",
@@ -160,7 +159,7 @@ public data class ToolchainSetupState(
     /** Durable recovery block reason: the journal is ambiguous and needs user-directed recovery. */
     val recoveryBlockReason: String? = null,
 ) {
-    val isBusy: Boolean get() = isRunning || isChecking || isFixing || activeOperationId != null
+    val isBusy: Boolean get() = isRunning || isChecking || activeOperationId != null
 
     /**
      * True if every step was verified live in this process and is SUCCESS or tolerated WARNING.

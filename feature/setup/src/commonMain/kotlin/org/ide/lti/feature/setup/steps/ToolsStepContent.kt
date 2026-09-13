@@ -171,13 +171,14 @@ fun ToolsStepContent(
                 isBusy = state.toolchainSetupState.isBusy,
                 searchFocusRequester = searchFocusRequester,
                 backdrop = resolvedBackdrop,
+                publishedToolIds = state.toolchainSetupState.publishedToolIds,
             )
 
             // Bounded Activity & Execution Terminal Output
             SetupActivityPanel(
                 activityState = resolvedActivityState,
                 title = "Tool Execution & Activity",
-                isRunning = state.toolchainSetupState.isRunning || state.toolchainSetupState.isFixing,
+                isRunning = state.toolchainSetupState.isRunning,
                 defaultExpanded = true,
                 backdrop = resolvedBackdrop,
             )
