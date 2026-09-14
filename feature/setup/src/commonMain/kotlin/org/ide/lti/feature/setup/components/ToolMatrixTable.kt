@@ -387,6 +387,7 @@ private fun ToolItemDetails(
                 color = glassColors.onGlassSecondary,
                 maxLines = 1,
                 softWrap = false,
+                overflow = TextOverflow.Ellipsis,
             )
             if (tool.isCore) {
                 GlassChip(
@@ -433,6 +434,7 @@ private fun ToolItemDetails(
                     color = diagnostics.success,
                     maxLines = 1,
                     softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }
@@ -449,6 +451,7 @@ private fun ToolItemDetails(
                         color = glassColors.onGlassMuted,
                         maxLines = 1,
                         softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
@@ -492,7 +495,7 @@ private fun ToolItemActionButtons(
                     contentDescription = null,
                     modifier = Modifier.size(IconSize.Small),
                 )
-                Text("Test", maxLines = 1, softWrap = false)
+                Text("Test", maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
             }
         }
 
@@ -510,7 +513,7 @@ private fun ToolItemActionButtons(
                         contentDescription = null,
                         modifier = Modifier.size(IconSize.Small),
                     )
-                    Text("Rebuild", maxLines = 1, softWrap = false)
+                    Text("Rebuild", maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
                 }
             }
         }

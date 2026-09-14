@@ -63,6 +63,7 @@ import org.ide.lti.core.designsystem.component.actions.windowDragGesture
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.BrandColors
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassEffects
@@ -311,7 +312,7 @@ private fun GlassTopBarLeftSection(
                             text = "L",
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White,
+                                color = BrandColors.OnLogoBadge,
                             ),
                         )
                     }

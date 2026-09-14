@@ -266,7 +266,7 @@ private fun VerticalStageRow(
                                 contentDescription = null,
                                 modifier = Modifier.size(IconSize.Small),
                             )
-                            Text("Retry Stage", maxLines = 1, softWrap = false)
+                            Text("Retry Stage", maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
                         }
                     }
                 }
@@ -329,6 +329,7 @@ private fun VerticalStageRow(
                         color = glassColors.onGlass,
                         maxLines = 1,
                         softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
                     )
 
                     Spacer(Modifier.size(Spacing.ExtraSmall))

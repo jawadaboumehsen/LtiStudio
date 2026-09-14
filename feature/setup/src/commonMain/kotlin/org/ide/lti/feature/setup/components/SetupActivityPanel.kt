@@ -310,6 +310,7 @@ private fun ActivityPanelHeader(
                 color = glassColors.glassAccent,
                 maxLines = 1,
                 softWrap = false,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }
@@ -385,6 +386,7 @@ private fun ActivityFollowButton(
                 style = MaterialTheme.typography.labelSmall,
                 maxLines = 1,
                 softWrap = false,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     } else {
@@ -396,6 +398,7 @@ private fun ActivityFollowButton(
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 softWrap = false,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }
@@ -432,6 +435,7 @@ private fun ActivitySelectionActions(
                 style = MaterialTheme.typography.labelSmall,
                 maxLines = 1,
                 softWrap = false,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }
@@ -581,6 +585,7 @@ private fun ActivityLogItemRow(
             ),
             color = lineTint,
             softWrap = false,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }

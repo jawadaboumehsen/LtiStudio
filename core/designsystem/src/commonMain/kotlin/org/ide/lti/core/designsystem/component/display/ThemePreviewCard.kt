@@ -46,6 +46,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.BrandColors
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
@@ -182,7 +183,7 @@ fun ThemePreviewCard(
                         painter = AppIcons.CheckPainterResource(),
                         contentDescription = "Selected",
                         modifier = Modifier.size(IconSize.Small),
-                        tint = if (theme == AppTheme.Light) ThemeColors.LightLayerText else Color.White,
+                        tint = if (theme == AppTheme.Light) ThemeColors.LightLayerText else BrandColors.OnLogoBadge,
                     )
                 }
             }
@@ -199,7 +200,7 @@ private fun MiniIdePreview(
     modifier: Modifier = Modifier,
 ) {
     val windowCanvasColor = when (theme) {
-        is AppTheme.Blue -> Color.Black
+        is AppTheme.Blue -> ThemeColors.BlueAmoledCanvas
         is AppTheme.Dark -> ThemeColors.DarkLayerBase
         is AppTheme.Light -> ThemeColors.LightLayerBase
         else -> ThemeColors.DarkLayerBase
@@ -220,7 +221,7 @@ private fun MiniIdePreview(
     }
 
     val editorColor = when (theme) {
-        is AppTheme.Blue -> Color.Black
+        is AppTheme.Blue -> ThemeColors.BlueAmoledCanvas
         is AppTheme.Dark -> ThemeColors.DarkLayerElevated
         is AppTheme.Light -> ThemeColors.LightLayerSurface
         else -> ThemeColors.DarkLayerElevated

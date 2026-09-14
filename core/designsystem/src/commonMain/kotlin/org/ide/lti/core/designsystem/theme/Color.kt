@@ -340,6 +340,17 @@ object WindowControlColors {
  */
 object BrandColors {
     val LogoGradientEnd = Color(0xFF38BDF8)
+
+    /** Foreground color for glyphs/icons drawn directly on [LogoGradientEnd]'s brand badge fill. */
+    val OnLogoBadge = Color.White
+}
+
+/**
+ * Centralized token colors for interactive press/drag highlight overlays. These are deliberately
+ * theme-agnostic additive light sources (drawn with BlendMode.Plus), not surface colors.
+ */
+object InteractionColors {
+    val PressHighlight = Color.White
 }
 
 /**
@@ -372,6 +383,9 @@ object ThemeColors {
     val WindowControlClose = Color(0xFFFF5F56)     // macOS Red (#FF5F56)
     val WindowControlMinimize = Color(0xFFFFBD2E)  // macOS Yellow (#FFBD2E)
     val WindowControlMaximize = Color(0xFF27C93F)  // macOS Green (#27C93F)
+
+    // True-black AMOLED canvas for the "Blue" theme's own signature look (see AppTheme.Blue docs)
+    val BlueAmoledCanvas = Color.Black
 }
 
 /**

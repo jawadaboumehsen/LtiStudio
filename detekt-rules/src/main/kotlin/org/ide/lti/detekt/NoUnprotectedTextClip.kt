@@ -17,8 +17,6 @@ import io.gitlab.arturbosch.detekt.api.Issue
 import io.gitlab.arturbosch.detekt.api.Rule
 import io.gitlab.arturbosch.detekt.api.Severity
 import org.jetbrains.kotlin.psi.KtCallExpression
-import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.kotlin.psi.KtVisitorVoid
 
 /**
  * Flags a `Text(...)` call that sets `softWrap = false` without also setting `overflow`.
@@ -26,6 +24,10 @@ import org.jetbrains.kotlin.psi.KtVisitorVoid
  * "text vanishes/clips at narrow widths" bug class found repeatedly across Glass* components
  * (e.g. GlassConsoleDrawer's "View Output" label). Use `overflow = TextOverflow.Ellipsis` (or
  * `.Clip` if clipping is deliberate) alongside `softWrap = false`.
+ *
+ * Overrides `visitCallExpression` directly on this Rule (a KtTreeVisitorVoid) rather than
+ * delegating to a nested `KtVisitorVoid` - the latter does NOT recurse into child PSI nodes and
+ * would silently never fire on any nested call expression.
  */
 class NoUnprotectedTextClip(config: Config = Config.empty) : Rule(config) {
     override val issue = Issue(
@@ -36,36 +38,29 @@ class NoUnprotectedTextClip(config: Config = Config.empty) : Rule(config) {
         debt = Debt.FIVE_MINS,
     )
 
-    override fun visitKtFile(file: KtFile) {
-        super.visitKtFile(file)
-        file.accept(
-            object : KtVisitorVoid() {
-                override fun visitCallExpression(expression: KtCallExpression) {
-                    super.visitCallExpression(expression)
-                    if (expression.calleeExpression?.text != "Text") return
+    override fun visitCallExpression(expression: KtCallExpression) {
+        super.visitCallExpression(expression)
+        if (expression.calleeExpression?.text != "Text") return
 
-                    val args = expression.valueArguments
-                    val hasSoftWrapFalse = args.any { arg ->
-                        arg.getArgumentName()?.asName?.asString() == "softWrap" &&
-                            arg.getArgumentExpression()?.text == "false"
-                    }
-                    if (!hasSoftWrapFalse) return
+        val args = expression.valueArguments
+        val hasSoftWrapFalse = args.any { arg ->
+            arg.getArgumentName()?.asName?.asString() == "softWrap" &&
+                arg.getArgumentExpression()?.text == "false"
+        }
+        if (!hasSoftWrapFalse) return
 
-                    val hasOverflow = args.any { arg ->
-                        arg.getArgumentName()?.asName?.asString() == "overflow"
-                    }
-                    if (hasOverflow) return
+        val hasOverflow = args.any { arg ->
+            arg.getArgumentName()?.asName?.asString() == "overflow"
+        }
+        if (hasOverflow) return
 
-                    report(
-                        CodeSmell(
-                            issue = issue,
-                            entity = Entity.from(expression),
-                            message = "Text(...) sets softWrap = false without overflow; " +
-                                "add overflow = TextOverflow.Ellipsis (or .Clip if intentional).",
-                        ),
-                    )
-                }
-            },
+        report(
+            CodeSmell(
+                issue = issue,
+                entity = Entity.from(expression),
+                message = "Text(...) sets softWrap = false without overflow; " +
+                    "add overflow = TextOverflow.Ellipsis (or .Clip if intentional).",
+            ),
         )
     }
 }

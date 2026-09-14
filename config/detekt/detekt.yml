@@ -413,6 +413,8 @@ lti-design-system:
     active: true
   NoUnprotectedTextClip:
     active: true
+  NoWeightInScrollableContainer:
+    active: true
 
 naming:
   active: true

@@ -182,6 +182,7 @@ fun DoctorDiagnosticsDrawer(
                     modifier = Modifier.align(Alignment.CenterEnd),
                     maxLines = 1,
                     softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
 
@@ -285,7 +286,12 @@ fun DoctorDiagnosticsDrawer(
                                     contentDescription = null,
                                     modifier = Modifier.size(IconSize.Small),
                                 )
-                                Text("Auto-Fix All Issues", maxLines = 1, softWrap = false)
+                                Text(
+                                    "Auto-Fix All Issues",
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
                             }
                         }
                     }

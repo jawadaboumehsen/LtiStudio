@@ -280,6 +280,39 @@ tasks.register("verifyDesignSystemGuardrails") {
             }
         }
 
+        // ---- 1f. Named-color bypass scan: UI code may not reference a raw Compose named color ----
+        // ---- constant (Color.White, Color.Black, Color.Red, ...) outside theme/ - these have  ----
+        // ---- the exact same "silently wrong in the other theme mode" failure as a raw hex      ----
+        // ---- literal (1a), but slip past that regex since they're not Color(0x...). Transparent ----
+        // ---- and Unspecified are load-bearing sentinel values (not real colors) and allowlisted. ----
+        val namedColorScanRoots = listOf(
+            File(root, "core/designsystem/src"),
+            File(root, "core/ui/src"),
+            File(root, "feature"),
+            File(root, "lti-shared/src"),
+            File(root, "lti-desktop/src"),
+            File(root, "catalog/src"),
+        )
+        val namedColorRegex = Regex(
+            """\bColor\.(White|Black|Red|Green|Blue|Yellow|Cyan|Magenta|Gray|LightGray|DarkGray)\b""",
+        )
+
+        namedColorScanRoots.forEach { scanRoot ->
+            ktFiles(scanRoot).forEach { file ->
+                val path = file.absolutePath.replace('\\', '/')
+                if (path.contains("/theme/")) return@forEach
+                file.readLines().forEachIndexed { idx, rawLine ->
+                    if (isCommentOrImport(rawLine)) return@forEachIndexed
+                    val line = rawLine.trim()
+                    if (namedColorRegex.containsMatchIn(line)) {
+                        violations += "${file.relativeTo(root).path}:${idx + 1}: raw named color constant " +
+                            "bypasses theme/Color.kt - add a real token (e.g. BrandColors/ThemeColors/" +
+                            "InteractionColors) instead. [$line]"
+                    }
+                }
+            }
+        }
+
         // ---- 2. Component-boundary scan: feature/*, lti-shared, lti-desktop must not hand-roll ----
         // ---- glass components directly from backdrop effect primitives.                        ----
         val boundaryScanRoots = listOf(

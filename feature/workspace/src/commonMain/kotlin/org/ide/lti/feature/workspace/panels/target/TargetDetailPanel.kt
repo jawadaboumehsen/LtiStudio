@@ -114,6 +114,7 @@ private fun BreadcrumbTrail(
             color = glassColors.onGlassMuted,
             maxLines = 1,
             softWrap = false,
+            overflow = TextOverflow.Ellipsis,
         )
         Text(
             text = "/",
@@ -121,6 +122,7 @@ private fun BreadcrumbTrail(
             color = glassColors.onGlassMuted,
             maxLines = 1,
             softWrap = false,
+            overflow = TextOverflow.Ellipsis,
         )
         Text(
             text = "${selectedTarget.name} (${selectedTarget.codename})",

@@ -25,6 +25,7 @@ import androidx.compose.ui.util.fastCoerceAtMost
 import androidx.compose.ui.util.lerp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import org.ide.lti.core.designsystem.theme.InteractionColors
 import org.ide.lti.core.designsystem.theme.MotionSpring
 import org.ide.lti.core.designsystem.theme.MotionThreshold
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -58,7 +59,7 @@ class InteractiveHighlight(
             val progress = pressProgressAnimation.value
             if (progress > 0f) {
                 drawRect(
-                    Color.White.copy(0.25f * progress),
+                    InteractionColors.PressHighlight.copy(0.25f * progress),
                     blendMode = BlendMode.Plus,
                 )
             }

@@ -436,6 +436,7 @@ private fun BackToProjectsButton(
                 text = "Back to Projects",
                 maxLines = 1,
                 softWrap = false,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }
@@ -503,7 +504,7 @@ private fun CheckingActionButton(glassColors: org.ide.lti.core.designsystem.them
                 strokeWidth = StrokeWidth.Hairline,
                 color = glassColors.onGlass,
             )
-            Text(text = "Checking...", maxLines = 1, softWrap = false)
+            Text(text = "Checking...", maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
         }
     }
 }
@@ -526,6 +527,7 @@ private fun StageProgressActionButton(
                 text = "Running Setup...",
                 maxLines = 1,
                 softWrap = false,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }
@@ -549,6 +551,7 @@ private fun OpenWorkspacesActionButton(
                 text = if (onNavigateToProjects != null) "Open Workspaces" else "Continue to Launchpad",
                 maxLines = 1,
                 softWrap = false,
+                overflow = TextOverflow.Ellipsis,
             )
             Icon(
                 painter = AppIcons.SendPainterResource(),
@@ -577,7 +580,7 @@ private fun ReconnectActionButton(
                 contentDescription = null,
                 modifier = Modifier.size(IconSize.Small),
             )
-            Text(text = "Reconnect", maxLines = 1, softWrap = false)
+            Text(text = "Reconnect", maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
         }
     }
 }
@@ -605,7 +608,7 @@ private fun RetryConnectionActionButton(
                 contentDescription = null,
                 modifier = Modifier.size(IconSize.Small),
             )
-            Text(text = "Retry Connection", maxLines = 1, softWrap = false)
+            Text(text = "Retry Connection", maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
         }
     }
 }
@@ -640,6 +643,7 @@ private fun RetryStageActionButton(
                 text = if (failedStage != null) "Retry ${failedStage.displayName}" else "Retry Stage",
                 maxLines = 1,
                 softWrap = false,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }
@@ -663,7 +667,7 @@ private fun CheckActionButton(
                 contentDescription = null,
                 modifier = Modifier.size(IconSize.Small),
             )
-            Text(text = "Check Environment", maxLines = 1, softWrap = false)
+            Text(text = "Check Environment", maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
         }
     }
 }
@@ -688,7 +692,7 @@ private fun SetUpActionButton(
                 contentDescription = null,
                 modifier = Modifier.size(IconSize.Small),
             )
-            Text(text = "Set Up Environment", maxLines = 1, softWrap = false)
+            Text(text = "Set Up Environment", maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
         }
     }
 }
@@ -743,7 +747,7 @@ private fun BridgeFailureBanner(
                             contentDescription = null,
                             modifier = Modifier.size(IconSize.Small),
                         )
-                        Text("Retry Bridge", maxLines = 1, softWrap = false)
+                        Text("Retry Bridge", maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
                     }
                 }
             }

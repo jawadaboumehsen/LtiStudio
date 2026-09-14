@@ -157,7 +157,7 @@ fun EnvironmentSubsystemHeader(
                                 modifier = Modifier.size(IconSize.Small),
                             )
                         }
-                        Text("Probe Subsystem", maxLines = 1, softWrap = false)
+                        Text("Probe Subsystem", maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
                     }
                 }
             }
@@ -200,6 +200,7 @@ fun EnvironmentSubsystemHeader(
                         color = glassColors.onGlassMuted,
                         maxLines = 1,
                         softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
 
@@ -224,6 +225,7 @@ fun EnvironmentSubsystemHeader(
                             color = glassColors.onGlassSecondary,
                             maxLines = 1,
                             softWrap = false,
+                            overflow = TextOverflow.Ellipsis,
                         )
                     }
 

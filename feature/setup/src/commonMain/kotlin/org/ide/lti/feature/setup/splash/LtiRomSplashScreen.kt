@@ -225,6 +225,7 @@ fun LtiRomSplashScreen(
                         letterSpacing = LetterSpacing.Widest,
                         maxLines = 1,
                         softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
 
@@ -246,6 +247,7 @@ fun LtiRomSplashScreen(
                         letterSpacing = LetterSpacing.Widest,
                         maxLines = 1,
                         softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
                     )
 
                     Spacer(modifier = Modifier.size(Spacing.ExtraSmall))
@@ -272,6 +274,7 @@ fun LtiRomSplashScreen(
                                 color = glassColors.glassAccent,
                                 maxLines = 1,
                                 softWrap = false,
+                                overflow = TextOverflow.Ellipsis,
                             )
                         }
 
@@ -327,6 +330,7 @@ fun LtiRomSplashScreen(
                             modifier = Modifier.align(Alignment.CenterEnd),
                             maxLines = 1,
                             softWrap = false,
+                            overflow = TextOverflow.Ellipsis,
                         )
                     }
                 }
@@ -377,6 +381,7 @@ fun LtiRomSplashScreen(
                         modifier = Modifier.align(Alignment.CenterEnd),
                         maxLines = 1,
                         softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
