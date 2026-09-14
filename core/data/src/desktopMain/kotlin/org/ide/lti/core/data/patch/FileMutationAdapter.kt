@@ -21,7 +21,6 @@ import org.ide.lti.core.domain.plugin.MutationContext
 import org.ide.lti.core.domain.plugin.MutationEffect
 import org.ide.lti.core.domain.plugin.MutationOutcome
 import org.ide.lti.core.domain.plugin.PluginPackagePolicy
-import org.ide.lti.core.model.plugin.PartitionPath
 import org.ide.lti.core.model.run.StageId
 import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
@@ -432,103 +431,8 @@ class FileMutationAdapter : FileMutationPort {
         )
     }
 
-    @Suppress("ReturnCount")
-    private fun resolveOperationPath(op: ConcreteOperation, ctx: MutationContext): ResolvedTarget {
-        val partPath = op.targetPartitionPath()
-        val partitionRel = ctx.partitionRoots[partPath.partition]
-            ?: return ResolvedTarget.Invalid(
-                ValidationError(
-                    stageId = StageId.MODULE_APPLICATION,
-                    objectId = op.id,
-                    fieldPath = partPath.partition,
-                    code = FileMutationCodes.PARTITION_NOT_IN_TREE,
-                    severity = Severity.ERROR,
-                    message = "Partition '${partPath.partition}' not found in work tree partition roots",
-                ),
-            )
-
-        val workTree = Path.of(ctx.workTreeRelPath).toAbsolutePath().normalize()
-        val partitionRoot = workTree.resolve(partitionRel).normalize()
-        if (!partitionRoot.startsWith(workTree)) {
-            return ResolvedTarget.Invalid(
-                ValidationError(
-                    stageId = StageId.MODULE_APPLICATION,
-                    objectId = op.id,
-                    fieldPath = partPath.partition,
-                    code = FileMutationCodes.PATH_ESCAPES_PARTITION,
-                    severity = Severity.ERROR,
-                    message = "Partition root '$partitionRel' escapes work tree root",
-                ),
-            )
-        }
-
-        val realPartitionRoot = if (Files.exists(partitionRoot)) {
-            partitionRoot.toRealPath()
-        } else {
-            partitionRoot
-        }
-
-        val resolved = partitionRoot.resolve(partPath.relativePath).normalize()
-        if (!resolved.startsWith(partitionRoot)) {
-            return ResolvedTarget.Invalid(
-                ValidationError(
-                    stageId = StageId.MODULE_APPLICATION,
-                    objectId = op.id,
-                    fieldPath = partPath.relativePath,
-                    code = FileMutationCodes.PATH_ESCAPES_PARTITION,
-                    severity = Severity.ERROR,
-                    message = "Path '${partPath.relativePath}' escapes partition root '${partPath.partition}'",
-                ),
-            )
-        }
-
-        if (Files.exists(partitionRoot) && !resolved.toAbsolutePath().normalize().startsWith(realPartitionRoot)) {
-            return ResolvedTarget.Invalid(
-                ValidationError(
-                    stageId = StageId.MODULE_APPLICATION,
-                    objectId = op.id,
-                    fieldPath = partPath.relativePath,
-                    code = FileMutationCodes.PATH_ESCAPES_PARTITION,
-                    severity = Severity.ERROR,
-                    message = "Path '${partPath.relativePath}' escapes real partition root",
-                ),
-            )
-        }
-
-        val relToRoot = partitionRoot.relativize(resolved)
-        var curr = partitionRoot
-        for (i in 0 until relToRoot.nameCount) {
-            val segment = relToRoot.getName(i)
-            if (segment.toString().isEmpty()) continue
-            curr = curr.resolve(segment)
-            if (Files.isSymbolicLink(curr)) {
-                return ResolvedTarget.Invalid(
-                    ValidationError(
-                        stageId = StageId.MODULE_APPLICATION,
-                        objectId = op.id,
-                        fieldPath = partPath.relativePath,
-                        code = FileMutationCodes.PATH_ESCAPES_PARTITION,
-                        severity = Severity.ERROR,
-                        message = "Path element '$segment' is a symbolic link",
-                    ),
-                )
-            }
-            if (Files.exists(curr) && !curr.toRealPath().startsWith(realPartitionRoot)) {
-                return ResolvedTarget.Invalid(
-                    ValidationError(
-                        stageId = StageId.MODULE_APPLICATION,
-                        objectId = op.id,
-                        fieldPath = partPath.relativePath,
-                        code = FileMutationCodes.PATH_ESCAPES_PARTITION,
-                        severity = Severity.ERROR,
-                        message = "Path element '$segment' traverses outside real partition root",
-                    ),
-                )
-            }
-        }
-
-        return ResolvedTarget.Valid(resolved, partitionRoot)
-    }
+    private fun resolveOperationPath(op: ConcreteOperation, ctx: MutationContext): ResolvedTarget =
+        PartitionPathResolver.resolve(op.targetPartitionPath(), op.id, ctx)
 
     private fun findSidecarUpdates(partitionRoot: Path, partition: String): List<String> {
         val configsDir = partitionRoot.resolve("../configs").normalize()
@@ -654,22 +558,6 @@ class FileMutationAdapter : FileMutationPort {
             idx = found + context.length
         }
         return count
-    }
-
-    private fun ConcreteOperation.targetPartitionPath(): PartitionPath = when (this) {
-        is ConcreteOperation.Copy -> destination
-        is ConcreteOperation.Replace -> destination
-        is ConcreteOperation.Delete -> target
-        is ConcreteOperation.PropertyPatch -> target
-        is ConcreteOperation.TextPatch -> target
-        is ConcreteOperation.ApkJarPatch -> target
-        is ConcreteOperation.CompiledClassMerge -> target
-        is ConcreteOperation.HookInjection -> target
-    }
-
-    private sealed interface ResolvedTarget {
-        data class Valid(val path: Path, val partitionRoot: Path) : ResolvedTarget
-        data class Invalid(val error: ValidationError) : ResolvedTarget
     }
 
     private companion object {
