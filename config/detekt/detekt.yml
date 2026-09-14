@@ -222,10 +222,13 @@ complexity:
 
 coroutines:
   active: true
-  # CoroutineLaunchedInTestWithoutRunTest and SuspendFunInFinallySection do not exist in
-  # detekt-rules-coroutines 1.23.7 (the version this project is pinned to) - confirmed by
-  # inspecting the jar's actual class list, not just the (newer) official docs page. They were
-  # added in a later Detekt release; add them when this project's detekt version catches up.
+  # Now on detekt-rules-coroutines 2.0.0-alpha.6, which does contain these two (confirmed via the
+  # real jar's class list) - they didn't exist in 1.23.7, the version this project was pinned to
+  # when they were first left out.
+  CoroutineLaunchedInTestWithoutRunTest:
+    active: true
+  SuspendFunInFinallySection:
+    active: true
   GlobalCoroutineUsage:
     active: true
   InjectDispatcher:
