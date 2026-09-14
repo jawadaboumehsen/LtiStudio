@@ -33,8 +33,14 @@ class PipelineOrchestratorTest {
     private fun orchestrator(port: SimulatedExecutionPort, repo: InMemoryRunRepository, vendored: Boolean = true) =
         PipelineOrchestrator(port, repo, FakeVendoredFiles(vendored))
 
-    private fun globalPort() = SimulatedExecutionPort(ws).apply { archiveSha256 = fixture.snapshotGlobalOta.firmware.sha256 }
-    private fun chinaPort() = SimulatedExecutionPort(ws).apply { archiveSha256 = fixture.snapshotChinaRaw.firmware.sha256 }
+    private fun globalPort() = SimulatedExecutionPort(ws).apply {
+        archiveSha256 =
+            fixture.snapshotGlobalOta.acquisition.firmware.sha256
+    }
+    private fun chinaPort() = SimulatedExecutionPort(ws).apply {
+        archiveSha256 =
+            fixture.snapshotChinaRaw.acquisition.firmware.sha256
+    }
 
     @Test
     fun fullRunSucceedsWithCapturedValuesAndArtifacts() = runTest {
@@ -44,14 +50,19 @@ class PipelineOrchestratorTest {
 
         assertEquals(PipelineEvent.RunFinished(RunState.SUCCEEDED), events.last())
         val started = events.filterIsInstance<PipelineEvent.StageStarted>().map { it.stageId }
-        assertEquals(StageId.entries.toList(), started)
+        val expectedStages = PipelineDefinitionRegistry().executableStages().map { it.id }
+        assertEquals(expectedStages, started)
 
         val run = assertNotNull(repo.getRun("run-1"))
         assertEquals(RunState.SUCCEEDED, run.state)
         assertTrue(run.stages.all { it.state == StageState.EXECUTED })
 
         // Captured values drive later steps: the AVB footer uses the real salt and searched size.
-        val footer = port.durableSteps.first { it.toolId == "avbtool" && it.args[0] == "add_hashtree_footer" && "--salt" in it.args }
+        val footer = port.durableSteps.first {
+            it.toolId == "avbtool" &&
+                it.args[0] == "add_hashtree_footer" &&
+                "--salt" in it.args
+        }
         val salt = footer.args[footer.args.indexOf("--salt") + 1]
         assertEquals(SimulatedExecutionPort.fakeDigest("$ws/out/images/odm.img", 64), salt)
         val partitionSize = footer.args[footer.args.indexOf("--partition_size") + 1].toLong()
@@ -75,7 +86,10 @@ class PipelineOrchestratorTest {
 
         val manifest = assertNotNull(port.text("out/manifest.json"))
         assertTrue(manifest.contains("https://ota.ltirom.org/updates/Lti_1.0.0_20260911_PQ84P01-sign.zip"))
-        assertTrue(manifest.contains("\"size\": ${SimulatedExecutionPort.ZIP_BYTES}") || manifest.contains("\"size\":${SimulatedExecutionPort.ZIP_BYTES}"))
+        assertTrue(
+            manifest.contains("\"size\": ${SimulatedExecutionPort.ZIP_BYTES}") ||
+                manifest.contains("\"size\":${SimulatedExecutionPort.ZIP_BYTES}"),
+        )
         assertEquals(3, run.artifacts.size)
         assertTrue(run.artifacts.all { it.verification == VerificationState.VERIFIED })
         assertEquals(SimulatedExecutionPort.ZIP_BYTES.toLong(), run.artifacts.first().sizeBytes)
@@ -89,7 +103,7 @@ class PipelineOrchestratorTest {
         val executedBefore = port.durableSteps.size
 
         val events = orchestrator(port, repo).drive("run-2", fixture.globalOtaContext(), "d2").toList()
-        assertEquals(StageId.entries.size, events.count { it is PipelineEvent.StageSkipped })
+        assertEquals(7, events.count { it is PipelineEvent.StageSkipped })
         assertEquals(executedBefore, port.durableSteps.size)
         assertTrue(repo.getRun("run-2")!!.stages.all { it.state == StageState.SKIPPED })
     }
@@ -119,9 +133,9 @@ class PipelineOrchestratorTest {
         assertEquals(2, failed.exitCode)
         assertEquals(PipelineEvent.RunFinished(RunState.FAILED), events.last())
         val run = repo.getRun("run-1")!!
-        assertEquals(StageState.FAILED, run.stages[4].state)
-        assertEquals(StageState.NOT_RUN, run.stages[5].state)
-        assertEquals(StageState.EXECUTED, run.stages[3].state)
+        assertEquals(StageState.FAILED, run.stages[5].state)
+        assertEquals(StageState.NOT_RUN, run.stages[6].state)
+        assertEquals(StageState.EXECUTED, run.stages[4].state)
         assertFalse(port.has(".cache/BUILD_FLASHABLE_ZIP.key"))
     }
 
@@ -129,7 +143,11 @@ class PipelineOrchestratorTest {
     fun missingVendoredUpdaterFailsInsteadOfSubstituting() = runTest {
         val port = globalPort()
         val repo = InMemoryRunRepository()
-        val events = orchestrator(port, repo, vendored = false).drive("run-1", fixture.globalOtaContext(), "d1").toList()
+        val events = orchestrator(
+            port,
+            repo,
+            vendored = false,
+        ).drive("run-1", fixture.globalOtaContext(), "d1").toList()
 
         val failed = events.filterIsInstance<PipelineEvent.StageFailed>().single()
         assertEquals(StageId.BUILD_FLASHABLE_ZIP, failed.stageId)
@@ -209,6 +227,11 @@ class PipelineOrchestratorTest {
         assertTrue(lpunpack.args.contains("system_a"))
         assertFalse(port.durableSteps.any { it.toolId == "payload-dumper-go" })
         // China profile folds system_ext into system.
-        assertTrue(port.durableSteps.any { it.toolId == "rsync" && it.args.last().endsWith("work/system/system/system_ext/") })
+        assertTrue(
+            port.durableSteps.any {
+                it.toolId == "rsync" &&
+                    it.args.last().endsWith("work/system/system/system_ext/")
+            },
+        )
     }
 }

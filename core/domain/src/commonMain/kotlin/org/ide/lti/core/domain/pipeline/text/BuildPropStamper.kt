@@ -29,8 +29,8 @@ public object BuildPropStamper {
             original = original,
             date = requireNotNull(ctx.value(RuntimeKeys.RUN_DATE)) { "run date missing from runtime values" },
             device = ctx.target.id,
-            version = ctx.snapshot.romVersion,
-            buildType = ctx.snapshot.buildType,
+            version = ctx.snapshot.assembly.romVersion,
+            buildType = ctx.snapshot.assembly.buildType,
         )
     }
 

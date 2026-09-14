@@ -65,9 +65,10 @@ public class PipelineOrchestrator(
     private val executionPort: PipelineExecutionPort,
     private val runRepository: RunRepository,
     private val vendoredFiles: VendoredFilePort,
-    private val stages: List<StageDefinition> = DefaultPipelineStages.all,
+    private val registry: PipelineDefinitionRegistry = PipelineDefinitionRegistry(),
     private val clock: Clock = Clock.System,
 ) {
+    private val stages: List<StageDefinition> get() = registry.executableStages()
     private class StageFailure(val stepIndex: Int, val exitCode: Int, message: String) : RuntimeException(message)
     private class StageInterruptedFailure(message: String) : RuntimeException(message)
     private class StageCancelledFailure(message: String) : RuntimeException(message)

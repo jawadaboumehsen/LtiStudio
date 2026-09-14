@@ -21,7 +21,7 @@ import org.ide.lti.core.model.target.TargetRegion
 data class ConfigurationDraft(
     val region: TargetRegion,
     val firmware: TargetFirmware,
-    val acquisitionMode: SnapshotAcquisitionMode = SnapshotAcquisitionMode.DOWNLOAD,
+    val acquisitionMode: AcquisitionMode = AcquisitionMode.DOWNLOAD,
     val importedArchiveName: String? = null,
     val buildType: String = "user",
     val romVersion: String = "1.0.0",
@@ -37,24 +37,32 @@ data class ConfigurationDraft(
         id = id,
         workspaceId = workspaceId,
         profileRevision = profileRevision,
-        region = region,
-        firmware = firmware,
-        acquisitionMode = acquisitionMode,
-        importedArchiveName = importedArchiveName,
-        packagePolicy = packagePolicy,
-        buildType = buildType,
-        romVersion = romVersion,
-        otaBaseUrl = otaBaseUrl,
+        acquisition = AcquisitionSettings(
+            mode = acquisitionMode,
+            region = region,
+            firmware = firmware,
+            archiveRef = importedArchiveName,
+        ),
+        assembly = AssemblySettings(
+            buildType = buildType,
+            romVersion = romVersion,
+        ),
+        build = BuildSettings(
+            packagePolicy = packagePolicy,
+        ),
+        release = ReleaseSettings(
+            otaBaseUrl = otaBaseUrl,
+        ),
         createdAt = createdAt,
     )
 }
 
 fun ConfigurationSnapshot.toDraft(): ConfigurationDraft = ConfigurationDraft(
-    region = region,
-    firmware = firmware,
-    acquisitionMode = acquisitionMode,
-    importedArchiveName = importedArchiveName,
-    buildType = buildType,
-    romVersion = romVersion,
-    otaBaseUrl = otaBaseUrl,
+    region = acquisition.region,
+    firmware = acquisition.firmware,
+    acquisitionMode = acquisition.mode,
+    importedArchiveName = acquisition.archiveRef,
+    buildType = assembly.buildType,
+    romVersion = assembly.romVersion,
+    otaBaseUrl = release.otaBaseUrl,
 )

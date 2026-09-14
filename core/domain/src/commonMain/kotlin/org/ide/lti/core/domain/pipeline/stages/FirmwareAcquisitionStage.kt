@@ -17,8 +17,8 @@ import org.ide.lti.core.domain.pipeline.StageDefinition
 import org.ide.lti.core.domain.pipeline.digestToken
 import org.ide.lti.core.domain.pipeline.stepCommand
 import org.ide.lti.core.model.run.StageId
+import org.ide.lti.core.model.workspace.AcquisitionMode
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
-import org.ide.lti.core.model.workspace.SnapshotAcquisitionMode
 
 /**
  * Stage 1 — obtain the firmware archive at `firmware/downloaded/<name>`.
@@ -47,7 +47,7 @@ public class FirmwareAcquisitionStage : StageDefinition {
             "mkdir downloaded",
         )
 
-        if (ctx.snapshot.acquisitionMode == SnapshotAcquisitionMode.DOWNLOAD) {
+        if (ctx.snapshot.acquisition.mode == AcquisitionMode.DOWNLOAD) {
             steps += downloadSteps(ctx, archive)
         } else {
             steps += PipelineStep.Tool(stepCommand("test", listOf("-f", archive), ws), "imported archive present")
@@ -66,8 +66,8 @@ public class FirmwareAcquisitionStage : StageDefinition {
 
     private fun downloadSteps(ctx: StageContext, archive: String): List<PipelineStep> {
         val ws = ctx.wsPath
-        val url = requireNotNull(ctx.snapshot.firmware.acquisitionUrl?.takeIf { it.isNotBlank() }) {
-            "Firmware ${ctx.snapshot.firmware.version} has no download URL; import the archive instead"
+        val url = requireNotNull(ctx.snapshot.acquisition.firmware.acquisitionUrl?.takeIf { it.isNotBlank() }) {
+            "Firmware ${ctx.snapshot.acquisition.firmware.version} has no download URL; import the archive instead"
         }
         val partial = "$archive.partial"
         val steps = mutableListOf<PipelineStep>()
@@ -109,7 +109,7 @@ public class FirmwareAcquisitionStage : StageDefinition {
 
     private fun checksumVerdict(snapshot: ConfigurationSnapshot, values: Map<String, String>): String? {
         val actual = values[RuntimeKeys.ARCHIVE_SHA256]?.digestToken().orEmpty()
-        val expected = snapshot.firmware.sha256?.lowercase()
+        val expected = snapshot.acquisition.firmware.sha256?.lowercase()
         return when {
             actual.isEmpty() -> "sha256sum produced no digest for the firmware archive"
             expected.isNullOrBlank() -> null // recorded as UNVERIFIED by the orchestrator
@@ -121,17 +121,18 @@ public class FirmwareAcquisitionStage : StageDefinition {
     public companion object {
         private const val CURL_RANGE_NOT_SUPPORTED = 33
 
-        public fun archiveName(snapshot: ConfigurationSnapshot): String =
-            when (snapshot.acquisitionMode) {
-                SnapshotAcquisitionMode.IMPORT_ARCHIVE ->
-                    requireNotNull(snapshot.importedArchiveName) {
-                        "IMPORT_ARCHIVE mode without an imported archive name"
-                    }
-                SnapshotAcquisitionMode.DOWNLOAD -> {
-                    val fromUrl = snapshot.firmware.acquisitionUrl?.substringAfterLast('/')?.substringBefore('?')
-                    fromUrl?.takeIf { it.isNotBlank() } ?: "${snapshot.firmware.version}.zip"
+        public fun archiveName(snapshot: ConfigurationSnapshot): String = when (snapshot.acquisition.mode) {
+            AcquisitionMode.IMPORT_ARCHIVE, AcquisitionMode.EXISTING_ARCHIVE ->
+                requireNotNull(snapshot.acquisition.archiveRef) {
+                    "Archive mode requires an archive ref"
                 }
+            AcquisitionMode.DOWNLOAD -> {
+                val fromUrl = snapshot.acquisition.firmware.acquisitionUrl?.substringAfterLast(
+                    '/',
+                )?.substringBefore('?')
+                fromUrl?.takeIf { it.isNotBlank() } ?: "${snapshot.acquisition.firmware.version}.zip"
             }
+        }
 
         public fun archiveRelPath(snapshot: ConfigurationSnapshot): String =
             "firmware/downloaded/${archiveName(snapshot)}"

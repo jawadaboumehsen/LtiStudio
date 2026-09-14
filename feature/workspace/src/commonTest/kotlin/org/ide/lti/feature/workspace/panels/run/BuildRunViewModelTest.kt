@@ -25,9 +25,9 @@ import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.Instant
 import org.ide.lti.core.domain.pipeline.PipelineOrchestrator
 import org.ide.lti.core.domain.pipeline.ToolResult
+import org.ide.lti.core.domain.ports.*
 import org.ide.lti.core.domain.ports.VendoredFile
 import org.ide.lti.core.domain.ports.VendoredFilePort
-import org.ide.lti.core.domain.ports.*
 import org.ide.lti.core.domain.repository.run.RunRepository
 import org.ide.lti.core.domain.repository.snapshot.SnapshotRepository
 import org.ide.lti.core.domain.repository.target.TargetRepository
@@ -106,18 +106,29 @@ class BuildRunViewModelTest {
         private val selectedFlow = MutableStateFlow(targets.first())
         override fun getAvailableTargets(): Flow<List<TargetDevice>> = flowOf(targets)
         override fun getSelectedTarget(): Flow<TargetDevice> = selectedFlow
-        override suspend fun selectTarget(targetId: String): Result<TargetDevice> = Result.success(targets.first { it.id == targetId })
+        override suspend fun selectTarget(targetId: String): Result<TargetDevice> =
+            Result.success(targets.first { it.id == targetId })
         override suspend fun addTarget(target: TargetDevice): Result<TargetDevice> = Result.success(target)
         override suspend fun updateTarget(target: TargetDevice): Result<TargetDevice> = Result.success(target)
         override suspend fun deleteTarget(targetId: String): Result<Unit> = Result.success(Unit)
     }
 
-    private class FakeReadinessPort(
-        var readinessState: EnvironmentReadinessState = EnvironmentReadinessState.READY
-    ) : EnvironmentReadinessPort {
-        override fun observe(): Flow<EnvironmentReadiness> = flowOf(EnvironmentReadiness(state = readinessState, workDirLinuxPath = "/home/lti/LtiRomWorkDir"))
-        override suspend fun refresh(): EnvironmentReadiness = EnvironmentReadiness(state = readinessState, workDirLinuxPath = "/home/lti/LtiRomWorkDir")
-        override suspend fun forWorkspace(workspace: Workspace): EnvironmentReadiness = EnvironmentReadiness(state = readinessState, workDirLinuxPath = "/home/lti/LtiRomWorkDir")
+    private class FakeReadinessPort(var readinessState: EnvironmentReadinessState = EnvironmentReadinessState.READY) :
+        EnvironmentReadinessPort {
+        override fun observe(): Flow<EnvironmentReadiness> = flowOf(
+            EnvironmentReadiness(
+                state = readinessState,
+                workDirLinuxPath = "/home/lti/LtiRomWorkDir",
+            ),
+        )
+        override suspend fun refresh(): EnvironmentReadiness = EnvironmentReadiness(
+            state = readinessState,
+            workDirLinuxPath = "/home/lti/LtiRomWorkDir",
+        )
+        override suspend fun forWorkspace(workspace: Workspace): EnvironmentReadiness = EnvironmentReadiness(
+            state = readinessState,
+            workDirLinuxPath = "/home/lti/LtiRomWorkDir",
+        )
     }
 
     private class FakePipelineExecutionPort : PipelineExecutionPort {
@@ -126,8 +137,7 @@ class BuildRunViewModelTest {
         override suspend fun startStep(ws: Workspace, step: StepCommand, idempotencyKey: String): RunHandle =
             RunHandle("step_1", "RUNNING", 1000L)
 
-        override fun observe(serverRunId: String, fromSeq: Long): Flow<StepEvent> =
-            flowOf(StepEvent.Finished(0))
+        override fun observe(serverRunId: String, fromSeq: Long): Flow<StepEvent> = flowOf(StepEvent.Finished(0))
 
         override suspend fun status(serverRunId: String): StepStatus? = null
         override suspend fun cancel(serverRunId: String): Boolean = true
@@ -151,7 +161,7 @@ class BuildRunViewModelTest {
 
     private fun createFixture(
         readinessState: EnvironmentReadinessState = EnvironmentReadinessState.READY,
-        availableDiskBytes: Long = 50_000_000_000L
+        availableDiskBytes: Long = 50_000_000_000L,
     ): Fixture {
         val workspaceRepo = FakeWorkspaceRepository()
         val snapshotRepo = FakeSnapshotRepository()
@@ -168,8 +178,8 @@ class BuildRunViewModelTest {
             availableRegions = listOf(TargetRegion.GLOBAL),
             availableFirmwares = mapOf(
                 TargetRegion.GLOBAL to listOf(
-                    TargetFirmware("V1.0", "test.build", isOfficial = true, isRecommended = true)
-                )
+                    TargetFirmware("V1.0", "test.build", isOfficial = true, isRecommended = true),
+                ),
             ),
             packagePolicy = PackagePolicy(
                 flashablePartitions = listOf("system", "vendor"),
@@ -185,7 +195,12 @@ class BuildRunViewModelTest {
         )
         val targetRepo = FakeTargetRepository(listOf(target))
 
-        val orchestrator = PipelineOrchestrator(executionPort = executionPort, runRepository = runRepo, vendoredFiles = NoVendoredFiles)
+        val orchestrator =
+            PipelineOrchestrator(
+                executionPort = executionPort,
+                runRepository = runRepo,
+                vendoredFiles = NoVendoredFiles,
+            )
 
         val startUseCase = StartPipelineRunUseCase(
             workspaceRepository = workspaceRepo,
@@ -195,7 +210,7 @@ class BuildRunViewModelTest {
             executionPort = executionPort,
             runRepository = runRepo,
             orchestrator = orchestrator,
-            scope = CoroutineScope(testDispatcher)
+            scope = CoroutineScope(testDispatcher),
         )
 
         val observeUseCase = ObserveRunUseCase(runRepo)
@@ -205,7 +220,7 @@ class BuildRunViewModelTest {
             workspaceManager = workspaceManager,
             startPipelineRunUseCase = startUseCase,
             observeRunUseCase = observeUseCase,
-            runRepository = runRepo
+            runRepository = runRepo,
         )
 
         return Fixture(
@@ -215,7 +230,7 @@ class BuildRunViewModelTest {
             snapshotRepo = snapshotRepo,
             runRepo = runRepo,
             target = target,
-            readinessPort = readinessPort
+            readinessPort = readinessPort,
         )
     }
 
@@ -234,12 +249,23 @@ class BuildRunViewModelTest {
             id = "snap-1",
             workspaceId = id,
             profileRevision = 1,
-            region = TargetRegion.GLOBAL,
-            firmware = target.availableFirmwares[TargetRegion.GLOBAL]!!.first(),
-            acquisitionMode = SnapshotAcquisitionMode.DOWNLOAD,
-            packagePolicy = target.packagePolicy,
+            acquisition = org.ide.lti.core.model.workspace.AcquisitionSettings(
+                mode = AcquisitionMode.DOWNLOAD,
+                region = TargetRegion.GLOBAL,
+                firmware = target.availableFirmwares[TargetRegion.GLOBAL]!!.first(),
+            ),
+            build = org.ide.lti.core.model.workspace.BuildSettings(
+                packagePolicy = target.packagePolicy!!,
+                signing = org.ide.lti.core.model.workspace.SigningPolicy(),
+            ),
+            assembly = org.ide.lti.core.model.workspace.AssemblySettings(
+                buildType = "user",
+                romVersion = "1.0",
+            ),
+            release = org.ide.lti.core.model.workspace.ReleaseSettings(
+                otaBaseUrl = "https://ota.example.com",
+            ),
             createdAt = Instant.fromEpochMilliseconds(1000L),
-            otaBaseUrl = "https://ota.example.com"
         )
         snapshotRepo.saveSnapshot(snapshot)
 
@@ -249,7 +275,7 @@ class BuildRunViewModelTest {
             path = "C:\\projects\\$id",
             linuxPath = "/home/lti/LtiRomWorkDir/workspaces/$id",
             targetBinding = TargetBinding(profileId = target.id, profileRevision = 1),
-            effectiveSnapshotId = snapshot.id
+            effectiveSnapshotId = snapshot.id,
         )
         workspaceRepo.saveWorkspace(workspace)
         workspaceManager.openWorkspace(workspace.id)
@@ -293,7 +319,7 @@ class BuildRunViewModelTest {
             workspaceId = ws.id,
             snapshotId = "snap-1",
             state = RunState.RUNNING,
-            startedAt = Instant.fromEpochMilliseconds(2000L)
+            startedAt = Instant.fromEpochMilliseconds(2000L),
         )
         fixture.runRepo.upsert(activeRun)
         advanceUntilIdle()
@@ -340,29 +366,29 @@ class BuildRunViewModelTest {
             StageOutcome(
                 stageId = StageId.FIRMWARE_ACQUISITION,
                 state = StageState.EXECUTED,
-                durationMs = 5000L
+                durationMs = 5000L,
             ),
             StageOutcome(
                 stageId = StageId.FIRMWARE_EXTRACTION,
-                state = StageState.SKIPPED
+                state = StageState.SKIPPED,
             ),
             StageOutcome(
                 stageId = StageId.WORK_TREE_ASSEMBLY,
-                state = StageState.RUNNING
+                state = StageState.RUNNING,
             ),
             StageOutcome(
                 stageId = StageId.MODULE_APPLICATION,
-                state = StageState.PENDING
+                state = StageState.PENDING,
             ),
             StageOutcome(
                 stageId = StageId.BUILD_FLASHABLE_ZIP,
                 state = StageState.FAILED,
-                message = "AVB signing failed"
+                message = "AVB signing failed",
             ),
             StageOutcome(
                 stageId = StageId.GENERATE_OTA_MANIFEST,
-                state = StageState.CANCELLED
-            )
+                state = StageState.CANCELLED,
+            ),
         )
 
         val run = BuildRun(
@@ -371,7 +397,7 @@ class BuildRunViewModelTest {
             snapshotId = "snap-1",
             state = RunState.FAILED,
             stages = stages,
-            startedAt = Instant.fromEpochMilliseconds(3000L)
+            startedAt = Instant.fromEpochMilliseconds(3000L),
         )
         fixture.runRepo.upsert(run)
         advanceUntilIdle()
@@ -401,22 +427,22 @@ class BuildRunViewModelTest {
                 linuxPath = "${ws.linuxPath}/out/package/rom.zip",
                 sizeBytes = 1_500_000_000L,
                 sha256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-                verification = VerificationState.VERIFIED
+                verification = VerificationState.VERIFIED,
             ),
             Artifact(
                 kind = ArtifactKind.CHECKSUM,
                 linuxPath = "${ws.linuxPath}/out/package/rom.zip.sha256",
                 sizeBytes = 64L,
                 sha256 = null,
-                verification = VerificationState.VERIFIED
+                verification = VerificationState.VERIFIED,
             ),
             Artifact(
                 kind = ArtifactKind.OTA_MANIFEST,
                 linuxPath = "${ws.linuxPath}/out/package/manifest.json",
                 sizeBytes = 512L,
                 sha256 = null,
-                verification = VerificationState.VERIFIED
-            )
+                verification = VerificationState.VERIFIED,
+            ),
         )
 
         val run = BuildRun(
@@ -425,7 +451,7 @@ class BuildRunViewModelTest {
             snapshotId = "snap-1",
             state = RunState.SUCCEEDED,
             artifacts = artifacts,
-            startedAt = Instant.fromEpochMilliseconds(4000L)
+            startedAt = Instant.fromEpochMilliseconds(4000L),
         )
         fixture.runRepo.upsert(run)
         advanceUntilIdle()

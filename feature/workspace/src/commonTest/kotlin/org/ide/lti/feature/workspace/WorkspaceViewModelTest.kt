@@ -14,6 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.emptyFlow
@@ -24,20 +25,9 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.ide.lti.core.common.event.PanelEventBus
 import org.ide.lti.core.domain.panels.PanelManager
+import org.ide.lti.core.domain.repository.device.ConnectedDeviceRepository
 import org.ide.lti.core.domain.repository.target.TargetRepository
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
-import org.ide.lti.core.domain.setup.ToolchainProvisioningService
-import org.ide.lti.core.domain.usecase.target.AddTargetUseCase
-import org.ide.lti.core.domain.usecase.target.GetAvailableTargetsUseCase
-import org.ide.lti.core.domain.usecase.target.GetSelectedTargetUseCase
-import org.ide.lti.core.domain.usecase.target.SelectTargetUseCase
-import org.ide.lti.core.domain.workspace.WorkspaceManager
-import org.ide.lti.core.model.target.TargetDevice
-import org.ide.lti.core.model.target.TargetFirmware
-import org.ide.lti.core.model.target.TargetRegion
-import org.ide.lti.core.model.target.TargetStatus
-import kotlinx.coroutines.flow.StateFlow
-import org.ide.lti.core.domain.repository.device.ConnectedDeviceRepository
 import org.ide.lti.core.domain.usecase.device.ConnectWirelessDeviceUseCase
 import org.ide.lti.core.domain.usecase.device.DisconnectDeviceUseCase
 import org.ide.lti.core.domain.usecase.device.GetConnectedDevicesUseCase
@@ -46,19 +36,27 @@ import org.ide.lti.core.domain.usecase.device.PairWirelessDeviceUseCase
 import org.ide.lti.core.domain.usecase.device.RebootConnectedDeviceUseCase
 import org.ide.lti.core.domain.usecase.device.RefreshConnectedDevicesUseCase
 import org.ide.lti.core.domain.usecase.device.SelectConnectedDeviceUseCase
+import org.ide.lti.core.domain.usecase.target.AddTargetUseCase
+import org.ide.lti.core.domain.usecase.target.GetAvailableTargetsUseCase
+import org.ide.lti.core.domain.usecase.target.GetSelectedTargetUseCase
+import org.ide.lti.core.domain.usecase.target.SelectTargetUseCase
+import org.ide.lti.core.domain.workspace.WorkspaceManager
 import org.ide.lti.core.model.target.AdbDeviceState
 import org.ide.lti.core.model.target.ConnectedTargetDevice
 import org.ide.lti.core.model.target.DeviceConnectionType
 import org.ide.lti.core.model.target.DeviceOperationResult
 import org.ide.lti.core.model.target.DeviceRebootMode
+import org.ide.lti.core.model.target.TargetBinding
+import org.ide.lti.core.model.target.TargetDevice
+import org.ide.lti.core.model.target.TargetFirmware
+import org.ide.lti.core.model.target.TargetRegion
+import org.ide.lti.core.model.target.TargetStatus
 import org.ide.lti.core.model.target.WirelessPairingRequest
 import org.ide.lti.core.model.workspace.RecentProject
-import org.ide.lti.core.model.target.TargetBinding
 import org.ide.lti.core.model.workspace.Workspace
 import org.ide.lti.core.model.workspace.WorkspaceSession
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -200,8 +198,8 @@ class WorkspaceViewModelTest {
                 modelName = "REDMAGIC Astra",
                 state = AdbDeviceState.ONLINE,
                 connectionType = DeviceConnectionType.USB,
-            )
-        )
+            ),
+        ),
     ) : ConnectedDeviceRepository {
         val devicesFlow = MutableStateFlow(initialDevices)
         val selectedDeviceFlow = MutableStateFlow(initialDevices.firstOrNull())
@@ -441,7 +439,7 @@ class WorkspaceViewModelTest {
                     host = "192.168.1.55",
                     port = 38521,
                     pairingCode = "654321",
-                )
+                ),
             ) { success, _ ->
                 callbackInvoked = true
                 assertTrue(success)

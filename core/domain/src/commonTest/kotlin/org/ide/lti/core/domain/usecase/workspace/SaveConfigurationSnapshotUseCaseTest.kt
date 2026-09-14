@@ -30,11 +30,11 @@ import org.ide.lti.core.model.target.PackagePolicy
 import org.ide.lti.core.model.target.TargetBinding
 import org.ide.lti.core.model.target.TargetFirmware
 import org.ide.lti.core.model.target.TargetRegion
+import org.ide.lti.core.model.workspace.AcquisitionMode
 import org.ide.lti.core.model.workspace.ConfigurationDraft
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 import org.ide.lti.core.model.workspace.DecodeWarning
 import org.ide.lti.core.model.workspace.RecentProject
-import org.ide.lti.core.model.workspace.SnapshotAcquisitionMode
 import org.ide.lti.core.model.workspace.Workspace
 import org.ide.lti.core.model.workspace.WorkspaceSession
 import org.ide.lti.core.model.workspace.WorkspaceType
@@ -107,9 +107,13 @@ class SaveConfigurationSnapshotUseCaseTest {
             id = "snap-initial",
             workspaceId = "ws-1",
             profileRevision = 1,
-            region = TargetRegion.GLOBAL,
-            firmware = firmwareGlobal,
-            packagePolicy = PackagePolicy(listOf("system"), listOf("boot")),
+            acquisition = org.ide.lti.core.model.workspace.AcquisitionSettings(
+                region = TargetRegion.GLOBAL,
+                firmware = firmwareGlobal,
+            ),
+            build = org.ide.lti.core.model.workspace.BuildSettings(
+                packagePolicy = PackagePolicy(listOf("system"), listOf("boot")),
+            ),
             createdAt = Clock.System.now(),
         )
         snapshotRepo.saveSnapshot(initialSnapshot)
@@ -144,7 +148,7 @@ class SaveConfigurationSnapshotUseCaseTest {
         val draft = ConfigurationDraft(
             region = TargetRegion.CHINA,
             firmware = firmwareCn,
-            acquisitionMode = SnapshotAcquisitionMode.DOWNLOAD,
+            acquisitionMode = AcquisitionMode.DOWNLOAD,
             buildType = "userdebug",
             romVersion = "1.1.0",
             otaBaseUrl = "https://ota.nubia.com/astra",
@@ -157,13 +161,13 @@ class SaveConfigurationSnapshotUseCaseTest {
         // 1. New snapshot created with new id and new digest
         assertNotEquals("snap-initial", newSnapshot.id)
         assertNotEquals(initialSnapshot.digest, newSnapshot.digest)
-        assertEquals(TargetRegion.CHINA, newSnapshot.region)
-        assertEquals("1.1.0", newSnapshot.romVersion)
+        assertEquals(TargetRegion.CHINA, newSnapshot.acquisition.region)
+        assertEquals("1.1.0", newSnapshot.assembly.romVersion)
 
         // 2. Previous snapshot is untouched
         val retrievedInitial = snapshotRepo.getSnapshot("snap-initial")
         assertNotNull(retrievedInitial)
-        assertEquals(TargetRegion.GLOBAL, retrievedInitial.region)
+        assertEquals(TargetRegion.GLOBAL, retrievedInitial.acquisition.region)
 
         // 3. Workspace 1 effectiveSnapshotId updated
         val updatedWs1 = workspaceRepo.getWorkspace("ws-1")

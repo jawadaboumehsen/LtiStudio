@@ -13,24 +13,7 @@ import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import org.ide.lti.core.model.target.PackagePolicy
-import org.ide.lti.core.model.target.TargetFirmware
-import org.ide.lti.core.model.target.TargetRegion
 import java.security.MessageDigest
-
-@Serializable
-enum class SnapshotAcquisitionMode {
-    DOWNLOAD,
-    IMPORT_ARCHIVE,
-}
-
-@Serializable
-data class SigningPolicy(
-    val signImages: Boolean = true,
-    val signPackage: Boolean = true,
-    val avbKeyRef: String = "keys/avb.pem",
-    val platformKeyRef: String = "keys/platform",
-)
 
 /**
  * Immutable configuration snapshot representing the exact settings for a ROM build run.
@@ -40,28 +23,19 @@ data class ConfigurationSnapshot(
     val id: String,
     val workspaceId: String,
     val profileRevision: Int,
-    val region: TargetRegion,
-    val firmware: TargetFirmware,
-    val acquisitionMode: SnapshotAcquisitionMode = SnapshotAcquisitionMode.DOWNLOAD,
-    val importedArchiveName: String? = null,
-    val enabledModuleIds: List<String> = emptyList(),
-    val packagePolicy: PackagePolicy,
-    val signing: SigningPolicy = SigningPolicy(),
-    val buildType: String = "user",
-    val romVersion: String = "1.0.0",
-    val otaBaseUrl: String = "https://example.com/updates",
-    val pipelineVersion: Int = 1,
+    val acquisition: AcquisitionSettings,
+    val extraction: ExtractionSettings,
+    val assembly: AssemblySettings,
+    val debloat: DebloatSettings,
+    val customization: CustomizationSettings,
+    val build: BuildSettings,
+    val release: ReleaseSettings,
+    val publish: PublishSettings,
     val createdAt: Instant,
     val digest: String,
 ) {
     init {
         require(profileRevision >= 1) { "profileRevision must be >= 1, but was $profileRevision" }
-        require(pipelineVersion >= 1) { "pipelineVersion must be >= 1, but was $pipelineVersion" }
-        require(otaBaseUrl.startsWith("https://")) { "otaBaseUrl must start with https://, was '$otaBaseUrl'" }
-        require(!otaBaseUrl.endsWith("/")) { "otaBaseUrl must not end with a trailing slash, was '$otaBaseUrl'" }
-        if (acquisitionMode == SnapshotAcquisitionMode.IMPORT_ARCHIVE) {
-            require(!importedArchiveName.isNullOrBlank()) { "importedArchiveName is required for IMPORT_ARCHIVE mode" }
-        }
     }
 
     companion object {
@@ -76,48 +50,39 @@ data class ConfigurationSnapshot(
         private data class DigestPayload(
             val workspaceId: String,
             val profileRevision: Int,
-            val region: TargetRegion,
-            val firmware: TargetFirmware,
-            val acquisitionMode: SnapshotAcquisitionMode,
-            val importedArchiveName: String?,
-            val enabledModuleIds: List<String>,
-            val packagePolicy: PackagePolicy,
-            val signing: SigningPolicy,
-            val buildType: String,
-            val romVersion: String,
-            val otaBaseUrl: String,
-            val pipelineVersion: Int,
+            val acquisition: AcquisitionSettings,
+            val extraction: ExtractionSettings,
+            val assembly: AssemblySettings,
+            val debloat: DebloatSettings,
+            val customization: CustomizationSettings,
+            val build: BuildSettings,
+            val release: ReleaseSettings,
+            val publish: PublishSettings,
         )
 
         fun computeDigest(
             workspaceId: String,
             profileRevision: Int,
-            region: TargetRegion,
-            firmware: TargetFirmware,
-            acquisitionMode: SnapshotAcquisitionMode,
-            importedArchiveName: String?,
-            enabledModuleIds: List<String>,
-            packagePolicy: PackagePolicy,
-            signing: SigningPolicy,
-            buildType: String,
-            romVersion: String,
-            otaBaseUrl: String,
-            pipelineVersion: Int,
+            acquisition: AcquisitionSettings,
+            extraction: ExtractionSettings,
+            assembly: AssemblySettings,
+            debloat: DebloatSettings,
+            customization: CustomizationSettings,
+            build: BuildSettings,
+            release: ReleaseSettings,
+            publish: PublishSettings,
         ): String {
             val payload = DigestPayload(
                 workspaceId = workspaceId,
                 profileRevision = profileRevision,
-                region = region,
-                firmware = firmware,
-                acquisitionMode = acquisitionMode,
-                importedArchiveName = importedArchiveName,
-                enabledModuleIds = enabledModuleIds,
-                packagePolicy = packagePolicy,
-                signing = signing,
-                buildType = buildType,
-                romVersion = romVersion,
-                otaBaseUrl = otaBaseUrl,
-                pipelineVersion = pipelineVersion,
+                acquisition = acquisition,
+                extraction = extraction,
+                assembly = assembly,
+                debloat = debloat,
+                customization = customization,
+                build = build,
+                release = release,
+                publish = publish,
             )
             val jsonString = canonicalJson.encodeToString(payload)
             val md = MessageDigest.getInstance("SHA-256")
@@ -129,49 +94,40 @@ data class ConfigurationSnapshot(
             id: String,
             workspaceId: String,
             profileRevision: Int,
-            region: TargetRegion,
-            firmware: TargetFirmware,
-            acquisitionMode: SnapshotAcquisitionMode = SnapshotAcquisitionMode.DOWNLOAD,
-            importedArchiveName: String? = null,
-            enabledModuleIds: List<String> = emptyList(),
-            packagePolicy: PackagePolicy,
-            signing: SigningPolicy = SigningPolicy(),
-            buildType: String = "user",
-            romVersion: String = "1.0.0",
-            otaBaseUrl: String = "https://example.com/updates",
-            pipelineVersion: Int = 1,
+            acquisition: AcquisitionSettings,
+            extraction: ExtractionSettings = ExtractionSettings(),
+            assembly: AssemblySettings = AssemblySettings(),
+            debloat: DebloatSettings = DebloatSettings(),
+            customization: CustomizationSettings = CustomizationSettings(),
+            build: BuildSettings = BuildSettings(),
+            release: ReleaseSettings = ReleaseSettings(),
+            publish: PublishSettings = PublishSettings(),
             createdAt: Instant,
         ): ConfigurationSnapshot {
             val digest = computeDigest(
                 workspaceId = workspaceId,
                 profileRevision = profileRevision,
-                region = region,
-                firmware = firmware,
-                acquisitionMode = acquisitionMode,
-                importedArchiveName = importedArchiveName,
-                enabledModuleIds = enabledModuleIds,
-                packagePolicy = packagePolicy,
-                signing = signing,
-                buildType = buildType,
-                romVersion = romVersion,
-                otaBaseUrl = otaBaseUrl,
-                pipelineVersion = pipelineVersion,
+                acquisition = acquisition,
+                extraction = extraction,
+                assembly = assembly,
+                debloat = debloat,
+                customization = customization,
+                build = build,
+                release = release,
+                publish = publish,
             )
             return ConfigurationSnapshot(
                 id = id,
                 workspaceId = workspaceId,
                 profileRevision = profileRevision,
-                region = region,
-                firmware = firmware,
-                acquisitionMode = acquisitionMode,
-                importedArchiveName = importedArchiveName,
-                enabledModuleIds = enabledModuleIds,
-                packagePolicy = packagePolicy,
-                signing = signing,
-                buildType = buildType,
-                romVersion = romVersion,
-                otaBaseUrl = otaBaseUrl,
-                pipelineVersion = pipelineVersion,
+                acquisition = acquisition,
+                extraction = extraction,
+                assembly = assembly,
+                debloat = debloat,
+                customization = customization,
+                build = build,
+                release = release,
+                publish = publish,
                 createdAt = createdAt,
                 digest = digest,
             )

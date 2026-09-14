@@ -59,13 +59,11 @@ import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.target.TargetFirmware
 import org.ide.lti.core.model.target.TargetRegion
 import org.ide.lti.core.model.target.TargetStatus
+import org.ide.lti.core.model.workspace.AcquisitionMode
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 import org.ide.lti.core.model.workspace.DecodeWarning
 import org.ide.lti.core.model.workspace.RecentProject
-import org.ide.lti.core.model.workspace.SnapshotAcquisitionMode
 import org.ide.lti.core.model.workspace.Workspace
-import org.ide.lti.core.model.workspace.WorkspaceKeys
-import org.ide.lti.core.model.workspace.WorkspaceManifest
 import org.ide.lti.core.model.workspace.WorkspaceSession
 import org.ide.lti.feature.workspace.creation.CreateWorkspaceViewModel
 import org.ide.lti.feature.workspace.panels.run.BuildRunViewModel
@@ -172,15 +170,18 @@ class OfflineWorkspaceTest {
         private val selectedFlow = MutableStateFlow(targets.first())
         override fun getAvailableTargets(): Flow<List<TargetDevice>> = flowOf(targets)
         override fun getSelectedTarget(): Flow<TargetDevice> = selectedFlow
-        override suspend fun selectTarget(targetId: String): Result<TargetDevice> = Result.success(targets.first { it.id == targetId })
+        override suspend fun selectTarget(targetId: String): Result<TargetDevice> = Result.success(
+            targets.first {
+                it.id ==
+                    targetId
+            },
+        )
         override suspend fun addTarget(target: TargetDevice): Result<TargetDevice> = Result.success(target)
         override suspend fun updateTarget(target: TargetDevice): Result<TargetDevice> = Result.success(target)
         override suspend fun deleteTarget(targetId: String): Result<Unit> = Result.success(Unit)
     }
 
-    private class TestReadinessPort(
-        initialReadiness: EnvironmentReadiness
-    ) : EnvironmentReadinessPort {
+    private class TestReadinessPort(initialReadiness: EnvironmentReadiness) : EnvironmentReadinessPort {
         val readinessFlow = MutableStateFlow(initialReadiness)
         var forWorkspaceOverride: EnvironmentReadiness? = null
 
@@ -205,7 +206,8 @@ class OfflineWorkspaceTest {
         override suspend fun cancel(serverRunId: String): Boolean = true
         override suspend fun uploadFile(ws: Workspace, relPath: String, bytes: ByteArray): Boolean = true
         override suspend fun readFile(ws: Workspace, relPath: String): String? = null
-        override suspend fun stat(ws: Workspace, relPath: String): FileStat = FileStat(relPath, exists = true, sizeBytes = 1000L)
+        override suspend fun stat(ws: Workspace, relPath: String): FileStat =
+            FileStat(relPath, exists = true, sizeBytes = 1000L)
         override suspend fun execute(ws: Workspace, command: StepCommand): ToolResult = ToolResult(0, "")
         override suspend fun checkAvailableDiskSpace(ws: Workspace): Long? = 50_000_000_000L
     }
@@ -262,12 +264,17 @@ class OfflineWorkspaceTest {
             id = "snap-1",
             workspaceId = "ws-offline-1",
             profileRevision = 1,
-            region = TargetRegion.GLOBAL,
-            firmware = testTarget.availableFirmwares[TargetRegion.GLOBAL]!!.first(),
-            acquisitionMode = SnapshotAcquisitionMode.DOWNLOAD,
-            packagePolicy = testTarget.packagePolicy,
+            acquisition = org.ide.lti.core.model.workspace.AcquisitionSettings(
+                mode = AcquisitionMode.DOWNLOAD,
+                region = TargetRegion.GLOBAL,
+                firmware = testTarget.availableFirmwares[TargetRegion.GLOBAL]!!.first(),
+            ),
+            build = org.ide.lti.core.model.workspace.BuildSettings(
+                packagePolicy = testTarget.packagePolicy,
+                signing = org.ide.lti.core.model.workspace.SigningPolicy(),
+            ),
             createdAt = Instant.fromEpochMilliseconds(1000L),
-            otaBaseUrl = "https://ota.example.com",
+            release = org.ide.lti.core.model.workspace.ReleaseSettings(otaBaseUrl = "https://example.com/updates"),
         )
         snapshotRepo.saveSnapshot(snapshot)
 
@@ -420,12 +427,17 @@ class OfflineWorkspaceTest {
             id = "snap-2",
             workspaceId = "ws-tools-missing",
             profileRevision = 1,
-            region = TargetRegion.GLOBAL,
-            firmware = testTarget.availableFirmwares[TargetRegion.GLOBAL]!!.first(),
-            acquisitionMode = SnapshotAcquisitionMode.DOWNLOAD,
-            packagePolicy = testTarget.packagePolicy,
+            acquisition = org.ide.lti.core.model.workspace.AcquisitionSettings(
+                mode = AcquisitionMode.DOWNLOAD,
+                region = TargetRegion.GLOBAL,
+                firmware = testTarget.availableFirmwares[TargetRegion.GLOBAL]!!.first(),
+            ),
+            build = org.ide.lti.core.model.workspace.BuildSettings(
+                packagePolicy = testTarget.packagePolicy,
+                signing = org.ide.lti.core.model.workspace.SigningPolicy(),
+            ),
             createdAt = Instant.fromEpochMilliseconds(2000L),
-            otaBaseUrl = "https://ota.example.com",
+            release = org.ide.lti.core.model.workspace.ReleaseSettings(otaBaseUrl = "https://example.com/updates"),
         )
         snapshotRepo.saveSnapshot(snapshot)
 

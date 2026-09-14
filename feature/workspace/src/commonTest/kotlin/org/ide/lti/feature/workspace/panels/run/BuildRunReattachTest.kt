@@ -111,24 +111,35 @@ class BuildRunReattachTest {
         private val selectedFlow = MutableStateFlow(targets.first())
         override fun getAvailableTargets(): Flow<List<TargetDevice>> = flowOf(targets)
         override fun getSelectedTarget(): Flow<TargetDevice> = selectedFlow
-        override suspend fun selectTarget(targetId: String): Result<TargetDevice> = Result.success(targets.first { it.id == targetId })
+        override suspend fun selectTarget(targetId: String): Result<TargetDevice> =
+            Result.success(targets.first { it.id == targetId })
         override suspend fun addTarget(target: TargetDevice): Result<TargetDevice> = Result.success(target)
         override suspend fun updateTarget(target: TargetDevice): Result<TargetDevice> = Result.success(target)
         override suspend fun deleteTarget(targetId: String): Result<Unit> = Result.success(Unit)
     }
 
     private class FakeReadinessPort : EnvironmentReadinessPort {
-        override fun observe(): Flow<EnvironmentReadiness> = flowOf(EnvironmentReadiness(state = EnvironmentReadinessState.READY, workDirLinuxPath = "/home/lti/LtiRomWorkDir"))
-        override suspend fun refresh(): EnvironmentReadiness = EnvironmentReadiness(state = EnvironmentReadinessState.READY, workDirLinuxPath = "/home/lti/LtiRomWorkDir")
-        override suspend fun forWorkspace(workspace: Workspace): EnvironmentReadiness = EnvironmentReadiness(state = EnvironmentReadinessState.READY, workDirLinuxPath = "/home/lti/LtiRomWorkDir")
+        override fun observe(): Flow<EnvironmentReadiness> = flowOf(
+            EnvironmentReadiness(
+                state = EnvironmentReadinessState.READY,
+                workDirLinuxPath = "/home/lti/LtiRomWorkDir",
+            ),
+        )
+        override suspend fun refresh(): EnvironmentReadiness = EnvironmentReadiness(
+            state = EnvironmentReadinessState.READY,
+            workDirLinuxPath = "/home/lti/LtiRomWorkDir",
+        )
+        override suspend fun forWorkspace(workspace: Workspace): EnvironmentReadiness = EnvironmentReadiness(
+            state = EnvironmentReadinessState.READY,
+            workDirLinuxPath = "/home/lti/LtiRomWorkDir",
+        )
     }
 
     private class FakePipelineExecutionPort : PipelineExecutionPort {
         val cancelledRuns = mutableListOf<String>()
         override suspend fun startStep(ws: Workspace, step: StepCommand, idempotencyKey: String): RunHandle =
             RunHandle("step_1", "RUNNING", 1000L)
-        override fun observe(serverRunId: String, fromSeq: Long): Flow<StepEvent> =
-            flowOf(StepEvent.Finished(0))
+        override fun observe(serverRunId: String, fromSeq: Long): Flow<StepEvent> = flowOf(StepEvent.Finished(0))
         override suspend fun status(serverRunId: String): StepStatus? = null
         override suspend fun cancel(serverRunId: String): Boolean {
             cancelledRuns.add(serverRunId)
@@ -138,8 +149,7 @@ class BuildRunReattachTest {
         override suspend fun readFile(ws: Workspace, relPath: String): String? = null
         override suspend fun stat(ws: Workspace, relPath: String): FileStat =
             FileStat(relPath, exists = true, sizeBytes = 100L)
-        override suspend fun execute(ws: Workspace, command: StepCommand): ToolResult =
-            ToolResult(0, "")
+        override suspend fun execute(ws: Workspace, command: StepCommand): ToolResult = ToolResult(0, "")
         override suspend fun checkAvailableDiskSpace(ws: Workspace): Long? = 50_000_000_000L
     }
 
@@ -159,14 +169,14 @@ class BuildRunReattachTest {
                     otaUrl = "https://ota.zip",
                     isOfficial = true,
                     isRecommended = true,
-                )
-            )
+                ),
+            ),
         ),
         packagePolicy = PackagePolicy(
             flashablePartitions = listOf("system"),
             flashableBootPartitions = listOf("boot"),
             bootSlots = listOf("a"),
-            recoverySystemMountPoint = "/system_root"
+            recoverySystemMountPoint = "/system_root",
         ),
         socPlatform = "Snapdragon 8 Elite",
         filesystemType = "erofs",
@@ -175,7 +185,7 @@ class BuildRunReattachTest {
         dynamicPartitions = listOf("system"),
         bootPartitions = listOf("boot"),
         status = TargetStatus.QUALIFIED,
-        description = "Test Target"
+        description = "Test Target",
     )
 
     private val testWorkspace = Workspace(
@@ -184,31 +194,39 @@ class BuildRunReattachTest {
         path = "C:\\test\\ws_test",
         linuxPath = "/home/lti/LtiRomWorkDir/workspaces/ws_test",
         targetBinding = TargetBinding("PQ84P01", 2),
-        effectiveSnapshotId = "snap_1"
+        effectiveSnapshotId = "snap_1",
     )
 
-    private val testSnapshot = ConfigurationSnapshot(
+    private val testSnapshot = ConfigurationSnapshot.create(
         id = "snap_1",
         workspaceId = "ws_test",
         profileRevision = 2,
-        region = TargetRegion.GLOBAL,
-        firmware = TargetFirmware(
-            version = "10.5",
-            buildId = "PQ84P01:15",
-            androidVersion = "15",
-            securityPatch = "2026-02-01",
-            otaUrl = "https://ota.zip",
-            isOfficial = true,
-            isRecommended = true,
+        acquisition = org.ide.lti.core.model.workspace.AcquisitionSettings(
+            mode = AcquisitionMode.DOWNLOAD,
+            region = TargetRegion.GLOBAL,
+            firmware = TargetFirmware(
+                version = "10.5",
+                buildId = "PQ84P01:15",
+                androidVersion = "15",
+                securityPatch = "2026-02-01",
+                otaUrl = "https://ota.zip",
+                isOfficial = true,
+                isRecommended = true,
+            ),
         ),
-        acquisitionMode = SnapshotAcquisitionMode.DOWNLOAD,
-        packagePolicy = testTarget.packagePolicy,
-        signing = SigningPolicy(signImages = true, signPackage = true),
-        romVersion = "1.0.0",
-        buildType = "userdebug",
-        otaBaseUrl = "https://example.com/updates",
+        build = org.ide.lti.core.model.workspace.BuildSettings(
+            packagePolicy = testTarget.packagePolicy,
+            signing = SigningPolicy(signImages = true, signPackage = true),
+        ),
+        assembly = org.ide.lti.core.model.workspace.AssemblySettings(
+            buildType = "userdebug",
+            romVersion = "1.0.0",
+        ),
+        release = org.ide.lti.core.model.workspace.ReleaseSettings(
+            otaBaseUrl = "https://example.com/updates",
+        ),
         createdAt = Instant.fromEpochMilliseconds(1000L),
-        digest = "snap_1_digest",
+
     )
 
     @BeforeTest
@@ -242,12 +260,30 @@ class BuildRunReattachTest {
         val observeUseCase = ObserveRunUseCase(runRepo)
         val orchestrator = PipelineOrchestrator(executionPort, runRepo, NoVendoredFiles)
         val startUseCase = StartPipelineRunUseCase(
-            workspaceRepo, snapshotRepo, targetRepo, FakeReadinessPort(), executionPort, runRepo, orchestrator, CoroutineScope(testDispatcher)
+            workspaceRepo,
+            snapshotRepo,
+            targetRepo,
+            FakeReadinessPort(),
+            executionPort,
+            runRepo,
+            orchestrator,
+            CoroutineScope(testDispatcher),
         )
 
         val reattachedRuns = mutableListOf<String>()
-        val spiedReattachUseCase = object : ReattachRunUseCase(workspaceRepo, snapshotRepo, targetRepo, runRepo, orchestrator, CoroutineScope(testDispatcher)) {
-            override suspend fun invoke(workspaceId: String, runId: String?, driverInstanceId: String): Flow<PipelineEvent>? {
+        val spiedReattachUseCase = object : ReattachRunUseCase(
+            workspaceRepo,
+            snapshotRepo,
+            targetRepo,
+            runRepo,
+            orchestrator,
+            CoroutineScope(testDispatcher),
+        ) {
+            override suspend fun invoke(
+                workspaceId: String,
+                runId: String?,
+                driverInstanceId: String,
+            ): Flow<PipelineEvent>? {
                 reattachedRuns.add(runId ?: "")
                 return flowOf(PipelineEvent.RunFinished(RunState.SUCCEEDED))
             }
@@ -265,7 +301,11 @@ class BuildRunReattachTest {
         workspaceManager.openWorkspace(testWorkspace.id)
         advanceUntilIdle()
 
-        assertEquals(listOf("run_active_1"), reattachedRuns, "Active run must be auto-reattached when workspace opens")
+        assertEquals(
+            listOf("run_active_1"),
+            reattachedRuns,
+            "Active run must be auto-reattached when workspace opens",
+        )
     }
 
     @Test
@@ -290,7 +330,7 @@ class BuildRunReattachTest {
                     idempotencyKey = "key_cancel",
                     command = StepCommand("curl", listOf("https://url")),
                     state = StepState.RUNNING,
-                )
+                ),
             ),
         )
         runRepo.upsert(activeRun)
@@ -299,7 +339,14 @@ class BuildRunReattachTest {
         val observeUseCase = ObserveRunUseCase(runRepo)
         val orchestrator = PipelineOrchestrator(executionPort, runRepo, NoVendoredFiles)
         val startUseCase = StartPipelineRunUseCase(
-            workspaceRepo, snapshotRepo, targetRepo, FakeReadinessPort(), executionPort, runRepo, orchestrator, CoroutineScope(testDispatcher)
+            workspaceRepo,
+            snapshotRepo,
+            targetRepo,
+            FakeReadinessPort(),
+            executionPort,
+            runRepo,
+            orchestrator,
+            CoroutineScope(testDispatcher),
         )
         val cancelUseCase = CancelRunUseCase(runRepo, executionPort, workspaceRepo)
 
@@ -326,7 +373,9 @@ class BuildRunReattachTest {
     }
 
     @Test
-    fun testInterruptedRunDisplaysOutcomeUnknownAndCannotBeStartedDirectly() = runTest(testDispatcher) {
+    fun testInterruptedRunDisplaysOutcomeUnknownAndCannotBeStartedDirectly() = runTest(
+        testDispatcher,
+    ) {
         val workspaceRepo = FakeWorkspaceRepository().apply { saveWorkspace(testWorkspace) }
         val snapshotRepo = FakeSnapshotRepository().apply { saveSnapshot(testSnapshot) }
         val targetRepo = FakeTargetRepository(listOf(testTarget))
@@ -346,7 +395,14 @@ class BuildRunReattachTest {
         val observeUseCase = ObserveRunUseCase(runRepo)
         val orchestrator = PipelineOrchestrator(executionPort, runRepo, NoVendoredFiles)
         val startUseCase = StartPipelineRunUseCase(
-            workspaceRepo, snapshotRepo, targetRepo, FakeReadinessPort(), executionPort, runRepo, orchestrator, CoroutineScope(testDispatcher)
+            workspaceRepo,
+            snapshotRepo,
+            targetRepo,
+            FakeReadinessPort(),
+            executionPort,
+            runRepo,
+            orchestrator,
+            CoroutineScope(testDispatcher),
         )
 
         val viewModel = BuildRunViewModel(
@@ -388,8 +444,14 @@ class BuildRunReattachTest {
         val executionPort = FakePipelineExecutionPort()
         val orchestrator = PipelineOrchestrator(executionPort, runRepo, NoVendoredFiles)
         val startUseCase = StartPipelineRunUseCase(
-            workspaceRepo, FakeSnapshotRepository(), FakeTargetRepository(listOf(testTarget)),
-            FakeReadinessPort(), executionPort, runRepo, orchestrator, CoroutineScope(testDispatcher)
+            workspaceRepo,
+            FakeSnapshotRepository(),
+            FakeTargetRepository(listOf(testTarget)),
+            FakeReadinessPort(),
+            executionPort,
+            runRepo,
+            orchestrator,
+            CoroutineScope(testDispatcher),
         )
 
         val viewModel = BuildRunViewModel(

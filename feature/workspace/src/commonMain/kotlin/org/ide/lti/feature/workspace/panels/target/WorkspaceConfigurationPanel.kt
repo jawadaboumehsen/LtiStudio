@@ -58,8 +58,8 @@ import org.ide.lti.core.model.setup.EnvironmentReadinessState
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.target.TargetFirmware
 import org.ide.lti.core.model.target.TargetRegion
+import org.ide.lti.core.model.workspace.AcquisitionMode
 import org.ide.lti.core.model.workspace.ConfigurationDraft
-import org.ide.lti.core.model.workspace.SnapshotAcquisitionMode
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -270,16 +270,16 @@ private fun AcquisitionSection(
         ) {
             GlassChip(
                 label = "Download OTA",
-                selected = draft.acquisitionMode == SnapshotAcquisitionMode.DOWNLOAD,
-                onClick = { viewModel.selectAcquisitionMode(SnapshotAcquisitionMode.DOWNLOAD) },
+                selected = draft.acquisitionMode == AcquisitionMode.DOWNLOAD,
+                onClick = { viewModel.selectAcquisitionMode(AcquisitionMode.DOWNLOAD) },
             )
             GlassChip(
                 label = "Import Local Archive",
-                selected = draft.acquisitionMode == SnapshotAcquisitionMode.IMPORT_ARCHIVE,
-                onClick = { viewModel.selectAcquisitionMode(SnapshotAcquisitionMode.IMPORT_ARCHIVE) },
+                selected = draft.acquisitionMode == AcquisitionMode.IMPORT_ARCHIVE,
+                onClick = { viewModel.selectAcquisitionMode(AcquisitionMode.IMPORT_ARCHIVE) },
             )
         }
-        if (draft.acquisitionMode == SnapshotAcquisitionMode.IMPORT_ARCHIVE) {
+        if (draft.acquisitionMode == AcquisitionMode.IMPORT_ARCHIVE) {
             ArchiveImportCard(draft.importedArchiveName, isUploadingArchive) { viewModel.pickAndUploadArchive() }
         }
     }
@@ -407,8 +407,11 @@ private fun FirmwareItemCard(
             .fillMaxWidth()
             .clip(GlassShapes.Small)
             .background(
-                if (isSelected) glassColors.glassAccent.copy(alpha = AlphaTokens.Hover)
-                else glassColors.glassSurface.copy(alpha = AlphaTokens.Subtle),
+                if (isSelected) {
+                    glassColors.glassAccent.copy(alpha = AlphaTokens.Hover)
+                } else {
+                    glassColors.glassSurface.copy(alpha = AlphaTokens.Subtle)
+                },
             )
             .border(
                 width = if (isSelected) StrokeWidth.Focused else StrokeWidth.Hairline,

@@ -29,8 +29,8 @@ import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.target.TargetFirmware
 import org.ide.lti.core.model.target.TargetRegion
 import org.ide.lti.core.model.target.TargetStatus
+import org.ide.lti.core.model.workspace.AcquisitionMode
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
-import org.ide.lti.core.model.workspace.SnapshotAcquisitionMode
 import org.ide.lti.core.model.workspace.Workspace
 import org.ide.lti.core.model.workspace.WorkspaceManifest
 import kotlin.test.Test
@@ -54,8 +54,8 @@ class RemoteWorkspaceProvisionerTest {
                     buildId = "PQ84P01:15",
                     androidVersion = "15",
                     securityPatch = "2026-02-01",
-                )
-            )
+                ),
+            ),
         ),
         packagePolicy = PackagePolicy(
             flashablePartitions = listOf("system", "vendor"),
@@ -74,13 +74,22 @@ class RemoteWorkspaceProvisionerTest {
         id = "snap-123",
         workspaceId = "ws-123",
         profileRevision = 1,
-        region = TargetRegion.GLOBAL,
-        firmware = target.availableFirmwares[TargetRegion.GLOBAL]!!.first(),
-        acquisitionMode = SnapshotAcquisitionMode.DOWNLOAD,
-        packagePolicy = target.packagePolicy!!,
-        buildType = "user",
-        romVersion = "1.0.0",
-        otaBaseUrl = "https://example.com/updates",
+        acquisition = org.ide.lti.core.model.workspace.AcquisitionSettings(
+            mode = AcquisitionMode.DOWNLOAD,
+            region = TargetRegion.GLOBAL,
+            firmware = target.availableFirmwares[TargetRegion.GLOBAL]!!.first(),
+        ),
+        build = org.ide.lti.core.model.workspace.BuildSettings(
+            packagePolicy = target.packagePolicy!!,
+            signing = org.ide.lti.core.model.workspace.SigningPolicy(),
+        ),
+        assembly = org.ide.lti.core.model.workspace.AssemblySettings(
+            buildType = "user",
+            romVersion = "1.0.0",
+        ),
+        release = org.ide.lti.core.model.workspace.ReleaseSettings(
+            otaBaseUrl = "https://example.com/updates",
+        ),
         createdAt = kotlinx.datetime.Instant.fromEpochMilliseconds(1700000000000L),
     )
 

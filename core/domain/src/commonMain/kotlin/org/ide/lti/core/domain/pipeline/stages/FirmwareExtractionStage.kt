@@ -51,7 +51,7 @@ public class FirmwareExtractionStage : StageDefinition {
         val steps = mutableListOf<PipelineStep>()
         steps += PipelineStep.Tool(stepCommand("mkdir", listOf("-p", extracted), ws), "mkdir extracted")
 
-        when (ctx.snapshot.firmware.sourceKind) {
+        when (ctx.snapshot.acquisition.firmware.sourceKind) {
             FirmwareSourceKind.OTA_ZIP -> steps += otaSteps(ctx, archive)
             FirmwareSourceKind.RAW_IMAGE_ZIP -> steps += rawSteps(ctx, archive)
         }

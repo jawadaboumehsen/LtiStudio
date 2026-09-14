@@ -28,9 +28,7 @@ import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.domain.usecase.build.GetRunHistoryUseCase
 import org.ide.lti.core.domain.workspace.WorkspaceManager
 import org.ide.lti.core.model.run.Artifact
-import org.ide.lti.core.model.run.ArtifactKind
 import org.ide.lti.core.model.run.BuildRun
-import org.ide.lti.core.model.run.Presence
 import org.ide.lti.core.model.run.RunState
 import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.run.StageOutcome

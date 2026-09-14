@@ -394,6 +394,9 @@ exceptions:
 # enforces ktlint style on any NEW code going forward.
 ktlint:
   active: true
+  # Lets `detekt` rewrite formatting findings when the Gradle task runs with autoCorrect=true
+  # (off by default, so a normal `detekt` run is still check-only).
+  autoCorrect: true
   # Empirically confirmed (unlike detekt's own first-party rule sets) that a bare `active: true`
   # at the ruleset level does NOT cascade compiled-in per-rule defaults for this third-party
   # ruleset - every rule needs its own explicit active: true/false, or it silently does nothing.

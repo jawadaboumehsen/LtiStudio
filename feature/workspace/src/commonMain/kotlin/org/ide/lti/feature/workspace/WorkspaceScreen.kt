@@ -428,7 +428,7 @@ fun WorkspaceScreen(
                 centerContent = {
                     TargetRunConfigurationBar(
                         selectedTarget = selectedTarget,
-                        region = effectiveSnapshot?.region ?: TargetRegion.GLOBAL,
+                        region = effectiveSnapshot?.acquisition?.region ?: TargetRegion.GLOBAL,
                         onOpenWorkspaceConfiguration = {
                             leftTabIndex = 1
                             if (!ltiLayoutState.showLeft) {
@@ -483,7 +483,7 @@ fun WorkspaceScreen(
             )
         },
         statusBar = {
-            val activeRegionCode = effectiveSnapshot?.region?.code ?: TargetRegion.GLOBAL.code
+            val activeRegionCode = effectiveSnapshot?.acquisition?.region?.code ?: TargetRegion.GLOBAL.code
             WorkspaceStatusBar(
                 branchName = branch,
                 module = "${selectedTarget.formattedSuperSize} • ${selectedTarget.filesystemType.uppercase()}",

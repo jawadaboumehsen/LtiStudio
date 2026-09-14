@@ -30,9 +30,9 @@ import org.ide.lti.core.model.setup.EnvironmentReadinessState
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.target.TargetFirmware
 import org.ide.lti.core.model.target.TargetRegion
+import org.ide.lti.core.model.workspace.AcquisitionMode
 import org.ide.lti.core.model.workspace.ConfigurationDraft
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
-import org.ide.lti.core.model.workspace.SnapshotAcquisitionMode
 import org.ide.lti.core.model.workspace.Workspace
 import org.ide.lti.core.model.workspace.toDraft
 
@@ -109,7 +109,9 @@ class WorkspaceConfigurationViewModel(
         val snapshotId = workspace.effectiveSnapshotId
         val snapshot = if (snapshotId != null) {
             snapshotRepository.getSnapshot(snapshotId)
-        } else null
+        } else {
+            null
+        }
 
         val draft = snapshot?.toDraft() ?: run {
             val defaultRegion = regions.firstOrNull() ?: TargetRegion.GLOBAL
@@ -161,7 +163,7 @@ class WorkspaceConfigurationViewModel(
         }
     }
 
-    fun selectAcquisitionMode(mode: SnapshotAcquisitionMode) {
+    fun selectAcquisitionMode(mode: AcquisitionMode) {
         _uiState.update { state ->
             val draft = state.draft ?: return@update state
             state.copy(
@@ -195,7 +197,7 @@ class WorkspaceConfigurationViewModel(
                 val draft = state.draft ?: return@update state
                 state.copy(
                     draft = draft.copy(
-                        acquisitionMode = SnapshotAcquisitionMode.IMPORT_ARCHIVE,
+                        acquisitionMode = AcquisitionMode.IMPORT_ARCHIVE,
                         importedArchiveName = file.name,
                     ),
                     isDirty = true,

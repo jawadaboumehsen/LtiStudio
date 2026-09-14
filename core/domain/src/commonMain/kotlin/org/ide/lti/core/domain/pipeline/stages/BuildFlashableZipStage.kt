@@ -43,13 +43,12 @@ public class BuildFlashableZipStage : StageDefinition {
         CacheKeys.stage5BuildZipKey(
             previousStageCacheKey,
             ctx.snapshot,
-            ctx.snapshot.signing.avbKeyRef,
-            ctx.snapshot.signing.platformKeyRef,
+            ctx.snapshot.build.signing.avbKeyRef,
+            ctx.snapshot.build.signing.platformKeyRef,
         )
 
-    override fun outputs(ctx: StageContext): List<String> =
-        ctx.target.dynamicPartitions.map { "out/images/$it.img" } +
-            listOf(zipRelPath(ctx), "${zipRelPath(ctx)}.sha256")
+    override fun outputs(ctx: StageContext): List<String> = ctx.target.dynamicPartitions.map { "out/images/$it.img" } +
+        listOf(zipRelPath(ctx), "${zipRelPath(ctx)}.sha256")
 
     override fun plan(ctx: StageContext): List<PipelineStep> {
         val ws = ctx.wsPath
@@ -81,7 +80,7 @@ public class BuildFlashableZipStage : StageDefinition {
         ctx.target.dynamicPartitions.forEach { p -> steps += imageSteps(ctx, p) }
         if (!ctx.target.dynamicPartitions.all { ctx.has(footeredSize(it)) }) return steps
 
-        ctx.snapshot.packagePolicy.flashableBootPartitions.forEach { b -> steps += bootSteps(ctx, b) }
+        ctx.snapshot.build.packagePolicy.flashableBootPartitions.forEach { b -> steps += bootSteps(ctx, b) }
         steps += superSteps(ctx)
         ctx.target.dynamicPartitions.forEach { p -> steps += blockDatSteps(ctx, p) }
         steps += generatedMembers(ctx)
@@ -97,7 +96,7 @@ public class BuildFlashableZipStage : StageDefinition {
             stepCommand(
                 "mkfs.erofs",
                 listOf(
-                    "--quiet", "-z", "lz4hc,9", "-b", "4096",
+                    "--quiet", "-z", ctx.snapshot.build.compression, "-b", ctx.snapshot.build.blockSize.toString(),
                     "--mount-point", if (p == "system") "/" else p,
                     "--fs-config-file", ctx.abs("work/configs/fs_config-$p"),
                     "--file-contexts", ctx.abs("work/configs/file_context-$p"),
@@ -131,7 +130,7 @@ public class BuildFlashableZipStage : StageDefinition {
         val ws = ctx.wsPath
         val img = ctx.abs("out/images/$p.img")
         val steps = mutableListOf<PipelineStep>()
-        val key = ctx.abs(ctx.snapshot.signing.avbKeyRef)
+        val key = ctx.abs(ctx.snapshot.build.signing.avbKeyRef)
         steps += PipelineStep.Tool(
             stepCommand(
                 "avbtool",
@@ -263,7 +262,7 @@ public class BuildFlashableZipStage : StageDefinition {
         val fingerprint = BuildPropStamper.prop(buildProp, "ro.build.fingerprint")
         val sdk = BuildPropStamper.prop(buildProp, "ro.build.version.sdk")
         val patch = BuildPropStamper.prop(buildProp, "ro.build.version.security_patch")
-            ?: ctx.snapshot.firmware.securityPatch
+            ?: ctx.snapshot.acquisition.firmware.securityPatch
         val timestamp = ctx.longValue(RuntimeKeys.RUN_TIMESTAMP)
         val date = ctx.value(RuntimeKeys.RUN_DATE)
         val missing = listOfNotNull(
@@ -279,11 +278,15 @@ public class BuildFlashableZipStage : StageDefinition {
                 },
             )
         }
-        val script = UpdaterScriptWriter.generate(ctx.target, ctx.snapshot.packagePolicy, ctx.snapshot.romVersion)
+        val script = UpdaterScriptWriter.generate(
+            ctx.target,
+            ctx.snapshot.build.packagePolicy,
+            ctx.snapshot.assembly.romVersion,
+        )
         val buildInfo = org.ide.lti.core.domain.pipeline.text.BuildInfoWriter.generate(
             org.ide.lti.core.domain.pipeline.text.BuildInfoWriter.BuildInfoParams(
                 device = ctx.target.id,
-                version = ctx.snapshot.romVersion,
+                version = ctx.snapshot.assembly.romVersion,
                 timestamp = requireNotNull(timestamp),
                 incremental = requireNotNull(incremental),
                 securityPatch = patch,
@@ -299,8 +302,8 @@ public class BuildFlashableZipStage : StageDefinition {
                 preDevice = ctx.target.id,
             ),
         )
-        val changelog = "# LtiRom ${ctx.snapshot.romVersion} for ${ctx.target.name}\n\n" +
-            "Built $date from ${ctx.snapshot.firmware.version} (${ctx.snapshot.region.name}).\n"
+        val changelog = "# LtiRom ${ctx.snapshot.assembly.romVersion} for ${ctx.target.name}\n\n" +
+            "Built $date from ${ctx.snapshot.acquisition.firmware.version} (${ctx.snapshot.acquisition.region.name}).\n"
         return listOf(
             PipelineStep.Check("updater-script policy") {
                 val updates = script.lineSequence().count { it.contains("block_image_update(") }
@@ -397,7 +400,7 @@ public class BuildFlashableZipStage : StageDefinition {
                 problems += "missing block-dat members for $p"
             }
         }
-        ctx.snapshot.packagePolicy.flashableBootPartitions.forEach { b ->
+        ctx.snapshot.build.packagePolicy.flashableBootPartitions.forEach { b ->
             if ("$b.img" !in members) problems += "missing stock $b.img"
         }
         REQUIRED_MEMBERS.forEach { m -> if (m !in members) problems += "missing $m" }
@@ -440,7 +443,10 @@ public class BuildFlashableZipStage : StageDefinition {
 
         public fun zipName(ctx: StageContext): String {
             val date = requireNotNull(ctx.value(RuntimeKeys.RUN_DATE)) { "run date missing from runtime values" }
-            return "Lti_${ctx.snapshot.romVersion}_${date}_${ctx.target.id}-sign.zip"
+            return ctx.snapshot.build.filenameTemplate
+                .replace("{version}", ctx.snapshot.assembly.romVersion)
+                .replace("{date}", date)
+                .replace("{device}", ctx.target.id)
         }
 
         public fun zipRelPath(ctx: StageContext): String = "out/package/${zipName(ctx)}"

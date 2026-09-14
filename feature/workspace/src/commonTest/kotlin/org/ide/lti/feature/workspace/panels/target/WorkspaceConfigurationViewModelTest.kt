@@ -36,10 +36,10 @@ import org.ide.lti.core.domain.ports.WorkspaceProvisioningPort
 import org.ide.lti.core.domain.repository.run.RunRepository
 import org.ide.lti.core.domain.repository.snapshot.SnapshotRepository
 import org.ide.lti.core.domain.repository.target.TargetRepository
-import org.ide.lti.core.model.run.BuildRun
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.domain.usecase.workspace.SaveConfigurationSnapshotUseCase
 import org.ide.lti.core.domain.workspace.WorkspaceManager
+import org.ide.lti.core.model.run.BuildRun
 import org.ide.lti.core.model.setup.EnvironmentReadiness
 import org.ide.lti.core.model.setup.EnvironmentReadinessState
 import org.ide.lti.core.model.setup.WorkspaceReadiness
@@ -49,11 +49,10 @@ import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.target.TargetFirmware
 import org.ide.lti.core.model.target.TargetRegion
 import org.ide.lti.core.model.target.TargetStatus
-import org.ide.lti.core.model.workspace.ConfigurationDraft
+import org.ide.lti.core.model.workspace.AcquisitionMode
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 import org.ide.lti.core.model.workspace.DecodeWarning
 import org.ide.lti.core.model.workspace.RecentProject
-import org.ide.lti.core.model.workspace.SnapshotAcquisitionMode
 import org.ide.lti.core.model.workspace.Workspace
 import org.ide.lti.core.model.workspace.WorkspaceSession
 import org.ide.lti.core.model.workspace.WorkspaceType
@@ -80,7 +79,7 @@ class WorkspaceConfigurationViewModelTest {
                     buildId = "PQ84P01:15",
                     androidVersion = "15",
                     securityPatch = "2026-02-01",
-                )
+                ),
             ),
             TargetRegion.CHINA to listOf(
                 TargetFirmware(
@@ -88,8 +87,8 @@ class WorkspaceConfigurationViewModelTest {
                     buildId = "PQ84P01:15",
                     androidVersion = "15",
                     securityPatch = "2026-02-01",
-                )
-            )
+                ),
+            ),
         ),
         packagePolicy = PackagePolicy(listOf("system"), listOf("boot")),
         socPlatform = "Snapdragon 8 Elite",
@@ -123,9 +122,7 @@ class WorkspaceConfigurationViewModelTest {
             targetsFlow.value = list
             return Result.success(target)
         }
-        override suspend fun updateTarget(target: TargetDevice): Result<TargetDevice> {
-            return addTarget(target)
-        }
+        override suspend fun updateTarget(target: TargetDevice): Result<TargetDevice> = addTarget(target)
         override suspend fun deleteTarget(targetId: String): Result<Unit> {
             val list = targetsFlow.value.toMutableList()
             list.removeAll { it.id == targetId }
@@ -199,8 +196,7 @@ class WorkspaceConfigurationViewModelTest {
 
     private class FakeTransport : RemoteTransportPort {
         val uploadedFiles = mutableMapOf<String, ByteArray>()
-        override suspend fun execute(request: ToolExecutionRequest) =
-            ToolExecutionResponse(0, "", "", 0)
+        override suspend fun execute(request: ToolExecutionRequest) = ToolExecutionResponse(0, "", "", 0)
         override fun stream(request: ToolExecutionRequest) = flowOf<io.ltirom.tooling.core.remote.StreamEvent>()
         override suspend fun checkHealth() = null
         override suspend fun listTools() = emptyList<io.ltirom.tooling.core.remote.ToolStatusInfo>()
@@ -238,9 +234,17 @@ class WorkspaceConfigurationViewModelTest {
                 id = "snap-1",
                 workspaceId = "ws-1",
                 profileRevision = 1,
-                region = TargetRegion.GLOBAL,
-                firmware = target.availableFirmwares[TargetRegion.GLOBAL]!!.first(),
-                packagePolicy = target.packagePolicy!!,
+                acquisition = org.ide.lti.core.model.workspace.AcquisitionSettings(
+                    mode = AcquisitionMode.DOWNLOAD,
+                    region = TargetRegion.GLOBAL,
+                    firmware = target.availableFirmwares[TargetRegion.GLOBAL]!!.first(),
+                ),
+                build = org.ide.lti.core.model.workspace.BuildSettings(
+                    packagePolicy = target.packagePolicy!!,
+                    signing = org.ide.lti.core.model.workspace.SigningPolicy(),
+                ),
+                assembly = org.ide.lti.core.model.workspace.AssemblySettings(buildType = "user", romVersion = "1.0"),
+                release = org.ide.lti.core.model.workspace.ReleaseSettings(otaBaseUrl = "https://example.com"),
                 createdAt = Clock.System.now(),
             )
             snapshotRepo.saveSnapshot(initialSnapshot)
@@ -277,14 +281,14 @@ class WorkspaceConfigurationViewModelTest {
             assertTrue(viewModel.uiState.value.isDirty)
             assertEquals(TargetRegion.CHINA, viewModel.uiState.value.draft?.region)
             // initial snapshot is still GLOBAL
-            assertEquals(TargetRegion.GLOBAL, viewModel.uiState.value.initialSnapshot?.region)
+            assertEquals(TargetRegion.GLOBAL, viewModel.uiState.value.initialSnapshot?.acquisition?.region)
 
             // Save
             viewModel.saveConfiguration()
             advanceUntilIdle()
 
             assertFalse(viewModel.uiState.value.isDirty)
-            assertEquals(TargetRegion.CHINA, viewModel.uiState.value.initialSnapshot?.region)
+            assertEquals(TargetRegion.CHINA, viewModel.uiState.value.initialSnapshot?.acquisition?.region)
             assertEquals(1, provisioningPort.uploadedConfigs.size)
         } finally {
             Dispatchers.resetMain()
@@ -336,7 +340,7 @@ class WorkspaceConfigurationViewModelTest {
             advanceUntilIdle()
 
             assertTrue(viewModel.uiState.value.isDirty)
-            assertEquals(SnapshotAcquisitionMode.IMPORT_ARCHIVE, viewModel.uiState.value.draft?.acquisitionMode)
+            assertEquals(AcquisitionMode.IMPORT_ARCHIVE, viewModel.uiState.value.draft?.acquisitionMode)
             assertEquals(platformFile.name, viewModel.uiState.value.draft?.importedArchiveName)
 
             val expectedRemotePath =

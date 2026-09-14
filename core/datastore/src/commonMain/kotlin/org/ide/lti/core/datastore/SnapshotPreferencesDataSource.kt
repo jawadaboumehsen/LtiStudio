@@ -98,7 +98,9 @@ public class SnapshotPreferencesDataSource(
                     json.decodeFromString<List<ConfigurationSnapshot>>(trimmed)
                 }
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            co.touchlab.kermit.Logger.w(e) { "Failed to decode persisted ConfigurationSnapshot store. Discarding." }
+            settings.remove(KEY_SNAPSHOTS)
             emptyList()
         }
     }

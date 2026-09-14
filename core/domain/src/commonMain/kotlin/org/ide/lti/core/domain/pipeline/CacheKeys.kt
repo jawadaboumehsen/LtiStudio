@@ -1,8 +1,17 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.core.domain.pipeline
 
-import java.security.MessageDigest
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
+import java.security.MessageDigest
 
 public object CacheKeys {
     public fun sha256(text: String): String {
@@ -12,11 +21,12 @@ public object CacheKeys {
     }
 
     public fun stage1AcquisitionKey(snapshot: ConfigurationSnapshot): String {
+        val firmware = snapshot.acquisition.firmware
         val raw = listOf(
-            snapshot.firmware.acquisitionUrl.orEmpty(),
-            if (snapshot.firmware.checksumUnavailable) "UNVERIFIED" else snapshot.firmware.sha256.orEmpty(),
-            snapshot.firmware.sourceKind.name,
-            snapshot.acquisitionMode.name
+            firmware.acquisitionUrl.orEmpty(),
+            if (firmware.checksumUnavailable) "UNVERIFIED" else firmware.sha256.orEmpty(),
+            firmware.sourceKind.name,
+            snapshot.acquisition.mode.name,
         ).joinToString("|")
         return sha256(raw)
     }
@@ -26,7 +36,7 @@ public object CacheKeys {
             stage1Key,
             target.dynamicPartitions.sorted().joinToString(","),
             target.bootPartitions.sorted().joinToString(","),
-            target.activeSlotSuffix
+            target.activeSlotSuffix,
         ).joinToString("|")
         return sha256(raw)
     }
@@ -35,8 +45,8 @@ public object CacheKeys {
         val raw = listOf(
             stage2Key,
             target.hasStandaloneSystemExt.toString(),
-            snapshot.buildType,
-            snapshot.romVersion
+            snapshot.assembly.buildType,
+            snapshot.assembly.romVersion,
         ).joinToString("|")
         return sha256(raw)
     }
@@ -44,7 +54,7 @@ public object CacheKeys {
     public fun stage4ModuleKey(stage3Key: String, snapshot: ConfigurationSnapshot): String {
         val raw = listOf(
             stage3Key,
-            snapshot.enabledModuleIds.sorted().joinToString(",")
+            snapshot.customization.enabledPackages.sorted().joinToString(","),
         ).joinToString("|")
         return sha256(raw)
     }
@@ -53,17 +63,17 @@ public object CacheKeys {
         stage4Key: String,
         snapshot: ConfigurationSnapshot,
         avbPubkeySha1: String = "",
-        platformCertSha1: String = ""
+        platformCertSha1: String = "",
     ): String {
         val raw = listOf(
             stage4Key,
-            snapshot.packagePolicy.flashablePartitions.sorted().joinToString(","),
-            snapshot.packagePolicy.flashableBootPartitions.sorted().joinToString(","),
-            snapshot.signing.signImages.toString(),
-            snapshot.signing.signPackage.toString(),
+            snapshot.build.packagePolicy.flashablePartitions.sorted().joinToString(","),
+            snapshot.build.packagePolicy.flashableBootPartitions.sorted().joinToString(","),
+            snapshot.build.signing.signImages.toString(),
+            snapshot.build.signing.signPackage.toString(),
             avbPubkeySha1,
             platformCertSha1,
-            snapshot.romVersion
+            snapshot.assembly.romVersion,
         ).joinToString("|")
         return sha256(raw)
     }
@@ -71,7 +81,7 @@ public object CacheKeys {
     public fun stage6ManifestKey(stage5Key: String, snapshot: ConfigurationSnapshot): String {
         val raw = listOf(
             stage5Key,
-            snapshot.otaBaseUrl
+            snapshot.release.otaBaseUrl,
         ).joinToString("|")
         return sha256(raw)
     }

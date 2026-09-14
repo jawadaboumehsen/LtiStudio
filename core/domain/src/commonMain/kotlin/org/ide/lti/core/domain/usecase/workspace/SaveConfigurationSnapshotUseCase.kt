@@ -45,22 +45,15 @@ class SaveConfigurationSnapshotUseCase(
 
         val previousSnapshot = workspace.effectiveSnapshotId?.let { snapshotRepository.getSnapshot(it) }
         val resolvedPolicy = packagePolicy
-            ?: previousSnapshot?.packagePolicy
+            ?: previousSnapshot?.build?.packagePolicy
             ?: PackagePolicy()
 
         val newSnapshotId = UUID.randomUUID().toString()
-        val snapshot = ConfigurationSnapshot.create(
+        val snapshot = draft.toSnapshot(
             id = newSnapshotId,
             workspaceId = workspaceId,
             profileRevision = workspace.targetBinding?.profileRevision ?: 1,
-            region = draft.region,
-            firmware = draft.firmware,
-            acquisitionMode = draft.acquisitionMode,
-            importedArchiveName = draft.importedArchiveName,
             packagePolicy = resolvedPolicy,
-            buildType = draft.buildType,
-            romVersion = draft.romVersion,
-            otaBaseUrl = draft.otaBaseUrl,
             createdAt = Clock.System.now(),
         )
 

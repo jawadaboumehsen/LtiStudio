@@ -17,9 +17,9 @@ import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.target.TargetFirmware
 import org.ide.lti.core.model.target.TargetRegion
 import org.ide.lti.core.model.target.TargetStatus
+import org.ide.lti.core.model.workspace.AcquisitionMode
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 import org.ide.lti.core.model.workspace.SigningPolicy
-import org.ide.lti.core.model.workspace.SnapshotAcquisitionMode
 import org.ide.lti.core.model.workspace.Workspace
 
 /** Shared PQ84P01 profile / workspace / snapshot fixture for pipeline tests. */
@@ -39,14 +39,14 @@ class PipelineFixture {
                     androidVersion = "15",
                     securityPatch = "2026-02-01",
                     isRecommended = true,
-                )
-            )
+                ),
+            ),
         ),
         packagePolicy = PackagePolicy(
             flashablePartitions = listOf("odm", "product", "system", "system_dlkm", "system_ext", "vendor", "vendor_dlkm"),
             flashableBootPartitions = listOf("boot", "init_boot", "vendor_boot", "dtbo"),
             bootSlots = listOf("a", "b"),
-            recoverySystemMountPoint = "/system_root"
+            recoverySystemMountPoint = "/system_root",
         ),
         socPlatform = "Snapdragon 8 Elite",
         filesystemType = "erofs",
@@ -67,7 +67,7 @@ class PipelineFixture {
 
     val targetChina = targetGlobal.copy(
         availableRegions = listOf(TargetRegion.CHINA),
-        hasStandaloneSystemExt = false
+        hasStandaloneSystemExt = false,
     )
 
     val workspace = Workspace(
@@ -75,57 +75,68 @@ class PipelineFixture {
         name = "PQ84P01-Global",
         path = "/home/lti/LtiRomWorkDir/workspaces/pq84p01-global",
         linuxPath = "/home/lti/LtiRomWorkDir/workspaces/pq84p01-global",
-        targetBinding = TargetBinding("PQ84P01", 2)
+        targetBinding = TargetBinding("PQ84P01", 2),
     )
 
-    val snapshotGlobalOta = ConfigurationSnapshot(
+    val snapshotGlobalOta = ConfigurationSnapshot.create(
         id = "snap_01",
         workspaceId = "ws_test_01",
         profileRevision = 2,
-        region = TargetRegion.GLOBAL,
-        firmware = TargetFirmware(
-            version = "REDMAGICOS10.5.15_NP05J_GB",
-            buildId = "PQ84P01:15/AQ3A.240812.002",
-            androidVersion = "15",
-            securityPatch = "2026-02-01",
-            sourceKind = FirmwareSourceKind.OTA_ZIP,
-            acquisitionUrl = "https://update.redmagic.gg/firmware/NP05J_GB.zip",
-            sha256 = "c2b647f1146f8c79a29e4726bfcf1a58a7da09f193758bdf214ff94e0192e4ab"
+        acquisition = org.ide.lti.core.model.workspace.AcquisitionSettings(
+            mode = org.ide.lti.core.model.workspace.AcquisitionMode.DOWNLOAD,
+            region = TargetRegion.GLOBAL,
+            firmware = TargetFirmware(
+                version = "REDMAGICOS10.5.15_NP05J_GB",
+                buildId = "PQ84P01:15/AQ3A.240812.002",
+                androidVersion = "15",
+                securityPatch = "2026-02-01",
+                sourceKind = FirmwareSourceKind.OTA_ZIP,
+                acquisitionUrl = "https://update.redmagic.gg/firmware/NP05J_GB.zip",
+                sha256 = "c2b647f1146f8c79a29e4726bfcf1a58a7da09f193758bdf214ff94e0192e4ab",
+            ),
         ),
-        acquisitionMode = SnapshotAcquisitionMode.DOWNLOAD,
-        packagePolicy = targetGlobal.packagePolicy,
-        signing = SigningPolicy(signImages = true, signPackage = true),
-        romVersion = "1.0.0",
-        buildType = "userdebug",
-        otaBaseUrl = "https://ota.ltirom.org/updates",
+        extraction = org.ide.lti.core.model.workspace.ExtractionSettings(),
+        assembly = org.ide.lti.core.model.workspace.AssemblySettings(romVersion = "1.0.0", buildType = "userdebug"),
+        debloat = org.ide.lti.core.model.workspace.DebloatSettings(enabled = false),
+        customization = org.ide.lti.core.model.workspace.CustomizationSettings(),
+        build = org.ide.lti.core.model.workspace.BuildSettings(
+            packagePolicy = targetGlobal.packagePolicy,
+            signing = org.ide.lti.core.model.workspace.SigningPolicy(signImages = true, signPackage = true),
+        ),
+        release = org.ide.lti.core.model.workspace.ReleaseSettings(otaBaseUrl = "https://ota.ltirom.org/updates"),
+        publish = org.ide.lti.core.model.workspace.PublishSettings(),
         createdAt = Instant.fromEpochSeconds(1726056000L),
-        digest = "digest_global"
     )
 
-    val snapshotChinaRaw = ConfigurationSnapshot(
+    val snapshotChinaRaw = ConfigurationSnapshot.create(
         id = "snap_02",
         workspaceId = "ws_test_01",
         profileRevision = 2,
-        region = TargetRegion.CHINA,
-        firmware = TargetFirmware(
-            version = "REDMAGICOS10.5.15_NP05J_CN",
-            buildId = "PQ84P01:15/AQ3A.240812.002",
-            androidVersion = "15",
-            securityPatch = "2026-02-01",
-            sourceKind = FirmwareSourceKind.RAW_IMAGE_ZIP,
-            acquisitionUrl = "https://update.redmagic.cn/firmware/NP05J_CN.zip",
-            sha256 = "a1b2c3d4e5f60000000000000000000000000000000000000000000000000000"
+        acquisition = org.ide.lti.core.model.workspace.AcquisitionSettings(
+            mode = org.ide.lti.core.model.workspace.AcquisitionMode.DOWNLOAD,
+            region = TargetRegion.CHINA,
+            firmware = TargetFirmware(
+                version = "REDMAGICOS10.5.15_NP05J_CN",
+                buildId = "PQ84P01:15/AQ3A.240812.002",
+                androidVersion = "15",
+                securityPatch = "2026-02-01",
+                sourceKind = FirmwareSourceKind.RAW_IMAGE_ZIP,
+                acquisitionUrl = "https://update.redmagic.cn/firmware/NP05J_CN.zip",
+                sha256 = "a1b2c3d4e5f60000000000000000000000000000000000000000000000000000",
+            ),
         ),
-        acquisitionMode = SnapshotAcquisitionMode.DOWNLOAD,
-        packagePolicy = targetChina.packagePolicy,
-        signing = SigningPolicy(signImages = true, signPackage = true),
-        romVersion = "1.0.0",
-        buildType = "user",
-        otaBaseUrl = "https://ota.ltirom.org/updates",
+        extraction = org.ide.lti.core.model.workspace.ExtractionSettings(),
+        assembly = org.ide.lti.core.model.workspace.AssemblySettings(romVersion = "1.0.0", buildType = "user"),
+        debloat = org.ide.lti.core.model.workspace.DebloatSettings(enabled = false),
+        customization = org.ide.lti.core.model.workspace.CustomizationSettings(),
+        build = org.ide.lti.core.model.workspace.BuildSettings(
+            packagePolicy = targetChina.packagePolicy,
+            signing = org.ide.lti.core.model.workspace.SigningPolicy(signImages = true, signPackage = true),
+        ),
+        release = org.ide.lti.core.model.workspace.ReleaseSettings(otaBaseUrl = "https://ota.ltirom.org/updates"),
+        publish = org.ide.lti.core.model.workspace.PublishSettings(),
         createdAt = Instant.fromEpochSeconds(1726056000L),
-        digest = "digest_china"
     )
-
 
     /** Values the orchestrator seeds at run start. */
     val runValues = mapOf(RuntimeKeys.RUN_DATE to "20260911", RuntimeKeys.RUN_TIMESTAMP to "1726056000")

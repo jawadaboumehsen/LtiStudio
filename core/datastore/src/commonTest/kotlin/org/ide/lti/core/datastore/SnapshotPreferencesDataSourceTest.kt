@@ -16,43 +16,44 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
 import org.ide.lti.core.model.target.DefaultTargetCatalog
 import org.ide.lti.core.model.target.PackagePolicy
-import org.ide.lti.core.model.target.TargetFirmware
 import org.ide.lti.core.model.target.TargetRegion
+import org.ide.lti.core.model.workspace.AcquisitionMode
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 import org.ide.lti.core.model.workspace.SigningPolicy
-import org.ide.lti.core.model.workspace.SnapshotAcquisitionMode
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SnapshotPreferencesDataSourceTest {
 
-    private fun createSampleSnapshot(
-        id: String = "snap-1",
-        workspaceId: String = "ws-1",
-    ): ConfigurationSnapshot {
-        return ConfigurationSnapshot.create(
+    private fun createSampleSnapshot(id: String = "snap-1", workspaceId: String = "ws-1"): ConfigurationSnapshot =
+        ConfigurationSnapshot.create(
             id = id,
             workspaceId = workspaceId,
             profileRevision = 1,
-            region = TargetRegion.GLOBAL,
-            firmware = DefaultTargetCatalog.PQ84P01_GLOBAL_FIRMWARES.first(),
-            acquisitionMode = SnapshotAcquisitionMode.DOWNLOAD,
-            packagePolicy = PackagePolicy(
-                flashablePartitions = listOf("system", "vendor"),
-                flashableBootPartitions = listOf("boot"),
+            acquisition = org.ide.lti.core.model.workspace.AcquisitionSettings(
+                mode = AcquisitionMode.DOWNLOAD,
+                region = TargetRegion.GLOBAL,
+                firmware = DefaultTargetCatalog.PQ84P01_GLOBAL_FIRMWARES.first(),
             ),
-            signing = SigningPolicy(),
-            buildType = "user",
-            romVersion = "1.0.0",
-            otaBaseUrl = "https://example.com/updates",
-            pipelineVersion = 1,
+            build = org.ide.lti.core.model.workspace.BuildSettings(
+                packagePolicy = PackagePolicy(
+                    flashablePartitions = listOf("system", "vendor"),
+                    flashableBootPartitions = listOf("boot"),
+                ),
+                signing = SigningPolicy(),
+            ),
+            assembly = org.ide.lti.core.model.workspace.AssemblySettings(
+                buildType = "user",
+                romVersion = "1.0.0",
+            ),
+            release = org.ide.lti.core.model.workspace.ReleaseSettings(
+                otaBaseUrl = "https://example.com/updates",
+            ),
             createdAt = Instant.fromEpochMilliseconds(1000L),
         )
-    }
 
     @Test
     fun testDefaultStateIsEmpty() = runTest {
@@ -94,7 +95,7 @@ class SnapshotPreferencesDataSourceTest {
         val snapshot1 = createSampleSnapshot("snap-1", "ws-1")
         dataSource.saveSnapshot(snapshot1)
 
-        val snapshotDuplicate = snapshot1.copy(romVersion = "2.0.0")
+        val snapshotDuplicate = snapshot1.copy(assembly = snapshot1.assembly.copy(romVersion = "2.0.0"))
         assertFailsWith<IllegalArgumentException> {
             dataSource.saveSnapshot(snapshotDuplicate)
         }
@@ -102,7 +103,7 @@ class SnapshotPreferencesDataSourceTest {
         // Verify original remains unmodified
         val current = dataSource.getSnapshot("snap-1")
         assertNotNull(current)
-        assertEquals("1.0.0", current.romVersion)
+        assertEquals("1.0.0", current.assembly.romVersion)
     }
 
     @Test

@@ -39,7 +39,7 @@ class PipelineResumeTest {
     private val ws = fixture.workspace.linuxPath!!
 
     private fun globalPort() = SimulatedExecutionPort(ws).apply {
-        archiveSha256 = fixture.snapshotGlobalOta.firmware.sha256
+        archiveSha256 = fixture.snapshotGlobalOta.acquisition.firmware.sha256
     }
 
     private fun orchestrator(port: SimulatedExecutionPort, repo: InMemoryRunRepository) =
@@ -207,7 +207,7 @@ class PipelineResumeTest {
                 RuntimeKeys.DOWNLOAD_RESUME to "",
                 RuntimeKeys.exitOf(RuntimeKeys.DOWNLOAD_RESUME) to "0",
                 RuntimeKeys.ARCHIVE_MIME to "application/zip",
-                RuntimeKeys.ARCHIVE_SHA256 to fixture.snapshotGlobalOta.firmware.sha256!!,
+                RuntimeKeys.ARCHIVE_SHA256 to fixture.snapshotGlobalOta.acquisition.firmware.sha256!!,
             ),
             driverInstanceId = "driver-1",
             driverHeartbeatEpochMs = System.currentTimeMillis(),

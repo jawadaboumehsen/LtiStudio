@@ -28,9 +28,9 @@ import org.ide.lti.core.model.target.TargetBinding
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.target.TargetFirmware
 import org.ide.lti.core.model.target.TargetRegion
+import org.ide.lti.core.model.workspace.AcquisitionMode
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 import org.ide.lti.core.model.workspace.RecentProject
-import org.ide.lti.core.model.workspace.SnapshotAcquisitionMode
 import org.ide.lti.core.model.workspace.Workspace
 import org.ide.lti.core.model.workspace.WorkspaceManifest
 import org.ide.lti.core.model.workspace.WorkspaceType
@@ -143,13 +143,21 @@ class CreateWorkspaceUseCase(
             id = snapshotId,
             workspaceId = workspaceId,
             profileRevision = target.revision,
-            region = region,
-            firmware = firmware,
-            acquisitionMode = SnapshotAcquisitionMode.DOWNLOAD,
-            packagePolicy = packagePolicy,
-            buildType = "user",
-            romVersion = "1.0.0",
-            otaBaseUrl = "https://example.com/updates",
+            acquisition = org.ide.lti.core.model.workspace.AcquisitionSettings(
+                mode = AcquisitionMode.DOWNLOAD,
+                region = region,
+                firmware = firmware,
+            ),
+            build = org.ide.lti.core.model.workspace.BuildSettings(
+                packagePolicy = packagePolicy,
+            ),
+            assembly = org.ide.lti.core.model.workspace.AssemblySettings(
+                buildType = "user",
+                romVersion = "1.0.0",
+            ),
+            release = org.ide.lti.core.model.workspace.ReleaseSettings(
+                otaBaseUrl = "https://example.com/updates",
+            ),
             createdAt = Clock.System.now(),
         )
     }

@@ -205,7 +205,7 @@ class CreateWorkspaceUseCaseTest {
         assertNotNull(snapshot)
         assertEquals(ws.id, snapshot.workspaceId)
         assertEquals(2, snapshot.profileRevision)
-        assertEquals(TargetRegion.GLOBAL, snapshot.region)
+        assertEquals(TargetRegion.GLOBAL, snapshot.acquisition.region)
 
         // Verify RecentProject registered
         assertEquals(1, repo.savedRecents.size)
