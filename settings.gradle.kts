@@ -57,6 +57,7 @@ include(":feature:settings")
 include(":feature:setup")
 include(":feature:workspace")
 include(":feature:configuration")
+include(":feature:plugins")
 
 include(":catalog")
 
@@ -64,3 +65,5 @@ include(":tool:core")
 include(":tool:adapters")
 include(":tool:client")
 include(":tool:codegen")
+
+include(":sdk:patch-mod")
