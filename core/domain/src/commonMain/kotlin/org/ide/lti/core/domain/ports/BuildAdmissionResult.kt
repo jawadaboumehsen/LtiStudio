@@ -1,9 +1,10 @@
-@file:Suppress("MatchingDeclarationName", "Filename")
-
 package org.ide.lti.core.domain.ports
 
 public sealed interface BuildAdmissionResult {
-    public data class Admitted(val envLease: EnvironmentLease, val wsLease: WorkspaceWriteLease) : BuildAdmissionResult
+    public data class Admitted(
+        val environmentLease: EnvironmentLease,
+        val workspaceLease: WorkspaceWriteLease,
+    ) : BuildAdmissionResult
 
     public data class Busy(val owner: WorkspaceWriteLease) : BuildAdmissionResult
 
@@ -13,8 +14,8 @@ public sealed interface BuildAdmissionResult {
 }
 
 /**
- * Acquires build admission enforcing the fixed order: environment -> workspace.
- * If the workspace step is Busy or RevisionMismatch, releases the environment lease before returning.
+ * Acquires build admission in the fixed order environment -> workspace; a workspace refusal
+ * releases the environment lease before returning so no lease is ever held without its pair.
  */
 public suspend fun acquireBuildAdmission(
     env: EnvironmentLeasePort,
@@ -26,30 +27,19 @@ public suspend fun acquireBuildAdmission(
     expectedRevision: Int?,
     currentRevision: Int?,
 ): BuildAdmissionResult {
-    val envAdmission = env.tryAcquire(environmentKey, EnvironmentUse.BUILD_USE, operationId)
-    val envLease = when (envAdmission) {
+    val envLease = when (val envAdmission = env.tryAcquire(environmentKey, EnvironmentUse.BUILD_USE, operationId)) {
         is EnvironmentAdmission.Busy -> return BuildAdmissionResult.EnvironmentBusy(envAdmission.owners)
         is EnvironmentAdmission.Admitted -> envAdmission.lease
     }
-
-    val wsAdmission = ws.tryAcquire(workspaceId, kind, operationId, expectedRevision, currentRevision)
-    return when (wsAdmission) {
-        is AdmissionResult.Admitted -> {
-            BuildAdmissionResult.Admitted(
-                envLease = envLease,
-                wsLease = wsAdmission.lease,
-            )
-        }
+    return when (val wsAdmission = ws.tryAcquire(workspaceId, kind, operationId, expectedRevision, currentRevision)) {
+        is AdmissionResult.Admitted -> BuildAdmissionResult.Admitted(envLease, wsAdmission.lease)
         is AdmissionResult.Busy -> {
             env.release(envLease)
             BuildAdmissionResult.Busy(wsAdmission.owner)
         }
         is AdmissionResult.RevisionMismatch -> {
             env.release(envLease)
-            BuildAdmissionResult.RevisionMismatch(
-                expected = wsAdmission.expected,
-                actual = wsAdmission.actual,
-            )
+            BuildAdmissionResult.RevisionMismatch(wsAdmission.expected, wsAdmission.actual)
         }
     }
 }
