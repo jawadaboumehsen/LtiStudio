@@ -34,7 +34,7 @@ googleOssPlugin = "0.10.6"
 ktlint = "12.1.1"
 detekt = "1.23.7"
 spotlessVersion = "6.25.0"
-twitter-detekt-compose = "0.0.26"
+compose-rules-detekt = "0.4.23"
 
 # Kotlin KMP Dependencies
 kotlin = "2.3.10"
@@ -137,7 +137,7 @@ detekt-api = { group = "io.gitlab.arturbosch.detekt", name = "detekt-api", versi
 detekt-formatting = { group = "io.gitlab.arturbosch.detekt", name = "detekt-formatting", version.ref = "detekt" }
 spotless-gradle = { group = "com.diffplug.spotless", name = "spotless-plugin-gradle", version.ref = "spotlessVersion" }
 detekt-gradlePlugin = { group = "io.gitlab.arturbosch.detekt", name = "detekt-gradle-plugin", version.ref = "detekt" }
-twitter-detekt-compose = { group = "com.twitter.compose.rules", name = "detekt", version.ref = "twitter-detekt-compose" }
+compose-rules-detekt = { group = "io.nlopez.compose.rules", name = "detekt", version.ref = "compose-rules-detekt" }
 
 google-oss-licenses = { group = "com.google.android.gms", name = "play-services-oss-licenses", version.ref = "googleOss" }
 google-oss-licenses-plugin = { group = "com.google.android.gms", name = "oss-licenses-plugin", version.ref = "googleOssPlugin" }

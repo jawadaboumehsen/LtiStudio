@@ -165,7 +165,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawIconSurface(
 
 @Preview
 @Composable
-fun GlassIconPreview() {
+private fun GlassIconPreview() {
     val backdrop = rememberLayerBackdrop()
     GlassIcon(
         onClick = {},

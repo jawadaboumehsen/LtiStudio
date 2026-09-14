@@ -59,7 +59,6 @@ import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.config.AppTheme
 import org.ide.lti.core.ui.GlassCodeEditor
 import org.ide.lti.core.ui.syntax.SyntaxLanguage
-import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -318,7 +317,6 @@ private fun EditorShortcutHint(keys: String, label: String) {
     }
 }
 
-@Preview
 @Composable
 private fun EmptyEditorView() {
     val glassColors = GlassTheme.colors

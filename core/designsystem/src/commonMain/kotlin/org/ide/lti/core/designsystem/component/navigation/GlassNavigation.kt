@@ -177,7 +177,7 @@ fun GlassNavigationRail(
 
 @Preview
 @Composable
-fun GlassNavigationBarPreview() {
+private fun GlassNavigationBarPreview() {
     val items = listOf("Explorer", "Search", "Settings", "Profile")
     val icons: List<@Composable () -> androidx.compose.ui.graphics.painter.Painter> =
         listOf(
@@ -214,7 +214,7 @@ fun GlassNavigationBarPreview() {
 
 @Preview
 @Composable
-fun GlassNavigationRailPreview() {
+private fun GlassNavigationRailPreview() {
     val items = listOf("Explorer", "Search", "Settings", "Profile")
     val icons: List<@Composable () -> androidx.compose.ui.graphics.painter.Painter> =
         listOf(

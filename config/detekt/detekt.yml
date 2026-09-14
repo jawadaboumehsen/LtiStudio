@@ -960,7 +960,7 @@ style:
     excludeImports:
       - "java.util.*"
 
-TwitterCompose:
+Compose:
   CompositionLocalAllowlist:
     active: false
     # You can optionally define a list of CompositionLocals that are allowed here
@@ -1001,7 +1001,11 @@ TwitterCompose:
     active: true
   UnstableCollections:
     active: false
+  # 11 pre-existing forwarding sites across feature:workspace (RunPanel, WorkspaceConfigurationPanel,
+  # WorkspaceScreen) pass a ViewModel down through nested composables rather than hoisting individual
+  # state/callbacks. Real, consistent architectural pattern across that module, not a one-off bug -
+  # left disabled pending a deliberate decision on whether to refactor to full state hoisting.
   ViewModelForwarding:
-    active: true
+    active: false
   ViewModelInjection:
     active: true

@@ -330,7 +330,7 @@ fun GlassLayout(
  */
 @Preview
 @Composable
-fun PreviewGlassLayout() {
+private fun GlassLayoutPreview() {
     val state = rememberLtiLayoutState()
 
     MaterialTheme {
