@@ -338,8 +338,10 @@ class StageDefinitionsTest {
             tools(s3).none { it.toolId == "rsync" && it.args.last().contains("system/system_ext") },
         )
 
-        // Stage 4: pass-through.
-        assertTrue(ModuleApplicationStage().plan(ctx).isEmpty())
+        // Stage 4: writes applied.json with empty record when no packages are enabled.
+        val s4 = ModuleApplicationStage().plan(ctx)
+        assertEquals(1, s4.size)
+        assertEquals("work/modules/applied.json", (s4.single() as PipelineStep.WriteFile).relPath)
 
         // Stage 5 before any capture: staging, key digests, mkfs.erofs/sha256sum/stat per partition — nothing else.
         val s5 = tools(BuildFlashableZipStage().plan(ctx))
