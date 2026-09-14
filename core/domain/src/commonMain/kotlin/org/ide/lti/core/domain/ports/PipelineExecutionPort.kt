@@ -47,7 +47,17 @@ public interface PipelineExecutionPort {
 
     public suspend fun cancel(serverRunId: String): Boolean
 
+    /** Small host-generated metadata only. */
     public suspend fun uploadFile(ws: Workspace, relPath: String, bytes: ByteArray): Boolean
+
+    public suspend fun uploadBounded(
+        ws: Workspace,
+        relPath: String,
+        totalBytes: Long,
+        chunks: Flow<ByteArray>,
+    ): TransferReceipt = throw UnsupportedTransportCapabilityException(
+        "bounded streaming upload is not supported by this transport",
+    )
 
     public suspend fun readFile(ws: Workspace, relPath: String): String?
 

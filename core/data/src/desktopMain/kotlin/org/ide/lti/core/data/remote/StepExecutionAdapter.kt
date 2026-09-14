@@ -1,22 +1,21 @@
 package org.ide.lti.core.data.remote
 
 import io.ltirom.tooling.core.ports.RemoteTransportPort
+import io.ltirom.tooling.core.remote.RunStatusValue
 import io.ltirom.tooling.core.remote.StartRunRequest
 import io.ltirom.tooling.core.remote.ToolExecutionRequest
-import io.ltirom.tooling.core.remote.StreamEvent as CoreStreamEvent
-import io.ltirom.tooling.core.remote.RunStatusValue
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.flow
 import org.ide.lti.core.domain.pipeline.ToolResult
 import org.ide.lti.core.domain.ports.FileStat
+import org.ide.lti.core.domain.ports.MAX_TRANSFER_CHUNK_BYTES
 import org.ide.lti.core.domain.ports.PipelineExecutionPort
 import org.ide.lti.core.domain.ports.RunHandle
 import org.ide.lti.core.domain.ports.StepEvent
 import org.ide.lti.core.domain.ports.StepStatus
 import org.ide.lti.core.model.run.StepCommand
 import org.ide.lti.core.model.workspace.Workspace
+import io.ltirom.tooling.core.remote.StreamEvent as CoreStreamEvent
 
 public class StepExecutionAdapter(
     private val transport: RemoteTransportPort,
@@ -26,33 +25,32 @@ public class StepExecutionAdapter(
     private companion object {
         const val DEFAULT_POLL_INTERVAL_MS = 500L
         val TERMINAL = setOf(
-            RunStatusValue.COMPLETED, RunStatusValue.FAILED, RunStatusValue.CANCELLED, RunStatusValue.INTERRUPTED,
+            RunStatusValue.COMPLETED,
+            RunStatusValue.FAILED,
+            RunStatusValue.CANCELLED,
+            RunStatusValue.INTERRUPTED,
         )
     }
 
-    override suspend fun startStep(
-        ws: Workspace,
-        step: StepCommand,
-        idempotencyKey: String
-    ): RunHandle {
+    override suspend fun startStep(ws: Workspace, step: StepCommand, idempotencyKey: String): RunHandle {
         val workingDir = step.workingDir ?: ws.linuxPath ?: ws.path
         val toolRequest = ToolExecutionRequest(
             toolId = step.toolId,
             arguments = step.args,
             workingDirectory = workingDir,
             timeoutMs = step.timeoutMs,
-            streamOutput = true
+            streamOutput = true,
         )
         val startReq = StartRunRequest(
             request = toolRequest,
             idempotencyKey = idempotencyKey,
-            workspaceLock = workingDir
+            workspaceLock = workingDir,
         )
         val handle = transport.startRun(startReq)
         return RunHandle(
             runId = handle.runId,
             status = handle.status.name,
-            startedAtEpochMs = handle.startedAtEpochMs
+            startedAtEpochMs = handle.startedAtEpochMs,
         )
     }
 
@@ -95,7 +93,7 @@ public class StepExecutionAdapter(
             pid = status.pid,
             startedAtEpochMs = status.startedAtEpochMs,
             endedAtEpochMs = status.endedAtEpochMs,
-            lastSeq = status.lastSeq
+            lastSeq = status.lastSeq,
         )
     }
 
@@ -105,6 +103,9 @@ public class StepExecutionAdapter(
     }
 
     override suspend fun uploadFile(ws: Workspace, relPath: String, bytes: ByteArray): Boolean {
+        require(bytes.size <= MAX_TRANSFER_CHUNK_BYTES) {
+            "uploadFile is for small host-generated metadata only; size ${bytes.size} exceeds $MAX_TRANSFER_CHUNK_BYTES"
+        }
         val wsPath = ws.linuxPath ?: ws.path
         val fullPath = "$wsPath/$relPath"
         return transport.uploadFile(fullPath, bytes)
@@ -124,8 +125,8 @@ public class StepExecutionAdapter(
             ToolExecutionRequest(
                 toolId = "stat",
                 arguments = listOf("-c", "%s", fullPath),
-                workingDirectory = wsPath
-            )
+                workingDirectory = wsPath,
+            ),
         )
         return if (response.exitCode == 0) {
             val size = response.stdout.trim().toLongOrNull() ?: 0L
@@ -141,8 +142,8 @@ public class StepExecutionAdapter(
                 toolId = command.toolId,
                 arguments = command.args,
                 workingDirectory = command.workingDir ?: ws.linuxPath ?: ws.path,
-                timeoutMs = command.timeoutMs
-            )
+                timeoutMs = command.timeoutMs,
+            ),
         )
         return ToolResult(exitCode = response.exitCode, stdout = response.stdout, stderr = response.stderr)
     }
@@ -153,11 +154,10 @@ public class StepExecutionAdapter(
             ToolExecutionRequest(
                 toolId = "df",
                 arguments = listOf("-B1", "--output=avail", wsPath),
-                workingDirectory = wsPath
-            )
+                workingDirectory = wsPath,
+            ),
         )
         if (response.exitCode != 0) return null
         return response.stdout.trim().lines().lastOrNull()?.trim()?.toLongOrNull()
     }
 }
-
