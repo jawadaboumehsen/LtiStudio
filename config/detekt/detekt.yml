@@ -240,8 +240,12 @@ complexity:
 
 coroutines:
   active: true
+  # CoroutineLaunchedInTestWithoutRunTest and SuspendFunInFinallySection do not exist in
+  # detekt-rules-coroutines 1.23.7 (the version this project is pinned to) - confirmed by
+  # inspecting the jar's actual class list, not just the (newer) official docs page. They were
+  # added in a later Detekt release; add them when this project's detekt version catches up.
   GlobalCoroutineUsage:
-    active: false
+    active: true
   InjectDispatcher:
     active: true
     dispatcherNames:
@@ -253,9 +257,9 @@ coroutines:
   SleepInsteadOfDelay:
     active: true
   SuspendFunSwallowedCancellation:
-    active: false
+    active: true
   SuspendFunWithCoroutineScopeReceiver:
-    active: false
+    active: true
   SuspendFunWithFlowReturnType:
     active: true
 
@@ -961,6 +965,12 @@ style:
       - "java.util.*"
 
 Compose:
+  # Rule-ID correction: these 5 entries were configured under stale/incorrect names inherited
+  # from the old com.twitter.compose.rules fork's docs and were silently dead config the entire
+  # time (confirmed empirically - detekt does not validate unknown property names within a
+  # third-party ruleset section, unlike a top-level ruleset ID or a first-party ruleset's rule
+  # names, both of which fail hard on a typo). Real IDs verified against the actual
+  # io.nlopez.compose.rules:detekt:0.4.23 jar's class list, not inferred from docs.
   CompositionLocalAllowlist:
     active: false
     # You can optionally define a list of CompositionLocals that are allowed here
@@ -971,25 +981,30 @@ Compose:
     active: true
     # You can optionally add your own composables here
     # contentEmitters: MyComposable,MyOtherComposable
-  ModifierComposable:
-    active: true
+  # Found 2 real hits in GlassModifiers.kt (glassEffect/glassScrim), both legitimately reading
+  # composition-scoped values (GlassTheme.backdrop, rememberLayerBackdrop()) inside a widely-used
+  # public API. Migrating to Modifier.Node is a genuine architectural rewrite with real regression
+  # risk for a core glass-effects utility - left disabled pending a deliberate decision, not fixed
+  # blindly in this pass. Same disposal as ViewModelForwarding above.
+  ModifierComposed: # was: ModifierComposable (dead config)
+    active: false
   ModifierMissing:
     active: true
   ModifierReused:
     active: true
   ModifierWithoutDefault:
     active: true
-  MultipleEmitters:
+  MultipleContentEmitters: # was: MultipleEmitters (dead config)
     active: true
     # You can optionally add your own composables here
     # contentEmitters: MyComposable,MyOtherComposable
-  MutableParams:
+  MutableParameters: # was: MutableParams (dead config)
     active: true
   ComposableNaming:
     active: true
     # You can optionally disable the checks in this rule for regex matches against the composable name (e.g. molecule presenters)
     # allowedComposableFunctionNames: .*Presenter,.*MoleculePresenter
-  ComposableParamOrder:
+  ParameterOrder: # was: ComposableParamOrder (dead config)
     active: true
   PreviewNaming:
     active: true
@@ -997,8 +1012,9 @@ Compose:
     active: true
     # You can optionally disable that only previews with @PreviewParameter are flagged
     # previewPublicOnlyIfParams: false
-  RememberMissing:
-    active: true
+  RememberStateMissing: # was: RememberMissing (dead config; RememberMissing itself was split
+    active: true         # into RememberStateMissing + RememberContentMissing in a later release -
+                          # only enabling the direct successor here, not both)
   UnstableCollections:
     active: false
   # 11 pre-existing forwarding sites across feature:workspace (RunPanel, WorkspaceConfigurationPanel,
