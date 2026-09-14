@@ -384,6 +384,190 @@ exceptions:
       - "RuntimeException"
       - "Throwable"
 
+# The ktlint-wrapper plugin (dev.detekt:detekt-rules-ktlint-wrapper) has been on the detektPlugins
+# classpath the whole time, but with no ktlint: block here the whole ruleset was completely inert
+# (a ruleset needs an explicit `active: true` block to run at all, same as every other ruleset in
+# this file) - a real gap, not a deliberate choice. Enabling it now with its ~84 default-active
+# formatting rules. This is a large, previously-unformatted-to-ktlint codebase, so the baseline
+# (config/detekt/baseline/*.xml, regenerated via `./gradlew detektBaseline`) grandfathers the
+# existing style debt rather than forcing a repo-wide reformatting diff in this pass - it still
+# enforces ktlint style on any NEW code going forward.
+ktlint:
+  active: true
+  # Empirically confirmed (unlike detekt's own first-party rule sets) that a bare `active: true`
+  # at the ruleset level does NOT cascade compiled-in per-rule defaults for this third-party
+  # ruleset - every rule needs its own explicit active: true/false, or it silently does nothing.
+  # This enumerates every rule Detekt 2.0's ktlint-wrapper documents as "active by default";
+  # the handful documented as inactive by default are left out (same net effect as false).
+  AnnotationOnSeparateLine:
+    active: true
+  AnnotationSpacing:
+    active: true
+  ArgumentListWrapping:
+    active: true
+  BackingPropertyNaming:
+    active: true
+  BinaryExpressionWrapping:
+    active: true
+  BlockCommentInitialStarAlignment:
+    active: true
+  ChainWrapping:
+    active: true
+  ClassSignature:
+    active: true
+  CommentSpacing:
+    active: true
+  CommentWrapping:
+    active: true
+  ConditionWrapping:
+    active: true
+  ContextReceiverListWrapping:
+    active: true
+  ContextReceiverMapping:
+    active: true
+  EnumEntryNameCase:
+    active: true
+  EnumWrapping:
+    active: true
+  Filename:
+    active: true
+  FinalNewline:
+    active: true
+  FunKeywordSpacing:
+    active: true
+  FunctionExpressionBody:
+    active: true
+  FunctionLiteral:
+    active: true
+  FunctionReturnTypeSpacing:
+    active: true
+  FunctionSignature:
+    active: true
+  FunctionStartOfBodySpacing:
+    active: true
+  FunctionTypeModifierSpacing:
+    active: true
+  FunctionTypeReferenceSpacing:
+    active: true
+  ImportOrdering:
+    active: true
+  Indentation:
+    active: true
+  Kdoc:
+    active: true
+  KdocWrapping:
+    active: true
+  MaximumLineLength:
+    active: true
+  MixedConditionOperators:
+    active: true
+  ModifierListSpacing:
+    active: true
+  ModifierOrdering:
+    active: true
+  MultiLineIfElse:
+    active: true
+  MultilineLoop:
+    active: true
+  NoBlankLineBeforeRbrace:
+    active: true
+  NoBlankLinesInChainedMethodCalls:
+    active: true
+  NoConsecutiveBlankLines:
+    active: true
+  NoEmptyClassBody:
+    active: true
+  NoEmptyFile:
+    active: true
+  NoEmptyFirstLineInMethodBlock:
+    active: true
+  NoLineBreakAfterElse:
+    active: true
+  NoLineBreakBeforeAssignment:
+    active: true
+  NoMultipleSpaces:
+    active: true
+  NoSemicolons:
+    active: true
+  NoTrailingSpaces:
+    active: true
+  NoUnitReturn:
+    active: true
+  NoUnusedImports:
+    active: true
+  NoWildcardImports:
+    active: true
+  NullableTypeSpacing:
+    active: true
+  PackageName:
+    active: true
+  ParameterListSpacing:
+    active: true
+  ParameterListWrapping:
+    active: true
+  ParameterWrapping:
+    active: true
+  PropertyName:
+    active: true
+  PropertyWrapping:
+    active: true
+  SpacingAroundAngleBrackets:
+    active: true
+  SpacingAroundColon:
+    active: true
+  SpacingAroundComma:
+    active: true
+  SpacingAroundCurly:
+    active: true
+  SpacingAroundDot:
+    active: true
+  SpacingAroundDoubleColon:
+    active: true
+  SpacingAroundKeyword:
+    active: true
+  SpacingAroundOperators:
+    active: true
+  SpacingAroundParens:
+    active: true
+  SpacingAroundRangeOperator:
+    active: true
+  SpacingAroundSquareBrackets:
+    active: true
+  SpacingAroundUnaryOperator:
+    active: true
+  SpacingBetweenDeclarationsWithAnnotations:
+    active: true
+  SpacingBetweenDeclarationsWithComments:
+    active: true
+  SpacingBetweenFunctionNameAndOpeningParenthesis:
+    active: true
+  StatementWrapping:
+    active: true
+  StringTemplate:
+    active: true
+  ThenSpacing:
+    active: true
+  TrailingCommaOnCallSite:
+    active: true
+  TrailingCommaOnDeclarationSite:
+    active: true
+  TypeArgumentComment:
+    active: true
+  TypeArgumentListSpacing:
+    active: true
+  TypeParameterComment:
+    active: true
+  TypeParameterListSpacing:
+    active: true
+  UnnecessaryParenthesesBeforeTrailingLambda:
+    active: true
+  ValueArgumentComment:
+    active: true
+  ValueParameterComment:
+    active: true
+  Wrapping:
+    active: true
+
 lti-design-system:
   active: true
   NoRawColorLiteral:

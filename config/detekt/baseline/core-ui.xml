@@ -2,7 +2,14 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
+    <ID>ClassSignature:GlassFileTree.kt:FlattenedFileNode</ID>
+    <ID>ClassSignature:SyntaxToken.kt:SyntaxToken</ID>
     <ID>CyclomaticComplexMethod:GlassFileTree.kt:@Composable private fun GlassFileTreeItem</ID>
+    <ID>FunctionSignature:GlassFileTree.kt:@Composable private fun LtiFileIcon</ID>
+    <ID>FunctionSignature:GlassFileTree.kt:internal fun flattenFileTree: List&lt;FlattenedFileNode&gt;</ID>
     <ID>MatchingDeclarationName:ShareUtils.desktop.kt:ShareUtils</ID>
+    <ID>NoUnusedImports:GlassCodeEditor.kt:org.ide.lti.core.ui.GlassCodeEditor.kt</ID>
+    <ID>NoUnusedImports:GlassFileTree.kt:org.ide.lti.core.ui.GlassFileTree.kt</ID>
+    <ID>NoUnusedImports:GlassMessageBubble.kt:org.ide.lti.core.ui.GlassMessageBubble.kt</ID>
   </CurrentIssues>
 </SmellBaseline>

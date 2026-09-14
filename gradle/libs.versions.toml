@@ -135,6 +135,7 @@ androidx-tracing-ktx = { group = "androidx.tracing", name = "tracing-ktx", versi
 ktlint-gradlePlugin = { group = "org.jlleitschuh.gradle", name = "ktlint-gradle", version.ref = "ktlint" }
 detekt-api = { group = "dev.detekt", name = "detekt-api", version.ref = "detekt" }
 detekt-formatting = { group = "dev.detekt", name = "detekt-rules-ktlint-wrapper", version.ref = "detekt" }
+detekt-ruleauthors = { group = "dev.detekt", name = "detekt-rules-ruleauthors", version.ref = "detekt" }
 spotless-gradle = { group = "com.diffplug.spotless", name = "spotless-plugin-gradle", version.ref = "spotlessVersion" }
 detekt-gradlePlugin = { group = "dev.detekt", name = "detekt-gradle-plugin", version.ref = "detekt" }
 compose-rules-detekt = { group = "io.nlopez.compose.rules", name = "detekt", version.ref = "compose-rules-detekt" }
