@@ -20,17 +20,6 @@ public object CacheKeys {
         return hash.joinToString("") { "%02x".format(it) }
     }
 
-    public fun stage1AcquisitionKey(snapshot: ConfigurationSnapshot): String {
-        val firmware = snapshot.acquisition.firmware
-        val raw = listOf(
-            firmware.acquisitionUrl.orEmpty(),
-            if (firmware.checksumUnavailable) "UNVERIFIED" else firmware.sha256.orEmpty(),
-            firmware.sourceKind.name,
-            snapshot.acquisition.mode.name,
-        ).joinToString("|")
-        return sha256(raw)
-    }
-
     public fun stage2ExtractionKey(stage1Key: String, target: TargetDevice): String {
         val raw = listOf(
             stage1Key,

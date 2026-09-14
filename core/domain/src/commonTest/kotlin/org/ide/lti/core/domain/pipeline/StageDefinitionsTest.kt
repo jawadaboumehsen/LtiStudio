@@ -455,7 +455,7 @@ class StageDefinitionsTest {
     @Test
     fun testCacheKeySensitivity() {
         val ctx1 = fx.globalOtaContext()
-        val key1 = CacheKeys.stage1AcquisitionKey(ctx1.snapshot)
+        val key1 = FirmwareAcquisitionStage().computeCacheKey(ctx1, "")
 
         val ctxDifferentUrl = ctx1.copy(
             snapshot = ctx1.snapshot.copy(
@@ -466,7 +466,7 @@ class StageDefinitionsTest {
                 ),
             ),
         )
-        assertNotEquals(key1, CacheKeys.stage1AcquisitionKey(ctxDifferentUrl.snapshot))
+        assertNotEquals(key1, FirmwareAcquisitionStage().computeCacheKey(ctxDifferentUrl, ""))
 
         val key2 = CacheKeys.stage2ExtractionKey(key1, testTargetGlobal)
         val key2DifferentSlot = CacheKeys.stage2ExtractionKey(

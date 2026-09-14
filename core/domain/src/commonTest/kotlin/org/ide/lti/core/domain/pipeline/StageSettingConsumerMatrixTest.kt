@@ -63,37 +63,6 @@ class StageSettingConsumerMatrixTest {
          * will fail loudly until the field is moved from this list to the consumed matrix.
          */
         val UNCONSUMED_FIELDS: List<UnconsumedField> = listOf(
-            // AcquisitionSettings
-            UnconsumedField(
-                fieldName = "acquisition.region",
-                targetTask = "T048: region-specific acquisition",
-                stage = FirmwareAcquisitionStage(),
-                mutate = { snap -> snap.copy(acquisition = snap.acquisition.copy(region = TargetRegion.CHINA)) },
-            ),
-            UnconsumedField(
-                fieldName = "acquisition.archiveRef",
-                targetTask = "T048: import archive verification",
-                stage = FirmwareAcquisitionStage(),
-                mutate = { snap -> snap.copy(acquisition = snap.acquisition.copy(archiveRef = "fw/archive.zip")) },
-            ),
-            UnconsumedField(
-                fieldName = "acquisition.expectedSha256",
-                targetTask = "T048: import archive verification",
-                stage = FirmwareAcquisitionStage(),
-                mutate = { snap -> snap.copy(acquisition = snap.acquisition.copy(expectedSha256 = "custom-sha256")) },
-            ),
-            UnconsumedField(
-                fieldName = "acquisition.retries",
-                targetTask = "T048: acquisition retry policy",
-                stage = FirmwareAcquisitionStage(),
-                mutate = { snap -> snap.copy(acquisition = snap.acquisition.copy(retries = 5)) },
-            ),
-            UnconsumedField(
-                fieldName = "acquisition.resume",
-                targetTask = "T048: acquisition resume policy",
-                stage = FirmwareAcquisitionStage(),
-                mutate = { snap -> snap.copy(acquisition = snap.acquisition.copy(resume = false)) },
-            ),
 
             // ExtractionSettings
             UnconsumedField(
@@ -264,6 +233,31 @@ class StageSettingConsumerMatrixTest {
                     ),
                 )
             },
+        ),
+        ConsumedFieldCase(
+            fieldName = "acquisition.region",
+            stage = FirmwareAcquisitionStage(),
+            mutate = { snap -> snap.copy(acquisition = snap.acquisition.copy(region = TargetRegion.CHINA)) },
+        ),
+        ConsumedFieldCase(
+            fieldName = "acquisition.archiveRef",
+            stage = FirmwareAcquisitionStage(),
+            mutate = { snap -> snap.copy(acquisition = snap.acquisition.copy(archiveRef = "fw/archive.zip")) },
+        ),
+        ConsumedFieldCase(
+            fieldName = "acquisition.expectedSha256",
+            stage = FirmwareAcquisitionStage(),
+            mutate = { snap -> snap.copy(acquisition = snap.acquisition.copy(expectedSha256 = "custom-sha256")) },
+        ),
+        ConsumedFieldCase(
+            fieldName = "acquisition.retries",
+            stage = FirmwareAcquisitionStage(),
+            mutate = { snap -> snap.copy(acquisition = snap.acquisition.copy(retries = 5)) },
+        ),
+        ConsumedFieldCase(
+            fieldName = "acquisition.resume",
+            stage = FirmwareAcquisitionStage(),
+            mutate = { snap -> snap.copy(acquisition = snap.acquisition.copy(resume = false)) },
         ),
         ConsumedFieldCase(
             fieldName = "acquisition.firmware.acquisitionUrl",
