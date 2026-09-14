@@ -1,10 +1,8 @@
 package org.ide.lti.core.domain.ports
 
 public sealed interface BuildAdmissionResult {
-    public data class Admitted(
-        val environmentLease: EnvironmentLease,
-        val workspaceLease: WorkspaceWriteLease,
-    ) : BuildAdmissionResult
+    public data class Admitted(val environmentLease: EnvironmentLease, val workspaceLease: WorkspaceWriteLease) :
+        BuildAdmissionResult
 
     public data class Busy(val owner: WorkspaceWriteLease) : BuildAdmissionResult
 
