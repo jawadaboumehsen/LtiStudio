@@ -13,6 +13,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -127,11 +128,7 @@ fun GlassBanner(
                 )
                 .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
-            ) {
+            val iconBlock: @Composable () -> Unit = {
                 if (icon != null) {
                     icon()
                 } else {
@@ -150,11 +147,10 @@ fun GlassBanner(
                         )
                     }
                 }
+            }
 
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
-                ) {
+            val textBlock: @Composable () -> Unit = {
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
                     Text(
                         text = title,
                         style = MaterialTheme.typography.titleSmall,
@@ -174,8 +170,11 @@ fun GlassBanner(
                         )
                     }
                 }
+            }
 
-                if (secondaryAction != null || primaryAction != null || onDismiss != null) {
+            val hasActions = secondaryAction != null || primaryAction != null || onDismiss != null
+            val actionsBlock: @Composable () -> Unit = {
+                if (hasActions) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
@@ -215,6 +214,42 @@ fun GlassBanner(
                                 )
                             }
                         }
+                    }
+                }
+            }
+
+            // Below PanelHeaderStackBreakpoint, icon + title/description (weight(1f), fill
+            // = true) + a fixed-content actions row don't all fit: the weighted text column
+            // gets squeezed toward zero while actions still demands its own natural width,
+            // clipping the title/description away entirely rather than truncating gracefully.
+            // Read the available width once, at this single root, to pick the side-by-side
+            // Row vs. a stacked Column — same cheap, non-nested breakpoint pattern as
+            // RunPanel's header and SetupScreen's root.
+            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                val isNarrow = maxWidth < ComponentSize.PanelHeaderStackBreakpoint
+
+                if (isNarrow) {
+                    Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
+                        ) {
+                            iconBlock()
+                            Box(modifier = Modifier.weight(1f)) { textBlock() }
+                        }
+                        if (hasActions) {
+                            Box(modifier = Modifier.fillMaxWidth()) { actionsBlock() }
+                        }
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
+                    ) {
+                        iconBlock()
+                        Box(modifier = Modifier.weight(1f)) { textBlock() }
+                        actionsBlock()
                     }
                 }
             }
