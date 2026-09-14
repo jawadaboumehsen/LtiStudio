@@ -33,6 +33,7 @@ import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.component.navigation.GlassTab
 import org.ide.lti.core.designsystem.component.navigation.GlassTabBar
 import org.ide.lti.core.designsystem.component.progress.GlassConsoleDrawer
+import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.model.run.Artifact
@@ -99,48 +100,68 @@ private fun ActiveRunContent(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
-        // Top action bar
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            // weight(fill = false): this title/subtitle column is the flexible side of the
-            // header — it truncates first at narrow widths so the action buttons on the
-            // right (fixed content, never wrapped) always keep the space they need.
-            Column(modifier = Modifier.weight(1f, fill = false)) {
-                Text(
-                    text = "ROM Build Pipeline",
-                    style = typography.titleMedium,
-                    color = glassColors.onGlass,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    text = if (uiState.currentWorkspace != null) {
-                        "Workspace: ${uiState.currentWorkspace?.name}"
-                    } else {
-                        "No workspace opened"
-                    },
-                    style = typography.bodySmall,
-                    color = glassColors.onGlassSecondary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+        // Top action bar.
+        // Below PanelHeaderStackBreakpoint even a truncated title and the (never-wrapped)
+        // action buttons don't both fit on one line — GlassLayout's split-panel divider can
+        // legitimately drag this panel down to MinPanelWidth (180dp), well under that. Read
+        // the available width once, at this single root, to pick Row (side-by-side) vs.
+        // Column (stacked) — a stable breakpoint boolean, not a continuous/animated read, so
+        // it stays cheap (see avoiding-subcomposition-pitfalls: nested or per-frame reads are
+        // the expensive case, a single top-level breakpoint check is not).
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            val isNarrow = maxWidth < ComponentSize.PanelHeaderStackBreakpoint
+
+            val titleBlock: @Composable () -> Unit = {
+                Column {
+                    Text(
+                        text = "ROM Build Pipeline",
+                        style = typography.titleMedium,
+                        color = glassColors.onGlass,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        text = if (uiState.currentWorkspace != null) {
+                            "Workspace: ${uiState.currentWorkspace?.name}"
+                        } else {
+                            "No workspace opened"
+                        },
+                        style = typography.bodySmall,
+                        color = glassColors.onGlassSecondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                if (uiState.canCancelRun) {
+            val actionsBlock: @Composable () -> Unit = {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (uiState.canCancelRun) {
+                        GlassButton(
+                            onClick = { viewModel.cancelBuild() },
+                            enabled = !uiState.isCancelling,
+                            variant = GlassButtonVariant.Secondary,
+                        ) {
+                            Text(
+                                text = if (uiState.isCancelling) "Cancelling..." else "Cancel",
+                                style = typography.labelMedium,
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+
                     GlassButton(
-                        onClick = { viewModel.cancelBuild() },
-                        enabled = !uiState.isCancelling,
-                        variant = GlassButtonVariant.Secondary,
+                        onClick = { viewModel.startBuild() },
+                        enabled = !uiState.isRunDisabled,
+                        variant = GlassButtonVariant.Primary,
                     ) {
                         Text(
-                            text = if (uiState.isCancelling) "Cancelling..." else "Cancel",
+                            text = if (uiState.isRunning) "Building..." else "Start Pipeline",
                             style = typography.labelMedium,
                             maxLines = 1,
                             softWrap = false,
@@ -148,19 +169,24 @@ private fun ActiveRunContent(
                         )
                     }
                 }
+            }
 
-                GlassButton(
-                    onClick = { viewModel.startBuild() },
-                    enabled = !uiState.isRunDisabled,
-                    variant = GlassButtonVariant.Primary,
+            if (isNarrow) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.Small),
                 ) {
-                    Text(
-                        text = if (uiState.isRunning) "Building..." else "Start Pipeline",
-                        style = typography.labelMedium,
-                        maxLines = 1,
-                        softWrap = false,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+                    titleBlock()
+                    actionsBlock()
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(modifier = Modifier.weight(1f, fill = false)) { titleBlock() }
+                    actionsBlock()
                 }
             }
         }

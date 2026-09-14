@@ -152,6 +152,7 @@ object ComponentSize {
     val ShortcutHelpWidth: Dp = 320.dp
     val StatusDotSize: Dp = 8.dp
     val StepNodeMinWidth: Dp = 96.dp
+    val PanelHeaderStackBreakpoint: Dp = 280.dp
     val ModalCardMaxWidth: Dp = 440.dp
     val SettingsMaxWidth: Dp = 760.dp
     val SettingsWindowWidth: Dp = 860.dp

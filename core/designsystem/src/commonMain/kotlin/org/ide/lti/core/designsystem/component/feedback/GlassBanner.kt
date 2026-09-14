@@ -182,12 +182,24 @@ fun GlassBanner(
                     ) {
                         if (secondaryAction != null) {
                             GlassSecondaryButton(onClick = secondaryAction.onClick) {
-                                Text(secondaryAction.label, style = MaterialTheme.typography.labelMedium)
+                                Text(
+                                    text = secondaryAction.label,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
                             }
                         }
                         if (primaryAction != null) {
                             GlassPrimaryButton(onClick = primaryAction.onClick) {
-                                Text(primaryAction.label, style = MaterialTheme.typography.labelMedium)
+                                Text(
+                                    text = primaryAction.label,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
                             }
                         }
                         if (onDismiss != null) {
