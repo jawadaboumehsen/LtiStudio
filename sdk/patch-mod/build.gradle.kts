@@ -24,6 +24,7 @@ kotlin {
         desktopMain.dependencies {
             implementation(projects.core.data)
             implementation(libs.clikt)
+            implementation(libs.kotlinx.coroutines.core)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -35,9 +36,10 @@ val desktopTarget = kotlin.targets.getByName("desktop") as org.jetbrains.kotlin.
 val mainCompilation = desktopTarget.compilations.getByName("main")
 val defaultModProject = layout.projectDirectory.dir("examples/file-property").asFile.absolutePath
 
-// The reserved sdk-api.md author task names. compileModPayload and signMod are deliberately absent
-// until their implementations land, rather than registered as tasks that do nothing.
+// The reserved sdk-api.md author task names. signMod is deliberately absent
+// until its implementation lands, rather than registered as a task that does nothing.
 listOf(
+    "compileModPayload" to "Compile author hook Kotlin sources into smali payloads",
     "generateModPlan" to "Generate and validate the author mod plan",
     "validateMod" to "Validate the author mod plan and manifest",
     "testMod" to "Run the author scenarios against the resolved plan",
