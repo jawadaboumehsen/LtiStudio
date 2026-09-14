@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "publisher": "org.ide.lti",
+  "id": "example-file-property",
+  "version": "1.0.0",
+  "settings": [
+    {
+      "type": "BooleanSetting",
+      "id": "opt_custom_hosts",
+      "label": "Install custom hosts file",
+      "help": "Copy custom hosts asset to /system/etc/hosts",
+      "required": false,
+      "advanced": false,
+      "default": true
+    },
+    {
+      "type": "TextSetting",
+      "id": "opt_custom_banner",
+      "label": "Custom system banner",
+      "help": "Banner text inserted into system properties and notice file",
+      "required": false,
+      "advanced": false,
+      "default": "LtiRom Custom Build",
+      "maxLength": 4096
+    }
+  ],
+  "operations": [
+    {
+      "type": "Copy",
+      "id": "op_copy_hosts",
+      "source": {
+        "path": "assets/overlay/hosts"
+      },
+      "destination": {
+        "partition": "system",
+        "relativePath": "etc/hosts"
+      },
+      "condition": {
+        "type": "Equals",
+        "left": {
+          "type": "Setting",
+          "settingId": "opt_custom_hosts"
+        },
+        "right": {
+          "type": "Literal",
+          "value": "true"
+        }
+      }
+    },
+    {
+      "type": "PropertyPatch",
+      "id": "op_prop_banner",
+      "target": {
+        "partition": "system",
+        "relativePath": "build.prop"
+      },
+      "key": "ro.lti.banner",
+      "value": {
+        "type": "Setting",
+        "settingId": "opt_custom_banner"
+      },
+      "condition": {
+        "type": "Always"
+      }
+    },
+    {
+      "type": "TextPatch",
+      "id": "op_patch_notice",
+      "target": {
+        "partition": "product",
+        "relativePath": "etc/notice.txt"
+      },
+      "context": "DEFAULT_BANNER",
+      "replacement": {
+        "type": "Setting",
+        "settingId": "opt_custom_banner"
+      },
+      "expectedSha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "condition": {
+        "type": "Equals",
+        "left": {
+          "type": "Setting",
+          "settingId": "opt_custom_hosts"
+        },
+        "right": {
+          "type": "Literal",
+          "value": "true"
+        }
+      }
+    }
+  ]
+}

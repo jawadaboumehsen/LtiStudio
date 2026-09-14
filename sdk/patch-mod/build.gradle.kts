@@ -7,6 +7,8 @@
  *
  * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
  */
+import org.gradle.process.CommandLineArgumentProvider
+
 plugins {
     alias(libs.plugins.kmp.library.convention)
     id("kotlinx-serialization")
@@ -19,8 +21,45 @@ kotlin {
             implementation(projects.core.model)
             implementation(libs.kotlinx.serialization.json)
         }
+        desktopMain.dependencies {
+            implementation(projects.core.data)
+            implementation(libs.clikt)
+        }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
+    }
+}
+
+val desktopTarget = kotlin.targets.getByName("desktop") as org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
+val mainCompilation = desktopTarget.compilations.getByName("main")
+val defaultModProject = layout.projectDirectory.dir("examples/file-property").asFile.absolutePath
+
+// The reserved sdk-api.md author task names. compileModPayload and signMod are deliberately absent
+// until their implementations land, rather than registered as tasks that do nothing.
+listOf(
+    "generateModPlan" to "Generate and validate the author mod plan",
+    "validateMod" to "Validate the author mod plan and manifest",
+    "testMod" to "Run the author scenarios against the resolved plan",
+    "packageMod" to "Package the author mod into a .lti-mod.zip",
+    "inspectMod" to "Inspect a packaged .lti-mod.zip without executing it",
+).forEach { (taskName, taskDescription) ->
+    tasks.register<JavaExec>(taskName) {
+        group = "sdk"
+        description = taskDescription
+        classpath = mainCompilation.output.allOutputs + mainCompilation.runtimeDependencyFiles
+        mainClass.set("org.ide.lti.sdk.patchmod.cli.PatchModCliKt")
+        val modProject = providers.gradleProperty("modProject").orElse(defaultModProject)
+        val modPackage = providers.gradleProperty("modPackage")
+        argumentProviders.add(
+            CommandLineArgumentProvider {
+                val pkg = modPackage.orNull
+                if (taskName == "inspectMod" && pkg != null) {
+                    listOf(taskName, "--package", pkg)
+                } else {
+                    listOf(taskName, "--project", modProject.get())
+                }
+            },
+        )
     }
 }
