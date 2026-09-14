@@ -11,6 +11,7 @@ package org.ide.lti.core.domain.pipeline
 
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
+import org.ide.lti.core.model.workspace.ExtractionSettings
 import java.security.MessageDigest
 
 public object CacheKeys {
@@ -20,15 +21,26 @@ public object CacheKeys {
         return hash.joinToString("") { "%02x".format(it) }
     }
 
-    public fun stage2ExtractionKey(stage1Key: String, target: TargetDevice): String {
+    public fun stage2ExtractionKey(stage1Key: String, target: TargetDevice): String =
+        stage2ExtractionKey(stage1Key, target, ExtractionSettings())
+
+    public fun stage2ExtractionKey(stage1Key: String, target: TargetDevice, extraction: ExtractionSettings): String {
         val raw = listOf(
             stage1Key,
             target.dynamicPartitions.sorted().joinToString(","),
             target.bootPartitions.sorted().joinToString(","),
             target.activeSlotSuffix,
+            extraction.adapter,
+            extraction.dynamicPartitions.sorted().joinToString(","),
+            extraction.bootPartitions.sorted().joinToString(","),
+            extraction.slot.orEmpty(),
+            extraction.reuseVerifiedExtraction.toString(),
         ).joinToString("|")
         return sha256(raw)
     }
+
+    public fun stage2ExtractionKey(stage1Key: String, target: TargetDevice, snapshot: ConfigurationSnapshot): String =
+        stage2ExtractionKey(stage1Key, target, snapshot.extraction)
 
     public fun stage3AssemblyKey(stage2Key: String, target: TargetDevice, snapshot: ConfigurationSnapshot): String {
         val raw = listOf(
@@ -36,6 +48,11 @@ public object CacheKeys {
             target.hasStandaloneSystemExt.toString(),
             snapshot.assembly.buildType,
             snapshot.assembly.romVersion,
+            snapshot.assembly.includedPartitions.sorted().joinToString(","),
+            snapshot.assembly.systemExtMode,
+            snapshot.assembly.bootFooterPolicy,
+            snapshot.assembly.baselineCleanup.toString(),
+            snapshot.assembly.propertyOverrides.toSortedMap().entries.joinToString(",") { "${it.key}=${it.value}" },
         ).joinToString("|")
         return sha256(raw)
     }
@@ -56,10 +73,22 @@ public object CacheKeys {
     ): String {
         val raw = listOf(
             stage4Key,
+            snapshot.build.filesystem,
+            snapshot.build.compression,
+            snapshot.build.level?.toString().orEmpty(),
+            snapshot.build.blockSize.toString(),
+            snapshot.build.alignment?.toString().orEmpty(),
             snapshot.build.packagePolicy.flashablePartitions.sorted().joinToString(","),
             snapshot.build.packagePolicy.flashableBootPartitions.sorted().joinToString(","),
+            snapshot.build.packagePolicy.bootSlots.sorted().joinToString(","),
+            snapshot.build.packagePolicy.excludeVbmeta.toString(),
+            snapshot.build.packagePolicy.recoverySystemMountPoint,
+            snapshot.build.packagePolicy.metadataPolicy.name,
             snapshot.build.signing.signImages.toString(),
             snapshot.build.signing.signPackage.toString(),
+            // The template names the produced zip, so it is part of this stage's identity: a different
+            // name is a different artifact even when the image bytes are identical.
+            snapshot.build.filenameTemplate,
             avbPubkeySha1,
             platformCertSha1,
             snapshot.assembly.romVersion,
@@ -71,6 +100,8 @@ public object CacheKeys {
         val raw = listOf(
             stage5Key,
             snapshot.release.otaBaseUrl,
+            snapshot.release.channel,
+            snapshot.release.changelog,
         ).joinToString("|")
         return sha256(raw)
     }

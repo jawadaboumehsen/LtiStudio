@@ -9,6 +9,8 @@
  */
 package org.ide.lti.core.domain.pipeline.stages
 
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
 import org.ide.lti.core.domain.pipeline.CacheKeys
 import org.ide.lti.core.domain.pipeline.PipelineStep
 import org.ide.lti.core.domain.pipeline.RuntimeKeys
@@ -21,7 +23,17 @@ import org.ide.lti.core.domain.pipeline.text.DynamicPartitionsOpListWriter
 import org.ide.lti.core.domain.pipeline.text.OtaMetadataWriter
 import org.ide.lti.core.domain.pipeline.text.UpdaterScriptWriter
 import org.ide.lti.core.model.run.StageId
+import org.ide.lti.core.model.target.MetadataPolicy
 import org.ide.lti.core.model.target.TargetDevice
+import org.ide.lti.core.model.workspace.ConfigurationSnapshot
+
+@Serializable
+private data class PackagingPolicy(
+    val excludeVbmeta: Boolean,
+    val recoverySystemMountPoint: String,
+    val metadataPolicy: MetadataPolicy,
+    val bootSlots: List<String>,
+)
 
 /**
  * Stage 5 — EROFS images with AVB footers, stock boot chain, super metadata, block-dat members,
@@ -48,9 +60,19 @@ public class BuildFlashableZipStage : StageDefinition {
         )
 
     override fun outputs(ctx: StageContext): List<String> = ctx.target.dynamicPartitions.map { "out/images/$it.img" } +
-        listOf(zipRelPath(ctx), "${zipRelPath(ctx)}.sha256")
+        listOf(zipRelPath(ctx), "${zipRelPath(ctx)}.sha256") +
+        if (!ctx.snapshot.build.signing.signPackage) listOf("out/package/UNSIGNED") else emptyList()
 
     override fun plan(ctx: StageContext): List<PipelineStep> {
+        if (!ctx.snapshot.build.filesystem.equals("erofs", ignoreCase = true)) {
+            return listOf(
+                PipelineStep.Check("verify filesystem") {
+                    "UNSUPPORTED_FILESYSTEM: Filesystem '${ctx.snapshot.build.filesystem}' is not supported; " +
+                        "only 'erofs' is supported"
+                },
+            )
+        }
+
         val ws = ctx.wsPath
         val stage = ctx.abs(STAGE_DIR)
         val steps = mutableListOf<PipelineStep>()
@@ -78,13 +100,13 @@ public class BuildFlashableZipStage : StageDefinition {
             resultKey = PLATFORM_CERT_SHA1,
         )
         ctx.target.dynamicPartitions.forEach { p -> steps += imageSteps(ctx, p) }
-        if (!ctx.target.dynamicPartitions.all { ctx.has(footeredSize(it)) }) return steps
-
-        ctx.snapshot.build.packagePolicy.flashableBootPartitions.forEach { b -> steps += bootSteps(ctx, b) }
-        steps += superSteps(ctx)
-        ctx.target.dynamicPartitions.forEach { p -> steps += blockDatSteps(ctx, p) }
-        steps += generatedMembers(ctx)
-        steps += packageSteps(ctx)
+        if (ctx.target.dynamicPartitions.all { ctx.has(footeredSize(it)) }) {
+            ctx.snapshot.build.packagePolicy.flashableBootPartitions.forEach { b -> steps += bootSteps(ctx, b) }
+            steps += superSteps(ctx)
+            ctx.target.dynamicPartitions.forEach { p -> steps += blockDatSteps(ctx, p) }
+            steps += generatedMembers(ctx)
+            steps += packageSteps(ctx)
+        }
         return steps
     }
 
@@ -92,11 +114,16 @@ public class BuildFlashableZipStage : StageDefinition {
         val ws = ctx.wsPath
         val img = ctx.abs("out/images/$p.img")
         val steps = mutableListOf<PipelineStep>()
+        val compressionArg = if (ctx.snapshot.build.level != null) {
+            "${ctx.snapshot.build.compression.substringBefore(',')},${ctx.snapshot.build.level}"
+        } else {
+            ctx.snapshot.build.compression
+        }
         steps += PipelineStep.Tool(
             stepCommand(
                 "mkfs.erofs",
                 listOf(
-                    "--quiet", "-z", ctx.snapshot.build.compression, "-b", ctx.snapshot.build.blockSize.toString(),
+                    "--quiet", "-z", compressionArg, "-b", ctx.snapshot.build.blockSize.toString(),
                     "--mount-point", if (p == "system") "/" else p,
                     "--fs-config-file", ctx.abs("work/configs/fs_config-$p"),
                     "--file-contexts", ctx.abs("work/configs/file_context-$p"),
@@ -213,6 +240,9 @@ public class BuildFlashableZipStage : StageDefinition {
             "--group", "$group:${target.superGroupBytes}",
         )
         if (target.virtualAb) lpmakeArgs += "--virtual-ab"
+        if (ctx.snapshot.build.alignment != null) {
+            lpmakeArgs += listOf("--alignment", ctx.snapshot.build.alignment.toString())
+        }
         target.dynamicPartitions.forEach { lpmakeArgs += listOf("--partition", "$it:readonly:0:$group") }
         lpmakeArgs += listOf("--output", ctx.abs("$STAGE_DIR/unsparse_super_empty.img"))
         return listOf(
@@ -278,11 +308,18 @@ public class BuildFlashableZipStage : StageDefinition {
                 },
             )
         }
-        val script = UpdaterScriptWriter.generate(
+        val rawScript = UpdaterScriptWriter.generate(
             ctx.target,
             ctx.snapshot.build.packagePolicy,
             ctx.snapshot.assembly.romVersion,
         )
+        val script = buildString {
+            append(
+                "# package_policy: metadataPolicy=${ctx.snapshot.build.packagePolicy.metadataPolicy}, " +
+                    "excludeVbmeta=${ctx.snapshot.build.packagePolicy.excludeVbmeta}\n",
+            )
+            append(rawScript)
+        }
         val buildInfo = org.ide.lti.core.domain.pipeline.text.BuildInfoWriter.generate(
             org.ide.lti.core.domain.pipeline.text.BuildInfoWriter.BuildInfoParams(
                 device = ctx.target.id,
@@ -304,17 +341,32 @@ public class BuildFlashableZipStage : StageDefinition {
         )
         val changelog = "# LtiRom ${ctx.snapshot.assembly.romVersion} for ${ctx.target.name}\n\n" +
             "Built $date from ${ctx.snapshot.acquisition.firmware.version} (${ctx.snapshot.acquisition.region.name}).\n"
+
+        val policy = PackagingPolicy(
+            excludeVbmeta = ctx.snapshot.build.packagePolicy.excludeVbmeta,
+            recoverySystemMountPoint = ctx.snapshot.build.packagePolicy.recoverySystemMountPoint,
+            metadataPolicy = ctx.snapshot.build.packagePolicy.metadataPolicy,
+            bootSlots = ctx.snapshot.build.packagePolicy.bootSlots,
+        )
+        val policyJson = ConfigurationSnapshot.canonicalJson.encodeToString(policy)
+
         return listOf(
             PipelineStep.Check("updater-script policy") {
-                val updates = script.lineSequence().count { it.contains("block_image_update(") }
+                val updates = rawScript.lineSequence().count { it.contains("block_image_update(") }
                 when {
                     updates != ctx.target.dynamicPartitions.size ->
                         "updater-script has $updates block_image_update calls, " +
                             "expected ${ctx.target.dynamicPartitions.size}"
-                    script.contains("vbmeta") -> "updater-script must not reference vbmeta"
+                    ctx.snapshot.build.packagePolicy.excludeVbmeta && rawScript.contains("vbmeta") ->
+                        "updater-script must not reference vbmeta"
                     else -> null
                 }
             },
+            PipelineStep.WriteFile(
+                relPath = "work/package/policy.json",
+                content = policyJson.encodeToByteArray(),
+                label = "write work/package/policy.json",
+            ),
             PipelineStep.WriteFile("$STAGE_DIR/META-INF/com/google/android/updater-script", script.encodeToByteArray()),
             PipelineStep.WriteVendoredFile(
                 "$STAGE_DIR/META-INF/com/google/android/update-binary",
@@ -339,11 +391,12 @@ public class BuildFlashableZipStage : StageDefinition {
             ),
             "zip stored members",
         )
+        val zipLevel = ctx.snapshot.build.level?.let { "-$it" } ?: "-3"
         steps += PipelineStep.Tool(
             stepCommand(
                 "zip",
                 listOf(
-                    "-3",
+                    zipLevel,
                     "-r",
                     "rom.zip",
                     ".",
@@ -360,14 +413,34 @@ public class BuildFlashableZipStage : StageDefinition {
             ),
             "zip deflated members",
         )
-        steps += PipelineStep.Tool(
-            stepCommand(
+
+        if (ctx.snapshot.build.signing.signPackage) {
+            val signapkArgs = mutableListOf("-w")
+            if (ctx.snapshot.build.alignment != null) {
+                signapkArgs += listOf("-a", ctx.snapshot.build.alignment.toString())
+            }
+            signapkArgs += listOf(
+                ctx.abs("keys/platform.x509.pem"),
+                ctx.abs("keys/platform.pk8"),
+                "$stage/rom.zip",
+                signed,
+            )
+            steps += PipelineStep.Tool(
+                stepCommand("signapk", signapkArgs, ws),
                 "signapk",
-                listOf("-w", ctx.abs("keys/platform.x509.pem"), ctx.abs("keys/platform.pk8"), "$stage/rom.zip", signed),
-                ws,
-            ),
-            "signapk",
-        )
+            )
+        } else {
+            steps += PipelineStep.Tool(
+                stepCommand("cp", listOf("$stage/rom.zip", signed), ws),
+                "copy unsigned zip",
+            )
+            steps += PipelineStep.WriteFile(
+                relPath = "out/package/UNSIGNED",
+                content = "UNSIGNED\n".encodeToByteArray(),
+                label = "write out/package/UNSIGNED",
+            )
+        }
+
         steps += PipelineStep.Tool(
             stepCommand("sha256sum", listOf(signed), ws),
             "sha256 zip",
@@ -404,8 +477,10 @@ public class BuildFlashableZipStage : StageDefinition {
             if ("$b.img" !in members) problems += "missing stock $b.img"
         }
         REQUIRED_MEMBERS.forEach { m -> if (m !in members) problems += "missing $m" }
-        members.filter { it.substringAfterLast('/').startsWith("vbmeta") }
-            .forEach { problems += "forbidden member $it" }
+        if (ctx.snapshot.build.packagePolicy.excludeVbmeta) {
+            members.filter { it.substringAfterLast('/').startsWith("vbmeta") }
+                .forEach { problems += "forbidden member $it" }
+        }
         return problems.takeIf { it.isNotEmpty() }?.joinToString("; ")
     }
 

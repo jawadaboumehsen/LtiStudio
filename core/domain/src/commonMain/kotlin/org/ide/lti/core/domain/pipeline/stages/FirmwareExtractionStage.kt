@@ -37,26 +37,101 @@ public class FirmwareExtractionStage : StageDefinition {
     )
 
     override fun computeCacheKey(ctx: StageContext, previousStageCacheKey: String): String =
-        CacheKeys.stage2ExtractionKey(previousStageCacheKey, ctx.target)
+        CacheKeys.stage2ExtractionKey(previousStageCacheKey, ctx.target, ctx.snapshot)
 
-    override fun outputs(ctx: StageContext): List<String> =
-        ctx.target.dynamicPartitions.flatMap { p ->
+    override fun outputs(ctx: StageContext): List<String> {
+        val dynamicPartitions = effectiveDynamicPartitions(ctx)
+        val bootPartitions = effectiveBootPartitions(ctx)
+        return dynamicPartitions.flatMap { p ->
             listOf("$EXTRACTED/$p.img", "$EXTRACTED/fs_config-$p", "$EXTRACTED/file_context-$p")
-        } + ctx.target.bootPartitions.map { "$EXTRACTED/$it.img" }
+        } + bootPartitions.map { "$EXTRACTED/$it.img" }
+    }
+
+    private fun validate(ctx: StageContext): PipelineStep.Check? {
+        val adapter = ctx.snapshot.extraction.adapter
+        val isAuto = adapter.equals("AUTO", ignoreCase = true)
+        val isPayloadDumper = adapter.equals("payload-dumper-go", ignoreCase = true)
+        val isLpunpack = adapter.equals("lpunpack", ignoreCase = true)
+
+        val dynamicOverrides = ctx.snapshot.extraction.dynamicPartitions
+        val invalidDynamic = dynamicOverrides.filter { it !in ctx.target.dynamicPartitions }
+
+        val bootOverrides = ctx.snapshot.extraction.bootPartitions
+        val invalidBoot = bootOverrides.filter { it !in ctx.target.bootPartitions }
+
+        val slot = ctx.snapshot.extraction.slot
+        val validSlots = buildSet {
+            addAll(ctx.target.packagePolicy.bootSlots)
+            addAll(ctx.target.packagePolicy.bootSlots.map { "_$it" })
+            add(ctx.target.activeSlotSuffix)
+            add(ctx.target.activeSlotSuffix.removePrefix("_"))
+        }
+
+        return when {
+            !isAuto && !isPayloadDumper && !isLpunpack ->
+                PipelineStep.Check("verify extraction adapter") {
+                    "UNSUPPORTED_EXTRACTION_ADAPTER: Extraction adapter '$adapter' is not supported"
+                }
+            invalidDynamic.isNotEmpty() ->
+                PipelineStep.Check("verify dynamic partitions on target") {
+                    "PARTITION_NOT_ON_TARGET: Dynamic partition(s) not on target: ${invalidDynamic.joinToString()}"
+                }
+            invalidBoot.isNotEmpty() ->
+                PipelineStep.Check("verify boot partitions on target") {
+                    "PARTITION_NOT_ON_TARGET: Boot partition(s) not on target: ${invalidBoot.joinToString()}"
+                }
+            !slot.isNullOrBlank() && slot !in validSlots ->
+                PipelineStep.Check("verify extraction slot") {
+                    "UNSUPPORTED_SLOT: Slot '$slot' is not supported on target device '${ctx.target.id}'"
+                }
+            else -> null
+        }
+    }
 
     override fun plan(ctx: StageContext): List<PipelineStep> {
+        val validationError = validate(ctx)
+        if (validationError != null) {
+            return listOf(validationError)
+        }
+
+        val extraction = ctx.snapshot.extraction
+        val slot = extraction.slot
+        val adapter = extraction.adapter
+        val isAuto = adapter.equals("AUTO", ignoreCase = true)
+        val isPayloadDumper = adapter.equals("payload-dumper-go", ignoreCase = true)
+
+        val dynamicPartitions = effectiveDynamicPartitions(ctx)
+        val bootPartitions = effectiveBootPartitions(ctx)
+        val effectiveSlotSuffix = if (!slot.isNullOrBlank()) {
+            if (slot.startsWith("_")) slot else "_$slot"
+        } else {
+            ctx.target.activeSlotSuffix
+        }
+
         val ws = ctx.wsPath
         val extracted = ctx.abs(EXTRACTED)
         val archive = ctx.abs(FirmwareAcquisitionStage.archiveRelPath(ctx.snapshot))
         val steps = mutableListOf<PipelineStep>()
+
+        if (!ctx.snapshot.extraction.reuseVerifiedExtraction) {
+            steps += PipelineStep.Tool(stepCommand("rm", listOf("-rf", extracted), ws), "clean extracted")
+        }
         steps += PipelineStep.Tool(stepCommand("mkdir", listOf("-p", extracted), ws), "mkdir extracted")
 
-        when (ctx.snapshot.acquisition.firmware.sourceKind) {
-            FirmwareSourceKind.OTA_ZIP -> steps += otaSteps(ctx, archive)
-            FirmwareSourceKind.RAW_IMAGE_ZIP -> steps += rawSteps(ctx, archive)
+        val useOta = if (isAuto) {
+            ctx.snapshot.acquisition.firmware.sourceKind == FirmwareSourceKind.OTA_ZIP
+        } else {
+            isPayloadDumper
         }
-        ctx.target.dynamicPartitions.forEach { p -> steps += sidecarSteps(ctx, p) }
-        ctx.target.bootPartitions.forEach { b ->
+
+        if (useOta) {
+            steps += otaSteps(ctx, archive)
+        } else {
+            steps += rawSteps(ctx, archive, dynamicPartitions, bootPartitions, effectiveSlotSuffix)
+        }
+
+        dynamicPartitions.forEach { p -> steps += sidecarSteps(ctx, p) }
+        bootPartitions.forEach { b ->
             steps += PipelineStep.Tool(
                 command = stepCommand("avbtool", listOf("info_image", "--image", "$extracted/$b.img"), ws),
                 label = "avbtool info $b",
@@ -64,7 +139,7 @@ public class FirmwareExtractionStage : StageDefinition {
                 allowFailure = true,
             )
         }
-        BOOT_IMAGES_WITH_HEADER.filter { it in ctx.target.bootPartitions }.forEach { b ->
+        BOOT_IMAGES_WITH_HEADER.filter { it in bootPartitions }.forEach { b ->
             steps += PipelineStep.Tool(
                 command = stepCommand(
                     "unpack_bootimg",
@@ -84,6 +159,12 @@ public class FirmwareExtractionStage : StageDefinition {
         return steps
     }
 
+    private fun effectiveDynamicPartitions(ctx: StageContext): List<String> =
+        ctx.snapshot.extraction.dynamicPartitions.ifEmpty { ctx.target.dynamicPartitions }
+
+    private fun effectiveBootPartitions(ctx: StageContext): List<String> =
+        ctx.snapshot.extraction.bootPartitions.ifEmpty { ctx.target.bootPartitions }
+
     private fun otaSteps(ctx: StageContext, archive: String): List<PipelineStep> {
         val ws = ctx.wsPath
         val firmware = ctx.abs("firmware")
@@ -100,13 +181,19 @@ public class FirmwareExtractionStage : StageDefinition {
         )
     }
 
-    private fun rawSteps(ctx: StageContext, archive: String): List<PipelineStep> {
+    private fun rawSteps(
+        ctx: StageContext,
+        archive: String,
+        dynamicPartitions: List<String>,
+        bootPartitions: List<String>,
+        slot: String,
+    ): List<PipelineStep> {
         val ws = ctx.wsPath
         val raw = ctx.abs("firmware/raw")
         val extracted = ctx.abs(EXTRACTED)
         val steps = mutableListOf<PipelineStep>()
         steps += PipelineStep.Tool(stepCommand("unzip", listOf("-o", archive, "-d", raw), ws), "unzip raw archive")
-        ctx.target.bootPartitions.forEach { b ->
+        bootPartitions.forEach { b ->
             steps += PipelineStep.Tool(stepCommand("cp", listOf("-a", "$raw/$b.img", "$extracted/$b.img"), ws), "cp $b")
             steps += avbPaddingTrim(ctx, b)
         }
@@ -125,12 +212,11 @@ public class FirmwareExtractionStage : StageDefinition {
         } else {
             "$raw/super.img"
         }
-        val slot = ctx.target.activeSlotSuffix
         val lpunpackArgs = listOf("--slot=0") +
-            ctx.target.dynamicPartitions.flatMap { listOf("-p", "$it$slot") } +
+            dynamicPartitions.flatMap { listOf("-p", "$it$slot") } +
             listOf(superImg, extracted)
         steps += PipelineStep.Tool(stepCommand("lpunpack", lpunpackArgs, ws), "lpunpack")
-        ctx.target.dynamicPartitions.forEach { p ->
+        dynamicPartitions.forEach { p ->
             steps += PipelineStep.Tool(
                 stepCommand("mv", listOf("$extracted/$p$slot.img", "$extracted/$p.img"), ws),
                 "rename $p",

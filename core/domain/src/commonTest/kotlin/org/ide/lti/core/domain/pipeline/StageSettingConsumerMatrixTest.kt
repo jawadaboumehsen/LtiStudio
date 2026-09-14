@@ -62,165 +62,15 @@ class StageSettingConsumerMatrixTest {
          * When a task wires an unconsumed field into its owning stage's cache key, this test
          * will fail loudly until the field is moved from this list to the consumed matrix.
          */
-        val UNCONSUMED_FIELDS: List<UnconsumedField> = listOf(
-
-            // ExtractionSettings
-            UnconsumedField(
-                fieldName = "extraction.adapter",
-                targetTask = "T050: extraction adapter selection",
-                stage = FirmwareExtractionStage(),
-                mutate = { snap -> snap.copy(extraction = snap.extraction.copy(adapter = "CUSTOM")) },
-            ),
-            UnconsumedField(
-                fieldName = "extraction.dynamicPartitions",
-                targetTask = "T050: extraction dynamic partitions override",
-                stage = FirmwareExtractionStage(),
-                mutate = { snap -> snap.copy(extraction = snap.extraction.copy(dynamicPartitions = listOf("system"))) },
-            ),
-            UnconsumedField(
-                fieldName = "extraction.bootPartitions",
-                targetTask = "T050: extraction boot partitions override",
-                stage = FirmwareExtractionStage(),
-                mutate = { snap -> snap.copy(extraction = snap.extraction.copy(bootPartitions = listOf("boot"))) },
-            ),
-            UnconsumedField(
-                fieldName = "extraction.slot",
-                targetTask = "T050: extraction slot override",
-                stage = FirmwareExtractionStage(),
-                mutate = { snap -> snap.copy(extraction = snap.extraction.copy(slot = "_b")) },
-            ),
-            UnconsumedField(
-                fieldName = "extraction.reuseVerifiedExtraction",
-                targetTask = "T050: extraction reuse",
-                stage = FirmwareExtractionStage(),
-                mutate = { snap -> snap.copy(extraction = snap.extraction.copy(reuseVerifiedExtraction = false)) },
-            ),
-
-            // AssemblySettings
-            UnconsumedField(
-                fieldName = "assembly.includedPartitions",
-                targetTask = "T050: assembly partition filtering",
-                stage = WorkTreeAssemblyStage(),
-                mutate = { snap -> snap.copy(assembly = snap.assembly.copy(includedPartitions = listOf("vendor"))) },
-            ),
-            UnconsumedField(
-                fieldName = "assembly.systemExtMode",
-                targetTask = "T050: system_ext fold-in mode",
-                stage = WorkTreeAssemblyStage(),
-                mutate = { snap -> snap.copy(assembly = snap.assembly.copy(systemExtMode = "manual")) },
-            ),
-            UnconsumedField(
-                fieldName = "assembly.bootFooterPolicy",
-                targetTask = "T050: boot footer policy",
-                stage = WorkTreeAssemblyStage(),
-                mutate = { snap -> snap.copy(assembly = snap.assembly.copy(bootFooterPolicy = "keep")) },
-            ),
-            UnconsumedField(
-                fieldName = "assembly.baselineCleanup",
-                targetTask = "T050: baseline cleanup",
-                stage = WorkTreeAssemblyStage(),
-                mutate = { snap -> snap.copy(assembly = snap.assembly.copy(baselineCleanup = false)) },
-            ),
-            UnconsumedField(
-                fieldName = "assembly.propertyOverrides",
-                targetTask = "T050: build.prop property overrides",
-                stage = WorkTreeAssemblyStage(),
-                mutate = { snap ->
-                    snap.copy(assembly = snap.assembly.copy(propertyOverrides = mapOf("ro.custom" to "1")))
-                },
-            ),
-
-            // BuildSettings
-            UnconsumedField(
-                fieldName = "build.filesystem",
-                targetTask = "T075: filesystem selection",
-                stage = BuildFlashableZipStage(),
-                mutate = { snap -> snap.copy(build = snap.build.copy(filesystem = "f2fs")) },
-            ),
-            UnconsumedField(
-                fieldName = "build.compression",
-                targetTask = "T075: compression algorithm",
-                stage = BuildFlashableZipStage(),
-                mutate = { snap -> snap.copy(build = snap.build.copy(compression = "none")) },
-            ),
-            UnconsumedField(
-                fieldName = "build.level",
-                targetTask = "T075: compression level",
-                stage = BuildFlashableZipStage(),
-                mutate = { snap -> snap.copy(build = snap.build.copy(level = 4)) },
-            ),
-            UnconsumedField(
-                fieldName = "build.blockSize",
-                targetTask = "T075: filesystem block size",
-                stage = BuildFlashableZipStage(),
-                mutate = { snap -> snap.copy(build = snap.build.copy(blockSize = 8192)) },
-            ),
-            UnconsumedField(
-                fieldName = "build.alignment",
-                targetTask = "T075: payload alignment",
-                stage = BuildFlashableZipStage(),
-                mutate = { snap -> snap.copy(build = snap.build.copy(alignment = 4096)) },
-            ),
-            UnconsumedField(
-                fieldName = "build.filenameTemplate",
-                targetTask = "T075: output zip naming template",
-                stage = BuildFlashableZipStage(),
-                mutate = { snap -> snap.copy(build = snap.build.copy(filenameTemplate = "ROM_{version}.zip")) },
-            ),
-            UnconsumedField(
-                fieldName = "build.packagePolicy.bootSlots",
-                targetTask = "T075: recovery boot slot packaging",
-                stage = BuildFlashableZipStage(),
-                mutate = { snap ->
-                    val policy = snap.build.packagePolicy.copy(bootSlots = listOf("a"))
-                    snap.copy(build = snap.build.copy(packagePolicy = policy))
-                },
-            ),
-            UnconsumedField(
-                fieldName = "build.packagePolicy.excludeVbmeta",
-                targetTask = "T075: vbmeta packaging policy",
-                stage = BuildFlashableZipStage(),
-                mutate = { snap ->
-                    val policy = snap.build.packagePolicy.copy(excludeVbmeta = false)
-                    snap.copy(build = snap.build.copy(packagePolicy = policy))
-                },
-            ),
-            UnconsumedField(
-                fieldName = "build.packagePolicy.recoverySystemMountPoint",
-                targetTask = "T075: recovery mount point",
-                stage = BuildFlashableZipStage(),
-                mutate = { snap ->
-                    val policy = snap.build.packagePolicy.copy(recoverySystemMountPoint = "/system")
-                    snap.copy(build = snap.build.copy(packagePolicy = policy))
-                },
-            ),
-            UnconsumedField(
-                fieldName = "build.packagePolicy.metadataPolicy",
-                targetTask = "T075: metadata packaging policy",
-                stage = BuildFlashableZipStage(),
-                mutate = { snap ->
-                    val policy = snap.build.packagePolicy.copy(metadataPolicy = MetadataPolicy.PACKAGE_ONLY)
-                    snap.copy(build = snap.build.copy(packagePolicy = policy))
-                },
-            ),
-
-            // ReleaseSettings
-            UnconsumedField(
-                fieldName = "release.channel",
-                targetTask = "T075: release channel tracking",
-                stage = GenerateOtaManifestStage(),
-                mutate = { snap -> snap.copy(release = snap.release.copy(channel = "beta")) },
-            ),
-            UnconsumedField(
-                fieldName = "release.changelog",
-                targetTask = "T075: release changelog embedding",
-                stage = GenerateOtaManifestStage(),
-                mutate = { snap -> snap.copy(release = snap.release.copy(changelog = "Initial beta changelog")) },
-            ),
-        )
+        val UNCONSUMED_FIELDS: List<UnconsumedField> = emptyList()
     }
 
     private val consumedFieldCases: List<ConsumedFieldCase> = listOf(
+        ConsumedFieldCase(
+            fieldName = "build.filenameTemplate",
+            stage = BuildFlashableZipStage(),
+            mutate = { snap -> snap.copy(build = snap.build.copy(filenameTemplate = "ROM_{version}.zip")) },
+        ),
         // AcquisitionSettings
         ConsumedFieldCase(
             fieldName = "acquisition.mode",
@@ -293,6 +143,33 @@ class StageSettingConsumerMatrixTest {
             },
         ),
 
+        // ExtractionSettings
+        ConsumedFieldCase(
+            fieldName = "extraction.adapter",
+            stage = FirmwareExtractionStage(),
+            mutate = { snap -> snap.copy(extraction = snap.extraction.copy(adapter = "lpunpack")) },
+        ),
+        ConsumedFieldCase(
+            fieldName = "extraction.dynamicPartitions",
+            stage = FirmwareExtractionStage(),
+            mutate = { snap -> snap.copy(extraction = snap.extraction.copy(dynamicPartitions = listOf("system"))) },
+        ),
+        ConsumedFieldCase(
+            fieldName = "extraction.bootPartitions",
+            stage = FirmwareExtractionStage(),
+            mutate = { snap -> snap.copy(extraction = snap.extraction.copy(bootPartitions = listOf("boot"))) },
+        ),
+        ConsumedFieldCase(
+            fieldName = "extraction.slot",
+            stage = FirmwareExtractionStage(),
+            mutate = { snap -> snap.copy(extraction = snap.extraction.copy(slot = "_b")) },
+        ),
+        ConsumedFieldCase(
+            fieldName = "extraction.reuseVerifiedExtraction",
+            stage = FirmwareExtractionStage(),
+            mutate = { snap -> snap.copy(extraction = snap.extraction.copy(reuseVerifiedExtraction = false)) },
+        ),
+
         // AssemblySettings
         ConsumedFieldCase(
             fieldName = "assembly.buildType",
@@ -303,6 +180,33 @@ class StageSettingConsumerMatrixTest {
             fieldName = "assembly.romVersion",
             stage = WorkTreeAssemblyStage(),
             mutate = { snap -> snap.copy(assembly = snap.assembly.copy(romVersion = "2.0.0")) },
+        ),
+        ConsumedFieldCase(
+            fieldName = "assembly.includedPartitions",
+            stage = WorkTreeAssemblyStage(),
+            mutate = { snap -> snap.copy(assembly = snap.assembly.copy(includedPartitions = listOf("vendor"))) },
+        ),
+        ConsumedFieldCase(
+            fieldName = "assembly.systemExtMode",
+            stage = WorkTreeAssemblyStage(),
+            mutate = { snap -> snap.copy(assembly = snap.assembly.copy(systemExtMode = "fold")) },
+        ),
+        ConsumedFieldCase(
+            fieldName = "assembly.bootFooterPolicy",
+            stage = WorkTreeAssemblyStage(),
+            mutate = { snap -> snap.copy(assembly = snap.assembly.copy(bootFooterPolicy = "preserve")) },
+        ),
+        ConsumedFieldCase(
+            fieldName = "assembly.baselineCleanup",
+            stage = WorkTreeAssemblyStage(),
+            mutate = { snap -> snap.copy(assembly = snap.assembly.copy(baselineCleanup = false)) },
+        ),
+        ConsumedFieldCase(
+            fieldName = "assembly.propertyOverrides",
+            stage = WorkTreeAssemblyStage(),
+            mutate = { snap ->
+                snap.copy(assembly = snap.assembly.copy(propertyOverrides = mapOf("ro.custom" to "1")))
+            },
         ),
 
         // DebloatSettings
@@ -357,6 +261,31 @@ class StageSettingConsumerMatrixTest {
 
         // BuildSettings
         ConsumedFieldCase(
+            fieldName = "build.filesystem",
+            stage = BuildFlashableZipStage(),
+            mutate = { snap -> snap.copy(build = snap.build.copy(filesystem = "f2fs")) },
+        ),
+        ConsumedFieldCase(
+            fieldName = "build.compression",
+            stage = BuildFlashableZipStage(),
+            mutate = { snap -> snap.copy(build = snap.build.copy(compression = "lz4")) },
+        ),
+        ConsumedFieldCase(
+            fieldName = "build.level",
+            stage = BuildFlashableZipStage(),
+            mutate = { snap -> snap.copy(build = snap.build.copy(level = 4)) },
+        ),
+        ConsumedFieldCase(
+            fieldName = "build.blockSize",
+            stage = BuildFlashableZipStage(),
+            mutate = { snap -> snap.copy(build = snap.build.copy(blockSize = 8192)) },
+        ),
+        ConsumedFieldCase(
+            fieldName = "build.alignment",
+            stage = BuildFlashableZipStage(),
+            mutate = { snap -> snap.copy(build = snap.build.copy(alignment = 4096)) },
+        ),
+        ConsumedFieldCase(
             fieldName = "build.packagePolicy.flashablePartitions",
             stage = BuildFlashableZipStage(),
             mutate = { snap ->
@@ -376,6 +305,38 @@ class StageSettingConsumerMatrixTest {
                         packagePolicy = snap.build.packagePolicy.copy(flashableBootPartitions = listOf("boot")),
                     ),
                 )
+            },
+        ),
+        ConsumedFieldCase(
+            fieldName = "build.packagePolicy.bootSlots",
+            stage = BuildFlashableZipStage(),
+            mutate = { snap ->
+                val policy = snap.build.packagePolicy.copy(bootSlots = listOf("a"))
+                snap.copy(build = snap.build.copy(packagePolicy = policy))
+            },
+        ),
+        ConsumedFieldCase(
+            fieldName = "build.packagePolicy.excludeVbmeta",
+            stage = BuildFlashableZipStage(),
+            mutate = { snap ->
+                val policy = snap.build.packagePolicy.copy(excludeVbmeta = false)
+                snap.copy(build = snap.build.copy(packagePolicy = policy))
+            },
+        ),
+        ConsumedFieldCase(
+            fieldName = "build.packagePolicy.recoverySystemMountPoint",
+            stage = BuildFlashableZipStage(),
+            mutate = { snap ->
+                val policy = snap.build.packagePolicy.copy(recoverySystemMountPoint = "/system")
+                snap.copy(build = snap.build.copy(packagePolicy = policy))
+            },
+        ),
+        ConsumedFieldCase(
+            fieldName = "build.packagePolicy.metadataPolicy",
+            stage = BuildFlashableZipStage(),
+            mutate = { snap ->
+                val policy = snap.build.packagePolicy.copy(metadataPolicy = MetadataPolicy.PACKAGE_ONLY)
+                snap.copy(build = snap.build.copy(packagePolicy = policy))
             },
         ),
         ConsumedFieldCase(
@@ -433,6 +394,16 @@ class StageSettingConsumerMatrixTest {
                 )
             },
         ),
+        ConsumedFieldCase(
+            fieldName = "release.channel",
+            stage = GenerateOtaManifestStage(),
+            mutate = { snap -> snap.copy(release = snap.release.copy(channel = "beta")) },
+        ),
+        ConsumedFieldCase(
+            fieldName = "release.changelog",
+            stage = GenerateOtaManifestStage(),
+            mutate = { snap -> snap.copy(release = snap.release.copy(changelog = "Initial beta changelog")) },
+        ),
     )
 
     @Test
@@ -472,8 +443,8 @@ class StageSettingConsumerMatrixTest {
     }
 
     @Test
-    fun `unconsumed fields list is non-empty and has unique field names with task assignments`() {
-        assertTrue(UNCONSUMED_FIELDS.isNotEmpty(), "UNCONSUMED_FIELDS must not be empty")
+    fun `unconsumed fields are uniquely named and each names the task that will consume it`() {
+        // An empty register is the goal state: every settings field has a consumer.
         val fieldNames = UNCONSUMED_FIELDS.map { it.fieldName }
         assertEquals(fieldNames.distinct().size, fieldNames.size, "Duplicate field names in UNCONSUMED_FIELDS")
 

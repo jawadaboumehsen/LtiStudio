@@ -31,22 +31,67 @@ public class WorkTreeAssemblyStage : StageDefinition {
     override fun computeCacheKey(ctx: StageContext, previousStageCacheKey: String): String =
         CacheKeys.stage3AssemblyKey(previousStageCacheKey, ctx.target, ctx.snapshot)
 
-    override fun outputs(ctx: StageContext): List<String> =
-        listOf(BUILD_PROP) + syncedPartitions(ctx).flatMap { p ->
+    override fun outputs(ctx: StageContext): List<String> {
+        val partitions = effectiveDynamicPartitions(ctx)
+        return listOf(BUILD_PROP) + syncedPartitions(ctx, partitions).flatMap { p ->
             listOf("work/configs/fs_config-$p", "work/configs/file_context-$p")
         }
+    }
+
+    private fun validate(ctx: StageContext): PipelineStep.Check? {
+        val included = ctx.snapshot.assembly.includedPartitions
+        val invalidIncluded = included.filter { it !in ctx.target.dynamicPartitions }
+        val systemExtMode = ctx.snapshot.assembly.systemExtMode.lowercase()
+        val bootFooterPolicy = ctx.snapshot.assembly.bootFooterPolicy.lowercase()
+        val invalidProp = ctx.snapshot.assembly.propertyOverrides.entries.firstOrNull { (k, v) ->
+            '\n' in k || '\u0000' in k || '\n' in v || '\u0000' in v
+        }
+        val reserved = ctx.snapshot.assembly.propertyOverrides.keys.filter { it in RESERVED_PROPERTIES }
+
+        return when {
+            invalidIncluded.isNotEmpty() ->
+                PipelineStep.Check("verify included partitions on target") {
+                    "PARTITION_NOT_ON_TARGET: Included partition(s) not on target: ${invalidIncluded.joinToString()}"
+                }
+            systemExtMode !in SUPPORTED_SYSTEM_EXT_MODES ->
+                PipelineStep.Check("verify system_ext mode") {
+                    "UNSUPPORTED_SYSTEM_EXT_MODE: Unsupported system_ext mode '${ctx.snapshot.assembly.systemExtMode}'"
+                }
+            bootFooterPolicy !in SUPPORTED_FOOTER_POLICIES ->
+                PipelineStep.Check("verify boot footer policy") {
+                    "UNSUPPORTED_FOOTER_POLICY: Unsupported boot footer policy " +
+                        "'${ctx.snapshot.assembly.bootFooterPolicy}'"
+                }
+            invalidProp != null ->
+                PipelineStep.Check("verify property overrides") {
+                    "INVALID_PROPERTY_OVERRIDE: Property override key or value contains newline or NUL: " +
+                        "'${invalidProp.key}'"
+                }
+            reserved.isNotEmpty() ->
+                PipelineStep.Check("verify property overrides") {
+                    "RESERVED_PROPERTY: Property override contains reserved key(s): ${reserved.joinToString()}"
+                }
+            else -> null
+        }
+    }
 
     override fun plan(ctx: StageContext): List<PipelineStep> {
+        val validationError = validate(ctx)
+        if (validationError != null) {
+            return listOf(validationError)
+        }
+
         val ws = ctx.wsPath
         val extracted = ctx.abs(FirmwareExtractionStage.EXTRACTED)
         val work = ctx.abs("work")
+        val dynamicPartitions = effectiveDynamicPartitions(ctx)
         val steps = mutableListOf<PipelineStep>()
         steps += PipelineStep.Tool(
             stepCommand("mkdir", listOf("-p", "$work/configs", "$work/kernel"), ws),
             "mkdir work",
         )
 
-        syncedPartitions(ctx).forEach { p ->
+        syncedPartitions(ctx, dynamicPartitions).forEach { p ->
             steps += PipelineStep.Tool(
                 stepCommand("rsync", listOf("-a", "--delete", "$extracted/$p/", "$work/$p/"), ws),
                 "rsync $p",
@@ -60,8 +105,9 @@ public class WorkTreeAssemblyStage : StageDefinition {
                 "cp file_context $p",
             )
         }
-        if (foldsSystemExt(ctx)) steps += systemExtFoldIn(ctx)
+        if (foldsSystemExt(ctx, dynamicPartitions)) steps += systemExtFoldIn(ctx)
 
+        val shouldEraseFooter = ctx.snapshot.assembly.bootFooterPolicy.equals("erase", ignoreCase = true)
         ctx.target.bootPartitions.forEach { b ->
             val infoKey = RuntimeKeys.kernelInfo(b)
             steps += PipelineStep.Tool(
@@ -74,7 +120,7 @@ public class WorkTreeAssemblyStage : StageDefinition {
                 resultKey = infoKey,
                 allowFailure = true,
             )
-            if (ctx.exitOf(infoKey) == 0) {
+            if (shouldEraseFooter && ctx.exitOf(infoKey) == 0) {
                 steps += PipelineStep.Tool(
                     stepCommand("avbtool", listOf("erase_footer", "--image", "$work/kernel/$b.img"), ws),
                     "erase footer $b",
@@ -82,21 +128,33 @@ public class WorkTreeAssemblyStage : StageDefinition {
             }
         }
 
-        steps += PipelineStep.Tool(
-            stepCommand("find", listOf(work, "-type", "d", "-name", "oat", "-exec", "rm", "-rf", "{}", "+"), ws),
-            "purge oat dirs",
-        )
-        steps += PipelineStep.Tool(
-            stepCommand(
-                "find",
-                listOf(work, "-type", "f", "(") + AOT_NAME_ARGS + listOf(")", "-delete"),
-                ws,
-            ),
-            "purge aot files",
-        )
-        steps += PipelineStep.EditFile(BUILD_PROP, BuildPropStamper.stamper(ctx), "stamp build.prop")
+        if (ctx.snapshot.assembly.baselineCleanup) {
+            steps += PipelineStep.Tool(
+                stepCommand("find", listOf(work, "-type", "d", "-name", "oat", "-exec", "rm", "-rf", "{}", "+"), ws),
+                "purge oat dirs",
+            )
+            steps += PipelineStep.Tool(
+                stepCommand(
+                    "find",
+                    listOf(work, "-type", "f", "(") + AOT_NAME_ARGS + listOf(")", "-delete"),
+                    ws,
+                ),
+                "purge aot files",
+            )
+        }
+
+        val baseStamper = BuildPropStamper.stamper(ctx)
+        val overrides = ctx.snapshot.assembly.propertyOverrides
+        val transform: (String) -> String = { original ->
+            val stamped = baseStamper(original)
+            if (overrides.isEmpty()) stamped else applyPropertyOverrides(stamped, overrides)
+        }
+        steps += PipelineStep.EditFile(BUILD_PROP, transform, "stamp build.prop")
         return steps
     }
+
+    private fun effectiveDynamicPartitions(ctx: StageContext): List<String> =
+        ctx.snapshot.assembly.includedPartitions.ifEmpty { ctx.target.dynamicPartitions }
 
     private fun systemExtFoldIn(ctx: StageContext): List<PipelineStep> {
         val ws = ctx.wsPath
@@ -144,14 +202,44 @@ public class WorkTreeAssemblyStage : StageDefinition {
         }
     }
 
-    private fun foldsSystemExt(ctx: StageContext): Boolean =
-        !ctx.target.hasStandaloneSystemExt && "system_ext" in ctx.target.dynamicPartitions
+    private fun foldsSystemExt(ctx: StageContext, dynamicPartitions: List<String>): Boolean {
+        if ("system_ext" !in dynamicPartitions) return false
+        return when (ctx.snapshot.assembly.systemExtMode.lowercase()) {
+            "auto" -> !ctx.target.hasStandaloneSystemExt
+            "fold" -> true
+            "standalone" -> false
+            else -> !ctx.target.hasStandaloneSystemExt
+        }
+    }
 
-    private fun syncedPartitions(ctx: StageContext): List<String> =
-        ctx.target.dynamicPartitions.filter { it != "system_ext" || ctx.target.hasStandaloneSystemExt }
+    private fun syncedPartitions(ctx: StageContext, dynamicPartitions: List<String>): List<String> =
+        dynamicPartitions.filter { it != "system_ext" || !foldsSystemExt(ctx, dynamicPartitions) }
+
+    private fun applyPropertyOverrides(text: String, overrides: Map<String, String>): String {
+        val remaining = overrides.toMutableMap()
+        val lines = text.lineSequence().map { line ->
+            val key = line.substringBefore('=')
+            if (key in remaining) {
+                val value = remaining.remove(key)
+                "$key=$value"
+            } else {
+                line
+            }
+        }.toMutableList()
+        while (lines.isNotEmpty() && lines.last().isBlank()) {
+            lines.removeAt(lines.lastIndex)
+        }
+        for ((k, v) in remaining) {
+            lines.add("$k=$v")
+        }
+        return lines.joinToString("\n", postfix = "\n")
+    }
 
     public companion object {
         public const val BUILD_PROP: String = "work/system/system/build.prop"
+        private val SUPPORTED_SYSTEM_EXT_MODES = setOf("auto", "fold", "standalone")
+        private val SUPPORTED_FOOTER_POLICIES = setOf("erase", "preserve")
+        private val RESERVED_PROPERTIES = setOf("ro.build.version.release", "ro.build.version.security_patch")
         private val AOT_NAME_ARGS = listOf(
             "-name", "*.vdex", "-o", "-name", "*.odex", "-o", "-name", "*.art",
             "-o", "-name", "boot-image.prof", "-o", "-name", "boot-image.bprof",
