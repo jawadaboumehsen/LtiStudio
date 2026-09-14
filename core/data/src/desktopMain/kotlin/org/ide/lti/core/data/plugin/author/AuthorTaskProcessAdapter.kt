@@ -10,6 +10,7 @@
 package org.ide.lti.core.data.plugin.author
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
@@ -119,7 +120,9 @@ class AuthorTaskProcessAdapter(
         val normalizedPath = Path.of(project.path).toAbsolutePath().normalize().toString()
         val approval = TrustApproval(
             projectPath = normalizedPath,
-            fingerprint = project.fingerprint,
+            // Recomputed from disk: a caller holding a stale AuthorProject would otherwise store an
+            // approval whose fingerprint can never match, silently locking the project out.
+            fingerprint = fingerprint(project.path) ?: project.fingerprint,
             approvedAtEpochMs = timeProvider(),
         )
         val file = approvalFileFor(project.path)
@@ -174,19 +177,18 @@ class AuthorTaskProcessAdapter(
             pb.directory(projectDir.toFile())
             val process = pb.start()
 
+            var stdout = ""
+            var stderr = ""
+            // Daemon threads: on timeout destroyForcibly() closes these pipes underneath them.
+            val stdoutReader = thread(name = "author-task-stdout", isDaemon = true) {
+                stdout = runCatching { readBounded(process.inputStream, MAX_OUTPUT_BYTES) }.getOrDefault("")
+            }
+            val stderrReader = thread(name = "author-task-stderr", isDaemon = true) {
+                stderr = runCatching { readBounded(process.errorStream, MAX_OUTPUT_BYTES) }.getOrDefault("")
+            }
+
             try {
                 withTimeout(timeoutMs) {
-                    var stdout = ""
-                    var stderr = ""
-                    // Dedicated threads, not the common ForkJoinPool: its parallelism can be 1, and two
-                    // blocking pipe readers there would deadlock against a full stderr buffer.
-                    val stdoutReader = thread(name = "author-task-stdout") {
-                        stdout = readBounded(process.inputStream, MAX_OUTPUT_BYTES)
-                    }
-                    val stderrReader = thread(name = "author-task-stderr") {
-                        stderr = readBounded(process.errorStream, MAX_OUTPUT_BYTES)
-                    }
-
                     while (process.isAlive) {
                         delay(POLL_INTERVAL_MS)
                     }
@@ -211,6 +213,11 @@ class AuthorTaskProcessAdapter(
                         )
                     }
                 }
+            } catch (_: TimeoutCancellationException) {
+                destroyProcessTree(process)
+                stdoutReader.join(READER_DRAIN_MS)
+                stderrReader.join(READER_DRAIN_MS)
+                AuthorTaskResult.TimedOut(afterMs = timeoutMs, stdout = stdout, stderr = stderr)
             } finally {
                 if (process.isAlive) {
                     destroyProcessTree(process)
@@ -342,5 +349,6 @@ class AuthorTaskProcessAdapter(
         )
         private const val MAX_OUTPUT_BYTES = 256 * 1024
         private const val POLL_INTERVAL_MS = 50L
+        private const val READER_DRAIN_MS = 500L
     }
 }

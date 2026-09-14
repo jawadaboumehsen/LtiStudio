@@ -43,7 +43,8 @@ class StandaloneDistributionTest {
             )
         }
 
-        val pomFile = pomFiles.first()
+        // local-maven accumulates one timestamped version per build; assert against the newest.
+        val pomFile = pomFiles.maxBy { it.lastModified() }
         val dependencies = parsePomDependencies(pomFile)
 
         val hasDomain = dependencies.any { dep ->

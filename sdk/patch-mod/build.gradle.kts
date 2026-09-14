@@ -89,3 +89,8 @@ publishing {
         }
     }
 }
+
+// StandaloneDistributionTest reads build/local-maven, so the publication must exist first.
+tasks.named("desktopTest") {
+    dependsOn("publishAllPublicationsToLocalMavenRepository")
+}

@@ -74,4 +74,7 @@ sealed interface AuthorTaskResult {
     ) : AuthorTaskResult
 
     data class Refused(val reason: AuthorTaskRefusal) : AuthorTaskResult
+
+    /** The task outlived its timeout and its process tree was destroyed. Never a success receipt. */
+    data class TimedOut(val afterMs: Long, val stdout: String = "", val stderr: String = "") : AuthorTaskResult
 }
