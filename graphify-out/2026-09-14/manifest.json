@@ -8178,9 +8178,9 @@
     "semantic_hash": ""
   },
   "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/remote/StepExecutionAdapter.kt": {
-    "mtime": 1789217341.8384755,
-    "seen": 1789260361.2553003,
-    "ast_hash": "6a8c2123d789c4c1b294259dd209e3ee",
+    "mtime": 1789388515.417042,
+    "seen": 1789389311.5581892,
+    "ast_hash": "9fd19232cec7d9a2270279fe25ff6c2c",
     "semantic_hash": ""
   },
   "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/remote/ToolPublicationAdapter.kt": {
@@ -8718,9 +8718,9 @@
     "semantic_hash": ""
   },
   "core/domain/src/commonMain/kotlin/org/ide/lti/core/domain/ports/PipelineExecutionPort.kt": {
-    "mtime": 1789383858.7886028,
-    "seen": 1789387556.225789,
-    "ast_hash": "f560c0154a0e42d4eef2a91fcfae6248",
+    "mtime": 1789388264.7119422,
+    "seen": 1789389311.5581892,
+    "ast_hash": "37a33bab8f79f429877dbfbcadc53f59",
     "semantic_hash": ""
   },
   "core/domain/src/commonMain/kotlin/org/ide/lti/core/domain/ports/ToolPublicationPort.kt": {
@@ -18213,6 +18213,96 @@
     "mtime": 1789352890.403765,
     "seen": 1789387556.227804,
     "ast_hash": "fac7f31c8018bf533e3e95e59dadcbe2",
+    "semantic_hash": ""
+  },
+  "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/admission/EnvironmentLeaseRepository.kt": {
+    "mtime": 1789388696.023515,
+    "seen": 1789389311.5581892,
+    "ast_hash": "75508784f2287343f7fcae0957e91282",
+    "semantic_hash": ""
+  },
+  "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/admission/LeaseStorage.kt": {
+    "mtime": 1789388674.5159817,
+    "seen": 1789389311.5581892,
+    "ast_hash": "b03b28ad2223978a2a79aa756c939c5c",
+    "semantic_hash": ""
+  },
+  "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/admission/WorkspaceAdmissionRepository.kt": {
+    "mtime": 1789388686.1104903,
+    "seen": 1789389311.5581892,
+    "ast_hash": "fa42957f59f5b3a1d5363eac22244e7b",
+    "semantic_hash": ""
+  },
+  "core/data/src/desktopTest/kotlin/org/ide/lti/core/data/admission/AdmissionContractTest.kt": {
+    "mtime": 1789388463.05863,
+    "seen": 1789389311.5581892,
+    "ast_hash": "8725fe97b27588bce3f3449718378d07",
+    "semantic_hash": ""
+  },
+  "core/domain/src/commonMain/kotlin/org/ide/lti/core/domain/pipeline/StageCheckpoint.kt": {
+    "mtime": 1789388249.0146947,
+    "seen": 1789389311.5581892,
+    "ast_hash": "445e109bbfd7f656aca398dc28851fed",
+    "semantic_hash": ""
+  },
+  "core/domain/src/commonMain/kotlin/org/ide/lti/core/domain/pipeline/configuration/ValidationError.kt": {
+    "mtime": 1789388254.9966767,
+    "seen": 1789389311.5581892,
+    "ast_hash": "4f3205d8929bef1b6813c148d12ee032",
+    "semantic_hash": ""
+  },
+  "core/domain/src/commonMain/kotlin/org/ide/lti/core/domain/ports/BoundedTransferPort.kt": {
+    "mtime": 1789387865.250838,
+    "seen": 1789389311.5581892,
+    "ast_hash": "4c11f2b2b8e05c061724b65d4a53fd40",
+    "semantic_hash": ""
+  },
+  "core/domain/src/commonMain/kotlin/org/ide/lti/core/domain/ports/BuildAdmissionResult.kt": {
+    "mtime": 1789389247.6379416,
+    "seen": 1789389311.5581892,
+    "ast_hash": "e695f4a378a73e14c26e525b59a845bf",
+    "semantic_hash": ""
+  },
+  "core/domain/src/commonMain/kotlin/org/ide/lti/core/domain/ports/CheckpointPort.kt": {
+    "mtime": 1789388259.4013722,
+    "seen": 1789389311.5581892,
+    "ast_hash": "ba5b06e7aedbaae2653308f1f51ff8bb",
+    "semantic_hash": ""
+  },
+  "core/domain/src/commonMain/kotlin/org/ide/lti/core/domain/ports/EnvironmentLeasePort.kt": {
+    "mtime": 1789387828.3851678,
+    "seen": 1789389311.5581892,
+    "ast_hash": "7f27f348909ad1a5ae0b5cc311c344bd",
+    "semantic_hash": ""
+  },
+  "core/domain/src/commonMain/kotlin/org/ide/lti/core/domain/ports/UnsupportedTransportCapabilityException.kt": {
+    "mtime": 1789388273.2042336,
+    "seen": 1789389311.5581892,
+    "ast_hash": "48a231989121b64b91fbcc7dab864fb5",
+    "semantic_hash": ""
+  },
+  "core/domain/src/commonMain/kotlin/org/ide/lti/core/domain/ports/WorkspaceAdmissionPort.kt": {
+    "mtime": 1789387824.172369,
+    "seen": 1789389311.5581892,
+    "ast_hash": "046716dc317700ac1f29aa344414d728",
+    "semantic_hash": ""
+  },
+  "core/domain/src/commonTest/kotlin/org/ide/lti/core/domain/pipeline/StageCheckpointTest.kt": {
+    "mtime": 1789387917.8191898,
+    "seen": 1789389311.5591936,
+    "ast_hash": "98ed3177080022efb124d9bc8418d624",
+    "semantic_hash": ""
+  },
+  "core/domain/src/commonTest/kotlin/org/ide/lti/core/domain/pipeline/configuration/ValidationErrorTest.kt": {
+    "mtime": 1789387816.6383517,
+    "seen": 1789389311.5591936,
+    "ast_hash": "ee4eacaa13d0154d1ff176051ba2f037",
+    "semantic_hash": ""
+  },
+  "core/domain/src/commonTest/kotlin/org/ide/lti/core/domain/ports/BoundedTransferPortTest.kt": {
+    "mtime": 1789388430.0793016,
+    "seen": 1789389311.5591936,
+    "ast_hash": "0b92e61e131324cf332bc5131d468eb2",
     "semantic_hash": ""
   }
 }

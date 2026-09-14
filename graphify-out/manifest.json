@@ -18304,5 +18304,113 @@
     "seen": 1789389311.5591936,
     "ast_hash": "0b92e61e131324cf332bc5131d468eb2",
     "semantic_hash": ""
+  },
+  "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/patch/BytecodeMatcher.kt": {
+    "mtime": 1789397025.7012322,
+    "seen": 1789397150.3993814,
+    "ast_hash": "84d71e915d8567ac3b837276b25e35da",
+    "semantic_hash": ""
+  },
+  "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/plugin/PluginPackageReader.kt": {
+    "mtime": 1789395994.0539463,
+    "seen": 1789397150.3993814,
+    "ast_hash": "3a5a3db5e1249f2082f0f33c50d74832",
+    "semantic_hash": ""
+  },
+  "core/data/src/desktopTest/kotlin/org/ide/lti/core/data/patch/BytecodeMatcherTest.kt": {
+    "mtime": 1789396607.705311,
+    "seen": 1789397150.3993814,
+    "ast_hash": "2362e0669fb56a159e8f1f26b4140d68",
+    "semantic_hash": ""
+  },
+  "core/data/src/desktopTest/kotlin/org/ide/lti/core/data/plugin/PluginPackageReaderTest.kt": {
+    "mtime": 1789395362.147894,
+    "seen": 1789397150.3993814,
+    "ast_hash": "c7f8054cd377bd413aa6f6fff5fb025a",
+    "semantic_hash": ""
+  },
+  "core/domain/src/commonMain/kotlin/org/ide/lti/core/domain/plugin/ConcreteMutationPlan.kt": {
+    "mtime": 1789394087.9192815,
+    "seen": 1789397150.3993814,
+    "ast_hash": "e20fc6bd2dea38cba897e25804debd8b",
+    "semantic_hash": ""
+  },
+  "core/domain/src/commonMain/kotlin/org/ide/lti/core/domain/plugin/PluginPackageCodec.kt": {
+    "mtime": 1789395280.228736,
+    "seen": 1789397150.3993814,
+    "ast_hash": "c5a82ca928b02dd1e8ab96eef53303fe",
+    "semantic_hash": ""
+  },
+  "core/domain/src/commonMain/kotlin/org/ide/lti/core/domain/plugin/PluginPackagePolicy.kt": {
+    "mtime": 1789389892.8514032,
+    "seen": 1789397150.3993814,
+    "ast_hash": "b92754e8ee8af21321ae5c9a5a09acaa",
+    "semantic_hash": ""
+  },
+  "core/domain/src/commonMain/kotlin/org/ide/lti/core/domain/plugin/PluginPlanResolver.kt": {
+    "mtime": 1789394612.644391,
+    "seen": 1789397150.3993814,
+    "ast_hash": "6b59808eedfdb78b6a1a594db840aec9",
+    "semantic_hash": ""
+  },
+  "core/domain/src/commonMain/kotlin/org/ide/lti/core/domain/plugin/PluginPlanValidator.kt": {
+    "mtime": 1789393472.5580144,
+    "seen": 1789397150.3993814,
+    "ast_hash": "a217caa1032d58a66f8e1b21a1de5964",
+    "semantic_hash": ""
+  },
+  "core/domain/src/commonTest/kotlin/org/ide/lti/core/domain/plugin/PluginPackageCodecTest.kt": {
+    "mtime": 1789395228.9880874,
+    "seen": 1789397150.3993814,
+    "ast_hash": "40ea148de9be4f982b2a52650a0e241c",
+    "semantic_hash": ""
+  },
+  "core/domain/src/commonTest/kotlin/org/ide/lti/core/domain/plugin/PluginPlanContractTest.kt": {
+    "mtime": 1789390095.8864179,
+    "seen": 1789397150.3993814,
+    "ast_hash": "4623cd3260fa157388bc417e42254207",
+    "semantic_hash": ""
+  },
+  "core/domain/src/commonTest/kotlin/org/ide/lti/core/domain/plugin/PluginPlanResolverTest.kt": {
+    "mtime": 1789393897.9600997,
+    "seen": 1789397150.3993814,
+    "ast_hash": "a18402bc2ea92351a9f44f1ff6fa4b70",
+    "semantic_hash": ""
+  },
+  "core/model/src/commonMain/kotlin/org/ide/lti/core/model/plugin/PluginPlan.kt": {
+    "mtime": 1789389864.7582607,
+    "seen": 1789397150.3993814,
+    "ast_hash": "32509710fa70696f4e88023928da9012",
+    "semantic_hash": ""
+  },
+  "core/model/src/commonTest/kotlin/org/ide/lti/core/model/plugin/PluginPlanSerializationTest.kt": {
+    "mtime": 1789389804.1172032,
+    "seen": 1789397150.3993814,
+    "ast_hash": "575e2ffb3d0a3c46f5d7dcffcebb495a",
+    "semantic_hash": ""
+  },
+  "sdk/patch-mod/src/commonMain/kotlin/org/ide/lti/sdk/patchmod/RomModDsl.kt": {
+    "mtime": 1789394327.227406,
+    "seen": 1789397150.3993814,
+    "ast_hash": "eb7b724790f12c70a6bd421d04c2d81f",
+    "semantic_hash": ""
+  },
+  "sdk/patch-mod/src/commonTest/kotlin/org/ide/lti/sdk/patchmod/RomModDslTest.kt": {
+    "mtime": 1789394160.9279845,
+    "seen": 1789397150.3993814,
+    "ast_hash": "242615873ea3d3b066ff00896ef165c5",
+    "semantic_hash": ""
+  },
+  "sdk/patch-mod/src/desktopMain/kotlin/org/ide/lti/sdk/patchmod/PackageWriter.kt": {
+    "mtime": 1789395601.5160568,
+    "seen": 1789397150.3993814,
+    "ast_hash": "7b76fe86115a0a7e9acdda8cca6692ce",
+    "semantic_hash": ""
+  },
+  "sdk/patch-mod/src/desktopTest/kotlin/org/ide/lti/sdk/patchmod/PackageWriterTest.kt": {
+    "mtime": 1789395605.2033365,
+    "seen": 1789397150.3993814,
+    "ast_hash": "ab014b0409b3035680e5e29c83194bcd",
+    "semantic_hash": ""
   }
 }
