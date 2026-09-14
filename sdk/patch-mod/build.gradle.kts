@@ -7,11 +7,20 @@
  *
  * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
  */
+import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.process.CommandLineArgumentProvider
 
 plugins {
     alias(libs.plugins.kmp.library.convention)
     id("kotlinx-serialization")
+    `maven-publish`
+}
+
+group = "org.ide.lti"
+version = if (project.version.toString().isNotEmpty() && project.version.toString() != "unspecified") {
+    project.version.toString()
+} else {
+    "0.1.0-SNAPSHOT"
 }
 
 kotlin {
@@ -63,5 +72,20 @@ listOf(
                 }
             },
         )
+    }
+}
+
+publishing {
+    repositories {
+        maven {
+            name = "localMaven"
+            url = uri(layout.buildDirectory.dir("local-maven"))
+        }
+    }
+    publications.withType<MavenPublication>().configureEach {
+        groupId = "org.ide.lti"
+        if (name == "desktop") {
+            artifactId = "patch-mod-sdk"
+        }
     }
 }
