@@ -47,6 +47,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import com.kashif_e.backdrop.Backdrop
 import kotlinx.coroutines.delay
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
@@ -197,6 +198,7 @@ fun GlassConsoleDrawer(
                         color = glassColors.glassAccent,
                         maxLines = 1,
                         softWrap = false,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                     )
                 }
             }
@@ -256,6 +258,7 @@ fun GlassConsoleDrawer(
                                     ),
                                     color = lineTint,
                                     softWrap = false,
+                                    overflow = TextOverflow.Clip,
                                 )
                             }
                         }

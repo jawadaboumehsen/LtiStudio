@@ -50,6 +50,7 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import com.kashif_e.backdrop.Backdrop
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
@@ -163,6 +164,9 @@ fun GlassActionCard(
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
                 color = glassColors.onGlass,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis,
             )
             Spacer(modifier = Modifier.height(Spacing.ExtraExtraSmall))
             Text(
@@ -170,6 +174,8 @@ fun GlassActionCard(
                 style = MaterialTheme.typography.bodySmall,
                 color = glassColors.onGlassSecondary,
                 maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis,
             )
             if (shortcut != null) {
                 Spacer(modifier = Modifier.height(Spacing.ExtraExtraSmall))
@@ -178,6 +184,8 @@ fun GlassActionCard(
                     style = MaterialTheme.typography.labelSmall,
                     color = glassColors.onGlassMuted,
                     maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }
@@ -316,12 +324,18 @@ fun GlassItemCard(
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = if (isHighlighted) FontWeight.Bold else FontWeight.SemiBold,
                     color = glassColors.onGlass,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
                 )
                 if (subtitle != null) {
                     Text(
                         text = subtitle,
                         style = MaterialTheme.typography.bodySmall,
                         color = glassColors.onGlassSecondary,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }

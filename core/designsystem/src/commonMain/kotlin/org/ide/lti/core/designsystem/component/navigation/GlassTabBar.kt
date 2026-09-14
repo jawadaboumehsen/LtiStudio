@@ -116,6 +116,9 @@ fun GlassTab(
                 text = text,
                 style = MaterialTheme.typography.bodySmall,
                 color = contentColor,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis,
             )
         },
         selected = selected,

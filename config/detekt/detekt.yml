@@ -411,6 +411,8 @@ lti-design-system:
     excludes: ["**/theme/**"]
   NoBackdropEffectImport:
     active: true
+  NoUnprotectedTextClip:
+    active: true
 
 naming:
   active: true

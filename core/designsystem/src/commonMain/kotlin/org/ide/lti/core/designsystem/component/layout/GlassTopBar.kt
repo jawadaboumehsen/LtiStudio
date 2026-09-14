@@ -49,6 +49,7 @@ import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.drawBackdrop
 import com.kashif_e.backdrop.highlight.Highlight
@@ -324,6 +325,9 @@ private fun GlassTopBarLeftSection(
                             letterSpacing = LetterSpacing.Widest,
                         ),
                         color = glassColors.onGlass,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
                     )
 
                     // Workspace / File pill indicator
@@ -356,6 +360,9 @@ private fun GlassTopBarLeftSection(
                                     letterSpacing = LetterSpacing.Snug,
                                 ),
                                 color = glassColors.onGlassSecondary,
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Ellipsis,
                             )
                         }
                     }

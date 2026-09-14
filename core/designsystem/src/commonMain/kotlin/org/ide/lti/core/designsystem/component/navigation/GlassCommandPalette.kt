@@ -24,6 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import org.ide.lti.core.designsystem.component.display.GlassCard
@@ -136,11 +137,17 @@ private fun CommandRow(command: CommandItem, onExecute: () -> Unit) {
                 text = command.title,
                 style = MaterialTheme.typography.bodyMedium,
                 color = GlassTheme.colors.onGlass,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis,
             )
             Text(
                 text = command.subtitle,
                 style = MaterialTheme.typography.labelSmall,
                 color = GlassTheme.colors.onGlassMuted,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis,
             )
         }
         if (command.shortcut != null) {
@@ -148,6 +155,9 @@ private fun CommandRow(command: CommandItem, onExecute: () -> Unit) {
                 text = command.shortcut,
                 style = MaterialTheme.typography.labelSmall,
                 color = GlassTheme.colors.onGlassMuted,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }

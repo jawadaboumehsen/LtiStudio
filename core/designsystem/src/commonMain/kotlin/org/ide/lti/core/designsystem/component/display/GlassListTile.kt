@@ -39,6 +39,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
@@ -103,6 +104,9 @@ fun GlassListTile(
                     text = trailing.text,
                     style = MaterialTheme.typography.bodySmall,
                     color = GlassTheme.colors.onGlassSecondary,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }
@@ -195,12 +199,18 @@ fun GlassListTile(
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Medium,
                     color = if (enabled) glassColors.onGlass else glassColors.onGlassMuted,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
                 )
                 if (supportingText != null) {
                     Text(
                         text = supportingText,
                         style = MaterialTheme.typography.bodySmall,
                         color = glassColors.onGlassSecondary,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
@@ -269,6 +279,9 @@ fun GlassValueTile(
                     text = value,
                     style = MaterialTheme.typography.bodyMedium,
                     color = glassColors.onGlassSecondary,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
                 )
                 if (onClick != null) {
                     Icon(

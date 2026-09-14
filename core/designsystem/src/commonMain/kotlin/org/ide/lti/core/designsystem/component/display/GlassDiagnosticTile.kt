@@ -184,6 +184,7 @@ fun GlassDiagnosticTile(
                         color = statusColor,
                         maxLines = 1,
                         softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.align(Alignment.CenterEnd),
                     )
                 }

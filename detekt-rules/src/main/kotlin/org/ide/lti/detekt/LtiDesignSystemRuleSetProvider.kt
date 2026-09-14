@@ -15,6 +15,7 @@ class LtiDesignSystemRuleSetProvider : RuleSetProvider {
             NoRawDimensionLiteral(config),
             NoRawMotionLiteral(config),
             NoBackdropEffectImport(config),
+            NoUnprotectedTextClip(config),
         ),
     )
 }
