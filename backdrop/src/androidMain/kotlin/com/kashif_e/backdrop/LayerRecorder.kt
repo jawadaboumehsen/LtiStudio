@@ -7,13 +7,13 @@ import androidx.compose.ui.node.requireDensity
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.toIntSize
 
-context(DelegatableNode)
+context(node: DelegatableNode)
 internal fun DrawScope.recordLayer(
     layer: GraphicsLayer,
     size: IntSize = this.size.toIntSize(),
     block: DrawScope.() -> Unit
 ) {
-    val density = requireDensity()
+    val density = node.requireDensity()
     layer.record(size) {
         val prevDensity = drawContext.density
         drawContext.density = density

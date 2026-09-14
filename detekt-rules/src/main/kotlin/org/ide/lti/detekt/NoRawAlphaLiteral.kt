@@ -1,21 +1,17 @@
 package org.ide.lti.detekt
 
-import io.gitlab.arturbosch.detekt.api.CodeSmell
-import io.gitlab.arturbosch.detekt.api.Config
-import io.gitlab.arturbosch.detekt.api.Debt
-import io.gitlab.arturbosch.detekt.api.Entity
-import io.gitlab.arturbosch.detekt.api.Issue
-import io.gitlab.arturbosch.detekt.api.Rule
-import io.gitlab.arturbosch.detekt.api.Severity
+import dev.detekt.api.Config
+import dev.detekt.api.Entity
+import dev.detekt.api.Finding
+import dev.detekt.api.Rule
+import dev.detekt.api.RuleName
 import org.jetbrains.kotlin.psi.KtFile
 
-class NoRawAlphaLiteral(config: Config = Config.empty) : Rule(config) {
-    override val issue = Issue(
-        id = "NoRawAlphaLiteral",
-        severity = Severity.Defect,
-        description = "Raw alpha literals (alpha = 0.x) bypass theme/Alpha.kt (AlphaTokens). Use tokens from theme/Alpha.kt instead.",
-        debt = Debt.FIVE_MINS,
-    )
+class NoRawAlphaLiteral(config: Config = Config.empty) : Rule(
+    config,
+    description = "Raw alpha literals (alpha = 0.x) bypass theme/Alpha.kt (AlphaTokens). Use tokens from theme/Alpha.kt instead.",
+) {
+    override val ruleName: RuleName get() = RuleName("NoRawAlphaLiteral")
 
     private val alphaLiteralRegex = Regex("""alpha\s*=\s*0\.\d""")
 
@@ -47,8 +43,7 @@ class NoRawAlphaLiteral(config: Config = Config.empty) : Rule(config) {
             if (alphaLiteralRegex.containsMatchIn(line)) {
                 val offset = if (idx < offsets.size) offsets[idx] else 0
                 report(
-                    CodeSmell(
-                        issue = issue,
+                    Finding(
                         entity = Entity.from(file, offset),
                         message = "raw alpha literal bypasses theme/Alpha.kt (AlphaTokens). [$line]",
                     ),

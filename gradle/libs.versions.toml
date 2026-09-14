@@ -32,18 +32,18 @@ googleOssPlugin = "0.10.6"
 
 # Static Analysis & Code Formatting
 ktlint = "12.1.1"
-detekt = "1.23.7"
+detekt = "2.0.0-alpha.6"
 spotlessVersion = "6.25.0"
-compose-rules-detekt = "0.4.23"
+compose-rules-detekt = "0.6.6"
 
 # Kotlin KMP Dependencies
-kotlin = "2.3.10"
+kotlin = "2.4.10"
 kotlinInject = "0.7.2"
 kotlinxCoroutines = "1.10.1"
 kotlinxDatetime = "0.6.1"
 kotlinxImmutable = "0.3.8"
 kotlinxSerializationJson = "1.7.3"
-ksp = "2.3.10"
+ksp = "2.3.12"
 
 # Ktor & Ktorfit
 ktorVersion = "3.0.3"
@@ -133,10 +133,10 @@ androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version
 androidx-tracing-ktx = { group = "androidx.tracing", name = "tracing-ktx", version.ref = "androidxTracing" }
 
 ktlint-gradlePlugin = { group = "org.jlleitschuh.gradle", name = "ktlint-gradle", version.ref = "ktlint" }
-detekt-api = { group = "io.gitlab.arturbosch.detekt", name = "detekt-api", version.ref = "detekt" }
-detekt-formatting = { group = "io.gitlab.arturbosch.detekt", name = "detekt-formatting", version.ref = "detekt" }
+detekt-api = { group = "dev.detekt", name = "detekt-api", version.ref = "detekt" }
+detekt-formatting = { group = "dev.detekt", name = "detekt-rules-ktlint-wrapper", version.ref = "detekt" }
 spotless-gradle = { group = "com.diffplug.spotless", name = "spotless-plugin-gradle", version.ref = "spotlessVersion" }
-detekt-gradlePlugin = { group = "io.gitlab.arturbosch.detekt", name = "detekt-gradle-plugin", version.ref = "detekt" }
+detekt-gradlePlugin = { group = "dev.detekt", name = "detekt-gradle-plugin", version.ref = "detekt" }
 compose-rules-detekt = { group = "io.nlopez.compose.rules", name = "detekt", version.ref = "compose-rules-detekt" }
 
 google-oss-licenses = { group = "com.google.android.gms", name = "play-services-oss-licenses", version.ref = "googleOss" }
@@ -295,7 +295,7 @@ spotless-convention = { id = "org.ide.lti.spotless.plugin", version = "unspecifi
 
 dependencyGuard = { id = "com.dropbox.dependency-guard", version.ref = "dependencyGuard" }
 
-detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+detekt = { id = "dev.detekt", version.ref = "detekt" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotlessVersion" }
 

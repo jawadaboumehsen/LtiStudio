@@ -23,7 +23,6 @@ kotlin {
 
     compilerOptions {
         freeCompilerArgs.addAll(
-            "-Xcontext-receivers",
             "-Xexpect-actual-classes"
         )
     }

@@ -20,7 +20,7 @@ class DetektConventionPlugin : Plugin<Project> {
 
     private fun Project.applyPlugins() {
         pluginManager.apply {
-            apply("io.gitlab.arturbosch.detekt")
+            apply("dev.detekt")
         }
     }
 }

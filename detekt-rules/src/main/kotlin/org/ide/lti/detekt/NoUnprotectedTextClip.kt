@@ -9,13 +9,11 @@
  */
 package org.ide.lti.detekt
 
-import io.gitlab.arturbosch.detekt.api.CodeSmell
-import io.gitlab.arturbosch.detekt.api.Config
-import io.gitlab.arturbosch.detekt.api.Debt
-import io.gitlab.arturbosch.detekt.api.Entity
-import io.gitlab.arturbosch.detekt.api.Issue
-import io.gitlab.arturbosch.detekt.api.Rule
-import io.gitlab.arturbosch.detekt.api.Severity
+import dev.detekt.api.Config
+import dev.detekt.api.Entity
+import dev.detekt.api.Finding
+import dev.detekt.api.Rule
+import dev.detekt.api.RuleName
 import org.jetbrains.kotlin.psi.KtCallExpression
 
 /**
@@ -29,14 +27,12 @@ import org.jetbrains.kotlin.psi.KtCallExpression
  * delegating to a nested `KtVisitorVoid` - the latter does NOT recurse into child PSI nodes and
  * would silently never fire on any nested call expression.
  */
-class NoUnprotectedTextClip(config: Config = Config.empty) : Rule(config) {
-    override val issue = Issue(
-        id = "NoUnprotectedTextClip",
-        severity = Severity.Defect,
-        description = "Text(...) with softWrap = false must also specify overflow " +
-            "(e.g. TextOverflow.Ellipsis), otherwise text silently clips with no ellipsis.",
-        debt = Debt.FIVE_MINS,
-    )
+class NoUnprotectedTextClip(config: Config = Config.empty) : Rule(
+    config,
+    description = "Text(...) with softWrap = false must also specify overflow " +
+        "(e.g. TextOverflow.Ellipsis), otherwise text silently clips with no ellipsis.",
+) {
+    override val ruleName: RuleName get() = RuleName("NoUnprotectedTextClip")
 
     override fun visitCallExpression(expression: KtCallExpression) {
         super.visitCallExpression(expression)
@@ -55,8 +51,7 @@ class NoUnprotectedTextClip(config: Config = Config.empty) : Rule(config) {
         if (hasOverflow) return
 
         report(
-            CodeSmell(
-                issue = issue,
+            Finding(
                 entity = Entity.from(expression),
                 message = "Text(...) sets softWrap = false without overflow; " +
                     "add overflow = TextOverflow.Ellipsis (or .Clip if intentional).",

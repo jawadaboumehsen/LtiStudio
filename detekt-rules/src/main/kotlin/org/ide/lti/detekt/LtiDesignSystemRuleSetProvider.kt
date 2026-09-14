@@ -1,22 +1,22 @@
 package org.ide.lti.detekt
 
-import io.gitlab.arturbosch.detekt.api.Config
-import io.gitlab.arturbosch.detekt.api.RuleSet
-import io.gitlab.arturbosch.detekt.api.RuleSetProvider
+import dev.detekt.api.RuleSet
+import dev.detekt.api.RuleSetId
+import dev.detekt.api.RuleSetProvider
 
 class LtiDesignSystemRuleSetProvider : RuleSetProvider {
-    override val ruleSetId: String = "lti-design-system"
+    override val ruleSetId: RuleSetId = RuleSetId("lti-design-system")
 
-    override fun instance(config: Config): RuleSet = RuleSet(
+    override fun instance(): RuleSet = RuleSet(
         ruleSetId,
         listOf(
-            NoRawColorLiteral(config),
-            NoRawAlphaLiteral(config),
-            NoRawDimensionLiteral(config),
-            NoRawMotionLiteral(config),
-            NoBackdropEffectImport(config),
-            NoUnprotectedTextClip(config),
-            NoWeightInScrollableContainer(config),
+            ::NoRawColorLiteral,
+            ::NoRawAlphaLiteral,
+            ::NoRawDimensionLiteral,
+            ::NoRawMotionLiteral,
+            ::NoBackdropEffectImport,
+            ::NoUnprotectedTextClip,
+            ::NoWeightInScrollableContainer,
         ),
     )
 }

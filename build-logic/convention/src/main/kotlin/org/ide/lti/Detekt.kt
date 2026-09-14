@@ -1,7 +1,7 @@
 package org.ide.lti
 
-import io.gitlab.arturbosch.detekt.Detekt
-import io.gitlab.arturbosch.detekt.extensions.DetektExtension
+import dev.detekt.gradle.Detekt
+import dev.detekt.gradle.extensions.DetektExtension
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.dependencies
 import org.gradle.kotlin.dsl.named
@@ -15,17 +15,17 @@ import org.gradle.kotlin.dsl.named
  */
 internal fun Project.configureDetekt(extension: DetektExtension) = extension.apply {
     source.setFrom(files("src"))
-    baseline = rootProject.file(
-        "config/detekt/baseline/${project.path.replace(":", "-").removePrefix("-")}.xml",
+    baseline.set(
+        rootProject.file(
+            "config/detekt/baseline/${project.path.replace(":", "-").removePrefix("-")}.xml",
+        ),
     )
     tasks.named<Detekt>("detekt") {
-        jvmTarget = "17"
+        jvmTarget.set("17")
         reports {
-            xml.required.set(true)
-            html.required.set(true)
-            txt.required.set(true)
-            sarif.required.set(true)
-            md.required.set(true)
+            html { required.set(true) }
+            sarif { required.set(true) }
+            markdown { required.set(true) }
         }
     }
     dependencies {

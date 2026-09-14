@@ -36,7 +36,7 @@ tasks.register("versionFile") {
 allprojects {
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>().configureEach {
         compilerOptions {
-            freeCompilerArgs.add("-Xcontext-receivers")
+            freeCompilerArgs.add("-Xcontext-parameters")
             freeCompilerArgs.add("-Xskip-metadata-version-check")
         }
     }

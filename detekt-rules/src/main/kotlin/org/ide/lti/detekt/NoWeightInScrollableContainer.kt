@@ -9,14 +9,12 @@
  */
 package org.ide.lti.detekt
 
-import io.gitlab.arturbosch.detekt.api.CodeSmell
-import io.gitlab.arturbosch.detekt.api.Config
-import io.gitlab.arturbosch.detekt.api.Debt
-import io.gitlab.arturbosch.detekt.api.Entity
-import io.gitlab.arturbosch.detekt.api.Issue
-import io.gitlab.arturbosch.detekt.api.Rule
-import io.gitlab.arturbosch.detekt.api.Severity
-import org.jetbrains.kotlin.com.intellij.psi.PsiElement
+import dev.detekt.api.Config
+import dev.detekt.api.Entity
+import dev.detekt.api.Finding
+import dev.detekt.api.Rule
+import dev.detekt.api.RuleName
+import com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.psi.KtCallExpression
 
 /**
@@ -43,17 +41,15 @@ import org.jetbrains.kotlin.psi.KtCallExpression
  * content lambda as a `ValueArgument`, whose `.text` is the ENTIRE nested subtree's source. Using
  * `valueArguments` directly makes every ancestor of a real match falsely "contain" that match too.
  */
-class NoWeightInScrollableContainer(config: Config = Config.empty) : Rule(config) {
-    override val issue = Issue(
-        id = "NoWeightInScrollableContainer",
-        severity = Severity.Defect,
-        description = "Modifier.weight(...) on a direct child of a Row/Column that itself applies " +
-            "horizontalScroll/verticalScroll throws at runtime - weight() needs a bounded parent " +
-            "constraint, which a scrollable container deliberately does not provide along its " +
-            "scroll axis. Remove weight() (use widthIn/heightIn instead) or move it inside a " +
-            "nested Row/Column/Box that re-bounds its own children.",
-        debt = Debt.TWENTY_MINS,
-    )
+class NoWeightInScrollableContainer(config: Config = Config.empty) : Rule(
+    config,
+    description = "Modifier.weight(...) on a direct child of a Row/Column that itself applies " +
+        "horizontalScroll/verticalScroll throws at runtime - weight() needs a bounded parent " +
+        "constraint, which a scrollable container deliberately does not provide along its " +
+        "scroll axis. Remove weight() (use widthIn/heightIn instead) or move it inside a " +
+        "nested Row/Column/Box that re-bounds its own children.",
+) {
+    override val ruleName: RuleName get() = RuleName("NoWeightInScrollableContainer")
 
     private val scrollModifierNeedles = listOf(".horizontalScroll(", ".verticalScroll(")
     private val layoutBoundaryCallees = setOf(
@@ -100,8 +96,7 @@ class NoWeightInScrollableContainer(config: Config = Config.empty) : Rule(config
 
         violations.forEach { violatingCall ->
             report(
-                CodeSmell(
-                    issue = issue,
+                Finding(
                     entity = Entity.from(violatingCall),
                     message = "${violatingCall.calleeExpression?.text ?: "this child"} uses " +
                         "Modifier.weight(...) directly inside a scrollable Row/Column - " +

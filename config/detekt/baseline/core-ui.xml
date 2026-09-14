@@ -1,8 +1,8 @@
 <?xml version="1.0" ?>
 <SmellBaseline>
-  <ManuallySuppressedIssues></ManuallySuppressedIssues>
+  <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>CyclomaticComplexMethod:GlassFileTree.kt$@Composable private fun GlassFileTreeItem( node: FileNode, level: Int, isExpanded: Boolean, onNodeClick: (FileNode) -&gt; Unit, modifier: Modifier = Modifier, isSelected: Boolean = false, )</ID>
-    <ID>MatchingDeclarationName:ShareUtils.desktop.kt$ShareUtils</ID>
+    <ID>CyclomaticComplexMethod:GlassFileTree.kt:@Composable private fun GlassFileTreeItem</ID>
+    <ID>MatchingDeclarationName:ShareUtils.desktop.kt:ShareUtils</ID>
   </CurrentIssues>
 </SmellBaseline>

@@ -1,22 +1,18 @@
 package org.ide.lti.detekt
 
-import io.gitlab.arturbosch.detekt.api.CodeSmell
-import io.gitlab.arturbosch.detekt.api.Config
-import io.gitlab.arturbosch.detekt.api.Debt
-import io.gitlab.arturbosch.detekt.api.Entity
-import io.gitlab.arturbosch.detekt.api.Issue
-import io.gitlab.arturbosch.detekt.api.Rule
-import io.gitlab.arturbosch.detekt.api.Severity
+import dev.detekt.api.Config
+import dev.detekt.api.Entity
+import dev.detekt.api.Finding
+import dev.detekt.api.Rule
+import dev.detekt.api.RuleName
 import org.jetbrains.kotlin.psi.KtFile
 
-class NoBackdropEffectImport(config: Config = Config.empty) : Rule(config) {
-    override val issue = Issue(
-        id = "NoBackdropEffectImport",
-        severity = Severity.Defect,
-        description = "This module may not build glass components directly from backdrop effect " +
-            "primitives - compose an existing core:designsystem/core:ui component instead.",
-        debt = Debt.TWENTY_MINS,
-    )
+class NoBackdropEffectImport(config: Config = Config.empty) : Rule(
+    config,
+    description = "This module may not build glass components directly from backdrop effect " +
+        "primitives - compose an existing core:designsystem/core:ui component instead.",
+) {
+    override val ruleName: RuleName get() = RuleName("NoBackdropEffectImport")
 
     private val forbiddenImportPrefixes = listOf(
         "import com.kashif_e.backdrop.effects.",
@@ -47,8 +43,7 @@ class NoBackdropEffectImport(config: Config = Config.empty) : Rule(config) {
                 forbiddenImportExact.contains(line)
             if (isForbidden) {
                 report(
-                    CodeSmell(
-                        issue = issue,
+                    Finding(
                         entity = Entity.from(file, offset = 0),
                         message = "this module may not build glass components directly from backdrop " +
                             "effect primitives - compose an existing core:designsystem/core:ui component " +

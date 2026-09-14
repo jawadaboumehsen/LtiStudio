@@ -1,12 +1,12 @@
 <?xml version="1.0" ?>
 <SmellBaseline>
-  <ManuallySuppressedIssues></ManuallySuppressedIssues>
+  <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>MaxLineLength:DefaultTargetCatalog.kt$DefaultTargetCatalog$acquisitionUrl = "https://rom.download.nubia.com/China/PQ84P01(NP05J)/REDMAGICOS10.5.12_NP05J_CN/update.zip"</ID>
-    <ID>MaxLineLength:DefaultTargetCatalog.kt$DefaultTargetCatalog$acquisitionUrl = "https://rom.download.nubia.com/China/PQ84P01(NP05J)/REDMAGICOS10.5.16_NP05J_CN/update.zip"</ID>
-    <ID>MaxLineLength:DefaultTargetCatalog.kt$DefaultTargetCatalog$acquisitionUrl = "https://rom.download.nubia.com/Europe&amp;Asia/PQ84P01(NP05J)/REDMAGICOS10.5.12_NP05J_GB/update.zip"</ID>
-    <ID>MaxLineLength:DefaultTargetCatalog.kt$DefaultTargetCatalog$acquisitionUrl = "https://rom.download.nubia.com/Europe&amp;Asia/PQ84P01(NP05J)/REDMAGICOS10.5.15_NP05J_GB/update.zip"</ID>
-    <ID>MaxLineLength:DefaultTargetCatalog.kt$DefaultTargetCatalog$acquisitionUrl = "https://rom.download.nubia.com/Europe&amp;Asia/PQ84P01(NP05J)/REDMAGICOS10.5.8_NP05J_GB/update.zip"</ID>
-    <ID>MaxLineLength:RunState.kt$RunState$*</ID>
+    <ID>MaxLineLength:DefaultTargetCatalog.kt:DefaultTargetCatalog$acquisitionUrl = "https://rom.download.nubia.com/China/PQ84P01(NP05J)/REDMAGICOS10.5.12_NP05J_CN/update.zip"</ID>
+    <ID>MaxLineLength:DefaultTargetCatalog.kt:DefaultTargetCatalog$acquisitionUrl = "https://rom.download.nubia.com/China/PQ84P01(NP05J)/REDMAGICOS10.5.16_NP05J_CN/update.zip"</ID>
+    <ID>MaxLineLength:DefaultTargetCatalog.kt:DefaultTargetCatalog$acquisitionUrl = "https://rom.download.nubia.com/Europe&amp;Asia/PQ84P01(NP05J)/REDMAGICOS10.5.12_NP05J_GB/update.zip"</ID>
+    <ID>MaxLineLength:DefaultTargetCatalog.kt:DefaultTargetCatalog$acquisitionUrl = "https://rom.download.nubia.com/Europe&amp;Asia/PQ84P01(NP05J)/REDMAGICOS10.5.15_NP05J_GB/update.zip"</ID>
+    <ID>MaxLineLength:DefaultTargetCatalog.kt:DefaultTargetCatalog$acquisitionUrl = "https://rom.download.nubia.com/Europe&amp;Asia/PQ84P01(NP05J)/REDMAGICOS10.5.8_NP05J_GB/update.zip"</ID>
+    <ID>MaxLineLength:RunState.kt:RunState$*</ID>
   </CurrentIssues>
 </SmellBaseline>

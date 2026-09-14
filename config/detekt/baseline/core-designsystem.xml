@@ -1,300 +1,297 @@
 <?xml version="1.0" ?>
 <SmellBaseline>
-  <ManuallySuppressedIssues></ManuallySuppressedIssues>
+  <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>ComplexCondition:GlassModifiers.kt$GlassBorderNode$strokePx &gt; 0f &amp;&amp; finalColor.alpha &gt; 0f &amp;&amp; innerWidth &gt; 0f &amp;&amp; innerHeight &gt; 0f</ID>
-    <ID>CyclomaticComplexMethod:GlassActionCard.kt$@OptIn(ExperimentalComposeUiApi::class) @Composable fun GlassActionCard( title: String, subtitle: String, icon: AppIcon, onClick: () -&gt; Unit, modifier: Modifier = Modifier, isPrimary: Boolean = false, shortcut: String? = null, backdrop: Backdrop? = null, )</ID>
-    <ID>CyclomaticComplexMethod:GlassActionCard.kt$@OptIn(ExperimentalComposeUiApi::class) @Composable fun GlassItemCard( title: String, modifier: Modifier = Modifier, subtitle: String? = null, icon: AppIcon? = null, onClick: (() -&gt; Unit)? = null, isHighlighted: Boolean = false, trailingContent: (@Composable () -&gt; Unit)? = null, backdrop: Backdrop? = null, )</ID>
-    <ID>CyclomaticComplexMethod:GlassBanner.kt$@Suppress("UnusedParameter") @Composable fun GlassBanner( severity: GlassBannerSeverity, title: String, modifier: Modifier = Modifier, description: String? = null, icon: (@Composable () -&gt; Unit)? = null, primaryAction: GlassBannerAction? = null, secondaryAction: GlassBannerAction? = null, onDismiss: (() -&gt; Unit)? = null, backdrop: Backdrop? = null, )</ID>
-    <ID>CyclomaticComplexMethod:GlassChip.kt$@OptIn(ExperimentalComposeUiApi::class) @Composable fun GlassChip( label: String, modifier: Modifier = Modifier, shape: Shape = GlassShapes.Capsule, selected: Boolean = false, onClick: (() -&gt; Unit)? = null, onSelectedChange: ((Boolean) -&gt; Unit)? = null, leadingIcon: (@Composable () -&gt; Unit)? = null, trailingIcon: (@Composable () -&gt; Unit)? = null, enabled: Boolean = true, backdrop: Backdrop? = null, )</ID>
-    <ID>CyclomaticComplexMethod:GlassConsoleDrawer.kt$@Composable fun GlassConsoleDrawer( logs: List&lt;String&gt;, isRunning: Boolean, modifier: Modifier = Modifier, backdrop: Backdrop? = null, )</ID>
-    <ID>CyclomaticComplexMethod:GlassDiagnosticTile.kt$@Composable fun GlassDiagnosticTile( item: GlassDiagnosticItem, modifier: Modifier = Modifier, )</ID>
-    <ID>CyclomaticComplexMethod:GlassSidebarItem.kt$@OptIn(ExperimentalComposeUiApi::class) @Composable fun GlassSidebarItem( label: String, icon: AppIcon, selected: Boolean, onClick: () -&gt; Unit, modifier: Modifier = Modifier, badge: String? = null, )</ID>
-    <ID>CyclomaticComplexMethod:GlassStepper.kt$@Composable private fun GlassStepNode( step: GlassStepInfo, index: Int, isBusy: Boolean, onRetry: (() -&gt; Unit)?, onClick: (() -&gt; Unit)?, modifier: Modifier = Modifier, )</ID>
-    <ID>CyclomaticComplexMethod:GlassTextField.kt$@OptIn(ExperimentalComposeUiApi::class) @Composable fun GlassTextField( value: String, onValueChange: (String) -&gt; Unit, modifier: Modifier = Modifier, label: String? = null, placeholder: String? = null, state: TextFieldState = TextFieldState.Default, leading: TextFieldLeadingSlot = TextFieldLeadingSlot.None, trailing: TextFieldTrailingSlot = TextFieldTrailingSlot.None, config: TextFieldConfig = TextFieldConfig.Default, enabled: Boolean = true, readOnly: Boolean = false, textStyle: TextStyle = LocalTextStyle.current, effects: BackdropEffectScope.() -&gt; Unit = GlassTextFieldEffects, backdrop: Backdrop? = null, interactionSource: MutableInteractionSource = remember { MutableInteractionSource() }, focusRequester: FocusRequester? = null, )</ID>
-    <ID>CyclomaticComplexMethod:GlassToggle.kt$@Suppress("LongMethod") @Composable fun GlassToggle( selected: () -&gt; Boolean, onSelect: (Boolean) -&gt; Unit, modifier: Modifier = Modifier, activeColor: Color = GlassTheme.colors.glassAccent, backdrop: Backdrop? = null, )</ID>
-    <ID>CyclomaticComplexMethod:ThemePreviewCard.kt$@Composable private fun MiniIdePreview( theme: AppTheme, modifier: Modifier = Modifier, )</ID>
-    <ID>CyclomaticComplexMethod:ThemePreviewCard.kt$@OptIn(ExperimentalComposeUiApi::class) @Composable fun ThemePreviewCard( theme: AppTheme, isSelected: Boolean, onClick: () -&gt; Unit, modifier: Modifier = Modifier, subtitle: String? = null, )</ID>
-    <ID>LongMethod:GlassConsoleDrawer.kt$@Composable fun GlassConsoleDrawer( logs: List&lt;String&gt;, isRunning: Boolean, modifier: Modifier = Modifier, backdrop: Backdrop? = null, )</ID>
-    <ID>LongMethod:GlassStepper.kt$@Composable private fun GlassStepNode( step: GlassStepInfo, index: Int, isBusy: Boolean, onRetry: (() -&gt; Unit)?, onClick: (() -&gt; Unit)?, modifier: Modifier = Modifier, )</ID>
-    <ID>LongMethod:GlassTextField.kt$@OptIn(ExperimentalComposeUiApi::class) @Composable fun GlassTextField( value: String, onValueChange: (String) -&gt; Unit, modifier: Modifier = Modifier, label: String? = null, placeholder: String? = null, state: TextFieldState = TextFieldState.Default, leading: TextFieldLeadingSlot = TextFieldLeadingSlot.None, trailing: TextFieldTrailingSlot = TextFieldTrailingSlot.None, config: TextFieldConfig = TextFieldConfig.Default, enabled: Boolean = true, readOnly: Boolean = false, textStyle: TextStyle = LocalTextStyle.current, effects: BackdropEffectScope.() -&gt; Unit = GlassTextFieldEffects, backdrop: Backdrop? = null, interactionSource: MutableInteractionSource = remember { MutableInteractionSource() }, focusRequester: FocusRequester? = null, )</ID>
-    <ID>LongMethod:ThemePreviewCard.kt$@Composable private fun MiniIdePreview( theme: AppTheme, modifier: Modifier = Modifier, )</ID>
-    <ID>MatchingDeclarationName:Alpha.kt$AlphaTokens</ID>
-    <ID>MatchingDeclarationName:GlassChip.kt$ChipMode</ID>
-    <ID>MatchingDeclarationName:GlassFilterChipRow.kt$GlassFilterChipItem</ID>
-    <ID>MatchingDeclarationName:GlassLayout.kt$GlassLayoutSlots</ID>
-    <ID>MatchingDeclarationName:Shape.kt$GlassShapes</ID>
-    <ID>MaxLineLength:Color.kt$// Apple Liquid Glass Dark Theme: Translucent charcoal surfaces, luminous specular hairlines, subtle frost tint, Fleet electric blue accents</ID>
-    <ID>MaxLineLength:Color.kt$ThemeColors$val DarkLayerSurface = Color(0xFF111318) // Level 1: Charcoal Obsidian panel / editor / terminal surface (#111318)</ID>
-    <ID>MaxLineLength:GlassActionCard.kt$color = if (isHighlighted || isHovered) glassColors.glassBorderHighlight else glassColors.glassBorder</ID>
-    <ID>MaxLineLength:GlassActionCard.kt$color = if (isPrimary || isHovered) glassColors.glassBorderHighlight else glassColors.glassBorder</ID>
-    <ID>MaxLineLength:GlassChromeDiagnosticScreenshotTest.kt$GlassChromeDiagnosticScreenshotTest$railPosition = org.ide.lti.core.designsystem.component.navigation.SidePanelRailPosition.Left</ID>
-    <ID>MaxLineLength:GlassChromeDiagnosticScreenshotTest.kt$GlassChromeDiagnosticScreenshotTest$railPosition = org.ide.lti.core.designsystem.component.navigation.SidePanelRailPosition.Right</ID>
-    <ID>MaxLineLength:GlassDivider.kt$val finalColor = if (color != Color.Unspecified) color else glassColors.glassBorder.copy(alpha = AlphaTokens.Faint)</ID>
-    <ID>MaxLineLength:GlassSidebarItem.kt$color = if (selected) glassColors.onGlass else if (isHovered) glassColors.onGlass else glassColors.onGlassSecondary</ID>
-    <ID>MaxLineLength:GlassTextField.kt$trailing = if (value.isNotEmpty()) TextFieldTrailingSlot.Clear { onValueChange("") } else TextFieldTrailingSlot.None</ID>
-    <ID>ModifierMissing:GlassCommandPalette.kt$GlassCommandPalette</ID>
-    <ID>ModifierMissing:GlassDropdownMenu.kt$GlassDropdownMenuDivider</ID>
-    <ID>ModifierMissing:GlassDropdownMenu.kt$GlassDropdownMenuHeader</ID>
-    <ID>NewLineAtEndOfFile:GlassEmptyState.kt$org.ide.lti.core.designsystem.component.display.GlassEmptyState.kt</ID>
-    <ID>UnusedParameter:GlassBottomTabs.kt$containerColor: Color</ID>
-    <ID>UnusedParameter:GlassTextField.kt$showPasswordTestTag: String? = null</ID>
-    <ID>UnusedParameter:GlassTopBar.kt$backdrop: Backdrop? = null</ID>
-    <ID>WildcardImport:GlassActionCard.kt$import org.ide.lti.core.designsystem.component.actions.*</ID>
-    <ID>WildcardImport:GlassActionCard.kt$import org.ide.lti.core.designsystem.component.devtools.*</ID>
-    <ID>WildcardImport:GlassActionCard.kt$import org.ide.lti.core.designsystem.component.display.*</ID>
-    <ID>WildcardImport:GlassActionCard.kt$import org.ide.lti.core.designsystem.component.feedback.*</ID>
-    <ID>WildcardImport:GlassActionCard.kt$import org.ide.lti.core.designsystem.component.inputs.*</ID>
-    <ID>WildcardImport:GlassActionCard.kt$import org.ide.lti.core.designsystem.component.layout.*</ID>
-    <ID>WildcardImport:GlassActionCard.kt$import org.ide.lti.core.designsystem.component.navigation.*</ID>
-    <ID>WildcardImport:GlassActionCard.kt$import org.ide.lti.core.designsystem.component.primitives.*</ID>
-    <ID>WildcardImport:GlassBottomSheet.kt$import org.ide.lti.core.designsystem.component.actions.*</ID>
-    <ID>WildcardImport:GlassBottomSheet.kt$import org.ide.lti.core.designsystem.component.devtools.*</ID>
-    <ID>WildcardImport:GlassBottomSheet.kt$import org.ide.lti.core.designsystem.component.display.*</ID>
-    <ID>WildcardImport:GlassBottomSheet.kt$import org.ide.lti.core.designsystem.component.feedback.*</ID>
-    <ID>WildcardImport:GlassBottomSheet.kt$import org.ide.lti.core.designsystem.component.inputs.*</ID>
-    <ID>WildcardImport:GlassBottomSheet.kt$import org.ide.lti.core.designsystem.component.layout.*</ID>
-    <ID>WildcardImport:GlassBottomSheet.kt$import org.ide.lti.core.designsystem.component.navigation.*</ID>
-    <ID>WildcardImport:GlassBottomSheet.kt$import org.ide.lti.core.designsystem.component.primitives.*</ID>
-    <ID>WildcardImport:GlassBottomTabs.kt$import org.ide.lti.core.designsystem.component.actions.*</ID>
-    <ID>WildcardImport:GlassBottomTabs.kt$import org.ide.lti.core.designsystem.component.devtools.*</ID>
-    <ID>WildcardImport:GlassBottomTabs.kt$import org.ide.lti.core.designsystem.component.display.*</ID>
-    <ID>WildcardImport:GlassBottomTabs.kt$import org.ide.lti.core.designsystem.component.feedback.*</ID>
-    <ID>WildcardImport:GlassBottomTabs.kt$import org.ide.lti.core.designsystem.component.inputs.*</ID>
-    <ID>WildcardImport:GlassBottomTabs.kt$import org.ide.lti.core.designsystem.component.layout.*</ID>
-    <ID>WildcardImport:GlassBottomTabs.kt$import org.ide.lti.core.designsystem.component.navigation.*</ID>
-    <ID>WildcardImport:GlassBottomTabs.kt$import org.ide.lti.core.designsystem.component.primitives.*</ID>
-    <ID>WildcardImport:GlassButton.kt$import org.ide.lti.core.designsystem.component.actions.*</ID>
-    <ID>WildcardImport:GlassButton.kt$import org.ide.lti.core.designsystem.component.devtools.*</ID>
-    <ID>WildcardImport:GlassButton.kt$import org.ide.lti.core.designsystem.component.display.*</ID>
-    <ID>WildcardImport:GlassButton.kt$import org.ide.lti.core.designsystem.component.feedback.*</ID>
-    <ID>WildcardImport:GlassButton.kt$import org.ide.lti.core.designsystem.component.inputs.*</ID>
-    <ID>WildcardImport:GlassButton.kt$import org.ide.lti.core.designsystem.component.layout.*</ID>
-    <ID>WildcardImport:GlassButton.kt$import org.ide.lti.core.designsystem.component.navigation.*</ID>
-    <ID>WildcardImport:GlassButton.kt$import org.ide.lti.core.designsystem.component.primitives.*</ID>
-    <ID>WildcardImport:GlassCard.kt$import org.ide.lti.core.designsystem.component.actions.*</ID>
-    <ID>WildcardImport:GlassCard.kt$import org.ide.lti.core.designsystem.component.devtools.*</ID>
-    <ID>WildcardImport:GlassCard.kt$import org.ide.lti.core.designsystem.component.display.*</ID>
-    <ID>WildcardImport:GlassCard.kt$import org.ide.lti.core.designsystem.component.feedback.*</ID>
-    <ID>WildcardImport:GlassCard.kt$import org.ide.lti.core.designsystem.component.inputs.*</ID>
-    <ID>WildcardImport:GlassCard.kt$import org.ide.lti.core.designsystem.component.layout.*</ID>
-    <ID>WildcardImport:GlassCard.kt$import org.ide.lti.core.designsystem.component.navigation.*</ID>
-    <ID>WildcardImport:GlassCard.kt$import org.ide.lti.core.designsystem.component.primitives.*</ID>
-    <ID>WildcardImport:GlassChip.kt$import org.ide.lti.core.designsystem.component.actions.*</ID>
-    <ID>WildcardImport:GlassChip.kt$import org.ide.lti.core.designsystem.component.devtools.*</ID>
-    <ID>WildcardImport:GlassChip.kt$import org.ide.lti.core.designsystem.component.display.*</ID>
-    <ID>WildcardImport:GlassChip.kt$import org.ide.lti.core.designsystem.component.feedback.*</ID>
-    <ID>WildcardImport:GlassChip.kt$import org.ide.lti.core.designsystem.component.inputs.*</ID>
-    <ID>WildcardImport:GlassChip.kt$import org.ide.lti.core.designsystem.component.layout.*</ID>
-    <ID>WildcardImport:GlassChip.kt$import org.ide.lti.core.designsystem.component.navigation.*</ID>
-    <ID>WildcardImport:GlassChip.kt$import org.ide.lti.core.designsystem.component.primitives.*</ID>
-    <ID>WildcardImport:GlassDialog.kt$import org.ide.lti.core.designsystem.component.actions.*</ID>
-    <ID>WildcardImport:GlassDialog.kt$import org.ide.lti.core.designsystem.component.devtools.*</ID>
-    <ID>WildcardImport:GlassDialog.kt$import org.ide.lti.core.designsystem.component.display.*</ID>
-    <ID>WildcardImport:GlassDialog.kt$import org.ide.lti.core.designsystem.component.feedback.*</ID>
-    <ID>WildcardImport:GlassDialog.kt$import org.ide.lti.core.designsystem.component.inputs.*</ID>
-    <ID>WildcardImport:GlassDialog.kt$import org.ide.lti.core.designsystem.component.layout.*</ID>
-    <ID>WildcardImport:GlassDialog.kt$import org.ide.lti.core.designsystem.component.navigation.*</ID>
-    <ID>WildcardImport:GlassDialog.kt$import org.ide.lti.core.designsystem.component.primitives.*</ID>
-    <ID>WildcardImport:GlassDivider.kt$import org.ide.lti.core.designsystem.component.actions.*</ID>
-    <ID>WildcardImport:GlassDivider.kt$import org.ide.lti.core.designsystem.component.devtools.*</ID>
-    <ID>WildcardImport:GlassDivider.kt$import org.ide.lti.core.designsystem.component.display.*</ID>
-    <ID>WildcardImport:GlassDivider.kt$import org.ide.lti.core.designsystem.component.feedback.*</ID>
-    <ID>WildcardImport:GlassDivider.kt$import org.ide.lti.core.designsystem.component.inputs.*</ID>
-    <ID>WildcardImport:GlassDivider.kt$import org.ide.lti.core.designsystem.component.layout.*</ID>
-    <ID>WildcardImport:GlassDivider.kt$import org.ide.lti.core.designsystem.component.navigation.*</ID>
-    <ID>WildcardImport:GlassDivider.kt$import org.ide.lti.core.designsystem.component.primitives.*</ID>
-    <ID>WildcardImport:GlassDragDivider.kt$import org.ide.lti.core.designsystem.component.actions.*</ID>
-    <ID>WildcardImport:GlassDragDivider.kt$import org.ide.lti.core.designsystem.component.devtools.*</ID>
-    <ID>WildcardImport:GlassDragDivider.kt$import org.ide.lti.core.designsystem.component.display.*</ID>
-    <ID>WildcardImport:GlassDragDivider.kt$import org.ide.lti.core.designsystem.component.feedback.*</ID>
-    <ID>WildcardImport:GlassDragDivider.kt$import org.ide.lti.core.designsystem.component.inputs.*</ID>
-    <ID>WildcardImport:GlassDragDivider.kt$import org.ide.lti.core.designsystem.component.layout.*</ID>
-    <ID>WildcardImport:GlassDragDivider.kt$import org.ide.lti.core.designsystem.component.navigation.*</ID>
-    <ID>WildcardImport:GlassDragDivider.kt$import org.ide.lti.core.designsystem.component.primitives.*</ID>
-    <ID>WildcardImport:GlassEmptyState.kt$import org.ide.lti.core.designsystem.component.actions.*</ID>
-    <ID>WildcardImport:GlassEmptyState.kt$import org.ide.lti.core.designsystem.component.devtools.*</ID>
-    <ID>WildcardImport:GlassEmptyState.kt$import org.ide.lti.core.designsystem.component.display.*</ID>
-    <ID>WildcardImport:GlassEmptyState.kt$import org.ide.lti.core.designsystem.component.feedback.*</ID>
-    <ID>WildcardImport:GlassEmptyState.kt$import org.ide.lti.core.designsystem.component.inputs.*</ID>
-    <ID>WildcardImport:GlassEmptyState.kt$import org.ide.lti.core.designsystem.component.layout.*</ID>
-    <ID>WildcardImport:GlassEmptyState.kt$import org.ide.lti.core.designsystem.component.navigation.*</ID>
-    <ID>WildcardImport:GlassEmptyState.kt$import org.ide.lti.core.designsystem.component.primitives.*</ID>
-    <ID>WildcardImport:GlassIcon.kt$import org.ide.lti.core.designsystem.component.actions.*</ID>
-    <ID>WildcardImport:GlassIcon.kt$import org.ide.lti.core.designsystem.component.devtools.*</ID>
-    <ID>WildcardImport:GlassIcon.kt$import org.ide.lti.core.designsystem.component.display.*</ID>
-    <ID>WildcardImport:GlassIcon.kt$import org.ide.lti.core.designsystem.component.feedback.*</ID>
-    <ID>WildcardImport:GlassIcon.kt$import org.ide.lti.core.designsystem.component.inputs.*</ID>
-    <ID>WildcardImport:GlassIcon.kt$import org.ide.lti.core.designsystem.component.layout.*</ID>
-    <ID>WildcardImport:GlassIcon.kt$import org.ide.lti.core.designsystem.component.navigation.*</ID>
-    <ID>WildcardImport:GlassIcon.kt$import org.ide.lti.core.designsystem.component.primitives.*</ID>
-    <ID>WildcardImport:GlassLayout.kt$import org.ide.lti.core.designsystem.component.actions.*</ID>
-    <ID>WildcardImport:GlassLayout.kt$import org.ide.lti.core.designsystem.component.devtools.*</ID>
-    <ID>WildcardImport:GlassLayout.kt$import org.ide.lti.core.designsystem.component.display.*</ID>
-    <ID>WildcardImport:GlassLayout.kt$import org.ide.lti.core.designsystem.component.feedback.*</ID>
-    <ID>WildcardImport:GlassLayout.kt$import org.ide.lti.core.designsystem.component.inputs.*</ID>
-    <ID>WildcardImport:GlassLayout.kt$import org.ide.lti.core.designsystem.component.layout.*</ID>
-    <ID>WildcardImport:GlassLayout.kt$import org.ide.lti.core.designsystem.component.navigation.*</ID>
-    <ID>WildcardImport:GlassLayout.kt$import org.ide.lti.core.designsystem.component.primitives.*</ID>
-    <ID>WildcardImport:GlassLayoutDefaults.kt$import org.ide.lti.core.designsystem.component.actions.*</ID>
-    <ID>WildcardImport:GlassLayoutDefaults.kt$import org.ide.lti.core.designsystem.component.devtools.*</ID>
-    <ID>WildcardImport:GlassLayoutDefaults.kt$import org.ide.lti.core.designsystem.component.display.*</ID>
-    <ID>WildcardImport:GlassLayoutDefaults.kt$import org.ide.lti.core.designsystem.component.feedback.*</ID>
-    <ID>WildcardImport:GlassLayoutDefaults.kt$import org.ide.lti.core.designsystem.component.inputs.*</ID>
-    <ID>WildcardImport:GlassLayoutDefaults.kt$import org.ide.lti.core.designsystem.component.layout.*</ID>
-    <ID>WildcardImport:GlassLayoutDefaults.kt$import org.ide.lti.core.designsystem.component.navigation.*</ID>
-    <ID>WildcardImport:GlassLayoutDefaults.kt$import org.ide.lti.core.designsystem.component.primitives.*</ID>
-    <ID>WildcardImport:GlassLayoutPanels.kt$import org.ide.lti.core.designsystem.component.actions.*</ID>
-    <ID>WildcardImport:GlassLayoutPanels.kt$import org.ide.lti.core.designsystem.component.devtools.*</ID>
-    <ID>WildcardImport:GlassLayoutPanels.kt$import org.ide.lti.core.designsystem.component.display.*</ID>
-    <ID>WildcardImport:GlassLayoutPanels.kt$import org.ide.lti.core.designsystem.component.feedback.*</ID>
-    <ID>WildcardImport:GlassLayoutPanels.kt$import org.ide.lti.core.designsystem.component.inputs.*</ID>
-    <ID>WildcardImport:GlassLayoutPanels.kt$import org.ide.lti.core.designsystem.component.layout.*</ID>
-    <ID>WildcardImport:GlassLayoutPanels.kt$import org.ide.lti.core.designsystem.component.navigation.*</ID>
-    <ID>WildcardImport:GlassLayoutPanels.kt$import org.ide.lti.core.designsystem.component.primitives.*</ID>
-    <ID>WildcardImport:GlassLayoutState.kt$import org.ide.lti.core.designsystem.component.actions.*</ID>
-    <ID>WildcardImport:GlassLayoutState.kt$import org.ide.lti.core.designsystem.component.devtools.*</ID>
-    <ID>WildcardImport:GlassLayoutState.kt$import org.ide.lti.core.designsystem.component.display.*</ID>
-    <ID>WildcardImport:GlassLayoutState.kt$import org.ide.lti.core.designsystem.component.feedback.*</ID>
-    <ID>WildcardImport:GlassLayoutState.kt$import org.ide.lti.core.designsystem.component.inputs.*</ID>
-    <ID>WildcardImport:GlassLayoutState.kt$import org.ide.lti.core.designsystem.component.layout.*</ID>
-    <ID>WildcardImport:GlassLayoutState.kt$import org.ide.lti.core.designsystem.component.navigation.*</ID>
-    <ID>WildcardImport:GlassLayoutState.kt$import org.ide.lti.core.designsystem.component.primitives.*</ID>
-    <ID>WildcardImport:GlassListTile.kt$import org.ide.lti.core.designsystem.component.actions.*</ID>
-    <ID>WildcardImport:GlassListTile.kt$import org.ide.lti.core.designsystem.component.devtools.*</ID>
-    <ID>WildcardImport:GlassListTile.kt$import org.ide.lti.core.designsystem.component.display.*</ID>
-    <ID>WildcardImport:GlassListTile.kt$import org.ide.lti.core.designsystem.component.feedback.*</ID>
-    <ID>WildcardImport:GlassListTile.kt$import org.ide.lti.core.designsystem.component.inputs.*</ID>
-    <ID>WildcardImport:GlassListTile.kt$import org.ide.lti.core.designsystem.component.layout.*</ID>
-    <ID>WildcardImport:GlassListTile.kt$import org.ide.lti.core.designsystem.component.navigation.*</ID>
-    <ID>WildcardImport:GlassListTile.kt$import org.ide.lti.core.designsystem.component.primitives.*</ID>
-    <ID>WildcardImport:GlassModifiers.kt$import org.ide.lti.core.designsystem.component.actions.*</ID>
-    <ID>WildcardImport:GlassModifiers.kt$import org.ide.lti.core.designsystem.component.devtools.*</ID>
-    <ID>WildcardImport:GlassModifiers.kt$import org.ide.lti.core.designsystem.component.display.*</ID>
-    <ID>WildcardImport:GlassModifiers.kt$import org.ide.lti.core.designsystem.component.feedback.*</ID>
-    <ID>WildcardImport:GlassModifiers.kt$import org.ide.lti.core.designsystem.component.inputs.*</ID>
-    <ID>WildcardImport:GlassModifiers.kt$import org.ide.lti.core.designsystem.component.layout.*</ID>
-    <ID>WildcardImport:GlassModifiers.kt$import org.ide.lti.core.designsystem.component.navigation.*</ID>
-    <ID>WildcardImport:GlassModifiers.kt$import org.ide.lti.core.designsystem.component.primitives.*</ID>
-    <ID>WildcardImport:GlassNavigation.kt$import org.ide.lti.core.designsystem.component.actions.*</ID>
-    <ID>WildcardImport:GlassNavigation.kt$import org.ide.lti.core.designsystem.component.devtools.*</ID>
-    <ID>WildcardImport:GlassNavigation.kt$import org.ide.lti.core.designsystem.component.display.*</ID>
-    <ID>WildcardImport:GlassNavigation.kt$import org.ide.lti.core.designsystem.component.feedback.*</ID>
-    <ID>WildcardImport:GlassNavigation.kt$import org.ide.lti.core.designsystem.component.inputs.*</ID>
-    <ID>WildcardImport:GlassNavigation.kt$import org.ide.lti.core.designsystem.component.layout.*</ID>
-    <ID>WildcardImport:GlassNavigation.kt$import org.ide.lti.core.designsystem.component.navigation.*</ID>
-    <ID>WildcardImport:GlassNavigation.kt$import org.ide.lti.core.designsystem.component.primitives.*</ID>
-    <ID>WildcardImport:GlassPanel.kt$import org.ide.lti.core.designsystem.component.actions.*</ID>
-    <ID>WildcardImport:GlassPanel.kt$import org.ide.lti.core.designsystem.component.devtools.*</ID>
-    <ID>WildcardImport:GlassPanel.kt$import org.ide.lti.core.designsystem.component.display.*</ID>
-    <ID>WildcardImport:GlassPanel.kt$import org.ide.lti.core.designsystem.component.feedback.*</ID>
-    <ID>WildcardImport:GlassPanel.kt$import org.ide.lti.core.designsystem.component.inputs.*</ID>
-    <ID>WildcardImport:GlassPanel.kt$import org.ide.lti.core.designsystem.component.layout.*</ID>
-    <ID>WildcardImport:GlassPanel.kt$import org.ide.lti.core.designsystem.component.navigation.*</ID>
-    <ID>WildcardImport:GlassPanel.kt$import org.ide.lti.core.designsystem.component.primitives.*</ID>
-    <ID>WildcardImport:GlassPerformanceMonitor.kt$import org.ide.lti.core.designsystem.component.actions.*</ID>
-    <ID>WildcardImport:GlassPerformanceMonitor.kt$import org.ide.lti.core.designsystem.component.devtools.*</ID>
-    <ID>WildcardImport:GlassPerformanceMonitor.kt$import org.ide.lti.core.designsystem.component.display.*</ID>
-    <ID>WildcardImport:GlassPerformanceMonitor.kt$import org.ide.lti.core.designsystem.component.feedback.*</ID>
-    <ID>WildcardImport:GlassPerformanceMonitor.kt$import org.ide.lti.core.designsystem.component.inputs.*</ID>
-    <ID>WildcardImport:GlassPerformanceMonitor.kt$import org.ide.lti.core.designsystem.component.layout.*</ID>
-    <ID>WildcardImport:GlassPerformanceMonitor.kt$import org.ide.lti.core.designsystem.component.navigation.*</ID>
-    <ID>WildcardImport:GlassPerformanceMonitor.kt$import org.ide.lti.core.designsystem.component.primitives.*</ID>
-    <ID>WildcardImport:GlassScrollEdge.kt$import org.ide.lti.core.designsystem.component.actions.*</ID>
-    <ID>WildcardImport:GlassScrollEdge.kt$import org.ide.lti.core.designsystem.component.devtools.*</ID>
-    <ID>WildcardImport:GlassScrollEdge.kt$import org.ide.lti.core.designsystem.component.display.*</ID>
-    <ID>WildcardImport:GlassScrollEdge.kt$import org.ide.lti.core.designsystem.component.feedback.*</ID>
-    <ID>WildcardImport:GlassScrollEdge.kt$import org.ide.lti.core.designsystem.component.inputs.*</ID>
-    <ID>WildcardImport:GlassScrollEdge.kt$import org.ide.lti.core.designsystem.component.layout.*</ID>
-    <ID>WildcardImport:GlassScrollEdge.kt$import org.ide.lti.core.designsystem.component.navigation.*</ID>
-    <ID>WildcardImport:GlassScrollEdge.kt$import org.ide.lti.core.designsystem.component.primitives.*</ID>
-    <ID>WildcardImport:GlassScrollableTabRow.kt$import org.ide.lti.core.designsystem.component.actions.*</ID>
-    <ID>WildcardImport:GlassScrollableTabRow.kt$import org.ide.lti.core.designsystem.component.devtools.*</ID>
-    <ID>WildcardImport:GlassScrollableTabRow.kt$import org.ide.lti.core.designsystem.component.display.*</ID>
-    <ID>WildcardImport:GlassScrollableTabRow.kt$import org.ide.lti.core.designsystem.component.feedback.*</ID>
-    <ID>WildcardImport:GlassScrollableTabRow.kt$import org.ide.lti.core.designsystem.component.inputs.*</ID>
-    <ID>WildcardImport:GlassScrollableTabRow.kt$import org.ide.lti.core.designsystem.component.layout.*</ID>
-    <ID>WildcardImport:GlassScrollableTabRow.kt$import org.ide.lti.core.designsystem.component.navigation.*</ID>
-    <ID>WildcardImport:GlassScrollableTabRow.kt$import org.ide.lti.core.designsystem.component.primitives.*</ID>
-    <ID>WildcardImport:GlassSidePanelTabs.kt$import org.ide.lti.core.designsystem.component.actions.*</ID>
-    <ID>WildcardImport:GlassSidePanelTabs.kt$import org.ide.lti.core.designsystem.component.devtools.*</ID>
-    <ID>WildcardImport:GlassSidePanelTabs.kt$import org.ide.lti.core.designsystem.component.display.*</ID>
-    <ID>WildcardImport:GlassSidePanelTabs.kt$import org.ide.lti.core.designsystem.component.feedback.*</ID>
-    <ID>WildcardImport:GlassSidePanelTabs.kt$import org.ide.lti.core.designsystem.component.inputs.*</ID>
-    <ID>WildcardImport:GlassSidePanelTabs.kt$import org.ide.lti.core.designsystem.component.layout.*</ID>
-    <ID>WildcardImport:GlassSidePanelTabs.kt$import org.ide.lti.core.designsystem.component.navigation.*</ID>
-    <ID>WildcardImport:GlassSidePanelTabs.kt$import org.ide.lti.core.designsystem.component.primitives.*</ID>
-    <ID>WildcardImport:GlassSidebarItem.kt$import org.ide.lti.core.designsystem.component.actions.*</ID>
-    <ID>WildcardImport:GlassSidebarItem.kt$import org.ide.lti.core.designsystem.component.devtools.*</ID>
-    <ID>WildcardImport:GlassSidebarItem.kt$import org.ide.lti.core.designsystem.component.display.*</ID>
-    <ID>WildcardImport:GlassSidebarItem.kt$import org.ide.lti.core.designsystem.component.feedback.*</ID>
-    <ID>WildcardImport:GlassSidebarItem.kt$import org.ide.lti.core.designsystem.component.inputs.*</ID>
-    <ID>WildcardImport:GlassSidebarItem.kt$import org.ide.lti.core.designsystem.component.layout.*</ID>
-    <ID>WildcardImport:GlassSidebarItem.kt$import org.ide.lti.core.designsystem.component.navigation.*</ID>
-    <ID>WildcardImport:GlassSidebarItem.kt$import org.ide.lti.core.designsystem.component.primitives.*</ID>
-    <ID>WildcardImport:GlassSlider.kt$import org.ide.lti.core.designsystem.component.actions.*</ID>
-    <ID>WildcardImport:GlassSlider.kt$import org.ide.lti.core.designsystem.component.devtools.*</ID>
-    <ID>WildcardImport:GlassSlider.kt$import org.ide.lti.core.designsystem.component.display.*</ID>
-    <ID>WildcardImport:GlassSlider.kt$import org.ide.lti.core.designsystem.component.feedback.*</ID>
-    <ID>WildcardImport:GlassSlider.kt$import org.ide.lti.core.designsystem.component.inputs.*</ID>
-    <ID>WildcardImport:GlassSlider.kt$import org.ide.lti.core.designsystem.component.layout.*</ID>
-    <ID>WildcardImport:GlassSlider.kt$import org.ide.lti.core.designsystem.component.navigation.*</ID>
-    <ID>WildcardImport:GlassSlider.kt$import org.ide.lti.core.designsystem.component.primitives.*</ID>
-    <ID>WildcardImport:GlassStatusBar.kt$import org.ide.lti.core.designsystem.component.actions.*</ID>
-    <ID>WildcardImport:GlassStatusBar.kt$import org.ide.lti.core.designsystem.component.devtools.*</ID>
-    <ID>WildcardImport:GlassStatusBar.kt$import org.ide.lti.core.designsystem.component.display.*</ID>
-    <ID>WildcardImport:GlassStatusBar.kt$import org.ide.lti.core.designsystem.component.feedback.*</ID>
-    <ID>WildcardImport:GlassStatusBar.kt$import org.ide.lti.core.designsystem.component.inputs.*</ID>
-    <ID>WildcardImport:GlassStatusBar.kt$import org.ide.lti.core.designsystem.component.layout.*</ID>
-    <ID>WildcardImport:GlassStatusBar.kt$import org.ide.lti.core.designsystem.component.navigation.*</ID>
-    <ID>WildcardImport:GlassStatusBar.kt$import org.ide.lti.core.designsystem.component.primitives.*</ID>
-    <ID>WildcardImport:GlassSurface.kt$import org.ide.lti.core.designsystem.component.actions.*</ID>
-    <ID>WildcardImport:GlassSurface.kt$import org.ide.lti.core.designsystem.component.devtools.*</ID>
-    <ID>WildcardImport:GlassSurface.kt$import org.ide.lti.core.designsystem.component.display.*</ID>
-    <ID>WildcardImport:GlassSurface.kt$import org.ide.lti.core.designsystem.component.feedback.*</ID>
-    <ID>WildcardImport:GlassSurface.kt$import org.ide.lti.core.designsystem.component.inputs.*</ID>
-    <ID>WildcardImport:GlassSurface.kt$import org.ide.lti.core.designsystem.component.layout.*</ID>
-    <ID>WildcardImport:GlassSurface.kt$import org.ide.lti.core.designsystem.component.navigation.*</ID>
-    <ID>WildcardImport:GlassSurface.kt$import org.ide.lti.core.designsystem.component.primitives.*</ID>
-    <ID>WildcardImport:GlassTabBar.kt$import org.ide.lti.core.designsystem.component.actions.*</ID>
-    <ID>WildcardImport:GlassTabBar.kt$import org.ide.lti.core.designsystem.component.devtools.*</ID>
-    <ID>WildcardImport:GlassTabBar.kt$import org.ide.lti.core.designsystem.component.display.*</ID>
-    <ID>WildcardImport:GlassTabBar.kt$import org.ide.lti.core.designsystem.component.feedback.*</ID>
-    <ID>WildcardImport:GlassTabBar.kt$import org.ide.lti.core.designsystem.component.inputs.*</ID>
-    <ID>WildcardImport:GlassTabBar.kt$import org.ide.lti.core.designsystem.component.layout.*</ID>
-    <ID>WildcardImport:GlassTabBar.kt$import org.ide.lti.core.designsystem.component.navigation.*</ID>
-    <ID>WildcardImport:GlassTabBar.kt$import org.ide.lti.core.designsystem.component.primitives.*</ID>
-    <ID>WildcardImport:GlassTextField.kt$import org.ide.lti.core.designsystem.component.actions.*</ID>
-    <ID>WildcardImport:GlassTextField.kt$import org.ide.lti.core.designsystem.component.devtools.*</ID>
-    <ID>WildcardImport:GlassTextField.kt$import org.ide.lti.core.designsystem.component.display.*</ID>
-    <ID>WildcardImport:GlassTextField.kt$import org.ide.lti.core.designsystem.component.feedback.*</ID>
-    <ID>WildcardImport:GlassTextField.kt$import org.ide.lti.core.designsystem.component.inputs.*</ID>
-    <ID>WildcardImport:GlassTextField.kt$import org.ide.lti.core.designsystem.component.layout.*</ID>
-    <ID>WildcardImport:GlassTextField.kt$import org.ide.lti.core.designsystem.component.navigation.*</ID>
-    <ID>WildcardImport:GlassTextField.kt$import org.ide.lti.core.designsystem.component.primitives.*</ID>
-    <ID>WildcardImport:GlassToggle.kt$import org.ide.lti.core.designsystem.component.actions.*</ID>
-    <ID>WildcardImport:GlassToggle.kt$import org.ide.lti.core.designsystem.component.devtools.*</ID>
-    <ID>WildcardImport:GlassToggle.kt$import org.ide.lti.core.designsystem.component.display.*</ID>
-    <ID>WildcardImport:GlassToggle.kt$import org.ide.lti.core.designsystem.component.feedback.*</ID>
-    <ID>WildcardImport:GlassToggle.kt$import org.ide.lti.core.designsystem.component.inputs.*</ID>
-    <ID>WildcardImport:GlassToggle.kt$import org.ide.lti.core.designsystem.component.layout.*</ID>
-    <ID>WildcardImport:GlassToggle.kt$import org.ide.lti.core.designsystem.component.navigation.*</ID>
-    <ID>WildcardImport:GlassToggle.kt$import org.ide.lti.core.designsystem.component.primitives.*</ID>
-    <ID>WildcardImport:GlassToggleButtonsOverlay.kt$import org.ide.lti.core.designsystem.component.actions.*</ID>
-    <ID>WildcardImport:GlassToggleButtonsOverlay.kt$import org.ide.lti.core.designsystem.component.devtools.*</ID>
-    <ID>WildcardImport:GlassToggleButtonsOverlay.kt$import org.ide.lti.core.designsystem.component.display.*</ID>
-    <ID>WildcardImport:GlassToggleButtonsOverlay.kt$import org.ide.lti.core.designsystem.component.feedback.*</ID>
-    <ID>WildcardImport:GlassToggleButtonsOverlay.kt$import org.ide.lti.core.designsystem.component.inputs.*</ID>
-    <ID>WildcardImport:GlassToggleButtonsOverlay.kt$import org.ide.lti.core.designsystem.component.layout.*</ID>
-    <ID>WildcardImport:GlassToggleButtonsOverlay.kt$import org.ide.lti.core.designsystem.component.navigation.*</ID>
-    <ID>WildcardImport:GlassToggleButtonsOverlay.kt$import org.ide.lti.core.designsystem.component.primitives.*</ID>
-    <ID>WildcardImport:WindowControlActions.kt$import org.ide.lti.core.designsystem.component.actions.*</ID>
-    <ID>WildcardImport:WindowControlActions.kt$import org.ide.lti.core.designsystem.component.devtools.*</ID>
-    <ID>WildcardImport:WindowControlActions.kt$import org.ide.lti.core.designsystem.component.display.*</ID>
-    <ID>WildcardImport:WindowControlActions.kt$import org.ide.lti.core.designsystem.component.feedback.*</ID>
-    <ID>WildcardImport:WindowControlActions.kt$import org.ide.lti.core.designsystem.component.inputs.*</ID>
-    <ID>WildcardImport:WindowControlActions.kt$import org.ide.lti.core.designsystem.component.layout.*</ID>
-    <ID>WildcardImport:WindowControlActions.kt$import org.ide.lti.core.designsystem.component.navigation.*</ID>
-    <ID>WildcardImport:WindowControlActions.kt$import org.ide.lti.core.designsystem.component.primitives.*</ID>
+    <ID>CyclomaticComplexMethod:GlassActionCard.kt:@OptIn(ExperimentalComposeUiApi::class) @Composable fun GlassActionCard</ID>
+    <ID>CyclomaticComplexMethod:GlassActionCard.kt:@OptIn(ExperimentalComposeUiApi::class) @Composable fun GlassItemCard</ID>
+    <ID>CyclomaticComplexMethod:GlassBanner.kt:@Suppress("UnusedParameter") @Composable fun GlassBanner</ID>
+    <ID>CyclomaticComplexMethod:GlassChip.kt:@OptIn(ExperimentalComposeUiApi::class) @Composable fun GlassChip</ID>
+    <ID>CyclomaticComplexMethod:GlassConsoleDrawer.kt:@Composable fun GlassConsoleDrawer</ID>
+    <ID>CyclomaticComplexMethod:GlassDiagnosticTile.kt:@Composable fun GlassDiagnosticTile</ID>
+    <ID>CyclomaticComplexMethod:GlassSidebarItem.kt:@OptIn(ExperimentalComposeUiApi::class) @Composable fun GlassSidebarItem</ID>
+    <ID>CyclomaticComplexMethod:GlassStepper.kt:@Composable private fun GlassStepNode</ID>
+    <ID>CyclomaticComplexMethod:GlassTextField.kt:@OptIn(ExperimentalComposeUiApi::class) @Composable fun GlassTextField</ID>
+    <ID>CyclomaticComplexMethod:ThemePreviewCard.kt:@Composable private fun MiniIdePreview</ID>
+    <ID>CyclomaticComplexMethod:ThemePreviewCard.kt:@OptIn(ExperimentalComposeUiApi::class) @Composable fun ThemePreviewCard</ID>
+    <ID>LongMethod:GlassConsoleDrawer.kt:@Composable fun GlassConsoleDrawer</ID>
+    <ID>LongMethod:GlassStepper.kt:@Composable private fun GlassStepNode</ID>
+    <ID>LongMethod:GlassTextField.kt:@OptIn(ExperimentalComposeUiApi::class) @Composable fun GlassTextField</ID>
+    <ID>LongMethod:ThemePreviewCard.kt:@Composable private fun MiniIdePreview</ID>
+    <ID>MatchingDeclarationName:Alpha.kt:AlphaTokens</ID>
+    <ID>MatchingDeclarationName:GlassChip.kt:ChipMode</ID>
+    <ID>MatchingDeclarationName:GlassFilterChipRow.kt:GlassFilterChipItem</ID>
+    <ID>MatchingDeclarationName:GlassLayout.kt:GlassLayoutSlots</ID>
+    <ID>MatchingDeclarationName:Shape.kt:GlassShapes</ID>
+    <ID>MaxLineLength:Color.kt:// Apple Liquid Glass Dark Theme: Translucent charcoal surfaces, luminous specular hairlines, subtle frost tint, Fleet electric blue accents</ID>
+    <ID>MaxLineLength:Color.kt:ThemeColors$val DarkLayerSurface = Color(0xFF111318) // Level 1: Charcoal Obsidian panel / editor / terminal surface (#111318)</ID>
+    <ID>MaxLineLength:GlassActionCard.kt:color = if (isHighlighted || isHovered) glassColors.glassBorderHighlight else glassColors.glassBorder</ID>
+    <ID>MaxLineLength:GlassActionCard.kt:color = if (isPrimary || isHovered) glassColors.glassBorderHighlight else glassColors.glassBorder</ID>
+    <ID>MaxLineLength:GlassChromeDiagnosticScreenshotTest.kt:GlassChromeDiagnosticScreenshotTest$railPosition = org.ide.lti.core.designsystem.component.navigation.SidePanelRailPosition.Left</ID>
+    <ID>MaxLineLength:GlassChromeDiagnosticScreenshotTest.kt:GlassChromeDiagnosticScreenshotTest$railPosition = org.ide.lti.core.designsystem.component.navigation.SidePanelRailPosition.Right</ID>
+    <ID>MaxLineLength:GlassDivider.kt:val finalColor = if (color != Color.Unspecified) color else glassColors.glassBorder.copy(alpha = AlphaTokens.Faint)</ID>
+    <ID>MaxLineLength:GlassSidebarItem.kt:color = if (selected) glassColors.onGlass else if (isHovered) glassColors.onGlass else glassColors.onGlassSecondary</ID>
+    <ID>MaxLineLength:GlassTextField.kt:trailing = if (value.isNotEmpty()) TextFieldTrailingSlot.Clear { onValueChange("") } else TextFieldTrailingSlot.None</ID>
+    <ID>ModifierMissing:GlassDropdownMenu.kt:@Composable public fun GlassDropdownMenuDivider</ID>
+    <ID>ModifierMissing:GlassDropdownMenu.kt:@Composable public fun GlassDropdownMenuHeader</ID>
+    <ID>NewLineAtEndOfFile:GlassEmptyState.kt:org.ide.lti.core.designsystem.component.display.GlassEmptyState.kt</ID>
+    <ID>UnusedParameter:GlassBottomTabs.kt:containerColor: Color</ID>
+    <ID>UnusedParameter:GlassTextField.kt:showPasswordTestTag: String? = null</ID>
+    <ID>UnusedParameter:GlassTopBar.kt:backdrop: Backdrop? = null</ID>
+    <ID>WildcardImport:GlassActionCard.kt:import org.ide.lti.core.designsystem.component.actions.*</ID>
+    <ID>WildcardImport:GlassActionCard.kt:import org.ide.lti.core.designsystem.component.devtools.*</ID>
+    <ID>WildcardImport:GlassActionCard.kt:import org.ide.lti.core.designsystem.component.display.*</ID>
+    <ID>WildcardImport:GlassActionCard.kt:import org.ide.lti.core.designsystem.component.feedback.*</ID>
+    <ID>WildcardImport:GlassActionCard.kt:import org.ide.lti.core.designsystem.component.inputs.*</ID>
+    <ID>WildcardImport:GlassActionCard.kt:import org.ide.lti.core.designsystem.component.layout.*</ID>
+    <ID>WildcardImport:GlassActionCard.kt:import org.ide.lti.core.designsystem.component.navigation.*</ID>
+    <ID>WildcardImport:GlassActionCard.kt:import org.ide.lti.core.designsystem.component.primitives.*</ID>
+    <ID>WildcardImport:GlassBottomSheet.kt:import org.ide.lti.core.designsystem.component.actions.*</ID>
+    <ID>WildcardImport:GlassBottomSheet.kt:import org.ide.lti.core.designsystem.component.devtools.*</ID>
+    <ID>WildcardImport:GlassBottomSheet.kt:import org.ide.lti.core.designsystem.component.display.*</ID>
+    <ID>WildcardImport:GlassBottomSheet.kt:import org.ide.lti.core.designsystem.component.feedback.*</ID>
+    <ID>WildcardImport:GlassBottomSheet.kt:import org.ide.lti.core.designsystem.component.inputs.*</ID>
+    <ID>WildcardImport:GlassBottomSheet.kt:import org.ide.lti.core.designsystem.component.layout.*</ID>
+    <ID>WildcardImport:GlassBottomSheet.kt:import org.ide.lti.core.designsystem.component.navigation.*</ID>
+    <ID>WildcardImport:GlassBottomSheet.kt:import org.ide.lti.core.designsystem.component.primitives.*</ID>
+    <ID>WildcardImport:GlassBottomTabs.kt:import org.ide.lti.core.designsystem.component.actions.*</ID>
+    <ID>WildcardImport:GlassBottomTabs.kt:import org.ide.lti.core.designsystem.component.devtools.*</ID>
+    <ID>WildcardImport:GlassBottomTabs.kt:import org.ide.lti.core.designsystem.component.display.*</ID>
+    <ID>WildcardImport:GlassBottomTabs.kt:import org.ide.lti.core.designsystem.component.feedback.*</ID>
+    <ID>WildcardImport:GlassBottomTabs.kt:import org.ide.lti.core.designsystem.component.inputs.*</ID>
+    <ID>WildcardImport:GlassBottomTabs.kt:import org.ide.lti.core.designsystem.component.layout.*</ID>
+    <ID>WildcardImport:GlassBottomTabs.kt:import org.ide.lti.core.designsystem.component.navigation.*</ID>
+    <ID>WildcardImport:GlassBottomTabs.kt:import org.ide.lti.core.designsystem.component.primitives.*</ID>
+    <ID>WildcardImport:GlassButton.kt:import org.ide.lti.core.designsystem.component.actions.*</ID>
+    <ID>WildcardImport:GlassButton.kt:import org.ide.lti.core.designsystem.component.devtools.*</ID>
+    <ID>WildcardImport:GlassButton.kt:import org.ide.lti.core.designsystem.component.display.*</ID>
+    <ID>WildcardImport:GlassButton.kt:import org.ide.lti.core.designsystem.component.feedback.*</ID>
+    <ID>WildcardImport:GlassButton.kt:import org.ide.lti.core.designsystem.component.inputs.*</ID>
+    <ID>WildcardImport:GlassButton.kt:import org.ide.lti.core.designsystem.component.layout.*</ID>
+    <ID>WildcardImport:GlassButton.kt:import org.ide.lti.core.designsystem.component.navigation.*</ID>
+    <ID>WildcardImport:GlassButton.kt:import org.ide.lti.core.designsystem.component.primitives.*</ID>
+    <ID>WildcardImport:GlassCard.kt:import org.ide.lti.core.designsystem.component.actions.*</ID>
+    <ID>WildcardImport:GlassCard.kt:import org.ide.lti.core.designsystem.component.devtools.*</ID>
+    <ID>WildcardImport:GlassCard.kt:import org.ide.lti.core.designsystem.component.display.*</ID>
+    <ID>WildcardImport:GlassCard.kt:import org.ide.lti.core.designsystem.component.feedback.*</ID>
+    <ID>WildcardImport:GlassCard.kt:import org.ide.lti.core.designsystem.component.inputs.*</ID>
+    <ID>WildcardImport:GlassCard.kt:import org.ide.lti.core.designsystem.component.layout.*</ID>
+    <ID>WildcardImport:GlassCard.kt:import org.ide.lti.core.designsystem.component.navigation.*</ID>
+    <ID>WildcardImport:GlassCard.kt:import org.ide.lti.core.designsystem.component.primitives.*</ID>
+    <ID>WildcardImport:GlassChip.kt:import org.ide.lti.core.designsystem.component.actions.*</ID>
+    <ID>WildcardImport:GlassChip.kt:import org.ide.lti.core.designsystem.component.devtools.*</ID>
+    <ID>WildcardImport:GlassChip.kt:import org.ide.lti.core.designsystem.component.display.*</ID>
+    <ID>WildcardImport:GlassChip.kt:import org.ide.lti.core.designsystem.component.feedback.*</ID>
+    <ID>WildcardImport:GlassChip.kt:import org.ide.lti.core.designsystem.component.inputs.*</ID>
+    <ID>WildcardImport:GlassChip.kt:import org.ide.lti.core.designsystem.component.layout.*</ID>
+    <ID>WildcardImport:GlassChip.kt:import org.ide.lti.core.designsystem.component.navigation.*</ID>
+    <ID>WildcardImport:GlassChip.kt:import org.ide.lti.core.designsystem.component.primitives.*</ID>
+    <ID>WildcardImport:GlassDialog.kt:import org.ide.lti.core.designsystem.component.actions.*</ID>
+    <ID>WildcardImport:GlassDialog.kt:import org.ide.lti.core.designsystem.component.devtools.*</ID>
+    <ID>WildcardImport:GlassDialog.kt:import org.ide.lti.core.designsystem.component.display.*</ID>
+    <ID>WildcardImport:GlassDialog.kt:import org.ide.lti.core.designsystem.component.feedback.*</ID>
+    <ID>WildcardImport:GlassDialog.kt:import org.ide.lti.core.designsystem.component.inputs.*</ID>
+    <ID>WildcardImport:GlassDialog.kt:import org.ide.lti.core.designsystem.component.layout.*</ID>
+    <ID>WildcardImport:GlassDialog.kt:import org.ide.lti.core.designsystem.component.navigation.*</ID>
+    <ID>WildcardImport:GlassDialog.kt:import org.ide.lti.core.designsystem.component.primitives.*</ID>
+    <ID>WildcardImport:GlassDivider.kt:import org.ide.lti.core.designsystem.component.actions.*</ID>
+    <ID>WildcardImport:GlassDivider.kt:import org.ide.lti.core.designsystem.component.devtools.*</ID>
+    <ID>WildcardImport:GlassDivider.kt:import org.ide.lti.core.designsystem.component.display.*</ID>
+    <ID>WildcardImport:GlassDivider.kt:import org.ide.lti.core.designsystem.component.feedback.*</ID>
+    <ID>WildcardImport:GlassDivider.kt:import org.ide.lti.core.designsystem.component.inputs.*</ID>
+    <ID>WildcardImport:GlassDivider.kt:import org.ide.lti.core.designsystem.component.layout.*</ID>
+    <ID>WildcardImport:GlassDivider.kt:import org.ide.lti.core.designsystem.component.navigation.*</ID>
+    <ID>WildcardImport:GlassDivider.kt:import org.ide.lti.core.designsystem.component.primitives.*</ID>
+    <ID>WildcardImport:GlassDragDivider.kt:import org.ide.lti.core.designsystem.component.actions.*</ID>
+    <ID>WildcardImport:GlassDragDivider.kt:import org.ide.lti.core.designsystem.component.devtools.*</ID>
+    <ID>WildcardImport:GlassDragDivider.kt:import org.ide.lti.core.designsystem.component.display.*</ID>
+    <ID>WildcardImport:GlassDragDivider.kt:import org.ide.lti.core.designsystem.component.feedback.*</ID>
+    <ID>WildcardImport:GlassDragDivider.kt:import org.ide.lti.core.designsystem.component.inputs.*</ID>
+    <ID>WildcardImport:GlassDragDivider.kt:import org.ide.lti.core.designsystem.component.layout.*</ID>
+    <ID>WildcardImport:GlassDragDivider.kt:import org.ide.lti.core.designsystem.component.navigation.*</ID>
+    <ID>WildcardImport:GlassDragDivider.kt:import org.ide.lti.core.designsystem.component.primitives.*</ID>
+    <ID>WildcardImport:GlassEmptyState.kt:import org.ide.lti.core.designsystem.component.actions.*</ID>
+    <ID>WildcardImport:GlassEmptyState.kt:import org.ide.lti.core.designsystem.component.devtools.*</ID>
+    <ID>WildcardImport:GlassEmptyState.kt:import org.ide.lti.core.designsystem.component.display.*</ID>
+    <ID>WildcardImport:GlassEmptyState.kt:import org.ide.lti.core.designsystem.component.feedback.*</ID>
+    <ID>WildcardImport:GlassEmptyState.kt:import org.ide.lti.core.designsystem.component.inputs.*</ID>
+    <ID>WildcardImport:GlassEmptyState.kt:import org.ide.lti.core.designsystem.component.layout.*</ID>
+    <ID>WildcardImport:GlassEmptyState.kt:import org.ide.lti.core.designsystem.component.navigation.*</ID>
+    <ID>WildcardImport:GlassEmptyState.kt:import org.ide.lti.core.designsystem.component.primitives.*</ID>
+    <ID>WildcardImport:GlassIcon.kt:import org.ide.lti.core.designsystem.component.actions.*</ID>
+    <ID>WildcardImport:GlassIcon.kt:import org.ide.lti.core.designsystem.component.devtools.*</ID>
+    <ID>WildcardImport:GlassIcon.kt:import org.ide.lti.core.designsystem.component.display.*</ID>
+    <ID>WildcardImport:GlassIcon.kt:import org.ide.lti.core.designsystem.component.feedback.*</ID>
+    <ID>WildcardImport:GlassIcon.kt:import org.ide.lti.core.designsystem.component.inputs.*</ID>
+    <ID>WildcardImport:GlassIcon.kt:import org.ide.lti.core.designsystem.component.layout.*</ID>
+    <ID>WildcardImport:GlassIcon.kt:import org.ide.lti.core.designsystem.component.navigation.*</ID>
+    <ID>WildcardImport:GlassIcon.kt:import org.ide.lti.core.designsystem.component.primitives.*</ID>
+    <ID>WildcardImport:GlassLayout.kt:import org.ide.lti.core.designsystem.component.actions.*</ID>
+    <ID>WildcardImport:GlassLayout.kt:import org.ide.lti.core.designsystem.component.devtools.*</ID>
+    <ID>WildcardImport:GlassLayout.kt:import org.ide.lti.core.designsystem.component.display.*</ID>
+    <ID>WildcardImport:GlassLayout.kt:import org.ide.lti.core.designsystem.component.feedback.*</ID>
+    <ID>WildcardImport:GlassLayout.kt:import org.ide.lti.core.designsystem.component.inputs.*</ID>
+    <ID>WildcardImport:GlassLayout.kt:import org.ide.lti.core.designsystem.component.layout.*</ID>
+    <ID>WildcardImport:GlassLayout.kt:import org.ide.lti.core.designsystem.component.navigation.*</ID>
+    <ID>WildcardImport:GlassLayout.kt:import org.ide.lti.core.designsystem.component.primitives.*</ID>
+    <ID>WildcardImport:GlassLayoutDefaults.kt:import org.ide.lti.core.designsystem.component.actions.*</ID>
+    <ID>WildcardImport:GlassLayoutDefaults.kt:import org.ide.lti.core.designsystem.component.devtools.*</ID>
+    <ID>WildcardImport:GlassLayoutDefaults.kt:import org.ide.lti.core.designsystem.component.display.*</ID>
+    <ID>WildcardImport:GlassLayoutDefaults.kt:import org.ide.lti.core.designsystem.component.feedback.*</ID>
+    <ID>WildcardImport:GlassLayoutDefaults.kt:import org.ide.lti.core.designsystem.component.inputs.*</ID>
+    <ID>WildcardImport:GlassLayoutDefaults.kt:import org.ide.lti.core.designsystem.component.layout.*</ID>
+    <ID>WildcardImport:GlassLayoutDefaults.kt:import org.ide.lti.core.designsystem.component.navigation.*</ID>
+    <ID>WildcardImport:GlassLayoutDefaults.kt:import org.ide.lti.core.designsystem.component.primitives.*</ID>
+    <ID>WildcardImport:GlassLayoutPanels.kt:import org.ide.lti.core.designsystem.component.actions.*</ID>
+    <ID>WildcardImport:GlassLayoutPanels.kt:import org.ide.lti.core.designsystem.component.devtools.*</ID>
+    <ID>WildcardImport:GlassLayoutPanels.kt:import org.ide.lti.core.designsystem.component.display.*</ID>
+    <ID>WildcardImport:GlassLayoutPanels.kt:import org.ide.lti.core.designsystem.component.feedback.*</ID>
+    <ID>WildcardImport:GlassLayoutPanels.kt:import org.ide.lti.core.designsystem.component.inputs.*</ID>
+    <ID>WildcardImport:GlassLayoutPanels.kt:import org.ide.lti.core.designsystem.component.layout.*</ID>
+    <ID>WildcardImport:GlassLayoutPanels.kt:import org.ide.lti.core.designsystem.component.navigation.*</ID>
+    <ID>WildcardImport:GlassLayoutPanels.kt:import org.ide.lti.core.designsystem.component.primitives.*</ID>
+    <ID>WildcardImport:GlassLayoutState.kt:import org.ide.lti.core.designsystem.component.actions.*</ID>
+    <ID>WildcardImport:GlassLayoutState.kt:import org.ide.lti.core.designsystem.component.devtools.*</ID>
+    <ID>WildcardImport:GlassLayoutState.kt:import org.ide.lti.core.designsystem.component.display.*</ID>
+    <ID>WildcardImport:GlassLayoutState.kt:import org.ide.lti.core.designsystem.component.feedback.*</ID>
+    <ID>WildcardImport:GlassLayoutState.kt:import org.ide.lti.core.designsystem.component.inputs.*</ID>
+    <ID>WildcardImport:GlassLayoutState.kt:import org.ide.lti.core.designsystem.component.layout.*</ID>
+    <ID>WildcardImport:GlassLayoutState.kt:import org.ide.lti.core.designsystem.component.navigation.*</ID>
+    <ID>WildcardImport:GlassLayoutState.kt:import org.ide.lti.core.designsystem.component.primitives.*</ID>
+    <ID>WildcardImport:GlassListTile.kt:import org.ide.lti.core.designsystem.component.actions.*</ID>
+    <ID>WildcardImport:GlassListTile.kt:import org.ide.lti.core.designsystem.component.devtools.*</ID>
+    <ID>WildcardImport:GlassListTile.kt:import org.ide.lti.core.designsystem.component.display.*</ID>
+    <ID>WildcardImport:GlassListTile.kt:import org.ide.lti.core.designsystem.component.feedback.*</ID>
+    <ID>WildcardImport:GlassListTile.kt:import org.ide.lti.core.designsystem.component.inputs.*</ID>
+    <ID>WildcardImport:GlassListTile.kt:import org.ide.lti.core.designsystem.component.layout.*</ID>
+    <ID>WildcardImport:GlassListTile.kt:import org.ide.lti.core.designsystem.component.navigation.*</ID>
+    <ID>WildcardImport:GlassListTile.kt:import org.ide.lti.core.designsystem.component.primitives.*</ID>
+    <ID>WildcardImport:GlassModifiers.kt:import org.ide.lti.core.designsystem.component.actions.*</ID>
+    <ID>WildcardImport:GlassModifiers.kt:import org.ide.lti.core.designsystem.component.devtools.*</ID>
+    <ID>WildcardImport:GlassModifiers.kt:import org.ide.lti.core.designsystem.component.display.*</ID>
+    <ID>WildcardImport:GlassModifiers.kt:import org.ide.lti.core.designsystem.component.feedback.*</ID>
+    <ID>WildcardImport:GlassModifiers.kt:import org.ide.lti.core.designsystem.component.inputs.*</ID>
+    <ID>WildcardImport:GlassModifiers.kt:import org.ide.lti.core.designsystem.component.layout.*</ID>
+    <ID>WildcardImport:GlassModifiers.kt:import org.ide.lti.core.designsystem.component.navigation.*</ID>
+    <ID>WildcardImport:GlassModifiers.kt:import org.ide.lti.core.designsystem.component.primitives.*</ID>
+    <ID>WildcardImport:GlassNavigation.kt:import org.ide.lti.core.designsystem.component.actions.*</ID>
+    <ID>WildcardImport:GlassNavigation.kt:import org.ide.lti.core.designsystem.component.devtools.*</ID>
+    <ID>WildcardImport:GlassNavigation.kt:import org.ide.lti.core.designsystem.component.display.*</ID>
+    <ID>WildcardImport:GlassNavigation.kt:import org.ide.lti.core.designsystem.component.feedback.*</ID>
+    <ID>WildcardImport:GlassNavigation.kt:import org.ide.lti.core.designsystem.component.inputs.*</ID>
+    <ID>WildcardImport:GlassNavigation.kt:import org.ide.lti.core.designsystem.component.layout.*</ID>
+    <ID>WildcardImport:GlassNavigation.kt:import org.ide.lti.core.designsystem.component.navigation.*</ID>
+    <ID>WildcardImport:GlassNavigation.kt:import org.ide.lti.core.designsystem.component.primitives.*</ID>
+    <ID>WildcardImport:GlassPanel.kt:import org.ide.lti.core.designsystem.component.actions.*</ID>
+    <ID>WildcardImport:GlassPanel.kt:import org.ide.lti.core.designsystem.component.devtools.*</ID>
+    <ID>WildcardImport:GlassPanel.kt:import org.ide.lti.core.designsystem.component.display.*</ID>
+    <ID>WildcardImport:GlassPanel.kt:import org.ide.lti.core.designsystem.component.feedback.*</ID>
+    <ID>WildcardImport:GlassPanel.kt:import org.ide.lti.core.designsystem.component.inputs.*</ID>
+    <ID>WildcardImport:GlassPanel.kt:import org.ide.lti.core.designsystem.component.layout.*</ID>
+    <ID>WildcardImport:GlassPanel.kt:import org.ide.lti.core.designsystem.component.navigation.*</ID>
+    <ID>WildcardImport:GlassPanel.kt:import org.ide.lti.core.designsystem.component.primitives.*</ID>
+    <ID>WildcardImport:GlassPerformanceMonitor.kt:import org.ide.lti.core.designsystem.component.actions.*</ID>
+    <ID>WildcardImport:GlassPerformanceMonitor.kt:import org.ide.lti.core.designsystem.component.devtools.*</ID>
+    <ID>WildcardImport:GlassPerformanceMonitor.kt:import org.ide.lti.core.designsystem.component.display.*</ID>
+    <ID>WildcardImport:GlassPerformanceMonitor.kt:import org.ide.lti.core.designsystem.component.feedback.*</ID>
+    <ID>WildcardImport:GlassPerformanceMonitor.kt:import org.ide.lti.core.designsystem.component.inputs.*</ID>
+    <ID>WildcardImport:GlassPerformanceMonitor.kt:import org.ide.lti.core.designsystem.component.layout.*</ID>
+    <ID>WildcardImport:GlassPerformanceMonitor.kt:import org.ide.lti.core.designsystem.component.navigation.*</ID>
+    <ID>WildcardImport:GlassPerformanceMonitor.kt:import org.ide.lti.core.designsystem.component.primitives.*</ID>
+    <ID>WildcardImport:GlassScrollEdge.kt:import org.ide.lti.core.designsystem.component.actions.*</ID>
+    <ID>WildcardImport:GlassScrollEdge.kt:import org.ide.lti.core.designsystem.component.devtools.*</ID>
+    <ID>WildcardImport:GlassScrollEdge.kt:import org.ide.lti.core.designsystem.component.display.*</ID>
+    <ID>WildcardImport:GlassScrollEdge.kt:import org.ide.lti.core.designsystem.component.feedback.*</ID>
+    <ID>WildcardImport:GlassScrollEdge.kt:import org.ide.lti.core.designsystem.component.inputs.*</ID>
+    <ID>WildcardImport:GlassScrollEdge.kt:import org.ide.lti.core.designsystem.component.layout.*</ID>
+    <ID>WildcardImport:GlassScrollEdge.kt:import org.ide.lti.core.designsystem.component.navigation.*</ID>
+    <ID>WildcardImport:GlassScrollEdge.kt:import org.ide.lti.core.designsystem.component.primitives.*</ID>
+    <ID>WildcardImport:GlassScrollableTabRow.kt:import org.ide.lti.core.designsystem.component.actions.*</ID>
+    <ID>WildcardImport:GlassScrollableTabRow.kt:import org.ide.lti.core.designsystem.component.devtools.*</ID>
+    <ID>WildcardImport:GlassScrollableTabRow.kt:import org.ide.lti.core.designsystem.component.display.*</ID>
+    <ID>WildcardImport:GlassScrollableTabRow.kt:import org.ide.lti.core.designsystem.component.feedback.*</ID>
+    <ID>WildcardImport:GlassScrollableTabRow.kt:import org.ide.lti.core.designsystem.component.inputs.*</ID>
+    <ID>WildcardImport:GlassScrollableTabRow.kt:import org.ide.lti.core.designsystem.component.layout.*</ID>
+    <ID>WildcardImport:GlassScrollableTabRow.kt:import org.ide.lti.core.designsystem.component.navigation.*</ID>
+    <ID>WildcardImport:GlassScrollableTabRow.kt:import org.ide.lti.core.designsystem.component.primitives.*</ID>
+    <ID>WildcardImport:GlassSidePanelTabs.kt:import org.ide.lti.core.designsystem.component.actions.*</ID>
+    <ID>WildcardImport:GlassSidePanelTabs.kt:import org.ide.lti.core.designsystem.component.devtools.*</ID>
+    <ID>WildcardImport:GlassSidePanelTabs.kt:import org.ide.lti.core.designsystem.component.display.*</ID>
+    <ID>WildcardImport:GlassSidePanelTabs.kt:import org.ide.lti.core.designsystem.component.feedback.*</ID>
+    <ID>WildcardImport:GlassSidePanelTabs.kt:import org.ide.lti.core.designsystem.component.inputs.*</ID>
+    <ID>WildcardImport:GlassSidePanelTabs.kt:import org.ide.lti.core.designsystem.component.layout.*</ID>
+    <ID>WildcardImport:GlassSidePanelTabs.kt:import org.ide.lti.core.designsystem.component.navigation.*</ID>
+    <ID>WildcardImport:GlassSidePanelTabs.kt:import org.ide.lti.core.designsystem.component.primitives.*</ID>
+    <ID>WildcardImport:GlassSidebarItem.kt:import org.ide.lti.core.designsystem.component.actions.*</ID>
+    <ID>WildcardImport:GlassSidebarItem.kt:import org.ide.lti.core.designsystem.component.devtools.*</ID>
+    <ID>WildcardImport:GlassSidebarItem.kt:import org.ide.lti.core.designsystem.component.display.*</ID>
+    <ID>WildcardImport:GlassSidebarItem.kt:import org.ide.lti.core.designsystem.component.feedback.*</ID>
+    <ID>WildcardImport:GlassSidebarItem.kt:import org.ide.lti.core.designsystem.component.inputs.*</ID>
+    <ID>WildcardImport:GlassSidebarItem.kt:import org.ide.lti.core.designsystem.component.layout.*</ID>
+    <ID>WildcardImport:GlassSidebarItem.kt:import org.ide.lti.core.designsystem.component.navigation.*</ID>
+    <ID>WildcardImport:GlassSidebarItem.kt:import org.ide.lti.core.designsystem.component.primitives.*</ID>
+    <ID>WildcardImport:GlassSlider.kt:import org.ide.lti.core.designsystem.component.actions.*</ID>
+    <ID>WildcardImport:GlassSlider.kt:import org.ide.lti.core.designsystem.component.devtools.*</ID>
+    <ID>WildcardImport:GlassSlider.kt:import org.ide.lti.core.designsystem.component.display.*</ID>
+    <ID>WildcardImport:GlassSlider.kt:import org.ide.lti.core.designsystem.component.feedback.*</ID>
+    <ID>WildcardImport:GlassSlider.kt:import org.ide.lti.core.designsystem.component.inputs.*</ID>
+    <ID>WildcardImport:GlassSlider.kt:import org.ide.lti.core.designsystem.component.layout.*</ID>
+    <ID>WildcardImport:GlassSlider.kt:import org.ide.lti.core.designsystem.component.navigation.*</ID>
+    <ID>WildcardImport:GlassSlider.kt:import org.ide.lti.core.designsystem.component.primitives.*</ID>
+    <ID>WildcardImport:GlassStatusBar.kt:import org.ide.lti.core.designsystem.component.actions.*</ID>
+    <ID>WildcardImport:GlassStatusBar.kt:import org.ide.lti.core.designsystem.component.devtools.*</ID>
+    <ID>WildcardImport:GlassStatusBar.kt:import org.ide.lti.core.designsystem.component.display.*</ID>
+    <ID>WildcardImport:GlassStatusBar.kt:import org.ide.lti.core.designsystem.component.feedback.*</ID>
+    <ID>WildcardImport:GlassStatusBar.kt:import org.ide.lti.core.designsystem.component.inputs.*</ID>
+    <ID>WildcardImport:GlassStatusBar.kt:import org.ide.lti.core.designsystem.component.layout.*</ID>
+    <ID>WildcardImport:GlassStatusBar.kt:import org.ide.lti.core.designsystem.component.navigation.*</ID>
+    <ID>WildcardImport:GlassStatusBar.kt:import org.ide.lti.core.designsystem.component.primitives.*</ID>
+    <ID>WildcardImport:GlassSurface.kt:import org.ide.lti.core.designsystem.component.actions.*</ID>
+    <ID>WildcardImport:GlassSurface.kt:import org.ide.lti.core.designsystem.component.devtools.*</ID>
+    <ID>WildcardImport:GlassSurface.kt:import org.ide.lti.core.designsystem.component.display.*</ID>
+    <ID>WildcardImport:GlassSurface.kt:import org.ide.lti.core.designsystem.component.feedback.*</ID>
+    <ID>WildcardImport:GlassSurface.kt:import org.ide.lti.core.designsystem.component.inputs.*</ID>
+    <ID>WildcardImport:GlassSurface.kt:import org.ide.lti.core.designsystem.component.layout.*</ID>
+    <ID>WildcardImport:GlassSurface.kt:import org.ide.lti.core.designsystem.component.navigation.*</ID>
+    <ID>WildcardImport:GlassSurface.kt:import org.ide.lti.core.designsystem.component.primitives.*</ID>
+    <ID>WildcardImport:GlassTabBar.kt:import org.ide.lti.core.designsystem.component.actions.*</ID>
+    <ID>WildcardImport:GlassTabBar.kt:import org.ide.lti.core.designsystem.component.devtools.*</ID>
+    <ID>WildcardImport:GlassTabBar.kt:import org.ide.lti.core.designsystem.component.display.*</ID>
+    <ID>WildcardImport:GlassTabBar.kt:import org.ide.lti.core.designsystem.component.feedback.*</ID>
+    <ID>WildcardImport:GlassTabBar.kt:import org.ide.lti.core.designsystem.component.inputs.*</ID>
+    <ID>WildcardImport:GlassTabBar.kt:import org.ide.lti.core.designsystem.component.layout.*</ID>
+    <ID>WildcardImport:GlassTabBar.kt:import org.ide.lti.core.designsystem.component.navigation.*</ID>
+    <ID>WildcardImport:GlassTabBar.kt:import org.ide.lti.core.designsystem.component.primitives.*</ID>
+    <ID>WildcardImport:GlassTextField.kt:import org.ide.lti.core.designsystem.component.actions.*</ID>
+    <ID>WildcardImport:GlassTextField.kt:import org.ide.lti.core.designsystem.component.devtools.*</ID>
+    <ID>WildcardImport:GlassTextField.kt:import org.ide.lti.core.designsystem.component.display.*</ID>
+    <ID>WildcardImport:GlassTextField.kt:import org.ide.lti.core.designsystem.component.feedback.*</ID>
+    <ID>WildcardImport:GlassTextField.kt:import org.ide.lti.core.designsystem.component.inputs.*</ID>
+    <ID>WildcardImport:GlassTextField.kt:import org.ide.lti.core.designsystem.component.layout.*</ID>
+    <ID>WildcardImport:GlassTextField.kt:import org.ide.lti.core.designsystem.component.navigation.*</ID>
+    <ID>WildcardImport:GlassTextField.kt:import org.ide.lti.core.designsystem.component.primitives.*</ID>
+    <ID>WildcardImport:GlassToggle.kt:import org.ide.lti.core.designsystem.component.actions.*</ID>
+    <ID>WildcardImport:GlassToggle.kt:import org.ide.lti.core.designsystem.component.devtools.*</ID>
+    <ID>WildcardImport:GlassToggle.kt:import org.ide.lti.core.designsystem.component.display.*</ID>
+    <ID>WildcardImport:GlassToggle.kt:import org.ide.lti.core.designsystem.component.feedback.*</ID>
+    <ID>WildcardImport:GlassToggle.kt:import org.ide.lti.core.designsystem.component.inputs.*</ID>
+    <ID>WildcardImport:GlassToggle.kt:import org.ide.lti.core.designsystem.component.layout.*</ID>
+    <ID>WildcardImport:GlassToggle.kt:import org.ide.lti.core.designsystem.component.navigation.*</ID>
+    <ID>WildcardImport:GlassToggle.kt:import org.ide.lti.core.designsystem.component.primitives.*</ID>
+    <ID>WildcardImport:GlassToggleButtonsOverlay.kt:import org.ide.lti.core.designsystem.component.actions.*</ID>
+    <ID>WildcardImport:GlassToggleButtonsOverlay.kt:import org.ide.lti.core.designsystem.component.devtools.*</ID>
+    <ID>WildcardImport:GlassToggleButtonsOverlay.kt:import org.ide.lti.core.designsystem.component.display.*</ID>
+    <ID>WildcardImport:GlassToggleButtonsOverlay.kt:import org.ide.lti.core.designsystem.component.feedback.*</ID>
+    <ID>WildcardImport:GlassToggleButtonsOverlay.kt:import org.ide.lti.core.designsystem.component.inputs.*</ID>
+    <ID>WildcardImport:GlassToggleButtonsOverlay.kt:import org.ide.lti.core.designsystem.component.layout.*</ID>
+    <ID>WildcardImport:GlassToggleButtonsOverlay.kt:import org.ide.lti.core.designsystem.component.navigation.*</ID>
+    <ID>WildcardImport:GlassToggleButtonsOverlay.kt:import org.ide.lti.core.designsystem.component.primitives.*</ID>
+    <ID>WildcardImport:WindowControlActions.kt:import org.ide.lti.core.designsystem.component.actions.*</ID>
+    <ID>WildcardImport:WindowControlActions.kt:import org.ide.lti.core.designsystem.component.devtools.*</ID>
+    <ID>WildcardImport:WindowControlActions.kt:import org.ide.lti.core.designsystem.component.display.*</ID>
+    <ID>WildcardImport:WindowControlActions.kt:import org.ide.lti.core.designsystem.component.feedback.*</ID>
+    <ID>WildcardImport:WindowControlActions.kt:import org.ide.lti.core.designsystem.component.inputs.*</ID>
+    <ID>WildcardImport:WindowControlActions.kt:import org.ide.lti.core.designsystem.component.layout.*</ID>
+    <ID>WildcardImport:WindowControlActions.kt:import org.ide.lti.core.designsystem.component.navigation.*</ID>
+    <ID>WildcardImport:WindowControlActions.kt:import org.ide.lti.core.designsystem.component.primitives.*</ID>
   </CurrentIssues>
 </SmellBaseline>

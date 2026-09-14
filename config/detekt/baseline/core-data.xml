@@ -1,172 +1,119 @@
 <?xml version="1.0" ?>
 <SmellBaseline>
-  <ManuallySuppressedIssues></ManuallySuppressedIssues>
+  <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>ComplexCondition:CompositeSystemDoctorEngineTest.kt$CompositeSystemDoctorEngineTest.MockWslCliExecutor$cmdStr.contains("test -e") || cmdStr.contains("test -d") || cmdStr.contains("test -x") || cmdStr.contains("test -r")</ID>
-    <ID>ComplexCondition:CompositeSystemDoctorEngineTest.kt$CompositeSystemDoctorEngineTest.MockWslCliExecutor$cmdStr.contains("which cmake") || cmdStr.contains("which make") || cmdStr.contains("which clang") || cmdStr.contains("which clang++")</ID>
-    <ID>ComplexCondition:WslToolchainProvisionerTest.kt$WslToolchainProvisionerTest.FakeWslCliExecutor$cmdStr.contains("test -e") || cmdStr.contains("test -d") || cmdStr.contains("test -x") || cmdStr.contains("test -r") || cmdStr.contains("test -f")</ID>
-    <ID>CyclomaticComplexMethod:CompilersInspector.kt$CompilersInspector$override suspend fun inspect(context: DiagnosticContext): DiagnosticCheckItem</ID>
-    <ID>CyclomaticComplexMethod:CompositeSystemDoctorEngineTest.kt$CompositeSystemDoctorEngineTest.MockWslCliExecutor$override fun execute( distro: String, command: List&lt;String&gt;, timeoutSeconds: Long, charset: Charset, user: String? ): CliExecutionResult</ID>
-    <ID>CyclomaticComplexMethod:DualJdkInspector.kt$DualJdkInspector$override suspend fun inspect(context: DiagnosticContext): DiagnosticCheckItem</ID>
-    <ID>CyclomaticComplexMethod:KernelFuseInspector.kt$KernelFuseInspector$override suspend fun inspect(context: DiagnosticContext): DiagnosticCheckItem</ID>
-    <ID>CyclomaticComplexMethod:SubmoduleSyncEngine.kt$SubmoduleSyncEngine$public suspend fun syncAll( distro: String, extDir: String, submodules: List&lt;PinnedSubmodule&gt; = DEFAULT_SUBMODULES, journal: SetupJournalContext? = null, onRunStarted: (SetupStepStage, String) -&gt; Unit = { _, _ -&gt; }, log: (String) -&gt; Unit = {}, ): Result&lt;Unit&gt;</ID>
-    <ID>CyclomaticComplexMethod:ToolchainBuildEngine.kt$ToolchainBuildEngine$public suspend fun buildAndDistributeAll( distro: String, extDir: String, binDir: String, journal: SetupJournalContext? = null, onRunStarted: (SetupStepStage, String) -&gt; Unit = { _, _ -&gt; }, log: (String) -&gt; Unit = {}, ): Result&lt;Unit&gt;</ID>
-    <ID>CyclomaticComplexMethod:WorkDirDiscoveryService.kt$WorkDirDiscoveryService$private fun resolvePhysicalWorkDir( basePathOverride: String?, environmentIdOverride: EnvironmentId? = null, ): Path?</ID>
-    <ID>CyclomaticComplexMethod:WslPackageRemediator.kt$WslPackageRemediator$public suspend fun remediate( context: DiagnosticContext, diagnosticItems: List&lt;DiagnosticCheckItem&gt;, onProgress: (String) -&gt; Unit = {} ): Boolean</ID>
-    <ID>CyclomaticComplexMethod:WslToolchainProvisioner.kt$WslToolchainProvisioner$override suspend fun repairTool(toolId: String): Boolean</ID>
-    <ID>CyclomaticComplexMethod:WslToolchainProvisioner.kt$WslToolchainProvisioner$override suspend fun testTool(toolId: String): StepStatus</ID>
-    <ID>CyclomaticComplexMethod:WslToolchainProvisioner.kt$WslToolchainProvisioner$override suspend fun verifyEnvironment(): ToolchainSetupState</ID>
-    <ID>CyclomaticComplexMethod:WslToolchainProvisioner.kt$WslToolchainProvisioner$public suspend fun provisionAvbKey( serviceCli: WslCliExecutor? = null, home: String? = null, distroName: String? = null ): Boolean</ID>
-    <ID>CyclomaticComplexMethod:WslToolchainProvisionerTest.kt$WslToolchainProvisionerTest.FakeWslCliExecutor$override fun execute(distro: String, command: List&lt;String&gt;, timeoutSeconds: Long, charset: Charset, user: String?): CliExecutionResult</ID>
-    <ID>LargeClass:WslToolchainProvisioner.kt$WslToolchainProvisioner : ToolchainProvisioningService</ID>
-    <ID>LongMethod:ToolchainBuildEngine.kt$ToolchainBuildEngine$public suspend fun buildAndDistributeAll( distro: String, extDir: String, binDir: String, journal: SetupJournalContext? = null, onRunStarted: (SetupStepStage, String) -&gt; Unit = { _, _ -&gt; }, log: (String) -&gt; Unit = {}, ): Result&lt;Unit&gt;</ID>
-    <ID>LongMethod:WslToolchainProvisioner.kt$WslToolchainProvisioner$override suspend fun verifyEnvironment(): ToolchainSetupState</ID>
-    <ID>MaxLineLength:CompilersInspector.kt$CompilersInspector$val compilerCmd = if (compilersOk) null else "sudo apt-get install -y build-essential ${missingCompilers.joinToString(" ")}"</ID>
-    <ID>MaxLineLength:CompositeSystemDoctorEngineTest.kt$CompositeSystemDoctorEngineTest$assertTrue(mockCli.executedCommands.any { it.startsWith("sudo -n apt-get") }, "Must execute via non-interactive sudo")</ID>
-    <ID>MaxLineLength:CompositeSystemDoctorEngineTest.kt$CompositeSystemDoctorEngineTest$fun</ID>
-    <ID>MaxLineLength:CompositeSystemDoctorEngineTest.kt$CompositeSystemDoctorEngineTest.MockWslCliExecutor$CliExecutionResult(0, "Filesystem 1G-blocks Used Available Use% Mounted on\n/dev/sdc 250G 235G 15G 94% /home/lti\n", "")</ID>
-    <ID>MaxLineLength:CompositeSystemDoctorEngineTest.kt$CompositeSystemDoctorEngineTest.MockWslCliExecutor$CliExecutionResult(0, "Filesystem 1G-blocks Used Available Use% Mounted on\n/dev/sdc 250G 50G 190G 21% /home/lti\n", "")</ID>
-    <ID>MaxLineLength:DualJdkInspector.kt$DualJdkInspector$jdkDetail = "Java ($detectedJavaVer) with javac verified. OpenJDK 17 (apktool) &amp; OpenJDK 21 (toolchain build) recommended."</ID>
-    <ID>MaxLineLength:DualJdkInspector.kt$DualJdkInspector$val detectedJavaVer = Regex("version\\s+\"([^\"]+)").find(javaVerOutput)?.groupValues?.get(1) ?: if (hasJava) "Active" else "None"</ID>
-    <ID>MaxLineLength:EnvironmentVerificationTest.kt$EnvironmentVerificationTest.FakeToolchainRepo$override suspend fun updateSubmodule(name: String, transform: (PersistedSubmoduleState) -&gt; PersistedSubmoduleState)</ID>
-    <ID>MaxLineLength:EnvironmentVerificationTest.kt$EnvironmentVerificationTest.RecordingRemoteTransport$request.toolId == "df" -&gt; ToolExecutionResponse(0, "Filesystem 1K-blocks Used Available Use% Mounted on\n/dev/sdb 100G 50G 50G 50% /home/lti\n", "", 2L)</ID>
-    <ID>MaxLineLength:EnvironmentVerificationTest.kt$EnvironmentVerificationTest.RecordingRemoteTransport$request.toolId == "find" &amp;&amp; (request.arguments.contains("/usr/bin") || request.arguments.contains("/bin"))</ID>
-    <ID>MaxLineLength:LoopMountInspector.kt$LoopMountInspector$val sudoMountCmd = "echo \"\$USER ALL=(ALL) NOPASSWD: /bin/mount, /bin/umount\" | sudo tee /etc/sudoers.d/ltirom-mount"</ID>
-    <ID>MaxLineLength:NativeLibrariesInspector.kt$NativeLibrariesInspector$"Pre-built binaries active in ${context.binDir}. Install libraries if compiling from source: $libsCmd"</ID>
-    <ID>MaxLineLength:PythonRuntimeInspector.kt$PythonRuntimeInspector$pyRemediation = "Run 'sudo apt-get install -y python3 python3-pip &amp;&amp; pip3 install cryptography pyasn1' in WSL."</ID>
-    <ID>MaxLineLength:PythonRuntimeInspector.kt$PythonRuntimeInspector$val pyCryptoOk = hasPython3 &amp;&amp; cli.execute(distro, listOf("python3", "-c", "import cryptography, pyasn1")).exitCode == 0</ID>
-    <ID>MaxLineLength:SetupConsentTest.kt$SetupConsentTest$assertNotNull(state.stepRunIds[SetupStepStage.TOOLCHAIN_COMPILATION], "Durable run ID must be recorded for toolchain compilation")</ID>
-    <ID>MaxLineLength:SetupConsentTest.kt$SetupConsentTest$assertTrue(resultFail.detail.contains("Unable to measure available disk space"), "Detail must report failure instead of fabricated 50L: ${resultFail.detail}")</ID>
-    <ID>MaxLineLength:SetupConsentTest.kt$SetupConsentTest$val context = DiagnosticContext(distro = "Ubuntu", home = "/home/lti", binDir = "/home/lti/LtiRomTools/bin", binariesPresent = false)</ID>
-    <ID>MaxLineLength:SetupConsentTest.kt$SetupConsentTest.SpyCliExecutor$cmdStr.contains("wsl.exe --status") || cmdStr.contains("--status") -&gt; CliExecutionResult(0, "Default Distribution: Ubuntu", "")</ID>
-    <ID>MaxLineLength:SetupConsentTest.kt$SetupConsentTest.SpyCliExecutor$command.firstOrNull() == "df" -&gt; CliExecutionResult(dfExitCode, if (dfExitCode == 0) dfOutput else "", if (dfExitCode != 0) "df failed" else "")</ID>
-    <ID>MaxLineLength:SetupConsentTest.kt$SetupConsentTest.SpyCliExecutor$var dfOutput: String = "Filesystem 1K-blocks Used Available Use% Mounted on\n/dev/root 100G 50G 50G 50% /home/lti\n"</ID>
-    <ID>MaxLineLength:SetupConsentTest.kt$SetupConsentTest.SpyDaemonSupervisor$var descriptor: ServerConnectionDescriptor? = ServerConnectionDescriptor("127.0.0.1", 9090, "token", 1234L, "Ubuntu")</ID>
-    <ID>MaxLineLength:SetupConsentTest.kt$SetupConsentTest.SpyRemoteTransport$ToolExecutionResponse(0, "payload-dumper-go\nlpunpack\nlpmake\nsimg2img\nerofsfuse\nmkfs.erofs\navbtool\nunpack_bootimg\nimg2sdat\nsignapk\nadb\nfastboot", "", 2L)</ID>
-    <ID>MaxLineLength:SetupConsentTest.kt$SetupConsentTest.SpyRemoteTransport$request.toolId == "find" &amp;&amp; (request.arguments.contains("/usr/bin") || request.arguments.contains("/bin"))</ID>
-    <ID>MaxLineLength:SetupConsentTest.kt$SetupConsentTest.SpyRemoteTransport$request.toolId == "find" -&gt; ToolExecutionResponse(0, "android-tools\napktool\nerofs-utils\nimg2sdat\nsignapk", "", 2L)</ID>
-    <ID>MaxLineLength:SetupConsentTest.kt$SetupConsentTest.SpyRemoteTransport$val out = "Filesystem 1K-blocks Used Available Use% Mounted on\n/dev/root 200000000 50000000 60G 25% /home/lti\n"</ID>
-    <ID>MaxLineLength:SetupExecutionPathTest.kt$SetupExecutionPathTest$"Expected ZERO calls to direct WslCliExecutor after SERVER_CONNECTIVITY succeeded, but found ${spyCli.postBridgeCommands.size} call(s): ${spyCli.postBridgeCommands}"</ID>
-    <ID>MaxLineLength:SetupExecutionPathTest.kt$SetupExecutionPathTest$fun</ID>
-    <ID>MaxLineLength:SetupExecutionPathTest.kt$SetupExecutionPathTest.RecordingTransport$ToolExecutionResponse(0, "Filesystem 1K-blocks Used Available Use% Mounted on\n/dev/sdb 100G 50G 50G 50% /home/lti\n", "", 2L)</ID>
-    <ID>MaxLineLength:SetupExecutionPathTest.kt$SetupExecutionPathTest.RecordingTransport$request.toolId == "which" -&gt; ToolExecutionResponse(0, "/usr/bin/${request.arguments.firstOrNull()}", "", 1L)</ID>
-    <ID>MaxLineLength:SetupExecutionPathTest.kt$SetupExecutionPathTest.RecordingTransport$return RunHandle(runId = "run-${startedRuns.size}", status = RunStatusValue.RUNNING, startedAtEpochMs = 1000L)</ID>
-    <ID>MaxLineLength:StepExecutionAdapterTest.kt$StepExecutionAdapterTest$RunStatus(runId = "run_123", status = RunStatusValue.COMPLETED, exitCode = 0, startedAtEpochMs = 1000L, lastSeq = 1L)</ID>
-    <ID>MaxLineLength:StepExecutionAdapterTest.kt$StepExecutionAdapterTest$RunStatus(runId = "run_123", status = RunStatusValue.FAILED, exitCode = 2, startedAtEpochMs = 1000L, lastSeq = 0L)</ID>
-    <ID>MaxLineLength:StorageHeadroomInspector.kt$StorageHeadroomInspector$detail = "Unable to measure available disk space in $home: ${dfRes.error.ifBlank { "df command failed" }}"</ID>
-    <ID>MaxLineLength:StorageHeadroomInspector.kt$StorageHeadroomInspector$remediation = if (diskStatus == StepStatus.SUCCESS) null else "Free disk space in WSL rootfs to ensure safe ROM packaging."</ID>
-    <ID>MaxLineLength:SubmoduleSyncEngine.kt$SubmoduleSyncEngine$log("[Step 4/5] Submodule directory '${sub.name}' detected. Verifying pinned commit ${sub.commit.take(8)}...")</ID>
-    <ID>MaxLineLength:SubmoduleSyncEngine.kt$SubmoduleSyncEngine$val err = "Failed to check out ${sub.name} at ${sub.commit}: ${checkoutRes.error.ifBlank { checkoutRes.output }}"</ID>
-    <ID>MaxLineLength:SubmoduleSyncEngine.kt$SubmoduleSyncEngine.Companion$PinnedSubmodule("android-tools", "https://github.com/UN1CA/external_android-tools.git", "2c5e1b7c192f30ec3d50ec5f983618bb87b9895c")</ID>
-    <ID>MaxLineLength:SubmoduleSyncEngine.kt$SubmoduleSyncEngine.Companion$PinnedSubmodule("apktool", "https://github.com/iBotPeaches/Apktool.git", "1c1d15b070c2138d958fa8b685d430c49c4bb117")</ID>
-    <ID>MaxLineLength:SubmoduleSyncEngine.kt$SubmoduleSyncEngine.Companion$PinnedSubmodule("erofs-utils", "https://github.com/sekaiacg/erofs-utils.git", "24ebe947b889fabcd72f802e4f184b0f807a0e0e")</ID>
-    <ID>MaxLineLength:SubmoduleSyncEngine.kt$SubmoduleSyncEngine.Companion$PinnedSubmodule("img2sdat", "https://github.com/UN1CA/external_img2sdat.git", "601317ed0bf502eb8facdd048f2d75dc75ffcd53")</ID>
-    <ID>MaxLineLength:SubmoduleSyncEngine.kt$SubmoduleSyncEngine.Companion$PinnedSubmodule("signapk", "https://github.com/UN1CA/external_signapk.git", "cb88f4b27d8a07ca101eade5d40a6893920cb55e")</ID>
-    <ID>MaxLineLength:SubmoduleSyncEngineTest.kt$SubmoduleSyncEngineTest$assertEquals(listOf("clone", "--recursive", "https://example.com/test.git", "/home/lti/LtiRomTools/external/test-sub"), req.request.arguments)</ID>
-    <ID>MaxLineLength:SubmoduleSyncEngineTest.kt$SubmoduleSyncEngineTest$assertEquals(listOf("git", "-C", "/home/lti/LtiRomTools/external/test-sub", "checkout", "-f", "abcdef1234567890"), checkoutCmd)</ID>
-    <ID>MaxLineLength:SubmoduleSyncEngineTest.kt$SubmoduleSyncEngineTest$val testSub = SubmoduleSyncEngine.PinnedSubmodule("test-sub", "https://example.com/test.git", "abcdef1234567890")</ID>
-    <ID>MaxLineLength:SubmoduleSyncEngineTest.kt$SubmoduleSyncEngineTest.RecordingTransport$override suspend fun execute(request: ToolExecutionRequest): ToolExecutionResponse</ID>
-    <ID>MaxLineLength:SudoNoninteractiveInspector.kt$SudoNoninteractiveInspector$"Configure passwordless sudo so automated package remediation can install dependencies non-interactively."</ID>
-    <ID>MaxLineLength:SudoNoninteractiveInspectorTest.kt$SudoNoninteractiveInspectorTest$fun</ID>
-    <ID>MaxLineLength:SudoNoninteractiveInspectorTest.kt$SudoNoninteractiveInspectorTest$progressMessages.any { it.contains("/etc/sudoers.d/ltirom") || it.contains("Passwordless non-interactive sudo") }</ID>
-    <ID>MaxLineLength:ToolRepairTest.kt$ToolRepairTest.SpyDaemonSupervisor$override suspend fun ensureStarted(): ServerConnectionDescriptor</ID>
-    <ID>MaxLineLength:ToolRepairTest.kt$ToolRepairTest.SpyDaemonSupervisor$var descriptor: ServerConnectionDescriptor? = ServerConnectionDescriptor("127.0.0.1", 9090, "token", 1234L, "Ubuntu")</ID>
-    <ID>MaxLineLength:ToolRepairTest.kt$ToolRepairTest.SpyRemoteTransport$ToolExecutionResponse(buildExitCode, if (buildExitCode == 0) "Build completed" else "Build error", "", 1L)</ID>
-    <ID>MaxLineLength:ToolRepairTest.kt$ToolRepairTest.SpyRemoteTransport$request.arguments.contains("--help") || request.toolId.endsWith("lpmake") || request.arguments.contains("-h")</ID>
-    <ID>MaxLineLength:ToolchainBuildEngine.kt$ToolchainBuildEngine$cli.execute(distro, listOf("chmod", "+x", "$binDir/signapk.jar", "$binDir/erofsfuse", "$binDir/payload-dumper-go"))</ID>
-    <ID>MaxLineLength:ToolchainBuildEngine.kt$ToolchainBuildEngine$cli.execute(distro, listOf("cp", "-a", "$extDir/android-tools/vendor/avb/avbtool.py", "$binDir/avbtool"))</ID>
-    <ID>MaxLineLength:ToolchainBuildEngine.kt$ToolchainBuildEngine$cli.execute(distro, listOf("cp", "-a", "$extDir/android-tools/vendor/mkbootimg/mkbootimg.py", "$binDir/mkbootimg.py"))</ID>
-    <ID>MaxLineLength:ToolchainBuildEngine.kt$ToolchainBuildEngine$cli.execute(distro, listOf("cp", "-a", "$extDir/payload-dumper-go/payload-dumper-go", "$binDir/payload-dumper-go"))</ID>
-    <ID>MaxLineLength:ToolchainBuildEngine.kt$ToolchainBuildEngine$cli.execute(distro, listOf("cp", "-a", "$extDir/signapk/signapk/build/libs/signapk.jar", "$binDir/signapk.jar"))</ID>
-    <ID>MaxLineLength:ToolchainBuildEngine.kt$ToolchainBuildEngine$if</ID>
-    <ID>MaxLineLength:ToolchainBuildEngine.kt$ToolchainBuildEngine$tool.copy(isCompiled = true, isVerified = true, binaryPath = "$binDir/img2sdat", lastVerifiedTimestamp = System.currentTimeMillis())</ID>
-    <ID>MaxLineLength:ToolchainBuildEngine.kt$ToolchainBuildEngine$val androidToolIds = listOf("adb", "fastboot", "mke2fs", "avbtool", "mkbootimg", "lpmake", "lpunpack", "lpdump")</ID>
-    <ID>MaxLineLength:ToolchainBuildEngineTest.kt$ToolchainBuildEngineTest$assertTrue(idempotencyKeys.contains("setup:build:android-tools:cmake"), "Must run android-tools cmake with idempotency key")</ID>
-    <ID>MaxLineLength:ToolchainBuildEngineTest.kt$ToolchainBuildEngineTest$assertTrue(idempotencyKeys.contains("setup:build:android-tools:make"), "Must run android-tools make with idempotency key")</ID>
-    <ID>MaxLineLength:ToolchainBuildEngineTest.kt$ToolchainBuildEngineTest$assertTrue(idempotencyKeys.contains("setup:build:erofs-utils:cmake"), "Must run erofs-utils cmake with idempotency key")</ID>
-    <ID>MaxLineLength:ToolchainBuildEngineTest.kt$ToolchainBuildEngineTest$assertTrue(idempotencyKeys.contains("setup:build:erofs-utils:make"), "Must run erofs-utils make with idempotency key")</ID>
-    <ID>MaxLineLength:ToolchainBuildEngineTest.kt$ToolchainBuildEngineTest.RecordingCli$command.contains("test") &amp;&amp; (command.contains("-x") || command.contains("-f") || command.contains("-d"))</ID>
-    <ID>MaxLineLength:ToolchainBuildEngineTest.kt$ToolchainBuildEngineTest.RecordingTransport$override suspend fun execute(request: ToolExecutionRequest): ToolExecutionResponse</ID>
-    <ID>MaxLineLength:ToolchainIntegrityInspector.kt$ToolchainIntegrityInspector$"${coreTools.size - missingCoreTools.size}/${coreTools.size} tools active. Missing: ${missingCoreTools.joinToString(", ")}."</ID>
-    <ID>MaxLineLength:ToolchainIntegrityInspector.kt$ToolchainIntegrityInspector$context.binariesPresent -&gt; if (missingCoreTools.size &lt; coreTools.size) StepStatus.WARNING else StepStatus.FAILED</ID>
-    <ID>MaxLineLength:WorkDirDiscoveryServiceTest.kt$WorkDirDiscoveryServiceTest$val tempDir = FileSystem.SYSTEM_TEMPORARY_DIRECTORY / "lti-disc-test-${Clock.System.now().toEpochMilliseconds()}"</ID>
-    <ID>MaxLineLength:WorkspaceRepositoryTest.kt$WorkspaceRepositoryTest$val tempDir = okio.FileSystem.SYSTEM_TEMPORARY_DIRECTORY / "lti-test-${kotlinx.datetime.Clock.System.now().toEpochMilliseconds()}"</ID>
-    <ID>MaxLineLength:WslPackageRemediator.kt$WslPackageRemediator$"open('/etc/sudoers.d/ltirom-mount', 'w').write('ALL ALL=(ALL) NOPASSWD: /bin/mount, /bin/umount\\n')"</ID>
-    <ID>MaxLineLength:WslPackageRemediator.kt$WslPackageRemediator$cli.execute(distro, listOf("cp", "-a", "$extDir/payload-dumper-go/payload-dumper-go", "$binDir/payload-dumper-go"))</ID>
-    <ID>MaxLineLength:WslPackageRemediator.kt$WslPackageRemediator$cli.execute(distro, listOf("cp", "-a", "$extDir/signapk/signapk/build/libs/signapk.jar", "$binDir/signapk.jar"))</ID>
-    <ID>MaxLineLength:WslPackageRemediator.kt$WslPackageRemediator$command = listOf("sudo", "-n", "apt-get", "install", "-y", "python3-cryptography", "python3-pyasn1")</ID>
-    <ID>MaxLineLength:WslPackageRemediator.kt$WslPackageRemediator$if</ID>
-    <ID>MaxLineLength:WslPackageRemediator.kt$WslPackageRemediator$onProgress("Error: Passwordless non-interactive sudo is not configured in $distro. Cannot run automated package remediation.")</ID>
-    <ID>MaxLineLength:WslPackageRemediator.kt$WslPackageRemediator$onProgress("Installing ${aptPackages.size} package(s) via sudo: ${aptPackages.sorted().joinToString(", ")}...")</ID>
-    <ID>MaxLineLength:WslToolchainProvisioner.kt$WslToolchainProvisioner$"${diagnosticsList.count { it.status == StepStatus.WARNING }} warnings detected in pre-flight checks."</ID>
-    <ID>MaxLineLength:WslToolchainProvisioner.kt$WslToolchainProvisioner$"${executables.count { it in ALL_CORE_TOOLS }}/${ALL_CORE_TOOLS.size} tools · ${publishedTools.size} published"</ID>
-    <ID>MaxLineLength:WslToolchainProvisioner.kt$WslToolchainProvisioner$appendLog("[Step 2/5] Daemon bridge active on http://${conn.host}:${conn.port} [distro=${conn.distro}, pid=${conn.pid}].")</ID>
-    <ID>MaxLineLength:WslToolchainProvisioner.kt$WslToolchainProvisioner$appendLog("[Step 3/5] Missing system dependencies detected. Initiating automated package remediation via non-interactive sudo...")</ID>
-    <ID>MaxLineLength:WslToolchainProvisioner.kt$WslToolchainProvisioner$appendLog("[Tool Matrix] Repair unavailable for '$toolId': Repair requires a supported recipe; otherwise the action is unavailable with a reason.")</ID>
-    <ID>MaxLineLength:WslToolchainProvisioner.kt$WslToolchainProvisioner$effectiveCli.execute(distro, listOf("$binDir/avbtool", "extract_public_key", "--key", keyPath, "--output", pubKeyPath))</ID>
-    <ID>MaxLineLength:WslToolchainProvisioner.kt$WslToolchainProvisioner$if (anyFailed) "Critical system requirements missing." else "Host runtimes, compilers, and dependencies verified."</ID>
-    <ID>MaxLineLength:WslToolchainProvisioner.kt$WslToolchainProvisioner$setStepStatus(SetupStepStage.REPO_SYNCHRONIZATION, StepStatus.FAILED, syncRes.exceptionOrNull()?.message ?: "Submodule sync failed.")</ID>
-    <ID>MaxLineLength:WslToolchainProvisioner.kt$WslToolchainProvisioner$setStepStatus(SetupStepStage.REPO_SYNCHRONIZATION, StepStatus.SUCCESS, "All 5 submodules and $workDir ready.")</ID>
-    <ID>MaxLineLength:WslToolchainProvisioner.kt$WslToolchainProvisioner$setStepStatus(SetupStepStage.SERVER_CONNECTIVITY, StepStatus.FAILED, "Daemon bridge failed: health check returned null.")</ID>
-    <ID>MaxLineLength:WslToolchainProvisioner.kt$WslToolchainProvisioner$setStepStatus(SetupStepStage.SERVER_CONNECTIVITY, StepStatus.SUCCESS, "Connected to daemon at http://${conn.host}:${conn.port}.")</ID>
-    <ID>MaxLineLength:WslToolchainProvisioner.kt$WslToolchainProvisioner$setStepStatus(SetupStepStage.TOOLCHAIN_COMPILATION, StepStatus.FAILED, buildRes.exceptionOrNull()?.message ?: "Toolchain build failed.")</ID>
-    <ID>MaxLineLength:WslToolchainProvisioner.kt$WslToolchainProvisioner$setStepStatus(SetupStepStage.TOOLCHAIN_COMPILATION, StepStatus.SUCCESS, "Core tools ready in $binDir.")</ID>
-    <ID>MaxLineLength:WslToolchainProvisioner.kt$WslToolchainProvisioner$setStepStatus(SetupStepStage.WSL_DETECTION, StepStatus.FAILED, "WSL 2 not detected or no distribution found.", "WSL 2 is not installed.")</ID>
-    <ID>MaxLineLength:WslToolchainProvisioner.kt$WslToolchainProvisioner$setStepStatus(SetupStepStage.WSL_DETECTION, StepStatus.SUCCESS, "WSL 2 active with default distribution '$d'.")</ID>
-    <ID>MaxLineLength:WslToolchainProvisioner.kt$WslToolchainProvisioner$val alreadyVerifiedWsl = isBridgeConnected || (wslStep?.status == StepStatus.SUCCESS &amp;&amp; wslStep.provenance == StepProvenance.LIVE)</ID>
-    <ID>MaxLineLength:WslToolchainProvisioner.kt$WslToolchainProvisioner$val buildRes = serviceBuildEngine.buildAndDistributeAll(distro, extDir, binDir, onRunStarted = onRunStarted) { appendLog(it) }</ID>
-    <ID>MaxLineLength:WslToolchainProvisioner.kt$WslToolchainProvisioner$val distro = distroName ?: _state.value.activeDistro ?: (if (serviceCli == null) detector.getDefaultDistro() else null) ?: "Ubuntu"</ID>
-    <ID>MaxLineLength:WslToolchainProvisioner.kt$WslToolchainProvisioner$val distros = if (alreadyVerifiedWsl) _state.value.installedDistros.ifEmpty { listOf(distro) } else detector.listDistros().ifEmpty { listOf(distro) }</ID>
-    <ID>MaxLineLength:WslToolchainProvisioner.kt$WslToolchainProvisioner$val err = "WSL 2 is not installed or has no active distributions. Run 'wsl --install -d Ubuntu' in PowerShell."</ID>
-    <ID>MaxLineLength:WslToolchainProvisioner.kt$WslToolchainProvisioner$val err = buildRes.exceptionOrNull()?.message ?: "Some core tool binaries are missing in $binDir after build."</ID>
-    <ID>MaxLineLength:WslToolchainProvisioner.kt$WslToolchainProvisioner$val execRes = if (exists) effectiveCli.execute(distro, listOf(binaryPath, "--help"), timeoutSeconds = 5) else null</ID>
-    <ID>MaxLineLength:WslToolchainProvisioner.kt$WslToolchainProvisioner$val res = transport.execute(ToolExecutionRequest(toolId = "printenv", arguments = listOf("HOME"), workingDirectory = "/"))</ID>
-    <ID>MaxLineLength:WslToolchainProvisioner.kt$WslToolchainProvisioner$val syncRes = serviceSubmoduleEngine.syncAll(distro, extDir, onRunStarted = onRunStarted) { appendLog(it) }</ID>
-    <ID>MaxLineLength:WslToolchainProvisioner.kt$WslToolchainProvisioner.Companion$PinnedSubmodule("android-tools", "https://github.com/UN1CA/external_android-tools.git", "2c5e1b7c192f30ec3d50ec5f983618bb87b9895c")</ID>
-    <ID>MaxLineLength:WslToolchainProvisioner.kt$WslToolchainProvisioner.Companion$PinnedSubmodule("apktool", "https://github.com/iBotPeaches/Apktool.git", "1c1d15b070c2138d958fa8b685d430c49c4bb117")</ID>
-    <ID>MaxLineLength:WslToolchainProvisioner.kt$WslToolchainProvisioner.Companion$PinnedSubmodule("erofs-utils", "https://github.com/sekaiacg/erofs-utils.git", "24ebe947b889fabcd72f802e4f184b0f807a0e0e")</ID>
-    <ID>MaxLineLength:WslToolchainProvisioner.kt$WslToolchainProvisioner.Companion$PinnedSubmodule("img2sdat", "https://github.com/UN1CA/external_img2sdat.git", "601317ed0bf502eb8facdd048f2d75dc75ffcd53")</ID>
-    <ID>MaxLineLength:WslToolchainProvisioner.kt$WslToolchainProvisioner.Companion$PinnedSubmodule("signapk", "https://github.com/UN1CA/external_signapk.git", "cb88f4b27d8a07ca101eade5d40a6893920cb55e")</ID>
-    <ID>MaxLineLength:WslToolchainProvisionerTest.kt$WslToolchainProvisionerTest$WslToolchainProvisioner.SUBMODULES.forEach { existingPaths.add("/home/lti/LtiRomTools/external/${it.name}") }</ID>
-    <ID>MaxLineLength:WslToolchainProvisionerTest.kt$WslToolchainProvisionerTest$assertTrue(provisioner.state.value.logs.any { it.contains("Initialized workspace root directory at /home/lti/LtiRomWorkDir") })</ID>
-    <ID>MaxLineLength:WslToolchainProvisionerTest.kt$WslToolchainProvisionerTest.FakeDaemonSupervisor$var descriptor: ServerConnectionDescriptor? = ServerConnectionDescriptor("127.0.0.1", 9090, "token", 1234L, "Ubuntu")</ID>
-    <ID>MaxLineLength:WslToolchainProvisionerTest.kt$WslToolchainProvisionerTest.FakeRemoteTransport$return RunHandle(runId = "fake-run-${request.idempotencyKey}", status = RunStatusValue.RUNNING, startedAtEpochMs = 1000L)</ID>
-    <ID>MaxLineLength:WslToolchainProvisionerTest.kt$WslToolchainProvisionerTest.FakeRemoteTransport$val output = listOf("android-tools", "apktool", "erofs-utils", "img2sdat", "signapk").joinToString("\n")</ID>
-    <ID>MaxLineLength:WslToolchainProvisionerTest.kt$WslToolchainProvisionerTest.FakeWslCliExecutor$if</ID>
-    <ID>MaxLineLength:WslToolchainProvisionerTest.kt$WslToolchainProvisionerTest.FakeWslCliExecutor$override</ID>
-    <ID>MaxLineLength:WslToolchainProvisionerTest.kt$WslToolchainProvisionerTest.FakeWslCliExecutor$return CliExecutionResult(0, "Filesystem 1G-blocks Used Available Use% Mounted on\n/dev/sdc 250G 50G 190G 21% /home/lti\n", "")</ID>
-    <ID>MaxLineLength:WslToolchainProvisionerTest.kt$WslToolchainProvisionerTest.FakeWslCliExecutor$val dir = (if (command.getOrNull(1) == "-L") command.getOrNull(2) else command.getOrNull(1))?.trimEnd('/') ?: ""</ID>
-    <ID>MaxLineLength:WslToolchainProvisionerTest.kt$WslToolchainProvisionerTest.FakeWslCliExecutor$val pkgLines = WslToolchainProvisioner.REQUIRED_DEV_PACKAGES.joinToString("\n") { "$it install ok installed" }</ID>
-    <ID>NestedBlockDepth:SubmoduleSyncEngine.kt$SubmoduleSyncEngine$public suspend fun syncAll( distro: String, extDir: String, submodules: List&lt;PinnedSubmodule&gt; = DEFAULT_SUBMODULES, journal: SetupJournalContext? = null, onRunStarted: (SetupStepStage, String) -&gt; Unit = { _, _ -&gt; }, log: (String) -&gt; Unit = {}, ): Result&lt;Unit&gt;</ID>
-    <ID>NestedBlockDepth:WorkDirDiscoveryService.kt$WorkDirDiscoveryService$public fun discoverWorkspaces( basePathOverride: String? = null, environmentIdOverride: EnvironmentId? = null, ): List&lt;RecentProject&gt;</ID>
-    <ID>ReturnCount:CompositeSystemDoctorEngineTest.kt$CompositeSystemDoctorEngineTest.MockWslCliExecutor$override fun execute( distro: String, command: List&lt;String&gt;, timeoutSeconds: Long, charset: Charset, user: String? ): CliExecutionResult</ID>
-    <ID>ReturnCount:EnvironmentReadinessAdapter.kt$EnvironmentReadinessAdapter$private suspend fun evaluateEnvironment(): EnvironmentReadiness</ID>
-    <ID>ReturnCount:EnvironmentReadinessAdapter.kt$EnvironmentReadinessAdapter$private suspend fun validateWorkspace(workspace: Workspace): EnvironmentReadiness</ID>
-    <ID>ReturnCount:InMemoryRunRepository.kt$InMemoryRunRepository$override suspend fun cachedEvents(runId: String, fromSeq: Long): List&lt;String&gt;</ID>
-    <ID>ReturnCount:InMemoryRunRepository.kt$InMemoryRunRepository$override suspend fun claimDriver(runId: String, instanceId: String, now: Long): Boolean</ID>
-    <ID>ReturnCount:RunRepositoryImpl.kt$RunRepositoryImpl$private suspend fun mirrorRunToRemoteWorkspace(run: BuildRun)</ID>
-    <ID>ReturnCount:RunRepositoryImpl.kt$RunRepositoryImpl$private suspend fun mirrorStageLogsToRemoteWorkspace(runId: String)</ID>
-    <ID>ReturnCount:StepExecutionAdapterTest.kt$StepExecutionAdapterTest.FakeRemoteTransport$override suspend fun execute(request: ToolExecutionRequest): ToolExecutionResponse</ID>
-    <ID>ReturnCount:SubmoduleSyncEngine.kt$SubmoduleSyncEngine$public suspend fun syncAll( distro: String, extDir: String, submodules: List&lt;PinnedSubmodule&gt; = DEFAULT_SUBMODULES, journal: SetupJournalContext? = null, onRunStarted: (SetupStepStage, String) -&gt; Unit = { _, _ -&gt; }, log: (String) -&gt; Unit = {}, ): Result&lt;Unit&gt;</ID>
-    <ID>ReturnCount:TargetRepositoryImpl.kt$TargetRepositoryImpl$override suspend fun deleteTarget(targetId: String): Result&lt;Unit&gt;</ID>
-    <ID>ReturnCount:ToolchainBuildEngine.kt$ToolchainBuildEngine$public suspend fun buildAndDistributeAll( distro: String, extDir: String, binDir: String, journal: SetupJournalContext? = null, onRunStarted: (SetupStepStage, String) -&gt; Unit = { _, _ -&gt; }, log: (String) -&gt; Unit = {}, ): Result&lt;Unit&gt;</ID>
-    <ID>ReturnCount:WorkDirDiscoveryService.kt$WorkDirDiscoveryService$private fun resolvePhysicalWorkDir( basePathOverride: String?, environmentIdOverride: EnvironmentId? = null, ): Path?</ID>
-    <ID>ReturnCount:WslPackageRemediator.kt$WslPackageRemediator$public suspend fun remediate( context: DiagnosticContext, diagnosticItems: List&lt;DiagnosticCheckItem&gt;, onProgress: (String) -&gt; Unit = {} ): Boolean</ID>
-    <ID>ReturnCount:WslToolchainProvisioner.kt$WslToolchainProvisioner$private fun restoreInitialState(): ToolchainSetupState</ID>
-    <ID>ReturnCount:WslToolchainProvisionerTest.kt$WslToolchainProvisionerTest.FakeWslCliExecutor$override fun execute(distro: String, command: List&lt;String&gt;, timeoutSeconds: Long, charset: Charset, user: String?): CliExecutionResult</ID>
-    <ID>ReturnCount:WslToolchainProvisionerTest.kt$WslToolchainProvisionerTest.FakeWslCliExecutor$override fun executeHost(command: List&lt;String&gt;, timeoutSeconds: Long, charset: Charset): CliExecutionResult</ID>
-    <ID>UnusedPrivateProperty:EnvironmentProbe.kt$EnvironmentProbe$private val expectedProductTools: Set&lt;String&gt; = DEFAULT_EXPECTED_PRODUCT_TOOLS</ID>
-    <ID>UnusedPrivateProperty:EnvironmentProbe.kt$EnvironmentProbe$private val toolPublicationPort: ToolPublicationPort? = null</ID>
-    <ID>UnusedPrivateProperty:StepExecutionAdapter.kt$StepExecutionAdapter$private val pollIntervalMs: Long = DEFAULT_POLL_INTERVAL_MS</ID>
-    <ID>UnusedPrivateProperty:TargetRepositoryImpl.kt$TargetRepositoryImpl$val targetToDelete = currentList.find { it.id == targetId } ?: return Result.failure(IllegalArgumentException("Target not found: $targetId"))</ID>
-    <ID>UnusedPrivateProperty:WslToolchainProvisioner.kt$WslToolchainProvisioner$val genRes = effectiveCli.execute( distro, listOf("openssl", "genpkey", "-algorithm", "RSA", "-pkeyopt", "rsa_keygen_bits:4096", "-out", keyPath) )</ID>
-    <ID>UseCheckOrError:EnvironmentVerificationTest.kt$EnvironmentVerificationTest.RecordingDaemonSupervisor$throw IllegalStateException("Failed to bind port 9090")</ID>
-    <ID>UseCheckOrError:EnvironmentVerificationTest.kt$EnvironmentVerificationTest.RecordingDaemonSupervisor$throw IllegalStateException("No descriptor")</ID>
-    <ID>UseCheckOrError:SetupConsentTest.kt$SetupConsentTest.SpyDaemonSupervisor$throw IllegalStateException("Daemon start failure simulated")</ID>
-    <ID>UseCheckOrError:SetupConsentTest.kt$SetupConsentTest.SpyDaemonSupervisor$throw IllegalStateException("No descriptor")</ID>
-    <ID>UseCheckOrError:ToolRepairTest.kt$ToolRepairTest.SpyDaemonSupervisor$throw IllegalStateException("No descriptor")</ID>
-    <ID>UseCheckOrError:WslToolchainProvisionerTest.kt$WslToolchainProvisionerTest.FakeDaemonSupervisor$throw IllegalStateException("Failed to launch daemon")</ID>
-    <ID>UseCheckOrError:WslToolchainProvisionerTest.kt$WslToolchainProvisionerTest.FakeDaemonSupervisor$throw IllegalStateException("No descriptor")</ID>
-    <ID>WildcardImport:StepExecutionAdapterTest.kt$import io.ltirom.tooling.core.remote.*</ID>
+    <ID>ComplexCondition:WslToolchainProvisionerTest.kt:WslToolchainProvisionerTest.FakeWslCliExecutor$cmdStr.contains("test -e") || cmdStr.contains("test -d") || cmdStr.contains("test -x") || cmdStr.contains("test -r") || cmdStr.contains("test -f")</ID>
+    <ID>CyclomaticComplexMethod:CompositeSystemDoctorEngineTest.kt:CompositeSystemDoctorEngineTest.MockWslCliExecutor$override fun execute: CliExecutionResult</ID>
+    <ID>CyclomaticComplexMethod:DualJdkInspector.kt:DualJdkInspector$override suspend fun inspect: DiagnosticCheckItem</ID>
+    <ID>CyclomaticComplexMethod:KernelFuseInspector.kt:KernelFuseInspector$override suspend fun inspect: DiagnosticCheckItem</ID>
+    <ID>CyclomaticComplexMethod:SubmoduleSyncEngine.kt:SubmoduleSyncEngine$public suspend fun syncAll: Result&lt;Unit&gt;</ID>
+    <ID>CyclomaticComplexMethod:WorkDirDiscoveryService.kt:WorkDirDiscoveryService$private fun resolvePhysicalWorkDir: Path?</ID>
+    <ID>CyclomaticComplexMethod:WslToolchainProvisioner.kt:WslToolchainProvisioner$override suspend fun verifyEnvironment: ToolchainSetupState</ID>
+    <ID>CyclomaticComplexMethod:WslToolchainProvisioner.kt:WslToolchainProvisioner$public suspend fun provisionAvbKey: Boolean</ID>
+    <ID>CyclomaticComplexMethod:WslToolchainProvisionerTest.kt:WslToolchainProvisionerTest.FakeWslCliExecutor$override fun execute: CliExecutionResult</ID>
+    <ID>LargeClass:WslToolchainProvisioner.kt:WslToolchainProvisioner : ToolchainProvisioningService</ID>
+    <ID>LongMethod:WslToolchainProvisioner.kt:WslToolchainProvisioner$override suspend fun verifyEnvironment: ToolchainSetupState</ID>
+    <ID>MaxLineLength:CompilersInspector.kt:CompilersInspector$val compilerCmd = if (compilersOk) null else "sudo apt-get install -y build-essential ${missingCompilers.joinToString(" ")}"</ID>
+    <ID>MaxLineLength:CompositeSystemDoctorEngineTest.kt:CompositeSystemDoctorEngineTest$assertTrue(mockCli.executedCommands.any { it.startsWith("sudo -n apt-get") }, "Must execute via non-interactive sudo")</ID>
+    <ID>MaxLineLength:CompositeSystemDoctorEngineTest.kt:CompositeSystemDoctorEngineTest$fun</ID>
+    <ID>MaxLineLength:CompositeSystemDoctorEngineTest.kt:CompositeSystemDoctorEngineTest.MockWslCliExecutor$CliExecutionResult(0, "Filesystem 1G-blocks Used Available Use% Mounted on\n/dev/sdc 250G 235G 15G 94% /home/lti\n", "")</ID>
+    <ID>MaxLineLength:CompositeSystemDoctorEngineTest.kt:CompositeSystemDoctorEngineTest.MockWslCliExecutor$CliExecutionResult(0, "Filesystem 1G-blocks Used Available Use% Mounted on\n/dev/sdc 250G 50G 190G 21% /home/lti\n", "")</ID>
+    <ID>MaxLineLength:DualJdkInspector.kt:DualJdkInspector$jdkDetail = "Java ($detectedJavaVer) with javac verified. OpenJDK 17 (apktool) &amp; OpenJDK 21 (toolchain build) recommended."</ID>
+    <ID>MaxLineLength:DualJdkInspector.kt:DualJdkInspector$val detectedJavaVer = Regex("version\\s+\"([^\"]+)").find(javaVerOutput)?.groupValues?.get(1) ?: if (hasJava) "Active" else "None"</ID>
+    <ID>MaxLineLength:EnvironmentVerificationTest.kt:EnvironmentVerificationTest.RecordingRemoteTransport$request.toolId == "df" -&gt; ToolExecutionResponse(0, "Filesystem 1K-blocks Used Available Use% Mounted on\n/dev/sdb 100G 50G 50G 50% /home/lti\n", "", 2L)</ID>
+    <ID>MaxLineLength:EnvironmentVerificationTest.kt:EnvironmentVerificationTest.RecordingRemoteTransport$request.toolId == "find" &amp;&amp; (request.arguments.contains("/usr/bin") || request.arguments.contains("/bin"))</ID>
+    <ID>MaxLineLength:LoopMountInspector.kt:LoopMountInspector$val sudoMountCmd = "echo \"\$USER ALL=(ALL) NOPASSWD: /bin/mount, /bin/umount\" | sudo tee /etc/sudoers.d/ltirom-mount"</ID>
+    <ID>MaxLineLength:PythonRuntimeInspector.kt:PythonRuntimeInspector$pyRemediation = "Run 'sudo apt-get install -y python3 python3-pip &amp;&amp; pip3 install cryptography pyasn1' in WSL."</ID>
+    <ID>MaxLineLength:PythonRuntimeInspector.kt:PythonRuntimeInspector$val pyCryptoOk = hasPython3 &amp;&amp; cli.execute(distro, listOf("python3", "-c", "import cryptography, pyasn1")).exitCode == 0</ID>
+    <ID>MaxLineLength:SetupConsentTest.kt:SetupConsentTest$assertNotNull(state.stepRunIds[SetupStepStage.TOOLCHAIN_COMPILATION], "Durable run ID must be recorded for toolchain compilation")</ID>
+    <ID>MaxLineLength:SetupConsentTest.kt:SetupConsentTest$assertTrue(resultFail.detail.contains("Unable to measure available disk space"), "Detail must report failure instead of fabricated 50L: ${resultFail.detail}")</ID>
+    <ID>MaxLineLength:SetupConsentTest.kt:SetupConsentTest$val context = DiagnosticContext(distro = "Ubuntu", home = "/home/lti", binDir = "/home/lti/LtiRomTools/bin", binariesPresent = false)</ID>
+    <ID>MaxLineLength:SetupConsentTest.kt:SetupConsentTest.SpyCliExecutor$cmdStr.contains("wsl.exe --status") || cmdStr.contains("--status") -&gt; CliExecutionResult(0, "Default Distribution: Ubuntu", "")</ID>
+    <ID>MaxLineLength:SetupConsentTest.kt:SetupConsentTest.SpyCliExecutor$command.firstOrNull() == "df" -&gt; CliExecutionResult(dfExitCode, if (dfExitCode == 0) dfOutput else "", if (dfExitCode != 0) "df failed" else "")</ID>
+    <ID>MaxLineLength:SetupConsentTest.kt:SetupConsentTest.SpyCliExecutor$var dfOutput: String = "Filesystem 1K-blocks Used Available Use% Mounted on\n/dev/root 100G 50G 50G 50% /home/lti\n"</ID>
+    <ID>MaxLineLength:SetupConsentTest.kt:SetupConsentTest.SpyDaemonSupervisor$var descriptor: ServerConnectionDescriptor? = ServerConnectionDescriptor("127.0.0.1", 9090, "token", 1234L, "Ubuntu")</ID>
+    <ID>MaxLineLength:SetupConsentTest.kt:SetupConsentTest.SpyRemoteTransport$ToolExecutionResponse(0, "payload-dumper-go\nlpunpack\nlpmake\nsimg2img\nerofsfuse\nmkfs.erofs\navbtool\nunpack_bootimg\nimg2sdat\nsignapk\nadb\nfastboot", "", 2L)</ID>
+    <ID>MaxLineLength:SetupConsentTest.kt:SetupConsentTest.SpyRemoteTransport$request.toolId == "find" &amp;&amp; (request.arguments.contains("/usr/bin") || request.arguments.contains("/bin"))</ID>
+    <ID>MaxLineLength:SetupConsentTest.kt:SetupConsentTest.SpyRemoteTransport$request.toolId == "find" -&gt; ToolExecutionResponse(0, "android-tools\napktool\nerofs-utils\nimg2sdat\nsignapk", "", 2L)</ID>
+    <ID>MaxLineLength:SetupConsentTest.kt:SetupConsentTest.SpyRemoteTransport$val out = "Filesystem 1K-blocks Used Available Use% Mounted on\n/dev/root 200000000 50000000 60G 25% /home/lti\n"</ID>
+    <ID>MaxLineLength:SetupExecutionPathTest.kt:SetupExecutionPathTest$"Expected ZERO calls to direct WslCliExecutor after SERVER_CONNECTIVITY succeeded, but found ${spyCli.postBridgeCommands.size} call(s): ${spyCli.postBridgeCommands}"</ID>
+    <ID>MaxLineLength:SetupExecutionPathTest.kt:SetupExecutionPathTest$fun</ID>
+    <ID>MaxLineLength:SetupExecutionPathTest.kt:SetupExecutionPathTest.RecordingTransport$ToolExecutionResponse(0, "Filesystem 1K-blocks Used Available Use% Mounted on\n/dev/sdb 100G 50G 50G 50% /home/lti\n", "", 2L)</ID>
+    <ID>MaxLineLength:SetupExecutionPathTest.kt:SetupExecutionPathTest.RecordingTransport$request.toolId == "which" -&gt; ToolExecutionResponse(0, "/usr/bin/${request.arguments.firstOrNull()}", "", 1L)</ID>
+    <ID>MaxLineLength:SetupExecutionPathTest.kt:SetupExecutionPathTest.RecordingTransport$return RunHandle(runId = "run-${startedRuns.size}", status = RunStatusValue.RUNNING, startedAtEpochMs = 1000L)</ID>
+    <ID>MaxLineLength:StepExecutionAdapterTest.kt:StepExecutionAdapterTest$RunStatus(runId = "run_123", status = RunStatusValue.COMPLETED, exitCode = 0, startedAtEpochMs = 1000L, lastSeq = 1L)</ID>
+    <ID>MaxLineLength:StepExecutionAdapterTest.kt:StepExecutionAdapterTest$RunStatus(runId = "run_123", status = RunStatusValue.FAILED, exitCode = 2, startedAtEpochMs = 1000L, lastSeq = 0L)</ID>
+    <ID>MaxLineLength:StorageHeadroomInspector.kt:StorageHeadroomInspector$detail = "Unable to measure available disk space in $home: ${dfRes.error.ifBlank { "df command failed" }}"</ID>
+    <ID>MaxLineLength:StorageHeadroomInspector.kt:StorageHeadroomInspector$remediation = if (diskStatus == StepStatus.SUCCESS) null else "Free disk space in WSL rootfs to ensure safe ROM packaging."</ID>
+    <ID>MaxLineLength:SubmoduleSyncEngine.kt:SubmoduleSyncEngine$log("[Step 4/5] Submodule directory '${sub.name}' detected. Verifying pinned commit ${sub.commit.take(8)}...")</ID>
+    <ID>MaxLineLength:SubmoduleSyncEngine.kt:SubmoduleSyncEngine$val err = "Failed to check out ${sub.name} at ${sub.commit}: ${checkoutRes.error.ifBlank { checkoutRes.output }}"</ID>
+    <ID>MaxLineLength:SubmoduleSyncEngine.kt:SubmoduleSyncEngine.Companion$PinnedSubmodule("android-tools", "https://github.com/UN1CA/external_android-tools.git", "2c5e1b7c192f30ec3d50ec5f983618bb87b9895c")</ID>
+    <ID>MaxLineLength:SubmoduleSyncEngine.kt:SubmoduleSyncEngine.Companion$PinnedSubmodule("apktool", "https://github.com/iBotPeaches/Apktool.git", "1c1d15b070c2138d958fa8b685d430c49c4bb117")</ID>
+    <ID>MaxLineLength:SubmoduleSyncEngine.kt:SubmoduleSyncEngine.Companion$PinnedSubmodule("erofs-utils", "https://github.com/sekaiacg/erofs-utils.git", "24ebe947b889fabcd72f802e4f184b0f807a0e0e")</ID>
+    <ID>MaxLineLength:SubmoduleSyncEngine.kt:SubmoduleSyncEngine.Companion$PinnedSubmodule("img2sdat", "https://github.com/UN1CA/external_img2sdat.git", "601317ed0bf502eb8facdd048f2d75dc75ffcd53")</ID>
+    <ID>MaxLineLength:SubmoduleSyncEngine.kt:SubmoduleSyncEngine.Companion$PinnedSubmodule("signapk", "https://github.com/UN1CA/external_signapk.git", "cb88f4b27d8a07ca101eade5d40a6893920cb55e")</ID>
+    <ID>MaxLineLength:SubmoduleSyncEngineTest.kt:SubmoduleSyncEngineTest$assertEquals(listOf("clone", "--recursive", "https://example.com/test.git", "/home/lti/LtiRomTools/external/test-sub"), req.request.arguments)</ID>
+    <ID>MaxLineLength:SubmoduleSyncEngineTest.kt:SubmoduleSyncEngineTest$assertEquals(listOf("git", "-C", "/home/lti/LtiRomTools/external/test-sub", "checkout", "-f", "abcdef1234567890"), checkoutCmd)</ID>
+    <ID>MaxLineLength:SubmoduleSyncEngineTest.kt:SubmoduleSyncEngineTest$val testSub = SubmoduleSyncEngine.PinnedSubmodule("test-sub", "https://example.com/test.git", "abcdef1234567890")</ID>
+    <ID>MaxLineLength:SubmoduleSyncEngineTest.kt:SubmoduleSyncEngineTest.RecordingTransport$override suspend fun execute: ToolExecutionResponse</ID>
+    <ID>MaxLineLength:SudoNoninteractiveInspectorTest.kt:SudoNoninteractiveInspectorTest$fun</ID>
+    <ID>MaxLineLength:SudoNoninteractiveInspectorTest.kt:SudoNoninteractiveInspectorTest$progressMessages.any { it.contains("/etc/sudoers.d/ltirom") || it.contains("Passwordless non-interactive sudo") }</ID>
+    <ID>MaxLineLength:ToolRepairTest.kt:ToolRepairTest.SpyDaemonSupervisor$override suspend fun ensureStarted: ServerConnectionDescriptor</ID>
+    <ID>MaxLineLength:ToolRepairTest.kt:ToolRepairTest.SpyDaemonSupervisor$var descriptor: ServerConnectionDescriptor? = ServerConnectionDescriptor("127.0.0.1", 9090, "token", 1234L, "Ubuntu")</ID>
+    <ID>MaxLineLength:ToolRepairTest.kt:ToolRepairTest.SpyRemoteTransport$ToolExecutionResponse(buildExitCode, if (buildExitCode == 0) "Build completed" else "Build error", "", 1L)</ID>
+    <ID>MaxLineLength:ToolRepairTest.kt:ToolRepairTest.SpyRemoteTransport$request.arguments.contains("--help") || request.toolId.endsWith("lpmake") || request.arguments.contains("-h")</ID>
+    <ID>MaxLineLength:ToolchainBuildEngine.kt:ToolchainBuildEngine$cli.execute(distro, listOf("chmod", "+x", "$binDir/signapk.jar", "$binDir/erofsfuse", "$binDir/payload-dumper-go"))</ID>
+    <ID>MaxLineLength:ToolchainBuildEngine.kt:ToolchainBuildEngine$cli.execute(distro, listOf("cp", "-a", "$extDir/android-tools/vendor/avb/avbtool.py", "$binDir/avbtool"))</ID>
+    <ID>MaxLineLength:ToolchainBuildEngine.kt:ToolchainBuildEngine$cli.execute(distro, listOf("cp", "-a", "$extDir/android-tools/vendor/mkbootimg/mkbootimg.py", "$binDir/mkbootimg.py"))</ID>
+    <ID>MaxLineLength:ToolchainBuildEngine.kt:ToolchainBuildEngine$cli.execute(distro, listOf("cp", "-a", "$extDir/payload-dumper-go/payload-dumper-go", "$binDir/payload-dumper-go"))</ID>
+    <ID>MaxLineLength:ToolchainBuildEngine.kt:ToolchainBuildEngine$cli.execute(distro, listOf("cp", "-a", "$extDir/signapk/signapk/build/libs/signapk.jar", "$binDir/signapk.jar"))</ID>
+    <ID>MaxLineLength:ToolchainBuildEngine.kt:ToolchainBuildEngine$if</ID>
+    <ID>MaxLineLength:ToolchainBuildEngineTest.kt:ToolchainBuildEngineTest.RecordingCli$command.contains("test") &amp;&amp; (command.contains("-x") || command.contains("-f") || command.contains("-d"))</ID>
+    <ID>MaxLineLength:ToolchainBuildEngineTest.kt:ToolchainBuildEngineTest.RecordingTransport$override suspend fun execute: ToolExecutionResponse</ID>
+    <ID>MaxLineLength:ToolchainIntegrityInspector.kt:ToolchainIntegrityInspector$context.binariesPresent -&gt; if (missingCoreTools.size &lt; coreTools.size) StepStatus.WARNING else StepStatus.FAILED</ID>
+    <ID>MaxLineLength:WorkDirDiscoveryServiceTest.kt:WorkDirDiscoveryServiceTest$val tempDir = FileSystem.SYSTEM_TEMPORARY_DIRECTORY / "lti-disc-test-${Clock.System.now().toEpochMilliseconds()}"</ID>
+    <ID>MaxLineLength:WorkspaceRepositoryTest.kt:WorkspaceRepositoryTest$val tempDir = okio.FileSystem.SYSTEM_TEMPORARY_DIRECTORY / "lti-test-${kotlinx.datetime.Clock.System.now().toEpochMilliseconds()}"</ID>
+    <ID>MaxLineLength:WslPackageRemediator.kt:WslPackageRemediator$"open('/etc/sudoers.d/ltirom-mount', 'w').write('ALL ALL=(ALL) NOPASSWD: /bin/mount, /bin/umount\\n')"</ID>
+    <ID>MaxLineLength:WslPackageRemediator.kt:WslPackageRemediator$cli.execute(distro, listOf("cp", "-a", "$extDir/payload-dumper-go/payload-dumper-go", "$binDir/payload-dumper-go"))</ID>
+    <ID>MaxLineLength:WslPackageRemediator.kt:WslPackageRemediator$cli.execute(distro, listOf("cp", "-a", "$extDir/signapk/signapk/build/libs/signapk.jar", "$binDir/signapk.jar"))</ID>
+    <ID>MaxLineLength:WslPackageRemediator.kt:WslPackageRemediator$command = listOf("sudo", "-n", "apt-get", "install", "-y", "python3-cryptography", "python3-pyasn1")</ID>
+    <ID>MaxLineLength:WslPackageRemediator.kt:WslPackageRemediator$if</ID>
+    <ID>MaxLineLength:WslPackageRemediator.kt:WslPackageRemediator$onProgress("Error: Passwordless non-interactive sudo is not configured in $distro. Cannot run automated package remediation.")</ID>
+    <ID>MaxLineLength:WslToolchainProvisioner.kt:WslToolchainProvisioner$effectiveCli.execute(distro, listOf("$binDir/avbtool", "extract_public_key", "--key", keyPath, "--output", pubKeyPath))</ID>
+    <ID>MaxLineLength:WslToolchainProvisioner.kt:WslToolchainProvisioner$setStepStatus(SetupStepStage.TOOLCHAIN_COMPILATION, StepStatus.SUCCESS, "Core tools ready in $binDir.")</ID>
+    <ID>MaxLineLength:WslToolchainProvisioner.kt:WslToolchainProvisioner$val alreadyVerifiedWsl = isBridgeConnected || (wslStep?.status == StepStatus.SUCCESS &amp;&amp; wslStep.provenance == StepProvenance.LIVE)</ID>
+    <ID>MaxLineLength:WslToolchainProvisioner.kt:WslToolchainProvisioner$val distro = distroName ?: _state.value.activeDistro ?: (if (serviceCli == null) detector.getDefaultDistro() else null) ?: "Ubuntu"</ID>
+    <ID>MaxLineLength:WslToolchainProvisioner.kt:WslToolchainProvisioner$val err = buildRes.exceptionOrNull()?.message ?: "Some core tool binaries are missing in $binDir after build."</ID>
+    <ID>MaxLineLength:WslToolchainProvisioner.kt:WslToolchainProvisioner$val res = transport.execute(ToolExecutionRequest(toolId = "printenv", arguments = listOf("HOME"), workingDirectory = "/"))</ID>
+    <ID>MaxLineLength:WslToolchainProvisioner.kt:WslToolchainProvisioner.Companion$PinnedSubmodule("android-tools", "https://github.com/UN1CA/external_android-tools.git", "2c5e1b7c192f30ec3d50ec5f983618bb87b9895c")</ID>
+    <ID>MaxLineLength:WslToolchainProvisioner.kt:WslToolchainProvisioner.Companion$PinnedSubmodule("apktool", "https://github.com/iBotPeaches/Apktool.git", "1c1d15b070c2138d958fa8b685d430c49c4bb117")</ID>
+    <ID>MaxLineLength:WslToolchainProvisioner.kt:WslToolchainProvisioner.Companion$PinnedSubmodule("erofs-utils", "https://github.com/sekaiacg/erofs-utils.git", "24ebe947b889fabcd72f802e4f184b0f807a0e0e")</ID>
+    <ID>MaxLineLength:WslToolchainProvisioner.kt:WslToolchainProvisioner.Companion$PinnedSubmodule("img2sdat", "https://github.com/UN1CA/external_img2sdat.git", "601317ed0bf502eb8facdd048f2d75dc75ffcd53")</ID>
+    <ID>MaxLineLength:WslToolchainProvisioner.kt:WslToolchainProvisioner.Companion$PinnedSubmodule("signapk", "https://github.com/UN1CA/external_signapk.git", "cb88f4b27d8a07ca101eade5d40a6893920cb55e")</ID>
+    <ID>MaxLineLength:WslToolchainProvisionerTest.kt:WslToolchainProvisionerTest$WslToolchainProvisioner.SUBMODULES.forEach { existingPaths.add("/home/lti/LtiRomTools/external/${it.name}") }</ID>
+    <ID>MaxLineLength:WslToolchainProvisionerTest.kt:WslToolchainProvisionerTest.FakeDaemonSupervisor$var descriptor: ServerConnectionDescriptor? = ServerConnectionDescriptor("127.0.0.1", 9090, "token", 1234L, "Ubuntu")</ID>
+    <ID>MaxLineLength:WslToolchainProvisionerTest.kt:WslToolchainProvisionerTest.FakeRemoteTransport$return RunHandle(runId = "fake-run-${request.idempotencyKey}", status = RunStatusValue.RUNNING, startedAtEpochMs = 1000L)</ID>
+    <ID>MaxLineLength:WslToolchainProvisionerTest.kt:WslToolchainProvisionerTest.FakeRemoteTransport$val output = listOf("android-tools", "apktool", "erofs-utils", "img2sdat", "signapk").joinToString("\n")</ID>
+    <ID>MaxLineLength:WslToolchainProvisionerTest.kt:WslToolchainProvisionerTest.FakeWslCliExecutor$if</ID>
+    <ID>MaxLineLength:WslToolchainProvisionerTest.kt:WslToolchainProvisionerTest.FakeWslCliExecutor$override</ID>
+    <ID>MaxLineLength:WslToolchainProvisionerTest.kt:WslToolchainProvisionerTest.FakeWslCliExecutor$return CliExecutionResult(0, "Filesystem 1G-blocks Used Available Use% Mounted on\n/dev/sdc 250G 50G 190G 21% /home/lti\n", "")</ID>
+    <ID>MaxLineLength:WslToolchainProvisionerTest.kt:WslToolchainProvisionerTest.FakeWslCliExecutor$val dir = (if (command.getOrNull(1) == "-L") command.getOrNull(2) else command.getOrNull(1))?.trimEnd('/') ?: ""</ID>
+    <ID>MaxLineLength:WslToolchainProvisionerTest.kt:WslToolchainProvisionerTest.FakeWslCliExecutor$val pkgLines = WslToolchainProvisioner.REQUIRED_DEV_PACKAGES.joinToString("\n") { "$it install ok installed" }</ID>
+    <ID>NestedBlockDepth:WorkDirDiscoveryService.kt:WorkDirDiscoveryService$public fun discoverWorkspaces: List&lt;RecentProject&gt;</ID>
+    <ID>ReturnCount:CompositeSystemDoctorEngineTest.kt:CompositeSystemDoctorEngineTest.MockWslCliExecutor$override fun execute: CliExecutionResult</ID>
+    <ID>ReturnCount:EnvironmentReadinessAdapter.kt:EnvironmentReadinessAdapter$private suspend fun evaluateEnvironment: EnvironmentReadiness</ID>
+    <ID>ReturnCount:EnvironmentReadinessAdapter.kt:EnvironmentReadinessAdapter$private suspend fun validateWorkspace: EnvironmentReadiness</ID>
+    <ID>ReturnCount:InMemoryRunRepository.kt:InMemoryRunRepository$override suspend fun cachedEvents: List&lt;String&gt;</ID>
+    <ID>ReturnCount:InMemoryRunRepository.kt:InMemoryRunRepository$override suspend fun claimDriver: Boolean</ID>
+    <ID>ReturnCount:RunRepositoryImpl.kt:RunRepositoryImpl$private suspend fun mirrorRunToRemoteWorkspace</ID>
+    <ID>ReturnCount:RunRepositoryImpl.kt:RunRepositoryImpl$private suspend fun mirrorStageLogsToRemoteWorkspace</ID>
+    <ID>ReturnCount:StepExecutionAdapterTest.kt:StepExecutionAdapterTest.FakeRemoteTransport$override suspend fun execute: ToolExecutionResponse</ID>
+    <ID>ReturnCount:SubmoduleSyncEngine.kt:SubmoduleSyncEngine$public suspend fun syncAll: Result&lt;Unit&gt;</ID>
+    <ID>ReturnCount:TargetRepositoryImpl.kt:TargetRepositoryImpl$override suspend fun deleteTarget: Result&lt;Unit&gt;</ID>
+    <ID>ReturnCount:WorkDirDiscoveryService.kt:WorkDirDiscoveryService$private fun resolvePhysicalWorkDir: Path?</ID>
+    <ID>ReturnCount:WslToolchainProvisioner.kt:WslToolchainProvisioner$private fun restoreInitialState: ToolchainSetupState</ID>
+    <ID>ReturnCount:WslToolchainProvisionerTest.kt:WslToolchainProvisionerTest.FakeWslCliExecutor$override fun execute: CliExecutionResult</ID>
+    <ID>ReturnCount:WslToolchainProvisionerTest.kt:WslToolchainProvisionerTest.FakeWslCliExecutor$override fun executeHost: CliExecutionResult</ID>
+    <ID>WildcardImport:StepExecutionAdapterTest.kt:import io.ltirom.tooling.core.remote.*</ID>
   </CurrentIssues>
 </SmellBaseline>

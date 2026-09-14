@@ -1,10 +1,10 @@
 <?xml version="1.0" ?>
 <SmellBaseline>
-  <ManuallySuppressedIssues></ManuallySuppressedIssues>
+  <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>LongMethod:SettingsScreen.kt$@Composable fun SettingsScreenContent( onBackClick: () -&gt; Unit, modifier: Modifier = Modifier, showHeader: Boolean = true, backdrop: Backdrop? = null, appSettingsState: AppSettingsState = koinInject(), )</ID>
-    <ID>MaxLineLength:SettingsScreen.kt$description = "Disable non-essential spring and fluid animations for accessibility"</ID>
-    <ID>MaxLineLength:SettingsScreen.kt$description = "GPU-accelerated lens refraction, vibrancy, and specular hairlines"</ID>
-    <ID>MaxLineLength:SettingsScreen.kt$text = "Select a bespoke visual palette. Blue features signature cosmic liquid glass, Dark provides high-contrast obsidian matte focus, and Light delivers clean frosted clarity."</ID>
+    <ID>LongMethod:SettingsScreen.kt:@Composable fun SettingsScreenContent</ID>
+    <ID>MaxLineLength:SettingsScreen.kt:description = "Disable non-essential spring and fluid animations for accessibility"</ID>
+    <ID>MaxLineLength:SettingsScreen.kt:description = "GPU-accelerated lens refraction, vibrancy, and specular hairlines"</ID>
+    <ID>MaxLineLength:SettingsScreen.kt:text = "Select a bespoke visual palette. Blue features signature cosmic liquid glass, Dark provides high-contrast obsidian matte focus, and Light delivers clean frosted clarity."</ID>
   </CurrentIssues>
 </SmellBaseline>

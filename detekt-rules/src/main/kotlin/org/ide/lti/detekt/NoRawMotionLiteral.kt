@@ -1,21 +1,17 @@
 package org.ide.lti.detekt
 
-import io.gitlab.arturbosch.detekt.api.CodeSmell
-import io.gitlab.arturbosch.detekt.api.Config
-import io.gitlab.arturbosch.detekt.api.Debt
-import io.gitlab.arturbosch.detekt.api.Entity
-import io.gitlab.arturbosch.detekt.api.Issue
-import io.gitlab.arturbosch.detekt.api.Rule
-import io.gitlab.arturbosch.detekt.api.Severity
+import dev.detekt.api.Config
+import dev.detekt.api.Entity
+import dev.detekt.api.Finding
+import dev.detekt.api.Rule
+import dev.detekt.api.RuleName
 import org.jetbrains.kotlin.psi.KtFile
 
-class NoRawMotionLiteral(config: Config = Config.empty) : Rule(config) {
-    override val issue = Issue(
-        id = "NoRawMotionLiteral",
-        severity = Severity.Defect,
-        description = "Raw motion literals bypass theme/Motion.kt (MotionDuration, MotionSpring, MotionEasing). Use tokens from theme/Motion.kt instead.",
-        debt = Debt.FIVE_MINS,
-    )
+class NoRawMotionLiteral(config: Config = Config.empty) : Rule(
+    config,
+    description = "Raw motion literals bypass theme/Motion.kt (MotionDuration, MotionSpring, MotionEasing). Use tokens from theme/Motion.kt instead.",
+) {
+    override val ruleName: RuleName get() = RuleName("NoRawMotionLiteral")
 
     private val durationMillisRegex = Regex("""durationMillis\s*=\s*[0-9]""")
     private val tweenRegex = Regex("""\btween\s*\(\s*[0-9]""")
@@ -52,8 +48,7 @@ class NoRawMotionLiteral(config: Config = Config.empty) : Rule(config) {
 
             if (durationMillisRegex.containsMatchIn(line)) {
                 report(
-                    CodeSmell(
-                        issue = issue,
+                    Finding(
                         entity = Entity.from(file, offset),
                         message = "raw durationMillis literal bypasses theme/Motion.kt (MotionDuration). [$line]",
                     ),
@@ -61,8 +56,7 @@ class NoRawMotionLiteral(config: Config = Config.empty) : Rule(config) {
             }
             if (tweenRegex.containsMatchIn(line)) {
                 report(
-                    CodeSmell(
-                        issue = issue,
+                    Finding(
                         entity = Entity.from(file, offset),
                         message = "raw tween duration literal bypasses theme/Motion.kt (MotionDuration). [$line]",
                     ),
@@ -70,8 +64,7 @@ class NoRawMotionLiteral(config: Config = Config.empty) : Rule(config) {
             }
             if (springRegex.containsMatchIn(line)) {
                 report(
-                    CodeSmell(
-                        issue = issue,
+                    Finding(
                         entity = Entity.from(file, offset),
                         message = "raw spring numeric literal bypasses theme/Motion.kt (MotionSpring). [$line]",
                     ),
@@ -79,8 +72,7 @@ class NoRawMotionLiteral(config: Config = Config.empty) : Rule(config) {
             }
             if (springParamsRegex.containsMatchIn(line)) {
                 report(
-                    CodeSmell(
-                        issue = issue,
+                    Finding(
                         entity = Entity.from(file, offset),
                         message = "raw spring parameter literal bypasses theme/Motion.kt (MotionSpring). [$line]",
                     ),
@@ -88,8 +80,7 @@ class NoRawMotionLiteral(config: Config = Config.empty) : Rule(config) {
             }
             if (cubicBezierEasingRegex.containsMatchIn(line)) {
                 report(
-                    CodeSmell(
-                        issue = issue,
+                    Finding(
                         entity = Entity.from(file, offset),
                         message = "raw CubicBezierEasing literal bypasses theme/Motion.kt (MotionEasing). [$line]",
                     ),

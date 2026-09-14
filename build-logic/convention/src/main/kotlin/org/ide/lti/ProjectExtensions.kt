@@ -1,7 +1,7 @@
 package org.ide.lti
 
 import com.diffplug.gradle.spotless.SpotlessExtension
-import io.gitlab.arturbosch.detekt.extensions.DetektExtension
+import dev.detekt.gradle.extensions.DetektExtension
 import org.gradle.api.Project
 import org.gradle.api.artifacts.VersionCatalog
 import org.gradle.api.artifacts.VersionCatalogsExtension
