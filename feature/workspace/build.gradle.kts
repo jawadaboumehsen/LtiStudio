@@ -28,5 +28,9 @@ kotlin {
             implementation(libs.kotlinx.serialization.json)
             implementation(compose.materialIconsExtended)
         }
+        commonTest.dependencies {
+            implementation(libs.multiplatform.settings)
+            implementation(libs.multiplatform.settings.test)
+        }
     }
 }

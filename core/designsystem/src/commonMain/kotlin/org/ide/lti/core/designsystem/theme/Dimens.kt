@@ -164,6 +164,17 @@ object ComponentSize {
     val SplashCardWidth: Dp = 640.dp
     val SplashCardHeight: Dp = 400.dp
     val SplashLogoSize: Dp = 96.dp
+    val StudioStageRailWidth: Dp = 56.dp
+    val StudioNavigatorMinWidth: Dp = 200.dp
+    val StudioNavigatorMaxWidth: Dp = 360.dp
+    val StudioNavigatorDefaultWidth: Dp = 240.dp
+    val StudioDockMinHeight: Dp = 120.dp
+    val StudioDockDefaultHeight: Dp = 180.dp
+    val StudioDockMaxHeight: Dp = 320.dp
+    val StudioCompactWindowWidth: Dp = 900.dp
+    val StudioCompactWindowHeight: Dp = 600.dp
+
+    fun studioNavigatorWidth(width: Int): Dp = width.dp
 }
 
 /**

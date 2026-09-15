@@ -20,6 +20,7 @@ import org.ide.lti.feature.workspace.panels.run.BuildRunViewModel
 import org.ide.lti.feature.workspace.panels.run.RunHistoryViewModel
 import org.ide.lti.feature.workspace.panels.target.WorkspaceConfigurationViewModel
 import org.ide.lti.feature.workspace.panels.terminal.TerminalViewModel
+import org.ide.lti.feature.workspace.studio.StudioViewModel
 import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
@@ -84,6 +85,14 @@ val workspaceModule = module {
             reattachRunUseCase = getOrNull(),
             runRepository = getOrNull(),
             readinessPort = getOrNull(),
+        )
+    }
+
+    viewModel { params ->
+        StudioViewModel(
+            studioPresentationStore = get(),
+            initialWorkspaceId = params.getOrNull<String>() ?: "",
+            workspaceManager = getOrNull(),
         )
     }
 }

@@ -9,17 +9,42 @@
  */
 package org.ide.lti.feature.workspace.studio
 
+import com.russhwolf.settings.MapSettings
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.ide.lti.core.datastore.StudioPresentationStore
 import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.studio.ScrollAnchor
 import org.ide.lti.core.model.studio.StudioPresentation
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class StudioNavigationTest {
+
+    private val testDispatcher = StandardTestDispatcher()
+
+    @BeforeTest
+    fun setUp() {
+        Dispatchers.setMain(testDispatcher)
+    }
+
+    @AfterTest
+    fun tearDown() {
+        Dispatchers.resetMain()
+    }
 
     @Test
     fun catalogHasExactlyEightStagesInContractOrderWithExactSubobjectCounts() {
@@ -224,5 +249,225 @@ class StudioNavigationTest {
 
         val inRange = initial.withNavigatorWidth(300)
         assertEquals(300, inRange.navigatorWidth)
+    }
+
+    @Test
+    fun viewModelInitialEntryResolutionMatchesContract() = runTest(testDispatcher) {
+        val store = StudioPresentationStore(settings = MapSettings(), ioDispatcher = Dispatchers.Unconfined)
+        val viewModel = StudioViewModel(
+            studioPresentationStore = store,
+            initialWorkspaceId = "ws-new",
+        )
+        advanceUntilIdle()
+
+        // Unopened workspace defaults to Overview with NEW_WORKSPACE
+        val initialState = viewModel.uiState.value
+        assertEquals("ws-new", initialState.workspaceId)
+        assertEquals(StudioEntry.Overview(StudioEntryReason.NEW_WORKSPACE), initialState.entry)
+
+        // Deep-link into specific stage and object
+        viewModel.onEntry("ws-new", StageId.DEBLOAT, "inventory")
+        advanceUntilIdle()
+
+        val deepLinkState = viewModel.uiState.value
+        assertEquals(
+            StudioEntry.Editor(StageId.DEBLOAT, "inventory", StudioEntryReason.DEEP_LINK),
+            deepLinkState.entry,
+        )
+
+        // Pre-stored presentation restores previous editor
+        store.put(
+            StudioPresentation(
+                workspaceId = "ws-stored",
+                hasOpened = true,
+                editorStageId = StageId.MODULE_APPLICATION,
+                editorObjectId = "enabled-ordered-modules",
+            ),
+        )
+        viewModel.onEntry("ws-stored", null, null)
+        advanceUntilIdle()
+
+        val storedState = viewModel.uiState.value
+        assertEquals("ws-stored", storedState.workspaceId)
+        assertEquals(
+            StudioEntry.Editor(StageId.MODULE_APPLICATION, "enabled-ordered-modules", StudioEntryReason.RESTORED),
+            storedState.entry,
+        )
+    }
+
+    @Test
+    fun viewModelSelectionAndNavigationStateTransitions() = runTest(testDispatcher) {
+        val store = StudioPresentationStore(settings = MapSettings(), ioDispatcher = Dispatchers.Unconfined)
+        val viewModel = StudioViewModel(
+            studioPresentationStore = store,
+            initialWorkspaceId = "ws-1",
+        )
+        advanceUntilIdle()
+
+        // Select stage BUILD_FLASHABLE_ZIP
+        viewModel.selectStage(StageId.BUILD_FLASHABLE_ZIP)
+        advanceUntilIdle()
+
+        val stageState = viewModel.uiState.value
+        assertTrue(stageState.entry is StudioEntry.Editor)
+        val stageEditor = stageState.entry as StudioEntry.Editor
+        assertEquals(StageId.BUILD_FLASHABLE_ZIP, stageEditor.stageId)
+        assertEquals("images", stageEditor.objectId, "selectStage falls back to the stage's first subobject")
+
+        // Rail items reflect selection
+        val selectedRail = stageState.railItems.firstOrNull { it.stage.stageId == StageId.BUILD_FLASHABLE_ZIP }
+        assertNotNull(selectedRail)
+        assertTrue(selectedRail.isSelected)
+        val unselectedRail = stageState.railItems.firstOrNull { it.stage.stageId == StageId.FIRMWARE_ACQUISITION }
+        assertNotNull(unselectedRail)
+        assertFalse(unselectedRail.isSelected)
+
+        // Select specific object within stage
+        viewModel.selectObject(StageId.BUILD_FLASHABLE_ZIP, "avb-keys")
+        advanceUntilIdle()
+
+        val objectState = viewModel.uiState.value
+        val objectEditor = objectState.entry as StudioEntry.Editor
+        assertEquals(StageId.BUILD_FLASHABLE_ZIP, objectEditor.stageId)
+        assertEquals("avb-keys", objectEditor.objectId)
+
+        // An object id the catalog does not recognize for this stage is a no-op, not silently accepted.
+        viewModel.selectObject(StageId.BUILD_FLASHABLE_ZIP, "no-such-object")
+        advanceUntilIdle()
+        assertEquals("avb-keys", (viewModel.uiState.value.entry as StudioEntry.Editor).objectId)
+
+        // Select overview mode
+        viewModel.openOverview()
+        advanceUntilIdle()
+
+        val overviewState = viewModel.uiState.value
+        assertTrue(overviewState.entry is StudioEntry.Overview)
+
+        // Restore editor returns to last selected editor context
+        viewModel.returnToEditor()
+        advanceUntilIdle()
+
+        val restoredState = viewModel.uiState.value
+        assertTrue(restoredState.entry is StudioEntry.Editor)
+        val restoredEditor = restoredState.entry as StudioEntry.Editor
+        assertEquals(StageId.BUILD_FLASHABLE_ZIP, restoredEditor.stageId)
+        assertEquals("avb-keys", restoredEditor.objectId)
+    }
+
+    @Test
+    fun viewModelDockAndDrawerAndSearchTransitions() = runTest(testDispatcher) {
+        val store = StudioPresentationStore(settings = MapSettings(), ioDispatcher = Dispatchers.Unconfined)
+        val viewModel = StudioViewModel(
+            studioPresentationStore = store,
+            initialWorkspaceId = "ws-1",
+        )
+        advanceUntilIdle()
+
+        // Dock tabs
+        viewModel.setActiveDockTab(StudioDockTab.ACTIVITY)
+        assertEquals(StudioDockTab.ACTIVITY, viewModel.uiState.value.activeDockTab)
+        viewModel.setActiveDockTab(StudioDockTab.ARTIFACTS)
+        assertEquals(StudioDockTab.ARTIFACTS, viewModel.uiState.value.activeDockTab)
+        viewModel.setActiveDockTab(StudioDockTab.PROBLEMS)
+        assertEquals(StudioDockTab.PROBLEMS, viewModel.uiState.value.activeDockTab)
+
+        // Dock expansion
+        val initialExpanded = viewModel.uiState.value.isDockExpanded
+        viewModel.toggleDock()
+        assertEquals(!initialExpanded, viewModel.uiState.value.isDockExpanded)
+        viewModel.toggleDock()
+        assertEquals(initialExpanded, viewModel.uiState.value.isDockExpanded)
+
+        // Navigator drawer
+        val initialDrawer = viewModel.uiState.value.isNavigatorDrawerOpen
+        viewModel.toggleNavigatorDrawer()
+        assertEquals(!initialDrawer, viewModel.uiState.value.isNavigatorDrawerOpen)
+        viewModel.closeNavigatorDrawer()
+        assertFalse(viewModel.uiState.value.isNavigatorDrawerOpen)
+
+        // Search query
+        viewModel.setSearchQuery("payload")
+        assertEquals("payload", viewModel.uiState.value.searchQuery)
+    }
+
+    @Test
+    fun viewModelSavingPresentationPersistsWidthStageAndObjectWithoutMutatingConfiguration() = runTest(testDispatcher) {
+        val store = StudioPresentationStore(settings = MapSettings(), ioDispatcher = Dispatchers.Unconfined)
+        val viewModel = StudioViewModel(
+            studioPresentationStore = store,
+            initialWorkspaceId = "ws-persist",
+        )
+        advanceUntilIdle()
+
+        // Resize navigator to 320
+        viewModel.setNavigatorWidth(320)
+        advanceUntilIdle()
+        assertEquals(320, viewModel.uiState.value.presentation.navigatorWidth)
+
+        // Clamped values
+        viewModel.setNavigatorWidth(100)
+        advanceUntilIdle()
+        assertEquals(StudioPresentation.MIN_NAVIGATOR_WIDTH, viewModel.uiState.value.presentation.navigatorWidth)
+
+        viewModel.setNavigatorWidth(500)
+        advanceUntilIdle()
+        assertEquals(StudioPresentation.MAX_NAVIGATOR_WIDTH, viewModel.uiState.value.presentation.navigatorWidth)
+
+        // Save presentation persists state to store
+        viewModel.selectStage(StageId.MODULE_APPLICATION)
+        viewModel.selectObject(StageId.MODULE_APPLICATION, "enabled-ordered-modules")
+        advanceUntilIdle()
+
+        viewModel.requestSave()
+        // Assert the transient notification before advancing time - advanceUntilIdle() would also run
+        // requestSave()'s own 2s auto-dismiss delay to completion, clearing it before we could observe it.
+        assertNotNull(viewModel.uiState.value.saveRequestedNotification)
+        advanceUntilIdle()
+        assertNull(viewModel.uiState.value.saveRequestedNotification, "Notification must auto-dismiss")
+
+        val persisted = store.get("ws-persist")
+        assertNotNull(persisted)
+        assertEquals(StageId.MODULE_APPLICATION, persisted.editorStageId)
+        assertEquals("enabled-ordered-modules", persisted.editorObjectId)
+        assertTrue(persisted.hasOpened)
+    }
+
+    @Test
+    fun viewModelNeverEmitsMachineSetupOrToolsAsStagesOrSubobjects() = runTest(testDispatcher) {
+        val store = StudioPresentationStore(settings = MapSettings(), ioDispatcher = Dispatchers.Unconfined)
+        val viewModel = StudioViewModel(
+            studioPresentationStore = store,
+            initialWorkspaceId = "ws-check",
+        )
+        advanceUntilIdle()
+
+        val railItems = viewModel.uiState.value.railItems
+        assertEquals(8, railItems.size, "Must have exactly 8 ROM build stages")
+
+        val stageTitles = railItems.map { it.stage.title }
+        val stageLabels = railItems.map { it.stage.accessibleLabel }
+        val subobjectTitles = railItems.flatMap { it.stage.subobjects }.map { it.title }
+        val subobjectLabels = railItems.flatMap { it.stage.subobjects }.map { it.accessibleLabel }
+
+        val forbiddenTerms = listOf("environment", "tools", "machine setup", "provisioning", "toolchain")
+
+        forbiddenTerms.forEach { term ->
+            assertTrue(
+                stageTitles.none { it.lowercase().contains(term) },
+                "Stage titles must never contain '$term': $stageTitles",
+            )
+            assertTrue(
+                stageLabels.none { it.lowercase().contains(term) },
+                "Stage accessible labels must never contain '$term': $stageLabels",
+            )
+            assertTrue(
+                subobjectTitles.none { it.lowercase().contains(term) },
+                "Subobject titles must never contain '$term': $subobjectTitles",
+            )
+            assertTrue(
+                subobjectLabels.none { it.lowercase().contains(term) },
+                "Subobject accessible labels must never contain '$term': $subobjectLabels",
+            )
+        }
     }
 }

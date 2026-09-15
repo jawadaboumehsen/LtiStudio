@@ -80,11 +80,13 @@ fun WorkspaceScreen(
     onOpenEditConfiguration: (String) -> Unit = { onOpenConfigurations() },
     onOpenAddConfiguration: () -> Unit = onOpenConfigurations,
     onNavigateToSetup: () -> Unit = {},
+    onOpenStudio: (workspaceId: String, stageId: String?, objectId: String?) -> Unit = { _, _, _ -> },
     viewModel: WorkspaceViewModel = koinViewModel(),
     editorViewModel: EditorViewModel = koinViewModel(),
     explorerViewModel: ExplorerViewModel = koinViewModel(),
     buildRunViewModel: BuildRunViewModel = koinViewModel(),
 ) {
+    val currentWorkspace by viewModel.currentWorkspace.collectAsState()
     val workspaceName by viewModel.workspaceName.collectAsState()
     val selectedTarget by viewModel.selectedTarget.collectAsState()
     val effectiveSnapshot by viewModel.effectiveSnapshot.collectAsState()
@@ -184,6 +186,18 @@ fun WorkspaceScreen(
                         ltiLayoutState.toggleLeft()
                         viewModel.togglePanelVisibility(PanelId.LEFT)
                     }
+                },
+            )
+            add(
+                CommandItem(
+                    id = "nav_studio",
+                    title = "ROM Setup Studio...",
+                    subtitle = "Open 8-stage ROM configuration and validation studio",
+                    category = CommandCategory.NAVIGATION,
+                    icon = AppIcon.Painted(AppIcons.SettingsPainterResource),
+                ) {
+                    // Studio is keyed by workspace ID, not the display name shown in the command's own subtitle.
+                    currentWorkspace?.id?.let { workspaceId -> onOpenStudio(workspaceId, null, null) }
                 },
             )
 

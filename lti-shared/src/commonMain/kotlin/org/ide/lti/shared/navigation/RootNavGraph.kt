@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import org.ide.lti.core.domain.workspace.WorkspaceManager
+import org.ide.lti.core.model.run.StageId
 import org.ide.lti.feature.configuration.configurationScreen
 import org.ide.lti.feature.configuration.navigateToConfiguration
 import org.ide.lti.feature.configuration.navigateToCreateConfiguration
@@ -27,6 +28,7 @@ import org.ide.lti.feature.setup.SETUP_ROUTE
 import org.ide.lti.feature.setup.setupScreen
 import org.ide.lti.feature.workspace.creation.createWorkspaceScreen
 import org.ide.lti.feature.workspace.creation.navigateToCreateWorkspace
+import org.ide.lti.feature.workspace.studio.studioScreen
 import org.ide.lti.feature.workspace.workspaceScreen
 import org.koin.compose.koinInject
 
@@ -72,6 +74,15 @@ internal fun RootNavGraph(
             onCreateWorkspace = { navHostController.navigateToCreateWorkspace() },
             onOpenConfigurations = { navHostController.navigateToConfiguration() },
             onOpenManageTargets = { navHostController.navigateToConfiguration() },
+            onOpenStudio = { workspaceId, stageId, objectId ->
+                navHostController.navigateToStudio(
+                    workspaceId = workspaceId,
+                    stageId = stageId?.let { raw ->
+                        StageId.entries.firstOrNull { it.name.equals(raw, ignoreCase = true) }
+                    },
+                    objectId = objectId,
+                )
+            },
         )
 
         // Create Workspace Screen
@@ -108,6 +119,15 @@ internal fun RootNavGraph(
                     launchSingleTop = true
                 }
             },
+            onOpenStudio = { workspaceId, stageId, objectId ->
+                navHostController.navigateToStudio(
+                    workspaceId = workspaceId,
+                    stageId = stageId?.let { raw ->
+                        StageId.entries.firstOrNull { it.name.equals(raw, ignoreCase = true) }
+                    },
+                    objectId = objectId,
+                )
+            },
         )
 
         // Notifications (reachable from the workspace top bar)
@@ -118,6 +138,27 @@ internal fun RootNavGraph(
         // Target & Run Configurations Studio
         configurationScreen(
             onBackClick = { navHostController.popBackStack() },
+        )
+
+        // ROM Setup Studio (8-stage ROM configuration and validation)
+        studioScreen(
+            onNavigateBack = { navHostController.popBackStack() },
+            onNavigateToRun = { workspaceId, runId ->
+                navHostController.navigateToRun(workspaceId = workspaceId, runId = runId)
+            },
+            onNavigateToPlugins = { workspaceId, packageId, destination ->
+                navHostController.navigateToPlugins(
+                    destination = destination,
+                    workspaceId = workspaceId,
+                    packageId = packageId,
+                )
+            },
+            onNavigateToSetup = {
+                navHostController.navigate(SETUP_ROUTE) {
+                    launchSingleTop = true
+                }
+            },
+            onOpenSettings = onOpenSettings,
         )
     }
 }
