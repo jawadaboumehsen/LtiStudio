@@ -83,7 +83,17 @@ val DomainModule = module {
             snapshotRepository = get(),
         )
     }
-    singleOf(::SaveConfigurationSnapshotUseCase)
+    single {
+        SaveConfigurationSnapshotUseCase(
+            workspaceRepository = get(),
+            snapshotRepository = get(),
+            runRepository = get(),
+            provisioningPort = get(),
+            admissionPort = get(),
+            materializerPort = get(),
+        )
+    }
+
     singleOf(::RemoveRecentWorkspaceUseCase)
 
     // Pipeline & Build Use Cases

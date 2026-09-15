@@ -67,6 +67,8 @@ class KoinGraphResolutionTest {
         assertNotNull(koin.get<MarketplaceIndexPort>())
         assertNotNull(koin.get<AuthorProjectTrustPort>())
         assertNotNull(koin.get<PluginCatalogPort>())
+        assertNotNull(koin.get<org.ide.lti.core.domain.ports.WorkspaceAdmissionPort>())
+        assertNotNull(koin.get<org.ide.lti.core.domain.ports.SnapshotMaterializerPort>())
     }
 
     @Test

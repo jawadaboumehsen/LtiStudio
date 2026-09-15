@@ -9,10 +9,12 @@
  */
 package org.ide.lti.core.data.di
 
+import org.ide.lti.core.data.admission.WorkspaceAdmissionRepository
+import org.ide.lti.core.data.common.resolveAppDataDir
+import org.ide.lti.core.data.configuration.SnapshotMaterializer
 import org.ide.lti.core.data.plugin.InstalledPluginRepository
 import org.ide.lti.core.data.plugin.PluginIndexAdapter
 import org.ide.lti.core.data.plugin.author.AuthorTaskProcessAdapter
-import org.ide.lti.core.data.plugin.resolvePluginStorageDir
 import org.ide.lti.core.data.remote.EnvironmentReadinessAdapter
 import org.ide.lti.core.data.remote.RemoteWorkspaceProvisioner
 import org.ide.lti.core.data.remote.ResourceVendoredFileAdapter
@@ -29,8 +31,10 @@ import org.ide.lti.core.domain.plugin.PluginCatalogPort
 import org.ide.lti.core.domain.plugin.PluginInstallPort
 import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
 import org.ide.lti.core.domain.ports.PipelineExecutionPort
+import org.ide.lti.core.domain.ports.SnapshotMaterializerPort
 import org.ide.lti.core.domain.ports.ToolPublicationPort
 import org.ide.lti.core.domain.ports.VendoredFilePort
+import org.ide.lti.core.domain.ports.WorkspaceAdmissionPort
 import org.ide.lti.core.domain.ports.WorkspaceProvisioningPort
 import org.ide.lti.core.domain.repository.device.ConnectedDeviceRepository
 import org.ide.lti.core.domain.repository.filesystem.FileSystemRepository
@@ -69,15 +73,22 @@ internal actual val platformRepositoryModule = module {
         )
     }
     single<PluginInstallPort> {
-        InstalledPluginRepository(storeDir = resolvePluginStorageDir("plugins/installed"))
+        InstalledPluginRepository(storeDir = resolveAppDataDir("plugins/installed"))
     }
     single<MarketplaceIndexPort> {
-        PluginIndexAdapter(cacheDir = resolvePluginStorageDir("plugins/index-cache"))
+        PluginIndexAdapter(cacheDir = resolveAppDataDir("plugins/index-cache"))
     }
     single<AuthorProjectTrustPort> {
-        AuthorTaskProcessAdapter(trustStoreDir = resolvePluginStorageDir("plugins/author-trust"))
+        AuthorTaskProcessAdapter(trustStoreDir = resolveAppDataDir("plugins/author-trust"))
     }
     // Bind PluginCatalogPort to EmptyPluginCatalog explicitly; a real catalog-backed implementation is a later task.
     single<PluginCatalogPort> { EmptyPluginCatalog }
+
+    single<WorkspaceAdmissionPort> {
+        WorkspaceAdmissionRepository(storageDir = resolveAppDataDir("workspace-admission"))
+    }
+    single<SnapshotMaterializerPort> {
+        SnapshotMaterializer(storageDir = resolveAppDataDir("snapshot-intents"))
+    }
 }
 

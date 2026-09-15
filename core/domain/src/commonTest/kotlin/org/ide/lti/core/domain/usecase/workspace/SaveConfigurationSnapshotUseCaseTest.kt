@@ -17,9 +17,16 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import org.ide.lti.core.domain.ports.AdmissionResult
+import org.ide.lti.core.domain.ports.LeaseReconciliation
+import org.ide.lti.core.domain.ports.MutationKind
 import org.ide.lti.core.domain.ports.ProvisioningEvent
 import org.ide.lti.core.domain.ports.ProvisioningSpec
+import org.ide.lti.core.domain.ports.SnapshotMaterializationIntent
+import org.ide.lti.core.domain.ports.SnapshotMaterializerPort
+import org.ide.lti.core.domain.ports.WorkspaceAdmissionPort
 import org.ide.lti.core.domain.ports.WorkspaceProvisioningPort
+import org.ide.lti.core.domain.ports.WorkspaceWriteLease
 import org.ide.lti.core.domain.repository.run.InMemoryRunRepository
 import org.ide.lti.core.domain.repository.snapshot.InMemorySnapshotRepository
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
@@ -31,15 +38,19 @@ import org.ide.lti.core.model.target.TargetBinding
 import org.ide.lti.core.model.target.TargetFirmware
 import org.ide.lti.core.model.target.TargetRegion
 import org.ide.lti.core.model.workspace.AcquisitionMode
+import org.ide.lti.core.model.workspace.AcquisitionSettings
+import org.ide.lti.core.model.workspace.BuildSettings
 import org.ide.lti.core.model.workspace.ConfigurationDraft
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 import org.ide.lti.core.model.workspace.DecodeWarning
+import org.ide.lti.core.model.workspace.ExtractionSettings
 import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.core.model.workspace.Workspace
 import org.ide.lti.core.model.workspace.WorkspaceSession
 import org.ide.lti.core.model.workspace.WorkspaceType
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -80,6 +91,51 @@ class SaveConfigurationSnapshotUseCaseTest {
         override fun observeDecodeWarnings(): Flow<DecodeWarning> = flowOf()
     }
 
+    private class FakeWorkspaceAdmissionPort : WorkspaceAdmissionPort {
+        override suspend fun tryAcquire(
+            workspaceId: String,
+            kind: MutationKind,
+            operationId: String,
+            expectedRevision: Int?,
+            currentRevision: Int?,
+        ): AdmissionResult {
+            if (expectedRevision != null && currentRevision != null && expectedRevision != currentRevision) {
+                return AdmissionResult.RevisionMismatch(expected = expectedRevision, actual = currentRevision)
+            }
+            return AdmissionResult.Admitted(
+                WorkspaceWriteLease(
+                    workspaceId = workspaceId,
+                    ownerKind = kind,
+                    operationId = operationId,
+                    expectedRevision = expectedRevision,
+                    acquiredAtEpochMs = 0L,
+                    durable = false,
+                ),
+            )
+        }
+        override suspend fun release(lease: WorkspaceWriteLease) {}
+        override suspend fun currentOwner(workspaceId: String): WorkspaceWriteLease? = null
+        override suspend fun unreconciledLeases(): List<WorkspaceWriteLease> = emptyList()
+        override suspend fun reconcile(lease: WorkspaceWriteLease, outcome: LeaseReconciliation) {}
+    }
+
+    private class FakeSnapshotMaterializerPort : SnapshotMaterializerPort {
+        val intents = mutableListOf<SnapshotMaterializationIntent>()
+        override suspend fun markMaterializing(workspaceId: String, snapshotId: String) {
+            intents.add(
+                SnapshotMaterializationIntent(
+                    workspaceId = workspaceId,
+                    snapshotId = snapshotId,
+                    status = "materializing",
+                ),
+            )
+        }
+        override suspend fun clearIntent(workspaceId: String, snapshotId: String) {
+            intents.removeAll { it.workspaceId == workspaceId && it.snapshotId == snapshotId }
+        }
+        override suspend fun findIncompleteMaterializations(): List<SnapshotMaterializationIntent> = intents
+    }
+
     private val firmwareGlobal = TargetFirmware(
         version = "10.5.15_GL",
         buildId = "PQ84P01:15",
@@ -100,18 +156,28 @@ class SaveConfigurationSnapshotUseCaseTest {
         val snapshotRepo = InMemorySnapshotRepository()
         val runRepo = InMemoryRunRepository()
         val provisioningPort = FakeProvisioningPort()
-        val useCase = SaveConfigurationSnapshotUseCase(workspaceRepo, snapshotRepo, runRepo, provisioningPort)
+        val admissionPort = FakeWorkspaceAdmissionPort()
+        val materializerPort = FakeSnapshotMaterializerPort()
+        val useCase = SaveConfigurationSnapshotUseCase(
+            workspaceRepository = workspaceRepo,
+            snapshotRepository = snapshotRepo,
+            runRepository = runRepo,
+            provisioningPort = provisioningPort,
+            admissionPort = admissionPort,
+            materializerPort = materializerPort,
+        )
 
         // Initial snapshot
+
         val initialSnapshot = ConfigurationSnapshot.create(
             id = "snap-initial",
             workspaceId = "ws-1",
             profileRevision = 1,
-            acquisition = org.ide.lti.core.model.workspace.AcquisitionSettings(
+            acquisition = AcquisitionSettings(
                 region = TargetRegion.GLOBAL,
                 firmware = firmwareGlobal,
             ),
-            build = org.ide.lti.core.model.workspace.BuildSettings(
+            build = BuildSettings(
                 packagePolicy = PackagePolicy(listOf("system"), listOf("boot")),
             ),
             createdAt = Clock.System.now(),
@@ -188,7 +254,16 @@ class SaveConfigurationSnapshotUseCaseTest {
         val snapshotRepo = InMemorySnapshotRepository()
         val runRepo = InMemoryRunRepository()
         val provisioningPort = FakeProvisioningPort()
-        val useCase = SaveConfigurationSnapshotUseCase(workspaceRepo, snapshotRepo, runRepo, provisioningPort)
+        val admissionPort = FakeWorkspaceAdmissionPort()
+        val materializerPort = FakeSnapshotMaterializerPort()
+        val useCase = SaveConfigurationSnapshotUseCase(
+            workspaceRepository = workspaceRepo,
+            snapshotRepository = snapshotRepo,
+            runRepository = runRepo,
+            provisioningPort = provisioningPort,
+            admissionPort = admissionPort,
+            materializerPort = materializerPort,
+        )
 
         val ws = Workspace(
             id = "ws-active",
@@ -218,5 +293,105 @@ class SaveConfigurationSnapshotUseCaseTest {
         assertTrue(result.isFailure)
         assertTrue(result.exceptionOrNull() is IllegalStateException)
         assertEquals(0, provisioningPort.writtenConfigs.size)
+    }
+
+    @Test
+    fun savingPreservesHiddenExtractionSettingsAndRecomputesDigestOverThem() = runTest {
+        val workspaceRepo = FakeWorkspaceRepo()
+        val snapshotRepo = InMemorySnapshotRepository()
+        val runRepo = InMemoryRunRepository()
+        val provisioningPort = FakeProvisioningPort()
+        val admissionPort = FakeWorkspaceAdmissionPort()
+        val materializerPort = FakeSnapshotMaterializerPort()
+        val useCase = SaveConfigurationSnapshotUseCase(
+            workspaceRepository = workspaceRepo,
+            snapshotRepository = snapshotRepo,
+            runRepository = runRepo,
+            provisioningPort = provisioningPort,
+            admissionPort = admissionPort,
+            materializerPort = materializerPort,
+        )
+
+        // Previous snapshot carries extraction settings ConfigurationDraft does not expose at all.
+        val customExtraction = ExtractionSettings(adapter = "lpunpack", dynamicPartitions = listOf("product"))
+        val initialSnapshot = ConfigurationSnapshot.create(
+            id = "snap-initial",
+            workspaceId = "ws-1",
+            profileRevision = 1,
+            acquisition = AcquisitionSettings(region = TargetRegion.GLOBAL, firmware = firmwareGlobal),
+            extraction = customExtraction,
+            createdAt = Clock.System.now(),
+        )
+        snapshotRepo.saveSnapshot(initialSnapshot)
+
+        val ws1 = Workspace(
+            id = "ws-1",
+            name = "Workspace 1",
+            path = "/path",
+            linuxPath = "/path",
+            targetBinding = TargetBinding("PQ84P01", 1),
+            effectiveSnapshotId = "snap-initial",
+        )
+        workspaceRepo.saveWorkspace(ws1)
+
+        val draft = ConfigurationDraft(region = TargetRegion.GLOBAL, firmware = firmwareGlobal, romVersion = "1.2.0")
+
+        val newSnapshot = useCase("ws-1", draft).getOrThrow()
+
+        // Extraction settings survive a save the current thin draft never mentions them in.
+        assertEquals(customExtraction, newSnapshot.extraction)
+
+        // The persisted digest actually matches the snapshot's real (post-preservation) content -
+        // recomputing it independently from the same field values must reproduce it exactly.
+        val recomputed = ConfigurationSnapshot.computeDigest(
+            workspaceId = newSnapshot.workspaceId,
+            profileRevision = newSnapshot.profileRevision,
+            acquisition = newSnapshot.acquisition,
+            extraction = newSnapshot.extraction,
+            assembly = newSnapshot.assembly,
+            debloat = newSnapshot.debloat,
+            customization = newSnapshot.customization,
+            build = newSnapshot.build,
+            release = newSnapshot.release,
+            publish = newSnapshot.publish,
+        )
+        assertEquals(recomputed, newSnapshot.digest)
+    }
+
+    @Test
+    fun savingRejectsAStaleExpectedBaseSnapshotId() = runTest {
+        val workspaceRepo = FakeWorkspaceRepo()
+        val snapshotRepo = InMemorySnapshotRepository()
+        val runRepo = InMemoryRunRepository()
+        val provisioningPort = FakeProvisioningPort()
+        val admissionPort = FakeWorkspaceAdmissionPort()
+        val materializerPort = FakeSnapshotMaterializerPort()
+        val useCase = SaveConfigurationSnapshotUseCase(
+            workspaceRepository = workspaceRepo,
+            snapshotRepository = snapshotRepo,
+            runRepository = runRepo,
+            provisioningPort = provisioningPort,
+            admissionPort = admissionPort,
+            materializerPort = materializerPort,
+        )
+
+        val ws = Workspace(
+            id = "ws-1",
+            name = "Workspace 1",
+            path = "/path",
+            linuxPath = "/path",
+            effectiveSnapshotId = "snap-current",
+        )
+        workspaceRepo.saveWorkspace(ws)
+
+        val draft = ConfigurationDraft(region = TargetRegion.GLOBAL, firmware = firmwareGlobal)
+
+        // Caller believes the base is "snap-stale", but the workspace has already moved to "snap-current".
+        val result = useCase("ws-1", draft, expectedBaseSnapshotId = "snap-stale")
+
+        assertTrue(result.isFailure)
+        assertEquals(0, provisioningPort.writtenConfigs.size)
+        // Never partially applied: no materialization intent left dangling from a rejected save.
+        assertFalse(materializerPort.intents.any { it.workspaceId == "ws-1" })
     }
 }
