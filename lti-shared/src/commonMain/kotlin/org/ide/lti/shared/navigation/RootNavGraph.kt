@@ -43,8 +43,9 @@ internal fun RootNavGraph(
     val currentWorkspace by workspaceManager.currentWorkspace.collectAsState()
 
     LaunchedEffect(currentWorkspace) {
-        if (currentWorkspace != null && navHostController.currentDestination?.route == SETUP_ROUTE) {
-            navHostController.navigate("workspace") {
+        val workspace = currentWorkspace
+        if (workspace != null && navHostController.currentDestination?.route == SETUP_ROUTE) {
+            navHostController.navigate(buildStudioRoute(workspaceId = workspace.id)) {
                 launchSingleTop = true
             }
         } else if (currentWorkspace == null && navHostController.currentDestination?.route == "workspace") {
@@ -63,9 +64,9 @@ internal fun RootNavGraph(
     ) {
         // Setup Screen (Entry point)
         setupScreen(
-            onOpenWorkspace = { _ ->
-                if (navHostController.currentDestination?.route != "workspace") {
-                    navHostController.navigate("workspace") {
+            onOpenWorkspace = { workspace ->
+                if (navHostController.currentDestination?.route != StudioRoutes.STUDIO_PATTERN) {
+                    navHostController.navigate(buildStudioRoute(workspaceId = workspace.id)) {
                         launchSingleTop = true
                     }
                 }
@@ -74,22 +75,13 @@ internal fun RootNavGraph(
             onCreateWorkspace = { navHostController.navigateToCreateWorkspace() },
             onOpenConfigurations = { navHostController.navigateToConfiguration() },
             onOpenManageTargets = { navHostController.navigateToConfiguration() },
-            onOpenStudio = { workspaceId, stageId, objectId ->
-                navHostController.navigateToStudio(
-                    workspaceId = workspaceId,
-                    stageId = stageId?.let { raw ->
-                        StageId.entries.firstOrNull { it.name.equals(raw, ignoreCase = true) }
-                    },
-                    objectId = objectId,
-                )
-            },
         )
 
         // Create Workspace Screen
         createWorkspaceScreen(
             onBackClick = { navHostController.popBackStack() },
-            onWorkspaceCreated = { _ ->
-                navHostController.navigate("workspace") {
+            onWorkspaceCreated = { workspace ->
+                navHostController.navigate(buildStudioRoute(workspaceId = workspace.id)) {
                     popUpTo(SETUP_ROUTE) { inclusive = false }
                     launchSingleTop = true
                 }
