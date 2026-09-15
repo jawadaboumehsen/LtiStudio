@@ -57,11 +57,12 @@ import kotlin.test.assertTrue
 
 class SaveConfigurationSnapshotUseCaseTest {
 
-    private class FakeProvisioningPort : WorkspaceProvisioningPort {
+    private class FakeProvisioningPort(private val failWrite: Boolean = false) : WorkspaceProvisioningPort {
         val writtenConfigs = mutableListOf<Pair<Workspace, ConfigurationSnapshot>>()
         override fun provision(spec: ProvisioningSpec): Flow<ProvisioningEvent> = emptyFlow()
         override suspend fun cancel(id: String) {}
         override suspend fun writeConfig(workspace: Workspace, snapshot: ConfigurationSnapshot) {
+            if (failWrite) error("Simulated remote materialization failure")
             writtenConfigs.add(workspace to snapshot)
         }
     }
@@ -393,5 +394,59 @@ class SaveConfigurationSnapshotUseCaseTest {
         assertEquals(0, provisioningPort.writtenConfigs.size)
         // Never partially applied: no materialization intent left dangling from a rejected save.
         assertFalse(materializerPort.intents.any { it.workspaceId == "ws-1" })
+    }
+
+    @Test
+    fun oldCommittedPointerRemainsSavedWhenRemoteMaterializationFails() = runTest {
+        val workspaceRepo = FakeWorkspaceRepo()
+        val snapshotRepo = InMemorySnapshotRepository()
+        val runRepo = InMemoryRunRepository()
+        val provisioningPort = FakeProvisioningPort(failWrite = true)
+        val admissionPort = FakeWorkspaceAdmissionPort()
+        val materializerPort = FakeSnapshotMaterializerPort()
+        val useCase = SaveConfigurationSnapshotUseCase(
+            workspaceRepository = workspaceRepo,
+            snapshotRepository = snapshotRepo,
+            runRepository = runRepo,
+            provisioningPort = provisioningPort,
+            admissionPort = admissionPort,
+            materializerPort = materializerPort,
+        )
+
+        val initialSnapshot = ConfigurationSnapshot.create(
+            id = "snap-initial",
+            workspaceId = "ws-1",
+            profileRevision = 1,
+            acquisition = AcquisitionSettings(region = TargetRegion.GLOBAL, firmware = firmwareGlobal),
+            createdAt = Clock.System.now(),
+        )
+        snapshotRepo.saveSnapshot(initialSnapshot)
+
+        val ws = Workspace(
+            id = "ws-1",
+            name = "Workspace 1",
+            path = "/path",
+            linuxPath = "/path",
+            effectiveSnapshotId = "snap-initial",
+        )
+        workspaceRepo.saveWorkspace(ws)
+
+        val draft = ConfigurationDraft(region = TargetRegion.CHINA, firmware = firmwareCn)
+
+        // 1. Persist immutable snapshot and 2. mark materializing both happen before the failing
+        // 3. writeConfig call - so the new snapshot exists, but nothing points at it yet.
+        val result = useCase("ws-1", draft)
+
+        assertTrue(result.isFailure)
+
+        // Only a COMMITTED pointer is shown as Saved: the old snapshot id is untouched.
+        val stillWs = workspaceRepo.getWorkspace("ws-1")
+        assertEquals("snap-initial", stillWs?.effectiveSnapshotId)
+
+        // The interrupted materialization is detectable, not silently lost: an intent marker
+        // was written before the failing writeConfig call and was never cleared, because the
+        // pointer-commit step that would have cleared it never ran.
+        assertEquals(1, materializerPort.intents.size)
+        assertEquals("ws-1", materializerPort.intents.first().workspaceId)
     }
 }
