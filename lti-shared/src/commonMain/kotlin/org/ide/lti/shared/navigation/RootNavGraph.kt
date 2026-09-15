@@ -22,6 +22,7 @@ import org.ide.lti.feature.configuration.configurationScreen
 import org.ide.lti.feature.configuration.navigateToConfiguration
 import org.ide.lti.feature.configuration.navigateToCreateConfiguration
 import org.ide.lti.feature.configuration.navigateToEditConfiguration
+import org.ide.lti.feature.plugins.pluginsScreen
 import org.ide.lti.feature.settings.navigateToNotification
 import org.ide.lti.feature.settings.notificationScreen
 import org.ide.lti.feature.setup.SETUP_ROUTE
@@ -150,6 +151,12 @@ internal fun RootNavGraph(
                     launchSingleTop = true
                 }
             },
+            onOpenSettings = onOpenSettings,
+        )
+
+        // Plugin Manager (Installed, Marketplace, Import, Author Tools)
+        pluginsScreen(
+            onNavigateBack = { navHostController.popBackStack() },
             onOpenSettings = onOpenSettings,
         )
     }

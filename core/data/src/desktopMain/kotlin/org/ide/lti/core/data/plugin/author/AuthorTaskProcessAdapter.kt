@@ -136,7 +136,7 @@ class AuthorTaskProcessAdapter(
         Files.deleteIfExists(file)
     }
 
-    suspend fun runTask(project: AuthorProject, task: String, timeoutMs: Long): AuthorTaskResult {
+    override suspend fun runTask(project: AuthorProject, task: String, timeoutMs: Long): AuthorTaskResult {
         if (task !in RESERVED_SDK_TASKS) {
             return AuthorTaskResult.Refused(AuthorTaskRefusal.UNKNOWN_TASK)
         }

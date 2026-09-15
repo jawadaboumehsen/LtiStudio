@@ -17,6 +17,9 @@ import org.ide.lti.core.domain.ai.AIServiceImpl
 import org.ide.lti.core.domain.connection.ConnectionManager
 import org.ide.lti.core.domain.panels.PanelManager
 import org.ide.lti.core.domain.pipeline.PipelineOrchestrator
+import org.ide.lti.core.domain.plugin.AuthorProjectTrustUseCase
+import org.ide.lti.core.domain.plugin.InstallPluginUseCase
+import org.ide.lti.core.domain.plugin.PluginLifecycleUseCase
 import org.ide.lti.core.domain.terminal.TerminalManager
 import org.ide.lti.core.domain.usecase.build.CancelRunUseCase
 import org.ide.lti.core.domain.usecase.build.GetRunHistoryUseCase
@@ -157,5 +160,10 @@ val DomainModule = module {
     singleOf(::PairWirelessDeviceUseCase)
     singleOf(::ConnectWirelessDeviceUseCase)
     singleOf(::DisconnectDeviceUseCase)
+
+    // Plugin Use Cases
+    single { InstallPluginUseCase(port = get()) }
+    single { PluginLifecycleUseCase(port = get()) }
+    single { AuthorProjectTrustUseCase(port = get()) }
 }
 

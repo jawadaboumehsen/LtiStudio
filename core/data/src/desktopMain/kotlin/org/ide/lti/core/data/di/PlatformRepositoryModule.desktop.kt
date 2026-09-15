@@ -9,27 +9,35 @@
  */
 package org.ide.lti.core.data.di
 
+import org.ide.lti.core.data.plugin.InstalledPluginRepository
+import org.ide.lti.core.data.plugin.PluginIndexAdapter
+import org.ide.lti.core.data.plugin.author.AuthorTaskProcessAdapter
+import org.ide.lti.core.data.plugin.resolvePluginStorageDir
 import org.ide.lti.core.data.remote.EnvironmentReadinessAdapter
 import org.ide.lti.core.data.remote.RemoteWorkspaceProvisioner
+import org.ide.lti.core.data.remote.ResourceVendoredFileAdapter
+import org.ide.lti.core.data.remote.StepExecutionAdapter
 import org.ide.lti.core.data.remote.ToolPublicationAdapter
 import org.ide.lti.core.data.remote.WorkspaceKeyProvisioner
 import org.ide.lti.core.data.repository.device.ConnectedDeviceRepositoryImpl
 import org.ide.lti.core.data.repository.filesystem.DesktopFileSystemRepository
+import org.ide.lti.core.data.repository.run.RunRepositoryImpl
+import org.ide.lti.core.domain.plugin.AuthorProjectTrustPort
+import org.ide.lti.core.domain.plugin.EmptyPluginCatalog
+import org.ide.lti.core.domain.plugin.MarketplaceIndexPort
+import org.ide.lti.core.domain.plugin.PluginCatalogPort
+import org.ide.lti.core.domain.plugin.PluginInstallPort
 import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
+import org.ide.lti.core.domain.ports.PipelineExecutionPort
 import org.ide.lti.core.domain.ports.ToolPublicationPort
+import org.ide.lti.core.domain.ports.VendoredFilePort
 import org.ide.lti.core.domain.ports.WorkspaceProvisioningPort
 import org.ide.lti.core.domain.repository.device.ConnectedDeviceRepository
 import org.ide.lti.core.domain.repository.filesystem.FileSystemRepository
+import org.ide.lti.core.domain.repository.run.RunRepository
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
-
-import org.ide.lti.core.data.remote.ResourceVendoredFileAdapter
-import org.ide.lti.core.data.remote.StepExecutionAdapter
-import org.ide.lti.core.data.repository.run.RunRepositoryImpl
-import org.ide.lti.core.domain.ports.PipelineExecutionPort
-import org.ide.lti.core.domain.ports.VendoredFilePort
-import org.ide.lti.core.domain.repository.run.RunRepository
 
 internal actual val platformRepositoryModule = module {
     singleOf(::DesktopFileSystemRepository) { bind<FileSystemRepository>() }
@@ -60,5 +68,16 @@ internal actual val platformRepositoryModule = module {
             executionPort = getOrNull(),
         )
     }
+    single<PluginInstallPort> {
+        InstalledPluginRepository(storeDir = resolvePluginStorageDir("plugins/installed"))
+    }
+    single<MarketplaceIndexPort> {
+        PluginIndexAdapter(cacheDir = resolvePluginStorageDir("plugins/index-cache"))
+    }
+    single<AuthorProjectTrustPort> {
+        AuthorTaskProcessAdapter(trustStoreDir = resolvePluginStorageDir("plugins/author-trust"))
+    }
+    // Bind PluginCatalogPort to EmptyPluginCatalog explicitly; a real catalog-backed implementation is a later task.
+    single<PluginCatalogPort> { EmptyPluginCatalog }
 }
 

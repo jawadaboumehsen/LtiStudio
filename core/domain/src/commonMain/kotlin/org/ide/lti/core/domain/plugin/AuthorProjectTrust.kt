@@ -28,6 +28,8 @@ interface AuthorProjectTrustPort {
     suspend fun approval(projectPath: String): TrustApproval?
     suspend fun approve(project: AuthorProject): TrustApproval
     suspend fun revoke(projectPath: String)
+    suspend fun runTask(project: AuthorProject, task: String, timeoutMs: Long): AuthorTaskResult =
+        AuthorTaskResult.Refused(AuthorTaskRefusal.NOT_TRUSTED)
 }
 
 class AuthorProjectTrustUseCase(private val port: AuthorProjectTrustPort) {
@@ -44,6 +46,9 @@ class AuthorProjectTrustUseCase(private val port: AuthorProjectTrustPort) {
     suspend fun approve(project: AuthorProject): TrustApproval = port.approve(project)
 
     suspend fun revoke(projectPath: String) = port.revoke(projectPath)
+
+    suspend fun runTask(project: AuthorProject, task: String, timeoutMs: Long = 60000L): AuthorTaskResult =
+        port.runTask(project, task, timeoutMs)
 }
 
 enum class AuthorTaskRefusal {

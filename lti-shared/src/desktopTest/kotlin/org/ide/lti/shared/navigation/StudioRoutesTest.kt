@@ -171,4 +171,12 @@ class StudioRoutesTest {
             StudioRoutes.STUDIO_PATTERN,
         )
     }
+
+    @Test
+    fun pluginsRoutePatternMatchesFeaturePluginsIndependentCopy() {
+        assertEquals(
+            org.ide.lti.feature.plugins.PLUGINS_ROUTE_PATTERN,
+            StudioRoutes.PLUGINS_PATTERN,
+        )
+    }
 }

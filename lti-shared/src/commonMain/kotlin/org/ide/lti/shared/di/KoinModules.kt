@@ -14,6 +14,7 @@ import org.ide.lti.core.common.di.DispatchersModule
 import org.ide.lti.core.data.di.DataModule
 import org.ide.lti.core.domain.di.DomainModule
 import org.ide.lti.feature.configuration.ConfigurationViewModel
+import org.ide.lti.feature.plugins.di.pluginsModule
 import org.ide.lti.feature.setup.SetupViewModel
 import org.ide.lti.feature.workspace.di.workspaceModule
 import org.koin.core.context.startKoin
@@ -46,6 +47,7 @@ object KoinModules {
     private val featureModules = module {
         includes(
             workspaceModule,
+            pluginsModule,
         )
         viewModel {
             SetupViewModel(

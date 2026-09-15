@@ -1,6 +1,13 @@
 package org.ide.lti.desktop.di
 
 import org.ide.lti.core.domain.pipeline.PipelineOrchestrator
+import org.ide.lti.core.domain.plugin.AuthorProjectTrustPort
+import org.ide.lti.core.domain.plugin.AuthorProjectTrustUseCase
+import org.ide.lti.core.domain.plugin.InstallPluginUseCase
+import org.ide.lti.core.domain.plugin.MarketplaceIndexPort
+import org.ide.lti.core.domain.plugin.PluginCatalogPort
+import org.ide.lti.core.domain.plugin.PluginInstallPort
+import org.ide.lti.core.domain.plugin.PluginLifecycleUseCase
 import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
 import org.ide.lti.core.domain.ports.PipelineExecutionPort
 import org.ide.lti.core.domain.ports.ToolPublicationPort
@@ -56,6 +63,10 @@ class KoinGraphResolutionTest {
         assertNotNull(koin.get<SnapshotRepository>())
         assertNotNull(koin.get<RunRepository>())
         assertNotNull(koin.get<ToolchainProvisioningService>())
+        assertNotNull(koin.get<PluginInstallPort>())
+        assertNotNull(koin.get<MarketplaceIndexPort>())
+        assertNotNull(koin.get<AuthorProjectTrustPort>())
+        assertNotNull(koin.get<PluginCatalogPort>())
     }
 
     @Test
@@ -66,6 +77,9 @@ class KoinGraphResolutionTest {
         assertNotNull(koin.get<PipelineOrchestrator>())
         assertNotNull(koin.get<StartPipelineRunUseCase>())
         assertNotNull(koin.get<ObserveRunUseCase>())
+        assertNotNull(koin.get<InstallPluginUseCase>())
+        assertNotNull(koin.get<PluginLifecycleUseCase>())
+        assertNotNull(koin.get<AuthorProjectTrustUseCase>())
     }
 
     @Test
@@ -86,6 +100,7 @@ class KoinGraphResolutionTest {
             "org.ide.lti.feature.workspace.creation.CreateWorkspaceViewModel",
             "org.ide.lti.feature.workspace.panels.run.BuildRunViewModel",
             "org.ide.lti.feature.configuration.ConfigurationViewModel",
+            "org.ide.lti.feature.plugins.PluginManagerViewModel",
         )
     }
 }
