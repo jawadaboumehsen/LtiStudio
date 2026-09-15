@@ -15,6 +15,7 @@ import org.ide.lti.core.datastore.LtiPreferencesDataSource
 import org.ide.lti.core.datastore.RunFileStorage
 import org.ide.lti.core.datastore.RunRecordDataSource
 import org.ide.lti.core.datastore.SnapshotPreferencesDataSource
+import org.ide.lti.core.datastore.StudioPresentationStore
 import org.ide.lti.core.datastore.TargetPreferencesDataSource
 import org.ide.lti.core.datastore.ToolchainJournalStorage
 import org.ide.lti.core.datastore.ToolchainPreferencesDataSource
@@ -36,6 +37,7 @@ val DatastoreModule = module {
     single { WorkspacePreferencesDataSource(settings = get(), json = get()) }
     single { TargetPreferencesDataSource(settings = get(), json = get()) }
     single { SnapshotPreferencesDataSource(settings = get(), json = get()) }
+    single { StudioPresentationStore(settings = get(), json = get()) }
     single { RunRecordDataSource(settings = get(), json = get(), fileStorage = get()) }
 }
 
