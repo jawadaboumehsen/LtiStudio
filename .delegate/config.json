@@ -1,0 +1,9 @@
+{
+  "version": "delegate-fleet.v1",
+  "lanes": {
+    "feature": {
+      "implementer": "codex",
+      "model": "gpt-5.6-luna"
+    }
+  }
+}

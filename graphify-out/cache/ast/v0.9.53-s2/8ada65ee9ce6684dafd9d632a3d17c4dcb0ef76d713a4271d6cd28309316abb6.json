@@ -1,0 +1,1 @@
+{"nodes": [{"id": "$graphify-root$_sdk_patch_mod_templates_basic_settings_gradle_kts", "label": "settings.gradle.kts", "file_type": "code", "source_file": "sdk/patch-mod/templates/basic/settings.gradle.kts", "source_location": "L1"}], "edges": [], "raw_calls": []}
