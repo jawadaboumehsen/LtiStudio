@@ -29,10 +29,17 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.Clock
+import org.ide.lti.core.domain.ports.AdmissionResult
 import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
+import org.ide.lti.core.domain.ports.LeaseReconciliation
+import org.ide.lti.core.domain.ports.MutationKind
 import org.ide.lti.core.domain.ports.ProvisioningEvent
 import org.ide.lti.core.domain.ports.ProvisioningSpec
+import org.ide.lti.core.domain.ports.SnapshotMaterializationIntent
+import org.ide.lti.core.domain.ports.SnapshotMaterializerPort
+import org.ide.lti.core.domain.ports.WorkspaceAdmissionPort
 import org.ide.lti.core.domain.ports.WorkspaceProvisioningPort
+import org.ide.lti.core.domain.ports.WorkspaceWriteLease
 import org.ide.lti.core.domain.repository.run.RunRepository
 import org.ide.lti.core.domain.repository.snapshot.SnapshotRepository
 import org.ide.lti.core.domain.repository.target.TargetRepository
@@ -194,6 +201,35 @@ class WorkspaceConfigurationViewModelTest {
         }
     }
 
+    private class FakeWorkspaceAdmissionPort : WorkspaceAdmissionPort {
+        override suspend fun tryAcquire(
+            workspaceId: String,
+            kind: MutationKind,
+            operationId: String,
+            expectedRevision: Int?,
+            currentRevision: Int?,
+        ): AdmissionResult = AdmissionResult.Admitted(
+            WorkspaceWriteLease(
+                workspaceId = workspaceId,
+                ownerKind = kind,
+                operationId = operationId,
+                expectedRevision = expectedRevision,
+                acquiredAtEpochMs = 0L,
+                durable = false,
+            ),
+        )
+        override suspend fun release(lease: WorkspaceWriteLease) {}
+        override suspend fun currentOwner(workspaceId: String): WorkspaceWriteLease? = null
+        override suspend fun unreconciledLeases(): List<WorkspaceWriteLease> = emptyList()
+        override suspend fun reconcile(lease: WorkspaceWriteLease, outcome: LeaseReconciliation) {}
+    }
+
+    private class FakeSnapshotMaterializerPort : SnapshotMaterializerPort {
+        override suspend fun markMaterializing(workspaceId: String, snapshotId: String) {}
+        override suspend fun clearIntent(workspaceId: String, snapshotId: String) {}
+        override suspend fun findIncompleteMaterializations(): List<SnapshotMaterializationIntent> = emptyList()
+    }
+
     private class FakeTransport : RemoteTransportPort {
         val uploadedFiles = mutableMapOf<String, ByteArray>()
         override suspend fun execute(request: ToolExecutionRequest) = ToolExecutionResponse(0, "", "", 0)
@@ -227,7 +263,14 @@ class WorkspaceConfigurationViewModelTest {
             val runRepo = FakeRunRepository()
             val provisioningPort = FakeProvisioningPort()
             val targetRepo = FakeTargetRepository(listOf(target))
-            val saveUseCase = SaveConfigurationSnapshotUseCase(workspaceRepo, snapshotRepo, runRepo, provisioningPort)
+            val saveUseCase = SaveConfigurationSnapshotUseCase(
+                workspaceRepo,
+                snapshotRepo,
+                runRepo,
+                provisioningPort,
+                FakeWorkspaceAdmissionPort(),
+                FakeSnapshotMaterializerPort(),
+            )
             val workspaceManager = WorkspaceManager(workspaceRepo, CoroutineScope(Dispatchers.Unconfined))
 
             val initialSnapshot = ConfigurationSnapshot.create(
@@ -306,7 +349,14 @@ class WorkspaceConfigurationViewModelTest {
             val provisioningPort = FakeProvisioningPort()
             val targetRepo = FakeTargetRepository(listOf(target))
             val transport = FakeTransport()
-            val saveUseCase = SaveConfigurationSnapshotUseCase(workspaceRepo, snapshotRepo, runRepo, provisioningPort)
+            val saveUseCase = SaveConfigurationSnapshotUseCase(
+                workspaceRepo,
+                snapshotRepo,
+                runRepo,
+                provisioningPort,
+                FakeWorkspaceAdmissionPort(),
+                FakeSnapshotMaterializerPort(),
+            )
             val workspaceManager = WorkspaceManager(workspaceRepo, CoroutineScope(Dispatchers.Unconfined))
 
             val ws = Workspace(
@@ -362,7 +412,14 @@ class WorkspaceConfigurationViewModelTest {
             val provisioningPort = FakeProvisioningPort()
             val targetRepo = FakeTargetRepository(listOf(target))
             val readinessPort = DynamicReadinessPort()
-            val saveUseCase = SaveConfigurationSnapshotUseCase(workspaceRepo, snapshotRepo, runRepo, provisioningPort)
+            val saveUseCase = SaveConfigurationSnapshotUseCase(
+                workspaceRepo,
+                snapshotRepo,
+                runRepo,
+                provisioningPort,
+                FakeWorkspaceAdmissionPort(),
+                FakeSnapshotMaterializerPort(),
+            )
             val workspaceManager = WorkspaceManager(workspaceRepo, CoroutineScope(Dispatchers.Unconfined))
 
             readinessPort.flow.emit(EnvironmentReadiness(state = EnvironmentReadinessState.READY))
@@ -415,7 +472,14 @@ class WorkspaceConfigurationViewModelTest {
             val runRepo = FakeRunRepository()
             val provisioningPort = FakeProvisioningPort()
             val targetRepo = FakeTargetRepository(listOf(target))
-            val saveUseCase = SaveConfigurationSnapshotUseCase(workspaceRepo, snapshotRepo, runRepo, provisioningPort)
+            val saveUseCase = SaveConfigurationSnapshotUseCase(
+                workspaceRepo,
+                snapshotRepo,
+                runRepo,
+                provisioningPort,
+                FakeWorkspaceAdmissionPort(),
+                FakeSnapshotMaterializerPort(),
+            )
             val workspaceManager = WorkspaceManager(workspaceRepo, CoroutineScope(Dispatchers.Unconfined))
 
             val ws = Workspace(
