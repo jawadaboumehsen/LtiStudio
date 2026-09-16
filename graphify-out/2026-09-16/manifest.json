@@ -19012,5 +19012,29 @@
     "seen": 1789528417.891362,
     "ast_hash": "0ad9dbb10b14dd461f0e49390dec60fa",
     "semantic_hash": ""
+  },
+  ".delegate/config.json": {
+    "mtime": 1789528537.231011,
+    "seen": 1789556079.1200967,
+    "ast_hash": "ec9ca9b4da1d6407e6578189fe9d7471",
+    "semantic_hash": ""
+  },
+  "feature/workspace/src/commonMain/kotlin/org/ide/lti/feature/workspace/studio/editors/AcquireEditor.kt": {
+    "mtime": 1789555886.018585,
+    "seen": 1789556079.1210952,
+    "ast_hash": "a4d15d0dc13ba003e3c707faa1b9f8bd",
+    "semantic_hash": ""
+  },
+  "feature/workspace/src/commonMain/kotlin/org/ide/lti/feature/workspace/studio/editors/AssembleEditor.kt": {
+    "mtime": 1789555889.8707845,
+    "seen": 1789556079.1210952,
+    "ast_hash": "7724384d0e87ce5712eb8f91d7f79107",
+    "semantic_hash": ""
+  },
+  "feature/workspace/src/commonMain/kotlin/org/ide/lti/feature/workspace/studio/editors/ExtractEditor.kt": {
+    "mtime": 1789555840.7502072,
+    "seen": 1789556079.1210952,
+    "ast_hash": "66d647d6c20d15803b9089391c62e729",
+    "semantic_hash": ""
   }
 }

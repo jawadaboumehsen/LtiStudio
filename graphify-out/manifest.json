@@ -19036,5 +19036,17 @@
     "seen": 1789556079.1210952,
     "ast_hash": "66d647d6c20d15803b9089391c62e729",
     "semantic_hash": ""
+  },
+  "feature/workspace/src/commonMain/kotlin/org/ide/lti/feature/workspace/studio/editors/BuildSignEditor.kt": {
+    "mtime": 1789557070.95126,
+    "seen": 1789557281.327307,
+    "ast_hash": "1dcfe2b5d2cde20fdca662df7785df50",
+    "semantic_hash": ""
+  },
+  "feature/workspace/src/commonMain/kotlin/org/ide/lti/feature/workspace/studio/editors/ReleaseMetadataEditor.kt": {
+    "mtime": 1789557081.0837042,
+    "seen": 1789557281.327307,
+    "ast_hash": "b0d23ed89fc45f2e350ec04de2d8fc55",
+    "semantic_hash": ""
   }
 }
