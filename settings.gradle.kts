@@ -50,6 +50,7 @@ include(":core:cli")
 include(":core:network")
 include(":core:model")
 include(":core:analytics")
+include(":core:testing")
 
 include(":feature:home")
 include(":feature:profile")
