@@ -62,7 +62,7 @@ public fun StudioTopAppBar(
     onDragWindow: (() -> Unit)? = null,
 ) {
     GlobalAppTopBar(
-        modifier = modifier.testTag("StudioTopAppBar"),
+        modifier = modifier,
         selectedDestination = GlobalAppDestination.Workspace,
         tagPrefix = "TopBar",
         onSelectDestination = { destination ->

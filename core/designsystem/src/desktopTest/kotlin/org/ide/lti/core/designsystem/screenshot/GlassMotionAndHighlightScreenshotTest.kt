@@ -40,16 +40,16 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
+import org.ide.lti.core.designsystem.component.display.GlassIcon
 import org.ide.lti.core.designsystem.component.feedback.GlassBottomSheet
 import org.ide.lti.core.designsystem.component.feedback.GlassBottomSheetValue
-import org.ide.lti.core.designsystem.component.display.GlassIcon
+import org.ide.lti.core.designsystem.component.feedback.rememberGlassBottomSheetState
+import org.ide.lti.core.designsystem.component.inputs.GlassSlider
+import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.component.navigation.GlassNavigationBar
 import org.ide.lti.core.designsystem.component.navigation.GlassNavigationBarItem
 import org.ide.lti.core.designsystem.component.navigation.GlassNavigationRail
 import org.ide.lti.core.designsystem.component.navigation.GlassNavigationRailItem
-import org.ide.lti.core.designsystem.component.inputs.GlassSlider
-import org.ide.lti.core.designsystem.component.inputs.GlassToggle
-import org.ide.lti.core.designsystem.component.feedback.rememberGlassBottomSheetState
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
@@ -57,6 +57,7 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.testing.screenshot.GoldenImageAssert
 import org.junit.Test
 
 /**
@@ -106,7 +107,7 @@ class GlassMotionAndHighlightScreenshotTest {
         }
 
         val image = onRoot().captureToImage()
-        ScreenshotTestHelper.assertMatchesBaseline("glass_bottom_sheet_modal", image)
+        GoldenImageAssert.assertMatchesBaseline("glass_bottom_sheet_modal", image)
     }
 
     @OptIn(ExperimentalTestApi::class)
@@ -190,7 +191,7 @@ class GlassMotionAndHighlightScreenshotTest {
         }
 
         val image = onRoot().captureToImage()
-        ScreenshotTestHelper.assertMatchesBaseline("glass_docked_navigation_highlight", image)
+        GoldenImageAssert.assertMatchesBaseline("glass_docked_navigation_highlight", image)
     }
 
     @OptIn(ExperimentalTestApi::class)
@@ -264,7 +265,7 @@ class GlassMotionAndHighlightScreenshotTest {
         waitForIdle()
 
         val image = onRoot().captureToImage()
-        ScreenshotTestHelper.assertMatchesBaseline("glass_icon_hover_highlight", image)
+        GoldenImageAssert.assertMatchesBaseline("glass_icon_hover_highlight", image)
     }
 
     @OptIn(ExperimentalTestApi::class)
@@ -370,6 +371,6 @@ class GlassMotionAndHighlightScreenshotTest {
         }
 
         val image = onRoot().captureToImage()
-        ScreenshotTestHelper.assertMatchesBaseline("glass_damped_drag_reduced_motion_comparison", image)
+        GoldenImageAssert.assertMatchesBaseline("glass_damped_drag_reduced_motion_comparison", image)
     }
 }

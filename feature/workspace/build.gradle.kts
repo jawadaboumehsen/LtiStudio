@@ -32,5 +32,26 @@ kotlin {
             implementation(libs.multiplatform.settings)
             implementation(libs.multiplatform.settings.test)
         }
+        desktopTest.dependencies {
+            implementation(projects.core.testing)
+            implementation(compose.desktop.uiTestJUnit4)
+            implementation(compose.desktop.currentOs)
+        }
     }
+}
+
+tasks.withType<Test>().configureEach {
+    testLogging {
+        events("passed", "skipped", "failed", "standardOut", "standardError")
+        showStandardStreams = true
+    }
+    val updateScreenshots = (project.findProperty("updateScreenshots") as String?)
+        ?: System.getProperty("updateScreenshots")
+    if (updateScreenshots != null) {
+        systemProperty("updateScreenshots", updateScreenshots)
+    }
+}
+
+tasks.register("test") {
+    dependsOn("desktopTest")
 }

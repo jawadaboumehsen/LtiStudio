@@ -40,16 +40,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.sp
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
-import org.ide.lti.core.designsystem.component.layout.GlassBackdrop
-import org.ide.lti.core.designsystem.component.layout.GlassLayout
 import org.ide.lti.core.designsystem.component.display.GlassPanelContainer
 import org.ide.lti.core.designsystem.component.display.GlassPanelHeader
 import org.ide.lti.core.designsystem.component.display.GlassPanelHeaderAction
+import org.ide.lti.core.designsystem.component.layout.GlassBackdrop
+import org.ide.lti.core.designsystem.component.layout.GlassLayout
+import org.ide.lti.core.designsystem.component.layout.rememberLtiLayoutState
 import org.ide.lti.core.designsystem.component.navigation.GlassSidePanelRail
 import org.ide.lti.core.designsystem.component.navigation.GlassSidePanelTab
 import org.ide.lti.core.designsystem.component.navigation.GlassSidePanelTabStrip
 import org.ide.lti.core.designsystem.component.navigation.SidePanelRailPosition
-import org.ide.lti.core.designsystem.component.layout.rememberLtiLayoutState
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.CornerRadius
@@ -58,6 +58,7 @@ import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.testing.screenshot.GoldenImageAssert
 import org.junit.Test
 
 class GlassChromeDiagnosticScreenshotTest {
@@ -405,7 +406,7 @@ class GlassChromeDiagnosticScreenshotTest {
         }
 
         val image = onRoot().captureToImage()
-        ScreenshotTestHelper.assertMatchesBaseline("glass_app_chrome_full_composition", image)
+        GoldenImageAssert.assertMatchesBaseline("glass_app_chrome_full_composition", image)
     }
 
     /**
@@ -476,7 +477,7 @@ class GlassChromeDiagnosticScreenshotTest {
         }
 
         val image = onRoot().captureToImage()
-        ScreenshotTestHelper.assertMatchesBaseline("glass_app_chrome_full_composition_light", image)
+        GoldenImageAssert.assertMatchesBaseline("glass_app_chrome_full_composition_light", image)
     }
 
     /**
@@ -555,6 +556,6 @@ class GlassChromeDiagnosticScreenshotTest {
         }
 
         val image = onRoot().captureToImage()
-        ScreenshotTestHelper.assertMatchesBaseline("glass_app_chrome_with_side_panel_tabs", image)
+        GoldenImageAssert.assertMatchesBaseline("glass_app_chrome_with_side_panel_tabs", image)
     }
 }

@@ -45,6 +45,7 @@ kotlin {
             api(libs.kermit.logging)
         }
         desktopTest.dependencies {
+            implementation(projects.core.testing)
             implementation(compose.desktop.uiTestJUnit4)
             implementation(compose.desktop.currentOs)
         }

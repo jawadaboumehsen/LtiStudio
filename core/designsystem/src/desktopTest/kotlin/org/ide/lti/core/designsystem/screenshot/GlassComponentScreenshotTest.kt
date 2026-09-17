@@ -40,34 +40,35 @@ import androidx.compose.ui.test.runDesktopComposeUiTest
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
+import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
+import org.ide.lti.core.designsystem.component.actions.GlassTextButton
 import org.ide.lti.core.designsystem.component.display.GlassCard
-import org.ide.lti.core.designsystem.component.layout.GlassLayout
 import org.ide.lti.core.designsystem.component.display.GlassPanelContainer
 import org.ide.lti.core.designsystem.component.display.GlassPanelHeader
-import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
-import org.ide.lti.core.designsystem.component.navigation.GlassSidePanelTab
-import org.ide.lti.core.designsystem.component.navigation.GlassSidePanelTabs
 import org.ide.lti.core.designsystem.component.inputs.GlassSlider
-import org.ide.lti.core.designsystem.component.primitives.GlassSurface
-import org.ide.lti.core.designsystem.component.actions.GlassTextButton
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
-import org.ide.lti.core.designsystem.component.inputs.TextFieldLeadingSlot
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
+import org.ide.lti.core.designsystem.component.inputs.TextFieldLeadingSlot
+import org.ide.lti.core.designsystem.component.layout.GlassLayout
 import org.ide.lti.core.designsystem.component.layout.GlassTopBar
+import org.ide.lti.core.designsystem.component.layout.LayoutPanel
 import org.ide.lti.core.designsystem.component.layout.TopBarNavigation
 import org.ide.lti.core.designsystem.component.layout.TopBarPanelToggles
-import org.ide.lti.core.designsystem.component.navigation.SidePanelRailPosition
-import org.ide.lti.core.designsystem.component.layout.LayoutPanel
 import org.ide.lti.core.designsystem.component.layout.rememberLtiLayoutState
+import org.ide.lti.core.designsystem.component.navigation.GlassSidePanelTab
+import org.ide.lti.core.designsystem.component.navigation.GlassSidePanelTabs
+import org.ide.lti.core.designsystem.component.navigation.SidePanelRailPosition
+import org.ide.lti.core.designsystem.component.primitives.GlassSurface
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.BlueGlassColorScheme
 import org.ide.lti.core.designsystem.theme.ColorContrast
 import org.ide.lti.core.designsystem.theme.ComponentSize
-import org.ide.lti.core.designsystem.theme.BlueGlassColorScheme
 import org.ide.lti.core.designsystem.theme.DarkGlassColorScheme
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.testing.screenshot.GoldenImageAssert
 import org.junit.Test
 
 /**
@@ -117,7 +118,7 @@ class GlassComponentScreenshotTest {
         }
 
         val image = onRoot().captureToImage()
-        ScreenshotTestHelper.assertMatchesBaseline("glass_button_variants", image)
+        GoldenImageAssert.assertMatchesBaseline("glass_button_variants", image)
     }
 
     @OptIn(ExperimentalTestApi::class)
@@ -164,7 +165,7 @@ class GlassComponentScreenshotTest {
         }
 
         val image = onRoot().captureToImage()
-        ScreenshotTestHelper.assertMatchesBaseline("glass_card", image)
+        GoldenImageAssert.assertMatchesBaseline("glass_card", image)
     }
 
     @OptIn(ExperimentalTestApi::class)
@@ -208,7 +209,7 @@ class GlassComponentScreenshotTest {
         }
 
         val image = onRoot().captureToImage()
-        ScreenshotTestHelper.assertMatchesBaseline("glass_panel_container", image)
+        GoldenImageAssert.assertMatchesBaseline("glass_panel_container", image)
     }
 
     @OptIn(ExperimentalTestApi::class)
@@ -257,7 +258,7 @@ class GlassComponentScreenshotTest {
         }
 
         val image = onRoot().captureToImage()
-        ScreenshotTestHelper.assertMatchesBaseline("glass_panel_scroll_edge_fade", image)
+        GoldenImageAssert.assertMatchesBaseline("glass_panel_scroll_edge_fade", image)
     }
 
     @OptIn(ExperimentalTestApi::class)
@@ -292,7 +293,7 @@ class GlassComponentScreenshotTest {
         }
 
         val image = onRoot().captureToImage()
-        ScreenshotTestHelper.assertMatchesBaseline("glass_text_field", image)
+        GoldenImageAssert.assertMatchesBaseline("glass_text_field", image)
     }
 
     @OptIn(ExperimentalTestApi::class)
@@ -345,7 +346,7 @@ class GlassComponentScreenshotTest {
         }
 
         val image = onRoot().captureToImage()
-        ScreenshotTestHelper.assertMatchesBaseline("glass_dialog_surface", image)
+        GoldenImageAssert.assertMatchesBaseline("glass_dialog_surface", image)
     }
 
     @OptIn(ExperimentalTestApi::class)
@@ -395,7 +396,7 @@ class GlassComponentScreenshotTest {
         }
 
         val image = onRoot().captureToImage()
-        ScreenshotTestHelper.assertMatchesBaseline("glass_toggle_and_slider", image)
+        GoldenImageAssert.assertMatchesBaseline("glass_toggle_and_slider", image)
     }
 
     @OptIn(ExperimentalTestApi::class)
@@ -430,7 +431,7 @@ class GlassComponentScreenshotTest {
         }
 
         val image = onRoot().captureToImage()
-        ScreenshotTestHelper.assertMatchesBaseline("glass_color_scheme_swatches", image)
+        GoldenImageAssert.assertMatchesBaseline("glass_color_scheme_swatches", image)
     }
 
     @OptIn(ExperimentalTestApi::class)
@@ -463,7 +464,7 @@ class GlassComponentScreenshotTest {
         }
 
         val image = onRoot().captureToImage()
-        ScreenshotTestHelper.assertMatchesBaseline("glass_top_bar", image)
+        GoldenImageAssert.assertMatchesBaseline("glass_top_bar", image)
     }
 
     @OptIn(ExperimentalTestApi::class)
@@ -571,7 +572,7 @@ class GlassComponentScreenshotTest {
         }
 
         val image = onRoot().captureToImage()
-        ScreenshotTestHelper.assertMatchesBaseline("glass_side_panel_tabs", image)
+        GoldenImageAssert.assertMatchesBaseline("glass_side_panel_tabs", image)
     }
 
     @OptIn(ExperimentalTestApi::class)
@@ -679,7 +680,7 @@ class GlassComponentScreenshotTest {
         }
 
         val image = onRoot().captureToImage()
-        ScreenshotTestHelper.assertMatchesBaseline("glass_side_panel_tabs_light", image)
+        GoldenImageAssert.assertMatchesBaseline("glass_side_panel_tabs_light", image)
     }
 
     @OptIn(ExperimentalTestApi::class)
@@ -710,7 +711,7 @@ class GlassComponentScreenshotTest {
         }
 
         val image = onRoot().captureToImage()
-        ScreenshotTestHelper.assertMatchesBaseline("glass_layout_focused_panel", image)
+        GoldenImageAssert.assertMatchesBaseline("glass_layout_focused_panel", image)
     }
 
     @Composable

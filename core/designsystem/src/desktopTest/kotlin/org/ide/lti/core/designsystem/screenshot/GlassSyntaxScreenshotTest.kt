@@ -39,6 +39,7 @@ import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.testing.screenshot.GoldenImageAssert
 import org.junit.Test
 
 /**
@@ -64,7 +65,7 @@ class GlassSyntaxScreenshotTest {
         }
 
         val image = onRoot().captureToImage()
-        ScreenshotTestHelper.assertMatchesBaseline("glass_syntax_highlighting_dark", image)
+        GoldenImageAssert.assertMatchesBaseline("glass_syntax_highlighting_dark", image)
     }
 
     @OptIn(ExperimentalTestApi::class)
@@ -85,7 +86,7 @@ class GlassSyntaxScreenshotTest {
         }
 
         val image = onRoot().captureToImage()
-        ScreenshotTestHelper.assertMatchesBaseline("glass_syntax_highlighting_light", image)
+        GoldenImageAssert.assertMatchesBaseline("glass_syntax_highlighting_light", image)
     }
 
     @Composable

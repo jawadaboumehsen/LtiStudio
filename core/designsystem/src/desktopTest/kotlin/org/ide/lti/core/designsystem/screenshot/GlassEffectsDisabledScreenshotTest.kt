@@ -32,16 +32,17 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
+import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
+import org.ide.lti.core.designsystem.component.actions.GlassTextButton
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.navigation.GlassNavigationBar
 import org.ide.lti.core.designsystem.component.navigation.GlassNavigationBarItem
-import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
-import org.ide.lti.core.designsystem.component.actions.GlassTextButton
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.testing.screenshot.GoldenImageAssert
 import org.junit.Test
 
 /**
@@ -88,7 +89,7 @@ class GlassEffectsDisabledScreenshotTest {
         }
 
         val image = onRoot().captureToImage()
-        ScreenshotTestHelper.assertMatchesBaseline("glass_buttons_effects_disabled", image)
+        GoldenImageAssert.assertMatchesBaseline("glass_buttons_effects_disabled", image)
     }
 
     @OptIn(ExperimentalTestApi::class)
@@ -135,7 +136,7 @@ class GlassEffectsDisabledScreenshotTest {
         }
 
         val image = onRoot().captureToImage()
-        ScreenshotTestHelper.assertMatchesBaseline("glass_card_effects_disabled", image)
+        GoldenImageAssert.assertMatchesBaseline("glass_card_effects_disabled", image)
     }
 
     @OptIn(ExperimentalTestApi::class)
@@ -178,6 +179,6 @@ class GlassEffectsDisabledScreenshotTest {
         }
 
         val image = onRoot().captureToImage()
-        ScreenshotTestHelper.assertMatchesBaseline("glass_navigation_bar_effects_disabled", image)
+        GoldenImageAssert.assertMatchesBaseline("glass_navigation_bar_effects_disabled", image)
     }
 }

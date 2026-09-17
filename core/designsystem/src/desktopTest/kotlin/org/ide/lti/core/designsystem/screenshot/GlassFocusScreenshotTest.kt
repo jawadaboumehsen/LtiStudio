@@ -44,6 +44,7 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.testing.screenshot.GoldenImageAssert
 import org.junit.Test
 
 /**
@@ -114,7 +115,7 @@ class GlassFocusScreenshotTest {
         }
 
         val image = onRoot().captureToImage()
-        ScreenshotTestHelper.assertMatchesBaseline("glass_button_focused", image)
+        GoldenImageAssert.assertMatchesBaseline("glass_button_focused", image)
     }
 
     @OptIn(ExperimentalTestApi::class)
@@ -143,7 +144,7 @@ class GlassFocusScreenshotTest {
         waitForIdle()
 
         val image = onRoot().captureToImage()
-        ScreenshotTestHelper.assertMatchesBaseline("glass_button_focus_ring_suppressed_on_click", image)
+        GoldenImageAssert.assertMatchesBaseline("glass_button_focus_ring_suppressed_on_click", image)
     }
 
     @OptIn(ExperimentalTestApi::class)
@@ -174,6 +175,6 @@ class GlassFocusScreenshotTest {
         waitForIdle()
 
         val image = onRoot().captureToImage()
-        ScreenshotTestHelper.assertMatchesBaseline("glass_button_focus_ring_reappears_on_keypress", image)
+        GoldenImageAssert.assertMatchesBaseline("glass_button_focus_ring_reappears_on_keypress", image)
     }
 }
