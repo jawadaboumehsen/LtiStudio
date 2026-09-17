@@ -422,3 +422,39 @@ object PreviewSampleColors {
 object GlassLayoutColors {
     val PanelShadow = Color(0x26000000)
 }
+
+/**
+ * Semantic token colors for Plugin Manager screens (Concepts 12, 13, 14, 15).
+ */
+object PluginThemeColors {
+    val SelectedRowBackground = Color(0xC61B5FB9)
+    val SelectedRowBorder = Color(0xFF38BDF8)
+    val CardBackground = Color(0xC40A1D36)
+    val CardBorder = Color(0x9958A9E8)
+    val HeaderBackground = Color(0xD9081930)
+    val TableRowAlt = Color(0x8F07162B)
+    val WarningBackground = Color(0xD12B1C09)
+    val WarningBorder = Color(0xCCB96A13)
+    val WarningText = Color(0xFFF59E0B)
+    val WarningBody = Color(0xFFD4B088)
+    val ActiveTabBackground = Color(0xD5195EB7)
+    val ActiveTabBorder = Color(0xFF38BDF8)
+    val StatusVerified = Color(0xFF22C55E)
+    val StatusUnverified = Color(0xFFF59E0B)
+}
+
+/** Optical palette for the saturated blue studio canvas used by IDE workspaces. */
+object StudioBackdropColors {
+    val Base = Color(0xFF031A33)
+    val PrimaryAura = Color(0xFF1677D2)
+    val CyanAura = Color(0xFF38BDF8)
+    val SidebarAura = Color(0xFF075FC7)
+    val VioletAura = Color(0xFF4949B8)
+    val Vignette = Color(0xFF010813)
+    val ChromeStart = Color(0xD5195FB5)
+    val ChromeCenter = Color(0xB90C427F)
+    val ChromeEnd = Color(0xD2072445)
+    val SidebarStart = Color(0xC9195FB5)
+    val SidebarCenter = Color(0xA90C4385)
+    val SidebarEnd = Color(0xC9062342)
+}

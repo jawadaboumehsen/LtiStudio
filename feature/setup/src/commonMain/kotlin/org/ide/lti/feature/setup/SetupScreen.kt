@@ -15,6 +15,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -26,7 +28,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Icon
-import androidx.compose.foundation.focusable
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -46,6 +49,7 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.backdrops.LayerBackdrop
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
@@ -59,16 +63,20 @@ import org.ide.lti.core.designsystem.component.feedback.GlassBannerAction
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.component.feedback.GlassBottomSheetScaffold
 import org.ide.lti.core.designsystem.component.layout.GlassTopBar
-import org.ide.lti.feature.setup.components.ProvisioningPreviewSheet
 import org.ide.lti.core.designsystem.component.layout.TopBarNavigation
+import org.ide.lti.core.designsystem.component.primitives.GlassSurface
 import org.ide.lti.core.designsystem.icon.AppIcons
+import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.MotionEasing
 import org.ide.lti.core.designsystem.theme.SetupTokens
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.domain.setup.SetupStepStage
+import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.model.workspace.Workspace
+import org.ide.lti.feature.setup.components.ProvisioningPreviewSheet
 import org.ide.lti.feature.setup.components.SetupJourneySidebar
 import org.ide.lti.feature.setup.steps.DocumentationStepContent
 import org.ide.lti.feature.setup.steps.EnvironmentStepContent
@@ -348,6 +356,13 @@ fun SetupScreenContent(
                     title = "LtiRom",
                     workspaceName = "Setup",
                 ),
+                centerContent = {
+                    SetupReferenceTopNavigation(
+                        onSelectSetup = { onTabChange(SetupTab.LAUNCHPAD) },
+                        onOpenWorkspace = actions.onOpenFolder,
+                        onOpenSettings = actions.onOpenSettings,
+                    )
+                },
                 search = null,
                 panelToggles = null,
                 actions = {
@@ -440,7 +455,7 @@ fun SetupScreenContent(
                             if (SetupTokens.IsReducedTransparency) {
                                 Modifier.background(SetupTokens.OpaqueSurfaceColor)
                             } else {
-                                Modifier
+                                Modifier.background(GlassTheme.colors.glassSurface.copy(alpha = AlphaTokens.Muted))
                             },
                         ),
                     contentAlignment = Alignment.TopCenter,
@@ -473,8 +488,7 @@ fun SetupScreenContent(
                                     previewInvokerFocusRequester = previewInvokerFocusRequester,
                                 )
                             }
-                            SetupTab.PROJECTS, SetupTab.LAUNCHPAD -> {
-                                // Legacy launchpad tab resolves to Workspaces content
+                            SetupTab.PROJECTS -> {
                                 ProjectsStepContent(
                                     state = state,
                                     actions = actions,
@@ -485,6 +499,10 @@ fun SetupScreenContent(
                                     lazyListState = workspacesListState,
                                 )
                             }
+                            SetupTab.LAUNCHPAD -> SetupOverviewContent(
+                                state = state,
+                                onOpenEnvironment = { onTabChange(SetupTab.ENVIRONMENT) },
+                            )
                             SetupTab.TOOLS -> {
                                 ToolsStepContent(
                                     state = state,
@@ -499,6 +517,19 @@ fun SetupScreenContent(
                             }
                         }
                     }
+                }
+
+                // The reference dashboard keeps machine readiness visible while an
+                // operator works in a sub-page. Keep this as a separate, quiet
+                // context pane rather than hiding truth in a modal or toolbar.
+                if (!isCompact) {
+                    GlassVerticalDivider(specular = true)
+                    SetupEnvironmentSummary(
+                        state = state,
+                        modifier = Modifier
+                            .widthIn(min = SetupTokens.SidebarWidthCompact, max = SetupTokens.SidebarWidthWide)
+                            .padding(Spacing.Medium),
+                    )
                 }
             }
         }
@@ -538,5 +569,193 @@ fun SetupScreenContent(
             plan = activeOperationForPreview.plan,
             contextualError = activeOperationForPreview.failure,
         )
+    }
+}
+
+@Composable
+private fun SetupReferenceTopNavigation(
+    onSelectSetup: () -> Unit,
+    onOpenWorkspace: () -> Unit,
+    onOpenSettings: () -> Unit,
+) {
+    val colors = GlassTheme.colors
+    Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(Spacing.Medium)) {
+        Text("Setup", color = colors.glassAccent, modifier = Modifier.clickable(onClick = onSelectSetup))
+        Text("Workspace", color = colors.onGlassSecondary, modifier = Modifier.clickable(onClick = onOpenWorkspace))
+        Text("Settings", color = colors.onGlassSecondary, modifier = Modifier.clickable(onClick = onOpenSettings))
+    }
+}
+
+@Composable
+private fun SetupOverviewContent(state: SetupUiState, onOpenEnvironment: () -> Unit, modifier: Modifier = Modifier) {
+    val colors = GlassTheme.colors
+    val toolchain = state.toolchainSetupState
+    val readyCount = toolchain.steps.count { step -> step.status == StepStatus.SUCCESS }
+    val wslStatus = setupStatusLabel(
+        toolchain.steps.firstOrNull { step ->
+            step.stage == SetupStepStage.WSL_DETECTION
+        }?.status,
+    )
+    val serviceStatus = setupStatusLabel(
+        toolchain.steps.firstOrNull { step ->
+            step.stage == SetupStepStage.SERVER_CONNECTIVITY
+        }?.status,
+    )
+    val toolsStatus = setupStatusLabel(
+        toolchain.steps.firstOrNull { step ->
+            step.stage == SetupStepStage.TOOLCHAIN_COMPILATION
+        }?.status,
+    )
+
+    Column(modifier = modifier.fillMaxSize().padding(top = Spacing.Large)) {
+        Text(
+            text = "Set up your build environment",
+            style = MaterialTheme.typography.headlineSmall,
+            color = colors.onGlass,
+            fontWeight = FontWeight.SemiBold,
+        )
+        Text(
+            "Prepare this machine before configuring your ROM.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = colors.onGlassSecondary,
+            modifier = Modifier.padding(top = Spacing.ExtraSmall, bottom = Spacing.Medium),
+        )
+        GlassSurface(modifier = Modifier.fillMaxWidth(), shape = GlassShapes.Medium) {
+            Column(modifier = Modifier.padding(Spacing.PanelPadding)) {
+                Text(
+                    "$readyCount of ${toolchain.steps.size} checks ready",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = colors.onGlass,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text(
+                    "Review the local services required to build and sign a ROM.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.onGlassSecondary,
+                    modifier = Modifier.padding(top = Spacing.ExtraSmall, bottom = Spacing.Small),
+                )
+                SetupOverviewReadinessRow("1", "Host system", "Detected", colors.onGlassSecondary)
+                SetupOverviewReadinessRow("2", "WSL runtime", wslStatus, colors.onGlassSecondary)
+                SetupOverviewReadinessRow("3", "Build service", serviceStatus, colors.onGlass)
+                SetupOverviewReadinessRow("4", "Tool packages", toolsStatus, colors.onGlassSecondary)
+            }
+        }
+        GlassSurface(
+            modifier = Modifier.fillMaxWidth().padding(top = Spacing.Medium),
+            shape = GlassShapes.Medium,
+        ) {
+            Column(modifier = Modifier.padding(Spacing.PanelPadding)) {
+                Text(
+                    "Next step",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = colors.onGlass,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text(
+                    "Verify the local build service, then check pinned tool packages.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = colors.onGlassSecondary,
+                    modifier = Modifier.padding(top = Spacing.ExtraSmall),
+                )
+                Text(
+                    "Open Build service",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = colors.glassAccent,
+                    modifier = Modifier.padding(top = Spacing.Small).clickable(onClick = onOpenEnvironment),
+                )
+            }
+        }
+        GlassSurface(
+            modifier = Modifier.fillMaxWidth().padding(top = Spacing.Medium),
+            shape = GlassShapes.Medium,
+        ) {
+            Column(modifier = Modifier.padding(Spacing.PanelPadding)) {
+                Text(
+                    "Setup activity",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = colors.onGlass,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text(
+                    if (toolchain.steps.isEmpty()) {
+                        "No environment checks have run yet."
+                    } else {
+                        "${toolchain.steps.size} environment checks are available for review."
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = colors.onGlassSecondary,
+                    modifier = Modifier.padding(top = Spacing.ExtraSmall),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SetupOverviewReadinessRow(
+    index: String,
+    title: String,
+    status: String,
+    titleColor: androidx.compose.ui.graphics.Color,
+) {
+    val colors = GlassTheme.colors
+    Row(modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.ExtraSmall)) {
+        Text(index, style = MaterialTheme.typography.labelMedium, color = colors.onGlassMuted)
+        Text(
+            title,
+            style = MaterialTheme.typography.bodyMedium,
+            color = titleColor,
+            modifier = Modifier.padding(start = Spacing.Small).weight(1f),
+        )
+        Text(status, style = MaterialTheme.typography.labelMedium, color = colors.onGlassSecondary)
+    }
+}
+
+private fun setupStatusLabel(status: StepStatus?): String = when (status) {
+    StepStatus.SUCCESS -> "Ready"
+    StepStatus.RUNNING -> "Checking"
+    StepStatus.FAILED -> "Needs attention"
+    else -> "Not checked"
+}
+
+/** Persistent right-hand context panel matching the Setup dashboard reference. */
+@Composable
+private fun SetupEnvironmentSummary(state: SetupUiState, modifier: Modifier = Modifier) {
+    val colors = GlassTheme.colors
+    val toolchain = state.toolchainSetupState
+    val serviceStatus = when {
+        toolchain.isBusy -> "Checking"
+        toolchain.steps.any { it.status == StepStatus.FAILED } -> "Needs attention"
+        toolchain.isAllReady -> "Ready"
+        else -> "Not checked"
+    }
+    val readiness = if (toolchain.isAllReady) "Ready" else "Not ready"
+
+    Column(modifier = modifier) {
+        GlassSurface(modifier = Modifier.fillMaxWidth(), shape = GlassShapes.Medium) {
+            Column(modifier = Modifier.padding(Spacing.PanelPadding)) {
+                Text("Environment summary", color = colors.onGlass)
+                Text("Platform", color = colors.onGlassSecondary)
+                Text("Windows", color = colors.onGlass)
+                Text("Runtime", color = colors.onGlassSecondary)
+                Text("WSL 2", color = colors.onGlass)
+                Text("Build service", color = colors.onGlassSecondary)
+                Text(serviceStatus, color = colors.onGlass)
+                Text("Tool readiness", color = colors.onGlassSecondary)
+                Text(readiness, color = colors.onGlass)
+            }
+        }
+        GlassSurface(
+            modifier = Modifier.fillMaxWidth().padding(top = Spacing.Medium),
+            shape = GlassShapes.Medium,
+        ) {
+            Column(modifier = Modifier.padding(Spacing.PanelPadding)) {
+                Text("Setup does not start a ROM build.", color = colors.onGlass)
+                Text(
+                    "This screen prepares your machine before you configure a ROM.",
+                    color = colors.onGlassSecondary,
+                )
+            }
+        }
     }
 }

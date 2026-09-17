@@ -247,7 +247,7 @@ class SetupAccessibilityTest {
         // Brand and navigation elements must be displayed in compact mode
         onNodeWithText("LTIROM").assertIsDisplayed()
         onNodeWithText("Recent Workspaces").assertIsDisplayed()
-        onNodeWithText("Environment").assertIsDisplayed()
+        onNodeWithText("Build service").assertIsDisplayed()
 
         // Content items displayed without clipping
         onNodeWithText("Kernel_AOSP").assertIsDisplayed()
@@ -350,8 +350,8 @@ class SetupAccessibilityTest {
         // Initially in Workspaces with search query visible
         onNodeWithText("CustomQuery").assertIsDisplayed()
 
-        // Click Environment destination
-        onNodeWithText("Environment").performClick()
+        // Click a unique reference-aligned Environment destination.
+        onNodeWithText("WSL runtime").performClick()
         assertEquals(SetupTab.ENVIRONMENT, activeTab)
     }
 
@@ -380,8 +380,8 @@ class SetupAccessibilityTest {
 
         // Environment header and navigation visible in compact mode (SC-005)
         onNodeWithText("Environment & Toolchains Cockpit").assertIsDisplayed()
-        onNodeWithText("Workspaces").assertIsDisplayed()
-        onNodeWithText("Environment").assertIsDisplayed()
+        onNodeWithText("Overview").assertIsDisplayed()
+        onNodeWithText("Build service").assertIsDisplayed()
     }
 
     @Test

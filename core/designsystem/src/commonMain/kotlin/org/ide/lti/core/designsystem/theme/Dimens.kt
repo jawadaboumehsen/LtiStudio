@@ -173,6 +173,30 @@ object ComponentSize {
     val StudioDockMaxHeight: Dp = 320.dp
     val StudioCompactWindowWidth: Dp = 900.dp
     val StudioCompactWindowHeight: Dp = 600.dp
+    val PluginSidebarWidth: Dp = 208.dp
+    val PluginInspectorWidth: Dp = 380.dp
+    val PluginTableRowHeight: Dp = 54.dp
+    val PluginStepperNodeSize: Dp = 24.dp
+    val PluginAuthorTasksWidth: Dp = 320.dp
+    val PluginSearchFieldWidth: Dp = 300.dp
+    val PluginStepperConnectorWidth: Dp = 120.dp
+    val PluginTableIndexColWidth: Dp = 40.dp
+    val PluginTableVersionColWidth: Dp = 80.dp
+    val PluginTableSourceColWidth: Dp = 80.dp
+    val PluginTableStatusColWidth: Dp = 110.dp
+    val PluginTableRefsColWidth: Dp = 80.dp
+    val PluginPipelineBoxWidth: Dp = 180.dp
+    val PluginDiagnosticsTableColIndex: Dp = 36.dp
+    val PluginDiagnosticsTableColSeverity: Dp = 80.dp
+    val PluginDiagnosticsTableColFile: Dp = 140.dp
+    val PluginDiagnosticsTableColTime: Dp = 84.dp
+    val PluginTopBarHeight: Dp = 58.dp
+    val PluginLogoBadgeSize: Dp = 34.dp
+    val PluginWorkspaceTabWidth: Dp = 140.dp
+    val PluginWorkspaceTabHeight: Dp = 36.dp
+    val PluginActionBtnHeight: Dp = 40.dp
+    val PluginActionBtnCompactHeight: Dp = 34.dp
+    val PluginActionBtnCompactWidth: Dp = 104.dp
 
     fun studioNavigatorWidth(width: Int): Dp = width.dp
 }

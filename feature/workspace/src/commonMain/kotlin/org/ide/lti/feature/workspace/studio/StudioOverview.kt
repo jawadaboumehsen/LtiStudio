@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -110,31 +109,11 @@ public fun StudioOverview(
                 NextActionCard(firstIssue = firstIssue, onSelectObject = onSelectObject)
             }
 
-            // 4. Stage Status Overview & Missing Settings
-            item(key = "stages-header") {
-                Text(
-                    text = "Pipeline Stages (8 Stages)",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = glassColors.onGlass,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
-
-            items(
-                items = StudioDestinationCatalog.stages,
-                key = { it.stageId.name },
-            ) { stage ->
-                val stageErrors = validationReport.errors.filter { it.stageId == stage.stageId }
-                val errorCount = stageErrors.count { it.severity == Severity.ERROR }
-                val warningCount = stageErrors.count { it.severity == Severity.WARNING }
-
-                StageOverviewCard(
-                    stage = stage,
-                    errors = stageErrors,
-                    errorCount = errorCount,
-                    warningCount = warningCount,
-                    onSelectStage = { onSelectStage(stage.stageId) },
-                    onSelectObject = { objId -> onSelectObject(stage.stageId, objId) },
+            // 4. The overview deliberately compresses readiness into one scannable surface.
+            item(key = "build-readiness") {
+                BuildReadinessCard(
+                    validationReport = validationReport,
+                    onSelectStage = onSelectStage,
                 )
             }
         }
@@ -151,7 +130,7 @@ private fun OverviewHeaderRow(workspaceId: String, onReturnToEditor: () -> Unit)
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "ROM Setup Studio Overview",
+                text = "Your ROM workspace",
                 style = MaterialTheme.typography.headlineSmall,
                 color = glassColors.onGlass,
                 fontWeight = FontWeight.Bold,
@@ -179,7 +158,7 @@ private fun OverviewHeaderRow(workspaceId: String, onReturnToEditor: () -> Unit)
             },
         ) {
             Text(
-                text = "Return to Editor",
+                text = "Configure firmware",
                 style = MaterialTheme.typography.labelMedium,
                 color = glassColors.onGlass,
             )
@@ -274,6 +253,97 @@ private fun WorkspaceChooserRow(workspace: Workspace, onSelectWorkspace: (String
         ) {
             Text("Select", color = glassColors.onGlass)
         }
+    }
+}
+
+@Composable
+private fun BuildReadinessCard(validationReport: ValidationReport, onSelectStage: (StageId) -> Unit) {
+    val glassColors = GlassTheme.colors
+    GlassCard(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = Spacing.Medium,
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column {
+                    Text(
+                        text = "Build readiness",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = glassColors.onGlass,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = "Review the pipeline before starting a ROM build.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = glassColors.onGlassSecondary,
+                    )
+                }
+                Text(
+                    text = "${StudioDestinationCatalog.stages.size} stages",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = glassColors.onGlassMuted,
+                )
+            }
+            Text(
+                text = "STAGE                                      STATUS                 ACTION",
+                style = MaterialTheme.typography.labelSmall,
+                color = glassColors.onGlassMuted,
+                modifier = Modifier.padding(top = Spacing.Small),
+            )
+            StudioDestinationCatalog.stages.forEach { stage ->
+                val stageErrors = validationReport.errors.filter { it.stageId == stage.stageId }
+                BuildReadinessRow(
+                    stage = stage,
+                    errorCount = stageErrors.count { it.severity == Severity.ERROR },
+                    warningCount = stageErrors.count { it.severity == Severity.WARNING },
+                    onClick = { onSelectStage(stage.stageId) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun BuildReadinessRow(stage: StudioStageDestination, errorCount: Int, warningCount: Int, onClick: () -> Unit) {
+    val glassColors = GlassTheme.colors
+    val status = stageBadgeStatus(errorCount = errorCount, warningCount = warningCount)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(GlassShapes.Compact)
+            .clickable(onClick = onClick)
+            .semantics {
+                contentDescription = "${stage.title}: ${status.label}. Open stage."
+                role = Role.Button
+            }
+            .padding(horizontal = Spacing.Small, vertical = Spacing.SmallMedium),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            painter = stage.icon(),
+            contentDescription = null,
+            modifier = Modifier.size(IconSize.Medium),
+            tint = glassColors.glassAccent,
+        )
+        Text(
+            text = stage.title,
+            style = MaterialTheme.typography.bodyMedium,
+            color = glassColors.onGlass,
+            modifier = Modifier
+                .padding(start = Spacing.Small)
+                .weight(1f),
+        )
+        StageStatusBadge(errorCount = errorCount, warningCount = warningCount)
+        Text(
+            text = "Configure",
+            style = MaterialTheme.typography.labelMedium,
+            color = glassColors.glassAccent,
+            modifier = Modifier.padding(start = Spacing.Medium),
+        )
     }
 }
 

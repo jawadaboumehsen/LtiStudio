@@ -279,7 +279,16 @@ public class PluginManagerViewModel(
     }
 
     public fun setImportPathInput(path: String) {
-        _uiState.update { it.copy(importPathInput = path) }
+        _uiState.update {
+            it.copy(
+                importPathInput = path,
+                importQuarantinedPath = null,
+                importInspection = null,
+                isLegacyUnsupportedFormat = false,
+                legacyFormatName = null,
+                installState = null,
+            )
+        }
     }
 
     public fun inspectImportPath(path: String) {
@@ -400,7 +409,12 @@ public class PluginManagerViewModel(
     }
 
     public fun selectAuthorTask(task: String) {
-        _uiState.update { it.copy(authorSelectedTask = task) }
+        _uiState.update {
+            it.copy(
+                authorSelectedTask = task,
+                authorTaskResult = null,
+            )
+        }
     }
 
     public fun runAuthorTask(task: String = _uiState.value.authorSelectedTask, timeoutMs: Long = 60000L) {

@@ -175,6 +175,52 @@ class SetupThemeScreenshotTest {
     }
 
     @Test
+    fun testBlueGlassOverviewScreenshot() = runDesktopComposeUiTest(width = 1120, height = 700) {
+        val overviewState = ToolchainSetupState(
+            steps = listOf(
+                SetupStepDetail(
+                    stage = SetupStepStage.WSL_DETECTION,
+                    title = "WSL runtime",
+                    description = "Ubuntu 22.04 LTS",
+                    status = StepStatus.SUCCESS,
+                    provenance = StepProvenance.LIVE,
+                ),
+                SetupStepDetail(
+                    stage = SetupStepStage.SERVER_CONNECTIVITY,
+                    title = "Build service",
+                    description = "Bridge needs verification",
+                    status = StepStatus.PENDING,
+                ),
+                SetupStepDetail(
+                    stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+                    title = "Tool packages",
+                    description = "Packages have not been checked",
+                    status = StepStatus.PENDING,
+                ),
+            ),
+        )
+        setContent {
+            val backdrop = rememberLayerBackdrop()
+            LtiTheme(appTheme = AppTheme.Blue, sharedBackdrop = backdrop) {
+                SetupScreenContent(
+                    state = SetupUiState(
+                        toolchainSetupState = overviewState,
+                        selectedTab = SetupTab.LAUNCHPAD,
+                    ),
+                    actions = SetupUiActions(),
+                    backdrop = backdrop,
+                )
+            }
+        }
+
+        onRoot().captureToImage().also { image ->
+            assertEquals(1120, image.width)
+            assertEquals(700, image.height)
+            saveScreenshotReport("overview_blue", image)
+        }
+    }
+
+    @Test
     fun testThreeThemesReadyStateScreenshot() = runDesktopComposeUiTest(width = 1120, height = 700) {
         val readySteps = listOf(
             SetupStepDetail(stage = SetupStepStage.WSL_DETECTION, title = "WSL Detection", description = "Ubuntu 22.04 LTS", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),

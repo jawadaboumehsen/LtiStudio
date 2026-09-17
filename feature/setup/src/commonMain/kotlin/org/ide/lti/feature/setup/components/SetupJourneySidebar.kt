@@ -100,7 +100,7 @@ fun SetupJourneySidebar(
     val isEnvironmentBusy = toolchainSetupState.isRunning || isAnyStepRunning
     val hasEnvironmentIssues = toolchainSetupState.hasAnyFailedSteps()
 
-    val isWorkspacesActive = selectedDestination == SetupDestination.WORKSPACES || currentStep == SetupTab.PROJECTS
+    val isWorkspacesActive = currentStep == SetupTab.LAUNCHPAD
     val isEnvironmentActive = selectedDestination == SetupDestination.ENVIRONMENT || currentStep == SetupTab.ENVIRONMENT
     val isToolsActive = selectedDestination == SetupDestination.TOOLS || currentStep == SetupTab.TOOLS
 
@@ -158,23 +158,31 @@ fun SetupJourneySidebar(
                 modifier = Modifier.padding(horizontal = Spacing.SmallMedium, vertical = Spacing.ExtraSmall),
             )
 
-            // Workspaces Destination
+            // Reference-aligned machine setup journey. Several destinations share
+            // the Environment editor today, but retain their own visible intent so
+            // the rail never pretends machine readiness is a ROM build pipeline.
             GlassSidebarItem(
-                label = "Workspaces",
+                label = "Overview",
                 icon = AppIcons.FolderOpen,
                 selected = isWorkspacesActive,
                 onClick = {
-                    onDestinationSelected(SetupDestination.WORKSPACES)
-                    onStepSelected(SetupTab.PROJECTS)
+                    onStepSelected(SetupTab.LAUNCHPAD)
                 },
             )
 
-            Spacer(modifier = Modifier.height(Spacing.Small))
+            GlassSidebarItem(
+                label = "WSL runtime",
+                icon = AppIcon.Painted(AppIcons.ideToolwindowsBuild),
+                selected = isEnvironmentActive,
+                onClick = {
+                    onDestinationSelected(SetupDestination.ENVIRONMENT)
+                    onStepSelected(SetupTab.ENVIRONMENT)
+                },
+            )
 
-            // Environment Destination
             JourneyStepCard(
-                stepNumber = "2",
-                title = "Environment",
+                stepNumber = "3",
+                title = "Build service",
                 subtitle = computeSidebarSubtitle(toolchainSetupState),
                 isComplete = isEnvironmentReady && !isEnvironmentActive,
                 isActive = isEnvironmentActive,
@@ -188,16 +196,33 @@ fun SetupJourneySidebar(
                 },
             )
 
-            Spacer(modifier = Modifier.height(Spacing.Small))
-
-            // Tools Destination
             GlassSidebarItem(
-                label = "Tools",
+                label = "Tool packages",
                 icon = AppIcon.Painted(AppIcons.ideToolwindowsBuild),
                 selected = isToolsActive,
                 onClick = {
                     onDestinationSelected(SetupDestination.TOOLS)
                     onStepSelected(SetupTab.TOOLS)
+                },
+            )
+
+            GlassSidebarItem(
+                label = "Diagnostics",
+                icon = AppIcon.Painted(AppIcons.InfoPainterResource),
+                selected = isEnvironmentActive,
+                onClick = {
+                    onDestinationSelected(SetupDestination.ENVIRONMENT)
+                    onStepSelected(SetupTab.ENVIRONMENT)
+                },
+            )
+
+            GlassSidebarItem(
+                label = "Recovery",
+                icon = AppIcon.Painted(AppIcons.InfoPainterResource),
+                selected = false,
+                onClick = {
+                    onDestinationSelected(SetupDestination.ENVIRONMENT)
+                    onStepSelected(SetupTab.ENVIRONMENT)
                 },
             )
         }

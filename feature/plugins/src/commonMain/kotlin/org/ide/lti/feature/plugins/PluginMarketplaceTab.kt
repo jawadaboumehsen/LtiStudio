@@ -9,44 +9,71 @@
  */
 package org.ide.lti.feature.plugins
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.LocalContentColor
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
-import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.GlassChip
+import org.ide.lti.core.designsystem.component.display.GlassHorizontalDivider
 import org.ide.lti.core.designsystem.component.feedback.GlassDialog
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
+import org.ide.lti.core.designsystem.component.inputs.TextFieldLeadingSlot
+import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
+import org.ide.lti.core.designsystem.generated.resources.Res
+import org.ide.lti.core.designsystem.generated.resources.ideToolwindowsRepositories
+import org.ide.lti.core.designsystem.icon.AppIcons
+import org.ide.lti.core.designsystem.icon.AppIconsRomStages
+import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.BrandColors
+import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.IconSize
+import org.ide.lti.core.designsystem.theme.PluginThemeColors
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.designsystem.theme.codeFontFamily
+import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.domain.plugin.IndexEntry
-import org.ide.lti.core.domain.plugin.IndexFailure
 import org.ide.lti.core.domain.plugin.IndexFetchResult
 import org.ide.lti.core.domain.plugin.IndexSource
 import org.ide.lti.core.domain.plugin.InstallState
 import org.ide.lti.core.domain.plugin.TrustDecision
+import org.ide.lti.feature.plugins.components.PluginFooterBar
+import org.jetbrains.compose.resources.painterResource
 
 @Composable
 internal fun PluginMarketplaceTab(
@@ -57,6 +84,7 @@ internal fun PluginMarketplaceTab(
     isLoading: Boolean,
     installState: InstallState?,
     searchQuery: String,
+    onSearchChange: (String) -> Unit = {},
     onUrlInputChange: (String) -> Unit,
     onConfigureSource: (String, String) -> Unit,
     onRefresh: () -> Unit,
@@ -67,220 +95,315 @@ internal fun PluginMarketplaceTab(
     var pendingInstallEntry by remember { mutableStateOf<IndexEntry?>(null) }
     var showConfigureModal by remember { mutableStateOf(false) }
 
-    CompositionLocalProvider(LocalContentColor provides GlassTheme.colors.onGlass) {
-        Column(modifier = modifier.fillMaxSize().padding(Spacing.Medium)) {
-            MarketplaceSourceHeader(
-                source = source,
-                isLoading = isLoading,
-                onOpenConfigure = { showConfigureModal = true },
-                onRefresh = onRefresh,
-                onNavigateToImport = onNavigateToImport,
-            )
-
-            Spacer(modifier = Modifier.height(Spacing.Small))
-
-            fetchResult?.let { result ->
-                MarketplaceResultBanner(result = result)
-                Spacer(modifier = Modifier.height(Spacing.Small))
-            }
-
-            installState?.let { state ->
-                InstallStateBanner(state = state)
-                Spacer(modifier = Modifier.height(Spacing.Small))
-            }
-
-            val filtered = entries.filter {
-                searchQuery.isBlank() ||
-                    it.publisher.contains(searchQuery, ignoreCase = true) ||
-                    it.id.contains(searchQuery, ignoreCase = true) ||
-                    it.targetSummary.contains(searchQuery, ignoreCase = true)
-            }
-
-            if (entries.isEmpty() && source == null) {
-                UnconfiguredMarketplaceState(
-                    onConfigureSource = { showConfigureModal = true },
-                    onNavigateToImport = onNavigateToImport,
-                )
-            } else if (filtered.isEmpty()) {
-                val emptyMsg = if (searchQuery.isBlank()) {
-                    "No entries in marketplace index."
-                } else {
-                    "No entries match '$searchQuery'."
-                }
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(
-                        text = emptyMsg,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = GlassTheme.colors.onGlassSecondary,
-                    )
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(Spacing.Small),
-                ) {
-                    items(filtered, key = { "${it.publisher}:${it.id}:${it.version}" }) { entry ->
-                        MarketplaceEntryCard(
-                            entry = entry,
-                            onInstallClick = { pendingInstallEntry = entry },
-                        )
-                    }
-                }
-            }
-        }
-
-        if (showConfigureModal) {
-            ConfigureSourceDialog(
-                url = urlInput,
-                onUrlChange = onUrlInputChange,
-                onDismiss = { showConfigureModal = false },
-                onConfirm = {
-                    onConfigureSource("Repository", urlInput)
-                    showConfigureModal = false
-                },
-            )
-        }
-
-        pendingInstallEntry?.let { entry ->
-            MarketplaceTrustDialog(
-                entry = entry,
-                onDismiss = { pendingInstallEntry = null },
-                onConfirmTrust = { decision ->
-                    onInstall(entry, decision)
-                    pendingInstallEntry = null
-                },
-            )
-        }
+    val filtered = entries.filter {
+        searchQuery.isBlank() ||
+            it.publisher.contains(searchQuery, ignoreCase = true) ||
+            it.id.contains(searchQuery, ignoreCase = true) ||
+            it.targetSummary.contains(searchQuery, ignoreCase = true)
     }
-}
 
-@Composable
-private fun MarketplaceSourceHeader(
-    source: IndexSource?,
-    isLoading: Boolean,
-    onOpenConfigure: () -> Unit,
-    onRefresh: () -> Unit,
-    onNavigateToImport: () -> Unit,
-) {
-    GlassCard(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(Spacing.Small),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
+    var selectedEntryId by remember { mutableStateOf<String?>(null) }
+
+    val selectedEntry = resolveMarketplaceSelection(filtered, selectedEntryId)
+
+    Column(modifier = modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .padding(horizontal = Spacing.Large, vertical = Spacing.Medium),
+            verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = source?.label ?: "No Marketplace Source Configured",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = GlassTheme.colors.onGlass,
+            MarketplaceHeader(
+                source = source,
+                fetchResult = fetchResult,
+                isLoading = isLoading,
+                onRefresh = onRefresh,
+                onOpenConfigure = { showConfigureModal = true },
+                searchQuery = searchQuery,
+                onSearchChange = onSearchChange,
+            )
+
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
+            ) {
+                MarketplaceMasterTable(
+                    filtered = filtered,
+                    selectedEntry = selectedEntry,
+                    searchQuery = searchQuery,
+                    onSelectEntry = { selectedEntryId = it.id },
+                    onNavigateToImport = onNavigateToImport,
+                    modifier = Modifier.weight(1f),
                 )
-                Text(
-                    text = source?.url ?: "Configure a repository HTTPS index URL to browse plugins",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = GlassTheme.colors.onGlassMuted,
+
+                MarketplaceInspectorPanel(
+                    entry = selectedEntry,
+                    fetchResult = fetchResult,
+                    filteredEmpty = filtered.isEmpty(),
+                    searchQuery = searchQuery,
+                    installState = installState,
+                    onInstallClick = { pendingInstallEntry = selectedEntry },
+                    modifier = Modifier.width(ComponentSize.PluginInspectorWidth),
                 )
             }
+        }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-                GlassButton(onClick = onOpenConfigure, variant = GlassButtonVariant.Standard) {
-                    Text("Configure source")
-                }
-                if (source != null) {
-                    GlassButton(onClick = onRefresh, enabled = !isLoading, variant = GlassButtonVariant.Standard) {
-                        Text(if (isLoading) "Fetching..." else "Refresh")
+        val glassColors = GlassTheme.colors
+        PluginFooterBar(
+            message = "Connect to refresh trust and revocation information.",
+            trailingContent = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                ) {
+                    GlassButton(
+                        onClick = { showConfigureModal = true },
+                        variant = GlassButtonVariant.Standard,
+                        shape = GlassShapes.MediumSmall,
+                        minHeight = ComponentSize.PluginActionBtnCompactHeight,
+                        contentPadding = PaddingValues(
+                            horizontal = Spacing.Medium,
+                            vertical = Spacing.ExtraSmall,
+                        ),
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                        ) {
+                            Icon(
+                                painter = AppIcons.SettingsPainterResource(),
+                                contentDescription = "Configure sources",
+                                tint = glassColors.onGlassSecondary,
+                                modifier = Modifier.size(IconSize.Small),
+                            )
+                            Text("Configure sources")
+                        }
+                    }
+                    GlassButton(
+                        onClick = onNavigateToImport,
+                        variant = GlassButtonVariant.Primary,
+                        shape = GlassShapes.MediumSmall,
+                        minHeight = ComponentSize.PluginActionBtnCompactHeight,
+                        contentPadding = PaddingValues(
+                            horizontal = Spacing.Medium,
+                            vertical = Spacing.ExtraSmall,
+                        ),
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                        ) {
+                            Icon(
+                                painter = AppIcons.FolderPainterResource(),
+                                contentDescription = "Import local package",
+                                tint = BrandColors.OnLogoBadge,
+                                modifier = Modifier.size(IconSize.Small),
+                            )
+                            Text("Import local package")
+                        }
                     }
                 }
-                GlassButton(onClick = onNavigateToImport, variant = GlassButtonVariant.Standard) {
-                    Text("Import local")
-                }
-            }
-        }
+            },
+        )
     }
-}
 
-@Composable
-private fun MarketplaceResultBanner(result: IndexFetchResult) {
-    when (result) {
-        is IndexFetchResult.Cached -> {
-            val ageSec = ((System.currentTimeMillis() - result.observedAtEpochMs) / 1000).coerceAtLeast(0)
-            GlassCard(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = "Offline Mode: Showing cached index observed $ageSec seconds ago.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = GlassTheme.colors.glassAccent,
-                    modifier = Modifier.padding(Spacing.Small),
-                )
-            }
-        }
-        is IndexFetchResult.Failed -> {
-            val failureText = when (val reason = result.reason) {
-                IndexFailure.Unauthenticated -> "Authentication Required: Access token or credentials missing"
-                IndexFailure.Offline -> "Network Offline: Unable to reach marketplace endpoint"
-                is IndexFailure.Malformed -> "Malformed Response: ${reason.detail}"
-                is IndexFailure.RateLimited -> {
-                    val waitSec = reason.retryAfterSeconds ?: 60
-                    "Rate Limited: Too many requests, retry after ${waitSec}s"
-                }
-                IndexFailure.InsecureSource -> "Insecure Source Rejected: HTTPS protocol is strictly required"
-                is IndexFailure.ServerError -> "Server Error: Endpoint returned HTTP ${reason.code}"
-            }
-            GlassCard(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = "Marketplace Fetch Error: $failureText",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = GlassTheme.colors.glassHighlight,
-                    modifier = Modifier.padding(Spacing.Small),
-                )
-            }
-        }
-        is IndexFetchResult.Fetched -> Unit
+    if (showConfigureModal) {
+        ConfigureSourceDialog(
+            url = urlInput,
+            onUrlChange = onUrlInputChange,
+            onDismiss = { showConfigureModal = false },
+            onConfirm = {
+                onConfigureSource(source?.label ?: "Custom", urlInput)
+                showConfigureModal = false
+            },
+        )
     }
-}
 
-@Composable
-private fun InstallStateBanner(state: InstallState) {
-    val text = when (state) {
-        InstallState.SourceSelected -> "Preparing download..."
-        InstallState.Downloading -> "Downloading package archive..."
-        InstallState.Quarantined -> "Package quarantined; verifying digest and manifest..."
-        InstallState.Verified -> "Integrity verified; promoting to installed library..."
-        is InstallState.Installed -> "Successfully installed ${state.record.publisher}:${state.record.id}"
-        is InstallState.Failed -> "Install failed: ${state.report.errors.firstOrNull()?.message ?: "Check rejected"}"
-        InstallState.Cancelled -> "Installation cancelled"
-    }
-    GlassCard(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodySmall,
-            color = GlassTheme.colors.glassAccent,
-            modifier = Modifier.padding(Spacing.Small),
+    pendingInstallEntry?.let { entry ->
+        MarketplaceTrustDialog(
+            entry = entry,
+            onDismiss = { pendingInstallEntry = null },
+            onConfirmTrust = { decision ->
+                onInstall(entry, decision)
+                pendingInstallEntry = null
+            },
         )
     }
 }
 
 @Composable
-private fun UnconfiguredMarketplaceState(onConfigureSource: () -> Unit, onNavigateToImport: () -> Unit) {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+private fun MarketplaceHeader(
+    source: IndexSource?,
+    fetchResult: IndexFetchResult?,
+    isLoading: Boolean,
+    onRefresh: () -> Unit,
+    onOpenConfigure: () -> Unit,
+    searchQuery: String,
+    onSearchChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val glassColors = GlassTheme.colors
+
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
             Text(
-                text = "No marketplace index configured.",
-                style = MaterialTheme.typography.titleMedium,
-                color = GlassTheme.colors.onGlass,
+                text = "Marketplace",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = glassColors.onGlass,
             )
-            Spacer(modifier = Modifier.height(Spacing.ExtraSmall))
             Text(
-                text = "Marketplace repositories are explicit user-configured HTTPS URLs.",
+                text = "Find and install operation packages for your project.",
                 style = MaterialTheme.typography.bodySmall,
-                color = GlassTheme.colors.onGlassSecondary,
+                color = glassColors.onGlassSecondary,
             )
-            Spacer(modifier = Modifier.height(Spacing.Medium))
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
-                GlassButton(onClick = onConfigureSource, variant = GlassButtonVariant.Primary) {
-                    Text("Configure source")
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+            ) {
+                Row(
+                    modifier = Modifier
+                        .clip(GlassShapes.Small)
+                        .background(glassColors.chromeSurface)
+                        .glassOutlineBorder(
+                            width = StrokeWidth.Hairline,
+                            color = glassColors.glassBorder.copy(alpha = AlphaTokens.Faint),
+                            shape = GlassShapes.Small,
+                        )
+                        .clickable(role = Role.Button, onClick = onOpenConfigure)
+                        .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Compact),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.Compact),
+                ) {
+                    Icon(
+                        painter = painterResource(Res.drawable.ideToolwindowsRepositories),
+                        contentDescription = "Repository",
+                        tint = glassColors.glassAccent,
+                        modifier = Modifier.size(IconSize.Small),
+                    )
+                    Text(
+                        text = "${source?.label ?: "No catalog configured"} ▾",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = glassColors.onGlass,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 }
-                GlassButton(onClick = onNavigateToImport, variant = GlassButtonVariant.Standard) {
-                    Text("Import local")
+
+                val cacheAgeText = when (fetchResult) {
+                    is IndexFetchResult.Cached -> {
+                        val elapsedMs = System.currentTimeMillis() - fetchResult.observedAtEpochMs
+                        val ageSec = (elapsedMs / 1000).coerceAtLeast(0)
+                        if (ageSec < 60) "Cached ${ageSec}s ago" else "Cached ${ageSec / 60}m ago"
+                    }
+                    is IndexFetchResult.Fetched -> "Updated now"
+                    else -> "Not loaded"
+                }
+                Text(
+                    text = cacheAgeText,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = glassColors.onGlassMuted,
+                    modifier = Modifier.clickable(onClick = onRefresh),
+                )
+
+                if (fetchResult is IndexFetchResult.Cached) {
+                    GlassChip(label = "Offline")
+                } else if (isLoading) {
+                    GlassChip(label = "Fetching...")
+                }
+            }
+
+            GlassTextField(
+                value = searchQuery,
+                onValueChange = onSearchChange,
+                placeholder = "Search packages...",
+                leading = TextFieldLeadingSlot.Icon(AppIcons.Search),
+                modifier = Modifier.width(ComponentSize.PluginInspectorWidth),
+            )
+        }
+    }
+}
+
+@Composable
+private fun MarketplaceMasterTable(
+    filtered: List<IndexEntry>,
+    selectedEntry: IndexEntry?,
+    searchQuery: String,
+    onSelectEntry: (IndexEntry) -> Unit,
+    onNavigateToImport: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val glassColors = GlassTheme.colors
+
+    Box(
+        modifier = modifier
+            .fillMaxHeight()
+            .clip(GlassShapes.Medium)
+            .background(PluginThemeColors.CardBackground)
+            .glassOutlineBorder(
+                width = StrokeWidth.Hairline,
+                color = PluginThemeColors.CardBorder,
+                shape = GlassShapes.Medium,
+            ),
+    ) {
+        if (filtered.isEmpty()) {
+            Box(
+                modifier = Modifier.fillMaxSize().padding(Spacing.Large),
+                contentAlignment = Alignment.Center,
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+                ) {
+                    Text(
+                        text = if (searchQuery.isBlank()) {
+                            "No packages available in this source index."
+                        } else {
+                            "No packages match '$searchQuery'."
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = glassColors.onGlassSecondary,
+                    )
+                    GlassButton(
+                        onClick = onNavigateToImport,
+                        variant = GlassButtonVariant.Standard,
+                        shape = GlassShapes.MediumSmall,
+                        minHeight = ComponentSize.PluginActionBtnCompactHeight,
+                    ) {
+                        Text("Import local package (.ltimod)")
+                    }
+                }
+            }
+        } else {
+            Column(modifier = Modifier.fillMaxSize()) {
+                MarketplaceTableHeader()
+
+                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    itemsIndexed(
+                        items = filtered,
+                        key = { _, e -> "${e.publisher}:${e.id}:${e.version}" },
+                    ) { _, entry ->
+                        val isSelected = entry.id == selectedEntry?.id
+                        MarketplaceTableRow(
+                            entry = entry,
+                            isSelected = isSelected,
+                            onClick = { onSelectEntry(entry) },
+                        )
+                    }
                 }
             }
         }
@@ -288,70 +411,385 @@ private fun UnconfiguredMarketplaceState(onConfigureSource: () -> Unit, onNaviga
 }
 
 @Composable
-private fun MarketplaceEntryCard(entry: IndexEntry, onInstallClick: () -> Unit) {
-    GlassCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(Spacing.Medium)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+private fun MarketplaceTableHeader(modifier: Modifier = Modifier) {
+    val glassColors = GlassTheme.colors
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(PluginThemeColors.HeaderBackground)
+            .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = "Package",
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = glassColors.onGlassMuted,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            text = "Publisher",
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = glassColors.onGlassMuted,
+            modifier = Modifier.width(ComponentSize.ButtonMinWidth * 2),
+        )
+        Text(
+            text = "SDK compatibility",
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = glassColors.onGlassMuted,
+            modifier = Modifier.width(ComponentSize.ButtonMinWidth * 2),
+        )
+        Spacer(modifier = Modifier.width(ComponentSize.PluginActionBtnCompactWidth + Spacing.Medium))
+    }
+}
+
+@Composable
+private fun getMarketplaceRowIcon(id: String): Painter = when {
+    id.contains("hook", ignoreCase = true) || id.contains("framework", ignoreCase = true) ->
+        AppIconsRomStages.assemble()
+    id.contains("resource", ignoreCase = true) || id.contains("overlay", ignoreCase = true) ->
+        AppIconsRomStages.patches()
+    else -> AppIcons.FilePainterResource()
+}
+
+@Composable
+private fun MarketplaceTableRow(
+    entry: IndexEntry,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val glassColors = GlassTheme.colors
+    val rowBg = if (isSelected) PluginThemeColors.SelectedRowBackground else Color.Transparent
+    val contentTint = if (isSelected) BrandColors.OnLogoBadge else glassColors.onGlassSecondary
+    val titleColor = if (isSelected) BrandColors.OnLogoBadge else glassColors.onGlass
+    val subtitleColor = if (isSelected) {
+        BrandColors.OnLogoBadge.copy(alpha = AlphaTokens.Hover)
+    } else {
+        glassColors.onGlassSecondary
+    }
+
+    val borderModifier = if (isSelected) {
+        Modifier.glassOutlineBorder(
+            width = StrokeWidth.Hairline,
+            color = PluginThemeColors.SelectedRowBorder,
+            shape = GlassShapes.Small,
+        )
+    } else {
+        Modifier.drawBehind {
+            drawLine(
+                color = glassColors.glassBorder.copy(alpha = AlphaTokens.Faint),
+                start = Offset(0f, size.height),
+                end = Offset(size.width, size.height),
+                strokeWidth = StrokeWidth.Hairline.toPx(),
+            )
+        }
+    }
+
+    val rowIcon = getMarketplaceRowIcon(entry.id)
+    val sdkRange = entry.sdkApiRange.ifBlank { "Not declared" }
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = ComponentSize.PluginTableRowHeight)
+            .clip(GlassShapes.Small)
+            .then(borderModifier)
+            .background(rowBg)
+            .clickable(role = Role.Tab, onClick = onClick)
+            .semantics { selected = isSelected }
+            .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Row(
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+        ) {
+            Icon(
+                painter = rowIcon,
+                contentDescription = "Package",
+                tint = contentTint,
+                modifier = Modifier.size(IconSize.Large),
+            )
+            Column {
+                Text(
+                    text = formatPluginDisplayName(entry.id),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                    color = titleColor,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = entry.targetSummary.ifBlank { "No package summary provided." },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = subtitleColor,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+
+        Text(
+            text = entry.publisher,
+            style = MaterialTheme.typography.bodySmall,
+            color = contentTint,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.width(ComponentSize.ButtonMinWidth * 2),
+        )
+
+        Text(
+            text = sdkRange,
+            style = MaterialTheme.typography.bodySmall,
+            color = contentTint,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.width(ComponentSize.ButtonMinWidth * 2),
+        )
+
+        GlassButton(
+            onClick = onClick,
+            variant = GlassButtonVariant.Standard,
+            shape = GlassShapes.MediumSmall,
+            minWidth = ComponentSize.PluginActionBtnCompactWidth,
+            minHeight = ComponentSize.PluginActionBtnCompactHeight,
+            contentPadding = PaddingValues(
+                horizontal = Spacing.SmallMedium,
+                vertical = Spacing.ExtraSmall,
+            ),
+        ) {
+            Text(
+                text = "View details",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Medium,
+                color = titleColor,
+            )
+        }
+    }
+}
+
+@Composable
+private fun MarketplaceInspectorHeader(entry: IndexEntry) {
+    val glassColors = GlassTheme.colors
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(ComponentSize.LogoBadgeSize)
+                .clip(GlassShapes.MediumSmall)
+                .background(PluginThemeColors.SelectedRowBackground)
+                .glassOutlineBorder(
+                    width = StrokeWidth.Hairline,
+                    color = PluginThemeColors.SelectedRowBorder,
+                    shape = GlassShapes.MediumSmall,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                painter = AppIcons.FilePainterResource(),
+                contentDescription = "Package",
+                tint = BrandColors.OnLogoBadge,
+                modifier = Modifier.size(IconSize.Large),
+            )
+        }
+
+        Column {
+            Text(
+                text = formatPluginDisplayName(entry.id),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = glassColors.onGlass,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = entry.publisher,
+                style = MaterialTheme.typography.labelSmall,
+                color = glassColors.onGlassMuted,
+            )
+        }
+    }
+}
+
+@Composable
+private fun MarketplaceUnverifiedWarningCard() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(GlassShapes.MediumSmall)
+            .background(PluginThemeColors.WarningBackground)
+            .glassOutlineBorder(
+                width = StrokeWidth.Hairline,
+                color = PluginThemeColors.WarningBorder,
+                shape = GlassShapes.MediumSmall,
+            )
+            .padding(Spacing.Medium),
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+            verticalAlignment = Alignment.Top,
+        ) {
+            Icon(
+                painter = AppIcons.InfoPainterResource(),
+                contentDescription = "Verification warning",
+                tint = PluginThemeColors.WarningText,
+                modifier = Modifier
+                    .size(IconSize.Small)
+                    .padding(top = Spacing.ExtraExtraSmall),
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
+                Text(
+                    text = "Requires source verification before install.",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = PluginThemeColors.WarningText,
+                )
+                Text(
+                    text = "This package has not been verified in the current offline state. " +
+                        "Connect to refresh trust and revocation information.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = PluginThemeColors.WarningBody,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MarketplaceInspectorPanel(
+    entry: IndexEntry?,
+    fetchResult: IndexFetchResult?,
+    filteredEmpty: Boolean,
+    searchQuery: String,
+    installState: InstallState?,
+    onInstallClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val glassColors = GlassTheme.colors
+    val isInstalling = installState is InstallState.Downloading || installState is InstallState.Quarantined
+    val sourceVerified = marketplaceSourceIsVerified(fetchResult)
+
+    Box(
+        modifier = modifier
+            .fillMaxHeight()
+            .clip(GlassShapes.Medium)
+            .background(PluginThemeColors.CardBackground)
+            .glassOutlineBorder(
+                width = StrokeWidth.Hairline,
+                color = PluginThemeColors.CardBorder,
+                shape = GlassShapes.Medium,
+            ),
+    ) {
+        if (entry == null) {
+            Box(
+                modifier = Modifier.fillMaxSize().padding(Spacing.Large),
+                contentAlignment = Alignment.Center,
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "${entry.publisher}:${entry.id}",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = GlassTheme.colors.onGlass,
+                Text(
+                    text = if (filteredEmpty && searchQuery.isNotBlank()) {
+                        "No packages match '$searchQuery'."
+                    } else {
+                        "Select a package to inspect details."
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = glassColors.onGlassSecondary,
+                )
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(Spacing.Large),
+                verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+            ) {
+                MarketplaceInspectorHeader(entry = entry)
+
+                Text(
+                    text = entry.targetSummary,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = glassColors.onGlassSecondary,
+                )
+
+                GlassHorizontalDivider(specular = true)
+
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
+                    MarketplacePropertyRow(
+                        label = "SDK compatibility",
+                        value = entry.sdkApiRange.ifBlank { "Not declared" },
                     )
-                    Spacer(modifier = Modifier.height(Spacing.ExtraExtraSmall))
-                    Text(
-                        text = "v${entry.version} • SDK ${entry.sdkApiRange}",
-                        style = MaterialTheme.typography.bodySmall,
-                        fontFamily = codeFontFamily(),
-                        color = GlassTheme.colors.onGlassMuted,
+                    GlassHorizontalDivider(specular = true)
+                    MarketplacePropertyRow(
+                        label = "Content digest",
+                        value = entry.contentDigest.ifBlank { "Not declared" },
+                    )
+                    GlassHorizontalDivider(specular = true)
+                    MarketplacePropertyRow(
+                        label = "Signature identity",
+                        value = entry.signatureIdentity ?: "Unsigned",
+                    )
+                    GlassHorizontalDivider(specular = true)
+                    MarketplacePropertyRow(
+                        label = "Revocation status",
+                        value = if (entry.revoked) "Revoked" else "Not marked revoked",
                     )
                 }
 
-                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
-                    if (entry.revoked) {
-                        GlassChip(label = "Known Revocation")
-                    } else if (entry.signatureIdentity != null) {
-                        GlassChip(label = "Signed")
-                    } else {
-                        GlassChip(label = "Unsigned")
+                if (!sourceVerified) {
+                    MarketplaceUnverifiedWarningCard()
+                }
+
+                if (sourceVerified) {
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    GlassButton(
+                        onClick = onInstallClick,
+                        enabled = !isInstalling,
+                        variant = GlassButtonVariant.Primary,
+                        shape = GlassShapes.MediumSmall,
+                        minHeight = ComponentSize.PluginActionBtnHeight,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(if (isInstalling) "Installing..." else "Install package")
                     }
                 }
             }
-
-            Spacer(modifier = Modifier.height(Spacing.Small))
-            Text(
-                text = entry.targetSummary,
-                style = MaterialTheme.typography.bodySmall,
-                color = GlassTheme.colors.onGlassSecondary,
-            )
-            Spacer(modifier = Modifier.height(Spacing.Small))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = "sha256:${entry.contentDigest.take(12)}...",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = codeFontFamily(),
-                    color = GlassTheme.colors.onGlassMuted,
-                )
-
-                GlassButton(
-                    onClick = onInstallClick,
-                    enabled = !entry.revoked,
-                    variant = GlassButtonVariant.Primary,
-                ) {
-                    Text("Install...")
-                }
-            }
         }
+    }
+}
+
+@Composable
+private fun MarketplacePropertyRow(label: String, value: String, modifier: Modifier = Modifier) {
+    val glassColors = GlassTheme.colors
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = glassColors.onGlassMuted,
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Medium,
+            color = glassColors.onGlass,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
@@ -367,7 +805,7 @@ private fun ConfigureSourceDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
             GlassButton(onClick = onConfirm, variant = GlassButtonVariant.Primary) {
-                Text("Save & Fetch")
+                Text("Save and Fetch")
             }
         },
         dismissButton = {
@@ -376,17 +814,19 @@ private fun ConfigureSourceDialog(
             }
         },
     ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(Spacing.Medium),
+            verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+        ) {
             Text(
-                text = "Enter a repository-backed HTTPS index URL (must start with https://):",
+                text = "Marketplace index repository must be a strictly secure HTTPS endpoint.",
                 style = MaterialTheme.typography.bodySmall,
                 color = GlassTheme.colors.onGlassSecondary,
             )
-            Spacer(modifier = Modifier.height(Spacing.Small))
             GlassTextField(
                 value = url,
                 onValueChange = onUrlChange,
-                placeholder = "https://example.com/lti-rom/index.json",
+                placeholder = "https://example.com/plugins/index.json",
                 modifier = Modifier.fillMaxWidth(),
             )
         }
@@ -395,19 +835,17 @@ private fun ConfigureSourceDialog(
 
 @Composable
 private fun MarketplaceTrustDialog(entry: IndexEntry, onDismiss: () -> Unit, onConfirmTrust: (TrustDecision) -> Unit) {
-    val isSigned = entry.signatureIdentity != null
+    var trustDecision by remember { mutableStateOf(TrustDecision.TRUSTED_UNVERIFIED) }
+
     GlassDialog(
-        title = "Trust Decision: ${entry.publisher}:${entry.id}",
+        title = "Install Package: ${entry.id}",
         onDismissRequest = onDismiss,
         confirmButton = {
             GlassButton(
-                onClick = {
-                    val decision = if (isSigned) TrustDecision.TRUSTED_SIGNATURE else TrustDecision.TRUSTED_UNVERIFIED
-                    onConfirmTrust(decision)
-                },
+                onClick = { onConfirmTrust(trustDecision) },
                 variant = GlassButtonVariant.Primary,
             ) {
-                Text(if (isSigned) "Approve & Install" else "Accept Unverified & Install")
+                Text("Confirm and Install")
             }
         },
         dismissButton = {
@@ -416,26 +854,41 @@ private fun MarketplaceTrustDialog(entry: IndexEntry, onDismiss: () -> Unit, onC
             }
         },
     ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            val trustExplanation = if (isSigned) {
-                "This package is cryptographically signed by '${entry.signatureIdentity}'. " +
-                    "Installing will add it to your local library without enabling it for any workspace."
-            } else {
-                "This package is unsigned. An explicit Unverified acknowledgment is required " +
-                    "before installation can proceed. Installing will never execute author code directly."
-            }
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(Spacing.Medium),
+            verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+        ) {
             Text(
-                text = trustExplanation,
-                style = MaterialTheme.typography.bodyMedium,
+                text = "Publisher: ${entry.publisher}\nVersion: ${entry.version}\nTarget: ${entry.targetSummary}",
+                style = MaterialTheme.typography.bodySmall,
                 color = GlassTheme.colors.onGlass,
             )
-            Spacer(modifier = Modifier.height(Spacing.Small))
-            Text(
-                text = "Workflow note: Installing adds this package to the local library. " +
-                    "Enabling it for a workspace is a separate, explicit action in ROM Setup Studio.",
-                style = MaterialTheme.typography.bodySmall,
-                color = GlassTheme.colors.onGlassMuted,
-            )
+
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
+                val sigVariant = if (trustDecision == TrustDecision.TRUSTED_SIGNATURE) {
+                    GlassButtonVariant.Primary
+                } else {
+                    GlassButtonVariant.Standard
+                }
+                val unverVariant = if (trustDecision == TrustDecision.TRUSTED_UNVERIFIED) {
+                    GlassButtonVariant.Primary
+                } else {
+                    GlassButtonVariant.Standard
+                }
+
+                GlassButton(
+                    onClick = { trustDecision = TrustDecision.TRUSTED_SIGNATURE },
+                    variant = sigVariant,
+                ) {
+                    Text("Trust Signature")
+                }
+                GlassButton(
+                    onClick = { trustDecision = TrustDecision.TRUSTED_UNVERIFIED },
+                    variant = unverVariant,
+                ) {
+                    Text("Trust Unverified")
+                }
+            }
         }
     }
 }

@@ -33,7 +33,6 @@ import org.ide.lti.core.domain.usecase.device.RefreshConnectedDevicesUseCase
 import org.ide.lti.core.domain.usecase.device.SelectConnectedDeviceUseCase
 import org.ide.lti.core.domain.usecase.target.AddTargetUseCase
 import org.ide.lti.core.domain.usecase.target.GetAvailableTargetsUseCase
-import org.ide.lti.core.domain.usecase.target.GetSelectedTargetUseCase
 import org.ide.lti.core.domain.repository.snapshot.SnapshotRepository
 import org.ide.lti.core.domain.usecase.target.SelectTargetUseCase
 import org.ide.lti.core.domain.workspace.WorkspaceManager
@@ -44,9 +43,6 @@ import org.ide.lti.core.model.target.DeviceConnectionType
 import org.ide.lti.core.model.target.DeviceOperationResult
 import org.ide.lti.core.model.target.DeviceRebootMode
 import org.ide.lti.core.model.target.TargetDevice
-import org.ide.lti.core.model.target.TargetFirmware
-import org.ide.lti.core.model.target.TargetRegion
-import org.ide.lti.core.model.target.TargetStatus
 import org.ide.lti.core.model.target.WirelessPairingRequest
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 import org.ide.lti.core.model.workspace.Workspace
@@ -57,16 +53,15 @@ import org.ide.lti.core.model.workspace.Workspace
  * Responsibilities:
  * - Layout, panel toggling, and tab orchestration (Explorer, Terminal, Editor, AI, Target Cockpit).
  * - Reactive workspace metadata & branch synchronization.
- * - Bound target profile resolution (workspace binding first, global selection as fallback).
+ * - Bound target profile resolution from the workspace's immutable binding only.
  * - Hardware ADB / Fastboot device discovery, pairing, and reboot transitions.
  */
 class WorkspaceViewModel(
     private val workspaceManager: WorkspaceManager,
     private val panelManager: PanelManager,
     private val getAvailableTargetsUseCase: GetAvailableTargetsUseCase,
-    private val getSelectedTargetUseCase: GetSelectedTargetUseCase,
     private val selectTargetUseCase: SelectTargetUseCase,
-    private val snapshotRepository: SnapshotRepository? = null,
+    private val snapshotRepository: SnapshotRepository,
     private val addTargetUseCase: AddTargetUseCase? = null,
     private val getConnectedDevicesUseCase: GetConnectedDevicesUseCase? = null,
     private val getSelectedConnectedDeviceUseCase: GetSelectedConnectedDeviceUseCase? = null,
@@ -79,39 +74,23 @@ class WorkspaceViewModel(
 ) : ViewModel() {
 
     companion object {
-        private val DEFAULT_GLOBAL_FIRMWARE = TargetFirmware(
-            version = "REDMAGICOS10.5.15_NP05J_GB",
-            buildId = "PQ84P01:15/AQ3A.240812.002/20260311.222527",
-            androidVersion = "15",
-            securityPatch = "2026-02-01",
-            otaUrl = "https://rom.download.nubia.com/Europe&Asia/PQ84P01(NP05J)/REDMAGICOS10.5.15_NP05J_GB/update.zip",
-            isOfficial = true,
-            isRecommended = true,
+        /** UI-only unresolved state; never a selectable, persisted, or executable target. */
+        val UNKNOWN_TARGET: TargetDevice = TargetDevice.EMPTY.copy(
+            name = "Unknown",
+            codename = "Unknown",
+            filesystemType = "unknown",
         )
 
-        val DEFAULT_TARGET = TargetDevice(
-            id = "PQ84P01",
-            name = "REDMAGIC Astra Gaming Tablet",
-            codename = "PQ84P01",
-            availableRegions = listOf(TargetRegion.GLOBAL, TargetRegion.CHINA),
-            availableFirmwares = mapOf(
-                TargetRegion.GLOBAL to listOf(DEFAULT_GLOBAL_FIRMWARE),
-            ),
-            socPlatform = "Snapdragon 8 Elite (SM8750 / sun)",
-            filesystemType = "erofs",
-            superPartitionBytes = 17179869184L,
-            dynamicPartitions = listOf("system", "vendor", "product", "system_ext", "odm", "vendor_dlkm", "system_dlkm"),
-            bootPartitions = listOf("boot", "init_boot", "vendor_boot", "dtbo"),
-            status = TargetStatus.QUALIFIED,
-            description = "Official Global baseline",
-            isDefault = true,
-        )
     }
 
     val currentWorkspace: StateFlow<Workspace?> = workspaceManager.currentWorkspace
 
     val effectiveSnapshot: StateFlow<ConfigurationSnapshot?> = workspaceManager.currentWorkspace
-        .map { ws -> ws?.effectiveSnapshotId?.let { snapshotRepository?.getSnapshot(it) } }
+        .map { workspace ->
+            workspace?.effectiveSnapshotId?.let { snapshotId ->
+                snapshotRepository.getSnapshot(snapshotId)
+            }
+        }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -135,24 +114,23 @@ class WorkspaceViewModel(
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = listOf(DEFAULT_TARGET),
+            initialValue = emptyList(),
         )
 
     /**
-     * The profile this workspace is bound to. Records without a binding (NEEDS_TARGET) fall back
-     * to the global selection until US5 lets the user bind them.
+     * The profile this workspace is bound to. Unbound or unresolved records deliberately expose
+     * [UNKNOWN_TARGET]; callers render it as Unknown instead of fabricating a Global target.
      */
     val selectedTarget: StateFlow<TargetDevice> = combine(
         workspaceManager.currentWorkspace,
         getAvailableTargetsUseCase(),
-        getSelectedTargetUseCase(),
-    ) { workspace, targets, globalSelection ->
+    ) { workspace, targets ->
         val boundId = workspace?.targetBinding?.profileId
-        targets.firstOrNull { it.id == boundId } ?: globalSelection
+        targets.firstOrNull { it.id == boundId } ?: UNKNOWN_TARGET
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
-        initialValue = DEFAULT_TARGET,
+        initialValue = UNKNOWN_TARGET,
     )
 
     // Connected ADB / Fastboot Physical & Emulated Devices

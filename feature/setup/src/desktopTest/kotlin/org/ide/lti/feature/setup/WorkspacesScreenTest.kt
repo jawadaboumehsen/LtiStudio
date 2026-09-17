@@ -188,7 +188,7 @@ class WorkspacesScreenTest {
         assertEquals(SetupDestination.WORKSPACES, SetupDestination.fromId("projects"))
         assertEquals(SetupDestination.WORKSPACES, SetupDestination.fromId("unknown_route"))
 
-        // UI assertion: SetupScreenContent renders Workspaces when given legacy launchpad initial tab
+        // The legacy route remains accepted, but now renders the reference-aligned Setup overview.
         setContent {
             val backdrop = rememberLayerBackdrop()
             LtiTheme(sharedBackdrop = backdrop) {
@@ -201,7 +201,6 @@ class WorkspacesScreenTest {
             }
         }
 
-        onAllNodesWithText("Workspaces").assertCountEquals(2)
-        onNodeWithText("Recent Workspaces").assertIsDisplayed()
+        onNodeWithText("Set up your build environment").assertIsDisplayed()
     }
 }

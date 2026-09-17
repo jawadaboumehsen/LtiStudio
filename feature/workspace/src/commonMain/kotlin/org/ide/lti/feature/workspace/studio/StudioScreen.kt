@@ -793,36 +793,49 @@ private fun StudioTopBar(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        // Title and Breadcrumbs
+        // Product navigation and current studio context. The studio is a Workspace mode,
+        // not a separate legacy-looking tool, so it uses the same primary navigation as Setup.
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
         ) {
-            GlassIconButton(
-                icon = AppIcons.ArrowBack,
-                onClick = onNavigateBack,
-                contentDescription = "Back to workspace",
-            )
             Text(
-                text = "ROM Setup Studio",
+                text = "LtiRom Studio",
                 style = MaterialTheme.typography.titleMedium,
                 color = glassColors.onGlass,
                 fontWeight = FontWeight.Bold,
             )
-
-            if (entry is StudioEntry.Editor && objectId != null) {
-                Text(
-                    text = "•",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = glassColors.onGlassMuted,
-                )
+            Text(
+                text = "Setup",
+                style = MaterialTheme.typography.labelLarge,
+                color = glassColors.onGlassSecondary,
+                modifier = Modifier
+                    .clickable(onClick = onNavigateToSetup)
+                    .semantics { role = Role.Tab },
+            )
+            Text(
+                text = "Workspace",
+                style = MaterialTheme.typography.labelLarge,
+                color = glassColors.glassAccent,
+                modifier = Modifier
+                    .clickable(onClick = onNavigateBack)
+                    .semantics { role = Role.Tab },
+            )
+            Text(
+                text = "Settings",
+                style = MaterialTheme.typography.labelLarge,
+                color = glassColors.onGlassSecondary,
+                modifier = Modifier
+                    .clickable(onClick = onOpenSettings)
+                    .semantics { role = Role.Tab },
+            )
+            if (entry is StudioEntry.Editor && objectId != null && !isHighTextScale) {
                 Text(
                     text = "${stage.title} / $objectId",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = glassColors.onGlassSecondary,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = glassColors.onGlassMuted,
                 )
             }
-
             TopBarValidationBadge(errorCount = errorCount, warningCount = warningCount)
         }
 

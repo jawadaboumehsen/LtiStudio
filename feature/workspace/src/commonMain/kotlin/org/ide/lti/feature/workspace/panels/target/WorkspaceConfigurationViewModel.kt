@@ -140,10 +140,15 @@ class WorkspaceConfigurationViewModel(
     fun updateDraftRegion(region: TargetRegion) {
         _uiState.update { state ->
             val draft = state.draft ?: return@update state
+            if (region !in state.availableRegions) {
+                return@update state.copy(errorMessage = "The selected region is not supported by this workspace target")
+            }
             val firmwares = state.availableFirmwares[region].orEmpty()
             val newFirmware = firmwares.firstOrNull { it.isRecommended }
                 ?: firmwares.firstOrNull()
-                ?: draft.firmware
+                ?: return@update state.copy(
+                    errorMessage = "No compatible firmware is available for ${region.displayName}",
+                )
             state.copy(
                 draft = draft.copy(region = region, firmware = newFirmware),
                 isDirty = true,
@@ -155,6 +160,11 @@ class WorkspaceConfigurationViewModel(
     fun updateDraftFirmware(firmware: TargetFirmware) {
         _uiState.update { state ->
             val draft = state.draft ?: return@update state
+            if (firmware !in state.availableFirmwares[draft.region].orEmpty()) {
+                return@update state.copy(
+                    errorMessage = "The selected firmware is not compatible with ${draft.region.displayName}",
+                )
+            }
             state.copy(
                 draft = draft.copy(firmware = firmware),
                 isDirty = true,
@@ -252,11 +262,15 @@ class WorkspaceConfigurationViewModel(
     }
 
     private fun persist(workspace: Workspace, draft: ConfigurationDraft) {
+        val workspaceId = workspace.id
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true, errorMessage = null) }
-            val result = saveConfigurationSnapshotUseCase(workspace.id, draft)
+            val result = saveConfigurationSnapshotUseCase(workspaceId, draft)
             result.onSuccess { snapshot ->
                 _uiState.update { s ->
+                    // A completion for a workspace that is no longer active must never
+                    // overwrite the active workspace's draft or claim it was saved.
+                    if (s.currentWorkspace?.id != workspaceId) return@update s
                     s.copy(
                         initialSnapshot = snapshot,
                         draft = snapshot.toDraft(),
@@ -267,6 +281,7 @@ class WorkspaceConfigurationViewModel(
                 }
             }.onFailure { error ->
                 _uiState.update { s ->
+                    if (s.currentWorkspace?.id != workspaceId) return@update s
                     s.copy(
                         isSaving = false,
                         errorMessage = error.message ?: "Failed to save configuration",

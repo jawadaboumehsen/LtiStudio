@@ -9,38 +9,57 @@
  */
 package org.ide.lti.feature.plugins
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.LocalContentColor
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
-import org.ide.lti.core.designsystem.component.display.GlassCard
-import org.ide.lti.core.designsystem.component.display.GlassChip
+import org.ide.lti.core.designsystem.component.display.GlassHorizontalDivider
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
+import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
+import org.ide.lti.core.designsystem.icon.AppIcons
+import org.ide.lti.core.designsystem.icon.ideGeneralDownload
+import org.ide.lti.core.designsystem.icon.ideStatusWarning
+import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.BrandColors
+import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.IconSize
+import org.ide.lti.core.designsystem.theme.PluginThemeColors
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.designsystem.theme.codeFontFamily
+import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.domain.plugin.InstallState
 import org.ide.lti.core.domain.plugin.PackageInspection
 import org.ide.lti.core.domain.plugin.TrustDecision
 import org.ide.lti.core.domain.plugin.key
+import org.ide.lti.feature.plugins.components.ImportStep
+import org.ide.lti.feature.plugins.components.PluginFooterBar
+import org.ide.lti.feature.plugins.components.PluginStepper
 
 @Composable
 internal fun PluginImportTab(
@@ -56,281 +75,875 @@ internal fun PluginImportTab(
     onConfirmInstall: (TrustDecision) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var acknowledgedUnverified by remember { mutableStateOf(false) }
+    val glassColors = GlassTheme.colors
+    var acknowledgedUnverified by remember(inspection?.identity?.key, importPath) {
+        mutableStateOf(false)
+    }
 
-    CompositionLocalProvider(LocalContentColor provides GlassTheme.colors.onGlass) {
+    val currentStep = when {
+        installState is InstallState.Installed -> ImportStep.INSTALL
+        inspection != null -> ImportStep.REVIEW
+        else -> ImportStep.INSPECT
+    }
+
+    val effectivePath = quarantinedPath ?: importPath
+    val displayFileName = effectivePath.substringAfterLast('/').substringAfterLast('\\').ifBlank {
+        "No package selected"
+    }
+
+    Column(modifier = modifier.fillMaxSize()) {
         Column(
-            modifier = modifier.fillMaxSize().padding(Spacing.Medium),
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .padding(horizontal = Spacing.Large, vertical = Spacing.Medium),
             verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
         ) {
-            GlassCard(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(Spacing.Medium)) {
-                    Text(
-                        text = "Import Local Package Archive",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = GlassTheme.colors.onGlass,
-                    )
-                    Spacer(modifier = Modifier.height(Spacing.ExtraSmall))
-                    Text(
-                        text = "Select a local Kotlin SDK data package (.lti-mod.zip) to " +
-                            "quarantine, inspect, and install.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = GlassTheme.colors.onGlassSecondary,
-                    )
-                    Spacer(modifier = Modifier.height(Spacing.Medium))
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
+                Text(
+                    text = "Workspace / Import package",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = glassColors.onGlassMuted,
+                )
+                Text(
+                    text = "Review package installation",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = glassColors.onGlass,
+                )
+                Text(
+                    text = "Inspect and review package details before installing into your workspace.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = glassColors.onGlassSecondary,
+                )
+            }
 
+            ImportPackageHeader(
+                displayFileName = displayFileName,
+                inspection = inspection,
+                importPath = importPath,
+                onImportPathChange = onImportPathChange,
+                onInspectPath = onInspectPath,
+            )
+
+            PluginStepper(currentStep = currentStep)
+
+            when {
+                isLegacyUnsupported -> {
+                    UnsupportedLegacyFormatPanel(
+                        formatName = legacyFormatName ?: "legacy script",
+                        onDismiss = onDismissLegacyWarning,
+                    )
+                }
+                inspection == null -> {
+                    ImportInspectFirstEmptyState()
+                }
+                else -> {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
                     ) {
-                        GlassTextField(
-                            value = importPath,
-                            onValueChange = onImportPathChange,
-                            placeholder = "C:/path/to/my-plugin.lti-mod.zip or /path/to/pkg.lti-mod.zip",
+                        ImportLeftReviewColumn(
+                            inspection = inspection,
+                            displayFileName = displayFileName,
+                            importPath = importPath,
                             modifier = Modifier.weight(1f),
                         )
-                        GlassButton(
-                            onClick = { onInspectPath(importPath) },
-                            enabled = importPath.isNotBlank(),
-                            variant = GlassButtonVariant.Primary,
-                        ) {
-                            Text("Inspect")
-                        }
+
+                        ImportRightReviewColumn(
+                            inspection = inspection,
+                            acknowledgedUnverified = acknowledgedUnverified,
+                            onAcknowledgedChange = { acknowledgedUnverified = it },
+                            installState = installState,
+                            onConfirmInstall = onConfirmInstall,
+                            onCancel = { onImportPathChange("") },
+                            modifier = Modifier.weight(1f),
+                        )
                     }
                 }
             }
+        }
 
-            if (isLegacyUnsupported) {
-                UnsupportedLegacyFormatPanel(
-                    formatName = legacyFormatName ?: "legacy script",
-                    onDismiss = onDismissLegacyWarning,
+        PluginFooterBar(
+            message = "Installation does not enable this package or modify a ROM.",
+        )
+    }
+}
+
+@Composable
+private fun ImportPackageHeader(
+    displayFileName: String,
+    inspection: PackageInspection?,
+    importPath: String,
+    onImportPathChange: (String) -> Unit,
+    onInspectPath: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val glassColors = GlassTheme.colors
+    val hasPath = importPath.isNotBlank()
+
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(ComponentSize.LogoBadgeSize)
+                    .clip(GlassShapes.MediumSmall)
+                    .background(PluginThemeColors.SelectedRowBackground)
+                    .glassOutlineBorder(
+                        width = StrokeWidth.Hairline,
+                        color = PluginThemeColors.SelectedRowBorder,
+                        shape = GlassShapes.MediumSmall,
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    painter = AppIcons.FilePainterResource(),
+                    contentDescription = "Package Archive",
+                    tint = BrandColors.OnLogoBadge,
+                    modifier = Modifier.size(IconSize.Large),
                 )
-            } else if (inspection != null) {
-                QuarantinedInspectionCard(
-                    inspection = inspection,
-                    quarantinedPath = quarantinedPath,
-                    acknowledgedUnverified = acknowledgedUnverified,
-                    onToggleAcknowledge = { acknowledgedUnverified = !acknowledgedUnverified },
-                    onConfirmInstall = {
-                        val decision = if (inspection.hasSignature) {
-                            TrustDecision.TRUSTED_SIGNATURE
-                        } else {
-                            TrustDecision.TRUSTED_UNVERIFIED
-                        }
-                        onConfirmInstall(decision)
+            }
+
+            Column {
+                Text(
+                    text = displayFileName,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = glassColors.onGlass,
+                )
+                Text(
+                    text = if (hasPath) {
+                        "Local package archive · Ready for review"
+                    } else {
+                        "Select a local package archive (.ltimod / .zip) to inspect"
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = glassColors.onGlassSecondary,
+                )
+            }
+        }
+
+        if (inspection == null) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                GlassTextField(
+                    value = importPath,
+                    onValueChange = onImportPathChange,
+                    placeholder = "C:/path/to/my-plugin.lti-mod.zip or /path/to/pkg.lti-mod.zip",
+                    modifier = Modifier.weight(1f),
+                )
+                GlassButton(
+                    onClick = { onInspectPath(importPath) },
+                    enabled = hasPath,
+                    variant = GlassButtonVariant.Primary,
+                    shape = GlassShapes.MediumSmall,
+                    minHeight = ComponentSize.PluginActionBtnCompactHeight,
+                ) {
+                    Text("Inspect")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ImportInspectFirstEmptyState(modifier: Modifier = Modifier) {
+    val glassColors = GlassTheme.colors
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(GlassShapes.Medium)
+            .background(PluginThemeColors.CardBackground)
+            .glassOutlineBorder(
+                width = StrokeWidth.Hairline,
+                color = PluginThemeColors.CardBorder,
+                shape = GlassShapes.Medium,
+            ),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(Spacing.ExtraLarge),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(ComponentSize.ActionCardHeight)
+                    .clip(GlassShapes.Medium)
+                    .background(glassColors.glassAccent.copy(alpha = AlphaTokens.Glow)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    painter = AppIcons.FilePainterResource(),
+                    contentDescription = "Inspect archive",
+                    tint = glassColors.glassAccent,
+                    modifier = Modifier.size(IconSize.ExtraLarge),
+                )
+            }
+
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+            ) {
+                Text(
+                    text = "Select and inspect a package archive",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = glassColors.onGlass,
+                )
+                Text(
+                    text = "Select a local package archive (.ltimod / .zip) and click Inspect to review " +
+                        "package identity, integrity, signature status, and compatibility before installing.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = glassColors.onGlassSecondary,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ImportPackageIdentityCard(
+    identityId: String?,
+    identityVersion: String?,
+    displayFileName: String,
+    importPath: String,
+) {
+    val glassColors = GlassTheme.colors
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(GlassShapes.MediumSmall)
+            .background(PluginThemeColors.CardBackground)
+            .glassOutlineBorder(
+                width = StrokeWidth.Hairline,
+                color = PluginThemeColors.CardBorder,
+                shape = GlassShapes.MediumSmall,
+            )
+            .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
+        ) {
+            Text(
+                text = "Package identity",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = glassColors.onGlass,
+            )
+            GlassHorizontalDivider(specular = true)
+
+            ImportDetailRow("Name", identityId ?: "Identity unavailable")
+            ImportDetailRow("Version", identityVersion ?: "Unavailable")
+            ImportDetailRow("Package type", "LtiRom package archive")
+            ImportDetailRow("File name", displayFileName)
+            ImportDetailRow("File size", "Not reported by inspection")
+            ImportDetailRow("Imported from", importPath)
+            ImportDetailRow("Import time", "Not recorded")
+        }
+    }
+}
+
+@Composable
+private fun ImportSdkCompatibilityCard(hasBlockingErrors: Boolean) {
+    val glassColors = GlassTheme.colors
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(GlassShapes.MediumSmall)
+            .background(PluginThemeColors.CardBackground)
+            .glassOutlineBorder(
+                width = StrokeWidth.Hairline,
+                color = PluginThemeColors.CardBorder,
+                shape = GlassShapes.MediumSmall,
+            )
+            .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
+        ) {
+            Text(
+                text = "SDK compatibility",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = glassColors.onGlass,
+            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+            ) {
+                Icon(
+                    painter = if (hasBlockingErrors) {
+                        AppIcons.ClearPainterResource()
+                    } else {
+                        AppIcons.CheckPainterResource()
+                    },
+                    contentDescription = if (hasBlockingErrors) "Blocked" else "Inspection passed",
+                    tint = if (hasBlockingErrors) glassColors.diagnostics.error else glassColors.diagnostics.success,
+                    modifier = Modifier.size(IconSize.Small),
+                )
+                Text(
+                    text = if (hasBlockingErrors) "Blocked" else "Inspection passed",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = if (hasBlockingErrors) glassColors.diagnostics.error else glassColors.diagnostics.success,
+                )
+            }
+            Text(
+                text = if (hasBlockingErrors) {
+                    "The inspection report contains blocking compatibility or validation errors."
+                } else {
+                    "No blocking compatibility errors were reported."
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = glassColors.onGlassSecondary,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ImportContentIntegrityCard(hasBlockingErrors: Boolean) {
+    val glassColors = GlassTheme.colors
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(GlassShapes.MediumSmall)
+            .background(PluginThemeColors.CardBackground)
+            .glassOutlineBorder(
+                width = StrokeWidth.Hairline,
+                color = PluginThemeColors.CardBorder,
+                shape = GlassShapes.MediumSmall,
+            )
+            .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
+        ) {
+            Text(
+                text = "Content integrity",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = glassColors.onGlass,
+            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+            ) {
+                Icon(
+                    painter = if (hasBlockingErrors) {
+                        AppIcons.ClearPainterResource()
+                    } else {
+                        AppIcons.CheckPainterResource()
+                    },
+                    contentDescription = if (hasBlockingErrors) "Failed" else "Inspection passed",
+                    tint = if (hasBlockingErrors) glassColors.diagnostics.error else glassColors.diagnostics.success,
+                    modifier = Modifier.size(IconSize.Small),
+                )
+                Text(
+                    text = if (hasBlockingErrors) "Failed" else "Inspection passed",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = if (hasBlockingErrors) glassColors.diagnostics.error else glassColors.diagnostics.success,
+                )
+            }
+            Text(
+                text = if (hasBlockingErrors) {
+                    "Review the reported validation errors before installation."
+                } else {
+                    "No blocking structure or integrity errors were reported."
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = glassColors.onGlassSecondary,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ImportSignatureCard(isSigned: Boolean) {
+    val glassColors = GlassTheme.colors
+    val sigColor = if (isSigned) glassColors.diagnostics.success else glassColors.onGlassMuted
+    val sigPainter = if (isSigned) AppIcons.CheckPainterResource() else AppIcons.InfoPainterResource()
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(GlassShapes.MediumSmall)
+            .background(PluginThemeColors.CardBackground)
+            .glassOutlineBorder(
+                width = StrokeWidth.Hairline,
+                color = PluginThemeColors.CardBorder,
+                shape = GlassShapes.MediumSmall,
+            )
+            .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
+        ) {
+            Text(
+                text = "Signature",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = glassColors.onGlass,
+            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+            ) {
+                Icon(
+                    painter = sigPainter,
+                    contentDescription = "Signature status",
+                    tint = sigColor,
+                    modifier = Modifier.size(IconSize.Small),
+                )
+                Text(
+                    text = if (isSigned) "Verified signature" else "Unsigned · Unverified publisher",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = sigColor,
+                )
+            }
+            Text(
+                text = if (isSigned) {
+                    "Digitally signed by verified publisher."
+                } else {
+                    "This package is not digitally signed."
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = glassColors.onGlassSecondary,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ImportLeftReviewColumn(
+    inspection: PackageInspection,
+    displayFileName: String,
+    importPath: String,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+    ) {
+        ImportPackageIdentityCard(
+            identityId = inspection.identity?.id,
+            identityVersion = inspection.identity?.version,
+            displayFileName = displayFileName,
+            importPath = importPath,
+        )
+        val hasBlockingErrors = inspection.report.hasBlockingErrors()
+        ImportSdkCompatibilityCard(hasBlockingErrors = hasBlockingErrors)
+        ImportContentIntegrityCard(hasBlockingErrors = hasBlockingErrors)
+        ImportSignatureCard(isSigned = inspection.hasSignature)
+    }
+}
+
+@Composable
+private fun ImportRightReviewColumn(
+    inspection: PackageInspection,
+    acknowledgedUnverified: Boolean,
+    onAcknowledgedChange: (Boolean) -> Unit,
+    installState: InstallState?,
+    onConfirmInstall: (TrustDecision) -> Unit,
+    onCancel: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val isSigned = inspection.hasSignature
+
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+    ) {
+        if (!isSigned) {
+            UnsignedSecurityAlertCard()
+        }
+
+        PackageEffectsCard()
+
+        DependencyResolutionCard(inspection = inspection)
+
+        if (!isSigned) {
+            UnsignedAcknowledgementRow(
+                acknowledged = acknowledgedUnverified,
+                onAcknowledgedChange = onAcknowledgedChange,
+            )
+        }
+
+        val canInstall = canInstallInspectedPackage(inspection, acknowledgedUnverified)
+        val isInstalling = installState is InstallState.Downloading || installState is InstallState.Quarantined
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Spacer(modifier = Modifier.weight(1f))
+
+            GlassButton(
+                onClick = {
+                    val decision = if (isSigned) {
+                        TrustDecision.TRUSTED_SIGNATURE
+                    } else {
+                        TrustDecision.TRUSTED_UNVERIFIED
+                    }
+                    onConfirmInstall(decision)
+                },
+                enabled = canInstall && !isInstalling,
+                variant = GlassButtonVariant.Primary,
+                shape = GlassShapes.MediumSmall,
+                minHeight = ComponentSize.PluginActionBtnCompactHeight,
+                contentPadding = PaddingValues(
+                    horizontal = Spacing.Medium,
+                    vertical = Spacing.ExtraSmall,
+                ),
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                ) {
+                    Icon(
+                        painter = AppIcons.ideGeneralDownload(),
+                        contentDescription = "Install",
+                        tint = BrandColors.OnLogoBadge,
+                        modifier = Modifier.size(IconSize.Small),
+                    )
+                    Text(if (isInstalling) "Installing..." else "Install package")
+                }
+            }
+
+            GlassButton(
+                onClick = onCancel,
+                variant = GlassButtonVariant.Standard,
+                shape = GlassShapes.MediumSmall,
+                minHeight = ComponentSize.PluginActionBtnCompactHeight,
+                contentPadding = PaddingValues(
+                    horizontal = Spacing.Medium,
+                    vertical = Spacing.ExtraSmall,
+                ),
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                ) {
+                    Icon(
+                        painter = AppIcons.ClearPainterResource(),
+                        contentDescription = "Cancel",
+                        tint = GlassTheme.colors.onGlassSecondary,
+                        modifier = Modifier.size(IconSize.Small),
+                    )
+                    Text("Cancel")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun UnsignedSecurityAlertCard(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(GlassShapes.MediumSmall)
+            .background(PluginThemeColors.WarningBackground)
+            .glassOutlineBorder(
+                width = StrokeWidth.Hairline,
+                color = PluginThemeColors.WarningBorder,
+                shape = GlassShapes.MediumSmall,
+            )
+            .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+            verticalAlignment = Alignment.Top,
+        ) {
+            Icon(
+                painter = AppIcons.ideStatusWarning(),
+                contentDescription = "Warning",
+                tint = PluginThemeColors.WarningText,
+                modifier = Modifier.size(IconSize.Medium),
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
+                Text(
+                    text = "A valid package is not proof of harmless behavior.",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = PluginThemeColors.WarningText,
+                )
+                Text(
+                    text = "This package was not signed by a verified publisher. Only install packages " +
+                        "from sources you trust. Malicious packages can modify your build output or target device.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = PluginThemeColors.WarningBody,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PackageEffectsCard(modifier: Modifier = Modifier) {
+    val glassColors = GlassTheme.colors
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(GlassShapes.MediumSmall)
+            .background(PluginThemeColors.CardBackground)
+            .glassOutlineBorder(
+                width = StrokeWidth.Hairline,
+                color = PluginThemeColors.CardBorder,
+                shape = GlassShapes.MediumSmall,
+            )
+            .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+        ) {
+            Text(
+                text = "Declared effects",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = glassColors.onGlass,
+            )
+            GlassHorizontalDivider(specular = true)
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+            ) {
+                Icon(
+                    painter = AppIcons.InfoPainterResource(),
+                    contentDescription = "Effects unavailable",
+                    tint = glassColors.onGlassSecondary,
+                    modifier = Modifier.size(IconSize.Small),
+                )
+                Text(
+                    text = "This inspection contract does not expose an operation/effect summary.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = glassColors.onGlass,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun DependencyResolutionCard(inspection: PackageInspection, modifier: Modifier = Modifier) {
+    val glassColors = GlassTheme.colors
+    val hasBlockingErrors = inspection.report.hasBlockingErrors()
+    val dependencyCount = inspection.dependencies.size
+    val conflictCount = inspection.conflicts.size
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(GlassShapes.MediumSmall)
+            .background(PluginThemeColors.CardBackground)
+            .glassOutlineBorder(
+                width = StrokeWidth.Hairline,
+                color = PluginThemeColors.CardBorder,
+                shape = GlassShapes.MediumSmall,
+            )
+            .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
+        ) {
+            Text(
+                text = "Dependency resolution",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = glassColors.onGlass,
+            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+            ) {
+                Icon(
+                    painter = if (hasBlockingErrors || conflictCount > 0) {
+                        AppIcons.ClearPainterResource()
+                    } else {
+                        AppIcons.CheckPainterResource()
+                    },
+                    contentDescription = if (hasBlockingErrors || conflictCount > 0) "Blocked" else "Resolved",
+                    tint = if (hasBlockingErrors || conflictCount > 0) {
+                        glassColors.diagnostics.error
+                    } else {
+                        glassColors.diagnostics.success
+                    },
+                    modifier = Modifier.size(IconSize.Small),
+                )
+                Text(
+                    text = if (hasBlockingErrors || conflictCount > 0) {
+                        "Dependency review blocked"
+                    } else {
+                        "No blocking dependency errors"
+                    },
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = if (hasBlockingErrors || conflictCount > 0) {
+                        glassColors.diagnostics.error
+                    } else {
+                        glassColors.diagnostics.success
                     },
                 )
             }
-
-            installState?.let { state ->
-                ImportInstallStateCard(state = state)
-            }
+            Text(
+                text = "$dependencyCount declared dependencies · $conflictCount declared conflicts.",
+                style = MaterialTheme.typography.bodySmall,
+                color = glassColors.onGlassSecondary,
+            )
         }
     }
 }
 
 @Composable
-private fun UnsupportedLegacyFormatPanel(formatName: String, onDismiss: () -> Unit) {
-    GlassCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(Spacing.Medium)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = "Unsupported Legacy Format Detected ($formatName)",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = GlassTheme.colors.glassHighlight,
-                )
-                GlassChip(label = "Format Incompatible")
+private fun UnsignedAcknowledgementRow(
+    acknowledged: Boolean,
+    onAcknowledgedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val glassColors = GlassTheme.colors
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(GlassShapes.MediumSmall)
+            .background(glassColors.chromeSurface)
+            .clickable(role = Role.Checkbox) {
+                onAcknowledgedChange(!acknowledged)
             }
+            .padding(Spacing.Small),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(ComponentSize.PluginStepperNodeSize)
+                .clip(GlassShapes.ExtraSmall)
+                .background(
+                    if (acknowledged) glassColors.glassAccent else glassColors.glassSurface,
+                )
+                .glassOutlineBorder(
+                    width = StrokeWidth.Hairline,
+                    color = glassColors.glassBorder,
+                    shape = GlassShapes.ExtraSmall,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (acknowledged) {
+                Icon(
+                    painter = AppIcons.CheckPainterResource(),
+                    contentDescription = "Checked",
+                    tint = BrandColors.OnLogoBadge,
+                    modifier = Modifier.size(IconSize.Small),
+                )
+            }
+        }
 
-            Spacer(modifier = Modifier.height(Spacing.Small))
-
+        Column {
             Text(
-                text = "Legacy shell scripts (e.g. customize.sh) and foreign patch bundles cannot be " +
-                    "directly executed or imported. To prevent arbitrary code execution on host ROMs, " +
-                    "this app strictly enforces the declarative Kotlin SDK package format.",
-                style = MaterialTheme.typography.bodySmall,
-                color = GlassTheme.colors.onGlass,
-            )
-
-            Spacer(modifier = Modifier.height(Spacing.Medium))
-
-            Text(
-                text = "Conversion Checklist (Kotlin SDK Package):",
+                text = "I trust this local package",
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.SemiBold,
-                color = GlassTheme.colors.glassAccent,
+                color = glassColors.onGlass,
             )
-            Spacer(modifier = Modifier.height(Spacing.ExtraSmall))
-
-            val checklist = listOf(
-                "1. Create a Kotlin Gradle project in IntelliJ IDEA targeting ':sdk:patch-mod'.",
-                "2. Define manifest.json declaring publisher, package id, version, and sdkApiRange.",
-                "3. Replace imperative shell commands with typed mutation operations (FileOp, PropertyOp, etc.).",
-                "4. Compile DEX/Smali hook classes using the Kotlin Author SDK payload compiler.",
-                "5. Package everything into a hermetic .lti-mod.zip archive with manifest and SHA-256 content digests.",
-                "6. Verify with ':sdk:patch-mod:validateMod' and test offline before importing.",
+            Text(
+                text = "I understand the risks and want to install this package.",
+                style = MaterialTheme.typography.bodySmall,
+                color = glassColors.onGlassSecondary,
             )
-
-            checklist.forEach { item ->
-                Text(
-                    text = item,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = GlassTheme.colors.onGlassSecondary,
-                    modifier = Modifier.padding(vertical = Spacing.ExtraExtraSmall),
-                )
-            }
-
-            Spacer(modifier = Modifier.height(Spacing.Medium))
-
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                GlassButton(onClick = onDismiss, variant = GlassButtonVariant.Standard) {
-                    Text("Dismiss")
-                }
-            }
         }
     }
 }
 
 @Composable
-private fun QuarantinedInspectionCard(
-    inspection: PackageInspection,
-    quarantinedPath: String?,
-    acknowledgedUnverified: Boolean,
-    onToggleAcknowledge: () -> Unit,
-    onConfirmInstall: () -> Unit,
-) {
-    GlassCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(Spacing.Medium)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = inspection.identity?.key ?: "Unknown Package",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = GlassTheme.colors.onGlass,
-                    )
-                    quarantinedPath?.let {
-                        Text(
-                            text = "Quarantined archive: $it",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontFamily = codeFontFamily(),
-                            color = GlassTheme.colors.onGlassMuted,
-                        )
-                    }
-                }
-
-                GlassChip(label = if (inspection.hasSignature) "Cryptographically Signed" else "Unsigned")
-            }
-
-            Spacer(modifier = Modifier.height(Spacing.Small))
-
-            if (inspection.report.hasBlockingErrors()) {
-                Text(
-                    text = "Package Inspection Errors:",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = GlassTheme.colors.glassHighlight,
-                )
-                inspection.report.errors.forEach { err ->
-                    Text(
-                        text = "• ${err.fieldPath}: ${err.message}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = GlassTheme.colors.glassHighlight,
-                    )
-                }
-            } else {
-                val digestPrefix = inspection.identity?.contentDigest?.take(12)
-                Text(
-                    text = "Version: ${inspection.identity?.version} • sha256:$digestPrefix...",
-                    style = MaterialTheme.typography.bodySmall,
-                    fontFamily = codeFontFamily(),
-                    color = GlassTheme.colors.onGlass,
-                )
-
-                Spacer(modifier = Modifier.height(Spacing.Small))
-
-                if (inspection.dependencies.isNotEmpty()) {
-                    Text(
-                        text = "Dependencies: ${inspection.dependencies.joinToString { "${it.publisher}:${it.id}" }}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = GlassTheme.colors.onGlassSecondary,
-                    )
-                }
-
-                if (!inspection.hasSignature) {
-                    Spacer(modifier = Modifier.height(Spacing.Small))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        val ackText = if (acknowledgedUnverified) {
-                            "[✓] Unverified Acknowledged"
-                        } else {
-                            "[ ] Acknowledge Unverified"
-                        }
-                        GlassButton(
-                            onClick = onToggleAcknowledge,
-                            variant = if (acknowledgedUnverified) {
-                                GlassButtonVariant.Primary
-                            } else {
-                                GlassButtonVariant.Standard
-                            },
-                        ) {
-                            Text(ackText)
-                        }
-                        Text(
-                            text = "Unsigned packages require explicit acknowledgment before installation.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = GlassTheme.colors.onGlassMuted,
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(Spacing.Medium))
-
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    val canInstall = inspection.hasSignature || acknowledgedUnverified
-                    GlassButton(
-                        onClick = onConfirmInstall,
-                        enabled = canInstall,
-                        variant = GlassButtonVariant.Primary,
-                    ) {
-                        Text("Approve & Install")
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ImportInstallStateCard(state: InstallState) {
-    val message = when (state) {
-        InstallState.SourceSelected -> "Source selected..."
-        InstallState.Downloading -> "Processing package bytes..."
-        InstallState.Quarantined -> "Quarantining package..."
-        InstallState.Verified -> "Integrity verified. Promoting package to installed library..."
-        is InstallState.Installed -> "Installed ${state.record.publisher}:${state.record.id}"
-        is InstallState.Failed -> "Failed: ${state.report.errors.firstOrNull()?.message ?: "Error"}"
-        InstallState.Cancelled -> "Cancelled"
-    }
-    GlassCard(modifier = Modifier.fillMaxWidth()) {
+private fun ImportDetailRow(label: String, value: String, modifier: Modifier = Modifier) {
+    val glassColors = GlassTheme.colors
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.Top,
+    ) {
         Text(
-            text = message,
+            text = label,
             style = MaterialTheme.typography.bodySmall,
-            color = GlassTheme.colors.glassAccent,
-            modifier = Modifier.padding(Spacing.Small),
+            color = glassColors.onGlassMuted,
         )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Medium,
+            color = glassColors.onGlass,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+@Composable
+private fun UnsupportedLegacyFormatPanel(formatName: String, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
+    val glassColors = GlassTheme.colors
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(GlassShapes.Medium)
+            .background(PluginThemeColors.CardBackground)
+            .glassOutlineBorder(
+                width = StrokeWidth.Hairline,
+                color = PluginThemeColors.CardBorder,
+                shape = GlassShapes.Medium,
+            ),
+    ) {
+        Column(
+            modifier = Modifier.padding(Spacing.Medium),
+            verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+            ) {
+                Icon(
+                    painter = AppIcons.ClearPainterResource(),
+                    contentDescription = "Legacy Format Warning",
+                    tint = glassColors.diagnostics.warning,
+                    modifier = Modifier.size(IconSize.Medium),
+                )
+                Text(
+                    text = "Unsupported legacy package: $formatName",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = glassColors.onGlass,
+                )
+            }
+
+            Text(
+                text = "This archive uses a deprecated raw format. " +
+                    "To ensure reproducible builds and tamper protection, please repackage using Author Tools.",
+                style = MaterialTheme.typography.bodySmall,
+                color = glassColors.onGlassSecondary,
+            )
+
+            GlassButton(
+                onClick = onDismiss,
+                variant = GlassButtonVariant.Standard,
+            ) {
+                Text("Dismiss warning")
+            }
+        }
     }
 }

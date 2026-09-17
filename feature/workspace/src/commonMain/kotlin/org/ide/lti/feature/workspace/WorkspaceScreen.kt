@@ -150,11 +150,7 @@ fun WorkspaceScreen(
                     icon = AppIcon.Painted(AppIcons.SettingsPainterResource),
                     shortcut = "Ctrl+2",
                 ) {
-                    leftTabIndex = 1
-                    if (!ltiLayoutState.showLeft) {
-                        ltiLayoutState.toggleLeft()
-                        viewModel.togglePanelVisibility(PanelId.LEFT)
-                    }
+                    currentWorkspace?.id?.let { workspaceId -> onOpenStudio(workspaceId, null, null) }
                 },
             )
             add(
@@ -444,11 +440,7 @@ fun WorkspaceScreen(
                         selectedTarget = selectedTarget,
                         region = effectiveSnapshot?.acquisition?.region ?: TargetRegion.GLOBAL,
                         onOpenWorkspaceConfiguration = {
-                            leftTabIndex = 1
-                            if (!ltiLayoutState.showLeft) {
-                                ltiLayoutState.toggleLeft()
-                                viewModel.togglePanelVisibility(PanelId.LEFT)
-                            }
+                            currentWorkspace?.id?.let { workspaceId -> onOpenStudio(workspaceId, null, null) }
                         },
                         onOpenEditConfiguration = { onOpenEditConfiguration(selectedTarget.id) },
                         onOpenAddConfiguration = onOpenAddConfiguration,

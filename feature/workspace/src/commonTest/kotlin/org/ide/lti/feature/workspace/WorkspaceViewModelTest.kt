@@ -26,6 +26,7 @@ import kotlinx.coroutines.test.setMain
 import org.ide.lti.core.common.event.PanelEventBus
 import org.ide.lti.core.domain.panels.PanelManager
 import org.ide.lti.core.domain.repository.device.ConnectedDeviceRepository
+import org.ide.lti.core.domain.repository.snapshot.SnapshotRepository
 import org.ide.lti.core.domain.repository.target.TargetRepository
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.domain.usecase.device.ConnectWirelessDeviceUseCase
@@ -38,7 +39,6 @@ import org.ide.lti.core.domain.usecase.device.RefreshConnectedDevicesUseCase
 import org.ide.lti.core.domain.usecase.device.SelectConnectedDeviceUseCase
 import org.ide.lti.core.domain.usecase.target.AddTargetUseCase
 import org.ide.lti.core.domain.usecase.target.GetAvailableTargetsUseCase
-import org.ide.lti.core.domain.usecase.target.GetSelectedTargetUseCase
 import org.ide.lti.core.domain.usecase.target.SelectTargetUseCase
 import org.ide.lti.core.domain.workspace.WorkspaceManager
 import org.ide.lti.core.model.target.AdbDeviceState
@@ -52,6 +52,7 @@ import org.ide.lti.core.model.target.TargetFirmware
 import org.ide.lti.core.model.target.TargetRegion
 import org.ide.lti.core.model.target.TargetStatus
 import org.ide.lti.core.model.target.WirelessPairingRequest
+import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.core.model.workspace.Workspace
 import org.ide.lti.core.model.workspace.WorkspaceSession
@@ -61,6 +62,19 @@ import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class WorkspaceViewModelTest {
+
+    private class FakeSnapshotRepository : SnapshotRepository {
+        override val snapshots = MutableStateFlow<List<ConfigurationSnapshot>>(emptyList())
+
+        override fun snapshotsForWorkspace(workspaceId: String): Flow<List<ConfigurationSnapshot>> = snapshots
+
+        override suspend fun getSnapshot(id: String): ConfigurationSnapshot? =
+            snapshots.value.find { snapshot -> snapshot.id == id }
+
+        override suspend fun saveSnapshot(snapshot: ConfigurationSnapshot) {
+            snapshots.value = snapshots.value + snapshot
+        }
+    }
 
     private class FakeWorkspaceRepository : WorkspaceRepository {
         override fun getWorkspaces(): Flow<List<Workspace>> = emptyFlow()
@@ -156,8 +170,8 @@ class WorkspaceViewModelTest {
         )
 
         val fakeTargetRepo = FakeTargetRepository(listOf(target), target)
+        val snapshotRepository = FakeSnapshotRepository()
         val getAvailableTargetsUseCase = GetAvailableTargetsUseCase(fakeTargetRepo)
-        val getSelectedTargetUseCase = GetSelectedTargetUseCase(fakeTargetRepo)
         val selectTargetUseCase = SelectTargetUseCase(fakeTargetRepo)
         val addTargetUseCase = AddTargetUseCase(fakeTargetRepo)
 
@@ -175,8 +189,8 @@ class WorkspaceViewModelTest {
             workspaceManager = workspaceManager,
             panelManager = panelManager,
             getAvailableTargetsUseCase = getAvailableTargetsUseCase,
-            getSelectedTargetUseCase = getSelectedTargetUseCase,
             selectTargetUseCase = selectTargetUseCase,
+            snapshotRepository = snapshotRepository,
             addTargetUseCase = addTargetUseCase,
             getConnectedDevicesUseCase = getConnectedDevicesUseCase,
             getSelectedConnectedDeviceUseCase = getSelectedConnectedDeviceUseCase,
@@ -263,9 +277,8 @@ class WorkspaceViewModelTest {
 
             testScheduler.advanceUntilIdle()
 
-            assertEquals("PQ84P01", viewModel.selectedTarget.value.id)
-            assertEquals("PQ84P01", viewModel.selectedTarget.value.codename)
-            assertTrue(viewModel.selectedTarget.value.availableRegions.contains(TargetRegion.GLOBAL))
+            assertEquals("Unknown", viewModel.selectedTarget.value.name)
+            assertEquals("Unknown", viewModel.selectedTarget.value.codename)
         } finally {
             Dispatchers.resetMain()
         }
@@ -301,7 +314,7 @@ class WorkspaceViewModelTest {
 
             workspaceManager.setCurrentWorkspace(null)
             testScheduler.advanceUntilIdle()
-            assertEquals("PQ84P01", viewModel.selectedTarget.value.id)
+            assertEquals("Unknown", viewModel.selectedTarget.value.name)
         } finally {
             Dispatchers.resetMain()
         }
@@ -312,7 +325,7 @@ class WorkspaceViewModelTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         Dispatchers.setMain(testDispatcher)
         try {
-            val (viewModel, _, _) = createTestFixture()
+            val (viewModel, _, workspaceManager) = createTestFixture()
             val collectAvailable = backgroundScope.launch(testDispatcher) { viewModel.availableTargets.collect() }
             val collectTarget = backgroundScope.launch(testDispatcher) { viewModel.selectedTarget.collect() }
 
@@ -340,6 +353,18 @@ class WorkspaceViewModelTest {
             viewModel.onAddTarget(newDevice)
             testScheduler.advanceUntilIdle()
 
+            // Catalog selection never becomes a workspace header fallback. A saved
+            // workspace binding is required before the target is shown as active.
+            workspaceManager.setCurrentWorkspace(
+                Workspace(
+                    id = "ws-new-target",
+                    name = "New target",
+                    path = "/home/lti/LtiRomWorkDir/workspaces/new-target",
+                    targetBinding = TargetBinding("NX769J", 1),
+                ),
+            )
+            testScheduler.advanceUntilIdle()
+
             assertEquals("NX769J", viewModel.selectedTarget.value.id)
             assertEquals("REDMAGIC 9 Pro", viewModel.selectedTarget.value.name)
             assertTrue(viewModel.availableTargets.value.any { it.id == "NX769J" })
@@ -353,9 +378,19 @@ class WorkspaceViewModelTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         Dispatchers.setMain(testDispatcher)
         try {
-            val (viewModel, fakeTargetRepo, _) = createTestFixture()
+            val (viewModel, fakeTargetRepo, workspaceManager) = createTestFixture()
             val collectAvailable = backgroundScope.launch(testDispatcher) { viewModel.availableTargets.collect() }
             val collectTarget = backgroundScope.launch(testDispatcher) { viewModel.selectedTarget.collect() }
+
+            workspaceManager.setCurrentWorkspace(
+                Workspace(
+                    id = "ws-save-target",
+                    name = "Save target",
+                    path = "/home/lti/LtiRomWorkDir/workspaces/save-target",
+                    targetBinding = TargetBinding("PQ84P01", 1),
+                ),
+            )
+            testScheduler.advanceUntilIdle()
 
             val updated = viewModel.selectedTarget.value.copy(
                 name = "REDMAGIC Astra Modified",

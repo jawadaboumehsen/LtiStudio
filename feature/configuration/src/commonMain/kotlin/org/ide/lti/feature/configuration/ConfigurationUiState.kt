@@ -19,6 +19,12 @@ enum class ConfigurationTab(val title: String) {
     PARTITIONS("Partitions"),
 }
 
+enum class DirtyTargetSelectionDecision {
+    SAVE,
+    DISCARD,
+    STAY,
+}
+
 data class ConfigurationUiState(
     val availableTargets: List<TargetDevice> = emptyList(),
     val selectedTargetId: String = "",
@@ -29,6 +35,8 @@ data class ConfigurationUiState(
     val isDirty: Boolean = false,
     val validationErrors: List<TargetValidationError> = emptyList(),
     val isSyncing: Boolean = false,
+    /** Target requested while the current editor contains unsaved changes. */
+    val pendingTargetId: String? = null,
     val statusMessage: String? = null,
 ) {
     val hasValidationErrors: Boolean

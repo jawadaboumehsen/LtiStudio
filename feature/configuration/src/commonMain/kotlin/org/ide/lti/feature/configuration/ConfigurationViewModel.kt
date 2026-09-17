@@ -139,13 +139,39 @@ class ConfigurationViewModel(
 
     fun onSelectTarget(targetId: String) {
         val target = _uiState.value.availableTargets.find { it.id == targetId } ?: return
+        val current = _uiState.value
+        if (current.isSyncing) return
+        if (current.isDirty && targetId != current.selectedTargetId) {
+            _uiState.update { it.copy(pendingTargetId = targetId, statusMessage = null) }
+            return
+        }
+        selectTargetImmediately(target)
+    }
+
+    /** Resolves a dirty target switch explicitly; no edit is silently discarded. */
+    fun resolvePendingTargetSelection(decision: DirtyTargetSelectionDecision) {
+        val targetId = _uiState.value.pendingTargetId ?: return
+        when (decision) {
+            DirtyTargetSelectionDecision.STAY -> _uiState.update { it.copy(pendingTargetId = null) }
+            DirtyTargetSelectionDecision.DISCARD -> {
+                onRevertChanges()
+                _uiState.value.availableTargets.find { it.id == targetId }?.let(::selectTargetImmediately)
+            }
+            DirtyTargetSelectionDecision.SAVE -> onApplyChanges {
+                _uiState.value.availableTargets.find { it.id == targetId }?.let(::selectTargetImmediately)
+            }
+        }
+    }
+
+    private fun selectTargetImmediately(target: TargetDevice) {
         _uiState.update {
             it.copy(
-                selectedTargetId = targetId,
+                selectedTargetId = target.id,
                 editingTarget = target,
                 originalTarget = target,
                 isDirty = false,
                 validationErrors = emptyList(),
+                pendingTargetId = null,
                 statusMessage = null,
             )
         }
@@ -220,6 +246,9 @@ class ConfigurationViewModel(
     }
 
     fun onApplyChanges(onSuccess: (() -> Unit)? = null) {
+        // Apply is an atomic user operation. A second click while the first save is
+        // outstanding must not mint a second revision or race its completion.
+        if (_uiState.value.isSyncing) return
         val target = _uiState.value.editingTarget
         val errors = validateTargetConfigurationUseCase(target)
         if (errors.isNotEmpty()) {
@@ -228,18 +257,35 @@ class ConfigurationViewModel(
         }
 
         viewModelScope.launch {
-            _uiState.update { it.copy(isSyncing = true) }
-            val isNew = _uiState.value.originalTarget == null
+            // Catalog collection can update the baseline while a duplicate draft is
+            // active. Membership, rather than that mutable baseline, defines whether
+            // this identity needs an insert or a revisioned update.
+            val isNew = _uiState.value.availableTargets.none { candidate ->
+                candidate.id == target.id
+            }
+            val targetId = target.id
+            _uiState.update { it.copy(isSyncing = true, statusMessage = null) }
             val toSave = if (isNew) target else target.copy(revision = target.revision + 1)
             val result = saveTargetConfigurationUseCase(
                 target = toSave,
                 isNew = isNew,
             )
-
-            _uiState.update { it.copy(isSyncing = false) }
+            _uiState.update { state ->
+                if (state.editingTarget.id == targetId) state.copy(isSyncing = false) else state
+            }
 
             if (result.isSuccess) {
                 _uiState.update {
+                    // Do not let an older target's completion replace a newer editor.
+                    if (it.editingTarget.id != targetId) return@update it.copy(isSyncing = false)
+                    if (it.editingTarget != target) {
+                        return@update it.copy(
+                            originalTarget = toSave,
+                            isDirty = true,
+                            isSyncing = false,
+                            statusMessage = "Saved an earlier revision; newer local changes are still unsaved",
+                        )
+                    }
                     it.copy(
                         originalTarget = toSave,
                         editingTarget = toSave,
@@ -252,7 +298,11 @@ class ConfigurationViewModel(
                 onSuccess?.invoke()
             } else {
                 _uiState.update {
-                    it.copy(statusMessage = "Error saving configuration: ${result.exceptionOrNull()?.message}")
+                    if (it.editingTarget.id != targetId) return@update it.copy(isSyncing = false)
+                    it.copy(
+                        isSyncing = false,
+                        statusMessage = "Error saving configuration: ${result.exceptionOrNull()?.message}",
+                    )
                 }
             }
         }

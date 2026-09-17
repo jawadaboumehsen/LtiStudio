@@ -38,8 +38,10 @@ import androidx.compose.ui.draw.clip
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
+import org.ide.lti.core.designsystem.component.actions.GlassTextButton
 import org.ide.lti.core.designsystem.component.display.GlassHorizontalDivider
 import org.ide.lti.core.designsystem.component.display.GlassVerticalDivider
+import org.ide.lti.core.designsystem.component.feedback.GlassDialog
 import org.ide.lti.core.designsystem.component.layout.GlassTopBar
 import org.ide.lti.core.designsystem.component.layout.TopBarNavigation
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
@@ -73,6 +75,33 @@ fun ConfigurationScreen(
 
     val state by viewModel.uiState.collectAsState()
     val glassColors = GlassTheme.colors
+
+    state.pendingTargetId?.let { pendingTargetId ->
+        GlassDialog(
+            onDismissRequest = {
+                viewModel.resolvePendingTargetSelection(DirtyTargetSelectionDecision.STAY)
+            },
+            title = "Unsaved target changes",
+            content = {
+                Text("Save, discard, or stay before opening $pendingTargetId.")
+            },
+            confirmButton = {
+                GlassTextButton(onClick = {
+                    viewModel.resolvePendingTargetSelection(DirtyTargetSelectionDecision.SAVE)
+                }) { Text("Save") }
+            },
+            dismissButton = {
+                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
+                    GlassTextButton(onClick = {
+                        viewModel.resolvePendingTargetSelection(DirtyTargetSelectionDecision.DISCARD)
+                    }) { Text("Discard") }
+                    GlassTextButton(onClick = {
+                        viewModel.resolvePendingTargetSelection(DirtyTargetSelectionDecision.STAY)
+                    }) { Text("Stay") }
+                }
+            },
+        )
+    }
 
     Column(
         modifier = modifier
@@ -215,7 +244,7 @@ fun ConfigurationScreen(
 
                     GlassPrimaryButton(
                         onClick = { viewModel.onApplyChanges(onSuccess = onBackClick) },
-                        enabled = state.validationErrors.isEmpty(),
+                        enabled = state.validationErrors.isEmpty() && !state.isSyncing,
                     ) {
                         Text(if (state.isSyncing) "Syncing..." else "Apply & Close")
                     }
