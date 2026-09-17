@@ -107,4 +107,10 @@ data class ThemeConfiguration(
     val backdropConfig: BackdropConfiguration,
     val panelConfig: PanelConfiguration,
     val brandingConfig: BrandingConfiguration,
+    val ideShellColorScheme: org.ide.lti.core.designsystem.theme.IdeShellColorScheme =
+        if (isDark) {
+            org.ide.lti.core.designsystem.theme.IdeShellTokens.Dark
+        } else {
+            org.ide.lti.core.designsystem.theme.IdeShellTokens.Light
+        },
 )

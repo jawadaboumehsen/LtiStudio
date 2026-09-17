@@ -141,6 +141,11 @@ object GlassTheme {
         @ReadOnlyComposable
         get() = LocalGlassColors.current
 
+    val ideShellColors: IdeShellColorScheme
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalThemeConfiguration.current.ideShellColorScheme
+
     val effectsEnabled: Boolean
         @Composable
         @ReadOnlyComposable

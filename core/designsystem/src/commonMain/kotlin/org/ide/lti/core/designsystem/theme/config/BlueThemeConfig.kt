@@ -89,5 +89,6 @@ val BlueThemeConfig: ThemeConfiguration by lazy {
             ),
             logoGradientEnd = BrandColors.LogoGradientEnd,
         ),
+        ideShellColorScheme = org.ide.lti.core.designsystem.theme.IdeShellTokens.Blue,
     )
 }

@@ -12,13 +12,15 @@ package org.ide.lti.shared
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import org.ide.lti.core.data.settings.AppSettingsState
 import org.ide.lti.core.designsystem.component.layout.GlassBackdrop
-import org.ide.lti.core.designsystem.theme.config.AppTheme
 import org.ide.lti.core.designsystem.theme.LtiTheme
+import org.ide.lti.core.designsystem.theme.config.AppTheme
+import org.ide.lti.feature.settings.navigateToSettings
 import org.ide.lti.feature.setup.SETUP_ROUTE
 import org.ide.lti.feature.workspace.WORKSPACE_ROUTE
 import org.ide.lti.shared.navigation.RootNavGraph
@@ -27,11 +29,11 @@ import org.koin.compose.koinInject
 @Composable
 fun LtiSharedApp(
     modifier: Modifier = Modifier,
-    onOpenSettings: () -> Unit = {},
+    openSettingsRequest: Long = 0,
     appSettingsState: AppSettingsState = koinInject(),
 ) {
     SharedApp(
-        onOpenSettings = onOpenSettings,
+        openSettingsRequest = openSettingsRequest,
         appSettingsState = appSettingsState,
         modifier = modifier,
     )
@@ -39,12 +41,18 @@ fun LtiSharedApp(
 
 @Composable
 private fun SharedApp(
-    onOpenSettings: () -> Unit,
+    openSettingsRequest: Long,
     appSettingsState: AppSettingsState,
     modifier: Modifier = Modifier,
 ) {
     val navController = rememberNavController()
     val backdrop = rememberLayerBackdrop()
+
+    LaunchedEffect(openSettingsRequest) {
+        if (openSettingsRequest > 0) {
+            navController.navigateToSettings()
+        }
+    }
 
     LtiTheme(
         appTheme = AppTheme.fromId(appSettingsState.theme),
@@ -58,7 +66,6 @@ private fun SharedApp(
             RootNavGraph(
                 navHostController = navController,
                 startDestination = SETUP_ROUTE,
-                onOpenSettings = onOpenSettings,
                 modifier = Modifier.fillMaxSize(),
             )
         }

@@ -1,0 +1,69 @@
+package org.ide.lti.core.designsystem.component.layout
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassFontFamily
+import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
+import org.ide.lti.core.designsystem.theme.IdeShellDimens
+import org.ide.lti.core.designsystem.theme.Spacing
+
+/**
+ * Breadcrumb bar matching the 32 dp Stitch design specification.
+ */
+@Composable
+fun IdeBreadcrumbBar(
+    segments: List<String>,
+    modifier: Modifier = Modifier,
+    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
+    onSegmentClick: ((Int) -> Unit)? = null,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(IdeShellDimens.BreadcrumbHeight)
+            .background(colors.contentBackground)
+            .padding(horizontal = Spacing.Medium),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+    ) {
+        segments.forEachIndexed { index, segment ->
+            val isLast = index == segments.size - 1
+            val textColor = if (isLast) colors.textMain else colors.textDim
+            val fontWeight = if (isLast) FontWeight.Medium else FontWeight.Normal
+
+            Text(
+                text = segment,
+                color = textColor,
+                fontSize = FontSize.BodySmall,
+                fontWeight = fontWeight,
+                fontFamily = GlassFontFamily.ide(),
+                modifier = if (onSegmentClick != null && !isLast) {
+                    Modifier.clickable { onSegmentClick(index) }
+                } else {
+                    Modifier
+                },
+            )
+
+            if (!isLast) {
+                Text(
+                    text = "/",
+                    color = colors.textDim,
+                    fontSize = FontSize.BodySmall,
+                    fontFamily = GlassFontFamily.ide(),
+                )
+            }
+        }
+    }
+}

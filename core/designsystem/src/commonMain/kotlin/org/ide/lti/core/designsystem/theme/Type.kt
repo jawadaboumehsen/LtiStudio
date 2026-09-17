@@ -17,6 +17,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.sp
 import org.ide.lti.core.designsystem.generated.resources.Res
+import org.ide.lti.core.designsystem.generated.resources.inter_bold
+import org.ide.lti.core.designsystem.generated.resources.inter_medium
+import org.ide.lti.core.designsystem.generated.resources.inter_regular
+import org.ide.lti.core.designsystem.generated.resources.inter_semi_bold
 import org.ide.lti.core.designsystem.generated.resources.jetbrains_mono_bold
 import org.ide.lti.core.designsystem.generated.resources.jetbrains_mono_medium
 import org.ide.lti.core.designsystem.generated.resources.jetbrains_mono_regular
@@ -30,6 +34,14 @@ import org.ide.lti.core.designsystem.generated.resources.outfit_regular
 import org.ide.lti.core.designsystem.generated.resources.outfit_semi_bold
 import org.ide.lti.core.designsystem.generated.resources.outfit_thin
 import org.jetbrains.compose.resources.Font
+
+@Composable
+fun ideFontFamily(): FontFamily = FontFamily(
+    Font(Res.font.inter_regular, FontWeight.Normal),
+    Font(Res.font.inter_medium, FontWeight.Medium),
+    Font(Res.font.inter_semi_bold, FontWeight.SemiBold),
+    Font(Res.font.inter_bold, FontWeight.Bold),
+)
 
 @Composable
 private fun fontFamily(): FontFamily {
@@ -211,6 +223,7 @@ object FontSize {
     val Micro = 10.sp
     val MicroAlt = 10.5.sp
     val CodeCompact = 11.sp
+    val CodeMedium = 13.sp
     val Chip = 11.5.sp
     val Code = 14.sp
 }
@@ -247,6 +260,7 @@ object LetterSpacing {
     val Normal = 0.25.sp
     val Loose = 0.4.sp
     val Wide = 0.5.sp
+    val TrackingHeader = 1.sp
     val CodeWide = 1.2.sp
     val Widest = 1.2.sp
 }
@@ -262,5 +276,9 @@ object GlassFontFamily {
     /** High-legibility monospaced font family for code, terminals, and hex (JetBrains Mono). */
     @Composable
     fun code(): FontFamily = codeFontFamily()
+
+    /** Professional matte IDE desktop UI font family (Inter). */
+    @Composable
+    fun ide(): FontFamily = ideFontFamily()
 }
 

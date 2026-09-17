@@ -92,3 +92,13 @@ fun <T> resolveAnimationSpec(
     reducedMotion: Boolean,
     durationMillis: Int = MotionDuration.Fast,
 ): AnimationSpec<T> = if (reducedMotion) snap() else tween(durationMillis)
+
+/**
+ * IDE shell micro-interaction and transition motion tokens.
+ */
+@Suppress("PropertyName")
+object IdeShellMotion {
+    const val StateTransitionDuration: Int = 100
+    const val DrawerTransitionDuration: Int = 200
+    val Easing = MotionEasing.Standard
+}

@@ -25,20 +25,28 @@ fun NavController.navigateToNotification(navOptions: NavOptions? = null) =
 
 fun NavGraphBuilder.settingsScreen(
     onBackClick: () -> Unit,
+    onNavigateToSetup: () -> Unit,
+    onNavigateToWorkspace: () -> Unit,
 ) {
     composableWithPushTransitions(route = SETTINGS_ROUTE) {
         SettingsScreen(
             onBackClick = onBackClick,
+            onNavigateToSetup = onNavigateToSetup,
+            onNavigateToWorkspace = onNavigateToWorkspace,
         )
     }
 }
 
 fun NavGraphBuilder.notificationScreen(
     onBackClick: () -> Unit,
+    onNavigateToSetup: () -> Unit,
+    onNavigateToWorkspace: () -> Unit,
 ) {
     composableWithPushTransitions(route = NOTIFICATION_ROUTE) {
         NotificationScreen(
             onBackClick = onBackClick,
+            onNavigateToSetup = onNavigateToSetup,
+            onNavigateToWorkspace = onNavigateToWorkspace,
         )
     }
 }

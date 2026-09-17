@@ -37,18 +37,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
-import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.catalog.tabs.ButtonsTab
 import org.ide.lti.catalog.tabs.CoreUiTab
 import org.ide.lti.catalog.tabs.DiagnosticsTab
+import org.ide.lti.catalog.tabs.IdeShellCatalogTab
 import org.ide.lti.catalog.tabs.InputsTab
 import org.ide.lti.catalog.tabs.LayoutTab
 import org.ide.lti.catalog.tabs.ModalsTab
 import org.ide.lti.catalog.tabs.NavigationTab
 import org.ide.lti.catalog.tabs.SurfacesTab
 import org.ide.lti.catalog.tabs.TokensTab
-import org.ide.lti.core.designsystem.component.layout.GlassBackdrop
 import org.ide.lti.core.designsystem.component.actions.GlassIconToggleButton
+import org.ide.lti.core.designsystem.component.display.GlassChip
+import org.ide.lti.core.designsystem.component.layout.GlassBackdrop
 import org.ide.lti.core.designsystem.component.layout.GlassTopBar
 import org.ide.lti.core.designsystem.component.layout.TopBarNavigation
 import org.ide.lti.core.designsystem.icon.AppIcons
@@ -72,6 +73,7 @@ enum class CatalogCategory(val title: String) {
     Layout("Workspace Layout"),
     CoreUi("Core UI Widgets"),
     Diagnostics("Diagnostics & Progress"),
+    IdeShell("IDE Shell Frame"),
 }
 
 @Composable
@@ -131,6 +133,7 @@ fun CatalogApp() {
                         CatalogCategory.Layout -> LayoutTab()
                         CatalogCategory.CoreUi -> CoreUiTab()
                         CatalogCategory.Diagnostics -> DiagnosticsTab()
+                        CatalogCategory.IdeShell -> IdeShellCatalogTab()
                     }
                 }
             }

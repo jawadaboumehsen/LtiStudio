@@ -15,14 +15,15 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.ide.lti.core.common.event.PanelId
 import org.ide.lti.core.domain.panels.PanelManager
+import org.ide.lti.core.domain.repository.snapshot.SnapshotRepository
 import org.ide.lti.core.domain.usecase.device.ConnectWirelessDeviceUseCase
 import org.ide.lti.core.domain.usecase.device.DisconnectDeviceUseCase
 import org.ide.lti.core.domain.usecase.device.GetConnectedDevicesUseCase
@@ -33,7 +34,6 @@ import org.ide.lti.core.domain.usecase.device.RefreshConnectedDevicesUseCase
 import org.ide.lti.core.domain.usecase.device.SelectConnectedDeviceUseCase
 import org.ide.lti.core.domain.usecase.target.AddTargetUseCase
 import org.ide.lti.core.domain.usecase.target.GetAvailableTargetsUseCase
-import org.ide.lti.core.domain.repository.snapshot.SnapshotRepository
 import org.ide.lti.core.domain.usecase.target.SelectTargetUseCase
 import org.ide.lti.core.domain.workspace.WorkspaceManager
 import org.ide.lti.core.model.panels.PanelState
@@ -80,7 +80,6 @@ class WorkspaceViewModel(
             codename = "Unknown",
             filesystemType = "unknown",
         )
-
     }
 
     val currentWorkspace: StateFlow<Workspace?> = workspaceManager.currentWorkspace

@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.workspace.studio
 
+import androidx.compose.runtime.Immutable
 import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.studio.StudioPresentation
 
@@ -140,3 +141,119 @@ public fun StudioPresentation.withNavigatorWidth(width: Int): StudioPresentation
         StudioPresentation.MAX_NAVIGATOR_WIDTH,
     ),
 )
+
+@Immutable
+public sealed interface DisplayValue {
+    public data class Available(val text: String) : DisplayValue
+    public data class Unavailable(val reason: String) : DisplayValue
+}
+
+public enum class GlobalDestination {
+    Setup,
+    Workspace,
+    Settings,
+    PluginManager,
+}
+
+public enum class WorkspaceSection {
+    Overview,
+    RomConfig,
+    RunHistory,
+    Artifacts,
+    TargetProfile,
+}
+
+@Immutable
+public sealed interface OperationUiState {
+    public data object Idle : OperationUiState
+
+    public data class Running(val generation: Long, val startedFromRevision: Long) : OperationUiState
+
+    public data class Succeeded(val generation: Long, val completedRevision: Long, val message: String? = null) :
+        OperationUiState
+
+    public data class Failed(val generation: Long, val startedFromRevision: Long, val userMessage: String) :
+        OperationUiState
+}
+
+@Immutable
+public sealed interface ConnectionUiState {
+    public data object Connecting : ConnectionUiState
+    public data class Connected(val target: String) : ConnectionUiState
+    public data class Disconnected(val reason: String? = null) : ConnectionUiState
+}
+
+@Immutable
+public sealed interface ActivityUiState {
+    public data object Idle : ActivityUiState
+    public data class Active(val description: String, val progress: Float? = null) : ActivityUiState
+}
+
+@Immutable
+public data class TargetContextUi(
+    val targetId: DisplayValue,
+    val profile: DisplayValue,
+    val revision: DisplayValue,
+    val draftBadge: String? = null,
+)
+
+@Immutable
+public data class PipelineRailItemUi(
+    val stageId: StageId,
+    val position: Int,
+    val label: String,
+    val iconKey: String,
+    val isSelected: Boolean = false,
+    val isEnabled: Boolean = true,
+    val disabledReason: String? = null,
+    val hasError: Boolean = false,
+    val accessibleDescription: String = label,
+)
+
+@Immutable
+public data class IdeStatusUiState(
+    val problemCount: Int = 0,
+    val activity: ActivityUiState = ActivityUiState.Idle,
+    val connection: ConnectionUiState = ConnectionUiState.Disconnected(),
+)
+
+@Immutable
+public data class WorkspaceShellUiState(
+    val globalDestination: GlobalDestination = GlobalDestination.Workspace,
+    val targetContext: TargetContextUi? = null,
+    val hasUnsavedChanges: Boolean = false,
+    val validateOperation: OperationUiState = OperationUiState.Idle,
+    val saveOperation: OperationUiState = OperationUiState.Idle,
+    val connection: ConnectionUiState = ConnectionUiState.Disconnected(),
+    val problemCount: Int = 0,
+    val activity: ActivityUiState = ActivityUiState.Idle,
+    val pipelineItems: List<PipelineRailItemUi> = createDefaultPipelineRailItems(),
+    val selectedWorkspaceSection: WorkspaceSection? = WorkspaceSection.Overview,
+) {
+    init {
+        require(problemCount >= 0) { "problemCount must be non-negative: $problemCount" }
+        require(pipelineItems.size == 8) {
+            "pipelineItems must contain exactly 8 items, found ${pipelineItems.size}"
+        }
+        if (globalDestination != GlobalDestination.Workspace) {
+            require(selectedWorkspaceSection == null) {
+                "selectedWorkspaceSection must be null when globalDestination is $globalDestination"
+            }
+        }
+    }
+}
+
+public fun createDefaultPipelineRailItems(selectedStageId: StageId? = null): List<PipelineRailItemUi> =
+    StudioDestinationCatalog.stages.map { stage ->
+        PipelineRailItemUi(
+            stageId = stage.stageId,
+            position = stage.position,
+            label = stage.title,
+            iconKey = stage.title.lowercase(),
+            isSelected = stage.stageId == selectedStageId,
+            isEnabled = true,
+            disabledReason = null,
+            hasError = false,
+            accessibleDescription = stage.accessibleLabel,
+        )
+    }

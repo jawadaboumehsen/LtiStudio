@@ -62,8 +62,8 @@ import org.ide.lti.core.designsystem.component.feedback.GlassBanner
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerAction
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.component.feedback.GlassBottomSheetScaffold
-import org.ide.lti.core.designsystem.component.layout.GlassTopBar
-import org.ide.lti.core.designsystem.component.layout.TopBarNavigation
+import org.ide.lti.core.designsystem.component.layout.GlobalAppDestination
+import org.ide.lti.core.designsystem.component.layout.GlobalAppTopBar
 import org.ide.lti.core.designsystem.component.primitives.GlassSurface
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
@@ -350,21 +350,16 @@ fun SetupScreenContent(
         val gutter = if (isCompact) SetupTokens.GutterCompact else SetupTokens.GutterWide
 
         Column(modifier = Modifier.fillMaxSize()) {
-            // Standard Unified Liquid Glass Top Bar
-            GlassTopBar(
-                navigation = TopBarNavigation.Brand(
-                    title = "LtiRom",
-                    workspaceName = "Setup",
-                ),
-                centerContent = {
-                    SetupReferenceTopNavigation(
-                        onSelectSetup = { onTabChange(SetupTab.LAUNCHPAD) },
-                        onOpenWorkspace = actions.onOpenFolder,
-                        onOpenSettings = actions.onOpenSettings,
-                    )
+            GlobalAppTopBar(
+                selectedDestination = GlobalAppDestination.Setup,
+                onSelectDestination = { destination ->
+                    when (destination) {
+                        GlobalAppDestination.Setup -> onTabChange(SetupTab.LAUNCHPAD)
+                        GlobalAppDestination.Workspace -> actions.onOpenFolder()
+                        GlobalAppDestination.Settings -> actions.onOpenSettings()
+                    }
                 },
-                search = null,
-                panelToggles = null,
+                contextLabel = "Setup",
                 actions = {
                     GlassIconButton(onClick = actions.onOpenManageTargets) {
                         Icon(
@@ -377,13 +372,6 @@ fun SetupScreenContent(
                         Icon(
                             painter = AppIcons.SparklesPainterResource(),
                             contentDescription = "Environment & Doctor",
-                            modifier = Modifier.size(IconSize.Small),
-                        )
-                    }
-                    GlassIconButton(onClick = actions.onOpenSettings) {
-                        Icon(
-                            painter = AppIcons.SettingsPainterResource(),
-                            contentDescription = "Settings",
                             modifier = Modifier.size(IconSize.Small),
                         )
                     }
@@ -402,9 +390,7 @@ fun SetupScreenContent(
                         )
                     }
                 },
-                windowControls = windowControls ?: LocalWindowControlActions.current,
-                backdrop = resolvedBackdrop,
-                drawOwnChrome = true,
+                windowControlActions = windowControls ?: LocalWindowControlActions.current,
             )
 
             if (state.environmentNotice != null) {
@@ -569,20 +555,6 @@ fun SetupScreenContent(
             plan = activeOperationForPreview.plan,
             contextualError = activeOperationForPreview.failure,
         )
-    }
-}
-
-@Composable
-private fun SetupReferenceTopNavigation(
-    onSelectSetup: () -> Unit,
-    onOpenWorkspace: () -> Unit,
-    onOpenSettings: () -> Unit,
-) {
-    val colors = GlassTheme.colors
-    Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(Spacing.Medium)) {
-        Text("Setup", color = colors.glassAccent, modifier = Modifier.clickable(onClick = onSelectSetup))
-        Text("Workspace", color = colors.onGlassSecondary, modifier = Modifier.clickable(onClick = onOpenWorkspace))
-        Text("Settings", color = colors.onGlassSecondary, modifier = Modifier.clickable(onClick = onOpenSettings))
     }
 }
 

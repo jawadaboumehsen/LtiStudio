@@ -104,3 +104,15 @@ object GlassShapes {
     fun asAnimated(shape: ContinuousRoundedRectangle): ContinuousRoundedRectangle =
         shape.copy(continuity = ContinuityG1)
 }
+
+/**
+ * IDE shell surface and control shapes defined by Feature 005.
+ */
+@Immutable
+object IdeShellShapes {
+    val Frame = RectangleShape
+    val Panel = RectangleShape
+    val Card = androidx.compose.foundation.shape.RoundedCornerShape(IdeShellDimens.CardCornerRadius)
+    val Control = androidx.compose.foundation.shape.RoundedCornerShape(IdeShellDimens.ControlCornerRadius)
+    val Badge = androidx.compose.foundation.shape.RoundedCornerShape(IdeShellDimens.BadgeCornerRadius)
+}

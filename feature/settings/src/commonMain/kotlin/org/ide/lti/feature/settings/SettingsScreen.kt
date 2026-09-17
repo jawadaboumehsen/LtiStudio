@@ -47,8 +47,8 @@ import org.ide.lti.core.designsystem.component.display.GlassToggleTile
 import org.ide.lti.core.designsystem.component.display.GlassValueTile
 import org.ide.lti.core.designsystem.component.display.GlassVerticalDivider
 import org.ide.lti.core.designsystem.component.display.ThemePreviewCard
-import org.ide.lti.core.designsystem.component.layout.GlassTopBar
-import org.ide.lti.core.designsystem.component.layout.TopBarNavigation
+import org.ide.lti.core.designsystem.component.layout.GlobalAppDestination
+import org.ide.lti.core.designsystem.component.layout.GlobalAppTopBar
 import org.ide.lti.core.designsystem.component.navigation.GlassSidebarItem
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
@@ -65,6 +65,8 @@ import org.koin.compose.koinInject
 @Composable
 fun SettingsScreen(
     onBackClick: () -> Unit,
+    onNavigateToSetup: () -> Unit = onBackClick,
+    onNavigateToWorkspace: () -> Unit = onBackClick,
     modifier: Modifier = Modifier,
     showHeader: Boolean = true,
     backdrop: Backdrop? = null,
@@ -73,6 +75,8 @@ fun SettingsScreen(
     SettingsScreenContent(
         modifier = modifier.fillMaxSize(),
         onBackClick = onBackClick,
+        onNavigateToSetup = onNavigateToSetup,
+        onNavigateToWorkspace = onNavigateToWorkspace,
         showHeader = showHeader,
         backdrop = backdrop,
         appSettingsState = appSettingsState,
@@ -82,6 +86,8 @@ fun SettingsScreen(
 @Composable
 fun SettingsScreenContent(
     onBackClick: () -> Unit,
+    onNavigateToSetup: () -> Unit = onBackClick,
+    onNavigateToWorkspace: () -> Unit = onBackClick,
     modifier: Modifier = Modifier,
     showHeader: Boolean = true,
     backdrop: Backdrop? = null,
@@ -102,14 +108,16 @@ fun SettingsScreenContent(
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             if (showHeader) {
-                GlassTopBar(
-                    navigation = TopBarNavigation.Back(
-                        onClick = onBackClick,
-                    ),
-                    search = null,
-                    panelToggles = null,
-                    backdrop = resolvedBackdrop,
-                    drawOwnChrome = true,
+                GlobalAppTopBar(
+                    selectedDestination = GlobalAppDestination.Settings,
+                    onSelectDestination = { destination ->
+                        when (destination) {
+                            GlobalAppDestination.Setup -> onNavigateToSetup()
+                            GlobalAppDestination.Workspace -> onNavigateToWorkspace()
+                            GlobalAppDestination.Settings -> Unit
+                        }
+                    },
+                    contextLabel = "Preferences",
                 )
             }
 

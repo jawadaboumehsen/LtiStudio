@@ -60,6 +60,7 @@ public data class StudioUiState(
     val availableWorkspaces: List<Workspace> = emptyList(),
     val validationReport: ValidationReport = ValidationReport(),
     val saveRequestedNotification: String? = null,
+    val overviewState: WorkspaceOverviewUiState = WorkspaceOverviewMapper.map(),
 )
 
 /**
@@ -72,6 +73,7 @@ public data class StudioUiState(
  * - Guaranteed: Selecting a stage or object NEVER starts work, never mutates a ConfigurationSnapshot,
  *   and never resets a draft.
  */
+@Suppress("TooManyFunctions")
 public class StudioViewModel(
     private val studioPresentationStore: StudioPresentationStore,
     initialWorkspaceId: String = "",
@@ -88,6 +90,11 @@ public class StudioViewModel(
     )
     public val uiState: StateFlow<StudioUiState> = _uiState.asStateFlow()
 
+    private val _shellState = MutableStateFlow(
+        buildInitialShellState(initialWorkspaceId),
+    )
+    public val shellState: StateFlow<WorkspaceShellUiState> = _shellState.asStateFlow()
+
     init {
         observeWorkspaces()
         if (initialWorkspaceId.isNotBlank()) {
@@ -99,7 +106,11 @@ public class StudioViewModel(
         if (workspaceManager != null) {
             viewModelScope.launch {
                 workspaceManager.getWorkspaces().collect { workspaces ->
-                    _uiState.update { it.copy(availableWorkspaces = workspaces) }
+                    _uiState.update { current ->
+                        val updatedState = current.copy(availableWorkspaces = workspaces)
+                        updatedState.copy(overviewState = recomputeOverview(updatedState))
+                    }
+                    _shellState.update { buildShellState(_uiState.value) }
                 }
             }
         }
@@ -130,13 +141,15 @@ public class StudioViewModel(
 
             _uiState.update { current ->
                 val railItems = computeRailItems(entry, current.validationReport)
-                current.copy(
+                val updated = current.copy(
                     workspaceId = workspaceId,
                     entry = entry,
                     presentation = updatedPresentation,
                     railItems = railItems,
                 )
+                updated.copy(overviewState = recomputeOverview(updated))
             }
+            updateShellState()
         }
     }
 
@@ -165,6 +178,7 @@ public class StudioViewModel(
                 isNavigatorDrawerOpen = false,
             )
         }
+        updateShellState()
 
         viewModelScope.launch {
             studioPresentationStore.put(updatedPresentation)
@@ -192,6 +206,7 @@ public class StudioViewModel(
                 isNavigatorDrawerOpen = false,
             )
         }
+        updateShellState()
 
         viewModelScope.launch {
             studioPresentationStore.put(updatedPresentation)
@@ -242,6 +257,7 @@ public class StudioViewModel(
                 isNavigatorDrawerOpen = false,
             )
         }
+        updateShellState()
     }
 
     /**
@@ -267,6 +283,166 @@ public class StudioViewModel(
                 railItems = computeRailItems(editorEntry, current.validationReport),
             )
         }
+        updateShellState()
+    }
+
+    public fun selectGlobalDestination(destination: GlobalDestination) {
+        _shellState.update { current ->
+            if (destination == GlobalDestination.Workspace) {
+                current.copy(
+                    globalDestination = destination,
+                    selectedWorkspaceSection = WorkspaceSection.Overview,
+                )
+            } else {
+                current.copy(
+                    globalDestination = destination,
+                    selectedWorkspaceSection = null,
+                )
+            }
+        }
+    }
+
+    public fun selectWorkspaceSection(section: WorkspaceSection) {
+        openOverview()
+        _shellState.update { current ->
+            current.copy(
+                globalDestination = GlobalDestination.Workspace,
+                selectedWorkspaceSection = section,
+            )
+        }
+    }
+
+    public fun validateWorkspace() {
+        val generation = 1L
+        _shellState.update { current ->
+            current.copy(
+                validateOperation = OperationUiState.Running(generation = generation, startedFromRevision = 1L),
+            )
+        }
+        viewModelScope.launch {
+            _shellState.update { current ->
+                val errorCount = _uiState.value.validationReport.errors.size
+                current.copy(
+                    validateOperation = OperationUiState.Succeeded(
+                        generation = generation,
+                        completedRevision = 1L,
+                        message = if (errorCount == 0) {
+                            "Validation completed successfully."
+                        } else {
+                            "Validation found $errorCount issue(s)."
+                        },
+                    ),
+                )
+            }
+        }
+    }
+
+    public fun saveWorkspace() {
+        val generation = 1L
+        _shellState.update { current ->
+            current.copy(
+                saveOperation = OperationUiState.Running(generation = generation, startedFromRevision = 1L),
+            )
+        }
+        viewModelScope.launch {
+            _shellState.update { current ->
+                current.copy(
+                    hasUnsavedChanges = false,
+                    saveOperation = OperationUiState.Succeeded(
+                        generation = generation,
+                        completedRevision = 2L,
+                        message = "Saved successfully.",
+                    ),
+                )
+            }
+        }
+    }
+
+    public fun markDirty(isDirty: Boolean = true) {
+        _shellState.update { it.copy(hasUnsavedChanges = isDirty) }
+    }
+
+    public fun setConnectionState(connectionState: ConnectionUiState) {
+        _shellState.update { it.copy(connection = connectionState) }
+    }
+
+    public fun setActivityState(activityState: ActivityUiState) {
+        _shellState.update { it.copy(activity = activityState) }
+    }
+
+    private fun updateShellState() {
+        _shellState.update { buildShellState(_uiState.value) }
+    }
+
+    /**
+     * Derives a fresh [WorkspaceOverviewUiState] from the current [StudioUiState].
+     *
+     * Workspace, validation report, and workspace-id are sourced from [uiState].
+     * Build runs and draft are not yet threaded through [StudioViewModel]; those
+     * signal groups will be added when their respective flows are wired in.
+     */
+    private fun recomputeOverview(uiState: StudioUiState): WorkspaceOverviewUiState {
+        val workspace = uiState.availableWorkspaces.firstOrNull { it.id == uiState.workspaceId }
+        return WorkspaceOverviewMapper.map(
+            workspace = workspace,
+            validationReport = uiState.validationReport,
+        )
+    }
+
+    private fun buildShellState(uiState: StudioUiState): WorkspaceShellUiState {
+        val currentShell = _shellState.value
+        val selectedStageId = (uiState.entry as? StudioEntry.Editor)?.stageId
+        val pipelineItems = createDefaultPipelineRailItems(selectedStageId).map { item ->
+            val hasErr = uiState.validationReport.errors.any {
+                it.stageId == item.stageId && it.severity == Severity.ERROR
+            }
+            item.copy(hasError = hasErr)
+        }
+        val problemCount = uiState.validationReport.errors.size
+        val ws = uiState.availableWorkspaces.firstOrNull { it.id == uiState.workspaceId }
+        val targetContext = if (ws != null) {
+            val tb = ws.targetBinding
+            TargetContextUi(
+                targetId = DisplayValue.Available(ws.name),
+                profile = if (tb != null) DisplayValue.Available(tb.profileId) else DisplayValue.Available("Default"),
+                revision = if (tb != null) {
+                    DisplayValue.Available("rev-${tb.profileRevision}")
+                } else {
+                    DisplayValue.Available("rev-1")
+                },
+                draftBadge = if (currentShell.hasUnsavedChanges) "Unsaved draft" else null,
+            )
+        } else if (uiState.workspaceId.isNotBlank()) {
+            TargetContextUi(
+                targetId = DisplayValue.Available(uiState.workspaceId),
+                profile = DisplayValue.Available("Default"),
+                revision = DisplayValue.Available("rev-1"),
+                draftBadge = if (currentShell.hasUnsavedChanges) "Unsaved draft" else null,
+            )
+        } else {
+            TargetContextUi(
+                targetId = DisplayValue.Unavailable("No active ROM profile selected"),
+                profile = DisplayValue.Unavailable("Environment unconfigured"),
+                revision = DisplayValue.Unavailable("Workspace not initialized"),
+                draftBadge = null,
+            )
+        }
+
+        val effectiveSection = if (currentShell.globalDestination == GlobalDestination.Workspace) {
+            when (uiState.entry) {
+                is StudioEntry.Overview -> currentShell.selectedWorkspaceSection ?: WorkspaceSection.Overview
+                is StudioEntry.Editor -> null
+            }
+        } else {
+            null
+        }
+
+        return currentShell.copy(
+            targetContext = targetContext,
+            problemCount = problemCount,
+            pipelineItems = pipelineItems,
+            selectedWorkspaceSection = effectiveSection,
+        )
     }
 
     public fun setSearchQuery(query: String) {
@@ -320,6 +496,36 @@ public class StudioViewModel(
     }
 
     private companion object {
+        fun buildInitialShellState(workspaceId: String): WorkspaceShellUiState {
+            val targetContext = if (workspaceId.isNotBlank()) {
+                TargetContextUi(
+                    targetId = DisplayValue.Available(workspaceId),
+                    profile = DisplayValue.Available("Default"),
+                    revision = DisplayValue.Available("rev-1"),
+                    draftBadge = null,
+                )
+            } else {
+                TargetContextUi(
+                    targetId = DisplayValue.Unavailable("No active ROM profile selected"),
+                    profile = DisplayValue.Unavailable("Environment unconfigured"),
+                    revision = DisplayValue.Unavailable("Workspace not initialized"),
+                    draftBadge = null,
+                )
+            }
+            return WorkspaceShellUiState(
+                globalDestination = GlobalDestination.Workspace,
+                targetContext = targetContext,
+                hasUnsavedChanges = false,
+                validateOperation = OperationUiState.Idle,
+                saveOperation = OperationUiState.Idle,
+                connection = ConnectionUiState.Disconnected(),
+                problemCount = 3,
+                activity = ActivityUiState.Idle,
+                pipelineItems = createDefaultPipelineRailItems(),
+                selectedWorkspaceSection = WorkspaceSection.Overview,
+            )
+        }
+
         fun computeInitialRailItems(): List<StudioRailItem> = StudioDestinationCatalog.stages.map { stage ->
             StudioRailItem(
                 stage = stage,

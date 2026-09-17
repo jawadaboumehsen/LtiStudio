@@ -24,11 +24,9 @@ import org.ide.lti.core.common.event.PanelId
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
 import org.ide.lti.core.designsystem.component.actions.onKeyShortcut
 import org.ide.lti.core.designsystem.component.layout.GlassLayout
-import org.ide.lti.core.designsystem.component.layout.GlassTopBar
+import org.ide.lti.core.designsystem.component.layout.GlobalAppDestination
+import org.ide.lti.core.designsystem.component.layout.GlobalAppTopBar
 import org.ide.lti.core.designsystem.component.layout.LayoutPanel
-import org.ide.lti.core.designsystem.component.layout.TopBarNavigation
-import org.ide.lti.core.designsystem.component.layout.TopBarPanelToggles
-import org.ide.lti.core.designsystem.component.layout.TopBarSearch
 import org.ide.lti.core.designsystem.component.layout.rememberLtiLayoutState
 import org.ide.lti.core.designsystem.component.navigation.CommandCategory
 import org.ide.lti.core.designsystem.component.navigation.CommandItem
@@ -36,15 +34,13 @@ import org.ide.lti.core.designsystem.component.navigation.GlassCommandPalette
 import org.ide.lti.core.designsystem.component.navigation.GlassSidePanelRail
 import org.ide.lti.core.designsystem.component.navigation.GlassSidePanelTab
 import org.ide.lti.core.designsystem.component.navigation.SidePanelRailPosition
-import org.ide.lti.core.model.target.TargetRegion
-import org.ide.lti.core.model.target.WirelessPairingRequest
-import org.ide.lti.feature.workspace.panels.target.GlassWifiPairingDialog
-import org.ide.lti.feature.workspace.panels.target.TargetRunConfigurationBar
-import org.ide.lti.core.designsystem.theme.ComponentSize
-import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.ui.WorkspaceStatusBar
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
+import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.IconSize
+import org.ide.lti.core.model.target.TargetRegion
+import org.ide.lti.core.model.target.WirelessPairingRequest
+import org.ide.lti.core.ui.WorkspaceStatusBar
 import org.ide.lti.feature.workspace.panels.ai.AIAssistantPanel
 import org.ide.lti.feature.workspace.panels.editor.EditorPanel
 import org.ide.lti.feature.workspace.panels.editor.EditorViewModel
@@ -52,7 +48,9 @@ import org.ide.lti.feature.workspace.panels.explorer.ExplorerPanel
 import org.ide.lti.feature.workspace.panels.explorer.ExplorerViewModel
 import org.ide.lti.feature.workspace.panels.run.BuildRunViewModel
 import org.ide.lti.feature.workspace.panels.run.RunPanel
+import org.ide.lti.feature.workspace.panels.target.GlassWifiPairingDialog
 import org.ide.lti.feature.workspace.panels.target.TargetDetailPanel
+import org.ide.lti.feature.workspace.panels.target.TargetRunConfigurationBar
 import org.ide.lti.feature.workspace.panels.target.WorkspaceConfigurationPanel
 import org.ide.lti.feature.workspace.panels.terminal.TerminalPanel
 import org.koin.compose.viewmodel.koinViewModel
@@ -413,28 +411,16 @@ fun WorkspaceScreen(
             )
         },
         topBar = {
-            GlassTopBar(
-                navigation = TopBarNavigation.Brand(
-                    title = "LtiRom",
-                    workspaceName = workspaceName,
-                ),
-                panelToggles = TopBarPanelToggles(
-                    isLeftVisible = ltiLayoutState.showLeft,
-                    isRightVisible = ltiLayoutState.showRight,
-                    isBottomVisible = ltiLayoutState.showBottom,
-                    onToggleLeft = {
-                        ltiLayoutState.toggleLeft()
-                        viewModel.togglePanelVisibility(PanelId.LEFT)
-                    },
-                    onToggleRight = {
-                        ltiLayoutState.toggleRight()
-                        viewModel.togglePanelVisibility(PanelId.RIGHT)
-                    },
-                    onToggleBottom = {
-                        ltiLayoutState.toggleBottom()
-                        viewModel.togglePanelVisibility(PanelId.BOTTOM)
-                    },
-                ),
+            GlobalAppTopBar(
+                selectedDestination = GlobalAppDestination.Workspace,
+                onSelectDestination = { destination ->
+                    when (destination) {
+                        GlobalAppDestination.Setup -> onNavigateToSetup()
+                        GlobalAppDestination.Workspace -> Unit
+                        GlobalAppDestination.Settings -> onOpenSettings()
+                    }
+                },
+                contextLabel = workspaceName,
                 centerContent = {
                     TargetRunConfigurationBar(
                         selectedTarget = selectedTarget,
@@ -454,38 +440,67 @@ fun WorkspaceScreen(
                         onOpenWifiPairing = { isWifiPairingDialogOpen = true },
                     )
                 },
-                search = TopBarSearch(
-                    placeholder = "Search actions, targets, partitions (Ctrl+K)...",
-                    shortcut = "Ctrl K",
-                    onClick = { isCommandPaletteOpen = true },
-                ),
                 actions = {
-                    if (onOpenNotifications != null) {
-                        GlassIconButton(
-                            onClick = onOpenNotifications,
-                            size = ComponentSize.TopBarButtonSize,
-                        ) {
-                            Icon(
-                                painter = AppIcons.NotificationsPainterResource(),
-                                contentDescription = "Notifications",
-                                modifier = Modifier.size(IconSize.Small),
-                            )
-                        }
+                    GlassIconButton(
+                        onClick = { isCommandPaletteOpen = true },
+                        size = ComponentSize.TopBarButtonSize,
+                    ) {
+                        Icon(
+                            painter = AppIcons.SearchPainterResource(),
+                            contentDescription = "Search actions, targets, and partitions",
+                            modifier = Modifier.size(IconSize.Small),
+                        )
                     }
-                    if (onOpenSettings != null) {
-                        GlassIconButton(
-                            onClick = onOpenSettings,
-                            size = ComponentSize.TopBarButtonSize,
-                        ) {
-                            Icon(
-                                painter = AppIcons.SettingsPainterResource(),
-                                contentDescription = "Settings",
-                                modifier = Modifier.size(IconSize.Small),
-                            )
-                        }
+                    GlassIconButton(
+                        onClick = {
+                            ltiLayoutState.toggleLeft()
+                            viewModel.togglePanelVisibility(PanelId.LEFT)
+                        },
+                        size = ComponentSize.TopBarButtonSize,
+                    ) {
+                        Icon(
+                            painter = AppIcons.LayoutSplitPainterResource(),
+                            contentDescription = "Toggle left panel",
+                            modifier = Modifier.size(IconSize.Small),
+                        )
+                    }
+                    GlassIconButton(
+                        onClick = {
+                            ltiLayoutState.toggleRight()
+                            viewModel.togglePanelVisibility(PanelId.RIGHT)
+                        },
+                        size = ComponentSize.TopBarButtonSize,
+                    ) {
+                        Icon(
+                            painter = AppIcons.LayoutSplitPainterResource(),
+                            contentDescription = "Toggle right panel",
+                            modifier = Modifier.size(IconSize.Small),
+                        )
+                    }
+                    GlassIconButton(
+                        onClick = {
+                            ltiLayoutState.toggleBottom()
+                            viewModel.togglePanelVisibility(PanelId.BOTTOM)
+                        },
+                        size = ComponentSize.TopBarButtonSize,
+                    ) {
+                        Icon(
+                            painter = AppIcons.LayoutSplitPainterResource(),
+                            contentDescription = "Toggle bottom panel",
+                            modifier = Modifier.size(IconSize.Small),
+                        )
+                    }
+                    GlassIconButton(
+                        onClick = onOpenNotifications,
+                        size = ComponentSize.TopBarButtonSize,
+                    ) {
+                        Icon(
+                            painter = AppIcons.NotificationsPainterResource(),
+                            contentDescription = "Notifications",
+                            modifier = Modifier.size(IconSize.Small),
+                        )
                     }
                 },
-                drawOwnChrome = false,
             )
         },
         statusBar = {

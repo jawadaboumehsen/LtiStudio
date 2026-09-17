@@ -24,7 +24,9 @@ import org.ide.lti.feature.configuration.navigateToCreateConfiguration
 import org.ide.lti.feature.configuration.navigateToEditConfiguration
 import org.ide.lti.feature.plugins.pluginsScreen
 import org.ide.lti.feature.settings.navigateToNotification
+import org.ide.lti.feature.settings.navigateToSettings
 import org.ide.lti.feature.settings.notificationScreen
+import org.ide.lti.feature.settings.settingsScreen
 import org.ide.lti.feature.setup.SETUP_ROUTE
 import org.ide.lti.feature.setup.setupScreen
 import org.ide.lti.feature.workspace.creation.createWorkspaceScreen
@@ -38,7 +40,6 @@ internal fun RootNavGraph(
     navHostController: NavHostController,
     startDestination: String,
     modifier: Modifier = Modifier,
-    onOpenSettings: () -> Unit = {},
     workspaceManager: WorkspaceManager = koinInject(),
 ) {
     val currentWorkspace by workspaceManager.currentWorkspace.collectAsState()
@@ -52,6 +53,22 @@ internal fun RootNavGraph(
         } else if (currentWorkspace == null && navHostController.currentDestination?.route == "workspace") {
             navHostController.navigate(SETUP_ROUTE) {
                 popUpTo("workspace") { inclusive = true }
+                launchSingleTop = true
+            }
+        }
+    }
+
+    val navigateToSetup: () -> Unit = {
+        navHostController.navigate(SETUP_ROUTE) {
+            launchSingleTop = true
+        }
+    }
+    val navigateToWorkspace: () -> Unit = {
+        val workspace = currentWorkspace
+        if (workspace == null) {
+            navigateToSetup()
+        } else {
+            navHostController.navigate(buildStudioRoute(workspaceId = workspace.id)) {
                 launchSingleTop = true
             }
         }
@@ -72,7 +89,7 @@ internal fun RootNavGraph(
                     }
                 }
             },
-            onOpenSettings = onOpenSettings,
+            onOpenSettings = { navHostController.navigateToSettings() },
             onCreateWorkspace = { navHostController.navigateToCreateWorkspace() },
             onOpenConfigurations = { navHostController.navigateToConfiguration() },
             onOpenManageTargets = { navHostController.navigateToConfiguration() },
@@ -87,16 +104,12 @@ internal fun RootNavGraph(
                     launchSingleTop = true
                 }
             },
-            onNavigateToSetup = {
-                navHostController.navigate(SETUP_ROUTE) {
-                    launchSingleTop = true
-                }
-            },
+            onNavigateToSetup = navigateToSetup,
         )
 
         // Workspace Screen (4-panel IDE layout)
         workspaceScreen(
-            onOpenSettings = onOpenSettings,
+            onOpenSettings = { navHostController.navigateToSettings() },
             onOpenNotifications = { navHostController.navigateToNotification() },
             onOpenConfigurations = {
                 navHostController.navigateToConfiguration()
@@ -107,11 +120,7 @@ internal fun RootNavGraph(
             onOpenAddConfiguration = {
                 navHostController.navigateToCreateConfiguration()
             },
-            onNavigateToSetup = {
-                navHostController.navigate(SETUP_ROUTE) {
-                    launchSingleTop = true
-                }
-            },
+            onNavigateToSetup = navigateToSetup,
             onOpenStudio = { workspaceId, stageId, objectId ->
                 navHostController.navigateToStudio(
                     workspaceId = workspaceId,
@@ -126,6 +135,14 @@ internal fun RootNavGraph(
         // Notifications (reachable from the workspace top bar)
         notificationScreen(
             onBackClick = { navHostController.popBackStack() },
+            onNavigateToSetup = navigateToSetup,
+            onNavigateToWorkspace = navigateToWorkspace,
+        )
+
+        settingsScreen(
+            onBackClick = { navHostController.popBackStack() },
+            onNavigateToSetup = navigateToSetup,
+            onNavigateToWorkspace = navigateToWorkspace,
         )
 
         // Target & Run Configurations Studio
@@ -146,18 +163,14 @@ internal fun RootNavGraph(
                     packageId = packageId,
                 )
             },
-            onNavigateToSetup = {
-                navHostController.navigate(SETUP_ROUTE) {
-                    launchSingleTop = true
-                }
-            },
-            onOpenSettings = onOpenSettings,
+            onNavigateToSetup = navigateToSetup,
+            onOpenSettings = { navHostController.navigateToSettings() },
         )
 
         // Plugin Manager (Installed, Marketplace, Import, Author Tools)
         pluginsScreen(
             onNavigateBack = { navHostController.popBackStack() },
-            onOpenSettings = onOpenSettings,
+            onOpenSettings = { navHostController.navigateToSettings() },
         )
     }
 }

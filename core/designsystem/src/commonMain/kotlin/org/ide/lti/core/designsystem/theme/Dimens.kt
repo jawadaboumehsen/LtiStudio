@@ -155,8 +155,6 @@ object ComponentSize {
     val PanelHeaderStackBreakpoint: Dp = 280.dp
     val ModalCardMaxWidth: Dp = 440.dp
     val SettingsMaxWidth: Dp = 760.dp
-    val SettingsWindowWidth: Dp = 860.dp
-    val SettingsWindowHeight: Dp = 720.dp
     val ScrollEdgeFadeHeight: Dp = 24.dp
     val CommandPaletteMinWidth: Dp = 200.dp
     val CommandPaletteMaxWidth: Dp = 320.dp
@@ -164,15 +162,6 @@ object ComponentSize {
     val SplashCardWidth: Dp = 640.dp
     val SplashCardHeight: Dp = 400.dp
     val SplashLogoSize: Dp = 96.dp
-    val StudioStageRailWidth: Dp = 56.dp
-    val StudioNavigatorMinWidth: Dp = 200.dp
-    val StudioNavigatorMaxWidth: Dp = 360.dp
-    val StudioNavigatorDefaultWidth: Dp = 240.dp
-    val StudioDockMinHeight: Dp = 120.dp
-    val StudioDockDefaultHeight: Dp = 180.dp
-    val StudioDockMaxHeight: Dp = 320.dp
-    val StudioCompactWindowWidth: Dp = 900.dp
-    val StudioCompactWindowHeight: Dp = 600.dp
     val PluginSidebarWidth: Dp = 208.dp
     val PluginInspectorWidth: Dp = 380.dp
     val PluginTableRowHeight: Dp = 54.dp
@@ -197,8 +186,6 @@ object ComponentSize {
     val PluginActionBtnHeight: Dp = 40.dp
     val PluginActionBtnCompactHeight: Dp = 34.dp
     val PluginActionBtnCompactWidth: Dp = 104.dp
-
-    fun studioNavigatorWidth(width: Int): Dp = width.dp
 }
 
 /**
@@ -209,4 +196,34 @@ object Elevation {
     val Raised: Dp = 4.dp
     val Panel: Dp = 8.dp
     val Modal: Dp = 16.dp
+}
+
+/**
+ * IDE shell geometry tokens specified by Feature 005 and the normative Stitch design.
+ */
+object IdeShellDimens {
+    val TopBarHeight: Dp = 40.dp
+    val PipelineRailWidth: Dp = 56.dp
+    val WorkspaceNavigatorWidth: Dp = 230.dp
+    val BreadcrumbHeight: Dp = 32.dp
+    val StatusBarHeight: Dp = 24.dp
+
+    val CompactBreakpoint: Dp = 1024.dp
+    val CompactHeightBreakpoint: Dp = 768.dp
+    val ReadableContentMaxWidth: Dp = 1280.dp
+    val ReferenceWindowWidth: Dp = 1584.dp
+    val ReferenceWindowHeight: Dp = 1280.dp
+    val HairlineBorder: Dp = 1.dp
+    val CardCornerRadius: Dp = 6.dp
+    val ControlCornerRadius: Dp = 4.dp
+    val BadgeCornerRadius: Dp = 3.dp
+
+    val PipelineStageItemHeight: Dp = 52.dp
+    val PipelineActiveIndicatorWidth: Dp = 2.dp
+    val PipelineActiveIndicatorHeight: Dp = 28.dp
+    val NavigatorItemHeight: Dp = 30.dp
+    val ReadinessStageColumnWidth: Dp = 100.dp
+    val ReadinessLabelColumnWidth: Dp = 140.dp
+    val ReadinessStatusColumnWidth: Dp = 110.dp
+    val StatusBadgeIconSize: Dp = 10.dp
 }

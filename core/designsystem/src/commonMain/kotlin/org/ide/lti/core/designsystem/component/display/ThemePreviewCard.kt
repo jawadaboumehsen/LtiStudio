@@ -207,14 +207,14 @@ private fun MiniIdePreview(
     }
 
     val windowBorderColor = when (theme) {
-        is AppTheme.Blue -> ThemeColors.Blue.copy(alpha = AlphaTokens.Border)
+        is AppTheme.Blue -> ThemeColors.BlueAmoledBorder
         is AppTheme.Dark -> ThemeColors.DarkLayerHighlight
         is AppTheme.Light -> ThemeColors.LightLayerBorder
         else -> ThemeColors.DarkLayerHighlight
     }
 
     val sidebarColor = when (theme) {
-        is AppTheme.Blue -> ThemeColors.Blue.copy(alpha = AlphaTokens.Hover)
+        is AppTheme.Blue -> ThemeColors.BlueAmoledRail
         is AppTheme.Dark -> ThemeColors.DarkLayerSurface
         is AppTheme.Light -> ThemeColors.LightLayerElevated
         else -> ThemeColors.DarkLayerSurface
@@ -228,9 +228,9 @@ private fun MiniIdePreview(
     }
 
     val tokenKeywordColor = when (theme) {
-        is AppTheme.Blue -> ThemeColors.Blue
+        is AppTheme.Blue -> ThemeColors.FleetCyan
         is AppTheme.Dark -> ThemeColors.FleetBlue
-        is AppTheme.Light -> ThemeColors.FleetBlue
+        is AppTheme.Light -> ThemeColors.LightLayerAccent
         else -> ThemeColors.FleetBlue
     }
 
@@ -242,7 +242,7 @@ private fun MiniIdePreview(
     }
 
     val tokenFadedColor = when (theme) {
-        is AppTheme.Blue -> ThemeColors.Blue.copy(alpha = AlphaTokens.Muted)
+        is AppTheme.Blue -> ThemeColors.BlueAmoledBorderMuted
         is AppTheme.Dark -> ThemeColors.DarkLayerControl
         is AppTheme.Light -> ThemeColors.LightLayerBorder
         else -> ThemeColors.DarkLayerControl

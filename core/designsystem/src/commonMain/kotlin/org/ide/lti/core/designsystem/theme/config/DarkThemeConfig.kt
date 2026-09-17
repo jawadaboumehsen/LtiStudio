@@ -109,5 +109,6 @@ val DarkThemeConfig: ThemeConfiguration by lazy {
             ),
             logoGradientEnd = ThemeColors.FleetCyan,
         ),
+        ideShellColorScheme = org.ide.lti.core.designsystem.theme.IdeShellTokens.Dark,
     )
 }

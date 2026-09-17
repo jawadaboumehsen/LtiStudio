@@ -36,13 +36,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import org.ide.lti.core.designsystem.component.actions.GlassIconButton
+import org.ide.lti.core.designsystem.component.actions.GlassItemCard
+import org.ide.lti.core.designsystem.component.actions.GlassTextButton
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.GlassEmptyState
-import org.ide.lti.core.designsystem.component.actions.GlassItemCard
-import org.ide.lti.core.designsystem.component.layout.GlassTopBar
-import org.ide.lti.core.designsystem.component.layout.TopBarNavigation
+import org.ide.lti.core.designsystem.component.layout.GlobalAppDestination
+import org.ide.lti.core.designsystem.component.layout.GlobalAppTopBar
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
-import org.ide.lti.core.designsystem.component.actions.GlassTextButton
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.ComponentSize
@@ -55,10 +56,14 @@ import org.ide.lti.core.designsystem.theme.StrokeWidth
 @Composable
 fun NotificationScreen(
     onBackClick: () -> Unit,
+    onNavigateToSetup: () -> Unit = {},
+    onNavigateToWorkspace: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     NotificationScreenContent(
         onBackClick = onBackClick,
+        onNavigateToSetup = onNavigateToSetup,
+        onNavigateToWorkspace = onNavigateToWorkspace,
         modifier = modifier.fillMaxSize(),
     )
 }
@@ -66,19 +71,37 @@ fun NotificationScreen(
 @Composable
 fun NotificationScreenContent(
     onBackClick: () -> Unit,
+    onNavigateToSetup: () -> Unit = {},
+    onNavigateToWorkspace: () -> Unit = {},
     modifier: Modifier = Modifier,
     notifications: List<AppNotificationItem> = defaultSampleNotifications,
 ) {
     var notificationList by remember(notifications) { mutableStateOf(notifications) }
 
     Column(modifier = modifier.fillMaxSize()) {
-        GlassTopBar(
-            navigation = TopBarNavigation.Back(
-                onClick = onBackClick,
-            ),
-            search = null,
-            panelToggles = null,
-            drawOwnChrome = true,
+        GlobalAppTopBar(
+            selectedDestination = GlobalAppDestination.Settings,
+            onSelectDestination = { destination ->
+                when (destination) {
+                    GlobalAppDestination.Setup -> onNavigateToSetup()
+                    GlobalAppDestination.Workspace -> onNavigateToWorkspace()
+                    GlobalAppDestination.Settings -> Unit
+                }
+            },
+            contextLabel = "Notifications",
+            contextIcon = AppIcons.Notifications,
+            actions = {
+                GlassIconButton(
+                    onClick = onBackClick,
+                    size = ComponentSize.TopBarButtonSize,
+                ) {
+                    Icon(
+                        painter = AppIcons.ArrowBackPainterResource(),
+                        contentDescription = "Back to settings",
+                        modifier = Modifier.size(IconSize.Small),
+                    )
+                }
+            },
         )
 
         Box(
