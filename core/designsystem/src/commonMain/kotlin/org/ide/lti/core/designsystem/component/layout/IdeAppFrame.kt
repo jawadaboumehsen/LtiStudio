@@ -18,12 +18,17 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import com.kashif_e.backdrop.backdrops.LayerBackdrop
+import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
+import org.ide.lti.core.designsystem.theme.LocalGlassBackdrop
+import org.ide.lti.core.designsystem.theme.config.AppTheme
 
 /**
  * Stateless root layout frame for the professional LtiRom IDE shell.
@@ -50,143 +55,167 @@ fun IdeAppFrame(
     onDismissDrawer: () -> Unit = {},
     drawerContent: (@Composable () -> Unit)? = null,
 ) {
-    BoxWithConstraints(
-        modifier = modifier
-            .fillMaxSize()
-            .background(colors.appBackground),
-    ) {
-        val isCompact = maxWidth < IdeShellDimens.CompactBreakpoint
+    val isBlueGlass = GlassTheme.appTheme == AppTheme.Blue && GlassTheme.effectsEnabled
+    val ambientBackdrop = (GlassTheme.backdrop as? LayerBackdrop)
+    val resolvedBackdrop = if (isBlueGlass) {
+        rememberLayerBackdrop()
+    } else {
+        ambientBackdrop ?: rememberLayerBackdrop()
+    }
 
-        Column(modifier = Modifier.fillMaxSize()) {
-            // Full-width Top App Bar
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(IdeShellDimens.TopBarHeight)
-                    .background(colors.topBarBackground),
-            ) {
-                topBar()
+    CompositionLocalProvider(LocalGlassBackdrop provides resolvedBackdrop) {
+        BoxWithConstraints(
+            modifier = modifier
+                .fillMaxSize()
+                .background(colors.appBackground),
+        ) {
+            if (isBlueGlass) {
+                StudioGlassBackdrop(backdrop = resolvedBackdrop)
             }
-            HorizontalDivider(
-                thickness = IdeShellDimens.HairlineBorder,
-                color = colors.border,
-            )
+            val isCompact = maxWidth < IdeShellDimens.CompactBreakpoint
 
-            // Middle Body
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-            ) {
-                // Persistent Pipeline Rail
+            Column(modifier = Modifier.fillMaxSize()) {
+                // Full-width Top App Bar
                 Box(
                     modifier = Modifier
-                        .width(IdeShellDimens.PipelineRailWidth)
-                        .fillMaxHeight()
-                        .background(colors.railBackground),
+                        .fillMaxWidth()
+                        .height(IdeShellDimens.TopBarHeight),
                 ) {
-                    pipelineRail()
+                    topBar()
                 }
-                VerticalDivider(
+                HorizontalDivider(
                     thickness = IdeShellDimens.HairlineBorder,
                     color = colors.border,
                 )
 
-                // Workspace Navigator (Inline if not compact)
-                if (!isCompact) {
+                // Middle Body
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                ) {
+                    // Persistent Pipeline Rail
                     Box(
                         modifier = Modifier
-                            .width(IdeShellDimens.WorkspaceNavigatorWidth)
-                            .fillMaxHeight()
-                            .background(colors.navigatorBackground),
+                            .width(IdeShellDimens.PipelineRailWidth)
+                            .fillMaxHeight(),
                     ) {
-                        navigator()
+                        pipelineRail()
                     }
                     VerticalDivider(
                         thickness = IdeShellDimens.HairlineBorder,
                         color = colors.border,
                     )
-                }
 
-                // Central Content Column
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .background(colors.contentBackground),
-                ) {
-                    // Breadcrumb Bar
-                    Box(
+                    // Workspace Navigator (Inline if not compact)
+                    if (!isCompact) {
+                        Box(
+                            modifier = Modifier
+                                .width(IdeShellDimens.WorkspaceNavigatorWidth)
+                                .fillMaxHeight(),
+                        ) {
+                            navigator()
+                        }
+                        VerticalDivider(
+                            thickness = IdeShellDimens.HairlineBorder,
+                            color = colors.border,
+                        )
+                    }
+
+                    // Central Content Column
+                    Column(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(IdeShellDimens.BreadcrumbHeight)
+                            .weight(1f)
+                            .fillMaxHeight()
                             .background(colors.contentBackground),
                     ) {
-                        breadcrumb()
-                    }
-                    HorizontalDivider(
-                        thickness = IdeShellDimens.HairlineBorder,
-                        color = colors.border,
-                    )
+                        // Breadcrumb Bar
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(IdeShellDimens.BreadcrumbHeight)
+                                .background(colors.contentBackground),
+                        ) {
+                            breadcrumb()
+                        }
+                        HorizontalDivider(
+                            thickness = IdeShellDimens.HairlineBorder,
+                            color = colors.border,
+                        )
 
-                    // Bounded Content Region
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f),
-                    ) {
-                        content()
+                        // Bounded Content Region
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f),
+                        ) {
+                            content()
+                        }
                     }
                 }
-            }
 
-            // Bottom Status Bar
-            HorizontalDivider(
-                thickness = IdeShellDimens.HairlineBorder,
-                color = colors.border,
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(IdeShellDimens.StatusBarHeight)
-                    .background(colors.statusBarBackground),
-            ) {
-                statusBar()
-            }
-        }
-
-        // Overlay Drawer for compact viewports
-        if (isCompact) {
-            val interactionSource = remember { MutableInteractionSource() }
-            AnimatedVisibility(
-                visible = isDrawerOpen,
-                enter = slideInHorizontally(initialOffsetX = { -it }),
-                exit = slideOutHorizontally(targetOffsetX = { -it }),
-            ) {
+                // Bottom Status Bar
+                HorizontalDivider(
+                    thickness = IdeShellDimens.HairlineBorder,
+                    color = colors.border,
+                )
                 Box(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .background(colors.appBackground.copy(alpha = AlphaTokens.Prominent))
-                        .clickable(
-                            interactionSource = interactionSource,
-                            indication = null,
-                            onClick = onDismissDrawer,
-                        ),
+                        .fillMaxWidth()
+                        .height(IdeShellDimens.StatusBarHeight),
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .width(IdeShellDimens.WorkspaceNavigatorWidth)
-                            .fillMaxHeight()
-                            .background(colors.navigatorBackground)
-                            .clickable(
-                                interactionSource = interactionSource,
-                                indication = null,
-                                onClick = {},
-                            ),
-                    ) {
-                        drawerContent?.invoke() ?: navigator()
-                    }
+                    statusBar()
                 }
+            }
+
+            // Overlay Drawer for compact viewports
+            if (isCompact) {
+                IdeCompactDrawer(
+                    isOpen = isDrawerOpen,
+                    onDismiss = onDismissDrawer,
+                    colors = colors,
+                    content = { drawerContent?.invoke() ?: navigator() },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun IdeCompactDrawer(
+    isOpen: Boolean,
+    onDismiss: () -> Unit,
+    colors: IdeShellColorScheme,
+    content: @Composable () -> Unit,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    AnimatedVisibility(
+        visible = isOpen,
+        enter = slideInHorizontally(initialOffsetX = { -it }),
+        exit = slideOutHorizontally(targetOffsetX = { -it }),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(colors.appBackground.copy(alpha = AlphaTokens.Prominent))
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                    onClick = onDismiss,
+                ),
+        ) {
+            Box(
+                modifier = Modifier
+                    .width(IdeShellDimens.WorkspaceNavigatorWidth)
+                    .fillMaxHeight()
+                    .background(colors.navigatorBackground)
+                    .clickable(
+                        interactionSource = interactionSource,
+                        indication = null,
+                        onClick = {},
+                    ),
+            ) {
+                content()
             }
         }
     }

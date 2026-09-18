@@ -421,6 +421,35 @@ object PreviewSampleColors {
 }
 
 /**
+ * Centralized token colors for scenic landscape/wallpaper preview backdrops.
+ */
+object WallpaperColors {
+    val DarkSkyTop = Color(0xFF070B10)
+    val DarkSkyMiddle = Color(0xFF101720)
+    val DarkSkyHorizon = Color(0xFF1E2632)
+    val DarkMountainFar = Color(0xFF151D28)
+    val DarkMountainNear = Color(0xFF0C1017)
+
+    val LightSkyTop = Color(0xFFE2E8F0)
+    val LightSkyMiddle = Color(0xFFCBD5E1)
+    val LightSkyHorizon = Color(0xFF94A3B8)
+    val LightMountainFar = Color(0xFF64748B)
+    val LightMountainNear = Color(0xFF475569)
+}
+
+/**
+ * Centralized token colors for theme accent color selection.
+ */
+object AccentPresetColors {
+    val Blue = Color(0xFF2563EB)
+    val Cyan = Color(0xFF06B6D4)
+    val Emerald = Color(0xFF10B981)
+    val Purple = Color(0xFF8B5CF6)
+    val Amber = Color(0xFFF59E0B)
+    val Crimson = Color(0xFFEF4444)
+}
+
+/**
  * Centralized token colors for glass layout shadows and dividers.
  */
 object GlassLayoutColors {
@@ -431,7 +460,7 @@ object GlassLayoutColors {
  * Semantic token colors for Plugin Manager screens (Concepts 12, 13, 14, 15).
  */
 object PluginThemeColors {
-    val SelectedRowBackground = Color(0xC61B5FB9)
+    val SelectedRowBackground = Color(0xD5195EB7)
     val SelectedRowBorder = Color(0xFF38BDF8)
     val CardBackground = Color(0xC40A1D36)
     val CardBorder = Color(0x9958A9E8)
@@ -556,19 +585,19 @@ object IdeShellTokens {
     )
 
     val Blue = IdeShellColorScheme(
-        appBackground = Color(0xFF060C18).copy(alpha = AlphaTokens.Muted),
-        topBarBackground = Color(0xFF0C1524).copy(alpha = AlphaTokens.GlassChrome),
-        railBackground = Color(0xFF07101E).copy(alpha = AlphaTokens.GlassElevated),
-        navigatorBackground = Color(0xFF0B1929).copy(alpha = AlphaTokens.GlassTranslucent),
-        contentBackground = Color(0xFF060C18).copy(alpha = AlphaTokens.Medium),
-        statusBarBackground = Color(0xFF0C1524).copy(alpha = AlphaTokens.GlassChrome),
-        cardBackground = Color(0xFF0D1C35).copy(alpha = AlphaTokens.GlassElevated),
-        cardBackgroundMuted = Color(0xFF122240).copy(alpha = AlphaTokens.GlassChrome),
-        border = Color(0xFF1A2B48).copy(alpha = AlphaTokens.IconTint),
-        borderMuted = Color(0xFF263D62).copy(alpha = AlphaTokens.Half),
+        appBackground = Color.Transparent,
+        topBarBackground = StudioBackdropColors.ChromeCenter.copy(alpha = AlphaTokens.Prominent),
+        railBackground = StudioBackdropColors.SidebarStart.copy(alpha = AlphaTokens.Strong),
+        navigatorBackground = StudioBackdropColors.SidebarCenter.copy(alpha = AlphaTokens.Strong),
+        contentBackground = StudioBackdropColors.Base.copy(alpha = AlphaTokens.GlassElevated),
+        statusBarBackground = StudioBackdropColors.ChromeEnd.copy(alpha = AlphaTokens.High),
+        cardBackground = StudioBackdropColors.Base.copy(alpha = AlphaTokens.GlassTranslucent),
+        cardBackgroundMuted = StudioBackdropColors.ChromeEnd.copy(alpha = AlphaTokens.Strong),
+        border = ThemeColors.FleetCyan.copy(alpha = AlphaTokens.Ambient),
+        borderMuted = ThemeColors.FleetCyan.copy(alpha = AlphaTokens.Glow),
         textMain = Color(0xFFEDF5FF),
         textMuted = Color(0xFFB8D0EB),
-        textDim = Color(0xFF7D9BBF),
+        textDim = Color(0xFF9CBCE0),
         accentGreen = Color(0xFF238636),
         accentGreenHover = Color(0xFF2EA043),
         accentBlue = Color(0xFF38BDF8),
@@ -578,8 +607,8 @@ object IdeShellTokens {
         errorRed = Color(0xFFF85149),
         errorRedBg = Color(0x26F85149),
         focusRing = Color(0xFF38BDF8),
-        controlHover = Color(0xFF162744),
-        controlSelected = Color(0xFF1E3A6E),
+        controlHover = Color(0xFF162744).copy(alpha = AlphaTokens.Elevated),
+        controlSelected = Color(0xFF1E3A6E).copy(alpha = AlphaTokens.Elevated),
         isDark = true,
     )
 }

@@ -16,14 +16,22 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHasClickAction
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
+import org.ide.lti.core.designsystem.theme.IdeShellTokens
+import org.ide.lti.core.designsystem.theme.LtiTheme
+import org.ide.lti.core.designsystem.theme.config.AppTheme
 import org.ide.lti.core.model.run.StageId
 import org.junit.Rule
 import org.junit.Test
@@ -34,6 +42,44 @@ class StudioShellLayoutTest {
 
     @get:Rule
     val composeTestRule = createComposeRule()
+
+    @Test
+    fun testWorkspaceShellFollowsEveryApplicationTheme() {
+        var theme by mutableStateOf<AppTheme>(AppTheme.Blue)
+        var observedColors: IdeShellColorScheme? = null
+
+        composeTestRule.setContent {
+            LtiTheme(appTheme = theme) {
+                observedColors = GlassTheme.ideShellColors
+                StudioShellContent(
+                    uiState = WorkspaceShellUiState(),
+                    onSelectGlobalDestination = {},
+                    onSelectWorkspaceSection = {},
+                    onSelectStage = {},
+                    onValidate = {},
+                    onSave = {},
+                    content = { Box(Modifier.fillMaxSize()) },
+                )
+            }
+        }
+
+        composeTestRule.waitForIdle()
+        assertEquals(IdeShellTokens.Blue, observedColors)
+        val blueImage = composeTestRule.onNodeWithTag("StudioShellLayout").captureToImage()
+
+        theme = AppTheme.Dark
+        composeTestRule.waitForIdle()
+        assertEquals(IdeShellTokens.Dark, observedColors)
+        val darkImage = composeTestRule.onNodeWithTag("StudioShellLayout").captureToImage()
+
+        theme = AppTheme.Light
+        composeTestRule.waitForIdle()
+        assertEquals(IdeShellTokens.Light, observedColors)
+        val lightImage = composeTestRule.onNodeWithTag("StudioShellLayout").captureToImage()
+
+        assertTrue(pixelDifferencePercent(blueImage, darkImage) > MIN_THEME_DIFF_PERCENT)
+        assertTrue(pixelDifferencePercent(darkImage, lightImage) > MIN_THEME_DIFF_PERCENT)
+    }
 
     @Test
     fun testRequiredSemanticInventory() {
@@ -253,5 +299,23 @@ class StudioShellLayoutTest {
         assertEquals(nav1.height, nav2.height, "Navigator height must remain stable")
         assertEquals(status1.width, status2.width, "Status Bar width must remain stable")
         assertEquals(status1.height, status2.height, "Status Bar height must remain stable")
+    }
+
+    private fun pixelDifferencePercent(first: ImageBitmap, second: ImageBitmap): Double {
+        val firstPixels = first.toPixelMap()
+        val secondPixels = second.toPixelMap()
+        var differentPixels = 0
+        for (y in 0 until first.height) {
+            for (x in 0 until first.width) {
+                if (firstPixels[x, y] != secondPixels[x, y]) {
+                    differentPixels++
+                }
+            }
+        }
+        return differentPixels.toDouble() / (first.width * first.height) * 100.0
+    }
+
+    private companion object {
+        const val MIN_THEME_DIFF_PERCENT = 5.0
     }
 }
