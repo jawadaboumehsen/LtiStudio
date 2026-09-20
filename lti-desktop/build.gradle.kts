@@ -48,6 +48,8 @@ kotlin {
 
         jvmTest.dependencies {
             implementation(libs.kotlin.test)
+            implementation(projects.core.domain)
+            implementation(projects.tool.client)
         }
     }
 }

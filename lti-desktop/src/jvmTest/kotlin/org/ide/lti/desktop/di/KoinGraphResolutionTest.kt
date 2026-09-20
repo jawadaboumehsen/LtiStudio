@@ -21,6 +21,7 @@ import org.ide.lti.core.domain.usecase.build.StartPipelineRunUseCase
 import org.ide.lti.core.domain.usecase.workspace.CreateWorkspaceUseCase
 import org.ide.lti.core.domain.usecase.workspace.SaveConfigurationSnapshotUseCase
 import org.ide.lti.shared.di.KoinModules
+import org.ide.lti.shared.di.toolingModule
 import org.koin.core.Koin
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin

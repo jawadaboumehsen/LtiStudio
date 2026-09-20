@@ -3,6 +3,7 @@ package org.ide.lti.desktop.di
 import kotlinx.coroutines.runBlocking
 import org.ide.lti.core.domain.setup.ToolchainProvisioningService
 import org.ide.lti.shared.di.KoinModules
+import org.ide.lti.shared.di.toolingModule
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import kotlin.test.AfterTest
