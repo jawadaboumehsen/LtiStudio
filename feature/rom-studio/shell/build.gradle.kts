@@ -19,6 +19,8 @@ kotlin {
             implementation(projects.core.model)
             implementation(projects.core.designsystem)
             implementation(projects.core.ui)
+            implementation(projects.feature.workspaceTarget)
+            implementation(projects.feature.workspaceRun)
             implementation(compose.ui)
             implementation(compose.foundation)
             implementation(compose.material3)

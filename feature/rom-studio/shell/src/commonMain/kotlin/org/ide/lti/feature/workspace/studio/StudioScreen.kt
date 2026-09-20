@@ -60,6 +60,9 @@ import org.ide.lti.feature.rom.studio.api.StageEditorRegistry
 import org.ide.lti.feature.rom.studio.api.StudioIconKey
 import org.ide.lti.feature.rom.studio.api.StudioSubobjectId
 import org.ide.lti.feature.rom.studio.api.descriptorFor
+import org.ide.lti.feature.workspace.panels.run.BuildRunViewModel
+import org.ide.lti.feature.workspace.panels.run.RunPanel
+import org.ide.lti.feature.workspace.panels.target.WorkspaceConfigurationPanel
 import org.ide.lti.feature.workspace.studio.components.StudioStatusBar
 import org.ide.lti.feature.workspace.studio.components.StudioTopAppBar
 import org.ide.lti.feature.workspace.studio.components.TopBarActionButton
@@ -140,51 +143,87 @@ public fun StudioScreen(
         onOpenProblems = { viewModel.selectWorkspaceSection(WorkspaceSection.Overview) },
         onOpenActivity = { viewModel.selectWorkspaceSection(WorkspaceSection.RunHistory) },
         content = {
-            if (selectedStageId != null && uiState.entry is StudioEntry.Editor) {
-                val editor = stageEditorRegistry.editorFor(selectedStageId)
-                val descriptor = stageEditorRegistry.descriptorFor(selectedStageId)
-                    ?: CanonicalStageDescriptors.descriptorFor(selectedStageId)
-                    ?: CanonicalStageDescriptors.ALL.first()
-                val activeObjectId = selectedObjectId ?: descriptor.subobjects.firstOrNull()?.id?.value
-
-                if (editor != null) {
-                    val context = StageEditorContext(
-                        workspaceId = workspaceId,
-                        selectedObjectId = activeObjectId?.let { StudioSubobjectId(it) },
-                        onSelectedObjectChange = { objId -> viewModel.selectObject(selectedStageId, objId.value) },
-                        onSaveRequested = { viewModel.saveWorkspace() },
-                        onValidationRequested = { viewModel.validateWorkspace() },
-                    )
-                    editor.Content(context = context, modifier = Modifier.fillMaxSize())
-                } else {
-                    StageObjectEditor(
-                        stage = descriptor,
-                        objectId = activeObjectId,
-                        validationErrors = uiState.validationReport.errors.filter {
-                            it.stageId == descriptor.stageId && it.objectId == activeObjectId
-                        },
-                        onSave = { viewModel.saveWorkspace() },
-                    )
-                }
-            } else {
-                WorkspaceOverview(
-                    state = uiState.overviewState,
-                    onAction = { action ->
-                        dispatchOverviewAction(
-                            action = action,
-                            viewModel = viewModel,
-                            workspaceId = workspaceId,
-                            onNavigateToSetup = onNavigateToSetup,
-                            onOpenSettings = onOpenSettings,
-                        )
-                    },
-                    onReload = { viewModel.onEntry(workspaceId) },
-                    onEditProfile = { viewModel.selectWorkspaceSection(WorkspaceSection.TargetProfile) },
-                    onOpenHistory = { viewModel.selectWorkspaceSection(WorkspaceSection.RunHistory) },
-                )
-            }
+            StudioContent(
+                uiState = uiState,
+                shellState = shellState,
+                viewModel = viewModel,
+                stageEditorRegistry = stageEditorRegistry,
+                workspaceId = workspaceId,
+                selectedStageId = selectedStageId,
+                selectedObjectId = selectedObjectId,
+                onNavigateToSetup = onNavigateToSetup,
+                onOpenSettings = onOpenSettings,
+            )
         },
     )
+}
+
+@Suppress("LongParameterList")
+@Composable
+private fun StudioContent(
+    uiState: StudioUiState,
+    shellState: WorkspaceShellUiState,
+    viewModel: StudioViewModel,
+    stageEditorRegistry: StageEditorRegistry,
+    workspaceId: String,
+    selectedStageId: StageId?,
+    selectedObjectId: String?,
+    onNavigateToSetup: () -> Unit,
+    onOpenSettings: () -> Unit,
+) {
+    if (selectedStageId != null && uiState.entry is StudioEntry.Editor) {
+        val editor = stageEditorRegistry.editorFor(selectedStageId)
+        val descriptor = stageEditorRegistry.descriptorFor(selectedStageId)
+            ?: CanonicalStageDescriptors.descriptorFor(selectedStageId)
+            ?: CanonicalStageDescriptors.ALL.first()
+        val activeObjectId = selectedObjectId ?: descriptor.subobjects.firstOrNull()?.id?.value
+
+        if (editor != null) {
+            val context = StageEditorContext(
+                workspaceId = workspaceId,
+                selectedObjectId = activeObjectId?.let { StudioSubobjectId(it) },
+                onSelectedObjectChange = { objId -> viewModel.selectObject(selectedStageId, objId.value) },
+                onSaveRequested = { viewModel.saveWorkspace() },
+                onValidationRequested = { viewModel.validateWorkspace() },
+            )
+            editor.Content(context = context, modifier = Modifier.fillMaxSize())
+        } else {
+            StageObjectEditor(
+                stage = descriptor,
+                objectId = activeObjectId,
+                validationErrors = uiState.validationReport.errors.filter {
+                    it.stageId == descriptor.stageId && it.objectId == activeObjectId
+                },
+                onSave = { viewModel.saveWorkspace() },
+            )
+        }
+    } else if (shellState.selectedWorkspaceSection == WorkspaceSection.RomConfig) {
+        WorkspaceConfigurationPanel(modifier = Modifier.fillMaxSize())
+    } else if (shellState.selectedWorkspaceSection == WorkspaceSection.RunHistory) {
+        RunPanel(
+            viewModel = koinViewModel<BuildRunViewModel>(),
+            onNavigateToSetup = onNavigateToSetup,
+            modifier = Modifier.fillMaxSize(),
+        )
+    } else {
+        // Overview, Artifacts, and TargetProfile have no dedicated panel yet - the overview
+        // stays the fallback for them, matching prior behavior.
+        WorkspaceOverview(
+            state = uiState.overviewState,
+            onAction = { action ->
+                dispatchOverviewAction(
+                    action = action,
+                    viewModel = viewModel,
+                    workspaceId = workspaceId,
+                    onNavigateToSetup = onNavigateToSetup,
+                    onOpenSettings = onOpenSettings,
+                )
+            },
+            onReload = { viewModel.onEntry(workspaceId) },
+            onEditProfile = { viewModel.selectWorkspaceSection(WorkspaceSection.TargetProfile) },
+            onOpenHistory = { viewModel.selectWorkspaceSection(WorkspaceSection.RunHistory) },
+        )
+    }
 }
 
 private fun dispatchOverviewAction(
