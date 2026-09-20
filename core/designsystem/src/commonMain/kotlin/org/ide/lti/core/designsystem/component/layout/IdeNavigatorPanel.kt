@@ -64,7 +64,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
@@ -74,10 +73,9 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import com.kashif_e.backdrop.drawBackdrop
+import org.ide.lti.core.designsystem.component.primitives.glass
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
-import org.ide.lti.core.designsystem.theme.GlassEffects
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
@@ -87,6 +85,7 @@ import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.LetterSpacing
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.config.AppTheme
+import org.ide.lti.core.designsystem.theme.glass.GlassStyles
 
 @Immutable
 data class IdeNavigatorItem(
@@ -111,25 +110,15 @@ fun IdeNavigatorPanel(
     colors: IdeShellColorScheme = GlassTheme.ideShellColors,
     footerContent: (@Composable () -> Unit)? = null,
 ) {
-    val actualBackdrop = GlassTheme.backdrop
+    // Real glass chrome only for the Blue theme - see IdeTopAppBar.
     val isBlueGlass = GlassTheme.appTheme == AppTheme.Blue && GlassTheme.effectsEnabled
-    val backgroundModifier = if (isBlueGlass && actualBackdrop != null) {
-        Modifier.drawBackdrop(
-            backdrop = actualBackdrop,
-            shape = { RectangleShape },
-            effects = GlassEffects.DockedNav,
-            highlight = { null },
-            onDrawSurface = { drawRect(colors.navigatorBackground) },
-        )
-    } else {
-        Modifier.background(colors.navigatorBackground)
-    }
+    val style = GlassStyles.navigator.then { copy(surface = colors.navigatorBackground) }
 
     Column(
         modifier = modifier
             .width(IdeShellDimens.WorkspaceNavigatorWidth)
             .fillMaxHeight()
-            .then(backgroundModifier)
+            .glass(style, enabled = isBlueGlass)
             .padding(vertical = Spacing.Small),
         verticalArrangement = Arrangement.SpaceBetween,
     ) {

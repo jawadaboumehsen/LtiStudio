@@ -45,7 +45,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
@@ -56,11 +55,10 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import com.kashif_e.backdrop.drawBackdrop
+import org.ide.lti.core.designsystem.component.primitives.glass
 import org.ide.lti.core.designsystem.icon.AppIconsRomStages
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
-import org.ide.lti.core.designsystem.theme.GlassEffects
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
@@ -69,6 +67,7 @@ import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.config.AppTheme
+import org.ide.lti.core.designsystem.theme.glass.GlassStyles
 
 @Immutable
 data class IdePipelineStageItem(
@@ -91,25 +90,15 @@ fun IdePipelineRail(
     header: (@Composable () -> Unit)? = null,
     colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
-    val actualBackdrop = GlassTheme.backdrop
+    // Real glass chrome only for the Blue theme - see IdeTopAppBar.
     val isBlueGlass = GlassTheme.appTheme == AppTheme.Blue && GlassTheme.effectsEnabled
-    val backgroundModifier = if (isBlueGlass && actualBackdrop != null) {
-        Modifier.drawBackdrop(
-            backdrop = actualBackdrop,
-            shape = { RectangleShape },
-            effects = GlassEffects.DockedNav,
-            highlight = { null },
-            onDrawSurface = { drawRect(colors.railBackground) },
-        )
-    } else {
-        Modifier.background(colors.railBackground)
-    }
+    val style = GlassStyles.rail.then { copy(surface = colors.railBackground) }
 
     Column(
         modifier = modifier
             .width(IdeShellDimens.PipelineRailWidth)
             .fillMaxHeight()
-            .then(backgroundModifier),
+            .glass(style, enabled = isBlueGlass),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top,
     ) {

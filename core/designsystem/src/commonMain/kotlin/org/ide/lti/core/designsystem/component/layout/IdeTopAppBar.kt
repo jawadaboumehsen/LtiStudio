@@ -9,7 +9,6 @@
  */
 package org.ide.lti.core.designsystem.component.layout
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -19,14 +18,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.RectangleShape
-import com.kashif_e.backdrop.drawBackdrop
-import org.ide.lti.core.designsystem.theme.GlassEffects
+import androidx.compose.ui.graphics.Color
+import org.ide.lti.core.designsystem.component.primitives.glass
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.config.AppTheme
+import org.ide.lti.core.designsystem.theme.glass.GlassStyles
 
 /**
  * Top application bar matching the approved Stitch Studio design.
@@ -43,25 +42,18 @@ fun IdeTopAppBar(
     windowControls: @Composable (() -> Unit)? = null,
     onDragWindow: (() -> Unit)? = null,
 ) {
-    val actualBackdrop = GlassTheme.backdrop
+    // Real glass chrome only for the Blue theme - Dark/Light always render flat, matching the
+    // rest of IdeShellColorScheme-driven chrome. Modifier.glass's own `enabled` gate reproduces
+    // this exactly (effectsEnabled is already folded into isBlueGlass, so the AND is redundant
+    // but harmless).
     val isBlueGlass = GlassTheme.appTheme == AppTheme.Blue && GlassTheme.effectsEnabled
-    val backgroundModifier = if (isBlueGlass && actualBackdrop != null) {
-        Modifier.drawBackdrop(
-            backdrop = actualBackdrop,
-            shape = { RectangleShape },
-            effects = GlassEffects.TopBar,
-            highlight = { null },
-            onDrawSurface = { drawRect(colors.topBarBackground) },
-        )
-    } else {
-        Modifier.background(colors.topBarBackground)
-    }
+    val style = GlassStyles.bar.then { copy(surface = colors.topBarBackground, tint = Color.Transparent) }
 
     Row(
         modifier = modifier
             .fillMaxWidth()
             .height(IdeShellDimens.TopBarHeight)
-            .then(backgroundModifier)
+            .glass(style, enabled = isBlueGlass)
             .padding(horizontal = Spacing.Small),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,

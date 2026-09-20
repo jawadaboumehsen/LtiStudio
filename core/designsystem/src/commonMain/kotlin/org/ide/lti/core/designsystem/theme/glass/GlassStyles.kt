@@ -71,22 +71,14 @@ public object GlassStyles {
             )
         }
 
+    // Real usage (IdeNavigatorPanel) confirmed this is optically identical to `rail` - both are
+    // GlassEffects.DockedNav (RectangleShape, no lens, no rim) in the actual production shell.
+    // Kept as a separate named role from `rail` for call-site clarity even though the values
+    // match exactly, per the plan's own "rail / navigator" table row.
     public val navigator: GlassStyle
         @Composable
         @ReadOnlyComposable
-        get() {
-            val colors = GlassTheme.colors
-            return GlassStyle(
-                surface = colors.glassSurface,
-                tint = colors.glassTint,
-                shape = GlassShapes.Panel,
-                blur = OpticalSizeValue.Fixed(BackdropBlur.Panel),
-                lens = OpticalSizeValue.Fixed(LensRefraction.Panel),
-                lensDepthEffect = true,
-                lensChromaticAberration = true,
-                grain = GRAIN_STANDARD,
-            )
-        }
+        get() = rail
 
     public val selected: GlassStyle
         @Composable

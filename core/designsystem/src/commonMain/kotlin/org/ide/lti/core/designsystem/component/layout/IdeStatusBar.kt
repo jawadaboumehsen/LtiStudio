@@ -9,7 +9,6 @@
  */
 package org.ide.lti.core.designsystem.component.layout
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -19,14 +18,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.RectangleShape
-import com.kashif_e.backdrop.drawBackdrop
-import org.ide.lti.core.designsystem.theme.GlassEffects
+import androidx.compose.ui.graphics.Color
+import org.ide.lti.core.designsystem.component.primitives.glass
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.config.AppTheme
+import org.ide.lti.core.designsystem.theme.glass.GlassStyles
 
 /**
  * Bottom application status bar matching the 24 dp Stitch design specification.
@@ -38,25 +37,15 @@ fun IdeStatusBar(
     leadingContent: @Composable RowScope.() -> Unit = {},
     trailingContent: @Composable RowScope.() -> Unit = {},
 ) {
-    val actualBackdrop = GlassTheme.backdrop
+    // Real glass chrome only for the Blue theme - see IdeTopAppBar.
     val isBlueGlass = GlassTheme.appTheme == AppTheme.Blue && GlassTheme.effectsEnabled
-    val backgroundModifier = if (isBlueGlass && actualBackdrop != null) {
-        Modifier.drawBackdrop(
-            backdrop = actualBackdrop,
-            shape = { RectangleShape },
-            effects = GlassEffects.StatusBar,
-            highlight = { null },
-            onDrawSurface = { drawRect(colors.statusBarBackground) },
-        )
-    } else {
-        Modifier.background(colors.statusBarBackground)
-    }
+    val style = GlassStyles.bar.then { copy(surface = colors.statusBarBackground, tint = Color.Transparent) }
 
     Row(
         modifier = modifier
             .fillMaxWidth()
             .height(IdeShellDimens.StatusBarHeight)
-            .then(backgroundModifier)
+            .glass(style, enabled = isBlueGlass)
             .padding(horizontal = Spacing.Small),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
