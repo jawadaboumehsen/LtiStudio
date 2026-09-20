@@ -28,14 +28,10 @@ import org.ide.lti.core.designsystem.component.display.GlassValueTile
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.icon.ideGeneralLanguage
-import org.ide.lti.core.designsystem.theme.AlphaTokens
-import org.ide.lti.core.designsystem.theme.BrandColors
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.SettingsThemeColors
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.designsystem.theme.config.AppTheme
 import org.ide.lti.feature.settings.model.SettingsCategory
 
 /**
@@ -47,8 +43,6 @@ fun GenericCategoryPane(
     modifier: Modifier = Modifier,
     colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
-    val isBlueGlass = GlassTheme.appTheme == AppTheme.Blue
-
     Column(
         modifier = modifier.fillMaxWidth().testTag("GenericCategoryPane_${category.name}"),
         verticalArrangement = Arrangement.spacedBy(Spacing.Large),
@@ -58,18 +52,18 @@ fun GenericCategoryPane(
                 text = category.title,
                 fontSize = FontSize.HeadlineMedium,
                 fontWeight = FontWeight.Bold,
-                color = if (isBlueGlass) BrandColors.OnLogoBadge else colors.textMain,
+                color = colors.textMain,
             )
             Text(
                 text = category.subtitle,
                 fontSize = FontSize.BodyMedium,
-                color = if (isBlueGlass) BrandColors.OnLogoBadge.copy(alpha = AlphaTokens.High) else colors.textMuted,
+                color = colors.textMuted,
             )
         }
 
         GlassCard(
-            surfaceColor = if (isBlueGlass) SettingsThemeColors.CardBackground else colors.cardBackground,
-            borderColor = if (isBlueGlass) SettingsThemeColors.CardBorder else colors.border,
+            surfaceColor = colors.cardBackground,
+            borderColor = colors.border,
             contentPadding = Spacing.CardPadding,
             modifier = Modifier.fillMaxWidth(),
         ) {
@@ -78,7 +72,7 @@ fun GenericCategoryPane(
                     text = "${category.title} Configuration",
                     fontSize = FontSize.TitleMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = if (isBlueGlass) BrandColors.OnLogoBadge else colors.textMain,
+                    color = colors.textMain,
                 )
 
                 when (category) {

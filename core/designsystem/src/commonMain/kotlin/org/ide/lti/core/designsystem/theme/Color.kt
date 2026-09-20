@@ -458,44 +458,28 @@ object GlassLayoutColors {
 
 /**
  * Semantic token colors for Plugin Manager screens (Concepts 12, 13, 14, 15).
+ *
+ * @deprecated Use [GlassTheme.ideShellColors] or [GlassTheme.colors] instead to ensure theme reactivity.
  */
+@Deprecated(
+    message = "Use GlassTheme.ideShellColors instead to support multi-theme reactivity.",
+    replaceWith = ReplaceWith("GlassTheme.ideShellColors"),
+)
 object PluginThemeColors {
-    val SelectedRowBackground = Color(0xD5195EB7)
-    val SelectedRowBorder = Color(0xFF38BDF8)
-    val CardBackground = Color(0xC40A1D36)
-    val CardBorder = Color(0x9958A9E8)
-    val HeaderBackground = Color(0xD9081930)
-    val TableRowAlt = Color(0x8F07162B)
-    val WarningBackground = Color(0xD12B1C09)
-    val WarningBorder = Color(0xCCB96A13)
-    val WarningText = Color(0xFFF59E0B)
-    val WarningBody = Color(0xFFD4B088)
-    val ActiveTabBackground = Color(0xD5195EB7)
-    val ActiveTabBorder = Color(0xFF38BDF8)
-    val StatusVerified = Color(0xFF22C55E)
-    val StatusUnverified = Color(0xFFF59E0B)
-}
-
-/**
- * Semantic token colors for Settings and Editor Preferences screens.
- */
-object SettingsThemeColors {
-    val CardBackground = Color(0xD00A1E38)
-    val CardBorder = Color(0x6638BDF8)
-    val CardCalloutBackground = Color(0xCC051222)
-    val CardCalloutBorder = Color(0x4038BDF8)
-    val ControlBackground = Color(0x80081B34)
-    val ControlBorder = Color(0x4D38BDF8)
-    val KeyCapBackground = Color(0x99061528)
-    val KeyCapBorder = Color(0x4038BDF8)
-    val ButtonSecondaryBackground = Color(0x331E3A6E)
-    val ButtonSecondaryBorder = Color(0x6638BDF8)
-    val ActivePillBackground = Color(0xD5195EB7)
-    val ActivePillBorder = Color(0xFF38BDF8)
-    val SwitchActiveTrack = Color(0xFF2563EB)
-    val StatusDotGreen = Color(0xFF22C55E)
-    val TextSecondary = Color(0xFF94A3B8)
-    val TextTertiary = Color(0xFF64748B)
+    val SelectedRowBackground: Color @Composable get() = GlassTheme.ideShellColors.controlSelected
+    val SelectedRowBorder: Color @Composable get() = GlassTheme.ideShellColors.focusRing
+    val CardBackground: Color @Composable get() = GlassTheme.ideShellColors.cardBackground
+    val CardBorder: Color @Composable get() = GlassTheme.ideShellColors.border
+    val HeaderBackground: Color @Composable get() = GlassTheme.ideShellColors.tableHeader
+    val TableRowAlt: Color @Composable get() = GlassTheme.ideShellColors.cardBackgroundMuted
+    val WarningBackground: Color @Composable get() = GlassTheme.ideShellColors.warningBackground
+    val WarningBorder: Color @Composable get() = GlassTheme.ideShellColors.warningBorder
+    val WarningText: Color @Composable get() = GlassTheme.ideShellColors.warningText
+    val WarningBody: Color @Composable get() = GlassTheme.ideShellColors.warningBody
+    val ActiveTabBackground: Color @Composable get() = GlassTheme.ideShellColors.tabSelected
+    val ActiveTabBorder: Color @Composable get() = GlassTheme.ideShellColors.tabSelectedBorder
+    val StatusVerified: Color @Composable get() = GlassTheme.ideShellColors.statusSuccess
+    val StatusUnverified: Color @Composable get() = GlassTheme.ideShellColors.statusWarning
 }
 
 /** Optical palette for the saturated blue studio canvas used by IDE workspaces. */
@@ -547,10 +531,23 @@ data class IdeShellColorScheme(
     val railSelectedBorder: Color = border,
     val tabSelected: Color = controlSelected,
     val tabSelectedBorder: Color = border,
-    val infoBannerFill: Color = accentBlue.copy(alpha = 0.1f),
-    val infoBannerBorder: Color = accentBlue.copy(alpha = 0.35f),
+    val infoBannerFill: Color = accentBlue.copy(alpha = AlphaTokens.Subtle),
+    val infoBannerBorder: Color = accentBlue.copy(alpha = AlphaTokens.Ambient),
     val tableHeader: Color = cardBackground,
-    val rowSelected: Color = controlSelected.copy(alpha = 0.25f),
+    val rowSelected: Color = controlSelected.copy(alpha = AlphaTokens.Faded),
+    val cardCalloutBackground: Color = cardBackgroundMuted,
+    val cardCalloutBorder: Color = borderMuted,
+    val keyCapBackground: Color = cardBackgroundMuted,
+    val keyCapBorder: Color = borderMuted,
+    val buttonSecondaryBackground: Color = controlHover,
+    val buttonSecondaryBorder: Color = border,
+    val switchActiveTrack: Color = accentBlue,
+    val statusSuccess: Color = accentGreen,
+    val statusWarning: Color = warningAmber,
+    val warningBackground: Color = warningAmberBg,
+    val warningBorder: Color = warningAmber,
+    val warningText: Color = warningAmber,
+    val warningBody: Color = textMuted,
 )
 
 /**
@@ -635,7 +632,7 @@ object IdeShellTokens {
 
     val Blue = IdeShellColorScheme(
         appBackground = Color.Transparent,
-        topBarBackground = Color(0xB90C427F).copy(alpha = AlphaTokens.Prominent),
+        topBarBackground = Color(0xFF0C427F).copy(alpha = AlphaTokens.Prominent),
         railBackground = StudioBackdropColors.SidebarStart.copy(alpha = AlphaTokens.Strong),
         navigatorBackground = StudioBackdropColors.SidebarCenter.copy(alpha = AlphaTokens.Strong),
         contentBackground = Color.Transparent,
@@ -669,5 +666,18 @@ object IdeShellTokens {
         infoBannerBorder = Color(0x5938BDF8),
         tableHeader = Color(0xD90B2140),
         rowSelected = Color(0x40195EB7),
+        cardCalloutBackground = Color(0xCC051222),
+        cardCalloutBorder = Color(0x4038BDF8),
+        keyCapBackground = Color(0x99061528),
+        keyCapBorder = Color(0x4038BDF8),
+        buttonSecondaryBackground = Color(0x331E3A6E),
+        buttonSecondaryBorder = Color(0x6638BDF8),
+        switchActiveTrack = Color(0xFF2563EB),
+        statusSuccess = Color(0xFF22C55E),
+        statusWarning = Color(0xFFF59E0B),
+        warningBackground = Color(0xD12B1C09),
+        warningBorder = Color(0xCCB96A13),
+        warningText = Color(0xFFF59E0B),
+        warningBody = Color(0xFFD4B088),
     )
 }

@@ -196,8 +196,8 @@ object GlassTheme {
 @Composable
 fun LtiTheme(
     modifier: Modifier = Modifier,
-    appTheme: AppTheme = AppTheme.Blue,
-    darkTheme: Boolean = appTheme.isDark,
+    appTheme: AppTheme? = null,
+    darkTheme: Boolean = true,
     glassColors: GlassColorScheme? = null,
     effectsEnabled: Boolean = true,
     reducedMotion: Boolean = false,
@@ -205,7 +205,7 @@ fun LtiTheme(
     sharedBackdrop: Backdrop? = null,
     content: @Composable () -> Unit,
 ) {
-    val effectiveAppTheme = if (!darkTheme) AppTheme.Light else appTheme
+    val effectiveAppTheme = appTheme ?: if (darkTheme) AppTheme.Blue else AppTheme.Light
     val themeConfig = effectiveAppTheme.configuration
 
     val resolvedMaterialScheme = materialColorScheme ?: themeConfig.materialColorScheme

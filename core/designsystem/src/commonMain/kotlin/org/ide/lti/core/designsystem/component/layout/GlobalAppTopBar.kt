@@ -45,12 +45,11 @@ import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.icon.GlassIcon
 import org.ide.lti.core.designsystem.theme.BrandColors
 import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
-import org.ide.lti.core.designsystem.theme.PluginThemeColors
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.config.AppTheme
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -169,21 +168,12 @@ private fun BrandIdentity(colors: IdeShellColorScheme, tag: String = "GlobalTopB
                 .size(ComponentSize.LogoBadgeSize)
                 .clip(GlassShapes.Small)
                 .background(
-                    brush = if (isBlue) {
-                        Brush.linearGradient(
-                            colors = listOf(
-                                colors.cardBackground,
-                                PluginThemeColors.CardBackground,
-                            ),
-                        )
-                    } else {
-                        Brush.linearGradient(
-                            colors = listOf(
-                                colors.cardBackground,
-                                colors.cardBackgroundMuted,
-                            ),
-                        )
-                    },
+                    brush = Brush.linearGradient(
+                        colors = listOf(
+                            colors.cardBackground,
+                            colors.cardBackgroundMuted,
+                        ),
+                    ),
                 )
                 .padding(Spacing.Compact),
             contentAlignment = Alignment.Center,
@@ -220,9 +210,9 @@ private fun DestinationTab(
     }
     val border = if (selected) {
         Modifier.border(
-            IdeShellDimens.HairlineBorder,
+            GlassDimens.HairlineBorder,
             if (isBlue) colors.tabSelectedBorder else colors.accentBlue,
-            org.ide.lti.core.designsystem.theme.IdeShellShapes.Pill,
+            org.ide.lti.core.designsystem.theme.GlassShapes.ShellPill,
         )
     } else {
         Modifier
@@ -231,7 +221,7 @@ private fun DestinationTab(
     Row(
         modifier = Modifier
             .testTag(tag)
-            .clip(org.ide.lti.core.designsystem.theme.IdeShellShapes.Pill)
+            .clip(org.ide.lti.core.designsystem.theme.GlassShapes.ShellPill)
             .then(border)
             .background(background)
             .selectable(

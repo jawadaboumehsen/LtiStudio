@@ -25,14 +25,10 @@ import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.GlassHorizontalDivider
 import org.ide.lti.core.designsystem.component.display.GlassToggleTile
 import org.ide.lti.core.designsystem.icon.AppIcons
-import org.ide.lti.core.designsystem.theme.AlphaTokens
-import org.ide.lti.core.designsystem.theme.BrandColors
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.SettingsThemeColors
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.designsystem.theme.config.AppTheme
 
 /**
  * Notifications & Alert Settings Pane.
@@ -42,7 +38,6 @@ fun NotificationsSettingsPane(
     modifier: Modifier = Modifier,
     colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
-    val isBlueGlass = GlassTheme.appTheme == AppTheme.Blue
     var pushEnabled by remember { mutableStateOf(true) }
     var soundEnabled by remember { mutableStateOf(false) }
     var autoSaveEnabled by remember { mutableStateOf(true) }
@@ -56,18 +51,18 @@ fun NotificationsSettingsPane(
                 text = "Notifications",
                 fontSize = FontSize.HeadlineMedium,
                 fontWeight = FontWeight.Bold,
-                color = if (isBlueGlass) BrandColors.OnLogoBadge else colors.textMain,
+                color = colors.textMain,
             )
             Text(
                 text = "System alerts, auditory cues, and background job notifications.",
                 fontSize = FontSize.BodyMedium,
-                color = if (isBlueGlass) BrandColors.OnLogoBadge.copy(alpha = AlphaTokens.High) else colors.textMuted,
+                color = colors.textMuted,
             )
         }
 
         GlassCard(
-            surfaceColor = if (isBlueGlass) SettingsThemeColors.CardBackground else colors.cardBackground,
-            borderColor = if (isBlueGlass) SettingsThemeColors.CardBorder else colors.border,
+            surfaceColor = colors.cardBackground,
+            borderColor = colors.border,
             contentPadding = Spacing.CardPadding,
             modifier = Modifier.fillMaxWidth(),
         ) {
@@ -76,7 +71,7 @@ fun NotificationsSettingsPane(
                     text = "System Alerts & Audio",
                     fontSize = FontSize.TitleMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = if (isBlueGlass) BrandColors.OnLogoBadge else colors.textMain,
+                    color = colors.textMain,
                 )
 
                 GlassToggleTile(
@@ -100,8 +95,8 @@ fun NotificationsSettingsPane(
         }
 
         GlassCard(
-            surfaceColor = if (isBlueGlass) SettingsThemeColors.CardBackground else colors.cardBackground,
-            borderColor = if (isBlueGlass) SettingsThemeColors.CardBorder else colors.border,
+            surfaceColor = colors.cardBackground,
+            borderColor = colors.border,
             contentPadding = Spacing.CardPadding,
             modifier = Modifier.fillMaxWidth(),
         ) {
@@ -110,7 +105,7 @@ fun NotificationsSettingsPane(
                     text = "Persistence & Window Focus",
                     fontSize = FontSize.TitleMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = if (isBlueGlass) BrandColors.OnLogoBadge else colors.textMain,
+                    color = colors.textMain,
                 )
 
                 GlassToggleTile(

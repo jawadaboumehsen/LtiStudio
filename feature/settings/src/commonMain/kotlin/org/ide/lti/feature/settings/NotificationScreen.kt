@@ -51,7 +51,6 @@ import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.SettingsThemeColors
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.config.AppTheme
@@ -139,8 +138,8 @@ fun NotificationScreenContent(
                     // Empty state
                     GlassCard(
                         modifier = Modifier.fillMaxWidth(),
-                        surfaceColor = if (isBlueGlass) SettingsThemeColors.CardBackground else colors.cardBackground,
-                        borderColor = if (isBlueGlass) SettingsThemeColors.CardBorder else colors.border,
+                        surfaceColor = colors.cardBackground,
+                        borderColor = colors.border,
                         contentPadding = Spacing.ExtraExtraLarge,
                     ) {
                         GlassEmptyState(

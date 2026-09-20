@@ -53,9 +53,6 @@ object AlphaTokens {
     /** Intense opacity for saturated icon tint layers (75%). */
     const val IconTint: Float = 0.75f
 
-    /** Vibrant icon or secondary text opacity (80%). */
-    const val Vibrant: Float = 0.80f
-
     /** Solid translucent glass panel backdrop opacity (92%). */
     const val Heavy: Float = 0.92f
 
