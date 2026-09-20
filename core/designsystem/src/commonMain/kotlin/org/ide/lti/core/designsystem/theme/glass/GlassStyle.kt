@@ -38,9 +38,8 @@ import kotlin.math.min
  * actually exposes today (`vibrancy` is a binary toggle in this engine, not a variable strength;
  * [rim] resolves through [Rim] to the existing `GlassBevel` shader rather than a new one).
  *
- * Not yet consumed anywhere - `GlassStyles` (the six named role values) and `Modifier.glass(style)`
- * (§1.2's resolution function) are the next step; this type is deliberately usable on its own so
- * that step can be reviewed against a settled data shape.
+ * Consumed via [GlassStyles] (the named role values) and
+ * [org.ide.lti.core.designsystem.component.primitives.glass] (§1.2's resolution function).
  */
 @Immutable
 public data class GlassStyle(
@@ -51,6 +50,8 @@ public data class GlassStyle(
     public val borderWidth: Dp = StrokeWidth.Standard,
     public val blur: OpticalSizeValue<Dp> = OpticalSizeValue.Fixed(BackdropBlur.Standard),
     public val lens: OpticalSizeValue<LensRefraction> = OpticalSizeValue.Fixed(LensRefraction.Surface),
+    public val lensDepthEffect: Boolean = false,
+    public val lensChromaticAberration: Boolean = false,
     public val vibrancy: Boolean = true,
     public val grain: Float = 0f,
     public val rim: Rim? = Rim.None,
@@ -84,7 +85,12 @@ public fun GlassStyle.toEffects(): BackdropEffectScope.() -> Unit = {
     if (resolvedBlur > 0.dp) blur(resolvedBlur.toPx())
     val resolvedLens = lens.resolve(shortestSide)
     if (resolvedLens.height > 0.dp || resolvedLens.amount > 0.dp) {
-        lens(resolvedLens.height.toPx(), resolvedLens.amount.toPx())
+        lens(
+            resolvedLens.height.toPx(),
+            resolvedLens.amount.toPx(),
+            depthEffect = lensDepthEffect,
+            chromaticAberration = lensChromaticAberration,
+        )
     }
     if (grain > 0f) frostedGrain(grain)
 }

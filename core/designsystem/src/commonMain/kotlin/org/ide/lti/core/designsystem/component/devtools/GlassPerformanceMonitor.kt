@@ -32,6 +32,7 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import com.kashif_e.backdrop.OpticalSizeValue
 import org.ide.lti.core.designsystem.component.actions.*
 import org.ide.lti.core.designsystem.component.display.*
 import org.ide.lti.core.designsystem.component.feedback.*
@@ -39,14 +40,17 @@ import org.ide.lti.core.designsystem.component.inputs.*
 import org.ide.lti.core.designsystem.component.layout.*
 import org.ide.lti.core.designsystem.component.navigation.*
 import org.ide.lti.core.designsystem.component.primitives.*
+import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize
-import org.ide.lti.core.designsystem.theme.GlassEffects
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.PerformanceMonitorColors
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
+import org.ide.lti.core.designsystem.theme.glass.GlassStyles
+import org.ide.lti.core.designsystem.theme.glass.Rim
 import kotlin.math.roundToInt
 
 /**
@@ -265,11 +269,27 @@ private fun PerformanceOverlay(
     metrics: GlassPerformanceMetrics,
     modifier: Modifier = Modifier,
 ) {
-    GlassCard(
-        modifier = modifier.width(ComponentSize.PerformanceMonitorWidth),
-        contentPadding = Spacing.SmallMedium,
-        borderColor = GlassTheme.colors.glassBorder,
-        effects = GlassEffects.PerformanceMonitor,
+    val glassColors = GlassTheme.colors
+    // Blur-only - no lens/vibrancy/rim/shadow - for this ultra-lean, high-frequency debug overlay.
+    // Bypasses GlassCard (which is tuned for GlassStyles.card's real content-card treatment)
+    // and calls Modifier.glass directly with a purpose-built style instead.
+    val style = GlassStyles.card.then {
+        copy(
+            border = glassColors.glassBorder,
+            borderWidth = StrokeWidth.Hairline,
+            blur = OpticalSizeValue.Fixed(BackdropBlur.Subtle),
+            lens = OpticalSizeValue.Fixed(LensRefraction.None),
+            vibrancy = false,
+            grain = 0f,
+            rim = Rim.None,
+            shadow = null,
+        )
+    }
+    Box(
+        modifier = modifier
+            .width(ComponentSize.PerformanceMonitorWidth)
+            .glass(style)
+            .padding(Spacing.SmallMedium),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
             // Title

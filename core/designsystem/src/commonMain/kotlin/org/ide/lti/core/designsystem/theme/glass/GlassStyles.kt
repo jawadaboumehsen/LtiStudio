@@ -11,9 +11,12 @@ package org.ide.lti.core.designsystem.theme.glass
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.ui.graphics.Color
 import com.kashif_e.backdrop.OpticalSizeValue
+import com.kashif_e.backdrop.shadow.Shadow
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BackdropBlur
+import org.ide.lti.core.designsystem.theme.Elevation
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LensRefraction
@@ -74,9 +77,12 @@ public object GlassStyles {
             val colors = GlassTheme.colors
             return GlassStyle(
                 surface = colors.glassSurface,
+                tint = colors.glassTint,
                 shape = GlassShapes.Panel,
                 blur = OpticalSizeValue.Fixed(BackdropBlur.Panel),
                 lens = OpticalSizeValue.Fixed(LensRefraction.Panel),
+                lensDepthEffect = true,
+                lensChromaticAberration = true,
                 grain = GRAIN_STANDARD,
             )
         }
@@ -102,10 +108,15 @@ public object GlassStyles {
             val colors = GlassTheme.colors
             return GlassStyle(
                 surface = colors.glassSurfaceElevated,
+                tint = colors.glassTint,
                 shape = GlassShapes.Card,
                 blur = OpticalSizeValue.Fixed(BackdropBlur.Card),
                 lens = OpticalSizeValue.Fixed(LensRefraction.Card),
+                lensDepthEffect = true,
+                lensChromaticAberration = true,
                 grain = GRAIN_STANDARD,
+                rim = Rim(),
+                shadow = Shadow(radius = Elevation.Raised, color = Color.Black.copy(alpha = AlphaTokens.Glow)),
             )
         }
 
@@ -121,6 +132,8 @@ public object GlassStyles {
                 shape = GlassShapes.Medium,
                 blur = OpticalSizeValue.Fixed(BackdropBlur.Button),
                 lens = OpticalSizeValue.Fixed(LensRefraction.Button),
+                lensChromaticAberration = true,
+                grain = GRAIN_STANDARD,
                 rim = Rim(),
             )
         }
@@ -132,10 +145,12 @@ public object GlassStyles {
             val colors = GlassTheme.colors
             val isDark = GlassTheme.isDark
             return GlassStyle(
-                surface = colors.glassSurfaceElevated,
+                surface = colors.glassSurface,
+                tint = colors.glassTint,
                 shape = GlassShapes.Dialog,
                 blur = OpticalSizeValue.Fixed(if (isDark) BackdropBlur.DialogDark else BackdropBlur.DialogLight),
                 lens = OpticalSizeValue.Fixed(LensRefraction.Dialog),
+                lensDepthEffect = true,
                 rim = Rim(),
             )
         }

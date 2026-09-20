@@ -110,7 +110,13 @@ class ModifierGlassScreenshotTest {
         const val TEST_WIDTH = 200
         const val TEST_HEIGHT = 140
         const val STRIPE_COUNT = 10
-        const val VARIANCE_REDUCTION_CEILING = 0.6
+
+        // GlassStyles.card carries a real translucent glassTint layer (matching what GlassSurface
+        // always substituted when a caller left tint unspecified - see GlassStyles.kt's card/
+        // navigator/dialog roles), which flattens contrast somewhat even in the flat fallback
+        // capture, so the proportional variance drop from blurring is smaller than a bare
+        // stripe-on-stripe comparison would show. 0.7 still requires a real, visible softening.
+        const val VARIANCE_REDUCTION_CEILING = 0.7
         const val MIN_OPAQUE_ALPHA = 0.9f
     }
 }

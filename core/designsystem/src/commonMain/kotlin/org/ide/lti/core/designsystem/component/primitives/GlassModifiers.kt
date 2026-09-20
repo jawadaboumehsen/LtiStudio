@@ -52,20 +52,26 @@ import org.ide.lti.core.designsystem.theme.glass.toHighlight
 /**
  * The single rendering facade for a [GlassStyle] - backdrop-refactor-plan-20260920.md §1.2. The
  * only place that reads [GlassTheme.effectsEnabled] / [GlassTheme.backdrop] on behalf of a style;
- * callers pass a value, not a lambda, and never see [com.kashif_e.backdrop.Backdrop] or
- * [BackdropEffectScope] in their own call site.
+ * callers pass a value, not a lambda, and (unless they need [backdrop]) never see
+ * [com.kashif_e.backdrop.Backdrop] or [BackdropEffectScope] in their own call site.
  *
- * When effects are disabled (globally via [GlassTheme.effectsEnabled], no ambient backdrop is
- * available, or [enabled] is `false`), falls back to a plain surface+tint+border draw - dropping
- * only the GPU-only blur/lens/vibrancy/grain stages, per the plan's fallback contract. The rim
+ * [backdrop] defaults to the ambient [GlassTheme.backdrop], but some screens deliberately capture
+ * their own distinct [com.kashif_e.backdrop.backdrops.LayerBackdrop] instead of sharing the app's
+ * (e.g. Setup's Blue Glass mode, `SetupScreen.kt`'s `resolvedBackdrop`) - an override stays
+ * possible for exactly that case, matching every pre-existing `backdrop ?: GlassTheme.backdrop`
+ * call site this facade is replacing.
+ *
+ * When effects are disabled (globally via [GlassTheme.effectsEnabled], no backdrop is available,
+ * or [enabled] is `false`), falls back to a plain surface+tint+border draw - dropping only the
+ * GPU-only blur/lens/vibrancy/grain stages, per the plan's fallback contract. The rim
  * ([GlassStyle.rim]) has no non-shader equivalent, so the fallback border color prefers
  * [GlassStyle.border] when set, else borrows [GlassColorScheme.glassBorderHighlight] when a rim
  * was requested, so the edge doesn't go fully undefined.
  */
-fun Modifier.glass(style: GlassStyle, enabled: Boolean = true): Modifier = composed {
+fun Modifier.glass(style: GlassStyle, enabled: Boolean = true, backdrop: Backdrop? = null): Modifier = composed {
     val glassColors = GlassTheme.colors
     val effectsEnabled = GlassTheme.effectsEnabled && enabled
-    val backdrop = GlassTheme.backdrop
+    val resolvedBackdrop = backdrop ?: GlassTheme.backdrop
 
     val borderColor = when {
         style.border.alpha > 0f -> style.border
@@ -78,9 +84,9 @@ fun Modifier.glass(style: GlassStyle, enabled: Boolean = true): Modifier = compo
         Modifier
     }
 
-    val backgroundModifier = if (effectsEnabled && backdrop != null) {
+    val backgroundModifier = if (effectsEnabled && resolvedBackdrop != null) {
         Modifier.drawBackdrop(
-            backdrop = backdrop,
+            backdrop = resolvedBackdrop,
             shape = { style.shape },
             effects = style.toEffects(),
             highlight = { style.rim?.toHighlight() },
