@@ -129,9 +129,14 @@ public object GlassStyles {
                 surface = colors.glassSurface,
                 tint = colors.glassTint,
                 border = colors.glassBorder,
-                shape = GlassShapes.Medium,
-                blur = OpticalSizeValue.Fixed(BackdropBlur.Button),
-                lens = OpticalSizeValue.Fixed(LensRefraction.Button),
+                shape = GlassShapes.Capsule,
+                // Matches GlassButtonPillEffects (= GlassEffects.ButtonPill) - GlassButton's real
+                // default `effects`. Only blur/lens/vibrancy/grain are actually consumed by
+                // GlassButton (via .toEffects()); it computes surface/tint/border/rim itself per
+                // variant/hover/focus state, so those fields above are placeholders, not real
+                // defaults, for this specific consumer.
+                blur = OpticalSizeValue.Fixed(BackdropBlur.ButtonPill),
+                lens = OpticalSizeValue.Fixed(LensRefraction.ButtonPill),
                 lensChromaticAberration = true,
                 grain = GRAIN_STANDARD,
                 rim = Rim(),

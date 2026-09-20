@@ -63,6 +63,8 @@ import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.LetterSpacing
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.glass.GlassStyles
+import org.ide.lti.core.designsystem.theme.glass.toEffects
 import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
 import org.ide.lti.core.designsystem.utils.InteractiveHighlight
 import org.ide.lti.core.designsystem.utils.applyInteractiveHighlightTransform
@@ -137,7 +139,7 @@ fun GlassButton(
     enabled: Boolean = true,
     shape: Shape = GlassShapes.Capsule,
     variant: GlassButtonVariant = GlassButtonVariant.Standard,
-    effects: BackdropEffectScope.() -> Unit = GlassButtonPillEffects,
+    effects: BackdropEffectScope.() -> Unit = GlassStyles.button.toEffects(),
     backdrop: Backdrop? = null,
     minWidth: Dp = GlassButtonDefaults.MinWidth,
     minHeight: Dp = GlassButtonDefaults.MinHeight,
