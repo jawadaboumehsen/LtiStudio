@@ -79,3 +79,9 @@ secrets/
 
 # Graphify output and cache
 graphify-out/
+
+# "build/" above also matches real source directories that happen to be package-named "build"
+# (e.g. org.ide.lti.feature.rom.studio.stage.build, org.ide.lti.core.domain.usecase.build) -
+# Gradle's own build/ output is never nested inside a src/ tree, so un-ignore anything under one.
+!**/src/**/build/
+!**/src/**/build/**
