@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.neverEqualPolicy
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.graphics.Path
@@ -41,6 +42,7 @@ import com.kashif_e.backdrop.shadow.InnerShadowElement
 import com.kashif_e.backdrop.shadow.Shadow
 import com.kashif_e.backdrop.shadow.ShadowElement
 import kotlin.math.ceil
+import kotlin.math.roundToInt
 
 private val DefaultOnDrawBackdrop: DrawScope.(DrawScope.() -> Unit) -> Unit = { it() }
 
@@ -77,7 +79,8 @@ actual fun Modifier.drawPlainBackdrop(
                 onDrawBehind = onDrawBehind,
                 onDrawBackdrop = actualOnDrawBackdrop,
                 onDrawSurface = onDrawSurface,
-                onDrawFront = onDrawFront
+                onDrawFront = onDrawFront,
+                inputScale = 1f
             )
         )
 }
@@ -100,8 +103,10 @@ actual fun Modifier.drawBackdrop(
     onDrawBehind: (DrawScope.() -> Unit)?,
     onDrawBackdrop: (DrawScope.(drawBackdrop: DrawScope.() -> Unit) -> Unit)?,
     onDrawSurface: (DrawScope.() -> Unit)?,
-    onDrawFront: (DrawScope.() -> Unit)?
+    onDrawFront: (DrawScope.() -> Unit)?,
+    inputScale: Float
 ): Modifier {
+    requireValidInputScale(inputScale)
     val shapeProvider = ShapeProvider(shape)
     val actualOnDrawBackdrop = onDrawBackdrop ?: DefaultOnDrawBackdrop
     return this
@@ -151,9 +156,17 @@ actual fun Modifier.drawBackdrop(
                 onDrawBehind = onDrawBehind,
                 onDrawBackdrop = actualOnDrawBackdrop,
                 onDrawSurface = onDrawSurface,
-                onDrawFront = onDrawFront
+                onDrawFront = onDrawFront,
+                inputScale = inputScale
             )
         )
+}
+
+/** Validates the `inputScale` contract shared by [drawBackdrop] and [DrawBackdropNode]. */
+private fun requireValidInputScale(inputScale: Float) {
+    require(inputScale.isFinite() && inputScale > 0f && inputScale <= 1f) {
+        "inputScale must be finite and in 0f < value <= 1f, was $inputScale"
+    }
 }
 
 private class DrawBackdropElement(
@@ -164,7 +177,8 @@ private class DrawBackdropElement(
     val onDrawBehind: (DrawScope.() -> Unit)?,
     val onDrawBackdrop: DrawScope.(drawBackdrop: DrawScope.() -> Unit) -> Unit,
     val onDrawSurface: (DrawScope.() -> Unit)?,
-    val onDrawFront: (DrawScope.() -> Unit)?
+    val onDrawFront: (DrawScope.() -> Unit)?,
+    val inputScale: Float
 ) : ModifierNodeElement<DrawBackdropNode>() {
 
     override fun create(): DrawBackdropNode {
@@ -176,7 +190,8 @@ private class DrawBackdropElement(
             onDrawBehind = onDrawBehind,
             onDrawBackdrop = onDrawBackdrop,
             onDrawSurface = onDrawSurface,
-            onDrawFront = onDrawFront
+            onDrawFront = onDrawFront,
+            inputScale = inputScale
         )
     }
 
@@ -189,6 +204,7 @@ private class DrawBackdropElement(
         node.onDrawBackdrop = onDrawBackdrop
         node.onDrawSurface = onDrawSurface
         node.onDrawFront = onDrawFront
+        node.inputScale = inputScale
         node.invalidateDrawCache()
         node.invalidateDraw()
     }
@@ -203,6 +219,7 @@ private class DrawBackdropElement(
         properties["onDrawBackdrop"] = onDrawBackdrop
         properties["onDrawSurface"] = onDrawSurface
         properties["onDrawFront"] = onDrawFront
+        properties["inputScale"] = inputScale
     }
 
     override fun equals(other: Any?): Boolean {
@@ -217,6 +234,7 @@ private class DrawBackdropElement(
         if (onDrawBackdrop != other.onDrawBackdrop) return false
         if (onDrawSurface != other.onDrawSurface) return false
         if (onDrawFront != other.onDrawFront) return false
+        if (inputScale != other.inputScale) return false
 
         return true
     }
@@ -230,6 +248,7 @@ private class DrawBackdropElement(
         result = 31 * result + onDrawBackdrop.hashCode()
         result = 31 * result + (onDrawSurface?.hashCode() ?: 0)
         result = 31 * result + (onDrawFront?.hashCode() ?: 0)
+        result = 31 * result + inputScale.hashCode()
         return result
     }
 }
@@ -242,7 +261,8 @@ private class DrawBackdropNode(
     var onDrawBehind: (DrawScope.() -> Unit)?,
     var onDrawBackdrop: DrawScope.(drawBackdrop: DrawScope.() -> Unit) -> Unit,
     var onDrawSurface: (DrawScope.() -> Unit)?,
-    var onDrawFront: (DrawScope.() -> Unit)?
+    var onDrawFront: (DrawScope.() -> Unit)?,
+    var inputScale: Float
 ) : LayoutModifierNode, DrawModifierNode, GlobalPositionAwareModifierNode, ObserverModifierNode, Modifier.Node() {
 
     override val shouldAutoInvalidate: Boolean = false
@@ -276,6 +296,17 @@ private class DrawBackdropNode(
 
     private val recordBackdropBlock: (DrawScope.() -> Unit) = {
         val canvas = drawContext.canvas
+        // inputScale < 1f: the recording canvas is smaller than the element's real size (see
+        // drawBackdropLayer). Scaling the canvas here - before the padding translate and the
+        // backdrop sample - makes every subsequent draw in this block (including the ambient
+        // layer's 1:1, unscaled drawLayer() inside LayerBackdrop.drawBackdrop) land downsampled
+        // onto the smaller canvas, in the same real-world position it would occupy at full
+        // resolution. At 1f this is a no-op scale, so behavior is unchanged.
+        val needsScale = inputScale != 1f
+        if (needsScale) {
+            canvas.save()
+            canvas.scale(inputScale, inputScale)
+        }
         // Rounded up (not truncated) and to the exact same integer drawBackdropLayer() uses for
         // the recorded layer's size/offset below - a raw fractional padding here (e.g. 2.5px at
         // 125% display scaling) would translate the recorded content by a sub-pixel amount that
@@ -298,6 +329,9 @@ private class DrawBackdropNode(
         if (currentPadding != 0f) {
             canvas.translate(-currentPadding, -currentPadding)
         }
+        if (needsScale) {
+            canvas.restore()
+        }
     }
 
     private val drawBackdropLayer: DrawScope.() -> Unit = {
@@ -306,18 +340,27 @@ private class DrawBackdropNode(
             // Same rounding as recordBackdropBlock's currentPadding - both must agree exactly.
             val currentPadding = ceil(padding).toInt()
             val currentSize = size
+            val fullWidth = ceil(currentSize.width).toInt() + currentPadding * 2
+            val fullHeight = ceil(currentSize.height).toInt() + currentPadding * 2
+
+            // inputScale < 1f records fewer pixels (the blur pass is cheaper), then the layer's
+            // own scaleX/scaleY compositing transform stretches it back to full size - the same
+            // downsample-then-upscale trade Haze's GlassInputScalePolicy makes. At 1f (the
+            // default) recordWidth == fullWidth and scaleX/Y == 1f: byte-identical to pre-B1.
+            val recordWidth = (fullWidth * inputScale).roundToInt().coerceAtLeast(1)
+            val recordHeight = (fullHeight * inputScale).roundToInt().coerceAtLeast(1)
 
             with(this@DrawBackdropNode) {
                 recordLayer(
                     layer,
-                    size = IntSize(
-                        ceil(currentSize.width).toInt() + currentPadding * 2,
-                        ceil(currentSize.height).toInt() + currentPadding * 2
-                    ),
+                    size = IntSize(recordWidth, recordHeight),
                     block = recordBackdropBlock
                 )
             }
 
+            layer.pivotOffset = Offset.Zero
+            layer.scaleX = fullWidth.toFloat() / recordWidth
+            layer.scaleY = fullHeight.toFloat() / recordHeight
             layer.topLeft =
                 if (currentPadding != 0) IntOffset(-currentPadding, -currentPadding)
                 else IntOffset.Zero

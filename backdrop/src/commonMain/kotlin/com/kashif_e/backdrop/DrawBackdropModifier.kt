@@ -26,6 +26,12 @@ import com.kashif_e.backdrop.shadow.Shadow
  * @param onDrawBackdrop Optional callback to customize backdrop drawing.
  * @param onDrawSurface Optional callback to draw on the surface.
  * @param onDrawFront Optional callback to draw in front of everything.
+ * @param inputScale Fraction of the element's pixel size (`0f` exclusive to `1f` inclusive) at
+ * which the sampled backdrop is captured and blurred before being scaled back up to fill the
+ * element. `1f` (the default) records at full resolution — byte-identical to the pre-B1 behavior.
+ * Values below `1f` cut blur cost roughly with the square of the scale (e.g. `0.5f` blurs a
+ * quarter of the pixels) at a cost invisible once blurred; ported from Haze's
+ * `GlassInputScalePolicy`.
  */
 expect fun Modifier.drawBackdrop(
     backdrop: Backdrop,
@@ -39,7 +45,8 @@ expect fun Modifier.drawBackdrop(
     onDrawBehind: (DrawScope.() -> Unit)? = null,
     onDrawBackdrop: (DrawScope.(drawBackdrop: DrawScope.() -> Unit) -> Unit)? = null,
     onDrawSurface: (DrawScope.() -> Unit)? = null,
-    onDrawFront: (DrawScope.() -> Unit)? = null
+    onDrawFront: (DrawScope.() -> Unit)? = null,
+    inputScale: Float = 1f
 ): Modifier
 
 /**
