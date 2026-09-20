@@ -45,3 +45,15 @@ expect sealed interface HighlightStyle {
         val GlassBevel: HighlightStyle
     }
 }
+
+/**
+ * A [HighlightStyle.GlassBevel] tuned with custom rim parameters, rather than the fixed
+ * [HighlightStyle.Companion.GlassBevel] default. `angleDegrees` follows the shader's own
+ * convention (0 = light from the right, 90 = light from the top).
+ */
+expect fun glassBevel(
+    specularAlpha: Float = 0.75f,
+    shadowAlpha: Float = 0.25f,
+    angleDegrees: Float = 90f,
+    falloff: Float = 1.6f,
+): HighlightStyle

@@ -178,6 +178,14 @@ actual sealed interface HighlightStyle {
     }
 }
 
+actual fun glassBevel(specularAlpha: Float, shadowAlpha: Float, angleDegrees: Float, falloff: Float): HighlightStyle =
+    HighlightStyle.GlassBevel(
+        specularAlpha = specularAlpha,
+        shadowAlpha = shadowAlpha,
+        angle = angleDegrees,
+        falloff = falloff,
+    )
+
 private fun DrawScope.getCornerRadii(shape: Shape): FloatArray {
     val size = size
     val maxRadius = size.minDimension / 2f
