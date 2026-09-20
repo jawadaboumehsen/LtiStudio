@@ -11,6 +11,8 @@ package org.ide.lti.core.designsystem.theme
 
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.kashif_e.backdrop.OpticalSizeValue
+import com.kashif_e.backdrop.resolve
 
 /**
  * Centralized blur radius tokens for glass backdrops.
@@ -104,6 +106,17 @@ data class LensRefraction(
         /** Prominent refraction for modal dialogs (24dp, 48dp). */
         val Dialog: LensRefraction = LensRefraction(24.dp, 48.dp)
     }
+}
+
+/**
+ * Resolves an [OpticalSizeValue] of [LensRefraction] at [shortestSide], smoothstep-interpolating
+ * both [LensRefraction.height] and [LensRefraction.amount] between adjacent breakpoints.
+ */
+fun OpticalSizeValue<LensRefraction>.resolve(shortestSide: Dp): LensRefraction = resolve(shortestSide) { a, b, t ->
+    LensRefraction(
+        height = Dp(a.height.value + (b.height.value - a.height.value) * t),
+        amount = Dp(a.amount.value + (b.amount.value - a.amount.value) * t),
+    )
 }
 
 /**
