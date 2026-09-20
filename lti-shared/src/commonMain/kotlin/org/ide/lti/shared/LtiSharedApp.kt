@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import org.ide.lti.core.designsystem.component.layout.GlassBackdrop
+import org.ide.lti.core.designsystem.component.layout.StudioGlassBackdrop
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.config.AppTheme
@@ -81,14 +82,20 @@ private fun SharedApp(openSettingsRequest: Long, appSettingsState: AppSettingsSt
         }
     }
 
+    val appTheme = AppTheme.fromId(appSettingsState.theme)
+
     LtiTheme(
-        appTheme = AppTheme.fromId(appSettingsState.theme),
+        appTheme = appTheme,
         effectsEnabled = appSettingsState.effectsEnabled,
         reducedMotion = appSettingsState.reducedMotion,
         sharedBackdrop = backdrop,
     ) {
         Box(modifier = modifier.fillMaxSize()) {
-            GlassBackdrop(backdrop = backdrop)
+            if (appTheme == AppTheme.Blue) {
+                StudioGlassBackdrop(backdrop = backdrop)
+            } else {
+                GlassBackdrop(backdrop = backdrop)
+            }
 
             RootNavGraph(
                 navHostController = navController,

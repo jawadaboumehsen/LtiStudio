@@ -13,21 +13,26 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
-import org.ide.lti.core.designsystem.component.display.GlassCard
+import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.display.GlassChip
-import org.ide.lti.core.designsystem.theme.GlassShapes
+import org.ide.lti.core.designsystem.component.display.ideCardSurface
+import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
+import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.ideFontFamily
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.AcquisitionMode
 import org.ide.lti.core.model.workspace.AcquisitionSettings
 
+@Suppress("UnusedParameter")
 @Composable
 public fun SourceModePane(
     settings: AcquisitionSettings,
@@ -44,48 +49,40 @@ public fun SourceModePane(
             .testTag("SourceModePane"),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
-        AcquireHeader(
-            title = "Source",
-            subtitle = "Configure acquisition mode and target firmware source.",
-            targetSpec = "${target.codename} / Development",
-            targetRevision = "Target revision ${target.revision}",
-            onValidate = onValidate,
-            onSave = onSave,
-            colors = colors,
-        )
-
-        GlassCard(
-            modifier = Modifier.fillMaxWidth(),
-            shape = GlassShapes.Panel,
-            surfaceColor = colors.cardBackground,
-            borderColor = colors.border,
-            contentPadding = Spacing.Medium,
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(IdeShellShapes.Card)
+                .ideCardSurface(colors, shape = IdeShellShapes.Card)
+                .padding(Spacing.Medium),
+            verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
-                Text(
-                    text = "Source mode",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = colors.textMain,
-                )
-                Text(
-                    text = "Pinned target: ${target.friendlyTitle}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = colors.textMuted,
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-                    AcquisitionMode.entries.forEach { mode ->
-                        val enabled = mode == AcquisitionMode.DOWNLOAD || !settings.archiveRef.isNullOrBlank()
-                        GlassChip(
-                            label = mode.name.replace('_', ' '),
-                            selected = settings.mode == mode,
-                            enabled = enabled,
-                            onClick = if (enabled) {
-                                { onChange(settings.copy(mode = mode)) }
-                            } else {
-                                null
-                            },
-                        )
-                    }
+            Text(
+                text = "Source mode",
+                color = colors.textMain,
+                fontSize = FontSize.TitleSmall,
+                fontWeight = FontWeight.SemiBold,
+                fontFamily = ideFontFamily(),
+            )
+            Text(
+                text = "Pinned target: ${target.friendlyTitle}",
+                color = colors.textMuted,
+                fontSize = FontSize.BodySmall,
+                fontFamily = ideFontFamily(),
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
+                AcquisitionMode.entries.forEach { mode ->
+                    val enabled = mode == AcquisitionMode.DOWNLOAD || !settings.archiveRef.isNullOrBlank()
+                    GlassChip(
+                        label = mode.name.replace('_', ' '),
+                        selected = settings.mode == mode,
+                        enabled = enabled,
+                        onClick = if (enabled) {
+                            { onChange(settings.copy(mode = mode)) }
+                        } else {
+                            null
+                        },
+                    )
                 }
             }
         }

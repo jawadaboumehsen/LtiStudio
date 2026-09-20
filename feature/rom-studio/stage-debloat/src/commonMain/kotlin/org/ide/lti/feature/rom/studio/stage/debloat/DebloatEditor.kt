@@ -18,27 +18,32 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
-import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.GlassChip
+import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
-import org.ide.lti.core.designsystem.theme.GlassShapes
+import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.codeFontFamily
+import org.ide.lti.core.designsystem.theme.ideFontFamily
 import org.ide.lti.core.domain.pipeline.configuration.Severity
 import org.ide.lti.core.domain.pipeline.configuration.ValidationError
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.DebloatSettings
 
+@Suppress("LongParameterList", "UnusedParameter")
 @Composable
 public fun DebloatEditor(
     settings: DebloatSettings,
@@ -50,6 +55,7 @@ public fun DebloatEditor(
     onValidate: () -> Unit = {},
     onSave: () -> Unit = {},
     modifier: Modifier = Modifier,
+    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     val errors = validationErrors.filter { it.fieldPath.startsWith("debloat.") || !it.fieldPath.contains('.') }
 
@@ -66,179 +72,285 @@ public fun DebloatEditor(
                 .padding(horizontal = Spacing.ExtraLarge, vertical = Spacing.Medium),
             verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
         ) {
-            item { EditorHeader(onValidate, onSave) }
             when (selectedObjectId.lowercase()) {
-                "presets" -> item { PresetsCard(settings, dirtyPaths, onChange) }
-                "remove-selections", "remove_selections" -> item { RemoveSelectionsCard(settings, dirtyPaths, onChange) }
-                "keep-rules", "keep_rules" -> item { KeepRulesCard(settings, dirtyPaths, onChange) }
-                "risk-review", "risk_review" -> item { RiskReviewCard(settings) }
-                "results" -> item { ResultsCard(settings) }
-                else -> item { InventoryCard(settings, onChange) }
+                "presets" -> item { PresetsCard(settings, dirtyPaths, onChange, colors) }
+                "remove-selections", "remove_selections" -> item {
+                    RemoveSelectionsCard(settings, dirtyPaths, onChange, colors)
+                }
+                "keep-rules", "keep_rules" -> item { KeepRulesCard(settings, dirtyPaths, onChange, colors) }
+                "risk-review", "risk_review" -> item { RiskReviewCard(settings, colors) }
+                "results" -> item { ResultsCard(settings, colors) }
+                else -> item { InventoryCard(settings, onChange, colors) }
             }
-            item { Diagnostics(errors) }
+            item { Diagnostics(errors, colors) }
         }
     }
 }
 
+@Suppress("UnusedParameter")
 @Composable
-private fun EditorHeader(onValidate: () -> Unit, onSave: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
+private fun InventoryCard(settings: DebloatSettings, onChange: (DebloatSettings) -> Unit, colors: IdeShellColorScheme) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(IdeShellShapes.Card)
+            .ideCardSurface(colors, shape = IdeShellShapes.Card)
+            .padding(Spacing.Medium),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
-        Column {
-            Text("Debloat", style = MaterialTheme.typography.headlineSmall, color = GlassTheme.colors.onGlass)
+        Text(
+            text = "Package inventory",
+            fontSize = FontSize.BodySmall,
+            fontWeight = FontWeight.SemiBold,
+            fontFamily = ideFontFamily(),
+            color = colors.textMain,
+        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            GlassToggle(settings.enabled, { onChange(settings.copy(enabled = it)) }, activeColor = colors.accentBlue)
             Text(
-                "Configure package removal, keep rules, and safety verification.",
-                color = GlassTheme.colors.onGlassSecondary,
+                text = "Enable debloat processing for this ROM build",
+                fontSize = FontSize.Micro,
+                fontFamily = ideFontFamily(),
+                color = colors.textMain,
             )
         }
+        Text(
+            text = "Active inventory contains ${settings.removeSelectors.size} packages selected for removal " +
+                "and ${settings.keepSelectors.size} explicitly protected packages.",
+            fontSize = FontSize.Micro,
+            fontFamily = ideFontFamily(),
+            color = colors.textMuted,
+        )
+    }
+}
+
+@Composable
+private fun PresetsCard(
+    settings: DebloatSettings,
+    dirtyPaths: Set<String>,
+    onChange: (DebloatSettings) -> Unit,
+    colors: IdeShellColorScheme,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(IdeShellShapes.Card)
+            .ideCardSurface(colors, shape = IdeShellShapes.Card)
+            .padding(Spacing.Medium),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+    ) {
+        Text(
+            text = "Debloat Presets",
+            fontSize = FontSize.BodySmall,
+            fontWeight = FontWeight.SemiBold,
+            fontFamily = ideFontFamily(),
+            color = colors.textMain,
+        )
+        Text(
+            text = "Select a curated debloat aggressiveness level:",
+            fontSize = FontSize.Micro,
+            fontFamily = ideFontFamily(),
+            color = colors.textMuted,
+        )
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-            GlassButton(onClick = onValidate, variant = GlassButtonVariant.Standard, shape = IdeShellShapes.Control) {
-                Text("Validate", color = GlassTheme.colors.onGlass)
-            }
-            GlassButton(onClick = onSave, variant = GlassButtonVariant.Primary, shape = IdeShellShapes.Control) {
-                Text("Save", color = GlassTheme.colors.onGlass)
+            listOf("minimal", "recommended", "aggressive").forEach { preset ->
+                GlassChip(
+                    label = preset.replaceFirstChar { it.uppercase() },
+                    selected = settings.presetId == preset,
+                    onClick = { onChange(settings.copy(presetId = preset)) },
+                )
             }
         }
+        Meta("presets", dirtyPaths, "Debloat policy", "Recommended preset preserves all critical services.", colors)
     }
 }
 
 @Composable
-private fun InventoryCard(settings: DebloatSettings, onChange: (DebloatSettings) -> Unit) {
-    GlassCard(Modifier.fillMaxWidth(), shape = GlassShapes.Panel) {
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
-            Text("Package inventory", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-                GlassToggle(settings.enabled, { onChange(settings.copy(enabled = it)) })
-                Text("Enable debloat processing for this ROM build", color = GlassTheme.colors.onGlass)
-            }
-            Text(
-                "Active inventory contains ${settings.removeSelectors.size} packages selected for removal and ${settings.keepSelectors.size} explicitly protected packages.",
-                style = MaterialTheme.typography.bodySmall,
-                color = GlassTheme.colors.onGlassSecondary,
-            )
-        }
+private fun RemoveSelectionsCard(
+    settings: DebloatSettings,
+    dirtyPaths: Set<String>,
+    onChange: (DebloatSettings) -> Unit,
+    colors: IdeShellColorScheme,
+) {
+    val items = settings.removeSelectors.ifEmpty {
+        listOf(
+            "com.google.android.apps.youtube.music",
+            "com.google.android.videos",
+            "com.google.android.apps.docs",
+        )
     }
-}
 
-@Composable
-private fun PresetsCard(settings: DebloatSettings, dirtyPaths: Set<String>, onChange: (DebloatSettings) -> Unit) {
-    GlassCard(Modifier.fillMaxWidth(), shape = GlassShapes.Panel) {
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
-            Text("Debloat Presets", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)
-            Text("Select a curated debloat aggressiveness level:", color = GlassTheme.colors.onGlassSecondary)
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-                listOf("minimal", "recommended", "aggressive").forEach { preset ->
-                    GlassChip(
-                        label = preset.replaceFirstChar { it.uppercase() },
-                        selected = settings.presetId == preset,
-                        onClick = { onChange(settings.copy(presetId = preset)) },
-                    )
-                }
-            }
-            Meta("presets", dirtyPaths, "Debloat policy", "Recommended preset preserves all critical telephony/IMS services.")
-        }
-    }
-}
-
-@Composable
-private fun RemoveSelectionsCard(settings: DebloatSettings, dirtyPaths: Set<String>, onChange: (DebloatSettings) -> Unit) {
-    GlassCard(Modifier.fillMaxWidth(), shape = GlassShapes.Panel) {
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
-            Text("Remove Selections", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)
-            settings.removeSelectors.forEach { selector ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(IdeShellShapes.Card)
+            .ideCardSurface(colors, shape = IdeShellShapes.Card)
+            .padding(Spacing.Medium),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+    ) {
+        Text(
+            text = "Remove Selections (Android Package IDs)",
+            fontSize = FontSize.BodySmall,
+            fontWeight = FontWeight.SemiBold,
+            fontFamily = ideFontFamily(),
+            color = colors.textMain,
+        )
+        items.forEach { selector ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = selector,
+                    color = colors.textMain,
+                    fontSize = FontSize.Micro,
+                    fontFamily = codeFontFamily(),
+                )
+                GlassButton(
+                    onClick = { onChange(settings.copy(removeSelectors = settings.removeSelectors - selector)) },
+                    variant = GlassButtonVariant.Standard,
+                    shape = IdeShellShapes.Control,
                 ) {
-                    Text(selector, color = GlassTheme.colors.onGlass, style = MaterialTheme.typography.bodyMedium)
-                    GlassButton(
-                        onClick = { onChange(settings.copy(removeSelectors = settings.removeSelectors - selector)) },
-                        variant = GlassButtonVariant.Standard,
-                        shape = IdeShellShapes.Control,
-                    ) {
-                        Text("Remove", color = GlassTheme.colors.diagnostics.error)
-                    }
+                    Text("Remove", color = colors.errorRed, fontSize = FontSize.Micro)
                 }
             }
-            Meta("removeSelectors", dirtyPaths, "Package list", "Selected packages will be stripped from /system and /product.")
         }
+        Meta("removeSelectors", dirtyPaths, "Package list", "Packages stripped from system and product.", colors)
     }
 }
 
 @Composable
-private fun KeepRulesCard(settings: DebloatSettings, dirtyPaths: Set<String>, onChange: (DebloatSettings) -> Unit) {
-    GlassCard(Modifier.fillMaxWidth(), shape = GlassShapes.Panel) {
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
-            Text("Keep Rules (Protected Packages)", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)
-            settings.keepSelectors.forEach { selector ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(selector, color = GlassTheme.colors.onGlass, style = MaterialTheme.typography.bodyMedium)
-                    GlassChip(label = "Protected", selected = true, onClick = {})
-                }
+private fun KeepRulesCard(
+    settings: DebloatSettings,
+    dirtyPaths: Set<String>,
+    onChange: (DebloatSettings) -> Unit,
+    colors: IdeShellColorScheme,
+) {
+    val items = settings.keepSelectors.ifEmpty {
+        listOf(
+            "com.android.phone",
+            "com.android.server.telecom",
+            "com.google.android.dialer",
+            "com.android.providers.telephony",
+        )
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(IdeShellShapes.Card)
+            .ideCardSurface(colors, shape = IdeShellShapes.Card)
+            .padding(Spacing.Medium),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+    ) {
+        Text(
+            text = "Keep Rules (Protected Packages)",
+            fontSize = FontSize.BodySmall,
+            fontWeight = FontWeight.SemiBold,
+            fontFamily = ideFontFamily(),
+            color = colors.textMain,
+        )
+        items.forEach { selector ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = selector,
+                    color = colors.textMain,
+                    fontSize = FontSize.Micro,
+                    fontFamily = codeFontFamily(),
+                )
+                GlassChip(label = "Protected", selected = true, onClick = {})
             }
-            Meta("keepSelectors", dirtyPaths, "Keep protection", "Explicit keep rules prevent accidental removal of core services.")
         }
+        Meta("keepSelectors", dirtyPaths, "Keep protection", "Explicit keep rules prevent OS breakage.", colors)
+    }
+}
+
+@Suppress("UnusedParameter")
+@Composable
+private fun RiskReviewCard(settings: DebloatSettings, colors: IdeShellColorScheme) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(IdeShellShapes.Card)
+            .ideCardSurface(colors, shape = IdeShellShapes.Card)
+            .padding(Spacing.Medium),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+    ) {
+        Text(
+            text = "Risk Review",
+            fontSize = FontSize.BodySmall,
+            fontWeight = FontWeight.SemiBold,
+            fontFamily = ideFontFamily(),
+            color = colors.textMain,
+        )
+        Text(
+            text = "Risk analysis: LOW RISK. No core OS packages or carrier IMS dependencies are targeted for removal.",
+            color = colors.accentGreen,
+            fontSize = FontSize.Micro,
+            fontFamily = ideFontFamily(),
+        )
+    }
+}
+
+@Suppress("UnusedParameter")
+@Composable
+private fun ResultsCard(settings: DebloatSettings, colors: IdeShellColorScheme) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(IdeShellShapes.Card)
+            .ideCardSurface(colors, shape = IdeShellShapes.Card)
+            .padding(Spacing.Medium),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+    ) {
+        Text(
+            text = "Results Preview",
+            fontSize = FontSize.BodySmall,
+            fontWeight = FontWeight.SemiBold,
+            fontFamily = ideFontFamily(),
+            color = colors.textMain,
+        )
+        Text(
+            text = "Projected size savings: ~450 MB across system and product partitions.",
+            color = colors.textMuted,
+            fontSize = FontSize.Micro,
+            fontFamily = ideFontFamily(),
+        )
     }
 }
 
 @Composable
-private fun RiskReviewCard(settings: DebloatSettings) {
-    GlassCard(Modifier.fillMaxWidth(), shape = GlassShapes.Panel) {
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
-            Text("Risk Review", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)
-            Text(
-                "Risk analysis: LOW RISK. No core OS packages or carrier IMS dependencies are targeted for removal.",
-                color = GlassTheme.colors.diagnostics.success,
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        }
-    }
-}
-
-@Composable
-private fun ResultsCard(settings: DebloatSettings) {
-    GlassCard(Modifier.fillMaxWidth(), shape = GlassShapes.Panel) {
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
-            Text("Results Preview", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)
-            Text(
-                "Projected size savings: ~450 MB across system and product partitions.",
-                color = GlassTheme.colors.onGlassSecondary,
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        }
-    }
-}
-
-@Composable
-private fun Meta(path: String, dirty: Set<String>, source: String, help: String) {
+private fun Meta(path: String, dirty: Set<String>, source: String, help: String, colors: IdeShellColorScheme) {
     val isDirty = dirty.any { it.startsWith(path.substringBefore('/')) }
     Text(
-        "$source${if (isDirty) " · Dirty" else ""} · $help",
-        style = MaterialTheme.typography.labelSmall,
-        color = if (isDirty) GlassTheme.colors.glassAccent else GlassTheme.colors.onGlassMuted,
+        text = "$source${if (isDirty) " · Dirty" else ""} · $help",
+        fontSize = FontSize.Micro,
+        fontFamily = codeFontFamily(),
+        color = if (isDirty) colors.accentBlue else colors.textDim,
     )
 }
 
 @Composable
-private fun Diagnostics(errors: List<ValidationError>) {
+private fun Diagnostics(errors: List<ValidationError>, colors: IdeShellColorScheme) {
     if (errors.isEmpty()) return
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
         errors.forEach {
             Text(
-                "${it.severity}: ${it.message}",
-                style = MaterialTheme.typography.bodySmall,
+                text = "${it.severity}: ${it.message}",
+                fontSize = FontSize.Micro,
+                fontFamily = ideFontFamily(),
                 color = if (it.severity == Severity.ERROR) {
-                    GlassTheme.colors.diagnostics.error
+                    colors.errorRed
                 } else {
-                    GlassTheme.colors.diagnostics.warning
+                    colors.warningAmber
                 },
             )
         }

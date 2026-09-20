@@ -38,13 +38,13 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
-import org.ide.lti.core.designsystem.theme.LetterSpacing
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.feature.workspace.studio.ActivityItemUi
 import org.ide.lti.feature.workspace.studio.WorkspaceActionUi
 
 /**
- * Section displaying recent build executions or a dashed empty state when no runs exist yet.
+ * Section displaying recent build executions or an empty state when no runs exist yet.
+ * Matches Mockup 09 card presentation with natural typography.
  */
 @Composable
 public fun RecentActivitySection(
@@ -57,24 +57,46 @@ public fun RecentActivitySection(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .testTag("RecentActivitySection"),
-        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+            .testTag("RecentActivitySection")
+            .ideCardSurface(colors = colors),
     ) {
-        // Section Header Row
+        // Card Header Row matching Mockup 09
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(Spacing.Medium),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
         ) {
-            Text(
-                text = "RECENT ACTIVITY",
-                color = colors.textDim,
-                fontSize = FontSize.Micro,
-                fontWeight = FontWeight.SemiBold,
-                fontFamily = GlassFontFamily.code(),
-                letterSpacing = LetterSpacing.Wide,
+            Icon(
+                imageVector = Icons.Default.History,
+                contentDescription = null,
+                tint = colors.textDim,
+                modifier = Modifier.size(IconSize.Medium),
             )
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
+                Text(
+                    text = "Recent activity",
+                    color = colors.textMain,
+                    fontSize = FontSize.TitleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    fontFamily = GlassFontFamily.ide(),
+                )
+                Text(
+                    text = "Latest events for this workspace.",
+                    color = colors.textDim,
+                    fontSize = FontSize.BodySmall,
+                    fontFamily = GlassFontFamily.ide(),
+                )
+            }
         }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(Spacing.Hairline)
+                .background(colors.borderMuted),
+        )
 
         // Empty or Populated Container
         if (activities.isEmpty()) {
@@ -82,14 +104,13 @@ public fun RecentActivitySection(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(IdeShellDimens.OverviewEmptyStateHeight)
-                    .ideCardSurface(colors = colors, isMuted = true)
                     .clickable(onClick = onOpenHistory)
                     .padding(Spacing.Medium),
                 contentAlignment = Alignment.Center,
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
                 ) {
                     Icon(
                         imageVector = Icons.Default.History,
@@ -98,20 +119,22 @@ public fun RecentActivitySection(
                         modifier = Modifier.size(IconSize.Large),
                     )
                     Text(
-                        text = "Build history will appear here. " +
-                            "Start your first build after configuring source firmware.",
+                        text = "Build history will appear here.",
+                        color = colors.textMain,
+                        fontSize = FontSize.BodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        fontFamily = GlassFontFamily.ide(),
+                    )
+                    Text(
+                        text = "Run a build to see activity, logs and results.",
                         color = colors.textDim,
-                        fontSize = FontSize.Micro,
+                        fontSize = FontSize.BodySmall,
                         fontFamily = GlassFontFamily.ide(),
                     )
                 }
             }
         } else {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .ideCardSurface(colors = colors),
-            ) {
+            Column(modifier = Modifier.fillMaxWidth()) {
                 activities.forEachIndexed { index, activity ->
                     if (index > 0) {
                         Box(
@@ -140,7 +163,7 @@ public fun RecentActivitySection(
                             Text(
                                 text = "${activity.timestamp} · ${activity.description}",
                                 color = colors.textDim,
-                                fontSize = FontSize.Micro,
+                                fontSize = FontSize.BodySmall,
                                 fontFamily = GlassFontFamily.ide(),
                             )
                         }

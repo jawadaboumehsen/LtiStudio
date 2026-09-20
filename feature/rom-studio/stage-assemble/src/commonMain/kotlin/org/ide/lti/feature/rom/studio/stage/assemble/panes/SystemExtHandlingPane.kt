@@ -26,7 +26,6 @@ import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.outlined.Layers
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -41,25 +40,25 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
-import org.ide.lti.core.designsystem.component.display.GlassCard
+import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
-import org.ide.lti.core.designsystem.theme.GlassFontFamily
-import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.codeFontFamily
+import org.ide.lti.core.designsystem.theme.ideFontFamily
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.AssemblySettings
 
 /**
  * Stage Assemble subobject pane for configuring `system_ext` partition integration.
- * Faithfully matches media_1789783219877.jpg.
+ * Matches Blue Glass styling.
  */
-@Suppress("LongParameterList")
+@Suppress("LongParameterList", "UnusedParameter")
 @Composable
 public fun SystemExtHandlingPane(
     settings: AssemblySettings,
@@ -80,17 +79,6 @@ public fun SystemExtHandlingPane(
             .testTag("SystemExtHandlingPane"),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
-        AssembleHeader(
-            title = "system_ext handling",
-            subtitle = "Configure how system_ext is integrated into the ROM build",
-            targetSpec = "${target.codename} / Development",
-            targetRevision = "Target revision ${target.revision}",
-            additionalContext = "Snapshot 12 · Run #042",
-            onValidate = onValidate,
-            onSave = onSave,
-            colors = colors,
-        )
-
         SystemExtTopInfoCard(colors = colors)
 
         SystemExtHandlingModeSection(
@@ -108,11 +96,13 @@ public fun SystemExtHandlingPane(
 
 @Composable
 private fun SystemExtTopInfoCard(colors: IdeShellColorScheme) {
-    GlassCard(
-        modifier = Modifier.fillMaxWidth(),
-        surfaceColor = colors.cardBackground,
-        borderColor = colors.border,
-        contentPadding = Spacing.Medium,
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(IdeShellShapes.Card)
+            .background(colors.infoBannerFill)
+            .border(IdeShellDimens.HairlineBorder, colors.infoBannerBorder, IdeShellShapes.Card)
+            .padding(Spacing.Medium),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -129,7 +119,7 @@ private fun SystemExtTopInfoCard(colors: IdeShellColorScheme) {
                 text = infoText,
                 color = colors.textMuted,
                 fontSize = FontSize.Micro,
-                fontFamily = GlassFontFamily.ide(),
+                fontFamily = ideFontFamily(),
                 modifier = Modifier.weight(1f),
             )
 
@@ -151,7 +141,7 @@ private fun SystemExtTopInfoCard(colors: IdeShellColorScheme) {
                     text = "Help",
                     color = colors.accentBlue,
                     fontSize = FontSize.Micro,
-                    fontFamily = GlassFontFamily.ide(),
+                    fontFamily = ideFontFamily(),
                 )
                 Icon(
                     imageVector = Icons.Default.ChevronRight,
@@ -177,63 +167,63 @@ private fun SystemExtHandlingModeSection(
             color = colors.textMain,
             fontSize = FontSize.BodyMedium,
             fontWeight = FontWeight.SemiBold,
-            fontFamily = GlassFontFamily.ide(),
+            fontFamily = ideFontFamily(),
         )
 
-        GlassCard(
-            modifier = Modifier.fillMaxWidth(),
-            surfaceColor = colors.cardBackground,
-            borderColor = colors.border,
-            contentPadding = Spacing.Medium,
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(IdeShellShapes.Card)
+                .ideCardSurface(colors, shape = IdeShellShapes.Card)
+                .padding(Spacing.Medium),
+            verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
-                ) {
-                    HandlingModeCard(
-                        title = "Separate (recommended)",
-                        subtitle = "Keep system_ext as a separate partition",
-                        description = "Preserves vendor compatibility and is required for the pinned target revision.",
-                        isSelected = isSeparate,
-                        isEnabled = true,
-                        onSelect = { onChange(settings.copy(systemExtMode = "separate")) },
-                        modifier = Modifier.weight(1f),
-                        colors = colors,
-                    )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
+            ) {
+                HandlingModeCard(
+                    title = "Separate (recommended)",
+                    subtitle = "Keep system_ext as a separate partition",
+                    description = "Preserves vendor compatibility and is required for the pinned target revision.",
+                    isSelected = isSeparate,
+                    isEnabled = true,
+                    onSelect = { onChange(settings.copy(systemExtMode = "separate")) },
+                    modifier = Modifier.weight(1f),
+                    colors = colors,
+                )
 
-                    HandlingModeCard(
-                        title = "Fold into system",
-                        subtitle = "Merge system_ext into system",
-                        description = "Disabled by pinned target capability." +
-                            " Target revision 4 requires separate system_ext.",
-                        isSelected = !isSeparate,
-                        isEnabled = false,
-                        onSelect = { onChange(settings.copy(systemExtMode = "fold")) },
-                        modifier = Modifier.weight(1f),
-                        colors = colors,
-                    )
-                }
+                HandlingModeCard(
+                    title = "Fold into system",
+                    subtitle = "Merge system_ext into system",
+                    description = "Disabled by pinned target capability." +
+                        " Target revision 4 requires separate system_ext.",
+                    isSelected = !isSeparate,
+                    isEnabled = false,
+                    onSelect = { onChange(settings.copy(systemExtMode = "fold")) },
+                    modifier = Modifier.weight(1f),
+                    colors = colors,
+                )
+            }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = null,
-                        tint = colors.accentBlue,
-                        modifier = Modifier.size(IconSize.Small),
-                    )
-                    Text(
-                        text = "Changing the handling mode will invalidate downstream checkpoints:" +
-                            " Build, Metadata, Publish.",
-                        color = colors.textMuted,
-                        fontSize = FontSize.Micro,
-                        fontFamily = GlassFontFamily.ide(),
-                    )
-                }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Info,
+                    contentDescription = null,
+                    tint = colors.accentBlue,
+                    modifier = Modifier.size(IconSize.Small),
+                )
+                Text(
+                    text = "Changing the handling mode will invalidate downstream checkpoints:" +
+                        " Build, Metadata, Publish.",
+                    color = colors.textMuted,
+                    fontSize = FontSize.Micro,
+                    fontFamily = ideFontFamily(),
+                )
             }
         }
     }
@@ -247,25 +237,25 @@ private fun SystemExtPathsCard(colors: IdeShellColorScheme) {
             color = colors.textMain,
             fontSize = FontSize.BodyMedium,
             fontWeight = FontWeight.SemiBold,
-            fontFamily = GlassFontFamily.ide(),
+            fontFamily = ideFontFamily(),
         )
 
-        GlassCard(
-            modifier = Modifier.fillMaxWidth(),
-            surfaceColor = colors.cardBackground,
-            borderColor = colors.border,
-            contentPadding = Spacing.Medium,
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(IdeShellShapes.Card)
+                .ideCardSurface(colors, shape = IdeShellShapes.Card)
+                .padding(Spacing.Medium),
+            verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
-                SystemExtFlowDiagram(colors = colors)
+            SystemExtFlowDiagram(colors = colors)
 
-                HorizontalDivider(
-                    thickness = IdeShellDimens.HairlineBorder,
-                    color = colors.borderMuted,
-                )
+            HorizontalDivider(
+                thickness = IdeShellDimens.HairlineBorder,
+                color = colors.borderMuted,
+            )
 
-                SystemExtDerivedPaths(colors = colors)
-            }
+            SystemExtDerivedPaths(colors = colors)
         }
     }
 }
@@ -296,7 +286,7 @@ private fun SystemExtFlowDiagram(colors: IdeShellColorScheme) {
                     color = colors.textMain,
                     fontSize = FontSize.BodySmall,
                     fontWeight = FontWeight.Medium,
-                    fontFamily = GlassFontFamily.ide(),
+                    fontFamily = ideFontFamily(),
                 )
             }
 
@@ -313,7 +303,7 @@ private fun SystemExtFlowDiagram(colors: IdeShellColorScheme) {
                     text = "D:\\ROM\\source\\extract\\system_ext",
                     color = colors.textMain,
                     fontSize = FontSize.Micro,
-                    fontFamily = GlassFontFamily.code(),
+                    fontFamily = codeFontFamily(),
                     modifier = Modifier.weight(1f),
                 )
                 GlassButton(
@@ -333,7 +323,7 @@ private fun SystemExtFlowDiagram(colors: IdeShellColorScheme) {
                 text = "Extracted from vendor image during Extract stage.",
                 color = colors.textDim,
                 fontSize = FontSize.Micro,
-                fontFamily = GlassFontFamily.ide(),
+                fontFamily = ideFontFamily(),
             )
         }
 
@@ -363,7 +353,7 @@ private fun SystemExtFlowDiagram(colors: IdeShellColorScheme) {
                     color = colors.textMain,
                     fontSize = FontSize.BodySmall,
                     fontWeight = FontWeight.Medium,
-                    fontFamily = GlassFontFamily.ide(),
+                    fontFamily = ideFontFamily(),
                 )
             }
 
@@ -378,7 +368,7 @@ private fun SystemExtFlowDiagram(colors: IdeShellColorScheme) {
                     text = "D:\\ROM\\workspace\\out\\system_ext",
                     color = colors.textMuted,
                     fontSize = FontSize.Micro,
-                    fontFamily = GlassFontFamily.code(),
+                    fontFamily = codeFontFamily(),
                 )
             }
 
@@ -386,7 +376,7 @@ private fun SystemExtFlowDiagram(colors: IdeShellColorScheme) {
                 text = "Derived path (based on workspace and handling mode).",
                 color = colors.textDim,
                 fontSize = FontSize.Micro,
-                fontFamily = GlassFontFamily.ide(),
+                fontFamily = ideFontFamily(),
             )
         }
     }
@@ -400,7 +390,7 @@ private fun SystemExtDerivedPaths(colors: IdeShellColorScheme) {
             color = colors.textMain,
             fontSize = FontSize.BodySmall,
             fontWeight = FontWeight.SemiBold,
-            fontFamily = GlassFontFamily.ide(),
+            fontFamily = ideFontFamily(),
         )
 
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
@@ -432,9 +422,9 @@ private fun HandlingModeCard(
 
     Box(
         modifier = modifier
-            .clip(GlassShapes.Card)
+            .clip(IdeShellShapes.Card)
             .background(bgColor)
-            .border(IdeShellDimens.HairlineBorder, borderColor, GlassShapes.Card)
+            .border(IdeShellDimens.HairlineBorder, borderColor, IdeShellShapes.Card)
             .clickable(enabled = isEnabled, onClick = onSelect)
             .padding(Spacing.Medium),
     ) {
@@ -473,19 +463,19 @@ private fun HandlingModeCard(
                     color = if (isEnabled) colors.textMain else colors.textMuted,
                     fontSize = FontSize.BodyMedium,
                     fontWeight = FontWeight.SemiBold,
-                    fontFamily = GlassFontFamily.ide(),
+                    fontFamily = ideFontFamily(),
                 )
                 Text(
                     text = subtitle,
                     color = if (isEnabled) colors.textMuted else colors.textDim,
                     fontSize = FontSize.Micro,
-                    fontFamily = GlassFontFamily.ide(),
+                    fontFamily = ideFontFamily(),
                 )
                 Text(
                     text = description,
                     color = colors.textDim,
                     fontSize = FontSize.Micro,
-                    fontFamily = GlassFontFamily.ide(),
+                    fontFamily = ideFontFamily(),
                 )
             }
         }
@@ -503,14 +493,14 @@ private fun DerivedPathRow(label: String, value: String, colors: IdeShellColorSc
             text = label,
             color = colors.textMuted,
             fontSize = FontSize.Micro,
-            fontFamily = GlassFontFamily.ide(),
+            fontFamily = ideFontFamily(),
             modifier = Modifier.width(IdeShellDimens.AcquirePolicyLabelWidth),
         )
         Text(
             text = value,
             color = colors.textMain,
             fontSize = FontSize.Micro,
-            fontFamily = GlassFontFamily.code(),
+            fontFamily = codeFontFamily(),
             modifier = Modifier.weight(1f),
         )
     }
@@ -537,7 +527,7 @@ private fun SystemExtWarningBanner(colors: IdeShellColorScheme) {
             Box(
                 modifier = Modifier
                     .size(IconSize.Large)
-                    .clip(GlassShapes.Capsule)
+                    .clip(IdeShellShapes.Pill)
                     .background(colors.warningAmber),
                 contentAlignment = Alignment.Center,
             ) {
@@ -546,7 +536,7 @@ private fun SystemExtWarningBanner(colors: IdeShellColorScheme) {
                     color = colors.cardBackgroundMuted,
                     fontSize = FontSize.BodySmall,
                     fontWeight = FontWeight.Bold,
-                    fontFamily = GlassFontFamily.ide(),
+                    fontFamily = ideFontFamily(),
                 )
             }
 
@@ -556,14 +546,14 @@ private fun SystemExtWarningBanner(colors: IdeShellColorScheme) {
                     color = colors.warningAmber,
                     fontSize = FontSize.BodySmall,
                     fontWeight = FontWeight.SemiBold,
-                    fontFamily = GlassFontFamily.ide(),
+                    fontFamily = ideFontFamily(),
                 )
                 Text(
                     text = "If you change the handling mode, the following stages must be rerun: " +
                         "Build, Metadata, Publish.",
                     color = colors.warningAmber,
                     fontSize = FontSize.Micro,
-                    fontFamily = GlassFontFamily.ide(),
+                    fontFamily = ideFontFamily(),
                 )
             }
         }

@@ -55,7 +55,6 @@ import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.IdeShellShapes
-import org.ide.lti.core.designsystem.theme.LetterSpacing
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.feature.workspace.studio.ReadinessId
 import org.ide.lti.feature.workspace.studio.ReadinessItemUi
@@ -77,53 +76,64 @@ public fun ReadinessChecklistSection(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .testTag("ReadinessMatrix"),
-        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+            .testTag("ReadinessMatrix")
+            .ideCardSurface(colors = colors),
     ) {
-        // Section Header Row
+        // Card Header
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(Spacing.Medium),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Text(
-                text = "CONFIGURATION & STAGE READINESS",
-                color = colors.textDim,
-                fontSize = FontSize.Micro,
-                fontWeight = FontWeight.SemiBold,
-                fontFamily = GlassFontFamily.code(),
-                letterSpacing = LetterSpacing.Wide,
-            )
-            Text(
-                text = "$reviewCount of ${items.size} components require review",
-                color = colors.textDim,
-                fontSize = FontSize.BodySmall,
-                fontFamily = GlassFontFamily.ide(),
-            )
-        }
-
-        // Divided Card Container
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .ideCardSurface(colors = colors),
-        ) {
-            items.forEachIndexed { index, item ->
-                if (index > 0) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(Spacing.Hairline)
-                            .background(colors.borderMuted),
-                    )
-                }
-
-                ReadinessRowItem(
-                    item = item,
-                    onAction = onAction,
-                    colors = colors,
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
+                Text(
+                    text = "Build readiness",
+                    color = colors.textMain,
+                    fontSize = FontSize.TitleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    fontFamily = GlassFontFamily.ide(),
+                )
+                Text(
+                    text = "Complete the required items to prepare your next build.",
+                    color = colors.textDim,
+                    fontSize = FontSize.BodySmall,
+                    fontFamily = GlassFontFamily.ide(),
                 )
             }
+            if (reviewCount > 0) {
+                Text(
+                    text = "$reviewCount require review",
+                    color = colors.textDim,
+                    fontSize = FontSize.Micro,
+                    fontFamily = GlassFontFamily.ide(),
+                )
+            }
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(Spacing.Hairline)
+                .background(colors.borderMuted),
+        )
+
+        items.forEachIndexed { index, item ->
+            if (index > 0) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(Spacing.Hairline)
+                        .background(colors.borderMuted),
+                )
+            }
+
+            ReadinessRowItem(
+                item = item,
+                onAction = onAction,
+                colors = colors,
+            )
         }
     }
 }

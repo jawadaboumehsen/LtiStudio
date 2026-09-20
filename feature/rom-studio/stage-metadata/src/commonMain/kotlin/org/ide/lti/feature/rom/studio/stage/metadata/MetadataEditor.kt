@@ -18,29 +18,32 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
-import org.ide.lti.core.designsystem.component.actions.GlassButton
-import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
-import org.ide.lti.core.designsystem.component.display.GlassCard
+import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.display.GlassChip
+import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.TextFieldConfig
 import org.ide.lti.core.designsystem.component.inputs.TextFieldState
-import org.ide.lti.core.designsystem.theme.GlassShapes
+import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.codeFontFamily
+import org.ide.lti.core.designsystem.theme.ideFontFamily
 import org.ide.lti.core.domain.pipeline.configuration.Severity
 import org.ide.lti.core.domain.pipeline.configuration.ValidationError
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.ReleaseSettings
 
+@Suppress("LongParameterList", "UnusedParameter")
 @Composable
 public fun MetadataEditor(
     settings: ReleaseSettings,
@@ -52,6 +55,7 @@ public fun MetadataEditor(
     onValidate: () -> Unit = {},
     onSave: () -> Unit = {},
     modifier: Modifier = Modifier,
+    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     val errors = validationErrors.filter { it.fieldPath.startsWith("release.") || !it.fieldPath.contains('.') }
 
@@ -68,40 +72,24 @@ public fun MetadataEditor(
                 .padding(horizontal = Spacing.ExtraLarge, vertical = Spacing.Medium),
             verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
         ) {
-            item { EditorHeader(onValidate, onSave) }
             when (selectedObjectId.lowercase()) {
-                "ota-url", "ota_url" -> item { OtaCard(settings, errors, dirtyPaths, onChange) }
-                "changelog" -> item { ChangelogCard(settings, errors, dirtyPaths, onChange) }
-                "compatibility" -> item { CompatibilityCard(target, dirtyPaths) }
-                "manifest-preview", "manifest_preview" -> item { ManifestCard(settings, target) }
-                else -> item { IdentityCard(settings, target, dirtyPaths, onChange) }
+                "ota-url", "ota_url" -> item {
+                    OtaCard(settings, errors, dirtyPaths, onChange, colors)
+                }
+                "changelog" -> item {
+                    ChangelogCard(settings, errors, dirtyPaths, onChange, colors)
+                }
+                "compatibility" -> item {
+                    CompatibilityCard(target, dirtyPaths, colors)
+                }
+                "manifest-preview", "manifest_preview" -> item {
+                    ManifestCard(settings, target, colors)
+                }
+                else -> item {
+                    IdentityCard(settings, target, dirtyPaths, onChange, colors)
+                }
             }
-            item { Diagnostics(errors) }
-        }
-    }
-}
-
-@Composable
-private fun EditorHeader(onValidate: () -> Unit, onSave: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column {
-            Text("Release Metadata", style = MaterialTheme.typography.headlineSmall, color = GlassTheme.colors.onGlass)
-            Text(
-                "Configure OTA update descriptors, manifest properties, changelog, and compatibility constraints.",
-                color = GlassTheme.colors.onGlassSecondary,
-            )
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-            GlassButton(onClick = onValidate, variant = GlassButtonVariant.Standard, shape = IdeShellShapes.Control) {
-                Text("Validate", color = GlassTheme.colors.onGlass)
-            }
-            GlassButton(onClick = onSave, variant = GlassButtonVariant.Primary, shape = IdeShellShapes.Control) {
-                Text("Save", color = GlassTheme.colors.onGlass)
-            }
+            item { Diagnostics(errors, colors) }
         }
     }
 }
@@ -112,34 +100,53 @@ private fun IdentityCard(
     target: TargetDevice,
     dirtyPaths: Set<String>,
     onChange: (ReleaseSettings) -> Unit,
+    colors: IdeShellColorScheme,
 ) {
-    GlassCard(Modifier.fillMaxWidth(), shape = GlassShapes.Panel) {
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
-            Text("Release Identity", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)
-            Text(
-                "Pinned target provides device identity; select distribution channel:",
-                style = MaterialTheme.typography.bodySmall,
-                color = GlassTheme.colors.onGlassSecondary,
-            )
-            GlassTextField(
-                target.codename,
-                {},
-                label = "Manifest device",
-                readOnly = true,
-                state = TextFieldState.Helper("Derived from pinned target device."),
-            )
-            Text("Channel", style = MaterialTheme.typography.labelLarge, color = GlassTheme.colors.onGlass)
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-                listOf("internal", "beta", "stable").forEach { channel ->
-                    GlassChip(
-                        label = channel.replaceFirstChar { it.uppercase() },
-                        selected = settings.channel == channel,
-                        onClick = { onChange(settings.copy(channel = channel)) },
-                    )
-                }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(IdeShellShapes.Card)
+            .ideCardSurface(colors, shape = IdeShellShapes.Card)
+            .padding(Spacing.Medium),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+    ) {
+        Text(
+            text = "Release Identity",
+            fontSize = FontSize.BodySmall,
+            fontWeight = FontWeight.SemiBold,
+            fontFamily = ideFontFamily(),
+            color = colors.textMain,
+        )
+        Text(
+            text = "Pinned target provides device identity; select distribution channel:",
+            fontSize = FontSize.Micro,
+            fontFamily = ideFontFamily(),
+            color = colors.textMuted,
+        )
+        GlassTextField(
+            target.codename,
+            {},
+            label = "Manifest device",
+            readOnly = true,
+            state = TextFieldState.Helper("Derived from pinned target device."),
+        )
+        Text(
+            text = "Channel",
+            fontSize = FontSize.BodySmall,
+            fontWeight = FontWeight.Medium,
+            fontFamily = ideFontFamily(),
+            color = colors.textMain,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
+            listOf("internal", "beta", "stable").forEach { channel ->
+                GlassChip(
+                    label = channel.replaceFirstChar { it.uppercase() },
+                    selected = settings.channel == channel,
+                    onClick = { onChange(settings.copy(channel = channel)) },
+                )
             }
-            Meta("channel", dirtyPaths, "Release channel", "Distribution channel ring.")
         }
+        Meta("channel", dirtyPaths, "Release channel", "Distribution channel ring.", colors)
     }
 }
 
@@ -149,25 +156,38 @@ private fun OtaCard(
     errors: List<ValidationError>,
     dirtyPaths: Set<String>,
     onChange: (ReleaseSettings) -> Unit,
+    colors: IdeShellColorScheme,
 ) {
-    GlassCard(Modifier.fillMaxWidth(), shape = GlassShapes.Panel) {
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
-            Text("OTA Distribution URL", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)
-            Text(
-                "Base URL must use HTTPS and must not end with a slash.",
-                style = MaterialTheme.typography.bodySmall,
-                color = GlassTheme.colors.onGlassSecondary,
-            )
-            GlassTextField(
-                settings.otaBaseUrl,
-                { value ->
-                    runCatching { settings.copy(otaBaseUrl = value) }.onSuccess(onChange)
-                },
-                label = "HTTPS distribution base URL",
-                state = fieldState(errors, "otaBaseUrl"),
-            )
-            Meta("otaBaseUrl", dirtyPaths, "OTA endpoint", "Server endpoint hosting delta/full payloads.")
-        }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(IdeShellShapes.Card)
+            .ideCardSurface(colors, shape = IdeShellShapes.Card)
+            .padding(Spacing.Medium),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+    ) {
+        Text(
+            text = "OTA Distribution URL",
+            fontSize = FontSize.BodySmall,
+            fontWeight = FontWeight.SemiBold,
+            fontFamily = ideFontFamily(),
+            color = colors.textMain,
+        )
+        Text(
+            text = "Base URL must use HTTPS and must not end with a slash.",
+            fontSize = FontSize.Micro,
+            fontFamily = ideFontFamily(),
+            color = colors.textMuted,
+        )
+        GlassTextField(
+            settings.otaBaseUrl,
+            { value ->
+                runCatching { settings.copy(otaBaseUrl = value) }.onSuccess(onChange)
+            },
+            label = "HTTPS distribution base URL",
+            state = fieldState(errors, "otaBaseUrl"),
+        )
+        Meta("otaBaseUrl", dirtyPaths, "OTA endpoint", "Server endpoint hosting delta/full payloads.", colors)
     }
 }
 
@@ -177,53 +197,77 @@ private fun ChangelogCard(
     errors: List<ValidationError>,
     dirtyPaths: Set<String>,
     onChange: (ReleaseSettings) -> Unit,
+    colors: IdeShellColorScheme,
 ) {
-    GlassCard(Modifier.fillMaxWidth(), shape = GlassShapes.Panel) {
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
-            Text("Changelog", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)
-            Text(
-                "Summarize key updates and release highlights:",
-                style = MaterialTheme.typography.bodySmall,
-                color = GlassTheme.colors.onGlassSecondary,
-            )
-            GlassTextField(
-                settings.changelog,
-                { onChange(settings.copy(changelog = it)) },
-                label = "Release notes",
-                config = TextFieldConfig(singleLine = false, maxLines = 10),
-                state = fieldState(errors, "changelog"),
-            )
-            Meta("changelog", dirtyPaths, "Changelog", "Rendered in system updater UI on client devices.")
-        }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(IdeShellShapes.Card)
+            .ideCardSurface(colors, shape = IdeShellShapes.Card)
+            .padding(Spacing.Medium),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+    ) {
+        Text(
+            text = "Changelog",
+            fontSize = FontSize.BodySmall,
+            fontWeight = FontWeight.SemiBold,
+            fontFamily = ideFontFamily(),
+            color = colors.textMain,
+        )
+        Text(
+            text = "Summarize key updates and release highlights:",
+            fontSize = FontSize.Micro,
+            fontFamily = ideFontFamily(),
+            color = colors.textMuted,
+        )
+        GlassTextField(
+            settings.changelog,
+            { onChange(settings.copy(changelog = it)) },
+            label = "Release notes",
+            config = TextFieldConfig(singleLine = false, maxLines = 10),
+            state = fieldState(errors, "changelog"),
+        )
+        Meta("changelog", dirtyPaths, "Changelog", "Rendered in system updater UI on client devices.", colors)
     }
 }
 
 @Composable
-private fun CompatibilityCard(target: TargetDevice, dirtyPaths: Set<String>) {
-    GlassCard(Modifier.fillMaxWidth(), shape = GlassShapes.Panel) {
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
-            Text("Compatibility Constraints", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)
-            GlassTextField(
-                target.friendlyTitle,
-                {},
-                label = "Supported device",
-                readOnly = true,
-                state = TextFieldState.Helper("Pinned target hardware."),
-            )
-            GlassTextField(
-                "Target revision ${target.revision} · ${target.status}",
-                {},
-                label = "Target revision",
-                readOnly = true,
-                state = TextFieldState.Helper("Rebind through target catalog."),
-            )
-            Meta("target", dirtyPaths, "Pinned target", "Governed by hardware security policy.")
-        }
+private fun CompatibilityCard(target: TargetDevice, dirtyPaths: Set<String>, colors: IdeShellColorScheme) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(IdeShellShapes.Card)
+            .ideCardSurface(colors, shape = IdeShellShapes.Card)
+            .padding(Spacing.Medium),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+    ) {
+        Text(
+            text = "Compatibility Constraints",
+            fontSize = FontSize.BodySmall,
+            fontWeight = FontWeight.SemiBold,
+            fontFamily = ideFontFamily(),
+            color = colors.textMain,
+        )
+        GlassTextField(
+            target.friendlyTitle,
+            {},
+            label = "Supported device",
+            readOnly = true,
+            state = TextFieldState.Helper("Pinned target hardware."),
+        )
+        GlassTextField(
+            "Target revision ${target.revision} · ${target.status}",
+            {},
+            label = "Target revision",
+            readOnly = true,
+            state = TextFieldState.Helper("Rebind through target catalog."),
+        )
+        Meta("target", dirtyPaths, "Pinned target", "Governed by hardware security policy.", colors)
     }
 }
 
 @Composable
-private fun ManifestCard(settings: ReleaseSettings, target: TargetDevice) {
+private fun ManifestCard(settings: ReleaseSettings, target: TargetDevice, colors: IdeShellColorScheme) {
     val manifest = buildString {
         appendLine("{")
         appendLine("  \"device\": \"${target.codename}\",")
@@ -233,28 +277,40 @@ private fun ManifestCard(settings: ReleaseSettings, target: TargetDevice) {
         appendLine("  \"status\": \"candidate\"")
         append("}")
     }
-    GlassCard(Modifier.fillMaxWidth(), shape = GlassShapes.Panel) {
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
-            Text("Manifest Preview", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)
-            GlassTextField(
-                manifest,
-                {},
-                label = "Generated manifest JSON",
-                readOnly = true,
-                config = TextFieldConfig(singleLine = false, maxLines = 10),
-                state = TextFieldState.Helper("Final build hashes and timestamps are injected at build completion."),
-            )
-        }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(IdeShellShapes.Card)
+            .ideCardSurface(colors, shape = IdeShellShapes.Card)
+            .padding(Spacing.Medium),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+    ) {
+        Text(
+            text = "Manifest Preview",
+            fontSize = FontSize.BodySmall,
+            fontWeight = FontWeight.SemiBold,
+            fontFamily = ideFontFamily(),
+            color = colors.textMain,
+        )
+        GlassTextField(
+            manifest,
+            {},
+            label = "Generated manifest JSON",
+            readOnly = true,
+            config = TextFieldConfig(singleLine = false, maxLines = 10),
+            state = TextFieldState.Helper("Final build hashes and timestamps are injected at build completion."),
+        )
     }
 }
 
 @Composable
-private fun Meta(path: String, dirty: Set<String>, source: String, help: String) {
+private fun Meta(path: String, dirty: Set<String>, source: String, help: String, colors: IdeShellColorScheme) {
     val isDirty = dirty.any { it.startsWith(path.substringBefore('/')) }
     Text(
-        "$source${if (isDirty) " · Dirty" else ""} · $help",
-        style = MaterialTheme.typography.labelSmall,
-        color = if (isDirty) GlassTheme.colors.glassAccent else GlassTheme.colors.onGlassMuted,
+        text = "$source${if (isDirty) " · Dirty" else ""} · $help",
+        fontSize = FontSize.Micro,
+        fontFamily = codeFontFamily(),
+        color = if (isDirty) colors.accentBlue else colors.textDim,
     )
 }
 
@@ -269,17 +325,18 @@ private fun fieldState(errors: List<ValidationError>, field: String): TextFieldS
 }
 
 @Composable
-private fun Diagnostics(errors: List<ValidationError>) {
+private fun Diagnostics(errors: List<ValidationError>, colors: IdeShellColorScheme) {
     if (errors.isEmpty()) return
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
         errors.forEach {
             Text(
-                "${it.severity}: ${it.message}",
-                style = MaterialTheme.typography.bodySmall,
+                text = "${it.severity}: ${it.message}",
+                fontSize = FontSize.Micro,
+                fontFamily = ideFontFamily(),
                 color = if (it.severity == Severity.ERROR) {
-                    GlassTheme.colors.diagnostics.error
+                    colors.errorRed
                 } else {
-                    GlassTheme.colors.diagnostics.warning
+                    colors.warningAmber
                 },
             )
         }

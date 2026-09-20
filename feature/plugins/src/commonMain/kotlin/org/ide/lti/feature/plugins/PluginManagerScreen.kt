@@ -178,7 +178,6 @@ public fun PluginManagerContent(
                     PluginSidebar(
                         currentDestination = state.destination,
                         onSelectDestination = actions.onSelectDestination,
-                        onNavigateToWorkspace = actions.onNavigateBack,
                         onOpenSettings = actions.onOpenSettings,
                     )
 

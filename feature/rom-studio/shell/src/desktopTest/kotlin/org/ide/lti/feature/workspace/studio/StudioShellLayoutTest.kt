@@ -118,9 +118,9 @@ class StudioShellLayoutTest {
         composeTestRule.onNodeWithTag("TopBar_Setup").assertExists()
         composeTestRule.onNodeWithTag("TopBar_Workspace").assertExists()
         composeTestRule.onNodeWithTag("TopBar_Settings").assertExists()
-        composeTestRule.onNodeWithTag("TopBarTargetContext").assertExists()
-        composeTestRule.onNodeWithTag("TopBar_Validate").assertExists()
-        composeTestRule.onNodeWithTag("TopBar_Save").assertExists()
+        // TargetContext/Validate/Save are owned by whichever destination is active (ContentHeader
+        // for a stage editor, OverviewValidateAndSave for Overview) rather than by the persistent
+        // top bar - this state renders Overview, so they are not asserted here.
         composeTestRule.onNodeWithTag("TopBar_DragRegion").assertExists()
 
         // Pipeline Rail & exactly 8 stages
@@ -138,8 +138,8 @@ class StudioShellLayoutTest {
         composeTestRule.onNodeWithTag("NavigatorItem_TargetProfile").assertExists()
         composeTestRule.onNodeWithTag("WorkspaceNavigatorFooter").assertExists()
 
-        // Breadcrumb, Content, Status Bar
-        composeTestRule.onNodeWithTag("IdeBreadcrumbBar").assertExists()
+        // Content, Status Bar (no separate breadcrumb region - each destination's own header
+        // owns its breadcrumb; see StudioScreen.kt's isStageEditor-gated ContentHeader)
         composeTestRule.onNodeWithTag("MainContent").assertExists()
         composeTestRule.onNodeWithTag("StudioStatusBar").assertExists()
         composeTestRule.onNodeWithTag("StatusBar_Problems").assertExists()
@@ -177,15 +177,13 @@ class StudioShellLayoutTest {
         val topBarBounds = composeTestRule.onNodeWithTag("GlobalAppTopBar").fetchSemanticsNode().boundsInRoot
         val railBounds = composeTestRule.onNodeWithTag("IdePipelineRail").fetchSemanticsNode().boundsInRoot
         val navBounds = composeTestRule.onNodeWithTag("WorkspaceNavigator").fetchSemanticsNode().boundsInRoot
-        val breadcrumbBounds = composeTestRule.onNodeWithTag("IdeBreadcrumbBar").fetchSemanticsNode().boundsInRoot
         val contentBounds = composeTestRule.onNodeWithTag("MainContent").fetchSemanticsNode().boundsInRoot
         val statusBarBounds = composeTestRule.onNodeWithTag("StudioStatusBar").fetchSemanticsNode().boundsInRoot
 
         // Vertical relationships
         assertTrue(topBarBounds.bottom <= railBounds.top, "Rail must be below Top Bar")
         assertTrue(topBarBounds.bottom <= navBounds.top, "Navigator must be below Top Bar")
-        assertTrue(topBarBounds.bottom <= breadcrumbBounds.top, "Breadcrumb must be below Top Bar")
-        assertTrue(breadcrumbBounds.bottom <= contentBounds.top, "Content must be below Breadcrumb")
+        assertTrue(topBarBounds.bottom <= contentBounds.top, "Content must be below Top Bar")
         assertTrue(railBounds.bottom <= statusBarBounds.top, "Rail must end above Status Bar")
         assertTrue(navBounds.bottom <= statusBarBounds.top, "Navigator must end above Status Bar")
         assertTrue(contentBounds.bottom <= statusBarBounds.top, "Content must end above Status Bar")
@@ -218,7 +216,6 @@ class StudioShellLayoutTest {
     @Test
     fun testNonInteractiveDragRegionsDoNotInterceptControls() {
         var clickedDestination: GlobalDestination? = null
-        var validated = false
         var selectedStage: StageId? = null
         var selectedSection: WorkspaceSection? = null
 
@@ -231,7 +228,7 @@ class StudioShellLayoutTest {
                     onSelectGlobalDestination = { clickedDestination = it },
                     onSelectWorkspaceSection = { selectedSection = it },
                     onSelectStage = { selectedStage = it },
-                    onValidate = { validated = true },
+                    onValidate = {},
                     onSave = {},
                     content = { Box(Modifier.fillMaxSize()) },
                 )
@@ -241,8 +238,9 @@ class StudioShellLayoutTest {
         composeTestRule.onNodeWithTag("TopBar_Settings").assertHasClickAction().performClick()
         assertEquals(GlobalDestination.Settings, clickedDestination)
 
-        composeTestRule.onNodeWithTag("TopBar_Validate").assertHasClickAction().performClick()
-        assertTrue(validated)
+        // Validate/Save live in the active destination's own header (ContentHeader for a stage
+        // editor, OverviewValidateAndSave for Overview), not the persistent top bar - their click
+        // wiring is covered where they are rendered, not here.
 
         composeTestRule.onNodeWithTag("RailItem_DEBLOAT").assertHasClickAction().performClick()
         assertEquals(StageId.DEBLOAT, selectedStage)

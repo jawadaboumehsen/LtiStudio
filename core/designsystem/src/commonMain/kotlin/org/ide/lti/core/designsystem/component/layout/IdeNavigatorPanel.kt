@@ -30,22 +30,29 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Archive
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.ListAlt
 import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Sell
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material.icons.filled.VpnKey
+import androidx.compose.material.icons.filled.Widgets
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -330,6 +337,23 @@ private val NAV_ICONS: Map<String, ImageVector> = mapOf(
     "output-naming" to Icons.Default.Sell,
     "output_naming" to Icons.Default.Sell,
     "output naming" to Icons.Default.Sell,
+    "all_tools" to Icons.Default.GridView,
+    "all-tools" to Icons.Default.GridView,
+    "firmware" to Icons.Default.Memory,
+    "filesystems" to Icons.Default.Storage,
+    "signing" to Icons.Default.Shield,
+    "general" to Icons.Default.Tune,
+    "appearance" to Icons.Default.Palette,
+    "editor" to Icons.Default.Code,
+    "target_profiles" to Icons.Default.PhoneAndroid,
+    "target-profiles" to Icons.Default.PhoneAndroid,
+    "build_environment" to Icons.Default.Build,
+    "build-environment" to Icons.Default.Build,
+    "plugin_sources" to Icons.Default.Widgets,
+    "plugin-sources" to Icons.Default.Widgets,
+    "credentials" to Icons.Default.VpnKey,
+    "notifications" to Icons.Default.Notifications,
+    "about" to Icons.Default.Info,
 )
 
 private fun resolveNavIcon(id: String): ImageVector = NAV_ICONS[id.lowercase()] ?: Icons.Default.Dashboard

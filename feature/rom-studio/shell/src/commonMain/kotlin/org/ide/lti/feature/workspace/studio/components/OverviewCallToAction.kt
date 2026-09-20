@@ -16,10 +16,15 @@ import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,11 +38,9 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
-import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.BrandColors
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
-import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
@@ -48,7 +51,7 @@ import org.ide.lti.feature.workspace.studio.WorkspaceActionUi
 
 /**
  * Visual call-to-action banner between the readiness matrix and recent activity.
- * Displays build status prompt and primary action button (e.g. "Configure firmware").
+ * Matches Mockup 09: prominent CTA button on the left with status explanation on the right.
  */
 @Composable
 public fun OverviewCallToAction(
@@ -65,41 +68,9 @@ public fun OverviewCallToAction(
             .ideCardSurface(colors = colors)
             .padding(Spacing.Medium),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.Large),
     ) {
-        // Status indicator dot and prompt
-        val dotColor = when (buildState) {
-            is BuildStateUi.InProgress -> colors.accentBlue
-            is BuildStateUi.Succeeded -> colors.accentGreen
-            is BuildStateUi.Failed -> colors.errorRed
-            BuildStateUi.NotStarted -> colors.textDim
-        }
-
-        val promptText = when (buildState) {
-            is BuildStateUi.InProgress -> "Build in progress (${buildState.stageLabel})"
-            is BuildStateUi.Succeeded -> "Last build completed successfully."
-            is BuildStateUi.Failed -> "Last build failed: ${buildState.stageLabel}"
-            BuildStateUi.NotStarted -> "No build has started."
-        }
-
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(IconSize.Indicator)
-                    .background(dotColor, GlassShapes.Full),
-            )
-            Text(
-                text = promptText,
-                color = colors.textDim,
-                fontSize = FontSize.BodySmall,
-                fontFamily = GlassFontFamily.ide(),
-            )
-        }
-
-        // Primary Action Button
+        // 1. Primary Action Button on the left
         val interactionSource = remember { MutableInteractionSource() }
         val isHovered by interactionSource.collectIsHoveredAsState()
         val isPressed by interactionSource.collectIsPressedAsState()
@@ -129,27 +100,66 @@ public fun OverviewCallToAction(
                         }
                     },
                 )
-                .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
+                .padding(horizontal = Spacing.Large, vertical = Spacing.SmallMedium),
             contentAlignment = Alignment.Center,
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
             ) {
+                Icon(
+                    imageVector = Icons.Default.PlayArrow,
+                    contentDescription = null,
+                    tint = BrandColors.OnLogoBadge,
+                    modifier = Modifier.size(IconSize.Medium),
+                )
                 Text(
                     text = buttonLabel,
                     color = BrandColors.OnLogoBadge,
-                    fontSize = FontSize.BodySmall,
+                    fontSize = FontSize.BodyMedium,
                     fontWeight = FontWeight.SemiBold,
                     fontFamily = GlassFontFamily.ide(),
                 )
-                Icon(
-                    painter = AppIcons.SendPainterResource(),
-                    contentDescription = null,
-                    tint = BrandColors.OnLogoBadge,
-                    modifier = Modifier.size(IconSize.Search),
-                )
             }
+        }
+
+        // 2. Vertical separator
+        Box(
+            modifier = Modifier
+                .width(Spacing.Hairline)
+                .height(Spacing.ExtraLarge)
+                .background(colors.borderMuted),
+        )
+
+        // 3. Status prompt explanation on the right
+        val promptTitle = when (buildState) {
+            is BuildStateUi.InProgress -> "Build in progress (${buildState.stageLabel})"
+            is BuildStateUi.Succeeded -> "Last build completed successfully."
+            is BuildStateUi.Failed -> "Last build failed: ${buildState.stageLabel}"
+            BuildStateUi.NotStarted -> "No build has started."
+        }
+
+        val promptDetail = when (buildState) {
+            is BuildStateUi.InProgress -> "Active run is compiling firmware artifacts."
+            is BuildStateUi.Succeeded -> "Artifacts are ready for review or publication."
+            is BuildStateUi.Failed -> "Review build logs and diagnostic details to resolve."
+            BuildStateUi.NotStarted -> "Set up the items above, then configure firmware to continue."
+        }
+
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
+            Text(
+                text = promptTitle,
+                color = colors.textMain,
+                fontSize = FontSize.BodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                fontFamily = GlassFontFamily.ide(),
+            )
+            Text(
+                text = promptDetail,
+                color = colors.textDim,
+                fontSize = FontSize.BodySmall,
+                fontFamily = GlassFontFamily.ide(),
+            )
         }
     }
 }

@@ -48,11 +48,10 @@ import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
 import org.ide.lti.feature.workspace.studio.DisplayValue
 import org.ide.lti.feature.workspace.studio.GlobalDestination
-import org.ide.lti.feature.workspace.studio.OperationUiState
 import org.ide.lti.feature.workspace.studio.TargetContextUi
 import org.ide.lti.feature.workspace.studio.WorkspaceShellUiState
 
-@Suppress("LongParameterList")
+@Suppress("LongParameterList", "UnusedParameter")
 @Composable
 public fun StudioTopAppBar(
     uiState: WorkspaceShellUiState,
@@ -81,47 +80,6 @@ public fun StudioTopAppBar(
         colors = colors,
         centerContent = {},
         actions = {
-            val targetContext = uiState.targetContext
-            if (targetContext != null) {
-                TopBarTargetSpecifier(
-                    targetContext = targetContext,
-                    colors = colors,
-                )
-            }
-
-            // Validate Action
-            val isValidating = uiState.validateOperation is OperationUiState.Running
-            TopBarActionButton(
-                label = "Validate",
-                icon = null,
-                isLoading = isValidating,
-                isEnabled = !isValidating,
-                colors = colors,
-                onClick = onValidate,
-                testTag = "TopBar_Validate",
-            )
-
-            // Save Action
-            val isSaving = uiState.saveOperation is OperationUiState.Running
-            TopBarActionButton(
-                label = "Save",
-                icon = null,
-                isLoading = isSaving,
-                isEnabled = !isSaving,
-                isPrimary = true,
-                colors = colors,
-                onClick = onSave,
-                testTag = "TopBar_Save",
-            )
-
-            // Vertical Divider
-            Box(
-                modifier = Modifier
-                    .width(IdeShellDimens.HairlineBorder)
-                    .height(Spacing.Medium)
-                    .background(colors.border),
-            )
-
             // User Profile Badge
             Box(
                 modifier = Modifier
@@ -145,7 +103,7 @@ public fun StudioTopAppBar(
 }
 
 @Composable
-private fun TopBarTargetSpecifier(
+internal fun TopBarTargetSpecifier(
     targetContext: TargetContextUi,
     colors: IdeShellColorScheme,
     modifier: Modifier = Modifier,
@@ -262,7 +220,7 @@ private fun TopBarTargetSpecifier(
 }
 
 @Composable
-private fun TopBarActionButton(
+internal fun TopBarActionButton(
     label: String,
     isLoading: Boolean,
     isEnabled: Boolean,

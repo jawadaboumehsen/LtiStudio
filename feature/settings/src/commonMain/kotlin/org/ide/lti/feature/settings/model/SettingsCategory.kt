@@ -58,6 +58,10 @@ enum class SettingsCategory(
         title = "Editor",
         subtitle = "Typography, syntax highlighting, and editor ergonomics",
     ),
+    TargetProfiles(
+        title = "Target profiles",
+        subtitle = "Active target configuration profiles and hardware variants",
+    ),
     BuildEnvironment(
         title = "Build environment",
         subtitle = "JDK toolchains, Android SDK, ADB runtime, and compilation targets",

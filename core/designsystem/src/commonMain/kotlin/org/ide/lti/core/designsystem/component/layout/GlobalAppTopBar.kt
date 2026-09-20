@@ -209,7 +209,7 @@ private fun DestinationTab(
 ) {
     val isBlue = GlassTheme.appTheme == AppTheme.Blue
     val background = when {
-        selected && isBlue -> PluginThemeColors.ActiveTabBackground
+        selected && isBlue -> colors.tabSelected
         selected -> colors.controlSelected
         else -> Color.Transparent
     }
@@ -221,8 +221,8 @@ private fun DestinationTab(
     val border = if (selected) {
         Modifier.border(
             IdeShellDimens.HairlineBorder,
-            if (isBlue) PluginThemeColors.ActiveTabBorder else colors.accentBlue,
-            GlassShapes.Small,
+            if (isBlue) colors.tabSelectedBorder else colors.accentBlue,
+            org.ide.lti.core.designsystem.theme.IdeShellShapes.Pill,
         )
     } else {
         Modifier
@@ -231,7 +231,7 @@ private fun DestinationTab(
     Row(
         modifier = Modifier
             .testTag(tag)
-            .clip(GlassShapes.Small)
+            .clip(org.ide.lti.core.designsystem.theme.IdeShellShapes.Pill)
             .then(border)
             .background(background)
             .selectable(

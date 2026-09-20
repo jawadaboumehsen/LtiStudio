@@ -206,11 +206,14 @@ object Elevation {
  * IDE shell geometry tokens specified by Feature 005 and the normative Stitch design.
  */
 object IdeShellDimens {
-    val TopBarHeight: Dp = 40.dp
-    val PipelineRailWidth: Dp = 116.dp
-    val WorkspaceNavigatorWidth: Dp = 230.dp
+    val TopBarHeight: Dp = 56.dp
+    val PipelineRailWidth: Dp = 150.dp
+    val WorkspaceNavigatorWidth: Dp = 215.dp
     val BreadcrumbHeight: Dp = 32.dp
-    val StatusBarHeight: Dp = 24.dp
+    val StatusBarHeight: Dp = 32.dp
+
+    val ContentInset: Dp = 8.dp
+    val ContentRadius: Dp = 8.dp
 
     val CompactBreakpoint: Dp = 1024.dp
     val CompactHeightBreakpoint: Dp = 768.dp
@@ -222,8 +225,8 @@ object IdeShellDimens {
     val ControlCornerRadius: Dp = 4.dp
     val BadgeCornerRadius: Dp = 3.dp
 
-    val PipelineStageItemHeight: Dp = 38.dp
-    val NavigatorItemHeight: Dp = 30.dp
+    val PipelineStageItemHeight: Dp = 52.dp
+    val NavigatorItemHeight: Dp = 40.dp
     val ReadinessStageColumnWidth: Dp = 100.dp
     val ReadinessLabelColumnWidth: Dp = 140.dp
     val ReadinessStatusColumnWidth: Dp = 110.dp
@@ -231,12 +234,17 @@ object IdeShellDimens {
     val OverviewMaxContentWidth: Dp = 1152.dp
     val OverviewStageIconBoxSize: Dp = 32.dp
     val OverviewEmptyStateHeight: Dp = 136.dp
+    val OverviewTargetCardWidth: Dp = 340.dp
+    val OverviewDockStripHeight: Dp = 32.dp
     val AcquirePolicyLabelWidth: Dp = 220.dp
     val AcquirePolicyInputWidth: Dp = 140.dp
     val AcquireTableSelectColWidth: Dp = 44.dp
     val AcquireTableActionColWidth: Dp = 90.dp
     val AcquireTableIconColWidth: Dp = 36.dp
-    val AcquireTableVerificationColWidth: Dp = 180.dp
     val AcquirePreviewBadgeSize: Dp = 44.dp
     val AcquireStatusBannerIconSize: Dp = 36.dp
+    val TableHeaderRowHeight: Dp = 36.dp
+    val TableBodyRowHeight: Dp = 40.dp
+    val TableSelectionIndicatorSize: Dp = 18.dp
+    val DetailsGridLabelColWidth: Dp = 140.dp
 }

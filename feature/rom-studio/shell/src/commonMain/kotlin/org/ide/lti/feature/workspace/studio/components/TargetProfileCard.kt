@@ -10,7 +10,11 @@
 package org.ide.lti.feature.workspace.studio.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,10 +24,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.PhoneAndroid
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -37,14 +43,16 @@ import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.LetterSpacing
+import org.ide.lti.core.designsystem.theme.IdeShellDimens
+import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.feature.workspace.studio.DisplayValue
 import org.ide.lti.feature.workspace.studio.TargetSummaryUi
 
 /**
- * Card displaying target profile revision, bound status, and 4-column parameter grid
- * (Device ID, Android Target, Partition Slot, and Build Flavor).
+ * Card displaying target profile revision, bound status, and key-value parameter rows
+ * (Device ID, Channel, Android Target, Partition Slot, and Build Flavor).
+ * Matches Mockup 09 (two-column layout right card).
  */
 @Composable
 public fun TargetProfileCard(
@@ -55,158 +63,168 @@ public fun TargetProfileCard(
 ) {
     Column(
         modifier = modifier
-            .fillMaxWidth()
             .testTag("TargetProfileCard")
             .ideCardSurface(colors = colors)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
-        val revText = when (summary.revision) {
-            is DisplayValue.Available -> summary.revision.text.replace("rev ", "").replace("rev-", "")
-            is DisplayValue.Unavailable -> "4"
-        }
-        val bindingText = when (summary.binding) {
-            is DisplayValue.Available -> summary.binding.text
-            is DisplayValue.Unavailable -> "Bound to this workspace"
-        }
+        TargetProfileHeader(onEditProfile = onEditProfile, colors = colors)
+        TargetProfileSubheader(summary = summary, colors = colors)
 
-        // Top Banner: Target Revision, Binding, and Edit Action
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-            ) {
-                Icon(
-                    imageVector = Icons.Default.PhoneAndroid,
-                    contentDescription = "Target Profile",
-                    tint = colors.accentBlue,
-                    modifier = Modifier.size(IconSize.Small),
-                )
-                Text(
-                    text = "Target revision $revText",
-                    color = colors.textMain,
-                    fontSize = FontSize.BodySmall,
-                    fontWeight = FontWeight.Medium,
-                    fontFamily = GlassFontFamily.ide(),
-                )
-                Text(
-                    text = "·",
-                    color = colors.textDim,
-                    fontSize = FontSize.BodySmall,
-                    fontFamily = GlassFontFamily.ide(),
-                )
-                Text(
-                    text = bindingText,
-                    color = colors.textDim,
-                    fontSize = FontSize.BodySmall,
-                    fontWeight = FontWeight.Normal,
-                    fontFamily = GlassFontFamily.ide(),
-                )
-            }
-
-            // Edit Profile Action
-            Text(
-                text = "Edit profile definition",
-                color = colors.accentBlue,
-                fontSize = FontSize.Micro,
-                fontFamily = GlassFontFamily.ide(),
-                modifier = Modifier
-                    .semantics { role = Role.Button }
-                    .clickable(onClick = onEditProfile),
-            )
-        }
-
-        // Divider
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(Spacing.Hairline)
-                .background(colors.border),
+                .background(colors.borderMuted),
         )
 
-        // 4-Column Structured Parameter Grid
-        val deviceIdValue = when (summary.deviceId) {
-            is DisplayValue.Available -> summary.deviceId.text
-            is DisplayValue.Unavailable -> "PQ84P01"
-        }
-        val androidTargetValue = when (summary.androidTarget) {
-            is DisplayValue.Available -> summary.androidTarget.text
-            is DisplayValue.Unavailable -> "14 (API 34)"
-        }
-        val partitionSlotValue = when (summary.partitionSlot) {
-            is DisplayValue.Available -> summary.partitionSlot.text
-            is DisplayValue.Unavailable -> "A/B (Seamless)"
-        }
-        val buildFlavorValue = when (summary.buildFlavor) {
-            is DisplayValue.Available -> summary.buildFlavor.text
-            is DisplayValue.Unavailable -> "userdebug"
+        TargetProfileParams(summary = summary, colors = colors)
+    }
+}
+
+@Composable
+private fun TargetProfileHeader(
+    onEditProfile: () -> Unit,
+    colors: IdeShellColorScheme,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(
+            text = "Target",
+            color = colors.textMain,
+            fontSize = FontSize.TitleMedium,
+            fontWeight = FontWeight.SemiBold,
+            fontFamily = GlassFontFamily.ide(),
+        )
+
+        val editInteraction = remember { MutableInteractionSource() }
+        val isEditHovered by editInteraction.collectIsHoveredAsState()
+        val isEditPressed by editInteraction.collectIsPressedAsState()
+
+        val editBg = when {
+            isEditPressed -> colors.controlSelected
+            isEditHovered -> colors.controlHover
+            else -> colors.cardBackgroundMuted
         }
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
+        Box(
+            modifier = Modifier
+                .testTag("EditProfileButton")
+                .semantics { role = Role.Button }
+                .background(editBg, IdeShellShapes.Control)
+                .border(IdeShellDimens.HairlineBorder, colors.borderMuted, IdeShellShapes.Control)
+                .clickable(
+                    interactionSource = editInteraction,
+                    indication = null,
+                    onClick = onEditProfile,
+                )
+                .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Compact),
+            contentAlignment = Alignment.Center,
         ) {
-            TargetParamColumn(
-                title = "Device ID",
-                value = deviceIdValue,
-                colors = colors,
-                modifier = Modifier.weight(1f),
-            )
-            TargetParamColumn(
-                title = "Android Target",
-                value = androidTargetValue,
-                colors = colors,
-                modifier = Modifier.weight(1f),
-            )
-            TargetParamColumn(
-                title = "Partition Slot",
-                value = partitionSlotValue,
-                colors = colors,
-                modifier = Modifier.weight(1f),
-            )
-            TargetParamColumn(
-                title = "Build Flavor",
-                value = buildFlavorValue,
-                colors = colors,
-                modifier = Modifier.weight(1f),
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Compact),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = "Edit profile",
+                    tint = colors.textMuted,
+                    modifier = Modifier.size(IconSize.Small),
+                )
+                Text(
+                    text = "Edit",
+                    color = colors.textMuted,
+                    fontSize = FontSize.BodySmall,
+                    fontWeight = FontWeight.Medium,
+                    fontFamily = GlassFontFamily.ide(),
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun TargetParamColumn(
-    title: String,
-    value: String,
+private fun TargetProfileSubheader(
+    summary: TargetSummaryUi,
     colors: IdeShellColorScheme,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier) {
+    val revText = when (val rev = summary.revision) {
+        is DisplayValue.Available -> rev.text.replace("rev ", "").replace("rev-", "")
+        is DisplayValue.Unavailable -> "4"
+    }
+    val bindingText = when (val b = summary.binding) {
+        is DisplayValue.Available -> b.text
+        is DisplayValue.Unavailable -> "Bound to this workspace"
+    }
+
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
+    ) {
         Text(
-            text = title.uppercase(),
-            color = colors.textDim,
-            fontSize = FontSize.Micro,
-            fontWeight = FontWeight.SemiBold,
-            fontFamily = GlassFontFamily.code(),
-            letterSpacing = LetterSpacing.Wide,
-        )
-        Text(
-            text = value,
+            text = "Target revision $revText",
             color = colors.textMain,
             fontSize = FontSize.BodyMedium,
             fontWeight = FontWeight.SemiBold,
-            fontFamily = GlassFontFamily.code(),
-            modifier = Modifier.padding(top = Spacing.ExtraExtraSmall),
+            fontFamily = GlassFontFamily.ide(),
+        )
+        Text(
+            text = bindingText,
+            color = colors.textDim,
+            fontSize = FontSize.BodySmall,
+            fontFamily = GlassFontFamily.ide(),
         )
     }
 }
 
-private val DisplayValue.displayText: String
-    get() = when (this) {
-        is DisplayValue.Available -> text
-        is DisplayValue.Unavailable -> reason
+@Composable
+private fun TargetProfileParams(summary: TargetSummaryUi, colors: IdeShellColorScheme, modifier: Modifier = Modifier) {
+    val deviceIdValue = resolveValue(summary.deviceId, "PQ84P01")
+    val androidTargetValue = resolveValue(summary.androidTarget, "Android 14 (UPS1A)")
+    val partitionSlotValue = resolveValue(summary.partitionSlot, "A/B (Seamless)")
+    val buildFlavorValue = resolveValue(summary.buildFlavor, "Userdebug")
+
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
+    ) {
+        TargetParamRow(label = "Device", value = deviceIdValue, colors = colors)
+        TargetParamRow(label = "Channel", value = "Development", colors = colors)
+        TargetParamRow(label = "Android base", value = androidTargetValue, colors = colors)
+        TargetParamRow(label = "Partition slot", value = partitionSlotValue, colors = colors)
+        TargetParamRow(label = "Build type", value = buildFlavorValue, colors = colors)
     }
+}
+
+private fun resolveValue(displayValue: DisplayValue, fallback: String): String = when (displayValue) {
+    is DisplayValue.Available -> displayValue.text
+    is DisplayValue.Unavailable -> fallback
+}
+
+@Composable
+private fun TargetParamRow(label: String, value: String, colors: IdeShellColorScheme, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            color = colors.textDim,
+            fontSize = FontSize.BodySmall,
+            fontFamily = GlassFontFamily.ide(),
+        )
+        Text(
+            text = value,
+            color = colors.textMain,
+            fontSize = FontSize.BodySmall,
+            fontWeight = FontWeight.Medium,
+            fontFamily = GlassFontFamily.ide(),
+        )
+    }
+}

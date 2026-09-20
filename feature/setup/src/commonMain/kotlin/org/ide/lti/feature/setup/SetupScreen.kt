@@ -19,7 +19,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -52,6 +51,8 @@ import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -60,7 +61,6 @@ import com.kashif_e.backdrop.backdrops.LayerBackdrop
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import org.ide.lti.core.designsystem.component.actions.LocalWindowControlActions
 import org.ide.lti.core.designsystem.component.actions.WindowControlActions
-import org.ide.lti.core.designsystem.component.display.GlassPanel
 import org.ide.lti.core.designsystem.component.display.GlassVerticalDivider
 import org.ide.lti.core.designsystem.component.feedback.GlassBanner
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerAction
@@ -68,8 +68,12 @@ import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.component.feedback.GlassBottomSheetScaffold
 import org.ide.lti.core.designsystem.component.layout.GlobalAppDestination
 import org.ide.lti.core.designsystem.component.layout.GlobalAppTopBar
+import org.ide.lti.core.designsystem.component.layout.IdeAppFrame
+import org.ide.lti.core.designsystem.component.layout.IdeNavigatorItem
+import org.ide.lti.core.designsystem.component.layout.IdeNavigatorPanel
+import org.ide.lti.core.designsystem.component.layout.IdePipelineRail
+import org.ide.lti.core.designsystem.component.layout.IdePipelineStageItem
 import org.ide.lti.core.designsystem.component.layout.IdeStatusBar
-import org.ide.lti.core.designsystem.component.layout.StudioGlassBackdrop
 import org.ide.lti.core.designsystem.component.primitives.GlassSurface
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
@@ -79,13 +83,11 @@ import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.MotionEasing
 import org.ide.lti.core.designsystem.theme.SetupTokens
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.config.AppTheme
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.model.workspace.Workspace
 import org.ide.lti.feature.setup.components.ProvisioningPreviewSheet
-import org.ide.lti.feature.setup.components.SetupJourneySidebar
 import org.ide.lti.feature.setup.steps.DocumentationStepContent
 import org.ide.lti.feature.setup.steps.EnvironmentStepContent
 import org.ide.lti.feature.setup.steps.ProjectsStepContent
@@ -304,11 +306,78 @@ fun SetupScreenContent(
         actions.onSelectTab(newTab)
     }
 
-    BoxWithConstraints(
+    val currentRailId = when (effectiveTab) {
+        SetupTab.LAUNCHPAD, SetupTab.PROJECTS -> "machine_setup"
+        SetupTab.ENVIRONMENT -> "environment_overview"
+        SetupTab.TOOLS -> "tool_packages"
+        SetupTab.RECOVERY -> "diagnostics_recovery"
+    }
+
+    val setupRailStages = remember {
+        listOf(
+            IdePipelineStageItem(
+                id = "machine_setup",
+                label = "Machine setup",
+                icon = "machine_setup",
+            ),
+            IdePipelineStageItem(
+                id = "environment_overview",
+                label = "Environment overview",
+                icon = "environment_overview",
+            ),
+            IdePipelineStageItem(
+                id = "wsl_runtime",
+                label = "WSL runtime",
+                icon = "wsl_runtime",
+            ),
+            IdePipelineStageItem(
+                id = "build_service",
+                label = "Build service",
+                icon = "build_service",
+            ),
+            IdePipelineStageItem(
+                id = "tool_packages",
+                label = "Tool packages",
+                icon = "tool_packages",
+            ),
+            IdePipelineStageItem(
+                id = "diagnostics_recovery",
+                label = "Recovery",
+                icon = "diagnostics_recovery",
+            ),
+        )
+    }
+
+    val isToolsActive = effectiveTab == SetupTab.TOOLS
+    val density = LocalDensity.current
+    var isCompact by remember { mutableStateOf(false) }
+
+    val toolPackagesNavItems = remember {
+        listOf(
+            IdeNavigatorItem(id = "all_tools", label = "All tools", icon = "all_tools"),
+            IdeNavigatorItem(id = "firmware", label = "Firmware", icon = "firmware"),
+            IdeNavigatorItem(id = "filesystems", label = "Filesystems", icon = "filesystems"),
+            IdeNavigatorItem(id = "signing", label = "Signing", icon = "signing"),
+        )
+    }
+
+    val selectedNavToolId = when (state.selectedToolCategory.lowercase()) {
+        "all" -> "all_tools"
+        "boot & kernel", "dynamic partitions", "firmware" -> "firmware"
+        "filesystem & images", "filesystems" -> "filesystems"
+        "signing & security", "signing" -> "signing"
+        else -> "all_tools"
+    }
+
+    IdeAppFrame(
         modifier = modifier
             .fillMaxSize()
             .background(colors.appBackground)
             .widthIn(min = SetupTokens.MinWindowWidth)
+            .onSizeChanged { size ->
+                val widthDp = with(density) { size.width.toDp() }
+                isCompact = widthDp < SetupTokens.CompactBreakpoint
+            }
             .focusRequester(rootFocusRequester)
             .focusable()
             .onKeyEvent { event ->
@@ -370,15 +439,7 @@ fun SetupScreenContent(
                     false
                 }
             },
-    ) {
-        if (isBlueGlass) {
-            StudioGlassBackdrop(backdrop = resolvedBackdrop)
-        }
-        val isCompact = maxWidth < SetupTokens.CompactBreakpoint
-        val sidebarWidth = if (isCompact) SetupTokens.SidebarWidthCompact else SetupTokens.SidebarWidthWide
-        val gutter = if (isCompact) SetupTokens.GutterCompact else SetupTokens.GutterWide
-
-        Column(modifier = Modifier.fillMaxSize()) {
+        topBar = {
             GlobalAppTopBar(
                 selectedDestination = GlobalAppDestination.Setup,
                 onSelectDestination = { destination ->
@@ -392,68 +453,132 @@ fun SetupScreenContent(
                 actions = {},
                 windowControlActions = windowControls ?: LocalWindowControlActions.current,
             )
-
-            if (state.environmentNotice != null) {
-                GlassBanner(
-                    severity = GlassBannerSeverity.WARNING,
-                    title = "Environment Verification Required",
-                    description = state.environmentNotice,
-                    primaryAction = GlassBannerAction(label = "Verify Now", onClick = actions.onNavigateToEnvironment),
-                    secondaryAction = GlassBannerAction(label = "Dismiss", onClick = actions.onDismissEnvironmentNotice),
-                    backdrop = resolvedBackdrop,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
+        },
+        pipelineRail = {
+            IdePipelineRail(
+                stages = setupRailStages,
+                selectedStageId = currentRailId,
+                onSelectStage = { railId ->
+                    when (railId) {
+                        "machine_setup" -> onTabChange(SetupTab.LAUNCHPAD)
+                        "environment_overview" -> onTabChange(SetupTab.ENVIRONMENT)
+                        "wsl_runtime" -> onTabChange(SetupTab.ENVIRONMENT)
+                        "build_service" -> onTabChange(SetupTab.ENVIRONMENT)
+                        "tool_packages" -> onTabChange(SetupTab.TOOLS)
+                        "diagnostics_recovery" -> onTabChange(SetupTab.RECOVERY)
+                    }
+                },
+                header = {
+                    Text(
+                        text = "Machine environment",
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                        color = colors.textDim,
+                        modifier = Modifier.padding(horizontal = Spacing.Small, vertical = Spacing.Small),
+                    )
+                },
+                colors = colors,
+            )
+        },
+        navigator = if (isToolsActive) {
+            {
+                IdeNavigatorPanel(
+                    headerTitle = "TOOL PACKAGES",
+                    headerSubtitle = null,
+                    items = toolPackagesNavItems,
+                    selectedItemId = selectedNavToolId,
+                    onSelectItem = { navId ->
+                        val cat = when (navId) {
+                            "all_tools" -> "All"
+                            "firmware" -> "Boot & Kernel"
+                            "filesystems" -> "Filesystem & Images"
+                            "signing" -> "Signing & Security"
+                            else -> "All"
+                        }
+                        actions.onSelectToolCategory(cat)
+                    },
+                    colors = colors,
                 )
             }
-
-            Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                // Adaptive Left Setup Journey Sidebar
-                GlassPanel(
-                    width = sidebarWidth,
-                    shape = GlassShapes.None,
-                    contentPadding = Spacing.None,
-                    modifier = Modifier.fillMaxHeight(),
-                    surfaceColor = if (isBlueGlass) Color.Unspecified else colors.navigatorBackground,
-                ) {
-                    SetupJourneySidebar(
-                        currentStep = effectiveTab,
-                        onStepSelected = onTabChange,
-                        toolchainSetupState = state.toolchainSetupState,
-                        onOpenSettings = actions.onOpenSettings,
-                        onOpenManageTargets = actions.onOpenManageTargets,
-                        onOpenHelp = {
-                            lastInvokingFocusRequester = helpButtonFocusRequester
-                            internalHelpSheetOpen = true
-                            actions.onOpenHelp()
-                        },
+        } else {
+            null
+        },
+        statusBar = {
+            IdeStatusBar(
+                modifier = Modifier.fillMaxWidth(),
+                colors = colors,
+                leadingContent = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Storage,
+                            contentDescription = null,
+                            tint = colors.textDim,
+                            modifier = Modifier.size(IconSize.Small),
+                        )
+                        val receipt = state.activeOperation?.operationId
+                            ?: state.toolchainSetupState.pendingAttemptId
+                            ?: "setup-042"
+                        Text(
+                            text = "Machine environment setup • Setup receipt: $receipt",
+                            fontSize = FontSize.Micro,
+                            color = colors.textMuted,
+                            fontFamily = GlassFontFamily.ide(),
+                        )
+                    }
+                },
+                trailingContent = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(IconSize.Indicator)
+                                .clip(GlassShapes.Capsule)
+                                .background(colors.warningAmber),
+                        )
+                        Text(
+                            text = "Service disconnected",
+                            fontSize = FontSize.Micro,
+                            color = colors.textMuted,
+                            fontFamily = GlassFontFamily.ide(),
+                        )
+                        Text(
+                            text = "No active maintenance",
+                            fontSize = FontSize.Micro,
+                            color = colors.textDim,
+                            fontFamily = GlassFontFamily.ide(),
+                        )
+                    }
+                },
+            )
+        },
+        colors = colors,
+        content = {
+            Column(modifier = Modifier.fillMaxSize()) {
+                if (state.environmentNotice != null) {
+                    GlassBanner(
+                        severity = GlassBannerSeverity.WARNING,
+                        title = "Environment Verification Required",
+                        description = state.environmentNotice,
+                        primaryAction = GlassBannerAction(
+                            label = "Verify Now",
+                            onClick = actions.onNavigateToEnvironment,
+                        ),
+                        secondaryAction = GlassBannerAction(
+                            label = "Dismiss",
+                            onClick = actions.onDismissEnvironmentNotice,
+                        ),
+                        backdrop = resolvedBackdrop,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
                     )
                 }
 
-                // Sleek Specular Hairline Vertical Divider
-                GlassVerticalDivider(
-                    thickness = StrokeWidth.Standard,
-                    color = GlassTheme.ideShellColors.borderMuted,
-                )
-
-                // Main Content Area with adaptive gutter padding and max content width constraint.
-                // In Blue theme, transparent canvas lets the studio backdrop shine through;
-                // In Dark or Light themes, the neutral content background matches IdeAppFrame.
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .then(
-                            if (isBlueGlass) {
-                                if (SetupTokens.IsReducedTransparency) {
-                                    Modifier.background(SetupTokens.OpaqueSurfaceColor)
-                                } else {
-                                    Modifier.background(Color.Transparent)
-                                }
-                            } else {
-                                Modifier.background(colors.contentBackground)
-                            },
-                        ),
-                    contentAlignment = Alignment.TopCenter,
-                ) {
+                Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
                     val fadeDuration = SetupTokens.DurationFadeMs
                     val feedbackDuration = SetupTokens.DurationFeedbackMs
 
@@ -472,12 +597,13 @@ fun SetupScreenContent(
                         },
                         label = "SetupDestinationTransition",
                         modifier = Modifier
-                            .fillMaxSize()
+                            .weight(1f)
+                            .fillMaxHeight()
                             .then(
                                 if (effectiveTab == SetupTab.RECOVERY) {
                                     Modifier
                                 } else {
-                                    Modifier.widthIn(max = SetupTokens.ContentMaxWidth).padding(horizontal = gutter)
+                                    Modifier.widthIn(max = SetupTokens.ContentMaxWidth)
                                 },
                             ),
                         contentAlignment = Alignment.TopCenter,
@@ -532,75 +658,20 @@ fun SetupScreenContent(
                             }
                         }
                     }
-                }
 
-                // The reference dashboard keeps machine readiness visible while an
-                // operator works in a sub-page. Keep this as a separate, quiet
-                // context pane rather than hiding truth in a modal or toolbar.
-                if (!isCompact && effectiveTab != SetupTab.RECOVERY) {
-                    GlassVerticalDivider(specular = true)
-                    SetupEnvironmentSummary(
-                        state = state,
-                        modifier = Modifier
-                            .widthIn(min = SetupTokens.SidebarWidthCompact, max = SetupTokens.SidebarWidthWide)
-                            .padding(Spacing.Medium),
-                    )
+                    if (!isCompact && effectiveTab == SetupTab.ENVIRONMENT) {
+                        GlassVerticalDivider(specular = true)
+                        SetupEnvironmentSummary(
+                            state = state,
+                            modifier = Modifier
+                                .widthIn(min = SetupTokens.SidebarWidthCompact, max = SetupTokens.SidebarWidthWide)
+                                .padding(Spacing.Medium),
+                        )
+                    }
                 }
             }
-
-            IdeStatusBar(
-                modifier = Modifier.fillMaxWidth(),
-                colors = GlassTheme.ideShellColors,
-                leadingContent = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Storage,
-                            contentDescription = null,
-                            tint = GlassTheme.ideShellColors.textDim,
-                            modifier = Modifier.size(IconSize.Small),
-                        )
-                        val receipt = state.activeOperation?.operationId
-                            ?: state.toolchainSetupState.pendingAttemptId
-                            ?: "setup-042"
-                        Text(
-                            text = "Machine environment setup • Setup receipt: $receipt",
-                            fontSize = FontSize.Micro,
-                            color = GlassTheme.ideShellColors.textMuted,
-                            fontFamily = GlassFontFamily.ide(),
-                        )
-                    }
-                },
-                trailingContent = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(IconSize.Indicator)
-                                .clip(GlassShapes.Capsule)
-                                .background(GlassTheme.ideShellColors.warningAmber),
-                        )
-                        Text(
-                            text = "Service disconnected",
-                            fontSize = FontSize.Micro,
-                            color = GlassTheme.ideShellColors.textMuted,
-                            fontFamily = GlassFontFamily.ide(),
-                        )
-                        Text(
-                            text = "Design concept • Sample data",
-                            fontSize = FontSize.Micro,
-                            color = GlassTheme.ideShellColors.textDim,
-                            fontFamily = GlassFontFamily.ide(),
-                        )
-                    }
-                },
-            )
-        }
-    }
+        },
+    )
 
     val showHelp = isHelpSheetOpen || internalHelpSheetOpen
     GlassBottomSheetScaffold(

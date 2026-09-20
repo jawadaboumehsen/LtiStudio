@@ -16,31 +16,41 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
-import org.ide.lti.core.designsystem.component.actions.GlassButton
-import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
-import org.ide.lti.core.designsystem.component.display.GlassCard
+import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.display.GlassChip
+import org.ide.lti.core.designsystem.component.display.IdeTable
+import org.ide.lti.core.designsystem.component.display.IdeTableHeader
+import org.ide.lti.core.designsystem.component.display.IdeTableHeaderCell
+import org.ide.lti.core.designsystem.component.display.IdeTableRow
+import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.component.inputs.TextFieldState
-import org.ide.lti.core.designsystem.theme.GlassShapes
+import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.codeFontFamily
+import org.ide.lti.core.designsystem.theme.ideFontFamily
 import org.ide.lti.core.domain.pipeline.configuration.Severity
 import org.ide.lti.core.domain.pipeline.configuration.ValidationError
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.ExtractionSettings
 
+@Suppress("UnusedParameter")
 @Composable
 public fun ExtractEditor(
     settings: ExtractionSettings,
@@ -52,6 +62,7 @@ public fun ExtractEditor(
     onValidate: () -> Unit = {},
     onSave: () -> Unit = {},
     modifier: Modifier = Modifier,
+    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     val errors = validationErrors.filter { it.fieldPath.startsWith("extraction.") || !it.fieldPath.contains('.') }
 
@@ -68,47 +79,21 @@ public fun ExtractEditor(
                 .padding(horizontal = Spacing.ExtraLarge, vertical = Spacing.Medium),
             verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
         ) {
-            item { EditorHeader(onValidate, onSave) }
             when (selectedObjectId.lowercase()) {
                 "dynamic-partitions", "dynamic_partitions" -> item {
-                    DynamicPartitionsCard(settings, target, errors, dirtyPaths, onChange)
+                    DynamicPartitionsCard(settings, target, errors, dirtyPaths, colors, onChange)
                 }
                 "boot-partitions", "boot_partitions" -> item {
-                    BootPartitionsCard(settings, target, errors, dirtyPaths, onChange)
+                    BootPartitionsCard(settings, target, errors, dirtyPaths, colors, onChange)
                 }
                 "slot", "filesystem-handling", "filesystem_handling" -> item {
-                    SlotFilesystemCard(settings, target, dirtyPaths, onChange)
+                    SlotFilesystemCard(settings, target, dirtyPaths, colors, onChange)
                 }
                 else -> item {
-                    ArchiveLayoutCard(settings, errors, dirtyPaths, onChange)
+                    ArchiveLayoutCard(settings, errors, dirtyPaths, colors, onChange)
                 }
             }
-            item { Diagnostics(errors) }
-        }
-    }
-}
-
-@Composable
-private fun EditorHeader(onValidate: () -> Unit, onSave: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column {
-            Text("Extract", style = MaterialTheme.typography.headlineSmall, color = GlassTheme.colors.onGlass)
-            Text(
-                "Inspect the archive layout and choose target-supported extraction inputs.",
-                color = GlassTheme.colors.onGlassSecondary,
-            )
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-            GlassButton(onClick = onValidate, variant = GlassButtonVariant.Standard, shape = IdeShellShapes.Control) {
-                Text("Validate", color = GlassTheme.colors.onGlass)
-            }
-            GlassButton(onClick = onSave, variant = GlassButtonVariant.Primary, shape = IdeShellShapes.Control) {
-                Text("Save", color = GlassTheme.colors.onGlass)
-            }
+            item { Diagnostics(errors, colors) }
         }
     }
 }
@@ -118,29 +103,48 @@ private fun ArchiveLayoutCard(
     settings: ExtractionSettings,
     errors: List<ValidationError>,
     dirtyPaths: Set<String>,
+    colors: IdeShellColorScheme,
     onChange: (ExtractionSettings) -> Unit,
 ) {
-    GlassCard(Modifier.fillMaxWidth(), shape = GlassShapes.Panel) {
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
-            Text("Archive layout", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)
-            Text(
-                "Source archive inspection is artifact-derived and read-only here.",
-                style = MaterialTheme.typography.bodySmall,
-                color = GlassTheme.colors.onGlassSecondary,
-            )
-            Text("Adapter", style = MaterialTheme.typography.bodySmall, color = GlassTheme.colors.onGlass)
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-                listOf("AUTO", "payload-dumper-go", "lpunpack").forEach { adapter ->
-                    GlassChip(
-                        label = adapter,
-                        selected = settings.adapter.equals(adapter, ignoreCase = true),
-                        onClick = { onChange(settings.copy(adapter = adapter)) },
-                    )
-                }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(IdeShellShapes.Card)
+            .ideCardSurface(colors, shape = IdeShellShapes.Card)
+            .padding(Spacing.Medium),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+    ) {
+        Text(
+            text = "Archive layout",
+            color = colors.textMain,
+            fontSize = FontSize.TitleSmall,
+            fontWeight = FontWeight.SemiBold,
+            fontFamily = ideFontFamily(),
+        )
+        Text(
+            text = "Source archive inspection is artifact-derived and read-only here.",
+            color = colors.textMuted,
+            fontSize = FontSize.BodySmall,
+            fontFamily = ideFontFamily(),
+        )
+        Text(
+            text = "Adapter",
+            color = colors.textMain,
+            fontSize = FontSize.BodySmall,
+            fontWeight = FontWeight.Medium,
+            fontFamily = ideFontFamily(),
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
+            listOf("AUTO", "payload-dumper-go", "lpunpack").forEach { adapter ->
+                GlassChip(
+                    label = adapter,
+                    selected = settings.adapter.equals(adapter, ignoreCase = true),
+                    onClick = { onChange(settings.copy(adapter = adapter)) },
+                )
             }
-            Meta("adapter", dirtyPaths, "Target capability", "Auto selects a supported archive adapter.")
-            Diagnostics(errors.filter { it.fieldPath.endsWith("adapter") })
         }
+        Meta("adapter", dirtyPaths, "Target capability", "Auto selects a supported archive adapter.", colors)
+        Diagnostics(errors.filter { it.fieldPath.endsWith("adapter") }, colors)
     }
 }
 
@@ -150,22 +154,46 @@ private fun DynamicPartitionsCard(
     target: TargetDevice,
     errors: List<ValidationError>,
     dirtyPaths: Set<String>,
+    colors: IdeShellColorScheme,
     onChange: (ExtractionSettings) -> Unit,
 ) {
-    GlassCard(Modifier.fillMaxWidth(), shape = GlassShapes.Panel) {
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
-            Text("Dynamic partitions", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)
-            Text(
-                "Select only partitions declared by the pinned target.",
-                style = MaterialTheme.typography.bodySmall,
-                color = GlassTheme.colors.onGlassSecondary,
-            )
-            PartitionChoices(target.dynamicPartitions, settings.dynamicPartitions) {
-                onChange(settings.copy(dynamicPartitions = it))
-            }
-            Meta("dynamicPartitions", dirtyPaths, "Target capability", "Constrained to target.dynamicPartitions.")
-            Diagnostics(errors.filter { it.fieldPath.endsWith("dynamicPartitions") })
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(IdeShellShapes.Card)
+            .ideCardSurface(colors, shape = IdeShellShapes.Card)
+            .padding(Spacing.Medium),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+    ) {
+        Text(
+            text = "Dynamic partitions",
+            color = colors.textMain,
+            fontSize = FontSize.TitleSmall,
+            fontWeight = FontWeight.SemiBold,
+            fontFamily = ideFontFamily(),
+        )
+        Text(
+            text = "Select only partitions declared by the pinned target.",
+            color = colors.textMuted,
+            fontSize = FontSize.BodySmall,
+            fontFamily = ideFontFamily(),
+        )
+        PartitionChoices(
+            options = target.dynamicPartitions,
+            selected = settings.dynamicPartitions,
+            groupLabel = "Dynamic partition",
+            colors = colors,
+        ) {
+            onChange(settings.copy(dynamicPartitions = it))
         }
+        Meta(
+            path = "dynamicPartitions",
+            dirty = dirtyPaths,
+            source = "Target capability",
+            help = "Constrained to target.dynamicPartitions.",
+            colors = colors,
+        )
+        Diagnostics(errors.filter { it.fieldPath.endsWith("dynamicPartitions") }, colors)
     }
 }
 
@@ -175,17 +203,40 @@ private fun BootPartitionsCard(
     target: TargetDevice,
     errors: List<ValidationError>,
     dirtyPaths: Set<String>,
+    colors: IdeShellColorScheme,
     onChange: (ExtractionSettings) -> Unit,
 ) {
-    GlassCard(Modifier.fillMaxWidth(), shape = GlassShapes.Panel) {
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
-            Text("Boot partitions", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)
-            PartitionChoices(target.bootPartitions, settings.bootPartitions) {
-                onChange(settings.copy(bootPartitions = it))
-            }
-            Meta("bootPartitions", dirtyPaths, "Target capability", "Pinned to target.bootPartitions.")
-            Diagnostics(errors.filter { it.fieldPath.endsWith("bootPartitions") })
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(IdeShellShapes.Card)
+            .ideCardSurface(colors, shape = IdeShellShapes.Card)
+            .padding(Spacing.Medium),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+    ) {
+        Text(
+            text = "Boot partitions",
+            color = colors.textMain,
+            fontSize = FontSize.TitleSmall,
+            fontWeight = FontWeight.SemiBold,
+            fontFamily = ideFontFamily(),
+        )
+        PartitionChoices(
+            options = target.bootPartitions,
+            selected = settings.bootPartitions,
+            groupLabel = "Boot partition",
+            colors = colors,
+        ) {
+            onChange(settings.copy(bootPartitions = it))
         }
+        Meta(
+            path = "bootPartitions",
+            dirty = dirtyPaths,
+            source = "Target capability",
+            help = "Pinned to target.bootPartitions.",
+            colors = colors,
+        )
+        Diagnostics(errors.filter { it.fieldPath.endsWith("bootPartitions") }, colors)
     }
 }
 
@@ -194,75 +245,173 @@ private fun SlotFilesystemCard(
     settings: ExtractionSettings,
     target: TargetDevice,
     dirtyPaths: Set<String>,
+    colors: IdeShellColorScheme,
     onChange: (ExtractionSettings) -> Unit,
 ) {
-    GlassCard(Modifier.fillMaxWidth(), shape = GlassShapes.Panel) {
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
-            Text("Slot and filesystem handling", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)
-            Text(
-                "Supported slots: ${target.packagePolicy.bootSlots.joinToString()} · active ${target.activeSlotSuffix}",
-                color = GlassTheme.colors.onGlassSecondary,
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-                listOf(null, *target.packagePolicy.bootSlots.toTypedArray()).forEach { slot ->
-                    GlassChip(
-                        label = slot ?: "Auto",
-                        selected = settings.slot == slot,
-                        onClick = { onChange(settings.copy(slot = slot)) },
-                    )
-                }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(IdeShellShapes.Card)
+            .ideCardSurface(colors, shape = IdeShellShapes.Card)
+            .padding(Spacing.Medium),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+    ) {
+        Text(
+            text = "Slot and filesystem handling",
+            color = colors.textMain,
+            fontSize = FontSize.TitleSmall,
+            fontWeight = FontWeight.SemiBold,
+            fontFamily = ideFontFamily(),
+        )
+        val bootSlots = target.packagePolicy.bootSlots.joinToString()
+        Text(
+            text = "Supported slots: $bootSlots · active ${target.activeSlotSuffix}",
+            color = colors.textMuted,
+            fontSize = FontSize.BodySmall,
+            fontFamily = ideFontFamily(),
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
+            listOf(null, *target.packagePolicy.bootSlots.toTypedArray()).forEach { slot ->
+                GlassChip(
+                    label = slot ?: "Auto",
+                    selected = settings.slot == slot,
+                    onClick = { onChange(settings.copy(slot = slot)) },
+                )
             }
-            GlassTextField(
-                settings.slot.orEmpty(),
-                {},
-                label = "Derived extraction slot",
-                readOnly = true,
-                state = TextFieldState.Helper("Typed target capability; output paths are workspace-derived."),
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-                GlassToggle(settings.reuseVerifiedExtraction, { onChange(settings.copy(reuseVerifiedExtraction = it)) })
-                Text("Reuse existing extraction only after verified digest", color = GlassTheme.colors.onGlass)
-            }
-            Meta("slot / reuseVerifiedExtraction", dirtyPaths, "Workspace override", "Reuse checks digest and sidecar.")
         }
-    }
-}
-
-@Composable
-private fun PartitionChoices(options: List<String>, selected: List<String>, onChange: (List<String>) -> Unit) {
-    options.forEach { name ->
-        GlassChip(
-            label = name,
-            selected = name in selected,
-            onClick = { onChange(if (name in selected) selected - name else selected + name) },
-            modifier = Modifier.fillMaxWidth(),
+        GlassTextField(
+            value = settings.slot.orEmpty(),
+            onValueChange = {},
+            label = "Derived extraction slot",
+            readOnly = true,
+            state = TextFieldState.Helper("Typed target capability; output paths are workspace-derived."),
+        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+        ) {
+            GlassToggle(
+                checked = settings.reuseVerifiedExtraction,
+                onCheckedChange = { onChange(settings.copy(reuseVerifiedExtraction = it)) },
+                activeColor = colors.accentBlue,
+            )
+            Text(
+                text = "Reuse existing extraction only after verified digest",
+                color = colors.textMain,
+                fontSize = FontSize.BodySmall,
+                fontFamily = ideFontFamily(),
+            )
+        }
+        Meta(
+            path = "slot / reuseVerifiedExtraction",
+            dirty = dirtyPaths,
+            source = "Workspace override",
+            help = "Reuse checks digest and sidecar.",
+            colors = colors,
         )
     }
 }
 
 @Composable
-private fun Meta(path: String, dirty: Set<String>, source: String, help: String) {
+private fun PartitionChoices(
+    options: List<String>,
+    selected: List<String>,
+    groupLabel: String,
+    colors: IdeShellColorScheme,
+    onChange: (List<String>) -> Unit,
+) {
+    IdeTable(
+        modifier = Modifier.fillMaxWidth(),
+        colors = colors,
+    ) {
+        IdeTableHeader(colors = colors) {
+            IdeTableHeaderCell(
+                text = "Select",
+                modifier = Modifier.width(IdeShellDimens.AcquireTableIconColWidth),
+                colors = colors,
+            )
+            IdeTableHeaderCell(
+                text = "Partition",
+                modifier = Modifier.weight(2f),
+                colors = colors,
+            )
+            IdeTableHeaderCell(
+                text = "Group",
+                modifier = Modifier.weight(1.5f),
+                colors = colors,
+            )
+            IdeTableHeaderCell(
+                text = "Status",
+                modifier = Modifier.weight(1.5f),
+                colors = colors,
+            )
+        }
+
+        options.forEach { name ->
+            val isChecked = name in selected
+            IdeTableRow(
+                isSelected = isChecked,
+                onClick = { onChange(if (isChecked) selected - name else selected + name) },
+                colors = colors,
+            ) {
+                Checkbox(
+                    checked = isChecked,
+                    onCheckedChange = { onChange(if (isChecked) selected - name else selected + name) },
+                    colors = CheckboxDefaults.colors(
+                        checkedColor = colors.accentBlue,
+                        uncheckedColor = colors.textDim,
+                    ),
+                    modifier = Modifier.width(IdeShellDimens.AcquireTableIconColWidth),
+                )
+                Text(
+                    text = name,
+                    color = colors.textMain,
+                    fontSize = FontSize.BodySmall,
+                    fontWeight = FontWeight.Medium,
+                    fontFamily = codeFontFamily(),
+                    modifier = Modifier.weight(2f),
+                )
+                Text(
+                    text = groupLabel,
+                    color = colors.textMuted,
+                    fontSize = FontSize.BodySmall,
+                    fontFamily = ideFontFamily(),
+                    modifier = Modifier.weight(1.5f),
+                )
+                Text(
+                    text = "Target capability",
+                    color = colors.accentGreen,
+                    fontSize = FontSize.Micro,
+                    fontWeight = FontWeight.Medium,
+                    fontFamily = ideFontFamily(),
+                    modifier = Modifier.weight(1.5f),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun Meta(path: String, dirty: Set<String>, source: String, help: String, colors: IdeShellColorScheme) {
     val isDirty = dirty.any { it.startsWith(path.substringBefore('/')) }
     Text(
-        "$source${if (isDirty) " · Dirty" else ""} · $help",
-        style = MaterialTheme.typography.labelSmall,
-        color = if (isDirty) GlassTheme.colors.glassAccent else GlassTheme.colors.onGlassMuted,
+        text = "$source${if (isDirty) " · Dirty" else ""} · $help",
+        color = if (isDirty) colors.accentBlue else colors.textMuted,
+        fontSize = FontSize.Micro,
+        fontFamily = ideFontFamily(),
     )
 }
 
 @Composable
-private fun Diagnostics(errors: List<ValidationError>) {
+private fun Diagnostics(errors: List<ValidationError>, colors: IdeShellColorScheme) {
     if (errors.isEmpty()) return
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
         errors.forEach {
             Text(
-                "${it.severity}: ${it.message}",
-                style = MaterialTheme.typography.bodySmall,
-                color = if (it.severity == Severity.ERROR) {
-                    GlassTheme.colors.diagnostics.error
-                } else {
-                    GlassTheme.colors.diagnostics.warning
-                },
+                text = "${it.severity}: ${it.message}",
+                color = if (it.severity == Severity.ERROR) colors.errorRed else colors.warningAmber,
+                fontSize = FontSize.BodySmall,
+                fontFamily = ideFontFamily(),
             )
         }
     }

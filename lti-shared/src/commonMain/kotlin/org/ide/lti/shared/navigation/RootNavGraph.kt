@@ -16,14 +16,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
 import org.ide.lti.core.domain.workspace.WorkspaceManager
-import org.ide.lti.core.model.run.StageId
 import org.ide.lti.feature.configuration.configurationScreen
 import org.ide.lti.feature.configuration.navigateToConfiguration
-import org.ide.lti.feature.configuration.navigateToCreateConfiguration
-import org.ide.lti.feature.configuration.navigateToEditConfiguration
 import org.ide.lti.feature.plugins.pluginsScreen
-import org.ide.lti.feature.settings.navigateToNotification
 import org.ide.lti.feature.settings.navigateToSettings
 import org.ide.lti.feature.settings.notificationScreen
 import org.ide.lti.feature.settings.settingsScreen
@@ -32,7 +29,6 @@ import org.ide.lti.feature.setup.setupScreen
 import org.ide.lti.feature.workspace.creation.createWorkspaceScreen
 import org.ide.lti.feature.workspace.creation.navigateToCreateWorkspace
 import org.ide.lti.feature.workspace.studio.studioScreen
-import org.ide.lti.feature.workspace.workspaceScreen
 import org.koin.compose.koinInject
 
 @Composable
@@ -107,30 +103,25 @@ internal fun RootNavGraph(
             onNavigateToSetup = navigateToSetup,
         )
 
-        // Workspace Screen (4-panel IDE layout)
-        workspaceScreen(
-            onOpenSettings = { navHostController.navigateToSettings() },
-            onOpenNotifications = { navHostController.navigateToNotification() },
-            onOpenConfigurations = {
-                navHostController.navigateToConfiguration()
-            },
-            onOpenEditConfiguration = { targetId ->
-                navHostController.navigateToEditConfiguration(targetId)
-            },
-            onOpenAddConfiguration = {
-                navHostController.navigateToCreateConfiguration()
-            },
-            onNavigateToSetup = navigateToSetup,
-            onOpenStudio = { workspaceId, stageId, objectId ->
-                navHostController.navigateToStudio(
-                    workspaceId = workspaceId,
-                    stageId = stageId?.let { raw ->
-                        StageId.entries.firstOrNull { it.name.equals(raw, ignoreCase = true) }
-                    },
-                    objectId = objectId,
-                )
-            },
-        )
+        // Workspace Route (redirects cleanly to StudioScreen)
+        composable(route = "workspace") {
+            val workspace = currentWorkspace
+            if (workspace != null) {
+                LaunchedEffect(workspace.id) {
+                    navHostController.navigate(buildStudioRoute(workspaceId = workspace.id)) {
+                        popUpTo("workspace") { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
+            } else {
+                LaunchedEffect(Unit) {
+                    navHostController.navigate(SETUP_ROUTE) {
+                        popUpTo("workspace") { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
+            }
+        }
 
         // Notifications (reachable from the workspace top bar)
         notificationScreen(

@@ -36,8 +36,8 @@ import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.GlassCard
+import org.ide.lti.core.designsystem.component.layout.ContentHeader
 import org.ide.lti.core.designsystem.component.layout.IdeAppFrame
-import org.ide.lti.core.designsystem.component.layout.IdeBreadcrumbBar
 import org.ide.lti.core.designsystem.component.layout.IdeNavigatorItem
 import org.ide.lti.core.designsystem.component.layout.IdeNavigatorPanel
 import org.ide.lti.core.designsystem.component.layout.IdePipelineRail
@@ -62,6 +62,8 @@ import org.ide.lti.feature.rom.studio.api.StudioSubobjectId
 import org.ide.lti.feature.rom.studio.api.descriptorFor
 import org.ide.lti.feature.workspace.studio.components.StudioStatusBar
 import org.ide.lti.feature.workspace.studio.components.StudioTopAppBar
+import org.ide.lti.feature.workspace.studio.components.TopBarActionButton
+import org.ide.lti.feature.workspace.studio.components.TopBarTargetSpecifier
 import org.ide.lti.feature.workspace.studio.components.WorkspaceNavigator
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -203,7 +205,7 @@ private fun dispatchOverviewAction(
     }
 }
 
-@Suppress("LongParameterList", "CyclomaticComplexMethod")
+@Suppress("LongParameterList", "CyclomaticComplexMethod", "LongMethod")
 @Composable
 public fun StudioShellContent(
     uiState: WorkspaceShellUiState,
@@ -265,7 +267,39 @@ public fun StudioShellContent(
         }
     }
 
-    val selectedStageId = uiState.pipelineItems.firstOrNull { it.isSelected }?.stageId?.name
+    val selectedStageItem = remember(uiState.pipelineItems) {
+        uiState.pipelineItems.firstOrNull { it.isSelected }
+    }
+    val selectedStageId = selectedStageItem?.stageId?.name
+    val isStageEditor = selectedStageId != null && uiState.selectedWorkspaceSection == null
+
+    val headerTitle = remember(
+        uiState.selectedWorkspaceSection,
+        selectedStageItem,
+        selectedObjectId,
+        stageEditorRegistry,
+    ) {
+        resolveHeaderTitle(
+            selectedSection = uiState.selectedWorkspaceSection,
+            stageItem = selectedStageItem,
+            selectedObjectId = selectedObjectId,
+            registry = stageEditorRegistry,
+        )
+    }
+
+    val headerSubtitle = remember(
+        uiState.selectedWorkspaceSection,
+        selectedStageItem,
+        selectedObjectId,
+        stageEditorRegistry,
+    ) {
+        resolveHeaderSubtitle(
+            selectedSection = uiState.selectedWorkspaceSection,
+            stageItem = selectedStageItem,
+            selectedObjectId = selectedObjectId,
+            registry = stageEditorRegistry,
+        )
+    }
 
     IdeAppFrame(
         modifier = modifier.testTag("StudioShellLayout"),
@@ -296,10 +330,12 @@ public fun StudioShellContent(
             )
         },
         navigator = {
-            val selectedStage = uiState.pipelineItems.firstOrNull { it.isSelected }
-            if (selectedStage != null && uiState.selectedWorkspaceSection == null) {
-                val descriptor = stageEditorRegistry?.descriptorFor(selectedStage.stageId)
-                    ?: CanonicalStageDescriptors.descriptorFor(selectedStage.stageId)
+            if (isStageEditor) {
+                val selectedStage = uiState.pipelineItems.firstOrNull { it.isSelected }
+                val descriptor = selectedStage?.let { stage ->
+                    stageEditorRegistry?.descriptorFor(stage.stageId)
+                        ?: CanonicalStageDescriptors.descriptorFor(stage.stageId)
+                }
                 if (descriptor != null) {
                     StageNavigator(
                         stage = descriptor,
@@ -316,18 +352,57 @@ public fun StudioShellContent(
                 )
             }
         },
-        breadcrumb = if (selectedStageId != null && uiState.selectedWorkspaceSection == null) {
-            null
-        } else {
-            {
-                IdeBreadcrumbBar(
-                    segments = breadcrumbItems,
-                    modifier = Modifier.testTag("IdeBreadcrumbBar"),
-                    colors = colors,
-                )
+        content = {
+            // Stage-editor pages have no header of their own, so ContentHeader supplies the
+            // breadcrumb/title/actions here. Every other destination (Overview today; future
+            // workspace sections) renders its own header - stacking ContentHeader on top of it
+            // would duplicate the breadcrumb and title, so it is skipped entirely in that case.
+            if (isStageEditor) {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    ContentHeader(
+                        title = headerTitle,
+                        breadcrumbs = breadcrumbItems,
+                        subtitle = headerSubtitle,
+                        colors = colors,
+                        actions = {
+                            val targetContext = uiState.targetContext
+                            if (targetContext != null) {
+                                TopBarTargetSpecifier(
+                                    targetContext = targetContext,
+                                    colors = colors,
+                                )
+                            }
+
+                            val isValidating = uiState.validateOperation is OperationUiState.Running
+                            TopBarActionButton(
+                                label = "Validate",
+                                isLoading = isValidating,
+                                isEnabled = !isValidating,
+                                colors = colors,
+                                onClick = onValidate,
+                                testTag = "TopBar_Validate",
+                            )
+
+                            val isSaving = uiState.saveOperation is OperationUiState.Running
+                            TopBarActionButton(
+                                label = "Save",
+                                isLoading = isSaving,
+                                isEnabled = !isSaving,
+                                isPrimary = true,
+                                colors = colors,
+                                onClick = onSave,
+                                testTag = "TopBar_Save",
+                            )
+                        },
+                    )
+                    Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                        content()
+                    }
+                }
+            } else {
+                content()
             }
         },
-        content = content,
         statusBar = {
             StudioStatusBar(
                 uiState = uiState,
@@ -497,4 +572,92 @@ private fun StageObjectEditor(
             }
         }
     }
+}
+
+private fun resolveHeaderTitle(
+    selectedSection: WorkspaceSection?,
+    stageItem: PipelineRailItemUi?,
+    selectedObjectId: String?,
+    registry: StageEditorRegistry?,
+): String {
+    if (stageItem != null && selectedSection == null) {
+        val currentStage = registry?.descriptorFor(stageItem.stageId)
+            ?: CanonicalStageDescriptors.descriptorFor(stageItem.stageId)
+        val activeObjectId = selectedObjectId ?: currentStage?.subobjects?.firstOrNull()?.id?.value
+        val currentSubobject = currentStage?.subobjects?.firstOrNull { it.id.value == activeObjectId }
+        return currentSubobject?.title ?: currentStage?.title ?: stageItem.label
+    }
+    return when (selectedSection) {
+        WorkspaceSection.Overview -> "Workspace Overview"
+        WorkspaceSection.RomConfig -> "ROM Configuration"
+        WorkspaceSection.RunHistory -> "Run History"
+        WorkspaceSection.Artifacts -> "Generated Artifacts"
+        WorkspaceSection.TargetProfile -> "Target Device Profile"
+        null -> "Workspace Overview"
+    }
+}
+
+private fun resolveHeaderSubtitle(
+    selectedSection: WorkspaceSection?,
+    stageItem: PipelineRailItemUi?,
+    selectedObjectId: String?,
+    registry: StageEditorRegistry?,
+): String? {
+    if (stageItem != null && selectedSection == null) {
+        val currentStage = registry?.descriptorFor(stageItem.stageId)
+            ?: CanonicalStageDescriptors.descriptorFor(stageItem.stageId)
+        val activeObjectId = selectedObjectId ?: currentStage?.subobjects?.firstOrNull()?.id?.value
+        return resolveStageSubtitle(stageItem.stageId, activeObjectId)
+    }
+    return null
+}
+
+private fun resolveStageSubtitle(stageId: StageId, subobjectId: String?): String = when (stageId) {
+    StageId.FIRMWARE_ACQUISITION -> resolveAcquireSubtitle(subobjectId)
+    StageId.FIRMWARE_EXTRACTION -> resolveExtractSubtitle(subobjectId)
+    StageId.WORK_TREE_ASSEMBLY -> resolveAssembleSubtitle(subobjectId)
+    StageId.DEBLOAT -> "Configure apps and components to remove."
+    StageId.MODULE_APPLICATION -> "Enable and configure patch modules."
+    StageId.BUILD_FLASHABLE_ZIP -> "Configure output images and package signing."
+    StageId.GENERATE_OTA_MANIFEST -> "Edit release information and review derived details."
+    StageId.PUBLISH_RELEASE -> "Configure release export, split archives, and distribution."
+}
+
+private fun resolveAcquireSubtitle(subobjectId: String?): String = when (subobjectId?.lowercase()) {
+    "source" -> "Configure acquisition mode and target firmware source."
+    "firmware-baseline", "firmware_baseline", "baseline" ->
+        "Select the official firmware build to use as the foundation for this workspace build."
+    "existing-archives", "existing_archives", "archives" ->
+        "Manage and verify previously downloaded or cached firmware archives."
+    "download-policy", "download_policy", "download" ->
+        "Configure how source files are downloaded, with retry and resume behavior."
+    "integrity" -> "Verify downloaded source against expected hash."
+    else -> "Acquire and verify official source firmware for this target."
+}
+
+private fun resolveExtractSubtitle(subobjectId: String?): String = when (subobjectId?.lowercase()) {
+    "archive-layout", "archive_layout" ->
+        "Inspect the archive layout and choose target-supported extraction inputs."
+    "dynamic-partitions", "dynamic_partitions" ->
+        "Choose what to extract from the verified source."
+    "boot-partitions", "boot_partitions" ->
+        "Configure boot, recovery, and vendor_boot extraction parameters."
+    "slot" -> "Select active A/B slot and payload partition mapping."
+    "filesystem-handling", "filesystem_handling" ->
+        "Configure filesystem extraction adapters and sparsing options."
+    else -> "Extract and unpack partition images from verified firmware."
+}
+
+private fun resolveAssembleSubtitle(subobjectId: String?): String = when (subobjectId?.lowercase()) {
+    "work-trees", "work_trees" ->
+        "Configure source work trees and assembly options."
+    "system-ext-handling", "system_ext_handling" ->
+        "Configure how system_ext is handled during assembly."
+    "boot-preparation", "boot_preparation" ->
+        "Configure boot image handling for the assembled build."
+    "aot-cleanup", "aot_cleanup" ->
+        "Configure ahead-of-time compilation cleanup and odex stripping."
+    "build-properties", "build_properties" ->
+        "Configure build properties and fingerprint overrides."
+    else -> "Assemble work trees and staging structures for customization."
 }

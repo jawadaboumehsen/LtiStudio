@@ -10,7 +10,6 @@
 package org.ide.lti.feature.rom.studio.stage.assemble.panes
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -39,24 +38,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
-import org.ide.lti.core.designsystem.component.display.GlassCard
+import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.theme.FontSize
-import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.codeFontFamily
+import org.ide.lti.core.designsystem.theme.ideFontFamily
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.AssemblySettings
 
 /**
  * Stage Assemble subobject pane for configuring AOT cleanup.
- * Faithfully matches media_1789783219880.jpg.
+ * Matches Blue Glass styling.
  */
-@Suppress("LongParameterList", "LongMethod")
+@Suppress("LongParameterList", "LongMethod", "UnusedParameter")
 @Composable
 public fun AotCleanupPane(
     settings: AssemblySettings,
@@ -73,234 +73,213 @@ public fun AotCleanupPane(
             .testTag("AotCleanupPane"),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
-        AssembleHeader(
-            title = "AOT cleanup",
-            subtitle = "Clean compiled bytecode to ensure fresh compilation",
-            targetSpec = "${target.codename} / Development",
-            targetRevision = "Target revision ${target.revision}",
-            additionalContext = "Workspace / ROM Setup",
-            validateIsPrimary = true,
-            onValidate = onValidate,
-            onSave = onSave,
-            colors = colors,
-        )
-
-        // Top Notice Card (blue tinted info card with Learn more link)
-        GlassCard(
-            modifier = Modifier.fillMaxWidth(),
-            surfaceColor = colors.cardBackground,
-            borderColor = colors.border,
-            contentPadding = Spacing.Medium,
+        // Top Notice Card (info banner)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(IdeShellShapes.Card)
+                .background(colors.infoBannerFill)
+                .padding(Spacing.Medium),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
         ) {
+            Icon(
+                imageVector = Icons.Default.Info,
+                contentDescription = null,
+                tint = colors.accentBlue,
+                modifier = Modifier.size(IconSize.Small),
+            )
+            val notice = "Removes precompiled ART artifacts (oat, odex, vdex) from the work tree " +
+                "so the system will compile fresh bytecode\n" +
+                "on first boot. This helps avoid runtime issues after framework or app changes."
+            Text(
+                text = notice,
+                color = colors.textMuted,
+                fontSize = FontSize.Micro,
+                fontFamily = ideFontFamily(),
+                modifier = Modifier.weight(1f),
+            )
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .clip(IdeShellShapes.Control)
+                    .clickable { }
+                    .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
             ) {
+                Text(
+                    text = "Learn more",
+                    color = colors.accentBlue,
+                    fontSize = FontSize.Micro,
+                    fontFamily = ideFontFamily(),
+                )
                 Icon(
-                    imageVector = Icons.Default.Info,
+                    imageVector = Icons.AutoMirrored.Filled.OpenInNew,
                     contentDescription = null,
                     tint = colors.accentBlue,
-                    modifier = Modifier.size(IconSize.Small),
+                    modifier = Modifier.size(IconSize.ExtraSmall),
                 )
-                val notice = "Removes precompiled ART artifacts (oat, odex, vdex) from the work tree " +
-                    "so the system will compile fresh bytecode\n" +
-                    "on first boot. This helps avoid runtime issues after framework or app changes."
-                Text(
-                    text = notice,
-                    color = colors.textMuted,
-                    fontSize = FontSize.Micro,
-                    fontFamily = GlassFontFamily.ide(),
-                    modifier = Modifier.weight(1f),
-                )
-                Row(
-                    modifier = Modifier
-                        .clip(IdeShellShapes.Control)
-                        .clickable { }
-                        .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-                ) {
-                    Text(
-                        text = "Learn more",
-                        color = colors.accentBlue,
-                        fontSize = FontSize.Micro,
-                        fontFamily = GlassFontFamily.ide(),
-                    )
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.OpenInNew,
-                        contentDescription = null,
-                        tint = colors.accentBlue,
-                        modifier = Modifier.size(IconSize.ExtraSmall),
-                    )
-                }
             }
         }
 
         // Toggle 1: Enable baseline cleanup (recommended)
-        GlassCard(
-            modifier = Modifier.fillMaxWidth(),
-            surfaceColor = colors.cardBackground,
-            borderColor = colors.border,
-            contentPadding = Spacing.Medium,
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(IdeShellShapes.Card)
+                .ideCardSurface(colors, shape = IdeShellShapes.Card)
+                .padding(Spacing.Medium),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
-            ) {
-                GlassToggle(
-                    checked = settings.baselineCleanup,
-                    onCheckedChange = { onChange(settings.copy(baselineCleanup = it)) },
-                    activeColor = colors.accentBlue,
-                )
+            GlassToggle(
+                checked = settings.baselineCleanup,
+                onCheckedChange = { onChange(settings.copy(baselineCleanup = it)) },
+                activeColor = colors.accentBlue,
+            )
 
-                Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
-                    Text(
-                        text = "Enable baseline cleanup (recommended)",
-                        color = colors.textMain,
-                        fontSize = FontSize.BodySmall,
-                        fontWeight = FontWeight.SemiBold,
-                        fontFamily = GlassFontFamily.ide(),
-                    )
-                    Text(
-                        text = "Remove existing oat, odex and vdex files from " +
-                            "system, system_ext and product work trees.",
-                        color = colors.textMuted,
-                        fontSize = FontSize.Micro,
-                        fontFamily = GlassFontFamily.ide(),
-                    )
-                    Text(
-                        text = "Safe to keep enabled for most builds.",
-                        color = colors.accentBlue,
-                        fontSize = FontSize.Micro,
-                        fontFamily = GlassFontFamily.ide(),
-                    )
-                }
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
+                Text(
+                    text = "Enable baseline cleanup (recommended)",
+                    color = colors.textMain,
+                    fontSize = FontSize.BodySmall,
+                    fontWeight = FontWeight.SemiBold,
+                    fontFamily = ideFontFamily(),
+                )
+                Text(
+                    text = "Remove existing oat, odex and vdex files from " +
+                        "system, system_ext and product work trees.",
+                    color = colors.textMuted,
+                    fontSize = FontSize.Micro,
+                    fontFamily = ideFontFamily(),
+                )
+                Text(
+                    text = "Safe to keep enabled for most builds.",
+                    color = colors.accentBlue,
+                    fontSize = FontSize.Micro,
+                    fontFamily = ideFontFamily(),
+                )
             }
         }
 
         // Toggle 2: Mandatory cleanup after bytecode changes (locked)
-        GlassCard(
-            modifier = Modifier.fillMaxWidth(),
-            surfaceColor = colors.cardBackground,
-            borderColor = colors.border,
-            contentPadding = Spacing.Medium,
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(IdeShellShapes.Card)
+                .ideCardSurface(colors, shape = IdeShellShapes.Card)
+                .padding(Spacing.Medium),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
-            ) {
-                GlassToggle(
-                    checked = false,
-                    onCheckedChange = { },
-                    enabled = false,
-                    activeColor = colors.textDim,
-                )
+            GlassToggle(
+                checked = false,
+                onCheckedChange = { },
+                enabled = false,
+                activeColor = colors.textDim,
+            )
 
-                Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Lock,
-                            contentDescription = "Locked",
-                            tint = colors.textMuted,
-                            modifier = Modifier.size(IconSize.ExtraSmall),
-                        )
-                        Text(
-                            text = "Mandatory cleanup after bytecode changes",
-                            color = colors.textMain,
-                            fontSize = FontSize.BodySmall,
-                            fontWeight = FontWeight.SemiBold,
-                            fontFamily = GlassFontFamily.ide(),
-                        )
-                    }
-                    val mandatoryNotice = "Automatically performs a full AOT cleanup when framework code, " +
-                        "core libraries or system applications\n" +
-                        "have been modified in this workspace."
-                    Text(
-                        text = mandatoryNotice,
-                        color = colors.textMuted,
-                        fontSize = FontSize.Micro,
-                        fontFamily = GlassFontFamily.ide(),
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Lock,
+                        contentDescription = "Locked",
+                        tint = colors.textMuted,
+                        modifier = Modifier.size(IconSize.ExtraSmall),
                     )
                     Text(
-                        text = "This option is always enabled and cannot be disabled.",
-                        color = colors.textDim,
-                        fontSize = FontSize.Micro,
-                        fontFamily = GlassFontFamily.ide(),
+                        text = "Mandatory cleanup after bytecode changes",
+                        color = colors.textMain,
+                        fontSize = FontSize.BodySmall,
+                        fontWeight = FontWeight.SemiBold,
+                        fontFamily = ideFontFamily(),
                     )
                 }
+                val mandatoryNotice = "Automatically performs a full AOT cleanup when framework code, " +
+                    "core libraries or system applications\n" +
+                    "have been modified in this workspace."
+                Text(
+                    text = mandatoryNotice,
+                    color = colors.textMuted,
+                    fontSize = FontSize.Micro,
+                    fontFamily = ideFontFamily(),
+                )
+                Text(
+                    text = "This option is always enabled and cannot be disabled.",
+                    color = colors.textDim,
+                    fontSize = FontSize.Micro,
+                    fontFamily = ideFontFamily(),
+                )
             }
         }
 
         // Table Card: Affected paths in work tree
-        GlassCard(
-            modifier = Modifier.fillMaxWidth(),
-            surfaceColor = colors.cardBackground,
-            borderColor = colors.border,
-            contentPadding = Spacing.Medium,
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(IdeShellShapes.Card)
+                .ideCardSurface(colors, shape = IdeShellShapes.Card)
+                .padding(Spacing.Medium),
+            verticalArrangement = Arrangement.spacedBy(Spacing.Small),
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
+            Text(
+                text = "Affected paths in work tree",
+                color = colors.textMain,
+                fontSize = FontSize.BodySmall,
+                fontWeight = FontWeight.SemiBold,
+                fontFamily = ideFontFamily(),
+            )
+
+            // Table Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Text(
-                    text = "Affected paths in work tree",
-                    color = colors.textMain,
-                    fontSize = FontSize.BodySmall,
+                    text = "#",
+                    color = colors.textDim,
+                    fontSize = FontSize.Micro,
                     fontWeight = FontWeight.SemiBold,
-                    fontFamily = GlassFontFamily.ide(),
+                    fontFamily = ideFontFamily(),
+                    modifier = Modifier.width(Spacing.ExtraLarge),
                 )
-
-                // Table Header
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = "#",
-                        color = colors.textDim,
-                        fontSize = FontSize.Micro,
-                        fontWeight = FontWeight.SemiBold,
-                        fontFamily = GlassFontFamily.ide(),
-                        modifier = Modifier.width(Spacing.ExtraLarge),
-                    )
-                    Text(
-                        text = "Path (relative to work tree)",
-                        color = colors.textDim,
-                        fontSize = FontSize.Micro,
-                        fontWeight = FontWeight.SemiBold,
-                        fontFamily = GlassFontFamily.ide(),
-                        modifier = Modifier.weight(2.5f),
-                    )
-                    Text(
-                        text = "Type",
-                        color = colors.textDim,
-                        fontSize = FontSize.Micro,
-                        fontWeight = FontWeight.SemiBold,
-                        fontFamily = GlassFontFamily.ide(),
-                        modifier = Modifier.weight(1.5f),
-                    )
-                    Text(
-                        text = "Status",
-                        color = colors.textDim,
-                        fontSize = FontSize.Micro,
-                        fontWeight = FontWeight.SemiBold,
-                        fontFamily = GlassFontFamily.ide(),
-                        modifier = Modifier.weight(1.5f),
-                    )
-                }
-
-                HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
-
-                // Table Rows
-                AffectedPathRow(1, "system/framework", "oat / odex / vdex", "Found (342 files)", colors)
-                AffectedPathRow(2, "system/app", "oat / odex / vdex", "Found (612 files)", colors)
-                AffectedPathRow(3, "system/priv-app", "oat / odex / vdex", "Found (428 files)", colors)
-                AffectedPathRow(4, "system_ext", "oat / odex / vdex", "Found (96 files)", colors)
-                AffectedPathRow(5, "product", "oat / odex / vdex", "Found (118 files)", colors)
+                Text(
+                    text = "Path (relative to work tree)",
+                    color = colors.textDim,
+                    fontSize = FontSize.Micro,
+                    fontWeight = FontWeight.SemiBold,
+                    fontFamily = ideFontFamily(),
+                    modifier = Modifier.weight(2.5f),
+                )
+                Text(
+                    text = "Type",
+                    color = colors.textDim,
+                    fontSize = FontSize.Micro,
+                    fontWeight = FontWeight.SemiBold,
+                    fontFamily = ideFontFamily(),
+                    modifier = Modifier.weight(1.5f),
+                )
+                Text(
+                    text = "Status",
+                    color = colors.textDim,
+                    fontSize = FontSize.Micro,
+                    fontWeight = FontWeight.SemiBold,
+                    fontFamily = ideFontFamily(),
+                    modifier = Modifier.weight(1.5f),
+                )
             }
+
+            HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+
+            // Table Rows
+            AffectedPathRow(1, "system/framework", "oat / odex / vdex", "Found (342 files)", colors)
+            AffectedPathRow(2, "system/app", "oat / odex / vdex", "Found (612 files)", colors)
+            AffectedPathRow(3, "system/priv-app", "oat / odex / vdex", "Found (428 files)", colors)
+            AffectedPathRow(4, "system_ext", "oat / odex / vdex", "Found (96 files)", colors)
+            AffectedPathRow(5, "product", "oat / odex / vdex", "Found (118 files)", colors)
         }
 
         // Bottom Console / Logs Drawer
@@ -320,28 +299,28 @@ private fun AffectedPathRow(index: Int, path: String, type: String, status: Stri
             text = index.toString(),
             color = colors.textDim,
             fontSize = FontSize.Micro,
-            fontFamily = GlassFontFamily.code(),
+            fontFamily = codeFontFamily(),
             modifier = Modifier.width(Spacing.ExtraLarge),
         )
         Text(
             text = path,
             color = colors.textMain,
             fontSize = FontSize.Micro,
-            fontFamily = GlassFontFamily.code(),
+            fontFamily = codeFontFamily(),
             modifier = Modifier.weight(2.5f),
         )
         Text(
             text = type,
             color = colors.textMuted,
             fontSize = FontSize.Micro,
-            fontFamily = GlassFontFamily.ide(),
+            fontFamily = ideFontFamily(),
             modifier = Modifier.weight(1.5f),
         )
         Text(
             text = status,
             color = colors.textMuted,
             fontSize = FontSize.Micro,
-            fontFamily = GlassFontFamily.ide(),
+            fontFamily = ideFontFamily(),
             modifier = Modifier.weight(1.5f),
         )
     }
@@ -350,84 +329,83 @@ private fun AffectedPathRow(index: Int, path: String, type: String, status: Stri
 @Composable
 private fun AotLogsDrawer(colors: IdeShellColorScheme) {
     var selectedTab by remember { mutableStateOf(0) }
-    val tabs = listOf(">_ Logs", "☰ Preview changes", "⚠ Problems")
+    val tabs = listOf("Logs", "Preview changes", "Problems")
 
-    GlassCard(
-        modifier = Modifier.fillMaxWidth(),
-        surfaceColor = colors.cardBackground,
-        borderColor = colors.border,
-        contentPadding = Spacing.Small,
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(IdeShellShapes.Card)
+            .ideCardSurface(colors, shape = IdeShellShapes.Card)
+            .padding(Spacing.Small),
     ) {
-        Column {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = Spacing.Small),
-                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-            ) {
-                tabs.forEachIndexed { index, tabTitle ->
-                    val isTabSelected = index == selectedTab
-                    Row(
-                        modifier = Modifier
-                            .clip(IdeShellShapes.Control)
-                            .then(
-                                if (isTabSelected) {
-                                    Modifier.background(colors.controlSelected)
-                                } else {
-                                    Modifier
-                                },
-                            )
-                            .clickable { selectedTab = index }
-                            .padding(horizontal = Spacing.Medium, vertical = Spacing.ExtraSmall),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-                    ) {
-                        val icon = when (index) {
-                            0 -> Icons.Default.Terminal
-                            1 -> Icons.Default.Menu
-                            else -> Icons.Default.Warning
-                        }
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = null,
-                            tint = if (isTabSelected) colors.accentBlue else colors.textDim,
-                            modifier = Modifier.size(IconSize.ExtraSmall),
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = Spacing.Small),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+        ) {
+            tabs.forEachIndexed { index, tabTitle ->
+                val isTabSelected = index == selectedTab
+                Row(
+                    modifier = Modifier
+                        .clip(IdeShellShapes.Control)
+                        .then(
+                            if (isTabSelected) {
+                                Modifier.background(colors.controlSelected)
+                            } else {
+                                Modifier
+                            },
                         )
-                        Text(
-                            text = tabTitle.substringAfter(' '),
-                            color = if (isTabSelected) colors.textMain else colors.textMuted,
-                            fontSize = FontSize.Micro,
-                            fontWeight = if (isTabSelected) FontWeight.Bold else FontWeight.Normal,
-                            fontFamily = GlassFontFamily.ide(),
-                        )
+                        .clickable { selectedTab = index }
+                        .padding(horizontal = Spacing.Medium, vertical = Spacing.ExtraSmall),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                ) {
+                    val icon = when (index) {
+                        0 -> Icons.Default.Terminal
+                        1 -> Icons.Default.Menu
+                        else -> Icons.Default.Warning
                     }
-                }
-            }
-
-            HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = Spacing.Small)
-                    .background(colors.cardBackgroundMuted, IdeShellShapes.Control)
-                    .padding(Spacing.Small),
-                verticalArrangement = Arrangement.spacedBy(Spacing.Hairline),
-            ) {
-                val logLines = listOf(
-                    "1  [10:24:17]  Scanning work tree for compiled artifacts...",
-                    "2  [10:24:17]  Found 1,596 files (oat/odex/vdex)",
-                    "3  [10:24:18]  Baseline cleanup is enabled",
-                    "4  [10:24:18]  AOT cleanup ready to run (no changes applied yet)",
-                )
-                logLines.forEach { line ->
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = if (isTabSelected) colors.accentBlue else colors.textDim,
+                        modifier = Modifier.size(IconSize.ExtraSmall),
+                    )
                     Text(
-                        text = line,
-                        color = colors.textMuted,
+                        text = tabTitle,
+                        color = if (isTabSelected) colors.textMain else colors.textMuted,
                         fontSize = FontSize.Micro,
-                        fontFamily = GlassFontFamily.code(),
+                        fontWeight = if (isTabSelected) FontWeight.Bold else FontWeight.Normal,
+                        fontFamily = ideFontFamily(),
                     )
                 }
+            }
+        }
+
+        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = Spacing.Small)
+                .background(colors.cardBackgroundMuted, IdeShellShapes.Control)
+                .padding(Spacing.Small),
+            verticalArrangement = Arrangement.spacedBy(Spacing.Hairline),
+        ) {
+            val logLines = listOf(
+                "1  [10:24:17]  Scanning work tree for compiled artifacts...",
+                "2  [10:24:17]  Found 1,596 files (oat/odex/vdex)",
+                "3  [10:24:18]  Baseline cleanup is enabled",
+                "4  [10:24:18]  AOT cleanup ready to run (no changes applied yet)",
+            )
+            logLines.forEach { line ->
+                Text(
+                    text = line,
+                    color = colors.textMuted,
+                    fontSize = FontSize.Micro,
+                    fontFamily = codeFontFamily(),
+                )
             }
         }
     }

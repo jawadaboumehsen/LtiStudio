@@ -38,6 +38,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Refresh
@@ -417,6 +418,7 @@ private fun resolveCategoryIcon(category: SettingsCategory): ImageVector = when 
     SettingsCategory.PrivacyAndData -> Icons.Default.Security
     SettingsCategory.Updates -> Icons.Default.Refresh
     SettingsCategory.About -> Icons.Default.Info
+    SettingsCategory.TargetProfiles -> Icons.Default.PhoneAndroid
     SettingsCategory.General -> Icons.Default.Tune
     SettingsCategory.Editor -> Icons.Default.Code
     SettingsCategory.BuildEnvironment -> Icons.Default.Build

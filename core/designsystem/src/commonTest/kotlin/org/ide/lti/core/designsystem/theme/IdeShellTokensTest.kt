@@ -18,11 +18,16 @@ class IdeShellTokensTest {
 
     @Test
     fun testLogicalFrameDimensions() {
-        assertEquals(40.dp, IdeShellDimens.TopBarHeight, "Top bar height must be 40 dp")
-        assertEquals(116.dp, IdeShellDimens.PipelineRailWidth, "Pipeline rail width must be 116 dp")
-        assertEquals(230.dp, IdeShellDimens.WorkspaceNavigatorWidth, "Workspace navigator width must be 230 dp")
+        assertEquals(56.dp, IdeShellDimens.TopBarHeight, "Top bar height must be 56 dp")
+        assertEquals(150.dp, IdeShellDimens.PipelineRailWidth, "Pipeline rail width must be 150 dp")
+        assertEquals(215.dp, IdeShellDimens.WorkspaceNavigatorWidth, "Workspace navigator width must be 215 dp")
         assertEquals(32.dp, IdeShellDimens.BreadcrumbHeight, "Breadcrumb bar height must be 32 dp")
-        assertEquals(24.dp, IdeShellDimens.StatusBarHeight, "Bottom status bar height must be 24 dp")
+        assertEquals(32.dp, IdeShellDimens.StatusBarHeight, "Bottom status bar height must be 32 dp")
+
+        assertEquals(8.dp, IdeShellDimens.ContentInset, "Content inset must be 8 dp")
+        assertEquals(8.dp, IdeShellDimens.ContentRadius, "Content radius must be 8 dp")
+        assertEquals(52.dp, IdeShellDimens.PipelineStageItemHeight, "Pipeline stage item height must be 52 dp")
+        assertEquals(40.dp, IdeShellDimens.NavigatorItemHeight, "Navigator item height must be 40 dp")
 
         assertEquals(1024.dp, IdeShellDimens.CompactBreakpoint)
         assertEquals(768.dp, IdeShellDimens.CompactHeightBreakpoint)
@@ -36,7 +41,8 @@ class IdeShellTokensTest {
     @Test
     fun testShapesAndMotionTokens() {
         assertEquals(androidx.compose.ui.graphics.RectangleShape, IdeShellShapes.Frame)
-        assertEquals(androidx.compose.ui.graphics.RectangleShape, IdeShellShapes.Panel)
+        assertTrue(IdeShellShapes.Panel is androidx.compose.foundation.shape.RoundedCornerShape)
+        assertTrue(IdeShellShapes.Pill is androidx.compose.foundation.shape.RoundedCornerShape)
         assertTrue(IdeShellShapes.Card is androidx.compose.foundation.shape.RoundedCornerShape)
         assertTrue(IdeShellShapes.Control is androidx.compose.foundation.shape.RoundedCornerShape)
         assertTrue(IdeShellShapes.Badge is androidx.compose.foundation.shape.RoundedCornerShape)

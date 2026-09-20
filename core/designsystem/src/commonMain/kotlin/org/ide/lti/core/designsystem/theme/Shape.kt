@@ -14,6 +14,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import com.kyant.capsule.Continuity
 import com.kyant.capsule.ContinuousCapsule
 import com.kyant.capsule.ContinuousRoundedRectangle
@@ -111,7 +112,8 @@ object GlassShapes {
 @Immutable
 object IdeShellShapes {
     val Frame = RectangleShape
-    val Panel = RectangleShape
+    val Panel = androidx.compose.foundation.shape.RoundedCornerShape(IdeShellDimens.ContentRadius)
+    val Pill = androidx.compose.foundation.shape.RoundedCornerShape(10.dp)
     val Card = androidx.compose.foundation.shape.RoundedCornerShape(IdeShellDimens.CardCornerRadius)
     val Control = androidx.compose.foundation.shape.RoundedCornerShape(IdeShellDimens.ControlCornerRadius)
     val Badge = androidx.compose.foundation.shape.RoundedCornerShape(IdeShellDimens.BadgeCornerRadius)

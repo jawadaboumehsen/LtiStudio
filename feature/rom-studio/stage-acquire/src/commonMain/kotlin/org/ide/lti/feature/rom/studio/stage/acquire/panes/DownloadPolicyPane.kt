@@ -44,21 +44,23 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
-import org.ide.lti.core.designsystem.component.display.GlassCard
+import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
-import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.codeFontFamily
+import org.ide.lti.core.designsystem.theme.ideFontFamily
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.AcquisitionSettings
 
+@Suppress("UnusedParameter")
 @Composable
 public fun DownloadPolicyPane(
     settings: AcquisitionSettings,
@@ -84,17 +86,6 @@ public fun DownloadPolicyPane(
             .testTag("DownloadPolicyPane"),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
-        AcquireHeader(
-            title = "Download policy",
-            subtitle = "Configure how source files are downloaded, with retry and resume behavior.",
-            targetSpec = "${target.codename} / Development",
-            targetRevision = "Target revision ${target.revision}",
-            additionalContext = "Snapshot 12 • Workspace",
-            onValidate = onValidate,
-            onSave = onSave,
-            colors = colors,
-        )
-
         PolicySettingsCard(
             sourceUrl = sourceUrl,
             onSourceUrlChange = { sourceUrl = it },
@@ -139,129 +130,129 @@ private fun PolicySettingsCard(
     onUserAgentChange: (String) -> Unit,
     colors: IdeShellColorScheme,
 ) {
-    GlassCard(
-        modifier = Modifier.fillMaxWidth(),
-        surfaceColor = colors.cardBackground,
-        borderColor = colors.border,
-        contentPadding = Spacing.Medium,
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(IdeShellShapes.Card)
+            .ideCardSurface(colors, shape = IdeShellShapes.Card)
+            .padding(Spacing.Medium),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Large),
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.Large)) {
-            Row(
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "Policy settings",
+                color = colors.textMain,
+                fontSize = FontSize.TitleSmall,
+                fontWeight = FontWeight.SemiBold,
+                fontFamily = ideFontFamily(),
+            )
+            Text(
+                text = "Applies to all downloads in this workspace.",
+                color = colors.textDim,
+                fontSize = FontSize.Micro,
+                fontFamily = ideFontFamily(),
+            )
+        }
+
+        PolicyFieldRow(
+            label = "Source URL",
+            helperText = "Base URL for downloading source files.",
+            isOverride = false,
+            colors = colors,
+        ) {
+            GlassTextField(
+                value = sourceUrl,
+                onValueChange = onSourceUrlChange,
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+            )
+        }
+
+        PolicyFieldRow(
+            label = "Retry count",
+            helperText = null,
+            isOverride = false,
+            colors = colors,
+        ) {
+            Row(
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
             ) {
-                Text(
-                    text = "Policy settings",
-                    color = colors.textMain,
-                    fontSize = FontSize.TitleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    fontFamily = GlassFontFamily.ide(),
-                )
-                Text(
-                    text = "Applies to all downloads in this workspace.",
-                    color = colors.textDim,
-                    fontSize = FontSize.Micro,
-                    fontFamily = GlassFontFamily.ide(),
-                )
-            }
-
-            PolicyFieldRow(
-                label = "Source URL",
-                helperText = "Base URL for downloading source files.",
-                isOverride = false,
-                colors = colors,
-            ) {
-                GlassTextField(
-                    value = sourceUrl,
-                    onValueChange = onSourceUrlChange,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-
-            PolicyFieldRow(
-                label = "Retry count",
-                helperText = null,
-                isOverride = false,
-                colors = colors,
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
-                ) {
-                    NumberStepper(
-                        value = retryCount,
-                        onValueChange = onRetryCountChange,
-                        min = 0,
-                        max = 5,
-                        colors = colors,
-                    )
-                    Column {
-                        Text(
-                            text = "Range: 0 – 5",
-                            color = colors.textMuted,
-                            fontSize = FontSize.Micro,
-                            fontFamily = GlassFontFamily.ide(),
-                        )
-                        Text(
-                            text = "Number of retry attempts for failed downloads.",
-                            color = colors.textDim,
-                            fontSize = FontSize.Micro,
-                            fontFamily = GlassFontFamily.ide(),
-                        )
-                    }
-                }
-            }
-
-            PolicyFieldRow(
-                label = "Resume interrupted downloads",
-                helperText = "Resume partial files when supported by the server.",
-                isOverride = false,
-                colors = colors,
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                ) {
-                    GlassToggle(
-                        checked = resume,
-                        onCheckedChange = onResumeChange,
-                        activeColor = colors.accentBlue,
-                    )
-                    Text(
-                        text = if (resume) "Enabled" else "Disabled",
-                        color = colors.textMain,
-                        fontSize = FontSize.BodySmall,
-                        fontFamily = GlassFontFamily.ide(),
-                    )
-                }
-            }
-
-            PolicyFieldRow(
-                label = "Timeout per attempt (seconds)",
-                helperText = "Time to wait for a response before retrying.",
-                isOverride = true,
-                colors = colors,
-            ) {
-                NumberSpinnerInput(
-                    value = timeoutSeconds,
-                    onValueChange = onTimeoutChange,
+                NumberStepper(
+                    value = retryCount,
+                    onValueChange = onRetryCountChange,
+                    min = 0,
+                    max = 5,
                     colors = colors,
                 )
+                Column {
+                    Text(
+                        text = "Range: 0 – 5",
+                        color = colors.textMuted,
+                        fontSize = FontSize.Micro,
+                        fontFamily = ideFontFamily(),
+                    )
+                    Text(
+                        text = "Number of retry attempts for failed downloads.",
+                        color = colors.textDim,
+                        fontSize = FontSize.Micro,
+                        fontFamily = ideFontFamily(),
+                    )
+                }
             }
+        }
 
-            PolicyFieldRow(
-                label = "User agent (optional)",
-                helperText = "Identifies this application to the server.",
-                isOverride = false,
-                colors = colors,
+        PolicyFieldRow(
+            label = "Resume interrupted downloads",
+            helperText = "Resume partial files when supported by the server.",
+            isOverride = false,
+            colors = colors,
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
             ) {
-                GlassTextField(
-                    value = userAgent,
-                    onValueChange = onUserAgentChange,
-                    modifier = Modifier.fillMaxWidth(),
+                GlassToggle(
+                    checked = resume,
+                    onCheckedChange = onResumeChange,
+                    activeColor = colors.accentBlue,
+                )
+                Text(
+                    text = if (resume) "Enabled" else "Disabled",
+                    color = colors.textMain,
+                    fontSize = FontSize.BodySmall,
+                    fontFamily = ideFontFamily(),
                 )
             }
+        }
+
+        PolicyFieldRow(
+            label = "Timeout per attempt (seconds)",
+            helperText = "Time to wait for a response before retrying.",
+            isOverride = true,
+            colors = colors,
+        ) {
+            NumberSpinnerInput(
+                value = timeoutSeconds,
+                onValueChange = onTimeoutChange,
+                colors = colors,
+            )
+        }
+
+        PolicyFieldRow(
+            label = "User agent (optional)",
+            helperText = "Identifies this application to the server.",
+            isOverride = false,
+            colors = colors,
+        ) {
+            GlassTextField(
+                value = userAgent,
+                onValueChange = onUserAgentChange,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }
@@ -284,7 +275,7 @@ private fun PolicyFieldRow(
                 color = colors.textMain,
                 fontSize = FontSize.BodySmall,
                 fontWeight = FontWeight.Medium,
-                fontFamily = GlassFontFamily.ide(),
+                fontFamily = ideFontFamily(),
             )
         }
 
@@ -296,7 +287,7 @@ private fun PolicyFieldRow(
                     text = helperText,
                     color = colors.textDim,
                     fontSize = FontSize.Micro,
-                    fontFamily = GlassFontFamily.ide(),
+                    fontFamily = ideFontFamily(),
                 )
             }
         }
@@ -326,7 +317,7 @@ private fun StatusPillBadge(isOverride: Boolean, colors: IdeShellColorScheme) {
             color = textColor,
             fontSize = FontSize.Micro,
             fontWeight = FontWeight.Medium,
-            fontFamily = GlassFontFamily.ide(),
+            fontFamily = ideFontFamily(),
         )
     }
 }
@@ -359,7 +350,7 @@ private fun NumberStepper(value: Int, onValueChange: (Int) -> Unit, min: Int, ma
             color = colors.textMain,
             fontSize = FontSize.BodySmall,
             fontWeight = FontWeight.Bold,
-            fontFamily = GlassFontFamily.code(),
+            fontFamily = codeFontFamily(),
             modifier = Modifier.padding(horizontal = Spacing.Medium),
         )
 
@@ -395,7 +386,7 @@ private fun NumberSpinnerInput(value: Int, onValueChange: (Int) -> Unit, colors:
             text = value.toString(),
             color = colors.textMain,
             fontSize = FontSize.BodySmall,
-            fontFamily = GlassFontFamily.code(),
+            fontFamily = codeFontFamily(),
         )
 
         Column {
@@ -421,69 +412,67 @@ private fun NumberSpinnerInput(value: Int, onValueChange: (Int) -> Unit, colors:
 
 @Composable
 private fun AdvancedOptionsAccordion(isOpen: Boolean, onToggle: () -> Unit, colors: IdeShellColorScheme) {
-    GlassCard(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onToggle),
-        surfaceColor = colors.cardBackground,
-        borderColor = colors.border,
-        contentPadding = Spacing.Medium,
+            .clip(IdeShellShapes.Card)
+            .ideCardSurface(colors, shape = IdeShellShapes.Card)
+            .clickable(onClick = onToggle)
+            .padding(Spacing.Medium),
     ) {
-        Column {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ChevronRight,
-                        contentDescription = if (isOpen) "Collapse" else "Expand",
-                        tint = colors.textMuted,
-                        modifier = Modifier
-                            .size(IconSize.Small)
-                            .rotate(if (isOpen) 90f else 0f),
-                    )
-                    Text(
-                        text = "Advanced options",
-                        color = colors.textMain,
-                        fontSize = FontSize.BodySmall,
-                        fontWeight = FontWeight.Medium,
-                        fontFamily = GlassFontFamily.ide(),
-                    )
-                }
-
+                Icon(
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = if (isOpen) "Collapse" else "Expand",
+                    tint = colors.textMuted,
+                    modifier = Modifier
+                        .size(IconSize.Small)
+                        .rotate(if (isOpen) 90f else 0f),
+                )
                 Text(
-                    text = "Proxy, headers and download limits",
-                    color = colors.textDim,
-                    fontSize = FontSize.Micro,
-                    fontFamily = GlassFontFamily.ide(),
+                    text = "Advanced options",
+                    color = colors.textMain,
+                    fontSize = FontSize.BodySmall,
+                    fontWeight = FontWeight.Medium,
+                    fontFamily = ideFontFamily(),
                 )
             }
 
-            AnimatedVisibility(visible = isOpen) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = Spacing.Medium),
-                    verticalArrangement = Arrangement.spacedBy(Spacing.Small),
-                ) {
-                    Text(
-                        text = "Configured proxy: Direct connection (no proxy configured)",
-                        color = colors.textMuted,
-                        fontSize = FontSize.BodySmall,
-                        fontFamily = GlassFontFamily.ide(),
-                    )
-                    Text(
-                        text = "Max parallel worker threads: 4",
-                        color = colors.textMuted,
-                        fontSize = FontSize.BodySmall,
-                        fontFamily = GlassFontFamily.ide(),
-                    )
-                }
+            Text(
+                text = "Proxy, headers and download limits",
+                color = colors.textDim,
+                fontSize = FontSize.Micro,
+                fontFamily = ideFontFamily(),
+            )
+        }
+
+        AnimatedVisibility(visible = isOpen) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = Spacing.Medium),
+                verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+            ) {
+                Text(
+                    text = "Configured proxy: Direct connection (no proxy configured)",
+                    color = colors.textMuted,
+                    fontSize = FontSize.BodySmall,
+                    fontFamily = ideFontFamily(),
+                )
+                Text(
+                    text = "Max parallel worker threads: 4",
+                    color = colors.textMuted,
+                    fontSize = FontSize.BodySmall,
+                    fontFamily = ideFontFamily(),
+                )
             }
         }
     }
@@ -494,8 +483,9 @@ private fun NeedHelpBanner(colors: IdeShellColorScheme) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(colors.cardBackgroundMuted, IdeShellShapes.Card)
-            .border(IdeShellDimens.HairlineBorder, colors.borderMuted, IdeShellShapes.Card)
+            .clip(IdeShellShapes.Card)
+            .background(colors.infoBannerFill, IdeShellShapes.Card)
+            .border(IdeShellDimens.HairlineBorder, colors.infoBannerBorder, IdeShellShapes.Card)
             .padding(Spacing.Medium),
     ) {
         Row(
@@ -515,7 +505,7 @@ private fun NeedHelpBanner(colors: IdeShellColorScheme) {
                     color = colors.textMain,
                     fontSize = FontSize.BodySmall,
                     fontWeight = FontWeight.Bold,
-                    fontFamily = GlassFontFamily.ide(),
+                    fontFamily = ideFontFamily(),
                 )
                 Spacer(Modifier.height(Spacing.ExtraSmall))
                 Text(
@@ -524,7 +514,7 @@ private fun NeedHelpBanner(colors: IdeShellColorScheme) {
                         "You can validate the configuration before saving.",
                     color = colors.textMuted,
                     fontSize = FontSize.Micro,
-                    fontFamily = GlassFontFamily.ide(),
+                    fontFamily = ideFontFamily(),
                 )
             }
 
@@ -537,7 +527,7 @@ private fun NeedHelpBanner(colors: IdeShellColorScheme) {
                     text = "Open documentation",
                     color = colors.accentBlue,
                     fontSize = FontSize.BodySmall,
-                    fontFamily = GlassFontFamily.ide(),
+                    fontFamily = ideFontFamily(),
                 )
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.OpenInNew,

@@ -44,26 +44,27 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
-import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.IdeStatusBadge
 import org.ide.lti.core.designsystem.component.display.IdeStatusSeverity
+import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenu
 import org.ide.lti.core.designsystem.theme.FontSize
-import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.codeFontFamily
+import org.ide.lti.core.designsystem.theme.ideFontFamily
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.AssemblySettings
 
 /**
  * Stage Assemble subobject pane for Boot preparation and inspection.
- * Faithfully matches media_1789783219884.jpg.
+ * Matches Blue Glass styling.
  */
-@Suppress("LongParameterList", "LongMethod")
+@Suppress("LongParameterList", "LongMethod", "UnusedParameter")
 @Composable
 public fun BootPreparationPane(
     settings: AssemblySettings,
@@ -86,145 +87,134 @@ public fun BootPreparationPane(
             .testTag("BootPreparationPane"),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
-        AssembleHeader(
-            title = "Boot preparation",
-            subtitle = "Configure and verify the boot image for this build.",
-            targetSpec = "${target.codename} / Development",
-            targetRevision = "Target revision ${target.revision}",
-            additionalContext = "Snapshot 12 ·",
-            onValidate = onValidate,
-            onSave = onSave,
-            colors = colors,
-        )
-
         // 2-Column Split: Left (Configuration), Right (Inspected & Affected)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
         ) {
             // ==================== LEFT COLUMN: Configuration ====================
-            GlassCard(
-                modifier = Modifier.weight(1f),
-                surfaceColor = colors.cardBackground,
-                borderColor = colors.border,
-                contentPadding = Spacing.Medium,
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(IdeShellShapes.Card)
+                    .ideCardSurface(colors, shape = IdeShellShapes.Card)
+                    .padding(Spacing.Medium),
+                verticalArrangement = Arrangement.spacedBy(Spacing.Small),
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
+                Text(
+                    text = "Configuration",
+                    color = colors.textMain,
+                    fontSize = FontSize.BodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    fontFamily = ideFontFamily(),
+                )
+                Text(
+                    text = "Prepare the boot image using the target policy and selected components.",
+                    color = colors.textMuted,
+                    fontSize = FontSize.Micro,
+                    fontFamily = ideFontFamily(),
+                )
+
+                // Field 1: Boot source
+                BootSelectField(
+                    label = "Boot source",
+                    value = bootSource,
+                    options = listOf(
+                        "From extracted build (recommended)",
+                        "From vendor firmware partition",
+                        "Custom boot image file",
+                    ),
+                    onSelect = { bootSource = it },
+                    helperText = "Uses boot image from the current workspace sources.",
+                    hasInfoIcon = true,
+                    colors = colors,
+                )
+
+                // Field 2: Kernel and ramdisk handling
+                BootSelectField(
+                    label = "Kernel and ramdisk handling",
+                    value = kernelRamdiskHandling,
+                    options = listOf(
+                        "Use extracted components",
+                        "Recompile from source tree",
+                        "Preserve without repack",
+                    ),
+                    onSelect = { kernelRamdiskHandling = it },
+                    helperText = "Keep kernel and ramdisk from source unless patches modify them.",
+                    colors = colors,
+                )
+
+                // Field 3: Patch integration (Checkbox)
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
                     Text(
-                        text = "Configuration",
-                        color = colors.textMain,
-                        fontSize = FontSize.BodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        fontFamily = GlassFontFamily.ide(),
-                    )
-                    Text(
-                        text = "Prepare the boot image using the target policy and selected components.",
-                        color = colors.textMuted,
+                        text = "Patch integration",
+                        color = colors.textDim,
                         fontSize = FontSize.Micro,
-                        fontFamily = GlassFontFamily.ide(),
+                        fontFamily = ideFontFamily(),
                     )
-
-                    // Field 1: Boot source
-                    BootSelectField(
-                        label = "Boot source",
-                        value = bootSource,
-                        options = listOf(
-                            "From extracted build (recommended)",
-                            "From vendor firmware partition",
-                            "Custom boot image file",
-                        ),
-                        onSelect = { bootSource = it },
-                        helperText = "Uses boot image from the current workspace sources.",
-                        hasInfoIcon = true,
-                        colors = colors,
-                    )
-
-                    // Field 2: Kernel and ramdisk handling
-                    BootSelectField(
-                        label = "Kernel and ramdisk handling",
-                        value = kernelRamdiskHandling,
-                        options = listOf(
-                            "Use extracted components",
-                            "Recompile from source tree",
-                            "Preserve without repack",
-                        ),
-                        onSelect = { kernelRamdiskHandling = it },
-                        helperText = "Keep kernel and ramdisk from source unless patches modify them.",
-                        colors = colors,
-                    )
-
-                    // Field 3: Patch integration (Checkbox)
-                    Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
-                        Text(
-                            text = "Patch integration",
-                            color = colors.textDim,
-                            fontSize = FontSize.Micro,
-                            fontFamily = GlassFontFamily.ide(),
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { applyBootPatches = !applyBootPatches },
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                    ) {
+                        Checkbox(
+                            checked = applyBootPatches,
+                            onCheckedChange = { applyBootPatches = it },
+                            colors = CheckboxDefaults.colors(
+                                checkedColor = colors.accentBlue,
+                                uncheckedColor = colors.textDim,
+                            ),
                         )
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { applyBootPatches = !applyBootPatches },
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                        ) {
-                            Checkbox(
-                                checked = applyBootPatches,
-                                onCheckedChange = { applyBootPatches = it },
-                                colors = CheckboxDefaults.colors(
-                                    checkedColor = colors.accentBlue,
-                                    uncheckedColor = colors.textDim,
-                                ),
-                            )
-                            Text(
-                                text = "Apply compatible boot patches",
-                                color = colors.textMain,
-                                fontSize = FontSize.BodySmall,
-                                fontFamily = GlassFontFamily.ide(),
-                            )
-                        }
                         Text(
-                            text = "Includes kernel modules and ramdisk modifications from the Patches stage.",
-                            color = colors.textMuted,
-                            fontSize = FontSize.Micro,
-                            fontFamily = GlassFontFamily.ide(),
-                            modifier = Modifier.padding(start = Spacing.Large),
+                            text = "Apply compatible boot patches",
+                            color = colors.textMain,
+                            fontSize = FontSize.BodySmall,
+                            fontFamily = ideFontFamily(),
                         )
                     }
-
-                    // Field 4: AVB handling
-                    BootSelectField(
-                        label = "AVB handling",
-                        value = avbHandling,
-                        options = listOf(
-                            "Preserve AVB configuration",
-                            "Disable AVB verification",
-                            "Custom AVB signing key",
-                        ),
-                        onSelect = { avbHandling = it },
-                        helperText = "Maintain verified boot settings from source.",
-                        colors = colors,
-                    )
-
-                    // Field 5: Boot footer policy
-                    BootSelectField(
-                        label = "Boot footer policy",
-                        value = bootFooterPolicyOption,
-                        options = listOf(
-                            "Use target policy (recommended)",
-                            "Preserve original footer",
-                            "Strip footer completely",
-                        ),
-                        onSelect = {
-                            bootFooterPolicyOption = it
-                            val policy = if (it.contains("target")) "target_policy" else "preserve"
-                            onChange(settings.copy(bootFooterPolicy = policy))
-                        },
-                        helperText = "Footer configuration will follow target revision 4 policy.",
-                        hasInfoIcon = true,
-                        colors = colors,
+                    Text(
+                        text = "Includes kernel modules and ramdisk modifications from the Patches stage.",
+                        color = colors.textMuted,
+                        fontSize = FontSize.Micro,
+                        fontFamily = ideFontFamily(),
+                        modifier = Modifier.padding(start = Spacing.Large),
                     )
                 }
+
+                // Field 4: AVB handling
+                BootSelectField(
+                    label = "AVB handling",
+                    value = avbHandling,
+                    options = listOf(
+                        "Preserve AVB configuration",
+                        "Disable AVB verification",
+                        "Custom AVB signing key",
+                    ),
+                    onSelect = { avbHandling = it },
+                    helperText = "Maintain verified boot settings from source.",
+                    colors = colors,
+                )
+
+                // Field 5: Boot footer policy
+                BootSelectField(
+                    label = "Boot footer policy",
+                    value = bootFooterPolicyOption,
+                    options = listOf(
+                        "Use target policy (recommended)",
+                        "Preserve original footer",
+                        "Strip footer completely",
+                    ),
+                    onSelect = {
+                        bootFooterPolicyOption = it
+                        val policy = if (it.contains("target")) "target_policy" else "preserve"
+                        onChange(settings.copy(bootFooterPolicy = policy))
+                    },
+                    helperText = "Footer configuration will follow target revision 4 policy.",
+                    hasInfoIcon = true,
+                    colors = colors,
+                )
             }
 
             // ==================== RIGHT COLUMN: Inspection & Preview ====================
@@ -233,65 +223,65 @@ public fun BootPreparationPane(
                 verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
             ) {
                 // Card 1: Inspected boot image
-                GlassCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    surfaceColor = colors.cardBackground,
-                    borderColor = colors.border,
-                    contentPadding = Spacing.Medium,
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(IdeShellShapes.Card)
+                        .ideCardSurface(colors, shape = IdeShellShapes.Card)
+                        .padding(Spacing.Medium),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.Small),
                 ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-                        Text(
-                            text = "Inspected boot image",
-                            color = colors.textMain,
-                            fontSize = FontSize.BodySmall,
-                            fontWeight = FontWeight.SemiBold,
-                            fontFamily = GlassFontFamily.ide(),
-                        )
+                    Text(
+                        text = "Inspected boot image",
+                        color = colors.textMain,
+                        fontSize = FontSize.BodySmall,
+                        fontWeight = FontWeight.SemiBold,
+                        fontFamily = ideFontFamily(),
+                    )
 
-                        val clipboardManager = LocalClipboardManager.current
-                        Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
-                            InspectedRow("Source", "extracted/boot.img", colors)
-                            InspectedRow("Device", target.codename, colors)
-                            InspectedRow("Android version", "14", colors)
-                            InspectedRow("Kernel version", "5.15.110-android14-g123abc", colors)
-                            InspectedRow("Build date", "2024-11-02 10:24:17", colors)
+                    val clipboardManager = LocalClipboardManager.current
+                    Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
+                        InspectedRow("Source", "extracted/boot.img", colors)
+                        InspectedRow("Device", target.codename, colors)
+                        InspectedRow("Android version", "14", colors)
+                        InspectedRow("Kernel version", "5.15.110-android14-g123abc", colors)
+                        InspectedRow("Build date", "2024-11-02 10:24:17", colors)
 
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = "Image hash (SHA-256)",
+                                color = colors.textMuted,
+                                fontSize = FontSize.Micro,
+                                fontFamily = ideFontFamily(),
+                            )
                             Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
                             ) {
                                 Text(
-                                    text = "Image hash (SHA-256)",
-                                    color = colors.textMuted,
+                                    text = "7e3f9a0c6b21...d4e8c2f1",
+                                    color = colors.textMain,
                                     fontSize = FontSize.Micro,
-                                    fontFamily = GlassFontFamily.ide(),
+                                    fontFamily = codeFontFamily(),
                                 )
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                                GlassIconButton(
+                                    onClick = {
+                                        val hash = "7e3f9a0c6b2123456789abcdef0123456789" +
+                                            "abcdef0123456789abcdefd4e8c2f1"
+                                        clipboardManager.setText(AnnotatedString(hash))
+                                    },
+                                    modifier = Modifier.size(IconSize.Small),
                                 ) {
-                                    Text(
-                                        text = "7e3f9a0c6b21...d4e8c2f1",
-                                        color = colors.textMain,
-                                        fontSize = FontSize.Micro,
-                                        fontFamily = GlassFontFamily.code(),
+                                    Icon(
+                                        imageVector = Icons.Default.ContentCopy,
+                                        contentDescription = "Copy hash",
+                                        tint = colors.textMuted,
+                                        modifier = Modifier.size(IconSize.ExtraSmall),
                                     )
-                                    GlassIconButton(
-                                        onClick = {
-                                            val hash = "7e3f9a0c6b2123456789abcdef0123456789" +
-                                                "abcdef0123456789abcdefd4e8c2f1"
-                                            clipboardManager.setText(AnnotatedString(hash))
-                                        },
-                                        modifier = Modifier.size(IconSize.Small),
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.ContentCopy,
-                                            contentDescription = "Copy hash",
-                                            tint = colors.textMuted,
-                                            modifier = Modifier.size(IconSize.ExtraSmall),
-                                        )
-                                    }
                                 }
                             }
                         }
@@ -299,130 +289,130 @@ public fun BootPreparationPane(
                 }
 
                 // Card 2: Footer verification
-                GlassCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    surfaceColor = colors.cardBackground,
-                    borderColor = colors.border,
-                    contentPadding = Spacing.Medium,
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(IdeShellShapes.Card)
+                        .ideCardSurface(colors, shape = IdeShellShapes.Card)
+                        .padding(Spacing.Medium),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
                 ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
-                        Text(
-                            text = "Footer verification",
-                            color = colors.textMain,
-                            fontSize = FontSize.BodySmall,
-                            fontWeight = FontWeight.SemiBold,
-                            fontFamily = GlassFontFamily.ide(),
+                    Text(
+                        text = "Footer verification",
+                        color = colors.textMain,
+                        fontSize = FontSize.BodySmall,
+                        fontWeight = FontWeight.SemiBold,
+                        fontFamily = ideFontFamily(),
+                    )
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = colors.accentGreen,
+                            modifier = Modifier.size(IconSize.Small),
                         )
-
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.CheckCircle,
-                                contentDescription = null,
-                                tint = colors.accentGreen,
-                                modifier = Modifier.size(IconSize.Small),
-                            )
-                            Text(
-                                text = "Valid",
-                                color = colors.accentGreen,
-                                fontSize = FontSize.BodySmall,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = GlassFontFamily.ide(),
-                            )
-                        }
-
                         Text(
-                            text = "Boot footer matches target policy (revision 4).",
-                            color = colors.textMuted,
-                            fontSize = FontSize.Micro,
-                            fontFamily = GlassFontFamily.ide(),
+                            text = "Valid",
+                            color = colors.accentGreen,
+                            fontSize = FontSize.BodySmall,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = ideFontFamily(),
                         )
                     }
+
+                    Text(
+                        text = "Boot footer matches target policy (revision 4).",
+                        color = colors.textMuted,
+                        fontSize = FontSize.Micro,
+                        fontFamily = ideFontFamily(),
+                    )
                 }
 
                 // Card 3: Affected files preview
-                GlassCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    surfaceColor = colors.cardBackground,
-                    borderColor = colors.border,
-                    contentPadding = Spacing.Medium,
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(IdeShellShapes.Card)
+                        .ideCardSurface(colors, shape = IdeShellShapes.Card)
+                        .padding(Spacing.Medium),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.Small),
                 ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-                        ) {
-                            Text(
-                                text = "Affected files preview",
-                                color = colors.textMain,
-                                fontSize = FontSize.BodySmall,
-                                fontWeight = FontWeight.SemiBold,
-                                fontFamily = GlassFontFamily.ide(),
-                            )
-                            Icon(
-                                imageVector = Icons.Default.Info,
-                                contentDescription = null,
-                                tint = colors.accentBlue,
-                                modifier = Modifier.size(IconSize.ExtraSmall),
-                            )
-                        }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                    ) {
+                        Text(
+                            text = "Affected files preview",
+                            color = colors.textMain,
+                            fontSize = FontSize.BodySmall,
+                            fontWeight = FontWeight.SemiBold,
+                            fontFamily = ideFontFamily(),
+                        )
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = null,
+                            tint = colors.accentBlue,
+                            modifier = Modifier.size(IconSize.ExtraSmall),
+                        )
+                    }
 
-                        // Table Header
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                text = "Path",
-                                color = colors.textDim,
-                                fontSize = FontSize.Micro,
-                                fontWeight = FontWeight.SemiBold,
-                                fontFamily = GlassFontFamily.ide(),
-                            )
-                            Text(
-                                text = "Action",
-                                color = colors.textDim,
-                                fontSize = FontSize.Micro,
-                                fontWeight = FontWeight.SemiBold,
-                                fontFamily = GlassFontFamily.ide(),
-                            )
-                        }
+                    // Table Header
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = "Path",
+                            color = colors.textDim,
+                            fontSize = FontSize.Micro,
+                            fontWeight = FontWeight.SemiBold,
+                            fontFamily = ideFontFamily(),
+                        )
+                        Text(
+                            text = "Action",
+                            color = colors.textDim,
+                            fontSize = FontSize.Micro,
+                            fontWeight = FontWeight.SemiBold,
+                            fontFamily = ideFontFamily(),
+                        )
+                    }
 
-                        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+                    HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
 
-                        // Rows
-                        AffectedFileRow("boot.img", "Rebuild", IdeStatusSeverity.Warning, colors)
-                        AffectedFileRow("kernel", "Included", IdeStatusSeverity.Ready, colors)
-                        AffectedFileRow("ramdisk", "Included", IdeStatusSeverity.Ready, colors)
-                        AffectedFileRow("kernel_modules/*", "Included", IdeStatusSeverity.Ready, colors)
-                        AffectedFileRow("init_boot.img", "Unchanged", IdeStatusSeverity.Running, colors)
+                    // Rows
+                    AffectedFileRow("boot.img", "Rebuild", IdeStatusSeverity.Warning, colors)
+                    AffectedFileRow("kernel", "Included", IdeStatusSeverity.Ready, colors)
+                    AffectedFileRow("ramdisk", "Included", IdeStatusSeverity.Ready, colors)
+                    AffectedFileRow("kernel_modules/*", "Included", IdeStatusSeverity.Ready, colors)
+                    AffectedFileRow("init_boot.img", "Unchanged", IdeStatusSeverity.Running, colors)
 
-                        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+                    HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
 
-                        // Footnote Info
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Info,
-                                contentDescription = null,
-                                tint = colors.accentBlue,
-                                modifier = Modifier.size(IconSize.ExtraSmall),
-                            )
-                            val filesNotice = "Files shown are relative to the output image. " +
-                                "The final boot image will be generated during the Build stage."
-                            Text(
-                                text = filesNotice,
-                                color = colors.textDim,
-                                fontSize = FontSize.Micro,
-                                fontFamily = GlassFontFamily.ide(),
-                            )
-                        }
+                    // Footnote Info
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = null,
+                            tint = colors.accentBlue,
+                            modifier = Modifier.size(IconSize.ExtraSmall),
+                        )
+                        val filesNotice = "Files shown are relative to the output image. " +
+                            "The final boot image will be generated during the Build stage."
+                        Text(
+                            text = filesNotice,
+                            color = colors.textDim,
+                            fontSize = FontSize.Micro,
+                            fontFamily = ideFontFamily(),
+                        )
                     }
                 }
             }
@@ -451,7 +441,7 @@ private fun BootSelectField(
                 text = label,
                 color = colors.textDim,
                 fontSize = FontSize.Micro,
-                fontFamily = GlassFontFamily.ide(),
+                fontFamily = ideFontFamily(),
             )
             if (hasInfoIcon) {
                 Icon(
@@ -479,7 +469,7 @@ private fun BootSelectField(
                     text = value,
                     color = colors.textMain,
                     fontSize = FontSize.Micro,
-                    fontFamily = GlassFontFamily.ide(),
+                    fontFamily = ideFontFamily(),
                 )
                 Icon(
                     imageVector = Icons.Default.KeyboardArrowDown,
@@ -500,7 +490,7 @@ private fun BootSelectField(
                                 text = option,
                                 color = if (option == value) colors.accentBlue else colors.textMain,
                                 fontSize = FontSize.Micro,
-                                fontFamily = GlassFontFamily.ide(),
+                                fontFamily = ideFontFamily(),
                             )
                         },
                         onClick = {
@@ -516,7 +506,7 @@ private fun BootSelectField(
             text = helperText,
             color = colors.textMuted,
             fontSize = FontSize.Micro,
-            fontFamily = GlassFontFamily.ide(),
+            fontFamily = ideFontFamily(),
         )
     }
 }
@@ -532,13 +522,13 @@ private fun InspectedRow(label: String, value: String, colors: IdeShellColorSche
             text = label,
             color = colors.textMuted,
             fontSize = FontSize.Micro,
-            fontFamily = GlassFontFamily.ide(),
+            fontFamily = ideFontFamily(),
         )
         Text(
             text = value,
             color = colors.textMain,
             fontSize = FontSize.Micro,
-            fontFamily = GlassFontFamily.code(),
+            fontFamily = codeFontFamily(),
         )
     }
 }
@@ -566,7 +556,7 @@ private fun AffectedFileRow(path: String, action: String, severity: IdeStatusSev
                 text = path,
                 color = colors.textMain,
                 fontSize = FontSize.Micro,
-                fontFamily = GlassFontFamily.code(),
+                fontFamily = codeFontFamily(),
             )
         }
 

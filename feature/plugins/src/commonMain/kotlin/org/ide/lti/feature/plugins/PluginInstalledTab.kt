@@ -47,6 +47,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.GlassHorizontalDivider
+import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.TextFieldLeadingSlot
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
@@ -246,13 +247,7 @@ private fun InstalledMasterTable(
     Box(
         modifier = modifier
             .fillMaxHeight()
-            .clip(GlassShapes.Medium)
-            .background(PluginThemeColors.CardBackground)
-            .glassOutlineBorder(
-                width = StrokeWidth.Hairline,
-                color = PluginThemeColors.CardBorder,
-                shape = GlassShapes.Medium,
-            ),
+            .ideCardSurface(),
     ) {
         if (filtered.isEmpty()) {
             Box(
@@ -490,13 +485,7 @@ private fun InstalledInspectorPanel(
     Box(
         modifier = modifier
             .fillMaxHeight()
-            .clip(GlassShapes.Medium)
-            .background(PluginThemeColors.CardBackground)
-            .glassOutlineBorder(
-                width = StrokeWidth.Hairline,
-                color = PluginThemeColors.CardBorder,
-                shape = GlassShapes.Medium,
-            ),
+            .ideCardSurface(),
     ) {
         if (record == null) {
             Box(

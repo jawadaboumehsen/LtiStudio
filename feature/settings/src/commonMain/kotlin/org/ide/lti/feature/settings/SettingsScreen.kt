@@ -10,73 +10,55 @@
 package org.ide.lti.feature.settings
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.HelpOutline
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.backdrops.LayerBackdrop
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
-import org.ide.lti.core.ui.settings.AppSettingsState
 import org.ide.lti.core.designsystem.component.layout.GlobalAppDestination
 import org.ide.lti.core.designsystem.component.layout.GlobalAppTopBar
+import org.ide.lti.core.designsystem.component.layout.IdeAppFrame
+import org.ide.lti.core.designsystem.component.layout.IdeNavigatorItem
+import org.ide.lti.core.designsystem.component.layout.IdeNavigatorPanel
 import org.ide.lti.core.designsystem.component.layout.IdePipelineRail
 import org.ide.lti.core.designsystem.component.layout.IdePipelineStageItem
-import org.ide.lti.core.designsystem.component.layout.StudioGlassBackdrop
-import org.ide.lti.core.designsystem.theme.AlphaTokens
-import org.ide.lti.core.designsystem.theme.BrandColors
-import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.component.layout.IdeStatusBar
 import org.ide.lti.core.designsystem.theme.FontSize
-import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
-import org.ide.lti.core.designsystem.theme.IconSize
+import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.PluginThemeColors
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.config.AppTheme
+import org.ide.lti.core.ui.settings.AppSettingsState
 import org.ide.lti.feature.settings.components.AboutSettingsPane
 import org.ide.lti.feature.settings.components.AppearanceSettingsPane
 import org.ide.lti.feature.settings.components.EditorSettingsPane
 import org.ide.lti.feature.settings.components.GenericCategoryPane
 import org.ide.lti.feature.settings.components.NotificationsSettingsPane
-import org.ide.lti.feature.settings.components.SettingsSidebar
 import org.ide.lti.feature.settings.model.SettingsCategory
 import org.koin.compose.koinInject
 
@@ -128,6 +110,8 @@ fun SettingsScreenContent(
         sharedBackdrop = resolvedBackdrop,
     ) {
         val colors = GlassTheme.ideShellColors
+        val density = LocalDensity.current
+        var isCompact by remember { mutableStateOf(false) }
 
         var selectedCategory by remember { mutableStateOf(SettingsCategory.EditorPreferences) }
 
@@ -144,19 +128,32 @@ fun SettingsScreenContent(
             )
         }
 
-        BoxWithConstraints(
+        val settingsNavItems = remember {
+            listOf(
+                IdeNavigatorItem(id = "general", label = "General"),
+                IdeNavigatorItem(id = "appearance", label = "Appearance"),
+                IdeNavigatorItem(id = "editor", label = "Editor"),
+                IdeNavigatorItem(id = "target_profiles", label = "Target profiles"),
+                IdeNavigatorItem(id = "build_environment", label = "Build environment"),
+                IdeNavigatorItem(id = "plugin_sources", label = "Plugin sources"),
+                IdeNavigatorItem(id = "credentials", label = "Credentials"),
+                IdeNavigatorItem(id = "notifications", label = "Notifications"),
+                IdeNavigatorItem(id = "about", label = "About"),
+            )
+        }
+
+        val selectedNavId = categoryToNavId(selectedCategory)
+
+        IdeAppFrame(
             modifier = modifier
                 .fillMaxSize()
                 .background(colors.appBackground)
+                .onSizeChanged { size ->
+                    val widthDp = with(density) { size.width.toDp() }
+                    isCompact = widthDp < IdeShellDimens.CompactBreakpoint
+                }
                 .testTag("SettingsScreen"),
-        ) {
-            if (isBlueGlass) {
-                StudioGlassBackdrop(backdrop = resolvedBackdrop)
-            }
-
-            val showPipelineRail = maxWidth >= IdeShellDimens.CompactBreakpoint
-
-            Column(modifier = Modifier.fillMaxSize()) {
+            topBar = {
                 if (showHeader) {
                     GlobalAppTopBar(
                         selectedDestination = GlobalAppDestination.Settings,
@@ -168,212 +165,58 @@ fun SettingsScreenContent(
                             }
                         },
                         colors = colors,
-                        actions = {
-                            // Top Bar Global Search Box
-                            Row(
-                                modifier = Modifier
-                                    .height(ComponentSize.TopBarButtonSize)
-                                    .clip(GlassShapes.Small)
-                                    .background(
-                                        if (isBlueGlass) {
-                                            PluginThemeColors.CardBackground.copy(alpha = AlphaTokens.Half)
-                                        } else {
-                                            colors.cardBackground
-                                        },
-                                    )
-                                    .border(
-                                        width = IdeShellDimens.HairlineBorder,
-                                        color = if (isBlueGlass) PluginThemeColors.CardBorder else colors.border,
-                                        shape = GlassShapes.Small,
-                                    )
-                                    .padding(horizontal = Spacing.SmallMedium),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Search,
-                                    contentDescription = null,
-                                    tint = if (isBlueGlass) BrandColors.OnLogoBadge.copy(alpha = AlphaTokens.Half) else colors.textMuted,
-                                    modifier = Modifier.size(IconSize.Search),
-                                 )
-                                Text(
-                                    text = "Search files, actions, ...",
-                                    fontSize = FontSize.LabelSmall,
-                                    color = if (isBlueGlass) BrandColors.OnLogoBadge.copy(alpha = AlphaTokens.Half) else colors.textMuted,
-                                )
-                                Spacer(modifier = Modifier.width(Spacing.Small))
-                                Box(
-                                    modifier = Modifier
-                                        .clip(GlassShapes.ExtraSmall)
-                                        .background(if (isBlueGlass) PluginThemeColors.CardBackground else colors.controlSelected)
-                                        .padding(horizontal = Spacing.ExtraSmall, vertical = Spacing.Hairline),
-                                ) {
-                                    Text(
-                                        text = "Ctrl+K",
-                                        fontFamily = codeFontFamily(),
-                                        fontSize = FontSize.LabelSmall,
-                                        color = if (isBlueGlass) BrandColors.OnLogoBadge.copy(alpha = AlphaTokens.High) else colors.textDim,
-                                    )
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.width(Spacing.SmallMedium))
-
-                            // User Profile Avatar Badge
-                            Box(
-                                modifier = Modifier
-                                    .size(ComponentSize.TopBarButtonSize)
-                                    .clip(CircleShape)
-                                    .background(
-                                        if (isBlueGlass) {
-                                            PluginThemeColors.ActiveTabBackground
-                                        } else {
-                                            colors.controlSelected
-                                        },
-                                    )
-                                    .border(
-                                        width = IdeShellDimens.HairlineBorder,
-                                        color = if (isBlueGlass) PluginThemeColors.ActiveTabBorder else colors.accentBlue,
-                                        shape = CircleShape,
-                                    ),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Text(
-                                    text = "JD",
-                                    fontSize = FontSize.LabelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (isBlueGlass) BrandColors.OnLogoBadge else colors.textMain,
-                                )
-                            }
-                        },
-                    )
-                    HorizontalDivider(
-                        thickness = IdeShellDimens.HairlineBorder,
-                        color = if (isBlueGlass) PluginThemeColors.CardBorder else colors.border,
                     )
                 }
-
-                // Middle Body: Pipeline Rail (Optional) + Category Sidebar + Detail Content
-                Row(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
-                ) {
-                    if (showPipelineRail) {
-                        Column(
-                            modifier = Modifier
-                                .width(IdeShellDimens.PipelineRailWidth)
-                                .fillMaxHeight()
-                                .background(colors.railBackground),
-                        ) {
-                            IdePipelineRail(
-                                stages = pipelineStages,
-                                selectedStageId = null,
-                                onSelectStage = { _ -> onNavigateToWorkspace() },
-                                colors = colors,
-                                modifier = Modifier.weight(1f),
-                            )
-
-                            // Bottom Settings Button in Pipeline Rail (Active)
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(ComponentSize.SidePanelRailButtonSize)
-                                        .clip(GlassShapes.Small)
-                                        .background(
-                                            if (isBlueGlass) {
-                                                PluginThemeColors.ActiveTabBackground
-                                            } else {
-                                                colors.accentBlue
-                                            },
-                                        )
-                                        .border(
-                                            width = IdeShellDimens.HairlineBorder,
-                                            color = if (isBlueGlass) PluginThemeColors.ActiveTabBorder else colors.accentBlue,
-                                            shape = GlassShapes.Small,
-                                        ),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Settings,
-                                        contentDescription = "Settings",
-                                        tint = BrandColors.OnLogoBadge,
-                                        modifier = Modifier.size(IconSize.Medium),
-                                    )
-                                }
-                            }
-
-                            // Help & Support
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = Spacing.Small)
-                                    .clickable(
-                                        interactionSource = remember { MutableInteractionSource() },
-                                        indication = null,
-                                        onClick = { /* help action */ },
-                                    ),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.HelpOutline,
-                                    contentDescription = "Help & Support",
-                                    tint = if (isBlueGlass) {
-                                        BrandColors.OnLogoBadge.copy(alpha = AlphaTokens.High)
-                                    } else {
-                                        colors.textMuted
-                                    },
-                                    modifier = Modifier.size(IconSize.SidePanelRail),
-                                )
-                                Text(
-                                    text = "Help",
-                                    fontSize = FontSize.Micro,
-                                    color = if (isBlueGlass) {
-                                        BrandColors.OnLogoBadge.copy(alpha = AlphaTokens.High)
-                                    } else {
-                                        colors.textMuted
-                                    },
-                                    maxLines = 1,
-                                )
-                            }
-                        }
-
-                        VerticalDivider(
-                            thickness = IdeShellDimens.HairlineBorder,
-                            color = if (isBlueGlass) PluginThemeColors.CardBorder else colors.border,
+            },
+            pipelineRail = {
+                IdePipelineRail(
+                    stages = pipelineStages,
+                    selectedStageId = null,
+                    onSelectStage = { _ -> onNavigateToWorkspace() },
+                    colors = colors,
+                )
+            },
+            navigator = {
+                IdeNavigatorPanel(
+                    headerTitle = "SETTINGS",
+                    headerSubtitle = null,
+                    items = settingsNavItems,
+                    selectedItemId = selectedNavId,
+                    onSelectItem = { id -> selectedCategory = navIdToCategory(id) },
+                    colors = colors,
+                )
+            },
+            statusBar = {
+                IdeStatusBar(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = colors,
+                    leadingContent = {
+                        Text(
+                            text = "Settings • ${selectedCategory.title}",
+                            fontSize = FontSize.LabelSmall,
+                            color = colors.textDim,
                         )
-                    }
-
-                    // Settings Category Navigation Sidebar
-                    SettingsSidebar(
-                        selectedCategory = selectedCategory,
-                        onSelectCategory = { selectedCategory = it },
-                        colors = colors,
-                    )
-
-                    VerticalDivider(
-                        thickness = IdeShellDimens.HairlineBorder,
-                        color = if (isBlueGlass) PluginThemeColors.CardBorder else colors.border,
-                    )
-
-                    // Right Detail Content Area
+                    },
+                    trailingContent = {
+                        Text(
+                            text = "LtiRom Studio v0.9.0 • Ready",
+                            fontSize = FontSize.LabelSmall,
+                            color = colors.textMuted,
+                        )
+                    },
+                )
+            },
+            content = {
+                Row(modifier = Modifier.fillMaxSize()) {
                     Box(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()
-                            .background(
-                                if (isBlueGlass) Color.Transparent else colors.contentBackground,
-                            )
+                            .verticalScroll(rememberScrollState())
                             .padding(
                                 horizontal = Spacing.ScreenHorizontal,
                                 vertical = Spacing.ScreenVertical,
-                            )
-                            .verticalScroll(rememberScrollState()),
+                            ),
                     ) {
                         when (selectedCategory) {
                             SettingsCategory.EditorPreferences, SettingsCategory.Editor -> {
@@ -387,9 +230,7 @@ fun SettingsScreenContent(
                                         appSettingsState.effectsEnabled = true
                                         appSettingsState.reducedMotion = false
                                     },
-                                    onApplyChanges = {
-                                        // Persistence is automatic via AppSettingsState
-                                    },
+                                    onApplyChanges = {},
                                     colors = colors,
                                 )
                             }
@@ -407,8 +248,122 @@ fun SettingsScreenContent(
                             }
                         }
                     }
+
+                    if (!isCompact) {
+                        VerticalDivider(
+                            thickness = IdeShellDimens.HairlineBorder,
+                            color = if (isBlueGlass) PluginThemeColors.CardBorder else colors.border,
+                        )
+                        SettingsHelpColumn(
+                            category = selectedCategory,
+                            colors = colors,
+                            modifier = Modifier
+                                .width(IdeShellDimens.WorkspaceNavigatorWidth)
+                                .fillMaxHeight()
+                                .padding(Spacing.Medium),
+                        )
+                    }
                 }
-            }
+            },
+        )
+    }
+}
+
+@Composable
+private fun SettingsHelpColumn(
+    category: SettingsCategory,
+    colors: IdeShellColorScheme,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+    ) {
+        Text(
+            text = "About these settings",
+            fontSize = FontSize.TitleSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = colors.textMain,
+        )
+
+        Text(
+            text = category.subtitle,
+            fontSize = FontSize.BodySmall,
+            color = colors.textDim,
+        )
+
+        HorizontalDivider(
+            thickness = IdeShellDimens.HairlineBorder,
+            color = colors.border,
+        )
+
+        Column(
+            verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+        ) {
+            Text(
+                text = "Preferences storage",
+                fontSize = FontSize.LabelSmall,
+                fontWeight = FontWeight.Medium,
+                color = colors.textMain,
+            )
+            Text(
+                text = "Studio settings are synchronized across workspaces and persisted locally.",
+                fontSize = FontSize.LabelSmall,
+                color = colors.textMuted,
+            )
+        }
+
+        Column(
+            verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+        ) {
+            Text(
+                text = "Quick navigation",
+                fontSize = FontSize.LabelSmall,
+                fontWeight = FontWeight.Medium,
+                color = colors.textMain,
+            )
+            Text(
+                text = "Use Ctrl+, to open settings or Ctrl+K to search files and studio actions.",
+                fontSize = FontSize.LabelSmall,
+                color = colors.textMuted,
+            )
         }
     }
+}
+
+private fun categoryToNavId(category: SettingsCategory): String = when (category) {
+    SettingsCategory.General,
+    SettingsCategory.Workspace,
+    SettingsCategory.PrivacyAndData,
+    -> "general"
+    SettingsCategory.Appearance -> "appearance"
+    SettingsCategory.Editor,
+    SettingsCategory.EditorPreferences,
+    -> "editor"
+    SettingsCategory.TargetProfiles -> "target_profiles"
+    SettingsCategory.BuildEnvironment,
+    SettingsCategory.BuildAndRun,
+    SettingsCategory.Paths,
+    -> "build_environment"
+    SettingsCategory.PluginSources -> "plugin_sources"
+    SettingsCategory.Credentials -> "credentials"
+    SettingsCategory.Notifications -> "notifications"
+    SettingsCategory.About,
+    SettingsCategory.Updates,
+    SettingsCategory.Diagnostics,
+    SettingsCategory.Network,
+    -> "about"
+}
+
+private fun navIdToCategory(id: String): SettingsCategory = when (id) {
+    "general" -> SettingsCategory.General
+    "appearance" -> SettingsCategory.Appearance
+    "editor" -> SettingsCategory.EditorPreferences
+    "target_profiles" -> SettingsCategory.TargetProfiles
+    "build_environment" -> SettingsCategory.BuildEnvironment
+    "plugin_sources" -> SettingsCategory.PluginSources
+    "credentials" -> SettingsCategory.Credentials
+    "notifications" -> SettingsCategory.Notifications
+    "about" -> SettingsCategory.About
+    else -> SettingsCategory.General
 }

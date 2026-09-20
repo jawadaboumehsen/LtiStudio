@@ -23,6 +23,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -36,6 +38,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import org.ide.lti.core.designsystem.theme.BrandColors
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassTheme
@@ -44,16 +47,18 @@ import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.feature.workspace.studio.WorkspaceActionUi
 
 /**
  * Top header for the Workspace Overview pane displaying breadcrumbs, page title,
- * contextual subtitle, and quick-action toolbar.
+ * contextual subtitle, target context, and actions. Matches Mockup 09.
  */
 @Composable
 public fun OverviewBreadcrumbHeader(
     title: String,
     subtitle: String,
     onReload: () -> Unit,
+    onAction: (WorkspaceActionUi) -> Unit = {},
     modifier: Modifier = Modifier,
     colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
@@ -100,50 +105,134 @@ public fun OverviewBreadcrumbHeader(
                 )
             }
 
-            // Reload State Action Button
-            val interactionSource = remember { MutableInteractionSource() }
-            val isHovered by interactionSource.collectIsHoveredAsState()
-            val isPressed by interactionSource.collectIsPressedAsState()
+            OverviewHeaderTargetAndActions(onReload = onReload, onAction = onAction, colors = colors)
+        }
+    }
+}
 
-            val btnBg = when {
-                isPressed -> colors.controlSelected
-                isHovered -> colors.controlHover
-                else -> colors.cardBackground
-            }
+@Composable
+private fun OverviewHeaderTargetAndActions(
+    onReload: () -> Unit,
+    onAction: (WorkspaceActionUi) -> Unit,
+    colors: IdeShellColorScheme,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
+    ) {
+        Column(
+            horizontalAlignment = Alignment.End,
+            verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
+        ) {
+            Text(
+                text = "PQ84P01 / Development",
+                color = colors.textMain,
+                fontSize = FontSize.BodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                fontFamily = GlassFontFamily.ide(),
+            )
+            Text(
+                text = "Target revision 4 · Draft changes",
+                color = colors.textDim,
+                fontSize = FontSize.Micro,
+                fontFamily = GlassFontFamily.ide(),
+            )
+        }
 
-            Box(
-                modifier = Modifier
-                    .testTag("ReloadStateButton")
-                    .semantics { role = Role.Button }
-                    .background(btnBg, IdeShellShapes.Control)
-                    .border(IdeShellDimens.HairlineBorder, colors.border, IdeShellShapes.Control)
-                    .clickable(
-                        interactionSource = interactionSource,
-                        indication = null,
-                        onClick = onReload,
-                    )
-                    .padding(horizontal = Spacing.MediumSmall, vertical = Spacing.Compact),
-                contentAlignment = Alignment.Center,
+        // Primary "Validate and Save" action button
+        Box(
+            modifier = Modifier
+                .testTag("OverviewValidateAndSave")
+                .background(colors.accentBlue, IdeShellShapes.Control)
+                .clickable(
+                    onClick = {
+                        onAction(WorkspaceActionUi.Validate)
+                        onAction(WorkspaceActionUi.Save)
+                    },
+                )
+                .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
+            contentAlignment = Alignment.Center,
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Compact),
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.Compact),
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = "Reload State",
-                        tint = colors.textMuted,
-                        modifier = Modifier.size(IconSize.Search),
-                    )
-                    Text(
-                        text = "Reload State",
-                        color = colors.textMuted,
-                        fontSize = FontSize.BodySmall,
-                        fontWeight = FontWeight.Medium,
-                        fontFamily = GlassFontFamily.ide(),
-                    )
-                }
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    tint = BrandColors.OnLogoBadge,
+                    modifier = Modifier.size(IconSize.Small),
+                )
+                Text(
+                    text = "Validate and Save",
+                    color = BrandColors.OnLogoBadge,
+                    fontSize = FontSize.BodySmall,
+                    fontWeight = FontWeight.SemiBold,
+                    fontFamily = GlassFontFamily.ide(),
+                )
             }
+        }
+
+        // Outlined "Discard changes" button
+        Box(
+            modifier = Modifier
+                .background(colors.cardBackgroundMuted, IdeShellShapes.Control)
+                .border(IdeShellDimens.HairlineBorder, colors.borderMuted, IdeShellShapes.Control)
+                .clickable(onClick = {})
+                .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Small),
+            contentAlignment = Alignment.Center,
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Compact),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Cancel,
+                    contentDescription = null,
+                    tint = colors.textMuted,
+                    modifier = Modifier.size(IconSize.Small),
+                )
+                Text(
+                    text = "Discard changes",
+                    color = colors.textMuted,
+                    fontSize = FontSize.BodySmall,
+                    fontWeight = FontWeight.Medium,
+                    fontFamily = GlassFontFamily.ide(),
+                )
+            }
+        }
+
+        // Quiet Reload action button (preserves testTag for testActionDispatchWiring)
+        val reloadInteraction = remember { MutableInteractionSource() }
+        val isReloadHovered by reloadInteraction.collectIsHoveredAsState()
+        val isReloadPressed by reloadInteraction.collectIsPressedAsState()
+
+        val reloadBg = when {
+            isReloadPressed -> colors.controlSelected
+            isReloadHovered -> colors.controlHover
+            else -> colors.cardBackgroundMuted
+        }
+
+        Box(
+            modifier = Modifier
+                .testTag("ReloadStateButton")
+                .semantics { role = Role.Button }
+                .background(reloadBg, IdeShellShapes.Control)
+                .border(IdeShellDimens.HairlineBorder, colors.borderMuted, IdeShellShapes.Control)
+                .clickable(
+                    interactionSource = reloadInteraction,
+                    indication = null,
+                    onClick = onReload,
+                )
+                .padding(horizontal = Spacing.Small, vertical = Spacing.Small),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = Icons.Default.Refresh,
+                contentDescription = "Reload State",
+                tint = colors.textMuted,
+                modifier = Modifier.size(IconSize.Small),
+            )
         }
     }
 }

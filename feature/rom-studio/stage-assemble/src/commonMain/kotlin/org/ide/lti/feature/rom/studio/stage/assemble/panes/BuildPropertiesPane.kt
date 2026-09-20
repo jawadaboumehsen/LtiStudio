@@ -56,16 +56,17 @@ import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
-import org.ide.lti.core.designsystem.component.display.GlassCard
+import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenu
 import org.ide.lti.core.designsystem.theme.FontSize
-import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.codeFontFamily
+import org.ide.lti.core.designsystem.theme.ideFontFamily
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.AssemblySettings
 
@@ -79,9 +80,9 @@ private data class PropertyEntry(
 
 /**
  * Stage Assemble subobject pane for Build properties.
- * Faithfully matches media_1789783219888.jpg.
+ * Matches Blue Glass styling.
  */
-@Suppress("LongParameterList", "LongMethod")
+@Suppress("LongParameterList", "LongMethod", "UnusedParameter")
 @Composable
 public fun BuildPropertiesPane(
     settings: AssemblySettings,
@@ -126,18 +127,6 @@ public fun BuildPropertiesPane(
             .testTag("BuildPropertiesPane"),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
-        AssembleHeader(
-            title = "Build properties",
-            subtitle = "Configure build type, version and property overrides for this ROM.",
-            targetSpec = "${target.codename} / Development",
-            targetRevision = "Target revision ${target.revision}",
-            additionalContext = "Snapshot 12 · Android 14 (API 34)",
-            saveButtonLabel = "Save changes",
-            onValidate = onValidate,
-            onSave = onSave,
-            colors = colors,
-        )
-
         // 2-Column Layout (Left ~65%, Right ~35%)
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -149,317 +138,314 @@ public fun BuildPropertiesPane(
                 verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
             ) {
                 // Section: General configuration
-                GlassCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    surfaceColor = colors.cardBackground,
-                    borderColor = colors.border,
-                    contentPadding = Spacing.Medium,
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(IdeShellShapes.Card)
+                        .ideCardSurface(colors, shape = IdeShellShapes.Card)
+                        .padding(Spacing.Medium),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.Small),
                 ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-                        Text(
-                            text = "General configuration",
-                            color = colors.textMain,
-                            fontSize = FontSize.BodySmall,
-                            fontWeight = FontWeight.SemiBold,
-                            fontFamily = GlassFontFamily.ide(),
-                        )
+                    Text(
+                        text = "General configuration",
+                        color = colors.textMain,
+                        fontSize = FontSize.BodySmall,
+                        fontWeight = FontWeight.SemiBold,
+                        fontFamily = ideFontFamily(),
+                    )
 
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
-                        ) {
-                            // Build type dropdown
-                            BuildTypeDropdown(
-                                selected = buildType,
-                                onSelect = {
-                                    buildType = it
-                                    onChange(settings.copy(buildType = it))
-                                },
-                                modifier = Modifier.weight(1f),
-                                colors = colors,
-                            )
-
-                            // ROM version field
-                            Column(
-                                modifier = Modifier.weight(1f),
-                                verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-                                ) {
-                                    Text(
-                                        text = "ROM version",
-                                        color = colors.textDim,
-                                        fontSize = FontSize.Micro,
-                                        fontFamily = GlassFontFamily.ide(),
-                                    )
-                                    Icon(
-                                        imageVector = Icons.Default.Info,
-                                        contentDescription = null,
-                                        tint = colors.accentBlue,
-                                        modifier = Modifier.size(IconSize.ExtraSmall),
-                                    )
-                                }
-
-                                BasicTextField(
-                                    value = romVersion,
-                                    onValueChange = {
-                                        romVersion = it
-                                        onChange(settings.copy(romVersion = it))
-                                    },
-                                    textStyle = TextStyle(
-                                        color = colors.textMain,
-                                        fontSize = FontSize.Micro,
-                                        fontFamily = GlassFontFamily.code(),
-                                    ),
-                                    cursorBrush = SolidColor(colors.accentBlue),
-                                    singleLine = true,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .background(colors.cardBackgroundMuted, IdeShellShapes.Control)
-                                        .border(
-                                            width = IdeShellDimens.HairlineBorder,
-                                            color = colors.borderMuted,
-                                            shape = IdeShellShapes.Control,
-                                        )
-                                        .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Small),
-                                )
-                            }
-                        }
-
-                        Text(
-                            text = "Use semantic versioning (e.g. 1.0.0 or 1.0.0-dev).",
-                            color = colors.textDim,
-                            fontSize = FontSize.Micro,
-                            fontFamily = GlassFontFamily.ide(),
-                        )
-                    }
-                }
-
-                // Section: Property overrides
-                GlassCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    surfaceColor = colors.cardBackground,
-                    borderColor = colors.border,
-                    contentPadding = Spacing.Medium,
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-                        // Title + Actions row
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.Top,
-                        ) {
-                            Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-                                ) {
-                                    Text(
-                                        text = "Property overrides",
-                                        color = colors.textMain,
-                                        fontSize = FontSize.BodySmall,
-                                        fontWeight = FontWeight.SemiBold,
-                                        fontFamily = GlassFontFamily.ide(),
-                                    )
-                                    Icon(
-                                        imageVector = Icons.Default.Info,
-                                        contentDescription = null,
-                                        tint = colors.accentBlue,
-                                        modifier = Modifier.size(IconSize.ExtraSmall),
-                                    )
-                                }
-                                Text(
-                                    text = "Add or override system properties for the build. " +
-                                        "Invalid entries are highlighted.",
-                                    color = colors.textMuted,
-                                    fontSize = FontSize.Micro,
-                                    fontFamily = GlassFontFamily.ide(),
-                                )
-                            }
-
-                            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-                                GlassButton(
-                                    onClick = {
-                                        properties.add(PropertyEntry("ro.custom.prop", "value"))
-                                    },
-                                    variant = GlassButtonVariant.Standard,
-                                    shape = IdeShellShapes.Control,
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Add,
-                                            contentDescription = null,
-                                            tint = colors.textMain,
-                                            modifier = Modifier.size(IconSize.ExtraSmall),
-                                        )
-                                        Text("+ Add property", color = colors.textMain, fontSize = FontSize.Micro)
-                                    }
-                                }
-
-                                GlassButton(
-                                    onClick = {
-                                        val toRemove = selectedIndices.sortedDescending()
-                                        toRemove.forEach { idx ->
-                                            if (idx in properties.indices) {
-                                                properties.removeAt(idx)
-                                            }
-                                        }
-                                        selectedIndices.clear()
-                                    },
-                                    variant = GlassButtonVariant.Standard,
-                                    shape = IdeShellShapes.Control,
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Delete,
-                                            contentDescription = null,
-                                            tint = colors.textMuted,
-                                            modifier = Modifier.size(IconSize.ExtraSmall),
-                                        )
-                                        Text("Remove selected", color = colors.textMuted, fontSize = FontSize.Micro)
-                                    }
-                                }
-                            }
-                        }
-
-                        // Properties Table Header
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                text = "#",
-                                color = colors.textDim,
-                                fontSize = FontSize.Micro,
-                                fontWeight = FontWeight.SemiBold,
-                                fontFamily = GlassFontFamily.ide(),
-                                modifier = Modifier.width(Spacing.Large),
-                            )
-                            Box(modifier = Modifier.width(IdeShellDimens.AcquireTableIconColWidth)) {
-                                Checkbox(
-                                    checked = selectedIndices.size == properties.size && properties.isNotEmpty(),
-                                    onCheckedChange = { checkAll ->
-                                        selectedIndices.clear()
-                                        if (checkAll) {
-                                            selectedIndices.addAll(properties.indices)
-                                        }
-                                    },
-                                    colors = CheckboxDefaults.colors(
-                                        checkedColor = colors.accentBlue,
-                                        uncheckedColor = colors.textDim,
-                                    ),
-                                    modifier = Modifier.size(IconSize.Small),
-                                )
-                            }
-                            Text(
-                                text = "Property name",
-                                color = colors.textDim,
-                                fontSize = FontSize.Micro,
-                                fontWeight = FontWeight.SemiBold,
-                                fontFamily = GlassFontFamily.ide(),
-                                modifier = Modifier.weight(1.5f),
-                            )
-                            Text(
-                                text = "Value",
-                                color = colors.textDim,
-                                fontSize = FontSize.Micro,
-                                fontWeight = FontWeight.SemiBold,
-                                fontFamily = GlassFontFamily.ide(),
-                                modifier = Modifier.weight(2f),
-                            )
-                            Text(
-                                text = "Source",
-                                color = colors.textDim,
-                                fontSize = FontSize.Micro,
-                                fontWeight = FontWeight.SemiBold,
-                                fontFamily = GlassFontFamily.ide(),
-                                modifier = Modifier.weight(0.8f),
-                            )
-                            Spacer(Modifier.width(Spacing.Large))
-                        }
-
-                        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
-
-                        // Properties Table Rows
-                        properties.forEachIndexed { index, prop ->
-                            val isChecked = index in selectedIndices
-                            PropertyRowItem(
-                                index = index + 1,
-                                isChecked = isChecked,
-                                onCheckedChange = { checked ->
-                                    if (checked) selectedIndices.add(index) else selectedIndices.remove(index)
-                                },
-                                entry = prop,
-                                colors = colors,
-                            )
-                        }
-                    }
-                }
-
-                // Validation Alert Card
-                GlassCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    surfaceColor = colors.cardBackground,
-                    borderColor = colors.border,
-                    contentPadding = Spacing.Medium,
-                ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Info,
-                                contentDescription = null,
-                                tint = colors.accentBlue,
-                                modifier = Modifier.size(IconSize.Medium),
-                            )
-                            Column(verticalArrangement = Arrangement.spacedBy(Spacing.Hairline)) {
-                                Text(
-                                    text = "Validation",
-                                    color = colors.textMain,
-                                    fontSize = FontSize.BodySmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontFamily = GlassFontFamily.ide(),
-                                )
-                                Text(
-                                    text = "Found 1 error. Fix the highlighted fields and run validation again.",
-                                    color = colors.textMuted,
-                                    fontSize = FontSize.Micro,
-                                    fontFamily = GlassFontFamily.ide(),
-                                )
-                            }
-                        }
+                        // Build type dropdown
+                        BuildTypeDropdown(
+                            selected = buildType,
+                            onSelect = {
+                                buildType = it
+                                onChange(settings.copy(buildType = it))
+                            },
+                            modifier = Modifier.weight(1f),
+                            colors = colors,
+                        )
 
-                        GlassButton(
-                            onClick = onValidate,
-                            variant = GlassButtonVariant.Standard,
-                            shape = IdeShellShapes.Control,
+                        // ROM version field
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
                             ) {
+                                Text(
+                                    text = "ROM version",
+                                    color = colors.textDim,
+                                    fontSize = FontSize.Micro,
+                                    fontFamily = ideFontFamily(),
+                                )
                                 Icon(
-                                    imageVector = Icons.Default.Check,
+                                    imageVector = Icons.Default.Info,
                                     contentDescription = null,
-                                    tint = colors.textMain,
+                                    tint = colors.accentBlue,
                                     modifier = Modifier.size(IconSize.ExtraSmall),
                                 )
-                                Text("Validate", color = colors.textMain, fontSize = FontSize.Micro)
                             }
+
+                            BasicTextField(
+                                value = romVersion,
+                                onValueChange = {
+                                    romVersion = it
+                                    onChange(settings.copy(romVersion = it))
+                                },
+                                textStyle = TextStyle(
+                                    color = colors.textMain,
+                                    fontSize = FontSize.Micro,
+                                    fontFamily = codeFontFamily(),
+                                ),
+                                cursorBrush = SolidColor(colors.accentBlue),
+                                singleLine = true,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(colors.cardBackgroundMuted, IdeShellShapes.Control)
+                                    .border(
+                                        width = IdeShellDimens.HairlineBorder,
+                                        color = colors.borderMuted,
+                                        shape = IdeShellShapes.Control,
+                                    )
+                                    .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Small),
+                            )
+                        }
+                    }
+
+                    Text(
+                        text = "Use semantic versioning (e.g. 1.0.0 or 1.0.0-dev).",
+                        color = colors.textDim,
+                        fontSize = FontSize.Micro,
+                        fontFamily = ideFontFamily(),
+                    )
+                }
+
+                // Section: Property overrides
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(IdeShellShapes.Card)
+                        .ideCardSurface(colors, shape = IdeShellShapes.Card)
+                        .padding(Spacing.Medium),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+                ) {
+                    // Title + Actions row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Top,
+                    ) {
+                        Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                            ) {
+                                Text(
+                                    text = "Property overrides",
+                                    color = colors.textMain,
+                                    fontSize = FontSize.BodySmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontFamily = ideFontFamily(),
+                                )
+                                Icon(
+                                    imageVector = Icons.Default.Info,
+                                    contentDescription = null,
+                                    tint = colors.accentBlue,
+                                    modifier = Modifier.size(IconSize.ExtraSmall),
+                                )
+                            }
+                            Text(
+                                text = "Add or override system properties for the build. " +
+                                    "Invalid entries are highlighted.",
+                                color = colors.textMuted,
+                                fontSize = FontSize.Micro,
+                                fontFamily = ideFontFamily(),
+                            )
+                        }
+
+                        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
+                            GlassButton(
+                                onClick = {
+                                    properties.add(PropertyEntry("ro.custom.prop", "value"))
+                                },
+                                variant = GlassButtonVariant.Standard,
+                                shape = IdeShellShapes.Control,
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Add,
+                                        contentDescription = null,
+                                        tint = colors.textMain,
+                                        modifier = Modifier.size(IconSize.ExtraSmall),
+                                    )
+                                    Text("+ Add property", color = colors.textMain, fontSize = FontSize.Micro)
+                                }
+                            }
+
+                            GlassButton(
+                                onClick = {
+                                    val toRemove = selectedIndices.sortedDescending()
+                                    toRemove.forEach { idx ->
+                                        if (idx in properties.indices) {
+                                            properties.removeAt(idx)
+                                        }
+                                    }
+                                    selectedIndices.clear()
+                                },
+                                variant = GlassButtonVariant.Standard,
+                                shape = IdeShellShapes.Control,
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = null,
+                                        tint = colors.textMuted,
+                                        modifier = Modifier.size(IconSize.ExtraSmall),
+                                    )
+                                    Text("Remove selected", color = colors.textMuted, fontSize = FontSize.Micro)
+                                }
+                            }
+                        }
+                    }
+
+                    // Properties Table Header
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = "#",
+                            color = colors.textDim,
+                            fontSize = FontSize.Micro,
+                            fontWeight = FontWeight.SemiBold,
+                            fontFamily = ideFontFamily(),
+                            modifier = Modifier.width(Spacing.Large),
+                        )
+                        Box(modifier = Modifier.width(IdeShellDimens.AcquireTableIconColWidth)) {
+                            Checkbox(
+                                checked = selectedIndices.size == properties.size && properties.isNotEmpty(),
+                                onCheckedChange = { checkAll ->
+                                    selectedIndices.clear()
+                                    if (checkAll) {
+                                        selectedIndices.addAll(properties.indices)
+                                    }
+                                },
+                                colors = CheckboxDefaults.colors(
+                                    checkedColor = colors.accentBlue,
+                                    uncheckedColor = colors.textDim,
+                                ),
+                                modifier = Modifier.size(IconSize.Small),
+                            )
+                        }
+                        Text(
+                            text = "Property name",
+                            color = colors.textDim,
+                            fontSize = FontSize.Micro,
+                            fontWeight = FontWeight.SemiBold,
+                            fontFamily = ideFontFamily(),
+                            modifier = Modifier.weight(1.5f),
+                        )
+                        Text(
+                            text = "Value",
+                            color = colors.textDim,
+                            fontSize = FontSize.Micro,
+                            fontWeight = FontWeight.SemiBold,
+                            fontFamily = ideFontFamily(),
+                            modifier = Modifier.weight(2f),
+                        )
+                        Text(
+                            text = "Source",
+                            color = colors.textDim,
+                            fontSize = FontSize.Micro,
+                            fontWeight = FontWeight.SemiBold,
+                            fontFamily = ideFontFamily(),
+                            modifier = Modifier.weight(0.8f),
+                        )
+                        Spacer(Modifier.width(Spacing.Large))
+                    }
+
+                    HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+
+                    // Properties Table Rows
+                    properties.forEachIndexed { index, prop ->
+                        val isChecked = index in selectedIndices
+                        PropertyRowItem(
+                            index = index + 1,
+                            isChecked = isChecked,
+                            onCheckedChange = { checked ->
+                                if (checked) selectedIndices.add(index) else selectedIndices.remove(index)
+                            },
+                            entry = prop,
+                            colors = colors,
+                        )
+                    }
+                }
+
+                // Validation Alert Card
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(IdeShellShapes.Card)
+                        .ideCardSurface(colors, shape = IdeShellShapes.Card)
+                        .padding(Spacing.Medium),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = null,
+                            tint = colors.accentBlue,
+                            modifier = Modifier.size(IconSize.Medium),
+                        )
+                        Column(verticalArrangement = Arrangement.spacedBy(Spacing.Hairline)) {
+                            Text(
+                                text = "Validation",
+                                color = colors.textMain,
+                                fontSize = FontSize.BodySmall,
+                                fontWeight = FontWeight.SemiBold,
+                                fontFamily = ideFontFamily(),
+                            )
+                            Text(
+                                text = "Found 1 error. Fix the highlighted fields and run validation again.",
+                                color = colors.textMuted,
+                                fontSize = FontSize.Micro,
+                                fontFamily = ideFontFamily(),
+                            )
+                        }
+                    }
+
+                    GlassButton(
+                        onClick = onValidate,
+                        variant = GlassButtonVariant.Standard,
+                        shape = IdeShellShapes.Control,
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = null,
+                                tint = colors.textMain,
+                                modifier = Modifier.size(IconSize.ExtraSmall),
+                            )
+                            Text("Validate", color = colors.textMain, fontSize = FontSize.Micro)
                         }
                     }
                 }
@@ -471,137 +457,137 @@ public fun BuildPropertiesPane(
                 verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
             ) {
                 // Card 1: Reserved fields
-                GlassCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    surfaceColor = colors.cardBackground,
-                    borderColor = colors.border,
-                    contentPadding = Spacing.Medium,
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(IdeShellShapes.Card)
+                        .ideCardSurface(colors, shape = IdeShellShapes.Card)
+                        .padding(Spacing.Medium),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.Small),
                 ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Lock,
-                                contentDescription = "Locked",
-                                tint = colors.textMuted,
-                                modifier = Modifier.size(IconSize.Small),
-                            )
-                            Text(
-                                text = "Reserved fields",
-                                color = colors.textMain,
-                                fontSize = FontSize.BodySmall,
-                                fontWeight = FontWeight.SemiBold,
-                                fontFamily = GlassFontFamily.ide(),
-                            )
-                        }
-
-                        Text(
-                            text = "Device identifiers and security settings are managed by the build system.",
-                            color = colors.textMuted,
-                            fontSize = FontSize.Micro,
-                            fontFamily = GlassFontFamily.ide(),
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Lock,
+                            contentDescription = "Locked",
+                            tint = colors.textMuted,
+                            modifier = Modifier.size(IconSize.Small),
                         )
-
-                        ReservedFieldItem("Target device", target.codename, colors)
-                        ReservedFieldItem("AVB signing", "Use default keys", colors)
-                        ReservedFieldItem("Verified Boot", "Enforcing (default)", colors)
+                        Text(
+                            text = "Reserved fields",
+                            color = colors.textMain,
+                            fontSize = FontSize.BodySmall,
+                            fontWeight = FontWeight.SemiBold,
+                            fontFamily = ideFontFamily(),
+                        )
                     }
+
+                    Text(
+                        text = "Device identifiers and security settings are managed by the build system.",
+                        color = colors.textMuted,
+                        fontSize = FontSize.Micro,
+                        fontFamily = ideFontFamily(),
+                    )
+
+                    ReservedFieldItem("Target device", target.codename, colors)
+                    ReservedFieldItem("AVB signing", "Use default keys", colors)
+                    ReservedFieldItem("Verified Boot", "Enforcing (default)", colors)
                 }
 
                 // Card 2: Help
-                GlassCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    surfaceColor = colors.cardBackground,
-                    borderColor = colors.border,
-                    contentPadding = Spacing.Medium,
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(IdeShellShapes.Card)
+                        .ideCardSurface(colors, shape = IdeShellShapes.Card)
+                        .padding(Spacing.Medium),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.Small),
                 ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.HelpOutline,
-                                contentDescription = "Help",
-                                tint = colors.accentBlue,
-                                modifier = Modifier.size(IconSize.Small),
-                            )
-                            Text(
-                                text = "Help",
-                                color = colors.textMain,
-                                fontSize = FontSize.BodySmall,
-                                fontWeight = FontWeight.SemiBold,
-                                fontFamily = GlassFontFamily.ide(),
-                            )
-                        }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.HelpOutline,
+                            contentDescription = "Help",
+                            tint = colors.accentBlue,
+                            modifier = Modifier.size(IconSize.Small),
+                        )
+                        Text(
+                            text = "Help",
+                            color = colors.textMain,
+                            fontSize = FontSize.BodySmall,
+                            fontWeight = FontWeight.SemiBold,
+                            fontFamily = ideFontFamily(),
+                        )
+                    }
 
-                        // Help Tabs
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
-                        ) {
-                            helpTabs.forEachIndexed { index, tabName ->
-                                val isSelected = index == activeHelpTab
-                                Column(
-                                    modifier = Modifier
-                                        .clickable { activeHelpTab = index }
-                                        .padding(vertical = Spacing.Hairline),
-                                ) {
-                                    Text(
-                                        text = tabName,
-                                        color = if (isSelected) colors.accentBlue else colors.textMuted,
-                                        fontSize = FontSize.Micro,
-                                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                        fontFamily = GlassFontFamily.ide(),
+                    // Help Tabs
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
+                    ) {
+                        helpTabs.forEachIndexed { index, tabName ->
+                            val isSelected = index == activeHelpTab
+                            Column(
+                                modifier = Modifier
+                                    .clickable { activeHelpTab = index }
+                                    .padding(vertical = Spacing.Hairline),
+                            ) {
+                                Text(
+                                    text = tabName,
+                                    color = if (isSelected) colors.accentBlue else colors.textMuted,
+                                    fontSize = FontSize.Micro,
+                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                    fontFamily = ideFontFamily(),
+                                )
+                                if (isSelected) {
+                                    Box(
+                                        modifier = Modifier
+                                            .width(Spacing.Large)
+                                            .height(IdeShellDimens.HairlineBorder)
+                                            .background(colors.accentBlue),
                                     )
-                                    if (isSelected) {
-                                        Box(
-                                            modifier = Modifier
-                                                .width(Spacing.Large)
-                                                .height(IdeShellDimens.HairlineBorder)
-                                                .background(colors.accentBlue),
-                                        )
-                                    }
                                 }
                             }
                         }
+                    }
 
-                        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+                    HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
 
-                        val helpText = "Build properties allow you to override system properties that will " +
-                            "be included in the generated system image.\n\n" +
-                            "Use this page to set a custom ROM name, version and other properties. " +
-                            "Reserved fields are locked to prevent configuration errors."
+                    val helpText = "Build properties allow you to override system properties that will " +
+                        "be included in the generated system image.\n\n" +
+                        "Use this page to set a custom ROM name, version and other properties. " +
+                        "Reserved fields are locked to prevent configuration errors."
+                    Text(
+                        text = helpText,
+                        color = colors.textMuted,
+                        fontSize = FontSize.Micro,
+                        fontFamily = ideFontFamily(),
+                    )
+
+                    Row(
+                        modifier = Modifier
+                            .clip(IdeShellShapes.Control)
+                            .clickable { }
+                            .padding(vertical = Spacing.ExtraSmall),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                    ) {
                         Text(
-                            text = helpText,
-                            color = colors.textMuted,
+                            text = "Open build properties documentation",
+                            color = colors.accentBlue,
                             fontSize = FontSize.Micro,
-                            fontFamily = GlassFontFamily.ide(),
+                            fontFamily = ideFontFamily(),
                         )
-
-                        Row(
-                            modifier = Modifier
-                                .clip(IdeShellShapes.Control)
-                                .clickable { }
-                                .padding(vertical = Spacing.ExtraSmall),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-                        ) {
-                            Text(
-                                text = "Open build properties documentation",
-                                color = colors.accentBlue,
-                                fontSize = FontSize.Micro,
-                                fontFamily = GlassFontFamily.ide(),
-                            )
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.OpenInNew,
-                                contentDescription = null,
-                                tint = colors.accentBlue,
-                                modifier = Modifier.size(IconSize.ExtraSmall),
-                            )
-                        }
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                            contentDescription = null,
+                            tint = colors.accentBlue,
+                            modifier = Modifier.size(IconSize.ExtraSmall),
+                        )
                     }
                 }
             }
@@ -631,7 +617,7 @@ private fun BuildTypeDropdown(
                 text = "Build type",
                 color = colors.textDim,
                 fontSize = FontSize.Micro,
-                fontFamily = GlassFontFamily.ide(),
+                fontFamily = ideFontFamily(),
             )
             Icon(
                 imageVector = Icons.Default.Info,
@@ -657,7 +643,7 @@ private fun BuildTypeDropdown(
                     text = selected,
                     color = colors.textMain,
                     fontSize = FontSize.Micro,
-                    fontFamily = GlassFontFamily.code(),
+                    fontFamily = codeFontFamily(),
                 )
                 Icon(
                     imageVector = Icons.Default.KeyboardArrowDown,
@@ -678,7 +664,7 @@ private fun BuildTypeDropdown(
                                 text = option,
                                 color = if (option == selected) colors.accentBlue else colors.textMain,
                                 fontSize = FontSize.Micro,
-                                fontFamily = GlassFontFamily.code(),
+                                fontFamily = codeFontFamily(),
                             )
                         },
                         onClick = {
@@ -713,7 +699,7 @@ private fun PropertyRowItem(
                 text = index.toString(),
                 color = colors.textDim,
                 fontSize = FontSize.Micro,
-                fontFamily = GlassFontFamily.code(),
+                fontFamily = codeFontFamily(),
                 modifier = Modifier.width(Spacing.Large),
             )
 
@@ -746,7 +732,7 @@ private fun PropertyRowItem(
                     text = entry.key,
                     color = colors.textMain,
                     fontSize = FontSize.Micro,
-                    fontFamily = GlassFontFamily.code(),
+                    fontFamily = codeFontFamily(),
                 )
             }
 
@@ -772,7 +758,7 @@ private fun PropertyRowItem(
                         text = entry.value,
                         color = colors.textMain,
                         fontSize = FontSize.Micro,
-                        fontFamily = GlassFontFamily.code(),
+                        fontFamily = codeFontFamily(),
                         modifier = Modifier.weight(1f),
                     )
                     if (entry.hasError) {
@@ -791,7 +777,7 @@ private fun PropertyRowItem(
                 text = entry.source,
                 color = colors.textMuted,
                 fontSize = FontSize.Micro,
-                fontFamily = GlassFontFamily.ide(),
+                fontFamily = ideFontFamily(),
                 modifier = Modifier.weight(0.8f),
             )
 
@@ -814,7 +800,7 @@ private fun PropertyRowItem(
                 text = entry.errorMessage,
                 color = colors.errorRed,
                 fontSize = FontSize.Micro,
-                fontFamily = GlassFontFamily.ide(),
+                fontFamily = ideFontFamily(),
                 modifier = Modifier.padding(
                     start = Spacing.Large + IdeShellDimens.AcquireTableIconColWidth,
                     top = Spacing.Hairline,
@@ -831,7 +817,7 @@ private fun ReservedFieldItem(label: String, value: String, colors: IdeShellColo
             text = label,
             color = colors.textDim,
             fontSize = FontSize.Micro,
-            fontFamily = GlassFontFamily.ide(),
+            fontFamily = ideFontFamily(),
         )
 
         Row(
@@ -847,7 +833,7 @@ private fun ReservedFieldItem(label: String, value: String, colors: IdeShellColo
                 text = value,
                 color = colors.textMuted,
                 fontSize = FontSize.Micro,
-                fontFamily = GlassFontFamily.code(),
+                fontFamily = codeFontFamily(),
             )
             Icon(
                 imageVector = Icons.Default.Lock,

@@ -32,13 +32,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
-import org.ide.lti.core.designsystem.component.display.GlassCard
+import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
@@ -51,12 +52,13 @@ import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.AcquisitionSettings
 
+@Suppress("UnusedParameter")
 @Composable
 public fun IntegrityPane(
     settings: AcquisitionSettings,
     target: TargetDevice,
-    onValidate: () -> Unit,
-    onSave: () -> Unit,
+    onValidate: () -> Unit = {},
+    onSave: () -> Unit = {},
     modifier: Modifier = Modifier,
     colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
@@ -66,16 +68,6 @@ public fun IntegrityPane(
             .testTag("IntegrityPane"),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
-        AcquireHeader(
-            title = "Integrity",
-            subtitle = "Verify downloaded source against expected hash",
-            targetSpec = "${target.codename} / Development",
-            targetRevision = "Target revision ${target.revision}",
-            onValidate = onValidate,
-            onSave = onSave,
-            colors = colors,
-        )
-
         VerifiedBanner(colors = colors)
 
         SourceFileCard(settings = settings, target = target, colors = colors)
@@ -142,173 +134,173 @@ private fun SourceFileCard(settings: AcquisitionSettings, target: TargetDevice, 
         fullHash
     }
 
-    GlassCard(
-        modifier = Modifier.fillMaxWidth(),
-        surfaceColor = colors.cardBackground,
-        borderColor = colors.border,
-        contentPadding = Spacing.Medium,
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(IdeShellShapes.Card)
+            .ideCardSurface(colors = colors, shape = IdeShellShapes.Card)
+            .padding(Spacing.Medium),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
+        Text(
+            text = "Source file",
+            color = colors.textMain,
+            fontSize = FontSize.TitleSmall,
+            fontWeight = FontWeight.SemiBold,
+            fontFamily = GlassFontFamily.ide(),
+        )
+
+        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+
+        PropertyRow(label = "File name", colors = colors) {
             Text(
-                text = "Source file",
+                text = fileName,
                 color = colors.textMain,
-                fontSize = FontSize.TitleSmall,
-                fontWeight = FontWeight.SemiBold,
-                fontFamily = GlassFontFamily.ide(),
+                fontSize = FontSize.BodySmall,
+                fontFamily = GlassFontFamily.code(),
             )
+        }
 
-            HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
 
-            PropertyRow(label = "File name", colors = colors) {
+        PropertyRow(label = "Source URL", colors = colors) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                val url = settings.firmware.acquisitionUrl
+                    ?: "https://example.com/firmware/$fileName"
                 Text(
-                    text = fileName,
-                    color = colors.textMain,
+                    text = url,
+                    color = colors.accentBlue,
                     fontSize = FontSize.BodySmall,
-                    fontFamily = GlassFontFamily.code(),
+                    fontFamily = GlassFontFamily.ide(),
+                )
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                    contentDescription = "Open link",
+                    tint = colors.accentBlue,
+                    modifier = Modifier.size(IconSize.ExtraSmall),
                 )
             }
+        }
 
-            HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
 
-            PropertyRow(label = "Source URL", colors = colors) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    val url = settings.firmware.acquisitionUrl
-                        ?: "https://example.com/firmware/$fileName"
-                    Text(
-                        text = url,
-                        color = colors.accentBlue,
-                        fontSize = FontSize.BodySmall,
-                        fontFamily = GlassFontFamily.ide(),
-                    )
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.OpenInNew,
-                        contentDescription = "Open link",
-                        tint = colors.accentBlue,
-                        modifier = Modifier.size(IconSize.ExtraSmall),
-                    )
-                }
-            }
+        PropertyRow(label = "Source provenance", value = "Vendor official release", colors = colors)
 
-            HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
 
-            PropertyRow(label = "Source provenance", value = "Vendor official release", colors = colors)
+        PropertyRow(label = "File size", value = "2.48 GB (2,662,609,920 bytes)", colors = colors)
 
-            HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
 
-            PropertyRow(label = "File size", value = "2.48 GB (2,662,609,920 bytes)", colors = colors)
+        PropertyRow(label = "Downloaded", value = "2024-05-14 10:21:37", colors = colors)
 
-            HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
 
-            PropertyRow(label = "Downloaded", value = "2024-05-14 10:21:37", colors = colors)
+        PropertyRow(label = "Expected SHA-256", colors = colors) {
+            HashCopyRow(
+                hash = truncatedHash,
+                onCopy = { clipboardManager.setText(AnnotatedString(fullHash)) },
+                colors = colors,
+            )
+        }
 
-            HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
 
-            PropertyRow(label = "Expected SHA-256", colors = colors) {
-                HashCopyRow(
-                    hash = truncatedHash,
-                    onCopy = { clipboardManager.setText(AnnotatedString(fullHash)) },
-                    colors = colors,
-                )
-            }
-
-            HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
-
-            PropertyRow(label = "Measured SHA-256", colors = colors) {
-                HashCopyRow(
-                    hash = truncatedHash,
-                    onCopy = { clipboardManager.setText(AnnotatedString(fullHash)) },
-                    colors = colors,
-                )
-            }
+        PropertyRow(label = "Measured SHA-256", colors = colors) {
+            HashCopyRow(
+                hash = truncatedHash,
+                onCopy = { clipboardManager.setText(AnnotatedString(fullHash)) },
+                colors = colors,
+            )
         }
     }
 }
 
 @Composable
 private fun VerificationCard(colors: IdeShellColorScheme) {
-    GlassCard(
-        modifier = Modifier.fillMaxWidth(),
-        surfaceColor = colors.cardBackground,
-        borderColor = colors.border,
-        contentPadding = Spacing.Medium,
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(IdeShellShapes.Card)
+            .ideCardSurface(colors = colors, shape = IdeShellShapes.Card)
+            .padding(Spacing.Medium),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "Verification",
+                color = colors.textMain,
+                fontSize = FontSize.TitleSmall,
+                fontWeight = FontWeight.SemiBold,
+                fontFamily = GlassFontFamily.ide(),
+            )
+
+            GlassButton(
+                onClick = {},
+                variant = GlassButtonVariant.Standard,
+                shape = IdeShellShapes.Control,
             ) {
-                Text(
-                    text = "Verification",
-                    color = colors.textMain,
-                    fontSize = FontSize.TitleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    fontFamily = GlassFontFamily.ide(),
-                )
-
-                GlassButton(
-                    onClick = {},
-                    variant = GlassButtonVariant.Standard,
-                    shape = IdeShellShapes.Control,
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = "Verify",
-                            tint = colors.textMain,
-                            modifier = Modifier.size(IconSize.ExtraSmall),
-                        )
-                        Text("Verify", color = colors.textMain, fontSize = FontSize.BodySmall)
-                    }
-                }
-            }
-
-            HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
-
-            PropertyRow(label = "Status", colors = colors) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
                 ) {
                     Icon(
-                        imageVector = Icons.Default.CheckCircle,
-                        contentDescription = "Verified",
-                        tint = colors.accentGreen,
-                        modifier = Modifier.size(IconSize.Small),
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "Verify",
+                        tint = colors.textMain,
+                        modifier = Modifier.size(IconSize.ExtraSmall),
                     )
-                    Text(
-                        text = "Verified",
-                        color = colors.accentGreen,
-                        fontSize = FontSize.BodySmall,
-                        fontWeight = FontWeight.Medium,
-                        fontFamily = GlassFontFamily.ide(),
-                    )
+                    Text("Verify", color = colors.textMain, fontSize = FontSize.BodySmall)
                 }
             }
-
-            HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
-
-            PropertyRow(label = "Method", value = "SHA-256 (local computation)", colors = colors)
-
-            HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
-
-            PropertyRow(label = "Checked at", value = "2024-05-14 10:21:45", colors = colors)
-
-            HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
-
-            PropertyRow(
-                label = "Result",
-                value = "The file integrity is confirmed. The measured hash matches the expected hash.",
-                colors = colors,
-            )
         }
+
+        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+
+        PropertyRow(label = "Status", colors = colors) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = "Verified",
+                    tint = colors.accentGreen,
+                    modifier = Modifier.size(IconSize.Small),
+                )
+                Text(
+                    text = "Verified",
+                    color = colors.accentGreen,
+                    fontSize = FontSize.BodySmall,
+                    fontWeight = FontWeight.Medium,
+                    fontFamily = GlassFontFamily.ide(),
+                )
+            }
+        }
+
+        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+
+        PropertyRow(label = "Method", value = "SHA-256 (local computation)", colors = colors)
+
+        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+
+        PropertyRow(label = "Checked at", value = "2024-05-14 10:21:45", colors = colors)
+
+        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+
+        PropertyRow(
+            label = "Result",
+            value = "The file integrity is confirmed. The measured hash matches the expected hash.",
+            colors = colors,
+        )
     }
 }
 
@@ -317,8 +309,9 @@ private fun IntegrityInfoBanner(colors: IdeShellColorScheme) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(colors.cardBackgroundMuted, IdeShellShapes.Card)
-            .border(IdeShellDimens.HairlineBorder, colors.borderMuted, IdeShellShapes.Card)
+            .clip(IdeShellShapes.Card)
+            .background(colors.infoBannerFill, IdeShellShapes.Card)
+            .border(IdeShellDimens.HairlineBorder, colors.infoBannerBorder, IdeShellShapes.Card)
             .padding(Spacing.SmallMedium),
     ) {
         Row(
@@ -364,7 +357,7 @@ internal fun PropertyRow(label: String, colors: IdeShellColorScheme, content: @C
             color = colors.textDim,
             fontSize = FontSize.BodySmall,
             fontFamily = GlassFontFamily.ide(),
-            modifier = Modifier.width(IdeShellDimens.AcquireTableVerificationColWidth),
+            modifier = Modifier.width(IdeShellDimens.DetailsGridLabelColWidth),
         )
         Box(modifier = Modifier.weight(1f)) {
             content()

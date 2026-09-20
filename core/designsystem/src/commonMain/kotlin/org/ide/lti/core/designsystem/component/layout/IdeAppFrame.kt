@@ -13,29 +13,37 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import com.kashif_e.backdrop.backdrops.LayerBackdrop
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
+import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.LocalGlassBackdrop
 import org.ide.lti.core.designsystem.theme.config.AppTheme
 
@@ -43,18 +51,18 @@ import org.ide.lti.core.designsystem.theme.config.AppTheme
  * Stateless root layout frame for the professional LtiRom IDE shell.
  *
  * Implements the normative geometry:
- * - 40 dp persistent full-width top app bar
- * - 56 dp persistent pipeline-stage rail
- * - 230 dp context-sensitive navigator panel (or collapsible drawer below compact breakpoint)
+ * - 56 dp persistent full-width top app bar
+ * - 150 dp persistent pipeline-stage rail
+ * - 215 dp context-sensitive navigator panel (or collapsible drawer below compact breakpoint)
  * - 32 dp breadcrumb bar
- * - Central content region owning its bounded vertical scroll
- * - 24 dp persistent full-width status bar
+ * - Central content region owning its bounded vertical scroll inside an inset glass panel
+ * - 32 dp persistent full-width status bar
  */
 @Composable
 fun IdeAppFrame(
     topBar: @Composable () -> Unit,
     pipelineRail: @Composable () -> Unit,
-    navigator: @Composable () -> Unit,
+    navigator: (@Composable () -> Unit)? = null,
     breadcrumb: (@Composable () -> Unit)? = null,
     content: @Composable () -> Unit,
     statusBar: @Composable () -> Unit,
@@ -66,22 +74,28 @@ fun IdeAppFrame(
 ) {
     val isBlueGlass = GlassTheme.appTheme == AppTheme.Blue && GlassTheme.effectsEnabled
     val ambientBackdrop = (GlassTheme.backdrop as? LayerBackdrop)
-    val resolvedBackdrop = if (isBlueGlass) {
-        rememberLayerBackdrop()
-    } else {
-        ambientBackdrop ?: rememberLayerBackdrop()
-    }
+    val resolvedBackdrop = ambientBackdrop ?: rememberLayerBackdrop()
+
+    val density = LocalDensity.current
+    var isCompact by remember { mutableStateOf(false) }
 
     CompositionLocalProvider(LocalGlassBackdrop provides resolvedBackdrop) {
-        BoxWithConstraints(
+        Box(
             modifier = modifier
                 .fillMaxSize()
+                .onSizeChanged { size ->
+                    val widthDp = with(density) { size.width.toDp() }
+                    isCompact = widthDp < IdeShellDimens.CompactBreakpoint
+                }
                 .background(colors.appBackground),
         ) {
-            if (isBlueGlass) {
-                StudioGlassBackdrop(backdrop = resolvedBackdrop)
+            if (ambientBackdrop == null) {
+                if (isBlueGlass) {
+                    StudioGlassBackdrop(backdrop = resolvedBackdrop)
+                } else {
+                    GlassBackdrop(backdrop = resolvedBackdrop)
+                }
             }
-            val isCompact = maxWidth < IdeShellDimens.CompactBreakpoint
 
             Column(modifier = Modifier.fillMaxSize()) {
                 // Full-width Top App Bar
@@ -116,8 +130,8 @@ fun IdeAppFrame(
                         color = colors.border,
                     )
 
-                    // Workspace Navigator (Inline if not compact)
-                    if (!isCompact) {
+                    // Workspace Navigator (Inline if not compact and present)
+                    if (navigator != null && !isCompact) {
                         Box(
                             modifier = Modifier
                                 .width(IdeShellDimens.WorkspaceNavigatorWidth)
@@ -131,26 +145,32 @@ fun IdeAppFrame(
                         )
                     }
 
-                    // Central Content Column
+                    // Inset Central Content Column
                     Column(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()
-                            .background(colors.contentBackground),
+                            .padding(IdeShellDimens.ContentInset)
+                            .clip(IdeShellShapes.Panel)
+                            .background(colors.contentPanel)
+                            .border(
+                                width = IdeShellDimens.HairlineBorder,
+                                color = colors.contentPanelBorder,
+                                shape = IdeShellShapes.Panel,
+                            ),
                     ) {
                         // Breadcrumb Bar
                         if (breadcrumb != null) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(IdeShellDimens.BreadcrumbHeight)
-                                    .background(colors.contentBackground),
+                                    .height(IdeShellDimens.BreadcrumbHeight),
                             ) {
                                 breadcrumb()
                             }
                             HorizontalDivider(
                                 thickness = IdeShellDimens.HairlineBorder,
-                                color = colors.border,
+                                color = colors.borderMuted,
                             )
                         }
 
@@ -180,12 +200,12 @@ fun IdeAppFrame(
             }
 
             // Overlay Drawer for compact viewports
-            if (isCompact) {
+            if (isCompact && (navigator != null || drawerContent != null)) {
                 IdeCompactDrawer(
                     isOpen = isDrawerOpen,
                     onDismiss = onDismissDrawer,
                     colors = colors,
-                    content = { drawerContent?.invoke() ?: navigator() },
+                    content = { drawerContent?.invoke() ?: navigator?.invoke() },
                 )
             }
         }

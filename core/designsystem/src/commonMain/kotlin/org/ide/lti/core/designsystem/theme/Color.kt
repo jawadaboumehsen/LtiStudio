@@ -544,6 +544,16 @@ data class IdeShellColorScheme(
     val controlHover: Color,
     val controlSelected: Color,
     val isDark: Boolean,
+    val contentPanel: Color = contentBackground,
+    val contentPanelBorder: Color = border,
+    val railSelected: Color = controlSelected,
+    val railSelectedBorder: Color = border,
+    val tabSelected: Color = controlSelected,
+    val tabSelectedBorder: Color = border,
+    val infoBannerFill: Color = accentBlue.copy(alpha = 0.1f),
+    val infoBannerBorder: Color = accentBlue.copy(alpha = 0.35f),
+    val tableHeader: Color = cardBackground,
+    val rowSelected: Color = controlSelected.copy(alpha = 0.25f),
 )
 
 /**
@@ -576,6 +586,16 @@ object IdeShellTokens {
         controlHover = Color(0xFF21262D),
         controlSelected = Color(0xFF21262D),
         isDark = true,
+        contentPanel = Color(0xFF0D1117),
+        contentPanelBorder = Color(0xFF30363D),
+        railSelected = Color(0xFF21262D),
+        railSelectedBorder = Color(0xFF30363D),
+        tabSelected = Color(0xFF21262D),
+        tabSelectedBorder = Color(0xFF30363D),
+        infoBannerFill = Color(0x263574F0),
+        infoBannerBorder = Color(0x4D3574F0),
+        tableHeader = Color(0xFF161B22),
+        rowSelected = Color(0x263574F0),
     )
 
     val Light = IdeShellColorScheme(
@@ -604,6 +624,16 @@ object IdeShellTokens {
         controlHover = Color(0xFFEBF0F9),
         controlSelected = Color(0xFFD6E8FF),
         isDark = false,
+        contentPanel = Color(0xFFF8FAFD),
+        contentPanelBorder = Color(0xFFD0D7DE),
+        railSelected = Color(0xFFD6E8FF),
+        railSelectedBorder = Color(0xFFB8D0EB),
+        tabSelected = Color(0xFFD6E8FF),
+        tabSelectedBorder = Color(0xFFB8D0EB),
+        infoBannerFill = Color(0x1A1570EF),
+        infoBannerBorder = Color(0x401570EF),
+        tableHeader = Color(0xFFF0F4FA),
+        rowSelected = Color(0x261570EF),
     )
 
     val Blue = IdeShellColorScheme(
@@ -632,5 +662,15 @@ object IdeShellTokens {
         controlHover = Color(0xFF162744).copy(alpha = AlphaTokens.Elevated),
         controlSelected = Color(0xD5195EB7),
         isDark = true,
+        contentPanel = Color(0xEB081B33),
+        contentPanelBorder = Color(0x4038BDF8),
+        railSelected = Color(0xFF195EB7),
+        railSelectedBorder = Color(0x4D38BDF8),
+        tabSelected = Color(0xFF195EB7),
+        tabSelectedBorder = Color(0x4D38BDF8),
+        infoBannerFill = Color(0x1A38BDF8),
+        infoBannerBorder = Color(0x5938BDF8),
+        tableHeader = Color(0xD90B2140),
+        rowSelected = Color(0x40195EB7),
     )
 }
