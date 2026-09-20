@@ -32,8 +32,10 @@ class DebloatStageEditorTest {
         val vm = DebloatViewModel(workspaceId = "test-ws")
         assertEquals("test-ws", vm.workspaceId)
         assertNotNull(vm.settings.value)
-        assertTrue(vm.settings.value.enabled)
-        assertEquals("recommended", vm.settings.value.presetId)
+        // Debloat is off and no preset is chosen until the user configures it - a workspace's
+        // debloat settings must never default to fabricated remove/keep selectors (see e42c3e3c).
+        assertTrue(!vm.settings.value.enabled)
+        assertEquals(null, vm.settings.value.presetId)
         vm.updateSettings(vm.settings.value.copy(presetId = "aggressive"))
         assertEquals("aggressive", vm.settings.value.presetId)
     }

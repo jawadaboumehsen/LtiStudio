@@ -32,10 +32,11 @@ class PatchStageEditorTest {
         val vm = PatchViewModel(workspaceId = "test-ws")
         assertEquals("test-ws", vm.workspaceId)
         assertNotNull(vm.settings.value)
-        assertTrue(vm.settings.value.enabledPackages.isNotEmpty())
-        assertEquals(2, vm.settings.value.enabledPackages.size)
-
-        vm.updateSettings(vm.settings.value.copy(enabledPackages = emptyList()))
+        // No modules are enabled until the user installs/enables one - a workspace's patch
+        // settings must never default to fabricated lockfile entries (see e42c3e3c).
         assertTrue(vm.settings.value.enabledPackages.isEmpty())
+
+        vm.updateSettings(vm.settings.value.copy(enabledPackages = listOf("org.example:mod")))
+        assertEquals(1, vm.settings.value.enabledPackages.size)
     }
 }

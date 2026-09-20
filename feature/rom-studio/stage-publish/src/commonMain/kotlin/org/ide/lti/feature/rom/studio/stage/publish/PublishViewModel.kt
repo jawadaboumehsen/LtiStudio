@@ -16,8 +16,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import org.ide.lti.core.model.target.DefaultTargetCatalog
 import org.ide.lti.core.model.target.TargetDevice
-import org.ide.lti.core.model.workspace.CollisionPolicy
-import org.ide.lti.core.model.workspace.PublishProvider
 import org.ide.lti.core.model.workspace.PublishSettings
 
 public class PublishViewModel(
@@ -27,17 +25,7 @@ public class PublishViewModel(
 
     public val targetDevice: TargetDevice = DefaultTargetCatalog.PQ84P01_DEFAULT
 
-    private val _settings = MutableStateFlow(
-        initialSettings ?: PublishSettings(
-            provider = PublishProvider.GITHUB_RELEASE,
-            repository = "openMF/lti-device-releases",
-            sourceTag = "v1.0.0-candidate",
-            partSizeBytes = 1_900_000_000L,
-            retentionPerDevice = 3,
-            credentialRef = "credentials/github-release-token",
-            collisionPolicy = CollisionPolicy.FAIL,
-        ),
-    )
+    private val _settings = MutableStateFlow(initialSettings ?: PublishSettings())
     public val settings: StateFlow<PublishSettings> = _settings.asStateFlow()
 
     public fun updateSettings(updated: PublishSettings) {

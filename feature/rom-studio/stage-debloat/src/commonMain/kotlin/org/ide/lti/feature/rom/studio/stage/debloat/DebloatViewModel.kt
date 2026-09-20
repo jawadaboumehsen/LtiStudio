@@ -25,15 +25,7 @@ public class DebloatViewModel(
 
     public val targetDevice: TargetDevice = DefaultTargetCatalog.PQ84P01_DEFAULT
 
-    private val _settings = MutableStateFlow(
-        initialSettings ?: DebloatSettings(
-            enabled = true,
-            presetId = "recommended",
-            presetRevision = 1,
-            removeSelectors = listOf("com.google.android.apps.tachyon", "com.android.chrome"),
-            keepSelectors = listOf("com.android.settings", "com.google.android.dialer"),
-        ),
-    )
+    private val _settings = MutableStateFlow(initialSettings ?: DebloatSettings())
     public val settings: StateFlow<DebloatSettings> = _settings.asStateFlow()
 
     public fun updateSettings(updated: DebloatSettings) {

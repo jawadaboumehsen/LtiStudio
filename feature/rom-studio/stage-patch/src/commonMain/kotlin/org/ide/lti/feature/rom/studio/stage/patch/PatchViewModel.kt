@@ -17,8 +17,6 @@ import kotlinx.coroutines.flow.update
 import org.ide.lti.core.model.target.DefaultTargetCatalog
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.CustomizationSettings
-import org.ide.lti.core.model.workspace.PluginLockfile
-import org.ide.lti.core.model.workspace.PluginLockfileEntry
 
 public class PatchViewModel(
     public val workspaceId: String,
@@ -27,34 +25,7 @@ public class PatchViewModel(
 
     public val targetDevice: TargetDevice = DefaultTargetCatalog.PQ84P01_DEFAULT
 
-    private val _settings = MutableStateFlow(
-        initialSettings ?: CustomizationSettings(
-            lockfile = PluginLockfile(
-                schemaVersion = 1,
-                entries = listOf(
-                    PluginLockfileEntry(
-                        publisher = "org.ide.lti",
-                        id = "mod-microg-core",
-                        version = "0.3.1",
-                        contentDigest = "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-                    ),
-                    PluginLockfileEntry(
-                        publisher = "org.ide.lti",
-                        id = "mod-custom-prop-injector",
-                        version = "1.0.0",
-                        contentDigest = "sha256:ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb",
-                    ),
-                ),
-            ),
-            enabledPackages = listOf("org.ide.lti:mod-microg-core", "org.ide.lti:mod-custom-prop-injector"),
-            settings = mapOf(
-                "org.ide.lti:mod-custom-prop-injector" to mapOf(
-                    "ro.config.low_ram" to "false",
-                    "persist.sys.theme" to "dark",
-                ),
-            ),
-        ),
-    )
+    private val _settings = MutableStateFlow(initialSettings ?: CustomizationSettings())
     public val settings: StateFlow<CustomizationSettings> = _settings.asStateFlow()
 
     public fun updateSettings(updated: CustomizationSettings) {

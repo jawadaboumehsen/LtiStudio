@@ -32,8 +32,10 @@ class PublishStageEditorTest {
         val vm = PublishViewModel(workspaceId = "test-ws")
         assertEquals("test-ws", vm.workspaceId)
         assertNotNull(vm.settings.value)
-        assertEquals(PublishProvider.GITHUB_RELEASE, vm.settings.value.provider)
-        assertEquals("credentials/github-release-token", vm.settings.value.credentialRef)
+        // No provider is configured until the user chooses one - a workspace's publish
+        // settings must never default to a fabricated GitHub repo/credential (see e42c3e3c).
+        assertEquals(PublishProvider.NONE, vm.settings.value.provider)
+        assertEquals(null, vm.settings.value.credentialRef)
 
         vm.updateSettings(vm.settings.value.copy(provider = PublishProvider.LOCAL_EXPORT))
         assertEquals(PublishProvider.LOCAL_EXPORT, vm.settings.value.provider)
