@@ -47,6 +47,16 @@ import kotlin.math.roundToInt
 private val DefaultOnDrawBackdrop: DrawScope.(DrawScope.() -> Unit) -> Unit = { it() }
 
 /**
+ * Diagnostic counter for how often [DrawBackdropNode] recomputes its effect graph
+ * (`effectScope.apply(effects)` + reassigning `renderEffect`) - the expensive part of a glass
+ * element's re-render, distinct from the cheap per-frame draw. Used to verify B2 (rim/interaction
+ * stage split, backdrop-refactor-plan-20260920.md): hover/press must not retrigger this.
+ */
+internal object DrawBackdropDiagnostics {
+    var updateEffectsCallCount: Int = 0
+}
+
+/**
  * Apply a plain backdrop effect without shadow/highlight decorations.
  */
 actual fun Modifier.drawPlainBackdrop(
@@ -424,6 +434,7 @@ private class DrawBackdropNode(
     }
 
     private fun updateEffects() {
+        DrawBackdropDiagnostics.updateEffectsCallCount++
         effectScope.apply(effects)
         // On iOS/Skia, convert the ImageFilter to a Compose RenderEffect
         graphicsLayer?.renderEffect = effectScope.imageFilter?.asComposeRenderEffect()
