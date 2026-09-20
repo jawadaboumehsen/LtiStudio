@@ -71,17 +71,13 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import org.ide.lti.core.designsystem.component.display.LtiRomStudioMark
-import org.ide.lti.core.designsystem.theme.AlphaTokens
-import org.ide.lti.core.designsystem.theme.BrandColors
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
-import org.ide.lti.core.designsystem.theme.PluginThemeColors
-import org.ide.lti.core.designsystem.theme.SettingsThemeColors
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StudioBackdropColors
 import org.ide.lti.core.designsystem.theme.codeFontFamily
@@ -132,8 +128,8 @@ fun SettingsSidebar(
             .fillMaxHeight()
             .then(backgroundModifier)
             .border(
-                width = IdeShellDimens.HairlineBorder,
-                color = if (isBlueGlass) PluginThemeColors.CardBorder else colors.border,
+                width = GlassDimens.HairlineBorder,
+                color = colors.border,
             )
             .padding(Spacing.Medium),
     ) {
@@ -142,7 +138,7 @@ fun SettingsSidebar(
             text = "Settings",
             fontSize = FontSize.TitleLarge,
             fontWeight = FontWeight.Bold,
-            color = if (isBlueGlass) BrandColors.OnLogoBadge else colors.textMain,
+            color = colors.textMain,
             modifier = Modifier.padding(bottom = Spacing.SmallMedium),
         )
 
@@ -151,7 +147,6 @@ fun SettingsSidebar(
             query = searchQuery,
             onQueryChange = { searchQuery = it },
             colors = colors,
-            isBlueGlass = isBlueGlass,
             modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.Medium),
         )
 
@@ -170,7 +165,6 @@ fun SettingsSidebar(
                     isSelected = isSelected,
                     onClick = { onSelectCategory(category) },
                     colors = colors,
-                    isBlueGlass = isBlueGlass,
                 )
             }
         }
@@ -190,23 +184,17 @@ fun SettingsSidebar(
                 modifier = Modifier
                     .size(IconSize.ExtraLarge)
                     .clip(GlassShapes.Card)
-                    .background(
-                        if (isBlueGlass) {
-                            PluginThemeColors.CardBackground
-                        } else {
-                            colors.cardBackground
-                        },
-                    )
+                    .background(colors.cardBackground)
                     .border(
-                        width = IdeShellDimens.HairlineBorder,
-                        color = if (isBlueGlass) PluginThemeColors.CardBorder else colors.border,
+                        width = GlassDimens.HairlineBorder,
+                        color = colors.border,
                         shape = GlassShapes.Card,
                     ),
                 contentAlignment = Alignment.Center,
             ) {
                 LtiRomStudioMark(
                     modifier = Modifier.size(IconSize.Medium),
-                    tint = if (isBlueGlass) PluginThemeColors.ActiveTabBorder else colors.accentBlue,
+                    tint = colors.accentBlue,
                 )
             }
 
@@ -215,13 +203,13 @@ fun SettingsSidebar(
                     text = "LtiRom Studio",
                     fontWeight = FontWeight.SemiBold,
                     fontSize = FontSize.BodySmall,
-                    color = if (isBlueGlass) BrandColors.OnLogoBadge else colors.textMain,
+                    color = colors.textMain,
                 )
                 Text(
                     text = appVersion,
                     fontFamily = codeFontFamily(),
                     fontSize = FontSize.LabelSmall,
-                    color = if (isBlueGlass) BrandColors.OnLogoBadge.copy(alpha = AlphaTokens.High) else colors.textDim,
+                    color = colors.textDim,
                 )
             }
         }
@@ -233,21 +221,12 @@ private fun SettingsSearchBar(
     query: String,
     onQueryChange: (String) -> Unit,
     colors: IdeShellColorScheme,
-    isBlueGlass: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    val searchBg = if (isBlueGlass) {
-        PluginThemeColors.CardBackground.copy(alpha = AlphaTokens.Half)
-    } else {
-        colors.contentBackground
-    }
-    val searchBorder = if (isBlueGlass) {
-        PluginThemeColors.CardBorder
-    } else {
-        colors.border
-    }
-    val textColor = if (isBlueGlass) BrandColors.OnLogoBadge else colors.textMain
-    val placeholderColor = if (isBlueGlass) BrandColors.OnLogoBadge.copy(alpha = AlphaTokens.Half) else colors.textMuted
+    val searchBg = colors.contentBackground
+    val searchBorder = colors.border
+    val textColor = colors.textMain
+    val placeholderColor = colors.textMuted
 
     Row(
         modifier = modifier
@@ -255,7 +234,7 @@ private fun SettingsSearchBar(
             .clip(GlassShapes.Small)
             .background(searchBg)
             .border(
-                width = IdeShellDimens.HairlineBorder,
+                width = GlassDimens.HairlineBorder,
                 color = searchBorder,
                 shape = GlassShapes.Small,
             )
@@ -286,7 +265,7 @@ private fun SettingsSearchBar(
                     color = textColor,
                     fontSize = FontSize.BodySmall,
                 ),
-                cursorBrush = SolidColor(if (isBlueGlass) PluginThemeColors.ActiveTabBorder else colors.accentBlue),
+                cursorBrush = SolidColor(colors.accentBlue),
                 modifier = Modifier.fillMaxWidth(),
             )
         }
@@ -315,23 +294,12 @@ private fun SettingsCategoryRow(
     isSelected: Boolean,
     onClick: () -> Unit,
     colors: IdeShellColorScheme,
-    isBlueGlass: Boolean,
     modifier: Modifier = Modifier,
 ) {
     var isHovered by remember { mutableStateOf(false) }
 
-    val activeBg = if (isBlueGlass) {
-        SettingsThemeColors.ActivePillBackground
-    } else {
-        colors.controlSelected
-    }
-
-    val hoverBg = if (isBlueGlass) {
-        PluginThemeColors.CardBackground.copy(alpha = AlphaTokens.Half)
-    } else {
-        colors.controlHover
-    }
-
+    val activeBg = colors.tabSelected
+    val hoverBg = colors.controlHover
     val targetBg = when {
         isSelected -> activeBg
         isHovered -> hoverBg
@@ -339,16 +307,11 @@ private fun SettingsCategoryRow(
     }
 
     val animatedBg by animateColorAsState(targetValue = targetBg)
-
-    val activeBorder = if (isBlueGlass) {
-        SettingsThemeColors.ActivePillBorder
-    } else {
-        colors.accentBlue
-    }
+    val activeBorder = colors.tabSelectedBorder
 
     val borderModifier = if (isSelected) {
         Modifier.border(
-            width = IdeShellDimens.HairlineBorder,
+            width = GlassDimens.HairlineBorder,
             color = activeBorder,
             shape = GlassShapes.MediumSmall,
         )
@@ -357,17 +320,15 @@ private fun SettingsCategoryRow(
     }
 
     val iconColor = when {
-        isSelected && isBlueGlass -> BrandColors.OnLogoBadge
         isSelected -> colors.accentBlue
-        isHovered -> if (isBlueGlass) BrandColors.OnLogoBadge else colors.textMain
-        else -> if (isBlueGlass) BrandColors.OnLogoBadge.copy(alpha = AlphaTokens.High) else colors.textDim
+        isHovered -> colors.textMain
+        else -> colors.textDim
     }
 
     val labelColor = when {
-        isSelected && isBlueGlass -> BrandColors.OnLogoBadge
         isSelected -> colors.textMain
-        isHovered -> if (isBlueGlass) BrandColors.OnLogoBadge else colors.textMain
-        else -> if (isBlueGlass) BrandColors.OnLogoBadge.copy(alpha = AlphaTokens.Vibrant) else colors.textMuted
+        isHovered -> colors.textMain
+        else -> colors.textMuted
     }
 
     val icon = resolveCategoryIcon(category)

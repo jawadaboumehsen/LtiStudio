@@ -59,17 +59,14 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
-import org.ide.lti.core.designsystem.theme.BrandColors
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
-import org.ide.lti.core.designsystem.theme.SettingsThemeColors
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
-import org.ide.lti.core.designsystem.theme.config.AppTheme
 
 /**
  * Editor Preferences Pane providing full parity with the target design mockup.
@@ -89,8 +86,6 @@ fun EditorSettingsPane(
     modifier: Modifier = Modifier,
     colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
-    val isBlueGlass = GlassTheme.appTheme == AppTheme.Blue
-
     var selectedEncoding by remember { mutableStateOf("UTF-8") }
     var selectedEol by remember { mutableStateOf("LF (Unix)") }
     var trimTrailingWhitespace by remember { mutableStateOf(true) }
@@ -104,11 +99,11 @@ fun EditorSettingsPane(
 
     var draftRecoveryEnabled by remember { mutableStateOf(true) }
 
-    val cardBg = if (isBlueGlass) SettingsThemeColors.CardBackground else colors.cardBackground
-    val cardBorder = if (isBlueGlass) SettingsThemeColors.CardBorder else colors.border
-    val textPrimary = if (isBlueGlass) BrandColors.OnLogoBadge else colors.textMain
-    val textMuted = if (isBlueGlass) SettingsThemeColors.TextSecondary else colors.textMuted
-    val textDim = if (isBlueGlass) SettingsThemeColors.TextTertiary else colors.textDim
+    val cardBg = colors.cardBackground
+    val cardBorder = colors.border
+    val textPrimary = colors.textMain
+    val textMuted = colors.textMuted
+    val textDim = colors.textDim
 
     Column(
         modifier = modifier.fillMaxWidth().testTag("EditorSettingsPane"),
@@ -140,7 +135,6 @@ fun EditorSettingsPane(
             cardBorder = cardBorder,
             textPrimary = textPrimary,
             textMuted = textMuted,
-            isBlueGlass = isBlueGlass,
             colors = colors,
         )
 
@@ -159,7 +153,6 @@ fun EditorSettingsPane(
             cardBorder = cardBorder,
             textPrimary = textPrimary,
             textMuted = textMuted,
-            isBlueGlass = isBlueGlass,
             colors = colors,
         )
 
@@ -168,7 +161,6 @@ fun EditorSettingsPane(
             cardBorder = cardBorder,
             textPrimary = textPrimary,
             textMuted = textMuted,
-            isBlueGlass = isBlueGlass,
             colors = colors,
         )
 
@@ -179,7 +171,6 @@ fun EditorSettingsPane(
             cardBorder = cardBorder,
             textPrimary = textPrimary,
             textMuted = textMuted,
-            isBlueGlass = isBlueGlass,
             colors = colors,
         )
 
@@ -242,7 +233,7 @@ private fun EditorHelpHeader(textPrimary: Color, textMuted: Color, cardBg: Color
                 .clip(GlassShapes.Card)
                 .background(cardBg)
                 .border(
-                    width = IdeShellDimens.HairlineBorder,
+                    width = GlassDimens.HairlineBorder,
                     color = cardBorder,
                     shape = GlassShapes.Card,
                 )
@@ -299,7 +290,6 @@ private fun GeneralSettingsCard(
     cardBorder: Color,
     textPrimary: Color,
     textMuted: Color,
-    isBlueGlass: Boolean,
     colors: IdeShellColorScheme,
 ) {
     GlassCard(
@@ -326,7 +316,6 @@ private fun GeneralSettingsCard(
                 onSelect = onSelectEncoding,
                 textPrimary = textPrimary,
                 textMuted = textMuted,
-                isBlueGlass = isBlueGlass,
                 colors = colors,
             )
 
@@ -339,7 +328,6 @@ private fun GeneralSettingsCard(
                 onSelect = onSelectEol,
                 textPrimary = textPrimary,
                 textMuted = textMuted,
-                isBlueGlass = isBlueGlass,
                 colors = colors,
             )
 
@@ -351,7 +339,6 @@ private fun GeneralSettingsCard(
                 onCheckedChange = onToggleTrimWhitespace,
                 textPrimary = textPrimary,
                 textMuted = textMuted,
-                isBlueGlass = isBlueGlass,
                 colors = colors,
             )
 
@@ -363,7 +350,6 @@ private fun GeneralSettingsCard(
                 onCheckedChange = onToggleEnsureNewline,
                 textPrimary = textPrimary,
                 textMuted = textMuted,
-                isBlueGlass = isBlueGlass,
                 colors = colors,
             )
         }
@@ -386,7 +372,6 @@ private fun EditorAppearanceCard(
     cardBorder: Color,
     textPrimary: Color,
     textMuted: Color,
-    isBlueGlass: Boolean,
     colors: IdeShellColorScheme,
 ) {
     GlassCard(
@@ -409,7 +394,6 @@ private fun EditorAppearanceCard(
                 onTextScaleChange = onTextScaleChange,
                 textPrimary = textPrimary,
                 textMuted = textMuted,
-                isBlueGlass = isBlueGlass,
                 colors = colors,
             )
 
@@ -422,7 +406,6 @@ private fun EditorAppearanceCard(
                 onSelect = onSelectDensity,
                 textPrimary = textPrimary,
                 textMuted = textMuted,
-                isBlueGlass = isBlueGlass,
                 colors = colors,
             )
 
@@ -434,7 +417,6 @@ private fun EditorAppearanceCard(
                 onCheckedChange = onToggleFocusIndicator,
                 textPrimary = textPrimary,
                 textMuted = textMuted,
-                isBlueGlass = isBlueGlass,
                 colors = colors,
             )
 
@@ -446,7 +428,6 @@ private fun EditorAppearanceCard(
                 onCheckedChange = onToggleLineNumbers,
                 textPrimary = textPrimary,
                 textMuted = textMuted,
-                isBlueGlass = isBlueGlass,
                 colors = colors,
             )
 
@@ -458,7 +439,6 @@ private fun EditorAppearanceCard(
                 onCheckedChange = onToggleIndentGuides,
                 textPrimary = textPrimary,
                 textMuted = textMuted,
-                isBlueGlass = isBlueGlass,
                 colors = colors,
             )
         }
@@ -471,7 +451,6 @@ private fun TextScaleStepperRow(
     onTextScaleChange: (Int) -> Unit,
     textPrimary: Color,
     textMuted: Color,
-    isBlueGlass: Boolean,
     colors: IdeShellColorScheme,
 ) {
     Row(
@@ -498,7 +477,7 @@ private fun TextScaleStepperRow(
                     color = textPrimary,
                 )
                 Text(
-                    text = "Adjust editor font size (affects all editors)",
+                    text = "Scale font size up or down relative to 100%",
                     fontSize = FontSize.BodySmall,
                     color = textMuted,
                 )
@@ -512,20 +491,10 @@ private fun TextScaleStepperRow(
             Row(
                 modifier = Modifier
                     .clip(GlassShapes.Small)
-                    .background(
-                        if (isBlueGlass) {
-                            SettingsThemeColors.ControlBackground
-                        } else {
-                            colors.controlHover
-                        },
-                    )
+                    .background(colors.buttonSecondaryBackground)
                     .border(
-                        width = IdeShellDimens.HairlineBorder,
-                        color = if (isBlueGlass) {
-                            SettingsThemeColors.ControlBorder
-                        } else {
-                            colors.border
-                        },
+                        width = GlassDimens.HairlineBorder,
+                        color = colors.buttonSecondaryBorder,
                         shape = GlassShapes.Small,
                     )
                     .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),
@@ -568,20 +537,10 @@ private fun TextScaleStepperRow(
             Box(
                 modifier = Modifier
                     .clip(GlassShapes.Small)
-                    .background(
-                        if (isBlueGlass) {
-                            SettingsThemeColors.ButtonSecondaryBackground
-                        } else {
-                            colors.controlHover
-                        },
-                    )
+                    .background(colors.buttonSecondaryBackground)
                     .border(
-                        width = IdeShellDimens.HairlineBorder,
-                        color = if (isBlueGlass) {
-                            SettingsThemeColors.ButtonSecondaryBorder
-                        } else {
-                            colors.border
-                        },
+                        width = GlassDimens.HairlineBorder,
+                        color = colors.buttonSecondaryBorder,
                         shape = GlassShapes.Small,
                     )
                     .clickable { onTextScaleChange(100) }
@@ -605,7 +564,6 @@ private fun KeyboardShortcutsCard(
     cardBorder: Color,
     textPrimary: Color,
     textMuted: Color,
-    isBlueGlass: Boolean,
     colors: IdeShellColorScheme,
 ) {
     GlassCard(
@@ -640,21 +598,18 @@ private fun KeyboardShortcutsCard(
                             label = "Find",
                             keys = listOf("Ctrl", "+", "F"),
                             textPrimary = textPrimary,
-                            isBlueGlass = isBlueGlass,
                             colors = colors,
                         )
                         ShortcutItem(
                             label = "Find next",
                             keys = listOf("F3"),
                             textPrimary = textPrimary,
-                            isBlueGlass = isBlueGlass,
                             colors = colors,
                         )
                         ShortcutItem(
                             label = "Find previous",
                             keys = listOf("Shift", "+", "F3"),
                             textPrimary = textPrimary,
-                            isBlueGlass = isBlueGlass,
                             colors = colors,
                         )
                     }
@@ -667,21 +622,18 @@ private fun KeyboardShortcutsCard(
                             label = "Go to line",
                             keys = listOf("Ctrl", "+", "G"),
                             textPrimary = textPrimary,
-                            isBlueGlass = isBlueGlass,
                             colors = colors,
                         )
                         ShortcutItem(
                             label = "Toggle comment",
                             keys = listOf("Ctrl", "+", "/"),
                             textPrimary = textPrimary,
-                            isBlueGlass = isBlueGlass,
                             colors = colors,
                         )
                         ShortcutItem(
                             label = "Format document",
                             keys = listOf("Ctrl", "+", "Shift", "+", "F"),
                             textPrimary = textPrimary,
-                            isBlueGlass = isBlueGlass,
                             colors = colors,
                         )
                     }
@@ -692,20 +644,10 @@ private fun KeyboardShortcutsCard(
                 Row(
                     modifier = Modifier
                         .clip(GlassShapes.Small)
-                        .background(
-                            if (isBlueGlass) {
-                                SettingsThemeColors.ButtonSecondaryBackground
-                            } else {
-                                colors.controlHover
-                            },
-                        )
+                        .background(colors.buttonSecondaryBackground)
                         .border(
-                            width = IdeShellDimens.HairlineBorder,
-                            color = if (isBlueGlass) {
-                                SettingsThemeColors.ButtonSecondaryBorder
-                            } else {
-                                colors.border
-                            },
+                            width = GlassDimens.HairlineBorder,
+                            color = colors.buttonSecondaryBorder,
                             shape = GlassShapes.Small,
                         )
                         .clickable { /* open shortcuts list */ }
@@ -739,7 +681,6 @@ private fun DraftRecoveryCard(
     cardBorder: Color,
     textPrimary: Color,
     textMuted: Color,
-    isBlueGlass: Boolean,
     colors: IdeShellColorScheme,
 ) {
     GlassCard(
@@ -800,11 +741,7 @@ private fun DraftRecoveryCard(
                         GlassToggle(
                             checked = draftRecoveryEnabled,
                             onCheckedChange = onToggleDraftRecovery,
-                            activeColor = if (isBlueGlass) {
-                                SettingsThemeColors.SwitchActiveTrack
-                            } else {
-                                colors.accentBlue
-                            },
+                            activeColor = colors.switchActiveTrack,
                         )
                         Text(
                             text = if (draftRecoveryEnabled) "Enabled" else "Disabled",
@@ -819,20 +756,10 @@ private fun DraftRecoveryCard(
                     modifier = Modifier
                         .weight(0.9f)
                         .clip(GlassShapes.Card)
-                        .background(
-                            if (isBlueGlass) {
-                                SettingsThemeColors.CardCalloutBackground
-                            } else {
-                                colors.cardBackgroundMuted
-                            },
-                        )
+                        .background(colors.cardCalloutBackground)
                         .border(
-                            width = IdeShellDimens.HairlineBorder,
-                            color = if (isBlueGlass) {
-                                SettingsThemeColors.CardCalloutBorder
-                            } else {
-                                colors.borderMuted
-                            },
+                            width = GlassDimens.HairlineBorder,
+                            color = colors.cardCalloutBorder,
                             shape = GlassShapes.Card,
                         )
                         .padding(Spacing.Medium),
@@ -842,11 +769,7 @@ private fun DraftRecoveryCard(
                     Icon(
                         imageVector = Icons.Default.Info,
                         contentDescription = null,
-                        tint = if (isBlueGlass) {
-                            SettingsThemeColors.CardBorder
-                        } else {
-                            colors.accentBlue
-                        },
+                        tint = colors.accentBlue,
                         modifier = Modifier.size(IconSize.Large),
                     )
                     Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
@@ -872,6 +795,7 @@ private fun DraftRecoveryCard(
 
 @Composable
 private fun EditorStatusBar(textPrimary: Color, textMuted: Color, textDim: Color) {
+    val colors = GlassTheme.ideShellColors
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -908,7 +832,7 @@ private fun EditorStatusBar(textPrimary: Color, textMuted: Color, textDim: Color
                     modifier = Modifier
                         .size(IconSize.Indicator)
                         .clip(CircleShape)
-                        .background(SettingsThemeColors.StatusDotGreen),
+                        .background(colors.statusSuccess),
                 )
                 Text(
                     text = "Connected",
@@ -969,7 +893,6 @@ private fun EditorDropdownRow(
     onSelect: (String) -> Unit,
     textPrimary: Color,
     textMuted: Color,
-    isBlueGlass: Boolean,
     colors: IdeShellColorScheme,
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -1009,20 +932,10 @@ private fun EditorDropdownRow(
             Row(
                 modifier = Modifier
                     .clip(GlassShapes.Small)
-                    .background(
-                        if (isBlueGlass) {
-                            SettingsThemeColors.ControlBackground
-                        } else {
-                            colors.controlHover
-                        },
-                    )
+                    .background(colors.buttonSecondaryBackground)
                     .border(
-                        width = IdeShellDimens.HairlineBorder,
-                        color = if (isBlueGlass) {
-                            SettingsThemeColors.ControlBorder
-                        } else {
-                            colors.border
-                        },
+                        width = GlassDimens.HairlineBorder,
+                        color = colors.buttonSecondaryBorder,
                         shape = GlassShapes.Small,
                     )
                     .clickable { expanded = true }
@@ -1047,13 +960,7 @@ private fun EditorDropdownRow(
             DropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false },
-                modifier = Modifier.background(
-                    if (isBlueGlass) {
-                        SettingsThemeColors.CardBackground
-                    } else {
-                        colors.topBarBackground
-                    },
-                ),
+                modifier = Modifier.background(colors.cardBackground),
             ) {
                 options.forEach { option ->
                     DropdownMenuItem(
@@ -1084,7 +991,6 @@ private fun EditorToggleRow(
     onCheckedChange: (Boolean) -> Unit,
     textPrimary: Color,
     textMuted: Color,
-    isBlueGlass: Boolean = false,
     colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     Row(
@@ -1125,11 +1031,7 @@ private fun EditorToggleRow(
             GlassToggle(
                 checked = checked,
                 onCheckedChange = onCheckedChange,
-                activeColor = if (isBlueGlass) {
-                    SettingsThemeColors.SwitchActiveTrack
-                } else {
-                    colors.accentBlue
-                },
+                activeColor = colors.switchActiveTrack,
             )
             Text(
                 text = if (checked) "Enabled" else "Disabled",
@@ -1142,13 +1044,7 @@ private fun EditorToggleRow(
 }
 
 @Composable
-private fun ShortcutItem(
-    label: String,
-    keys: List<String>,
-    textPrimary: Color,
-    isBlueGlass: Boolean,
-    colors: IdeShellColorScheme,
-) {
+private fun ShortcutItem(label: String, keys: List<String>, textPrimary: Color, colors: IdeShellColorScheme) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -1176,20 +1072,10 @@ private fun ShortcutItem(
                     Box(
                         modifier = Modifier
                             .clip(GlassShapes.ExtraSmall)
-                            .background(
-                                if (isBlueGlass) {
-                                    SettingsThemeColors.KeyCapBackground
-                                } else {
-                                    colors.controlSelected
-                                },
-                            )
+                            .background(colors.keyCapBackground)
                             .border(
-                                width = IdeShellDimens.HairlineBorder,
-                                color = if (isBlueGlass) {
-                                    SettingsThemeColors.KeyCapBorder
-                                } else {
-                                    colors.border
-                                },
+                                width = GlassDimens.HairlineBorder,
+                                color = colors.keyCapBorder,
                                 shape = GlassShapes.ExtraSmall,
                             )
                             .padding(

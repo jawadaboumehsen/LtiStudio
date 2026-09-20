@@ -48,12 +48,12 @@ import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BrandColors
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
-import org.ide.lti.core.designsystem.theme.PluginThemeColors
+import org.ide.lti.core.designsystem.theme.IdeShellTokens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StudioBackdropColors
 import org.ide.lti.core.designsystem.theme.ThemeColors
@@ -74,36 +74,43 @@ fun LiveStudioPreviewCard(
     val isBlueGlass = theme == AppTheme.Blue
     val isDark = theme == AppTheme.Dark
 
+    val previewTokens = when (theme) {
+        AppTheme.Blue -> IdeShellTokens.Blue
+        AppTheme.Dark -> IdeShellTokens.Dark
+        AppTheme.Light -> IdeShellTokens.Light
+        else -> IdeShellTokens.Blue
+    }
+
     val windowCanvasBg = when {
         reduceTransparency && isBlueGlass -> ThemeColors.BlueAmoledCanvas
-        reduceTransparency && isDark -> colors.navigatorBackground
+        reduceTransparency && isDark -> previewTokens.navigatorBackground
         reduceTransparency -> ThemeColors.LightLayerElevated
-        isBlueGlass -> PluginThemeColors.CardBackground.copy(alpha = AlphaTokens.TextMuted)
-        isDark -> colors.navigatorBackground.copy(alpha = AlphaTokens.Heavy)
+        isBlueGlass -> previewTokens.cardBackground.copy(alpha = AlphaTokens.TextMuted)
+        isDark -> previewTokens.navigatorBackground.copy(alpha = AlphaTokens.Heavy)
         else -> ThemeColors.LightLayerBase.copy(alpha = AlphaTokens.Heavy)
     }
 
     val windowBorderColor = when {
-        isBlueGlass -> PluginThemeColors.CardBorder
-        isDark -> colors.border
+        isBlueGlass -> previewTokens.border
+        isDark -> previewTokens.border
         else -> ThemeColors.LightLayerBorder
     }
 
     val textColor = when {
         isBlueGlass -> BrandColors.OnLogoBadge
-        isDark -> colors.textMain
+        isDark -> previewTokens.textMain
         else -> ThemeColors.LightLayerText
     }
 
     val textMutedColor = when {
         isBlueGlass -> BrandColors.OnLogoBadge.copy(alpha = AlphaTokens.Prominent)
-        isDark -> colors.textMuted
-        else -> colors.textMuted
+        isDark -> previewTokens.textMuted
+        else -> previewTokens.textMuted
     }
 
     val activeAccent = when {
-        isBlueGlass -> PluginThemeColors.ActiveTabBorder
-        isDark -> colors.accentBlue
+        isBlueGlass -> previewTokens.accentBlue
+        isDark -> previewTokens.accentBlue
         else -> ThemeColors.LightLayerAccent
     }
 
@@ -115,8 +122,8 @@ fun LiveStudioPreviewCard(
             .height(ComponentSize.AppearanceLivePreviewHeight)
             .clip(GlassShapes.Card)
             .border(
-                width = IdeShellDimens.HairlineBorder,
-                color = if (isBlueGlass) PluginThemeColors.CardBorder else colors.border,
+                width = GlassDimens.HairlineBorder,
+                color = colors.border,
                 shape = GlassShapes.Card,
             )
             .testTag("LiveStudioPreviewCard"),
@@ -141,7 +148,7 @@ fun LiveStudioPreviewCard(
                     .clip(GlassShapes.Medium)
                     .background(windowCanvasBg)
                     .border(
-                        width = IdeShellDimens.HairlineBorder,
+                        width = GlassDimens.HairlineBorder,
                         color = windowBorderColor,
                         shape = GlassShapes.Medium,
                     ),
@@ -180,13 +187,7 @@ fun LiveStudioPreviewCard(
                         modifier = Modifier
                             .width(ComponentSize.PluginTableStatusColWidth)
                             .fillMaxHeight()
-                            .background(
-                                if (isBlueGlass) {
-                                    PluginThemeColors.CardBackground.copy(alpha = AlphaTokens.Half)
-                                } else {
-                                    colors.cardBackground.copy(alpha = AlphaTokens.Half)
-                                },
-                            )
+                            .background(previewTokens.cardBackground.copy(alpha = AlphaTokens.Half))
                             .padding(horizontal = Spacing.Small, vertical = Spacing.SmallMedium),
                         verticalArrangement = Arrangement.spacedBy(contentSpacing),
                     ) {
@@ -197,9 +198,9 @@ fun LiveStudioPreviewCard(
                                 .clip(GlassShapes.Small)
                                 .background(
                                     if (isBlueGlass) {
-                                        PluginThemeColors.ActiveTabBackground
+                                        previewTokens.tabSelected
                                     } else {
-                                        colors.controlSelected
+                                        previewTokens.controlSelected
                                     },
                                 )
                                 .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),
@@ -328,7 +329,7 @@ private fun MiniFormInput(
                 .clip(GlassShapes.ExtraSmall)
                 .background(bgColor)
                 .border(
-                    width = IdeShellDimens.HairlineBorder,
+                    width = GlassDimens.HairlineBorder,
                     color = borderColor,
                     shape = GlassShapes.ExtraSmall,
                 )

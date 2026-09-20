@@ -22,11 +22,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -42,26 +40,21 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
-import org.ide.lti.core.ui.settings.AppSettingsState
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.GlassHorizontalDivider
 import org.ide.lti.core.designsystem.component.display.ThemePreviewCard
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.theme.AccentPresetColors
-import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BrandColors
-import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
-import org.ide.lti.core.designsystem.theme.PluginThemeColors
-import org.ide.lti.core.designsystem.theme.SettingsThemeColors
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.designsystem.theme.ThemeColors
 import org.ide.lti.core.designsystem.theme.config.AppTheme
+import org.ide.lti.core.ui.settings.AppSettingsState
 
 /**
  * High-fidelity Appearance Settings Pane matching the Stitch & Fleet design standards.
@@ -83,8 +76,6 @@ fun AppearanceSettingsPane(
     modifier: Modifier = Modifier,
     colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
-    val isBlueGlass = GlassTheme.appTheme == AppTheme.Blue
-
     var reduceTransparency by remember { mutableStateOf(false) }
     var showFocusIndicators by remember { mutableStateOf(true) }
     var isComfortable by remember { mutableStateOf(true) }
@@ -103,12 +94,12 @@ fun AppearanceSettingsPane(
                 text = "Appearance",
                 fontSize = FontSize.HeadlineMedium,
                 fontWeight = FontWeight.Bold,
-                color = if (isBlueGlass) BrandColors.OnLogoBadge else colors.textMain,
+                color = colors.textMain,
             )
             Text(
                 text = "Make the studio comfortable for long sessions.",
                 fontSize = FontSize.BodyMedium,
-                color = if (isBlueGlass) BrandColors.OnLogoBadge.copy(alpha = AlphaTokens.High) else colors.textMuted,
+                color = colors.textMuted,
             )
         }
 
@@ -125,8 +116,8 @@ fun AppearanceSettingsPane(
                 // Card 1: App style
                 GlassCard(
                     modifier = Modifier.fillMaxWidth(),
-                    surfaceColor = if (isBlueGlass) SettingsThemeColors.CardBackground else colors.cardBackground,
-                    borderColor = if (isBlueGlass) SettingsThemeColors.CardBorder else colors.border,
+                    surfaceColor = colors.cardBackground,
+                    borderColor = colors.border,
                     contentPadding = Spacing.CardPadding,
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
@@ -135,12 +126,12 @@ fun AppearanceSettingsPane(
                                 text = "App style",
                                 fontSize = FontSize.TitleMedium,
                                 fontWeight = FontWeight.SemiBold,
-                                color = if (isBlueGlass) BrandColors.OnLogoBadge else colors.textMain,
+                                color = colors.textMain,
                             )
                             Text(
                                 text = "Choose how LtiRom Studio looks on your screen.",
                                 fontSize = FontSize.BodySmall,
-                                color = if (isBlueGlass) BrandColors.OnLogoBadge.copy(alpha = AlphaTokens.High) else colors.textMuted,
+                                color = colors.textMuted,
                             )
                         }
 
@@ -167,7 +158,6 @@ fun AppearanceSettingsPane(
                             selectedAccent = selectedAccentName,
                             onSelectAccent = { selectedAccentName = it },
                             colors = colors,
-                            isBlueGlass = isBlueGlass,
                         )
 
                         GlassHorizontalDivider()
@@ -177,7 +167,6 @@ fun AppearanceSettingsPane(
                             isComfortable = isComfortable,
                             onDensityChange = { isComfortable = it },
                             colors = colors,
-                            isBlueGlass = isBlueGlass,
                         )
 
                         GlassHorizontalDivider()
@@ -187,7 +176,6 @@ fun AppearanceSettingsPane(
                             selectedSize = selectedTextSize,
                             onSelectSize = { selectedTextSize = it },
                             colors = colors,
-                            isBlueGlass = isBlueGlass,
                         )
                     }
                 }
@@ -195,8 +183,8 @@ fun AppearanceSettingsPane(
                 // Card 2: Glass & motion
                 GlassCard(
                     modifier = Modifier.fillMaxWidth(),
-                    surfaceColor = if (isBlueGlass) SettingsThemeColors.CardBackground else colors.cardBackground,
-                    borderColor = if (isBlueGlass) SettingsThemeColors.CardBorder else colors.border,
+                    surfaceColor = colors.cardBackground,
+                    borderColor = colors.border,
                     contentPadding = Spacing.CardPadding,
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
@@ -205,12 +193,12 @@ fun AppearanceSettingsPane(
                                 text = "Glass & motion",
                                 fontSize = FontSize.TitleMedium,
                                 fontWeight = FontWeight.SemiBold,
-                                color = if (isBlueGlass) BrandColors.OnLogoBadge else colors.textMain,
+                                color = colors.textMain,
                             )
                             Text(
                                 text = "Navigation stays expressive. Editors stay readable.",
                                 fontSize = FontSize.BodySmall,
-                                color = if (isBlueGlass) BrandColors.OnLogoBadge.copy(alpha = AlphaTokens.High) else colors.textMuted,
+                                color = colors.textMuted,
                             )
                         }
 
@@ -221,7 +209,6 @@ fun AppearanceSettingsPane(
                             checked = reduceTransparency,
                             onCheckedChange = { reduceTransparency = it },
                             colors = colors,
-                            isBlueGlass = isBlueGlass,
                         )
 
                         GlassHorizontalDivider()
@@ -233,7 +220,6 @@ fun AppearanceSettingsPane(
                             checked = appSettingsState.reducedMotion,
                             onCheckedChange = { appSettingsState.reducedMotion = it },
                             colors = colors,
-                            isBlueGlass = isBlueGlass,
                         )
 
                         GlassHorizontalDivider()
@@ -245,7 +231,6 @@ fun AppearanceSettingsPane(
                             checked = showFocusIndicators,
                             onCheckedChange = { showFocusIndicators = it },
                             colors = colors,
-                            isBlueGlass = isBlueGlass,
                         )
                     }
                 }
@@ -261,12 +246,12 @@ fun AppearanceSettingsPane(
                         text = "Preview",
                         fontSize = FontSize.TitleMedium,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (isBlueGlass) BrandColors.OnLogoBadge else colors.textMain,
+                        color = colors.textMain,
                     )
                     Text(
                         text = "A sample of the current look and feel.",
                         fontSize = FontSize.BodySmall,
-                        color = if (isBlueGlass) BrandColors.OnLogoBadge.copy(alpha = AlphaTokens.High) else colors.textMuted,
+                        color = colors.textMuted,
                     )
                 }
 
@@ -294,10 +279,10 @@ fun AppearanceSettingsPane(
             Box(
                 modifier = Modifier
                     .clip(GlassShapes.Small)
-                    .background(if (isBlueGlass) PluginThemeColors.CardBackground else colors.cardBackground)
+                    .background(colors.buttonSecondaryBackground)
                     .border(
-                        width = IdeShellDimens.HairlineBorder,
-                        color = if (isBlueGlass) PluginThemeColors.CardBorder else colors.border,
+                        width = GlassDimens.HairlineBorder,
+                        color = colors.buttonSecondaryBorder,
                         shape = GlassShapes.Small,
                     )
                     .clickable(
@@ -319,7 +304,7 @@ fun AppearanceSettingsPane(
                     text = "Restore defaults",
                     fontSize = FontSize.BodySmall,
                     fontWeight = FontWeight.Medium,
-                    color = if (isBlueGlass) BrandColors.OnLogoBadge else colors.textMain,
+                    color = colors.textMain,
                 )
             }
 
@@ -331,17 +316,17 @@ fun AppearanceSettingsPane(
                 Text(
                     text = "Changes apply to this app only.",
                     fontSize = FontSize.LabelSmall,
-                    color = if (isBlueGlass) BrandColors.OnLogoBadge.copy(alpha = AlphaTokens.Half) else colors.textDim,
+                    color = colors.textDim,
                 )
 
                 // Cancel Button
                 Box(
                     modifier = Modifier
                         .clip(GlassShapes.Small)
-                        .background(if (isBlueGlass) PluginThemeColors.CardBackground else colors.cardBackground)
+                        .background(colors.buttonSecondaryBackground)
                         .border(
-                            width = IdeShellDimens.HairlineBorder,
-                            color = if (isBlueGlass) PluginThemeColors.CardBorder else colors.border,
+                            width = GlassDimens.HairlineBorder,
+                            color = colors.buttonSecondaryBorder,
                             shape = GlassShapes.Small,
                         )
                         .clickable(
@@ -355,7 +340,7 @@ fun AppearanceSettingsPane(
                     Text(
                         text = "Cancel",
                         fontSize = FontSize.BodySmall,
-                        color = if (isBlueGlass) BrandColors.OnLogoBadge else colors.textMain,
+                        color = colors.textMain,
                     )
                 }
 
@@ -363,10 +348,10 @@ fun AppearanceSettingsPane(
                 Box(
                     modifier = Modifier
                         .clip(GlassShapes.Small)
-                        .background(if (isBlueGlass) PluginThemeColors.ActiveTabBackground else colors.accentBlue)
+                        .background(colors.accentBlue)
                         .border(
-                            width = IdeShellDimens.HairlineBorder,
-                            color = if (isBlueGlass) PluginThemeColors.ActiveTabBorder else colors.accentBlue,
+                            width = GlassDimens.HairlineBorder,
+                            color = colors.accentBlue,
                             shape = GlassShapes.Small,
                         )
                         .clickable(
@@ -388,7 +373,7 @@ fun AppearanceSettingsPane(
                 Text(
                     text = "Design concept",
                     fontSize = FontSize.LabelSmall,
-                    color = if (isBlueGlass) BrandColors.OnLogoBadge.copy(alpha = AlphaTokens.Medium) else colors.textDim,
+                    color = colors.textDim,
                 )
             }
         }
@@ -396,12 +381,7 @@ fun AppearanceSettingsPane(
 }
 
 @Composable
-private fun AccentColorRow(
-    selectedAccent: String,
-    onSelectAccent: (String) -> Unit,
-    colors: IdeShellColorScheme,
-    isBlueGlass: Boolean,
-) {
+private fun AccentColorRow(selectedAccent: String, onSelectAccent: (String) -> Unit, colors: IdeShellColorScheme) {
     var expanded by remember { mutableStateOf(false) }
     val accents = listOf("Cobalt Blue", "Cyan", "Emerald", "Purple", "Amber", "Crimson")
 
@@ -424,12 +404,12 @@ private fun AccentColorRow(
                 text = "Accent color",
                 fontSize = FontSize.BodyMedium,
                 fontWeight = FontWeight.Medium,
-                color = if (isBlueGlass) BrandColors.OnLogoBadge else colors.textMain,
+                color = colors.textMain,
             )
             Text(
                 text = "Used for highlights, selections and interactive elements.",
                 fontSize = FontSize.BodySmall,
-                color = if (isBlueGlass) BrandColors.OnLogoBadge.copy(alpha = AlphaTokens.High) else colors.textMuted,
+                color = colors.textMuted,
             )
         }
 
@@ -437,10 +417,10 @@ private fun AccentColorRow(
             Row(
                 modifier = Modifier
                     .clip(GlassShapes.Small)
-                    .background(if (isBlueGlass) PluginThemeColors.CardBackground else colors.cardBackground)
+                    .background(colors.cardBackground)
                     .border(
-                        width = IdeShellDimens.HairlineBorder,
-                        color = if (isBlueGlass) PluginThemeColors.CardBorder else colors.border,
+                        width = GlassDimens.HairlineBorder,
+                        color = colors.border,
                         shape = GlassShapes.Small,
                     )
                     .clickable { expanded = true }
@@ -457,12 +437,12 @@ private fun AccentColorRow(
                 Text(
                     text = selectedAccent,
                     fontSize = FontSize.BodySmall,
-                    color = if (isBlueGlass) BrandColors.OnLogoBadge else colors.textMain,
+                    color = colors.textMain,
                 )
                 Icon(
                     imageVector = Icons.Default.ArrowDropDown,
                     contentDescription = null,
-                    tint = if (isBlueGlass) BrandColors.OnLogoBadge else colors.textMuted,
+                    tint = colors.textMuted,
                     modifier = Modifier.size(IconSize.Small),
                 )
             }
@@ -490,7 +470,6 @@ private fun InterfaceDensityRow(
     isComfortable: Boolean,
     onDensityChange: (Boolean) -> Unit,
     colors: IdeShellColorScheme,
-    isBlueGlass: Boolean,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -502,12 +481,12 @@ private fun InterfaceDensityRow(
                 text = "Interface density",
                 fontSize = FontSize.BodyMedium,
                 fontWeight = FontWeight.Medium,
-                color = if (isBlueGlass) BrandColors.OnLogoBadge else colors.textMain,
+                color = colors.textMain,
             )
             Text(
                 text = "Controls the spacing of UI elements.",
                 fontSize = FontSize.BodySmall,
-                color = if (isBlueGlass) BrandColors.OnLogoBadge.copy(alpha = AlphaTokens.High) else colors.textMuted,
+                color = colors.textMuted,
             )
         }
 
@@ -515,10 +494,10 @@ private fun InterfaceDensityRow(
         Row(
             modifier = Modifier
                 .clip(GlassShapes.Small)
-                .background(if (isBlueGlass) PluginThemeColors.CardBackground else colors.cardBackground)
+                .background(colors.cardBackground)
                 .border(
-                    width = IdeShellDimens.HairlineBorder,
-                    color = if (isBlueGlass) PluginThemeColors.CardBorder else colors.border,
+                    width = GlassDimens.HairlineBorder,
+                    color = colors.border,
                     shape = GlassShapes.Small,
                 )
                 .padding(Spacing.ExtraExtraSmall),
@@ -529,36 +508,28 @@ private fun InterfaceDensityRow(
                 isSelected = isComfortable,
                 onClick = { onDensityChange(true) },
                 colors = colors,
-                isBlueGlass = isBlueGlass,
             )
             DensitySegmentItem(
                 label = "Compact",
                 isSelected = !isComfortable,
                 onClick = { onDensityChange(false) },
                 colors = colors,
-                isBlueGlass = isBlueGlass,
             )
         }
     }
 }
 
 @Composable
-private fun DensitySegmentItem(
-    label: String,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    colors: IdeShellColorScheme,
-    isBlueGlass: Boolean,
-) {
-    val activeBg = if (isBlueGlass) PluginThemeColors.ActiveTabBackground else colors.controlSelected
-    val activeBorder = if (isBlueGlass) PluginThemeColors.ActiveTabBorder else colors.accentBlue
+private fun DensitySegmentItem(label: String, isSelected: Boolean, onClick: () -> Unit, colors: IdeShellColorScheme) {
+    val activeBg = colors.controlSelected
+    val activeBorder = colors.accentBlue
 
     Box(
         modifier = Modifier
             .clip(GlassShapes.ExtraSmall)
             .background(if (isSelected) activeBg else Color.Transparent)
             .border(
-                width = if (isSelected) IdeShellDimens.HairlineBorder else Spacing.None,
+                width = if (isSelected) GlassDimens.HairlineBorder else Spacing.None,
                 color = if (isSelected) activeBorder else Color.Transparent,
                 shape = GlassShapes.ExtraSmall,
             )
@@ -574,18 +545,13 @@ private fun DensitySegmentItem(
             text = label,
             fontSize = FontSize.BodySmall,
             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-            color = if (isBlueGlass) BrandColors.OnLogoBadge else colors.textMain,
+            color = colors.textMain,
         )
     }
 }
 
 @Composable
-private fun TextSizeRow(
-    selectedSize: String,
-    onSelectSize: (String) -> Unit,
-    colors: IdeShellColorScheme,
-    isBlueGlass: Boolean,
-) {
+private fun TextSizeRow(selectedSize: String, onSelectSize: (String) -> Unit, colors: IdeShellColorScheme) {
     var expanded by remember { mutableStateOf(false) }
     val sizes = listOf("90%", "100%", "110%", "125%")
 
@@ -599,12 +565,12 @@ private fun TextSizeRow(
                 text = "Text size",
                 fontSize = FontSize.BodyMedium,
                 fontWeight = FontWeight.Medium,
-                color = if (isBlueGlass) BrandColors.OnLogoBadge else colors.textMain,
+                color = colors.textMain,
             )
             Text(
                 text = "Scales text throughout the app.",
                 fontSize = FontSize.BodySmall,
-                color = if (isBlueGlass) BrandColors.OnLogoBadge.copy(alpha = AlphaTokens.High) else colors.textMuted,
+                color = colors.textMuted,
             )
         }
 
@@ -612,10 +578,10 @@ private fun TextSizeRow(
             Row(
                 modifier = Modifier
                     .clip(GlassShapes.Small)
-                    .background(if (isBlueGlass) PluginThemeColors.CardBackground else colors.cardBackground)
+                    .background(colors.cardBackground)
                     .border(
-                        width = IdeShellDimens.HairlineBorder,
-                        color = if (isBlueGlass) PluginThemeColors.CardBorder else colors.border,
+                        width = GlassDimens.HairlineBorder,
+                        color = colors.border,
                         shape = GlassShapes.Small,
                     )
                     .clickable { expanded = true }
@@ -626,12 +592,12 @@ private fun TextSizeRow(
                 Text(
                     text = selectedSize,
                     fontSize = FontSize.BodySmall,
-                    color = if (isBlueGlass) BrandColors.OnLogoBadge else colors.textMain,
+                    color = colors.textMain,
                 )
                 Icon(
                     imageVector = Icons.Default.ArrowDropDown,
                     contentDescription = null,
-                    tint = if (isBlueGlass) BrandColors.OnLogoBadge else colors.textMuted,
+                    tint = colors.textMuted,
                     modifier = Modifier.size(IconSize.Small),
                 )
             }
@@ -661,7 +627,6 @@ private fun SettingsSwitchRow(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     colors: IdeShellColorScheme,
-    isBlueGlass: Boolean,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -676,19 +641,19 @@ private fun SettingsSwitchRow(
                 text = title,
                 fontSize = FontSize.BodyMedium,
                 fontWeight = FontWeight.Medium,
-                color = if (isBlueGlass) BrandColors.OnLogoBadge else colors.textMain,
+                color = colors.textMain,
             )
             Text(
                 text = description,
                 fontSize = FontSize.BodySmall,
-                color = if (isBlueGlass) BrandColors.OnLogoBadge.copy(alpha = AlphaTokens.High) else colors.textMuted,
+                color = colors.textMuted,
             )
         }
 
         GlassToggle(
             checked = checked,
             onCheckedChange = onCheckedChange,
-            activeColor = if (isBlueGlass) PluginThemeColors.ActiveTabBorder else colors.accentBlue,
+            activeColor = colors.accentBlue,
         )
     }
 }

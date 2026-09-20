@@ -46,11 +46,10 @@ import org.ide.lti.core.designsystem.component.layout.IdePipelineRail
 import org.ide.lti.core.designsystem.component.layout.IdePipelineStageItem
 import org.ide.lti.core.designsystem.component.layout.IdeStatusBar
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.LtiTheme
-import org.ide.lti.core.designsystem.theme.PluginThemeColors
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.config.AppTheme
 import org.ide.lti.core.ui.settings.AppSettingsState
@@ -150,7 +149,7 @@ fun SettingsScreenContent(
                 .background(colors.appBackground)
                 .onSizeChanged { size ->
                     val widthDp = with(density) { size.width.toDp() }
-                    isCompact = widthDp < IdeShellDimens.CompactBreakpoint
+                    isCompact = widthDp < GlassDimens.CompactBreakpoint
                 }
                 .testTag("SettingsScreen"),
             topBar = {
@@ -251,14 +250,14 @@ fun SettingsScreenContent(
 
                     if (!isCompact) {
                         VerticalDivider(
-                            thickness = IdeShellDimens.HairlineBorder,
-                            color = if (isBlueGlass) PluginThemeColors.CardBorder else colors.border,
+                            thickness = GlassDimens.HairlineBorder,
+                            color = colors.border,
                         )
                         SettingsHelpColumn(
                             category = selectedCategory,
                             colors = colors,
                             modifier = Modifier
-                                .width(IdeShellDimens.WorkspaceNavigatorWidth)
+                                .width(GlassDimens.WorkspaceNavigatorWidth)
                                 .fillMaxHeight()
                                 .padding(Spacing.Medium),
                         )
@@ -293,7 +292,7 @@ private fun SettingsHelpColumn(
         )
 
         HorizontalDivider(
-            thickness = IdeShellDimens.HairlineBorder,
+            thickness = GlassDimens.HairlineBorder,
             color = colors.border,
         )
 
