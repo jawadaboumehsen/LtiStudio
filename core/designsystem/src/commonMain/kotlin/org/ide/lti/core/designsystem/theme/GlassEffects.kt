@@ -39,21 +39,8 @@ object GlassEffects {
 
     // ==================== 1. CHROME TIER ====================
 
-    /**
-     * Top app bar chrome effect stack — high precision, low displacement so window controls
-     * and breadcrumbs stay razor-sharp over active content.
-     */
-    val TopBar: BackdropEffectScope.() -> Unit = {
-        vibrancy()
-        blur(BackdropBlur.TopBar.toPx())
-        lens(LensRefraction.TopBar.height.toPx(), LensRefraction.TopBar.amount.toPx())
-        frostedGrain(0.015f)
-    }
-
-    /**
-     * Status bar footer chrome effect stack — identical calibration to [TopBar] for visual unity.
-     */
-    val StatusBar: BackdropEffectScope.() -> Unit = TopBar
+    // TopBar/StatusBar deleted - GlassTopBar/GlassStatusBar and the real production shell
+    // (IdeTopAppBar/IdeStatusBar) now resolve this tier through GlassStyles.bar instead.
 
     /**
      * Docked navigation bar effect stack for bottom rails and side panel rails.
@@ -82,20 +69,8 @@ object GlassEffects {
         frostedGrain(0.015f)
     }
 
-    /**
-     * Card surface effect stack — tuned for high readability over dense IDE code and project feeds.
-     */
-    val Card: BackdropEffectScope.() -> Unit = {
-        vibrancy()
-        blur(BackdropBlur.Card.toPx())
-        lens(
-            refractionHeight = LensRefraction.Card.height.toPx(),
-            refractionAmount = LensRefraction.Card.amount.toPx(),
-            depthEffect = true,
-            chromaticAberration = true,
-        )
-        frostedGrain(0.015f)
-    }
+    // Card deleted - GlassCard and Modifier.ideCardSurface now resolve this tier through
+    // GlassStyles.card instead.
 
     /**
      * Sidebar and tool window panel effect stack — deep frosted glass blur for prominent z-depth.
@@ -129,20 +104,7 @@ object GlassEffects {
         frostedGrain(0.015f)
     }
 
-    /**
-     * Pill action button effect stack — scaled up so lens refraction stays visible across wide surfaces.
-     */
-    val ButtonPill: BackdropEffectScope.() -> Unit = {
-        vibrancy()
-        blur(BackdropBlur.ButtonPill.toPx())
-        lens(
-            refractionHeight = LensRefraction.ButtonPill.height.toPx(),
-            refractionAmount = LensRefraction.ButtonPill.amount.toPx(),
-            depthEffect = false,
-            chromaticAberration = true,
-        )
-        frostedGrain(0.015f)
-    }
+    // ButtonPill deleted - GlassButton now resolves this tier through GlassStyles.button instead.
 
     /**
      * Chip and metadata tag effect stack — ultra-subtle blur and fast lens for compact badges.
@@ -220,21 +182,8 @@ object GlassEffects {
 
     // ==================== 4. MODAL & SCRIM TIER ====================
 
-    /**
-     * Modal dialog effect stack — heavy frosted glass with theme-aware brightness and saturation boost.
-     */
-    fun dialog(isLightTheme: Boolean): BackdropEffectScope.() -> Unit = {
-        colorControls(
-            brightness = if (isLightTheme) BackdropBrightness.DialogLight else BackdropBrightness.DialogDark,
-            saturation = BackdropSaturation.Vibrant,
-        )
-        blur((if (isLightTheme) BackdropBlur.DialogLight else BackdropBlur.DialogDark).toPx())
-        lens(
-            refractionHeight = LensRefraction.Dialog.height.toPx(),
-            refractionAmount = LensRefraction.Dialog.amount.toPx(),
-            depthEffect = true,
-        )
-    }
+    // dialog() deleted - GlassDialog/GlassLoadingDialog now resolve this tier through
+    // GlassStyles.dialog (including its brightness/saturation colorControls) instead.
 
     /**
      * Bottom sheet effect stack — heavy frosted drawer with vibrancy boost.

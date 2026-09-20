@@ -76,12 +76,6 @@ import org.ide.lti.core.designsystem.utils.applyInteractiveHighlightTransform
 val GlassButtonEffects: BackdropEffectScope.() -> Unit = GlassEffects.Button
 
 /**
- * Pill-button glass effect stack for text-labeled action buttons.
- * Delegated to canonical [GlassEffects.ButtonPill].
- */
-val GlassButtonPillEffects: BackdropEffectScope.() -> Unit = GlassEffects.ButtonPill
-
-/**
  * Type-safe button style hierarchy representing visual variants.
  */
 sealed interface GlassButtonStyle {
