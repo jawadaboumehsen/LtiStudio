@@ -20,6 +20,7 @@ import androidx.navigation.compose.composable
 import org.ide.lti.core.domain.workspace.WorkspaceManager
 import org.ide.lti.feature.configuration.configurationScreen
 import org.ide.lti.feature.configuration.navigateToConfiguration
+import org.ide.lti.feature.configuration.navigateToEditConfiguration
 import org.ide.lti.feature.plugins.pluginsScreen
 import org.ide.lti.feature.settings.navigateToSettings
 import org.ide.lti.feature.settings.notificationScreen
@@ -156,6 +157,9 @@ internal fun RootNavGraph(
             },
             onNavigateToSetup = navigateToSetup,
             onOpenSettings = { navHostController.navigateToSettings() },
+            onOpenEditConfiguration = { targetId ->
+                navHostController.navigateToEditConfiguration(targetId)
+            },
         )
 
         // Plugin Manager (Installed, Marketplace, Import, Author Tools)

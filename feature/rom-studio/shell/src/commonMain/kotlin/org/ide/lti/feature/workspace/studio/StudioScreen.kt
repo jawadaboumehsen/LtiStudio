@@ -52,6 +52,7 @@ import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.domain.pipeline.PipelineStageSequence
 import org.ide.lti.core.domain.pipeline.configuration.ValidationError
+import org.ide.lti.core.domain.workspace.WorkspaceManager
 import org.ide.lti.core.model.run.StageId
 import org.ide.lti.feature.rom.studio.api.CanonicalStageDescriptors
 import org.ide.lti.feature.rom.studio.api.StageDescriptor
@@ -68,6 +69,7 @@ import org.ide.lti.feature.workspace.studio.components.StudioTopAppBar
 import org.ide.lti.feature.workspace.studio.components.TopBarActionButton
 import org.ide.lti.feature.workspace.studio.components.TopBarTargetSpecifier
 import org.ide.lti.feature.workspace.studio.components.WorkspaceNavigator
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -95,11 +97,15 @@ public fun StudioScreen(
     onNavigateToPlugins: (workspaceId: String?, packageId: String?, destination: String) -> Unit = { _, _, _ -> },
     onNavigateToSetup: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
+    onOpenEditConfiguration: (targetId: String) -> Unit = {},
     viewModel: StudioViewModel = koinViewModel { parametersOf(workspaceId) },
+    workspaceManager: WorkspaceManager = koinInject(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val shellState by viewModel.shellState.collectAsState()
     val stageEditorRegistry = viewModel.stageEditorRegistry
+    val currentWorkspace by workspaceManager.currentWorkspace.collectAsState()
+    val boundProfileId = currentWorkspace?.targetBinding?.profileId
 
     LaunchedEffect(workspaceId, initialStageId, initialObjectId) {
         viewModel.onEntry(
@@ -132,7 +138,11 @@ public fun StudioScreen(
             }
         },
         onSelectWorkspaceSection = { section ->
-            viewModel.selectWorkspaceSection(section)
+            if (section == WorkspaceSection.TargetProfile && boundProfileId != null) {
+                onOpenEditConfiguration(boundProfileId)
+            } else {
+                viewModel.selectWorkspaceSection(section)
+            }
         },
         onSelectStage = { stageId ->
             viewModel.selectStage(stageId)
@@ -153,6 +163,8 @@ public fun StudioScreen(
                 selectedObjectId = selectedObjectId,
                 onNavigateToSetup = onNavigateToSetup,
                 onOpenSettings = onOpenSettings,
+                boundProfileId = boundProfileId,
+                onOpenEditConfiguration = onOpenEditConfiguration,
             )
         },
     )
@@ -170,6 +182,8 @@ private fun StudioContent(
     selectedObjectId: String?,
     onNavigateToSetup: () -> Unit,
     onOpenSettings: () -> Unit,
+    boundProfileId: String?,
+    onOpenEditConfiguration: (targetId: String) -> Unit,
 ) {
     if (selectedStageId != null && uiState.entry is StudioEntry.Editor) {
         val editor = stageEditorRegistry.editorFor(selectedStageId)
@@ -220,7 +234,13 @@ private fun StudioContent(
                 )
             },
             onReload = { viewModel.onEntry(workspaceId) },
-            onEditProfile = { viewModel.selectWorkspaceSection(WorkspaceSection.TargetProfile) },
+            onEditProfile = {
+                if (boundProfileId != null) {
+                    onOpenEditConfiguration(boundProfileId)
+                } else {
+                    viewModel.selectWorkspaceSection(WorkspaceSection.TargetProfile)
+                }
+            },
             onOpenHistory = { viewModel.selectWorkspaceSection(WorkspaceSection.RunHistory) },
         )
     }

@@ -29,6 +29,7 @@ public fun NavGraphBuilder.studioScreen(
     onNavigateToPlugins: (workspaceId: String?, packageId: String?, destination: String) -> Unit = { _, _, _ -> },
     onNavigateToSetup: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
+    onOpenEditConfiguration: (targetId: String) -> Unit = {},
 ) {
     composable(
         route = STUDIO_ROUTE_PATTERN,
@@ -68,6 +69,7 @@ public fun NavGraphBuilder.studioScreen(
             onNavigateToPlugins = onNavigateToPlugins,
             onNavigateToSetup = onNavigateToSetup,
             onOpenSettings = onOpenSettings,
+            onOpenEditConfiguration = onOpenEditConfiguration,
         )
     }
 }
