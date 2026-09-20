@@ -16,7 +16,6 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.runDesktopComposeUiTest
-import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.config.AppTheme
 import org.ide.lti.core.domain.pipeline.configuration.ValidationReport
@@ -87,12 +86,10 @@ class PluginThemeScreenshotTest {
         )
 
         setContent {
-            val backdrop = rememberLayerBackdrop()
-            LtiTheme(appTheme = AppTheme.Blue, sharedBackdrop = backdrop) {
+            LtiTheme(appTheme = AppTheme.Blue) {
                 PluginManagerContent(
                     state = state,
                     actions = PluginManagerActions(),
-                    backdrop = backdrop,
                 )
             }
         }
@@ -150,12 +147,10 @@ class PluginThemeScreenshotTest {
         )
 
         setContent {
-            val backdrop = rememberLayerBackdrop()
-            LtiTheme(appTheme = AppTheme.Blue, sharedBackdrop = backdrop) {
+            LtiTheme(appTheme = AppTheme.Blue) {
                 PluginManagerContent(
                     state = state,
                     actions = PluginManagerActions(),
-                    backdrop = backdrop,
                 )
             }
         }
@@ -182,12 +177,10 @@ class PluginThemeScreenshotTest {
         )
 
         setContent {
-            val backdrop = rememberLayerBackdrop()
-            LtiTheme(appTheme = AppTheme.Blue, sharedBackdrop = backdrop) {
+            LtiTheme(appTheme = AppTheme.Blue) {
                 PluginManagerContent(
                     state = state,
                     actions = PluginManagerActions(),
-                    backdrop = backdrop,
                 )
             }
         }
@@ -228,12 +221,10 @@ class PluginThemeScreenshotTest {
         )
 
         setContent {
-            val backdrop = rememberLayerBackdrop()
-            LtiTheme(appTheme = AppTheme.Blue, sharedBackdrop = backdrop) {
+            LtiTheme(appTheme = AppTheme.Blue) {
                 PluginManagerContent(
                     state = state,
                     actions = PluginManagerActions(),
-                    backdrop = backdrop,
                 )
             }
         }

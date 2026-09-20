@@ -36,6 +36,8 @@ import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.GlassVerticalDivider
+import org.ide.lti.core.designsystem.component.layout.GlobalAppDestination
+import org.ide.lti.core.designsystem.component.layout.GlobalAppTopBar
 import org.ide.lti.core.designsystem.component.layout.StudioGlassBackdrop
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.theme.GlassShapes
@@ -45,7 +47,6 @@ import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.domain.plugin.key
 import org.ide.lti.feature.plugins.components.PluginSidebar
-import org.ide.lti.feature.plugins.components.PluginTopBar
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -54,6 +55,7 @@ public fun PluginManagerScreen(
     initialWorkspaceId: String? = null,
     initialPackageId: String? = null,
     onNavigateBack: () -> Unit = {},
+    onNavigateToSetup: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
     backdrop: Backdrop? = null,
     modifier: Modifier = Modifier,
@@ -112,6 +114,7 @@ public fun PluginManagerScreen(
     PluginManagerContent(
         state = uiState,
         actions = actions,
+        onNavigateToSetup = onNavigateToSetup,
         backdrop = backdrop,
         modifier = modifier,
     )
@@ -121,12 +124,24 @@ public fun PluginManagerScreen(
 public fun PluginManagerContent(
     state: PluginManagerUiState,
     actions: PluginManagerActions = PluginManagerActions(),
+    onNavigateToSetup: () -> Unit = {},
     backdrop: Backdrop? = null,
     modifier: Modifier = Modifier,
 ) {
-    val ambientBackdrop = (backdrop as? LayerBackdrop) ?: (GlassTheme.backdrop as? LayerBackdrop)
-    val resolvedBackdrop = ambientBackdrop ?: rememberLayerBackdrop()
+    // Prefer an explicitly passed or ambient backdrop so this screen doesn't allocate a
+    // redundant LayerBackdrop when one is already available; falls back to a fresh one for
+    // isolated preview/test usage. Unlike IdeAppFrame, this screen always paints its own
+    // StudioGlassBackdrop canvas below regardless of which backdrop it resolved to - an
+    // ambient backdrop from LtiTheme's own internal fallback (LtiTheme always provides one,
+    // painted or not) is not a reliable signal that something else already painted it, and
+    // skipping the paint here left large areas of this screen sampling an empty backdrop.
+    val resolvedBackdrop = (backdrop as? LayerBackdrop)
+        ?: (GlassTheme.backdrop as? LayerBackdrop)
+        ?: rememberLayerBackdrop()
     val glassColors = GlassTheme.colors
+    val onSelectGlobalDestination = remember(onNavigateToSetup, actions) {
+        { destination: GlobalAppDestination -> resolveGlobalDestination(destination, onNavigateToSetup, actions) }
+    }
 
     CompositionLocalProvider(LocalContentColor provides glassColors.onGlass) {
         Box(
@@ -144,11 +159,10 @@ public fun PluginManagerContent(
             Column(
                 modifier = Modifier.fillMaxSize(),
             ) {
-                // Top Product Header matching Concept mockups
-                PluginTopBar(
-                    activeWorkspaceId = state.activeWorkspaceId,
-                    onNavigateBack = actions.onNavigateBack,
-                    onOpenSettings = actions.onOpenSettings,
+                GlobalAppTopBar(
+                    selectedDestination = GlobalAppDestination.Workspace,
+                    onSelectDestination = onSelectGlobalDestination,
+                    tagPrefix = "TopBar",
                 )
 
                 // Optional Notification or Error Status Banner
@@ -267,6 +281,18 @@ public fun PluginManagerContent(
                 )
             }
         }
+    }
+}
+
+private fun resolveGlobalDestination(
+    destination: GlobalAppDestination,
+    onNavigateToSetup: () -> Unit,
+    actions: PluginManagerActions,
+) {
+    when (destination) {
+        GlobalAppDestination.Setup -> onNavigateToSetup()
+        GlobalAppDestination.Workspace -> actions.onNavigateBack()
+        GlobalAppDestination.Settings -> actions.onOpenSettings()
     }
 }
 

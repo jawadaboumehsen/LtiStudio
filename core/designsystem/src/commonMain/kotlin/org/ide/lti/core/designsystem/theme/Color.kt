@@ -506,9 +506,6 @@ object StudioBackdropColors {
     val SidebarAura = Color(0xFF075FC7)
     val VioletAura = Color(0xFF4949B8)
     val Vignette = Color(0xFF010813)
-    val ChromeStart = Color(0xD5195FB5)
-    val ChromeCenter = Color(0xB90C427F)
-    val ChromeEnd = Color(0xD2072445)
     val SidebarStart = Color(0xC9195FB5)
     val SidebarCenter = Color(0xA90C4385)
     val SidebarEnd = Color(0xC9062342)
@@ -638,11 +635,11 @@ object IdeShellTokens {
 
     val Blue = IdeShellColorScheme(
         appBackground = Color.Transparent,
-        topBarBackground = StudioBackdropColors.ChromeCenter.copy(alpha = AlphaTokens.Prominent),
+        topBarBackground = Color(0xB90C427F).copy(alpha = AlphaTokens.Prominent),
         railBackground = StudioBackdropColors.SidebarStart.copy(alpha = AlphaTokens.Strong),
         navigatorBackground = StudioBackdropColors.SidebarCenter.copy(alpha = AlphaTokens.Strong),
         contentBackground = Color.Transparent,
-        statusBarBackground = StudioBackdropColors.ChromeEnd.copy(alpha = AlphaTokens.High),
+        statusBarBackground = Color(0xD2072445).copy(alpha = AlphaTokens.High),
         cardBackground = Color(0x730A1E38),
         cardBackgroundMuted = Color(0x40051222),
         border = Color(0x4D38BDF8),

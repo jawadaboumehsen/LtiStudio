@@ -22,7 +22,11 @@ import androidx.savedstate.read
 public const val PLUGINS_ROUTE_PATTERN: String =
     "plugins/{destination}?workspaceId={workspaceId}&packageId={packageId}"
 
-public fun NavGraphBuilder.pluginsScreen(onNavigateBack: () -> Unit = {}, onOpenSettings: () -> Unit = {}) {
+public fun NavGraphBuilder.pluginsScreen(
+    onNavigateBack: () -> Unit = {},
+    onNavigateToSetup: () -> Unit = {},
+    onOpenSettings: () -> Unit = {},
+) {
     composable(
         route = PLUGINS_ROUTE_PATTERN,
         arguments = listOf(
@@ -51,6 +55,7 @@ public fun NavGraphBuilder.pluginsScreen(onNavigateBack: () -> Unit = {}, onOpen
             initialWorkspaceId = workspaceId,
             initialPackageId = packageId,
             onNavigateBack = onNavigateBack,
+            onNavigateToSetup = onNavigateToSetup,
             onOpenSettings = onOpenSettings,
         )
     }

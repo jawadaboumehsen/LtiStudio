@@ -161,6 +161,7 @@ internal fun RootNavGraph(
         // Plugin Manager (Installed, Marketplace, Import, Author Tools)
         pluginsScreen(
             onNavigateBack = { navHostController.popBackStack() },
+            onNavigateToSetup = navigateToSetup,
             onOpenSettings = { navHostController.navigateToSettings() },
         )
     }

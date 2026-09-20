@@ -178,10 +178,6 @@ object ComponentSize {
     val PluginDiagnosticsTableColSeverity: Dp = 80.dp
     val PluginDiagnosticsTableColFile: Dp = 140.dp
     val PluginDiagnosticsTableColTime: Dp = 84.dp
-    val PluginTopBarHeight: Dp = 58.dp
-    val PluginLogoBadgeSize: Dp = 34.dp
-    val PluginWorkspaceTabWidth: Dp = 140.dp
-    val PluginWorkspaceTabHeight: Dp = 36.dp
     val PluginActionBtnHeight: Dp = 40.dp
     val PluginActionBtnCompactHeight: Dp = 34.dp
     val PluginActionBtnCompactWidth: Dp = 104.dp
