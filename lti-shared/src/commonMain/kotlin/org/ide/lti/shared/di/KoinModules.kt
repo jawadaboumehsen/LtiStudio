@@ -31,7 +31,6 @@ import org.ide.lti.feature.rom.studio.stage.patch.di.stagePatchModule
 import org.ide.lti.feature.rom.studio.stage.publish.di.stagePublishModule
 import org.ide.lti.feature.settings.di.settingsModule
 import org.ide.lti.feature.setup.di.setupModule
-import org.ide.lti.feature.workspace.di.workspaceModule
 import org.ide.lti.feature.workspace.studio.di.romStudioShellModule
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module
@@ -80,7 +79,6 @@ object KoinModules {
             setupModule,
             configurationModule,
             settingsModule,
-            workspaceModule,
             pluginsModule,
             romStudioShellModule,
             stageAcquireModule,

@@ -97,7 +97,6 @@ class KoinGraphResolutionTest {
     private companion object {
         val SCREEN_VIEW_MODELS = listOf(
             "org.ide.lti.feature.setup.SetupViewModel",
-            "org.ide.lti.feature.workspace.WorkspaceViewModel",
             "org.ide.lti.feature.workspace.panels.target.WorkspaceConfigurationViewModel",
             "org.ide.lti.feature.workspace.creation.CreateWorkspaceViewModel",
             "org.ide.lti.feature.workspace.panels.run.BuildRunViewModel",

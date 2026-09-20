@@ -33,7 +33,7 @@ kotlin {
             implementation(projects.feature.settings)
             implementation(projects.feature.setup)
             api(projects.feature.workspaceApi)
-            implementation(projects.feature.workspace)
+            implementation(projects.feature.workspaceCreate)
             implementation(projects.feature.configuration)
             implementation(projects.feature.plugins)
             implementation(projects.feature.romStudio.romStudioApi)

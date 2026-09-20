@@ -69,7 +69,6 @@ include(":feature:rom-studio:stage-patch")
 include(":feature:rom-studio:stage-build")
 include(":feature:rom-studio:stage-metadata")
 include(":feature:rom-studio:stage-publish")
-include(":feature:workspace")
 include(":feature:configuration")
 include(":feature:plugins")
 

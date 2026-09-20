@@ -244,11 +244,4 @@ class AppSettingsStateWiringTest {
         println("[VERIFICATION] SettingsScreen Blue vs Dark diff: $diffPixels pixels ($formatted%)")
         assertTrue(diffPercent > 0.0, "SettingsScreen must render differently between Blue and Dark themes")
     }
-
-    @Test
-    fun testTerminalViewModelCanBeResolvedFromKoin() {
-        val koin = org.koin.core.context.GlobalContext.get()
-        val terminalViewModel = koin.getOrNull<org.ide.lti.feature.workspace.panels.terminal.TerminalViewModel>()
-        kotlin.test.assertNotNull(terminalViewModel, "TerminalViewModel should be resolvable from Koin")
-    }
 }

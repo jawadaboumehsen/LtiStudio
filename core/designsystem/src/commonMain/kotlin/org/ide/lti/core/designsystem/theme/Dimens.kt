@@ -148,8 +148,6 @@ object ComponentSize {
     val ThemePreviewHeight: Dp = 84.dp
     val ActionCardHeight: Dp = 120.dp
     val EmptyStateBadgeSize: Dp = 56.dp
-    val SpinnerSize: Dp = 28.dp
-    val ShortcutHelpWidth: Dp = 320.dp
     val StatusDotSize: Dp = 8.dp
     val StepNodeMinWidth: Dp = 96.dp
     val PanelHeaderStackBreakpoint: Dp = 280.dp
