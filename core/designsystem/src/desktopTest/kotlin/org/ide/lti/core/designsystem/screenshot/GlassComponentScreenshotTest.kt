@@ -50,6 +50,7 @@ import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.component.inputs.TextFieldLeadingSlot
 import org.ide.lti.core.designsystem.component.layout.GlassLayout
+import org.ide.lti.core.designsystem.component.layout.GlassStatusBar
 import org.ide.lti.core.designsystem.component.layout.GlassTopBar
 import org.ide.lti.core.designsystem.component.layout.LayoutPanel
 import org.ide.lti.core.designsystem.component.layout.TopBarNavigation
@@ -464,6 +465,31 @@ class GlassComponentScreenshotTest {
 
         val image = onRoot().captureToImage()
         GoldenImageAssert.assertMatchesBaseline("glass_top_bar", image)
+    }
+
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun testGlassStatusBar() = runDesktopComposeUiTest(width = 640, height = 60) {
+        setContent {
+            LtiTheme(darkTheme = true) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(GlassTheme.colors.glassSurface)
+                        .padding(Spacing.Small),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    GlassStatusBar(
+                        leadingContent = { Text("main") },
+                        centerContent = { Text("Ln 12, Col 4") },
+                        trailingContent = { Text("UTF-8") },
+                    )
+                }
+            }
+        }
+
+        val image = onRoot().captureToImage()
+        GoldenImageAssert.assertMatchesBaseline("glass_status_bar", image)
     }
 
     @OptIn(ExperimentalTestApi::class)

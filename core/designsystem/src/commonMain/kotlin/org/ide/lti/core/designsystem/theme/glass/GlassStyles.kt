@@ -44,12 +44,12 @@ public object GlassStyles {
         get() {
             val colors = GlassTheme.colors
             return GlassStyle(
-                surface = colors.glassSurface,
-                tint = colors.glassTint,
+                surface = colors.chromeSurface,
                 shape = GlassShapes.None,
                 blur = OpticalSizeValue.Fixed(BackdropBlur.TopBar),
                 lens = OpticalSizeValue.Fixed(LensRefraction.TopBar),
                 grain = GRAIN_STANDARD,
+                rim = Rim(),
             )
         }
 

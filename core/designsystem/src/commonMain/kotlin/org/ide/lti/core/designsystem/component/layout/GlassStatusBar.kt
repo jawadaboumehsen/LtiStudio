@@ -9,7 +9,6 @@
  */
 package org.ide.lti.core.designsystem.component.layout
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -23,9 +22,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.kashif_e.backdrop.Backdrop
-import com.kashif_e.backdrop.drawBackdrop
-import com.kashif_e.backdrop.highlight.Highlight
 import org.ide.lti.core.designsystem.component.actions.*
 import org.ide.lti.core.designsystem.component.devtools.*
 import org.ide.lti.core.designsystem.component.display.*
@@ -33,13 +29,10 @@ import org.ide.lti.core.designsystem.component.feedback.*
 import org.ide.lti.core.designsystem.component.inputs.*
 import org.ide.lti.core.designsystem.component.navigation.*
 import org.ide.lti.core.designsystem.component.primitives.*
-import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
-import org.ide.lti.core.designsystem.theme.GlassEffects
-import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.glass.GlassStyles
 
 /**
  * Modern IDE Liquid Glass Status Bar Primitive.
@@ -52,7 +45,6 @@ import org.ide.lti.core.designsystem.theme.StrokeWidth
  * @param leadingContent Optional content slot on the start/left edge.
  * @param centerContent Optional content slot centered in the status bar.
  * @param trailingContent Optional content slot on the end/right edge.
- * @param backdrop Shared glass backdrop for refraction effects.
  * @param drawOwnChrome Whether to render internal glass background and borders (false when embedded).
  */
 @Composable
@@ -61,37 +53,12 @@ fun GlassStatusBar(
     leadingContent: (@Composable RowScope.() -> Unit)? = null,
     centerContent: (@Composable RowScope.() -> Unit)? = null,
     trailingContent: (@Composable RowScope.() -> Unit)? = null,
-    backdrop: Backdrop? = null,
     drawOwnChrome: Boolean = true,
 ) {
-    val actualBackdrop = backdrop ?: GlassTheme.backdrop
     val glassColors = GlassTheme.colors
-    val effectsEnabled = GlassTheme.effectsEnabled
 
-    val backgroundModifier = if (drawOwnChrome) {
-        if (effectsEnabled && actualBackdrop != null) {
-            Modifier.drawBackdrop(
-                backdrop = actualBackdrop,
-                shape = { GlassShapes.Panel },
-                effects = GlassEffects.StatusBar,
-                highlight = { Highlight.Default },
-                onDrawSurface = {
-                    drawRect(glassColors.glassSurface)
-                },
-            )
-        } else {
-            Modifier.background(glassColors.glassSurface.copy(alpha = AlphaTokens.Medium))
-        }
-    } else {
-        Modifier
-    }
-
-    val borderModifier = if (drawOwnChrome) {
-        Modifier.glassOutlineBorder(
-            width = StrokeWidth.Hairline,
-            color = glassColors.glassBorder,
-            shape = GlassShapes.Panel,
-        )
+    val chromeModifier = if (drawOwnChrome) {
+        Modifier.glass(GlassStyles.bar)
     } else {
         Modifier
     }
@@ -100,8 +67,7 @@ fun GlassStatusBar(
         modifier = modifier
             .fillMaxWidth()
             .height(ComponentSize.StatusBarHeightAlt)
-            .then(backgroundModifier)
-            .then(borderModifier)
+            .then(chromeModifier)
             .padding(horizontal = Spacing.SmallMedium),
         contentAlignment = Alignment.Center,
     ) {

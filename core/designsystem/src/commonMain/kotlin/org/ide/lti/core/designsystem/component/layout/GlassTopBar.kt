@@ -56,6 +56,7 @@ import org.ide.lti.core.designsystem.component.actions.GlassIconToggleButton
 import org.ide.lti.core.designsystem.component.actions.LocalWindowControlActions
 import org.ide.lti.core.designsystem.component.actions.WindowControlActions
 import org.ide.lti.core.designsystem.component.actions.windowDragGesture
+import org.ide.lti.core.designsystem.component.primitives.glass
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
@@ -71,6 +72,7 @@ import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
+import org.ide.lti.core.designsystem.theme.glass.GlassStyles
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import java.awt.Cursor
 
@@ -134,48 +136,16 @@ fun GlassTopBar(
 ) {
     val actualBackdrop = backdrop ?: GlassTheme.backdrop
     val glassColors = GlassTheme.colors
-    val effectsEnabled = GlassTheme.effectsEnabled
     val localControls = LocalWindowControlActions.current
 
     val effectiveWindowControls = windowControls ?: localControls
     val effectiveDrag = effectiveWindowControls.onDragWindow
     val effectiveDragDelta = effectiveWindowControls.onDragDelta
 
-    val backgroundModifier = if (drawOwnChrome) {
-        if (effectsEnabled && actualBackdrop != null) {
-            Modifier.drawBackdrop(
-                backdrop = actualBackdrop,
-                shape = { shape },
-                effects = GlassEffects.TopBar,
-                highlight = { null },
-                onDrawSurface = {
-                    drawRect(glassColors.chromeSurface)
-                },
-            )
-        } else {
-            Modifier.background(glassColors.chromeSurface, shape)
-        }
+    val chromeModifier = if (drawOwnChrome) {
+        Modifier.glass(GlassStyles.bar.then { copy(shape = shape) })
     } else {
         Modifier
-    }
-
-    val borderModifier = Modifier.drawBehind {
-        // Uniform bottom specular hairline gradient separating top bar from window content
-        drawLine(
-            brush = Brush.horizontalGradient(
-                colors = listOf(
-                    glassColors.glassBorderHighlight.copy(alpha = AlphaTokens.Hover),
-                    glassColors.glassBorderHighlight.copy(alpha = AlphaTokens.Prominent),
-                    glassColors.glassBorderHighlight.copy(alpha = AlphaTokens.Hover),
-                    Color.Transparent,
-                ),
-                startX = 0f,
-                endX = size.width,
-            ),
-            start = Offset(0f, size.height),
-            end = Offset(size.width, size.height),
-            strokeWidth = StrokeWidth.Hairline.toPx(),
-        )
     }
 
     Row(
@@ -186,8 +156,7 @@ fun GlassTopBar(
                 onDrag = effectiveDrag,
                 onDragDelta = effectiveDragDelta,
             )
-            .then(backgroundModifier)
-            .then(borderModifier)
+            .then(chromeModifier)
             .padding(horizontal = Spacing.MediumSmall),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.Small),

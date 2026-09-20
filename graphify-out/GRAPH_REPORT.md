@@ -1,26 +1,26 @@
 # Graph Report - LtiRomGui  (2026-09-20)
 
 ## Corpus Check
-- 4319 files · ~2,008,706 words
+- 2194 files · ~1,270,408 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 25159 nodes · 51558 edges · 3176 communities (1461 shown, 422 thin omitted)
-- Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 1611 edges (avg confidence: 0.85)
+- 16832 nodes · 37529 edges · 1425 communities (995 shown, 279 thin omitted)
+- Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 1577 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `3eb0277b`
+- Built from commit: `e168c9a3`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
-- Action
+- ChipMode
 - config.mjs
-- RemoteTransportPort
+- ToolExecutionRequest
 - skiaMain/kotlin/com/kashif_e/backdrop/DrawBackdropModifier.kt
-- ValidationError
-- ComponentSize
+- PluginPackageCodec
+- GlassTopBar.kt
 - KotlinSyntaxTokenizer
 - Writing the brief
 - Dispatch and poll
@@ -29,7 +29,7 @@
 - CliktCommand
 - README_GLASS_THEME.md
 - Theme & Design System Rules
-- StageId
+- StageEditor
 - claude-delegate/scripts/relay.mjs
 - Dispatch and poll
 - ExecutionContext
@@ -41,39 +41,39 @@
 - commandcode-delegate/scripts/relay.mjs
 - JetBrains IntelliJ Platform Icon Manifest
 - grok-delegate/scripts/relay.mjs
-- Deprecated
+- StudioScreen.kt
 - WorkspaceWriteLease
 - Options
 - SyntaxLanguage
-- LtiRomGuiProjectDependency
+- PluginPlanTemplate
 - Contributor Covenant Code of Conduct
 - ToolchainSetupState
 - GlassLayoutState
-- androidMain/kotlin/com/kashif_e/backdrop/DrawBackdropModifier.kt
-- InverseLayerScope
+- ShapeProvider
+- RunStatus
 - Flow
-- StepCommand
+- BuildRun
 - InverseLayerScope
 - aider-delegate/scripts/relay.mjs
 - codex-delegate/scripts/relay.mjs
-- ToolCapabilities
+- SetupPlanKind
 - TerminalConsole
-- GlassDialog.kt
+- column
 - cursor-delegate/scripts/relay.mjs
 - vibe-delegate/scripts/relay.mjs
 - ToolchainPreferencesDataSource
-- LayerBackdropElement
-- LayerBackdropElement
-- skiaMain/kotlin/com/kashif_e/backdrop/platform/PlatformEffects.kt
+- InMemorySnapshotRepository
+- LayerBackdropModifier.kt
+- PlatformRenderEffect
 - agy-delegate/scripts/relay.mjs
 - copilot-delegate/scripts/relay.mjs
 - omp-delegate/scripts/relay.mjs
 - warp-delegate/scripts/relay.mjs
 - Advanced Patterns
 - TerminalCommandDispatcherImpl
-- InMemorySnapshotRepository
+- EnvironmentReadiness
 - KMP Liquid Glass — Building Glass Components
-- HighlightNode
+- StudioPresentationState.kt
 - InnerShadowNode
 - DetektConventionPlugin.kt
 - cline-delegate/scripts/relay.mjs
@@ -81,47 +81,47 @@
 - opencode-delegate/scripts/relay.mjs
 - pi-delegate/scripts/relay.mjs
 - qoder-delegate/scripts/relay.mjs
-- TerminalViewModel
+- ShellExecutor
 - KMP Liquid Glass — Building Glass Components
-- androidMain/kotlin/com/kashif_e/backdrop/platform/PlatformEffects.kt
+- StageDescriptor
 - EnvironmentStepContent.kt
 - HighlightNode
 - StdinMode
-- column
+- Spacing
 - customizer.sh
-- InnerShadowNode
+- KtorRemoteTransportAdapter
 - DecodedComponent
 - Built-In Types
 - Overview
 - Advanced techniques
-- .setFloatUniform
-- ShadowElement
-- CoreProjectDependency
-- MutableStateFlow
+- RecordingRemoteTransport
+- PluginImportTab.kt
+- StudioViewModel
+- Workspace
 - Advanced techniques
-- SetupOutcome
-- NavGraphBuilderExtensions.kt
+- WslToolchainProvisioner
+- Enter
 - Component recipes
-- RuntimeShaderCache
-- skiaMain/kotlin/com/kashif_e/backdrop/highlight/HighlightStyle.kt
+- SetupLogEvent
+- PlatformRuntimeShader
 - PartitionPath
 - Component recipes
 - skiaMain/kotlin/com/kashif_e/backdrop/BackdropEffectScope.kt
 - RuntimeShaderBuilder
 - Documenting Scripts
 - Upgrading to Newer Releases
-- ConnectionManager
-- BackdropEffectScopeImpl
-- SnapshotMaterializer
+- MutableStateFlow
+- RecordingTransport
+- atomicWrite
 - ThemeRegistry
-- GlassCard
-- skiaMain/kotlin/com/kashif_e/backdrop/effects/ColorFilter.kt
+- DefaultStageEditorRegistry
+- DrawBackdropInputScaleScreenshotTest
 - Enabling Completion
 - Clikt 5 — Kotlin Multiplatform Command Line Interfaces
 - .launch
-- AIAssistantViewModel
+- MessageRole
 - Effects reference
-- BytecodeMatcher
+- BytecodeMatchSpec
 - Effects reference
 - ToolRisk
 - GlassContrastTest
@@ -132,7 +132,7 @@
 - Writing the brief
 - Aider Delegate
 - Commands
-- BytecodeMatchSpec
+- PluginManagerViewModelTest
 - GlassMaterial
 - Dispatch and poll
 - Dispatch and poll
@@ -151,9 +151,9 @@
 - tokenizeCommandLine
 - ArtifactRequirement
 - ConcreteOperation
-- applyPlatformEffect
+- .createDraft
 - commonMain/kotlin/com/kashif_e/backdrop/backdrops/LayerBackdrop.kt
-- javax.inject.Inject
+- RecoveryStepContent.kt
 - Review and land
 - Writing the brief
 - Dispatch and poll
@@ -167,11 +167,11 @@
 - Writing the brief
 - Dispatch and poll
 - WorkspacePipelineDraft
-- FeatureProjectDependency
+- StudioIconKey
 - 📂 Complete File Manifest
-- androidMain/kotlin/com/kashif_e/backdrop/effects/ColorFilter.kt
-- BuildRunViewModel
-- effect
+- AcquireViewModel
+- BuildRunReattachTest
+- AssembleViewModel
 - Review and land
 - Review and land
 - Review and land
@@ -206,17 +206,17 @@
 - Quick Start
 - Platform support & API levels
 - `core:designsystem` Module Architecture
-- PackageWriterTest
-- org.gradle.api.provider.Provider
-- Spacing
+- PluginPackageReader.kt
+- ExtractViewModel
+- GlassFileTree.kt
 - pre-commit.sh
 - pre-push.sh
 - Helpers — required by the interactive recipes
 - .createFixture
 - commonMain/kotlin/com/kashif_e/backdrop/BackdropEffectScope.kt
-- org.gradle.api.internal.catalog.DefaultVersionCatalog
+- PatchViewModel
 - PersistentFakeServer
-- skiaMain/kotlin/com/kashif_e/backdrop/effects/Blur.kt
+- WorkspaceKeyProvisioner
 - KtlintConventionPlugin
 - The loop
 - Multi-task queues
@@ -243,11 +243,11 @@
 - Vibe Delegate
 - The loop
 - Testing Clikt Commands
-- PluginImportTab.kt
+- GlassShapes
 - Helpers — required by the interactive recipes
 - EnvironmentSetupState
-- ToolExecutionRequest
-- Run
+- WslEnvironmentDetector
+- .append
 - DiagnosticCheckItem
 - ShareUtils
 - ShareUtils
@@ -256,9 +256,9 @@
 - 🚀 Future Enhancement Opportunities
 - 📖 Usage Guide
 - 🎯 Key Achievements
-- BlurStyle
-- GlassButton
-- BlurStyle
+- OpticalSizeValueTest
+- IconSize
+- .testDelegatingSystemNotifier_forwardsToAttachedDelegate
 - build.gradle.kts
 - CMPFeatureConventionPlugin
 - GitHooksConventionPlugin
@@ -266,7 +266,7 @@
 - Multi-task queues
 - AppDispatchers
 - SimulatedExecutionPort
-- StudioViewModel
+- StudioPresentation
 - gradlew
 - 📋 PHASE 4: Debugging & Presets ✅ COMPLETED
 - 📋 PHASE 5: Advanced Capabilities ✅ COMPLETED
@@ -278,16 +278,16 @@
 - Exception Handling
 - Why Clikt?
 - EnvironmentState
-- InMemoryRunRepository
+- Rim
 - Backdrop
-- org.gradle.api.artifacts.MinimalExternalModuleDependency
+- BuildFlashableZipStageTest
 - ToolCommand
-- AuthorProject
+- AuthorTaskResult
 - PULL_REQUEST_TEMPLATE.md
 - commonMain/kotlin/com/kashif_e/backdrop/effects/ProgressiveBlur.kt
 - ci-prepush.sh
 - GoldenImageAssert
-- IconSize
+- GlassBottomSheet.kt
 - ToolId
 - Third-Party Licenses and Attributions
 - build-logic/README.md
@@ -298,19 +298,21 @@
 - domain/README.md
 - model/README.md
 - network/README.md
-- ReadinessChecklistSection.kt
-- FlashingCommand
+- WorkspaceOverviewState.kt
+- SetupTokens
 - settings/README.md
 - lti-desktop/README.md
 - lti-shared/README.md
 - LtiNavGraph.kt
+- ModifierGlassScreenshotTest
 - AssetRef
-- DomainModule.kt
+- PipelineDraftSession
+- SidecarNormalizer
 - PackageIdentity
 - GlassTheme
 - WorkspaceJailInterceptor
 - Multi Value Options
-- androidMain/kotlin/com/kashif_e/backdrop/Outline.kt
+- SdkBoundaryTest
 - commonMain/kotlin/com/kashif_e/backdrop/Outline.kt
 - GoldenImageAssertTest
 - Commands
@@ -318,7 +320,7 @@
 - PipelineOrchestrator
 - ToolDomainEvent
 - CheckpointRepository.kt
-- StageContext
+- StageId
 - ArchiveTransferAdapter.kt
 - Condition
 - Commands
@@ -328,60 +330,60 @@
 - Commands
 - ToolExecutionResponse
 - FakeWorkspaceRepo
-- .createTestFixture
+- ConnectedDeviceRepository
 - PluginIndexAdapter
 - Slot
-- StudioDraftController
+- CommandCategory
 - StudioAction
-- BuildRun
+- PairWirelessDeviceUseCase.kt
 - ConfigurationViewModel
-- ToolDiWiringTest.kt
-- PluginDependencyResolver.kt
+- KoinModules.kt
+- DependencyRef
 - ToolBinary
 - AuditRecord
 - ToolResult
-- org.gradle.plugin.use.PluginDependency
+- RebootConnectedDeviceUseCase.kt
 - ConfigurationSnapshot
 - RemoteWslToolRepository
 - SystemNotification
-- FileNode
+- .createTestOverviewState
 - properties
-- RecordingRemoteTransport
-- EditorSettingsPane.kt
+- TransportCliExecutor
+- DevicesCommand
 - SetupActivityState
 - TestCommand
 - definitions
-- SetupTab
+- SetupJourneySidebar.kt
 - DebloatResolver.kt
 - properties
-- .testServiceUnreachableReadOnlyOpenAndCanStartFalseWithRemediation
+- EmuCommand
 - InstalledRecord
-- ToolProjectDependency
+- ResizeLogicalPartitionCommand
 - RootNavGraph.kt
 - ToolingException
 - properties
-- CoilLibraryAccessors
+- DaemonCommand
 - DefaultStudioActionDispatcher
 - CircuitBreaker
 - SetupJournalContext
-- LibrariesForLibsInPluginsBlock
+- DumpChunksCommand
 - KotlinSyntaxTokenizerTest
 - enum
 - navigation/StudioRoutes.kt
 - FakeToolchainRepo
 - ModifierExt.kt
 - properties
-- AnchorHealthPreflight.kt
+- AnchorPattern
 - ConnectedDeviceRepositoryImpl
 - DesktopFileSystemRepository
-- EditorViewModel
+- DumpPackagenameCommand
 - ToolchainSetupRepositoryImpl
 - CredentialRef
 - type
 - .generateDraft
 - WorkspaceVirtualizer
 - Commands
-- GoogleOssLicensesLibraryAccessors
+- BCommand
 - ExitCodeSpec
 - TerminalOutputEvent
 - Unpack_bootimgCliCommand.kt
@@ -392,17 +394,17 @@
 - OS
 - tool-specification.schema.json
 - PatchModCli.kt
-- PlatformRepositoryModule.desktop.kt
+- PipelineExecutionPort
 - main.kt
 - .proceed
-- ExecuteCommand
+- DCommand
 - CatalogCategory
-- AndroidxComposeLibraryAccessors
-- PluginMarketplaceTab.kt
-- WorkspaceViewModel
+- DecodeCommand
+- IndexFetchResult
+- InstallFrameworkCommand
 - SyntaxTokenKind
 - RedactionSpec
-- FakeWorkspaceRepository
+- ListFrameworksCommand
 - ToolBrowserState
 - PanelEvent
 - Commands
@@ -419,10 +421,10 @@
 - Phase3SpecificationTest
 - RepositoryModule.kt
 - NoRawAlphaLiteral
-- PayloadCompilerAdapter
+- ValidationError
 - ToolchainSetupRepository
 - risk
-- AndroidxComposeMaterial3AdaptiveLibraryAccessors
+- ExecuteCommand
 - Dump.erofs Tool Reference
 - Erofsfuse Tool Reference
 - Ext2simg Tool Reference
@@ -442,15 +444,15 @@
 - Zipalign Tool Reference
 - ToolFamily
 - NoWeightInScrollableContainer
-- WindowKeyShortcutHandler.kt
+- DesktopKeyShortcut
 - ServerConnectionDescriptor
-- PayloadCompilationResult
+- ExecuteCommand
 - WriteChannelContent
 - DelegatingSystemNotifier
 - ToolResultTest
 - SafetyCheckInterceptor
 - commonMain/kotlin/org/ide/lti/feature/setup/SetupPerformanceScenario.kt
-- PublishProvider
+- PublishViewModel
 - BugreportCommand
 - AdbCliCommand.kt
 - AttachCliCommand.kt
@@ -484,7 +486,7 @@
 - adb/cli/RebootCliCommand.kt
 - EmptyBackdrop.kt
 - ReconnectCliCommand.kt
-- AndroidxLibraryAccessors
+- ExecuteCommand
 - RemountCliCommand.kt
 - ReverseCliCommand.kt
 - RootCliCommand.kt
@@ -501,7 +503,7 @@
 - ConnectCommand
 - DisableVerityCommand
 - DisconnectCommand
-- PayloadCompilationRequest
+- AgentTaskCommand
 - EnableVerityCommand
 - ForwardCommand
 - GetDevpathCommand
@@ -517,25 +519,25 @@
 - PullCommand
 - PushCommand
 - RebootCommand
-- DependencyRef
+- AgentTaskCreateCommand
 - ReverseCommand
 - RootCommand
 - ShellCommand
 - SyncCommand
 - TcpipCommand
-- PipelineOrchestratorTest
+- CodespaceCodeCommand
 - UnrootCommand
 - VersionCommand
 - WaitForCommand
 - BootCommand
 - BootCliCommand.kt
 - CreateLogicalPartitionCliCommand.kt
-- KotlinLibraryAccessors
-- WorkTreeAssemblyStageTest
+- CodespaceCommand
+- CodespaceEditCommand
 - DeleteLogicalPartitionCliCommand.kt
 - fastboot/cli/DevicesCliCommand.kt
 - EraseCliCommand.kt
-- KotlinxLibraryAccessors
+- DiscussionCommand
 - FastbootCliCommand.kt
 - FetchCliCommand.kt
 - FlashallCliCommand.kt
@@ -549,7 +551,7 @@
 - ToolSpecification
 - OemCliCommand.kt
 - fastboot/cli/RebootCliCommand.kt
-- PatchModCliTest
+- StandaloneDistributionTest
 - ResizeLogicalPartitionCliCommand.kt
 - SetActiveCliCommand.kt
 - SnapshotUpdateCliCommand.kt
@@ -563,17 +565,17 @@
 - FlashallCommand
 - FlashRawCommand
 - LtiDesignSystemRuleSetProvider.kt
-- Core_NetworkProjectDependency
+- ExtensionCommand
 - GetvarCommand
 - GsiCommand
 - OemCommand
 - RebootCommand
-- CliResult
+- ExtensionExecCommand
 - SetActiveCommand
 - SnapshotUpdateCommand
 - StageCommand
 - UpdateCommand
-- FakeWorkspaceRepo
+- PipelineResumeTest.kt
 - Aapt2CliCommand.kt
 - ApkinfoCliCommand.kt
 - CompileCliCommand.kt
@@ -598,19 +600,19 @@
 - LinkCliCommand.kt
 - OptimizeCliCommand.kt
 - aapt2/cli/VersionCliCommand.kt
-- ScriptedFakeTransport
+- ExtensionSearchCommand
 - DumpBadgingCommand
-- DumpCommand
+- GistCommand
 - NoRawDimensionLiteral
 - DumpPermissionsCommand
-- DumpResourcesCommand
-- DumpStringsCommand
+- ArtifactKind
+- GistViewCommand
 - DumpXmlstringsCommand
 - DumpXmltreeCommand
-- LinkCommand
-- SetupOperationState
-- BuildCommand
-- FakeTargetRepo
+- GpgKeyAddCommand
+- IssueCommand
+- PreviewPrompterCommand
+- ProjectFieldCreateCommand
 - ApktoolCliCommand.kt
 - BCliCommand.kt
 - BuildCliCommand.kt
@@ -622,14 +624,14 @@
 - IfCommandCliCommand.kt
 - InstallFrameworkCliCommand.kt
 - LfCliCommand.kt
-- MutableInteractionSource
+- AppIcon
 - ListFrameworksCliCommand.kt
 - apktool/cli/PrCliCommand.kt
 - PublicizeResourcesCliCommand.kt
 - apktool/cli/VersionCliCommand.kt
 - FirmwareExtractionStageTest
 - IfCommandCommand
-- TerminalManager
+- ProjectItemArchiveCommand
 - LfCommand
 - NoRawColorLiteral
 - Append2simgCliCommand.kt
@@ -638,21 +640,21 @@
 - PluginManagerContent
 - ExecuteCommand
 - E2fsdroidCliCommand.kt
-- KtorLibraryAccessors
+- ProjectItemCreateCommand
 - ExecuteCommand
 - ErofsfuseCliCommand.kt
 - ExecuteCommand
-- WorkspacePreferencesDataSource
+- RecentProject
 - Ext2simgCliCommand.kt
 - FecCliCommand.kt
 - ExecuteCommand
 - FsckerofsCliCommand.kt
-- EnvironmentReadinessPort
+- SetupOutcome
 - Img2sdatCliCommand.kt
 - Img2simgCliCommand.kt
 - LpaddCliCommand.kt
 - LpdumpCliCommand.kt
-- ArtifactKind
+- ArtifactDirection
 - LpflashCliCommand.kt
 - ExecuteCommand
 - LpmakeCliCommand.kt
@@ -670,13 +672,13 @@
 - mkdtboimg/cli/HelpCliCommand.kt
 - MkdtboimgCliCommand.kt
 - CreateCommand
-- DumpCommand
+- ProjectItemEditCommand
 - HelpCommand
 - Mke2fsCliCommand.kt
 - ExecuteCommand
 - Mkf2fsuserimgCliCommand.kt
 - MkfserofsCliCommand.kt
-- ArtifactDirection
+- ConvertCommand
 - FakePluginInstallPort
 - Mkuserimg_mke2fsCliCommand.kt
 - PayloaddumpergoCliCommand.kt
@@ -689,8 +691,8 @@
 - AliasCommand
 - AliasDeleteCommand
 - AliasImportCommand
-- NucleusLibraryAccessors
-- AliasListCommand
+- RunCancelCommand
+- RunRerunCommand
 - AliasSetCommand
 - ApiCommand
 - AttestationCommand
@@ -699,15 +701,15 @@
 - AttestationVerifyCommand
 - AuthCommand
 - AuthLoginCommand
-- AuthLogoutCommand
+- RunWatchCommand
 - AuthRefreshCommand
-- AndroidLibraryAccessors
-- NoBackdropEffectImport.kt
-- KtorfitLibraryAccessors
-- NoUnprotectedTextClip.kt
+- SearchCommitsCommand
+- Operation
+- SearchPrsCommand
+- SkillPreviewCommand
 - AuthSetupGitCommand
 - DebloatViewModel
-- AuthTokenCommand
+- SkillPublishCommand
 - BrowseCommand
 - CacheListCommand
 - AgentTaskCliCommand.kt
@@ -863,7 +865,7 @@
 - WorkflowRunCliCommand.kt
 - MetadataViewModel
 - FlashCommand
-- ComposeLibraryAccessors
+- SshKeyAddCommand
 - GetSerialnoCommand
 - WorkflowViewCliCommand.kt
 - HelpCommand
@@ -876,77 +878,72 @@
 - FileToolchainJournalStorage
 - CodespaceLogsCommand
 - CodespacePortsCommand
-- CodespacePortsForwardCommand
+- WorkflowListCommand
 - CodespacePortsVisibilityCommand
 - CodespaceRebuildCommand
 - CodespaceSshCommand
 - CodespaceStopCommand
 - CodespaceViewCommand
-- CompletionCommand
+- CalculateKernelCmdlineCommand
 - ConfigClearCacheCommand
 - ConfigCommand
-- ConfigGetCommand
+- MakeAtxUnlockCredentialCommand
 - UsbCommand
 - ConfigSetCommand
 - CopilotCommand
-- FormatCommand
+- MakeCertPermanentAttributesCommand
 - GetStagedCommand
 - ApkinfoCommand
-- `annotationProcessor`
+- MakeVbmetaImageCommand
 - ExtensionCreateCommand
 - DumpOverlayableCommand
-- ExtensionInstallCommand
+- backdrop/Backdrop.kt
 - ExtensionListCommand
-- ExtensionRemoveCommand
-- PipelineDefinitionRegistry
+- UpdaterScriptWriter.kt
+- ConnectWirelessDeviceUseCase.kt
 - CfCommand
 - ExtensionUpgradeCommand
-- GistCloneCommand
+- GetConnectedDevicesUseCase.kt
 - HelpCommand
 - DiffCommand
 - .run
 - GistListCommand
-- GistRenameCommand
+- GetSelectedConnectedDeviceUseCase.kt
 - PrCommand
 - DumpApcCommand
-- `api`
+- SyntaxTokenizer
 - GpgKeyCommand
 - GpgKeyDeleteCommand
-- `apiDependenciesMetadata`
+- DrawBackdropRecompositionTest
 - GpgKeyListCommand
 - DumpConfigurationsCommand
 - NoRawMotionLiteral
 - LabelCloneCommand
-- LabelCommand
-- LabelDeleteCommand
+- KeyShortcut.kt
+- SheetDragHandle
 - LabelEditCommand
 - LicensesCommand
-- `apiElements`
+- .SyntaxHighlightedCodeCard
 - OrgCommand
 - PrCommand
-- Sdk_PatchModProjectDependency
+- BuildInfoWriter
 - DumpStyleparentsCommand
 - ProjectCommand
 - ProjectCopyCommand
 - ProjectCreateCommand
-- `archives`
 - ProjectEditCommand
-- ExecuteCommand
+- DisconnectDeviceUseCase
 - ProjectFieldDeleteCommand
 - ProjectFieldListCommand
-- OptimizeCommand
+- RefreshConnectedDevicesUseCase
 - ProjectItemDeleteCommand
 - DebloatInventoryAdapterTest
-- ProjectItemListCommand
+- SelectConnectedDeviceUseCase
 - ProjectLinkCommand
 - ProjectListCommand
-- `compileClasspath`
+- Third-Party Notices
 - ProjectMarkTemplateCommand
-- `compileOnlyApi`
-- `compileOnly`
 - ArchiveTransferAdapterTest
-- `compileOnlyDependenciesMetadata`
-- `compilePluginsBlocksPluginClasspath`
 - ProjectViewCommand
 - ReleaseCommand
 - RulesetCheckCommand
@@ -954,11 +951,8 @@
 - compiled-hook/manifest.json
 - RulesetListCommand
 - file-property/manifest.json
-- RulesetViewCommand
 - ConfigListCommand
-- CleanFrameworksCommand
 - RunDeleteCommand
-- ExtensionBrowseCommand
 - RunListCommand
 - GistCreateCommand
 - RunViewCommand
@@ -966,33 +960,22 @@
 - SearchCodeCommand
 - SearchCommand
 - ProjectCloseCommand
-- SearchIssuesCommand
 - SearchReposCommand
 - SecretCommand
 - SecretDeleteCommand
-- `compilePluginsBlocksPluginClasspathElements`
 - SecretListCommand
-- SecretSetCommand
 - SkillCommand
-- ExecuteCommand
 - SkillListCommand
 - SkillSearchCommand
-- SkillUpdateCommand
-- `default`
 - CacheCommand
 - StudioRoutesTest
 - SshKeyCommand
 - SshKeyListCommand
-- `embeddedKotlin`
-- VariableCommand
 - ProjectUnlinkCommand
-- `implementation`
 - CacheDeleteCommand
 - VariableListCommand
-- VariableSetCommand
 - WorkflowCommand
 - WorkflowDisableCommand
-- WorkflowEnableCommand
 - WorkflowRunCommand
 - WorkflowViewCommand
 - AddHashtreeFooterCommand
@@ -1007,16 +990,11 @@
 - Payload-dumper-go Tool Reference
 - Signapk Tool Reference
 - Simg2img Tool Reference
-- RunCommand
-- `implementationDependenciesMetadata`
 - AppSettingsState
-- GistDeleteCommand
-- `intransitiveDependenciesMetadata`
 - LabelCreateCommand
 - AddHashFooterCliCommand.kt
 - AddHashtreeFooterCliCommand.kt
 - AppendVbmetaImageCliCommand.kt
-- `kotlinBuildToolsApiClasspath`
 - AvbtoolCliCommand.kt
 - CalculateKernelCmdlineCliCommand.kt
 - CalculateVbmetaDigestCliCommand.kt
@@ -1024,104 +1002,41 @@
 - RunDownloadCommand
 - ExtractPublicKeyCliCommand.kt
 - ExtractPublicKeyDigestCliCommand.kt
-- RuntimeShaderCacheImpl
 - ExtractVbmetaImageCliCommand.kt
 - GenerateTestImageCliCommand.kt
 - Adb Tool Reference
 - Avbtool Tool Reference
 - Gh Tool Reference
-- `kotlinCompilerClasspath`
 - InfoImageCliCommand.kt
 - MakeAtxCertificateCliCommand.kt
 - MakeAtxMetadataCliCommand.kt
-- `kotlinCompilerPluginClasspath`
-- `kotlinCompilerPluginClasspathMain`
 - MakeAtxPermanentAttributesCliCommand.kt
 - MakeAtxUnlockCredentialCliCommand.kt
-- `kotlinCompilerPluginClasspathTest`
 - MakeCertificateCliCommand.kt
 - MakeCertMetadataCliCommand.kt
 - .transfer
 - MakeCertPermanentAttributesCliCommand.kt
-- `kotlinKlibCommonizerClasspath`
-- FileSystemRepository
-- `kotlinNativeBundleConfiguration`
-- `kotlinNativeCompilerPluginClasspath`
-- `kotlinScriptDef`
 - MakeCertUnlockCredentialCliCommand.kt
 - MakeVbmetaImageCliCommand.kt
 - TransferState
 - PrintPartitionDigestsCliCommand.kt
 - ResignImageCliCommand.kt
-- `kotlinScriptDefExtensions`
 - SkillInstallCommand
 - .handleHttpResponse
 - ResizeImageCliCommand.kt
 - SetAbMetadataCliCommand.kt
-- `mainSourceElements`
-- `runtimeClasspath`
-- `runtimeElements`
 - TestingCliCommand.kt
 - UpdatePartitionDescriptorCliCommand.kt
 - VerifyImageCliCommand.kt
-- `runtimeOnly`
 - avbtool/cli/VersionCliCommand.kt
 - ZeroHashtreeCliCommand.kt
-- `testAnnotationProcessor`
 - Example Compiled Hook Mod
 - ExampleHook
 - Basic Mod Project Template
 - ExtractPublicKeyCommand
-- `testApi`
-- `testApiDependenciesMetadata`
 - IdeShellTokensTest
-- `testCompileClasspath`
-- `testCompileOnly`
-- `testCompileOnlyDependenciesMetadata`
 - ExtractPublicKeyDigestCommand
-- `testImplementation`
 - file-property/README.md
-- StatusCommand
-- `testImplementationDependenciesMetadata`
-- `testIntransitiveDependenciesMetadata`
-- `testKotlinScriptDef`
-- `testKotlinScriptDefExtensions`
-- `testResultsElementsForTest`
-- `testRuntimeClasspath`
-- `testRuntimeOnly`
-- `archives`
-- `commonMainApi`
-- `commonMainCompileOnly`
-- `commonMainImplementation`
-- `commonMainImplementationDependenciesMetadata`
-- `commonMainRuntimeOnly`
-- `commonTestApi`
-- `commonTestCompileOnly`
-- `commonTestImplementation`
-- `commonTestImplementationDependenciesMetadata`
-- `commonTestRuntimeOnly`
-- `default`
-- `desktopApiElements`
-- `desktopCompilationApi`
-- `desktopCompilationCompileOnly`
-- `desktopCompilationImplementation`
-- `desktopCompilationRuntimeOnly`
-- `desktopCompileClasspath`
-- `desktopMainAnnotationProcessor`
-- `desktopMainApi`
-- `desktopMainCompileClasspath`
-- `desktopMainCompileOnly`
-- `desktopMainImplementation`
-- `desktopMainImplementationDependenciesMetadata`
-- `desktopMainRuntimeClasspath`
-- `desktopMainRuntimeOnly`
-- `desktopRuntimeClasspath`
-- `desktopRuntimeElements`
-- `desktopSourcesElements`
-- `desktopTestAnnotationProcessor`
-- `desktopTestApi`
-- `desktopTestCompilationApi`
-- `desktopTestCompilationCompileOnly`
 - `install`
 - `logcat`
 - `pull`
@@ -1344,385 +1259,15 @@
 - `gistView`
 - VariableGetCommand
 - MakeCertificateCommand
-- `desktopTestCompilationImplementation`
-- `desktopTestCompilationRuntimeOnly`
-- `desktopTestCompileClasspath`
-- `desktopTestCompileOnly`
-- `desktopTestImplementation`
-- `desktopTestImplementationDependenciesMetadata`
-- `desktopTestRuntimeClasspath`
-- `desktopTestRuntimeOnly`
-- `detekt`
-- `detektPlugins`
-- `kotlinAbiValidationCompatClasspath`
-- `kotlinBuildToolsApiClasspath`
-- `kotlinCompilerClasspath`
-- `kotlinCompilerPluginClasspath`
-- `kotlinCompilerPluginClasspathDesktopMain`
-- `kotlinCompilerPluginClasspathDesktopTest`
-- `kotlinCompilerPluginClasspathMetadataMain`
-- `kotlinKlibCommonizerClasspath`
-- `kotlinNativeCompilerPluginClasspath`
-- `kotlinScriptDef`
-- `kotlinScriptDefExtensions`
-- `kspCommonMainMetadata`
-- `ksp`
-- `kspDesktop`
-- `kspDesktopTest`
-- `metadataApiElements`
-- `metadataCompilationApi`
-- `metadataCompilationCompileOnly`
-- `metadataCompilationImplementation`
-- `metadataCompilationRuntimeOnly`
-- `metadataCompileClasspath`
-- `metadataSourcesElements`
-- `swiftPMDependenciesMetadataClasspath`
-- `testKotlinScriptDef`
-- `testKotlinScriptDefExtensions`
-- `annotationProcessor`
-- `api`
-- `apiElements`
-- `archives`
-- `compileClasspath`
-- `compileOnly`
-- `default`
-- `detekt`
-- `detektPlugins`
-- `implementation`
-- `implementationDependenciesMetadata`
-- `kotlinAbiValidationCompatClasspath`
-- `kotlinBuildToolsApiClasspath`
-- `kotlinCompilerClasspath`
-- `kotlinCompilerPluginClasspath`
-- `kotlinCompilerPluginClasspathMain`
-- `kotlinCompilerPluginClasspathTest`
-- `kotlinKlibCommonizerClasspath`
-- `kotlinNativeCompilerPluginClasspath`
-- `kotlinScriptDef`
-- `kotlinScriptDefExtensions`
-- `mainSourceElements`
-- `runtimeClasspath`
-- `runtimeElements`
-- `runtimeOnly`
-- `testAnnotationProcessor`
-- `testApi`
-- `testCompileClasspath`
-- `testCompileOnly`
-- `testImplementation`
-- `testImplementationDependenciesMetadata`
-- `testKotlinScriptDef`
-- `testKotlinScriptDefExtensions`
-- `testResultsElementsForTest`
-- `testRuntimeClasspath`
-- `testRuntimeOnly`
-- `archives`
-- `commonMainApi`
-- `commonMainCompileOnly`
-- `commonMainImplementation`
-- `commonMainImplementationDependenciesMetadata`
-- `commonMainRuntimeOnly`
-- `commonTestApi`
-- `commonTestCompileOnly`
-- `commonTestImplementation`
-- `commonTestImplementationDependenciesMetadata`
-- `commonTestRuntimeOnly`
-- `default`
-- `desktopApiElements`
-- `desktopCompilationApi`
-- `desktopCompilationCompileOnly`
-- `desktopCompilationImplementation`
-- `desktopCompilationRuntimeOnly`
-- `desktopCompileClasspath`
-- `desktopMainAnnotationProcessor`
-- `desktopMainApi`
-- `desktopMainCompileClasspath`
-- `desktopMainCompileOnly`
-- `desktopMainImplementation`
-- `desktopMainImplementationDependenciesMetadata`
-- `desktopMainRuntimeClasspath`
-- `desktopMainRuntimeOnly`
-- `desktopRuntimeClasspath`
-- `desktopRuntimeElements`
-- `desktopSourcesElements`
-- `desktopTestAnnotationProcessor`
-- `desktopTestApi`
-- `desktopTestCompilationApi`
-- `desktopTestCompilationCompileOnly`
-- `desktopTestCompilationImplementation`
-- `desktopTestCompilationRuntimeOnly`
-- `desktopTestCompileClasspath`
-- `desktopTestCompileOnly`
-- `desktopTestImplementation`
-- `desktopTestImplementationDependenciesMetadata`
-- `desktopTestRuntimeClasspath`
-- `desktopTestRuntimeOnly`
-- `detekt`
-- `detektPlugins`
-- `kotlinAbiValidationCompatClasspath`
-- `kotlinBuildToolsApiClasspath`
-- `kotlinCompilerClasspath`
-- `kotlinCompilerPluginClasspath`
-- `kotlinCompilerPluginClasspathDesktopMain`
-- `kotlinCompilerPluginClasspathDesktopTest`
-- `kotlinCompilerPluginClasspathMetadataMain`
-- `kotlinKlibCommonizerClasspath`
-- `kotlinNativeCompilerPluginClasspath`
-- `kotlinScriptDef`
-- `kotlinScriptDefExtensions`
-- `kspCommonMainMetadata`
-- `ksp`
-- `kspDesktop`
-- `kspDesktopTest`
-- `metadataApiElements`
-- `metadataCompilationApi`
-- `metadataCompilationCompileOnly`
-- `metadataCompilationImplementation`
-- `metadataCompilationRuntimeOnly`
-- `metadataCompileClasspath`
-- `metadataSourcesElements`
-- `swiftPMDependenciesMetadataClasspath`
-- `testKotlinScriptDef`
-- `testKotlinScriptDefExtensions`
-- `archives`
-- `commonMainApi`
-- `commonMainCompileOnly`
-- `commonMainImplementation`
-- `commonMainImplementationDependenciesMetadata`
-- `commonMainRuntimeOnly`
-- `commonTestApi`
-- `commonTestCompileOnly`
-- `commonTestImplementation`
-- `commonTestImplementationDependenciesMetadata`
-- `commonTestRuntimeOnly`
-- `default`
-- `desktopApiElements`
-- `desktopCompilationApi`
-- `desktopCompilationCompileOnly`
-- `desktopCompilationImplementation`
-- `desktopCompilationRuntimeOnly`
-- `desktopCompileClasspath`
-- `desktopMainAnnotationProcessor`
-- `desktopMainApi`
-- `desktopMainCompileClasspath`
-- `desktopMainCompileOnly`
-- `desktopMainImplementation`
-- `desktopMainImplementationDependenciesMetadata`
-- `desktopMainRuntimeClasspath`
-- `desktopMainRuntimeOnly`
-- `desktopRuntimeClasspath`
-- `desktopRuntimeElements`
-- `desktopSourcesElements`
-- `desktopTestAnnotationProcessor`
-- `desktopTestApi`
-- `desktopTestCompilationApi`
-- `desktopTestCompilationCompileOnly`
-- `desktopTestCompilationImplementation`
-- `desktopTestCompilationRuntimeOnly`
-- `desktopTestCompileClasspath`
-- `desktopTestCompileOnly`
-- `desktopTestImplementation`
-- `desktopTestImplementationDependenciesMetadata`
-- `desktopTestRuntimeClasspath`
-- `desktopTestRuntimeOnly`
-- `detekt`
-- `detektPlugins`
-- `kotlinAbiValidationCompatClasspath`
-- `kotlinBuildToolsApiClasspath`
-- `kotlinCompilerClasspath`
-- `kotlinCompilerPluginClasspath`
-- `kotlinCompilerPluginClasspathDesktopMain`
-- `kotlinCompilerPluginClasspathDesktopTest`
-- `kotlinCompilerPluginClasspathMetadataMain`
-- `kotlinKlibCommonizerClasspath`
-- `kotlinNativeCompilerPluginClasspath`
-- `kotlinScriptDef`
-- `kotlinScriptDefExtensions`
-- `kspCommonMainMetadata`
-- `ksp`
-- `kspDesktop`
-- `kspDesktopTest`
-- `metadataApiElements`
-- `metadataCompilationApi`
-- `metadataCompilationCompileOnly`
-- `metadataCompilationImplementation`
-- `metadataCompilationRuntimeOnly`
-- `metadataCompileClasspath`
-- `metadataSourcesElements`
-- `swiftPMDependenciesMetadataClasspath`
-- `testKotlinScriptDef`
-- `testKotlinScriptDefExtensions`
-- `archives`
-- `commonMainApi`
-- `commonMainCompileOnly`
-- `commonMainImplementation`
-- `commonMainImplementationDependenciesMetadata`
-- `commonMainRuntimeOnly`
-- `commonTestApi`
-- `commonTestCompileOnly`
-- `commonTestImplementation`
-- `commonTestImplementationDependenciesMetadata`
-- `commonTestRuntimeOnly`
-- `default`
-- `desktopApiElements`
-- `desktopCompilationApi`
-- `desktopCompilationCompileOnly`
-- `desktopCompilationImplementation`
-- `desktopCompilationRuntimeOnly`
-- `desktopCompileClasspath`
-- `desktopMainAnnotationProcessor`
-- `desktopMainApi`
-- `desktopMainCompileClasspath`
-- `desktopMainCompileOnly`
-- `desktopMainImplementation`
-- `desktopMainImplementationDependenciesMetadata`
-- `desktopMainRuntimeClasspath`
-- `desktopMainRuntimeOnly`
-- `desktopRuntimeClasspath`
-- `desktopRuntimeElements`
-- `desktopSourcesElements`
-- `desktopTestAnnotationProcessor`
-- `desktopTestApi`
-- `desktopTestCompilationApi`
-- `desktopTestCompilationCompileOnly`
-- `desktopTestCompilationImplementation`
-- `desktopTestCompilationRuntimeOnly`
-- `desktopTestCompileClasspath`
-- `desktopTestCompileOnly`
-- `desktopTestImplementation`
-- `desktopTestImplementationDependenciesMetadata`
-- `desktopTestRuntimeClasspath`
-- `desktopTestRuntimeOnly`
-- `detekt`
-- `detektPlugins`
-- `kotlinAbiValidationCompatClasspath`
-- `kotlinBuildToolsApiClasspath`
-- `kotlinCompilerClasspath`
-- `kotlinCompilerPluginClasspath`
-- `kotlinCompilerPluginClasspathDesktopMain`
-- `kotlinCompilerPluginClasspathDesktopTest`
-- `kotlinCompilerPluginClasspathMetadataMain`
-- `kotlinKlibCommonizerClasspath`
-- `kotlinNativeCompilerPluginClasspath`
-- `kotlinScriptDef`
-- `kotlinScriptDefExtensions`
-- `kspCommonMainMetadata`
-- `ksp`
-- `kspDesktop`
-- `kspDesktopTest`
-- `metadataApiElements`
-- `metadataCompilationApi`
-- `metadataCompilationCompileOnly`
-- `metadataCompilationImplementation`
-- `metadataCompilationRuntimeOnly`
-- `metadataCompileClasspath`
-- `metadataSourcesElements`
-- `swiftPMDependenciesMetadataClasspath`
-- `testKotlinScriptDef`
-- `testKotlinScriptDefExtensions`
-- `annotationProcessor`
-- `api`
-- `apiElements`
-- `archives`
-- `compileClasspath`
-- `compileOnly`
-- `default`
-- `implementation`
-- `implementationDependenciesMetadata`
-- `kotlinAbiValidationCompatClasspath`
-- `kotlinBuildToolsApiClasspath`
-- `kotlinCompilerClasspath`
-- `kotlinCompilerPluginClasspath`
-- `kotlinCompilerPluginClasspathMain`
-- `kotlinCompilerPluginClasspathTest`
-- `kotlinKlibCommonizerClasspath`
-- `kotlinNativeCompilerPluginClasspath`
-- `kotlinScriptDef`
-- `kotlinScriptDefExtensions`
-- `mainSourceElements`
-- `runtimeClasspath`
-- `runtimeElements`
-- `runtimeOnly`
-- `testAnnotationProcessor`
-- `testApi`
-- `testCompileClasspath`
-- `testCompileOnly`
-- `testImplementation`
-- `testImplementationDependenciesMetadata`
-- `testKotlinScriptDef`
-- `testKotlinScriptDefExtensions`
-- `testResultsElementsForTest`
-- `testRuntimeClasspath`
-- `testRuntimeOnly`
-- `archives`
-- `commonMainApi`
-- `commonMainCompileOnly`
-- `commonMainImplementation`
-- `commonMainImplementationDependenciesMetadata`
-- `commonMainRuntimeOnly`
-- `commonTestApi`
-- `commonTestCompileOnly`
-- `commonTestImplementation`
-- `commonTestImplementationDependenciesMetadata`
-- `commonTestRuntimeOnly`
-- `default`
-- `kotlinAbiValidationCompatClasspath`
-- `kotlinBuildToolsApiClasspath`
-- `kotlinCompilerClasspath`
-- `kotlinCompilerPluginClasspath`
-- `kotlinCompilerPluginClasspathMetadataMain`
-- `kotlinKlibCommonizerClasspath`
-- `kotlinNativeCompilerPluginClasspath`
-- `metadataApiElements`
-- `metadataCompilationApi`
-- `metadataCompilationCompileOnly`
-- `metadataCompilationImplementation`
-- `metadataCompilationRuntimeOnly`
-- `metadataCompileClasspath`
-- `metadataSourcesElements`
-- `swiftPMDependenciesMetadataClasspath`
-- `archives`
-- `commonMainApi`
-- `commonMainCompileOnly`
-- `commonMainImplementation`
-- `commonMainImplementationDependenciesMetadata`
-- `commonMainRuntimeOnly`
-- `commonTestApi`
-- `commonTestCompileOnly`
-- `commonTestImplementation`
-- `commonTestImplementationDependenciesMetadata`
-- `commonTestRuntimeOnly`
-- `default`
-- `kotlinAbiValidationCompatClasspath`
-- `kotlinBuildToolsApiClasspath`
-- `kotlinCompilerClasspath`
-- `kotlinCompilerPluginClasspath`
-- `kotlinCompilerPluginClasspathMetadataMain`
-- `kotlinKlibCommonizerClasspath`
-- `kotlinNativeCompilerPluginClasspath`
-- `metadataApiElements`
-- `metadataCompilationApi`
-- `metadataCompilationCompileOnly`
-- `metadataCompilationImplementation`
-- `metadataCompilationRuntimeOnly`
-- `metadataCompileClasspath`
-- `metadataSourcesElements`
-- `swiftPMDependenciesMetadataClasspath`
 - MakeCertMetadataCommand
-- skiaMain/kotlin/com/kashif_e/backdrop/effects/PlatformEffectExt.kt
 - ExtractVbmetaImageCommand
 - MakeCertUnlockCredentialCommand
-- MakeAtxCertificateCommand
 - PrintPartitionDigestsCommand
-- ProjectDeleteCommand
-- ResizeImageCommand
-- ProjectItemAddCommand
-- ZeroHashtreeCommand
 - SignapkCliCommand.kt
 - ZipalignCliCommand.kt
 - EmptyStateAction
 - WorkspaceRoutes.kt
 - ResignImageCommand
-- SetAbMetadataCommand
 - RepoCommand
 - VerifyImageCommand
 - .execute
@@ -1734,227 +1279,69 @@
 - .execute
 - ToolFingerprint
 - RemoteProtocolTest
-- VersionCommand
-- DialogUtils
-- `ext`
-- `ext`
-- `base`
-- `defaultArtifacts`
-- `samWithReceiver`
+- DomainModule.kt
 - AvbSizeCalculator
 - ToolchainSetupRepository
 - OtaMetadataWriter
-- 400f71d7ccf71c9b5f68e9f4b0ab6761/classes/scripts/2fc6e8bad4a90c4b01059fd874fe7ed4.gradle.kts
-- instrumented/classes/scripts/2fc6e8bad4a90c4b01059fd874fe7ed4.gradle.kts
-- RemoteFileUploaderPort
-- AddHashFooterCommand
-- .invoke
-- CalculateVbmetaDigestCommand
+- ToolingModule.kt
 - EraseFooterCommand
 - MakeAtxMetadataCommand
 - TestingCommand
-- `ext`
-- `optionalNpm`
-- `spotless`
-- `sourceSets`
-- `ext`
-- `peerNpm`
-- `kotlinDslPluginOptions`
-- `npm`
-- `ext`
-- `sourceSets`
-- `detekt`
-- `ext`
-- `detekt`
-- `ext`
-- `ext`
-- `kotlin`
-- `devNpm`
-- `defaultArtifacts`
-- `javaToolchains`
-- `reporting`
-- `peerNpm`
-- `ext`
-- `ext`
-- `optionalNpm`
-- `ext`
-- `ext`
-- `assignment`
-- `ext`
-- `sourceSets`
-- `libs`
-- `ext`
-- `kotlin`
-- `javaToolchains`
-- `ext`
-- `versionCatalogs`
-- `projects`
-- `reckon`
-- `ext`
 - .generate
-- `ext`
-- `reporting`
-- `ext`
-- `kotlinTestRegistry`
-- `peerNpm`
-- `ext`
-- `ext`
-- `detekt`
-- `devNpm`
-- `defaultArtifacts`
-- `kotlinTestRegistry`
-- `ext`
-- `javaToolchains`
-- `peerNpm`
-- `ext`
-- `ext`
-- `ext`
-- `sourceSets`
-- `ext`
-- `reporting`
-- `ext`
-- `devNpm`
-- `base`
-- `ext`
-- `defaultArtifacts`
-- `ext`
-- `javaToolchains`
-- `ext`
-- `ext`
-- `ext`
-- `ext`
-- `ext`
-- `ext`
-- `ext`
-- `ext`
-- `versionCatalogs`
-- `ext`
-- `reporting`
-- `spotless`
-- `composeCompiler`
-- `swiftPMDependencies`
-- `sourceSets`
-- `ext`
-- `ext`
-- `ext`
-- `ext`
-- `ksp`
-- `ext`
-- `ext`
-- `devNpm`
-- `versionCatalogs`
-- `ext`
-- `javaToolchains`
-- `ext`
-- `ext`
-- `ext`
-- `ext`
-- `sourceSets`
-- `java`
-- `swiftExport`
-- `java`
-- `kotlin`
-- `ext`
-- `peerNpm`
-- `ext`
-- `projects`
-- `javaToolchains`
-- `reporting`
-- `swiftPMDependencies`
-- `ext`
-- `ext`
-- `compose`
-- `ext`
-- `desktop`
-- `sourceSets`
-- `defaultArtifacts`
-- `reporting`
-- `resources`
-- `ext`
-- `ext`
-- `compose`
-- `reporting`
-- `composeCompiler`
-- `ext`
-- `swiftExport`
-- `kotlinTestRegistry`
-- `ext`
-- `peerNpm`
-- `ext`
-- dc9ff7cf2ff1caf6d4e787771062435b-PS/sources/org/gradle/kotlin/dsl/PluginDependencySpecAccessors.kt
-- `kotlin`
-- `versionCatalogs`
-- `optionalNpm`
-- `ext`
-- `libs`
-- `ext`
-- `ext`
-- `ext`
-- `compose`
-- `javaToolchains`
-- `ext`
-- `peerNpm`
-- `ext`
-- `ext`
-- `ext`
 - Compiler
 
 ## God Nodes (most connected - your core abstractions)
-1. `Action` - 1703 edges
-2. `ExecutionContext` - 999 edges
-3. `ToolId` - 702 edges
-4. `ToolRisk` - 637 edges
-5. `ToolRepository` - 631 edges
-6. `StdinMode` - 623 edges
-7. `ToolCommand` - 328 edges
-8. `ArtifactRequirement` - 326 edges
-9. `ArtifactKind` - 313 edges
-10. `ArtifactDirection` - 313 edges
+1. `ExecutionContext` - 999 edges
+2. `ToolId` - 702 edges
+3. `ToolRisk` - 637 edges
+4. `ToolRepository` - 631 edges
+5. `StdinMode` - 623 edges
+6. `ToolCommand` - 328 edges
+7. `ArtifactRequirement` - 326 edges
+8. `ArtifactKind` - 313 edges
+9. `ArtifactDirection` - 313 edges
+10. `IdeShellColorScheme` - 251 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `parseStageId()` --references--> `StageId`  [EXTRACTED]
   feature/workspace-api/src/commonMain/kotlin/org/ide/lti/feature/workspace/api/StudioRoutes.kt → core/model/src/commonMain/kotlin/org/ide/lti/core/model/run/StageId.kt
+- `withNavigatorWidth()` --references--> `StudioPresentation`  [EXTRACTED]
+  feature/rom-studio/shell/src/commonMain/kotlin/org/ide/lti/feature/workspace/studio/StudioPresentationState.kt → core/model/src/commonMain/kotlin/org/ide/lti/core/model/studio/StudioPresentation.kt
+- `withOverview()` --references--> `StudioPresentation`  [EXTRACTED]
+  feature/rom-studio/shell/src/commonMain/kotlin/org/ide/lti/feature/workspace/studio/StudioPresentationState.kt → core/model/src/commonMain/kotlin/org/ide/lti/core/model/studio/StudioPresentation.kt
 - `BuildRunReattachTest` --calls--> `SigningPolicy`  [INFERRED]
   feature/workspace-run/src/commonTest/kotlin/org/ide/lti/feature/workspace/panels/run/BuildRunReattachTest.kt → core/model/src/commonMain/kotlin/org/ide/lti/core/model/workspace/ConfigurationSettings.kt
-- ``optionalNpm`()` --references--> `Action`  [EXTRACTED]
-  .gradle-codex/caches/8.14.5/kotlin-dsl/accessors/161ec4c4c170897317365cc47cf6c1d8/sources/org/gradle/kotlin/dsl/Accessors2bjcqrj2vc1c82f7jbep8612w.kt → core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/display/GlassChip.kt
-- ``sourceSets`()` --references--> `Action`  [EXTRACTED]
-  .gradle-codex/caches/8.14.5/kotlin-dsl/accessors/161ec4c4c170897317365cc47cf6c1d8/sources/org/gradle/kotlin/dsl/Accessors2oadk7let745pm8ahqypkqzlk.kt → core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/display/GlassChip.kt
-- ``ext`()` --references--> `Action`  [EXTRACTED]
-  .gradle-codex/caches/8.14.5/kotlin-dsl/accessors/161ec4c4c170897317365cc47cf6c1d8/sources/org/gradle/kotlin/dsl/Accessors46nwrg1rs44ofdqpi7vyy3pfc.kt → core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/display/GlassChip.kt
+- `GlassActionCard()` --references--> `Backdrop`  [EXTRACTED]
+  core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/actions/GlassActionCard.kt → backdrop/src/commonMain/kotlin/com/kashif_e/backdrop/Backdrop.kt
 
 ## Import Cycles
 - None detected.
 
-## Communities (3176 total, 422 thin omitted)
+## Communities (1425 total, 279 thin omitted)
 
-### Community 0 - "Action"
-Cohesion: 0.00
-Nodes (528): Action, ChipMode, ReadOnly, Toggle, `ext`(), org, `kotlin`(), org (+520 more)
+### Community 0 - "ChipMode"
+Cohesion: 0.50
+Nodes (4): Action, ChipMode, ReadOnly, Toggle
 
 ### Community 1 - "config.mjs"
 Cohesion: 0.06
 Nodes (63): assertSafeProjectConfigPath(), configDigest(), effectiveLanes(), fail(), findGitRoot(), globalConfigPath(), isMain, loadEffective() (+55 more)
 
-### Community 2 - "RemoteTransportPort"
-Cohesion: 0.02
-Nodes (55): ByteArray, StepStatus, ToolResult, Workspace, StepExecutionAdapter, ToolPublicationAdapter, FakeRemoteTransport, ByteArray (+47 more)
+### Community 2 - "ToolExecutionRequest"
+Cohesion: 0.03
+Nodes (52): ToolManifestDto, ToolPublicationAdapter, Flow, FakeRemoteTransport, ByteArray, Flow, RemoteTransportPort, ToolPublicationAdapterTest (+44 more)
 
 ### Community 3 - "skiaMain/kotlin/com/kashif_e/backdrop/DrawBackdropModifier.kt"
 Cohesion: 0.11
-Nodes (21): drawBackdrop(), DrawBackdropElement, DrawBackdropNode, drawPlainBackdrop(), Constraints, drawBackdrop, DrawBackdropNode, DrawModifierNode (+13 more)
+Nodes (21): drawBackdrop(), DrawBackdropDiagnostics, DrawBackdropElement, DrawBackdropNode, drawPlainBackdrop(), DrawModifierNode, DrawScope, GlobalPositionAwareModifierNode (+13 more)
 
-### Community 4 - "ValidationError"
-Cohesion: 0.03
-Nodes (48): InstalledPluginRepositoryTest, ByteArray, TargetDevice, StageSettingsValidator, ArtifactFreshness, FRESH, MISSING, STALE (+40 more)
+### Community 4 - "PluginPackageCodec"
+Cohesion: 0.07
+Nodes (12): InstalledPluginRepositoryTest, ByteArray, PluginPackageCodec, PluginPackagePolicy, PluginPackageCodecTest, PayloadEntry, PluginManifest, ByteArray (+4 more)
 
-### Community 5 - "ComponentSize"
-Cohesion: 0.04
-Nodes (87): CatalogApp(), CatalogTopBar(), CategoryNavBar(), main(), LayoutTab(), SurfacesTab(), Key, Modifier (+79 more)
-
-### Community 6 - "KotlinSyntaxTokenizer"
-Cohesion: 0.16
-Nodes (4): KotlinSyntaxTokenizer, SyntaxToken, PlainTextSyntaxTokenizer, SyntaxTokenizer
+### Community 5 - "GlassTopBar.kt"
+Cohesion: 0.05
+Nodes (73): CatalogApp(), CatalogTopBar(), CategoryNavBar(), LayoutTab(), SurfacesTab(), DesktopWindowControls(), ImageVector, Modifier (+65 more)
 
 ### Community 7 - "Writing the brief"
 Cohesion: 0.04
@@ -1984,9 +1371,9 @@ Nodes (47): 1. Basic Setup, 2. Component Gallery, 3. Accessibility Support, 4. C
 Cohesion: 0.04
 Nodes (46): 10. Don't pass a large state-holder object when a composable only needs a few fields, 11. Use `remember` correctly — cache expensive/identity-sensitive values, not everything, 12. Be deliberate about image loading, 13. Avoid nesting scrollable/lazy layouts; use `contentType` when items vary, 14. Don't allocate new `Modifier` instances (or lambdas that capture per-recomposition state) in hot paths, 15. Shared/long-lived objects with mutable content require tracked snapshot reads for consumer invalidation — and writes MUST happen in `SideEffect`, never in `draw`, 1. Composables must be cheap to call, 2. Mark data classes `@Immutable` / `@Stable` where true, and verify it (+38 more)
 
-### Community 14 - "StageId"
-Cohesion: 0.02
-Nodes (79): PipelineStageSequence, StageId, BUILD_FLASHABLE_ZIP, DEBLOAT, FIRMWARE_ACQUISITION, FIRMWARE_EXTRACTION, GENERATE_OTA_MANIFEST, MODULE_APPLICATION (+71 more)
+### Community 14 - "StageEditor"
+Cohesion: 0.06
+Nodes (25): Modifier, StageEditor, StageEditorContext, Modifier, AcquireStageEditor, Modifier, StageEditor, AssembleStageEditor (+17 more)
 
 ### Community 15 - "claude-delegate/scripts/relay.mjs"
 Cohesion: 0.10
@@ -1998,11 +1385,11 @@ Nodes (42): Before the first run: check the binary, Dispatch and poll, Dispatchi
 
 ### Community 17 - "ExecutionContext"
 Cohesion: 0.00
-Nodes (302): AttachUseCase, BugreportUseCase, ConnectUseCase, DetachUseCase, DisableVerityUseCase, DisconnectUseCase, EmuUseCase, EnableVerityUseCase (+294 more)
+Nodes (305): AttachUseCase, BugreportUseCase, ConnectUseCase, DetachUseCase, DevicesUseCase, DisableVerityUseCase, DisconnectUseCase, EmuUseCase (+297 more)
 
 ### Community 18 - "desktopMain/kotlin/org/ide/lti/feature/setup/SetupPerformanceScenario.kt"
-Cohesion: 0.11
-Nodes (17): AppTheme, Color, SetupTokens, ToolScope, HOST, WSL2, BenchmarkMarkersPayload, BenchmarkSegmentMarker (+9 more)
+Cohesion: 0.14
+Nodes (14): ToolScope, HOST, WSL2, BenchmarkMarkersPayload, BenchmarkSegmentMarker, createBenchmarkLogs(), createBenchmarkPreviewOperation(), createBenchmarkRecents() (+6 more)
 
 ### Community 19 - "GLASS_MIGRATION_GUIDE.md"
 Cohesion: 0.04
@@ -2014,11 +1401,11 @@ Nodes (43): applyFleetLane(), asciiFold(), asTarget(), buildArgv(), BUNDLE_RELAT
 
 ### Community 21 - "SetupViewModel"
 Cohesion: 0.05
-Nodes (14): Job, StateFlow, TargetDevice, ViewModel, SetupViewModel, FakeEnvironmentReadinessPort, FakeToolchainProvisioningService, FakeWorkspaceRepository (+6 more)
+Nodes (18): Flow, Result, Workspace, WorkspaceManager, Job, StateFlow, TargetDevice, ViewModel (+10 more)
 
 ### Community 22 - "FakeToolRepository"
-Cohesion: 0.04
-Nodes (28): DevicesCommand, io, ToolCommand, DevicesCommand, io, ToolCommand, AndroidDeviceAdapterTest, io (+20 more)
+Cohesion: 0.05
+Nodes (24): io, ToolCommand, VersionCommand, io, ToolCommand, VersionCommand, AndroidPackageAdapterTest, ExecuteCommand (+16 more)
 
 ### Community 23 - "commandcode-delegate/scripts/relay.mjs"
 Cohesion: 0.13
@@ -2032,9 +1419,9 @@ Nodes (40): Actions (85), Bookmarks (4), Breakpoints (41), Build (7), CodeInsigh
 Cohesion: 0.12
 Nodes (38): applyFleetLane(), asciiFold(), AUTONOMY_MODES, autonomyFlags(), buildArgv(), canonicalFilePath(), changedDirtyPaths(), dirtyPaths() (+30 more)
 
-### Community 26 - "Deprecated"
-Cohesion: 0.02
-Nodes (51): DependencyNotationSupplier, Deprecated, AndroidxTestExtLibraryAccessors, AndroidToolsLibraryAccessors, AndroidxComposeFoundationLibraryAccessors, AndroidxComposeMaterial3AdaptiveLibraryAccessors, AndroidxComposeMaterialLibraryAccessors, AndroidxComposeRuntimeLibraryAccessors (+43 more)
+### Community 26 - "StudioScreen.kt"
+Cohesion: 0.07
+Nodes (42): ContentHeader(), Composable, Modifier, RowScope, Modifier, StatusBarActivity(), StatusBarConnection(), StatusBarProblems() (+34 more)
 
 ### Community 27 - "WorkspaceWriteLease"
 Cohesion: 0.05
@@ -2048,41 +1435,41 @@ Nodes (31): Basic Options, Boolean Flag Options, Choice and Switch Options With 
 Cohesion: 0.11
 Nodes (16): SyntaxLanguage, CSS, GO, GRADLE, HTML, JAVA, JAVASCRIPT, JSON (+8 more)
 
-### Community 30 - "LtiRomGuiProjectDependency"
-Cohesion: 0.02
-Nodes (59): BackdropProjectDependency, CatalogProjectDependency, DetektRulesProjectDependency, LtiDesktopProjectDependency, BackdropProjectDependency, CatalogProjectDependency, CoreProjectDependency, DetektRulesProjectDependency (+51 more)
+### Community 30 - "PluginPlanTemplate"
+Cohesion: 0.09
+Nodes (19): AppliedModulePlan, AppliedModuleSummary, AppliedOperationSummary, Failure, ModuleApplicationStage, PackageOutcome, ResolutionOutcome, Success (+11 more)
 
 ### Community 31 - "Contributor Covenant Code of Conduct"
 Cohesion: 0.06
 Nodes (31): 1. Correction, 2. Warning, 3. Temporary Ban, 4. Permanent Ban, Attribution, Contributor Covenant Code of Conduct, Enforcement, Enforcement Guidelines (+23 more)
 
 ### Community 32 - "ToolchainSetupState"
-Cohesion: 0.05
-Nodes (24): SetupOperationsTest, StepProvenance, LIVE, RESTORED, ToolCategory, BOOT_AND_KERNEL, BRIDGE_AND_FLASHING, DYNAMIC_PARTITIONS (+16 more)
+Cohesion: 0.08
+Nodes (21): SetupStepDetail, StepProvenance, LIVE, RESTORED, ToolCategory, BOOT_AND_KERNEL, BRIDGE_AND_FLASHING, DYNAMIC_PARTITIONS (+13 more)
 
 ### Community 33 - "GlassLayoutState"
 Cohesion: 0.12
 Nodes (10): Active, AllCollapsed, GlassLayoutState, PanelDragAxisState, PanelVisibilityState, awaitDragOrUp(), drag(), inspectDragGestures() (+2 more)
 
-### Community 34 - "androidMain/kotlin/com/kashif_e/backdrop/DrawBackdropModifier.kt"
-Cohesion: 0.09
-Nodes (26): drawBackdrop(), DrawBackdropElement, DrawBackdropNode, drawPlainBackdrop(), Constraints, drawBackdrop, DrawBackdropNode, DrawModifierNode (+18 more)
+### Community 34 - "ShapeProvider"
+Cohesion: 0.60
+Nodes (5): LayoutDirection, Outline, Shape, Size, ShapeProvider
 
-### Community 35 - "InverseLayerScope"
-Cohesion: 0.13
-Nodes (19): Density, GraphicsLayerScope, InverseLayerScope, LayerBackdrop, LayoutCoordinates, LayerBackdrop, rememberLayerBackdrop(), InverseLayerScope (+11 more)
+### Community 35 - "RunStatus"
+Cohesion: 0.07
+Nodes (13): ByteArray, Flow, RunHandle, StepStatus, ToolResult, Workspace, StepExecutionAdapter, FakeRemoteTransport (+5 more)
 
 ### Community 36 - "Flow"
 Cohesion: 0.08
 Nodes (23): Document, Fleet schema (`delegate-fleet.v1`), Helpers, Implementer keys and dials, Paths, Auth and models, Grounding the lane map, How to ask them (+15 more)
 
-### Community 37 - "StepCommand"
-Cohesion: 0.08
-Nodes (34): InMemoryRunRepository, PipelineResumeTest, Artifact, ArtifactKind, CHECKSUM, FLASHABLE_ZIP, IMAGE, OTA_MANIFEST (+26 more)
+### Community 37 - "BuildRun"
+Cohesion: 0.04
+Nodes (53): InMemoryRunRepository, Flow, Flow, RunRepositoryImpl, Flow, RunRepository, InMemoryRunRepository, PipelineResumeTest (+45 more)
 
 ### Community 38 - "InverseLayerScope"
-Cohesion: 0.14
-Nodes (17): Density, GraphicsLayerScope, InverseLayerScope, LayerBackdrop, LayoutCoordinates, LayerBackdrop, rememberLayerBackdrop(), InverseLayerScope (+9 more)
+Cohesion: 0.16
+Nodes (16): Density, GraphicsLayerScope, LayerBackdrop, LayoutCoordinates, LayerBackdrop, rememberLayerBackdrop(), InverseLayerScope, Color (+8 more)
 
 ### Community 39 - "aider-delegate/scripts/relay.mjs"
 Cohesion: 0.19
@@ -2092,17 +1479,17 @@ Nodes (23): aiderVersion(), applyFleetLane(), buildArgv(), detectModelFailure(),
 Cohesion: 0.19
 Nodes (23): applyFleetLane(), buildArgv(), codexEnv(), codexVersion(), dispatchToCodex(), extractThreadId(), fail(), gitTouchedFiles() (+15 more)
 
-### Community 41 - "ToolCapabilities"
-Cohesion: 0.06
-Nodes (12): CheckSnapshot, EnvironmentConnectionStatus, CONNECTED, DISCONNECTED, UNAVAILABLE, invalidateForRepair(), RecipeCapability, ToolEvidence (+4 more)
+### Community 41 - "SetupPlanKind"
+Cohesion: 0.05
+Nodes (23): SetupPlanFactory, BuildRecipes, CheckSnapshot, EnvironmentConnectionStatus, CONNECTED, DISCONNECTED, UNAVAILABLE, invalidateForRepair() (+15 more)
 
 ### Community 42 - "TerminalConsole"
 Cohesion: 0.14
 Nodes (9): AnsiLevel, Size, TerminalConsole, InputEvent, MouseTracking, PrintRequest, TerminalInfo, TerminalInterface (+1 more)
 
-### Community 43 - "GlassDialog.kt"
-Cohesion: 0.10
-Nodes (33): ModalsTab(), GlassPerformanceCollector, GlassPerformanceMetrics, GlassPerformanceMonitor(), GlassPerformanceMonitorExample(), Color, Modifier, MetricRow() (+25 more)
+### Community 43 - "column"
+Cohesion: 0.04
+Nodes (72): drawBackdrop(), drawPlainBackdrop(), DrawScope, GraphicsLayerScope, LayerBackdrop, Modifier, glassChrome(), glassRegular() (+64 more)
 
 ### Community 44 - "cursor-delegate/scripts/relay.mjs"
 Cohesion: 0.21
@@ -2116,17 +1503,17 @@ Nodes (22): agentName(), applyFleetLane(), buildArgv(), dispatchToVibe(), extrac
 Cohesion: 0.11
 Nodes (6): ToolchainSetupRepositoryTest, Flow, Json, Result, ToolchainPreferencesDataSource, ToolchainPreferencesDataSourceTest
 
-### Community 47 - "LayerBackdropElement"
-Cohesion: 0.14
-Nodes (13): DrawModifierNode, GlobalPositionAwareModifierNode, LayerBackdropNode, LayoutCoordinates, Modifier, ModifierNodeElement, Node, layerBackdrop() (+5 more)
+### Community 47 - "InMemorySnapshotRepository"
+Cohesion: 0.10
+Nodes (11): CreateWorkspaceParams, CreateWorkspaceUseCase, InMemorySnapshotRepository, Flow, CreateWorkspaceUseCaseTest, FakeProvisioningPort, FakeReadinessPort, FakeWorkspaceRepo (+3 more)
 
-### Community 48 - "LayerBackdropElement"
-Cohesion: 0.14
-Nodes (13): DrawModifierNode, GlobalPositionAwareModifierNode, LayerBackdropNode, LayoutCoordinates, Modifier, ModifierNodeElement, Node, layerBackdrop() (+5 more)
-
-### Community 49 - "skiaMain/kotlin/com/kashif_e/backdrop/platform/PlatformEffects.kt"
+### Community 48 - "LayerBackdropModifier.kt"
 Cohesion: 0.15
-Nodes (13): asSkiaImageFilter(), BlurStyle, ColorFilter, FilterTileMode, FloatArray, ImageFilter, PlatformRuntimeShader, None (+5 more)
+Nodes (11): DrawModifierNode, GlobalPositionAwareModifierNode, LayoutCoordinates, Modifier, ModifierNodeElement, Node, LayerBackdropElement, LayerBackdropNode (+3 more)
+
+### Community 49 - "PlatformRenderEffect"
+Cohesion: 0.10
+Nodes (26): applyEffect(), colorControls(), colorControlsColorFilter(), colorFilter(), exposureAdjustment(), FloatArray, makeSkiaColorMatrixFilter(), opacity() (+18 more)
 
 ### Community 50 - "agy-delegate/scripts/relay.mjs"
 Cohesion: 0.20
@@ -2152,21 +1539,21 @@ Nodes (22): Advanced Patterns, Command Aliases, Command Line Argument Files ("@a
 Cohesion: 0.22
 Nodes (4): TerminalCommandDispatcherImpl, FakeShellExecutor, Flow, TerminalCommandDispatcherTest
 
-### Community 56 - "InMemorySnapshotRepository"
-Cohesion: 0.04
-Nodes (34): CreateWorkspaceParams, CreateWorkspaceUseCase, InMemorySnapshotRepository, Flow, CreateWorkspaceUseCaseTest, FakeProvisioningPort, FakeReadinessPort, FakeWorkspaceRepo (+26 more)
+### Community 56 - "EnvironmentReadiness"
+Cohesion: 0.06
+Nodes (25): Workspace, EnvironmentReadiness, CreateWorkspaceViewModel, CreationStage, CONFIG, KEY, LAYOUT, PROMOTE (+17 more)
 
 ### Community 57 - "KMP Liquid Glass — Building Glass Components"
 Cohesion: 0.10
 Nodes (20): A frosted dialog (heavy glass), A glass card, A glass pill button, Animating a glass element, Bottom tab bar / navigation pill, Choosing the right entry point, Common component recipes, Common pitfalls — read this before debugging (+12 more)
 
-### Community 58 - "HighlightNode"
-Cohesion: 0.16
-Nodes (8): HighlightElement, HighlightNode, DrawModifierNode, GraphicsLayer, HighlightNode, HighlightStyle, ModifierNodeElement, Node
+### Community 58 - "StudioPresentationState.kt"
+Cohesion: 0.06
+Nodes (37): Active, ActivityUiState, Connected, Connecting, ConnectionUiState, Disconnected, Editor, Failed (+29 more)
 
 ### Community 59 - "InnerShadowNode"
-Cohesion: 0.15
-Nodes (10): InnerShadowElement, InnerShadowNode, DrawModifierNode, GraphicsLayer, ImageFilter, InnerShadowNode, ModifierNodeElement, Node (+2 more)
+Cohesion: 0.16
+Nodes (9): InnerShadowElement, InnerShadowNode, DrawModifierNode, GraphicsLayer, ImageFilter, ModifierNodeElement, Node, Outline (+1 more)
 
 ### Community 60 - "DetektConventionPlugin.kt"
 Cohesion: 0.17
@@ -2192,45 +1579,45 @@ Nodes (20): applyFleetLane(), buildArgv(), dispatchToPi(), fail(), gitTouchedFil
 Cohesion: 0.21
 Nodes (20): applyFleetLane(), buildArgv(), dispatch(), fail(), gitTouchedFiles(), headerComment(), killChild(), main() (+12 more)
 
-### Community 66 - "TerminalViewModel"
-Cohesion: 0.13
-Nodes (10): DefaultTerminalCommandDispatcherFactory, Flow, StateFlow, TerminalCommandDispatcher, TerminalCommandDispatcherFactory, Job, StateFlow, ViewModel (+2 more)
+### Community 66 - "ShellExecutor"
+Cohesion: 0.19
+Nodes (8): DefaultTerminalCommandDispatcherFactory, createDefaultShellExecutor(), createDefaultShellExecutor(), ShellExecutor, Flow, StateFlow, TerminalCommandDispatcher, TerminalCommandDispatcherFactory
 
 ### Community 67 - "KMP Liquid Glass — Building Glass Components"
 Cohesion: 0.10
 Nodes (20): A frosted dialog (heavy glass), A glass card, A glass pill button, Animating a glass element, Bottom tab bar / navigation pill, Choosing the right entry point, Common component recipes, Common pitfalls — read this before debugging (+12 more)
 
-### Community 68 - "androidMain/kotlin/com/kashif_e/backdrop/platform/PlatformEffects.kt"
-Cohesion: 0.17
-Nodes (13): Android, asAndroid(), BlurStyle, ColorFilter, FloatArray, PlatformRuntimeShader, RenderEffect, Shader (+5 more)
+### Community 68 - "StageDescriptor"
+Cohesion: 0.10
+Nodes (15): CanonicalStageDescriptors, StageDescriptor, StudioSubobject, allDescriptors(), descriptorFor(), StageEditor, owningStage(), StageEditorRegistry (+7 more)
 
 ### Community 69 - "EnvironmentStepContent.kt"
 Cohesion: 0.15
-Nodes (26): LayerBackdrop, Modifier, SetupActivityPanel(), shouldPauseFollow(), EnvironmentPresentation, BackToProjectsButton(), BridgeFailureBanner(), CheckActionButton() (+18 more)
+Nodes (26): EnvironmentPresentation, PrimaryAction, CHECK, CHECKING, OPEN_WORKSPACES, RECONNECT, RETRY_CONNECTION, RETRY_STAGE (+18 more)
 
 ### Community 70 - "HighlightNode"
-Cohesion: 0.16
-Nodes (9): HighlightElement, HighlightNode, DrawModifierNode, GraphicsLayer, HighlightNode, ModifierNodeElement, Node, Outline (+1 more)
+Cohesion: 0.18
+Nodes (8): HighlightElement, HighlightNode, DrawModifierNode, GraphicsLayer, ModifierNodeElement, Node, Outline, Paint
 
 ### Community 71 - "StdinMode"
 Cohesion: 0.03
-Nodes (52): GetStateCommand, io, ToolCommand, io, ToolCommand, RemountCommand, CompileCommand, io (+44 more)
+Nodes (52): DevicesCommand, io, ToolCommand, io, ToolCommand, LinkCommand, ExecuteCommand, io (+44 more)
 
-### Community 72 - "column"
-Cohesion: 0.03
-Nodes (123): DiagnosticsTab(), column, GlassSecondaryButton(), GlassDiagnosticList(), Modifier, GlassDiagnosticDefaults, GlassDiagnosticItem, GlassDiagnosticTile() (+115 more)
+### Community 72 - "Spacing"
+Cohesion: 0.04
+Nodes (116): DiagnosticsTab(), GlassCard(), Color, Dp, Modifier, Shape, GlassChip(), Composable (+108 more)
 
 ### Community 73 - "customizer.sh"
 Cohesion: 0.25
 Nodes (19): capitalize_first(), cleanup_backup_files(), escape_dots(), kebab_to_camel(), main(), print_final_summary(), print_section(), process_module_content() (+11 more)
 
-### Community 74 - "InnerShadowNode"
-Cohesion: 0.16
-Nodes (8): InnerShadowElement, InnerShadowNode, DrawModifierNode, GraphicsLayer, InnerShadowNode, ModifierNodeElement, Node, Outline
+### Community 74 - "KtorRemoteTransportAdapter"
+Cohesion: 0.09
+Nodes (7): SessionSummary, RunCancelResponse, ByteArray, Flow, RemoteTransportPort, RunHandle, KtorRemoteTransportAdapter
 
 ### Community 75 - "DecodedComponent"
-Cohesion: 0.10
-Nodes (14): ApkJarMutationAdapter, Applied, ComponentProcessResult, computeAotArtifacts(), ParsedHunk, Refused, FakeComponentPatchPort, ApkJarOutcome (+6 more)
+Cohesion: 0.09
+Nodes (20): ApkJarMutationAdapter, Applied, ComponentProcessResult, computeAotArtifacts(), ParsedHunk, Refused, FakeComponentPatchPort, ApkJarOutcome (+12 more)
 
 ### Community 76 - "Built-In Types"
 Cohesion: 0.11
@@ -2244,45 +1631,45 @@ Nodes (17): Adding New Features, Building and Running, Contributing, Core Module
 Cohesion: 0.12
 Nodes (16): Adaptive Luminance Glass, Advanced techniques, Authoring an SDF texture, Camera / video as backdrop, Control Center — drag-to-reveal grid with overshoot animation, Custom shaders (expect/actual), Glass Playground — interactive parameter exploration, How it works (+8 more)
 
-### Community 79 - ".setFloatUniform"
-Cohesion: 0.16
-Nodes (10): gammaAdjustment(), reflectiveGlass(), lens(), throwUnsupportedSDFException(), effect(), RenderEffect, ImageBitmap, rememberSdfShader() (+2 more)
+### Community 79 - "RecordingRemoteTransport"
+Cohesion: 0.15
+Nodes (10): EnvironmentVerificationTest, ByteArray, Charset, RemoteTransportPort, RunHandle, WslCliExecutor, RecordingCliExecutor, RecordingDaemonSupervisor (+2 more)
 
-### Community 80 - "ShadowElement"
-Cohesion: 0.18
-Nodes (7): DrawModifierNode, GraphicsLayer, ModifierNodeElement, Node, ShadowNode, ShadowElement, ShadowNode
+### Community 80 - "PluginImportTab.kt"
+Cohesion: 0.17
+Nodes (24): ImportStep, INSPECT, INSTALL, REVIEW, Modifier, PluginStepper(), StepperConnector(), StepperStepNode() (+16 more)
 
-### Community 81 - "CoreProjectDependency"
-Cohesion: 0.02
-Nodes (44): Core_AnalyticsProjectDependency, Core_CliProjectDependency, Core_CommonProjectDependency, Core_DataProjectDependency, Core_DatastoreProjectDependency, Core_DesignsystemProjectDependency, Core_DomainProjectDependency, Core_ModelProjectDependency (+36 more)
+### Community 81 - "StudioViewModel"
+Cohesion: 0.14
+Nodes (4): StateFlow, ViewModel, StudioUiState, StudioViewModel
 
-### Community 82 - "MutableStateFlow"
-Cohesion: 0.02
-Nodes (107): Flow, Flow, RuntimeException, Workspace, RemoteWorkspaceProvisioner, StepFailure, Flow, ToolchainReadinessPolicy (+99 more)
+### Community 82 - "Workspace"
+Cohesion: 0.03
+Nodes (55): WorkDirDiscoveryService, WorkDirDiscoveryServiceTest, resolveAppDataDir(), Flow, RuntimeException, Workspace, RemoteWorkspaceProvisioner, StepFailure (+47 more)
 
 ### Community 83 - "Advanced techniques"
 Cohesion: 0.12
 Nodes (16): Adaptive Luminance Glass, Advanced techniques, Authoring an SDF texture, Camera / video as backdrop, Control Center — drag-to-reveal grid with overshoot animation, Custom shaders (expect/actual), Glass Playground — interactive parameter exploration, How it works (+8 more)
 
-### Community 84 - "SetupOutcome"
-Cohesion: 0.04
-Nodes (41): Flow, OperationOwner, SetupOperationCoordinator, SetupPlanFactory, Flow, ByteArray, Flow, RemoteTransportPort (+33 more)
+### Community 84 - "WslToolchainProvisioner"
+Cohesion: 0.06
+Nodes (20): Flow, OperationOwner, SetupOperationCoordinator, Flow, Result, StepStatus, ToolchainProvisioningService, WslCliExecutor (+12 more)
 
-### Community 85 - "NavGraphBuilderExtensions.kt"
-Cohesion: 0.21
-Nodes (13): composableWithRootPushTransitions(), composableWithSlideTransitions(), composableWithStayTransitions(), Enter, Exit, RootTransitionProviders, TransitionProviders, EnterTransitionProvider (+5 more)
+### Community 85 - "Enter"
+Cohesion: 0.28
+Nodes (8): Enter, Exit, RootTransitionProviders, TransitionProviders, EnterTransitionProvider, ExitTransitionProvider, NonNullEnterTransitionProvider, NonNullExitTransitionProvider
 
 ### Community 86 - "Component recipes"
 Cohesion: 0.12
 Nodes (15): Backdrop demo scaffold (catalog pattern), Common z-order traps (remember these), Component recipes, Frosted dialog (heavy glass), Glass card, Glass search field, Layout choices: when to use which `Backdrop`, Lazy scroll container (full-screen catalog grid) (+7 more)
 
-### Community 87 - "RuntimeShaderCache"
-Cohesion: 0.28
-Nodes (12): Ambient, createShader(), Default, getCornerRadii(), BlendMode, Color, FloatArray, HighlightStyle (+4 more)
+### Community 87 - "SetupLogEvent"
+Cohesion: 0.15
+Nodes (6): Flow, SetupActivitySink, SetupLogBuffer, SetupLogBufferTest, SetupLogConstants, SetupLogEvent
 
-### Community 88 - "skiaMain/kotlin/com/kashif_e/backdrop/highlight/HighlightStyle.kt"
-Cohesion: 0.28
-Nodes (14): Ambient, createShader(), Default, getCornerRadii(), GlassBevel, BlendMode, Color, FloatArray (+6 more)
+### Community 88 - "PlatformRuntimeShader"
+Cohesion: 0.20
+Nodes (15): Ambient, createShader(), Default, getCornerRadii(), GlassBevel, Color, FloatArray, HighlightStyle (+7 more)
 
 ### Community 89 - "PartitionPath"
 Cohesion: 0.07
@@ -2294,11 +1681,11 @@ Nodes (15): Backdrop demo scaffold (catalog pattern), Common z-order traps (reme
 
 ### Community 91 - "skiaMain/kotlin/com/kashif_e/backdrop/BackdropEffectScope.kt"
 Cohesion: 0.25
-Nodes (9): BackdropEffectScope, BackdropEffectScopeImpl, Density, DrawScope, ImageFilter, LayoutDirection, PlatformRuntimeShader, Shape (+1 more)
+Nodes (8): BackdropEffectScope, BackdropEffectScopeImpl, Density, DrawScope, ImageFilter, LayoutDirection, Shape, Size
 
 ### Community 92 - "RuntimeShaderBuilder"
-Cohesion: 0.15
-Nodes (12): lens(), Color, progressiveBlur(), ImageBitmap, Shader, rememberSdfShader(), SdfShader, org (+4 more)
+Cohesion: 0.20
+Nodes (10): lens(), Color, progressiveBlur(), ImageBitmap, Shader, rememberSdfShader(), SdfShader, Image (+2 more)
 
 ### Community 93 - "Documenting Scripts"
 Cohesion: 0.13
@@ -2308,25 +1695,25 @@ Nodes (15): Changing the help option behavior, Changing the help option names, D
 Cohesion: 0.13
 Nodes (15): `CliktCommand` constructor no longer takes most parameters, `Context` builder properties renamed, Environment variable splitting, Experimental APIs, Help formatting, Localization, Markdown moved to a separate module, Maven Coordinates (+7 more)
 
-### Community 95 - "ConnectionManager"
-Cohesion: 0.13
-Nodes (14): ConnectionManager, Result, StateFlow, Connection, ConnectionStatus, CONNECTED, CONNECTING, DISCONNECTED (+6 more)
+### Community 95 - "MutableStateFlow"
+Cohesion: 0.09
+Nodes (19): ConnectionManager, Result, StateFlow, Flow, StateFlow, TerminalManager, Connection, ConnectionStatus (+11 more)
 
-### Community 96 - "BackdropEffectScopeImpl"
-Cohesion: 0.26
-Nodes (9): BackdropEffectScope, BackdropEffectScopeImpl, Density, DrawScope, LayoutDirection, RenderEffect, RuntimeShader, Shape (+1 more)
+### Community 96 - "RecordingTransport"
+Cohesion: 0.11
+Nodes (9): FakePublicationPort, ByteArray, Charset, RemoteTransportPort, RunHandle, WslCliExecutor, RecordingTransport, SetupExecutionPathTest (+1 more)
 
-### Community 97 - "SnapshotMaterializer"
-Cohesion: 0.15
-Nodes (4): readIfPresent(), IntentData, SnapshotMaterializer, SnapshotMaterializerTest
+### Community 97 - "atomicWrite"
+Cohesion: 0.14
+Nodes (5): atomicWrite(), readIfPresent(), IntentData, SnapshotMaterializer, SnapshotMaterializerTest
 
-### Community 99 - "GlassCard"
-Cohesion: 0.06
-Nodes (82): GlassCard(), GlassChip(), Composable, Modifier, Shape, GlassConsoleDrawer(), Modifier, Modifier (+74 more)
+### Community 99 - "DefaultStageEditorRegistry"
+Cohesion: 0.18
+Nodes (10): DefaultStageEditorRegistry, DuplicateStageEditorException, IllegalArgumentException, IllegalStateException, StageEditor, MissingStageEditorException, UnknownSubobjectException, DefaultStageEditorRegistryTest (+2 more)
 
-### Community 100 - "skiaMain/kotlin/com/kashif_e/backdrop/effects/ColorFilter.kt"
-Cohesion: 0.31
-Nodes (10): applyEffect(), colorControls(), colorControlsColorFilter(), colorFilter(), exposureAdjustment(), FloatArray, PlatformRenderEffect, makeSkiaColorMatrixFilter() (+2 more)
+### Community 100 - "DrawBackdropInputScaleScreenshotTest"
+Cohesion: 0.25
+Nodes (6): DrawBackdropInputScaleScreenshotTest, DrawScope, FloatArray, ImageBitmap, LayerBackdrop, Modifier
 
 ### Community 101 - "Enabling Completion"
 Cohesion: 0.15
@@ -2337,20 +1724,20 @@ Cohesion: 0.15
 Nodes (13): 1. Mental Model: Core Architecture, 2. Basic Command Setup, 3. Options & Arguments Recipes, 4. Subcommands & Hierarchies, 5. Coroutines with SuspendingCliktCommand, 6. Embedding Clikt in Graphical Terminals (IDE In-App Terminal), 7. Testing Clikt Commands, 8. Reference Documentation Index (+5 more)
 
 ### Community 103 - ".launch"
-Cohesion: 0.10
-Nodes (13): createDefaultShellExecutor(), DesktopShellExecutor, Flow, Job, createDefaultShellExecutor(), DesktopShellExecutorTest, Finished, Flow (+5 more)
+Cohesion: 0.11
+Nodes (11): DesktopShellExecutor, Flow, Job, DesktopShellExecutorTest, Finished, Flow, Line, ShellOutputEvent (+3 more)
 
-### Community 104 - "AIAssistantViewModel"
-Cohesion: 0.10
-Nodes (16): AIService, Flow, AIServiceImpl, Flow, Message, MessageRole, ASSISTANT, SYSTEM (+8 more)
+### Community 104 - "MessageRole"
+Cohesion: 0.16
+Nodes (9): AIService, Flow, AIServiceImpl, Flow, Message, MessageRole, ASSISTANT, SYSTEM (+1 more)
 
 ### Community 105 - "Effects reference"
 Cohesion: 0.17
 Nodes (11): blur, colorControls, Composition cheatsheet, Effects reference, exposureAdjustment / gammaAdjustment, lens, opacity, progressiveBlur (+3 more)
 
-### Community 107 - "BytecodeMatcher"
+### Community 107 - "BytecodeMatchSpec"
 Cohesion: 0.14
-Nodes (12): Ambiguous, BytecodeMatcher, ClassMismatch, Instruction, Matched, MatchOutcome, MethodNotFound, NearMiss (+4 more)
+Nodes (13): Ambiguous, BytecodeMatcher, ClassMismatch, Instruction, Matched, MatchOutcome, MethodNotFound, NearMiss (+5 more)
 
 ### Community 108 - "Effects reference"
 Cohesion: 0.17
@@ -2358,10 +1745,10 @@ Nodes (11): blur, colorControls, Composition cheatsheet, Effects reference, expo
 
 ### Community 109 - "ToolRisk"
 Cohesion: 0.03
-Nodes (53): AttachCommand, io, ToolCommand, EmuCommand, io, ToolCommand, io, ToolCommand (+45 more)
+Nodes (53): DetachCommand, io, ToolCommand, io, ToolCommand, StartServerCommand, io, ToolCommand (+45 more)
 
 ### Community 111 - "FakeWorkspaceRepository"
-Cohesion: 0.11
+Cohesion: 0.10
 Nodes (9): StateFlow, ViewModel, RunHistoryUiState, RunHistoryViewModel, FakeRunRepository, FakeWorkspaceRepository, Flow, Workspace (+1 more)
 
 ### Community 112 - "BACKDROP_ENHANCEMENT_TRACKER.md"
@@ -2388,9 +1775,9 @@ Nodes (11): Aider Delegate, Authorization model, Autonomy and permissions, Choos
 Cohesion: 0.18
 Nodes (11): Chaining and Repeating Subcommands, Command pipelines, Commands, Customizing Command Name, Customizing Contexts, Executing Nested Commands, Nested Handling And Contexts, Passing Parameters (+3 more)
 
-### Community 118 - "BytecodeMatchSpec"
-Cohesion: 0.11
-Nodes (13): BytecodeMatcherTest, MessageDigest, EffectKind, CREATED, DELETED, PROPERTY_SET, REPLACED, TEXT_PATCHED (+5 more)
+### Community 118 - "PluginManagerViewModelTest"
+Cohesion: 0.15
+Nodes (4): FakeAuthorProjectTrustPort, FakePluginInstallPort, FakeMarketplaceIndexPort, PluginManagerViewModelTest
 
 ### Community 119 - "GlassMaterial"
 Cohesion: 0.16
@@ -2458,23 +1845,19 @@ Nodes (7): CommandCompleter, CommandNode, DefaultCommandCompleter, flushToken(),
 
 ### Community 135 - "ArtifactRequirement"
 Cohesion: 0.03
-Nodes (45): io, ToolCommand, ResizeLogicalPartitionCommand, ExecuteCommand, io, ToolCommand, ExecuteCommand, io (+37 more)
+Nodes (42): GetStateCommand, io, ToolCommand, FlashingCommand, io, ToolCommand, ExecuteCommand, io (+34 more)
 
 ### Community 136 - "ConcreteOperation"
 Cohesion: 0.09
 Nodes (27): CheckedPlan, FileMutationAdapter, PlannedOperation, Ready, Refused, Invalid, PartitionPath, PartitionPathResolver (+19 more)
 
-### Community 137 - "applyPlatformEffect"
-Cohesion: 0.31
-Nodes (6): blur(), TileMode, applyPlatformEffect(), PlatformRenderEffect, Color, progressiveBlur()
-
 ### Community 138 - "commonMain/kotlin/com/kashif_e/backdrop/backdrops/LayerBackdrop.kt"
 Cohesion: 0.36
 Nodes (6): Density, GraphicsLayerScope, LayoutCoordinates, Modifier, LayerBackdrop, rememberLayerBackdrop()
 
-### Community 139 - "javax.inject.Inject"
-Cohesion: 0.04
-Nodes (63): RootProjectAccessor, BackdropProjectDependency, CatalogProjectDependency, Core_AnalyticsProjectDependency, Core_CliProjectDependency, Core_CommonProjectDependency, Core_DataProjectDependency, Core_DatastoreProjectDependency (+55 more)
+### Community 139 - "RecoveryStepContent.kt"
+Cohesion: 0.42
+Nodes (11): ConsoleTabItem(), androidx, LayerBackdrop, Modifier, RecoveryBlockedBanner(), RecoveryConsoleDrawer(), RecoveryHeader(), RecoveryPropertyRow() (+3 more)
 
 ### Community 140 - "Review and land"
 Cohesion: 0.22
@@ -2525,28 +1908,28 @@ Cohesion: 0.22
 Nodes (9): Artifacts and result fields, Before the first run, Dispatch and poll, Dispatching, Recovering lost work, The commit boundary, Waiting for completion, What the relay runs (+1 more)
 
 ### Community 152 - "WorkspacePipelineDraft"
-Cohesion: 0.08
-Nodes (20): Available, DisplayValue, Unavailable, TargetDevice, Workspace, WorkspaceOverviewMapper, BuildStateUi, Content (+12 more)
+Cohesion: 0.10
+Nodes (10): Available, DisplayValue, Unavailable, TargetDevice, Workspace, WorkspaceOverviewMapper, org, T (+2 more)
 
-### Community 153 - "FeatureProjectDependency"
-Cohesion: 0.03
-Nodes (34): Feature_ConfigurationProjectDependency, Feature_HomeProjectDependency, Feature_PluginsProjectDependency, Feature_ProfileProjectDependency, Feature_SettingsProjectDependency, Feature_SetupProjectDependency, Feature_WorkspaceProjectDependency, FeatureProjectDependency (+26 more)
+### Community 153 - "StudioIconKey"
+Cohesion: 0.20
+Nodes (9): StudioIconKey, ACQUIRE, ASSEMBLE, BUILD, DEBLOAT, EXTRACT, METADATA, PATCH (+1 more)
 
 ### Community 154 - "📂 Complete File Manifest"
 Cohesion: 0.25
 Nodes (8): 📂 Complete File Manifest, Phase 1 Files (6 files):, Phase 2 Files (12 files):, Phase 3 Files (11 files):, Phase 4 Files (3 files):, Phase 5 Files (3 files):, Phase 6 Files (1 file):, Phase 7 Integration Files (6 files created/updated):
 
-### Community 155 - "androidMain/kotlin/com/kashif_e/backdrop/effects/ColorFilter.kt"
-Cohesion: 0.39
-Nodes (7): colorControls(), colorControlsColorFilter(), colorFilter(), exposureAdjustment(), androidx, opacity(), vibrancy()
+### Community 155 - "AcquireViewModel"
+Cohesion: 0.27
+Nodes (5): AcquireViewModel, StateFlow, TargetDevice, ViewModel, AcquireStageEditorTest
 
-### Community 156 - "BuildRunViewModel"
+### Community 156 - "BuildRunReattachTest"
 Cohesion: 0.05
-Nodes (21): BuildRunUiState, BuildRunViewModel, StateFlow, ViewModel, BuildRunReattachTest, FakePipelineExecutionPort, FakeReadinessPort, FakeRunRepository (+13 more)
+Nodes (23): ToolResult, BuildRunUiState, BuildRunViewModel, StateFlow, ViewModel, BuildRunReattachTest, ReattachRunUseCase, FakePipelineExecutionPort (+15 more)
 
-### Community 157 - "effect"
-Cohesion: 0.83
-Nodes (3): effect(), ImageFilter, PlatformRenderEffect
+### Community 157 - "AssembleViewModel"
+Cohesion: 0.27
+Nodes (5): AssembleViewModel, StateFlow, TargetDevice, ViewModel, AssembleStageEditorTest
 
 ### Community 158 - "Review and land"
 Cohesion: 0.25
@@ -2613,15 +1996,15 @@ Cohesion: 0.25
 Nodes (8): Authorization model, Autonomy and permissions, Choose the model (optional), Prerequisites (check once), References, The binary is `oz`, not `warp`, Warp Delegate, When NOT to use this
 
 ### Community 174 - "LtiTheme"
-Cohesion: 0.09
-Nodes (29): AppTheme, ColorScheme, Modifier, LtiTheme(), SetupStepDetail, ToolComponentItem, AssembleEditorUiTest, PlannedSetupChanges (+21 more)
+Cohesion: 0.10
+Nodes (21): AppTheme, LtiTheme(), AssembleEditorUiTest, PlannedSetupChanges, SetupOperation, androidx, Modifier, StepStatus (+13 more)
 
 ### Community 175 - "ShadowElement"
 Cohesion: 0.22
-Nodes (6): DrawModifierNode, ModifierNodeElement, Node, ShadowNode, ShadowElement, ShadowNode
+Nodes (6): setPlatformMaskFilter(), DrawModifierNode, ModifierNodeElement, Node, ShadowElement, ShadowNode
 
 ### Community 176 - "SetupAttemptRecord"
-Cohesion: 0.10
+Cohesion: 0.09
 Nodes (18): FailingSettings, Settings, PersistedSubmoduleState, PersistedToolState, AttemptStatus, AUTHORIZED, CANCELLED, FAILED (+10 more)
 
 ### Community 177 - "📋 PHASE 2: Advanced Visual Effects ✅ COMPLETED"
@@ -2633,8 +2016,8 @@ Cohesion: 0.29
 Nodes (6): Catalog apps, Compatibility matrix, Platform support & API levels, Rendering pipelines, What this means for your component, When to write platform-specific shader code
 
 ### Community 179 - "GlassTextField"
-Cohesion: 0.12
-Nodes (39): InputsTab(), Clear, Custom, Default, Error, GlassOtpTextField(), GlassPasswordField(), GlassSearchField() (+31 more)
+Cohesion: 0.13
+Nodes (38): InputsTab(), Clear, Custom, Default, Error, GlassOtpTextField(), GlassPasswordField(), GlassSearchField() (+30 more)
 
 ### Community 180 - "KMPLibraryConventionPlugin.kt"
 Cohesion: 0.48
@@ -2684,17 +2067,17 @@ Nodes (6): Catalog apps, Compatibility matrix, Platform support & API levels, Re
 Cohesion: 0.29
 Nodes (6): 1. Clean Architecture & Dependency Rules, 2. Domain-Driven Package Architecture, 3. SOLID Principles in Practice, Clean Architecture Sealed Interfaces & Cohesive Data Classes, `core:designsystem` Module Architecture, Strict Modularization Guardrails:
 
-### Community 192 - "PackageWriterTest"
-Cohesion: 0.12
-Nodes (13): BoundedStream, ByteArray, RuntimeException, T, Ok, PackageReadResult, PluginPackageReader, Reader (+5 more)
-
-### Community 193 - "org.gradle.api.provider.Provider"
-Cohesion: 0.03
-Nodes (14): AndroidxTestExtVersionAccessors, AndroidxTestVersionAccessors, AndroidxVersionAccessors, ComposeRulesVersionAccessors, ComposeVersionAccessors, VersionAccessors, AndroidxTestExtVersionAccessors, AndroidxTestVersionAccessors (+6 more)
-
-### Community 194 - "Spacing"
+### Community 192 - "PluginPackageReader.kt"
 Cohesion: 0.09
-Nodes (30): CoreUiTab(), GlassScrollableTabRow(), Color, Dp, Modifier, TabContent, Spacing, LineHeight (+22 more)
+Nodes (14): BoundedStream, ByteArray, RuntimeException, T, Ok, PackageReadResult, PluginPackageReader, Reader (+6 more)
+
+### Community 193 - "ExtractViewModel"
+Cohesion: 0.27
+Nodes (5): ExtractViewModel, StateFlow, TargetDevice, ViewModel, ExtractStageEditorTest
+
+### Community 194 - "GlassFileTree.kt"
+Cohesion: 0.13
+Nodes (22): CoreUiTab(), GlassScrollableTabRow(), Color, Dp, Modifier, TabContent, FileNode, FileType (+14 more)
 
 ### Community 195 - "pre-commit.sh"
 Cohesion: 0.52
@@ -2709,24 +2092,20 @@ Cohesion: 0.33
 Nodes (5): DampedDragAnimation, Helpers — required by the interactive recipes, How recipes use these fields, inspectDragGestures, InteractiveHighlight
 
 ### Community 198 - ".createFixture"
-Cohesion: 0.06
-Nodes (17): BuildRunViewModelTest, FakePipelineExecutionPort, FakeReadinessPort, FakeRunRepository, FakeSnapshotRepository, FakeTargetRepository, Fixture, ByteArray (+9 more)
+Cohesion: 0.05
+Nodes (17): BuildRunViewModelTest, FakePipelineExecutionPort, FakeReadinessPort, FakeRunRepository, FakeTargetRepository, FakeWorkspaceRepository, Fixture, ByteArray (+9 more)
 
 ### Community 199 - "commonMain/kotlin/com/kashif_e/backdrop/BackdropEffectScope.kt"
 Cohesion: 0.60
 Nodes (5): BackdropEffectScope, Density, LayoutDirection, Shape, Size
 
-### Community 200 - "org.gradle.api.internal.catalog.DefaultVersionCatalog"
-Cohesion: 0.09
-Nodes (6): org.gradle.api.artifacts.ExternalModuleDependencyBundle, org.gradle.api.internal.artifacts.dsl.CapabilityNotationParser, org.gradle.api.internal.attributes.AttributesFactory, org.gradle.api.internal.catalog.DefaultVersionCatalog, org.gradle.api.model.ObjectFactory, org.gradle.api.provider.ProviderFactory
+### Community 200 - "PatchViewModel"
+Cohesion: 0.27
+Nodes (5): StateFlow, TargetDevice, ViewModel, PatchViewModel, PatchStageEditorTest
 
 ### Community 201 - "PersistentFakeServer"
 Cohesion: 0.28
 Nodes (7): SetupRunRecovery, ByteArray, MapSettings, RemoteTransportPort, RunHandle, PersistentFakeServer, SetupRecoveryTest
-
-### Community 202 - "skiaMain/kotlin/com/kashif_e/backdrop/effects/Blur.kt"
-Cohesion: 0.60
-Nodes (5): asSkiaImageFilter(), blur(), FilterTileMode, TileMode, toSkiaTileMode()
 
 ### Community 203 - "KtlintConventionPlugin"
 Cohesion: 0.60
@@ -2832,29 +2211,29 @@ Nodes (6): 1. Write the brief, 2. Dispatch, 3. Wait for completion, 4. Review - 
 Cohesion: 0.33
 Nodes (6): Configuring `exitProcess`, Custom Testing, Testing Clikt Commands, Testing Environment Variables, Testing Prompt Options, Using `parse` instead of `main`
 
-### Community 229 - "PluginImportTab.kt"
-Cohesion: 0.09
-Nodes (43): glassBackground(), GlassBackgroundElement, GlassBackgroundNode, glassBorder(), GlassBorderElement, GlassBorderNode, glassEffect(), glassInteractive() (+35 more)
+### Community 229 - "GlassShapes"
+Cohesion: 0.03
+Nodes (97): Density, GraphicsLayerScope, LayoutCoordinates, rememberBackdrop(), WrappedBackdrop, Fixed, Dp, T (+89 more)
 
 ### Community 230 - "Helpers — required by the interactive recipes"
 Cohesion: 0.33
 Nodes (5): DampedDragAnimation, Helpers — required by the interactive recipes, How recipes use these fields, inspectDragGestures, InteractiveHighlight
 
 ### Community 231 - "EnvironmentSetupState"
+Cohesion: 0.06
+Nodes (21): EnvironmentSetupState, Job, StateFlow, SetupOperationKind, CACHE_RESET, FULL_SETUP, REPAIR_TOOL, RETRY_STAGE (+13 more)
+
+### Community 232 - "WslEnvironmentDetector"
 Cohesion: 0.08
-Nodes (12): EnvironmentSetupState, Job, StateFlow, SetupOperationKind, CACHE_RESET, FULL_SETUP, REPAIR_TOOL, RETRY_STAGE (+4 more)
+Nodes (22): inMemoryToolchainRepository(), ByteArray, Charset, RemoteTransportPort, RunHandle, WslCliExecutor, SetupConsentTest, SpyCliExecutor (+14 more)
 
-### Community 232 - "ToolExecutionRequest"
-Cohesion: 0.02
-Nodes (80): RunHandle, ToolManifestDto, Result, StateFlow, StepStatus, ToolchainProvisioningService, WslCliExecutor, PinnedSubmodule (+72 more)
-
-### Community 233 - "Run"
-Cohesion: 0.27
-Nodes (5): NotApplicable, Rejected, ResolutionResult, Resolved, Run
+### Community 233 - ".append"
+Cohesion: 0.13
+Nodes (10): AnnotatedString, TransformedText, VisualTransformation, nonLetterColorVisualTransformation(), NotApplicable, Rejected, ResolutionResult, Resolved (+2 more)
 
 ### Community 234 - "DiagnosticCheckItem"
-Cohesion: 0.03
-Nodes (61): ArchiveToolsInspector, BuildCacheInspector, CompilersInspector, CompositeSystemDoctorEngine, WslCliExecutor, DiagnosticContext, DualJdkInspector, KernelFuseInspector (+53 more)
+Cohesion: 0.04
+Nodes (56): ArchiveToolsInspector, BuildCacheInspector, CompilersInspector, CompositeSystemDoctorEngine, WslCliExecutor, DiagnosticContext, DualJdkInspector, KernelFuseInspector (+48 more)
 
 ### Community 235 - "ShareUtils"
 Cohesion: 0.40
@@ -2884,17 +2263,13 @@ Nodes (5): Advanced Theme with All Features, Quick Start - Basic Theme, State-Ba
 Cohesion: 0.40
 Nodes (5): Developer Experience, 🎯 Key Achievements, Performance Engineering, System Architecture, Visual Quality
 
-### Community 242 - "BlurStyle"
-Cohesion: 0.40
-Nodes (5): BlurStyle, INNER, NORMAL, OUTER, SOLID
+### Community 243 - "IconSize"
+Cohesion: 0.04
+Nodes (125): ButtonsTab(), Custom, drawButtonSurface(), GlassButton(), GlassButtonDefaults, GlassButtonStyle, GlassButtonVariant, Primary (+117 more)
 
-### Community 243 - "GlassButton"
-Cohesion: 0.06
-Nodes (60): ButtonsTab(), Custom, drawButtonSurface(), GlassButton(), GlassButtonStyle, GlassButtonVariant, Primary, Secondary (+52 more)
-
-### Community 244 - "BlurStyle"
-Cohesion: 0.40
-Nodes (5): BlurStyle, INNER, NORMAL, OUTER, SOLID
+### Community 244 - ".testDelegatingSystemNotifier_forwardsToAttachedDelegate"
+Cohesion: 0.32
+Nodes (3): SystemNotifier, SystemNotifierTest, SystemNotifier
 
 ### Community 246 - "CMPFeatureConventionPlugin"
 Cohesion: 0.70
@@ -2917,12 +2292,12 @@ Cohesion: 0.40
 Nodes (4): AppDispatchers, Default, IO, Unconfined
 
 ### Community 263 - "SimulatedExecutionPort"
-Cohesion: 0.11
-Nodes (7): ByteArray, RunHandle, StepStatus, ToolResult, Workspace, SimulatedExecutionPort, BoundedTransferPortTest
+Cohesion: 0.08
+Nodes (10): GlassStyleTest, InMemoryRunRepository, PipelineOrchestratorTest, ByteArray, RunHandle, StepStatus, ToolResult, Workspace (+2 more)
 
-### Community 264 - "StudioViewModel"
-Cohesion: 0.03
-Nodes (54): Flow, Json, StudioPresentationMap, StudioPresentationStore, StudioPresentationStoreTest, InMemoryStudioPresentationStore, Flow, StudioPresentationStorePort (+46 more)
+### Community 264 - "StudioPresentation"
+Cohesion: 0.08
+Nodes (12): Flow, Json, StudioPresentationMap, StudioPresentationStore, StudioPresentationStoreTest, InMemoryStudioPresentationStore, Flow, StudioPresentationStorePort (+4 more)
 
 ### Community 265 - "gradlew"
 Cohesion: 0.60
@@ -2965,68 +2340,60 @@ Cohesion: 0.50
 Nodes (3): Why Clikt?, Why not a Java library like JCommander or Picocli?, Why not a Kotlin library like kotlin-argparser or kotlinx.cli?
 
 ### Community 275 - "EnvironmentState"
-Cohesion: 0.08
-Nodes (30): CheckedNeedsSetup, Checking, EnvironmentState, Failed, Interrupted, MutationRunning, PrimaryAction, CHECK (+22 more)
-
-### Community 276 - "InMemoryRunRepository"
-Cohesion: 0.09
-Nodes (12): InMemoryRunRepository, Flow, InMemoryRunRepositoryTest, RunState, CANCELLED, CANCELLING, FAILED, INTERRUPTED (+4 more)
+Cohesion: 0.11
+Nodes (21): CheckedNeedsSetup, Checking, EnvironmentState, Failed, Interrupted, MutationRunning, Ready, Reconnecting (+13 more)
 
 ### Community 277 - "Backdrop"
-Cohesion: 0.02
-Nodes (175): Backdrop, Density, GraphicsLayerScope, LayoutCoordinates, CanvasBackdrop(), CanvasBackdropImpl, Density, GraphicsLayerScope (+167 more)
-
-### Community 278 - "org.gradle.api.artifacts.MinimalExternalModuleDependency"
-Cohesion: 0.03
-Nodes (17): ComposeIconsLibraryAccessors, JbKotlinLibraryAccessors, JbKotlinStdlibLibraryAccessors, JbLibraryAccessors, KoinAndroidxLibraryAccessors, KoinComposeLibraryAccessors, KoinCoreLibraryAccessors, KoinKspLibraryAccessors (+9 more)
+Cohesion: 0.06
+Nodes (62): Backdrop, CanvasBackdrop(), CanvasBackdropImpl, Density, GraphicsLayerScope, LayoutCoordinates, rememberCanvasBackdrop(), Combined2Backdrops (+54 more)
 
 ### Community 279 - "ToolCommand"
-Cohesion: 0.07
-Nodes (21): ExecOutCommand, ByteArray, ExtensionSearchCommand, io, ToolCommand, AppendVbmetaImageCommand, io, ToolCommand (+13 more)
+Cohesion: 0.08
+Nodes (20): ExecOutCommand, ByteArray, io, ToolCommand, SearchIssuesCommand, BinaryToolCommand, CommandExecutionResult, GhExtensionCommand (+12 more)
 
-### Community 280 - "AuthorProject"
+### Community 280 - "AuthorTaskResult"
 Cohesion: 0.06
-Nodes (18): AuthorTaskProcessAdapter, AuthorTaskProcessAdapterTest, Approved, AuthorDiagnostic, AuthorProject, AuthorProjectTrustPort, AuthorProjectTrustUseCase, AuthorTaskRefusal (+10 more)
+Nodes (27): AuthorTaskProcessAdapter, AuthorTaskProcessAdapterTest, Approved, AuthorDiagnostic, AuthorProject, AuthorProjectTrustPort, AuthorProjectTrustUseCase, AuthorTaskRefusal (+19 more)
 
 ### Community 281 - "PULL_REQUEST_TEMPLATE.md"
 Cohesion: 0.50
 Nodes (3): Description, Issue Fix, Screenshots
 
 ### Community 284 - "GoldenImageAssert"
-Cohesion: 0.23
-Nodes (5): BufferedImage, ArgbChannels, GoldenImageAssert, ImageBitmap, PixelComparison
+Cohesion: 0.18
+Nodes (8): clipOutline(), Outline, BufferedImage, ArgbChannels, GoldenImageAssert, ImageBitmap, PixelComparison, Rect
 
-### Community 285 - "IconSize"
-Cohesion: 0.08
-Nodes (35): NavigationTab(), ColumnScope, Collapsed, Custom, Default, Expanded, GlassBottomSheet(), GlassBottomSheetExample() (+27 more)
+### Community 285 - "GlassBottomSheet.kt"
+Cohesion: 0.12
+Nodes (23): NavigationTab(), ColumnScope, Collapsed, Expanded, GlassBottomSheet(), GlassBottomSheetExample(), GlassBottomSheetScaffold(), GlassBottomSheetState (+15 more)
 
 ### Community 286 - "ToolId"
 Cohesion: 0.02
-Nodes (72): io, ToolCommand, ReconnectCommand, io, ToolCommand, UninstallCommand, DaemonCommand, io (+64 more)
+Nodes (75): AttachCommand, io, ToolCommand, io, ToolCommand, ReconnectCommand, io, ToolCommand (+67 more)
 
-### Community 296 - "ReadinessChecklistSection.kt"
-Cohesion: 0.06
-Nodes (50): ideCardSurface(), Dp, Modifier, Shape, LetterSpacing, Modifier, OverviewCallToAction(), ActionButtonStyle (+42 more)
+### Community 296 - "WorkspaceOverviewState.kt"
+Cohesion: 0.08
+Nodes (24): BuildStateUi, Content, ContentLoadState, Empty, Error, Failed, InProgress, Loading (+16 more)
 
-### Community 297 - "FlashingCommand"
-Cohesion: 0.40
-Nodes (3): FlashingCommand, io, ToolCommand
+### Community 297 - "SetupTokens"
+Cohesion: 0.57
+Nodes (3): AppTheme, Color, SetupTokens
 
 ### Community 359 - "AssetRef"
-Cohesion: 0.27
-Nodes (4): FileMutationAdapterTest, ByteArray, ConcreteMutationPlan, AssetRef
+Cohesion: 0.23
+Nodes (5): FileMutationAdapterTest, ByteArray, MessageDigest, ConcreteMutationPlan, AssetRef
 
-### Community 360 - "DomainModule.kt"
-Cohesion: 0.07
-Nodes (28): Flow, IllegalStateException, TargetDevice, OptimisticRevisionConflictException, PipelineDraftSession, PipelineDraftSessionRepository, DiscardPipelineDraftChangesUseCase, Flow (+20 more)
+### Community 360 - "PipelineDraftSession"
+Cohesion: 0.15
+Nodes (10): Flow, IllegalStateException, TargetDevice, OptimisticRevisionConflictException, PipelineDraftSession, PipelineDraftSessionRepository, DiscardPipelineDraftChangesUseCase, SavePipelineDraftUseCase (+2 more)
 
 ### Community 370 - "PackageIdentity"
-Cohesion: 0.10
-Nodes (10): atomicWrite(), InstalledPluginRepository, PackageIdentity, PackageInspection, authorTaskStatusLabel(), canInstallInspectedPackage(), packageTaskSucceeded(), resolveInstalledSelection() (+2 more)
+Cohesion: 0.11
+Nodes (9): InstalledPluginRepository, PackageIdentity, PackageInspection, authorTaskStatusLabel(), canInstallInspectedPackage(), packageTaskSucceeded(), resolveInstalledSelection(), FakePluginInstallPort (+1 more)
 
 ### Community 371 - "GlassTheme"
 Cohesion: 0.04
-Nodes (115): Continuity, ContinuousRoundedRectangle, Color, Modifier, LtiRomStudioMark(), AppTheme, Modifier, MiniIdePreview() (+107 more)
+Nodes (111): AnimationSpec, main(), AlphaTokensGrid(), ColorSchemeGrid(), ColorSwatchCard(), DimensionCategoryRow(), DimensionsGrid(), Color (+103 more)
 
 ### Community 372 - "WorkspaceJailInterceptor"
 Cohesion: 0.08
@@ -3035,10 +2402,6 @@ Nodes (18): ExecutionChain, R, ToolExecutionInterceptor, ToolResult, WorkspaceJa
 ### Community 373 - "Multi Value Options"
 Cohesion: 0.40
 Nodes (5): Multi Value Options, Options With a Variable Number of Values, Options with an Optional Value, Options With Fixed Number of Values, Splitting an Option Value on a Delimiter
-
-### Community 376 - "GoldenImageAssertTest"
-Cohesion: 0.16
-Nodes (5): clipOutline(), Outline, GoldenImageAssertTest, ImageBitmap, Rect
 
 ### Community 377 - "Commands"
 Cohesion: 0.04
@@ -3050,7 +2413,7 @@ Nodes (46): `boot`, Commands, `createLogicalPartition`, `deleteLogicalPartition`
 
 ### Community 379 - "PipelineOrchestrator"
 Cohesion: 0.15
-Nodes (21): Driver, ByteArray, Flow, RuntimeException, Workspace, PipelineEvent, PipelineOrchestrator, RunFinished (+13 more)
+Nodes (20): Driver, ByteArray, Flow, RuntimeException, Workspace, PipelineEvent, PipelineOrchestrator, RunFinished (+12 more)
 
 ### Community 380 - "ToolDomainEvent"
 Cohesion: 0.09
@@ -3060,17 +2423,17 @@ Nodes (21): DefaultToolEventBus, ExecutionCompleted, ExecutionFailed, ExecutionS
 Cohesion: 0.06
 Nodes (34): CheckpointRepository, copyStreamed(), copyTreeRecursively(), deleteRecursively(), SimpleFileVisitor, findFirstDifference(), BasicFileAttributes, FileVisitResult (+26 more)
 
-### Community 382 - "StageContext"
+### Community 382 - "StageId"
 Cohesion: 0.03
-Nodes (37): DefaultPipelineStages, AvbSizeSearch, Check, digestToken(), EditFile, PipelineStep, RuntimeKeys, Tool (+29 more)
+Nodes (41): DefaultPipelineStages, PipelineDefinitionRegistry, PipelineStageSequence, AvbSizeSearch, Check, digestToken(), EditFile, PipelineStep (+33 more)
 
 ### Community 383 - "ArchiveTransferAdapter.kt"
 Cohesion: 0.17
 Nodes (12): ArchiveTransferCodes, Flow, BoundedTransferPort, Cancelled, ExistingFileProbe, Failed, Finalized, Flow (+4 more)
 
 ### Community 384 - "Condition"
-Cohesion: 0.08
-Nodes (34): Always, And, ApkJarPatch, CompiledClassMerge, Condition, Copy, Delete, Equals (+26 more)
+Cohesion: 0.09
+Nodes (28): Always, And, Condition, Equals, HookPlacement, AFTER, BEFORE, In (+20 more)
 
 ### Community 385 - "Commands"
 Cohesion: 0.05
@@ -3085,7 +2448,7 @@ Cohesion: 0.10
 Nodes (10): Flow, UserDataRepositoryImpl, Flow, LtiPreferencesDataSource, LtiPreferencesDataSourceTest, Flow, UserDataRepository, EditorSettings (+2 more)
 
 ### Community 388 - "PanelId"
-Cohesion: 0.16
+Cohesion: 0.18
 Nodes (9): PanelId, BOTTOM, LEFT, MAIN, RIGHT, StateFlow, PanelManager, PanelState (+1 more)
 
 ### Community 389 - "Commands"
@@ -3093,48 +2456,48 @@ Cohesion: 0.05
 Nodes (37): `aliasDelete`, `attestationDownload`, `attestationVerify`, `cache`, `codespacePortsVisibility`, `codespaceView`, Command Options, Command Options (+29 more)
 
 ### Community 390 - "ToolExecutionResponse"
-Cohesion: 0.09
-Nodes (13): EnvironmentReadinessAdapter, EnvironmentReadinessPort, Workspace, EnvironmentReadinessAdapterTest, FakeDaemonSupervisor, FakeRemoteTransport, FakeWslPresence, ByteArray (+5 more)
+Cohesion: 0.08
+Nodes (15): EnvironmentReadinessAdapter, EnvironmentReadinessPort, Flow, Workspace, ToolchainReadinessPolicy, EnvironmentReadinessAdapterTest, FakeDaemonSupervisor, FakeRemoteTransport (+7 more)
 
 ### Community 391 - "FakeWorkspaceRepo"
-Cohesion: 0.11
-Nodes (12): SnapshotMaterializationIntent, SnapshotMaterializerPort, SaveConfigurationSnapshotUseCase, FakeProvisioningPort, FakeSnapshotMaterializerPort, FakeWorkspaceAdmissionPort, FakeWorkspaceRepo, Flow (+4 more)
+Cohesion: 0.12
+Nodes (13): SnapshotMaterializationIntent, SnapshotMaterializerPort, Result, SaveConfigurationSnapshotUseCase, FakeProvisioningPort, FakeSnapshotMaterializerPort, FakeWorkspaceAdmissionPort, FakeWorkspaceRepo (+5 more)
 
-### Community 392 - ".createTestFixture"
-Cohesion: 0.03
-Nodes (41): ConnectedDeviceRepository, ConnectedTargetDevice, DeviceOperationResult, DeviceRebootMode, Result, StateFlow, WirelessPairingRequest, DeviceOperationResult (+33 more)
+### Community 392 - "ConnectedDeviceRepository"
+Cohesion: 0.22
+Nodes (7): ConnectedDeviceRepository, ConnectedTargetDevice, DeviceOperationResult, DeviceRebootMode, Result, StateFlow, WirelessPairingRequest
 
 ### Community 393 - "PluginIndexAdapter"
-Cohesion: 0.05
-Nodes (34): CachedIndexRecord, Done, Failure, HttpURLConnection, StepResult, URI, PluginIndexAdapter, Redirect (+26 more)
+Cohesion: 0.09
+Nodes (15): CachedIndexRecord, Done, Failure, HttpURLConnection, StepResult, URI, PluginIndexAdapter, Redirect (+7 more)
 
 ### Community 394 - "Slot"
 Cohesion: 0.10
 Nodes (17): AdbSerial, DeviceState, DEVICE, FASTBOOT, FASTBOOTD, RECOVERY, SIDELOAD, FastbootSerial (+9 more)
 
-### Community 395 - "StudioDraftController"
-Cohesion: 0.16
-Nodes (4): StateFlow, StudioDraftController, TargetDevice, StudioDraftControllerTest
+### Community 395 - "CommandCategory"
+Cohesion: 0.33
+Nodes (6): CommandCategory, CONFIG, GENERAL, NAVIGATION, PANELS, TARGET
 
 ### Community 396 - "StudioAction"
 Cohesion: 0.06
-Nodes (26): StudioAction, ABOUT, BRING_ALL_TO_FRONT, CHECK_UPDATES, CLONE_GIT, COPY, CUT, DOCUMENTATION (+18 more)
+Nodes (29): Key, KeyEvent, WindowKeyShortcutHandler, StudioAction, ABOUT, BRING_ALL_TO_FRONT, CHECK_UPDATES, CLONE_GIT (+21 more)
 
-### Community 397 - "BuildRun"
-Cohesion: 0.07
-Nodes (8): InMemoryRunRepository, Flow, Flow, RunRepositoryImpl, Flow, RunRepository, BuildRun, TestRunRepository
+### Community 397 - "PairWirelessDeviceUseCase.kt"
+Cohesion: 0.47
+Nodes (4): DeviceOperationResult, Result, WirelessPairingRequest, PairWirelessDeviceUseCase
 
 ### Community 398 - "ConfigurationViewModel"
 Cohesion: 0.06
 Nodes (24): ConfigurationNavMode, CLONE, CREATE, EDIT, ConfigurationTab, GENERAL, HARDWARE, OS_STREAMS (+16 more)
 
-### Community 399 - "ToolDiWiringTest.kt"
-Cohesion: 0.18
-Nodes (5): koinConfiguration(), ToolDiWiringTest, DevicesUseCase, ExtractPublicKeyUseCase, ToolMetadataRegistry
+### Community 399 - "KoinModules.kt"
+Cohesion: 0.17
+Nodes (3): koinConfiguration(), ToolDiWiringTest, ToolMetadataRegistry
 
-### Community 400 - "PluginDependencyResolver.kt"
-Cohesion: 0.14
-Nodes (19): Comparable, Exact, Failure, InstalledPackage, Interval, Locked, LockResult, malformedRange() (+11 more)
+### Community 400 - "DependencyRef"
+Cohesion: 0.11
+Nodes (21): Comparable, Exact, Failure, InstalledPackage, Interval, Locked, LockResult, malformedRange() (+13 more)
 
 ### Community 401 - "ToolBinary"
 Cohesion: 0.12
@@ -3148,41 +2511,37 @@ Nodes (10): AuditRecord, ToolCommand, Redactor, SecretString, TraceContext, Audi
 Cohesion: 0.17
 Nodes (20): ConnectionTimeout, DaemonUnreachable, executeResult(), ExecutionError, Failure, flatMap(), getOrElse(), getOrThrow() (+12 more)
 
-### Community 404 - "org.gradle.plugin.use.PluginDependency"
-Cohesion: 0.04
-Nodes (29): CmpFeaturePluginAccessors, CmpPluginAccessors, ComposePluginAccessors, DetektPluginAccessors, GitHooksPluginAccessors, GitPluginAccessors, KmpKoinPluginAccessors, KmpLibraryPluginAccessors (+21 more)
+### Community 404 - "RebootConnectedDeviceUseCase.kt"
+Cohesion: 0.47
+Nodes (4): DeviceOperationResult, DeviceRebootMode, Result, RebootConnectedDeviceUseCase
 
 ### Community 405 - "ConfigurationSnapshot"
 Cohesion: 0.06
-Nodes (21): ConfigurationMigration, Flow, SnapshotRepositoryImpl, Flow, Json, SnapshotList, SnapshotPreferencesDataSource, SnapshotPreferencesDataSourceTest (+13 more)
+Nodes (24): ConfigurationMigration, Flow, SnapshotRepositoryImpl, Flow, Json, SnapshotList, SnapshotPreferencesDataSource, SnapshotPreferencesDataSourceTest (+16 more)
 
 ### Community 406 - "RemoteWslToolRepository"
 Cohesion: 0.10
-Nodes (15): RawToolCommand, Flow, R, ToolCommand, ToolResult, RemoteWslToolRepository, Flow, R (+7 more)
+Nodes (17): Flow, R, ToolCommand, StreamingToolRepository, Flow, R, ToolCommand, ToolResult (+9 more)
 
 ### Community 407 - "SystemNotification"
-Cohesion: 0.16
-Nodes (7): SystemNotification, SystemNotifier, SystemNotifierTest, SystemNotifier, DesktopNativeNotifier, SystemNotifier, DesktopNativeNotifierTest
-
-### Community 408 - "FileNode"
-Cohesion: 0.14
-Nodes (13): FileNode, FlattenedFileNode, flattenFileTree(), GlassFileTreeTest, Error, ExplorerUiState, ExplorerViewModel, findNode() (+5 more)
+Cohesion: 0.26
+Nodes (4): SystemNotification, DesktopNativeNotifier, SystemNotifier, DesktopNativeNotifierTest
 
 ### Community 409 - "properties"
 Cohesion: 0.08
 Nodes (25): type, pattern, type, type, items, type, type, properties (+17 more)
 
-### Community 410 - "RecordingRemoteTransport"
-Cohesion: 0.21
-Nodes (4): ByteArray, RemoteTransportPort, RecordingRemoteTransport, TransportCliExecutorTest
+### Community 410 - "TransportCliExecutor"
+Cohesion: 0.23
+Nodes (6): WslCliExecutor, TransportCliExecutor, ByteArray, RemoteTransportPort, RecordingRemoteTransport, TransportCliExecutorTest
 
-### Community 411 - "EditorSettingsPane.kt"
-Cohesion: 0.36
-Nodes (16): DraftRecoveryCard(), EditorAppearanceCard(), EditorBreadcrumbs(), EditorCardHeader(), EditorDropdownRow(), EditorHelpHeader(), EditorSettingsPane(), EditorStatusBar() (+8 more)
+### Community 411 - "DevicesCommand"
+Cohesion: 0.40
+Nodes (3): DevicesCommand, io, ToolCommand
 
 ### Community 412 - "SetupActivityState"
-Cohesion: 0.10
-Nodes (5): SetupLogConstants, ActivityDestinationState, StateFlow, SetupActivityState, SetupActivityStateTest
+Cohesion: 0.09
+Nodes (13): LayerBackdrop, Modifier, SetupActivityPanel(), shouldPauseFollow(), ActivityDestinationState, StateFlow, SetupActivityState, FocusRequester (+5 more)
 
 ### Community 413 - "TestCommand"
 Cohesion: 0.18
@@ -3192,9 +2551,9 @@ Nodes (10): ExecutionChain, R, ToolCommand, ToolExecutionInterceptor, ToolResult
 Cohesion: 0.11
 Nodes (23): description, direction, name, spelling, subcommandPath, type, additionalProperties, required (+15 more)
 
-### Community 415 - "SetupTab"
-Cohesion: 0.12
-Nodes (13): NavOptions, navigateToSetup(), SetupDestination, ENVIRONMENT, RECOVERY, TOOLS, WORKSPACES, SetupTab (+5 more)
+### Community 415 - "SetupJourneySidebar.kt"
+Cohesion: 0.11
+Nodes (22): NavOptions, navigateToSetup(), SetupDestination, ENVIRONMENT, RECOVERY, TOOLS, WORKSPACES, SetupTab (+14 more)
 
 ### Community 416 - "DebloatResolver.kt"
 Cohesion: 0.09
@@ -3204,21 +2563,21 @@ Nodes (27): DebloatInventoryAdapter, buildDecision(), candidateMatches(), collec
 Cohesion: 0.10
 Nodes (22): items, type, items, type, items, type, properties, items (+14 more)
 
-### Community 418 - ".testServiceUnreachableReadOnlyOpenAndCanStartFalseWithRemediation"
-Cohesion: 0.07
-Nodes (17): ByteArray, EnvironmentReadinessPort, Flow, Result, RunHandle, StepStatus, TargetDevice, TargetRepository (+9 more)
+### Community 418 - "EmuCommand"
+Cohesion: 0.40
+Nodes (3): EmuCommand, io, ToolCommand
 
 ### Community 419 - "InstalledRecord"
-Cohesion: 0.07
-Nodes (13): InstalledRecord, TrustDecision, TRUSTED_SIGNATURE, TRUSTED_UNVERIFIED, UNTRUSTED, StateFlow, ViewModel, PluginDestination (+5 more)
+Cohesion: 0.06
+Nodes (24): InstalledRecord, TrustDecision, TRUSTED_SIGNATURE, TRUSTED_UNVERIFIED, UNTRUSTED, InspectorRow(), InstalledInspectorActions(), InstalledInspectorHeader() (+16 more)
 
-### Community 420 - "ToolProjectDependency"
-Cohesion: 0.04
-Nodes (23): ToolProjectDependency, ToolProjectDependency, Tool_AdaptersProjectDependency, Tool_ClientProjectDependency, Tool_CodegenProjectDependency, Tool_CoreProjectDependency, Tool_AdaptersProjectDependency, Tool_ClientProjectDependency (+15 more)
+### Community 420 - "ResizeLogicalPartitionCommand"
+Cohesion: 0.40
+Nodes (3): io, ToolCommand, ResizeLogicalPartitionCommand
 
 ### Community 421 - "RootNavGraph.kt"
 Cohesion: 0.11
-Nodes (27): composableWithPushTransitions(), configurationRoute(), configurationScreen(), NavOptions, navigateToConfiguration(), navigateToCreateConfiguration(), navigateToEditConfiguration(), pluginsScreen() (+19 more)
+Nodes (28): composableWithPushTransitions(), composableWithRootPushTransitions(), composableWithSlideTransitions(), composableWithStayTransitions(), configurationRoute(), configurationScreen(), NavOptions, navigateToConfiguration() (+20 more)
 
 ### Community 422 - "ToolingException"
 Cohesion: 0.18
@@ -3228,12 +2587,12 @@ Nodes (15): ProcessHandle, Exception, ToolCancellationException, ToolExitExcepti
 Cohesion: 0.11
 Nodes (21): properties, type, items, type, type, type, type, properties (+13 more)
 
-### Community 424 - "CoilLibraryAccessors"
-Cohesion: 0.12
-Nodes (4): CoilKtLibraryAccessors, CoilLibraryAccessors, CoilNetworkLibraryAccessors, CoilLibraryAccessors
+### Community 424 - "DaemonCommand"
+Cohesion: 0.40
+Nodes (3): DaemonCommand, io, ToolCommand
 
 ### Community 425 - "DefaultStudioActionDispatcher"
-Cohesion: 0.18
+Cohesion: 0.19
 Nodes (4): DefaultStudioActionDispatcher, KeyEvent, WindowKeyShortcutHandlerTest, StudioMenuBarTest
 
 ### Community 426 - "CircuitBreaker"
@@ -3242,19 +2601,19 @@ Nodes (8): CircuitBreaker, CircuitBreakerOpenException, CircuitState, CLOSED, HA
 
 ### Community 427 - "SetupJournalContext"
 Cohesion: 0.06
-Nodes (23): SetupJournalContext, Result, PinnedSubmodule, SubmoduleSyncEngine, Result, ToolchainBuildEngine, ByteArray, Flow (+15 more)
+Nodes (24): SetupJournalContext, Result, PinnedSubmodule, SubmoduleSyncEngine, Result, ToolchainBuildEngine, ByteArray, Charset (+16 more)
 
-### Community 428 - "LibrariesForLibsInPluginsBlock"
-Cohesion: 0.03
-Nodes (28): BundleFactory, AndroidxBundleAccessors, AndroidxComposeBundleAccessors, AndroidxComposeUiBundleAccessors, BackLibraryAccessors, BundleAccessors, ConstraintLibraryAccessors, DetektLibraryAccessors (+20 more)
+### Community 428 - "DumpChunksCommand"
+Cohesion: 0.40
+Nodes (3): DumpChunksCommand, io, ToolCommand
 
 ### Community 430 - "enum"
 Cohesion: 0.11
 Nodes (18): BOOLEAN, CHOICE, device-path, DIRECTORY, FILE, INT, partition, PATH (+10 more)
 
 ### Community 431 - "navigation/StudioRoutes.kt"
-Cohesion: 0.06
-Nodes (34): Flow, SetupActivitySink, SetupLogBuffer, SetupLogBufferTest, AnnotatedString, TransformedText, VisualTransformation, nonLetterColorVisualTransformation() (+26 more)
+Cohesion: 0.12
+Nodes (26): buildPluginsRoute(), buildRunRoute(), buildStudioRoute(), NavOptions, navigateToPlugins(), navigateToRun(), navigateToStudio(), parsePluginsRoute() (+18 more)
 
 ### Community 432 - "FakeToolchainRepo"
 Cohesion: 0.24
@@ -3268,21 +2627,21 @@ Nodes (9): CompositionLocalConsumerModifierNode, KeyEvent, Modifier, ModifierNod
 Cohesion: 0.12
 Nodes (17): IN_PLACE, INPUT, OUTPUT, properties, enum, type, minimum, type (+9 more)
 
-### Community 435 - "AnchorHealthPreflight.kt"
-Cohesion: 0.13
-Nodes (16): AnchorHealthPort, Ambiguous, AnchorCheck, AnchorFinding, AnchorHealthEntry, AnchorHealthPort, AnchorHealthPreflight, ComponentUnavailable (+8 more)
+### Community 435 - "AnchorPattern"
+Cohesion: 0.09
+Nodes (18): AnchorHealthPort, BytecodeMatcherTest, Ambiguous, AnchorCheck, AnchorFinding, AnchorHealthEntry, AnchorHealthPort, AnchorHealthPreflight (+10 more)
 
 ### Community 436 - "ConnectedDeviceRepositoryImpl"
 Cohesion: 0.18
 Nodes (9): ConnectedDeviceRepositoryImpl, ConnectedTargetDevice, DeviceOperationResult, DeviceRebootMode, Result, StateFlow, WirelessPairingRequest, UnsupportedTransportCapabilityException (+1 more)
 
 ### Community 437 - "DesktopFileSystemRepository"
-Cohesion: 0.15
-Nodes (10): DesktopFileSystemRepository, Flow, Result, FileCreated, FileDeleted, FileModified, FileSystemEvent, WatchEvent (+2 more)
+Cohesion: 0.10
+Nodes (13): DesktopFileSystemRepository, Flow, Result, FileCreated, FileDeleted, FileModified, FileSystemEvent, FileSystemRepository (+5 more)
 
-### Community 438 - "EditorViewModel"
-Cohesion: 0.22
-Nodes (8): EditorFile, EditorUiState, EditorViewModel, Empty, Error, StateFlow, ViewModel, Loaded
+### Community 438 - "DumpPackagenameCommand"
+Cohesion: 0.40
+Nodes (3): DumpPackagenameCommand, io, ToolCommand
 
 ### Community 439 - "ToolchainSetupRepositoryImpl"
 Cohesion: 0.14
@@ -3300,13 +2659,17 @@ Nodes (16): items, type, items, type, type, items, type, aliases (+8 more)
 Cohesion: 0.12
 Nodes (15): ArgumentSpec, OptionSpec, SpecDraftGenerator, ArgumentSpec, ArtifactDirection, IN_PLACE, INPUT, OUTPUT (+7 more)
 
+### Community 443 - "WorkspaceVirtualizer"
+Cohesion: 0.27
+Nodes (5): VirtualWorkspaceDescriptor, WorkspaceVirtualizer, FakeCliExecutor, WslCliExecutor, WorkspaceVirtualizerTest
+
 ### Community 444 - "Commands"
 Cohesion: 0.13
 Nodes (15): `attach`, Commands, `detach`, `disableVerity`, `enableVerity`, `getDevpath`, `getSerialno`, `getState` (+7 more)
 
-### Community 445 - "GoogleOssLicensesLibraryAccessors"
-Cohesion: 0.14
-Nodes (5): GoogleLibraryAccessors, GoogleOssLibraryAccessors, GoogleOssLicensesLibraryAccessors, GoogleLibraryAccessors, GoogleOssLibraryAccessors
+### Community 445 - "BCommand"
+Cohesion: 0.40
+Nodes (3): BCommand, io, ToolCommand
 
 ### Community 446 - "ExitCodeSpec"
 Cohesion: 0.14
@@ -3329,8 +2692,8 @@ Cohesion: 0.22
 Nodes (5): ExecuteCommand, io, ToolCommand, SignApkInvocation, SignedArchiveValidator
 
 ### Community 451 - "AcquisitionSettings"
-Cohesion: 0.04
-Nodes (45): AppliedModulePlan, AppliedModuleSummary, AppliedOperationSummary, Failure, ModuleApplicationStage, PackageOutcome, ResolutionOutcome, Success (+37 more)
+Cohesion: 0.05
+Nodes (42): Flow, ObserveAcquisitionConfigUseCase, ObserveAssemblyConfigUseCase, ObserveBuildConfigUseCase, ObserveCustomizationConfigUseCase, ObserveDebloatConfigUseCase, ObserveExtractionConfigUseCase, ObservePipelineDraftSessionUseCase (+34 more)
 
 ### Community 452 - "PluginLifecycleUseCase"
 Cohesion: 0.41
@@ -3345,40 +2708,40 @@ Cohesion: 0.17
 Nodes (11): commands, executable, platform, risk, schemaVersion, tool, additionalProperties, required (+3 more)
 
 ### Community 455 - "PatchModCli.kt"
-Cohesion: 0.13
-Nodes (13): CompileModPayloadCommand, GenerateModPlanCommand, handleResult(), InspectModCommand, CliktCommand, Context, main(), ModScenario (+5 more)
+Cohesion: 0.11
+Nodes (19): CliResult, CompileModPayloadCommand, DiagnosticEntry, Failure, GenerateModPlanCommand, handleResult(), InspectModCommand, CliktCommand (+11 more)
 
-### Community 456 - "PlatformRepositoryModule.desktop.kt"
-Cohesion: 0.06
-Nodes (16): resolveAppDataDir(), ResourceVendoredFileAdapter, WorkspaceKeyProvisioner, ByteArray, Flow, ToolResult, Workspace, PipelineExecutionPort (+8 more)
+### Community 456 - "PipelineExecutionPort"
+Cohesion: 0.08
+Nodes (19): ResourceVendoredFileAdapter, FileStat, Finished, Heartbeat, ByteArray, Flow, ToolResult, Workspace (+11 more)
 
 ### Community 457 - "main.kt"
 Cohesion: 0.21
-Nodes (18): Menu, KoinAppDeclaration, buildWindowControlActions(), NucleusWindow, WindowState, main(), StudioActionDispatcher, StudioMenuState (+10 more)
+Nodes (18): Menu, buildWindowControlActions(), NucleusWindow, WindowState, main(), StudioActionDispatcher, StudioMenuState, EditMenu() (+10 more)
 
 ### Community 458 - ".proceed"
 Cohesion: 0.35
 Nodes (8): ExecutionChain, ExecutionChain, R, ToolCommand, ToolResult, RealExecutionChain, ToolExecutionInterceptor, ToolExecutionPipeline
 
-### Community 459 - "ExecuteCommand"
+### Community 459 - "DCommand"
 Cohesion: 0.40
-Nodes (3): ExecuteCommand, io, ToolCommand
+Nodes (3): DCommand, io, ToolCommand
 
 ### Community 460 - "CatalogCategory"
 Cohesion: 0.18
 Nodes (11): CatalogCategory, Buttons, CoreUi, Diagnostics, IdeShell, Inputs, Layout, Modals (+3 more)
 
-### Community 461 - "AndroidxComposeLibraryAccessors"
-Cohesion: 0.05
-Nodes (10): AndroidxComposeFoundationLibraryAccessors, AndroidxComposeLibraryAccessors, AndroidxComposeMaterial3LibraryAccessors, AndroidxComposeMaterialLibraryAccessors, AndroidxComposeRuntimeLibraryAccessors, AndroidxComposeUiLibraryAccessors, AndroidxComposeUiTestLibraryAccessors, AndroidxComposeUiToolingLibraryAccessors (+2 more)
+### Community 461 - "DecodeCommand"
+Cohesion: 0.40
+Nodes (3): DecodeCommand, io, ToolCommand
 
-### Community 462 - "PluginMarketplaceTab.kt"
-Cohesion: 0.07
-Nodes (61): GlassButtonDefaults, AppIconsRomStages, AuthorTaskResult, Failed, Refused, Success, TimedOut, IndexEntry (+53 more)
+### Community 462 - "IndexFetchResult"
+Cohesion: 0.09
+Nodes (28): Cached, Failed, Fetched, IndexEntry, IndexFailure, IndexFetchResult, InsecureSource, Malformed (+20 more)
 
-### Community 463 - "WorkspaceViewModel"
-Cohesion: 0.10
-Nodes (8): ConnectedTargetDevice, DeviceRebootMode, StateFlow, TargetDevice, ViewModel, WirelessPairingRequest, Workspace, WorkspaceViewModel
+### Community 463 - "InstallFrameworkCommand"
+Cohesion: 0.40
+Nodes (3): InstallFrameworkCommand, io, ToolCommand
 
 ### Community 464 - "SyntaxTokenKind"
 Cohesion: 0.20
@@ -3388,13 +2751,13 @@ Nodes (9): SyntaxTokenKind, ANNOTATION, COMMENT, FUNCTION, KEYWORD, NUMBER, PLAI
 Cohesion: 0.20
 Nodes (10): pattern, RedactionSpec, type, type, pattern, placeholder, additionalProperties, properties (+2 more)
 
-### Community 466 - "FakeWorkspaceRepository"
-Cohesion: 0.13
-Nodes (5): FakeShellExecutor, FakeWorkspaceRepository, Flow, Workspace, TerminalViewModelTest
+### Community 466 - "ListFrameworksCommand"
+Cohesion: 0.40
+Nodes (3): io, ToolCommand, ListFrameworksCommand
 
 ### Community 467 - "ToolBrowserState"
-Cohesion: 0.11
-Nodes (8): StateFlow, ToolBrowserState, ToolPresentation, StateFlow, ToolchainProvisioningService, SpyToolchainService, ToolBrowserStateTest, ToolchainProvisioningService
+Cohesion: 0.10
+Nodes (9): StateFlow, ToolBrowserState, ToolPresentation, Flow, StateFlow, ToolchainProvisioningService, SpyToolchainService, ToolBrowserStateTest (+1 more)
 
 ### Community 468 - "PanelEvent"
 Cohesion: 0.18
@@ -3409,16 +2772,16 @@ Cohesion: 0.20
 Nodes (9): `cfgCreate`, Command Options, Commands, `create`, `dump`, Global Options, `help`, Metadata (+1 more)
 
 ### Community 471 - "IdeShellColorScheme"
-Cohesion: 0.03
-Nodes (190): SectionContainer(), AppFramePreviewSection(), BreadcrumbBarCatalogSection(), CatalogThemeMode, Blue, Dark, Light, IdeShellCatalogTab() (+182 more)
+Cohesion: 0.02
+Nodes (276): SectionContainer(), AppFramePreviewSection(), BreadcrumbBarCatalogSection(), CatalogThemeMode, Blue, Dark, Light, IdeShellCatalogTab() (+268 more)
 
 ### Community 472 - "AppTheme"
 Cohesion: 0.22
 Nodes (8): AppTheme, Blue, Dark, Light, DarkTone, Black, DarkGray, Gray
 
 ### Community 473 - "WslPathTranslator"
-Cohesion: 0.13
-Nodes (3): WslExt4Deployer, WslPathTranslator, WslPathTranslatorTest
+Cohesion: 0.07
+Nodes (15): PathTranslatorPort, PathTranslationDirection, WINDOWS_TO_WSL, WSL_TO_WINDOWS, PathTranslationRequest, PathTranslationResponse, SessionStatus, CANCELLED (+7 more)
 
 ### Community 474 - "TargetPreferencesDataSource"
 Cohesion: 0.14
@@ -3433,7 +2796,7 @@ Cohesion: 0.07
 Nodes (18): Json, Result, LoadedRecords, RecoveryDraftMap, RecoveryDraftStore, Settings, RecoveryDraftStoreTest, ThrowingSettings (+10 more)
 
 ### Community 479 - "JournaledRunLauncher"
-Cohesion: 0.21
+Cohesion: 0.18
 Nodes (10): Finished, Interrupted, JournalCommitException, JournaledRunLauncher, JournaledRunResult, JournalRejected, RuntimeException, Blocked (+2 more)
 
 ### Community 481 - "RepositoryModule.kt"
@@ -3444,9 +2807,9 @@ Nodes (7): PlatformDependentDataModule, Flow, NetworkMonitor, Flow, TimeZoneMoni
 Cohesion: 0.43
 Nodes (4): KtFile, Rule, RuleName, NoRawAlphaLiteral
 
-### Community 483 - "PayloadCompilerAdapter"
-Cohesion: 0.17
-Nodes (4): ByteArray, PayloadCompilerPort, PayloadCompilerAdapter, ProcessResult
+### Community 483 - "ValidationError"
+Cohesion: 0.05
+Nodes (36): TargetDevice, StageSettingsValidator, ArtifactFreshness, FRESH, MISSING, STALE, UNVERIFIED, DeferredArtifactCheck (+28 more)
 
 ### Community 484 - "ToolchainSetupRepository"
 Cohesion: 0.18
@@ -3455,6 +2818,10 @@ Nodes (3): Flow, Result, ToolchainSetupRepository
 ### Community 485 - "risk"
 Cohesion: 0.29
 Nodes (7): DEVICE_WRITE, HOST_WRITE, IRREVERSIBLE, READ_ONLY, risk, enum, type
+
+### Community 486 - "ExecuteCommand"
+Cohesion: 0.40
+Nodes (3): ExecuteCommand, io, ToolCommand
 
 ### Community 487 - "Dump.erofs Tool Reference"
 Cohesion: 0.29
@@ -3532,37 +2899,37 @@ Nodes (6): ToolFamily, ANDROID_DEVICE, ANDROID_PACKAGE, IMAGE, PUBLISHING, SECUR
 Cohesion: 0.40
 Nodes (5): KtCallExpression, Rule, RuleName, NoWeightInScrollableContainer, PsiElement
 
-### Community 506 - "WindowKeyShortcutHandler.kt"
-Cohesion: 0.24
-Nodes (7): KeyShortcut, Key, KeyEvent, WindowKeyShortcutHandler, DesktopKeyShortcut, Key, ShortcutModifiers
+### Community 506 - "DesktopKeyShortcut"
+Cohesion: 0.39
+Nodes (4): KeyShortcut, DesktopKeyShortcut, Key, ShortcutModifiers
 
 ### Community 507 - "ServerConnectionDescriptor"
-Cohesion: 0.03
-Nodes (39): EnvironmentProbe, RecordingSupervisor, Adopted, DaemonProbeStatus, EnvironmentProbePort, EnvironmentProbeResult, Failed, Launched (+31 more)
+Cohesion: 0.04
+Nodes (23): RecordingSupervisor, Socket, DaemonSupervisorPort, AutoCloseable, ServerConnectionDescriptor, DaemonHeartbeatMonitor, AutoCloseable, Job (+15 more)
 
-### Community 508 - "PayloadCompilationResult"
-Cohesion: 0.20
-Nodes (10): Compiled, Failed, PayloadCompilationReceipt, PayloadCompilationResult, PayloadCompilerCodes, PayloadCompilerPort, ToolIdentity, CompilePayloadCommandTest (+2 more)
+### Community 508 - "ExecuteCommand"
+Cohesion: 0.40
+Nodes (3): ExecuteCommand, io, ToolCommand
 
 ### Community 509 - "WriteChannelContent"
 Cohesion: 0.31
 Nodes (6): ByteWriteChannel, ContentType, BinaryTransferResponse, BinaryTransportClient, WriteChannelContent, TransferProgress
 
 ### Community 510 - "DelegatingSystemNotifier"
-Cohesion: 0.22
-Nodes (5): DelegatingSystemNotifier, NoOpSystemNotifier, SystemNotifier, AppTray(), Painter
+Cohesion: 0.29
+Nodes (3): DelegatingSystemNotifier, NoOpSystemNotifier, SystemNotifier
 
 ### Community 512 - "SafetyCheckInterceptor"
 Cohesion: 0.18
 Nodes (7): ExecutionChain, R, ToolExecutionInterceptor, ToolResult, SafetyCheckInterceptor, ToolCommand, ToolSafetyPolicy
 
 ### Community 513 - "commonMain/kotlin/org/ide/lti/feature/setup/SetupPerformanceScenario.kt"
-Cohesion: 0.38
-Nodes (5): isSetupBenchmarkActive(), Modifier, SetupBenchmarkConfig, SetupPerformanceScenarioHook(), ScrollState
+Cohesion: 0.47
+Nodes (4): isSetupBenchmarkActive(), Modifier, SetupBenchmarkConfig, SetupPerformanceScenarioHook()
 
-### Community 514 - "PublishProvider"
-Cohesion: 0.14
-Nodes (13): CollisionPolicy, FAIL, OVERWRITE, SKIP, PublishProvider, GITHUB_RELEASE, LOCAL_EXPORT, NONE (+5 more)
+### Community 514 - "PublishViewModel"
+Cohesion: 0.18
+Nodes (9): PublishProvider, GITHUB_RELEASE, LOCAL_EXPORT, NONE, StateFlow, TargetDevice, ViewModel, PublishViewModel (+1 more)
 
 ### Community 515 - "BugreportCommand"
 Cohesion: 0.40
@@ -3696,9 +3063,9 @@ Nodes (4): emptyBackdrop(), Density, GraphicsLayerScope, LayoutCoordinates
 Cohesion: 0.47
 Nodes (3): CliktCommand, Context, ReconnectCliCommand
 
-### Community 548 - "AndroidxLibraryAccessors"
-Cohesion: 0.09
-Nodes (5): AndroidxCoreLibraryAccessors, AndroidxLibraryAccessors, AndroidxTestLibraryAccessors, AndroidxTracingLibraryAccessors, AndroidxLibraryAccessors
+### Community 548 - "ExecuteCommand"
+Cohesion: 0.40
+Nodes (3): ExecuteCommand, io, ToolCommand
 
 ### Community 549 - "RemountCliCommand.kt"
 Cohesion: 0.47
@@ -3764,9 +3131,9 @@ Nodes (3): DisableVerityCommand, io, ToolCommand
 Cohesion: 0.40
 Nodes (3): DisconnectCommand, io, ToolCommand
 
-### Community 565 - "PayloadCompilationRequest"
-Cohesion: 0.35
-Nodes (3): PayloadCompilationRequest, ByteArray, PayloadCompilerAdapterTest
+### Community 565 - "AgentTaskCommand"
+Cohesion: 0.40
+Nodes (3): AgentTaskCommand, io, ToolCommand
 
 ### Community 566 - "EnableVerityCommand"
 Cohesion: 0.40
@@ -3828,6 +3195,10 @@ Nodes (3): io, ToolCommand, PushCommand
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, RebootCommand
 
+### Community 581 - "AgentTaskCreateCommand"
+Cohesion: 0.40
+Nodes (3): AgentTaskCreateCommand, io, ToolCommand
+
 ### Community 582 - "ReverseCommand"
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, ReverseCommand
@@ -3847,6 +3218,10 @@ Nodes (3): io, ToolCommand, SyncCommand
 ### Community 586 - "TcpipCommand"
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, TcpipCommand
+
+### Community 587 - "CodespaceCodeCommand"
+Cohesion: 0.40
+Nodes (3): CodespaceCodeCommand, io, ToolCommand
 
 ### Community 588 - "UnrootCommand"
 Cohesion: 0.40
@@ -3872,9 +3247,13 @@ Nodes (3): BootCliCommand, CliktCommand, Context
 Cohesion: 0.47
 Nodes (3): CreateLogicalPartitionCliCommand, CliktCommand, Context
 
-### Community 594 - "KotlinLibraryAccessors"
-Cohesion: 0.08
-Nodes (6): KotlinInjectCompilerLibraryAccessors, KotlinInjectLibraryAccessors, KotlinInjectRuntimeLibraryAccessors, KotlinLibraryAccessors, KotlinInjectLibraryAccessors, KotlinLibraryAccessors
+### Community 594 - "CodespaceCommand"
+Cohesion: 0.40
+Nodes (3): CodespaceCommand, io, ToolCommand
+
+### Community 595 - "CodespaceEditCommand"
+Cohesion: 0.40
+Nodes (3): CodespaceEditCommand, io, ToolCommand
 
 ### Community 596 - "DeleteLogicalPartitionCliCommand.kt"
 Cohesion: 0.47
@@ -3888,9 +3267,9 @@ Nodes (3): DevicesCliCommand, CliktCommand, Context
 Cohesion: 0.47
 Nodes (3): EraseCliCommand, CliktCommand, Context
 
-### Community 599 - "KotlinxLibraryAccessors"
-Cohesion: 0.10
-Nodes (5): KotlinxCollectionsLibraryAccessors, KotlinxCoroutinesLibraryAccessors, KotlinxLibraryAccessors, KotlinxSerializationLibraryAccessors, KotlinxLibraryAccessors
+### Community 599 - "DiscussionCommand"
+Cohesion: 0.40
+Nodes (3): DiscussionCommand, io, ToolCommand
 
 ### Community 600 - "FastbootCliCommand.kt"
 Cohesion: 0.47
@@ -3944,10 +3323,6 @@ Nodes (3): CliktCommand, Context, OemCliCommand
 Cohesion: 0.47
 Nodes (3): CliktCommand, Context, RebootCliCommand
 
-### Community 613 - "PatchModCliTest"
-Cohesion: 0.13
-Nodes (4): PatchModCliTest, SdkBoundaryTest, PomDependency, StandaloneDistributionTest
-
 ### Community 614 - "ResizeLogicalPartitionCliCommand.kt"
 Cohesion: 0.47
 Nodes (3): CliktCommand, Context, ResizeLogicalPartitionCliCommand
@@ -4000,9 +3375,9 @@ Nodes (3): FlashRawCommand, io, ToolCommand
 Cohesion: 0.53
 Nodes (4): LtiDesignSystemRuleSetProvider, RuleSet, RuleSetId, RuleSetProvider
 
-### Community 627 - "Core_NetworkProjectDependency"
-Cohesion: 0.22
-Nodes (4): Core_NetworkProjectDependency, Core_NetworkProjectDependency, Core_NetworkProjectDependency, Core_NetworkProjectDependency
+### Community 627 - "ExtensionCommand"
+Cohesion: 0.40
+Nodes (3): ExtensionCommand, io, ToolCommand
 
 ### Community 628 - "GetvarCommand"
 Cohesion: 0.40
@@ -4020,9 +3395,9 @@ Nodes (3): io, ToolCommand, OemCommand
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, RebootCommand
 
-### Community 632 - "CliResult"
-Cohesion: 0.38
-Nodes (6): CliResult, DiagnosticEntry, Failure, PayloadCompilerPort, PatchModTool, Success
+### Community 632 - "ExtensionExecCommand"
+Cohesion: 0.40
+Nodes (3): ExtensionExecCommand, io, ToolCommand
 
 ### Community 633 - "SetActiveCommand"
 Cohesion: 0.40
@@ -4039,6 +3414,10 @@ Nodes (3): io, ToolCommand, StageCommand
 ### Community 636 - "UpdateCommand"
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, UpdateCommand
+
+### Community 637 - "PipelineResumeTest.kt"
+Cohesion: 0.12
+Nodes (7): FakeTargetRepo, FakeWorkspaceRepo, Flow, Result, TargetDevice, TargetRepository, Workspace
 
 ### Community 638 - "Aapt2CliCommand.kt"
 Cohesion: 0.47
@@ -4136,17 +3515,17 @@ Nodes (3): CliktCommand, Context, OptimizeCliCommand
 Cohesion: 0.47
 Nodes (3): CliktCommand, Context, VersionCliCommand
 
-### Community 662 - "ScriptedFakeTransport"
-Cohesion: 0.20
-Nodes (3): ByteArray, RemoteTransportPort, ScriptedFakeTransport
+### Community 662 - "ExtensionSearchCommand"
+Cohesion: 0.40
+Nodes (3): ExtensionSearchCommand, io, ToolCommand
 
 ### Community 663 - "DumpBadgingCommand"
 Cohesion: 0.40
 Nodes (3): DumpBadgingCommand, io, ToolCommand
 
-### Community 664 - "DumpCommand"
+### Community 664 - "GistCommand"
 Cohesion: 0.40
-Nodes (3): DumpCommand, io, ToolCommand
+Nodes (3): GistCommand, io, ToolCommand
 
 ### Community 665 - "NoRawDimensionLiteral"
 Cohesion: 0.43
@@ -4156,13 +3535,13 @@ Nodes (4): KtFile, Rule, RuleName, NoRawDimensionLiteral
 Cohesion: 0.40
 Nodes (3): DumpPermissionsCommand, io, ToolCommand
 
-### Community 667 - "DumpResourcesCommand"
-Cohesion: 0.40
-Nodes (3): DumpResourcesCommand, io, ToolCommand
+### Community 667 - "ArtifactKind"
+Cohesion: 0.04
+Nodes (30): io, ToolCommand, RemountCommand, DumpResourcesCommand, io, ToolCommand, DumpStringsCommand, io (+22 more)
 
-### Community 668 - "DumpStringsCommand"
+### Community 668 - "GistViewCommand"
 Cohesion: 0.40
-Nodes (3): DumpStringsCommand, io, ToolCommand
+Nodes (3): GistViewCommand, io, ToolCommand
 
 ### Community 669 - "DumpXmlstringsCommand"
 Cohesion: 0.40
@@ -4172,21 +3551,21 @@ Nodes (3): DumpXmlstringsCommand, io, ToolCommand
 Cohesion: 0.40
 Nodes (3): DumpXmltreeCommand, io, ToolCommand
 
-### Community 671 - "LinkCommand"
+### Community 671 - "GpgKeyAddCommand"
 Cohesion: 0.40
-Nodes (3): io, ToolCommand, LinkCommand
+Nodes (3): GpgKeyAddCommand, io, ToolCommand
 
-### Community 672 - "SetupOperationState"
-Cohesion: 0.25
-Nodes (8): SetupOperationState, CANCELLED, FAILED, INTERRUPTED, PREVIEW, RECONNECTING, RUNNING, SUCCEEDED
-
-### Community 673 - "BuildCommand"
+### Community 672 - "IssueCommand"
 Cohesion: 0.40
-Nodes (3): BuildCommand, io, ToolCommand
+Nodes (3): IssueCommand, io, ToolCommand
 
-### Community 674 - "FakeTargetRepo"
-Cohesion: 0.33
-Nodes (5): FakeTargetRepo, Flow, Result, TargetDevice, TargetRepository
+### Community 673 - "PreviewPrompterCommand"
+Cohesion: 0.40
+Nodes (3): io, ToolCommand, PreviewPrompterCommand
+
+### Community 674 - "ProjectFieldCreateCommand"
+Cohesion: 0.40
+Nodes (3): io, ToolCommand, ProjectFieldCreateCommand
 
 ### Community 675 - "ApktoolCliCommand.kt"
 Cohesion: 0.47
@@ -4232,9 +3611,9 @@ Nodes (3): InstallFrameworkCliCommand, CliktCommand, Context
 Cohesion: 0.47
 Nodes (3): CliktCommand, Context, LfCliCommand
 
-### Community 686 - "MutableInteractionSource"
-Cohesion: 0.05
-Nodes (72): AnimationSpec, GlassActionCard(), GlassItemCard(), Composable, ImageVector, Modifier, DesktopWindowControls(), ImageVector (+64 more)
+### Community 686 - "AppIcon"
+Cohesion: 0.04
+Nodes (77): GlassEmptyState(), GlassEmptyStateBadge(), GlassEmptyStateDefaults, GlassEmptyStateOrientation, Horizontal, Vertical, Color, Composable (+69 more)
 
 ### Community 687 - "ListFrameworksCliCommand.kt"
 Cohesion: 0.47
@@ -4256,9 +3635,9 @@ Nodes (3): CliktCommand, Context, VersionCliCommand
 Cohesion: 0.40
 Nodes (3): IfCommandCommand, io, ToolCommand
 
-### Community 693 - "TerminalManager"
-Cohesion: 0.33
-Nodes (4): Flow, StateFlow, TerminalManager, TerminalSession
+### Community 693 - "ProjectItemArchiveCommand"
+Cohesion: 0.40
+Nodes (3): io, ToolCommand, ProjectItemArchiveCommand
 
 ### Community 694 - "LfCommand"
 Cohesion: 0.40
@@ -4277,8 +3656,8 @@ Cohesion: 0.47
 Nodes (3): DumperofsCliCommand, CliktCommand, Context
 
 ### Community 699 - "PluginManagerContent"
-Cohesion: 0.35
-Nodes (7): PluginManagerActions, Modifier, PluginManagerContent(), PluginManagerScreen(), PluginManagerUiState, ImageBitmap, PluginThemeScreenshotTest
+Cohesion: 0.40
+Nodes (7): PluginManagerActions, Modifier, PluginManagerContent(), PluginManagerScreen(), resolveGlobalDestination(), PluginManagerUiState, PluginThemeScreenshotTest
 
 ### Community 700 - "ExecuteCommand"
 Cohesion: 0.40
@@ -4288,9 +3667,9 @@ Nodes (3): ExecuteCommand, io, ToolCommand
 Cohesion: 0.47
 Nodes (3): E2fsdroidCliCommand, CliktCommand, Context
 
-### Community 702 - "KtorLibraryAccessors"
-Cohesion: 0.11
-Nodes (6): KtorLibraryAccessors, KtorSerializationKotlinxLibraryAccessors, KtorSerializationLibraryAccessors, KtorServerLibraryAccessors, KtorLibraryAccessors, KtorSerializationLibraryAccessors
+### Community 702 - "ProjectItemCreateCommand"
+Cohesion: 0.40
+Nodes (3): io, ToolCommand, ProjectItemCreateCommand
 
 ### Community 703 - "ExecuteCommand"
 Cohesion: 0.40
@@ -4304,9 +3683,9 @@ Nodes (3): ErofsfuseCliCommand, CliktCommand, Context
 Cohesion: 0.40
 Nodes (3): ExecuteCommand, io, ToolCommand
 
-### Community 706 - "WorkspacePreferencesDataSource"
-Cohesion: 0.05
-Nodes (19): WorkDirDiscoveryService, Flow, Workspace, WorkspaceRepositoryImpl, WorkDirDiscoveryServiceTest, CapturingSystemNotifier, SystemNotifier, WorkspaceRepositoryTest (+11 more)
+### Community 706 - "RecentProject"
+Cohesion: 0.04
+Nodes (29): Flow, Workspace, WorkspaceRepositoryImpl, CapturingSystemNotifier, SystemNotifier, WorkspaceRepositoryTest, Flow, Json (+21 more)
 
 ### Community 707 - "Ext2simgCliCommand.kt"
 Cohesion: 0.47
@@ -4324,9 +3703,9 @@ Nodes (3): ExecuteCommand, io, ToolCommand
 Cohesion: 0.47
 Nodes (3): FsckerofsCliCommand, CliktCommand, Context
 
-### Community 711 - "EnvironmentReadinessPort"
-Cohesion: 0.43
-Nodes (4): EnvironmentReadinessPort, kotlinx, org, EnvironmentReadinessPort
+### Community 711 - "SetupOutcome"
+Cohesion: 0.04
+Nodes (20): Busy, Cancelled, Failed, Interrupted, SetupOutcome, Succeeded, Flow, StateFlow (+12 more)
 
 ### Community 712 - "Img2sdatCliCommand.kt"
 Cohesion: 0.47
@@ -4344,9 +3723,9 @@ Nodes (3): CliktCommand, Context, LpaddCliCommand
 Cohesion: 0.47
 Nodes (3): CliktCommand, Context, LpdumpCliCommand
 
-### Community 716 - "ArtifactKind"
-Cohesion: 0.05
-Nodes (27): io, ToolCommand, SideloadCommand, DecodeCommand, io, ToolCommand, ExecuteCommand, io (+19 more)
+### Community 716 - "ArtifactDirection"
+Cohesion: 0.04
+Nodes (31): io, ToolCommand, SideloadCommand, ExecuteCommand, io, ToolCommand, ExecuteCommand, io (+23 more)
 
 ### Community 717 - "LpflashCliCommand.kt"
 Cohesion: 0.47
@@ -4416,9 +3795,9 @@ Nodes (3): CliktCommand, Context, MkdtboimgCliCommand
 Cohesion: 0.40
 Nodes (3): CreateCommand, io, ToolCommand
 
-### Community 734 - "DumpCommand"
+### Community 734 - "ProjectItemEditCommand"
 Cohesion: 0.40
-Nodes (3): DumpCommand, io, ToolCommand
+Nodes (3): io, ToolCommand, ProjectItemEditCommand
 
 ### Community 735 - "HelpCommand"
 Cohesion: 0.40
@@ -4440,9 +3819,9 @@ Nodes (3): CliktCommand, Context, Mkf2fsuserimgCliCommand
 Cohesion: 0.47
 Nodes (3): CliktCommand, Context, MkfserofsCliCommand
 
-### Community 740 - "ArtifactDirection"
-Cohesion: 0.04
-Nodes (28): DetachCommand, io, ToolCommand, io, ToolCommand, WipeSuperCommand, ConvertCommand, io (+20 more)
+### Community 740 - "ConvertCommand"
+Cohesion: 0.40
+Nodes (3): ConvertCommand, io, ToolCommand
 
 ### Community 741 - "FakePluginInstallPort"
 Cohesion: 0.12
@@ -4488,13 +3867,13 @@ Nodes (3): AliasDeleteCommand, io, ToolCommand
 Cohesion: 0.40
 Nodes (3): AliasImportCommand, io, ToolCommand
 
-### Community 753 - "NucleusLibraryAccessors"
-Cohesion: 0.14
-Nodes (4): NucleusDecoratedLibraryAccessors, NucleusFsLibraryAccessors, NucleusLibraryAccessors, NucleusLibraryAccessors
-
-### Community 754 - "AliasListCommand"
+### Community 753 - "RunCancelCommand"
 Cohesion: 0.40
-Nodes (3): AliasListCommand, io, ToolCommand
+Nodes (3): io, ToolCommand, RunCancelCommand
+
+### Community 754 - "RunRerunCommand"
+Cohesion: 0.40
+Nodes (3): io, ToolCommand, RunRerunCommand
 
 ### Community 755 - "AliasSetCommand"
 Cohesion: 0.40
@@ -4528,41 +3907,41 @@ Nodes (3): AuthCommand, io, ToolCommand
 Cohesion: 0.40
 Nodes (3): AuthLoginCommand, io, ToolCommand
 
-### Community 763 - "AuthLogoutCommand"
+### Community 763 - "RunWatchCommand"
 Cohesion: 0.40
-Nodes (3): AuthLogoutCommand, io, ToolCommand
+Nodes (3): io, ToolCommand, RunWatchCommand
 
 ### Community 764 - "AuthRefreshCommand"
 Cohesion: 0.40
 Nodes (3): AuthRefreshCommand, io, ToolCommand
 
-### Community 765 - "AndroidLibraryAccessors"
-Cohesion: 0.15
-Nodes (3): AndroidLibraryAccessors, AndroidToolsLibraryAccessors, AndroidLibraryAccessors
+### Community 765 - "SearchCommitsCommand"
+Cohesion: 0.40
+Nodes (3): io, ToolCommand, SearchCommitsCommand
 
-### Community 766 - "NoBackdropEffectImport.kt"
-Cohesion: 0.53
-Nodes (4): KtFile, Rule, RuleName, NoBackdropEffectImport
+### Community 766 - "Operation"
+Cohesion: 0.08
+Nodes (32): condition(), depth(), error(), operation(), report(), setting(), validate(), valueRef() (+24 more)
 
-### Community 767 - "KtorfitLibraryAccessors"
-Cohesion: 0.15
-Nodes (3): KtorfitConvertersLibraryAccessors, KtorfitLibraryAccessors, KtorfitLibraryAccessors
+### Community 767 - "SearchPrsCommand"
+Cohesion: 0.40
+Nodes (3): io, ToolCommand, SearchPrsCommand
 
-### Community 768 - "NoUnprotectedTextClip.kt"
-Cohesion: 0.53
-Nodes (4): KtCallExpression, Rule, RuleName, NoUnprotectedTextClip
+### Community 768 - "SkillPreviewCommand"
+Cohesion: 0.40
+Nodes (3): io, ToolCommand, SkillPreviewCommand
 
 ### Community 769 - "AuthSetupGitCommand"
 Cohesion: 0.40
 Nodes (3): AuthSetupGitCommand, io, ToolCommand
 
 ### Community 770 - "DebloatViewModel"
-Cohesion: 0.53
-Nodes (4): DebloatViewModel, StateFlow, TargetDevice, ViewModel
+Cohesion: 0.27
+Nodes (5): DebloatViewModel, StateFlow, TargetDevice, ViewModel, DebloatStageEditorTest
 
-### Community 771 - "AuthTokenCommand"
+### Community 771 - "SkillPublishCommand"
 Cohesion: 0.40
-Nodes (3): AuthTokenCommand, io, ToolCommand
+Nodes (3): io, ToolCommand, SkillPublishCommand
 
 ### Community 772 - "BrowseCommand"
 Cohesion: 0.40
@@ -5173,16 +4552,16 @@ Cohesion: 0.47
 Nodes (3): CliktCommand, Context, WorkflowRunCliCommand
 
 ### Community 925 - "MetadataViewModel"
-Cohesion: 0.53
-Nodes (4): StateFlow, TargetDevice, ViewModel, MetadataViewModel
+Cohesion: 0.27
+Nodes (5): StateFlow, TargetDevice, ViewModel, MetadataViewModel, MetadataStageEditorTest
 
 ### Community 926 - "FlashCommand"
 Cohesion: 0.40
 Nodes (3): FlashCommand, io, ToolCommand
 
-### Community 927 - "ComposeLibraryAccessors"
-Cohesion: 0.18
-Nodes (3): ComposeLibraryAccessors, ComposeRulesLibraryAccessors, ComposeLibraryAccessors
+### Community 927 - "SshKeyAddCommand"
+Cohesion: 0.40
+Nodes (3): io, ToolCommand, SshKeyAddCommand
 
 ### Community 928 - "GetSerialnoCommand"
 Cohesion: 0.40
@@ -5232,9 +4611,9 @@ Nodes (3): CodespaceLogsCommand, io, ToolCommand
 Cohesion: 0.40
 Nodes (3): CodespacePortsCommand, io, ToolCommand
 
-### Community 941 - "CodespacePortsForwardCommand"
+### Community 941 - "WorkflowListCommand"
 Cohesion: 0.40
-Nodes (3): CodespacePortsForwardCommand, io, ToolCommand
+Nodes (3): io, ToolCommand, WorkflowListCommand
 
 ### Community 942 - "CodespacePortsVisibilityCommand"
 Cohesion: 0.40
@@ -5256,9 +4635,9 @@ Nodes (3): CodespaceStopCommand, io, ToolCommand
 Cohesion: 0.40
 Nodes (3): CodespaceViewCommand, io, ToolCommand
 
-### Community 947 - "CompletionCommand"
+### Community 947 - "CalculateKernelCmdlineCommand"
 Cohesion: 0.40
-Nodes (3): CompletionCommand, io, ToolCommand
+Nodes (3): CalculateKernelCmdlineCommand, io, ToolCommand
 
 ### Community 948 - "ConfigClearCacheCommand"
 Cohesion: 0.40
@@ -5268,9 +4647,9 @@ Nodes (3): ConfigClearCacheCommand, io, ToolCommand
 Cohesion: 0.40
 Nodes (3): ConfigCommand, io, ToolCommand
 
-### Community 950 - "ConfigGetCommand"
+### Community 950 - "MakeAtxUnlockCredentialCommand"
 Cohesion: 0.40
-Nodes (3): ConfigGetCommand, io, ToolCommand
+Nodes (3): io, ToolCommand, MakeAtxUnlockCredentialCommand
 
 ### Community 951 - "UsbCommand"
 Cohesion: 0.40
@@ -5284,9 +4663,9 @@ Nodes (3): ConfigSetCommand, io, ToolCommand
 Cohesion: 0.40
 Nodes (3): CopilotCommand, io, ToolCommand
 
-### Community 954 - "FormatCommand"
+### Community 954 - "MakeCertPermanentAttributesCommand"
 Cohesion: 0.40
-Nodes (3): FormatCommand, io, ToolCommand
+Nodes (3): io, ToolCommand, MakeCertPermanentAttributesCommand
 
 ### Community 955 - "GetStagedCommand"
 Cohesion: 0.40
@@ -5296,9 +4675,9 @@ Nodes (3): GetStagedCommand, io, ToolCommand
 Cohesion: 0.40
 Nodes (3): ApkinfoCommand, io, ToolCommand
 
-### Community 957 - "`annotationProcessor`"
-Cohesion: 0.39
-Nodes (8): `annotationProcessor`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
+### Community 957 - "MakeVbmetaImageCommand"
+Cohesion: 0.40
+Nodes (3): io, ToolCommand, MakeVbmetaImageCommand
 
 ### Community 958 - "ExtensionCreateCommand"
 Cohesion: 0.40
@@ -5308,17 +4687,21 @@ Nodes (3): ExtensionCreateCommand, io, ToolCommand
 Cohesion: 0.40
 Nodes (3): DumpOverlayableCommand, io, ToolCommand
 
-### Community 960 - "ExtensionInstallCommand"
-Cohesion: 0.40
-Nodes (3): ExtensionInstallCommand, io, ToolCommand
+### Community 960 - "backdrop/Backdrop.kt"
+Cohesion: 0.60
+Nodes (3): Density, GraphicsLayerScope, LayoutCoordinates
 
 ### Community 961 - "ExtensionListCommand"
 Cohesion: 0.40
 Nodes (3): ExtensionListCommand, io, ToolCommand
 
-### Community 962 - "ExtensionRemoveCommand"
-Cohesion: 0.40
-Nodes (3): ExtensionRemoveCommand, io, ToolCommand
+### Community 962 - "UpdaterScriptWriter.kt"
+Cohesion: 0.60
+Nodes (3): PackagePolicy, TargetDevice, UpdaterScriptWriter
+
+### Community 963 - "ConnectWirelessDeviceUseCase.kt"
+Cohesion: 0.50
+Nodes (3): ConnectWirelessDeviceUseCase, DeviceOperationResult, Result
 
 ### Community 964 - "CfCommand"
 Cohesion: 0.40
@@ -5328,9 +4711,9 @@ Nodes (3): CfCommand, io, ToolCommand
 Cohesion: 0.40
 Nodes (3): ExtensionUpgradeCommand, io, ToolCommand
 
-### Community 966 - "GistCloneCommand"
-Cohesion: 0.40
-Nodes (3): GistCloneCommand, io, ToolCommand
+### Community 966 - "GetConnectedDevicesUseCase.kt"
+Cohesion: 0.60
+Nodes (3): GetConnectedDevicesUseCase, ConnectedTargetDevice, StateFlow
 
 ### Community 967 - "HelpCommand"
 Cohesion: 0.40
@@ -5344,9 +4727,9 @@ Nodes (3): DiffCommand, io, ToolCommand
 Cohesion: 0.40
 Nodes (3): GistListCommand, io, ToolCommand
 
-### Community 971 - "GistRenameCommand"
-Cohesion: 0.40
-Nodes (3): GistRenameCommand, io, ToolCommand
+### Community 971 - "GetSelectedConnectedDeviceUseCase.kt"
+Cohesion: 0.60
+Nodes (3): GetSelectedConnectedDeviceUseCase, ConnectedTargetDevice, StateFlow
 
 ### Community 972 - "PrCommand"
 Cohesion: 0.40
@@ -5356,10 +4739,6 @@ Nodes (3): io, ToolCommand, PrCommand
 Cohesion: 0.40
 Nodes (3): DumpApcCommand, io, ToolCommand
 
-### Community 974 - "`api`"
-Cohesion: 0.39
-Nodes (8): `api`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
 ### Community 975 - "GpgKeyCommand"
 Cohesion: 0.40
 Nodes (3): GpgKeyCommand, io, ToolCommand
@@ -5367,10 +4746,6 @@ Nodes (3): GpgKeyCommand, io, ToolCommand
 ### Community 976 - "GpgKeyDeleteCommand"
 Cohesion: 0.40
 Nodes (3): GpgKeyDeleteCommand, io, ToolCommand
-
-### Community 977 - "`apiDependenciesMetadata`"
-Cohesion: 0.39
-Nodes (8): `apiDependenciesMetadata`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
 
 ### Community 978 - "GpgKeyListCommand"
 Cohesion: 0.40
@@ -5388,13 +4763,13 @@ Nodes (4): KtFile, Rule, RuleName, NoRawMotionLiteral
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, LabelCloneCommand
 
-### Community 982 - "LabelCommand"
-Cohesion: 0.40
-Nodes (3): io, ToolCommand, LabelCommand
+### Community 982 - "KeyShortcut.kt"
+Cohesion: 0.83
+Nodes (3): Key, Modifier, onKeyShortcut()
 
-### Community 983 - "LabelDeleteCommand"
-Cohesion: 0.40
-Nodes (3): io, ToolCommand, LabelDeleteCommand
+### Community 983 - "SheetDragHandle"
+Cohesion: 0.50
+Nodes (4): Custom, Default, None, SheetDragHandle
 
 ### Community 984 - "LabelEditCommand"
 Cohesion: 0.40
@@ -5404,10 +4779,6 @@ Nodes (3): io, ToolCommand, LabelEditCommand
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, LicensesCommand
 
-### Community 986 - "`apiElements`"
-Cohesion: 0.39
-Nodes (8): `apiElements`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
 ### Community 987 - "OrgCommand"
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, OrgCommand
@@ -5415,10 +4786,6 @@ Nodes (3): io, ToolCommand, OrgCommand
 ### Community 988 - "PrCommand"
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, PrCommand
-
-### Community 989 - "Sdk_PatchModProjectDependency"
-Cohesion: 0.13
-Nodes (6): Sdk_PatchModProjectDependency, Sdk_PatchModProjectDependency, Sdk_PatchModProjectDependency, SdkProjectDependency, Sdk_PatchModProjectDependency, SdkProjectDependency
 
 ### Community 990 - "DumpStyleparentsCommand"
 Cohesion: 0.40
@@ -5436,17 +4803,9 @@ Nodes (3): io, ToolCommand, ProjectCopyCommand
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, ProjectCreateCommand
 
-### Community 994 - "`archives`"
-Cohesion: 0.39
-Nodes (8): `archives`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
 ### Community 995 - "ProjectEditCommand"
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, ProjectEditCommand
-
-### Community 996 - "ExecuteCommand"
-Cohesion: 0.40
-Nodes (3): ExecuteCommand, io, ToolCommand
 
 ### Community 997 - "ProjectFieldDeleteCommand"
 Cohesion: 0.40
@@ -5456,10 +4815,6 @@ Nodes (3): io, ToolCommand, ProjectFieldDeleteCommand
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, ProjectFieldListCommand
 
-### Community 999 - "OptimizeCommand"
-Cohesion: 0.40
-Nodes (3): io, ToolCommand, OptimizeCommand
-
 ### Community 1000 - "ProjectItemDeleteCommand"
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, ProjectItemDeleteCommand
@@ -5467,10 +4822,6 @@ Nodes (3): io, ToolCommand, ProjectItemDeleteCommand
 ### Community 1001 - "DebloatInventoryAdapterTest"
 Cohesion: 0.22
 Nodes (5): DebloatInventoryAdapterTest, SimpleFileVisitor, BasicFileAttributes, FileVisitResult, SimpleFileVisitor
-
-### Community 1002 - "ProjectItemListCommand"
-Cohesion: 0.40
-Nodes (3): io, ToolCommand, ProjectItemListCommand
 
 ### Community 1003 - "ProjectLinkCommand"
 Cohesion: 0.40
@@ -5480,33 +4831,13 @@ Nodes (3): io, ToolCommand, ProjectLinkCommand
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, ProjectListCommand
 
-### Community 1005 - "`compileClasspath`"
-Cohesion: 0.39
-Nodes (8): `compileClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
 ### Community 1006 - "ProjectMarkTemplateCommand"
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, ProjectMarkTemplateCommand
 
-### Community 1007 - "`compileOnlyApi`"
-Cohesion: 0.39
-Nodes (8): `compileOnlyApi`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1008 - "`compileOnly`"
-Cohesion: 0.39
-Nodes (8): `compileOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
 ### Community 1009 - "ArchiveTransferAdapterTest"
 Cohesion: 0.24
 Nodes (3): ArchiveTransferAdapterTest, Workspace, TransferSession
-
-### Community 1010 - "`compileOnlyDependenciesMetadata`"
-Cohesion: 0.39
-Nodes (8): `compileOnlyDependenciesMetadata`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1011 - "`compilePluginsBlocksPluginClasspath`"
-Cohesion: 0.39
-Nodes (8): `compilePluginsBlocksPluginClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
 
 ### Community 1012 - "ProjectViewCommand"
 Cohesion: 0.40
@@ -5536,25 +4867,13 @@ Nodes (3): io, ToolCommand, RulesetListCommand
 Cohesion: 0.12
 Nodes (15): compatibleTargets, conflicts, dependencies, displayName, id, PQ84P01, license, payloads (+7 more)
 
-### Community 1019 - "RulesetViewCommand"
-Cohesion: 0.40
-Nodes (3): io, ToolCommand, RulesetViewCommand
-
 ### Community 1020 - "ConfigListCommand"
 Cohesion: 0.40
 Nodes (3): ConfigListCommand, io, ToolCommand
 
-### Community 1021 - "CleanFrameworksCommand"
-Cohesion: 0.40
-Nodes (3): CleanFrameworksCommand, io, ToolCommand
-
 ### Community 1022 - "RunDeleteCommand"
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, RunDeleteCommand
-
-### Community 1023 - "ExtensionBrowseCommand"
-Cohesion: 0.40
-Nodes (3): ExtensionBrowseCommand, io, ToolCommand
 
 ### Community 1024 - "RunListCommand"
 Cohesion: 0.40
@@ -5584,10 +4903,6 @@ Nodes (3): io, ToolCommand, SearchCommand
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, ProjectCloseCommand
 
-### Community 1031 - "SearchIssuesCommand"
-Cohesion: 0.40
-Nodes (3): io, ToolCommand, SearchIssuesCommand
-
 ### Community 1032 - "SearchReposCommand"
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, SearchReposCommand
@@ -5600,25 +4915,13 @@ Nodes (3): io, ToolCommand, SecretCommand
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, SecretDeleteCommand
 
-### Community 1035 - "`compilePluginsBlocksPluginClasspathElements`"
-Cohesion: 0.39
-Nodes (8): `compilePluginsBlocksPluginClasspathElements`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
 ### Community 1036 - "SecretListCommand"
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, SecretListCommand
 
-### Community 1037 - "SecretSetCommand"
-Cohesion: 0.40
-Nodes (3): io, ToolCommand, SecretSetCommand
-
 ### Community 1038 - "SkillCommand"
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, SkillCommand
-
-### Community 1039 - "ExecuteCommand"
-Cohesion: 0.40
-Nodes (3): ExecuteCommand, io, ToolCommand
 
 ### Community 1040 - "SkillListCommand"
 Cohesion: 0.40
@@ -5627,14 +4930,6 @@ Nodes (3): io, ToolCommand, SkillListCommand
 ### Community 1041 - "SkillSearchCommand"
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, SkillSearchCommand
-
-### Community 1042 - "SkillUpdateCommand"
-Cohesion: 0.40
-Nodes (3): io, ToolCommand, SkillUpdateCommand
-
-### Community 1043 - "`default`"
-Cohesion: 0.39
-Nodes (8): `default`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
 
 ### Community 1044 - "CacheCommand"
 Cohesion: 0.40
@@ -5648,21 +4943,9 @@ Nodes (3): io, ToolCommand, SshKeyCommand
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, SshKeyListCommand
 
-### Community 1048 - "`embeddedKotlin`"
-Cohesion: 0.39
-Nodes (8): `embeddedKotlin`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1049 - "VariableCommand"
-Cohesion: 0.40
-Nodes (3): io, ToolCommand, VariableCommand
-
 ### Community 1050 - "ProjectUnlinkCommand"
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, ProjectUnlinkCommand
-
-### Community 1051 - "`implementation`"
-Cohesion: 0.39
-Nodes (8): `implementation`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
 
 ### Community 1052 - "CacheDeleteCommand"
 Cohesion: 0.40
@@ -5672,10 +4955,6 @@ Nodes (3): CacheDeleteCommand, io, ToolCommand
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, VariableListCommand
 
-### Community 1054 - "VariableSetCommand"
-Cohesion: 0.40
-Nodes (3): io, ToolCommand, VariableSetCommand
-
 ### Community 1055 - "WorkflowCommand"
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, WorkflowCommand
@@ -5683,10 +4962,6 @@ Nodes (3): io, ToolCommand, WorkflowCommand
 ### Community 1056 - "WorkflowDisableCommand"
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, WorkflowDisableCommand
-
-### Community 1057 - "WorkflowEnableCommand"
-Cohesion: 0.40
-Nodes (3): io, ToolCommand, WorkflowEnableCommand
 
 ### Community 1058 - "WorkflowRunCommand"
 Cohesion: 0.40
@@ -5744,25 +5019,9 @@ Nodes (5): Commands, `execute`, Metadata, Positional Arguments, Signapk Tool Ref
 Cohesion: 0.33
 Nodes (5): Commands, `execute`, Metadata, Positional Arguments, Simg2img Tool Reference
 
-### Community 1072 - "RunCommand"
-Cohesion: 0.40
-Nodes (3): io, ToolCommand, RunCommand
-
-### Community 1073 - "`implementationDependenciesMetadata`"
-Cohesion: 0.39
-Nodes (8): `implementationDependenciesMetadata`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
 ### Community 1074 - "AppSettingsState"
-Cohesion: 0.12
-Nodes (16): AppSettingsState, Modifier, LtiRomSplashScreen(), Completed, Idle, Initializing, StateFlow, ReadyToDismiss (+8 more)
-
-### Community 1075 - "GistDeleteCommand"
-Cohesion: 0.40
-Nodes (3): GistDeleteCommand, io, ToolCommand
-
-### Community 1076 - "`intransitiveDependenciesMetadata`"
-Cohesion: 0.39
-Nodes (8): `intransitiveDependenciesMetadata`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
+Cohesion: 0.11
+Nodes (18): AppSettingsState, Modifier, LtiRomSplashScreen(), Completed, Idle, Initializing, StateFlow, ReadyToDismiss (+10 more)
 
 ### Community 1077 - "LabelCreateCommand"
 Cohesion: 0.40
@@ -5779,10 +5038,6 @@ Nodes (3): AddHashtreeFooterCliCommand, CliktCommand, Context
 ### Community 1080 - "AppendVbmetaImageCliCommand.kt"
 Cohesion: 0.47
 Nodes (3): AppendVbmetaImageCliCommand, CliktCommand, Context
-
-### Community 1081 - "`kotlinBuildToolsApiClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinBuildToolsApiClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
 
 ### Community 1082 - "AvbtoolCliCommand.kt"
 Cohesion: 0.47
@@ -5832,10 +5087,6 @@ Nodes (3): Avbtool Tool Reference, Global Options, Metadata
 Cohesion: 0.50
 Nodes (3): Gh Tool Reference, Global Options, Metadata
 
-### Community 1096 - "`kotlinCompilerClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinCompilerClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
 ### Community 1097 - "InfoImageCliCommand.kt"
 Cohesion: 0.47
 Nodes (3): InfoImageCliCommand, CliktCommand, Context
@@ -5848,14 +5099,6 @@ Nodes (3): CliktCommand, Context, MakeAtxCertificateCliCommand
 Cohesion: 0.47
 Nodes (3): CliktCommand, Context, MakeAtxMetadataCliCommand
 
-### Community 1100 - "`kotlinCompilerPluginClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinCompilerPluginClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1101 - "`kotlinCompilerPluginClasspathMain`"
-Cohesion: 0.39
-Nodes (8): `kotlinCompilerPluginClasspathMain`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
 ### Community 1102 - "MakeAtxPermanentAttributesCliCommand.kt"
 Cohesion: 0.47
 Nodes (3): CliktCommand, Context, MakeAtxPermanentAttributesCliCommand
@@ -5863,10 +5106,6 @@ Nodes (3): CliktCommand, Context, MakeAtxPermanentAttributesCliCommand
 ### Community 1103 - "MakeAtxUnlockCredentialCliCommand.kt"
 Cohesion: 0.47
 Nodes (3): CliktCommand, Context, MakeAtxUnlockCredentialCliCommand
-
-### Community 1104 - "`kotlinCompilerPluginClasspathTest`"
-Cohesion: 0.39
-Nodes (8): `kotlinCompilerPluginClasspathTest`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
 
 ### Community 1105 - "MakeCertificateCliCommand.kt"
 Cohesion: 0.47
@@ -5883,26 +5122,6 @@ Nodes (8): Cancelled, IoFailure, ByteArray, MessageDigest, Workspace, StreamResu
 ### Community 1108 - "MakeCertPermanentAttributesCliCommand.kt"
 Cohesion: 0.47
 Nodes (3): CliktCommand, Context, MakeCertPermanentAttributesCliCommand
-
-### Community 1109 - "`kotlinKlibCommonizerClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinKlibCommonizerClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1110 - "FileSystemRepository"
-Cohesion: 0.26
-Nodes (3): FileSystemRepository, Flow, Result
-
-### Community 1111 - "`kotlinNativeBundleConfiguration`"
-Cohesion: 0.39
-Nodes (8): `kotlinNativeBundleConfiguration`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1112 - "`kotlinNativeCompilerPluginClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinNativeCompilerPluginClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1113 - "`kotlinScriptDef`"
-Cohesion: 0.39
-Nodes (8): `kotlinScriptDef`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
 
 ### Community 1114 - "MakeCertUnlockCredentialCliCommand.kt"
 Cohesion: 0.47
@@ -5924,10 +5143,6 @@ Nodes (3): CliktCommand, Context, PrintPartitionDigestsCliCommand
 Cohesion: 0.47
 Nodes (3): CliktCommand, Context, ResignImageCliCommand
 
-### Community 1119 - "`kotlinScriptDefExtensions`"
-Cohesion: 0.39
-Nodes (8): `kotlinScriptDefExtensions`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
 ### Community 1120 - "SkillInstallCommand"
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, SkillInstallCommand
@@ -5944,18 +5159,6 @@ Nodes (3): CliktCommand, Context, ResizeImageCliCommand
 Cohesion: 0.47
 Nodes (3): CliktCommand, Context, SetAbMetadataCliCommand
 
-### Community 1124 - "`mainSourceElements`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `mainSourceElements`()
-
-### Community 1125 - "`runtimeClasspath`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `runtimeClasspath`()
-
-### Community 1126 - "`runtimeElements`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `runtimeElements`()
-
 ### Community 1127 - "TestingCliCommand.kt"
 Cohesion: 0.47
 Nodes (3): CliktCommand, Context, TestingCliCommand
@@ -5968,10 +5171,6 @@ Nodes (3): CliktCommand, Context, UpdatePartitionDescriptorCliCommand
 Cohesion: 0.47
 Nodes (3): CliktCommand, Context, VerifyImageCliCommand
 
-### Community 1130 - "`runtimeOnly`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `runtimeOnly`()
-
 ### Community 1131 - "avbtool/cli/VersionCliCommand.kt"
 Cohesion: 0.47
 Nodes (3): CliktCommand, Context, VersionCliCommand
@@ -5979,10 +5178,6 @@ Nodes (3): CliktCommand, Context, VersionCliCommand
 ### Community 1132 - "ZeroHashtreeCliCommand.kt"
 Cohesion: 0.47
 Nodes (3): CliktCommand, Context, ZeroHashtreeCliCommand
-
-### Community 1133 - "`testAnnotationProcessor`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testAnnotationProcessor`()
 
 ### Community 1134 - "Example Compiled Hook Mod"
 Cohesion: 0.50
@@ -5992,197 +5187,9 @@ Nodes (3): Compiling the Payload, Example Compiled Hook Mod, Payload Configurati
 Cohesion: 0.40
 Nodes (3): ExtractPublicKeyCommand, io, ToolCommand
 
-### Community 1138 - "`testApi`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testApi`()
-
-### Community 1139 - "`testApiDependenciesMetadata`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testApiDependenciesMetadata`()
-
-### Community 1141 - "`testCompileClasspath`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testCompileClasspath`()
-
-### Community 1142 - "`testCompileOnly`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testCompileOnly`()
-
-### Community 1143 - "`testCompileOnlyDependenciesMetadata`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testCompileOnlyDependenciesMetadata`()
-
 ### Community 1144 - "ExtractPublicKeyDigestCommand"
 Cohesion: 0.40
 Nodes (3): ExtractPublicKeyDigestCommand, io, ToolCommand
-
-### Community 1145 - "`testImplementation`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testImplementation`()
-
-### Community 1149 - "StatusCommand"
-Cohesion: 0.40
-Nodes (3): io, ToolCommand, StatusCommand
-
-### Community 1150 - "`testImplementationDependenciesMetadata`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testImplementationDependenciesMetadata`()
-
-### Community 1151 - "`testIntransitiveDependenciesMetadata`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testIntransitiveDependenciesMetadata`()
-
-### Community 1152 - "`testKotlinScriptDef`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testKotlinScriptDef`()
-
-### Community 1153 - "`testKotlinScriptDefExtensions`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testKotlinScriptDefExtensions`()
-
-### Community 1154 - "`testResultsElementsForTest`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testResultsElementsForTest`()
-
-### Community 1155 - "`testRuntimeClasspath`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testRuntimeClasspath`()
-
-### Community 1156 - "`testRuntimeOnly`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testRuntimeOnly`()
-
-### Community 1157 - "`archives`"
-Cohesion: 0.39
-Nodes (8): `archives`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1158 - "`commonMainApi`"
-Cohesion: 0.39
-Nodes (8): `commonMainApi`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1159 - "`commonMainCompileOnly`"
-Cohesion: 0.39
-Nodes (8): `commonMainCompileOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1160 - "`commonMainImplementation`"
-Cohesion: 0.39
-Nodes (8): `commonMainImplementation`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1161 - "`commonMainImplementationDependenciesMetadata`"
-Cohesion: 0.39
-Nodes (8): `commonMainImplementationDependenciesMetadata`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1162 - "`commonMainRuntimeOnly`"
-Cohesion: 0.39
-Nodes (8): `commonMainRuntimeOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1163 - "`commonTestApi`"
-Cohesion: 0.39
-Nodes (8): `commonTestApi`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1164 - "`commonTestCompileOnly`"
-Cohesion: 0.39
-Nodes (8): `commonTestCompileOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1165 - "`commonTestImplementation`"
-Cohesion: 0.39
-Nodes (8): `commonTestImplementation`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1168 - "`commonTestImplementationDependenciesMetadata`"
-Cohesion: 0.39
-Nodes (8): `commonTestImplementationDependenciesMetadata`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1169 - "`commonTestRuntimeOnly`"
-Cohesion: 0.39
-Nodes (8): `commonTestRuntimeOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1170 - "`default`"
-Cohesion: 0.39
-Nodes (8): `default`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1171 - "`desktopApiElements`"
-Cohesion: 0.39
-Nodes (8): `desktopApiElements`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1172 - "`desktopCompilationApi`"
-Cohesion: 0.39
-Nodes (8): `desktopCompilationApi`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1173 - "`desktopCompilationCompileOnly`"
-Cohesion: 0.39
-Nodes (8): `desktopCompilationCompileOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1174 - "`desktopCompilationImplementation`"
-Cohesion: 0.39
-Nodes (8): `desktopCompilationImplementation`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1175 - "`desktopCompilationRuntimeOnly`"
-Cohesion: 0.39
-Nodes (8): `desktopCompilationRuntimeOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1176 - "`desktopCompileClasspath`"
-Cohesion: 0.39
-Nodes (8): `desktopCompileClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1177 - "`desktopMainAnnotationProcessor`"
-Cohesion: 0.39
-Nodes (8): `desktopMainAnnotationProcessor`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1178 - "`desktopMainApi`"
-Cohesion: 0.39
-Nodes (8): `desktopMainApi`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1179 - "`desktopMainCompileClasspath`"
-Cohesion: 0.39
-Nodes (8): `desktopMainCompileClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1180 - "`desktopMainCompileOnly`"
-Cohesion: 0.39
-Nodes (8): `desktopMainCompileOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1181 - "`desktopMainImplementation`"
-Cohesion: 0.39
-Nodes (8): `desktopMainImplementation`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1182 - "`desktopMainImplementationDependenciesMetadata`"
-Cohesion: 0.39
-Nodes (8): `desktopMainImplementationDependenciesMetadata`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1183 - "`desktopMainRuntimeClasspath`"
-Cohesion: 0.39
-Nodes (8): `desktopMainRuntimeClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1184 - "`desktopMainRuntimeOnly`"
-Cohesion: 0.39
-Nodes (8): `desktopMainRuntimeOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1185 - "`desktopRuntimeClasspath`"
-Cohesion: 0.39
-Nodes (8): `desktopRuntimeClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1186 - "`desktopRuntimeElements`"
-Cohesion: 0.39
-Nodes (8): `desktopRuntimeElements`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1187 - "`desktopSourcesElements`"
-Cohesion: 0.39
-Nodes (8): `desktopSourcesElements`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1188 - "`desktopTestAnnotationProcessor`"
-Cohesion: 0.39
-Nodes (8): `desktopTestAnnotationProcessor`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1189 - "`desktopTestApi`"
-Cohesion: 0.39
-Nodes (8): `desktopTestApi`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1190 - "`desktopTestCompilationApi`"
-Cohesion: 0.39
-Nodes (8): `desktopTestCompilationApi`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1191 - "`desktopTestCompilationCompileOnly`"
-Cohesion: 0.39
-Nodes (8): `desktopTestCompilationCompileOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
 
 ### Community 1192 - "`install`"
 Cohesion: 0.67
@@ -6216,1458 +5223,6 @@ Nodes (3): io, ToolCommand, VariableGetCommand
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, MakeCertificateCommand
 
-### Community 1453 - "`desktopTestCompilationImplementation`"
-Cohesion: 0.39
-Nodes (8): `desktopTestCompilationImplementation`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1454 - "`desktopTestCompilationRuntimeOnly`"
-Cohesion: 0.39
-Nodes (8): `desktopTestCompilationRuntimeOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1455 - "`desktopTestCompileClasspath`"
-Cohesion: 0.39
-Nodes (8): `desktopTestCompileClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1456 - "`desktopTestCompileOnly`"
-Cohesion: 0.39
-Nodes (8): `desktopTestCompileOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1457 - "`desktopTestImplementation`"
-Cohesion: 0.39
-Nodes (8): `desktopTestImplementation`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1458 - "`desktopTestImplementationDependenciesMetadata`"
-Cohesion: 0.39
-Nodes (8): `desktopTestImplementationDependenciesMetadata`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1459 - "`desktopTestRuntimeClasspath`"
-Cohesion: 0.39
-Nodes (8): `desktopTestRuntimeClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1460 - "`desktopTestRuntimeOnly`"
-Cohesion: 0.39
-Nodes (8): `desktopTestRuntimeOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1461 - "`detekt`"
-Cohesion: 0.39
-Nodes (8): `detekt`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1462 - "`detektPlugins`"
-Cohesion: 0.39
-Nodes (8): `detektPlugins`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1463 - "`kotlinAbiValidationCompatClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinAbiValidationCompatClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1464 - "`kotlinBuildToolsApiClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinBuildToolsApiClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1465 - "`kotlinCompilerClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinCompilerClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1466 - "`kotlinCompilerPluginClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinCompilerPluginClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1467 - "`kotlinCompilerPluginClasspathDesktopMain`"
-Cohesion: 0.39
-Nodes (8): `kotlinCompilerPluginClasspathDesktopMain`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1468 - "`kotlinCompilerPluginClasspathDesktopTest`"
-Cohesion: 0.39
-Nodes (8): `kotlinCompilerPluginClasspathDesktopTest`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1469 - "`kotlinCompilerPluginClasspathMetadataMain`"
-Cohesion: 0.39
-Nodes (8): `kotlinCompilerPluginClasspathMetadataMain`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1470 - "`kotlinKlibCommonizerClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinKlibCommonizerClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1471 - "`kotlinNativeCompilerPluginClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinNativeCompilerPluginClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1472 - "`kotlinScriptDef`"
-Cohesion: 0.39
-Nodes (8): `kotlinScriptDef`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1473 - "`kotlinScriptDefExtensions`"
-Cohesion: 0.39
-Nodes (8): `kotlinScriptDefExtensions`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1474 - "`kspCommonMainMetadata`"
-Cohesion: 0.39
-Nodes (8): `kspCommonMainMetadata`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1475 - "`ksp`"
-Cohesion: 0.39
-Nodes (8): `ksp`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1476 - "`kspDesktop`"
-Cohesion: 0.39
-Nodes (8): `kspDesktop`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1477 - "`kspDesktopTest`"
-Cohesion: 0.39
-Nodes (8): `kspDesktopTest`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1478 - "`metadataApiElements`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataApiElements`()
-
-### Community 1479 - "`metadataCompilationApi`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataCompilationApi`()
-
-### Community 1480 - "`metadataCompilationCompileOnly`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataCompilationCompileOnly`()
-
-### Community 1481 - "`metadataCompilationImplementation`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataCompilationImplementation`()
-
-### Community 1482 - "`metadataCompilationRuntimeOnly`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataCompilationRuntimeOnly`()
-
-### Community 1483 - "`metadataCompileClasspath`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataCompileClasspath`()
-
-### Community 1484 - "`metadataSourcesElements`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataSourcesElements`()
-
-### Community 1485 - "`swiftPMDependenciesMetadataClasspath`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `swiftPMDependenciesMetadataClasspath`()
-
-### Community 1486 - "`testKotlinScriptDef`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testKotlinScriptDef`()
-
-### Community 1487 - "`testKotlinScriptDefExtensions`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testKotlinScriptDefExtensions`()
-
-### Community 1488 - "`annotationProcessor`"
-Cohesion: 0.39
-Nodes (8): `annotationProcessor`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1489 - "`api`"
-Cohesion: 0.39
-Nodes (8): `api`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1490 - "`apiElements`"
-Cohesion: 0.39
-Nodes (8): `apiElements`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1491 - "`archives`"
-Cohesion: 0.39
-Nodes (8): `archives`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1492 - "`compileClasspath`"
-Cohesion: 0.39
-Nodes (8): `compileClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1493 - "`compileOnly`"
-Cohesion: 0.39
-Nodes (8): `compileOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1494 - "`default`"
-Cohesion: 0.39
-Nodes (8): `default`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1495 - "`detekt`"
-Cohesion: 0.39
-Nodes (8): `detekt`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1496 - "`detektPlugins`"
-Cohesion: 0.39
-Nodes (8): `detektPlugins`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1497 - "`implementation`"
-Cohesion: 0.39
-Nodes (8): `implementation`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1498 - "`implementationDependenciesMetadata`"
-Cohesion: 0.39
-Nodes (8): `implementationDependenciesMetadata`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1499 - "`kotlinAbiValidationCompatClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinAbiValidationCompatClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1500 - "`kotlinBuildToolsApiClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinBuildToolsApiClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1501 - "`kotlinCompilerClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinCompilerClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1502 - "`kotlinCompilerPluginClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinCompilerPluginClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1503 - "`kotlinCompilerPluginClasspathMain`"
-Cohesion: 0.39
-Nodes (8): `kotlinCompilerPluginClasspathMain`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1504 - "`kotlinCompilerPluginClasspathTest`"
-Cohesion: 0.39
-Nodes (8): `kotlinCompilerPluginClasspathTest`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1505 - "`kotlinKlibCommonizerClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinKlibCommonizerClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1506 - "`kotlinNativeCompilerPluginClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinNativeCompilerPluginClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1507 - "`kotlinScriptDef`"
-Cohesion: 0.39
-Nodes (8): `kotlinScriptDef`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1508 - "`kotlinScriptDefExtensions`"
-Cohesion: 0.39
-Nodes (8): `kotlinScriptDefExtensions`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1509 - "`mainSourceElements`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `mainSourceElements`()
-
-### Community 1510 - "`runtimeClasspath`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `runtimeClasspath`()
-
-### Community 1511 - "`runtimeElements`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `runtimeElements`()
-
-### Community 1512 - "`runtimeOnly`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `runtimeOnly`()
-
-### Community 1513 - "`testAnnotationProcessor`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testAnnotationProcessor`()
-
-### Community 1514 - "`testApi`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testApi`()
-
-### Community 1515 - "`testCompileClasspath`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testCompileClasspath`()
-
-### Community 1516 - "`testCompileOnly`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testCompileOnly`()
-
-### Community 1517 - "`testImplementation`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testImplementation`()
-
-### Community 1518 - "`testImplementationDependenciesMetadata`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testImplementationDependenciesMetadata`()
-
-### Community 1519 - "`testKotlinScriptDef`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testKotlinScriptDef`()
-
-### Community 1520 - "`testKotlinScriptDefExtensions`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testKotlinScriptDefExtensions`()
-
-### Community 1521 - "`testResultsElementsForTest`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testResultsElementsForTest`()
-
-### Community 1522 - "`testRuntimeClasspath`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testRuntimeClasspath`()
-
-### Community 1523 - "`testRuntimeOnly`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testRuntimeOnly`()
-
-### Community 1524 - "`archives`"
-Cohesion: 0.39
-Nodes (8): `archives`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1525 - "`commonMainApi`"
-Cohesion: 0.39
-Nodes (8): `commonMainApi`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1526 - "`commonMainCompileOnly`"
-Cohesion: 0.39
-Nodes (8): `commonMainCompileOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1527 - "`commonMainImplementation`"
-Cohesion: 0.39
-Nodes (8): `commonMainImplementation`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1528 - "`commonMainImplementationDependenciesMetadata`"
-Cohesion: 0.39
-Nodes (8): `commonMainImplementationDependenciesMetadata`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1529 - "`commonMainRuntimeOnly`"
-Cohesion: 0.39
-Nodes (8): `commonMainRuntimeOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1530 - "`commonTestApi`"
-Cohesion: 0.39
-Nodes (8): `commonTestApi`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1531 - "`commonTestCompileOnly`"
-Cohesion: 0.39
-Nodes (8): `commonTestCompileOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1532 - "`commonTestImplementation`"
-Cohesion: 0.39
-Nodes (8): `commonTestImplementation`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1533 - "`commonTestImplementationDependenciesMetadata`"
-Cohesion: 0.39
-Nodes (8): `commonTestImplementationDependenciesMetadata`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1534 - "`commonTestRuntimeOnly`"
-Cohesion: 0.39
-Nodes (8): `commonTestRuntimeOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1535 - "`default`"
-Cohesion: 0.39
-Nodes (8): `default`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1536 - "`desktopApiElements`"
-Cohesion: 0.39
-Nodes (8): `desktopApiElements`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1537 - "`desktopCompilationApi`"
-Cohesion: 0.39
-Nodes (8): `desktopCompilationApi`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1538 - "`desktopCompilationCompileOnly`"
-Cohesion: 0.39
-Nodes (8): `desktopCompilationCompileOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1539 - "`desktopCompilationImplementation`"
-Cohesion: 0.39
-Nodes (8): `desktopCompilationImplementation`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1540 - "`desktopCompilationRuntimeOnly`"
-Cohesion: 0.39
-Nodes (8): `desktopCompilationRuntimeOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1541 - "`desktopCompileClasspath`"
-Cohesion: 0.39
-Nodes (8): `desktopCompileClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1542 - "`desktopMainAnnotationProcessor`"
-Cohesion: 0.39
-Nodes (8): `desktopMainAnnotationProcessor`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1543 - "`desktopMainApi`"
-Cohesion: 0.39
-Nodes (8): `desktopMainApi`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1544 - "`desktopMainCompileClasspath`"
-Cohesion: 0.39
-Nodes (8): `desktopMainCompileClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1545 - "`desktopMainCompileOnly`"
-Cohesion: 0.39
-Nodes (8): `desktopMainCompileOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1546 - "`desktopMainImplementation`"
-Cohesion: 0.39
-Nodes (8): `desktopMainImplementation`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1547 - "`desktopMainImplementationDependenciesMetadata`"
-Cohesion: 0.39
-Nodes (8): `desktopMainImplementationDependenciesMetadata`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1548 - "`desktopMainRuntimeClasspath`"
-Cohesion: 0.39
-Nodes (8): `desktopMainRuntimeClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1549 - "`desktopMainRuntimeOnly`"
-Cohesion: 0.39
-Nodes (8): `desktopMainRuntimeOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1550 - "`desktopRuntimeClasspath`"
-Cohesion: 0.39
-Nodes (8): `desktopRuntimeClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1551 - "`desktopRuntimeElements`"
-Cohesion: 0.39
-Nodes (8): `desktopRuntimeElements`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1552 - "`desktopSourcesElements`"
-Cohesion: 0.39
-Nodes (8): `desktopSourcesElements`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1553 - "`desktopTestAnnotationProcessor`"
-Cohesion: 0.39
-Nodes (8): `desktopTestAnnotationProcessor`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1554 - "`desktopTestApi`"
-Cohesion: 0.39
-Nodes (8): `desktopTestApi`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1555 - "`desktopTestCompilationApi`"
-Cohesion: 0.39
-Nodes (8): `desktopTestCompilationApi`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1556 - "`desktopTestCompilationCompileOnly`"
-Cohesion: 0.39
-Nodes (8): `desktopTestCompilationCompileOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1557 - "`desktopTestCompilationImplementation`"
-Cohesion: 0.39
-Nodes (8): `desktopTestCompilationImplementation`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1558 - "`desktopTestCompilationRuntimeOnly`"
-Cohesion: 0.39
-Nodes (8): `desktopTestCompilationRuntimeOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1559 - "`desktopTestCompileClasspath`"
-Cohesion: 0.39
-Nodes (8): `desktopTestCompileClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1560 - "`desktopTestCompileOnly`"
-Cohesion: 0.39
-Nodes (8): `desktopTestCompileOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1561 - "`desktopTestImplementation`"
-Cohesion: 0.39
-Nodes (8): `desktopTestImplementation`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1562 - "`desktopTestImplementationDependenciesMetadata`"
-Cohesion: 0.39
-Nodes (8): `desktopTestImplementationDependenciesMetadata`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1563 - "`desktopTestRuntimeClasspath`"
-Cohesion: 0.39
-Nodes (8): `desktopTestRuntimeClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1564 - "`desktopTestRuntimeOnly`"
-Cohesion: 0.39
-Nodes (8): `desktopTestRuntimeOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1565 - "`detekt`"
-Cohesion: 0.39
-Nodes (8): `detekt`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1566 - "`detektPlugins`"
-Cohesion: 0.39
-Nodes (8): `detektPlugins`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1567 - "`kotlinAbiValidationCompatClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinAbiValidationCompatClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1568 - "`kotlinBuildToolsApiClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinBuildToolsApiClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1569 - "`kotlinCompilerClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinCompilerClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1570 - "`kotlinCompilerPluginClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinCompilerPluginClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1571 - "`kotlinCompilerPluginClasspathDesktopMain`"
-Cohesion: 0.39
-Nodes (8): `kotlinCompilerPluginClasspathDesktopMain`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1572 - "`kotlinCompilerPluginClasspathDesktopTest`"
-Cohesion: 0.39
-Nodes (8): `kotlinCompilerPluginClasspathDesktopTest`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1573 - "`kotlinCompilerPluginClasspathMetadataMain`"
-Cohesion: 0.39
-Nodes (8): `kotlinCompilerPluginClasspathMetadataMain`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1574 - "`kotlinKlibCommonizerClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinKlibCommonizerClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1575 - "`kotlinNativeCompilerPluginClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinNativeCompilerPluginClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1576 - "`kotlinScriptDef`"
-Cohesion: 0.39
-Nodes (8): `kotlinScriptDef`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1577 - "`kotlinScriptDefExtensions`"
-Cohesion: 0.39
-Nodes (8): `kotlinScriptDefExtensions`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1578 - "`kspCommonMainMetadata`"
-Cohesion: 0.39
-Nodes (8): `kspCommonMainMetadata`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1579 - "`ksp`"
-Cohesion: 0.39
-Nodes (8): `ksp`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1580 - "`kspDesktop`"
-Cohesion: 0.39
-Nodes (8): `kspDesktop`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1581 - "`kspDesktopTest`"
-Cohesion: 0.39
-Nodes (8): `kspDesktopTest`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1582 - "`metadataApiElements`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataApiElements`()
-
-### Community 1583 - "`metadataCompilationApi`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataCompilationApi`()
-
-### Community 1584 - "`metadataCompilationCompileOnly`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataCompilationCompileOnly`()
-
-### Community 1585 - "`metadataCompilationImplementation`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataCompilationImplementation`()
-
-### Community 1586 - "`metadataCompilationRuntimeOnly`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataCompilationRuntimeOnly`()
-
-### Community 1587 - "`metadataCompileClasspath`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataCompileClasspath`()
-
-### Community 1588 - "`metadataSourcesElements`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataSourcesElements`()
-
-### Community 1589 - "`swiftPMDependenciesMetadataClasspath`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `swiftPMDependenciesMetadataClasspath`()
-
-### Community 1590 - "`testKotlinScriptDef`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testKotlinScriptDef`()
-
-### Community 1591 - "`testKotlinScriptDefExtensions`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testKotlinScriptDefExtensions`()
-
-### Community 1592 - "`archives`"
-Cohesion: 0.39
-Nodes (8): `archives`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1593 - "`commonMainApi`"
-Cohesion: 0.39
-Nodes (8): `commonMainApi`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1594 - "`commonMainCompileOnly`"
-Cohesion: 0.39
-Nodes (8): `commonMainCompileOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1595 - "`commonMainImplementation`"
-Cohesion: 0.39
-Nodes (8): `commonMainImplementation`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1596 - "`commonMainImplementationDependenciesMetadata`"
-Cohesion: 0.39
-Nodes (8): `commonMainImplementationDependenciesMetadata`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1597 - "`commonMainRuntimeOnly`"
-Cohesion: 0.39
-Nodes (8): `commonMainRuntimeOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1598 - "`commonTestApi`"
-Cohesion: 0.39
-Nodes (8): `commonTestApi`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1599 - "`commonTestCompileOnly`"
-Cohesion: 0.39
-Nodes (8): `commonTestCompileOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1600 - "`commonTestImplementation`"
-Cohesion: 0.39
-Nodes (8): `commonTestImplementation`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1601 - "`commonTestImplementationDependenciesMetadata`"
-Cohesion: 0.39
-Nodes (8): `commonTestImplementationDependenciesMetadata`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1602 - "`commonTestRuntimeOnly`"
-Cohesion: 0.39
-Nodes (8): `commonTestRuntimeOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1603 - "`default`"
-Cohesion: 0.39
-Nodes (8): `default`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1604 - "`desktopApiElements`"
-Cohesion: 0.39
-Nodes (8): `desktopApiElements`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1605 - "`desktopCompilationApi`"
-Cohesion: 0.39
-Nodes (8): `desktopCompilationApi`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1606 - "`desktopCompilationCompileOnly`"
-Cohesion: 0.39
-Nodes (8): `desktopCompilationCompileOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1607 - "`desktopCompilationImplementation`"
-Cohesion: 0.39
-Nodes (8): `desktopCompilationImplementation`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1608 - "`desktopCompilationRuntimeOnly`"
-Cohesion: 0.39
-Nodes (8): `desktopCompilationRuntimeOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1609 - "`desktopCompileClasspath`"
-Cohesion: 0.39
-Nodes (8): `desktopCompileClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1610 - "`desktopMainAnnotationProcessor`"
-Cohesion: 0.39
-Nodes (8): `desktopMainAnnotationProcessor`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1611 - "`desktopMainApi`"
-Cohesion: 0.39
-Nodes (8): `desktopMainApi`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1612 - "`desktopMainCompileClasspath`"
-Cohesion: 0.39
-Nodes (8): `desktopMainCompileClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1613 - "`desktopMainCompileOnly`"
-Cohesion: 0.39
-Nodes (8): `desktopMainCompileOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1614 - "`desktopMainImplementation`"
-Cohesion: 0.39
-Nodes (8): `desktopMainImplementation`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1615 - "`desktopMainImplementationDependenciesMetadata`"
-Cohesion: 0.39
-Nodes (8): `desktopMainImplementationDependenciesMetadata`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1616 - "`desktopMainRuntimeClasspath`"
-Cohesion: 0.39
-Nodes (8): `desktopMainRuntimeClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1617 - "`desktopMainRuntimeOnly`"
-Cohesion: 0.39
-Nodes (8): `desktopMainRuntimeOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1618 - "`desktopRuntimeClasspath`"
-Cohesion: 0.39
-Nodes (8): `desktopRuntimeClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1619 - "`desktopRuntimeElements`"
-Cohesion: 0.39
-Nodes (8): `desktopRuntimeElements`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1620 - "`desktopSourcesElements`"
-Cohesion: 0.39
-Nodes (8): `desktopSourcesElements`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1621 - "`desktopTestAnnotationProcessor`"
-Cohesion: 0.39
-Nodes (8): `desktopTestAnnotationProcessor`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1622 - "`desktopTestApi`"
-Cohesion: 0.39
-Nodes (8): `desktopTestApi`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1623 - "`desktopTestCompilationApi`"
-Cohesion: 0.39
-Nodes (8): `desktopTestCompilationApi`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1624 - "`desktopTestCompilationCompileOnly`"
-Cohesion: 0.39
-Nodes (8): `desktopTestCompilationCompileOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1625 - "`desktopTestCompilationImplementation`"
-Cohesion: 0.39
-Nodes (8): `desktopTestCompilationImplementation`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1626 - "`desktopTestCompilationRuntimeOnly`"
-Cohesion: 0.39
-Nodes (8): `desktopTestCompilationRuntimeOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1627 - "`desktopTestCompileClasspath`"
-Cohesion: 0.39
-Nodes (8): `desktopTestCompileClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1628 - "`desktopTestCompileOnly`"
-Cohesion: 0.39
-Nodes (8): `desktopTestCompileOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1629 - "`desktopTestImplementation`"
-Cohesion: 0.39
-Nodes (8): `desktopTestImplementation`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1630 - "`desktopTestImplementationDependenciesMetadata`"
-Cohesion: 0.39
-Nodes (8): `desktopTestImplementationDependenciesMetadata`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1631 - "`desktopTestRuntimeClasspath`"
-Cohesion: 0.39
-Nodes (8): `desktopTestRuntimeClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1632 - "`desktopTestRuntimeOnly`"
-Cohesion: 0.39
-Nodes (8): `desktopTestRuntimeOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1633 - "`detekt`"
-Cohesion: 0.39
-Nodes (8): `detekt`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1634 - "`detektPlugins`"
-Cohesion: 0.39
-Nodes (8): `detektPlugins`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1635 - "`kotlinAbiValidationCompatClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinAbiValidationCompatClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1636 - "`kotlinBuildToolsApiClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinBuildToolsApiClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1637 - "`kotlinCompilerClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinCompilerClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1638 - "`kotlinCompilerPluginClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinCompilerPluginClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1639 - "`kotlinCompilerPluginClasspathDesktopMain`"
-Cohesion: 0.39
-Nodes (8): `kotlinCompilerPluginClasspathDesktopMain`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1640 - "`kotlinCompilerPluginClasspathDesktopTest`"
-Cohesion: 0.39
-Nodes (8): `kotlinCompilerPluginClasspathDesktopTest`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1641 - "`kotlinCompilerPluginClasspathMetadataMain`"
-Cohesion: 0.39
-Nodes (8): `kotlinCompilerPluginClasspathMetadataMain`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1642 - "`kotlinKlibCommonizerClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinKlibCommonizerClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1643 - "`kotlinNativeCompilerPluginClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinNativeCompilerPluginClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1644 - "`kotlinScriptDef`"
-Cohesion: 0.39
-Nodes (8): `kotlinScriptDef`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1645 - "`kotlinScriptDefExtensions`"
-Cohesion: 0.39
-Nodes (8): `kotlinScriptDefExtensions`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1646 - "`kspCommonMainMetadata`"
-Cohesion: 0.39
-Nodes (8): `kspCommonMainMetadata`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1647 - "`ksp`"
-Cohesion: 0.39
-Nodes (8): `ksp`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1648 - "`kspDesktop`"
-Cohesion: 0.39
-Nodes (8): `kspDesktop`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1649 - "`kspDesktopTest`"
-Cohesion: 0.39
-Nodes (8): `kspDesktopTest`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1650 - "`metadataApiElements`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataApiElements`()
-
-### Community 1651 - "`metadataCompilationApi`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataCompilationApi`()
-
-### Community 1652 - "`metadataCompilationCompileOnly`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataCompilationCompileOnly`()
-
-### Community 1653 - "`metadataCompilationImplementation`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataCompilationImplementation`()
-
-### Community 1654 - "`metadataCompilationRuntimeOnly`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataCompilationRuntimeOnly`()
-
-### Community 1655 - "`metadataCompileClasspath`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataCompileClasspath`()
-
-### Community 1656 - "`metadataSourcesElements`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataSourcesElements`()
-
-### Community 1657 - "`swiftPMDependenciesMetadataClasspath`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `swiftPMDependenciesMetadataClasspath`()
-
-### Community 1658 - "`testKotlinScriptDef`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testKotlinScriptDef`()
-
-### Community 1659 - "`testKotlinScriptDefExtensions`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testKotlinScriptDefExtensions`()
-
-### Community 1660 - "`archives`"
-Cohesion: 0.39
-Nodes (8): `archives`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1661 - "`commonMainApi`"
-Cohesion: 0.39
-Nodes (8): `commonMainApi`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1662 - "`commonMainCompileOnly`"
-Cohesion: 0.39
-Nodes (8): `commonMainCompileOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1663 - "`commonMainImplementation`"
-Cohesion: 0.39
-Nodes (8): `commonMainImplementation`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1664 - "`commonMainImplementationDependenciesMetadata`"
-Cohesion: 0.39
-Nodes (8): `commonMainImplementationDependenciesMetadata`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1665 - "`commonMainRuntimeOnly`"
-Cohesion: 0.39
-Nodes (8): `commonMainRuntimeOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1666 - "`commonTestApi`"
-Cohesion: 0.39
-Nodes (8): `commonTestApi`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1667 - "`commonTestCompileOnly`"
-Cohesion: 0.39
-Nodes (8): `commonTestCompileOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1668 - "`commonTestImplementation`"
-Cohesion: 0.39
-Nodes (8): `commonTestImplementation`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1669 - "`commonTestImplementationDependenciesMetadata`"
-Cohesion: 0.39
-Nodes (8): `commonTestImplementationDependenciesMetadata`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1670 - "`commonTestRuntimeOnly`"
-Cohesion: 0.39
-Nodes (8): `commonTestRuntimeOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1671 - "`default`"
-Cohesion: 0.39
-Nodes (8): `default`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1672 - "`desktopApiElements`"
-Cohesion: 0.39
-Nodes (8): `desktopApiElements`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1673 - "`desktopCompilationApi`"
-Cohesion: 0.39
-Nodes (8): `desktopCompilationApi`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1674 - "`desktopCompilationCompileOnly`"
-Cohesion: 0.39
-Nodes (8): `desktopCompilationCompileOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1675 - "`desktopCompilationImplementation`"
-Cohesion: 0.39
-Nodes (8): `desktopCompilationImplementation`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1676 - "`desktopCompilationRuntimeOnly`"
-Cohesion: 0.39
-Nodes (8): `desktopCompilationRuntimeOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1677 - "`desktopCompileClasspath`"
-Cohesion: 0.39
-Nodes (8): `desktopCompileClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1678 - "`desktopMainAnnotationProcessor`"
-Cohesion: 0.39
-Nodes (8): `desktopMainAnnotationProcessor`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1679 - "`desktopMainApi`"
-Cohesion: 0.39
-Nodes (8): `desktopMainApi`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1680 - "`desktopMainCompileClasspath`"
-Cohesion: 0.39
-Nodes (8): `desktopMainCompileClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1681 - "`desktopMainCompileOnly`"
-Cohesion: 0.39
-Nodes (8): `desktopMainCompileOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1682 - "`desktopMainImplementation`"
-Cohesion: 0.39
-Nodes (8): `desktopMainImplementation`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1683 - "`desktopMainImplementationDependenciesMetadata`"
-Cohesion: 0.39
-Nodes (8): `desktopMainImplementationDependenciesMetadata`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1684 - "`desktopMainRuntimeClasspath`"
-Cohesion: 0.39
-Nodes (8): `desktopMainRuntimeClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1685 - "`desktopMainRuntimeOnly`"
-Cohesion: 0.39
-Nodes (8): `desktopMainRuntimeOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1686 - "`desktopRuntimeClasspath`"
-Cohesion: 0.39
-Nodes (8): `desktopRuntimeClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1687 - "`desktopRuntimeElements`"
-Cohesion: 0.39
-Nodes (8): `desktopRuntimeElements`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1688 - "`desktopSourcesElements`"
-Cohesion: 0.39
-Nodes (8): `desktopSourcesElements`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1689 - "`desktopTestAnnotationProcessor`"
-Cohesion: 0.39
-Nodes (8): `desktopTestAnnotationProcessor`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1690 - "`desktopTestApi`"
-Cohesion: 0.39
-Nodes (8): `desktopTestApi`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1691 - "`desktopTestCompilationApi`"
-Cohesion: 0.39
-Nodes (8): `desktopTestCompilationApi`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1692 - "`desktopTestCompilationCompileOnly`"
-Cohesion: 0.39
-Nodes (8): `desktopTestCompilationCompileOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1693 - "`desktopTestCompilationImplementation`"
-Cohesion: 0.39
-Nodes (8): `desktopTestCompilationImplementation`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1694 - "`desktopTestCompilationRuntimeOnly`"
-Cohesion: 0.39
-Nodes (8): `desktopTestCompilationRuntimeOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1695 - "`desktopTestCompileClasspath`"
-Cohesion: 0.39
-Nodes (8): `desktopTestCompileClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1696 - "`desktopTestCompileOnly`"
-Cohesion: 0.39
-Nodes (8): `desktopTestCompileOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1697 - "`desktopTestImplementation`"
-Cohesion: 0.39
-Nodes (8): `desktopTestImplementation`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1698 - "`desktopTestImplementationDependenciesMetadata`"
-Cohesion: 0.39
-Nodes (8): `desktopTestImplementationDependenciesMetadata`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1699 - "`desktopTestRuntimeClasspath`"
-Cohesion: 0.39
-Nodes (8): `desktopTestRuntimeClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1700 - "`desktopTestRuntimeOnly`"
-Cohesion: 0.39
-Nodes (8): `desktopTestRuntimeOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1701 - "`detekt`"
-Cohesion: 0.39
-Nodes (8): `detekt`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1702 - "`detektPlugins`"
-Cohesion: 0.39
-Nodes (8): `detektPlugins`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1703 - "`kotlinAbiValidationCompatClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinAbiValidationCompatClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1704 - "`kotlinBuildToolsApiClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinBuildToolsApiClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1705 - "`kotlinCompilerClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinCompilerClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1706 - "`kotlinCompilerPluginClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinCompilerPluginClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1707 - "`kotlinCompilerPluginClasspathDesktopMain`"
-Cohesion: 0.39
-Nodes (8): `kotlinCompilerPluginClasspathDesktopMain`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1708 - "`kotlinCompilerPluginClasspathDesktopTest`"
-Cohesion: 0.39
-Nodes (8): `kotlinCompilerPluginClasspathDesktopTest`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1709 - "`kotlinCompilerPluginClasspathMetadataMain`"
-Cohesion: 0.39
-Nodes (8): `kotlinCompilerPluginClasspathMetadataMain`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1710 - "`kotlinKlibCommonizerClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinKlibCommonizerClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1711 - "`kotlinNativeCompilerPluginClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinNativeCompilerPluginClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1712 - "`kotlinScriptDef`"
-Cohesion: 0.39
-Nodes (8): `kotlinScriptDef`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1713 - "`kotlinScriptDefExtensions`"
-Cohesion: 0.39
-Nodes (8): `kotlinScriptDefExtensions`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1714 - "`kspCommonMainMetadata`"
-Cohesion: 0.39
-Nodes (8): `kspCommonMainMetadata`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1715 - "`ksp`"
-Cohesion: 0.39
-Nodes (8): `ksp`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1716 - "`kspDesktop`"
-Cohesion: 0.39
-Nodes (8): `kspDesktop`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1717 - "`kspDesktopTest`"
-Cohesion: 0.39
-Nodes (8): `kspDesktopTest`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1718 - "`metadataApiElements`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataApiElements`()
-
-### Community 1719 - "`metadataCompilationApi`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataCompilationApi`()
-
-### Community 1720 - "`metadataCompilationCompileOnly`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataCompilationCompileOnly`()
-
-### Community 1721 - "`metadataCompilationImplementation`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataCompilationImplementation`()
-
-### Community 1722 - "`metadataCompilationRuntimeOnly`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataCompilationRuntimeOnly`()
-
-### Community 1723 - "`metadataCompileClasspath`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataCompileClasspath`()
-
-### Community 1724 - "`metadataSourcesElements`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataSourcesElements`()
-
-### Community 1725 - "`swiftPMDependenciesMetadataClasspath`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `swiftPMDependenciesMetadataClasspath`()
-
-### Community 1726 - "`testKotlinScriptDef`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testKotlinScriptDef`()
-
-### Community 1727 - "`testKotlinScriptDefExtensions`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testKotlinScriptDefExtensions`()
-
-### Community 1728 - "`annotationProcessor`"
-Cohesion: 0.39
-Nodes (8): `annotationProcessor`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1729 - "`api`"
-Cohesion: 0.39
-Nodes (8): `api`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1730 - "`apiElements`"
-Cohesion: 0.39
-Nodes (8): `apiElements`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1731 - "`archives`"
-Cohesion: 0.39
-Nodes (8): `archives`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1732 - "`compileClasspath`"
-Cohesion: 0.39
-Nodes (8): `compileClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1733 - "`compileOnly`"
-Cohesion: 0.39
-Nodes (8): `compileOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1734 - "`default`"
-Cohesion: 0.39
-Nodes (8): `default`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1735 - "`implementation`"
-Cohesion: 0.39
-Nodes (8): `implementation`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1736 - "`implementationDependenciesMetadata`"
-Cohesion: 0.39
-Nodes (8): `implementationDependenciesMetadata`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1737 - "`kotlinAbiValidationCompatClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinAbiValidationCompatClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1738 - "`kotlinBuildToolsApiClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinBuildToolsApiClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1739 - "`kotlinCompilerClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinCompilerClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1740 - "`kotlinCompilerPluginClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinCompilerPluginClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1741 - "`kotlinCompilerPluginClasspathMain`"
-Cohesion: 0.39
-Nodes (8): `kotlinCompilerPluginClasspathMain`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1742 - "`kotlinCompilerPluginClasspathTest`"
-Cohesion: 0.39
-Nodes (8): `kotlinCompilerPluginClasspathTest`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1743 - "`kotlinKlibCommonizerClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinKlibCommonizerClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1744 - "`kotlinNativeCompilerPluginClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinNativeCompilerPluginClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1745 - "`kotlinScriptDef`"
-Cohesion: 0.39
-Nodes (8): `kotlinScriptDef`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1746 - "`kotlinScriptDefExtensions`"
-Cohesion: 0.39
-Nodes (8): `kotlinScriptDefExtensions`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1747 - "`mainSourceElements`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `mainSourceElements`()
-
-### Community 1748 - "`runtimeClasspath`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `runtimeClasspath`()
-
-### Community 1749 - "`runtimeElements`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `runtimeElements`()
-
-### Community 1750 - "`runtimeOnly`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `runtimeOnly`()
-
-### Community 1751 - "`testAnnotationProcessor`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testAnnotationProcessor`()
-
-### Community 1752 - "`testApi`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testApi`()
-
-### Community 1753 - "`testCompileClasspath`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testCompileClasspath`()
-
-### Community 1754 - "`testCompileOnly`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testCompileOnly`()
-
-### Community 1755 - "`testImplementation`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testImplementation`()
-
-### Community 1756 - "`testImplementationDependenciesMetadata`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testImplementationDependenciesMetadata`()
-
-### Community 1757 - "`testKotlinScriptDef`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testKotlinScriptDef`()
-
-### Community 1758 - "`testKotlinScriptDefExtensions`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testKotlinScriptDefExtensions`()
-
-### Community 1759 - "`testResultsElementsForTest`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testResultsElementsForTest`()
-
-### Community 1760 - "`testRuntimeClasspath`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testRuntimeClasspath`()
-
-### Community 1761 - "`testRuntimeOnly`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `testRuntimeOnly`()
-
-### Community 1762 - "`archives`"
-Cohesion: 0.39
-Nodes (8): `archives`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1763 - "`commonMainApi`"
-Cohesion: 0.39
-Nodes (8): `commonMainApi`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1764 - "`commonMainCompileOnly`"
-Cohesion: 0.39
-Nodes (8): `commonMainCompileOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1765 - "`commonMainImplementation`"
-Cohesion: 0.39
-Nodes (8): `commonMainImplementation`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1766 - "`commonMainImplementationDependenciesMetadata`"
-Cohesion: 0.39
-Nodes (8): `commonMainImplementationDependenciesMetadata`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1767 - "`commonMainRuntimeOnly`"
-Cohesion: 0.39
-Nodes (8): `commonMainRuntimeOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1768 - "`commonTestApi`"
-Cohesion: 0.39
-Nodes (8): `commonTestApi`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1769 - "`commonTestCompileOnly`"
-Cohesion: 0.39
-Nodes (8): `commonTestCompileOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1770 - "`commonTestImplementation`"
-Cohesion: 0.39
-Nodes (8): `commonTestImplementation`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1771 - "`commonTestImplementationDependenciesMetadata`"
-Cohesion: 0.39
-Nodes (8): `commonTestImplementationDependenciesMetadata`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1772 - "`commonTestRuntimeOnly`"
-Cohesion: 0.39
-Nodes (8): `commonTestRuntimeOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1773 - "`default`"
-Cohesion: 0.39
-Nodes (8): `default`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1774 - "`kotlinAbiValidationCompatClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinAbiValidationCompatClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1775 - "`kotlinBuildToolsApiClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinBuildToolsApiClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1776 - "`kotlinCompilerClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinCompilerClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1777 - "`kotlinCompilerPluginClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinCompilerPluginClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1778 - "`kotlinCompilerPluginClasspathMetadataMain`"
-Cohesion: 0.39
-Nodes (8): `kotlinCompilerPluginClasspathMetadataMain`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1779 - "`kotlinKlibCommonizerClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinKlibCommonizerClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1780 - "`kotlinNativeCompilerPluginClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinNativeCompilerPluginClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1781 - "`metadataApiElements`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataApiElements`()
-
-### Community 1782 - "`metadataCompilationApi`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataCompilationApi`()
-
-### Community 1783 - "`metadataCompilationCompileOnly`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataCompilationCompileOnly`()
-
-### Community 1784 - "`metadataCompilationImplementation`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataCompilationImplementation`()
-
-### Community 1785 - "`metadataCompilationRuntimeOnly`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataCompilationRuntimeOnly`()
-
-### Community 1786 - "`metadataCompileClasspath`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataCompileClasspath`()
-
-### Community 1787 - "`metadataSourcesElements`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataSourcesElements`()
-
-### Community 1788 - "`swiftPMDependenciesMetadataClasspath`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `swiftPMDependenciesMetadataClasspath`()
-
-### Community 1789 - "`archives`"
-Cohesion: 0.39
-Nodes (8): `archives`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1790 - "`commonMainApi`"
-Cohesion: 0.39
-Nodes (8): `commonMainApi`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1791 - "`commonMainCompileOnly`"
-Cohesion: 0.39
-Nodes (8): `commonMainCompileOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1792 - "`commonMainImplementation`"
-Cohesion: 0.39
-Nodes (8): `commonMainImplementation`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1793 - "`commonMainImplementationDependenciesMetadata`"
-Cohesion: 0.39
-Nodes (8): `commonMainImplementationDependenciesMetadata`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1794 - "`commonMainRuntimeOnly`"
-Cohesion: 0.39
-Nodes (8): `commonMainRuntimeOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1795 - "`commonTestApi`"
-Cohesion: 0.39
-Nodes (8): `commonTestApi`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1796 - "`commonTestCompileOnly`"
-Cohesion: 0.39
-Nodes (8): `commonTestCompileOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1797 - "`commonTestImplementation`"
-Cohesion: 0.39
-Nodes (8): `commonTestImplementation`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1798 - "`commonTestImplementationDependenciesMetadata`"
-Cohesion: 0.39
-Nodes (8): `commonTestImplementationDependenciesMetadata`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1799 - "`commonTestRuntimeOnly`"
-Cohesion: 0.39
-Nodes (8): `commonTestRuntimeOnly`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1800 - "`default`"
-Cohesion: 0.39
-Nodes (8): `default`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1801 - "`kotlinAbiValidationCompatClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinAbiValidationCompatClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1802 - "`kotlinBuildToolsApiClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinBuildToolsApiClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1803 - "`kotlinCompilerClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinCompilerClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1804 - "`kotlinCompilerPluginClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinCompilerPluginClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1805 - "`kotlinCompilerPluginClasspathMetadataMain`"
-Cohesion: 0.39
-Nodes (8): `kotlinCompilerPluginClasspathMetadataMain`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1806 - "`kotlinKlibCommonizerClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinKlibCommonizerClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1807 - "`kotlinNativeCompilerPluginClasspath`"
-Cohesion: 0.39
-Nodes (8): `kotlinNativeCompilerPluginClasspath`(), Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T
-
-### Community 1808 - "`metadataApiElements`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataApiElements`()
-
-### Community 1809 - "`metadataCompilationApi`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataCompilationApi`()
-
-### Community 1810 - "`metadataCompilationCompileOnly`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataCompilationCompileOnly`()
-
-### Community 1811 - "`metadataCompilationImplementation`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataCompilationImplementation`()
-
-### Community 1812 - "`metadataCompilationRuntimeOnly`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataCompilationRuntimeOnly`()
-
-### Community 1813 - "`metadataCompileClasspath`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataCompileClasspath`()
-
-### Community 1814 - "`metadataSourcesElements`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `metadataSourcesElements`()
-
-### Community 1815 - "`swiftPMDependenciesMetadataClasspath`"
-Cohesion: 0.39
-Nodes (8): Dependency, DependencyConstraint, ExternalModuleDependency, Provider, ProviderConvertible, PublishArtifact, T, `swiftPMDependenciesMetadataClasspath`()
-
 ### Community 1816 - "MakeCertMetadataCommand"
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, MakeCertMetadataCommand
@@ -7680,29 +5235,9 @@ Nodes (3): ExtractVbmetaImageCommand, io, ToolCommand
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, MakeCertUnlockCredentialCommand
 
-### Community 1820 - "MakeAtxCertificateCommand"
-Cohesion: 0.40
-Nodes (3): io, ToolCommand, MakeAtxCertificateCommand
-
 ### Community 1821 - "PrintPartitionDigestsCommand"
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, PrintPartitionDigestsCommand
-
-### Community 1822 - "ProjectDeleteCommand"
-Cohesion: 0.40
-Nodes (3): io, ToolCommand, ProjectDeleteCommand
-
-### Community 1823 - "ResizeImageCommand"
-Cohesion: 0.40
-Nodes (3): io, ToolCommand, ResizeImageCommand
-
-### Community 1824 - "ProjectItemAddCommand"
-Cohesion: 0.40
-Nodes (3): io, ToolCommand, ProjectItemAddCommand
-
-### Community 1825 - "ZeroHashtreeCommand"
-Cohesion: 0.40
-Nodes (3): io, ToolCommand, ZeroHashtreeCommand
 
 ### Community 1826 - "SignapkCliCommand.kt"
 Cohesion: 0.47
@@ -7724,10 +5259,6 @@ Nodes (3): NavOptions, navigateToCreateWorkspace(), navigateToWorkspace()
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, ResignImageCommand
 
-### Community 1831 - "SetAbMetadataCommand"
-Cohesion: 0.40
-Nodes (3): io, ToolCommand, SetAbMetadataCommand
-
 ### Community 1832 - "RepoCommand"
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, RepoCommand
@@ -7736,25 +5267,21 @@ Nodes (3): io, ToolCommand, RepoCommand
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, VerifyImageCommand
 
-### Community 1834 - ".execute"
+### Community 1836 - ".execute"
 Cohesion: 0.24
-Nodes (4): ExecOutUseCase, ByteArray, R, ToolCommand
+Nodes (4): io, PushUseCase, R, ToolCommand
 
-### Community 1843 - "VersionCommand"
-Cohesion: 0.40
-Nodes (3): io, ToolCommand, VersionCommand
+### Community 1844 - "DomainModule.kt"
+Cohesion: 0.04
+Nodes (36): DialogUtils, io, GetRecentWorkspacesUseCase, Flow, Result, Workspace, OpenWorkspaceByPathUseCase, Result (+28 more)
 
 ### Community 1851 - "ToolchainSetupRepository"
 Cohesion: 0.50
 Nodes (3): Result, ToolchainSetupRepository, ToolchainSetupRepository
 
-### Community 1856 - "AddHashFooterCommand"
-Cohesion: 0.40
-Nodes (3): AddHashFooterCommand, io, ToolCommand
-
-### Community 1858 - "CalculateVbmetaDigestCommand"
-Cohesion: 0.40
-Nodes (3): CalculateVbmetaDigestCommand, io, ToolCommand
+### Community 1855 - "ToolingModule.kt"
+Cohesion: 0.10
+Nodes (18): EnvironmentProbe, Adopted, DaemonProbeStatus, EnvironmentProbePort, EnvironmentProbeResult, Failed, Launched, ByteArray (+10 more)
 
 ### Community 1859 - "EraseFooterCommand"
 Cohesion: 0.40
@@ -7773,24 +5300,24 @@ Cohesion: 0.36
 Nodes (3): main(), printUsage(), Compiler
 
 ## Knowledge Gaps
-- **2568 isolated node(s):** `MODEL_FAILURE_PATTERNS`, `EFFORT_LEVELS`, `SANDBOX_MODES`, `EXIT_HINTS`, `EFFORT_LEVELS` (+2563 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 6917 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **422 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **2557 isolated node(s):** `MODEL_FAILURE_PATTERNS`, `EFFORT_LEVELS`, `SANDBOX_MODES`, `EXIT_HINTS`, `EFFORT_LEVELS` (+2552 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 4711 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **279 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `Action` connect `Action` to ``annotationProcessor``, ``api``, ``apiDependenciesMetadata``, ``apiElements``, ``archives``, ``compileClasspath``, ``compileOnlyApi``, ``compileOnly``, ``compileOnlyDependenciesMetadata``, ``compilePluginsBlocksPluginClasspath``, ``compilePluginsBlocksPluginClasspathElements``, ``default``, ``embeddedKotlin``, ``implementation``, ``implementationDependenciesMetadata``, ``intransitiveDependenciesMetadata``, ``kotlinBuildToolsApiClasspath``, ``kotlinCompilerClasspath``, ``kotlinCompilerPluginClasspath``, ``kotlinCompilerPluginClasspathMain``, ``kotlinCompilerPluginClasspathTest``, ``kotlinKlibCommonizerClasspath``, ``kotlinNativeBundleConfiguration``, ``kotlinNativeCompilerPluginClasspath``, ``kotlinScriptDef``, ``kotlinScriptDefExtensions``, ``mainSourceElements``, ``runtimeClasspath``, ``runtimeElements``, ``runtimeOnly``, ``testAnnotationProcessor``, ``testApi``, ``testApiDependenciesMetadata``, ``testCompileClasspath``, ``testCompileOnly``, ``testCompileOnlyDependenciesMetadata``, ``testImplementation``, ``testImplementationDependenciesMetadata``, ``testIntransitiveDependenciesMetadata``, ``testKotlinScriptDef``, ``testKotlinScriptDefExtensions``, ``testResultsElementsForTest``, ``testRuntimeClasspath``, ``testRuntimeOnly``, ``archives``, ``commonMainApi``, ``commonMainCompileOnly``, ``commonMainImplementation``, ``commonMainImplementationDependenciesMetadata``, ``commonMainRuntimeOnly``, ``commonTestApi``, ``commonTestCompileOnly``, ``commonTestImplementation``, ``commonTestImplementationDependenciesMetadata``, ``commonTestRuntimeOnly``, ``default``, ``desktopApiElements``, ``desktopCompilationApi``, ``desktopCompilationCompileOnly``, ``desktopCompilationImplementation``, ``desktopCompilationRuntimeOnly``, ``desktopCompileClasspath``, ``desktopMainAnnotationProcessor``, ``desktopMainApi``, ``desktopMainCompileClasspath``, ``desktopMainCompileOnly``, ``desktopMainImplementation``, ``desktopMainImplementationDependenciesMetadata``, ``desktopMainRuntimeClasspath``, ``desktopMainRuntimeOnly``, ``desktopRuntimeClasspath``, ``desktopRuntimeElements``, ``desktopSourcesElements``, ``desktopTestAnnotationProcessor``, ``desktopTestApi``, ``desktopTestCompilationApi``, ``desktopTestCompilationCompileOnly``, ``desktopTestCompilationImplementation``, ``desktopTestCompilationRuntimeOnly``, ``desktopTestCompileClasspath``, ``desktopTestCompileOnly``, ``desktopTestImplementation``, ``desktopTestImplementationDependenciesMetadata``, ``desktopTestRuntimeClasspath``, ``desktopTestRuntimeOnly``, ``detekt``, ``detektPlugins``, ``kotlinAbiValidationCompatClasspath``, ``kotlinBuildToolsApiClasspath``, ``kotlinCompilerClasspath``, ``kotlinCompilerPluginClasspath``, ``kotlinCompilerPluginClasspathDesktopMain``, ``kotlinCompilerPluginClasspathDesktopTest``, ``kotlinCompilerPluginClasspathMetadataMain``, ``kotlinKlibCommonizerClasspath``, ``kotlinNativeCompilerPluginClasspath``, ``kotlinScriptDef``, ``kotlinScriptDefExtensions``, ``kspCommonMainMetadata``, ``ksp``, ``kspDesktop``, ``kspDesktopTest``, ``metadataApiElements``, ``metadataCompilationApi``, ``metadataCompilationCompileOnly``, ``metadataCompilationImplementation``, ``metadataCompilationRuntimeOnly``, ``metadataCompileClasspath``, ``metadataSourcesElements``, ``swiftPMDependenciesMetadataClasspath``, ``testKotlinScriptDef``, ``testKotlinScriptDefExtensions``, ``annotationProcessor``, ``api``, ``apiElements``, ``archives``, ``compileClasspath``, ``compileOnly``, ``default``, ``detekt``, ``detektPlugins``, ``implementation``, ``implementationDependenciesMetadata``, ``kotlinAbiValidationCompatClasspath``, ``kotlinBuildToolsApiClasspath``, ``kotlinCompilerClasspath``, ``kotlinCompilerPluginClasspath``, ``kotlinCompilerPluginClasspathMain``, ``kotlinCompilerPluginClasspathTest``, ``kotlinKlibCommonizerClasspath``, ``kotlinNativeCompilerPluginClasspath``, ``kotlinScriptDef``, ``kotlinScriptDefExtensions``, ``mainSourceElements``, ``runtimeClasspath``, ``runtimeElements``, ``runtimeOnly``, ``testAnnotationProcessor``, ``testApi``, ``testCompileClasspath``, ``testCompileOnly``, ``testImplementation``, ``testImplementationDependenciesMetadata``, ``testKotlinScriptDef``, ``testKotlinScriptDefExtensions``, ``testResultsElementsForTest``, ``testRuntimeClasspath``, ``testRuntimeOnly``, ``archives``, ``commonMainApi``, ``commonMainCompileOnly``, ``commonMainImplementation``, ``commonMainImplementationDependenciesMetadata``, ``commonMainRuntimeOnly``, ``commonTestApi``, ``commonTestCompileOnly``, ``commonTestImplementation``, ``commonTestImplementationDependenciesMetadata``, ``commonTestRuntimeOnly``, ``default``, ``desktopApiElements``, ``desktopCompilationApi``, ``desktopCompilationCompileOnly``, ``desktopCompilationImplementation``, ``desktopCompilationRuntimeOnly``, ``desktopCompileClasspath``, ``desktopMainAnnotationProcessor``, ``desktopMainApi``, ``desktopMainCompileClasspath``, ``desktopMainCompileOnly``, ``desktopMainImplementation``, ``desktopMainImplementationDependenciesMetadata``, ``desktopMainRuntimeClasspath``, ``desktopMainRuntimeOnly``, ``desktopRuntimeClasspath``, ``desktopRuntimeElements``, ``desktopSourcesElements``, ``desktopTestAnnotationProcessor``, ``desktopTestApi``, ``desktopTestCompilationApi``, ``desktopTestCompilationCompileOnly``, ``desktopTestCompilationImplementation``, ``desktopTestCompilationRuntimeOnly``, ``desktopTestCompileClasspath``, ``desktopTestCompileOnly``, ``desktopTestImplementation``, ``desktopTestImplementationDependenciesMetadata``, ``desktopTestRuntimeClasspath``, ``desktopTestRuntimeOnly``, ``detekt``, ``detektPlugins``, ``kotlinAbiValidationCompatClasspath``, ``kotlinBuildToolsApiClasspath``, ``kotlinCompilerClasspath``, ``kotlinCompilerPluginClasspath``, ``kotlinCompilerPluginClasspathDesktopMain``, ``kotlinCompilerPluginClasspathDesktopTest``, ``kotlinCompilerPluginClasspathMetadataMain``, ``kotlinKlibCommonizerClasspath``, ``kotlinNativeCompilerPluginClasspath``, ``kotlinScriptDef``, ``kotlinScriptDefExtensions``, ``kspCommonMainMetadata``, ``ksp``, ``kspDesktop``, ``kspDesktopTest``, ``metadataApiElements``, ``metadataCompilationApi``, ``metadataCompilationCompileOnly``, ``metadataCompilationImplementation``, ``metadataCompilationRuntimeOnly``, ``metadataCompileClasspath``, ``metadataSourcesElements``, ``swiftPMDependenciesMetadataClasspath``, ``testKotlinScriptDef``, ``testKotlinScriptDefExtensions``, ``archives``, ``commonMainApi``, ``commonMainCompileOnly``, ``commonMainImplementation``, ``commonMainImplementationDependenciesMetadata``, ``commonMainRuntimeOnly``, ``commonTestApi``, ``commonTestCompileOnly``, ``commonTestImplementation``, ``commonTestImplementationDependenciesMetadata``, ``commonTestRuntimeOnly``, ``default``, ``desktopApiElements``, ``desktopCompilationApi``, ``desktopCompilationCompileOnly``, ``desktopCompilationImplementation``, ``desktopCompilationRuntimeOnly``, ``desktopCompileClasspath``, ``desktopMainAnnotationProcessor``, ``desktopMainApi``, ``desktopMainCompileClasspath``, ``desktopMainCompileOnly``, ``desktopMainImplementation``, ``desktopMainImplementationDependenciesMetadata``, ``desktopMainRuntimeClasspath``, ``desktopMainRuntimeOnly``, ``desktopRuntimeClasspath``, ``desktopRuntimeElements``, ``desktopSourcesElements``, ``desktopTestAnnotationProcessor``, ``desktopTestApi``, ``desktopTestCompilationApi``, ``desktopTestCompilationCompileOnly``, ``desktopTestCompilationImplementation``, ``desktopTestCompilationRuntimeOnly``, ``desktopTestCompileClasspath``, ``desktopTestCompileOnly``, ``desktopTestImplementation``, ``desktopTestImplementationDependenciesMetadata``, ``desktopTestRuntimeClasspath``, ``desktopTestRuntimeOnly``, ``detekt``, ``detektPlugins``, ``kotlinAbiValidationCompatClasspath``, ``kotlinBuildToolsApiClasspath``, ``kotlinCompilerClasspath``, ``kotlinCompilerPluginClasspath``, ``kotlinCompilerPluginClasspathDesktopMain``, ``kotlinCompilerPluginClasspathDesktopTest``, ``kotlinCompilerPluginClasspathMetadataMain``, ``kotlinKlibCommonizerClasspath``, ``kotlinNativeCompilerPluginClasspath``, ``kotlinScriptDef``, ``kotlinScriptDefExtensions``, ``kspCommonMainMetadata``, ``ksp``, ``kspDesktop``, ``kspDesktopTest``, ``metadataApiElements``, ``metadataCompilationApi``, ``metadataCompilationCompileOnly``, ``metadataCompilationImplementation``, ``metadataCompilationRuntimeOnly``, ``metadataCompileClasspath``, ``metadataSourcesElements``, ``swiftPMDependenciesMetadataClasspath``, ``testKotlinScriptDef``, ``testKotlinScriptDefExtensions``, ``archives``, ``commonMainApi``, ``commonMainCompileOnly``, ``commonMainImplementation``, ``commonMainImplementationDependenciesMetadata``, ``commonMainRuntimeOnly``, ``commonTestApi``, ``commonTestCompileOnly``, ``commonTestImplementation``, ``commonTestImplementationDependenciesMetadata``, ``commonTestRuntimeOnly``, ``default``, ``desktopApiElements``, ``desktopCompilationApi``, ``desktopCompilationCompileOnly``, ``desktopCompilationImplementation``, ``desktopCompilationRuntimeOnly``, ``desktopCompileClasspath``, ``desktopMainAnnotationProcessor``, ``desktopMainApi``, ``desktopMainCompileClasspath``, ``desktopMainCompileOnly``, ``desktopMainImplementation``, ``desktopMainImplementationDependenciesMetadata``, ``desktopMainRuntimeClasspath``, ``desktopMainRuntimeOnly``, ``desktopRuntimeClasspath``, ``desktopRuntimeElements``, ``desktopSourcesElements``, ``desktopTestAnnotationProcessor``, ``desktopTestApi``, ``desktopTestCompilationApi``, ``desktopTestCompilationCompileOnly``, ``desktopTestCompilationImplementation``, ``desktopTestCompilationRuntimeOnly``, ``desktopTestCompileClasspath``, ``desktopTestCompileOnly``, ``desktopTestImplementation``, ``desktopTestImplementationDependenciesMetadata``, ``desktopTestRuntimeClasspath``, ``desktopTestRuntimeOnly``, ``detekt``, ``detektPlugins``, ``kotlinAbiValidationCompatClasspath``, ``kotlinBuildToolsApiClasspath``, ``kotlinCompilerClasspath``, ``kotlinCompilerPluginClasspath``, ``kotlinCompilerPluginClasspathDesktopMain``, ``kotlinCompilerPluginClasspathDesktopTest``, ``kotlinCompilerPluginClasspathMetadataMain``, ``kotlinKlibCommonizerClasspath``, ``kotlinNativeCompilerPluginClasspath``, ``kotlinScriptDef``, ``kotlinScriptDefExtensions``, ``kspCommonMainMetadata``, ``ksp``, ``kspDesktop``, ``kspDesktopTest``, ``metadataApiElements``, ``metadataCompilationApi``, ``metadataCompilationCompileOnly``, ``metadataCompilationImplementation``, ``metadataCompilationRuntimeOnly``, ``metadataCompileClasspath``, ``metadataSourcesElements``, ``swiftPMDependenciesMetadataClasspath``, ``testKotlinScriptDef``, ``testKotlinScriptDefExtensions``, ``annotationProcessor``, ``api``, ``apiElements``, ``archives``, ``compileClasspath``, ``compileOnly``, ``default``, ``implementation``, ``implementationDependenciesMetadata``, ``kotlinAbiValidationCompatClasspath``, ``kotlinBuildToolsApiClasspath``, ``kotlinCompilerClasspath``, ``kotlinCompilerPluginClasspath``, ``kotlinCompilerPluginClasspathMain``, ``kotlinCompilerPluginClasspathTest``, ``kotlinKlibCommonizerClasspath``, ``kotlinNativeCompilerPluginClasspath``, ``kotlinScriptDef``, ``kotlinScriptDefExtensions``, ``mainSourceElements``, ``runtimeClasspath``, ``runtimeElements``, ``runtimeOnly``, ``testAnnotationProcessor``, ``testApi``, ``testCompileClasspath``, ``testCompileOnly``, ``testImplementation``, ``testImplementationDependenciesMetadata``, ``testKotlinScriptDef``, ``testKotlinScriptDefExtensions``, ``testResultsElementsForTest``, ``testRuntimeClasspath``, ``testRuntimeOnly``, ``archives``, ``commonMainApi``, ``commonMainCompileOnly``, ``commonMainImplementation``, ``commonMainImplementationDependenciesMetadata``, ``commonMainRuntimeOnly``, ``commonTestApi``, ``commonTestCompileOnly``, ``commonTestImplementation``, ``commonTestImplementationDependenciesMetadata``, ``commonTestRuntimeOnly``, ``default``, ``kotlinAbiValidationCompatClasspath``, ``kotlinBuildToolsApiClasspath``, ``kotlinCompilerClasspath``, ``kotlinCompilerPluginClasspath``, ``kotlinCompilerPluginClasspathMetadataMain``, ``kotlinKlibCommonizerClasspath``, ``kotlinNativeCompilerPluginClasspath``, ``metadataApiElements``, ``metadataCompilationApi``, ``metadataCompilationCompileOnly``, ``metadataCompilationImplementation``, ``metadataCompilationRuntimeOnly``, ``metadataCompileClasspath``, ``metadataSourcesElements``, ``swiftPMDependenciesMetadataClasspath``, ``archives``, ``commonMainApi``, ``commonMainCompileOnly``, ``commonMainImplementation``, ``commonMainImplementationDependenciesMetadata``, ``commonMainRuntimeOnly``, ``commonTestApi``, ``commonTestCompileOnly``, ``commonTestImplementation``, ``commonTestImplementationDependenciesMetadata``, ``commonTestRuntimeOnly``, ``default``, ``kotlinAbiValidationCompatClasspath``, ``kotlinBuildToolsApiClasspath``, ``kotlinCompilerClasspath``, ``kotlinCompilerPluginClasspath``, ``kotlinCompilerPluginClasspathMetadataMain``, ``kotlinKlibCommonizerClasspath``, ``kotlinNativeCompilerPluginClasspath``, ``metadataApiElements``, ``metadataCompilationApi``, ``metadataCompilationCompileOnly``, ``metadataCompilationImplementation``, ``metadataCompilationRuntimeOnly``, ``metadataCompileClasspath``, ``metadataSourcesElements``, ``swiftPMDependenciesMetadataClasspath``, ``ext``, ``ext``, ``base``, ``defaultArtifacts``, ``samWithReceiver``, ``ext``, ``optionalNpm``, ``spotless``, ``sourceSets``, ``ext``, ``peerNpm``, ``kotlinDslPluginOptions``, ``npm``, ``ext``, ``sourceSets``, ``detekt``, ``ext``, ``detekt``, ``ext``, ``ext``, ``kotlin``, ``devNpm``, ``defaultArtifacts``, ``javaToolchains``, ``reporting``, ``peerNpm``, ``ext``, ``ext``, ``optionalNpm``, ``ext``, ``ext``, ``assignment``, ``ext``, ``sourceSets``, ``libs``, ``ext``, ``kotlin``, ``javaToolchains``, ``ext``, ``versionCatalogs``, ``projects``, ``reckon``, ``ext``, ``ext``, ``reporting``, ``ext``, ``kotlinTestRegistry``, ``peerNpm``, ``ext``, ``ext``, ``detekt``, ``devNpm``, ``defaultArtifacts``, ``kotlinTestRegistry``, ``ext``, ``javaToolchains``, ``peerNpm``, ``ext``, ``ext``, ``ext``, ``sourceSets``, ``ext``, ``reporting``, ``ext``, ``devNpm``, ``base``, ``ext``, ``defaultArtifacts``, ``ext``, ``javaToolchains``, ``ext``, ``ext``, ``ext``, ``ext``, ``ext``, ``ext``, ``ext``, ``ext``, ``versionCatalogs``, ``ext``, ``reporting``, ``spotless``, ``composeCompiler``, ``swiftPMDependencies``, ``sourceSets``, ``ext``, ``ext``, ``ext``, ``ext``, ``ksp``, ``ext``, ``ext``, ``devNpm``, ``versionCatalogs``, ``ext``, ``javaToolchains``, ``ext``, ``ext``, ``ext``, ``ext``, ``sourceSets``, ``java``, ``swiftExport``, ``java``, ``kotlin``, ``ext``, ``peerNpm``, ``ext``, ``projects``, ``javaToolchains``, ``reporting``, ``swiftPMDependencies``, ``ext``, ``ext``, ``compose``, ``ext``, ``desktop``, ``sourceSets``, ``defaultArtifacts``, ``reporting``, ``resources``, ``ext``, ``ext``, ``compose``, ``reporting``, ``composeCompiler``, ``ext``, ``swiftExport``, ``kotlinTestRegistry``, ``ext``, ``peerNpm``, ``ext``, ``kotlin``, ``versionCatalogs``, ``optionalNpm``, ``ext``, ``libs``, ``ext``, ``ext``, ``ext``, ``compose``, ``javaToolchains``, ``ext``, ``peerNpm``, ``ext``, ``ext``, ``ext``?**
-  _High betweenness centrality (0.300) - this node is a cross-community bridge._
-- **Why does `ChipMode` connect `Action` to `GlassCard`?**
-  _High betweenness centrality (0.244) - this node is a cross-community bridge._
-- **Why does `ExecutionContext` connect `ExecutionContext` to `RemoteTransportPort`, `FakeToolRepository`, `WorkspaceJailInterceptor`, `ToolDomainEvent`, `ToolDiWiringTest.kt`, `ToolResult`, `RemoteWslToolRepository`, `TestCommand`, `ToolingException`, `Unpack_bootimgCliCommand.kt`, `.proceed`, `SafetyCheckInterceptor`, `AdbCliCommand.kt`, `AttachCliCommand.kt`, `BugreportCliCommand.kt`, `ConnectCliCommand.kt`, `DetachCliCommand.kt`, `adb/cli/DevicesCliCommand.kt`, `DisableVerityCliCommand.kt`, `DisconnectCliCommand.kt`, `EmuCliCommand.kt`, `EnableVerityCliCommand.kt`, `ExecOutCliCommand.kt`, `ForwardCliCommand.kt`, `GetDevpathCliCommand.kt`, `GetSerialnoCliCommand.kt`, `GetStateCliCommand.kt`, `adb/cli/HelpCliCommand.kt`, `InstallCliCommand.kt`, `InstallMultiPackageCliCommand.kt`, `InstallMultipleCliCommand.kt`, `JdwpCliCommand.kt`, `KeygenCliCommand.kt`, `KillServerCliCommand.kt`, `LogcatCliCommand.kt`, `MdnsCliCommand.kt`, `PairCliCommand.kt`, `PullCliCommand.kt`, `PushCliCommand.kt`, `adb/cli/RebootCliCommand.kt`, `ReconnectCliCommand.kt`, `RemountCliCommand.kt`, `ReverseCliCommand.kt`, `RootCliCommand.kt`, `ShellCliCommand.kt`, `SideloadCliCommand.kt`, `StartServerCliCommand.kt`, `SyncCliCommand.kt`, `TcpipCliCommand.kt`, `UninstallCliCommand.kt`, `UnrootCliCommand.kt`, `UsbCliCommand.kt`, `adb/cli/VersionCliCommand.kt`, `WaitForCliCommand.kt`, `BootCliCommand.kt`, `CreateLogicalPartitionCliCommand.kt`, `DeleteLogicalPartitionCliCommand.kt`, `fastboot/cli/DevicesCliCommand.kt`, `EraseCliCommand.kt`, `FastbootCliCommand.kt`, `FetchCliCommand.kt`, `FlashallCliCommand.kt`, `FlashCliCommand.kt`, `FlashingCliCommand.kt`, `FlashRawCliCommand.kt`, `FormatCliCommand.kt`, `GetStagedCliCommand.kt`, `GetvarCliCommand.kt`, `GsiCliCommand.kt`, `OemCliCommand.kt`, `fastboot/cli/RebootCliCommand.kt`, `ResizeLogicalPartitionCliCommand.kt`, `SetActiveCliCommand.kt`, `SnapshotUpdateCliCommand.kt`, `StageCliCommand.kt`, `UpdateCliCommand.kt`, `WipeSuperCliCommand.kt`, `Aapt2CliCommand.kt`, `ApkinfoCliCommand.kt`, `CompileCliCommand.kt`, `ConvertCliCommand.kt`, `DaemonCliCommand.kt`, `DiffCliCommand.kt`, `DumpApcCliCommand.kt`, `DumpBadgingCliCommand.kt`, `DumpChunksCliCommand.kt`, `aapt2/cli/DumpCliCommand.kt`, `DumpConfigurationsCliCommand.kt`, `DumpOverlayableCliCommand.kt`, `DumpPackagenameCliCommand.kt`, `DumpPermissionsCliCommand.kt`, `DumpResourcesCliCommand.kt`, `DumpStringsCliCommand.kt`, `DumpStyleparentsCliCommand.kt`, `DumpXmlstringsCliCommand.kt`, `DumpXmltreeCliCommand.kt`, `LinkCliCommand.kt`, `OptimizeCliCommand.kt`, `aapt2/cli/VersionCliCommand.kt`, `ApktoolCliCommand.kt`, `BCliCommand.kt`, `BuildCliCommand.kt`, `CfCliCommand.kt`, `CleanFrameworksCliCommand.kt`, `DCliCommand.kt`, `DecodeCliCommand.kt`, `apktool/cli/HelpCliCommand.kt`, `IfCommandCliCommand.kt`, `InstallFrameworkCliCommand.kt`, `LfCliCommand.kt`, `ListFrameworksCliCommand.kt`, `apktool/cli/PrCliCommand.kt`, `PublicizeResourcesCliCommand.kt`, `apktool/cli/VersionCliCommand.kt`, `Append2simgCliCommand.kt`, `DumperofsCliCommand.kt`, `E2fsdroidCliCommand.kt`, `ErofsfuseCliCommand.kt`, `Ext2simgCliCommand.kt`, `FecCliCommand.kt`, `FsckerofsCliCommand.kt`, `Img2sdatCliCommand.kt`, `Img2simgCliCommand.kt`, `LpaddCliCommand.kt`, `LpdumpCliCommand.kt`, `LpflashCliCommand.kt`, `LpmakeCliCommand.kt`, `LpunpackCliCommand.kt`, `Make_f2fsCliCommand.kt`, `MkbootfsCliCommand.kt`, `MkbootimgCliCommand.kt`, `CfgCreateCliCommand.kt`, `CreateCliCommand.kt`, `mkdtboimg/cli/DumpCliCommand.kt`, `mkdtboimg/cli/HelpCliCommand.kt`, `MkdtboimgCliCommand.kt`, `Mke2fsCliCommand.kt`, `Mkf2fsuserimgCliCommand.kt`, `MkfserofsCliCommand.kt`, `Mkuserimg_mke2fsCliCommand.kt`, `PayloaddumpergoCliCommand.kt`, `Repack_bootimgCliCommand.kt`, `Simg2imgCliCommand.kt`, `Sload_f2fsCliCommand.kt`, `AgentTaskCliCommand.kt`, `AgentTaskCreateCliCommand.kt`, `AgentTaskListCliCommand.kt`, `AgentTaskViewCliCommand.kt`, `AliasCliCommand.kt`, `AliasDeleteCliCommand.kt`, `AliasImportCliCommand.kt`, `AliasListCliCommand.kt`, `AliasSetCliCommand.kt`, `ApiCliCommand.kt`, `AttestationCliCommand.kt`, `AttestationDownloadCliCommand.kt`, `AttestationTrustedRootCliCommand.kt`, `AttestationVerifyCliCommand.kt`, `AuthCliCommand.kt`, `AuthLoginCliCommand.kt`, `AuthLogoutCliCommand.kt`, `AuthRefreshCliCommand.kt`, `AuthSetupGitCliCommand.kt`, `AuthStatusCliCommand.kt`, `AuthSwitchCliCommand.kt`, `AuthTokenCliCommand.kt`, `BrowseCliCommand.kt`, `CacheCliCommand.kt`, `CacheDeleteCliCommand.kt`, `CacheListCliCommand.kt`, `CodespaceCliCommand.kt`, `CodespaceCodeCliCommand.kt`, `CodespaceCpCliCommand.kt`, `CodespaceCreateCliCommand.kt`, `CodespaceDeleteCliCommand.kt`, `CodespaceEditCliCommand.kt`, `CodespaceJupyterCliCommand.kt`, `CodespaceListCliCommand.kt`, `CodespaceLogsCliCommand.kt`, `CodespacePortsCliCommand.kt`, `CodespacePortsForwardCliCommand.kt`, `CodespacePortsVisibilityCliCommand.kt`, `CodespaceRebuildCliCommand.kt`, `CodespaceSshCliCommand.kt`, `CodespaceStopCliCommand.kt`, `CodespaceViewCliCommand.kt`, `CompletionCliCommand.kt`, `ConfigClearCacheCliCommand.kt`, `ConfigCliCommand.kt`, `ConfigGetCliCommand.kt`, `ConfigListCliCommand.kt`, `ConfigSetCliCommand.kt`, `CopilotCliCommand.kt`, `DiscussionCliCommand.kt`, `ExtensionBrowseCliCommand.kt`, `ExtensionCliCommand.kt`, `ExtensionCreateCliCommand.kt`, `ExtensionExecCliCommand.kt`, `ExtensionInstallCliCommand.kt`, `ExtensionListCliCommand.kt`, `ExtensionRemoveCliCommand.kt`, `ExtensionSearchCliCommand.kt`, `ExtensionUpgradeCliCommand.kt`, `GhCliCommand.kt`, `GistCliCommand.kt`, `GistCloneCliCommand.kt`, `GistCreateCliCommand.kt`, `GistDeleteCliCommand.kt`, `GistEditCliCommand.kt`, `GistListCliCommand.kt`, `GistRenameCliCommand.kt`, `GistViewCliCommand.kt`, `GpgKeyAddCliCommand.kt`, `GpgKeyCliCommand.kt`, `GpgKeyDeleteCliCommand.kt`, `GpgKeyListCliCommand.kt`, `IssueCliCommand.kt`, `LabelCliCommand.kt`, `LabelCloneCliCommand.kt`, `LabelCreateCliCommand.kt`, `LabelDeleteCliCommand.kt`, `LabelEditCliCommand.kt`, `LabelListCliCommand.kt`, `LicensesCliCommand.kt`, `OrgCliCommand.kt`, `gh/cli/PrCliCommand.kt`, `PreviewCliCommand.kt`, `PreviewPrompterCliCommand.kt`, `ProjectCliCommand.kt`, `ProjectCloseCliCommand.kt`, `ProjectCopyCliCommand.kt`, `ProjectCreateCliCommand.kt`, `ProjectDeleteCliCommand.kt`, `ProjectEditCliCommand.kt`, `ProjectFieldCreateCliCommand.kt`, `ProjectFieldDeleteCliCommand.kt`, `ProjectFieldListCliCommand.kt`, `ProjectItemAddCliCommand.kt`, `ProjectItemArchiveCliCommand.kt`, `ProjectItemCreateCliCommand.kt`, `ProjectItemDeleteCliCommand.kt`, `ProjectItemEditCliCommand.kt`, `ProjectItemListCliCommand.kt`, `ProjectLinkCliCommand.kt`, `ProjectListCliCommand.kt`, `ProjectMarkTemplateCliCommand.kt`, `ProjectUnlinkCliCommand.kt`, `ProjectViewCliCommand.kt`, `ReleaseCliCommand.kt`, `RepoCliCommand.kt`, `RulesetCheckCliCommand.kt`, `RulesetCliCommand.kt`, `RulesetListCliCommand.kt`, `RulesetViewCliCommand.kt`, `RunCancelCliCommand.kt`, `RunCliCommand.kt`, `RunDeleteCliCommand.kt`, `RunDownloadCliCommand.kt`, `RunListCliCommand.kt`, `RunRerunCliCommand.kt`, `RunViewCliCommand.kt`, `RunWatchCliCommand.kt`, `SearchCliCommand.kt`, `SearchCodeCliCommand.kt`, `SearchCommitsCliCommand.kt`, `SearchIssuesCliCommand.kt`, `SearchPrsCliCommand.kt`, `SearchReposCliCommand.kt`, `SecretCliCommand.kt`, `SecretDeleteCliCommand.kt`, `SecretListCliCommand.kt`, `SecretSetCliCommand.kt`, `SkillCliCommand.kt`, `SkillInstallCliCommand.kt`, `SkillListCliCommand.kt`, `SkillPreviewCliCommand.kt`, `SkillPublishCliCommand.kt`, `SkillSearchCliCommand.kt`, `SkillUpdateCliCommand.kt`, `SshKeyAddCliCommand.kt`, `SshKeyCliCommand.kt`, `SshKeyDeleteCliCommand.kt`, `SshKeyListCliCommand.kt`, `StatusCliCommand.kt`, `VariableCliCommand.kt`, `VariableDeleteCliCommand.kt`, `VariableGetCliCommand.kt`, `VariableListCliCommand.kt`, `VariableSetCliCommand.kt`, `WorkflowCliCommand.kt`, `WorkflowDisableCliCommand.kt`, `WorkflowEnableCliCommand.kt`, `WorkflowListCliCommand.kt`, `WorkflowRunCliCommand.kt`, `WorkflowViewCliCommand.kt`, `AddHashFooterCliCommand.kt`, `AddHashtreeFooterCliCommand.kt`, `AppendVbmetaImageCliCommand.kt`, `AvbtoolCliCommand.kt`, `CalculateKernelCmdlineCliCommand.kt`, `CalculateVbmetaDigestCliCommand.kt`, `EraseFooterCliCommand.kt`, `ExtractPublicKeyCliCommand.kt`, `ExtractPublicKeyDigestCliCommand.kt`, `ExtractVbmetaImageCliCommand.kt`, `GenerateTestImageCliCommand.kt`, `InfoImageCliCommand.kt`, `MakeAtxCertificateCliCommand.kt`, `MakeAtxMetadataCliCommand.kt`, `MakeAtxPermanentAttributesCliCommand.kt`, `MakeAtxUnlockCredentialCliCommand.kt`, `MakeCertificateCliCommand.kt`, `MakeCertMetadataCliCommand.kt`, `MakeCertPermanentAttributesCliCommand.kt`, `MakeCertUnlockCredentialCliCommand.kt`, `MakeVbmetaImageCliCommand.kt`, `PrintPartitionDigestsCliCommand.kt`, `ResignImageCliCommand.kt`, `ResizeImageCliCommand.kt`, `SetAbMetadataCliCommand.kt`, `TestingCliCommand.kt`, `UpdatePartitionDescriptorCliCommand.kt`, `VerifyImageCliCommand.kt`, `avbtool/cli/VersionCliCommand.kt`, `ZeroHashtreeCliCommand.kt`, `SignapkCliCommand.kt`, `ZipalignCliCommand.kt`, `.execute`, `.execute`, `.execute`, `.execute`, `.execute`, `.execute`, `.execute`?**
-  _High betweenness centrality (0.156) - this node is a cross-community bridge._
+- **Why does `ExecutionContext` connect `ExecutionContext` to `FakeToolRepository`, `ToolCommand`, `WorkspaceJailInterceptor`, `ToolDomainEvent`, `ToolResult`, `RemoteWslToolRepository`, `TestCommand`, `ToolingException`, `Unpack_bootimgCliCommand.kt`, `.proceed`, `SafetyCheckInterceptor`, `AdbCliCommand.kt`, `AttachCliCommand.kt`, `BugreportCliCommand.kt`, `ConnectCliCommand.kt`, `DetachCliCommand.kt`, `adb/cli/DevicesCliCommand.kt`, `DisableVerityCliCommand.kt`, `DisconnectCliCommand.kt`, `EmuCliCommand.kt`, `EnableVerityCliCommand.kt`, `ExecOutCliCommand.kt`, `ForwardCliCommand.kt`, `GetDevpathCliCommand.kt`, `GetSerialnoCliCommand.kt`, `GetStateCliCommand.kt`, `adb/cli/HelpCliCommand.kt`, `InstallCliCommand.kt`, `InstallMultiPackageCliCommand.kt`, `InstallMultipleCliCommand.kt`, `JdwpCliCommand.kt`, `KeygenCliCommand.kt`, `KillServerCliCommand.kt`, `LogcatCliCommand.kt`, `MdnsCliCommand.kt`, `PairCliCommand.kt`, `PullCliCommand.kt`, `PushCliCommand.kt`, `adb/cli/RebootCliCommand.kt`, `ReconnectCliCommand.kt`, `RemountCliCommand.kt`, `ReverseCliCommand.kt`, `RootCliCommand.kt`, `ShellCliCommand.kt`, `SideloadCliCommand.kt`, `StartServerCliCommand.kt`, `SyncCliCommand.kt`, `TcpipCliCommand.kt`, `UninstallCliCommand.kt`, `UnrootCliCommand.kt`, `UsbCliCommand.kt`, `adb/cli/VersionCliCommand.kt`, `WaitForCliCommand.kt`, `BootCliCommand.kt`, `CreateLogicalPartitionCliCommand.kt`, `DeleteLogicalPartitionCliCommand.kt`, `fastboot/cli/DevicesCliCommand.kt`, `EraseCliCommand.kt`, `FastbootCliCommand.kt`, `FetchCliCommand.kt`, `FlashallCliCommand.kt`, `FlashCliCommand.kt`, `FlashingCliCommand.kt`, `FlashRawCliCommand.kt`, `FormatCliCommand.kt`, `GetStagedCliCommand.kt`, `GetvarCliCommand.kt`, `GsiCliCommand.kt`, `OemCliCommand.kt`, `fastboot/cli/RebootCliCommand.kt`, `ResizeLogicalPartitionCliCommand.kt`, `SetActiveCliCommand.kt`, `SnapshotUpdateCliCommand.kt`, `StageCliCommand.kt`, `UpdateCliCommand.kt`, `WipeSuperCliCommand.kt`, `Aapt2CliCommand.kt`, `ApkinfoCliCommand.kt`, `CompileCliCommand.kt`, `ConvertCliCommand.kt`, `DaemonCliCommand.kt`, `DiffCliCommand.kt`, `DumpApcCliCommand.kt`, `DumpBadgingCliCommand.kt`, `DumpChunksCliCommand.kt`, `aapt2/cli/DumpCliCommand.kt`, `DumpConfigurationsCliCommand.kt`, `DumpOverlayableCliCommand.kt`, `DumpPackagenameCliCommand.kt`, `DumpPermissionsCliCommand.kt`, `DumpResourcesCliCommand.kt`, `DumpStringsCliCommand.kt`, `DumpStyleparentsCliCommand.kt`, `DumpXmlstringsCliCommand.kt`, `DumpXmltreeCliCommand.kt`, `LinkCliCommand.kt`, `OptimizeCliCommand.kt`, `aapt2/cli/VersionCliCommand.kt`, `ApktoolCliCommand.kt`, `BCliCommand.kt`, `BuildCliCommand.kt`, `CfCliCommand.kt`, `CleanFrameworksCliCommand.kt`, `DCliCommand.kt`, `DecodeCliCommand.kt`, `apktool/cli/HelpCliCommand.kt`, `IfCommandCliCommand.kt`, `InstallFrameworkCliCommand.kt`, `LfCliCommand.kt`, `ListFrameworksCliCommand.kt`, `apktool/cli/PrCliCommand.kt`, `PublicizeResourcesCliCommand.kt`, `apktool/cli/VersionCliCommand.kt`, `Append2simgCliCommand.kt`, `DumperofsCliCommand.kt`, `E2fsdroidCliCommand.kt`, `ErofsfuseCliCommand.kt`, `Ext2simgCliCommand.kt`, `FecCliCommand.kt`, `FsckerofsCliCommand.kt`, `Img2sdatCliCommand.kt`, `Img2simgCliCommand.kt`, `LpaddCliCommand.kt`, `LpdumpCliCommand.kt`, `LpflashCliCommand.kt`, `LpmakeCliCommand.kt`, `LpunpackCliCommand.kt`, `Make_f2fsCliCommand.kt`, `MkbootfsCliCommand.kt`, `MkbootimgCliCommand.kt`, `CfgCreateCliCommand.kt`, `CreateCliCommand.kt`, `mkdtboimg/cli/DumpCliCommand.kt`, `mkdtboimg/cli/HelpCliCommand.kt`, `MkdtboimgCliCommand.kt`, `Mke2fsCliCommand.kt`, `Mkf2fsuserimgCliCommand.kt`, `MkfserofsCliCommand.kt`, `Mkuserimg_mke2fsCliCommand.kt`, `PayloaddumpergoCliCommand.kt`, `Repack_bootimgCliCommand.kt`, `Simg2imgCliCommand.kt`, `Sload_f2fsCliCommand.kt`, `AgentTaskCliCommand.kt`, `AgentTaskCreateCliCommand.kt`, `AgentTaskListCliCommand.kt`, `AgentTaskViewCliCommand.kt`, `AliasCliCommand.kt`, `AliasDeleteCliCommand.kt`, `AliasImportCliCommand.kt`, `AliasListCliCommand.kt`, `AliasSetCliCommand.kt`, `ApiCliCommand.kt`, `AttestationCliCommand.kt`, `AttestationDownloadCliCommand.kt`, `AttestationTrustedRootCliCommand.kt`, `AttestationVerifyCliCommand.kt`, `AuthCliCommand.kt`, `AuthLoginCliCommand.kt`, `AuthLogoutCliCommand.kt`, `AuthRefreshCliCommand.kt`, `AuthSetupGitCliCommand.kt`, `AuthStatusCliCommand.kt`, `AuthSwitchCliCommand.kt`, `AuthTokenCliCommand.kt`, `BrowseCliCommand.kt`, `CacheCliCommand.kt`, `CacheDeleteCliCommand.kt`, `CacheListCliCommand.kt`, `CodespaceCliCommand.kt`, `CodespaceCodeCliCommand.kt`, `CodespaceCpCliCommand.kt`, `CodespaceCreateCliCommand.kt`, `CodespaceDeleteCliCommand.kt`, `CodespaceEditCliCommand.kt`, `CodespaceJupyterCliCommand.kt`, `CodespaceListCliCommand.kt`, `CodespaceLogsCliCommand.kt`, `CodespacePortsCliCommand.kt`, `CodespacePortsForwardCliCommand.kt`, `CodespacePortsVisibilityCliCommand.kt`, `CodespaceRebuildCliCommand.kt`, `CodespaceSshCliCommand.kt`, `CodespaceStopCliCommand.kt`, `CodespaceViewCliCommand.kt`, `CompletionCliCommand.kt`, `ConfigClearCacheCliCommand.kt`, `ConfigCliCommand.kt`, `ConfigGetCliCommand.kt`, `ConfigListCliCommand.kt`, `ConfigSetCliCommand.kt`, `CopilotCliCommand.kt`, `DiscussionCliCommand.kt`, `ExtensionBrowseCliCommand.kt`, `ExtensionCliCommand.kt`, `ExtensionCreateCliCommand.kt`, `ExtensionExecCliCommand.kt`, `ExtensionInstallCliCommand.kt`, `ExtensionListCliCommand.kt`, `ExtensionRemoveCliCommand.kt`, `ExtensionSearchCliCommand.kt`, `ExtensionUpgradeCliCommand.kt`, `GhCliCommand.kt`, `GistCliCommand.kt`, `GistCloneCliCommand.kt`, `GistCreateCliCommand.kt`, `GistDeleteCliCommand.kt`, `GistEditCliCommand.kt`, `GistListCliCommand.kt`, `GistRenameCliCommand.kt`, `GistViewCliCommand.kt`, `GpgKeyAddCliCommand.kt`, `GpgKeyCliCommand.kt`, `GpgKeyDeleteCliCommand.kt`, `GpgKeyListCliCommand.kt`, `IssueCliCommand.kt`, `LabelCliCommand.kt`, `LabelCloneCliCommand.kt`, `LabelCreateCliCommand.kt`, `LabelDeleteCliCommand.kt`, `LabelEditCliCommand.kt`, `LabelListCliCommand.kt`, `LicensesCliCommand.kt`, `OrgCliCommand.kt`, `gh/cli/PrCliCommand.kt`, `PreviewCliCommand.kt`, `PreviewPrompterCliCommand.kt`, `ProjectCliCommand.kt`, `ProjectCloseCliCommand.kt`, `ProjectCopyCliCommand.kt`, `ProjectCreateCliCommand.kt`, `ProjectDeleteCliCommand.kt`, `ProjectEditCliCommand.kt`, `ProjectFieldCreateCliCommand.kt`, `ProjectFieldDeleteCliCommand.kt`, `ProjectFieldListCliCommand.kt`, `ProjectItemAddCliCommand.kt`, `ProjectItemArchiveCliCommand.kt`, `ProjectItemCreateCliCommand.kt`, `ProjectItemDeleteCliCommand.kt`, `ProjectItemEditCliCommand.kt`, `ProjectItemListCliCommand.kt`, `ProjectLinkCliCommand.kt`, `ProjectListCliCommand.kt`, `ProjectMarkTemplateCliCommand.kt`, `ProjectUnlinkCliCommand.kt`, `ProjectViewCliCommand.kt`, `ReleaseCliCommand.kt`, `RepoCliCommand.kt`, `RulesetCheckCliCommand.kt`, `RulesetCliCommand.kt`, `RulesetListCliCommand.kt`, `RulesetViewCliCommand.kt`, `RunCancelCliCommand.kt`, `RunCliCommand.kt`, `RunDeleteCliCommand.kt`, `RunDownloadCliCommand.kt`, `RunListCliCommand.kt`, `RunRerunCliCommand.kt`, `RunViewCliCommand.kt`, `RunWatchCliCommand.kt`, `SearchCliCommand.kt`, `SearchCodeCliCommand.kt`, `SearchCommitsCliCommand.kt`, `SearchIssuesCliCommand.kt`, `SearchPrsCliCommand.kt`, `SearchReposCliCommand.kt`, `SecretCliCommand.kt`, `SecretDeleteCliCommand.kt`, `SecretListCliCommand.kt`, `SecretSetCliCommand.kt`, `SkillCliCommand.kt`, `SkillInstallCliCommand.kt`, `SkillListCliCommand.kt`, `SkillPreviewCliCommand.kt`, `SkillPublishCliCommand.kt`, `SkillSearchCliCommand.kt`, `SkillUpdateCliCommand.kt`, `SshKeyAddCliCommand.kt`, `SshKeyCliCommand.kt`, `SshKeyDeleteCliCommand.kt`, `SshKeyListCliCommand.kt`, `StatusCliCommand.kt`, `VariableCliCommand.kt`, `VariableDeleteCliCommand.kt`, `VariableGetCliCommand.kt`, `VariableListCliCommand.kt`, `VariableSetCliCommand.kt`, `WorkflowCliCommand.kt`, `WorkflowDisableCliCommand.kt`, `WorkflowEnableCliCommand.kt`, `WorkflowListCliCommand.kt`, `WorkflowRunCliCommand.kt`, `WorkflowViewCliCommand.kt`, `AddHashFooterCliCommand.kt`, `AddHashtreeFooterCliCommand.kt`, `AppendVbmetaImageCliCommand.kt`, `AvbtoolCliCommand.kt`, `CalculateKernelCmdlineCliCommand.kt`, `CalculateVbmetaDigestCliCommand.kt`, `EraseFooterCliCommand.kt`, `ExtractPublicKeyCliCommand.kt`, `ExtractPublicKeyDigestCliCommand.kt`, `ExtractVbmetaImageCliCommand.kt`, `GenerateTestImageCliCommand.kt`, `InfoImageCliCommand.kt`, `MakeAtxCertificateCliCommand.kt`, `MakeAtxMetadataCliCommand.kt`, `MakeAtxPermanentAttributesCliCommand.kt`, `MakeAtxUnlockCredentialCliCommand.kt`, `MakeCertificateCliCommand.kt`, `MakeCertMetadataCliCommand.kt`, `MakeCertPermanentAttributesCliCommand.kt`, `MakeCertUnlockCredentialCliCommand.kt`, `MakeVbmetaImageCliCommand.kt`, `PrintPartitionDigestsCliCommand.kt`, `ResignImageCliCommand.kt`, `ResizeImageCliCommand.kt`, `SetAbMetadataCliCommand.kt`, `TestingCliCommand.kt`, `UpdatePartitionDescriptorCliCommand.kt`, `VerifyImageCliCommand.kt`, `avbtool/cli/VersionCliCommand.kt`, `ZeroHashtreeCliCommand.kt`, `SignapkCliCommand.kt`, `ZipalignCliCommand.kt`, `.execute`, `.execute`, `.execute`, `.execute`, `.execute`, `.execute`, `.execute`?**
+  _High betweenness centrality (0.176) - this node is a cross-community bridge._
+- **Why does `ToolRepository` connect `ExecutionContext` to `RemoteWslToolRepository`, `ToolingException`, `Unpack_bootimgCliCommand.kt`, `AdbCliCommand.kt`, `AttachCliCommand.kt`, `BugreportCliCommand.kt`, `ConnectCliCommand.kt`, `DetachCliCommand.kt`, `adb/cli/DevicesCliCommand.kt`, `DisableVerityCliCommand.kt`, `DisconnectCliCommand.kt`, `EmuCliCommand.kt`, `EnableVerityCliCommand.kt`, `ExecOutCliCommand.kt`, `ForwardCliCommand.kt`, `GetDevpathCliCommand.kt`, `GetSerialnoCliCommand.kt`, `GetStateCliCommand.kt`, `adb/cli/HelpCliCommand.kt`, `InstallCliCommand.kt`, `InstallMultiPackageCliCommand.kt`, `InstallMultipleCliCommand.kt`, `JdwpCliCommand.kt`, `KeygenCliCommand.kt`, `KillServerCliCommand.kt`, `LogcatCliCommand.kt`, `MdnsCliCommand.kt`, `PairCliCommand.kt`, `PullCliCommand.kt`, `PushCliCommand.kt`, `adb/cli/RebootCliCommand.kt`, `ReconnectCliCommand.kt`, `RemountCliCommand.kt`, `ReverseCliCommand.kt`, `RootCliCommand.kt`, `ShellCliCommand.kt`, `SideloadCliCommand.kt`, `StartServerCliCommand.kt`, `SyncCliCommand.kt`, `TcpipCliCommand.kt`, `UninstallCliCommand.kt`, `UnrootCliCommand.kt`, `UsbCliCommand.kt`, `adb/cli/VersionCliCommand.kt`, `WaitForCliCommand.kt`, `BootCliCommand.kt`, `CreateLogicalPartitionCliCommand.kt`, `DeleteLogicalPartitionCliCommand.kt`, `fastboot/cli/DevicesCliCommand.kt`, `EraseCliCommand.kt`, `FastbootCliCommand.kt`, `FetchCliCommand.kt`, `FlashallCliCommand.kt`, `FlashCliCommand.kt`, `FlashingCliCommand.kt`, `FlashRawCliCommand.kt`, `FormatCliCommand.kt`, `GetStagedCliCommand.kt`, `GetvarCliCommand.kt`, `GsiCliCommand.kt`, `OemCliCommand.kt`, `fastboot/cli/RebootCliCommand.kt`, `ResizeLogicalPartitionCliCommand.kt`, `SetActiveCliCommand.kt`, `SnapshotUpdateCliCommand.kt`, `StageCliCommand.kt`, `UpdateCliCommand.kt`, `WipeSuperCliCommand.kt`, `Aapt2CliCommand.kt`, `ApkinfoCliCommand.kt`, `CompileCliCommand.kt`, `ConvertCliCommand.kt`, `DaemonCliCommand.kt`, `DiffCliCommand.kt`, `DumpApcCliCommand.kt`, `DumpBadgingCliCommand.kt`, `DumpChunksCliCommand.kt`, `aapt2/cli/DumpCliCommand.kt`, `DumpConfigurationsCliCommand.kt`, `DumpOverlayableCliCommand.kt`, `DumpPackagenameCliCommand.kt`, `DumpPermissionsCliCommand.kt`, `DumpResourcesCliCommand.kt`, `DumpStringsCliCommand.kt`, `DumpStyleparentsCliCommand.kt`, `DumpXmlstringsCliCommand.kt`, `DumpXmltreeCliCommand.kt`, `LinkCliCommand.kt`, `OptimizeCliCommand.kt`, `aapt2/cli/VersionCliCommand.kt`, `ApktoolCliCommand.kt`, `BCliCommand.kt`, `BuildCliCommand.kt`, `CfCliCommand.kt`, `CleanFrameworksCliCommand.kt`, `DCliCommand.kt`, `DecodeCliCommand.kt`, `apktool/cli/HelpCliCommand.kt`, `IfCommandCliCommand.kt`, `InstallFrameworkCliCommand.kt`, `LfCliCommand.kt`, `ListFrameworksCliCommand.kt`, `apktool/cli/PrCliCommand.kt`, `PublicizeResourcesCliCommand.kt`, `apktool/cli/VersionCliCommand.kt`, `Append2simgCliCommand.kt`, `DumperofsCliCommand.kt`, `E2fsdroidCliCommand.kt`, `ErofsfuseCliCommand.kt`, `Ext2simgCliCommand.kt`, `FecCliCommand.kt`, `FsckerofsCliCommand.kt`, `Img2sdatCliCommand.kt`, `Img2simgCliCommand.kt`, `LpaddCliCommand.kt`, `LpdumpCliCommand.kt`, `LpflashCliCommand.kt`, `LpmakeCliCommand.kt`, `LpunpackCliCommand.kt`, `Make_f2fsCliCommand.kt`, `MkbootfsCliCommand.kt`, `MkbootimgCliCommand.kt`, `CfgCreateCliCommand.kt`, `CreateCliCommand.kt`, `mkdtboimg/cli/DumpCliCommand.kt`, `mkdtboimg/cli/HelpCliCommand.kt`, `MkdtboimgCliCommand.kt`, `Mke2fsCliCommand.kt`, `Mkf2fsuserimgCliCommand.kt`, `MkfserofsCliCommand.kt`, `Mkuserimg_mke2fsCliCommand.kt`, `PayloaddumpergoCliCommand.kt`, `Repack_bootimgCliCommand.kt`, `Simg2imgCliCommand.kt`, `Sload_f2fsCliCommand.kt`, `AgentTaskCliCommand.kt`, `AgentTaskCreateCliCommand.kt`, `AgentTaskListCliCommand.kt`, `AgentTaskViewCliCommand.kt`, `AliasCliCommand.kt`, `AliasDeleteCliCommand.kt`, `AliasImportCliCommand.kt`, `AliasListCliCommand.kt`, `AliasSetCliCommand.kt`, `ApiCliCommand.kt`, `AttestationCliCommand.kt`, `AttestationDownloadCliCommand.kt`, `AttestationTrustedRootCliCommand.kt`, `AttestationVerifyCliCommand.kt`, `AuthCliCommand.kt`, `AuthLoginCliCommand.kt`, `AuthLogoutCliCommand.kt`, `AuthRefreshCliCommand.kt`, `AuthSetupGitCliCommand.kt`, `AuthStatusCliCommand.kt`, `AuthSwitchCliCommand.kt`, `AuthTokenCliCommand.kt`, `BrowseCliCommand.kt`, `CacheCliCommand.kt`, `CacheDeleteCliCommand.kt`, `CacheListCliCommand.kt`, `CodespaceCliCommand.kt`, `CodespaceCodeCliCommand.kt`, `CodespaceCpCliCommand.kt`, `CodespaceCreateCliCommand.kt`, `CodespaceDeleteCliCommand.kt`, `CodespaceEditCliCommand.kt`, `CodespaceJupyterCliCommand.kt`, `CodespaceListCliCommand.kt`, `CodespaceLogsCliCommand.kt`, `CodespacePortsCliCommand.kt`, `CodespacePortsForwardCliCommand.kt`, `CodespacePortsVisibilityCliCommand.kt`, `CodespaceRebuildCliCommand.kt`, `CodespaceSshCliCommand.kt`, `CodespaceStopCliCommand.kt`, `CodespaceViewCliCommand.kt`, `CompletionCliCommand.kt`, `ConfigClearCacheCliCommand.kt`, `ConfigCliCommand.kt`, `ConfigGetCliCommand.kt`, `ConfigListCliCommand.kt`, `ConfigSetCliCommand.kt`, `CopilotCliCommand.kt`, `DiscussionCliCommand.kt`, `ExtensionBrowseCliCommand.kt`, `ExtensionCliCommand.kt`, `ExtensionCreateCliCommand.kt`, `ExtensionExecCliCommand.kt`, `ExtensionInstallCliCommand.kt`, `ExtensionListCliCommand.kt`, `ExtensionRemoveCliCommand.kt`, `ExtensionSearchCliCommand.kt`, `ExtensionUpgradeCliCommand.kt`, `GhCliCommand.kt`, `GistCliCommand.kt`, `GistCloneCliCommand.kt`, `GistCreateCliCommand.kt`, `GistDeleteCliCommand.kt`, `GistEditCliCommand.kt`, `GistListCliCommand.kt`, `GistRenameCliCommand.kt`, `GistViewCliCommand.kt`, `GpgKeyAddCliCommand.kt`, `GpgKeyCliCommand.kt`, `GpgKeyDeleteCliCommand.kt`, `GpgKeyListCliCommand.kt`, `IssueCliCommand.kt`, `LabelCliCommand.kt`, `LabelCloneCliCommand.kt`, `LabelCreateCliCommand.kt`, `LabelDeleteCliCommand.kt`, `LabelEditCliCommand.kt`, `LabelListCliCommand.kt`, `LicensesCliCommand.kt`, `OrgCliCommand.kt`, `gh/cli/PrCliCommand.kt`, `PreviewCliCommand.kt`, `PreviewPrompterCliCommand.kt`, `ProjectCliCommand.kt`, `ProjectCloseCliCommand.kt`, `ProjectCopyCliCommand.kt`, `ProjectCreateCliCommand.kt`, `ProjectDeleteCliCommand.kt`, `ProjectEditCliCommand.kt`, `ProjectFieldCreateCliCommand.kt`, `ProjectFieldDeleteCliCommand.kt`, `ProjectFieldListCliCommand.kt`, `ProjectItemAddCliCommand.kt`, `ProjectItemArchiveCliCommand.kt`, `ProjectItemCreateCliCommand.kt`, `ProjectItemDeleteCliCommand.kt`, `ProjectItemEditCliCommand.kt`, `ProjectItemListCliCommand.kt`, `ProjectLinkCliCommand.kt`, `ProjectListCliCommand.kt`, `ProjectMarkTemplateCliCommand.kt`, `ProjectUnlinkCliCommand.kt`, `ProjectViewCliCommand.kt`, `ReleaseCliCommand.kt`, `RepoCliCommand.kt`, `RulesetCheckCliCommand.kt`, `RulesetCliCommand.kt`, `RulesetListCliCommand.kt`, `RulesetViewCliCommand.kt`, `RunCancelCliCommand.kt`, `RunCliCommand.kt`, `RunDeleteCliCommand.kt`, `RunDownloadCliCommand.kt`, `RunListCliCommand.kt`, `RunRerunCliCommand.kt`, `RunViewCliCommand.kt`, `RunWatchCliCommand.kt`, `SearchCliCommand.kt`, `SearchCodeCliCommand.kt`, `SearchCommitsCliCommand.kt`, `SearchIssuesCliCommand.kt`, `SearchPrsCliCommand.kt`, `SearchReposCliCommand.kt`, `SecretCliCommand.kt`, `SecretDeleteCliCommand.kt`, `SecretListCliCommand.kt`, `SecretSetCliCommand.kt`, `SkillCliCommand.kt`, `SkillInstallCliCommand.kt`, `SkillListCliCommand.kt`, `SkillPreviewCliCommand.kt`, `SkillPublishCliCommand.kt`, `SkillSearchCliCommand.kt`, `SkillUpdateCliCommand.kt`, `SshKeyAddCliCommand.kt`, `SshKeyCliCommand.kt`, `SshKeyDeleteCliCommand.kt`, `SshKeyListCliCommand.kt`, `StatusCliCommand.kt`, `VariableCliCommand.kt`, `VariableDeleteCliCommand.kt`, `VariableGetCliCommand.kt`, `VariableListCliCommand.kt`, `VariableSetCliCommand.kt`, `WorkflowCliCommand.kt`, `WorkflowDisableCliCommand.kt`, `WorkflowEnableCliCommand.kt`, `WorkflowListCliCommand.kt`, `WorkflowRunCliCommand.kt`, `WorkflowViewCliCommand.kt`, `AddHashFooterCliCommand.kt`, `AddHashtreeFooterCliCommand.kt`, `AppendVbmetaImageCliCommand.kt`, `AvbtoolCliCommand.kt`, `CalculateKernelCmdlineCliCommand.kt`, `CalculateVbmetaDigestCliCommand.kt`, `EraseFooterCliCommand.kt`, `ExtractPublicKeyCliCommand.kt`, `ExtractPublicKeyDigestCliCommand.kt`, `ExtractVbmetaImageCliCommand.kt`, `GenerateTestImageCliCommand.kt`, `InfoImageCliCommand.kt`, `MakeAtxCertificateCliCommand.kt`, `MakeAtxMetadataCliCommand.kt`, `MakeAtxPermanentAttributesCliCommand.kt`, `MakeAtxUnlockCredentialCliCommand.kt`, `MakeCertificateCliCommand.kt`, `MakeCertMetadataCliCommand.kt`, `MakeCertPermanentAttributesCliCommand.kt`, `MakeCertUnlockCredentialCliCommand.kt`, `MakeVbmetaImageCliCommand.kt`, `PrintPartitionDigestsCliCommand.kt`, `ResignImageCliCommand.kt`, `ResizeImageCliCommand.kt`, `SetAbMetadataCliCommand.kt`, `TestingCliCommand.kt`, `UpdatePartitionDescriptorCliCommand.kt`, `VerifyImageCliCommand.kt`, `avbtool/cli/VersionCliCommand.kt`, `ZeroHashtreeCliCommand.kt`, `SignapkCliCommand.kt`, `ZipalignCliCommand.kt`, `.execute`, `.execute`, `.execute`, `.execute`, `.execute`, `.execute`, `.execute`, `ToolingModule.kt`?**
+  _High betweenness centrality (0.120) - this node is a cross-community bridge._
+- **Why does `ToolId` connect `ToolId` to `RunListCommand`, `GistCreateCommand`, `RunViewCommand`, `BugreportCommand`, `PreviewCommand`, `SearchCodeCommand`, `ProjectCloseCommand`, `SearchCommand`, `SearchReposCommand`, `SecretCommand`, `SecretDeleteCommand`, `ConfigListCommand`, `SecretListCommand`, `SkillCommand`, `SkillListCommand`, `ExecutionContext`, `SkillSearchCommand`, `CacheCommand`, `FakeToolRepository`, `SshKeyCommand`, `SshKeyListCommand`, `ProjectUnlinkCommand`, `CacheDeleteCommand`, `VariableListCommand`, `WorkflowCommand`, `WorkflowDisableCommand`, `WorkflowRunCommand`, `WorkflowViewCommand`, `ExecuteCommand`, `AddHashtreeFooterCommand`, `ConnectCommand`, `DisableVerityCommand`, `DisconnectCommand`, `AgentTaskCommand`, `EnableVerityCommand`, `ForwardCommand`, `GetDevpathCommand`, `LabelCreateCommand`, `InstallCommand`, `InstallMultiPackageCommand`, `JdwpCommand`, `KeygenCommand`, `KillServerCommand`, `LogcatCommand`, `MdnsCommand`, `PairCommand`, `PullCommand`, `PushCommand`, `RebootCommand`, `AgentTaskCreateCommand`, `ReverseCommand`, `RootCommand`, `ShellCommand`, `SyncCommand`, `TcpipCommand`, `StdinMode`, `UnrootCommand`, `VersionCommand`, `WaitForCommand`, `BootCommand`, `CodespaceCodeCommand`, `CodespaceCommand`, `CodespaceEditCommand`, `DiscussionCommand`, `ExtractPublicKeyCommand`, `SkillInstallCommand`, `CreateLogicalPartitionCommand`, `ToolRisk`, `DeleteLogicalPartitionCommand`, `EraseCommand`, `FetchCommand`, `FlashallCommand`, `FlashRawCommand`, `ExtensionCommand`, `GetvarCommand`, `GsiCommand`, `OemCommand`, `RebootCommand`, `ExtensionExecCommand`, `SetActiveCommand`, `SnapshotUpdateCommand`, `StageCommand`, `UpdateCommand`, `ExtractPublicKeyDigestCommand`, `WorkflowListCommand`, `ArtifactRequirement`, `MakeCertificateCommand`, `SpecValidator.kt`, `ExtensionSearchCommand`, `DumpBadgingCommand`, `GistCommand`, `DumpPermissionsCommand`, `ArtifactKind`, `GistViewCommand`, `DumpXmlstringsCommand`, `DumpXmltreeCommand`, `GpgKeyAddCommand`, `IssueCommand`, `PreviewPrompterCommand`, `ProjectFieldCreateCommand`, `MakeAtxUnlockCredentialCommand`, `.generateDraft`, `IfCommandCommand`, `ProjectItemArchiveCommand`, `LfCommand`, `ExecuteCommand`, `ProjectItemCreateCommand`, `ExecuteCommand`, `ExecuteCommand`, `ExecuteCommand`, `ArtifactDirection`, `ExecuteCommand`, `ExecuteCommand`, `GenerateTestImageCommand`, `ExecuteCommand`, `ExecuteCommand`, `CfgCreateCommand`, `CreateCommand`, `ProjectItemEditCommand`, `HelpCommand`, `ExecuteCommand`, `ConvertCommand`, `AgentTaskListCommand`, `AgentTaskViewCommand`, `AliasCommand`, `AliasDeleteCommand`, `AliasImportCommand`, `RunCancelCommand`, `RunRerunCommand`, `AliasSetCommand`, `ApiCommand`, `AttestationCommand`, `AttestationDownloadCommand`, `AttestationTrustedRootCommand`, `AttestationVerifyCommand`, `AuthCommand`, `AuthLoginCommand`, `RunWatchCommand`, `AuthRefreshCommand`, `SearchCommitsCommand`, `SearchPrsCommand`, `SkillPreviewCommand`, `AuthSetupGitCommand`, `SkillPublishCommand`, `BrowseCommand`, `CacheListCommand`, `ToolCommand`, `MakeCertMetadataCommand`, `ExtractVbmetaImageCommand`, `MakeCertUnlockCredentialCommand`, `PrintPartitionDigestsCommand`, `ResignImageCommand`, `RepoCommand`, `VerifyImageCommand`, `EraseFooterCommand`, `MakeAtxMetadataCommand`, `TestingCommand`, `RunDownloadCommand`, `WorkspaceJailInterceptor`, `ToolDomainEvent`, `VariableGetCommand`, `ToolBinary`, `CoverageVerifier`, `DevicesCommand`, `FlashCommand`, `SshKeyAddCommand`, `GetSerialnoCommand`, `EmuCommand`, `HelpCommand`, `ResizeLogicalPartitionCommand`, `CodespaceCpCommand`, `CodespaceCreateCommand`, `CodespaceDeleteCommand`, `InstallMultipleCommand`, `DaemonCommand`, `CodespaceJupyterCommand`, `CodespaceListCommand`, `DumpChunksCommand`, `CodespaceLogsCommand`, `CodespacePortsCommand`, `CodespacePortsVisibilityCommand`, `CodespaceRebuildCommand`, `CodespaceSshCommand`, `CodespaceStopCommand`, `CodespaceViewCommand`, `ConfigClearCacheCommand`, `ConfigCommand`, `DumpPackagenameCommand`, `UsbCommand`, `ConfigSetCommand`, `CopilotCommand`, `CalculateKernelCmdlineCommand`, `GetStagedCommand`, `ApkinfoCommand`, `BCommand`, `ExtensionCreateCommand`, `DumpOverlayableCommand`, `MakeCertPermanentAttributesCommand`, `ExtensionListCommand`, `MakeVbmetaImageCommand`, `signapk/ExecuteCommand.kt`, `CfCommand`, `ExtensionUpgradeCommand`, `HelpCommand`, `DiffCommand`, `GistListCommand`, `DCommand`, `PrCommand`, `DumpApcCommand`, `DecodeCommand`, `InstallFrameworkCommand`, `GpgKeyCommand`, `GpgKeyDeleteCommand`, `ListFrameworksCommand`, `DumpConfigurationsCommand`, `GpgKeyListCommand`, `LabelCloneCommand`, `LabelEditCommand`, `LicensesCommand`, `OrgCommand`, `PrCommand`, `DumpStyleparentsCommand`, `ProjectCommand`, `ProjectCopyCommand`, `ProjectCreateCommand`, `Phase3SpecificationTest`, `ProjectEditCommand`, `ProjectFieldDeleteCommand`, `ExecuteCommand`, `ProjectFieldListCommand`, `ProjectItemDeleteCommand`, `ProjectLinkCommand`, `ProjectListCommand`, `ProjectMarkTemplateCommand`, `ProjectViewCommand`, `ReleaseCommand`, `RulesetCheckCommand`, `AuthSwitchCommand`, `Compiler`, `RulesetListCommand`, `ExecuteCommand`, `RunDeleteCommand`?**
+  _High betweenness centrality (0.089) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `ExecutionContext` (e.g. with `.`interceptor can short-circuit pipeline without executing terminal`()` and `.`pipeline executes interceptors in declared order`()`) actually correct?**
   _`ExecutionContext` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `MODEL_FAILURE_PATTERNS`, `EFFORT_LEVELS`, `SANDBOX_MODES` to the rest of the system?**
-  _2568 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `Action` be split into smaller, more focused modules?**
-  _Cohesion score 0.003368067527359563 - nodes in this community are weakly interconnected._
+  _2557 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `config.mjs` be split into smaller, more focused modules?**
   _Cohesion score 0.0649692712906058 - nodes in this community are weakly interconnected._
+- **Should `ToolExecutionRequest` be split into smaller, more focused modules?**
+  _Cohesion score 0.029449423815621 - nodes in this community are weakly interconnected._

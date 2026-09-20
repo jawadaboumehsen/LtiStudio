@@ -21,7 +21,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import com.kashif_e.backdrop.Backdrop
 import org.ide.lti.core.designsystem.component.layout.GlassStatusBar
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.theme.AlphaTokens
@@ -49,14 +48,12 @@ fun WorkspaceStatusBar(
     encoding: String = "UTF-8",
     lineEnding: LineEnding = LineEnding.LF,
     fileType: String? = null,
-    backdrop: Backdrop? = null,
     drawOwnChrome: Boolean = true,
 ) {
     val glassColors = GlassTheme.colors
 
     GlassStatusBar(
         modifier = modifier,
-        backdrop = backdrop,
         drawOwnChrome = drawOwnChrome,
         leadingContent = {
             // Git Branch Pill
