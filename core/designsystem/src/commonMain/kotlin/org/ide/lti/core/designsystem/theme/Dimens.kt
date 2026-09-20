@@ -198,8 +198,10 @@ object Elevation {
 
 /**
  * IDE shell geometry tokens specified by Feature 005 and the normative Stitch design.
+ * (Folded under the Glass* naming scheme alongside GlassShapes/GlassStyle; same values, no field renames -
+ * these are single-purpose shell measurements, not duplicates of the generic Spacing/CornerRadius tokens.)
  */
-object IdeShellDimens {
+object GlassDimens {
     val TopBarHeight: Dp = 56.dp
     val PipelineRailWidth: Dp = 150.dp
     val WorkspaceNavigatorWidth: Dp = 215.dp

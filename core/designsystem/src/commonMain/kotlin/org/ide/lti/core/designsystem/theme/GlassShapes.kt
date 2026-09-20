@@ -77,11 +77,11 @@ object GlassShapes {
     // IDE-native look or the glass tier's soft one. Zero visual change from this consolidation -
     // same shape type, same values, one shape registry instead of two.
     val ShellFrame = RectangleShape
-    val ShellPanel = RoundedCornerShape(IdeShellDimens.ContentRadius)
+    val ShellPanel = RoundedCornerShape(GlassDimens.ContentRadius)
     val ShellPill = RoundedCornerShape(10.dp)
-    val ShellCard = RoundedCornerShape(IdeShellDimens.CardCornerRadius)
-    val ShellControl = RoundedCornerShape(IdeShellDimens.ControlCornerRadius)
-    val ShellBadge = RoundedCornerShape(IdeShellDimens.BadgeCornerRadius)
+    val ShellCard = RoundedCornerShape(GlassDimens.CardCornerRadius)
+    val ShellControl = RoundedCornerShape(GlassDimens.ControlCornerRadius)
+    val ShellBadge = RoundedCornerShape(GlassDimens.BadgeCornerRadius)
 
     // --- Concentric Shape Utilities ---
 

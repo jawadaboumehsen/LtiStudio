@@ -29,11 +29,11 @@ import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.layout.IdeNavigatorItem
 import org.ide.lti.core.designsystem.component.layout.IdeNavigatorPanel
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -133,7 +133,7 @@ internal fun WorkspaceNavigatorFooter(
                 .clip(GlassShapes.ShellControl)
                 .background(colors.cardBackgroundMuted)
                 .border(
-                    width = IdeShellDimens.HairlineBorder,
+                    width = GlassDimens.HairlineBorder,
                     color = colors.borderMuted,
                     shape = GlassShapes.ShellControl,
                 )
@@ -175,7 +175,7 @@ internal fun WorkspaceNavigatorFooter(
                 )
 
                 HorizontalDivider(
-                    thickness = IdeShellDimens.HairlineBorder,
+                    thickness = GlassDimens.HairlineBorder,
                     color = colors.borderMuted,
                     modifier = Modifier.padding(vertical = Spacing.Hairline),
                 )

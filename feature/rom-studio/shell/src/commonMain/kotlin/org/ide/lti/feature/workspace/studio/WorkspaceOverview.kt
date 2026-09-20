@@ -37,11 +37,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.feature.workspace.studio.components.OverviewBreadcrumbHeader
 import org.ide.lti.feature.workspace.studio.components.OverviewCallToAction
@@ -80,7 +80,7 @@ public fun WorkspaceOverview(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .widthIn(max = IdeShellDimens.OverviewMaxContentWidth)
+                .widthIn(max = GlassDimens.OverviewMaxContentWidth)
                 .verticalScroll(scrollState)
                 .padding(horizontal = Spacing.ExtraLarge, vertical = Spacing.Medium),
             verticalArrangement = Arrangement.spacedBy(Spacing.Large),
@@ -112,7 +112,7 @@ public fun WorkspaceOverview(
                     summary = state.targetSummary,
                     onEditProfile = onEditProfile,
                     colors = colors,
-                    modifier = Modifier.width(IdeShellDimens.OverviewTargetCardWidth),
+                    modifier = Modifier.width(GlassDimens.OverviewTargetCardWidth),
                 )
             }
 
@@ -143,7 +143,7 @@ private fun OverviewDockStrip(colors: IdeShellColorScheme, modifier: Modifier = 
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(IdeShellDimens.OverviewDockStripHeight)
+            .height(GlassDimens.OverviewDockStripHeight)
             .ideCardSurface(colors = colors)
             .padding(horizontal = Spacing.Medium),
         verticalAlignment = Alignment.CenterVertically,

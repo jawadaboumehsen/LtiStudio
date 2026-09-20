@@ -18,24 +18,24 @@ class IdeShellTokensTest {
 
     @Test
     fun testLogicalFrameDimensions() {
-        assertEquals(56.dp, IdeShellDimens.TopBarHeight, "Top bar height must be 56 dp")
-        assertEquals(150.dp, IdeShellDimens.PipelineRailWidth, "Pipeline rail width must be 150 dp")
-        assertEquals(215.dp, IdeShellDimens.WorkspaceNavigatorWidth, "Workspace navigator width must be 215 dp")
-        assertEquals(32.dp, IdeShellDimens.BreadcrumbHeight, "Breadcrumb bar height must be 32 dp")
-        assertEquals(32.dp, IdeShellDimens.StatusBarHeight, "Bottom status bar height must be 32 dp")
+        assertEquals(56.dp, GlassDimens.TopBarHeight, "Top bar height must be 56 dp")
+        assertEquals(150.dp, GlassDimens.PipelineRailWidth, "Pipeline rail width must be 150 dp")
+        assertEquals(215.dp, GlassDimens.WorkspaceNavigatorWidth, "Workspace navigator width must be 215 dp")
+        assertEquals(32.dp, GlassDimens.BreadcrumbHeight, "Breadcrumb bar height must be 32 dp")
+        assertEquals(32.dp, GlassDimens.StatusBarHeight, "Bottom status bar height must be 32 dp")
 
-        assertEquals(8.dp, IdeShellDimens.ContentInset, "Content inset must be 8 dp")
-        assertEquals(8.dp, IdeShellDimens.ContentRadius, "Content radius must be 8 dp")
-        assertEquals(52.dp, IdeShellDimens.PipelineStageItemHeight, "Pipeline stage item height must be 52 dp")
-        assertEquals(40.dp, IdeShellDimens.NavigatorItemHeight, "Navigator item height must be 40 dp")
+        assertEquals(8.dp, GlassDimens.ContentInset, "Content inset must be 8 dp")
+        assertEquals(8.dp, GlassDimens.ContentRadius, "Content radius must be 8 dp")
+        assertEquals(52.dp, GlassDimens.PipelineStageItemHeight, "Pipeline stage item height must be 52 dp")
+        assertEquals(40.dp, GlassDimens.NavigatorItemHeight, "Navigator item height must be 40 dp")
 
-        assertEquals(1024.dp, IdeShellDimens.CompactBreakpoint)
-        assertEquals(768.dp, IdeShellDimens.CompactHeightBreakpoint)
-        assertEquals(1280.dp, IdeShellDimens.ReadableContentMaxWidth)
-        assertEquals(1.dp, IdeShellDimens.HairlineBorder)
-        assertEquals(6.dp, IdeShellDimens.CardCornerRadius)
-        assertEquals(4.dp, IdeShellDimens.ControlCornerRadius)
-        assertEquals(3.dp, IdeShellDimens.BadgeCornerRadius)
+        assertEquals(1024.dp, GlassDimens.CompactBreakpoint)
+        assertEquals(768.dp, GlassDimens.CompactHeightBreakpoint)
+        assertEquals(1280.dp, GlassDimens.ReadableContentMaxWidth)
+        assertEquals(1.dp, GlassDimens.HairlineBorder)
+        assertEquals(6.dp, GlassDimens.CardCornerRadius)
+        assertEquals(4.dp, GlassDimens.ControlCornerRadius)
+        assertEquals(3.dp, GlassDimens.BadgeCornerRadius)
     }
 
     @Test

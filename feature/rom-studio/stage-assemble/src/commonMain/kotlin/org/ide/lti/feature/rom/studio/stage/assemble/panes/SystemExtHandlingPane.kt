@@ -43,11 +43,11 @@ import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -101,7 +101,7 @@ private fun SystemExtTopInfoCard(colors: IdeShellColorScheme) {
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
             .background(colors.infoBannerFill)
-            .border(IdeShellDimens.HairlineBorder, colors.infoBannerBorder, GlassShapes.ShellCard)
+            .border(GlassDimens.HairlineBorder, colors.infoBannerBorder, GlassShapes.ShellCard)
             .padding(Spacing.Medium),
     ) {
         Row(
@@ -251,7 +251,7 @@ private fun SystemExtPathsCard(colors: IdeShellColorScheme) {
             SystemExtFlowDiagram(colors = colors)
 
             HorizontalDivider(
-                thickness = IdeShellDimens.HairlineBorder,
+                thickness = GlassDimens.HairlineBorder,
                 color = colors.borderMuted,
             )
 
@@ -294,7 +294,7 @@ private fun SystemExtFlowDiagram(colors: IdeShellColorScheme) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(colors.cardBackgroundMuted, GlassShapes.ShellControl)
-                    .border(IdeShellDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
+                    .border(GlassDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
                     .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Small),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -361,7 +361,7 @@ private fun SystemExtFlowDiagram(colors: IdeShellColorScheme) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(colors.cardBackgroundMuted, GlassShapes.ShellControl)
-                    .border(IdeShellDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
+                    .border(GlassDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
                     .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Medium),
             ) {
                 Text(
@@ -424,7 +424,7 @@ private fun HandlingModeCard(
         modifier = modifier
             .clip(GlassShapes.ShellCard)
             .background(bgColor)
-            .border(IdeShellDimens.HairlineBorder, borderColor, GlassShapes.ShellCard)
+            .border(GlassDimens.HairlineBorder, borderColor, GlassShapes.ShellCard)
             .clickable(enabled = isEnabled, onClick = onSelect)
             .padding(Spacing.Medium),
     ) {
@@ -494,7 +494,7 @@ private fun DerivedPathRow(label: String, value: String, colors: IdeShellColorSc
             color = colors.textMuted,
             fontSize = FontSize.Micro,
             fontFamily = ideFontFamily(),
-            modifier = Modifier.width(IdeShellDimens.AcquirePolicyLabelWidth),
+            modifier = Modifier.width(GlassDimens.AcquirePolicyLabelWidth),
         )
         Text(
             text = value,
@@ -514,7 +514,7 @@ private fun SystemExtWarningBanner(colors: IdeShellColorScheme) {
             .clip(GlassShapes.ShellControl)
             .background(colors.cardBackground)
             .border(
-                width = IdeShellDimens.HairlineBorder,
+                width = GlassDimens.HairlineBorder,
                 color = colors.warningAmber.copy(alpha = AlphaTokens.Border),
                 shape = GlassShapes.ShellControl,
             )

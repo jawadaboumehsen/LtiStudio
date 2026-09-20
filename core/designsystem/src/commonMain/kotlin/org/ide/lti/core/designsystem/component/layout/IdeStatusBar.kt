@@ -20,9 +20,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import org.ide.lti.core.designsystem.component.primitives.glass
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.config.AppTheme
 import org.ide.lti.core.designsystem.theme.glass.GlassStyles
@@ -44,7 +44,7 @@ fun IdeStatusBar(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(IdeShellDimens.StatusBarHeight)
+            .height(GlassDimens.StatusBarHeight)
             .glass(style, enabled = isBlueGlass)
             .padding(horizontal = Spacing.Small),
         verticalAlignment = Alignment.CenterVertically,

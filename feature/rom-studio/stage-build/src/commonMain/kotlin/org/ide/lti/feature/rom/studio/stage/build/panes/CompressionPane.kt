@@ -40,11 +40,11 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -120,7 +120,7 @@ private fun ErofsSettingsCard(
                 fontFamily = ideFontFamily(),
             )
         }
-        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
 
         CompressionParameterRow(
             label = "Algorithm",
@@ -129,7 +129,7 @@ private fun ErofsSettingsCard(
             explanation = "lz4hc offers a good balance of size and performance for modern devices.",
             colors = colors,
         )
-        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
 
         CompressionParameterRow(
             label = "Compression level",
@@ -138,7 +138,7 @@ private fun ErofsSettingsCard(
             explanation = "Recommended: 12 for release builds",
             colors = colors,
         )
-        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
 
         CompressionParameterRow(
             label = "Block size",
@@ -147,7 +147,7 @@ private fun ErofsSettingsCard(
             explanation = "Using 4 KiB for broad device compatibility.",
             colors = colors,
         )
-        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
 
         CompressionParameterRow(
             label = "Alignment",
@@ -185,7 +185,7 @@ private fun CompressionParameterRow(
                 .weight(1.3f)
                 .clip(GlassShapes.ShellControl)
                 .background(colors.cardBackgroundMuted)
-                .border(IdeShellDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
+                .border(GlassDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
                 .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),
         ) {
             Row(
@@ -215,7 +215,7 @@ private fun CompressionParameterRow(
                 .weight(1.7f)
                 .clip(GlassShapes.ShellControl)
                 .background(colors.cardBackgroundMuted)
-                .border(IdeShellDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
+                .border(GlassDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
                 .padding(Spacing.Small),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.Hairline)) {
@@ -267,7 +267,7 @@ private fun ApplyToImagesCard(colors: IdeShellColorScheme) {
                 fontFamily = ideFontFamily(),
             )
         }
-        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
 
         ChecklistItem("system", "Required (Android 14)", systemChecked, { systemChecked = it }, true, colors)
         ChecklistItem("product", "Recommended", productChecked, { productChecked = it }, false, colors)
@@ -344,7 +344,7 @@ private fun AboutErofsCard(colors: IdeShellColorScheme) {
                 fontFamily = ideFontFamily(),
             )
         }
-        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
 
         Text(
             text = "EROFS (Enhanced Read-Only File System) provides high compression ratios " +

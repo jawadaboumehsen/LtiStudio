@@ -34,12 +34,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.LetterSpacing
 import org.ide.lti.core.designsystem.theme.Spacing
 
@@ -99,7 +99,7 @@ fun IdeStatusBadge(
     Row(
         modifier = modifier
             .background(style.bgColor, GlassShapes.ShellBadge)
-            .border(IdeShellDimens.HairlineBorder, style.borderColor, GlassShapes.ShellBadge)
+            .border(GlassDimens.HairlineBorder, style.borderColor, GlassShapes.ShellBadge)
             .padding(horizontal = Spacing.Compact, vertical = Spacing.ExtraExtraSmall),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
@@ -115,7 +115,7 @@ fun IdeStatusBadge(
                 imageVector = style.icon,
                 contentDescription = null,
                 tint = style.fgColor,
-                modifier = Modifier.size(IdeShellDimens.StatusBadgeIconSize),
+                modifier = Modifier.size(GlassDimens.StatusBadgeIconSize),
             )
         }
         Text(

@@ -49,10 +49,10 @@ import org.ide.lti.core.designsystem.component.layout.IdePipelineStageItem
 import org.ide.lti.core.designsystem.component.layout.IdeStatusBar
 import org.ide.lti.core.designsystem.component.layout.IdeTopAppBar
 import org.ide.lti.core.designsystem.icon.AppIcons
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.IdeShellTokens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
@@ -278,8 +278,8 @@ private fun PipelineRailCatalogSection(colors: IdeShellColorScheme) {
         ) {
             Box(
                 modifier = Modifier
-                    .height(IdeShellDimens.CompactHeightBreakpoint)
-                    .border(IdeShellDimens.HairlineBorder, colors.border),
+                    .height(GlassDimens.CompactHeightBreakpoint)
+                    .border(GlassDimens.HairlineBorder, colors.border),
             ) {
                 IdePipelineRail(
                     stages = sampleStages,
@@ -334,9 +334,9 @@ private fun NavigatorPanelCatalogSection(colors: IdeShellColorScheme) {
     ) {
         Box(
             modifier = Modifier
-                .width(IdeShellDimens.WorkspaceNavigatorWidth)
-                .height(IdeShellDimens.CompactHeightBreakpoint)
-                .border(IdeShellDimens.HairlineBorder, colors.border),
+                .width(GlassDimens.WorkspaceNavigatorWidth)
+                .height(GlassDimens.CompactHeightBreakpoint)
+                .border(GlassDimens.HairlineBorder, colors.border),
         ) {
             IdeNavigatorPanel(
                 headerTitle = "WORKSPACE",
@@ -514,9 +514,9 @@ private fun AppFramePreviewSection(colors: IdeShellColorScheme) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(IdeShellDimens.CompactHeightBreakpoint)
+                .height(GlassDimens.CompactHeightBreakpoint)
                 .clip(GlassShapes.ShellCard)
-                .border(IdeShellDimens.HairlineBorder, colors.border, GlassShapes.ShellCard),
+                .border(GlassDimens.HairlineBorder, colors.border, GlassShapes.ShellCard),
         ) {
             IdeAppFrame(
                 colors = colors,

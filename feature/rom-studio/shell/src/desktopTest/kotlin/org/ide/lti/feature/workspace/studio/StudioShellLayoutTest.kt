@@ -26,9 +26,9 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.IdeShellTokens
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.config.AppTheme
@@ -99,7 +99,7 @@ class StudioShellLayoutTest {
         )
 
         composeTestRule.setContent {
-            Box(Modifier.size(IdeShellDimens.ReferenceWindowWidth, IdeShellDimens.ReferenceWindowHeight)) {
+            Box(Modifier.size(GlassDimens.ReferenceWindowWidth, GlassDimens.ReferenceWindowHeight)) {
                 StudioShellContent(
                     uiState = uiState,
                     onSelectGlobalDestination = {},
@@ -161,7 +161,7 @@ class StudioShellLayoutTest {
         )
 
         composeTestRule.setContent {
-            Box(Modifier.size(IdeShellDimens.ReferenceWindowWidth, IdeShellDimens.ReferenceWindowHeight)) {
+            Box(Modifier.size(GlassDimens.ReferenceWindowWidth, GlassDimens.ReferenceWindowHeight)) {
                 StudioShellContent(
                     uiState = uiState,
                     onSelectGlobalDestination = {},
@@ -196,7 +196,7 @@ class StudioShellLayoutTest {
     @Test
     fun testExactlyOneTopBarAndOneStatusBar() {
         composeTestRule.setContent {
-            Box(Modifier.size(IdeShellDimens.ReferenceWindowWidth, IdeShellDimens.ReferenceWindowHeight)) {
+            Box(Modifier.size(GlassDimens.ReferenceWindowWidth, GlassDimens.ReferenceWindowHeight)) {
                 StudioShellContent(
                     uiState = WorkspaceShellUiState(),
                     onSelectGlobalDestination = {},
@@ -220,7 +220,7 @@ class StudioShellLayoutTest {
         var selectedSection: WorkspaceSection? = null
 
         composeTestRule.setContent {
-            Box(Modifier.size(IdeShellDimens.ReferenceWindowWidth, IdeShellDimens.ReferenceWindowHeight)) {
+            Box(Modifier.size(GlassDimens.ReferenceWindowWidth, GlassDimens.ReferenceWindowHeight)) {
                 StudioShellContent(
                     uiState = WorkspaceShellUiState(
                         pipelineItems = createDefaultPipelineRailItems(StageId.FIRMWARE_ACQUISITION),
@@ -259,7 +259,7 @@ class StudioShellLayoutTest {
         )
 
         composeTestRule.setContent {
-            Box(Modifier.size(IdeShellDimens.ReferenceWindowWidth, IdeShellDimens.ReferenceWindowHeight)) {
+            Box(Modifier.size(GlassDimens.ReferenceWindowWidth, GlassDimens.ReferenceWindowHeight)) {
                 StudioShellContent(
                     uiState = uiState,
                     onSelectGlobalDestination = {},

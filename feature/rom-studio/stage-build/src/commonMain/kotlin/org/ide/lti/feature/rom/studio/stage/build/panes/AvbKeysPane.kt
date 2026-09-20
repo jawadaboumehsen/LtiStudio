@@ -40,11 +40,11 @@ import org.ide.lti.core.designsystem.component.display.IdeStatusBadge
 import org.ide.lti.core.designsystem.component.display.IdeStatusSeverity
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
@@ -97,7 +97,7 @@ private fun AvbNoticeCard(colors: IdeShellColorScheme) {
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
             .background(colors.infoBannerFill)
-            .border(IdeShellDimens.HairlineBorder, colors.infoBannerBorder, GlassShapes.ShellCard)
+            .border(GlassDimens.HairlineBorder, colors.infoBannerBorder, GlassShapes.ShellCard)
             .padding(Spacing.Medium),
     ) {
         Row(
@@ -166,13 +166,13 @@ private fun AvbKeysTableCard(colors: IdeShellColorScheme) {
         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
         AvbTableHeader(colors)
-        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
 
         rows.forEach { row ->
             AvbTableRow(row = row, colors = colors)
         }
 
-        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
         AvbMissingKeyErrorBanner(colors)
     }
 }
@@ -284,7 +284,7 @@ private fun AvbTableRow(row: AvbKeyRow, colors: IdeShellColorScheme) {
                 .weight(1.0f)
                 .clip(GlassShapes.ShellControl)
                 .background(colors.cardBackgroundMuted)
-                .border(IdeShellDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
+                .border(GlassDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
                 .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraExtraSmall),
         ) {
             Row(
@@ -311,7 +311,7 @@ private fun AvbMissingKeyErrorBanner(colors: IdeShellColorScheme) {
             .fillMaxWidth()
             .clip(GlassShapes.ShellControl)
             .background(colors.errorRedBg)
-            .border(IdeShellDimens.HairlineBorder, colors.errorRed, GlassShapes.ShellControl)
+            .border(GlassDimens.HairlineBorder, colors.errorRed, GlassShapes.ShellControl)
             .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -356,7 +356,7 @@ private fun SelectedKeyDetailsCard(colors: IdeShellColorScheme) {
             fontWeight = FontWeight.SemiBold,
             fontFamily = ideFontFamily(),
         )
-        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
 
         KeyDetailRow("Key alias", "release-avb", isCode = true, colors = colors)
         KeyDetailRow("Algorithm", "RSA 4096 (AVB v2.0)", isCode = false, colors = colors)
@@ -416,7 +416,7 @@ private fun KeyManagementCard(colors: IdeShellColorScheme) {
                 fontFamily = ideFontFamily(),
             )
         }
-        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
 
         Text(
             text = "Manage and import AVB keys in Settings > Credentials.",

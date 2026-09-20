@@ -48,12 +48,12 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.Spacing
 
 /**
@@ -77,7 +77,7 @@ fun IdeReadinessRow(
         modifier = modifier
             .fillMaxWidth()
             .background(colors.cardBackground, GlassShapes.ShellControl)
-            .border(IdeShellDimens.HairlineBorder, colors.border, GlassShapes.ShellControl)
+            .border(GlassDimens.HairlineBorder, colors.border, GlassShapes.ShellControl)
             .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
@@ -86,7 +86,7 @@ fun IdeReadinessRow(
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-            modifier = Modifier.width(IdeShellDimens.ReadinessStageColumnWidth),
+            modifier = Modifier.width(GlassDimens.ReadinessStageColumnWidth),
         ) {
             val icon = resolveStageIcon(stageName)
             Icon(
@@ -112,12 +112,12 @@ fun IdeReadinessRow(
             fontSize = FontSize.BodySmall,
             fontWeight = FontWeight.Medium,
             fontFamily = GlassFontFamily.ide(),
-            modifier = Modifier.width(IdeShellDimens.ReadinessLabelColumnWidth),
+            modifier = Modifier.width(GlassDimens.ReadinessLabelColumnWidth),
             maxLines = 1,
         )
 
         // Column 3: Status Badge
-        Box(modifier = Modifier.width(IdeShellDimens.ReadinessStatusColumnWidth)) {
+        Box(modifier = Modifier.width(GlassDimens.ReadinessStatusColumnWidth)) {
             IdeStatusBadge(
                 label = statusText,
                 severity = severity,
@@ -160,7 +160,7 @@ fun IdeReadinessRow(
                         shape = GlassShapes.ShellControl,
                     )
                     .border(
-                        width = IdeShellDimens.HairlineBorder,
+                        width = GlassDimens.HairlineBorder,
                         color = if (actionEnabled) colors.accentBlue else colors.border,
                         shape = GlassShapes.ShellControl,
                     )

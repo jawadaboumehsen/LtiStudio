@@ -84,7 +84,7 @@ class IdeShellGlassChromeScreenshotTest {
 
     @Test
     fun topAppBarBlursUnderBlueThemeAndStaysFlatUnderDarkTheme() {
-        // IdeShellDimens.TopBarHeight = 56dp - sample well inside the bar, not the flat canvas below it.
+        // GlassDimens.TopBarHeight = 56dp - sample well inside the bar, not the flat canvas below it.
         val blueVariance = stripeVariance(captureOverStripes(AppTheme.Blue) { IdeTopAppBar() }, sampleY = BAR_SAMPLE_Y)
         val darkVariance = stripeVariance(captureOverStripes(AppTheme.Dark) { IdeTopAppBar() }, sampleY = BAR_SAMPLE_Y)
         val flatReference = stripeVariance(captureOverStripes(AppTheme.Blue) {}, sampleY = BAR_SAMPLE_Y)
@@ -113,7 +113,7 @@ class IdeShellGlassChromeScreenshotTest {
 
     @Test
     fun statusBarBlursUnderBlueTheme() {
-        // IdeShellDimens.StatusBarHeight = 32dp - sample well inside the bar.
+        // GlassDimens.StatusBarHeight = 32dp - sample well inside the bar.
         val flatReference = stripeVariance(captureOverStripes(AppTheme.Blue) {}, sampleY = BAR_SAMPLE_Y)
         val blue = captureOverStripes(AppTheme.Blue) { IdeStatusBar() }
         assertTrue(

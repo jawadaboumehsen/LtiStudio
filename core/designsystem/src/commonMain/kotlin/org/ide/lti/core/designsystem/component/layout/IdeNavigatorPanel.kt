@@ -76,12 +76,12 @@ import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.primitives.glass
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.LetterSpacing
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.config.AppTheme
@@ -116,7 +116,7 @@ fun IdeNavigatorPanel(
 
     Column(
         modifier = modifier
-            .width(IdeShellDimens.WorkspaceNavigatorWidth)
+            .width(GlassDimens.WorkspaceNavigatorWidth)
             .fillMaxHeight()
             .glass(style, enabled = isBlueGlass)
             .padding(vertical = Spacing.Small),
@@ -145,7 +145,7 @@ fun IdeNavigatorPanel(
                             .clip(GlassShapes.ShellBadge)
                             .background(colors.cardBackgroundMuted)
                             .border(
-                                width = IdeShellDimens.HairlineBorder,
+                                width = GlassDimens.HairlineBorder,
                                 color = colors.border,
                                 shape = GlassShapes.ShellBadge,
                             )
@@ -178,7 +178,7 @@ fun IdeNavigatorPanel(
         if (footerContent != null) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 HorizontalDivider(
-                    thickness = IdeShellDimens.HairlineBorder,
+                    thickness = GlassDimens.HairlineBorder,
                     color = colors.borderMuted,
                 )
                 Box(modifier = Modifier.fillMaxWidth().padding(Spacing.Small)) {
@@ -219,7 +219,7 @@ private fun NavigatorItemRow(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = Spacing.Small, vertical = Spacing.Hairline)
-            .height(IdeShellDimens.NavigatorItemHeight)
+            .height(GlassDimens.NavigatorItemHeight)
             .clip(GlassShapes.ShellControl)
             .background(bg)
             .testTag("NavigatorItem_${item.id}")

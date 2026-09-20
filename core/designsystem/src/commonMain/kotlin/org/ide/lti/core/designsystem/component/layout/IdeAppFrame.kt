@@ -40,10 +40,10 @@ import androidx.compose.ui.platform.LocalDensity
 import com.kashif_e.backdrop.backdrops.LayerBackdrop
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.LocalGlassBackdrop
 import org.ide.lti.core.designsystem.theme.config.AppTheme
 
@@ -85,7 +85,7 @@ fun IdeAppFrame(
                 .fillMaxSize()
                 .onSizeChanged { size ->
                     val widthDp = with(density) { size.width.toDp() }
-                    isCompact = widthDp < IdeShellDimens.CompactBreakpoint
+                    isCompact = widthDp < GlassDimens.CompactBreakpoint
                 }
                 .background(colors.appBackground),
         ) {
@@ -102,12 +102,12 @@ fun IdeAppFrame(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(IdeShellDimens.TopBarHeight),
+                        .height(GlassDimens.TopBarHeight),
                 ) {
                     topBar()
                 }
                 HorizontalDivider(
-                    thickness = IdeShellDimens.HairlineBorder,
+                    thickness = GlassDimens.HairlineBorder,
                     color = colors.border,
                 )
 
@@ -120,13 +120,13 @@ fun IdeAppFrame(
                     // Persistent Pipeline Rail
                     Box(
                         modifier = Modifier
-                            .width(IdeShellDimens.PipelineRailWidth)
+                            .width(GlassDimens.PipelineRailWidth)
                             .fillMaxHeight(),
                     ) {
                         pipelineRail()
                     }
                     VerticalDivider(
-                        thickness = IdeShellDimens.HairlineBorder,
+                        thickness = GlassDimens.HairlineBorder,
                         color = colors.border,
                     )
 
@@ -134,13 +134,13 @@ fun IdeAppFrame(
                     if (navigator != null && !isCompact) {
                         Box(
                             modifier = Modifier
-                                .width(IdeShellDimens.WorkspaceNavigatorWidth)
+                                .width(GlassDimens.WorkspaceNavigatorWidth)
                                 .fillMaxHeight(),
                         ) {
                             navigator()
                         }
                         VerticalDivider(
-                            thickness = IdeShellDimens.HairlineBorder,
+                            thickness = GlassDimens.HairlineBorder,
                             color = colors.border,
                         )
                     }
@@ -150,11 +150,11 @@ fun IdeAppFrame(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()
-                            .padding(IdeShellDimens.ContentInset)
+                            .padding(GlassDimens.ContentInset)
                             .clip(GlassShapes.ShellPanel)
                             .background(colors.contentPanel)
                             .border(
-                                width = IdeShellDimens.HairlineBorder,
+                                width = GlassDimens.HairlineBorder,
                                 color = colors.contentPanelBorder,
                                 shape = GlassShapes.ShellPanel,
                             ),
@@ -164,12 +164,12 @@ fun IdeAppFrame(
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(IdeShellDimens.BreadcrumbHeight),
+                                    .height(GlassDimens.BreadcrumbHeight),
                             ) {
                                 breadcrumb()
                             }
                             HorizontalDivider(
-                                thickness = IdeShellDimens.HairlineBorder,
+                                thickness = GlassDimens.HairlineBorder,
                                 color = colors.borderMuted,
                             )
                         }
@@ -187,13 +187,13 @@ fun IdeAppFrame(
 
                 // Bottom Status Bar
                 HorizontalDivider(
-                    thickness = IdeShellDimens.HairlineBorder,
+                    thickness = GlassDimens.HairlineBorder,
                     color = colors.border,
                 )
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(IdeShellDimens.StatusBarHeight),
+                        .height(GlassDimens.StatusBarHeight),
                 ) {
                     statusBar()
                 }
@@ -237,7 +237,7 @@ private fun IdeCompactDrawer(
         ) {
             Box(
                 modifier = Modifier
-                    .width(IdeShellDimens.WorkspaceNavigatorWidth)
+                    .width(GlassDimens.WorkspaceNavigatorWidth)
                     .fillMaxHeight()
                     .background(colors.navigatorBackground)
                     .clickable(

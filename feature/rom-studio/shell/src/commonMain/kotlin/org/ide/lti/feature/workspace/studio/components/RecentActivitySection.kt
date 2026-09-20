@@ -33,11 +33,11 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.feature.workspace.studio.ActivityItemUi
 import org.ide.lti.feature.workspace.studio.WorkspaceActionUi
@@ -103,7 +103,7 @@ public fun RecentActivitySection(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(IdeShellDimens.OverviewEmptyStateHeight)
+                    .height(GlassDimens.OverviewEmptyStateHeight)
                     .clickable(onClick = onOpenHistory)
                     .padding(Spacing.Medium),
                 contentAlignment = Alignment.Center,

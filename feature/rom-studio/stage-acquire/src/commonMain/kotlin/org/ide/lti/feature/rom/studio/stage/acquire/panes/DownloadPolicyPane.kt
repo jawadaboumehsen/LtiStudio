@@ -49,11 +49,11 @@ import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -269,7 +269,7 @@ private fun PolicyFieldRow(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.Top,
     ) {
-        Column(modifier = Modifier.width(IdeShellDimens.AcquirePolicyLabelWidth)) {
+        Column(modifier = Modifier.width(GlassDimens.AcquirePolicyLabelWidth)) {
             Text(
                 text = label,
                 color = colors.textMain,
@@ -308,7 +308,7 @@ private fun StatusPillBadge(isOverride: Boolean, colors: IdeShellColorScheme) {
         modifier = Modifier
             .clip(GlassShapes.ShellControl)
             .background(bg)
-            .border(IdeShellDimens.HairlineBorder, borderColor, GlassShapes.ShellControl)
+            .border(GlassDimens.HairlineBorder, borderColor, GlassShapes.ShellControl)
             .padding(horizontal = Spacing.Small, vertical = Spacing.Hairline),
         contentAlignment = Alignment.Center,
     ) {
@@ -328,7 +328,7 @@ private fun NumberStepper(value: Int, onValueChange: (Int) -> Unit, min: Int, ma
         modifier = Modifier
             .clip(GlassShapes.ShellControl)
             .background(colors.cardBackgroundMuted)
-            .border(IdeShellDimens.HairlineBorder, colors.border, GlassShapes.ShellControl),
+            .border(GlassDimens.HairlineBorder, colors.border, GlassShapes.ShellControl),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
@@ -374,10 +374,10 @@ private fun NumberStepper(value: Int, onValueChange: (Int) -> Unit, min: Int, ma
 private fun NumberSpinnerInput(value: Int, onValueChange: (Int) -> Unit, colors: IdeShellColorScheme) {
     Row(
         modifier = Modifier
-            .width(IdeShellDimens.AcquirePolicyInputWidth)
+            .width(GlassDimens.AcquirePolicyInputWidth)
             .clip(GlassShapes.ShellControl)
             .background(colors.cardBackgroundMuted)
-            .border(IdeShellDimens.HairlineBorder, colors.border, GlassShapes.ShellControl)
+            .border(GlassDimens.HairlineBorder, colors.border, GlassShapes.ShellControl)
             .padding(horizontal = Spacing.Small, vertical = Spacing.Hairline),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -485,7 +485,7 @@ private fun NeedHelpBanner(colors: IdeShellColorScheme) {
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
             .background(colors.infoBannerFill, GlassShapes.ShellCard)
-            .border(IdeShellDimens.HairlineBorder, colors.infoBannerBorder, GlassShapes.ShellCard)
+            .border(GlassDimens.HairlineBorder, colors.infoBannerBorder, GlassShapes.ShellCard)
             .padding(Spacing.Medium),
     ) {
         Row(

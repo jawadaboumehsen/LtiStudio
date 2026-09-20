@@ -20,7 +20,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.config.AppTheme
 import org.ide.lti.core.model.run.StageId
@@ -40,7 +40,7 @@ class WorkspaceOverviewScreenTest {
 
         composeTestRule.setContent {
             LtiTheme(appTheme = AppTheme.Dark) {
-                Box(Modifier.size(IdeShellDimens.ReferenceWindowWidth, IdeShellDimens.ReferenceWindowHeight)) {
+                Box(Modifier.size(GlassDimens.ReferenceWindowWidth, GlassDimens.ReferenceWindowHeight)) {
                     WorkspaceOverview(
                         state = testState,
                         modifier = Modifier.fillMaxSize(),
@@ -63,7 +63,7 @@ class WorkspaceOverviewScreenTest {
 
         composeTestRule.setContent {
             LtiTheme(appTheme = AppTheme.Dark) {
-                Box(Modifier.size(IdeShellDimens.ReferenceWindowWidth, IdeShellDimens.ReferenceWindowHeight)) {
+                Box(Modifier.size(GlassDimens.ReferenceWindowWidth, GlassDimens.ReferenceWindowHeight)) {
                     WorkspaceOverview(
                         state = testState,
                         modifier = Modifier.fillMaxSize(),
@@ -89,7 +89,7 @@ class WorkspaceOverviewScreenTest {
 
         composeTestRule.setContent {
             LtiTheme(appTheme = AppTheme.Dark) {
-                Box(Modifier.size(IdeShellDimens.ReferenceWindowWidth, IdeShellDimens.ReferenceWindowHeight)) {
+                Box(Modifier.size(GlassDimens.ReferenceWindowWidth, GlassDimens.ReferenceWindowHeight)) {
                     WorkspaceOverview(
                         state = testState,
                         modifier = Modifier.fillMaxSize(),

@@ -59,12 +59,12 @@ import org.ide.lti.core.designsystem.component.primitives.glass
 import org.ide.lti.core.designsystem.icon.AppIconsRomStages
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.config.AppTheme
 import org.ide.lti.core.designsystem.theme.glass.GlassStyles
@@ -96,7 +96,7 @@ fun IdePipelineRail(
 
     Column(
         modifier = modifier
-            .width(IdeShellDimens.PipelineRailWidth)
+            .width(GlassDimens.PipelineRailWidth)
             .fillMaxHeight()
             .glass(style, enabled = isBlueGlass),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -131,7 +131,7 @@ private fun PipelineRailItem(
 
     val borderModifier = if (visuals.borderColor != null) {
         Modifier.border(
-            width = IdeShellDimens.HairlineBorder,
+            width = GlassDimens.HairlineBorder,
             color = visuals.borderColor,
             shape = GlassShapes.ShellPill,
         )
@@ -142,7 +142,7 @@ private fun PipelineRailItem(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(IdeShellDimens.PipelineStageItemHeight)
+            .height(GlassDimens.PipelineStageItemHeight)
             .padding(horizontal = Spacing.Small, vertical = Spacing.Hairline)
             .clip(GlassShapes.ShellPill)
             .then(borderModifier)

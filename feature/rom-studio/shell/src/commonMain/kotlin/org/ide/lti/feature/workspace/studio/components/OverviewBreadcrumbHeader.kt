@@ -40,12 +40,12 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.theme.BrandColors
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.feature.workspace.studio.WorkspaceActionUi
 
@@ -177,7 +177,7 @@ private fun OverviewHeaderTargetAndActions(
         Box(
             modifier = Modifier
                 .background(colors.cardBackgroundMuted, GlassShapes.ShellControl)
-                .border(IdeShellDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
+                .border(GlassDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
                 .clickable(onClick = {})
                 .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Small),
             contentAlignment = Alignment.Center,
@@ -218,7 +218,7 @@ private fun OverviewHeaderTargetAndActions(
                 .testTag("ReloadStateButton")
                 .semantics { role = Role.Button }
                 .background(reloadBg, GlassShapes.ShellControl)
-                .border(IdeShellDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
+                .border(GlassDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
                 .clickable(
                     interactionSource = reloadInteraction,
                     indication = null,

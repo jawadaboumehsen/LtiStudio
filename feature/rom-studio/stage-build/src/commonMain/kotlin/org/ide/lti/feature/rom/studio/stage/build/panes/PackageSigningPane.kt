@@ -30,11 +30,11 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.ideFontFamily
 import org.ide.lti.core.model.target.TargetDevice
@@ -78,7 +78,7 @@ public fun PackageSigningPane(
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = ideFontFamily(),
             )
-            HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+            HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
 
             SigningToggleRow(
                 label = "Sign individual partition images with AVB",

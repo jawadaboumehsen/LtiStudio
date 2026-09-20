@@ -57,11 +57,11 @@ import org.ide.lti.core.designsystem.component.display.IdeTableHeaderCell
 import org.ide.lti.core.designsystem.component.display.IdeTableRow
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -216,7 +216,7 @@ private fun TopInfoInstruction(colors: IdeShellColorScheme) {
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
             .background(colors.infoBannerFill, GlassShapes.ShellCard)
-            .border(IdeShellDimens.HairlineBorder, colors.infoBannerBorder, GlassShapes.ShellCard)
+            .border(GlassDimens.HairlineBorder, colors.infoBannerBorder, GlassShapes.ShellCard)
             .padding(Spacing.SmallMedium),
     ) {
         Row(
@@ -254,7 +254,7 @@ private fun ArchivesTableCard(
         IdeTableHeader(colors = colors) {
             IdeTableHeaderCell(
                 text = "Select",
-                modifier = Modifier.width(IdeShellDimens.AcquireTableIconColWidth),
+                modifier = Modifier.width(GlassDimens.AcquireTableIconColWidth),
                 colors = colors,
             )
             IdeTableHeaderCell(
@@ -279,7 +279,7 @@ private fun ArchivesTableCard(
             )
             IdeTableHeaderCell(
                 text = "Action",
-                modifier = Modifier.width(IdeShellDimens.AcquireTableActionColWidth),
+                modifier = Modifier.width(GlassDimens.AcquireTableActionColWidth),
                 colors = colors,
             )
         }
@@ -316,7 +316,7 @@ private fun ArchiveTableRow(
                 checkedColor = colors.accentBlue,
                 uncheckedColor = colors.textDim,
             ),
-            modifier = Modifier.width(IdeShellDimens.AcquireTableIconColWidth),
+            modifier = Modifier.width(GlassDimens.AcquireTableIconColWidth),
         )
 
         Row(
@@ -424,7 +424,7 @@ private fun ArchiveTableRow(
             }
         }
 
-        Box(modifier = Modifier.width(IdeShellDimens.AcquireTableActionColWidth)) {
+        Box(modifier = Modifier.width(GlassDimens.AcquireTableActionColWidth)) {
             GlassButton(
                 onClick = { onSelect(archive) },
                 enabled = !archive.isMissing,
@@ -481,7 +481,7 @@ private fun SelectedArchiveCard(archive: ArchiveItemUi, colors: IdeShellColorSch
                 imageVector = Icons.Default.ViewInAr,
                 contentDescription = null,
                 tint = colors.accentBlue,
-                modifier = Modifier.size(IdeShellDimens.AcquirePreviewBadgeSize),
+                modifier = Modifier.size(GlassDimens.AcquirePreviewBadgeSize),
             )
 
             Column(
@@ -606,7 +606,7 @@ private fun BottomLogsDrawer(colors: IdeShellColorScheme) {
             }
         }
 
-        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
 
         Column(
             modifier = Modifier

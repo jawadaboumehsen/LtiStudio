@@ -50,12 +50,12 @@ import org.ide.lti.core.designsystem.icon.ideStatusErrorOutline
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BrandColors
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.PluginThemeColors
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
@@ -292,7 +292,7 @@ private fun RecoveryPropertyRow(label: String, value: String, colors: IdeShellCo
             text = label,
             color = colors.textDim,
             fontSize = FontSize.BodySmall,
-            modifier = Modifier.width(IdeShellDimens.ReadinessLabelColumnWidth),
+            modifier = Modifier.width(GlassDimens.ReadinessLabelColumnWidth),
         )
         Text(
             text = value,
@@ -345,7 +345,7 @@ private fun ServiceStateCard(
                     .fillMaxWidth()
                     .clip(GlassShapes.Small)
                     .background(colors.cardBackgroundMuted)
-                    .border(IdeShellDimens.HairlineBorder, colors.borderMuted, GlassShapes.Small)
+                    .border(GlassDimens.HairlineBorder, colors.borderMuted, GlassShapes.Small)
                     .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
                 contentAlignment = Alignment.CenterStart,
             ) {
@@ -385,7 +385,7 @@ private fun ServiceStateCard(
                     .testTag("ReconnectButton")
                     .clip(GlassShapes.Small)
                     .border(
-                        width = IdeShellDimens.HairlineBorder,
+                        width = GlassDimens.HairlineBorder,
                         color = if (isBlue) PluginThemeColors.ActiveTabBorder else colors.accentBlue,
                         shape = GlassShapes.Small,
                     )
@@ -417,7 +417,7 @@ private fun ServiceStateCard(
                     .testTag("ViewEvidenceButton")
                     .clip(GlassShapes.Small)
                     .border(
-                        width = IdeShellDimens.HairlineBorder,
+                        width = GlassDimens.HairlineBorder,
                         color = colors.borderMuted,
                         shape = GlassShapes.Small,
                     )
@@ -452,7 +452,7 @@ private fun RecoveryBlockedBanner(colors: IdeShellColorScheme, modifier: Modifie
             .clip(GlassShapes.Card)
             .background(colors.cardBackground)
             .border(
-                width = IdeShellDimens.HairlineBorder,
+                width = GlassDimens.HairlineBorder,
                 color = PluginThemeColors.WarningBorder,
                 shape = GlassShapes.Card,
             )
@@ -590,7 +590,7 @@ private fun RecoveryConsoleDrawer(
                                 },
                             )
                             .border(
-                                width = IdeShellDimens.HairlineBorder,
+                                width = GlassDimens.HairlineBorder,
                                 color = if (autoScroll) {
                                     if (isBlue) PluginThemeColors.ActiveTabBorder else colors.accentBlue
                                 } else {
@@ -617,7 +617,7 @@ private fun RecoveryConsoleDrawer(
                     .fillMaxWidth()
                     .clip(GlassShapes.Small)
                     .background(colors.appBackground.copy(alpha = AlphaTokens.Elevated))
-                    .border(IdeShellDimens.HairlineBorder, colors.borderMuted, GlassShapes.Small)
+                    .border(GlassDimens.HairlineBorder, colors.borderMuted, GlassShapes.Small)
                     .padding(Spacing.Medium),
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
@@ -682,7 +682,7 @@ private fun ConsoleTabItem(
                     Modifier
                         .background(if (isBlue) PluginThemeColors.SelectedRowBackground else colors.controlSelected)
                         .border(
-                            width = IdeShellDimens.HairlineBorder,
+                            width = GlassDimens.HairlineBorder,
                             color = activeBorder,
                             shape = GlassShapes.Small,
                         )

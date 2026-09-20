@@ -49,11 +49,11 @@ import org.ide.lti.core.designsystem.component.display.IdeStatusSeverity
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenu
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -382,7 +382,7 @@ public fun BootPreparationPane(
                         )
                     }
 
-                    HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+                    HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
 
                     // Rows
                     AffectedFileRow("boot.img", "Rebuild", IdeStatusSeverity.Warning, colors)
@@ -391,7 +391,7 @@ public fun BootPreparationPane(
                     AffectedFileRow("kernel_modules/*", "Included", IdeStatusSeverity.Ready, colors)
                     AffectedFileRow("init_boot.img", "Unchanged", IdeStatusSeverity.Running, colors)
 
-                    HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+                    HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
 
                     // Footnote Info
                     Row(
@@ -459,7 +459,7 @@ private fun BootSelectField(
                     .fillMaxWidth()
                     .clip(GlassShapes.ShellControl)
                     .background(colors.cardBackgroundMuted)
-                    .border(IdeShellDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
+                    .border(GlassDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
                     .clickable { expanded = true }
                     .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Small),
                 verticalAlignment = Alignment.CenterVertically,

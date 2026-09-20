@@ -49,11 +49,11 @@ import org.ide.lti.core.designsystem.component.display.IdeTableRadioIndicator
 import org.ide.lti.core.designsystem.component.display.IdeTableRow
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -240,7 +240,7 @@ private fun RegionSelectorRow(colors: IdeShellColorScheme) {
                 modifier = Modifier
                     .clip(GlassShapes.ShellControl)
                     .background(colors.cardBackgroundMuted)
-                    .border(IdeShellDimens.HairlineBorder, colors.border, GlassShapes.ShellControl)
+                    .border(GlassDimens.HairlineBorder, colors.border, GlassShapes.ShellControl)
                     .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
@@ -294,7 +294,7 @@ private fun FirmwareVersionsTable(
         IdeTableHeader(colors = colors) {
             IdeTableHeaderCell(
                 text = "Select",
-                modifier = Modifier.width(IdeShellDimens.AcquireTableSelectColWidth),
+                modifier = Modifier.width(GlassDimens.AcquireTableSelectColWidth),
                 colors = colors,
             )
             IdeTableHeaderCell(
@@ -350,7 +350,7 @@ private fun FirmwareVersionRowItem(
         colors = colors,
     ) {
         Box(
-            modifier = Modifier.width(IdeShellDimens.AcquireTableSelectColWidth),
+            modifier = Modifier.width(GlassDimens.AcquireTableSelectColWidth),
             contentAlignment = Alignment.CenterStart,
         ) {
             IdeTableRadioIndicator(
@@ -583,7 +583,7 @@ private fun FirmwareInfoBanner(colors: IdeShellColorScheme) {
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
             .background(colors.infoBannerFill, GlassShapes.ShellCard)
-            .border(IdeShellDimens.HairlineBorder, colors.infoBannerBorder, GlassShapes.ShellCard)
+            .border(GlassDimens.HairlineBorder, colors.infoBannerBorder, GlassShapes.ShellCard)
             .padding(Spacing.SmallMedium),
     ) {
         Row(

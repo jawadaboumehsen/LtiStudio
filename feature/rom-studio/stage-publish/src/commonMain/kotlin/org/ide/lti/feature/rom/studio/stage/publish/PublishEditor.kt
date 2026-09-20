@@ -30,10 +30,10 @@ import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.TextFieldState
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -69,7 +69,7 @@ public fun PublishEditor(
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
-                .widthIn(max = IdeShellDimens.OverviewMaxContentWidth)
+                .widthIn(max = GlassDimens.OverviewMaxContentWidth)
                 .padding(horizontal = Spacing.ExtraLarge, vertical = Spacing.Medium),
             verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
         ) {

@@ -38,10 +38,10 @@ import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.component.inputs.TextFieldState
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -75,7 +75,7 @@ public fun ExtractEditor(
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
-                .widthIn(max = IdeShellDimens.OverviewMaxContentWidth)
+                .widthIn(max = GlassDimens.OverviewMaxContentWidth)
                 .padding(horizontal = Spacing.ExtraLarge, vertical = Spacing.Medium),
             verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
         ) {
@@ -327,7 +327,7 @@ private fun PartitionChoices(
         IdeTableHeader(colors = colors) {
             IdeTableHeaderCell(
                 text = "Select",
-                modifier = Modifier.width(IdeShellDimens.AcquireTableIconColWidth),
+                modifier = Modifier.width(GlassDimens.AcquireTableIconColWidth),
                 colors = colors,
             )
             IdeTableHeaderCell(
@@ -361,7 +361,7 @@ private fun PartitionChoices(
                         checkedColor = colors.accentBlue,
                         uncheckedColor = colors.textDim,
                     ),
-                    modifier = Modifier.width(IdeShellDimens.AcquireTableIconColWidth),
+                    modifier = Modifier.width(GlassDimens.AcquireTableIconColWidth),
                 )
                 Text(
                     text = name,

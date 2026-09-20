@@ -40,11 +40,11 @@ import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -92,11 +92,11 @@ private fun OutputNamingUnifiedCard(
         verticalArrangement = Arrangement.spacedBy(Spacing.Large),
     ) {
         FilenameTemplateSection(settings = settings, onChange = onChange, colors = colors)
-        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
         FilenamePreviewSection(colors = colors)
-        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
         InvalidCharacterCheckSection(colors = colors)
-        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
         OutputFolderSection(colors = colors)
     }
 }
@@ -132,7 +132,7 @@ private fun FilenameTemplateSection(
                 .fillMaxWidth()
                 .clip(GlassShapes.ShellControl)
                 .background(colors.cardBackgroundMuted)
-                .border(IdeShellDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
+                .border(GlassDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
                 .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
         ) {
             Row(
@@ -171,7 +171,7 @@ private fun FilenameTemplateSection(
                     modifier = Modifier
                         .clip(GlassShapes.ShellControl)
                         .background(colors.cardBackgroundMuted)
-                        .border(IdeShellDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
+                        .border(GlassDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
                         .clickable {
                             templateText = templateText.replace(".zip", "$variable.zip")
                             onChange(settings.copy(filenameTemplate = templateText))
@@ -227,7 +227,7 @@ private fun FilenamePreviewSection(colors: IdeShellColorScheme) {
                 .fillMaxWidth()
                 .clip(GlassShapes.ShellControl)
                 .background(colors.cardBackgroundMuted)
-                .border(IdeShellDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
+                .border(GlassDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
                 .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
         ) {
             Row(
@@ -290,7 +290,7 @@ private fun InvalidCharacterCheckSection(colors: IdeShellColorScheme) {
             modifier = Modifier
                 .clip(GlassShapes.ShellControl)
                 .background(colors.cardBackgroundMuted)
-                .border(IdeShellDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
+                .border(GlassDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
                 .padding(horizontal = Spacing.Medium, vertical = Spacing.ExtraSmall),
         ) {
             Text(
@@ -350,7 +350,7 @@ private fun OutputFolderSection(colors: IdeShellColorScheme) {
                     .weight(1f)
                     .clip(GlassShapes.ShellControl)
                     .background(colors.cardBackgroundMuted)
-                    .border(IdeShellDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
+                    .border(GlassDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
                     .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
             ) {
                 Text(

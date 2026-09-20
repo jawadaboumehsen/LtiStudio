@@ -49,11 +49,11 @@ import org.ide.lti.core.designsystem.component.display.IdeStatusBadge
 import org.ide.lti.core.designsystem.component.display.IdeStatusSeverity
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -96,7 +96,7 @@ private fun ImagesNoticeCard(colors: IdeShellColorScheme) {
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
             .background(colors.infoBannerFill)
-            .border(IdeShellDimens.HairlineBorder, colors.infoBannerBorder, GlassShapes.ShellCard)
+            .border(GlassDimens.HairlineBorder, colors.infoBannerBorder, GlassShapes.ShellCard)
             .padding(Spacing.Medium),
     ) {
         Row(
@@ -216,7 +216,7 @@ private fun ImagesTableCard(settings: BuildSettings, colors: IdeShellColorScheme
         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
         ImagesTableHeader(colors)
-        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
         rows.forEach { row ->
             ImagesTableRow(row = row, colors = colors)
         }
@@ -280,7 +280,7 @@ private fun ImagesTableRow(row: ImageRowData, colors: IdeShellColorScheme) {
                 .weight(1.5f)
                 .clip(GlassShapes.ShellControl)
                 .background(colors.cardBackgroundMuted)
-                .border(IdeShellDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
+                .border(GlassDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
                 .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraExtraSmall),
         ) {
             Row(

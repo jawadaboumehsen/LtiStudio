@@ -42,12 +42,12 @@ import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.AcquisitionSettings
@@ -86,7 +86,7 @@ private fun VerifiedBanner(colors: IdeShellColorScheme) {
             .fillMaxWidth()
             .background(green.copy(alpha = AlphaTokens.Glow), GlassShapes.ShellCard)
             .border(
-                width = IdeShellDimens.HairlineBorder,
+                width = GlassDimens.HairlineBorder,
                 color = green.copy(alpha = AlphaTokens.Medium),
                 shape = GlassShapes.ShellCard,
             )
@@ -100,7 +100,7 @@ private fun VerifiedBanner(colors: IdeShellColorScheme) {
                 imageVector = Icons.Default.CheckCircle,
                 contentDescription = "Verified",
                 tint = green,
-                modifier = Modifier.size(IdeShellDimens.AcquireStatusBannerIconSize),
+                modifier = Modifier.size(GlassDimens.AcquireStatusBannerIconSize),
             )
             Column {
                 Text(
@@ -150,7 +150,7 @@ private fun SourceFileCard(settings: AcquisitionSettings, target: TargetDevice, 
             fontFamily = GlassFontFamily.ide(),
         )
 
-        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
 
         PropertyRow(label = "File name", colors = colors) {
             Text(
@@ -161,7 +161,7 @@ private fun SourceFileCard(settings: AcquisitionSettings, target: TargetDevice, 
             )
         }
 
-        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
 
         PropertyRow(label = "Source URL", colors = colors) {
             Row(
@@ -186,19 +186,19 @@ private fun SourceFileCard(settings: AcquisitionSettings, target: TargetDevice, 
             }
         }
 
-        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
 
         PropertyRow(label = "Source provenance", value = "Vendor official release", colors = colors)
 
-        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
 
         PropertyRow(label = "File size", value = "2.48 GB (2,662,609,920 bytes)", colors = colors)
 
-        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
 
         PropertyRow(label = "Downloaded", value = "2024-05-14 10:21:37", colors = colors)
 
-        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
 
         PropertyRow(label = "Expected SHA-256", colors = colors) {
             HashCopyRow(
@@ -208,7 +208,7 @@ private fun SourceFileCard(settings: AcquisitionSettings, target: TargetDevice, 
             )
         }
 
-        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
 
         PropertyRow(label = "Measured SHA-256", colors = colors) {
             HashCopyRow(
@@ -263,7 +263,7 @@ private fun VerificationCard(colors: IdeShellColorScheme) {
             }
         }
 
-        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
 
         PropertyRow(label = "Status", colors = colors) {
             Row(
@@ -286,15 +286,15 @@ private fun VerificationCard(colors: IdeShellColorScheme) {
             }
         }
 
-        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
 
         PropertyRow(label = "Method", value = "SHA-256 (local computation)", colors = colors)
 
-        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
 
         PropertyRow(label = "Checked at", value = "2024-05-14 10:21:45", colors = colors)
 
-        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
 
         PropertyRow(
             label = "Result",
@@ -311,7 +311,7 @@ private fun IntegrityInfoBanner(colors: IdeShellColorScheme) {
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
             .background(colors.infoBannerFill, GlassShapes.ShellCard)
-            .border(IdeShellDimens.HairlineBorder, colors.infoBannerBorder, GlassShapes.ShellCard)
+            .border(GlassDimens.HairlineBorder, colors.infoBannerBorder, GlassShapes.ShellCard)
             .padding(Spacing.SmallMedium),
     ) {
         Row(
@@ -357,7 +357,7 @@ internal fun PropertyRow(label: String, colors: IdeShellColorScheme, content: @C
             color = colors.textDim,
             fontSize = FontSize.BodySmall,
             fontFamily = GlassFontFamily.ide(),
-            modifier = Modifier.width(IdeShellDimens.DetailsGridLabelColWidth),
+            modifier = Modifier.width(GlassDimens.DetailsGridLabelColWidth),
         )
         Box(modifier = Modifier.weight(1f)) {
             content()

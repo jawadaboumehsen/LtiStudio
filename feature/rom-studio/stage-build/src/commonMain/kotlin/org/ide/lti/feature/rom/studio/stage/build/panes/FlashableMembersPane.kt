@@ -42,11 +42,11 @@ import org.ide.lti.core.designsystem.component.display.IdeStatusBadge
 import org.ide.lti.core.designsystem.component.display.IdeStatusSeverity
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -273,7 +273,7 @@ private fun TargetImageSelectionCard(colors: IdeShellColorScheme) {
             fontSize = FontSize.Micro,
             fontFamily = ideFontFamily(),
         )
-        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
 
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.Small),
@@ -304,7 +304,7 @@ private fun TargetImageSelectionCard(colors: IdeShellColorScheme) {
                 modifier = Modifier.weight(0.8f),
             )
         }
-        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
 
         items.forEach { item ->
             FlashableItemRow(item = item, colors = colors)
@@ -419,7 +419,7 @@ private fun PackagePreviewCard(colors: IdeShellColorScheme) {
             fontSize = FontSize.Micro,
             fontFamily = ideFontFamily(),
         )
-        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
 
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.Small),
@@ -429,7 +429,7 @@ private fun PackagePreviewCard(colors: IdeShellColorScheme) {
             Text("Size", color = colors.textDim, fontSize = FontSize.Micro, modifier = Modifier.weight(0.9f))
             Text("Partition", color = colors.textDim, fontSize = FontSize.Micro, modifier = Modifier.weight(1.0f))
         }
-        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
 
         previewItems.forEach { item ->
             Row(
@@ -486,7 +486,7 @@ private fun CompatibilityWarningsCard(colors: IdeShellColorScheme) {
             )
             IdeStatusBadge(severity = IdeStatusSeverity.Warning, label = "2 warnings", colors = colors)
         }
-        HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
 
         Row(
             verticalAlignment = Alignment.CenterVertically,

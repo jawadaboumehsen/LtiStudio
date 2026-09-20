@@ -59,11 +59,11 @@ import org.ide.lti.core.designsystem.component.actions.GlassIconButton
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenu
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -209,7 +209,7 @@ public fun BuildPropertiesPane(
                                     .fillMaxWidth()
                                     .background(colors.cardBackgroundMuted, GlassShapes.ShellControl)
                                     .border(
-                                        width = IdeShellDimens.HairlineBorder,
+                                        width = GlassDimens.HairlineBorder,
                                         color = colors.borderMuted,
                                         shape = GlassShapes.ShellControl,
                                     )
@@ -333,7 +333,7 @@ public fun BuildPropertiesPane(
                             fontFamily = ideFontFamily(),
                             modifier = Modifier.width(Spacing.Large),
                         )
-                        Box(modifier = Modifier.width(IdeShellDimens.AcquireTableIconColWidth)) {
+                        Box(modifier = Modifier.width(GlassDimens.AcquireTableIconColWidth)) {
                             Checkbox(
                                 checked = selectedIndices.size == properties.size && properties.isNotEmpty(),
                                 onCheckedChange = { checkAll ->
@@ -376,7 +376,7 @@ public fun BuildPropertiesPane(
                         Spacer(Modifier.width(Spacing.Large))
                     }
 
-                    HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+                    HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
 
                     // Properties Table Rows
                     properties.forEachIndexed { index, prop ->
@@ -547,7 +547,7 @@ public fun BuildPropertiesPane(
                                     Box(
                                         modifier = Modifier
                                             .width(Spacing.Large)
-                                            .height(IdeShellDimens.HairlineBorder)
+                                            .height(GlassDimens.HairlineBorder)
                                             .background(colors.accentBlue),
                                     )
                                 }
@@ -555,7 +555,7 @@ public fun BuildPropertiesPane(
                         }
                     }
 
-                    HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+                    HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
 
                     val helpText = "Build properties allow you to override system properties that will " +
                         "be included in the generated system image.\n\n" +
@@ -633,7 +633,7 @@ private fun BuildTypeDropdown(
                     .fillMaxWidth()
                     .clip(GlassShapes.ShellControl)
                     .background(colors.cardBackgroundMuted)
-                    .border(IdeShellDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
+                    .border(GlassDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
                     .clickable { expanded = true }
                     .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Small),
                 verticalAlignment = Alignment.CenterVertically,
@@ -703,7 +703,7 @@ private fun PropertyRowItem(
                 modifier = Modifier.width(Spacing.Large),
             )
 
-            Box(modifier = Modifier.width(IdeShellDimens.AcquireTableIconColWidth)) {
+            Box(modifier = Modifier.width(GlassDimens.AcquireTableIconColWidth)) {
                 Checkbox(
                     checked = isChecked,
                     onCheckedChange = onCheckedChange,
@@ -722,7 +722,7 @@ private fun PropertyRowItem(
                     .padding(end = Spacing.ExtraSmall)
                     .background(colors.cardBackgroundMuted, GlassShapes.ShellControl)
                     .border(
-                        IdeShellDimens.HairlineBorder,
+                        GlassDimens.HairlineBorder,
                         if (entry.hasError) colors.errorRed else colors.borderMuted,
                         GlassShapes.ShellControl,
                     )
@@ -743,7 +743,7 @@ private fun PropertyRowItem(
                     .padding(end = Spacing.ExtraSmall)
                     .background(colors.cardBackgroundMuted, GlassShapes.ShellControl)
                     .border(
-                        IdeShellDimens.HairlineBorder,
+                        GlassDimens.HairlineBorder,
                         if (entry.hasError) colors.errorRed else colors.borderMuted,
                         GlassShapes.ShellControl,
                     )
@@ -802,7 +802,7 @@ private fun PropertyRowItem(
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
                 modifier = Modifier.padding(
-                    start = Spacing.Large + IdeShellDimens.AcquireTableIconColWidth,
+                    start = Spacing.Large + GlassDimens.AcquireTableIconColWidth,
                     top = Spacing.Hairline,
                 ),
             )
@@ -824,7 +824,7 @@ private fun ReservedFieldItem(label: String, value: String, colors: IdeShellColo
             modifier = Modifier
                 .fillMaxWidth()
                 .background(colors.cardBackgroundMuted, GlassShapes.ShellControl)
-                .border(IdeShellDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
+                .border(GlassDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
                 .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Small),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,

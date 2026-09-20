@@ -22,10 +22,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.Spacing
 
 /**
@@ -41,7 +41,7 @@ fun IdeBreadcrumbBar(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(IdeShellDimens.BreadcrumbHeight)
+            .height(GlassDimens.BreadcrumbHeight)
             .background(colors.contentBackground)
             .padding(horizontal = Spacing.Medium),
         verticalAlignment = Alignment.CenterVertically,

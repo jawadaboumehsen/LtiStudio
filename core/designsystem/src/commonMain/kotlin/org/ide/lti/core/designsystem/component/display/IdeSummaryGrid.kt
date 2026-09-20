@@ -25,11 +25,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.LetterSpacing
 import org.ide.lti.core.designsystem.theme.Spacing
 
@@ -55,7 +55,7 @@ fun IdeSummaryGrid(
         modifier = modifier
             .fillMaxWidth()
             .background(colors.cardBackground, GlassShapes.ShellCard)
-            .border(IdeShellDimens.HairlineBorder, colors.border, GlassShapes.ShellCard)
+            .border(GlassDimens.HairlineBorder, colors.border, GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {

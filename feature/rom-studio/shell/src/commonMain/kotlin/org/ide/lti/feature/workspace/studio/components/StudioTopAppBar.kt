@@ -36,11 +36,11 @@ import org.ide.lti.core.designsystem.component.layout.GlobalAppTopBar
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BrandColors
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
@@ -146,7 +146,7 @@ internal fun TopBarTargetSpecifier(
                 .clip(GlassShapes.ShellControl)
                 .background(colors.cardBackgroundMuted)
                 .border(
-                    width = IdeShellDimens.HairlineBorder,
+                    width = GlassDimens.HairlineBorder,
                     color = colors.border,
                     shape = GlassShapes.ShellControl,
                 )
@@ -184,7 +184,7 @@ internal fun TopBarTargetSpecifier(
         // Vertical Divider
         Box(
             modifier = Modifier
-                .width(IdeShellDimens.HairlineBorder)
+                .width(GlassDimens.HairlineBorder)
                 .height(Spacing.Medium)
                 .background(colors.border),
         )
@@ -201,7 +201,7 @@ internal fun TopBarTargetSpecifier(
                 .clip(GlassShapes.ShellControl)
                 .background(colors.warningAmberBg)
                 .border(
-                    width = IdeShellDimens.HairlineBorder,
+                    width = GlassDimens.HairlineBorder,
                     color = colors.warningAmber.copy(alpha = AlphaTokens.Muted),
                     shape = GlassShapes.ShellControl,
                 )

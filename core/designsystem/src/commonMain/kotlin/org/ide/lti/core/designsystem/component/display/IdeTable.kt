@@ -38,11 +38,11 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.Spacing
 
 /**
@@ -77,7 +77,7 @@ public fun IdeTableHeader(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(IdeShellDimens.TableHeaderRowHeight)
+                .height(GlassDimens.TableHeaderRowHeight)
                 .background(colors.tableHeader)
                 .padding(horizontal = Spacing.Medium),
             verticalAlignment = Alignment.CenterVertically,
@@ -133,7 +133,7 @@ public fun IdeTableRow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(IdeShellDimens.TableBodyRowHeight)
+                .height(GlassDimens.TableBodyRowHeight)
                 .background(rowBg)
                 .then(clickableModifier)
                 .padding(horizontal = Spacing.Medium),
@@ -179,9 +179,9 @@ public fun IdeTableRadioIndicator(
 ) {
     Box(
         modifier = modifier
-            .size(IdeShellDimens.TableSelectionIndicatorSize)
+            .size(GlassDimens.TableSelectionIndicatorSize)
             .border(
-                width = IdeShellDimens.HairlineBorder,
+                width = GlassDimens.HairlineBorder,
                 color = if (isSelected) colors.accentBlue else colors.border,
                 shape = GlassShapes.Full,
             ),
@@ -190,7 +190,7 @@ public fun IdeTableRadioIndicator(
         if (isSelected) {
             Box(
                 modifier = Modifier
-                    .size(IdeShellDimens.StatusBadgeIconSize)
+                    .size(GlassDimens.StatusBadgeIconSize)
                     .background(colors.accentBlue, GlassShapes.Full),
             )
         }

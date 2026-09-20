@@ -49,12 +49,12 @@ import org.ide.lti.core.designsystem.component.display.IdeStatusSeverity
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.theme.BrandColors
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.feature.workspace.studio.ReadinessId
 import org.ide.lti.feature.workspace.studio.ReadinessItemUi
@@ -164,14 +164,14 @@ private fun ReadinessRowItem(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
             modifier = Modifier.width(
-                IdeShellDimens.ReadinessLabelColumnWidth + IdeShellDimens.OverviewStageIconBoxSize,
+                GlassDimens.ReadinessLabelColumnWidth + GlassDimens.OverviewStageIconBoxSize,
             ),
         ) {
             Box(
                 modifier = Modifier
-                    .size(IdeShellDimens.OverviewStageIconBoxSize)
+                    .size(GlassDimens.OverviewStageIconBoxSize)
                     .background(colors.cardBackgroundMuted, GlassShapes.ShellControl)
-                    .border(IdeShellDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl),
+                    .border(GlassDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -200,7 +200,7 @@ private fun ReadinessRowItem(
         }
 
         // Status Badge (useDot variant for sleek presentation)
-        Box(modifier = Modifier.width(IdeShellDimens.ReadinessStatusColumnWidth + Spacing.ExtraExtraLarge)) {
+        Box(modifier = Modifier.width(GlassDimens.ReadinessStatusColumnWidth + Spacing.ExtraExtraLarge)) {
             IdeStatusBadge(
                 label = item.statusLabel,
                 severity = mapReadinessSeverity(item),
@@ -259,7 +259,7 @@ private fun ReadinessActionButton(
             .testTag("ReadinessAction_${item.id.name}")
             .semantics { role = Role.Button }
             .background(style.bg, GlassShapes.ShellControl)
-            .border(IdeShellDimens.HairlineBorder, style.border, GlassShapes.ShellControl)
+            .border(GlassDimens.HairlineBorder, style.border, GlassShapes.ShellControl)
             .clickable(
                 interactionSource = btnInteraction,
                 indication = null,

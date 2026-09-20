@@ -21,9 +21,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.domain.pipeline.configuration.ValidationError
 import org.ide.lti.core.model.target.TargetDevice
@@ -59,7 +59,7 @@ public fun AssembleEditor(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .widthIn(max = IdeShellDimens.OverviewMaxContentWidth)
+                .widthIn(max = GlassDimens.OverviewMaxContentWidth)
                 .verticalScroll(scrollState)
                 .padding(horizontal = Spacing.ExtraLarge, vertical = Spacing.Medium),
         ) {
