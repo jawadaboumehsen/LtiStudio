@@ -780,9 +780,9 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/actions/GlassButton.kt": {
-    "mtime": 1789866825.3331082,
-    "seen": 1789935395.302028,
-    "ast_hash": "191032dccb4bdf3e109d66223677a17f",
+    "mtime": 1789942453.1055517,
+    "seen": 1789942979.1615713,
+    "ast_hash": "b3d9b0dd595d6a1ee6a67b4beaff39df",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/actions/WindowControlActions.kt": {
@@ -792,15 +792,15 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/devtools/GlassPerformanceMonitor.kt": {
-    "mtime": 1789866697.4649036,
-    "seen": 1789935395.302028,
-    "ast_hash": "f4d28b6227df093025655309334727f5",
+    "mtime": 1789938065.0155456,
+    "seen": 1789938790.2112024,
+    "ast_hash": "272d9da1528d3fab49892d1318d8d0f4",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/display/GlassCard.kt": {
-    "mtime": 1789866697.542436,
-    "seen": 1789935395.302028,
-    "ast_hash": "4c92518bba302859d45faf25b0d5d430",
+    "mtime": 1789938027.0075657,
+    "seen": 1789938790.2112024,
+    "ast_hash": "83791225c472e8a1a06634d2b8490a76",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/display/GlassChip.kt": {
@@ -852,9 +852,9 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/feedback/GlassDialog.kt": {
-    "mtime": 1789866699.3850732,
-    "seen": 1789935395.302028,
-    "ast_hash": "a0d33018a7ad423fc147cd538ea2284c",
+    "mtime": 1789939948.6545558,
+    "seen": 1789940138.4665558,
+    "ast_hash": "eb3f86299cec13f1611ee6f2003c77d8",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/feedback/GlassScrollEdge.kt": {
@@ -894,9 +894,9 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/layout/GlassLayout.kt": {
-    "mtime": 1789866700.4900374,
-    "seen": 1789935395.302028,
-    "ast_hash": "e8ea1ef7eae89c7257e5505fc756f26f",
+    "mtime": 1789937453.3248694,
+    "seen": 1789937579.0701437,
+    "ast_hash": "e3c59f0b7f81f00407a1ed23e3129a9d",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/layout/GlassLayoutDefaults.kt": {
@@ -918,9 +918,9 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/layout/GlassStatusBar.kt": {
-    "mtime": 1789866700.8881612,
-    "seen": 1789935395.302028,
-    "ast_hash": "19392a3f7bcc9c0aebad071a33df3c33",
+    "mtime": 1789937075.6154032,
+    "seen": 1789937579.0701437,
+    "ast_hash": "d2530156c373b73f5b0546dccfd79d46",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/layout/GlassToggleButtonsOverlay.kt": {
@@ -930,9 +930,9 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/layout/GlassTopBar.kt": {
-    "mtime": 1789866701.3871717,
-    "seen": 1789935395.302028,
-    "ast_hash": "c40b9fa8a93c5a9ff06e510ab8064bdd",
+    "mtime": 1789937143.6162586,
+    "seen": 1789937579.0701437,
+    "ast_hash": "92d4f269b5e9d90c71bca19c1e5eb0be",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/navigation/GlassBottomTabs.kt": {
@@ -972,9 +972,9 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/primitives/GlassModifiers.kt": {
-    "mtime": 1789935173.696326,
-    "seen": 1789935395.302028,
-    "ast_hash": "a089c5dbe75023bc4f7e94f2a080d5b1",
+    "mtime": 1789939519.087737,
+    "seen": 1789940138.4665558,
+    "ast_hash": "bac49876ed47e23d787ab950c1cbb6b8",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/primitives/GlassSurface.kt": {
@@ -1224,8 +1224,8 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/Alpha.kt": {
-    "mtime": 1789930049.5687153,
-    "seen": 1789935395.302028,
+    "mtime": 1789946091.9481633,
+    "seen": 1789946470.727521,
     "ast_hash": "fd5cb6917366f883ee1f61693f0e451a",
     "semantic_hash": ""
   },
@@ -1236,8 +1236,8 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/Color.kt": {
-    "mtime": 1789930393.5913174,
-    "seen": 1789935395.302028,
+    "mtime": 1789946091.949164,
+    "seen": 1789946470.727521,
     "ast_hash": "b1b78728f0dbe05af55f31b57de7ddf5",
     "semantic_hash": ""
   },
@@ -1248,15 +1248,15 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/Dimens.kt": {
-    "mtime": 1789921006.0482976,
-    "seen": 1789935395.302028,
-    "ast_hash": "7a27a4c083c3a22aa8dbbd9500ea24c7",
+    "mtime": 1789946091.9506724,
+    "seen": 1789946470.727521,
+    "ast_hash": "290ec0f0a65474b58f3036a3ce85e150",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/GlassEffects.kt": {
-    "mtime": 1789866390.8146603,
-    "seen": 1789935395.302028,
-    "ast_hash": "7bf1128fb5a1d9431c86b60637e44390",
+    "mtime": 1789942442.9348705,
+    "seen": 1789942979.1625705,
+    "ast_hash": "51af676e7f8c73768ef6e53fbae44ca5",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/Motion.kt": {
@@ -1265,15 +1265,9 @@
     "ast_hash": "2fe839a415c13e7ca46bc4a64fbd17b3",
     "semantic_hash": ""
   },
-  "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/Shape.kt": {
-    "mtime": 1789869073.0894787,
-    "seen": 1789935395.302028,
-    "ast_hash": "b54afb2d8e752eed4195747dbbc4549a",
-    "semantic_hash": ""
-  },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/Theme.kt": {
-    "mtime": 1789929377.4223106,
-    "seen": 1789935395.302028,
+    "mtime": 1789946091.9536846,
+    "seen": 1789946470.727521,
     "ast_hash": "1665f6800e5d81573701cf579326b126",
     "semantic_hash": ""
   },
@@ -1362,9 +1356,9 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/desktopTest/kotlin/org/ide/lti/core/designsystem/screenshot/GlassComponentScreenshotTest.kt": {
-    "mtime": 1789866392.86429,
-    "seen": 1789935395.302028,
-    "ast_hash": "e4b6ae878bf7ed9575a498bef3fa54cf",
+    "mtime": 1789936984.0385725,
+    "seen": 1789937579.0701437,
+    "ast_hash": "1a6b7f0a4c817700a6a9dd381f390f2d",
     "semantic_hash": ""
   },
   "core/designsystem/src/desktopTest/kotlin/org/ide/lti/core/designsystem/screenshot/GlassEffectsDisabledScreenshotTest.kt": {
@@ -1554,9 +1548,9 @@
     "semantic_hash": ""
   },
   "core/ui/src/commonMain/kotlin/org/ide/lti/core/ui/WorkspaceStatusBar.kt": {
-    "mtime": 1789164290.935242,
-    "seen": 1789260361.2553003,
-    "ast_hash": "74188818488a08b10eb964fcdc9d79d9",
+    "mtime": 1789937081.664447,
+    "seen": 1789937579.0701437,
+    "ast_hash": "925bad0414ddc07cb5ec47c561d04658",
     "semantic_hash": ""
   },
   "core/ui/src/commonMain/kotlin/org/ide/lti/core/ui/syntax/KotlinSyntaxTokenizer.kt": {
@@ -1674,9 +1668,9 @@
     "semantic_hash": ""
   },
   "feature/settings/src/commonMain/kotlin/org/ide/lti/feature/settings/NotificationScreen.kt": {
-    "mtime": 1789929771.3895247,
-    "seen": 1789935395.302028,
-    "ast_hash": "d1aefa5e8073689e9e549a5291942e45",
+    "mtime": 1789946092.0102553,
+    "seen": 1789946470.727521,
+    "ast_hash": "2e4d33c93ec7442a3defbd7261212971",
     "semantic_hash": ""
   },
   "feature/settings/src/commonMain/kotlin/org/ide/lti/feature/settings/SettingsNavigation.kt": {
@@ -1686,9 +1680,9 @@
     "semantic_hash": ""
   },
   "feature/settings/src/commonMain/kotlin/org/ide/lti/feature/settings/SettingsScreen.kt": {
-    "mtime": 1789930212.606822,
-    "seen": 1789935395.302028,
-    "ast_hash": "74d0ea80b4b0005c167608a93847982e",
+    "mtime": 1789946092.0112543,
+    "seen": 1789946470.727521,
+    "ast_hash": "6060b438a4396e60048d120d979c405c",
     "semantic_hash": ""
   },
   "feature/setup/build.gradle.kts": {
@@ -2394,9 +2388,9 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1789228656.3074603,
-    "seen": 1789260361.256803,
-    "ast_hash": "d57aa334c401a9ed680d38be43e117bd",
+    "mtime": 1789942625.9259863,
+    "seen": 1789942979.167109,
+    "ast_hash": "5dddf76372b30e8185d24d71357fe801",
     "semantic_hash": ""
   },
   "CODE_OF_CONDUCT.md": {
@@ -7656,9 +7650,9 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/desktopTest/resources/screenshots/glass_layout_focused_panel.png": {
-    "mtime": 1789164290.930258,
-    "seen": 1789260361.2578082,
-    "ast_hash": "62c5bc44294673034948f3da02825140",
+    "mtime": 1789937015.3346417,
+    "seen": 1789937579.0721493,
+    "ast_hash": "9a2ebc4986fc77c3b2d0af4765bfd61d",
     "semantic_hash": ""
   },
   "core/designsystem/src/desktopTest/resources/screenshots/glass_navigation_bar_effects_disabled.png": {
@@ -7716,9 +7710,9 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/desktopTest/resources/screenshots/glass_top_bar.png": {
-    "mtime": 1789164290.931242,
-    "seen": 1789260361.2578082,
-    "ast_hash": "67fd019bd5fa165c393bfc008d5f063d",
+    "mtime": 1789939578.5064814,
+    "seen": 1789940138.469555,
+    "ast_hash": "9bf7dd206e00ecbaaef9299f6a08b828",
     "semantic_hash": ""
   },
   "designImg/currentdesign.png": {
@@ -12750,63 +12744,63 @@
     "semantic_hash": ""
   },
   "catalog/src/desktopMain/kotlin/org/ide/lti/catalog/tabs/IdeShellCatalogTab.kt": {
-    "mtime": 1789651913.9093966,
-    "seen": 1789656895.1043928,
-    "ast_hash": "0a0e5b2f67e972b7eeb3eb6883fc7290",
+    "mtime": 1789946091.9346375,
+    "seen": 1789946470.7265203,
+    "ast_hash": "84c1a85ce376f84f60acba8f26f22558",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/display/IdeReadinessRow.kt": {
-    "mtime": 1789866698.6569564,
-    "seen": 1789935395.302028,
-    "ast_hash": "3f2b2684aec303c2c2fd20612f21b885",
+    "mtime": 1789946091.9366465,
+    "seen": 1789946470.727521,
+    "ast_hash": "0e859ba760e1d8512d7fc8c82eb31709",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/display/IdeStatusBadge.kt": {
-    "mtime": 1789866382.9557822,
-    "seen": 1789935395.302028,
-    "ast_hash": "795bf24bd7c363c5d710e94bc3752b4c",
+    "mtime": 1789946091.9381537,
+    "seen": 1789946470.727521,
+    "ast_hash": "d0c0fac5237435792f8320b36b743a2e",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/display/IdeSummaryGrid.kt": {
-    "mtime": 1789866698.7515178,
-    "seen": 1789935395.302028,
-    "ast_hash": "7ca4a20a777966b36609adb91eeda9c1",
+    "mtime": 1789946091.9391658,
+    "seen": 1789946470.727521,
+    "ast_hash": "29a0d0a1086e515663674059d2b35d42",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/layout/IdeAppFrame.kt": {
-    "mtime": 1789869225.2535875,
-    "seen": 1789935395.302028,
-    "ast_hash": "1a1cd608c439d10c2f888c958571508e",
+    "mtime": 1789946091.9431648,
+    "seen": 1789946470.727521,
+    "ast_hash": "535c38b996f3d4bf5378c7fa9229cb76",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/layout/IdeBreadcrumbBar.kt": {
-    "mtime": 1789866701.5329797,
-    "seen": 1789935395.302028,
-    "ast_hash": "89f34addbae718e4a2ec686f4c03e37c",
+    "mtime": 1789946091.9431648,
+    "seen": 1789946470.727521,
+    "ast_hash": "a47cd3c09efa50a8dff974d509c51805",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/layout/IdeNavigatorPanel.kt": {
-    "mtime": 1789870271.5677643,
-    "seen": 1789935395.302028,
-    "ast_hash": "822e9220ea33217f76f8d6760890fa98",
+    "mtime": 1789946091.9441638,
+    "seen": 1789946470.727521,
+    "ast_hash": "04d3ee07dbe59e2c897fc5d085d23046",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/layout/IdePipelineRail.kt": {
-    "mtime": 1789872610.0089524,
-    "seen": 1789935395.302028,
-    "ast_hash": "500e0d3dd3ed51cb4257a9313f0e37bd",
+    "mtime": 1789946091.9451632,
+    "seen": 1789946470.727521,
+    "ast_hash": "0dc7558a24f4ce95ef7ebda158417d5b",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/layout/IdeStatusBar.kt": {
-    "mtime": 1789866386.259405,
-    "seen": 1789935395.302028,
-    "ast_hash": "11bbf032c1b78bffe6a6ad1a8a8e1967",
+    "mtime": 1789946091.946163,
+    "seen": 1789946470.727521,
+    "ast_hash": "ed340e49bca0f636e7e7904b2718be25",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/layout/IdeTopAppBar.kt": {
-    "mtime": 1789866386.299161,
-    "seen": 1789935395.302028,
-    "ast_hash": "198d2f9df453ee4fdff8c05a996fa9bc",
+    "mtime": 1789946091.9471643,
+    "seen": 1789946470.727521,
+    "ast_hash": "8065c780efac5509e7a35612e7a28841",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/layout/StudioGlassBackdrop.kt": {
@@ -12816,9 +12810,9 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/commonTest/kotlin/org/ide/lti/core/designsystem/theme/IdeShellTokensTest.kt": {
-    "mtime": 1789869046.9654944,
-    "seen": 1789935395.302028,
-    "ast_hash": "d9b3ac466e7a986f21026d5900661090",
+    "mtime": 1789946091.9546866,
+    "seen": 1789946470.727521,
+    "ast_hash": "a4607f6e16264ad43879cc4f2c9b3d1c",
     "semantic_hash": ""
   },
   "core/designsystem/src/desktopTest/kotlin/org/ide/lti/core/designsystem/screenshot/IdeShellComponentTest.kt": {
@@ -12876,9 +12870,9 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/layout/GlobalAppTopBar.kt": {
-    "mtime": 1789929545.5468397,
-    "seen": 1789935395.302028,
-    "ast_hash": "ddbd24ef37bc621f1dbb70c01d78b369",
+    "mtime": 1789946091.9421635,
+    "seen": 1789946470.727521,
+    "ast_hash": "6f986fc2ff1bc688f5918005a95a1347",
     "semantic_hash": ""
   },
   "core/designsystem/src/desktopTest/kotlin/org/ide/lti/core/designsystem/layout/GlobalAppTopBarTest.kt": {
@@ -12888,15 +12882,15 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/display/IdeCardSurface.kt": {
-    "mtime": 1789866382.7813802,
-    "seen": 1789935395.302028,
-    "ast_hash": "a4d86abe285e3846b7dd85600f868d03",
+    "mtime": 1789946091.9366465,
+    "seen": 1789946470.727521,
+    "ast_hash": "bd6056a7d4383113968e4776b99fdb7d",
     "semantic_hash": ""
   },
   "feature/setup/src/commonMain/kotlin/org/ide/lti/feature/setup/steps/RecoveryStepContent.kt": {
-    "mtime": 1789866385.5902095,
-    "seen": 1789935395.302028,
-    "ast_hash": "d438e92e29fb2494c92dfef956ced1e3",
+    "mtime": 1789946092.0197783,
+    "seen": 1789946470.727521,
+    "ast_hash": "87d194199ab3802cc149fd28efa4c486",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/display/LtiRomStudioMark.kt": {
@@ -12906,45 +12900,45 @@
     "semantic_hash": ""
   },
   "feature/settings/src/commonMain/kotlin/org/ide/lti/feature/settings/components/AboutSettingsPane.kt": {
-    "mtime": 1789930397.6794214,
-    "seen": 1789935395.302028,
-    "ast_hash": "06dd234613c5149b904d09abd4439bec",
+    "mtime": 1789946092.012257,
+    "seen": 1789946470.727521,
+    "ast_hash": "e2949be6e375cfa5eacaa6f7bc8110de",
     "semantic_hash": ""
   },
   "feature/settings/src/commonMain/kotlin/org/ide/lti/feature/settings/components/AppearanceSettingsPane.kt": {
-    "mtime": 1789930470.513125,
-    "seen": 1789935395.302028,
-    "ast_hash": "492a0f2a077faf65c0e6e6d0fc1002c6",
+    "mtime": 1789946092.0132556,
+    "seen": 1789946470.727521,
+    "ast_hash": "9664da974e0938c27588ab7a155d2fd9",
     "semantic_hash": ""
   },
   "feature/settings/src/commonMain/kotlin/org/ide/lti/feature/settings/components/EditorSettingsPane.kt": {
-    "mtime": 1789930479.0501783,
-    "seen": 1789935395.302028,
-    "ast_hash": "caf7a329524f0902601e614e13b8b610",
+    "mtime": 1789946092.0142546,
+    "seen": 1789946470.727521,
+    "ast_hash": "8f31a4f094bb7ebed19fbfb8fb33ecbc",
     "semantic_hash": ""
   },
   "feature/settings/src/commonMain/kotlin/org/ide/lti/feature/settings/components/GenericCategoryPane.kt": {
-    "mtime": 1789929589.252646,
-    "seen": 1789935395.302028,
-    "ast_hash": "bb9d6694e444e81dc73f59b19332fc44",
+    "mtime": 1789946092.015254,
+    "seen": 1789946470.727521,
+    "ast_hash": "bf2a1bed139e7004c00ac00cae0691ae",
     "semantic_hash": ""
   },
   "feature/settings/src/commonMain/kotlin/org/ide/lti/feature/settings/components/LiveStudioPreviewCard.kt": {
-    "mtime": 1789930314.0196204,
-    "seen": 1789935395.302028,
-    "ast_hash": "8206976249d82db102a5c98c451c5e56",
+    "mtime": 1789946092.016255,
+    "seen": 1789946470.727521,
+    "ast_hash": "c30e62f5a86186e388b7cfdfefa84e90",
     "semantic_hash": ""
   },
   "feature/settings/src/commonMain/kotlin/org/ide/lti/feature/settings/components/NotificationsSettingsPane.kt": {
-    "mtime": 1789929580.2843416,
-    "seen": 1789935395.302028,
-    "ast_hash": "13e1747d4f55bcd218ac1b39ef56d832",
+    "mtime": 1789946092.0177631,
+    "seen": 1789946470.727521,
+    "ast_hash": "19367bf671e6cbcb20e8ab3ea9b19344",
     "semantic_hash": ""
   },
   "feature/settings/src/commonMain/kotlin/org/ide/lti/feature/settings/components/SettingsSidebar.kt": {
-    "mtime": 1789929970.1257935,
-    "seen": 1789935395.302028,
-    "ast_hash": "5fcf1c495f90f0ac4c40edfaa95616ec",
+    "mtime": 1789946092.018769,
+    "seen": 1789946470.727521,
+    "ast_hash": "3828127c499a9706e0d898fd7a997a04",
     "semantic_hash": ""
   },
   "feature/settings/src/commonMain/kotlin/org/ide/lti/feature/settings/model/SettingsCategory.kt": {
@@ -13344,9 +13338,9 @@
     "semantic_hash": ""
   },
   "feature/rom-studio/shell/src/commonMain/kotlin/org/ide/lti/feature/workspace/studio/WorkspaceOverview.kt": {
-    "mtime": 1789916422.7016082,
-    "seen": 1789935395.302028,
-    "ast_hash": "30a52db80ddf8ad0c5b306632e260f64",
+    "mtime": 1789946091.957683,
+    "seen": 1789946470.727521,
+    "ast_hash": "c3bc2535181800d13976978d4d010c17",
     "semantic_hash": ""
   },
   "feature/rom-studio/shell/src/commonMain/kotlin/org/ide/lti/feature/workspace/studio/WorkspaceOverviewMapper.kt": {
@@ -13368,27 +13362,27 @@
     "semantic_hash": ""
   },
   "feature/rom-studio/shell/src/commonMain/kotlin/org/ide/lti/feature/workspace/studio/components/OverviewBreadcrumbHeader.kt": {
-    "mtime": 1789916593.7861454,
-    "seen": 1789935395.302028,
-    "ast_hash": "7ec0b82ba9ade8209707abe3cfb9878d",
+    "mtime": 1789946091.9586837,
+    "seen": 1789946470.727521,
+    "ast_hash": "427350393abf0aa553418d3472e19ecf",
     "semantic_hash": ""
   },
   "feature/rom-studio/shell/src/commonMain/kotlin/org/ide/lti/feature/workspace/studio/components/OverviewCallToAction.kt": {
-    "mtime": 1789871262.408952,
-    "seen": 1789935395.302028,
-    "ast_hash": "a5a4d60784d02e802da461e7d45594d2",
+    "mtime": 1789945072.8702338,
+    "seen": 1789945397.5653033,
+    "ast_hash": "ef57670cdba51e0de507057b8d3c2914",
     "semantic_hash": ""
   },
   "feature/rom-studio/shell/src/commonMain/kotlin/org/ide/lti/feature/workspace/studio/components/ReadinessChecklistSection.kt": {
-    "mtime": 1789871872.8572912,
-    "seen": 1789935395.302028,
-    "ast_hash": "2a27b81caec9a6270687790fd4d12cc5",
+    "mtime": 1789946091.9596834,
+    "seen": 1789946470.727521,
+    "ast_hash": "6a5003cc7322c3c762dfedaacd3bd246",
     "semantic_hash": ""
   },
   "feature/rom-studio/shell/src/commonMain/kotlin/org/ide/lti/feature/workspace/studio/components/RecentActivitySection.kt": {
-    "mtime": 1789871292.5381122,
-    "seen": 1789935395.302028,
-    "ast_hash": "6ea9dc69ea4614854cf8304e09408f4c",
+    "mtime": 1789946091.960685,
+    "seen": 1789946470.727521,
+    "ast_hash": "951732e67ef701d341b06e8c3e8fd08f",
     "semantic_hash": ""
   },
   "feature/rom-studio/shell/src/commonMain/kotlin/org/ide/lti/feature/workspace/studio/components/StudioStatusBar.kt": {
@@ -13398,21 +13392,21 @@
     "semantic_hash": ""
   },
   "feature/rom-studio/shell/src/commonMain/kotlin/org/ide/lti/feature/workspace/studio/components/StudioTopAppBar.kt": {
-    "mtime": 1789871856.758596,
-    "seen": 1789935395.302028,
-    "ast_hash": "c7673ff05afebd5d47ba663ebdcb9fab",
+    "mtime": 1789946091.9626863,
+    "seen": 1789946470.727521,
+    "ast_hash": "732dd9a399d379e855263e1c9b0f95a5",
     "semantic_hash": ""
   },
   "feature/rom-studio/shell/src/commonMain/kotlin/org/ide/lti/feature/workspace/studio/components/TargetProfileCard.kt": {
-    "mtime": 1789872010.7614603,
-    "seen": 1789935395.302028,
-    "ast_hash": "30c8942e07d071e8e3ecd6b277a20a97",
+    "mtime": 1789946091.964685,
+    "seen": 1789946470.727521,
+    "ast_hash": "84ae6f6c923cf0447af28a8dd2927cea",
     "semantic_hash": ""
   },
   "feature/rom-studio/shell/src/commonMain/kotlin/org/ide/lti/feature/workspace/studio/components/WorkspaceNavigator.kt": {
-    "mtime": 1789746506.899112,
-    "seen": 1789773077.5141346,
-    "ast_hash": "9647df3f45f9a8d64b117b50f332354c",
+    "mtime": 1789946091.9661965,
+    "seen": 1789946470.727521,
+    "ast_hash": "8ff9bca98625b87fa53ff8bcc18769d3",
     "semantic_hash": ""
   },
   "feature/rom-studio/shell/src/commonMain/kotlin/org/ide/lti/feature/workspace/studio/di/RomStudioModule.kt": {
@@ -13458,15 +13452,15 @@
     "semantic_hash": ""
   },
   "feature/rom-studio/shell/src/desktopTest/kotlin/org/ide/lti/feature/workspace/studio/StudioShellLayoutTest.kt": {
-    "mtime": 1789916522.426693,
-    "seen": 1789935395.302028,
-    "ast_hash": "f1b2cb3c9708102fdd23853a62547ad9",
+    "mtime": 1789946091.9687736,
+    "seen": 1789946470.727521,
+    "ast_hash": "36f571c7d9399503c12dac0ffd89e844",
     "semantic_hash": ""
   },
   "feature/rom-studio/shell/src/desktopTest/kotlin/org/ide/lti/feature/workspace/studio/WorkspaceOverviewScreenTest.kt": {
-    "mtime": 1789673041.025379,
-    "seen": 1789773077.5141346,
-    "ast_hash": "6a70fca70c0f932efaf7927f8f862c37",
+    "mtime": 1789946091.9697783,
+    "seen": 1789946470.727521,
+    "ast_hash": "8938e04c24e0f13299381f6f45854ffe",
     "semantic_hash": ""
   },
   "feature/rom-studio/stage-acquire/build.gradle.kts": {
@@ -13476,9 +13470,9 @@
     "semantic_hash": ""
   },
   "feature/rom-studio/stage-acquire/src/commonMain/kotlin/org/ide/lti/feature/rom/studio/stage/acquire/AcquireEditor.kt": {
-    "mtime": 1789772135.1330848,
-    "seen": 1789773077.5141346,
-    "ast_hash": "e454eee96f59bf9774aba863f2d426a5",
+    "mtime": 1789946091.9717724,
+    "seen": 1789946470.727521,
+    "ast_hash": "8337be4c3605b4b4e839570516a6c08b",
     "semantic_hash": ""
   },
   "feature/rom-studio/stage-acquire/src/commonMain/kotlin/org/ide/lti/feature/rom/studio/stage/acquire/AcquireStageEditor.kt": {
@@ -13500,39 +13494,39 @@
     "semantic_hash": ""
   },
   "feature/rom-studio/stage-acquire/src/commonMain/kotlin/org/ide/lti/feature/rom/studio/stage/acquire/panes/AcquireHeader.kt": {
-    "mtime": 1789772125.7497127,
-    "seen": 1789773077.5141346,
-    "ast_hash": "d47f44961130ed5ce5b05edcce105d06",
+    "mtime": 1789945073.574249,
+    "seen": 1789945397.5653033,
+    "ast_hash": "0c8621f110c06c7775f982e0859f79ee",
     "semantic_hash": ""
   },
   "feature/rom-studio/stage-acquire/src/commonMain/kotlin/org/ide/lti/feature/rom/studio/stage/acquire/panes/DownloadPolicyPane.kt": {
-    "mtime": 1789874726.363048,
-    "seen": 1789935395.302028,
-    "ast_hash": "77d2b70842b9033401bcb4f37c98f857",
+    "mtime": 1789946091.973772,
+    "seen": 1789946470.727521,
+    "ast_hash": "41a2af8decc23a45452b500bdb88dce8",
     "semantic_hash": ""
   },
   "feature/rom-studio/stage-acquire/src/commonMain/kotlin/org/ide/lti/feature/rom/studio/stage/acquire/panes/ExistingArchivesPane.kt": {
-    "mtime": 1789874780.1283712,
-    "seen": 1789935395.302028,
-    "ast_hash": "4ed7a7d57becc1a21ece017ef7abb65e",
+    "mtime": 1789946091.9747727,
+    "seen": 1789946470.727521,
+    "ast_hash": "29edad39fc98fdab64207b422dcedd2d",
     "semantic_hash": ""
   },
   "feature/rom-studio/stage-acquire/src/commonMain/kotlin/org/ide/lti/feature/rom/studio/stage/acquire/panes/FirmwareBaselinePane.kt": {
-    "mtime": 1789874789.7879233,
-    "seen": 1789935395.302028,
-    "ast_hash": "5e72d268ea3385d18e6a995f42e83633",
+    "mtime": 1789946091.975771,
+    "seen": 1789946470.727521,
+    "ast_hash": "cab9a11d6cf1ab876fa89eb8b85dfda6",
     "semantic_hash": ""
   },
   "feature/rom-studio/stage-acquire/src/commonMain/kotlin/org/ide/lti/feature/rom/studio/stage/acquire/panes/IntegrityPane.kt": {
-    "mtime": 1789874081.347475,
-    "seen": 1789935395.302028,
-    "ast_hash": "2d9770e1f1daa2b94089b6c5e9ca73ef",
+    "mtime": 1789946091.9777868,
+    "seen": 1789946470.727521,
+    "ast_hash": "6df8b98c4765c9127a8efbb9b7567c28",
     "semantic_hash": ""
   },
   "feature/rom-studio/stage-acquire/src/commonMain/kotlin/org/ide/lti/feature/rom/studio/stage/acquire/panes/SourceModePane.kt": {
-    "mtime": 1789874773.2592633,
-    "seen": 1789935395.302028,
-    "ast_hash": "319820aaad61a8765aa759820a8cfe3f",
+    "mtime": 1789945074.1748877,
+    "seen": 1789945397.5653033,
+    "ast_hash": "93e1c17e3d21765710c39dab62a54403",
     "semantic_hash": ""
   },
   "feature/rom-studio/stage-acquire/src/commonTest/kotlin/org/ide/lti/feature/rom/studio/stage/acquire/AcquireStageEditorTest.kt": {
@@ -13548,9 +13542,9 @@
     "semantic_hash": ""
   },
   "feature/rom-studio/stage-assemble/src/commonMain/kotlin/org/ide/lti/feature/rom/studio/stage/assemble/AssembleEditor.kt": {
-    "mtime": 1789785190.455474,
-    "seen": 1789786739.7814841,
-    "ast_hash": "8c3f52f14944490becd1d04592171fca",
+    "mtime": 1789946091.9797711,
+    "seen": 1789946470.727521,
+    "ast_hash": "5f4b60f94750bcc83a49e13dd9f6e6d5",
     "semantic_hash": ""
   },
   "feature/rom-studio/stage-assemble/src/commonMain/kotlin/org/ide/lti/feature/rom/studio/stage/assemble/AssembleStageEditor.kt": {
@@ -13590,9 +13584,9 @@
     "semantic_hash": ""
   },
   "feature/rom-studio/stage-debloat/src/commonMain/kotlin/org/ide/lti/feature/rom/studio/stage/debloat/DebloatEditor.kt": {
-    "mtime": 1789924186.1322677,
-    "seen": 1789935395.302028,
-    "ast_hash": "ceb43c67efcbdac42eb648ee228ffd5d",
+    "mtime": 1789946092.002123,
+    "seen": 1789946470.727521,
+    "ast_hash": "4d7a9f5cb1ecf9ed010aac871fafae7e",
     "semantic_hash": ""
   },
   "feature/rom-studio/stage-debloat/src/commonMain/kotlin/org/ide/lti/feature/rom/studio/stage/debloat/DebloatStageEditor.kt": {
@@ -13626,9 +13620,9 @@
     "semantic_hash": ""
   },
   "feature/rom-studio/stage-extract/src/commonMain/kotlin/org/ide/lti/feature/rom/studio/stage/extract/ExtractEditor.kt": {
-    "mtime": 1789874878.2254522,
-    "seen": 1789935395.302028,
-    "ast_hash": "454bc56fdad9aa463e968ca9ffdf215b",
+    "mtime": 1789946092.0032568,
+    "seen": 1789946470.727521,
+    "ast_hash": "79972118c0156dae384d48cdf1e9cec5",
     "semantic_hash": ""
   },
   "feature/rom-studio/stage-extract/src/commonMain/kotlin/org/ide/lti/feature/rom/studio/stage/extract/ExtractStageEditor.kt": {
@@ -13662,9 +13656,9 @@
     "semantic_hash": ""
   },
   "feature/rom-studio/stage-metadata/src/commonMain/kotlin/org/ide/lti/feature/rom/studio/stage/metadata/MetadataEditor.kt": {
-    "mtime": 1789913997.0733554,
-    "seen": 1789935395.302028,
-    "ast_hash": "0fd293a8feb4bf62ce76af6218ca18cb",
+    "mtime": 1789946092.0052564,
+    "seen": 1789946470.727521,
+    "ast_hash": "e22981d8a184c3a36b40e6e6382a7d01",
     "semantic_hash": ""
   },
   "feature/rom-studio/stage-metadata/src/commonMain/kotlin/org/ide/lti/feature/rom/studio/stage/metadata/MetadataStageEditor.kt": {
@@ -13698,9 +13692,9 @@
     "semantic_hash": ""
   },
   "feature/rom-studio/stage-patch/src/commonMain/kotlin/org/ide/lti/feature/rom/studio/stage/patch/PatchEditor.kt": {
-    "mtime": 1789914025.5948408,
-    "seen": 1789935395.302028,
-    "ast_hash": "4754aedbac986d871f64e7425168c4ae",
+    "mtime": 1789946092.0072548,
+    "seen": 1789946470.727521,
+    "ast_hash": "0590e77e0723dd78596040bc63a96bdd",
     "semantic_hash": ""
   },
   "feature/rom-studio/stage-patch/src/commonMain/kotlin/org/ide/lti/feature/rom/studio/stage/patch/PatchStageEditor.kt": {
@@ -13734,9 +13728,9 @@
     "semantic_hash": ""
   },
   "feature/rom-studio/stage-publish/src/commonMain/kotlin/org/ide/lti/feature/rom/studio/stage/publish/PublishEditor.kt": {
-    "mtime": 1789914043.030131,
-    "seen": 1789935395.302028,
-    "ast_hash": "d72870e31f0eb8a44ddc0f2c681e6f88",
+    "mtime": 1789946092.0092576,
+    "seen": 1789946470.727521,
+    "ast_hash": "2d81e4ead240863fcad4f1075437311e",
     "semantic_hash": ""
   },
   "feature/rom-studio/stage-publish/src/commonMain/kotlin/org/ide/lti/feature/rom/studio/stage/publish/PublishStageEditor.kt": {
@@ -19716,39 +19710,39 @@
     "semantic_hash": ""
   },
   "feature/rom-studio/stage-assemble/src/commonMain/kotlin/org/ide/lti/feature/rom/studio/stage/assemble/panes/AotCleanupPane.kt": {
-    "mtime": 1789875820.8355286,
-    "seen": 1789935395.302028,
-    "ast_hash": "67d9001d930a61eaa5a371d949c51724",
+    "mtime": 1789946091.9807754,
+    "seen": 1789946470.727521,
+    "ast_hash": "882ba6e1e96257b6ec2d0228751c5ac5",
     "semantic_hash": ""
   },
   "feature/rom-studio/stage-assemble/src/commonMain/kotlin/org/ide/lti/feature/rom/studio/stage/assemble/panes/AssembleHeader.kt": {
-    "mtime": 1789786197.0021193,
-    "seen": 1789786739.7814841,
-    "ast_hash": "ced1991c988e85c43445c2a1e20c2660",
+    "mtime": 1789945074.4588406,
+    "seen": 1789945397.5653033,
+    "ast_hash": "263e70710147aa404f01350f2f9e8884",
     "semantic_hash": ""
   },
   "feature/rom-studio/stage-assemble/src/commonMain/kotlin/org/ide/lti/feature/rom/studio/stage/assemble/panes/BootPreparationPane.kt": {
-    "mtime": 1789875037.9579751,
-    "seen": 1789935395.302028,
-    "ast_hash": "1ef604c7a74c48e346ab2fcaf28a3865",
+    "mtime": 1789946091.9817736,
+    "seen": 1789946470.727521,
+    "ast_hash": "39b572b178675fcd853a0aa15bec5f19",
     "semantic_hash": ""
   },
   "feature/rom-studio/stage-assemble/src/commonMain/kotlin/org/ide/lti/feature/rom/studio/stage/assemble/panes/BuildPropertiesPane.kt": {
-    "mtime": 1789875909.3596106,
-    "seen": 1789935395.302028,
-    "ast_hash": "06ecc63eb713c41565edfbb9f8f39469",
+    "mtime": 1789946091.984849,
+    "seen": 1789946470.727521,
+    "ast_hash": "fd9640751af0e4f35821d336719d02f5",
     "semantic_hash": ""
   },
   "feature/rom-studio/stage-assemble/src/commonMain/kotlin/org/ide/lti/feature/rom/studio/stage/assemble/panes/SystemExtHandlingPane.kt": {
-    "mtime": 1789875027.3162012,
-    "seen": 1789935395.302028,
-    "ast_hash": "14c6d4257d260c55e1d73ffc155cd90e",
+    "mtime": 1789946091.9863937,
+    "seen": 1789946470.727521,
+    "ast_hash": "3c5f0db4919c14ae8d61b456d9cb10a0",
     "semantic_hash": ""
   },
   "feature/rom-studio/stage-assemble/src/commonMain/kotlin/org/ide/lti/feature/rom/studio/stage/assemble/panes/WorkTreesPane.kt": {
-    "mtime": 1789874939.161824,
-    "seen": 1789935395.302028,
-    "ast_hash": "d92a9a00a58c54c30f0ab102c74f68fe",
+    "mtime": 1789946091.987393,
+    "seen": 1789946470.727521,
+    "ast_hash": "289f67dc4ace60cd2bad054afa6928c0",
     "semantic_hash": ""
   },
   "feature/rom-studio/stage-assemble/src/desktopTest/kotlin/org/ide/lti/feature/rom/studio/stage/assemble/AssembleEditorUiTest.kt": {
@@ -19812,9 +19806,9 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/display/IdeTable.kt": {
-    "mtime": 1789872484.2977142,
-    "seen": 1789935395.302028,
-    "ast_hash": "5a1fec0eb3550cd0c8342d274f27e4d5",
+    "mtime": 1789946091.9401648,
+    "seen": 1789946470.727521,
+    "ast_hash": "2884bd187decaa8a26d023a1efb28318",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/layout/ContentHeader.kt": {
@@ -19824,15 +19818,15 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/glass/GlassStyle.kt": {
-    "mtime": 1789929048.1750412,
-    "seen": 1789935395.302028,
-    "ast_hash": "bc52e0ab2178c45131a4e62528a7e8d6",
+    "mtime": 1789939678.6431963,
+    "seen": 1789940138.4665558,
+    "ast_hash": "8e52ebe9f85f6c3f6801e23e9b145cc5",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/glass/GlassStyles.kt": {
-    "mtime": 1789935072.5035317,
-    "seen": 1789935395.302028,
-    "ast_hash": "814b0d1aef04ebafb9215071a29818d1",
+    "mtime": 1789941346.7801664,
+    "seen": 1789941883.8487623,
+    "ast_hash": "1d79d4620beccc02bb89850c36e5aadd",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/glass/Rim.kt": {
@@ -19842,9 +19836,9 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/commonTest/kotlin/org/ide/lti/core/designsystem/theme/glass/GlassStyleTest.kt": {
-    "mtime": 1789929103.4540496,
-    "seen": 1789935395.302028,
-    "ast_hash": "244d71e9400105c7f8d52f52fa229f00",
+    "mtime": 1789939687.1696856,
+    "seen": 1789940138.4675922,
+    "ast_hash": "e1bd44b66edafff5ad5eeb8a09b2b8de",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonTest/kotlin/org/ide/lti/core/designsystem/theme/glass/RimTest.kt": {
@@ -19866,9 +19860,9 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/desktopTest/kotlin/org/ide/lti/core/designsystem/theme/glass/ModifierGlassScreenshotTest.kt": {
-    "mtime": 1789935226.195533,
-    "seen": 1789935395.302028,
-    "ast_hash": "18bbfbece94b76300eea0201f6aad842",
+    "mtime": 1789938536.508504,
+    "seen": 1789938790.2112024,
+    "ast_hash": "17fde456c1b518a95a5ccbc6457b5f48",
     "semantic_hash": ""
   },
   "THIRD_PARTY_NOTICES.md": {
@@ -19881,6 +19875,42 @@
     "mtime": 1789927907.3400087,
     "seen": 1789935395.3040147,
     "ast_hash": "bb4d9892e8951da45967f005ab31655f",
+    "semantic_hash": ""
+  },
+  "core/designsystem/src/desktopTest/resources/screenshots/glass_status_bar.png": {
+    "mtime": 1789939578.2923534,
+    "seen": 1789940138.469555,
+    "ast_hash": "f9324101eccd20567da2ef0c10098142",
+    "semantic_hash": ""
+  },
+  "core/designsystem/src/desktopTest/kotlin/org/ide/lti/core/designsystem/theme/glass/GlassStylesDialogScreenshotTest.kt": {
+    "mtime": 1789939885.6374917,
+    "seen": 1789940138.4675922,
+    "ast_hash": "948edad91a5086befefddf433b2a7769",
+    "semantic_hash": ""
+  },
+  "core/designsystem/src/desktopTest/resources/screenshots/glass_styles_dialog.png": {
+    "mtime": 1789939905.7594173,
+    "seen": 1789940138.469555,
+    "ast_hash": "1912d79773d36904453e1617ad752881",
+    "semantic_hash": ""
+  },
+  "core/designsystem/src/desktopTest/kotlin/org/ide/lti/core/designsystem/screenshot/IdeShellGlassChromeScreenshotTest.kt": {
+    "mtime": 1789946091.9556828,
+    "seen": 1789946470.727521,
+    "ast_hash": "81e88665f1ba3bd6289e12e325e9c81a",
+    "semantic_hash": ""
+  },
+  "rules/glass-context.md": {
+    "mtime": 1789942611.8912282,
+    "seen": 1789942979.167109,
+    "ast_hash": "123617d3545fd7536e9618a339e4c2ef",
+    "semantic_hash": ""
+  },
+  "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/GlassShapes.kt": {
+    "mtime": 1789946091.9526794,
+    "seen": 1789946470.727521,
+    "ast_hash": "ffcf42aaa78ce70f1d8d921868f7d548",
     "semantic_hash": ""
   }
 }
