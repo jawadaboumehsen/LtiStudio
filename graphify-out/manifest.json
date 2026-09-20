@@ -1236,9 +1236,9 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/Color.kt": {
-    "mtime": 1789946091.949164,
-    "seen": 1789946470.727521,
-    "ast_hash": "b1b78728f0dbe05af55f31b57de7ddf5",
+    "mtime": 1789947031.4909425,
+    "seen": 1789947132.4596982,
+    "ast_hash": "eb38120169694e80d6200b50dec0d51f",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/ColorContrast.kt": {
