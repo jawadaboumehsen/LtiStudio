@@ -64,18 +64,21 @@ import org.ide.lti.core.designsystem.theme.glass.toHighlight
  * When effects are disabled (globally via [GlassTheme.effectsEnabled], no backdrop is available,
  * or [enabled] is `false`), falls back to a plain surface+tint+border draw - dropping only the
  * GPU-only blur/lens/vibrancy/grain stages, per the plan's fallback contract. The rim
- * ([GlassStyle.rim]) has no non-shader equivalent, so the fallback border color prefers
- * [GlassStyle.border] when set, else borrows [GlassColorScheme.glassBorderHighlight] when a rim
- * was requested, so the edge doesn't go fully undefined.
+ * ([GlassStyle.rim]) has no non-shader equivalent, so *only in that fallback* does the border
+ * color prefer [GlassStyle.border] when set, else borrow [GlassColorScheme.glassBorderHighlight]
+ * when a rim was requested, so the edge doesn't go fully undefined - in the real backdrop path,
+ * the rim already draws its own shader edge, so an explicit [GlassStyle.border] is the only thing
+ * that adds a separate stroke there.
  */
 fun Modifier.glass(style: GlassStyle, enabled: Boolean = true, backdrop: Backdrop? = null): Modifier = composed {
     val glassColors = GlassTheme.colors
     val effectsEnabled = GlassTheme.effectsEnabled && enabled
     val resolvedBackdrop = backdrop ?: GlassTheme.backdrop
+    val usingRealBackdrop = effectsEnabled && resolvedBackdrop != null
 
     val borderColor = when {
         style.border.alpha > 0f -> style.border
-        style.rim != null -> glassColors.glassBorderHighlight
+        !usingRealBackdrop && style.rim != null -> glassColors.glassBorderHighlight
         else -> Color.Transparent
     }
     val borderModifier = if (borderColor.alpha > 0f) {
@@ -84,7 +87,7 @@ fun Modifier.glass(style: GlassStyle, enabled: Boolean = true, backdrop: Backdro
         Modifier
     }
 
-    val backgroundModifier = if (effectsEnabled && resolvedBackdrop != null) {
+    val backgroundModifier = if (usingRealBackdrop) {
         Modifier.drawBackdrop(
             backdrop = resolvedBackdrop,
             shape = { style.shape },
