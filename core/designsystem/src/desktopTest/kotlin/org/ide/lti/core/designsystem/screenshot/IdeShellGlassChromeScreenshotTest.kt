@@ -12,6 +12,7 @@ package org.ide.lti.core.designsystem.screenshot
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -24,10 +25,12 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import com.kashif_e.backdrop.backdrops.layerBackdrop
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
+import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.component.layout.IdeNavigatorPanel
 import org.ide.lti.core.designsystem.component.layout.IdePipelineRail
 import org.ide.lti.core.designsystem.component.layout.IdeStatusBar
 import org.ide.lti.core.designsystem.component.layout.IdeTopAppBar
+import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.PreviewSampleColors
 import org.ide.lti.core.designsystem.theme.config.AppTheme
@@ -116,6 +119,29 @@ class IdeShellGlassChromeScreenshotTest {
         assertTrue(
             stripeVariance(blue, sampleY = BAR_SAMPLE_Y) < flatReference * VARIANCE_REDUCTION_CEILING,
             "IdeStatusBar did not visibly blur under AppTheme.Blue",
+        )
+    }
+
+    @Test
+    fun ideCardSurfaceBlursUnderBlueThemeAndStaysFlatUnderDarkTheme() {
+        val cardBox: @Composable () -> Unit = {
+            Box(
+                Modifier
+                    .size(ComponentSize.MinPanelWidth, ComponentSize.ActionCardHeight)
+                    .ideCardSurface(),
+            )
+        }
+        val blueVariance = stripeVariance(captureOverStripes(AppTheme.Blue, cardBox))
+        val darkVariance = stripeVariance(captureOverStripes(AppTheme.Dark, cardBox))
+        val flatReference = stripeVariance(captureOverStripes(AppTheme.Blue) {})
+
+        assertTrue(
+            blueVariance < flatReference * VARIANCE_REDUCTION_CEILING,
+            "ideCardSurface did not visibly blur under AppTheme.Blue",
+        )
+        assertTrue(
+            darkVariance < UNIFORM_FILL_VARIANCE_CEILING,
+            "ideCardSurface under AppTheme.Dark was not a uniform opaque fill (variance=$darkVariance)",
         )
     }
 
