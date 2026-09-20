@@ -175,14 +175,6 @@ private fun RemoveSelectionsCard(
     onChange: (DebloatSettings) -> Unit,
     colors: IdeShellColorScheme,
 ) {
-    val items = settings.removeSelectors.ifEmpty {
-        listOf(
-            "com.google.android.apps.youtube.music",
-            "com.google.android.videos",
-            "com.google.android.apps.docs",
-        )
-    }
-
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -198,7 +190,15 @@ private fun RemoveSelectionsCard(
             fontFamily = ideFontFamily(),
             color = colors.textMain,
         )
-        items.forEach { selector ->
+        if (settings.removeSelectors.isEmpty()) {
+            Text(
+                text = "No packages selected for removal yet.",
+                color = colors.textMuted,
+                fontSize = FontSize.Micro,
+                fontFamily = ideFontFamily(),
+            )
+        }
+        settings.removeSelectors.forEach { selector ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -230,15 +230,6 @@ private fun KeepRulesCard(
     onChange: (DebloatSettings) -> Unit,
     colors: IdeShellColorScheme,
 ) {
-    val items = settings.keepSelectors.ifEmpty {
-        listOf(
-            "com.android.phone",
-            "com.android.server.telecom",
-            "com.google.android.dialer",
-            "com.android.providers.telephony",
-        )
-    }
-
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -254,7 +245,15 @@ private fun KeepRulesCard(
             fontFamily = ideFontFamily(),
             color = colors.textMain,
         )
-        items.forEach { selector ->
+        if (settings.keepSelectors.isEmpty()) {
+            Text(
+                text = "No packages explicitly protected yet.",
+                color = colors.textMuted,
+                fontSize = FontSize.Micro,
+                fontFamily = ideFontFamily(),
+            )
+        }
+        settings.keepSelectors.forEach { selector ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
