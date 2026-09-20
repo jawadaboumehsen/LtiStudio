@@ -108,7 +108,7 @@ fun IdeStatusBadge(
             Box(
                 modifier = Modifier
                     .size(IconSize.Indicator)
-                    .background(style.fgColor, GlassShapes.Full),
+                    .background(style.fgColor, GlassShapes.Circle),
             )
         } else {
             Icon(

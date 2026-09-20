@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -831,7 +830,7 @@ private fun EditorStatusBar(textPrimary: Color, textMuted: Color, textDim: Color
                 Box(
                     modifier = Modifier
                         .size(IconSize.Indicator)
-                        .clip(CircleShape)
+                        .clip(GlassShapes.Circle)
                         .background(colors.statusSuccess),
                 )
                 Text(

@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -33,6 +32,7 @@ import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.BrandColors
 import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -107,12 +107,12 @@ private fun StepperStepNode(
         Box(
             modifier = Modifier
                 .size(ComponentSize.PluginStepperNodeSize)
-                .clip(CircleShape)
+                .clip(GlassShapes.Circle)
                 .background(circleColor)
                 .glassOutlineBorder(
                     width = StrokeWidth.Hairline,
                     color = if (isCurrent) glassColors.glassBorderHighlight else glassColors.glassBorder,
-                    shape = CircleShape,
+                    shape = GlassShapes.Circle,
                 ),
             contentAlignment = Alignment.Center,
         ) {

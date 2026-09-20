@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.HorizontalDivider
@@ -186,7 +185,7 @@ private fun SuperPartitionStorageCard(colors: IdeShellColorScheme) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
             ) {
-                Box(modifier = Modifier.size(Spacing.Small).clip(CircleShape).background(colors.accentBlue))
+                Box(modifier = Modifier.size(Spacing.Small).clip(GlassShapes.Circle).background(colors.accentBlue))
                 Text(
                     text = "Used 11.43 GB (83.9%)",
                     color = colors.textMuted,
@@ -198,7 +197,7 @@ private fun SuperPartitionStorageCard(colors: IdeShellColorScheme) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
             ) {
-                Box(modifier = Modifier.size(Spacing.Small).clip(CircleShape).background(colors.border))
+                Box(modifier = Modifier.size(Spacing.Small).clip(GlassShapes.Circle).background(colors.border))
                 Text(
                     text = "Free 2.19 GB (16.1%)",
                     color = colors.textDim,

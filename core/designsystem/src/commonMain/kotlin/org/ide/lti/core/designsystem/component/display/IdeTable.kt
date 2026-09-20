@@ -183,7 +183,7 @@ public fun IdeTableRadioIndicator(
             .border(
                 width = GlassDimens.HairlineBorder,
                 color = if (isSelected) colors.accentBlue else colors.border,
-                shape = GlassShapes.Full,
+                shape = GlassShapes.Circle,
             ),
         contentAlignment = Alignment.Center,
     ) {
@@ -191,7 +191,7 @@ public fun IdeTableRadioIndicator(
             Box(
                 modifier = Modifier
                     .size(GlassDimens.StatusBadgeIconSize)
-                    .background(colors.accentBlue, GlassShapes.Full),
+                    .background(colors.accentBlue, GlassShapes.Circle),
             )
         }
     }

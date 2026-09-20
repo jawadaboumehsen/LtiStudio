@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.FolderOpen
@@ -162,9 +161,24 @@ fun LiveStudioPreviewCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
                 ) {
-                    Box(modifier = Modifier.size(Spacing.Small).clip(CircleShape).background(ThemeColors.WindowControlClose))
-                    Box(modifier = Modifier.size(Spacing.Small).clip(CircleShape).background(ThemeColors.WindowControlMinimize))
-                    Box(modifier = Modifier.size(Spacing.Small).clip(CircleShape).background(ThemeColors.WindowControlMaximize))
+                    Box(
+                        modifier = Modifier
+                            .size(Spacing.Small)
+                            .clip(GlassShapes.Circle)
+                            .background(ThemeColors.WindowControlClose),
+                    )
+                    Box(
+                        modifier = Modifier
+                            .size(Spacing.Small)
+                            .clip(GlassShapes.Circle)
+                            .background(ThemeColors.WindowControlMinimize),
+                    )
+                    Box(
+                        modifier = Modifier
+                            .size(Spacing.Small)
+                            .clip(GlassShapes.Circle)
+                            .background(ThemeColors.WindowControlMaximize),
+                    )
 
                     Spacer(modifier = Modifier.width(Spacing.Small))
 

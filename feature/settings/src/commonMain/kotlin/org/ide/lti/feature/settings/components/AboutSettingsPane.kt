@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.AltRoute
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
@@ -200,7 +199,7 @@ fun AboutSettingsPane(
                             Box(
                                 modifier = Modifier
                                     .size(Spacing.Small)
-                                    .clip(CircleShape)
+                                    .clip(GlassShapes.Circle)
                                     .background(colors.statusSuccess),
                             )
                             Text(
@@ -460,7 +459,7 @@ fun AboutSettingsPane(
                     Box(
                         modifier = Modifier
                             .size(Spacing.Small)
-                            .clip(CircleShape)
+                            .clip(GlassShapes.Circle)
                             .background(colors.statusSuccess),
                     )
                     Text(

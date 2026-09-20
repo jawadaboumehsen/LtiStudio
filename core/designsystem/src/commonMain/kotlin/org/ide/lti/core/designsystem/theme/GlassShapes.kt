@@ -51,7 +51,6 @@ object GlassShapes {
     val Medium = ContinuousRoundedRectangle(CornerRadius.Medium, continuity = ContinuityG2)
     val Large = ContinuousRoundedRectangle(CornerRadius.Large, continuity = ContinuityG2)
     val ExtraLarge = ContinuousRoundedRectangle(CornerRadius.ExtraLarge, continuity = ContinuityG2)
-    val Full = CircleShape
     val Circle = CircleShape
     val Capsule = ContinuousCapsule(continuity = ContinuityG2)
     val Card = ContinuousRoundedRectangle(CornerRadius.Card, continuity = ContinuityG2)

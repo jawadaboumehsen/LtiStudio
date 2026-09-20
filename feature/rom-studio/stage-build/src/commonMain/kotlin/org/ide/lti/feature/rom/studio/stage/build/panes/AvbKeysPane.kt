@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
@@ -273,7 +272,12 @@ private fun AvbTableRow(row: AvbKeyRow, colors: IdeShellColorScheme) {
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
                 ) {
-                    Box(modifier = Modifier.size(Spacing.ExtraSmall).clip(CircleShape).background(colors.accentGreen))
+                    Box(
+                        modifier = Modifier
+                            .size(Spacing.ExtraSmall)
+                            .clip(GlassShapes.Circle)
+                            .background(colors.accentGreen),
+                    )
                     Text("Available", color = colors.accentGreen, fontSize = FontSize.Micro)
                 }
             }
