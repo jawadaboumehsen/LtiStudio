@@ -16,6 +16,8 @@ import com.kashif_e.backdrop.OpticalSizeValue
 import com.kashif_e.backdrop.shadow.Shadow
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BackdropBlur
+import org.ide.lti.core.designsystem.theme.BackdropBrightness
+import org.ide.lti.core.designsystem.theme.BackdropSaturation
 import org.ide.lti.core.designsystem.theme.Elevation
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
@@ -34,10 +36,9 @@ import org.ide.lti.core.designsystem.theme.LensRefraction
  * static `val`s - a role must re-resolve when the active [org.ide.lti.core.designsystem.theme.AppTheme]
  * or light/dark mode changes.
  *
- * Known gap: [GlassStyle] has no `colorAdjustment`/saturation field yet (see the plan's §7 review
- * amendment / external review's Phase 2), so [dialog]'s brightness+saturation boost from
- * `GlassEffects.dialog()` is not reproduced here - only its blur/lens/rim. Tracked, not silently
- * dropped.
+ * [dialog]'s brightness+saturation boost from `GlassEffects.dialog()` is reproduced via
+ * [GlassStyle.brightness]/[GlassStyle.saturation] (the plan's §7 review amendment / external
+ * review's Phase 2 `colorAdjustment` gap, closed here once [dialog] became a real consumer).
  */
 public object GlassStyles {
 
@@ -156,7 +157,13 @@ public object GlassStyles {
                 blur = OpticalSizeValue.Fixed(if (isDark) BackdropBlur.DialogDark else BackdropBlur.DialogLight),
                 lens = OpticalSizeValue.Fixed(LensRefraction.Dialog),
                 lensDepthEffect = true,
+                // dialog() uses colorControls' own saturation boost instead of vibrancy() - using
+                // both would double the boost.
+                vibrancy = false,
+                brightness = if (isDark) BackdropBrightness.DialogDark else BackdropBrightness.DialogLight,
+                saturation = BackdropSaturation.Vibrant,
                 rim = Rim(),
+                shadow = Shadow(radius = Elevation.Modal, color = colors.glassShadow),
             )
         }
 

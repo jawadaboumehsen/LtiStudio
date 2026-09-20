@@ -28,6 +28,13 @@ class GlassStyleTest {
         assertEquals(0f, style.grain)
         assertEquals(1f, style.inputScale)
         assertEquals(Rim.None, style.rim)
+        assertEquals(0f, style.brightness)
+        assertEquals(1f, style.saturation)
+    }
+
+    @Test
+    fun rejectsNegativeSaturation() {
+        assertFailsWith<IllegalArgumentException> { baseline().copy(saturation = -0.1f) }
     }
 
     @Test

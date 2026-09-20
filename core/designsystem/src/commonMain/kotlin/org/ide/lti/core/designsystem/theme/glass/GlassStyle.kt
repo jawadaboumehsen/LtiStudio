@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.isSpecified
 import com.kashif_e.backdrop.BackdropEffectScope
 import com.kashif_e.backdrop.OpticalSizeValue
 import com.kashif_e.backdrop.effects.blur
+import com.kashif_e.backdrop.effects.colorControls
 import com.kashif_e.backdrop.effects.frostedGrain
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
@@ -53,6 +54,8 @@ public data class GlassStyle(
     public val lensDepthEffect: Boolean = false,
     public val lensChromaticAberration: Boolean = false,
     public val vibrancy: Boolean = true,
+    public val brightness: Float = 0f,
+    public val saturation: Float = 1f,
     public val grain: Float = 0f,
     public val rim: Rim? = Rim.None,
     public val shadow: Shadow? = null,
@@ -67,6 +70,10 @@ public data class GlassStyle(
         require(inputScale.isFinite() && inputScale > 0f && inputScale <= 1f) {
             "inputScale must be finite and in 0f < value <= 1f, was $inputScale"
         }
+        require(brightness.isFinite()) { "brightness must be finite, was $brightness" }
+        require(saturation.isFinite() && saturation >= 0f) {
+            "saturation must be finite and non-negative, was $saturation"
+        }
     }
 
     /** Copy-based style composition - no scope DSL, per the plan's sketch. */
@@ -80,6 +87,9 @@ public data class GlassStyle(
  */
 public fun GlassStyle.toEffects(): BackdropEffectScope.() -> Unit = {
     val shortestSide = min(size.width, size.height).toDp()
+    if (brightness != 0f || saturation != 1f) {
+        colorControls(brightness = brightness, saturation = saturation)
+    }
     if (vibrancy) vibrancy()
     val resolvedBlur = blur.resolve(shortestSide)
     if (resolvedBlur > 0.dp) blur(resolvedBlur.toPx())
