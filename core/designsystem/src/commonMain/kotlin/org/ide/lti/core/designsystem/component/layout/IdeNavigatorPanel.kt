@@ -77,11 +77,11 @@ import org.ide.lti.core.designsystem.component.primitives.glass
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
-import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.LetterSpacing
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.config.AppTheme
@@ -142,12 +142,12 @@ fun IdeNavigatorPanel(
                 if (headerSubtitle != null) {
                     Box(
                         modifier = Modifier
-                            .clip(IdeShellShapes.Badge)
+                            .clip(GlassShapes.ShellBadge)
                             .background(colors.cardBackgroundMuted)
                             .border(
                                 width = IdeShellDimens.HairlineBorder,
                                 color = colors.border,
-                                shape = IdeShellShapes.Badge,
+                                shape = GlassShapes.ShellBadge,
                             )
                             .padding(horizontal = Spacing.ExtraSmall, vertical = Spacing.Hairline),
                     ) {
@@ -220,7 +220,7 @@ private fun NavigatorItemRow(
             .fillMaxWidth()
             .padding(horizontal = Spacing.Small, vertical = Spacing.Hairline)
             .height(IdeShellDimens.NavigatorItemHeight)
-            .clip(IdeShellShapes.Control)
+            .clip(GlassShapes.ShellControl)
             .background(bg)
             .testTag("NavigatorItem_${item.id}")
             .semantics {

@@ -40,11 +40,11 @@ import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
-import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -86,8 +86,8 @@ private fun OutputNamingUnifiedCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(IdeShellShapes.Card)
-            .ideCardSurface(colors, shape = IdeShellShapes.Card)
+            .clip(GlassShapes.ShellCard)
+            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Large),
     ) {
@@ -130,9 +130,9 @@ private fun FilenameTemplateSection(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(IdeShellShapes.Control)
+                .clip(GlassShapes.ShellControl)
                 .background(colors.cardBackgroundMuted)
-                .border(IdeShellDimens.HairlineBorder, colors.borderMuted, IdeShellShapes.Control)
+                .border(IdeShellDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
                 .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
         ) {
             Row(
@@ -169,9 +169,9 @@ private fun FilenameTemplateSection(
             variables.forEach { variable ->
                 Box(
                     modifier = Modifier
-                        .clip(IdeShellShapes.Control)
+                        .clip(GlassShapes.ShellControl)
                         .background(colors.cardBackgroundMuted)
-                        .border(IdeShellDimens.HairlineBorder, colors.borderMuted, IdeShellShapes.Control)
+                        .border(IdeShellDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
                         .clickable {
                             templateText = templateText.replace(".zip", "$variable.zip")
                             onChange(settings.copy(filenameTemplate = templateText))
@@ -225,9 +225,9 @@ private fun FilenamePreviewSection(colors: IdeShellColorScheme) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(IdeShellShapes.Control)
+                .clip(GlassShapes.ShellControl)
                 .background(colors.cardBackgroundMuted)
-                .border(IdeShellDimens.HairlineBorder, colors.borderMuted, IdeShellShapes.Control)
+                .border(IdeShellDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
                 .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
         ) {
             Row(
@@ -288,9 +288,9 @@ private fun InvalidCharacterCheckSection(colors: IdeShellColorScheme) {
 
         Box(
             modifier = Modifier
-                .clip(IdeShellShapes.Control)
+                .clip(GlassShapes.ShellControl)
                 .background(colors.cardBackgroundMuted)
-                .border(IdeShellDimens.HairlineBorder, colors.borderMuted, IdeShellShapes.Control)
+                .border(IdeShellDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
                 .padding(horizontal = Spacing.Medium, vertical = Spacing.ExtraSmall),
         ) {
             Text(
@@ -348,9 +348,9 @@ private fun OutputFolderSection(colors: IdeShellColorScheme) {
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .clip(IdeShellShapes.Control)
+                    .clip(GlassShapes.ShellControl)
                     .background(colors.cardBackgroundMuted)
-                    .border(IdeShellDimens.HairlineBorder, colors.borderMuted, IdeShellShapes.Control)
+                    .border(IdeShellDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
                     .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
             ) {
                 Text(
@@ -364,7 +364,7 @@ private fun OutputFolderSection(colors: IdeShellColorScheme) {
             GlassButton(
                 onClick = { },
                 variant = GlassButtonVariant.Standard,
-                shape = IdeShellShapes.Control,
+                shape = GlassShapes.ShellControl,
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -401,8 +401,8 @@ private fun OutputNamingFootnoteCard(colors: IdeShellColorScheme) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(IdeShellShapes.Card)
-            .ideCardSurface(colors, shape = IdeShellShapes.Card)
+            .clip(GlassShapes.ShellCard)
+            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
             .padding(Spacing.Small),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.Small),

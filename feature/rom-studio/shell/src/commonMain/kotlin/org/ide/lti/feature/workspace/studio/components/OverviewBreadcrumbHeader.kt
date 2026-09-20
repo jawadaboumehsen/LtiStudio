@@ -41,11 +41,11 @@ import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.theme.BrandColors
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
-import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.feature.workspace.studio.WorkspaceActionUi
 
@@ -143,7 +143,7 @@ private fun OverviewHeaderTargetAndActions(
         Box(
             modifier = Modifier
                 .testTag("OverviewValidateAndSave")
-                .background(colors.accentBlue, IdeShellShapes.Control)
+                .background(colors.accentBlue, GlassShapes.ShellControl)
                 .clickable(
                     onClick = {
                         onAction(WorkspaceActionUi.Validate)
@@ -176,8 +176,8 @@ private fun OverviewHeaderTargetAndActions(
         // Outlined "Discard changes" button
         Box(
             modifier = Modifier
-                .background(colors.cardBackgroundMuted, IdeShellShapes.Control)
-                .border(IdeShellDimens.HairlineBorder, colors.borderMuted, IdeShellShapes.Control)
+                .background(colors.cardBackgroundMuted, GlassShapes.ShellControl)
+                .border(IdeShellDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
                 .clickable(onClick = {})
                 .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Small),
             contentAlignment = Alignment.Center,
@@ -217,8 +217,8 @@ private fun OverviewHeaderTargetAndActions(
             modifier = Modifier
                 .testTag("ReloadStateButton")
                 .semantics { role = Role.Button }
-                .background(reloadBg, IdeShellShapes.Control)
-                .border(IdeShellDimens.HairlineBorder, colors.borderMuted, IdeShellShapes.Control)
+                .background(reloadBg, GlassShapes.ShellControl)
+                .border(IdeShellDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
                 .clickable(
                     interactionSource = reloadInteraction,
                     indication = null,

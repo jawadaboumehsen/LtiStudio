@@ -40,7 +40,6 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
-import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.LetterSpacing
 import org.ide.lti.core.designsystem.theme.Spacing
 
@@ -99,8 +98,8 @@ fun IdeStatusBadge(
 
     Row(
         modifier = modifier
-            .background(style.bgColor, IdeShellShapes.Badge)
-            .border(IdeShellDimens.HairlineBorder, style.borderColor, IdeShellShapes.Badge)
+            .background(style.bgColor, GlassShapes.ShellBadge)
+            .border(IdeShellDimens.HairlineBorder, style.borderColor, GlassShapes.ShellBadge)
             .padding(horizontal = Spacing.Compact, vertical = Spacing.ExtraExtraSmall),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),

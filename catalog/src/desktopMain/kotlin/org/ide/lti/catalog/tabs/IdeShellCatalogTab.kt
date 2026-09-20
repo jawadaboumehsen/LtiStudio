@@ -49,10 +49,10 @@ import org.ide.lti.core.designsystem.component.layout.IdePipelineStageItem
 import org.ide.lti.core.designsystem.component.layout.IdeStatusBar
 import org.ide.lti.core.designsystem.component.layout.IdeTopAppBar
 import org.ide.lti.core.designsystem.icon.AppIcons
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
-import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.IdeShellTokens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
@@ -515,8 +515,8 @@ private fun AppFramePreviewSection(colors: IdeShellColorScheme) {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(IdeShellDimens.CompactHeightBreakpoint)
-                .clip(IdeShellShapes.Card)
-                .border(IdeShellDimens.HairlineBorder, colors.border, IdeShellShapes.Card),
+                .clip(GlassShapes.ShellCard)
+                .border(IdeShellDimens.HairlineBorder, colors.border, GlassShapes.ShellCard),
         ) {
             IdeAppFrame(
                 colors = colors,

@@ -23,9 +23,9 @@ import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.ideFontFamily
 import org.ide.lti.core.model.target.TargetDevice
@@ -52,8 +52,8 @@ public fun SourceModePane(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(IdeShellShapes.Card)
-                .ideCardSurface(colors, shape = IdeShellShapes.Card)
+                .clip(GlassShapes.ShellCard)
+                .ideCardSurface(colors, shape = GlassShapes.ShellCard)
                 .padding(Spacing.Medium),
             verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
         ) {

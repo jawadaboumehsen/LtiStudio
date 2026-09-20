@@ -57,11 +57,11 @@ import org.ide.lti.core.designsystem.component.display.IdeTableHeaderCell
 import org.ide.lti.core.designsystem.component.display.IdeTableRow
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
-import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -167,7 +167,7 @@ public fun ExistingArchivesPane(
             GlassButton(
                 onClick = {},
                 variant = GlassButtonVariant.Primary,
-                shape = IdeShellShapes.Control,
+                shape = GlassShapes.ShellControl,
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -186,7 +186,7 @@ public fun ExistingArchivesPane(
             GlassButton(
                 onClick = {},
                 variant = GlassButtonVariant.Standard,
-                shape = IdeShellShapes.Control,
+                shape = GlassShapes.ShellControl,
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -214,9 +214,9 @@ private fun TopInfoInstruction(colors: IdeShellColorScheme) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(IdeShellShapes.Card)
-            .background(colors.infoBannerFill, IdeShellShapes.Card)
-            .border(IdeShellDimens.HairlineBorder, colors.infoBannerBorder, IdeShellShapes.Card)
+            .clip(GlassShapes.ShellCard)
+            .background(colors.infoBannerFill, GlassShapes.ShellCard)
+            .border(IdeShellDimens.HairlineBorder, colors.infoBannerBorder, GlassShapes.ShellCard)
             .padding(Spacing.SmallMedium),
     ) {
         Row(
@@ -429,7 +429,7 @@ private fun ArchiveTableRow(
                 onClick = { onSelect(archive) },
                 enabled = !archive.isMissing,
                 variant = if (isSelected) GlassButtonVariant.Primary else GlassButtonVariant.Standard,
-                shape = IdeShellShapes.Control,
+                shape = GlassShapes.ShellControl,
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -459,8 +459,8 @@ private fun SelectedArchiveCard(archive: ArchiveItemUi, colors: IdeShellColorSch
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(IdeShellShapes.Card)
-            .ideCardSurface(colors, shape = IdeShellShapes.Card)
+            .clip(GlassShapes.ShellCard)
+            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
@@ -557,8 +557,8 @@ private fun BottomLogsDrawer(colors: IdeShellColorScheme) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(IdeShellShapes.Card)
-            .ideCardSurface(colors, shape = IdeShellShapes.Card)
+            .clip(GlassShapes.ShellCard)
+            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
             .padding(Spacing.Small),
     ) {
         Row(
@@ -571,7 +571,7 @@ private fun BottomLogsDrawer(colors: IdeShellColorScheme) {
                 val isTabSelected = index == selectedTab
                 Row(
                     modifier = Modifier
-                        .clip(IdeShellShapes.Control)
+                        .clip(GlassShapes.ShellControl)
                         .then(
                             if (isTabSelected) {
                                 Modifier.background(colors.controlSelected)
@@ -612,7 +612,7 @@ private fun BottomLogsDrawer(colors: IdeShellColorScheme) {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = Spacing.Small)
-                .background(colors.cardBackgroundMuted, IdeShellShapes.Control)
+                .background(colors.cardBackgroundMuted, GlassShapes.ShellControl)
                 .padding(Spacing.Small),
             verticalArrangement = Arrangement.spacedBy(Spacing.Hairline),
         ) {

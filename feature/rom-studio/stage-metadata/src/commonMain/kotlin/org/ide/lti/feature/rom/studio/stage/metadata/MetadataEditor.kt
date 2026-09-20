@@ -31,10 +31,10 @@ import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.TextFieldConfig
 import org.ide.lti.core.designsystem.component.inputs.TextFieldState
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
-import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -105,8 +105,8 @@ private fun IdentityCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(IdeShellShapes.Card)
-            .ideCardSurface(colors, shape = IdeShellShapes.Card)
+            .clip(GlassShapes.ShellCard)
+            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
@@ -161,8 +161,8 @@ private fun OtaCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(IdeShellShapes.Card)
-            .ideCardSurface(colors, shape = IdeShellShapes.Card)
+            .clip(GlassShapes.ShellCard)
+            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
@@ -202,8 +202,8 @@ private fun ChangelogCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(IdeShellShapes.Card)
-            .ideCardSurface(colors, shape = IdeShellShapes.Card)
+            .clip(GlassShapes.ShellCard)
+            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
@@ -236,8 +236,8 @@ private fun CompatibilityCard(target: TargetDevice, dirtyPaths: Set<String>, col
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(IdeShellShapes.Card)
-            .ideCardSurface(colors, shape = IdeShellShapes.Card)
+            .clip(GlassShapes.ShellCard)
+            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
@@ -280,8 +280,8 @@ private fun ManifestCard(settings: ReleaseSettings, target: TargetDevice, colors
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(IdeShellShapes.Card)
-            .ideCardSurface(colors, shape = IdeShellShapes.Card)
+            .clip(GlassShapes.ShellCard)
+            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {

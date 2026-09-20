@@ -40,11 +40,11 @@ import org.ide.lti.core.designsystem.component.display.IdeStatusBadge
 import org.ide.lti.core.designsystem.component.display.IdeStatusSeverity
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
-import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
@@ -95,9 +95,9 @@ private fun AvbNoticeCard(colors: IdeShellColorScheme) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(IdeShellShapes.Card)
+            .clip(GlassShapes.ShellCard)
             .background(colors.infoBannerFill)
-            .border(IdeShellDimens.HairlineBorder, colors.infoBannerBorder, IdeShellShapes.Card)
+            .border(IdeShellDimens.HairlineBorder, colors.infoBannerBorder, GlassShapes.ShellCard)
             .padding(Spacing.Medium),
     ) {
         Row(
@@ -160,8 +160,8 @@ private fun AvbKeysTableCard(colors: IdeShellColorScheme) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(IdeShellShapes.Card)
-            .ideCardSurface(colors, shape = IdeShellShapes.Card)
+            .clip(GlassShapes.ShellCard)
+            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
@@ -213,12 +213,12 @@ private fun AvbTableRow(row: AvbKeyRow, colors: IdeShellColorScheme) {
         Box(
             modifier = Modifier
                 .weight(1.5f)
-                .clip(IdeShellShapes.Control)
+                .clip(GlassShapes.ShellControl)
                 .background(colors.cardBackgroundMuted)
                 .border(
                     width = StrokeWidth.Standard,
                     color = if (row.isMissing) colors.errorRed else colors.borderMuted,
-                    shape = IdeShellShapes.Control,
+                    shape = GlassShapes.ShellControl,
                 )
                 .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraExtraSmall),
         ) {
@@ -282,9 +282,9 @@ private fun AvbTableRow(row: AvbKeyRow, colors: IdeShellColorScheme) {
         Box(
             modifier = Modifier
                 .weight(1.0f)
-                .clip(IdeShellShapes.Control)
+                .clip(GlassShapes.ShellControl)
                 .background(colors.cardBackgroundMuted)
-                .border(IdeShellDimens.HairlineBorder, colors.borderMuted, IdeShellShapes.Control)
+                .border(IdeShellDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
                 .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraExtraSmall),
         ) {
             Row(
@@ -309,9 +309,9 @@ private fun AvbMissingKeyErrorBanner(colors: IdeShellColorScheme) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(IdeShellShapes.Control)
+            .clip(GlassShapes.ShellControl)
             .background(colors.errorRedBg)
-            .border(IdeShellDimens.HairlineBorder, colors.errorRed, IdeShellShapes.Control)
+            .border(IdeShellDimens.HairlineBorder, colors.errorRed, GlassShapes.ShellControl)
             .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -344,8 +344,8 @@ private fun SelectedKeyDetailsCard(colors: IdeShellColorScheme) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(IdeShellShapes.Card)
-            .ideCardSurface(colors, shape = IdeShellShapes.Card)
+            .clip(GlassShapes.ShellCard)
+            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
@@ -398,8 +398,8 @@ private fun KeyManagementCard(colors: IdeShellColorScheme) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(IdeShellShapes.Card)
-            .ideCardSurface(colors, shape = IdeShellShapes.Card)
+            .clip(GlassShapes.ShellCard)
+            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {

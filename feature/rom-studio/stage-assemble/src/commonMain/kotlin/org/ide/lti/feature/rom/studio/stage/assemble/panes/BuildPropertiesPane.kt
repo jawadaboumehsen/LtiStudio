@@ -59,11 +59,11 @@ import org.ide.lti.core.designsystem.component.actions.GlassIconButton
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenu
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
-import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -141,8 +141,8 @@ public fun BuildPropertiesPane(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(IdeShellShapes.Card)
-                        .ideCardSurface(colors, shape = IdeShellShapes.Card)
+                        .clip(GlassShapes.ShellCard)
+                        .ideCardSurface(colors, shape = GlassShapes.ShellCard)
                         .padding(Spacing.Medium),
                     verticalArrangement = Arrangement.spacedBy(Spacing.Small),
                 ) {
@@ -207,11 +207,11 @@ public fun BuildPropertiesPane(
                                 singleLine = true,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .background(colors.cardBackgroundMuted, IdeShellShapes.Control)
+                                    .background(colors.cardBackgroundMuted, GlassShapes.ShellControl)
                                     .border(
                                         width = IdeShellDimens.HairlineBorder,
                                         color = colors.borderMuted,
-                                        shape = IdeShellShapes.Control,
+                                        shape = GlassShapes.ShellControl,
                                     )
                                     .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Small),
                             )
@@ -230,8 +230,8 @@ public fun BuildPropertiesPane(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(IdeShellShapes.Card)
-                        .ideCardSurface(colors, shape = IdeShellShapes.Card)
+                        .clip(GlassShapes.ShellCard)
+                        .ideCardSurface(colors, shape = GlassShapes.ShellCard)
                         .padding(Spacing.Medium),
                     verticalArrangement = Arrangement.spacedBy(Spacing.Small),
                 ) {
@@ -275,7 +275,7 @@ public fun BuildPropertiesPane(
                                     properties.add(PropertyEntry("ro.custom.prop", "value"))
                                 },
                                 variant = GlassButtonVariant.Standard,
-                                shape = IdeShellShapes.Control,
+                                shape = GlassShapes.ShellControl,
                             ) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
@@ -302,7 +302,7 @@ public fun BuildPropertiesPane(
                                     selectedIndices.clear()
                                 },
                                 variant = GlassButtonVariant.Standard,
-                                shape = IdeShellShapes.Control,
+                                shape = GlassShapes.ShellControl,
                             ) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
@@ -397,8 +397,8 @@ public fun BuildPropertiesPane(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(IdeShellShapes.Card)
-                        .ideCardSurface(colors, shape = IdeShellShapes.Card)
+                        .clip(GlassShapes.ShellCard)
+                        .ideCardSurface(colors, shape = GlassShapes.ShellCard)
                         .padding(Spacing.Medium),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -433,7 +433,7 @@ public fun BuildPropertiesPane(
                     GlassButton(
                         onClick = onValidate,
                         variant = GlassButtonVariant.Standard,
-                        shape = IdeShellShapes.Control,
+                        shape = GlassShapes.ShellControl,
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -460,8 +460,8 @@ public fun BuildPropertiesPane(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(IdeShellShapes.Card)
-                        .ideCardSurface(colors, shape = IdeShellShapes.Card)
+                        .clip(GlassShapes.ShellCard)
+                        .ideCardSurface(colors, shape = GlassShapes.ShellCard)
                         .padding(Spacing.Medium),
                     verticalArrangement = Arrangement.spacedBy(Spacing.Small),
                 ) {
@@ -500,8 +500,8 @@ public fun BuildPropertiesPane(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(IdeShellShapes.Card)
-                        .ideCardSurface(colors, shape = IdeShellShapes.Card)
+                        .clip(GlassShapes.ShellCard)
+                        .ideCardSurface(colors, shape = GlassShapes.ShellCard)
                         .padding(Spacing.Medium),
                     verticalArrangement = Arrangement.spacedBy(Spacing.Small),
                 ) {
@@ -570,7 +570,7 @@ public fun BuildPropertiesPane(
 
                     Row(
                         modifier = Modifier
-                            .clip(IdeShellShapes.Control)
+                            .clip(GlassShapes.ShellControl)
                             .clickable { }
                             .padding(vertical = Spacing.ExtraSmall),
                         verticalAlignment = Alignment.CenterVertically,
@@ -631,9 +631,9 @@ private fun BuildTypeDropdown(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(IdeShellShapes.Control)
+                    .clip(GlassShapes.ShellControl)
                     .background(colors.cardBackgroundMuted)
-                    .border(IdeShellDimens.HairlineBorder, colors.borderMuted, IdeShellShapes.Control)
+                    .border(IdeShellDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
                     .clickable { expanded = true }
                     .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Small),
                 verticalAlignment = Alignment.CenterVertically,
@@ -720,11 +720,11 @@ private fun PropertyRowItem(
                 modifier = Modifier
                     .weight(1.5f)
                     .padding(end = Spacing.ExtraSmall)
-                    .background(colors.cardBackgroundMuted, IdeShellShapes.Control)
+                    .background(colors.cardBackgroundMuted, GlassShapes.ShellControl)
                     .border(
                         IdeShellDimens.HairlineBorder,
                         if (entry.hasError) colors.errorRed else colors.borderMuted,
-                        IdeShellShapes.Control,
+                        GlassShapes.ShellControl,
                     )
                     .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),
             ) {
@@ -741,11 +741,11 @@ private fun PropertyRowItem(
                 modifier = Modifier
                     .weight(2f)
                     .padding(end = Spacing.ExtraSmall)
-                    .background(colors.cardBackgroundMuted, IdeShellShapes.Control)
+                    .background(colors.cardBackgroundMuted, GlassShapes.ShellControl)
                     .border(
                         IdeShellDimens.HairlineBorder,
                         if (entry.hasError) colors.errorRed else colors.borderMuted,
-                        IdeShellShapes.Control,
+                        GlassShapes.ShellControl,
                     )
                     .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),
             ) {
@@ -823,8 +823,8 @@ private fun ReservedFieldItem(label: String, value: String, colors: IdeShellColo
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(colors.cardBackgroundMuted, IdeShellShapes.Control)
-                .border(IdeShellDimens.HairlineBorder, colors.borderMuted, IdeShellShapes.Control)
+                .background(colors.cardBackgroundMuted, GlassShapes.ShellControl)
+                .border(IdeShellDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
                 .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Small),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,

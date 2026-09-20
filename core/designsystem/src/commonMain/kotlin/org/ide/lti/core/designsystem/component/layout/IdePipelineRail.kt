@@ -60,11 +60,11 @@ import org.ide.lti.core.designsystem.icon.AppIconsRomStages
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
-import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.config.AppTheme
 import org.ide.lti.core.designsystem.theme.glass.GlassStyles
@@ -133,7 +133,7 @@ private fun PipelineRailItem(
         Modifier.border(
             width = IdeShellDimens.HairlineBorder,
             color = visuals.borderColor,
-            shape = IdeShellShapes.Pill,
+            shape = GlassShapes.ShellPill,
         )
     } else {
         Modifier
@@ -144,7 +144,7 @@ private fun PipelineRailItem(
             .fillMaxWidth()
             .height(IdeShellDimens.PipelineStageItemHeight)
             .padding(horizontal = Spacing.Small, vertical = Spacing.Hairline)
-            .clip(IdeShellShapes.Pill)
+            .clip(GlassShapes.ShellPill)
             .then(borderModifier)
             .background(visuals.bg)
             .testTag("RailItem_${stage.id}")

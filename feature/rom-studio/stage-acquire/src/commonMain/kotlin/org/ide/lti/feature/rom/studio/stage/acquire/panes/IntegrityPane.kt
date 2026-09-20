@@ -43,11 +43,11 @@ import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
-import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.AcquisitionSettings
@@ -84,11 +84,11 @@ private fun VerifiedBanner(colors: IdeShellColorScheme) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(green.copy(alpha = AlphaTokens.Glow), IdeShellShapes.Card)
+            .background(green.copy(alpha = AlphaTokens.Glow), GlassShapes.ShellCard)
             .border(
                 width = IdeShellDimens.HairlineBorder,
                 color = green.copy(alpha = AlphaTokens.Medium),
-                shape = IdeShellShapes.Card,
+                shape = GlassShapes.ShellCard,
             )
             .padding(Spacing.Medium),
     ) {
@@ -137,8 +137,8 @@ private fun SourceFileCard(settings: AcquisitionSettings, target: TargetDevice, 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(IdeShellShapes.Card)
-            .ideCardSurface(colors = colors, shape = IdeShellShapes.Card)
+            .clip(GlassShapes.ShellCard)
+            .ideCardSurface(colors = colors, shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
@@ -225,8 +225,8 @@ private fun VerificationCard(colors: IdeShellColorScheme) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(IdeShellShapes.Card)
-            .ideCardSurface(colors = colors, shape = IdeShellShapes.Card)
+            .clip(GlassShapes.ShellCard)
+            .ideCardSurface(colors = colors, shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
@@ -246,7 +246,7 @@ private fun VerificationCard(colors: IdeShellColorScheme) {
             GlassButton(
                 onClick = {},
                 variant = GlassButtonVariant.Standard,
-                shape = IdeShellShapes.Control,
+                shape = GlassShapes.ShellControl,
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -309,9 +309,9 @@ private fun IntegrityInfoBanner(colors: IdeShellColorScheme) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(IdeShellShapes.Card)
-            .background(colors.infoBannerFill, IdeShellShapes.Card)
-            .border(IdeShellDimens.HairlineBorder, colors.infoBannerBorder, IdeShellShapes.Card)
+            .clip(GlassShapes.ShellCard)
+            .background(colors.infoBannerFill, GlassShapes.ShellCard)
+            .border(IdeShellDimens.HairlineBorder, colors.infoBannerBorder, GlassShapes.ShellCard)
             .padding(Spacing.SmallMedium),
     ) {
         Row(

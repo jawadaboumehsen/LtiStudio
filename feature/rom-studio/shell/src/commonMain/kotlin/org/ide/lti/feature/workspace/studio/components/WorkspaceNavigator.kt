@@ -34,7 +34,6 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
-import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -131,12 +130,12 @@ internal fun WorkspaceNavigatorFooter(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(IdeShellShapes.Control)
+                .clip(GlassShapes.ShellControl)
                 .background(colors.cardBackgroundMuted)
                 .border(
                     width = IdeShellDimens.HairlineBorder,
                     color = colors.borderMuted,
-                    shape = IdeShellShapes.Control,
+                    shape = GlassShapes.ShellControl,
                 )
                 .padding(Spacing.Small),
         ) {

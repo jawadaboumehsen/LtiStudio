@@ -49,11 +49,11 @@ import org.ide.lti.core.designsystem.component.display.IdeTableRadioIndicator
 import org.ide.lti.core.designsystem.component.display.IdeTableRow
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
-import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -238,9 +238,9 @@ private fun RegionSelectorRow(colors: IdeShellColorScheme) {
             )
             Row(
                 modifier = Modifier
-                    .clip(IdeShellShapes.Control)
+                    .clip(GlassShapes.ShellControl)
                     .background(colors.cardBackgroundMuted)
-                    .border(IdeShellDimens.HairlineBorder, colors.border, IdeShellShapes.Control)
+                    .border(IdeShellDimens.HairlineBorder, colors.border, GlassShapes.ShellControl)
                     .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
@@ -432,8 +432,8 @@ private fun SelectedBaselineDetailsCard(firmware: FirmwareVersionRowUi, colors: 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(IdeShellShapes.Card)
-            .ideCardSurface(colors = colors, shape = IdeShellShapes.Card)
+            .clip(GlassShapes.ShellCard)
+            .ideCardSurface(colors = colors, shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
     ) {
@@ -480,8 +480,8 @@ private fun ChecksumAndProvenanceCard(firmware: FirmwareVersionRowUi, colors: Id
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(IdeShellShapes.Card)
-            .ideCardSurface(colors = colors, shape = IdeShellShapes.Card)
+            .clip(GlassShapes.ShellCard)
+            .ideCardSurface(colors = colors, shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
     ) {
@@ -500,7 +500,7 @@ private fun ChecksumAndProvenanceCard(firmware: FirmwareVersionRowUi, colors: Id
 
             Row(
                 modifier = Modifier
-                    .clip(IdeShellShapes.Control)
+                    .clip(GlassShapes.ShellControl)
                     .background(colors.cardBackgroundMuted)
                     .padding(Spacing.Hairline),
             ) {
@@ -508,7 +508,7 @@ private fun ChecksumAndProvenanceCard(firmware: FirmwareVersionRowUi, colors: Id
                     val isTabSelected = index == selectedTab
                     Box(
                         modifier = Modifier
-                            .clip(IdeShellShapes.Control)
+                            .clip(GlassShapes.ShellControl)
                             .background(if (isTabSelected) colors.controlSelected else colors.cardBackgroundMuted)
                             .clickable { selectedTab = index }
                             .padding(horizontal = Spacing.Small, vertical = Spacing.Hairline),
@@ -581,9 +581,9 @@ private fun FirmwareInfoBanner(colors: IdeShellColorScheme) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(IdeShellShapes.Card)
-            .background(colors.infoBannerFill, IdeShellShapes.Card)
-            .border(IdeShellDimens.HairlineBorder, colors.infoBannerBorder, IdeShellShapes.Card)
+            .clip(GlassShapes.ShellCard)
+            .background(colors.infoBannerFill, GlassShapes.ShellCard)
+            .border(IdeShellDimens.HairlineBorder, colors.infoBannerBorder, GlassShapes.ShellCard)
             .padding(Spacing.SmallMedium),
     ) {
         Row(

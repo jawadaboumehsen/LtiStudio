@@ -29,10 +29,10 @@ import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.Spacing
 
 /**
@@ -201,7 +201,7 @@ private fun AssembleHeaderRight(
             GlassButton(
                 onClick = onValidate,
                 variant = validateVariant,
-                shape = IdeShellShapes.Control,
+                shape = GlassShapes.ShellControl,
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -229,7 +229,7 @@ private fun AssembleHeaderRight(
             GlassButton(
                 onClick = onSave,
                 variant = saveVariant,
-                shape = IdeShellShapes.Control,
+                shape = GlassShapes.ShellControl,
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,

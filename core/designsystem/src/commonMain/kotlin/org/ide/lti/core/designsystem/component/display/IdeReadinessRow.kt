@@ -49,11 +49,11 @@ import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
-import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.Spacing
 
 /**
@@ -76,8 +76,8 @@ fun IdeReadinessRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .background(colors.cardBackground, IdeShellShapes.Control)
-            .border(IdeShellDimens.HairlineBorder, colors.border, IdeShellShapes.Control)
+            .background(colors.cardBackground, GlassShapes.ShellControl)
+            .border(IdeShellDimens.HairlineBorder, colors.border, GlassShapes.ShellControl)
             .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
@@ -157,12 +157,12 @@ fun IdeReadinessRow(
                     }
                     .background(
                         color = btnBg,
-                        shape = IdeShellShapes.Control,
+                        shape = GlassShapes.ShellControl,
                     )
                     .border(
                         width = IdeShellDimens.HairlineBorder,
                         color = if (actionEnabled) colors.accentBlue else colors.border,
-                        shape = IdeShellShapes.Control,
+                        shape = GlassShapes.ShellControl,
                     )
                     .clickable(
                         interactionSource = actionInteractionSource,

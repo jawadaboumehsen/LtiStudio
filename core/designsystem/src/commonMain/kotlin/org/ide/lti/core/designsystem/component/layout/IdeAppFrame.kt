@@ -40,10 +40,10 @@ import androidx.compose.ui.platform.LocalDensity
 import com.kashif_e.backdrop.backdrops.LayerBackdrop
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
-import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.LocalGlassBackdrop
 import org.ide.lti.core.designsystem.theme.config.AppTheme
 
@@ -151,12 +151,12 @@ fun IdeAppFrame(
                             .weight(1f)
                             .fillMaxHeight()
                             .padding(IdeShellDimens.ContentInset)
-                            .clip(IdeShellShapes.Panel)
+                            .clip(GlassShapes.ShellPanel)
                             .background(colors.contentPanel)
                             .border(
                                 width = IdeShellDimens.HairlineBorder,
                                 color = colors.contentPanelBorder,
-                                shape = IdeShellShapes.Panel,
+                                shape = GlassShapes.ShellPanel,
                             ),
                     ) {
                         // Breadcrumb Bar

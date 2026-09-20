@@ -43,11 +43,11 @@ import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
-import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -99,9 +99,9 @@ private fun SystemExtTopInfoCard(colors: IdeShellColorScheme) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(IdeShellShapes.Card)
+            .clip(GlassShapes.ShellCard)
             .background(colors.infoBannerFill)
-            .border(IdeShellDimens.HairlineBorder, colors.infoBannerBorder, IdeShellShapes.Card)
+            .border(IdeShellDimens.HairlineBorder, colors.infoBannerBorder, GlassShapes.ShellCard)
             .padding(Spacing.Medium),
     ) {
         Row(
@@ -125,7 +125,7 @@ private fun SystemExtTopInfoCard(colors: IdeShellColorScheme) {
 
             Row(
                 modifier = Modifier
-                    .clip(IdeShellShapes.Control)
+                    .clip(GlassShapes.ShellControl)
                     .clickable { }
                     .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),
                 verticalAlignment = Alignment.CenterVertically,
@@ -173,8 +173,8 @@ private fun SystemExtHandlingModeSection(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(IdeShellShapes.Card)
-                .ideCardSurface(colors, shape = IdeShellShapes.Card)
+                .clip(GlassShapes.ShellCard)
+                .ideCardSurface(colors, shape = GlassShapes.ShellCard)
                 .padding(Spacing.Medium),
             verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
         ) {
@@ -243,8 +243,8 @@ private fun SystemExtPathsCard(colors: IdeShellColorScheme) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(IdeShellShapes.Card)
-                .ideCardSurface(colors, shape = IdeShellShapes.Card)
+                .clip(GlassShapes.ShellCard)
+                .ideCardSurface(colors, shape = GlassShapes.ShellCard)
                 .padding(Spacing.Medium),
             verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
         ) {
@@ -293,8 +293,8 @@ private fun SystemExtFlowDiagram(colors: IdeShellColorScheme) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(colors.cardBackgroundMuted, IdeShellShapes.Control)
-                    .border(IdeShellDimens.HairlineBorder, colors.borderMuted, IdeShellShapes.Control)
+                    .background(colors.cardBackgroundMuted, GlassShapes.ShellControl)
+                    .border(IdeShellDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
                     .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Small),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -309,7 +309,7 @@ private fun SystemExtFlowDiagram(colors: IdeShellColorScheme) {
                 GlassButton(
                     onClick = { },
                     variant = GlassButtonVariant.Standard,
-                    shape = IdeShellShapes.Control,
+                    shape = GlassShapes.ShellControl,
                 ) {
                     Text(
                         text = "Browse...",
@@ -360,8 +360,8 @@ private fun SystemExtFlowDiagram(colors: IdeShellColorScheme) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(colors.cardBackgroundMuted, IdeShellShapes.Control)
-                    .border(IdeShellDimens.HairlineBorder, colors.borderMuted, IdeShellShapes.Control)
+                    .background(colors.cardBackgroundMuted, GlassShapes.ShellControl)
+                    .border(IdeShellDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
                     .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Medium),
             ) {
                 Text(
@@ -422,9 +422,9 @@ private fun HandlingModeCard(
 
     Box(
         modifier = modifier
-            .clip(IdeShellShapes.Card)
+            .clip(GlassShapes.ShellCard)
             .background(bgColor)
-            .border(IdeShellDimens.HairlineBorder, borderColor, IdeShellShapes.Card)
+            .border(IdeShellDimens.HairlineBorder, borderColor, GlassShapes.ShellCard)
             .clickable(enabled = isEnabled, onClick = onSelect)
             .padding(Spacing.Medium),
     ) {
@@ -511,12 +511,12 @@ private fun SystemExtWarningBanner(colors: IdeShellColorScheme) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(IdeShellShapes.Control)
+            .clip(GlassShapes.ShellControl)
             .background(colors.cardBackground)
             .border(
                 width = IdeShellDimens.HairlineBorder,
                 color = colors.warningAmber.copy(alpha = AlphaTokens.Border),
-                shape = IdeShellShapes.Control,
+                shape = GlassShapes.ShellControl,
             )
             .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
     ) {
@@ -527,7 +527,7 @@ private fun SystemExtWarningBanner(colors: IdeShellColorScheme) {
             Box(
                 modifier = Modifier
                     .size(IconSize.Large)
-                    .clip(IdeShellShapes.Pill)
+                    .clip(GlassShapes.ShellPill)
                     .background(colors.warningAmber),
                 contentAlignment = Alignment.Center,
             ) {

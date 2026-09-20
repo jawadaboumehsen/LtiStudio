@@ -40,11 +40,11 @@ import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
-import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.feature.workspace.studio.DisplayValue
 import org.ide.lti.feature.workspace.studio.TargetSummaryUi
@@ -115,8 +115,8 @@ private fun TargetProfileHeader(
             modifier = Modifier
                 .testTag("EditProfileButton")
                 .semantics { role = Role.Button }
-                .background(editBg, IdeShellShapes.Control)
-                .border(IdeShellDimens.HairlineBorder, colors.borderMuted, IdeShellShapes.Control)
+                .background(editBg, GlassShapes.ShellControl)
+                .border(IdeShellDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
                 .clickable(
                     interactionSource = editInteraction,
                     indication = null,

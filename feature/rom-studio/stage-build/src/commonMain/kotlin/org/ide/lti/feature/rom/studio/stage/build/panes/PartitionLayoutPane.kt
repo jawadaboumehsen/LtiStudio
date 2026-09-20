@@ -34,11 +34,11 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
-import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -77,9 +77,9 @@ private fun PartitionLayoutNoticeCard(colors: IdeShellColorScheme) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(IdeShellShapes.Card)
+            .clip(GlassShapes.ShellCard)
             .background(colors.infoBannerFill)
-            .border(IdeShellDimens.HairlineBorder, colors.infoBannerBorder, IdeShellShapes.Card)
+            .border(IdeShellDimens.HairlineBorder, colors.infoBannerBorder, GlassShapes.ShellCard)
             .padding(Spacing.Medium),
     ) {
         Row(
@@ -112,8 +112,8 @@ private fun SuperPartitionStorageCard(colors: IdeShellColorScheme) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(IdeShellShapes.Card)
-            .ideCardSurface(colors, shape = IdeShellShapes.Card)
+            .clip(GlassShapes.ShellCard)
+            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
@@ -159,7 +159,7 @@ private fun SuperPartitionStorageCard(colors: IdeShellColorScheme) {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(Spacing.Small)
-                .clip(IdeShellShapes.Control)
+                .clip(GlassShapes.ShellControl)
                 .background(colors.cardBackgroundMuted),
         ) {
             Box(
@@ -240,8 +240,8 @@ private fun PartitionTableCard(colors: IdeShellColorScheme) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(IdeShellShapes.Card)
-            .ideCardSurface(colors, shape = IdeShellShapes.Card)
+            .clip(GlassShapes.ShellCard)
+            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
@@ -288,9 +288,9 @@ private fun PartitionTableRow(item: PartitionDetail, colors: IdeShellColorScheme
         Box(modifier = Modifier.weight(1.0f)) {
             Box(
                 modifier = Modifier
-                    .clip(IdeShellShapes.Badge)
+                    .clip(GlassShapes.ShellBadge)
                     .background(colors.cardBackgroundMuted)
-                    .border(IdeShellDimens.HairlineBorder, colors.borderMuted, IdeShellShapes.Badge)
+                    .border(IdeShellDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellBadge)
                     .padding(horizontal = Spacing.ExtraSmall, vertical = Spacing.Hairline),
             ) {
                 Text(
@@ -335,8 +335,8 @@ private fun AboutPartitionLayoutCard(colors: IdeShellColorScheme) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(IdeShellShapes.Card)
-            .ideCardSurface(colors, shape = IdeShellShapes.Card)
+            .clip(GlassShapes.ShellCard)
+            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {

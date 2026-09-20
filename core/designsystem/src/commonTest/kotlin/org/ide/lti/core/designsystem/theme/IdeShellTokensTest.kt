@@ -40,12 +40,12 @@ class IdeShellTokensTest {
 
     @Test
     fun testShapesAndMotionTokens() {
-        assertEquals(androidx.compose.ui.graphics.RectangleShape, IdeShellShapes.Frame)
-        assertTrue(IdeShellShapes.Panel is androidx.compose.foundation.shape.RoundedCornerShape)
-        assertTrue(IdeShellShapes.Pill is androidx.compose.foundation.shape.RoundedCornerShape)
-        assertTrue(IdeShellShapes.Card is androidx.compose.foundation.shape.RoundedCornerShape)
-        assertTrue(IdeShellShapes.Control is androidx.compose.foundation.shape.RoundedCornerShape)
-        assertTrue(IdeShellShapes.Badge is androidx.compose.foundation.shape.RoundedCornerShape)
+        assertEquals(androidx.compose.ui.graphics.RectangleShape, GlassShapes.ShellFrame)
+        assertTrue(GlassShapes.ShellPanel is androidx.compose.foundation.shape.RoundedCornerShape)
+        assertTrue(GlassShapes.ShellPill is androidx.compose.foundation.shape.RoundedCornerShape)
+        assertTrue(GlassShapes.ShellCard is androidx.compose.foundation.shape.RoundedCornerShape)
+        assertTrue(GlassShapes.ShellControl is androidx.compose.foundation.shape.RoundedCornerShape)
+        assertTrue(GlassShapes.ShellBadge is androidx.compose.foundation.shape.RoundedCornerShape)
 
         assertEquals(100, IdeShellMotion.StateTransitionDuration)
         assertEquals(200, IdeShellMotion.DrawerTransitionDuration)

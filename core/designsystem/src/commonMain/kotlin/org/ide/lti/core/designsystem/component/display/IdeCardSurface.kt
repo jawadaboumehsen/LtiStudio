@@ -15,10 +15,10 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
 import com.kashif_e.backdrop.Backdrop
 import org.ide.lti.core.designsystem.component.primitives.glass
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
-import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.config.AppTheme
 import org.ide.lti.core.designsystem.theme.glass.GlassStyles
 
@@ -33,7 +33,7 @@ import org.ide.lti.core.designsystem.theme.glass.GlassStyles
 @Composable
 fun Modifier.ideCardSurface(
     colors: IdeShellColorScheme = GlassTheme.ideShellColors,
-    shape: Shape = IdeShellShapes.Card,
+    shape: Shape = GlassShapes.ShellCard,
     borderWidth: Dp = IdeShellDimens.HairlineBorder,
     isMuted: Boolean = false,
     backdrop: Backdrop? = null,

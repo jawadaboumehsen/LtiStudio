@@ -38,11 +38,11 @@ import org.ide.lti.core.designsystem.component.display.IdeTableHeaderCell
 import org.ide.lti.core.designsystem.component.display.IdeTableRow
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
-import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -76,8 +76,8 @@ public fun WorkTreesPane(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(IdeShellShapes.Card)
-                .ideCardSurface(colors, shape = IdeShellShapes.Card)
+                .clip(GlassShapes.ShellCard)
+                .ideCardSurface(colors, shape = GlassShapes.ShellCard)
                 .padding(Spacing.Medium),
             verticalArrangement = Arrangement.spacedBy(Spacing.Small),
         ) {
@@ -183,8 +183,8 @@ public fun WorkTreesPane(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(IdeShellShapes.Card)
-                .ideCardSurface(colors, shape = IdeShellShapes.Card)
+                .clip(GlassShapes.ShellCard)
+                .ideCardSurface(colors, shape = GlassShapes.ShellCard)
                 .padding(Spacing.Medium),
             verticalArrangement = Arrangement.spacedBy(Spacing.Small),
         ) {

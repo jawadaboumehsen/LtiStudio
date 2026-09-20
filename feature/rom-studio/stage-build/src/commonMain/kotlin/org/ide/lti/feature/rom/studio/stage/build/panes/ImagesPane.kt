@@ -49,11 +49,11 @@ import org.ide.lti.core.designsystem.component.display.IdeStatusBadge
 import org.ide.lti.core.designsystem.component.display.IdeStatusSeverity
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
-import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -94,9 +94,9 @@ private fun ImagesNoticeCard(colors: IdeShellColorScheme) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(IdeShellShapes.Card)
+            .clip(GlassShapes.ShellCard)
             .background(colors.infoBannerFill)
-            .border(IdeShellDimens.HairlineBorder, colors.infoBannerBorder, IdeShellShapes.Card)
+            .border(IdeShellDimens.HairlineBorder, colors.infoBannerBorder, GlassShapes.ShellCard)
             .padding(Spacing.Medium),
     ) {
         Row(
@@ -210,8 +210,8 @@ private fun ImagesTableCard(settings: BuildSettings, colors: IdeShellColorScheme
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(IdeShellShapes.Card)
-            .ideCardSurface(colors, shape = IdeShellShapes.Card)
+            .clip(GlassShapes.ShellCard)
+            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
@@ -278,9 +278,9 @@ private fun ImagesTableRow(row: ImageRowData, colors: IdeShellColorScheme) {
         Box(
             modifier = Modifier
                 .weight(1.5f)
-                .clip(IdeShellShapes.Control)
+                .clip(GlassShapes.ShellControl)
                 .background(colors.cardBackgroundMuted)
-                .border(IdeShellDimens.HairlineBorder, colors.borderMuted, IdeShellShapes.Control)
+                .border(IdeShellDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
                 .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraExtraSmall),
         ) {
             Row(
@@ -331,8 +331,8 @@ private fun ImagesSummaryCard(colors: IdeShellColorScheme) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(IdeShellShapes.Card)
-            .ideCardSurface(colors, shape = IdeShellShapes.Card)
+            .clip(GlassShapes.ShellCard)
+            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
@@ -372,14 +372,14 @@ private fun ImagesSummaryCard(colors: IdeShellColorScheme) {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(Spacing.Small)
-                .clip(IdeShellShapes.Control)
+                .clip(GlassShapes.ShellControl)
                 .background(colors.cardBackgroundMuted),
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth(0.58f)
                     .height(Spacing.Small)
-                    .clip(IdeShellShapes.Control)
+                    .clip(GlassShapes.ShellControl)
                     .background(colors.accentBlue),
             )
         }
@@ -412,8 +412,8 @@ private fun ImagesValidationCard(onRunValidation: () -> Unit, colors: IdeShellCo
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(IdeShellShapes.Card)
-            .ideCardSurface(colors, shape = IdeShellShapes.Card)
+            .clip(GlassShapes.ShellCard)
+            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
@@ -469,7 +469,7 @@ private fun ImagesValidationCard(onRunValidation: () -> Unit, colors: IdeShellCo
                     GlassButton(
                         onClick = onRunValidation,
                         variant = GlassButtonVariant.Primary,
-                        shape = IdeShellShapes.Control,
+                        shape = GlassShapes.ShellControl,
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -512,8 +512,8 @@ private fun ImagesFootnoteCard(colors: IdeShellColorScheme) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(IdeShellShapes.Card)
-            .ideCardSurface(colors, shape = IdeShellShapes.Card)
+            .clip(GlassShapes.ShellCard)
+            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
             .padding(Spacing.Small),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.Small),

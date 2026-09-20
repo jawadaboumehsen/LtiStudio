@@ -10,6 +10,7 @@
 package org.ide.lti.core.designsystem.theme
 
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.graphics.RectangleShape
@@ -68,7 +69,22 @@ object GlassShapes {
         continuity = ContinuityG2,
     )
 
+    // --- IDE Shell Shapes (folded in from the former IdeShellShapes, Feature 005) ---
+    // Kept as plain RoundedCornerShape (not ContinuousRoundedRectangle) and under `Shell`-prefixed
+    // names - these are real, deliberately different (smaller, sharper) corner values from the
+    // glass-tier Card/Panel/Pill above (6dp/8dp/10dp vs 16dp/12dp/full-capsule); merging the
+    // *names* without also merging the *values* would silently change either the shell's precise
+    // IDE-native look or the glass tier's soft one. Zero visual change from this consolidation -
+    // same shape type, same values, one shape registry instead of two.
+    val ShellFrame = RectangleShape
+    val ShellPanel = RoundedCornerShape(IdeShellDimens.ContentRadius)
+    val ShellPill = RoundedCornerShape(10.dp)
+    val ShellCard = RoundedCornerShape(IdeShellDimens.CardCornerRadius)
+    val ShellControl = RoundedCornerShape(IdeShellDimens.ControlCornerRadius)
+    val ShellBadge = RoundedCornerShape(IdeShellDimens.BadgeCornerRadius)
+
     // --- Concentric Shape Utilities ---
+
     /**
      * Creates a concentric inner squircle shape offset inward by [padding].
      * Guarantees R_inner = max(0, R_outer - padding) for concentric nested glass cards and panels.
@@ -86,6 +102,7 @@ object GlassShapes {
         shape.concentricOutset(padding)
 
     // --- Shape Morphing & Interpolation ---
+
     /**
      * Linearly interpolates between two continuous rounded rectangle squircles.
      * Enables smooth shape-morphing animations between component states.
@@ -104,17 +121,4 @@ object GlassShapes {
     @Stable
     fun asAnimated(shape: ContinuousRoundedRectangle): ContinuousRoundedRectangle =
         shape.copy(continuity = ContinuityG1)
-}
-
-/**
- * IDE shell surface and control shapes defined by Feature 005.
- */
-@Immutable
-object IdeShellShapes {
-    val Frame = RectangleShape
-    val Panel = androidx.compose.foundation.shape.RoundedCornerShape(IdeShellDimens.ContentRadius)
-    val Pill = androidx.compose.foundation.shape.RoundedCornerShape(10.dp)
-    val Card = androidx.compose.foundation.shape.RoundedCornerShape(IdeShellDimens.CardCornerRadius)
-    val Control = androidx.compose.foundation.shape.RoundedCornerShape(IdeShellDimens.ControlCornerRadius)
-    val Badge = androidx.compose.foundation.shape.RoundedCornerShape(IdeShellDimens.BadgeCornerRadius)
 }

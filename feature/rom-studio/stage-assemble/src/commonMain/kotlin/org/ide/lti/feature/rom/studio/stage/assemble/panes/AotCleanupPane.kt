@@ -41,11 +41,11 @@ import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
-import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -77,7 +77,7 @@ public fun AotCleanupPane(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(IdeShellShapes.Card)
+                .clip(GlassShapes.ShellCard)
                 .background(colors.infoBannerFill)
                 .padding(Spacing.Medium),
             verticalAlignment = Alignment.CenterVertically,
@@ -101,7 +101,7 @@ public fun AotCleanupPane(
             )
             Row(
                 modifier = Modifier
-                    .clip(IdeShellShapes.Control)
+                    .clip(GlassShapes.ShellControl)
                     .clickable { }
                     .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),
                 verticalAlignment = Alignment.CenterVertically,
@@ -126,8 +126,8 @@ public fun AotCleanupPane(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(IdeShellShapes.Card)
-                .ideCardSurface(colors, shape = IdeShellShapes.Card)
+                .clip(GlassShapes.ShellCard)
+                .ideCardSurface(colors, shape = GlassShapes.ShellCard)
                 .padding(Spacing.Medium),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
@@ -166,8 +166,8 @@ public fun AotCleanupPane(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(IdeShellShapes.Card)
-                .ideCardSurface(colors, shape = IdeShellShapes.Card)
+                .clip(GlassShapes.ShellCard)
+                .ideCardSurface(colors, shape = GlassShapes.ShellCard)
                 .padding(Spacing.Medium),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
@@ -220,8 +220,8 @@ public fun AotCleanupPane(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(IdeShellShapes.Card)
-                .ideCardSurface(colors, shape = IdeShellShapes.Card)
+                .clip(GlassShapes.ShellCard)
+                .ideCardSurface(colors, shape = GlassShapes.ShellCard)
                 .padding(Spacing.Medium),
             verticalArrangement = Arrangement.spacedBy(Spacing.Small),
         ) {
@@ -334,8 +334,8 @@ private fun AotLogsDrawer(colors: IdeShellColorScheme) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(IdeShellShapes.Card)
-            .ideCardSurface(colors, shape = IdeShellShapes.Card)
+            .clip(GlassShapes.ShellCard)
+            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
             .padding(Spacing.Small),
     ) {
         Row(
@@ -348,7 +348,7 @@ private fun AotLogsDrawer(colors: IdeShellColorScheme) {
                 val isTabSelected = index == selectedTab
                 Row(
                     modifier = Modifier
-                        .clip(IdeShellShapes.Control)
+                        .clip(GlassShapes.ShellControl)
                         .then(
                             if (isTabSelected) {
                                 Modifier.background(colors.controlSelected)
@@ -389,7 +389,7 @@ private fun AotLogsDrawer(colors: IdeShellColorScheme) {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = Spacing.Small)
-                .background(colors.cardBackgroundMuted, IdeShellShapes.Control)
+                .background(colors.cardBackgroundMuted, GlassShapes.ShellControl)
                 .padding(Spacing.Small),
             verticalArrangement = Arrangement.spacedBy(Spacing.Hairline),
         ) {

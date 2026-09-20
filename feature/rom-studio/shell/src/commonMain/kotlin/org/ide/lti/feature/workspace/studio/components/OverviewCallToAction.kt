@@ -41,10 +41,10 @@ import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.theme.BrandColors
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.feature.workspace.studio.BuildStateUi
 import org.ide.lti.feature.workspace.studio.WorkspaceActionUi
@@ -90,7 +90,7 @@ public fun OverviewCallToAction(
             modifier = Modifier
                 .testTag("OverviewCtaButton")
                 .semantics { role = Role.Button }
-                .background(btnBg, IdeShellShapes.Control)
+                .background(btnBg, GlassShapes.ShellControl)
                 .clickable(
                     interactionSource = interactionSource,
                     indication = null,

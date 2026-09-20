@@ -49,11 +49,11 @@ import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
-import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -133,8 +133,8 @@ private fun PolicySettingsCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(IdeShellShapes.Card)
-            .ideCardSurface(colors, shape = IdeShellShapes.Card)
+            .clip(GlassShapes.ShellCard)
+            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Large),
     ) {
@@ -306,9 +306,9 @@ private fun StatusPillBadge(isOverride: Boolean, colors: IdeShellColorScheme) {
 
     Box(
         modifier = Modifier
-            .clip(IdeShellShapes.Control)
+            .clip(GlassShapes.ShellControl)
             .background(bg)
-            .border(IdeShellDimens.HairlineBorder, borderColor, IdeShellShapes.Control)
+            .border(IdeShellDimens.HairlineBorder, borderColor, GlassShapes.ShellControl)
             .padding(horizontal = Spacing.Small, vertical = Spacing.Hairline),
         contentAlignment = Alignment.Center,
     ) {
@@ -326,9 +326,9 @@ private fun StatusPillBadge(isOverride: Boolean, colors: IdeShellColorScheme) {
 private fun NumberStepper(value: Int, onValueChange: (Int) -> Unit, min: Int, max: Int, colors: IdeShellColorScheme) {
     Row(
         modifier = Modifier
-            .clip(IdeShellShapes.Control)
+            .clip(GlassShapes.ShellControl)
             .background(colors.cardBackgroundMuted)
-            .border(IdeShellDimens.HairlineBorder, colors.border, IdeShellShapes.Control),
+            .border(IdeShellDimens.HairlineBorder, colors.border, GlassShapes.ShellControl),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
@@ -375,9 +375,9 @@ private fun NumberSpinnerInput(value: Int, onValueChange: (Int) -> Unit, colors:
     Row(
         modifier = Modifier
             .width(IdeShellDimens.AcquirePolicyInputWidth)
-            .clip(IdeShellShapes.Control)
+            .clip(GlassShapes.ShellControl)
             .background(colors.cardBackgroundMuted)
-            .border(IdeShellDimens.HairlineBorder, colors.border, IdeShellShapes.Control)
+            .border(IdeShellDimens.HairlineBorder, colors.border, GlassShapes.ShellControl)
             .padding(horizontal = Spacing.Small, vertical = Spacing.Hairline),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -415,8 +415,8 @@ private fun AdvancedOptionsAccordion(isOpen: Boolean, onToggle: () -> Unit, colo
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(IdeShellShapes.Card)
-            .ideCardSurface(colors, shape = IdeShellShapes.Card)
+            .clip(GlassShapes.ShellCard)
+            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
             .clickable(onClick = onToggle)
             .padding(Spacing.Medium),
     ) {
@@ -483,9 +483,9 @@ private fun NeedHelpBanner(colors: IdeShellColorScheme) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(IdeShellShapes.Card)
-            .background(colors.infoBannerFill, IdeShellShapes.Card)
-            .border(IdeShellDimens.HairlineBorder, colors.infoBannerBorder, IdeShellShapes.Card)
+            .clip(GlassShapes.ShellCard)
+            .background(colors.infoBannerFill, GlassShapes.ShellCard)
+            .border(IdeShellDimens.HairlineBorder, colors.infoBannerBorder, GlassShapes.ShellCard)
             .padding(Spacing.Medium),
     ) {
         Row(

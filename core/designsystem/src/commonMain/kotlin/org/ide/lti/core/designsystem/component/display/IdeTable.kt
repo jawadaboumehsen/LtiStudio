@@ -43,7 +43,6 @@ import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
-import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.Spacing
 
 /**
@@ -59,8 +58,8 @@ public fun IdeTable(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .clip(IdeShellShapes.Card)
-            .ideCardSurface(colors = colors, shape = IdeShellShapes.Card),
+            .clip(GlassShapes.ShellCard)
+            .ideCardSurface(colors = colors, shape = GlassShapes.ShellCard),
         content = content,
     )
 }

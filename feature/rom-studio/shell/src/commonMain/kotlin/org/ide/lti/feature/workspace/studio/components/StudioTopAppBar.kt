@@ -41,7 +41,6 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
-import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
@@ -144,12 +143,12 @@ internal fun TopBarTargetSpecifier(
         // Target Specifier Badge Pill
         Row(
             modifier = Modifier
-                .clip(IdeShellShapes.Control)
+                .clip(GlassShapes.ShellControl)
                 .background(colors.cardBackgroundMuted)
                 .border(
                     width = IdeShellDimens.HairlineBorder,
                     color = colors.border,
-                    shape = IdeShellShapes.Control,
+                    shape = GlassShapes.ShellControl,
                 )
                 .padding(horizontal = Spacing.Small, vertical = Spacing.Hairline),
             verticalAlignment = Alignment.CenterVertically,
@@ -199,12 +198,12 @@ internal fun TopBarTargetSpecifier(
 
         Box(
             modifier = Modifier
-                .clip(IdeShellShapes.Control)
+                .clip(GlassShapes.ShellControl)
                 .background(colors.warningAmberBg)
                 .border(
                     width = IdeShellDimens.HairlineBorder,
                     color = colors.warningAmber.copy(alpha = AlphaTokens.Muted),
-                    shape = IdeShellShapes.Control,
+                    shape = GlassShapes.ShellControl,
                 )
                 .padding(horizontal = Spacing.Small, vertical = Spacing.Hairline),
             contentAlignment = Alignment.Center,
@@ -248,11 +247,11 @@ internal fun TopBarActionButton(
     Box(
         modifier = modifier
             .testTag(testTag)
-            .clip(IdeShellShapes.Control)
+            .clip(GlassShapes.ShellControl)
             .border(
                 width = StrokeWidth.Hairline,
                 color = borderColor,
-                shape = IdeShellShapes.Control,
+                shape = GlassShapes.ShellControl,
             )
             .background(bg)
             .clickable(enabled = isEnabled, onClick = onClick)

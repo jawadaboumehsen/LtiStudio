@@ -50,11 +50,11 @@ import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.theme.BrandColors
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
-import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.feature.workspace.studio.ReadinessId
 import org.ide.lti.feature.workspace.studio.ReadinessItemUi
@@ -170,8 +170,8 @@ private fun ReadinessRowItem(
             Box(
                 modifier = Modifier
                     .size(IdeShellDimens.OverviewStageIconBoxSize)
-                    .background(colors.cardBackgroundMuted, IdeShellShapes.Control)
-                    .border(IdeShellDimens.HairlineBorder, colors.borderMuted, IdeShellShapes.Control),
+                    .background(colors.cardBackgroundMuted, GlassShapes.ShellControl)
+                    .border(IdeShellDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -258,8 +258,8 @@ private fun ReadinessActionButton(
         modifier = Modifier
             .testTag("ReadinessAction_${item.id.name}")
             .semantics { role = Role.Button }
-            .background(style.bg, IdeShellShapes.Control)
-            .border(IdeShellDimens.HairlineBorder, style.border, IdeShellShapes.Control)
+            .background(style.bg, GlassShapes.ShellControl)
+            .border(IdeShellDimens.HairlineBorder, style.border, GlassShapes.ShellControl)
             .clickable(
                 interactionSource = btnInteraction,
                 indication = null,
