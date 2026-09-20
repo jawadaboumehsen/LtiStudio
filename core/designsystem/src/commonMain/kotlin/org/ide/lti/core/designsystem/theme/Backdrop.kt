@@ -66,6 +66,10 @@ data class LensRefraction(
     val amount: Dp,
 ) {
     companion object {
+        /** No refraction - for glass roles (e.g. `rail`) that omit lens to safely support a
+         * rectangular shape. */
+        val None: LensRefraction = LensRefraction(0.dp, 0.dp)
+
         /** Micro refraction for tiny inset views like layout minimaps (2dp, 4dp). */
         val Minimap: LensRefraction = LensRefraction(2.dp, 4.dp)
 

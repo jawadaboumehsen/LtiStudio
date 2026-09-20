@@ -45,6 +45,68 @@ import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LocalGlassColors
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.glass.GlassStyle
+import org.ide.lti.core.designsystem.theme.glass.toEffects
+import org.ide.lti.core.designsystem.theme.glass.toHighlight
+
+/**
+ * The single rendering facade for a [GlassStyle] - backdrop-refactor-plan-20260920.md §1.2. The
+ * only place that reads [GlassTheme.effectsEnabled] / [GlassTheme.backdrop] on behalf of a style;
+ * callers pass a value, not a lambda, and never see [com.kashif_e.backdrop.Backdrop] or
+ * [BackdropEffectScope] in their own call site.
+ *
+ * When effects are disabled (globally via [GlassTheme.effectsEnabled], no ambient backdrop is
+ * available, or [enabled] is `false`), falls back to a plain surface+tint+border draw - dropping
+ * only the GPU-only blur/lens/vibrancy/grain stages, per the plan's fallback contract. The rim
+ * ([GlassStyle.rim]) has no non-shader equivalent, so the fallback border color prefers
+ * [GlassStyle.border] when set, else borrows [GlassColorScheme.glassBorderHighlight] when a rim
+ * was requested, so the edge doesn't go fully undefined.
+ */
+fun Modifier.glass(style: GlassStyle, enabled: Boolean = true): Modifier = composed {
+    val glassColors = GlassTheme.colors
+    val effectsEnabled = GlassTheme.effectsEnabled && enabled
+    val backdrop = GlassTheme.backdrop
+
+    val borderColor = when {
+        style.border.alpha > 0f -> style.border
+        style.rim != null -> glassColors.glassBorderHighlight
+        else -> Color.Transparent
+    }
+    val borderModifier = if (borderColor.alpha > 0f) {
+        Modifier.glassOutlineBorder(color = borderColor, width = style.borderWidth, shape = style.shape)
+    } else {
+        Modifier
+    }
+
+    val backgroundModifier = if (effectsEnabled && backdrop != null) {
+        Modifier.drawBackdrop(
+            backdrop = backdrop,
+            shape = { style.shape },
+            effects = style.toEffects(),
+            highlight = { style.rim?.toHighlight() },
+            shadow = { style.shadow },
+            innerShadow = { style.innerShadow },
+            inputScale = style.inputScale,
+            onDrawSurface = {
+                drawRect(style.surface)
+                if (style.tint.alpha > 0f) {
+                    drawRect(style.tint, blendMode = BlendMode.SrcOver)
+                }
+            },
+        )
+    } else {
+        Modifier
+            .clip(style.shape)
+            .drawBehind {
+                drawRect(style.surface)
+                if (style.tint.alpha > 0f) {
+                    drawRect(style.tint, blendMode = BlendMode.SrcOver)
+                }
+            }
+    }
+
+    this.then(backgroundModifier).then(borderModifier)
+}
 
 /**
  * Applies glass morphism effect to any composable.
