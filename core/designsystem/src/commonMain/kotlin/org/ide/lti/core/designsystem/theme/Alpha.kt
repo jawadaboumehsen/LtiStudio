@@ -7,7 +7,7 @@
  *
  * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
  */
-@file:Suppress("ktlint:standard:filename")
+@file:Suppress("ktlint:standard:filename", "PropertyName")
 
 package org.ide.lti.core.designsystem.theme
 
@@ -47,8 +47,17 @@ object AlphaTokens {
     /** Prominent opacity for active highlight gradients (60%). */
     const val Prominent: Float = 0.60f
 
+    /** High opacity for readable secondary text or distinct accents (70%). */
+    const val High: Float = 0.70f
+
     /** Intense opacity for saturated icon tint layers (75%). */
     const val IconTint: Float = 0.75f
+
+    /** Vibrant icon or secondary text opacity (80%). */
+    const val Vibrant: Float = 0.80f
+
+    /** Solid translucent glass panel backdrop opacity (92%). */
+    const val Heavy: Float = 0.92f
 
     /** Faded opacity for the outer edge of a radial gradient glow (25%). */
     const val Faded: Float = 0.25f

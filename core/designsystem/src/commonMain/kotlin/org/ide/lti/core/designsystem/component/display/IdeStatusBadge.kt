@@ -1,3 +1,12 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 @file:Suppress("MatchingDeclarationName")
 
 package org.ide.lti.core.designsystem.component.display
@@ -5,6 +14,7 @@ package org.ide.lti.core.designsystem.component.display
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -25,7 +35,9 @@ import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.IdeShellShapes
@@ -50,6 +62,7 @@ fun IdeStatusBadge(
     severity: IdeStatusSeverity,
     modifier: Modifier = Modifier,
     colors: IdeShellColorScheme = GlassTheme.ideShellColors,
+    useDot: Boolean = false,
 ) {
     val style = when (severity) {
         IdeStatusSeverity.Ready -> StatusBadgeStyle(
@@ -92,19 +105,27 @@ fun IdeStatusBadge(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
     ) {
-        Icon(
-            imageVector = style.icon,
-            contentDescription = null,
-            tint = style.fgColor,
-            modifier = Modifier.size(IdeShellDimens.StatusBadgeIconSize),
-        )
+        if (useDot) {
+            Box(
+                modifier = Modifier
+                    .size(IconSize.Indicator)
+                    .background(style.fgColor, GlassShapes.Full),
+            )
+        } else {
+            Icon(
+                imageVector = style.icon,
+                contentDescription = null,
+                tint = style.fgColor,
+                modifier = Modifier.size(IdeShellDimens.StatusBadgeIconSize),
+            )
+        }
         Text(
-            text = label.uppercase(),
+            text = if (useDot) label else label.uppercase(),
             color = style.fgColor,
             fontSize = FontSize.Micro,
-            fontWeight = FontWeight.SemiBold,
-            fontFamily = GlassFontFamily.code(),
-            letterSpacing = LetterSpacing.Wide,
+            fontWeight = if (useDot) FontWeight.Medium else FontWeight.SemiBold,
+            fontFamily = if (useDot) GlassFontFamily.ide() else GlassFontFamily.code(),
+            letterSpacing = if (useDot) LetterSpacing.Normal else LetterSpacing.Wide,
         )
     }
 }

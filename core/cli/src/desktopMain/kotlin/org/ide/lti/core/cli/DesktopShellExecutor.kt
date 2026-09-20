@@ -8,6 +8,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import org.ide.lti.core.domain.terminal.ShellExecutor
+import org.ide.lti.core.domain.terminal.ShellOutputEvent
 import java.io.BufferedReader
 import java.io.File
 import java.io.InputStream

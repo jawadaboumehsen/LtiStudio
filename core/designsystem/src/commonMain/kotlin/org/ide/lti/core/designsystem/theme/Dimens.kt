@@ -67,6 +67,7 @@ object CornerRadius {
 object IconSize {
     val MiniDot: Dp = 5.dp
     val Indicator: Dp = 6.dp
+    val ExtraSmall: Dp = 10.dp
     val Small: Dp = 12.dp
     val WindowControl: Dp = 13.dp
     val Search: Dp = 14.dp
@@ -77,7 +78,6 @@ object IconSize {
     val Large: Dp = 24.dp
     val ExtraLarge: Dp = 28.dp
     val ActionCard: Dp = 32.dp
-    val Avatar: Dp = 80.dp
 }
 
 /**
@@ -153,7 +153,6 @@ object ComponentSize {
     val StatusDotSize: Dp = 8.dp
     val StepNodeMinWidth: Dp = 96.dp
     val PanelHeaderStackBreakpoint: Dp = 280.dp
-    val ModalCardMaxWidth: Dp = 440.dp
     val SettingsMaxWidth: Dp = 760.dp
     val ScrollEdgeFadeHeight: Dp = 24.dp
     val CommandPaletteMinWidth: Dp = 200.dp
@@ -186,6 +185,11 @@ object ComponentSize {
     val PluginActionBtnHeight: Dp = 40.dp
     val PluginActionBtnCompactHeight: Dp = 34.dp
     val PluginActionBtnCompactWidth: Dp = 104.dp
+    val SettingsSearchFieldHeight: Dp = 34.dp
+    val SettingsCategoryRowHeight: Dp = 38.dp
+    val AboutLogoBoxSize: Dp = 68.dp
+    val AboutLinkCardHeight: Dp = 72.dp
+    val AppearanceLivePreviewHeight: Dp = 360.dp
 }
 
 /**
@@ -203,7 +207,7 @@ object Elevation {
  */
 object IdeShellDimens {
     val TopBarHeight: Dp = 40.dp
-    val PipelineRailWidth: Dp = 56.dp
+    val PipelineRailWidth: Dp = 116.dp
     val WorkspaceNavigatorWidth: Dp = 230.dp
     val BreadcrumbHeight: Dp = 32.dp
     val StatusBarHeight: Dp = 24.dp
@@ -218,12 +222,21 @@ object IdeShellDimens {
     val ControlCornerRadius: Dp = 4.dp
     val BadgeCornerRadius: Dp = 3.dp
 
-    val PipelineStageItemHeight: Dp = 52.dp
-    val PipelineActiveIndicatorWidth: Dp = 2.dp
-    val PipelineActiveIndicatorHeight: Dp = 28.dp
+    val PipelineStageItemHeight: Dp = 38.dp
     val NavigatorItemHeight: Dp = 30.dp
     val ReadinessStageColumnWidth: Dp = 100.dp
     val ReadinessLabelColumnWidth: Dp = 140.dp
     val ReadinessStatusColumnWidth: Dp = 110.dp
     val StatusBadgeIconSize: Dp = 10.dp
+    val OverviewMaxContentWidth: Dp = 1152.dp
+    val OverviewStageIconBoxSize: Dp = 32.dp
+    val OverviewEmptyStateHeight: Dp = 136.dp
+    val AcquirePolicyLabelWidth: Dp = 220.dp
+    val AcquirePolicyInputWidth: Dp = 140.dp
+    val AcquireTableSelectColWidth: Dp = 44.dp
+    val AcquireTableActionColWidth: Dp = 90.dp
+    val AcquireTableIconColWidth: Dp = 36.dp
+    val AcquireTableVerificationColWidth: Dp = 180.dp
+    val AcquirePreviewBadgeSize: Dp = 44.dp
+    val AcquireStatusBannerIconSize: Dp = 36.dp
 }

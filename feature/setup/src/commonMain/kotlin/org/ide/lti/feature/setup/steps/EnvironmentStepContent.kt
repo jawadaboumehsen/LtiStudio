@@ -18,8 +18,6 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -35,6 +33,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import com.kashif_e.backdrop.backdrops.LayerBackdrop
@@ -43,6 +43,7 @@ import org.ide.lti.core.designsystem.component.actions.GlassSecondaryButton
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.feedback.GlassBanner
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
+import org.ide.lti.core.designsystem.component.progress.GlassConsoleDrawer
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
@@ -53,22 +54,19 @@ import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepStatus
-import org.ide.lti.core.domain.setup.ToolComponentItem
 import org.ide.lti.core.domain.setup.ToolchainSetupState
 import org.ide.lti.feature.setup.EnvironmentPresentation
 import org.ide.lti.feature.setup.EnvironmentState
 import org.ide.lti.feature.setup.PrimaryAction
+import org.ide.lti.feature.setup.SetupActivityState
+import org.ide.lti.feature.setup.SetupOperation
 import org.ide.lti.feature.setup.SetupPresentationMapper
 import org.ide.lti.feature.setup.SetupUiActions
 import org.ide.lti.feature.setup.SetupUiState
-import org.ide.lti.core.designsystem.component.progress.GlassConsoleDrawer
-import org.ide.lti.feature.setup.SetupOperation
-import org.ide.lti.feature.setup.SetupOperationState
 import org.ide.lti.feature.setup.components.DoctorDiagnosticsDrawer
 import org.ide.lti.feature.setup.components.EnvironmentSubsystemHeader
 import org.ide.lti.feature.setup.components.SetupActivityPanel
 import org.ide.lti.feature.setup.components.ToolchainPipelineTracker
-import org.ide.lti.feature.setup.SetupActivityState
 
 /**
  * Structured overload for [EnvironmentStepContent] utilizing [SetupUiState] and [SetupUiActions]
@@ -190,100 +188,99 @@ fun EnvironmentStepContent(
                 ),
             verticalArrangement = Arrangement.spacedBy(Spacing.SectionGap),
         ) {
-        // Header Row (FrameLayout / Box Anchored Layout)
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-        ) {
-            Text(
-                text = "Environment & Toolchains Cockpit",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = glassColors.onGlass,
-                maxLines = 1,
-                softWrap = false,
-                overflow = TextOverflow.Ellipsis,
+            // Header Row (FrameLayout / Box Anchored Layout)
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+            ) {
+                Text(
+                    text = "Environment & Toolchains Cockpit",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = glassColors.onGlass,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = "Professional diagnostics, WSL 2 subsystem bridge, 35-tool matrix, and build pipeline",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = glassColors.onGlassSecondary,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+
+            // 1. Interactive Subsystem & Runtime Header
+            EnvironmentSubsystemHeader(
+                state = toolchainSetupState,
+                onCheckEnvironment = onCheckEnvironment,
+                backdrop = resolvedBackdrop,
+                isAutoDoctorEnabled = isAutoDoctorEnabled,
+                onSetAutoDoctorEnabled = onSetAutoDoctorEnabled,
+                onResetToolchainCache = onResetToolchainCache,
             )
-            Text(
-                text = "Professional diagnostics, WSL 2 subsystem bridge, 35-tool matrix, and build pipeline",
-                style = MaterialTheme.typography.bodyMedium,
-                color = glassColors.onGlassSecondary,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
+
+            EnvironmentStatusBanners(
+                toolchainSetupState = toolchainSetupState,
+                resolvedBackdrop = resolvedBackdrop,
+                onCheckEnvironment = onCheckEnvironment,
+                glassColors = glassColors,
+                diagnostics = diagnostics,
+            )
+
+            ToolchainPipelineTracker(
+                steps = toolchainSetupState.steps,
+                onRetryStep = onRetrySetupStep,
+                isBusy = toolchainSetupState.isBusy,
+                backdrop = resolvedBackdrop,
+                onRetryStage = onRetryStage,
+            )
+
+            val cockpitTabs = listOf(
+                org.ide.lti.core.designsystem.component.navigation.GlassTab(
+                    id = "doctor",
+                    title = "Doctor Diagnostics",
+                ),
+                org.ide.lti.core.designsystem.component.navigation.GlassTab(
+                    id = "console",
+                    title = "Pipeline Console",
+                ),
+            )
+
+            org.ide.lti.core.designsystem.component.navigation.GlassTabBar(
+                tabs = cockpitTabs,
+                selectedId = selectedCockpitTab,
+                onTabSelected = onSelectCockpitTab,
+                modifier = Modifier.fillMaxWidth(),
+                backdrop = resolvedBackdrop,
+            )
+
+            EnvironmentCockpitTabContent(
+                selectedCockpitTab = selectedCockpitTab,
+                toolchainSetupState = toolchainSetupState,
+                onAutoRemediateDoctor = onAutoRemediateDoctor,
+                activityState = activityState,
+                activityListState = activityListState,
+                resolvedBackdrop = resolvedBackdrop,
+            )
+
+            EnvironmentStepActionBar(
+                toolchainSetupState = toolchainSetupState,
+                presentation = presentation,
+                onNavigateToProjects = onNavigateToProjects,
+                onProceedToLaunchpad = onProceedToLaunchpad,
+                onCheckEnvironment = onCheckEnvironment,
+                onReconnect = onReconnect,
+                onPreviewSetup = onPreviewSetup,
+                onRetryStage = onRetryStage,
+                resolvedBackdrop = resolvedBackdrop,
+                glassColors = glassColors,
+                previewInvokerFocusRequester = previewInvokerFocusRequester,
             )
         }
-
-        // 1. Interactive Subsystem & Runtime Header
-        EnvironmentSubsystemHeader(
-            state = toolchainSetupState,
-            onCheckEnvironment = onCheckEnvironment,
-            backdrop = resolvedBackdrop,
-            isAutoDoctorEnabled = isAutoDoctorEnabled,
-            onSetAutoDoctorEnabled = onSetAutoDoctorEnabled,
-            onResetToolchainCache = onResetToolchainCache,
-        )
-
-        EnvironmentStatusBanners(
-            toolchainSetupState = toolchainSetupState,
-            resolvedBackdrop = resolvedBackdrop,
-            onCheckEnvironment = onCheckEnvironment,
-            glassColors = glassColors,
-            diagnostics = diagnostics,
-        )
-
-        ToolchainPipelineTracker(
-            steps = toolchainSetupState.steps,
-            onRetryStep = onRetrySetupStep,
-            isBusy = toolchainSetupState.isBusy,
-            backdrop = resolvedBackdrop,
-            onRetryStage = onRetryStage,
-        )
-
-        val cockpitTabs = listOf(
-            org.ide.lti.core.designsystem.component.navigation.GlassTab(
-                id = "doctor",
-                title = "Doctor Diagnostics",
-            ),
-            org.ide.lti.core.designsystem.component.navigation.GlassTab(
-                id = "console",
-                title = "Pipeline Console",
-            )
-        )
-
-        org.ide.lti.core.designsystem.component.navigation.GlassTabBar(
-            tabs = cockpitTabs,
-            selectedId = selectedCockpitTab,
-            onTabSelected = onSelectCockpitTab,
-            modifier = Modifier.fillMaxWidth(),
-            backdrop = resolvedBackdrop,
-        )
-
-        EnvironmentCockpitTabContent(
-            selectedCockpitTab = selectedCockpitTab,
-            toolchainSetupState = toolchainSetupState,
-            onAutoRemediateDoctor = onAutoRemediateDoctor,
-            activityState = activityState,
-            activityListState = activityListState,
-            resolvedBackdrop = resolvedBackdrop,
-        )
-
-        EnvironmentStepActionBar(
-            toolchainSetupState = toolchainSetupState,
-            presentation = presentation,
-            onNavigateToProjects = onNavigateToProjects,
-            onProceedToLaunchpad = onProceedToLaunchpad,
-            onCheckEnvironment = onCheckEnvironment,
-            onReconnect = onReconnect,
-            onPreviewSetup = onPreviewSetup,
-            onRetryStage = onRetryStage,
-            resolvedBackdrop = resolvedBackdrop,
-            glassColors = glassColors,
-            previewInvokerFocusRequester = previewInvokerFocusRequester,
-        )
     }
 }
-}
-
 
 @Composable
 private fun EnvironmentStatusBanners(
@@ -303,7 +300,7 @@ private fun EnvironmentStatusBanners(
             onCheckEnvironment = onCheckEnvironment,
             isBusy = toolchainSetupState.isBusy,
             diagnostics = diagnostics,
-            glassColors = glassColors
+            glassColors = glassColors,
         )
     }
 
@@ -381,8 +378,11 @@ private fun EnvironmentStepActionBar(
     glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme,
     previewInvokerFocusRequester: FocusRequester? = null,
 ) {
+    val shellColors = GlassTheme.ideShellColors
     GlassCard(
         modifier = Modifier.fillMaxWidth(),
+        surfaceColor = shellColors.cardBackground,
+        borderColor = shellColors.border,
         backdrop = resolvedBackdrop,
         contentPadding = Spacing.CardPadding,
     ) {
@@ -705,11 +705,14 @@ private fun BridgeFailureBanner(
     onCheckEnvironment: () -> Unit,
     isBusy: Boolean,
     diagnostics: org.ide.lti.core.designsystem.theme.DiagnosticColors,
-    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme
+    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme,
 ) {
     val failureReason = bridgeStep.description
+    val shellColors = GlassTheme.ideShellColors
     GlassCard(
         modifier = Modifier.fillMaxWidth(),
+        surfaceColor = shellColors.cardBackground,
+        borderColor = shellColors.border,
         backdrop = resolvedBackdrop,
         contentPadding = Spacing.CardPadding,
     ) {

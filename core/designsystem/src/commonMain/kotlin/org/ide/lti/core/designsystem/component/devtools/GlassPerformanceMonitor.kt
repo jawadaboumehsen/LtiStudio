@@ -9,15 +9,6 @@
  */
 package org.ide.lti.core.designsystem.component.devtools
 
-import org.ide.lti.core.designsystem.component.primitives.*
-import org.ide.lti.core.designsystem.component.actions.*
-import org.ide.lti.core.designsystem.component.inputs.*
-import org.ide.lti.core.designsystem.component.display.*
-import org.ide.lti.core.designsystem.component.navigation.*
-import org.ide.lti.core.designsystem.component.layout.*
-import org.ide.lti.core.designsystem.component.feedback.*
-import org.ide.lti.core.designsystem.component.devtools.*
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -41,16 +32,21 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import com.kashif_e.backdrop.effects.blur
-import org.ide.lti.core.designsystem.theme.BackdropBlur
+import org.ide.lti.core.designsystem.component.actions.*
+import org.ide.lti.core.designsystem.component.display.*
+import org.ide.lti.core.designsystem.component.feedback.*
+import org.ide.lti.core.designsystem.component.inputs.*
+import org.ide.lti.core.designsystem.component.layout.*
+import org.ide.lti.core.designsystem.component.navigation.*
+import org.ide.lti.core.designsystem.component.primitives.*
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassEffects
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.PerformanceMonitorColors
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.codeFontFamily
 import kotlin.math.roundToInt
 
 /**

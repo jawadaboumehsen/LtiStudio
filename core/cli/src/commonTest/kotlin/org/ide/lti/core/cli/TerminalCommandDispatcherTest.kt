@@ -5,6 +5,9 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import java.io.File
+import org.ide.lti.core.domain.terminal.ShellExecutor
+import org.ide.lti.core.domain.terminal.ShellOutputEvent
+import org.ide.lti.core.model.terminal.TerminalOutputEvent
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

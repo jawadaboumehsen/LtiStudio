@@ -576,9 +576,9 @@
     "semantic_hash": ""
   },
   "catalog/src/desktopMain/kotlin/org/ide/lti/catalog/CatalogApp.kt": {
-    "mtime": 1789059906.6836264,
-    "seen": 1789260361.2553003,
-    "ast_hash": "bb2394be7262b60c0a53a7f95d18ba99",
+    "mtime": 1789651809.437372,
+    "seen": 1789656895.1043928,
+    "ast_hash": "1c57c22f23ea268a6c8f3e7e029d31dd",
     "semantic_hash": ""
   },
   "catalog/src/desktopMain/kotlin/org/ide/lti/catalog/Main.kt": {
@@ -876,9 +876,9 @@
     "semantic_hash": ""
   },
   "core/designsystem/build.gradle.kts": {
-    "mtime": 1789352084.3229296,
-    "seen": 1789387556.225789,
-    "ast_hash": "28213b6c9eeaa9db4f7e7e5c0bed28a5",
+    "mtime": 1789649805.0880494,
+    "seen": 1789656895.1043928,
+    "ast_hash": "17e2b9f963ce259a82e25bc055fd4e25",
     "semantic_hash": ""
   },
   "core/designsystem/plugins/.claude-plugin/marketplace.json": {
@@ -966,9 +966,9 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/display/ThemePreviewCard.kt": {
-    "mtime": 1789345862.1381683,
-    "seen": 1789387556.225789,
-    "ast_hash": "23c305bc2410ee01c1be2ca4deb1ed86",
+    "mtime": 1789662475.570321,
+    "seen": 1789664658.7377057,
+    "ast_hash": "517b64ba5a883b13a1f81654552e3046",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/feedback/GlassBottomSheet.kt": {
@@ -1362,9 +1362,9 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/Color.kt": {
-    "mtime": 1789345838.8960276,
-    "seen": 1789387556.225789,
-    "ast_hash": "7d9ced35c3c17354d14ac7ba71b56559",
+    "mtime": 1789665930.444,
+    "seen": 1789666549.441447,
+    "ast_hash": "7a3bcb7a3f896760c7bfa252e1c0c375",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/ColorContrast.kt": {
@@ -1374,9 +1374,9 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/Dimens.kt": {
-    "mtime": 1789587694.8951585,
-    "seen": 1789590287.5555103,
-    "ast_hash": "938149fa4afae80a0d3902ca44e41737",
+    "mtime": 1789658022.8222194,
+    "seen": 1789664658.7377057,
+    "ast_hash": "1642b55f39d49bdb0c4a958cd7aa86df",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/GlassEffects.kt": {
@@ -1386,27 +1386,27 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/Motion.kt": {
-    "mtime": 1789208049.17659,
-    "seen": 1789260361.2553003,
-    "ast_hash": "bf85648740f2a304d72bbe4db9cf9e13",
+    "mtime": 1789651512.486963,
+    "seen": 1789656895.1043928,
+    "ast_hash": "2fe839a415c13e7ca46bc4a64fbd17b3",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/Shape.kt": {
-    "mtime": 1788460273.9903715,
-    "seen": 1788496709.4533372,
-    "ast_hash": "f2d603fb5aa62a8b035ac665cafd02c0",
+    "mtime": 1789650219.1322682,
+    "seen": 1789656895.1043928,
+    "ast_hash": "a53b6f7fca874853f5d08b5c7f6e37f9",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/Theme.kt": {
-    "mtime": 1789164290.9247005,
-    "seen": 1789260361.2553003,
-    "ast_hash": "cab2d137c4bb1f61412ed912919d9565",
+    "mtime": 1789650453.0582068,
+    "seen": 1789656895.1043928,
+    "ast_hash": "7124fd9fefadc9c3fa8b4aa0abd85cfc",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/Type.kt": {
-    "mtime": 1789164290.9247005,
-    "seen": 1789260361.2553003,
-    "ast_hash": "c1765ded043e37e508d5a11bc3264182",
+    "mtime": 1789651052.6884208,
+    "seen": 1789656895.1043928,
+    "ast_hash": "b695dcfbedc9b446a050a2dd2ff2a5fc",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/config/AppTheme.kt": {
@@ -1416,27 +1416,27 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/config/BlueThemeConfig.kt": {
-    "mtime": 1789164290.9247005,
-    "seen": 1789260361.2553003,
-    "ast_hash": "05be62abd6e77139ecbbd726deb37d20",
+    "mtime": 1789650270.4351065,
+    "seen": 1789656895.1043928,
+    "ast_hash": "66214366be94e509801dadcbdcf9859e",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/config/DarkThemeConfig.kt": {
-    "mtime": 1789164290.9257078,
-    "seen": 1789260361.2553003,
-    "ast_hash": "86e458b60c3d4af60c9a41313b585c4f",
+    "mtime": 1789650254.857372,
+    "seen": 1789656895.1043928,
+    "ast_hash": "0ae64b4df3b6f6c1ebbc42c5c530cddf",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/config/LightThemeConfig.kt": {
-    "mtime": 1789164290.9257078,
-    "seen": 1789260361.2553003,
-    "ast_hash": "394dfe56d36dd3da678dbe0d4649f8ba",
+    "mtime": 1789650262.7425587,
+    "seen": 1789656895.1043928,
+    "ast_hash": "b5ede78fd495f0c385a349fda9b8a18f",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/config/ThemeConfiguration.kt": {
-    "mtime": 1789164290.9257078,
-    "seen": 1789260361.2553003,
-    "ast_hash": "a3143fa2b9eeaf5f596eadbc6d74904c",
+    "mtime": 1789651062.8684535,
+    "seen": 1789656895.1043928,
+    "ast_hash": "03c94ba78c05cd99a69a08b25d88d2f2",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/config/ThemeRegistry.kt": {
@@ -1482,45 +1482,39 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/desktopTest/kotlin/org/ide/lti/core/designsystem/screenshot/GlassChromeDiagnosticScreenshotTest.kt": {
-    "mtime": 1788462982.9471211,
-    "seen": 1788496709.4533372,
-    "ast_hash": "fa0dd81711422a5c06fe68f3d138e644",
+    "mtime": 1789651199.6931434,
+    "seen": 1789656895.1043928,
+    "ast_hash": "239d1383685bb841d74209735aa3ba67",
     "semantic_hash": ""
   },
   "core/designsystem/src/desktopTest/kotlin/org/ide/lti/core/designsystem/screenshot/GlassComponentScreenshotTest.kt": {
-    "mtime": 1788463435.7024548,
-    "seen": 1788496709.4533372,
-    "ast_hash": "e4176b9cd1adc4cd461197d323773f9d",
+    "mtime": 1789651449.7941692,
+    "seen": 1789656895.1043928,
+    "ast_hash": "602823a10f3534197ee7f327d9ed8f27",
     "semantic_hash": ""
   },
   "core/designsystem/src/desktopTest/kotlin/org/ide/lti/core/designsystem/screenshot/GlassEffectsDisabledScreenshotTest.kt": {
-    "mtime": 1788460992.164104,
-    "seen": 1788496709.4533372,
-    "ast_hash": "e642ff56f4e75a94934353904f9f4160",
+    "mtime": 1789651449.7941692,
+    "seen": 1789656895.1043928,
+    "ast_hash": "9873bd9c375ceeb617ec6096ec7f2fff",
     "semantic_hash": ""
   },
   "core/designsystem/src/desktopTest/kotlin/org/ide/lti/core/designsystem/screenshot/GlassFocusScreenshotTest.kt": {
-    "mtime": 1788460992.1646862,
-    "seen": 1788496709.4533372,
-    "ast_hash": "b2f79bdc59db484440388b0e3d5cccf5",
+    "mtime": 1789651449.7951689,
+    "seen": 1789656895.1043928,
+    "ast_hash": "6dab18187b289abb3fdac06c1b179d08",
     "semantic_hash": ""
   },
   "core/designsystem/src/desktopTest/kotlin/org/ide/lti/core/designsystem/screenshot/GlassMotionAndHighlightScreenshotTest.kt": {
-    "mtime": 1788460992.1646862,
-    "seen": 1788496709.4533372,
-    "ast_hash": "15aef3532ee1e67c3c0e94387743a13c",
+    "mtime": 1789651449.7951689,
+    "seen": 1789656895.1043928,
+    "ast_hash": "24b3831427a7c236d2ffddffc28d8ccc",
     "semantic_hash": ""
   },
   "core/designsystem/src/desktopTest/kotlin/org/ide/lti/core/designsystem/screenshot/GlassSyntaxScreenshotTest.kt": {
-    "mtime": 1788460992.1651971,
-    "seen": 1788496709.4533372,
-    "ast_hash": "0439293ebfc03b3382a98979a94e166e",
-    "semantic_hash": ""
-  },
-  "core/designsystem/src/desktopTest/kotlin/org/ide/lti/core/designsystem/screenshot/ScreenshotTestHelper.kt": {
-    "mtime": 1788460992.1657164,
-    "seen": 1788496709.4533372,
-    "ast_hash": "96b9e312805c9a35e8c3af013a2c01ef",
+    "mtime": 1789651449.7961688,
+    "seen": 1789656895.1043928,
+    "ast_hash": "4a8450c0ab2580522ce890f9b427b1b5",
     "semantic_hash": ""
   },
   "core/domain/build.gradle.kts": {
@@ -1842,21 +1836,21 @@
     "semantic_hash": ""
   },
   "feature/settings/src/commonMain/kotlin/org/ide/lti/feature/settings/NotificationScreen.kt": {
-    "mtime": 1788460354.6438763,
-    "seen": 1788496709.4533372,
-    "ast_hash": "17498add1357aea6d3d46d37ba386c37",
+    "mtime": 1789665052.3169744,
+    "seen": 1789665754.716126,
+    "ast_hash": "85185784bd28c8d088a82916acd68acb",
     "semantic_hash": ""
   },
   "feature/settings/src/commonMain/kotlin/org/ide/lti/feature/settings/SettingsNavigation.kt": {
-    "mtime": 1788460274.004373,
-    "seen": 1788496709.4533372,
-    "ast_hash": "e150a0e9939dd8c75c86591897c5e96a",
+    "mtime": 1789665053.0982542,
+    "seen": 1789665754.716126,
+    "ast_hash": "487410de1466aab238936ded5c0dc6f2",
     "semantic_hash": ""
   },
   "feature/settings/src/commonMain/kotlin/org/ide/lti/feature/settings/SettingsScreen.kt": {
-    "mtime": 1789164290.9362414,
-    "seen": 1789260361.2553003,
-    "ast_hash": "0f72c8495f343fd624051a044eedc7ea",
+    "mtime": 1789657895.1426637,
+    "seen": 1789664658.7377057,
+    "ast_hash": "b007d50931ced8a49d1bdb8151b2fc21",
     "semantic_hash": ""
   },
   "feature/setup/build.gradle.kts": {
@@ -1872,9 +1866,9 @@
     "semantic_hash": ""
   },
   "feature/setup/src/commonMain/kotlin/org/ide/lti/feature/setup/SetupScreen.kt": {
-    "mtime": 1789575301.7984343,
-    "seen": 1789590287.5555103,
-    "ast_hash": "4c56c26af9dc0e3b60ef8f1f37e46989",
+    "mtime": 1789657846.0442348,
+    "seen": 1789664658.7377057,
+    "ast_hash": "cc47eb9cd27b22ed91aaaee2a4d8e37b",
     "semantic_hash": ""
   },
   "feature/setup/src/commonMain/kotlin/org/ide/lti/feature/setup/SetupViewModel.kt": {
@@ -1884,9 +1878,9 @@
     "semantic_hash": ""
   },
   "feature/workspace/build.gradle.kts": {
-    "mtime": 1789467617.4081552,
-    "seen": 1789528417.890375,
-    "ast_hash": "c59ae8728e82fea1d8a24359e9d73608",
+    "mtime": 1789649814.163703,
+    "seen": 1789656895.1043928,
+    "ast_hash": "be8f9803c30608d9af100c202d224afd",
     "semantic_hash": ""
   },
   "feature/workspace/src/commonMain/kotlin/org/ide/lti/feature/workspace/WorkspaceNavigation.kt": {
@@ -1896,15 +1890,15 @@
     "semantic_hash": ""
   },
   "feature/workspace/src/commonMain/kotlin/org/ide/lti/feature/workspace/WorkspaceScreen.kt": {
-    "mtime": 1789559150.369538,
-    "seen": 1789590287.5555103,
-    "ast_hash": "4049e122a5656f4f8523f7b6404fecf5",
+    "mtime": 1789664694.3054373,
+    "seen": 1789665754.716126,
+    "ast_hash": "861d75a4833fdf733ac3d7612a1642bd",
     "semantic_hash": ""
   },
   "feature/workspace/src/commonMain/kotlin/org/ide/lti/feature/workspace/WorkspaceViewModel.kt": {
-    "mtime": 1789575639.6784227,
-    "seen": 1789590287.5555103,
-    "ast_hash": "4fa79edc084fbc5d8242020ac500f05d",
+    "mtime": 1789652659.8339028,
+    "seen": 1789656895.1043928,
+    "ast_hash": "3640a757ca5046e8c7039e170807a12c",
     "semantic_hash": ""
   },
   "feature/workspace/src/commonMain/kotlin/org/ide/lti/feature/workspace/di/WorkspaceModule.kt": {
@@ -1980,9 +1974,9 @@
     "semantic_hash": ""
   },
   "lti-desktop/src/jvmMain/kotlin/main.kt": {
-    "mtime": 1789233436.0286796,
-    "seen": 1789260361.2553003,
-    "ast_hash": "8c09a8bb3afa9cdb381e1f85c35751c4",
+    "mtime": 1789657965.6045833,
+    "seen": 1789664658.73869,
+    "ast_hash": "bd241642e599e4c73e1de409211e73c9",
     "semantic_hash": ""
   },
   "lti-shared/build.gradle.kts": {
@@ -1992,9 +1986,9 @@
     "semantic_hash": ""
   },
   "lti-shared/src/commonMain/kotlin/org/ide/lti/shared/LtiSharedApp.kt": {
-    "mtime": 1789164290.996718,
-    "seen": 1789260361.2553003,
-    "ast_hash": "084c3b4b70e9f33f880ca346cc9297db",
+    "mtime": 1789664863.1694665,
+    "seen": 1789665754.716126,
+    "ast_hash": "3b6eaeabbc5640121eedd7fbdaa4c862",
     "semantic_hash": ""
   },
   "lti-shared/src/commonMain/kotlin/org/ide/lti/shared/di/KoinModules.kt": {
@@ -2010,9 +2004,9 @@
     "semantic_hash": ""
   },
   "lti-shared/src/commonMain/kotlin/org/ide/lti/shared/navigation/RootNavGraph.kt": {
-    "mtime": 1789477592.5279496,
-    "seen": 1789528417.890375,
-    "ast_hash": "33d12bd086b80d781f2d0d9928a3b166",
+    "mtime": 1789665179.1294854,
+    "seen": 1789665754.716126,
+    "ast_hash": "8b314b39358e3660e07937baefcd8123",
     "semantic_hash": ""
   },
   "lti-shared/src/commonMain/kotlin/org/ide/lti/shared/utils/TopLevelDestination.kt": {
@@ -2040,9 +2034,9 @@
     "semantic_hash": ""
   },
   "settings.gradle.kts": {
-    "mtime": 1789380043.5306237,
-    "seen": 1789387556.225789,
-    "ast_hash": "7703c882400f641aae38f9f139a8651d",
+    "mtime": 1789649698.6374018,
+    "seen": 1789656895.1053846,
+    "ast_hash": "f6410c37fcf546beb87918f15f45934c",
     "semantic_hash": ""
   },
   "spotless/copyright.kt": {
@@ -18192,9 +18186,9 @@
     "semantic_hash": ""
   },
   "feature/plugins/build.gradle.kts": {
-    "mtime": 1789480267.6101048,
-    "seen": 1789528417.890375,
-    "ast_hash": "7f25928f569dbd69174a2882c24d95b5",
+    "mtime": 1789601558.356614,
+    "seen": 1789656895.1043928,
+    "ast_hash": "20d52028191a7b3449af81a0c0b505ef",
     "semantic_hash": ""
   },
   "sdk/patch-mod/build.gradle.kts": {
@@ -18738,9 +18732,9 @@
     "semantic_hash": ""
   },
   "feature/plugins/src/commonMain/kotlin/org/ide/lti/feature/plugins/PluginAuthorToolsTab.kt": {
-    "mtime": 1789589948.9960127,
-    "seen": 1789590287.5555103,
-    "ast_hash": "0489d32796aa36ac9a438efb91ae7717",
+    "mtime": 1789617776.5934594,
+    "seen": 1789656895.1043928,
+    "ast_hash": "8a59f183044fad2d774d16c582805e4c",
     "semantic_hash": ""
   },
   "feature/plugins/src/commonMain/kotlin/org/ide/lti/feature/plugins/PluginDetailsDialog.kt": {
@@ -18750,33 +18744,33 @@
     "semantic_hash": ""
   },
   "feature/plugins/src/commonMain/kotlin/org/ide/lti/feature/plugins/PluginImportTab.kt": {
-    "mtime": 1789590106.10735,
-    "seen": 1789590287.5555103,
-    "ast_hash": "c5d7d98701785e514ad4c102bf9f9c2b",
+    "mtime": 1789617139.0197823,
+    "seen": 1789656895.1043928,
+    "ast_hash": "8188311809791850b3af9b0335b4d464",
     "semantic_hash": ""
   },
   "feature/plugins/src/commonMain/kotlin/org/ide/lti/feature/plugins/PluginInstalledTab.kt": {
-    "mtime": 1789590013.4327333,
-    "seen": 1789590287.5555103,
-    "ast_hash": "b8d173a8322f181aceb4efcb4610c98d",
+    "mtime": 1789613870.358393,
+    "seen": 1789656895.1043928,
+    "ast_hash": "c50c89eb5a88f4b329a60fdc2130675c",
     "semantic_hash": ""
   },
   "feature/plugins/src/commonMain/kotlin/org/ide/lti/feature/plugins/PluginManagerScreen.kt": {
-    "mtime": 1789588146.005083,
-    "seen": 1789590287.5555103,
-    "ast_hash": "b816bd8bc54d974906aa6af27f868f50",
+    "mtime": 1789617776.6180532,
+    "seen": 1789656895.1043928,
+    "ast_hash": "676ad05ffff0398ec61a32b4419500b8",
     "semantic_hash": ""
   },
   "feature/plugins/src/commonMain/kotlin/org/ide/lti/feature/plugins/PluginManagerViewModel.kt": {
-    "mtime": 1789482607.4981148,
-    "seen": 1789528417.890375,
-    "ast_hash": "497706678d7b5e84f8d613e6b5737f89",
+    "mtime": 1789617087.248011,
+    "seen": 1789656895.1043928,
+    "ast_hash": "e88738d07d67310ac0394ea3331b7202",
     "semantic_hash": ""
   },
   "feature/plugins/src/commonMain/kotlin/org/ide/lti/feature/plugins/PluginMarketplaceTab.kt": {
-    "mtime": 1789590055.5504305,
-    "seen": 1789590287.5555103,
-    "ast_hash": "ffc9137a17e4e38930508ba63ab02be2",
+    "mtime": 1789617371.4717588,
+    "seen": 1789656895.1043928,
+    "ast_hash": "057dbe39c9dc2413be2282557f928455",
     "semantic_hash": ""
   },
   "feature/plugins/src/commonMain/kotlin/org/ide/lti/feature/plugins/PluginsNavigation.kt": {
@@ -18815,12 +18809,6 @@
     "ast_hash": "f5dd6450cf59ab3b30ccd25b70aa1753",
     "semantic_hash": ""
   },
-  "feature/workspace/src/commonMain/kotlin/org/ide/lti/feature/workspace/studio/StudioDock.kt": {
-    "mtime": 1789469486.5446088,
-    "seen": 1789528417.890375,
-    "ast_hash": "bbbf0e9416d9659d67e455bc7928fcb7",
-    "semantic_hash": ""
-  },
   "feature/workspace/src/commonMain/kotlin/org/ide/lti/feature/workspace/studio/StudioDraftController.kt": {
     "mtime": 1789525473.4378433,
     "seen": 1789528417.890375,
@@ -18833,28 +18821,22 @@
     "ast_hash": "108c0a392deb2d08c7c8dfceb9e87038",
     "semantic_hash": ""
   },
-  "feature/workspace/src/commonMain/kotlin/org/ide/lti/feature/workspace/studio/StudioOverview.kt": {
-    "mtime": 1789573312.7491999,
-    "seen": 1789590287.5555103,
-    "ast_hash": "c2dfa61bd9d03dc01de8b39d9a53bab1",
-    "semantic_hash": ""
-  },
   "feature/workspace/src/commonMain/kotlin/org/ide/lti/feature/workspace/studio/StudioPresentationState.kt": {
-    "mtime": 1789459531.028677,
-    "seen": 1789528417.890375,
-    "ast_hash": "a2a463a5e5b9f08133c48b1920e755b8",
+    "mtime": 1789652845.6986299,
+    "seen": 1789656895.1053846,
+    "ast_hash": "f9f4b87c8ffc4760cb08e1b7891d9bdb",
     "semantic_hash": ""
   },
   "feature/workspace/src/commonMain/kotlin/org/ide/lti/feature/workspace/studio/StudioScreen.kt": {
-    "mtime": 1789575896.4415839,
-    "seen": 1789590287.5555103,
-    "ast_hash": "585100a631b755a0baf7eb4b0904b465",
+    "mtime": 1789657032.148043,
+    "seen": 1789657314.5343304,
+    "ast_hash": "cd23637e862c889ca21f924401fae33f",
     "semantic_hash": ""
   },
   "feature/workspace/src/commonMain/kotlin/org/ide/lti/feature/workspace/studio/StudioViewModel.kt": {
-    "mtime": 1789468777.2135382,
-    "seen": 1789528417.890375,
-    "ast_hash": "2eaf672a7e10c306555bbd839b2a2391",
+    "mtime": 1789657002.416839,
+    "seen": 1789657314.5343304,
+    "ast_hash": "b6d369b3ea006bd19de505108335292f",
     "semantic_hash": ""
   },
   "feature/workspace/src/commonMain/kotlin/org/ide/lti/feature/workspace/studio/WorkspacePipelineDraft.kt": {
@@ -31248,39 +31230,39 @@
     "semantic_hash": ""
   },
   "feature/plugins/src/commonMain/kotlin/org/ide/lti/feature/plugins/components/PluginDiagnosticsTable.kt": {
-    "mtime": 1789589072.684219,
-    "seen": 1789590287.5555103,
-    "ast_hash": "76bd24369538b5720eb9e6c1ae86c8b2",
+    "mtime": 1789616849.6589444,
+    "seen": 1789656895.1043928,
+    "ast_hash": "c21c458813f50a87a35914b6d9ece412",
     "semantic_hash": ""
   },
   "feature/plugins/src/commonMain/kotlin/org/ide/lti/feature/plugins/components/PluginFooterBar.kt": {
-    "mtime": 1789587804.3961291,
-    "seen": 1789590287.5555103,
-    "ast_hash": "295af5ea015708a2d4ac357c73baef8a",
+    "mtime": 1789616849.6519456,
+    "seen": 1789656895.1043928,
+    "ast_hash": "2845a0696a513bdca1fe46c48b1d4edf",
     "semantic_hash": ""
   },
   "feature/plugins/src/commonMain/kotlin/org/ide/lti/feature/plugins/components/PluginPipelineFlow.kt": {
-    "mtime": 1789587902.8693867,
-    "seen": 1789590287.5555103,
-    "ast_hash": "2762ebc9e90f223356b9eb7c2f4683b3",
+    "mtime": 1789617776.5634742,
+    "seen": 1789656895.1043928,
+    "ast_hash": "3b7baa800808848318e6bffa47f750b5",
     "semantic_hash": ""
   },
   "feature/plugins/src/commonMain/kotlin/org/ide/lti/feature/plugins/components/PluginSidebar.kt": {
-    "mtime": 1789589171.8466127,
-    "seen": 1789590287.5555103,
-    "ast_hash": "11819097fb7455b5b4415a782bb87571",
+    "mtime": 1789617465.2965558,
+    "seen": 1789656895.1043928,
+    "ast_hash": "b36335f4b76572dc5abab2d8a9e976aa",
     "semantic_hash": ""
   },
   "feature/plugins/src/commonMain/kotlin/org/ide/lti/feature/plugins/components/PluginStepper.kt": {
-    "mtime": 1789589041.6842706,
-    "seen": 1789590287.5555103,
-    "ast_hash": "90707cfbc2dcce32441722685ebd5cb4",
+    "mtime": 1789613814.686802,
+    "seen": 1789656895.1043928,
+    "ast_hash": "784bb746a383831be4ca3cf872489535",
     "semantic_hash": ""
   },
   "feature/plugins/src/commonMain/kotlin/org/ide/lti/feature/plugins/components/PluginTopBar.kt": {
-    "mtime": 1789589901.7481408,
-    "seen": 1789590287.5555103,
-    "ast_hash": "c56be84d277d91ec1ac44ef42d6e4da8",
+    "mtime": 1789615914.1942236,
+    "seen": 1789656895.1043928,
+    "ast_hash": "ccdfa97fd98c6fd75996321ae1cbb945",
     "semantic_hash": ""
   },
   ".gradle-codex/.tmp/configuration-cache-report5516050221371873664.html": {
@@ -31323,6 +31305,630 @@
     "mtime": 1789559333.208755,
     "seen": 1789590287.5565207,
     "ast_hash": "5f51e08d8e81ff0a002efa67b2319e7a",
+    "semantic_hash": ""
+  },
+  "feature/plugins/src/commonTest/kotlin/org/ide/lti/feature/plugins/PluginPresentationStateTest.kt": {
+    "mtime": 1789617179.3579004,
+    "seen": 1789656895.1043928,
+    "ast_hash": "bb55fd7e01dbefffcfea6806c74cc967",
+    "semantic_hash": ""
+  },
+  "catalog/src/desktopMain/kotlin/org/ide/lti/catalog/tabs/IdeShellCatalogTab.kt": {
+    "mtime": 1789651913.9093966,
+    "seen": 1789656895.1043928,
+    "ast_hash": "0a0e5b2f67e972b7eeb3eb6883fc7290",
+    "semantic_hash": ""
+  },
+  "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/display/IdeReadinessRow.kt": {
+    "mtime": 1789651071.769128,
+    "seen": 1789656895.1043928,
+    "ast_hash": "804ba119b8f732f4c27362214bb18745",
+    "semantic_hash": ""
+  },
+  "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/display/IdeStatusBadge.kt": {
+    "mtime": 1789651085.7298048,
+    "seen": 1789656895.1043928,
+    "ast_hash": "cf50ec91b3af2a9b0bf206c66b9a3a11",
+    "semantic_hash": ""
+  },
+  "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/display/IdeSummaryGrid.kt": {
+    "mtime": 1789651093.1698582,
+    "seen": 1789656895.1043928,
+    "ast_hash": "9c7ee45f3fb5f456fbaf3af0f58765cf",
+    "semantic_hash": ""
+  },
+  "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/layout/IdeAppFrame.kt": {
+    "mtime": 1789650849.5856078,
+    "seen": 1789656895.1043928,
+    "ast_hash": "c074e8ee70f6f16ea693a43540447a80",
+    "semantic_hash": ""
+  },
+  "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/layout/IdeBreadcrumbBar.kt": {
+    "mtime": 1789650789.3058248,
+    "seen": 1789656895.1043928,
+    "ast_hash": "a9d78ceb4afbb5a978980f8760832cea",
+    "semantic_hash": ""
+  },
+  "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/layout/IdeNavigatorPanel.kt": {
+    "mtime": 1789651115.7094228,
+    "seen": 1789656895.1043928,
+    "ast_hash": "fcfe9cfa48fece0fb8a14310731a8394",
+    "semantic_hash": ""
+  },
+  "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/layout/IdePipelineRail.kt": {
+    "mtime": 1789651106.9525192,
+    "seen": 1789656895.1043928,
+    "ast_hash": "1810aabcdfded33e418b17028f2c6b18",
+    "semantic_hash": ""
+  },
+  "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/layout/IdeStatusBar.kt": {
+    "mtime": 1789650856.6356423,
+    "seen": 1789656895.1043928,
+    "ast_hash": "6a5c55d8262516996ab983f5a4f528e9",
+    "semantic_hash": ""
+  },
+  "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/layout/IdeTopAppBar.kt": {
+    "mtime": 1789651123.353588,
+    "seen": 1789656895.1043928,
+    "ast_hash": "d421447ddc95500a7274c6524d9318d5",
+    "semantic_hash": ""
+  },
+  "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/layout/StudioGlassBackdrop.kt": {
+    "mtime": 1789618638.5751977,
+    "seen": 1789656895.1043928,
+    "ast_hash": "408756de7789b6d6565d9f085efee5ea",
+    "semantic_hash": ""
+  },
+  "core/designsystem/src/commonTest/kotlin/org/ide/lti/core/designsystem/theme/IdeShellTokensTest.kt": {
+    "mtime": 1789651138.3908665,
+    "seen": 1789656895.1043928,
+    "ast_hash": "6669666a9a6483d488ac69981f1e36c4",
+    "semantic_hash": ""
+  },
+  "core/designsystem/src/desktopTest/kotlin/org/ide/lti/core/designsystem/screenshot/IdeShellComponentTest.kt": {
+    "mtime": 1789651154.7423465,
+    "seen": 1789656895.1043928,
+    "ast_hash": "e6bea9ad5ba74fe068a73bb933425b13",
+    "semantic_hash": ""
+  },
+  "core/testing/build.gradle.kts": {
+    "mtime": 1789649731.7574544,
+    "seen": 1789656895.1043928,
+    "ast_hash": "a8dee4a264394773076540861f67cf08",
+    "semantic_hash": ""
+  },
+  "core/testing/src/desktopMain/kotlin/org/ide/lti/core/testing/screenshot/GoldenImageAssert.kt": {
+    "mtime": 1789666879.664215,
+    "seen": 1789667251.5806983,
+    "ast_hash": "36c15cf4e919448ce0eb8d6e6ce30288",
+    "semantic_hash": ""
+  },
+  "core/testing/src/desktopTest/kotlin/org/ide/lti/core/testing/screenshot/GoldenImageAssertTest.kt": {
+    "mtime": 1789666771.1034653,
+    "seen": 1789667251.5806983,
+    "ast_hash": "6d357464d70518ee4aa2166ddd7441c5",
+    "semantic_hash": ""
+  },
+  "feature/plugins/src/commonMain/kotlin/org/ide/lti/feature/plugins/PluginManagerActions.kt": {
+    "mtime": 1789613014.9438522,
+    "seen": 1789656895.1043928,
+    "ast_hash": "9825325c626c71306cece8e4f212bf28",
+    "semantic_hash": ""
+  },
+  "feature/plugins/src/commonMain/kotlin/org/ide/lti/feature/plugins/PluginPresentationState.kt": {
+    "mtime": 1789617179.351903,
+    "seen": 1789656895.1043928,
+    "ast_hash": "13f16a6950b8165a012e965ac3eb9783",
+    "semantic_hash": ""
+  },
+  "feature/plugins/src/desktopTest/kotlin/org/ide/lti/feature/plugins/PluginThemeScreenshotTest.kt": {
+    "mtime": 1789618285.1817203,
+    "seen": 1789656895.1043928,
+    "ast_hash": "db2df264c506cc8bcc46f30891738f71",
+    "semantic_hash": ""
+  },
+  "feature/workspace/src/commonMain/kotlin/org/ide/lti/feature/workspace/studio/WorkspaceOverview.kt": {
+    "mtime": 1789657120.3959725,
+    "seen": 1789657314.5343304,
+    "ast_hash": "c2efc90942e055b5739b788a79b07f62",
+    "semantic_hash": ""
+  },
+  "feature/workspace/src/commonMain/kotlin/org/ide/lti/feature/workspace/studio/WorkspaceOverviewMapper.kt": {
+    "mtime": 1789656756.9292233,
+    "seen": 1789656895.1053846,
+    "ast_hash": "04f4442ef06579a708b6e9b613dc67ed",
+    "semantic_hash": ""
+  },
+  "feature/workspace/src/commonMain/kotlin/org/ide/lti/feature/workspace/studio/WorkspaceOverviewState.kt": {
+    "mtime": 1789655243.0665746,
+    "seen": 1789656895.1053846,
+    "ast_hash": "9ec55c199fb024988ea863ba0806a9f1",
+    "semantic_hash": ""
+  },
+  "feature/workspace/src/commonMain/kotlin/org/ide/lti/feature/workspace/studio/components/StudioStatusBar.kt": {
+    "mtime": 1789654329.5283868,
+    "seen": 1789656895.1053846,
+    "ast_hash": "3c95dfb8bbb4b3d435d3aaa75382051e",
+    "semantic_hash": ""
+  },
+  "feature/workspace/src/commonMain/kotlin/org/ide/lti/feature/workspace/studio/components/StudioTopAppBar.kt": {
+    "mtime": 1789666994.0816202,
+    "seen": 1789667251.5806983,
+    "ast_hash": "9d137190e4766de1d83b6a515b6a1a65",
+    "semantic_hash": ""
+  },
+  "feature/workspace/src/commonMain/kotlin/org/ide/lti/feature/workspace/studio/components/WorkspaceNavigator.kt": {
+    "mtime": 1789653064.5603564,
+    "seen": 1789656895.1053846,
+    "ast_hash": "4c07b4fe6098fef0466b73b6ba59fa7d",
+    "semantic_hash": ""
+  },
+  "feature/workspace/src/commonTest/kotlin/org/ide/lti/feature/workspace/studio/WorkspaceOverviewMapperTest.kt": {
+    "mtime": 1789655306.1589453,
+    "seen": 1789656895.1053846,
+    "ast_hash": "653a76d7d9034467def08a70fa40e73c",
+    "semantic_hash": ""
+  },
+  "feature/workspace/src/commonTest/kotlin/org/ide/lti/feature/workspace/studio/WorkspaceShellUiStateTest.kt": {
+    "mtime": 1789652579.7321799,
+    "seen": 1789656895.1053846,
+    "ast_hash": "8c872893d616c08031e9cea03a8f1038",
+    "semantic_hash": ""
+  },
+  "feature/workspace/src/desktopTest/kotlin/org/ide/lti/feature/workspace/studio/StudioShellLayoutTest.kt": {
+    "mtime": 1789667086.5704598,
+    "seen": 1789667251.5806983,
+    "ast_hash": "2efb00946b8306ea885873395477603d",
+    "semantic_hash": ""
+  },
+  "feature/workspace/src/desktopTest/resources/reference/provenance.json": {
+    "mtime": 1789649676.294545,
+    "seen": 1789656895.1053846,
+    "ast_hash": "e9cbbda713ec100b00572bed2b3d44b2",
+    "semantic_hash": ""
+  },
+  "lti-shared/src/desktopTest/kotlin/org/ide/lti/navigation/WorkspaceFrameIntegrationTest.kt": {
+    "mtime": 1789666994.7867577,
+    "seen": 1789667251.5806983,
+    "ast_hash": "22eb0eeae79a7b6ef702b6e6ce2c074f",
+    "semantic_hash": ""
+  },
+  "core/designsystem/src/commonMain/composeResources/font/INTER-LICENSE.txt": {
+    "mtime": 1700402896.0,
+    "seen": 1789656895.10638,
+    "ast_hash": "082d8cc7db39783f598b7eda8c911f9d",
+    "semantic_hash": ""
+  },
+  "feature/workspace/src/desktopTest/resources/reference/workspace_overview_dark_1584x1280.png": {
+    "mtime": 1789608476.0,
+    "seen": 1789656895.1083922,
+    "ast_hash": "a8aee796d0739f7ac668103600e59849",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-be25220b-e9db-45d4-b238-d3107bfed5f0/sources/org/gradle/accessors/dm/BackdropProjectDependency.java": {
+    "mtime": 1789658407.3392503,
+    "seen": 1789664658.7346895,
+    "ast_hash": "bb63eca13b83a0cf807f16e99d7d8fa6",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-be25220b-e9db-45d4-b238-d3107bfed5f0/sources/org/gradle/accessors/dm/CatalogProjectDependency.java": {
+    "mtime": 1789658407.3362532,
+    "seen": 1789664658.7346895,
+    "ast_hash": "f377820e10172eb4116452c71bda12ff",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-be25220b-e9db-45d4-b238-d3107bfed5f0/sources/org/gradle/accessors/dm/CoreProjectDependency.java": {
+    "mtime": 1789658407.346251,
+    "seen": 1789664658.7346895,
+    "ast_hash": "592be46f26b185d8ad97b2643314200c",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-be25220b-e9db-45d4-b238-d3107bfed5f0/sources/org/gradle/accessors/dm/Core_AnalyticsProjectDependency.java": {
+    "mtime": 1789658407.3312664,
+    "seen": 1789664658.7346895,
+    "ast_hash": "ce2ec4ff2f1d1c819782dc0f7524338d",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-be25220b-e9db-45d4-b238-d3107bfed5f0/sources/org/gradle/accessors/dm/Core_CliProjectDependency.java": {
+    "mtime": 1789658407.3402498,
+    "seen": 1789664658.7346895,
+    "ast_hash": "dd581fbbfa4911326539f6cd8d0cc9d6",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-be25220b-e9db-45d4-b238-d3107bfed5f0/sources/org/gradle/accessors/dm/Core_CommonProjectDependency.java": {
+    "mtime": 1789658407.348249,
+    "seen": 1789664658.7346895,
+    "ast_hash": "402eb9c09b0e0b85950dcb2e779bd60d",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-be25220b-e9db-45d4-b238-d3107bfed5f0/sources/org/gradle/accessors/dm/Core_DataProjectDependency.java": {
+    "mtime": 1789658407.3342495,
+    "seen": 1789664658.7346895,
+    "ast_hash": "a1e41acf4b31e4cf7d276ca98f11f12f",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-be25220b-e9db-45d4-b238-d3107bfed5f0/sources/org/gradle/accessors/dm/Core_DatastoreProjectDependency.java": {
+    "mtime": 1789658407.348249,
+    "seen": 1789664658.7346895,
+    "ast_hash": "a5ffeb08726602fb6e48cc6887f97108",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-be25220b-e9db-45d4-b238-d3107bfed5f0/sources/org/gradle/accessors/dm/Core_DesignsystemProjectDependency.java": {
+    "mtime": 1789658407.3382483,
+    "seen": 1789664658.7346895,
+    "ast_hash": "dd1c3d9312050f214eb4198712ee1d86",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-be25220b-e9db-45d4-b238-d3107bfed5f0/sources/org/gradle/accessors/dm/Core_DomainProjectDependency.java": {
+    "mtime": 1789658407.3422484,
+    "seen": 1789664658.7346895,
+    "ast_hash": "ef25931b97c1f769e33b1e990bcda504",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-be25220b-e9db-45d4-b238-d3107bfed5f0/sources/org/gradle/accessors/dm/Core_ModelProjectDependency.java": {
+    "mtime": 1789658407.3332474,
+    "seen": 1789664658.7346895,
+    "ast_hash": "6619f1312b481deea100bea6f74769cd",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-be25220b-e9db-45d4-b238-d3107bfed5f0/sources/org/gradle/accessors/dm/Core_NetworkProjectDependency.java": {
+    "mtime": 1789658407.3342495,
+    "seen": 1789664658.7346895,
+    "ast_hash": "76087d0e740f9a8b154fbd78ac515683",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-be25220b-e9db-45d4-b238-d3107bfed5f0/sources/org/gradle/accessors/dm/Core_TestingProjectDependency.java": {
+    "mtime": 1789658407.3362532,
+    "seen": 1789664658.7346895,
+    "ast_hash": "9f9eef1032c2821a9e67971f6ef239b0",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-be25220b-e9db-45d4-b238-d3107bfed5f0/sources/org/gradle/accessors/dm/Core_UiProjectDependency.java": {
+    "mtime": 1789658407.3402498,
+    "seen": 1789664658.7346895,
+    "ast_hash": "0d44ac5f672455893ff5d11cec1bf125",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-be25220b-e9db-45d4-b238-d3107bfed5f0/sources/org/gradle/accessors/dm/DetektRulesProjectDependency.java": {
+    "mtime": 1789658407.3422484,
+    "seen": 1789664658.7346895,
+    "ast_hash": "2bf6bad36513e49223d2c68a1891a2fa",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-be25220b-e9db-45d4-b238-d3107bfed5f0/sources/org/gradle/accessors/dm/FeatureProjectDependency.java": {
+    "mtime": 1789658407.3452523,
+    "seen": 1789664658.7346895,
+    "ast_hash": "28caa7a8b85b6d8eea52034959cdbdd4",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-be25220b-e9db-45d4-b238-d3107bfed5f0/sources/org/gradle/accessors/dm/Feature_ConfigurationProjectDependency.java": {
+    "mtime": 1789658407.3332474,
+    "seen": 1789664658.7346895,
+    "ast_hash": "9ce617b30c1baa46dfb8a4243e1394cc",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-be25220b-e9db-45d4-b238-d3107bfed5f0/sources/org/gradle/accessors/dm/Feature_HomeProjectDependency.java": {
+    "mtime": 1789658407.3322487,
+    "seen": 1789664658.7346895,
+    "ast_hash": "1b01b5c2cefabf13296f2ca68671477e",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-be25220b-e9db-45d4-b238-d3107bfed5f0/sources/org/gradle/accessors/dm/Feature_PluginsProjectDependency.java": {
+    "mtime": 1789658407.3292499,
+    "seen": 1789664658.7346895,
+    "ast_hash": "8bcddcb4fe806b81defcba06490e8977",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-be25220b-e9db-45d4-b238-d3107bfed5f0/sources/org/gradle/accessors/dm/Feature_ProfileProjectDependency.java": {
+    "mtime": 1789658407.3352478,
+    "seen": 1789664658.7346895,
+    "ast_hash": "6a68c54e456107ed32f95071711f7419",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-be25220b-e9db-45d4-b238-d3107bfed5f0/sources/org/gradle/accessors/dm/Feature_SettingsProjectDependency.java": {
+    "mtime": 1789658407.3452523,
+    "seen": 1789664658.7346895,
+    "ast_hash": "7859fa5f2b861d1db5add3615166f1aa",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-be25220b-e9db-45d4-b238-d3107bfed5f0/sources/org/gradle/accessors/dm/Feature_SetupProjectDependency.java": {
+    "mtime": 1789658407.3292499,
+    "seen": 1789664658.7346895,
+    "ast_hash": "b1c800d80b68f43641e19412a4f3ae8e",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-be25220b-e9db-45d4-b238-d3107bfed5f0/sources/org/gradle/accessors/dm/Feature_WorkspaceProjectDependency.java": {
+    "mtime": 1789658407.3302474,
+    "seen": 1789664658.7346895,
+    "ast_hash": "bd931c1c049e72adc3d72c9ada637e47",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-be25220b-e9db-45d4-b238-d3107bfed5f0/sources/org/gradle/accessors/dm/LtiDesktopProjectDependency.java": {
+    "mtime": 1789658407.3322487,
+    "seen": 1789664658.7346895,
+    "ast_hash": "3aa9732103be4c17a0aefd62e3b86ad9",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-be25220b-e9db-45d4-b238-d3107bfed5f0/sources/org/gradle/accessors/dm/LtiRomGuiProjectDependency.java": {
+    "mtime": 1789658407.3442483,
+    "seen": 1789664658.7346895,
+    "ast_hash": "72e92d5cbc95703de8526deded0c233c",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-be25220b-e9db-45d4-b238-d3107bfed5f0/sources/org/gradle/accessors/dm/LtiSharedProjectDependency.java": {
+    "mtime": 1789658407.3412504,
+    "seen": 1789664658.7346895,
+    "ast_hash": "c94ad5cbad1a9ce6f5f2df70104115c3",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-be25220b-e9db-45d4-b238-d3107bfed5f0/sources/org/gradle/accessors/dm/RootProjectAccessor.java": {
+    "mtime": 1789658407.3282485,
+    "seen": 1789664658.7346895,
+    "ast_hash": "5b0f097f4ff0096315021294e3913e7c",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-be25220b-e9db-45d4-b238-d3107bfed5f0/sources/org/gradle/accessors/dm/SdkProjectDependency.java": {
+    "mtime": 1789658407.3352478,
+    "seen": 1789664658.7346895,
+    "ast_hash": "1e4bb7aa310ad5d62e4f98774fbf3c9e",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-be25220b-e9db-45d4-b238-d3107bfed5f0/sources/org/gradle/accessors/dm/Sdk_PatchModProjectDependency.java": {
+    "mtime": 1789658407.3472502,
+    "seen": 1789664658.7346895,
+    "ast_hash": "3f7567ef23ccba149514a5eac904c4d3",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-be25220b-e9db-45d4-b238-d3107bfed5f0/sources/org/gradle/accessors/dm/ToolProjectDependency.java": {
+    "mtime": 1789658407.33725,
+    "seen": 1789664658.7346895,
+    "ast_hash": "2c4c099be8cea17a4af0cdbfdb4ce82e",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-be25220b-e9db-45d4-b238-d3107bfed5f0/sources/org/gradle/accessors/dm/Tool_AdaptersProjectDependency.java": {
+    "mtime": 1789658407.3412504,
+    "seen": 1789664658.7346895,
+    "ast_hash": "4b15dfadef2c7c4cd6eb1c0bc0acbdc1",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-be25220b-e9db-45d4-b238-d3107bfed5f0/sources/org/gradle/accessors/dm/Tool_ClientProjectDependency.java": {
+    "mtime": 1789658407.3312664,
+    "seen": 1789664658.7346895,
+    "ast_hash": "89346fb9b02b26d1e29aaf2369b8b1f1",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-be25220b-e9db-45d4-b238-d3107bfed5f0/sources/org/gradle/accessors/dm/Tool_CodegenProjectDependency.java": {
+    "mtime": 1789658407.3382483,
+    "seen": 1789664658.7346895,
+    "ast_hash": "4a89204ff18f0fac22dcbf5815647a29",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-be25220b-e9db-45d4-b238-d3107bfed5f0/sources/org/gradle/accessors/dm/Tool_CoreProjectDependency.java": {
+    "mtime": 1789658407.3442483,
+    "seen": 1789664658.7346895,
+    "ast_hash": "4b4f594a0011c4fee2d99b244424c903",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-d6dabfc9-dc6c-4c60-ae56-3ce20b8e6eb7/sources/org/gradle/accessors/dm/BackdropProjectDependency.java": {
+    "mtime": 1789658441.828902,
+    "seen": 1789664658.7346895,
+    "ast_hash": "bb63eca13b83a0cf807f16e99d7d8fa6",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-d6dabfc9-dc6c-4c60-ae56-3ce20b8e6eb7/sources/org/gradle/accessors/dm/CatalogProjectDependency.java": {
+    "mtime": 1789658441.8239045,
+    "seen": 1789664658.7346895,
+    "ast_hash": "f377820e10172eb4116452c71bda12ff",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-d6dabfc9-dc6c-4c60-ae56-3ce20b8e6eb7/sources/org/gradle/accessors/dm/CoreProjectDependency.java": {
+    "mtime": 1789658441.8379037,
+    "seen": 1789664658.7346895,
+    "ast_hash": "592be46f26b185d8ad97b2643314200c",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-d6dabfc9-dc6c-4c60-ae56-3ce20b8e6eb7/sources/org/gradle/accessors/dm/Core_AnalyticsProjectDependency.java": {
+    "mtime": 1789658441.816903,
+    "seen": 1789664658.7346895,
+    "ast_hash": "ce2ec4ff2f1d1c819782dc0f7524338d",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-d6dabfc9-dc6c-4c60-ae56-3ce20b8e6eb7/sources/org/gradle/accessors/dm/Core_CliProjectDependency.java": {
+    "mtime": 1789658441.8299017,
+    "seen": 1789664658.7346895,
+    "ast_hash": "dd581fbbfa4911326539f6cd8d0cc9d6",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-d6dabfc9-dc6c-4c60-ae56-3ce20b8e6eb7/sources/org/gradle/accessors/dm/Core_CommonProjectDependency.java": {
+    "mtime": 1789658441.8399026,
+    "seen": 1789664658.7346895,
+    "ast_hash": "402eb9c09b0e0b85950dcb2e779bd60d",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-d6dabfc9-dc6c-4c60-ae56-3ce20b8e6eb7/sources/org/gradle/accessors/dm/Core_DataProjectDependency.java": {
+    "mtime": 1789658441.8209038,
+    "seen": 1789664658.7346895,
+    "ast_hash": "a1e41acf4b31e4cf7d276ca98f11f12f",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-d6dabfc9-dc6c-4c60-ae56-3ce20b8e6eb7/sources/org/gradle/accessors/dm/Core_DatastoreProjectDependency.java": {
+    "mtime": 1789658441.8389034,
+    "seen": 1789664658.7346895,
+    "ast_hash": "a5ffeb08726602fb6e48cc6887f97108",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-d6dabfc9-dc6c-4c60-ae56-3ce20b8e6eb7/sources/org/gradle/accessors/dm/Core_DesignsystemProjectDependency.java": {
+    "mtime": 1789658441.8279035,
+    "seen": 1789664658.7346895,
+    "ast_hash": "dd1c3d9312050f214eb4198712ee1d86",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-d6dabfc9-dc6c-4c60-ae56-3ce20b8e6eb7/sources/org/gradle/accessors/dm/Core_DomainProjectDependency.java": {
+    "mtime": 1789658441.8319035,
+    "seen": 1789664658.7346895,
+    "ast_hash": "ef25931b97c1f769e33b1e990bcda504",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-d6dabfc9-dc6c-4c60-ae56-3ce20b8e6eb7/sources/org/gradle/accessors/dm/Core_ModelProjectDependency.java": {
+    "mtime": 1789658441.8199046,
+    "seen": 1789664658.7346895,
+    "ast_hash": "6619f1312b481deea100bea6f74769cd",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-d6dabfc9-dc6c-4c60-ae56-3ce20b8e6eb7/sources/org/gradle/accessors/dm/Core_NetworkProjectDependency.java": {
+    "mtime": 1789658441.8219035,
+    "seen": 1789664658.7346895,
+    "ast_hash": "76087d0e740f9a8b154fbd78ac515683",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-d6dabfc9-dc6c-4c60-ae56-3ce20b8e6eb7/sources/org/gradle/accessors/dm/Core_TestingProjectDependency.java": {
+    "mtime": 1789658441.8249025,
+    "seen": 1789664658.7346895,
+    "ast_hash": "9f9eef1032c2821a9e67971f6ef239b0",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-d6dabfc9-dc6c-4c60-ae56-3ce20b8e6eb7/sources/org/gradle/accessors/dm/Core_UiProjectDependency.java": {
+    "mtime": 1789658441.8299017,
+    "seen": 1789664658.7346895,
+    "ast_hash": "0d44ac5f672455893ff5d11cec1bf125",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-d6dabfc9-dc6c-4c60-ae56-3ce20b8e6eb7/sources/org/gradle/accessors/dm/DetektRulesProjectDependency.java": {
+    "mtime": 1789658441.8319035,
+    "seen": 1789664658.7346895,
+    "ast_hash": "2bf6bad36513e49223d2c68a1891a2fa",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-d6dabfc9-dc6c-4c60-ae56-3ce20b8e6eb7/sources/org/gradle/accessors/dm/FeatureProjectDependency.java": {
+    "mtime": 1789658441.8359022,
+    "seen": 1789664658.7346895,
+    "ast_hash": "28caa7a8b85b6d8eea52034959cdbdd4",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-d6dabfc9-dc6c-4c60-ae56-3ce20b8e6eb7/sources/org/gradle/accessors/dm/Feature_ConfigurationProjectDependency.java": {
+    "mtime": 1789658441.8199046,
+    "seen": 1789664658.7346895,
+    "ast_hash": "9ce617b30c1baa46dfb8a4243e1394cc",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-d6dabfc9-dc6c-4c60-ae56-3ce20b8e6eb7/sources/org/gradle/accessors/dm/Feature_HomeProjectDependency.java": {
+    "mtime": 1789658441.818902,
+    "seen": 1789664658.7346895,
+    "ast_hash": "1b01b5c2cefabf13296f2ca68671477e",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-d6dabfc9-dc6c-4c60-ae56-3ce20b8e6eb7/sources/org/gradle/accessors/dm/Feature_PluginsProjectDependency.java": {
+    "mtime": 1789658441.8129022,
+    "seen": 1789664658.7357032,
+    "ast_hash": "8bcddcb4fe806b81defcba06490e8977",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-d6dabfc9-dc6c-4c60-ae56-3ce20b8e6eb7/sources/org/gradle/accessors/dm/Feature_ProfileProjectDependency.java": {
+    "mtime": 1789658441.8229048,
+    "seen": 1789664658.7357032,
+    "ast_hash": "6a68c54e456107ed32f95071711f7419",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-d6dabfc9-dc6c-4c60-ae56-3ce20b8e6eb7/sources/org/gradle/accessors/dm/Feature_SettingsProjectDependency.java": {
+    "mtime": 1789658441.8369052,
+    "seen": 1789664658.7357032,
+    "ast_hash": "7859fa5f2b861d1db5add3615166f1aa",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-d6dabfc9-dc6c-4c60-ae56-3ce20b8e6eb7/sources/org/gradle/accessors/dm/Feature_SetupProjectDependency.java": {
+    "mtime": 1789658441.8139043,
+    "seen": 1789664658.7357032,
+    "ast_hash": "b1c800d80b68f43641e19412a4f3ae8e",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-d6dabfc9-dc6c-4c60-ae56-3ce20b8e6eb7/sources/org/gradle/accessors/dm/Feature_WorkspaceProjectDependency.java": {
+    "mtime": 1789658441.8139043,
+    "seen": 1789664658.7357032,
+    "ast_hash": "bd931c1c049e72adc3d72c9ada637e47",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-d6dabfc9-dc6c-4c60-ae56-3ce20b8e6eb7/sources/org/gradle/accessors/dm/LtiDesktopProjectDependency.java": {
+    "mtime": 1789658441.817903,
+    "seen": 1789664658.7357032,
+    "ast_hash": "3aa9732103be4c17a0aefd62e3b86ad9",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-d6dabfc9-dc6c-4c60-ae56-3ce20b8e6eb7/sources/org/gradle/accessors/dm/LtiRomGuiProjectDependency.java": {
+    "mtime": 1789658441.8339057,
+    "seen": 1789664658.7357032,
+    "ast_hash": "72e92d5cbc95703de8526deded0c233c",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-d6dabfc9-dc6c-4c60-ae56-3ce20b8e6eb7/sources/org/gradle/accessors/dm/LtiSharedProjectDependency.java": {
+    "mtime": 1789658441.8319035,
+    "seen": 1789664658.7357032,
+    "ast_hash": "c94ad5cbad1a9ce6f5f2df70104115c3",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-d6dabfc9-dc6c-4c60-ae56-3ce20b8e6eb7/sources/org/gradle/accessors/dm/RootProjectAccessor.java": {
+    "mtime": 1789658441.8109035,
+    "seen": 1789664658.7357032,
+    "ast_hash": "5b0f097f4ff0096315021294e3913e7c",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-d6dabfc9-dc6c-4c60-ae56-3ce20b8e6eb7/sources/org/gradle/accessors/dm/SdkProjectDependency.java": {
+    "mtime": 1789658441.8229048,
+    "seen": 1789664658.7357032,
+    "ast_hash": "1e4bb7aa310ad5d62e4f98774fbf3c9e",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-d6dabfc9-dc6c-4c60-ae56-3ce20b8e6eb7/sources/org/gradle/accessors/dm/Sdk_PatchModProjectDependency.java": {
+    "mtime": 1789658441.8389034,
+    "seen": 1789664658.7357032,
+    "ast_hash": "3f7567ef23ccba149514a5eac904c4d3",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-d6dabfc9-dc6c-4c60-ae56-3ce20b8e6eb7/sources/org/gradle/accessors/dm/ToolProjectDependency.java": {
+    "mtime": 1789658441.8259037,
+    "seen": 1789664658.7357032,
+    "ast_hash": "2c4c099be8cea17a4af0cdbfdb4ce82e",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-d6dabfc9-dc6c-4c60-ae56-3ce20b8e6eb7/sources/org/gradle/accessors/dm/Tool_AdaptersProjectDependency.java": {
+    "mtime": 1789658441.8309038,
+    "seen": 1789664658.7357032,
+    "ast_hash": "4b15dfadef2c7c4cd6eb1c0bc0acbdc1",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-d6dabfc9-dc6c-4c60-ae56-3ce20b8e6eb7/sources/org/gradle/accessors/dm/Tool_ClientProjectDependency.java": {
+    "mtime": 1789658441.815936,
+    "seen": 1789664658.7357032,
+    "ast_hash": "89346fb9b02b26d1e29aaf2369b8b1f1",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-d6dabfc9-dc6c-4c60-ae56-3ce20b8e6eb7/sources/org/gradle/accessors/dm/Tool_CodegenProjectDependency.java": {
+    "mtime": 1789658441.8269026,
+    "seen": 1789664658.7357032,
+    "ast_hash": "4a89204ff18f0fac22dcbf5815647a29",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/caches/8.14.5/dependencies-accessors/5d5a4e8b7e9ca7ce49cf79a8b58f956d7b1ccf17-d6dabfc9-dc6c-4c60-ae56-3ce20b8e6eb7/sources/org/gradle/accessors/dm/Tool_CoreProjectDependency.java": {
+    "mtime": 1789658441.834903,
+    "seen": 1789664658.7357032,
+    "ast_hash": "4b4f594a0011c4fee2d99b244424c903",
+    "semantic_hash": ""
+  },
+  "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/layout/GlobalAppTopBar.kt": {
+    "mtime": 1789663900.3753707,
+    "seen": 1789664658.7377057,
+    "ast_hash": "a3d8d5464d9ae78f298db77dfa57ff5c",
+    "semantic_hash": ""
+  },
+  "core/designsystem/src/desktopTest/kotlin/org/ide/lti/core/designsystem/layout/GlobalAppTopBarTest.kt": {
+    "mtime": 1789665931.6145236,
+    "seen": 1789666549.441447,
+    "ast_hash": "2a421ee33b40db617c4cdff980ddc267",
+    "semantic_hash": ""
+  },
+  ".gradle-codex/.tmp/configuration-cache-report12652868728947901273.html": {
+    "mtime": 1789658442.6181736,
+    "seen": 1789664658.7397027,
+    "ast_hash": "c9087ce09f9f47f30043a239374798bc",
     "semantic_hash": ""
   }
 }

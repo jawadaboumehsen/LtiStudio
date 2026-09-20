@@ -25,16 +25,27 @@ kotlin {
             implementation(projects.core.common)
             implementation(projects.core.model)
             implementation(projects.core.domain)
-            api(projects.core.data)
-            api(projects.core.network)
+            implementation(projects.core.data)
+            implementation(projects.core.network)
+            implementation(projects.core.cli)
+            implementation(projects.core.ui)
 
-            implementation(projects.feature.home)
-            implementation(projects.feature.profile)
             implementation(projects.feature.settings)
             implementation(projects.feature.setup)
+            api(projects.feature.workspaceApi)
             implementation(projects.feature.workspace)
             implementation(projects.feature.configuration)
             implementation(projects.feature.plugins)
+            implementation(projects.feature.romStudio.romStudioApi)
+            implementation(projects.feature.romStudio.shell)
+            implementation(projects.feature.romStudio.stageAcquire)
+            implementation(projects.feature.romStudio.stageExtract)
+            implementation(projects.feature.romStudio.stageAssemble)
+            implementation(projects.feature.romStudio.stageDebloat)
+            implementation(projects.feature.romStudio.stagePatch)
+            implementation(projects.feature.romStudio.stageBuild)
+            implementation(projects.feature.romStudio.stageMetadata)
+            implementation(projects.feature.romStudio.stagePublish)
 
 
             //put your multiplatform dependencies here
@@ -53,6 +64,15 @@ kotlin {
             // Desktop specific dependencies
             implementation(compose.desktop.currentOs)
             implementation(compose.desktop.common)
+            implementation(projects.tool.api)
+            implementation(projects.tool.runtime)
+            implementation(projects.tool.client)
+            implementation(projects.tool.metadata)
+            implementation(projects.tool.adapter.androidDevice)
+            implementation(projects.tool.adapter.androidPackage)
+            implementation(projects.tool.adapter.image)
+            implementation(projects.tool.adapter.security)
+            implementation(projects.tool.adapter.publishing)
         }
 
         desktopTest.dependencies {

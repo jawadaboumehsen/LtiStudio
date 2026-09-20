@@ -9,19 +9,15 @@
  */
 package org.ide.lti.core.designsystem.theme.config
 
+import androidx.compose.material3.ColorScheme
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.Dp
-import com.kashif_e.backdrop.highlight.Highlight
-import androidx.compose.material3.ColorScheme
 import com.materialkolor.dynamicColorScheme
-import com.kashif_e.backdrop.shadow.Shadow
 import org.ide.lti.core.designsystem.component.layout.LtiLayoutDefaults
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.DarkGlassColorScheme
-import org.ide.lti.core.designsystem.theme.GlassShapes
-import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.ThemeColors
 import org.ide.lti.core.designsystem.theme.deriveDiagnosticColors
 import org.ide.lti.core.designsystem.theme.deriveSyntaxColorScheme

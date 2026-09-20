@@ -93,7 +93,7 @@ object GlassShapes {
     fun lerp(
         start: ContinuousRoundedRectangle,
         stop: ContinuousRoundedRectangle,
-        fraction: Float
+        fraction: Float,
     ): ContinuousRoundedRectangle = capsuleLerp(start, stop, fraction)
 
     /**

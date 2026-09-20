@@ -64,7 +64,6 @@ import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BlueGlassColorScheme
 import org.ide.lti.core.designsystem.theme.ColorContrast
 import org.ide.lti.core.designsystem.theme.ComponentSize
-import org.ide.lti.core.designsystem.theme.DarkGlassColorScheme
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -448,17 +447,17 @@ class GlassComponentScreenshotTest {
                     contentAlignment = Alignment.Center,
                 ) {
                     GlassTopBar(
-                       navigation = TopBarNavigation.Brand(
-                           title = "LtiRom",
-                           workspaceName = "Workspace",
-                       ),
-                       panelToggles = TopBarPanelToggles(
-                           isLeftVisible = true,
-                           isBottomVisible = true,
-                           isRightVisible = false,
-                       ),
-                       backdrop = backdrop,
-                   )
+                        navigation = TopBarNavigation.Brand(
+                            title = "LtiRom",
+                            workspaceName = "Workspace",
+                        ),
+                        panelToggles = TopBarPanelToggles(
+                            isLeftVisible = true,
+                            isBottomVisible = true,
+                            isRightVisible = false,
+                        ),
+                        backdrop = backdrop,
+                    )
                 }
             }
         }

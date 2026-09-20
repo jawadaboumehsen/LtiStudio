@@ -33,12 +33,17 @@ fun HardwareConfigTab(
     modifier: Modifier = Modifier,
 ) {
     val glassColors = GlassTheme.colors
+    val colors = GlassTheme.ideShellColors
 
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
-        GlassCard(modifier = Modifier.fillMaxWidth()) {
+        GlassCard(
+            modifier = Modifier.fillMaxWidth(),
+            surfaceColor = colors.cardBackground,
+            borderColor = colors.border,
+        ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(Spacing.Small),
@@ -78,7 +83,11 @@ fun HardwareConfigTab(
             }
         }
 
-        GlassCard(modifier = Modifier.fillMaxWidth()) {
+        GlassCard(
+            modifier = Modifier.fillMaxWidth(),
+            surfaceColor = colors.cardBackground,
+            borderColor = colors.border,
+        ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(Spacing.Small),
@@ -136,7 +145,11 @@ fun HardwareConfigTab(
             }
         }
 
-        GlassCard(modifier = Modifier.fillMaxWidth()) {
+        GlassCard(
+            modifier = Modifier.fillMaxWidth(),
+            surfaceColor = colors.cardBackground,
+            borderColor = colors.border,
+        ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(Spacing.Small),

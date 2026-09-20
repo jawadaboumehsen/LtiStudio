@@ -9,15 +9,6 @@
  */
 package org.ide.lti.core.designsystem.component.layout
 
-import org.ide.lti.core.designsystem.component.primitives.*
-import org.ide.lti.core.designsystem.component.actions.*
-import org.ide.lti.core.designsystem.component.inputs.*
-import org.ide.lti.core.designsystem.component.display.*
-import org.ide.lti.core.designsystem.component.navigation.*
-import org.ide.lti.core.designsystem.component.layout.*
-import org.ide.lti.core.designsystem.component.feedback.*
-import org.ide.lti.core.designsystem.component.devtools.*
-
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -37,6 +28,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
+import org.ide.lti.core.designsystem.component.actions.*
+import org.ide.lti.core.designsystem.component.devtools.*
+import org.ide.lti.core.designsystem.component.display.*
+import org.ide.lti.core.designsystem.component.feedback.*
+import org.ide.lti.core.designsystem.component.inputs.*
+import org.ide.lti.core.designsystem.component.navigation.*
+import org.ide.lti.core.designsystem.component.primitives.*
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.icon.ideGeneralChevronUp
 import org.ide.lti.core.designsystem.theme.IconSize

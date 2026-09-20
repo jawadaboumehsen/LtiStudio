@@ -15,7 +15,8 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.runDesktopComposeUiTest
-import org.ide.lti.core.data.settings.AppSettingsState
+import org.ide.lti.core.designsystem.theme.LtiTheme
+import org.ide.lti.core.ui.settings.AppSettingsState
 import org.ide.lti.feature.settings.SettingsScreenContent
 import org.ide.lti.shared.di.initKoin
 import org.junit.After
@@ -77,10 +78,19 @@ class AppSettingsStateWiringTest {
             initialEffectsEnabled = true,
         )
 
+        // Use SettingsScreenContent wrapped in LtiTheme — it renders GlassSurface components
+        // that visibly differ when effectsEnabled changes. LtiSharedApp shows a splash screen
+        // with no glass blur components and always produces a 0% pixel diff.
         setContent {
-            LtiSharedApp(
-                appSettingsState = settingsState,
-            )
+            LtiTheme(
+                darkTheme = settingsState.isDarkTheme,
+                effectsEnabled = settingsState.effectsEnabled,
+            ) {
+                SettingsScreenContent(
+                    onBackClick = {},
+                    appSettingsState = settingsState,
+                )
+            }
         }
 
         waitForIdle()

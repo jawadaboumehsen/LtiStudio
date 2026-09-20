@@ -9,15 +9,6 @@
  */
 package org.ide.lti.core.designsystem.component.display
 
-import org.ide.lti.core.designsystem.component.primitives.*
-import org.ide.lti.core.designsystem.component.actions.*
-import org.ide.lti.core.designsystem.component.inputs.*
-import org.ide.lti.core.designsystem.component.display.*
-import org.ide.lti.core.designsystem.component.navigation.*
-import org.ide.lti.core.designsystem.component.layout.*
-import org.ide.lti.core.designsystem.component.feedback.*
-import org.ide.lti.core.designsystem.component.devtools.*
-
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -44,17 +35,19 @@ import androidx.compose.ui.semantics.Role
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import com.kashif_e.backdrop.drawBackdrop
-import com.kashif_e.backdrop.effects.blur
-import com.kashif_e.backdrop.effects.lens
-import com.kashif_e.backdrop.effects.vibrancy
 import com.kashif_e.backdrop.highlight.Highlight
+import org.ide.lti.core.designsystem.component.actions.*
+import org.ide.lti.core.designsystem.component.devtools.*
+import org.ide.lti.core.designsystem.component.feedback.*
+import org.ide.lti.core.designsystem.component.inputs.*
+import org.ide.lti.core.designsystem.component.layout.*
+import org.ide.lti.core.designsystem.component.navigation.*
+import org.ide.lti.core.designsystem.component.primitives.*
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
-import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.GlassEffects
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
-import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.utils.InteractiveHighlight
 import org.ide.lti.core.designsystem.utils.applyInteractiveHighlightTransform

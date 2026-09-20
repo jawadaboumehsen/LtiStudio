@@ -17,6 +17,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -27,6 +28,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -39,8 +42,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.isCtrlPressed
@@ -53,7 +58,6 @@ import androidx.compose.ui.text.font.FontWeight
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.backdrops.LayerBackdrop
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
-import org.ide.lti.core.designsystem.component.actions.GlassIconButton
 import org.ide.lti.core.designsystem.component.actions.LocalWindowControlActions
 import org.ide.lti.core.designsystem.component.actions.WindowControlActions
 import org.ide.lti.core.designsystem.component.display.GlassPanel
@@ -64,15 +68,19 @@ import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.component.feedback.GlassBottomSheetScaffold
 import org.ide.lti.core.designsystem.component.layout.GlobalAppDestination
 import org.ide.lti.core.designsystem.component.layout.GlobalAppTopBar
+import org.ide.lti.core.designsystem.component.layout.IdeStatusBar
+import org.ide.lti.core.designsystem.component.layout.StudioGlassBackdrop
 import org.ide.lti.core.designsystem.component.primitives.GlassSurface
-import org.ide.lti.core.designsystem.icon.AppIcons
-import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.MotionEasing
 import org.ide.lti.core.designsystem.theme.SetupTokens
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.config.AppTheme
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.model.workspace.Workspace
@@ -81,6 +89,7 @@ import org.ide.lti.feature.setup.components.SetupJourneySidebar
 import org.ide.lti.feature.setup.steps.DocumentationStepContent
 import org.ide.lti.feature.setup.steps.EnvironmentStepContent
 import org.ide.lti.feature.setup.steps.ProjectsStepContent
+import org.ide.lti.feature.setup.steps.RecoveryStepContent
 import org.ide.lti.feature.setup.steps.ToolsStepContent
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -120,6 +129,7 @@ fun SetupScreen(
     val environmentPresentation by viewModel.environmentPresentation.collectAsState()
     val workspaceError by viewModel.workspaceError.collectAsState()
 
+    var activeTab by remember { mutableStateOf(SetupTab.LAUNCHPAD) }
     var isHelpSheetOpen by remember { mutableStateOf(false) }
 
     val uiState = SetupUiState(
@@ -135,8 +145,8 @@ fun SetupScreen(
         selectedToolCategory = selectedToolCategory,
         filteredToolsMatrix = filteredToolsMatrix,
         isAutoDoctorEnabled = isAutoDoctorEnabled,
-        selectedTab = selectedTab,
-        selectedDestination = SetupDestination.fromId(selectedTab.id),
+        selectedTab = activeTab,
+        selectedDestination = SetupDestination.fromId(activeTab.id),
         environmentNotice = environmentNotice,
         environmentReadiness = environmentReadiness,
         activeOperation = activeOperation,
@@ -161,15 +171,24 @@ fun SetupScreen(
         onSelectToolCategory = viewModel::selectToolCategory,
         onTestTool = viewModel::testTool,
         onRecompileTool = viewModel::recompileTool,
-        onNavigateToEnvironment = viewModel::navigateToEnvironment,
+        onNavigateToEnvironment = {
+            activeTab = SetupTab.ENVIRONMENT
+            viewModel.navigateToEnvironment()
+        },
         onOpenSettings = onOpenSettings,
-        onSelectTab = viewModel::selectTab,
+        onSelectTab = { tab ->
+            activeTab = tab
+            viewModel.selectTab(tab)
+        },
         onSelectDestination = { dest ->
-            when (dest) {
-                SetupDestination.WORKSPACES -> viewModel.selectTab(SetupTab.PROJECTS)
-                SetupDestination.ENVIRONMENT -> viewModel.selectTab(SetupTab.ENVIRONMENT)
-                SetupDestination.TOOLS -> viewModel.selectTab(SetupTab.TOOLS)
+            val tab = when (dest) {
+                SetupDestination.WORKSPACES -> SetupTab.PROJECTS
+                SetupDestination.ENVIRONMENT -> SetupTab.ENVIRONMENT
+                SetupDestination.TOOLS -> SetupTab.TOOLS
+                SetupDestination.RECOVERY -> SetupTab.RECOVERY
             }
+            activeTab = tab
+            viewModel.selectTab(tab)
         },
         onDismissEnvironmentNotice = viewModel::dismissEnvironmentNotice,
         onSetAutoDoctorEnabled = viewModel::setAutoDoctorEnabled,
@@ -235,8 +254,14 @@ fun SetupScreenContent(
     toolsScrollState: androidx.compose.foundation.ScrollState = androidx.compose.foundation.rememberScrollState(),
     activityListState: androidx.compose.foundation.lazy.LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
 ) {
+    val colors = GlassTheme.ideShellColors
+    val isBlueGlass = GlassTheme.appTheme == AppTheme.Blue && GlassTheme.effectsEnabled
     val ambientBackdrop = (backdrop as? LayerBackdrop) ?: (GlassTheme.backdrop as? LayerBackdrop)
-    val resolvedBackdrop = ambientBackdrop ?: rememberLayerBackdrop()
+    val resolvedBackdrop = if (isBlueGlass) {
+        rememberLayerBackdrop()
+    } else {
+        ambientBackdrop ?: rememberLayerBackdrop()
+    }
     var localSelectedTab by remember { mutableStateOf(initialTab ?: state.selectedTab) }
     val effectiveTab = initialTab?.let { localSelectedTab } ?: state.selectedTab
     var internalHelpSheetOpen by remember { mutableStateOf(isHelpSheetOpen) }
@@ -282,6 +307,7 @@ fun SetupScreenContent(
     BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
+            .background(colors.appBackground)
             .widthIn(min = SetupTokens.MinWindowWidth)
             .focusRequester(rootFocusRequester)
             .focusable()
@@ -345,6 +371,9 @@ fun SetupScreenContent(
                 }
             },
     ) {
+        if (isBlueGlass) {
+            StudioGlassBackdrop(backdrop = resolvedBackdrop)
+        }
         val isCompact = maxWidth < SetupTokens.CompactBreakpoint
         val sidebarWidth = if (isCompact) SetupTokens.SidebarWidthCompact else SetupTokens.SidebarWidthWide
         val gutter = if (isCompact) SetupTokens.GutterCompact else SetupTokens.GutterWide
@@ -359,37 +388,8 @@ fun SetupScreenContent(
                         GlobalAppDestination.Settings -> actions.onOpenSettings()
                     }
                 },
-                contextLabel = "Setup",
-                actions = {
-                    GlassIconButton(onClick = actions.onOpenManageTargets) {
-                        Icon(
-                            painter = AppIcons.EditPainterResource(),
-                            contentDescription = "Target Configuration",
-                            modifier = Modifier.size(IconSize.Small),
-                        )
-                    }
-                    GlassIconButton(onClick = actions.onNavigateToEnvironment) {
-                        Icon(
-                            painter = AppIcons.SparklesPainterResource(),
-                            contentDescription = "Environment & Doctor",
-                            modifier = Modifier.size(IconSize.Small),
-                        )
-                    }
-                    GlassIconButton(
-                        onClick = {
-                            lastInvokingFocusRequester = helpButtonFocusRequester
-                            internalHelpSheetOpen = true
-                            actions.onOpenHelp()
-                        },
-                        modifier = Modifier.focusRequester(helpButtonFocusRequester),
-                    ) {
-                        Icon(
-                            painter = AppIcons.InfoPainterResource(),
-                            contentDescription = "Help & Documentation",
-                            modifier = Modifier.size(IconSize.Small),
-                        )
-                    }
-                },
+                contextLabel = "",
+                actions = {},
                 windowControlActions = windowControls ?: LocalWindowControlActions.current,
             )
 
@@ -410,7 +410,9 @@ fun SetupScreenContent(
                 GlassPanel(
                     width = sidebarWidth,
                     shape = GlassShapes.None,
+                    contentPadding = Spacing.None,
                     modifier = Modifier.fillMaxHeight(),
+                    surfaceColor = if (isBlueGlass) Color.Unspecified else colors.navigatorBackground,
                 ) {
                     SetupJourneySidebar(
                         currentStep = effectiveTab,
@@ -427,21 +429,27 @@ fun SetupScreenContent(
                 }
 
                 // Sleek Specular Hairline Vertical Divider
-                GlassVerticalDivider(specular = true)
+                GlassVerticalDivider(
+                    thickness = StrokeWidth.Standard,
+                    color = GlassTheme.ideShellColors.borderMuted,
+                )
 
                 // Main Content Area with adaptive gutter padding and max content width constraint.
-                // Only reduced transparency paints an opaque surface here; otherwise the shared
-                // glass backdrop must remain visible through this pane, as it did before this
-                // toggle was introduced.
+                // In Blue theme, transparent canvas lets the studio backdrop shine through;
+                // In Dark or Light themes, the neutral content background matches IdeAppFrame.
                 Box(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
                         .then(
-                            if (SetupTokens.IsReducedTransparency) {
-                                Modifier.background(SetupTokens.OpaqueSurfaceColor)
+                            if (isBlueGlass) {
+                                if (SetupTokens.IsReducedTransparency) {
+                                    Modifier.background(SetupTokens.OpaqueSurfaceColor)
+                                } else {
+                                    Modifier.background(Color.Transparent)
+                                }
                             } else {
-                                Modifier.background(GlassTheme.colors.glassSurface.copy(alpha = AlphaTokens.Muted))
+                                Modifier.background(colors.contentBackground)
                             },
                         ),
                     contentAlignment = Alignment.TopCenter,
@@ -453,13 +461,25 @@ fun SetupScreenContent(
                         targetState = effectiveTab,
                         transitionSpec = {
                             fadeIn(animationSpec = tween(durationMillis = fadeDuration, easing = MotionEasing.Standard))
-                                .togetherWith(fadeOut(animationSpec = tween(durationMillis = feedbackDuration, easing = MotionEasing.Standard)))
+                                .togetherWith(
+                                    fadeOut(
+                                        animationSpec = tween(
+                                            durationMillis = feedbackDuration,
+                                            easing = MotionEasing.Standard,
+                                        ),
+                                    ),
+                                )
                         },
                         label = "SetupDestinationTransition",
                         modifier = Modifier
-                            .widthIn(max = SetupTokens.ContentMaxWidth)
                             .fillMaxSize()
-                            .padding(horizontal = gutter),
+                            .then(
+                                if (effectiveTab == SetupTab.RECOVERY) {
+                                    Modifier
+                                } else {
+                                    Modifier.widthIn(max = SetupTokens.ContentMaxWidth).padding(horizontal = gutter)
+                                },
+                            ),
                         contentAlignment = Alignment.TopCenter,
                     ) { currentTab ->
                         when (currentTab) {
@@ -501,6 +521,15 @@ fun SetupScreenContent(
                                     scrollState = toolsScrollState,
                                 )
                             }
+                            SetupTab.RECOVERY -> {
+                                RecoveryStepContent(
+                                    state = state,
+                                    actions = actions,
+                                    resolvedBackdrop = resolvedBackdrop,
+                                    activityState = activityState,
+                                    onOpenHelp = actions.onOpenHelp,
+                                )
+                            }
                         }
                     }
                 }
@@ -508,7 +537,7 @@ fun SetupScreenContent(
                 // The reference dashboard keeps machine readiness visible while an
                 // operator works in a sub-page. Keep this as a separate, quiet
                 // context pane rather than hiding truth in a modal or toolbar.
-                if (!isCompact) {
+                if (!isCompact && effectiveTab != SetupTab.RECOVERY) {
                     GlassVerticalDivider(specular = true)
                     SetupEnvironmentSummary(
                         state = state,
@@ -518,6 +547,58 @@ fun SetupScreenContent(
                     )
                 }
             }
+
+            IdeStatusBar(
+                modifier = Modifier.fillMaxWidth(),
+                colors = GlassTheme.ideShellColors,
+                leadingContent = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Storage,
+                            contentDescription = null,
+                            tint = GlassTheme.ideShellColors.textDim,
+                            modifier = Modifier.size(IconSize.Small),
+                        )
+                        val receipt = state.activeOperation?.operationId
+                            ?: state.toolchainSetupState.pendingAttemptId
+                            ?: "setup-042"
+                        Text(
+                            text = "Machine environment setup • Setup receipt: $receipt",
+                            fontSize = FontSize.Micro,
+                            color = GlassTheme.ideShellColors.textMuted,
+                            fontFamily = GlassFontFamily.ide(),
+                        )
+                    }
+                },
+                trailingContent = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(IconSize.Indicator)
+                                .clip(GlassShapes.Capsule)
+                                .background(GlassTheme.ideShellColors.warningAmber),
+                        )
+                        Text(
+                            text = "Service disconnected",
+                            fontSize = FontSize.Micro,
+                            color = GlassTheme.ideShellColors.textMuted,
+                            fontFamily = GlassFontFamily.ide(),
+                        )
+                        Text(
+                            text = "Design concept • Sample data",
+                            fontSize = FontSize.Micro,
+                            color = GlassTheme.ideShellColors.textDim,
+                            fontFamily = GlassFontFamily.ide(),
+                        )
+                    }
+                },
+            )
         }
     }
 

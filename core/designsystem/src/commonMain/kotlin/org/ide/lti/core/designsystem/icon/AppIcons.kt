@@ -20,7 +20,6 @@ import org.ide.lti.core.designsystem.generated.resources.ideActionsSplit
 import org.ide.lti.core.designsystem.generated.resources.ideAdd
 import org.ide.lti.core.designsystem.generated.resources.ideCheck
 import org.ide.lti.core.designsystem.generated.resources.ideChevronDown
-import org.ide.lti.core.designsystem.generated.resources.ideGeneralChevronUp
 import org.ide.lti.core.designsystem.generated.resources.ideChevronLeft
 import org.ide.lti.core.designsystem.generated.resources.ideChevronRight
 import org.ide.lti.core.designsystem.generated.resources.ideClose
@@ -29,6 +28,7 @@ import org.ide.lti.core.designsystem.generated.resources.ideDelete
 import org.ide.lti.core.designsystem.generated.resources.ideEdit
 import org.ide.lti.core.designsystem.generated.resources.ideFile
 import org.ide.lti.core.designsystem.generated.resources.ideFolder
+import org.ide.lti.core.designsystem.generated.resources.ideGeneralChevronUp
 import org.ide.lti.core.designsystem.generated.resources.ideHide
 import org.ide.lti.core.designsystem.generated.resources.ideInfo
 import org.ide.lti.core.designsystem.generated.resources.ideLocked
@@ -38,11 +38,11 @@ import org.ide.lti.core.designsystem.generated.resources.ideNodesHomeFolder
 import org.ide.lti.core.designsystem.generated.resources.ideNodesSymlink
 import org.ide.lti.core.designsystem.generated.resources.ideNotifications
 import org.ide.lti.core.designsystem.generated.resources.ideRefresh
+import org.ide.lti.core.designsystem.generated.resources.ideRunRun
 import org.ide.lti.core.designsystem.generated.resources.ideSave
 import org.ide.lti.core.designsystem.generated.resources.ideSearch
 import org.ide.lti.core.designsystem.generated.resources.ideSettings
 import org.ide.lti.core.designsystem.generated.resources.ideShow
-import org.ide.lti.core.designsystem.generated.resources.ideRunRun
 import org.ide.lti.core.designsystem.generated.resources.ideToolwindowsToolWindowAskAI
 import org.ide.lti.core.designsystem.generated.resources.ideUser
 import org.ide.lti.core.designsystem.generated.resources.ideVcsArrowRight

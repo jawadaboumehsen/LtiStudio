@@ -9,13 +9,12 @@
  */
 package org.ide.lti.feature.setup.steps
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -31,7 +30,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import com.kashif_e.backdrop.backdrops.LayerBackdrop
-import kotlinx.coroutines.launch
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.feature.setup.SetupActivityState
@@ -98,7 +96,6 @@ fun ToolsStepContent(
 
     val fallbackActivityState = remember { SetupActivityState(scope = coroutineScope) }
     val resolvedActivityState = activityState ?: fallbackActivityState
-
 
     Column(
         modifier = modifier

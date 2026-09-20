@@ -4,6 +4,8 @@
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
  */
 @file:Suppress("MatchingDeclarationName")
 
@@ -21,11 +23,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -33,15 +39,20 @@ import org.ide.lti.core.designsystem.component.actions.DesktopWindowControls
 import org.ide.lti.core.designsystem.component.actions.LocalWindowControlActions
 import org.ide.lti.core.designsystem.component.actions.WindowControlActions
 import org.ide.lti.core.designsystem.component.actions.windowDragGesture
+import org.ide.lti.core.designsystem.component.display.LtiRomStudioMark
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.icon.GlassIcon
+import org.ide.lti.core.designsystem.theme.BrandColors
+import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellShapes
+import org.ide.lti.core.designsystem.theme.IdeShellDimens
+import org.ide.lti.core.designsystem.theme.PluginThemeColors
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.config.AppTheme
 import org.ide.lti.core.designsystem.theme.ideFontFamily
 
 /** Global destinations rendered by the single application top-bar family. */
@@ -52,21 +63,23 @@ enum class GlobalAppDestination {
 }
 
 /**
- * Canonical application top bar used by Setup, Workspace, Studio, and Settings.
+ * Top-level global application bar shared between the Setup/Launchpad and Workspace views.
  *
- * Geometry, brand, global navigation, interaction states, drag region, and native window controls
- * are owned here. Destinations provide only contextual text and actions through slots.
+ * Provides single source of truth for:
+ * - Brand identity ("LtiRom Studio")
+ * - Global destination navigation (Setup vs Workspace vs Settings)
+ * - Window controls (Minimize / Maximize / Close)
+ * - Contextual breadcrumb / active profile indicator
  */
-@Suppress("LongParameterList")
 @Composable
 fun GlobalAppTopBar(
     selectedDestination: GlobalAppDestination,
     onSelectDestination: (GlobalAppDestination) -> Unit,
-    contextLabel: String,
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
-    contextIcon: AppIcon = destinationIcon(selectedDestination),
+    contextLabel: String = "",
+    contextIcon: AppIcon = AppIcons.FolderOpen,
     tagPrefix: String = "GlobalTopBar",
+    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
     centerContent: @Composable RowScope.() -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
     windowControlActions: WindowControlActions? = null,
@@ -81,36 +94,44 @@ fun GlobalAppTopBar(
         colors = colors,
         leadingContent = {
             BrandIdentity(colors = colors, tag = "${tagPrefix}Brand")
-            GlobalAppDestination.entries.forEach { destination ->
-                DestinationTab(
-                    destination = destination,
-                    selected = destination == selectedDestination,
-                    colors = colors,
-                    tag = "${tagPrefix}_${destination.name}",
-                    onClick = { onSelectDestination(destination) },
-                )
-            }
         },
         centerContent = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-                modifier = Modifier.testTag("GlobalTopBarContext"),
+                modifier = Modifier.testTag("GlobalTopBarDestinations"),
             ) {
-                GlassIcon(
-                    icon = contextIcon,
-                    contentDescription = null,
-                    tint = colors.textMuted,
-                    modifier = Modifier.size(IconSize.Small),
-                )
-                Text(
-                    text = contextLabel,
-                    color = colors.textMain,
-                    fontFamily = ideFontFamily(),
-                    fontWeight = FontWeight.Medium,
-                )
-                centerContent()
+                GlobalAppDestination.entries.forEach { destination ->
+                    DestinationTab(
+                        destination = destination,
+                        selected = destination == selectedDestination,
+                        colors = colors,
+                        tag = "${tagPrefix}_${destination.name}",
+                        onClick = { onSelectDestination(destination) },
+                    )
+                }
             }
+            if (contextLabel.isNotBlank() && contextLabel != selectedDestination.name) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                    modifier = Modifier.testTag("GlobalTopBarContext"),
+                ) {
+                    GlassIcon(
+                        icon = contextIcon,
+                        contentDescription = null,
+                        tint = colors.textMuted,
+                        modifier = Modifier.size(IconSize.Small),
+                    )
+                    Text(
+                        text = contextLabel,
+                        color = colors.textMain,
+                        fontFamily = ideFontFamily(),
+                        fontWeight = FontWeight.Medium,
+                    )
+                }
+            }
+            centerContent()
         },
         trailingContent = {
             actions()
@@ -137,24 +158,37 @@ fun GlobalAppTopBar(
 
 @Composable
 private fun BrandIdentity(colors: IdeShellColorScheme, tag: String = "GlobalTopBarBrand") {
+    val isBlue = GlassTheme.appTheme == AppTheme.Blue
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.Compact),
         modifier = Modifier.testTag(tag),
     ) {
         Box(
             modifier = Modifier
-                .size(IconSize.Medium)
-                .clip(IdeShellShapes.Control)
-                .background(colors.accentBlue),
+                .size(ComponentSize.LogoBadgeSize)
+                .clip(GlassShapes.Small)
+                .background(
+                    brush = if (isBlue) {
+                        Brush.linearGradient(
+                            colors = listOf(
+                                colors.cardBackground,
+                                PluginThemeColors.CardBackground,
+                            ),
+                        )
+                    } else {
+                        Brush.linearGradient(
+                            colors = listOf(
+                                colors.cardBackground,
+                                colors.cardBackgroundMuted,
+                            ),
+                        )
+                    },
+                )
+                .padding(Spacing.Compact),
             contentAlignment = Alignment.Center,
         ) {
-            GlassIcon(
-                icon = AppIcons.Play,
-                contentDescription = null,
-                tint = colors.textMain,
-                modifier = Modifier.size(IconSize.Small),
-            )
+            LtiRomStudioMark()
         }
         Text(
             text = "LtiRom Studio",
@@ -173,9 +207,23 @@ private fun DestinationTab(
     tag: String = "GlobalTopBar_${destination.name}",
     onClick: () -> Unit,
 ) {
-    val background = if (selected) colors.controlSelected else colors.topBarBackground
+    val isBlue = GlassTheme.appTheme == AppTheme.Blue
+    val background = when {
+        selected && isBlue -> PluginThemeColors.ActiveTabBackground
+        selected -> colors.controlSelected
+        else -> Color.Transparent
+    }
+    val contentColor = when {
+        selected && isBlue -> BrandColors.OnLogoBadge
+        selected -> colors.textMain
+        else -> colors.textMuted
+    }
     val border = if (selected) {
-        Modifier.border(StrokeWidth.Standard, colors.border, IdeShellShapes.Control)
+        Modifier.border(
+            IdeShellDimens.HairlineBorder,
+            if (isBlue) PluginThemeColors.ActiveTabBorder else colors.accentBlue,
+            GlassShapes.Small,
+        )
     } else {
         Modifier
     }
@@ -183,7 +231,7 @@ private fun DestinationTab(
     Row(
         modifier = Modifier
             .testTag(tag)
-            .clip(IdeShellShapes.Control)
+            .clip(GlassShapes.Small)
             .then(border)
             .background(background)
             .selectable(
@@ -192,19 +240,19 @@ private fun DestinationTab(
                 role = Role.Tab,
                 onClick = onClick,
             )
-            .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),
+            .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.ExtraSmall),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
     ) {
         GlassIcon(
             icon = destinationIcon(destination),
             contentDescription = null,
-            tint = if (selected) colors.textMain else colors.textMuted,
+            tint = contentColor,
             modifier = Modifier.size(IconSize.Small),
         )
         Text(
             text = destination.name,
-            color = if (selected) colors.textMain else colors.textMuted,
+            color = contentColor,
             fontFamily = ideFontFamily(),
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
         )
@@ -212,7 +260,7 @@ private fun DestinationTab(
 }
 
 private fun destinationIcon(destination: GlobalAppDestination): AppIcon = when (destination) {
-    GlobalAppDestination.Setup -> AppIcons.Home
+    GlobalAppDestination.Setup -> AppIcons.Settings
     GlobalAppDestination.Workspace -> AppIcons.FolderOpen
-    GlobalAppDestination.Settings -> AppIcons.Settings
+    GlobalAppDestination.Settings -> AppIcon.Vector(Icons.Default.Tune)
 }

@@ -31,7 +31,7 @@ kotlin {
             implementation(libs.kotlinx.serialization.json)
         }
         desktopMain.dependencies {
-            implementation(projects.core.data)
+            implementation(projects.sdk.patchModRuntime)
             implementation(libs.clikt)
             implementation(libs.kotlinx.coroutines.core)
         }

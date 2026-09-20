@@ -10,13 +10,14 @@
 package org.ide.lti.feature.setup
 
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.graphics.asSkiaBitmap
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.unit.Density
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.runDesktopComposeUiTest
+import androidx.compose.ui.unit.Density
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import org.ide.lti.core.designsystem.theme.ColorContrast
 import org.ide.lti.core.designsystem.theme.LtiTheme
@@ -29,9 +30,8 @@ import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolchainSetupState
 import org.jetbrains.skia.EncodedImageFormat
 import org.jetbrains.skia.Image
-import androidx.compose.ui.graphics.asSkiaBitmap
-import java.io.File
 import org.junit.Test
+import java.io.File
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 

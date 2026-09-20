@@ -35,9 +35,10 @@ class Phase3SpecificationTest {
             assertEquals(spec.commands.size, spec.commands.map { it.subcommandPath }.toSet().size)
 
             val packageName = spec.tool.lowercase().replace("-", "").replace(".", "")
+            val family = ToolFamily.forTool(spec.tool)
             for (cmd in spec.commands) {
                 val useCaseName = cmd.name.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() } + "UseCase.kt"
-                val useCaseFile = File(root, "tool/adapters/src/main/kotlin/io/ltirom/tooling/adapters/$packageName/$useCaseName")
+                val useCaseFile = File(root, "tool/adapter/${family.directoryName}/src/main/kotlin/io/ltirom/tooling/adapters/$packageName/$useCaseName")
                 assertTrue(useCaseFile.isFile, "Missing generated use case $useCaseName for ${spec.tool}")
             }
         }
@@ -75,7 +76,7 @@ class Phase3SpecificationTest {
         val root = projectRoot()
         val generated = File(
             root,
-            "tool/adapters/src/main/kotlin/io/ltirom/tooling/adapters/aapt2/DumpBadgingCommand.kt"
+            "tool/adapter/android-package/src/main/kotlin/io/ltirom/tooling/adapters/aapt2/DumpBadgingCommand.kt"
         ).readText()
         assertEquals(
             true,

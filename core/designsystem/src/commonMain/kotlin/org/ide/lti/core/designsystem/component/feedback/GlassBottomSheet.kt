@@ -9,15 +9,6 @@
  */
 package org.ide.lti.core.designsystem.component.feedback
 
-import org.ide.lti.core.designsystem.component.primitives.*
-import org.ide.lti.core.designsystem.component.actions.*
-import org.ide.lti.core.designsystem.component.inputs.*
-import org.ide.lti.core.designsystem.component.display.*
-import org.ide.lti.core.designsystem.component.navigation.*
-import org.ide.lti.core.designsystem.component.layout.*
-import org.ide.lti.core.designsystem.component.feedback.*
-import org.ide.lti.core.designsystem.component.devtools.*
-
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.animateFloatAsState
@@ -59,13 +50,16 @@ import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.input.pointer.pointerInput
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.BackdropEffectScope
-import com.kashif_e.backdrop.effects.blur
-import com.kashif_e.backdrop.effects.colorControls
-import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.highlight.Highlight
 import kotlinx.coroutines.launch
+import org.ide.lti.core.designsystem.component.actions.*
+import org.ide.lti.core.designsystem.component.devtools.*
+import org.ide.lti.core.designsystem.component.display.*
+import org.ide.lti.core.designsystem.component.inputs.*
+import org.ide.lti.core.designsystem.component.layout.*
+import org.ide.lti.core.designsystem.component.navigation.*
+import org.ide.lti.core.designsystem.component.primitives.*
 import org.ide.lti.core.designsystem.theme.ComponentSize
-import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassEffects
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme

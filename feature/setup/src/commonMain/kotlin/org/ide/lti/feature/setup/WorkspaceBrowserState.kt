@@ -24,7 +24,6 @@ import org.ide.lti.core.domain.usecase.workspace.OpenWorkspaceByPathUseCase
 import org.ide.lti.core.domain.usecase.workspace.OpenWorkspaceUseCase
 import org.ide.lti.core.domain.usecase.workspace.RemoveRecentWorkspaceUseCase
 import org.ide.lti.core.domain.usecase.workspace.SelectAndOpenDirectoryUseCase
-import org.ide.lti.core.model.setup.EnvironmentReadiness
 import org.ide.lti.core.model.setup.EnvironmentReadinessState
 import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.core.model.workspace.Workspace
@@ -213,7 +212,10 @@ class WorkspaceBrowserState(
     suspend fun checkCreationPrerequisites(): Result<Unit> {
         if (environmentReadinessPort == null) {
             return Result.failure(
-                IllegalStateException("Execution environment readiness check is unavailable. WSL / daemon service required for creation.")
+                IllegalStateException(
+                    "Execution environment readiness check is unavailable. " +
+                        "WSL / daemon service required for creation.",
+                ),
             )
         }
         val readiness = environmentReadinessPort.refresh()
@@ -221,7 +223,10 @@ class WorkspaceBrowserState(
             Result.success(Unit)
         } else {
             val reason = readiness.failingCheck
-                ?: "Execution environment not ready (${readiness.state}). Setup WSL2 and execution service to create workspaces."
+                ?: (
+                    "Execution environment not ready (${readiness.state}). " +
+                        "Setup WSL2 and execution service to create workspaces."
+                    )
             Result.failure(IllegalStateException(reason))
         }
     }

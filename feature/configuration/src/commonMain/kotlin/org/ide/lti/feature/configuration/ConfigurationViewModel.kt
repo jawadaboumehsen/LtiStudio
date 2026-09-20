@@ -138,14 +138,15 @@ class ConfigurationViewModel(
     }
 
     fun onSelectTarget(targetId: String) {
-        val target = _uiState.value.availableTargets.find { it.id == targetId } ?: return
         val current = _uiState.value
-        if (current.isSyncing) return
+        val target = current.availableTargets.find { it.id == targetId }
+        if (target == null || current.isSyncing) return
+
         if (current.isDirty && targetId != current.selectedTargetId) {
             _uiState.update { it.copy(pendingTargetId = targetId, statusMessage = null) }
-            return
+        } else {
+            selectTargetImmediately(target)
         }
-        selectTargetImmediately(target)
     }
 
     /** Resolves a dirty target switch explicitly; no edit is silently discarded. */

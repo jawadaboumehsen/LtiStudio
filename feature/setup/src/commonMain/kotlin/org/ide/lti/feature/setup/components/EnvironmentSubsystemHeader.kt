@@ -9,9 +9,6 @@
  */
 package org.ide.lti.feature.setup.components
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -20,11 +17,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -33,11 +28,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import com.kashif_e.backdrop.backdrops.LayerBackdrop
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
-import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
 import org.ide.lti.core.designsystem.component.actions.GlassSecondaryButton
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.GlassChip
@@ -46,12 +43,9 @@ import org.ide.lti.core.designsystem.component.feedback.GlassBanner
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.component.tooltip.GlassTooltipArea
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
-import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
@@ -95,8 +89,11 @@ fun EnvironmentSubsystemHeader(
         state.steps.firstOrNull { it.stage.name == "SERVER_CONNECTIVITY" }?.status == StepStatus.SUCCESS
     val isServerFailed = state.steps.firstOrNull { it.stage.name == "SERVER_CONNECTIVITY" }?.status == StepStatus.FAILED
 
+    val shellColors = GlassTheme.ideShellColors
     GlassCard(
         modifier = modifier.fillMaxWidth(),
+        surfaceColor = shellColors.cardBackground,
+        borderColor = shellColors.border,
         backdrop = backdrop,
         contentPadding = Spacing.CardPadding,
     ) {
@@ -110,60 +107,60 @@ fun EnvironmentSubsystemHeader(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
             ) {
-            // Left: Subsystem Badges & Live Status Indicators
-            FlowRow(
-                modifier = Modifier.padding(vertical = Spacing.ExtraSmall),
-                verticalArrangement = Arrangement.spacedBy(Spacing.Small),
-                horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
-            ) {
-                WslRuntimeBadge(
-                    isWslHealthy = isWslHealthy,
-                    activeDistro = state.activeDistro,
-                    glassColors = glassColors,
-                    diagnostics = diagnostics,
-                )
-                DaemonBridgeBadge(
-                    isServerConnected = isServerConnected,
-                    isServerFailed = isServerFailed,
-                    latencyMs = state.daemonPingMs,
-                    glassColors = glassColors,
-                    diagnostics = diagnostics,
-                )
-            }
-
-            // Right: Probing action (Primary mutations owned exclusively by SetupPresentationMapper / ActionBar)
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-            ) {
-                GlassSecondaryButton(
-                    onClick = onCheckEnvironment,
-                    enabled = !state.isBusy,
+                // Left: Subsystem Badges & Live Status Indicators
+                FlowRow(
+                    modifier = Modifier.padding(vertical = Spacing.ExtraSmall),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                    WslRuntimeBadge(
+                        isWslHealthy = isWslHealthy,
+                        activeDistro = state.activeDistro,
+                        glassColors = glassColors,
+                        diagnostics = diagnostics,
+                    )
+                    DaemonBridgeBadge(
+                        isServerConnected = isServerConnected,
+                        isServerFailed = isServerFailed,
+                        latencyMs = state.daemonPingMs,
+                        glassColors = glassColors,
+                        diagnostics = diagnostics,
+                    )
+                }
+
+                // Right: Probing action (Primary mutations owned exclusively by SetupPresentationMapper / ActionBar)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                ) {
+                    GlassSecondaryButton(
+                        onClick = onCheckEnvironment,
+                        enabled = !state.isBusy,
                     ) {
-                        if (state.isChecking) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(IconSize.Small),
-                                strokeWidth = StrokeWidth.Hairline,
-                                color = glassColors.onGlass,
-                            )
-                        } else {
-                            Icon(
-                                painter = AppIcons.RefreshPainterResource(),
-                                contentDescription = null,
-                                modifier = Modifier.size(IconSize.Small),
-                            )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                        ) {
+                            if (state.isChecking) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(IconSize.Small),
+                                    strokeWidth = StrokeWidth.Hairline,
+                                    color = glassColors.onGlass,
+                                )
+                            } else {
+                                Icon(
+                                    painter = AppIcons.RefreshPainterResource(),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(IconSize.Small),
+                                )
+                            }
+                            Text("Probe Subsystem", maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
                         }
-                        Text("Probe Subsystem", maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
                     }
                 }
             }
-        }
 
-        val sudoDiag = state.diagnostics.firstOrNull { it.id == "sudo_noninteractive" }
+            val sudoDiag = state.diagnostics.firstOrNull { it.id == "sudo_noninteractive" }
             if (sudoDiag != null && sudoDiag.status != StepStatus.SUCCESS) {
                 val cmd = sudoDiag.copyableCommand ?: "echo \"\$USER ALL=(ALL) NOPASSWD: ALL\" | sudo tee /etc/sudoers.d/ltirom"
                 GlassBanner(
@@ -209,25 +206,12 @@ fun EnvironmentSubsystemHeader(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
                 ) {
-                    // Auto-Fix on Launch Toggle
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                    ) {
-                        GlassToggle(
-                            checked = isAutoDoctorEnabled,
-                            onCheckedChange = onSetAutoDoctorEnabled,
-                            enabled = !state.isBusy,
-                        )
-                        Text(
-                            text = "Auto-Fix on Launch",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = glassColors.onGlassSecondary,
-                            maxLines = 1,
-                            softWrap = false,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
+                    AutoFixToggle(
+                        checked = isAutoDoctorEnabled,
+                        onCheckedChange = onSetAutoDoctorEnabled,
+                        enabled = !state.isBusy,
+                        textColor = glassColors.onGlassSecondary,
+                    )
 
                     // Reset & Rebuild destructive action (quiet icon button)
                     GlassTooltipArea(
@@ -278,8 +262,11 @@ private fun WslRuntimeBadge(
             .background(glassColors.glassSurface)
             .border(
                 width = StrokeWidth.Standard,
-                color = if (isWslHealthy) diagnostics.success.copy(alpha = AlphaTokens.Border)
-                    else glassColors.glassBorder,
+                color = if (isWslHealthy) {
+                    diagnostics.success.copy(alpha = AlphaTokens.Border)
+                } else {
+                    glassColors.glassBorder
+                },
                 shape = GlassShapes.Medium,
             )
             .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Small),
@@ -293,7 +280,7 @@ private fun WslRuntimeBadge(
                     .size(IconSize.Indicator)
                     .clip(GlassShapes.Capsule)
                     .background(
-                        if (isWslHealthy) diagnostics.success else diagnostics.warning
+                        if (isWslHealthy) diagnostics.success else diagnostics.warning,
                     ),
             )
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
@@ -314,7 +301,6 @@ private fun WslRuntimeBadge(
             }
         }
     }
-
 }
 
 @Composable
@@ -354,7 +340,7 @@ private fun DaemonBridgeBadge(
                             isServerConnected -> diagnostics.success
                             isServerFailed -> diagnostics.error
                             else -> glassColors.onGlassMuted
-                        }
+                        },
                     ),
             )
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
@@ -430,5 +416,26 @@ private fun DaemonBridgeBadge(
             }
         }
     }
+}
 
+@Composable
+private fun AutoFixToggle(checked: Boolean, onCheckedChange: (Boolean) -> Unit, enabled: Boolean, textColor: Color) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+    ) {
+        GlassToggle(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            enabled = enabled,
+        )
+        Text(
+            text = "Auto-Fix on Launch",
+            style = MaterialTheme.typography.labelSmall,
+            color = textColor,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
 }

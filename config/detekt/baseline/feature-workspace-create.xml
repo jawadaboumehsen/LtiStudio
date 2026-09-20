@@ -1,0 +1,24 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ArgumentListWrapping:CreateWorkspaceScreen.kt:( uiState.currentStage, uiState.isProvisioning, uiState.errorMessage, uiState.createdWorkspace, )</ID>
+    <ID>ArgumentListWrapping:CreateWorkspaceScreen.kt:(visible = uiState.environmentReadiness != null &amp;&amp; uiState.environmentReadiness?.state != EnvironmentReadinessState.READY)</ID>
+    <ID>BackingPropertyNaming:CreateWorkspaceViewModelTest.kt:CreateWorkspaceViewModelTest.FakeSnapshotRepository$private val _flow = MutableStateFlow&lt;List&lt;ConfigurationSnapshot&gt;&gt;(emptyList())</ID>
+    <ID>BackingPropertyNaming:CreateWorkspaceViewModelTest.kt:CreateWorkspaceViewModelTest.FakeWorkspaceRepo$private val _flow = MutableStateFlow&lt;List&lt;Workspace&gt;&gt;(emptyList())</ID>
+    <ID>BinaryExpressionWrapping:CreateWorkspaceScreen.kt:!uiState.isProvisioning &amp;&amp; uiState.name.isNotBlank() &amp;&amp; uiState.selectedTarget != null &amp;&amp; uiState.canCreate</ID>
+    <ID>BinaryExpressionWrapping:CreateWorkspaceScreen.kt:uiState.environmentReadiness != null &amp;&amp; uiState.environmentReadiness?.state != EnvironmentReadinessState.READY</ID>
+    <ID>BinaryExpressionWrapping:CreateWorkspaceScreen.kt:uiState.environmentReadiness?.state != EnvironmentReadinessState.READY</ID>
+    <ID>FunctionSignature:CreateWorkspaceViewModel.kt:CreationStage.Companion$fun fromStepId: CreationStage?</ID>
+    <ID>FunctionSignature:CreateWorkspaceViewModelTest.kt:CreateWorkspaceViewModelTest.FakeReadinessPort$override fun observe: Flow&lt;EnvironmentReadiness&gt;</ID>
+    <ID>FunctionSignature:CreateWorkspaceViewModelTest.kt:CreateWorkspaceViewModelTest.FakeReadinessPort$override suspend fun refresh: EnvironmentReadiness</ID>
+    <ID>MaxLineLength:CreateWorkspaceScreen.kt:AnimatedVisibility</ID>
+    <ID>MaxLineLength:CreateWorkspaceScreen.kt:description = uiState.remediation ?: "The build environment or service daemon is currently unreachable."</ID>
+    <ID>MaxLineLength:CreateWorkspaceScreen.kt:enabled = !uiState.isProvisioning &amp;&amp; uiState.name.isNotBlank() &amp;&amp; uiState.selectedTarget != null &amp;&amp; uiState.canCreate</ID>
+    <ID>MaximumLineLength:CreateWorkspaceScreen.kt:,</ID>
+    <ID>MaximumLineLength:CreateWorkspaceScreen.kt:{</ID>
+    <ID>NoUnusedImports:CreateWorkspaceScreen.kt:org.ide.lti.feature.workspace.creation.CreateWorkspaceScreen.kt</ID>
+    <ID>ReturnCount:CreateWorkspaceViewModel.kt:CreateWorkspaceViewModel$fun startCreation</ID>
+    <ID>TrailingCommaOnDeclarationSite:CreateWorkspaceViewModel.kt:CreationStage</ID>
+  </CurrentIssues>
+</SmellBaseline>

@@ -40,6 +40,7 @@ fun OsStreamsConfigTab(
     modifier: Modifier = Modifier,
 ) {
     val glassColors = GlassTheme.colors
+    val colors = GlassTheme.ideShellColors
     var activeRegion by remember(target.id) {
         mutableStateOf(target.availableRegions.firstOrNull() ?: TargetRegion.GLOBAL)
     }
@@ -63,7 +64,11 @@ fun OsStreamsConfigTab(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
-        GlassCard(modifier = Modifier.fillMaxWidth()) {
+        GlassCard(
+            modifier = Modifier.fillMaxWidth(),
+            surfaceColor = colors.cardBackground,
+            borderColor = colors.border,
+        ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(Spacing.Small),
@@ -102,7 +107,11 @@ fun OsStreamsConfigTab(
             }
         }
 
-        GlassCard(modifier = Modifier.fillMaxWidth()) {
+        GlassCard(
+            modifier = Modifier.fillMaxWidth(),
+            surfaceColor = colors.cardBackground,
+            borderColor = colors.border,
+        ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(Spacing.Small),
@@ -166,7 +175,11 @@ fun OsStreamsConfigTab(
             }
         }
 
-        GlassCard(modifier = Modifier.fillMaxWidth()) {
+        GlassCard(
+            modifier = Modifier.fillMaxWidth(),
+            surfaceColor = colors.cardBackground,
+            borderColor = colors.border,
+        ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(Spacing.Small),

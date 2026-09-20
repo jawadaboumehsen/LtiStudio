@@ -14,11 +14,13 @@ plugins {
 kotlin {
     sourceSets {
         commonMain.dependencies {
+            api(projects.feature.workspaceApi)
+            api(projects.feature.workspaceCreate)
+            api(projects.feature.workspaceRun)
+            api(projects.feature.workspaceTarget)
+            api(projects.feature.romStudio.romStudioApi)
             implementation(projects.core.domain)
-            implementation(projects.core.data)
-            implementation(projects.core.cli)
             implementation(projects.core.common)
-            implementation(projects.tool.core)
             implementation(libs.filekit.core)
             implementation(compose.ui)
             implementation(compose.foundation)

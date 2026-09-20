@@ -23,12 +23,12 @@ kotlin {
             implementation(projects.core.analytics)
             implementation(libs.kermit.logging)
             implementation(libs.kotlinx.serialization.json)
-            api(libs.jb.composeRuntime)
         }
 
         desktopMain.dependencies {
-            implementation(projects.tool.core)
+            implementation(projects.tool.api)
             implementation(projects.tool.client)
+            implementation(projects.sdk.patchModRuntime)
         }
 
         val desktopTest by getting {
@@ -45,4 +45,4 @@ kotlin {
             implementation(libs.kotlinx.coroutines.test)
         }
     }
-}
+}

@@ -19,9 +19,6 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
-import org.ide.lti.core.data.plugin.PackageReadResult
-import org.ide.lti.core.data.plugin.PluginPackageReader
-import org.ide.lti.core.data.plugin.author.PayloadCompilerAdapter
 import org.ide.lti.core.domain.plugin.PayloadCompilationReceipt
 import org.ide.lti.core.domain.plugin.PayloadCompilationRequest
 import org.ide.lti.core.domain.plugin.PayloadCompilationResult
@@ -32,6 +29,9 @@ import org.ide.lti.core.domain.plugin.PluginPlanValidator
 import org.ide.lti.core.domain.plugin.ResolutionInput
 import org.ide.lti.core.domain.plugin.ResolutionResult
 import org.ide.lti.sdk.patchmod.PackageWriter
+import org.ide.lti.sdk.patchmod.runtime.PackageReadResult
+import org.ide.lti.sdk.patchmod.runtime.PayloadCompilerAdapter
+import org.ide.lti.sdk.patchmod.runtime.PluginPackageReader
 import java.io.File
 import java.nio.file.Path
 import kotlin.system.exitProcess

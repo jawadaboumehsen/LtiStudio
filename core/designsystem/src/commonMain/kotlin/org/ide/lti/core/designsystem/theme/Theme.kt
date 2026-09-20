@@ -9,7 +9,6 @@
  */
 package org.ide.lti.core.designsystem.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.ColorScheme
@@ -32,10 +31,8 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
-import androidx.compose.ui.graphics.Color
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
-import com.materialkolor.rememberDynamicColorScheme
 import org.ide.lti.core.designsystem.theme.config.AppTheme
 import org.ide.lti.core.designsystem.theme.config.BackdropConfiguration
 import org.ide.lti.core.designsystem.theme.config.BlueThemeConfig

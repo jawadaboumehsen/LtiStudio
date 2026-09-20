@@ -13,10 +13,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
-import org.ide.lti.core.cli.ShellExecutor
-import org.ide.lti.core.cli.ShellOutputEvent
-import org.ide.lti.core.cli.TerminalLine
-import org.ide.lti.core.data.settings.AppSettingsState
+import org.ide.lti.core.domain.terminal.ShellExecutor
+import org.ide.lti.core.domain.terminal.ShellOutputEvent
+import org.ide.lti.core.model.terminal.TerminalLine
+import org.ide.lti.core.ui.settings.AppSettingsState
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.domain.workspace.WorkspaceManager
 import org.ide.lti.core.model.workspace.RecentProject
@@ -48,7 +48,7 @@ class FakeShellExecutor(
         if (delayExecution) {
             kotlinx.coroutines.awaitCancellation()
         } else {
-            emit(org.ide.lti.core.cli.ShellOutputEvent.Finished(0))
+            emit(ShellOutputEvent.Finished(0))
         }
     }
 }
@@ -61,7 +61,7 @@ class TerminalViewModelTest {
         val workspaceManager = WorkspaceManager(repo, scope)
         val appSettingsState = AppSettingsState()
         val fakeShell = FakeShellExecutor(delayExecution = delayExecution)
-        return TerminalViewModel(workspaceManager, appSettingsState, fakeShell)
+        return TerminalViewModel(workspaceManager, appSettingsState, shellExecutor = fakeShell)
     }
 
     @Test

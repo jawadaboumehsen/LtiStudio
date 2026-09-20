@@ -9,26 +9,19 @@
  */
 package org.ide.lti.feature.workspace.di
 
-import org.ide.lti.core.cli.DesktopShellExecutor
-import org.ide.lti.core.cli.ShellExecutor
 import org.ide.lti.feature.workspace.WorkspaceViewModel
-import org.ide.lti.feature.workspace.creation.CreateWorkspaceViewModel
+import org.ide.lti.feature.workspace.creation.di.workspaceCreateModule
 import org.ide.lti.feature.workspace.panels.ai.AIAssistantViewModel
 import org.ide.lti.feature.workspace.panels.editor.EditorViewModel
 import org.ide.lti.feature.workspace.panels.explorer.ExplorerViewModel
-import org.ide.lti.feature.workspace.panels.run.BuildRunViewModel
-import org.ide.lti.feature.workspace.panels.run.RunHistoryViewModel
-import org.ide.lti.feature.workspace.panels.target.WorkspaceConfigurationViewModel
+import org.ide.lti.feature.workspace.panels.run.di.workspaceRunModule
+import org.ide.lti.feature.workspace.panels.target.di.workspaceTargetModule
 import org.ide.lti.feature.workspace.panels.terminal.TerminalViewModel
-import org.ide.lti.feature.workspace.studio.StudioViewModel
 import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
 val workspaceModule = module {
-    // CLI & Terminal execution services
-    single<ShellExecutor> { DesktopShellExecutor() }
-
     // Workspace ViewModels
     viewModel {
         WorkspaceViewModel(
@@ -49,50 +42,13 @@ val workspaceModule = module {
         )
     }
 
-    // Explicit: the defaulted file-picker/reader lambdas must not be resolved through Koin.
-    viewModel {
-        WorkspaceConfigurationViewModel(
-            workspaceManager = get(),
-            snapshotRepository = get(),
-            targetRepository = get(),
-            saveConfigurationSnapshotUseCase = get(),
-            transport = getOrNull(),
-            readinessPort = getOrNull(),
-        )
-    }
-    viewModel {
-        CreateWorkspaceViewModel(
-            createWorkspaceUseCase = get(),
-            targetRepository = get(),
-            workspaceRepository = get(),
-            workspaceManager = get(),
-            readinessPort = getOrNull(),
-        )
-    }
+    includes(workspaceTargetModule)
+    includes(workspaceCreateModule)
 
     // Panel ViewModels
     viewModelOf(::AIAssistantViewModel)
     viewModelOf(::EditorViewModel)
     viewModelOf(::ExplorerViewModel)
     viewModelOf(::TerminalViewModel)
-    viewModelOf(::RunHistoryViewModel)
-    viewModel {
-        BuildRunViewModel(
-            workspaceManager = get(),
-            startPipelineRunUseCase = get(),
-            observeRunUseCase = get(),
-            cancelRunUseCase = getOrNull(),
-            reattachRunUseCase = getOrNull(),
-            runRepository = getOrNull(),
-            readinessPort = getOrNull(),
-        )
-    }
-
-    viewModel { params ->
-        StudioViewModel(
-            studioPresentationStore = get(),
-            initialWorkspaceId = params.getOrNull<String>() ?: "",
-            workspaceManager = getOrNull(),
-        )
-    }
+    includes(workspaceRunModule)
 }

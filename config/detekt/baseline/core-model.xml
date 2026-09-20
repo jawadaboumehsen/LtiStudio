@@ -24,7 +24,6 @@
     <ID>MaxLineLength:RunState.kt:RunState$*</ID>
     <ID>MaximumLineLength:DefaultTargetCatalog.kt:DefaultTargetCatalog$,</ID>
     <ID>TrailingCommaOnDeclarationSite:RunState.kt:RunState</ID>
-    <ID>TrailingCommaOnDeclarationSite:StageId.kt:StageId</ID>
     <ID>TrailingCommaOnDeclarationSite:TargetDevice.kt:FirmwareAcquisitionMode</ID>
     <ID>TrailingCommaOnDeclarationSite:TargetDevice.kt:TargetRegion</ID>
     <ID>TrailingCommaOnDeclarationSite:TargetDevice.kt:TargetStatus</ID>

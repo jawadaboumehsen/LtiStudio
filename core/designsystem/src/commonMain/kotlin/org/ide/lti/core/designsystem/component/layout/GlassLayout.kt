@@ -9,15 +9,6 @@
  */
 package org.ide.lti.core.designsystem.component.layout
 
-import org.ide.lti.core.designsystem.component.primitives.*
-import org.ide.lti.core.designsystem.component.actions.*
-import org.ide.lti.core.designsystem.component.inputs.*
-import org.ide.lti.core.designsystem.component.display.*
-import org.ide.lti.core.designsystem.component.navigation.*
-import org.ide.lti.core.designsystem.component.layout.*
-import org.ide.lti.core.designsystem.component.feedback.*
-import org.ide.lti.core.designsystem.component.devtools.*
-
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
@@ -33,6 +24,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -45,47 +37,19 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import com.kashif_e.backdrop.Backdrop
+import org.ide.lti.core.designsystem.component.actions.*
+import org.ide.lti.core.designsystem.component.devtools.*
+import org.ide.lti.core.designsystem.component.display.*
+import org.ide.lti.core.designsystem.component.feedback.*
+import org.ide.lti.core.designsystem.component.inputs.*
+import org.ide.lti.core.designsystem.component.navigation.*
+import org.ide.lti.core.designsystem.component.primitives.*
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.PreviewSampleColors
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.jetbrains.compose.ui.tooling.preview.Preview
-
-/**
- * Professional resizable panel layout for LtiRomGui IDE with Liquid Glass theme.
- *
- * This component provides a complete IDE-style layout with glass morphism effects:
- *
- * ```
- * ┌───────────────────────────────────────────────────────┐
- * │ topBar() - GlassTopBar (40dp fixed)                   │
- * ├────────────┬───────────────────────────┬──────────────┤
- * │            │                           │              │
- * │  LEFT      │   MAIN (Editor)           │    RIGHT     │
- * │  Panel     ├───────────────────────────┤    Panel     │
- * │(weight)    │   BOTTOM Panel (weight)   │  (weight)    │
- * │            │   [Optional/Collapsible]  │              │
- * ├────────────┴───────────────────────────┴──────────────┤
- * │ statusBar() - GlassStatusBar (22dp fixed)            │
- * └───────────────────────────────────────────────────────┘
- * ```
- *
- * @param state Layout state controlling panel visibility and sizing. Use [rememberLtiLayoutState].
- * @param modifier Modifier to be applied to the root layout container.
- * @param leftRail Optional leading chrome rail composable.
- * @param leftPanel Content for the left panel (typically file explorer).
- * @param mainContent Content for the main central area (typically code editor).
- * @param bottomPanel Content for the bottom panel (typically terminal/console).
- * @param rightPanel Content for the right panel (typically properties/AI assistant).
- * @param rightRail Optional trailing chrome rail composable.
- * @param topBar Top application bar composable (default: [GlassTopBar]).
- * @param statusBar Bottom status bar composable (default: [GlassStatusBar]).
- * @param showToggleButtons Whether to show floating panel toggle buttons (default: false).
- * @param appearance Visual appearance configuration (default: [GlassLayoutAppearance.Default]).
- * @param backdrop Shared backdrop for glass effects (default: from [GlassTheme]).
- */
-import androidx.compose.runtime.Immutable
 
 /**
  * Cohesive configuration of composable slots for [GlassLayout].

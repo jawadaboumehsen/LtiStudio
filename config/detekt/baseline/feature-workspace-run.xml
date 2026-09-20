@@ -1,0 +1,72 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ArgumentListWrapping:RunPanel.kt:("Go to Setup")</ID>
+    <ID>BackingPropertyNaming:BuildRunReattachTest.kt:BuildRunReattachTest.FakeSnapshotRepository$private val _flow = MutableStateFlow&lt;List&lt;ConfigurationSnapshot&gt;&gt;(emptyList())</ID>
+    <ID>BackingPropertyNaming:BuildRunViewModelTest.kt:BuildRunViewModelTest.FakeSnapshotRepository$private val _flow = MutableStateFlow&lt;List&lt;ConfigurationSnapshot&gt;&gt;(emptyList())</ID>
+    <ID>BinaryExpressionWrapping:BuildRunViewModel.kt:BuildRunViewModel$_uiState.value.environmentReadiness?.state?.let { it == EnvironmentReadinessState.READY } ?: true</ID>
+    <ID>BinaryExpressionWrapping:BuildRunViewModel.kt:BuildRunViewModel$it == EnvironmentReadinessState.READY</ID>
+    <ID>BinaryExpressionWrapping:BuildRunViewModel.kt:BuildRunViewModel$state.environmentReadiness?.state?.let { it == EnvironmentReadinessState.READY } ?: true</ID>
+    <ID>BinaryExpressionWrapping:RunPanel.kt:onNavigateToSetup != null</ID>
+    <ID>BinaryExpressionWrapping:RunPanel.kt:uiState.environmentReadiness != null &amp;&amp; uiState.environmentReadiness?.state != EnvironmentReadinessState.READY</ID>
+    <ID>BinaryExpressionWrapping:RunPanel.kt:uiState.environmentReadiness?.state != EnvironmentReadinessState.READY</ID>
+    <ID>CyclomaticComplexMethod:RunPanel.kt:@Composable private fun ActiveRunContent</ID>
+    <ID>CyclomaticComplexMethod:StagePipelineView.kt:@Composable public fun StagePipelineView</ID>
+    <ID>FunctionExpressionBody:RunHistoryViewModelTest.kt:RunHistoryViewModelTest${ return BuildRun( id = id, workspaceId = workspaceId, snapshotId = "snap-1", state = RunState.SUCCEEDED, startedAt = Instant.fromEpochSeconds(startedEpochSec), endedAt = Instant.fromEpochSeconds(startedEpochSec + 100), stages = stages, steps = listOf( StageStep( stageId = StageId.BUILD_FLASHABLE_ZIP, index = 0, idempotencyKey = "key-$id-0", command = StepCommand(toolId = "build", args = listOf("all")), state = StepState.COMPLETED, exitCode = 0, ), ), artifacts = artifacts, ) }</ID>
+    <ID>FunctionLiteral:BuildRunViewModel.kt:BuildRunViewModel$&lt;anonymous&gt;</ID>
+    <ID>FunctionLiteral:RunPanel.kt:&lt;anonymous&gt;</ID>
+    <ID>FunctionSignature:RunHistoryPanel.kt:@Composable private fun RunListItemCard</ID>
+    <ID>FunctionSignature:RunHistoryPanel.kt:@Composable public fun RunHistoryPanel</ID>
+    <ID>FunctionSignature:RunHistoryViewModelTest.kt:RunHistoryViewModelTest.FakeRunRepository$override suspend fun cachedEvents: List&lt;String&gt;</ID>
+    <ID>LongMethod:RunPanel.kt:@Composable private fun ActiveRunContent</ID>
+    <ID>MaxLineLength:BuildRunViewModel.kt:BuildRunViewModel$?:</ID>
+    <ID>MaxLineLength:BuildRunViewModel.kt:BuildRunViewModel$val currentIsReady = state.environmentReadiness?.state?.let { it == EnvironmentReadinessState.READY } ?: true</ID>
+    <ID>MaxLineLength:RunPanel.kt:description = uiState.remediation ?: "The build environment or service daemon is currently unavailable."</ID>
+    <ID>MaxLineLength:RunPanel.kt:if</ID>
+    <ID>MaxLineLength:RunPanel.kt:primaryAction = if (onNavigateToSetup != null) GlassBannerAction("Go to Setup") { onNavigateToSetup() } else null</ID>
+    <ID>MaxLineLength:RunPanel.kt:text = if (uiState.isRunning) "Artifacts will appear after build completes." else "No build artifacts produced yet."</ID>
+    <ID>MaximumLineLength:BuildRunViewModel.kt:BuildRunViewModel$)</ID>
+    <ID>MaximumLineLength:BuildRunViewModel.kt:BuildRunViewModel$true</ID>
+    <ID>MaximumLineLength:RunPanel.kt:,</ID>
+    <ID>MaximumLineLength:RunPanel.kt:{</ID>
+    <ID>MultiLineIfElse:BuildRunViewModel.kt:BuildRunViewModel$emptyList()</ID>
+    <ID>MultiLineIfElse:BuildRunViewModel.kt:BuildRunViewModel$null</ID>
+    <ID>NoWildcardImports:BuildRunReattachTest.kt:import kotlin.test.*</ID>
+    <ID>NoWildcardImports:BuildRunReattachTest.kt:import org.ide.lti.core.domain.ports.*</ID>
+    <ID>NoWildcardImports:BuildRunReattachTest.kt:import org.ide.lti.core.model.run.*</ID>
+    <ID>NoWildcardImports:BuildRunReattachTest.kt:import org.ide.lti.core.model.target.*</ID>
+    <ID>NoWildcardImports:BuildRunReattachTest.kt:import org.ide.lti.core.model.workspace.*</ID>
+    <ID>NoWildcardImports:BuildRunViewModel.kt:import kotlinx.coroutines.flow.*</ID>
+    <ID>NoWildcardImports:BuildRunViewModelTest.kt:import kotlin.test.*</ID>
+    <ID>NoWildcardImports:BuildRunViewModelTest.kt:import org.ide.lti.core.domain.ports.*</ID>
+    <ID>NoWildcardImports:BuildRunViewModelTest.kt:import org.ide.lti.core.model.run.*</ID>
+    <ID>NoWildcardImports:BuildRunViewModelTest.kt:import org.ide.lti.core.model.target.*</ID>
+    <ID>NoWildcardImports:BuildRunViewModelTest.kt:import org.ide.lti.core.model.workspace.*</ID>
+    <ID>NoWildcardImports:RunHistoryPanel.kt:import androidx.compose.foundation.layout.*</ID>
+    <ID>NoWildcardImports:RunPanel.kt:import androidx.compose.foundation.layout.*</ID>
+    <ID>ReturnCount:BuildRunViewModel.kt:BuildRunViewModel$public fun cancelBuild</ID>
+    <ID>ReturnCount:BuildRunViewModel.kt:BuildRunViewModel$public fun reattachBuild</ID>
+    <ID>StringTemplate:RunPanel.kt:${sizeMb}</ID>
+    <ID>TrailingCommaOnCallSite:BuildRunViewModel.kt:BuildRunViewModel$( isCancelling = false, errorMessage = error.message ?: "Failed to cancel pipeline run" )</ID>
+    <ID>TrailingCommaOnCallSite:BuildRunViewModel.kt:BuildRunViewModel$( isStartingRun = false, errorMessage = error.message ?: "Failed to start pipeline run" )</ID>
+    <ID>TrailingCommaOnCallSite:BuildRunViewModel.kt:BuildRunViewModel$( onSuccess = { cancelledRun -&gt; _uiState.update { it.copy(latestRun = cancelledRun, isCancelling = false) } }, onFailure = { error -&gt; _uiState.update { it.copy( isCancelling = false, errorMessage = error.message ?: "Failed to cancel pipeline run" ) } } )</ID>
+    <ID>TrailingCommaOnCallSite:BuildRunViewModel.kt:BuildRunViewModel$( onSuccess = { run -&gt; _uiState.update { it.copy(latestRun = run, isStartingRun = false) } }, onFailure = { error -&gt; _uiState.update { it.copy( isStartingRun = false, errorMessage = error.message ?: "Failed to start pipeline run" ) } } )</ID>
+    <ID>TrailingCommaOnCallSite:StagePipelineView.kt:( StageId.FIRMWARE_ACQUISITION to "Acquire", StageId.FIRMWARE_EXTRACTION to "Extract", StageId.WORK_TREE_ASSEMBLY to "Assemble", StageId.MODULE_APPLICATION to "Modules", StageId.BUILD_FLASHABLE_ZIP to "Package", StageId.GENERATE_OTA_MANIFEST to "Manifest" )</ID>
+    <ID>TrailingCommaOnCallSite:StagePipelineView.kt:( id = stageId.name, shortTitle = title, status = status, statusLabel = label )</ID>
+    <ID>TrailingCommaOnCallSite:StagePipelineView.kt:( steps = stepInfos, orientation = orientation, isBusy = isBusy, modifier = modifier .fillMaxWidth() .padding(vertical = Spacing.Small) )</ID>
+    <ID>WildcardImport:BuildRunReattachTest.kt:import kotlin.test.*</ID>
+    <ID>WildcardImport:BuildRunReattachTest.kt:import org.ide.lti.core.domain.ports.*</ID>
+    <ID>WildcardImport:BuildRunReattachTest.kt:import org.ide.lti.core.model.run.*</ID>
+    <ID>WildcardImport:BuildRunReattachTest.kt:import org.ide.lti.core.model.target.*</ID>
+    <ID>WildcardImport:BuildRunReattachTest.kt:import org.ide.lti.core.model.workspace.*</ID>
+    <ID>WildcardImport:BuildRunViewModel.kt:import kotlinx.coroutines.flow.*</ID>
+    <ID>WildcardImport:BuildRunViewModelTest.kt:import kotlin.test.*</ID>
+    <ID>WildcardImport:BuildRunViewModelTest.kt:import org.ide.lti.core.domain.ports.*</ID>
+    <ID>WildcardImport:BuildRunViewModelTest.kt:import org.ide.lti.core.model.run.*</ID>
+    <ID>WildcardImport:BuildRunViewModelTest.kt:import org.ide.lti.core.model.target.*</ID>
+    <ID>WildcardImport:BuildRunViewModelTest.kt:import org.ide.lti.core.model.workspace.*</ID>
+    <ID>WildcardImport:RunHistoryPanel.kt:import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:RunPanel.kt:import androidx.compose.foundation.layout.*</ID>
+  </CurrentIssues>
+</SmellBaseline>

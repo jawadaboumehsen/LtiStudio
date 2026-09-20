@@ -1,17 +1,26 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.feature.setup
 
+import org.ide.lti.core.domain.setup.SetupStepDetail
+import org.ide.lti.core.domain.setup.SetupStepStage
+import org.ide.lti.core.domain.setup.StepProvenance
+import org.ide.lti.core.domain.setup.StepStatus
+import org.ide.lti.core.domain.setup.ToolCategory
+import org.ide.lti.core.domain.setup.ToolComponentItem
+import org.ide.lti.core.domain.setup.ToolchainSetupState
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import org.ide.lti.core.domain.setup.SetupStepDetail
-import org.ide.lti.core.domain.setup.SetupStepStage
-import org.ide.lti.core.domain.setup.StepProvenance
-import org.ide.lti.core.domain.setup.StepStatus
-import org.ide.lti.core.domain.setup.ToolComponentItem
-import org.ide.lti.core.domain.setup.ToolCategory
-import org.ide.lti.core.domain.setup.ToolchainSetupState
 
 class SetupPresentationMapperTest {
 
@@ -22,7 +31,7 @@ class SetupPresentationMapperTest {
             title = "",
             description = "",
             status = StepStatus.PENDING,
-            provenance = StepProvenance.LIVE
+            provenance = StepProvenance.LIVE,
         )
         assertEquals(StagePresentationState.UNKNOWN, SetupPresentationMapper.mapStageState(detailPending, false))
 
@@ -31,7 +40,7 @@ class SetupPresentationMapperTest {
             title = "",
             description = "",
             status = StepStatus.SUCCESS,
-            provenance = StepProvenance.RESTORED
+            provenance = StepProvenance.RESTORED,
         )
         assertEquals(StagePresentationState.RESTORED, SetupPresentationMapper.mapStageState(detailRestored, false))
 
@@ -40,7 +49,7 @@ class SetupPresentationMapperTest {
             title = "",
             description = "",
             status = StepStatus.RUNNING,
-            provenance = StepProvenance.LIVE
+            provenance = StepProvenance.LIVE,
         )
         assertEquals(StagePresentationState.CHECKING, SetupPresentationMapper.mapStageState(detailChecking, true))
 
@@ -49,7 +58,7 @@ class SetupPresentationMapperTest {
             title = "",
             description = "",
             status = StepStatus.SUCCESS,
-            provenance = StepProvenance.LIVE
+            provenance = StepProvenance.LIVE,
         )
         assertEquals(StagePresentationState.READY, SetupPresentationMapper.mapStageState(detailReady, false))
 
@@ -58,7 +67,7 @@ class SetupPresentationMapperTest {
             title = "",
             description = "",
             status = StepStatus.FAILED,
-            provenance = StepProvenance.LIVE
+            provenance = StepProvenance.LIVE,
         )
         assertEquals(StagePresentationState.FAILED, SetupPresentationMapper.mapStageState(detailFailed, false))
     }
@@ -121,7 +130,7 @@ class SetupPresentationMapperTest {
                 step(SetupStepStage.SYSTEM_DIAGNOSTICS),
                 step(SetupStepStage.REPO_SYNCHRONIZATION, status = StepStatus.PENDING),
                 step(SetupStepStage.TOOLCHAIN_COMPILATION, status = StepStatus.PENDING),
-            )
+            ),
         )
         val mappedNeedsSetup = SetupPresentationMapper.mapEnvironmentState(needsSetupState)
         assertTrue(mappedNeedsSetup is EnvironmentState.CheckedNeedsSetup)
@@ -164,7 +173,7 @@ class SetupPresentationMapperTest {
                     error = "make failed exit code 2",
                     status = StepStatus.FAILED,
                 ),
-            )
+            ),
         )
         val mappedFailed = SetupPresentationMapper.mapEnvironmentState(failedState)
         assertTrue(mappedFailed is EnvironmentState.Failed)
@@ -181,7 +190,7 @@ class SetupPresentationMapperTest {
                     error = "Connection refused",
                     status = StepStatus.FAILED,
                 ),
-            )
+            ),
         )
         val mappedUnavailable = SetupPresentationMapper.mapEnvironmentState(unavailableState)
         assertTrue(mappedUnavailable is EnvironmentState.Unavailable)
@@ -198,19 +207,19 @@ class SetupPresentationMapperTest {
                     provenance = StepProvenance.RESTORED,
                     verifiedAt = 1699999900000L,
                 ),
-            )
+            ),
         )
         val mappedRestored = SetupPresentationMapper.mapEnvironmentState(restoredState)
         assertTrue(mappedRestored is EnvironmentState.Restored)
         assertNull(
             mappedRestored.checkedAt,
-            "Restored state must have null checkedAt (no live check in this session)"
+            "Restored state must have null checkedAt (no live check in this session)",
         )
         assertEquals(1699999900000L, mappedRestored.lastReadyAt)
         assertEquals(
             PrimaryAction.CHECK,
             SetupPresentationMapper.mapAction(mappedRestored),
-            "Restored state must offer Check, never live-ready"
+            "Restored state must offer Check, never live-ready",
         )
     }
 
@@ -225,13 +234,13 @@ class SetupPresentationMapperTest {
             steps = listOf(
                 step(SetupStepStage.WSL_DETECTION),
                 step(SetupStepStage.REPO_SYNCHRONIZATION, status = StepStatus.PENDING),
-            )
+            ),
         )
         val presentation = SetupPresentationMapper.mapEnvironment(stateAfterCheck)
         assertEquals(checkTime, presentation.checkedAt)
         assertNull(
             presentation.lastVerifiedAt,
-            "lastReadyAt / lastVerifiedAt must remain null when environment needs setup"
+            "lastReadyAt / lastVerifiedAt must remain null when environment needs setup",
         )
         assertEquals(PrimaryAction.SET_UP, presentation.primaryAction)
 
@@ -248,7 +257,7 @@ class SetupPresentationMapperTest {
                 step(SetupStepStage.TOOLCHAIN_COMPILATION),
             ),
             toolsMatrix = listOf(coreTool("lpunpack", "LP Unpack")),
-            publishedToolIds = setOf("lpunpack")
+            publishedToolIds = setOf("lpunpack"),
         )
         val readyPresentation = SetupPresentationMapper.mapEnvironment(fullyReadyState)
         assertEquals(readyTime, readyPresentation.checkedAt)
@@ -285,12 +294,13 @@ class SetupPresentationMapperTest {
                 step(SetupStepStage.TOOLCHAIN_COMPILATION),
             ),
             toolsMatrix = tools,
-            publishedToolIds = setOf("lpunpack"), // mkfs.erofs missing!
+            // mkfs.erofs missing!
+            publishedToolIds = setOf("lpunpack"),
         )
         val presentation = SetupPresentationMapper.mapEnvironment(stateMissingPub)
         assertFalse(
             presentation.environmentState is EnvironmentState.Ready,
-            "Missing publication must prevent Ready state"
+            "Missing publication must prevent Ready state",
         )
         assertTrue(presentation.environmentState is EnvironmentState.CheckedNeedsSetup)
         assertEquals(PrimaryAction.SET_UP, presentation.primaryAction)
@@ -315,7 +325,7 @@ class SetupPresentationMapperTest {
         val presentation = SetupPresentationMapper.mapEnvironment(stateFailedProbe)
         assertFalse(
             presentation.environmentState is EnvironmentState.Ready,
-            "Failed execution probe must prevent Ready state"
+            "Failed execution probe must prevent Ready state",
         )
     }
 
@@ -331,13 +341,14 @@ class SetupPresentationMapperTest {
                 step(SetupStepStage.REPO_SYNCHRONIZATION),
                 step(SetupStepStage.TOOLCHAIN_COMPILATION),
             ),
-            toolsMatrix = emptyList(), // Empty inventory!
+            // Empty inventory!
+            toolsMatrix = emptyList(),
             publishedToolIds = emptySet(),
         )
         val presentation = SetupPresentationMapper.mapEnvironment(stateEmptyTools)
         assertFalse(
             presentation.environmentState is EnvironmentState.Ready,
-            "Empty tool inventory must never become Ready"
+            "Empty tool inventory must never become Ready",
         )
     }
 

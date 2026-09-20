@@ -22,6 +22,7 @@ kotlin {
             implementation(libs.kotlinx.serialization.core)
             implementation(libs.kotlinx.serialization.json)
             implementation(projects.core.model)
+            implementation(projects.core.domain)
             implementation(projects.core.common)
         }
 

@@ -1,3 +1,12 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.feature.setup
 
 import kotlinx.coroutines.Dispatchers
@@ -7,34 +16,31 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.Clock
+import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
-import org.ide.lti.core.domain.setup.DiagnosticCheckItem
-import org.ide.lti.core.domain.setup.SetupOutcome
-import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.flow.flowOf
 import org.ide.lti.core.domain.setup.SetupLogEvent
+import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.domain.setup.SetupPlan
 import org.ide.lti.core.domain.setup.SetupPlanKind
-import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepProvenance
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolchainProvisioningService
 import org.ide.lti.core.domain.setup.ToolchainSetupState
-import org.ide.lti.feature.setup.components.computeSidebarBadge
-import org.ide.lti.feature.setup.components.computeSidebarSubtitle
-import org.ide.lti.core.domain.usecase.target.ProvisionAvbKeyUseCase
 import org.ide.lti.core.domain.usecase.workspace.DiscoverWorkdirWorkspacesUseCase
 import org.ide.lti.core.domain.usecase.workspace.GetRecentWorkspacesUseCase
 import org.ide.lti.core.domain.usecase.workspace.OpenWorkspaceUseCase
 import org.ide.lti.core.domain.usecase.workspace.RemoveRecentWorkspaceUseCase
 import org.ide.lti.core.domain.workspace.WorkspaceManager
-import org.ide.lti.core.model.target.TargetDevice
+import org.ide.lti.core.model.setup.EnvironmentReadiness
+import org.ide.lti.core.model.setup.EnvironmentReadinessState
 import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.core.model.workspace.Workspace
 import org.ide.lti.core.model.workspace.WorkspaceSession
@@ -378,21 +384,15 @@ class SetupViewModelWorkspaceTest {
             repo.recents.value = listOf(project1, project2)
             val manager = WorkspaceManager(repo, this)
 
-            val failingReadinessPort = object : org.ide.lti.core.domain.ports.EnvironmentReadinessPort {
-                override fun observe():
-                    kotlinx.coroutines.flow.Flow<org.ide.lti.core.model.setup.EnvironmentReadiness> =
-                    kotlinx.coroutines.flow.emptyFlow()
+            val failingReadinessPort = object : EnvironmentReadinessPort {
+                override fun observe(): Flow<EnvironmentReadiness> = emptyFlow()
 
-                override suspend fun refresh(): org.ide.lti.core.model.setup.EnvironmentReadiness {
-                    return org.ide.lti.core.model.setup.EnvironmentReadiness(
-                        state = org.ide.lti.core.model.setup.EnvironmentReadinessState.SERVICE_UNREACHABLE,
-                        failingCheck = "WSL2 daemon bridge unreachable",
-                    )
-                }
+                override suspend fun refresh(): EnvironmentReadiness = EnvironmentReadiness(
+                    state = EnvironmentReadinessState.SERVICE_UNREACHABLE,
+                    failingCheck = "WSL2 daemon bridge unreachable",
+                )
 
-                override suspend fun forWorkspace(
-                    workspace: Workspace,
-                ): org.ide.lti.core.model.setup.EnvironmentReadiness = refresh()
+                override suspend fun forWorkspace(workspace: Workspace): EnvironmentReadiness = refresh()
             }
 
             val viewModel = SetupViewModel(
@@ -465,8 +465,14 @@ class SetupViewModelWorkspaceTest {
 
         // 003 plan contract: fakes never synthesize success for behaviour the test does not drive.
         override suspend fun prepare(kind: SetupPlanKind, targetId: String?, autoDoctorEnabled: Boolean): SetupPlan =
-            SetupPlan(planId = "fake-plan", revisionHash = "fake-rev", environmentKey = "fake-env", kind = kind,
-                targetStageOrToolId = targetId, autoDoctorEnabled = autoDoctorEnabled)
+            SetupPlan(
+                planId = "fake-plan",
+                revisionHash = "fake-rev",
+                environmentKey = "fake-env",
+                kind = kind,
+                targetStageOrToolId = targetId,
+                autoDoctorEnabled = autoDoctorEnabled,
+            )
         override suspend fun confirm(planId: String, revisionHash: String): SetupOutcome =
             SetupOutcome.Failed(stage = null, reason = "fake service does not execute plans")
         override fun observe(): Flow<SetupOutcome?> = flowOf(null)
@@ -484,8 +490,5 @@ class SetupViewModelWorkspaceTest {
             lastTestedToolId = toolId
             return SetupOutcome.Succeeded()
         }
-
-
     }
-
 }

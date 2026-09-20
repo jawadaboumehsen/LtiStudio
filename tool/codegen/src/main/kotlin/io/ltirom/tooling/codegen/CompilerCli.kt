@@ -29,7 +29,7 @@ public fun main(args: Array<String>) {
     val specsDir = File(projectRoot, "tool/specs")
     val draftsDir = File(projectRoot, "tool/specs/drafts")
     val capturedHelpDir = File(projectRoot, "tool/captured-help")
-    val adaptersOutputDir = File(projectRoot, "tool/adapters/src/main/kotlin")
+    val adapterBaseDir = File(projectRoot, "tool/adapter")
     val docsOutputDir = File(projectRoot, "tool/docs")
 
     when (command) {
@@ -51,8 +51,9 @@ public fun main(args: Array<String>) {
             Compiler.runValidationAndGeneration(
                 specsDir = specsDir,
                 capturedHelpDir = capturedHelpDir,
-                adaptersOutputDir = adaptersOutputDir,
-                docsOutputDir = docsOutputDir
+                adaptersOutputDir = adapterBaseDir,
+                docsOutputDir = docsOutputDir,
+                projectRootDir = projectRoot
             )
         }
         "promote" -> {

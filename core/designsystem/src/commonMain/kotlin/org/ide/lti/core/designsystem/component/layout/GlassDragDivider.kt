@@ -9,15 +9,6 @@
  */
 package org.ide.lti.core.designsystem.component.layout
 
-import org.ide.lti.core.designsystem.component.primitives.*
-import org.ide.lti.core.designsystem.component.actions.*
-import org.ide.lti.core.designsystem.component.inputs.*
-import org.ide.lti.core.designsystem.component.display.*
-import org.ide.lti.core.designsystem.component.navigation.*
-import org.ide.lti.core.designsystem.component.layout.*
-import org.ide.lti.core.designsystem.component.feedback.*
-import org.ide.lti.core.designsystem.component.devtools.*
-
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
 import androidx.compose.foundation.background
@@ -54,6 +45,13 @@ import androidx.compose.ui.semantics.semantics
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import com.kashif_e.backdrop.drawBackdrop
+import org.ide.lti.core.designsystem.component.actions.*
+import org.ide.lti.core.designsystem.component.devtools.*
+import org.ide.lti.core.designsystem.component.display.*
+import org.ide.lti.core.designsystem.component.feedback.*
+import org.ide.lti.core.designsystem.component.inputs.*
+import org.ide.lti.core.designsystem.component.navigation.*
+import org.ide.lti.core.designsystem.component.primitives.*
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.GlassEffects
 import org.ide.lti.core.designsystem.theme.GlassShapes
@@ -155,14 +153,16 @@ internal fun GlassDragDivider(
     ) {
         // Single shared idle hairline divider between adjacent docked panels
         val idleLineModifier = when (orientation) {
-            DividerOrientation.Vertical -> Modifier
-                .width(StrokeWidth.Hairline)
-                .fillMaxHeight()
-                .background(normalColor)
-            DividerOrientation.Horizontal -> Modifier
-                .height(StrokeWidth.Hairline)
-                .fillMaxWidth()
-                .background(normalColor)
+            DividerOrientation.Vertical ->
+                Modifier
+                    .width(StrokeWidth.Hairline)
+                    .fillMaxHeight()
+                    .background(normalColor)
+            DividerOrientation.Horizontal ->
+                Modifier
+                    .height(StrokeWidth.Hairline)
+                    .fillMaxWidth()
+                    .background(normalColor)
         }
         Box(modifier = idleLineModifier)
 

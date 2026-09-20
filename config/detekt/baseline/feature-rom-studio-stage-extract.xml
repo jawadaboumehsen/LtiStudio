@@ -1,0 +1,10 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ArgumentListWrapping:ExtractEditor.kt:("Slot and filesystem handling", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)</ID>
+    <ID>ClassSignature:ExtractViewModel.kt:ExtractViewModel : ViewModel</ID>
+    <ID>MaxLineLength:ExtractEditor.kt:Text("Slot and filesystem handling", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)</ID>
+    <ID>MaximumLineLength:ExtractEditor.kt:)</ID>
+  </CurrentIssues>
+</SmellBaseline>

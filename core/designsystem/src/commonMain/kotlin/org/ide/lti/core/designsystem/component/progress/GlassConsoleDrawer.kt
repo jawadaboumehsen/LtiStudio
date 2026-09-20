@@ -84,6 +84,7 @@ fun GlassConsoleDrawer(
 ) {
     val glassColors = GlassTheme.colors
     val diagnostics = glassColors.diagnostics
+
     @Suppress("DEPRECATION")
     val clipboardManager = LocalClipboardManager.current
     var isExpanded by remember { mutableStateOf(false) }

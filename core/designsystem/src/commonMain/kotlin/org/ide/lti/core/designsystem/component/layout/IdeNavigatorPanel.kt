@@ -1,8 +1,18 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 @file:Suppress("MatchingDeclarationName")
 
 package org.ide.lti.core.designsystem.component.layout
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
@@ -21,9 +31,21 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Dashboard
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.ListAlt
+import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.PhoneAndroid
+import androidx.compose.material.icons.filled.Sell
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.filled.VerifiedUser
+import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -35,6 +57,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
@@ -44,8 +67,10 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import com.kashif_e.backdrop.drawBackdrop
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassEffects
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
@@ -54,6 +79,7 @@ import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.IdeShellShapes
 import org.ide.lti.core.designsystem.theme.LetterSpacing
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.config.AppTheme
 
 @Immutable
 data class IdeNavigatorItem(
@@ -78,11 +104,25 @@ fun IdeNavigatorPanel(
     colors: IdeShellColorScheme = GlassTheme.ideShellColors,
     footerContent: (@Composable () -> Unit)? = null,
 ) {
+    val actualBackdrop = GlassTheme.backdrop
+    val isBlueGlass = GlassTheme.appTheme == AppTheme.Blue && GlassTheme.effectsEnabled
+    val backgroundModifier = if (isBlueGlass && actualBackdrop != null) {
+        Modifier.drawBackdrop(
+            backdrop = actualBackdrop,
+            shape = { RectangleShape },
+            effects = GlassEffects.DockedNav,
+            highlight = { null },
+            onDrawSurface = { drawRect(colors.navigatorBackground) },
+        )
+    } else {
+        Modifier.background(colors.navigatorBackground)
+    }
+
     Column(
         modifier = modifier
             .width(IdeShellDimens.WorkspaceNavigatorWidth)
             .fillMaxHeight()
-            .background(colors.navigatorBackground)
+            .then(backgroundModifier)
             .padding(vertical = Spacing.Small),
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
@@ -96,7 +136,7 @@ fun IdeNavigatorPanel(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = headerTitle.uppercase(),
+                    text = headerTitle,
                     color = colors.textDim,
                     fontSize = FontSize.Micro,
                     fontWeight = FontWeight.SemiBold,
@@ -104,12 +144,24 @@ fun IdeNavigatorPanel(
                     letterSpacing = LetterSpacing.TrackingHeader,
                 )
                 if (headerSubtitle != null) {
-                    Text(
-                        text = headerSubtitle,
-                        color = colors.textDim,
-                        fontSize = FontSize.Micro,
-                        fontFamily = GlassFontFamily.code(),
-                    )
+                    Box(
+                        modifier = Modifier
+                            .clip(IdeShellShapes.Badge)
+                            .background(colors.cardBackgroundMuted)
+                            .border(
+                                width = IdeShellDimens.HairlineBorder,
+                                color = colors.border,
+                                shape = IdeShellShapes.Badge,
+                            )
+                            .padding(horizontal = Spacing.ExtraSmall, vertical = Spacing.Hairline),
+                    ) {
+                        Text(
+                            text = headerSubtitle,
+                            color = colors.textDim,
+                            fontSize = FontSize.Micro,
+                            fontFamily = GlassFontFamily.code(),
+                        )
+                    }
                 }
             }
 
@@ -154,7 +206,7 @@ private fun NavigatorItemRow(
 
     val bg = when {
         !item.enabled -> Color.Transparent
-        isSelected -> colors.controlSelected
+        isSelected -> colors.accentBlue
         isPressed -> colors.controlHover
         isHovered -> colors.controlHover.copy(alpha = AlphaTokens.Prominent)
         else -> Color.Transparent
@@ -199,7 +251,7 @@ private fun NavigatorItemRow(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = if (isSelected) colors.accentBlue else contentColor,
+                tint = contentColor,
                 modifier = Modifier.size(IconSize.Small),
             )
             Text(
@@ -214,7 +266,7 @@ private fun NavigatorItemRow(
         if (item.badge != null) {
             Text(
                 text = item.badge,
-                color = colors.textDim,
+                color = if (isSelected) colors.textMain else colors.textDim,
                 fontSize = FontSize.Micro,
                 fontFamily = GlassFontFamily.code(),
             )
@@ -222,11 +274,62 @@ private fun NavigatorItemRow(
     }
 }
 
-private fun resolveNavIcon(id: String): ImageVector = when (id.lowercase()) {
-    "overview" -> Icons.Default.Dashboard
-    "rom_configuration", "rom config" -> Icons.Default.Settings
-    "run_history", "run history" -> Icons.Default.History
-    "artifacts" -> Icons.Default.Archive
-    "target_profile", "target profile" -> Icons.Default.PhoneAndroid
-    else -> Icons.Default.Dashboard
-}
+private val NAV_ICONS: Map<String, ImageVector> = mapOf(
+    "overview" to Icons.Default.Dashboard,
+    "romconfig" to Icons.Default.Settings,
+    "rom_configuration" to Icons.Default.Settings,
+    "rom config" to Icons.Default.Settings,
+    "runhistory" to Icons.Default.History,
+    "run_history" to Icons.Default.History,
+    "run history" to Icons.Default.History,
+    "artifacts" to Icons.Default.Archive,
+    "targetprofile" to Icons.Default.PhoneAndroid,
+    "target_profile" to Icons.Default.PhoneAndroid,
+    "target profile" to Icons.Default.PhoneAndroid,
+    "source" to Icons.Default.Storage,
+    "firmware-baseline" to Icons.Default.Memory,
+    "firmware_baseline" to Icons.Default.Memory,
+    "baseline" to Icons.Default.Memory,
+    "existing-archives" to Icons.Default.Folder,
+    "existing_archives" to Icons.Default.Folder,
+    "archives" to Icons.Default.Folder,
+    "download-policy" to Icons.Default.Download,
+    "download_policy" to Icons.Default.Download,
+    "download" to Icons.Default.Download,
+    "integrity" to Icons.Default.VerifiedUser,
+    "verification" to Icons.Default.VerifiedUser,
+    "work-trees" to Icons.Default.Folder,
+    "work_trees" to Icons.Default.Folder,
+    "worktrees" to Icons.Default.Folder,
+    "system-ext-handling" to Icons.Default.Layers,
+    "system_ext_handling" to Icons.Default.Layers,
+    "system_ext" to Icons.Default.Layers,
+    "boot-preparation" to Icons.Default.Memory,
+    "boot_preparation" to Icons.Default.Memory,
+    "boot" to Icons.Default.Memory,
+    "aot-cleanup" to Icons.Default.Settings,
+    "aot_cleanup" to Icons.Default.Settings,
+    "aot" to Icons.Default.Settings,
+    "build-properties" to Icons.Default.Description,
+    "build_properties" to Icons.Default.Description,
+    "properties" to Icons.Default.Description,
+    "images" to Icons.Default.Description,
+    "compression" to Icons.Default.Storage,
+    "partition-layout" to Icons.Default.GridView,
+    "partition_layout" to Icons.Default.GridView,
+    "partition layout" to Icons.Default.GridView,
+    "flashable-members" to Icons.Default.ListAlt,
+    "flashable_members" to Icons.Default.ListAlt,
+    "flashable members" to Icons.Default.ListAlt,
+    "avb-keys" to Icons.Default.VpnKey,
+    "avb_keys" to Icons.Default.VpnKey,
+    "avb keys" to Icons.Default.VpnKey,
+    "package-signing" to Icons.Default.Shield,
+    "package_signing" to Icons.Default.Shield,
+    "package signing" to Icons.Default.Shield,
+    "output-naming" to Icons.Default.Sell,
+    "output_naming" to Icons.Default.Sell,
+    "output naming" to Icons.Default.Sell,
+)
+
+private fun resolveNavIcon(id: String): ImageVector = NAV_ICONS[id.lowercase()] ?: Icons.Default.Dashboard

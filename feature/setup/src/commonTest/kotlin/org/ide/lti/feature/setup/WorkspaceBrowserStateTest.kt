@@ -1,3 +1,12 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.feature.setup
 
 import kotlinx.coroutines.Dispatchers
@@ -28,7 +37,6 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -83,7 +91,7 @@ class WorkspaceBrowserStateTest {
         var readiness: EnvironmentReadiness = EnvironmentReadiness(
             state = EnvironmentReadinessState.ENV_ABSENT,
             failingCheck = "WSL2 distribution not detected.",
-        )
+        ),
     ) : EnvironmentReadinessPort {
         val flow = MutableStateFlow(readiness)
 
@@ -99,7 +107,7 @@ class WorkspaceBrowserStateTest {
             EnvironmentReadiness(
                 state = EnvironmentReadinessState.ENV_ABSENT,
                 failingCheck = "WSL2 execution environment absent",
-            )
+            ),
         )
         val now = Clock.System.now()
         val cachedWorkspace = Workspace(
@@ -116,7 +124,7 @@ class WorkspaceBrowserStateTest {
                 name = cachedWorkspace.name,
                 path = cachedWorkspace.path,
                 lastOpened = now,
-            )
+            ),
         )
 
         val state = WorkspaceBrowserState(
@@ -149,7 +157,7 @@ class WorkspaceBrowserStateTest {
             EnvironmentReadiness(
                 state = EnvironmentReadinessState.ENV_ABSENT,
                 failingCheck = "WSL2 distribution not found. Remote workspace creation requires WSL2.",
-            )
+            ),
         )
         val state = WorkspaceBrowserState(
             scope = backgroundScope,

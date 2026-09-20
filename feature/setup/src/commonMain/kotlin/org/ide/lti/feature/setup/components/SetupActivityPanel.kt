@@ -48,7 +48,6 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
@@ -187,10 +186,13 @@ fun SetupActivityPanel(
         }
     }
 
+    val shellColors = GlassTheme.ideShellColors
     GlassCard(
         modifier = modifier
             .fillMaxWidth()
             .semantics { paneTitle = title },
+        surfaceColor = shellColors.cardBackground,
+        borderColor = shellColors.border,
         backdrop = backdrop,
         contentPadding = Spacing.CardPadding,
     ) {

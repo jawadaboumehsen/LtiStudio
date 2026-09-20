@@ -62,12 +62,20 @@ object Compiler {
         specsDir: File,
         capturedHelpDir: File,
         adaptersOutputDir: File,
-        docsOutputDir: File
+        docsOutputDir: File,
+        projectRootDir: File? = null
     ) {
         val specFiles = specsDir.listFiles { _, name -> name.endsWith(".json") } ?: emptyArray()
         if (specFiles.isEmpty()) {
             println("No specifications found in ${specsDir.absolutePath}")
             return
+        }
+
+        val root = projectRootDir ?: findProjectRoot(adaptersOutputDir)
+        val adapterBaseDir = if (adaptersOutputDir.name == "kotlin" || adaptersOutputDir.name == "adapters") {
+            File(root, "tool/adapter")
+        } else {
+            adaptersOutputDir
         }
 
         println("=== Validating Specifications ===")
@@ -98,23 +106,27 @@ object Compiler {
         }
 
         println("=== Generating Outputs (Run 1) ===")
-        val tempDir1 = File(adaptersOutputDir.parentFile, "adapters_gen1")
-        val tempDir2 = File(adaptersOutputDir.parentFile, "adapters_gen2")
+        val tempDir1 = File(adapterBaseDir, "adapters_gen1")
+        val tempDir2 = File(adapterBaseDir, "adapters_gen2")
         tempDir1.deleteRecursively()
         tempDir2.deleteRecursively()
 
         // Generate Run 1
         for (spec in specs) {
-            KotlinModelGenerator.generate(spec, tempDir1)
-            CliktGenerator.generate(spec, tempDir1)
+            val family = ToolFamily.forTool(spec.tool)
+            val familyGen1 = File(tempDir1, "${family.directoryName}/src/main/kotlin")
+            KotlinModelGenerator.generate(spec, familyGen1)
+            CliktGenerator.generate(spec, familyGen1)
             MarkdownDocGenerator.generate(spec, docsOutputDir)
         }
 
         println("=== Generating Outputs (Run 2: Reproducibility Verification) ===")
         // Generate Run 2
         for (spec in specs) {
-            KotlinModelGenerator.generate(spec, tempDir2)
-            CliktGenerator.generate(spec, tempDir2)
+            val family = ToolFamily.forTool(spec.tool)
+            val familyGen2 = File(tempDir2, "${family.directoryName}/src/main/kotlin")
+            KotlinModelGenerator.generate(spec, familyGen2)
+            CliktGenerator.generate(spec, familyGen2)
         }
 
         // Compare Run 1 vs Run 2
@@ -122,28 +134,22 @@ object Compiler {
         compareDirectories(tempDir1, tempDir2)
         println("  Reproducibility check PASSED.")
 
-        // Promote Run 1 to output dir
-        val preservedHandwritten = adaptersOutputDir
-            .takeIf(File::exists)
-            ?.walkTopDown()
-            ?.filter(File::isFile)
-            ?.filter { it.relativeTo(adaptersOutputDir).invariantSeparatorsPath.startsWith("io/ltirom/tooling/adapters/") }
-            ?.associate { it.relativeTo(adaptersOutputDir).invariantSeparatorsPath to it.readBytes() }
-            ?: emptyMap()
-        adaptersOutputDir.deleteRecursively()
-        tempDir1.renameTo(adaptersOutputDir)
-        for ((relativePath, bytes) in preservedHandwritten) {
-            val destination = File(adaptersOutputDir, relativePath)
-            destination.parentFile.mkdirs()
-            destination.writeBytes(bytes)
+        // Promote Run 1 to family output dirs under adapterBaseDir
+        for (family in ToolFamily.entries) {
+            val familyDestDir = File(adapterBaseDir, "${family.directoryName}/src/main/kotlin")
+            val familySrcDir = File(tempDir1, "${family.directoryName}/src/main/kotlin")
+            familyDestDir.deleteRecursively()
+            if (familySrcDir.exists()) {
+                familySrcDir.copyRecursively(familyDestDir, overwrite = true)
+            }
         }
+        tempDir1.deleteRecursively()
         tempDir2.deleteRecursively()
-        println("Generated adapters promoted to ${adaptersOutputDir.absolutePath}; preserved ${preservedHandwritten.size} handwritten files")
+        println("Generated adapters promoted to family directories under ${adapterBaseDir.absolutePath}")
 
-        // Generate ToolMetadataRegistry in tool:core
-        val projectRoot = adaptersOutputDir.parentFile.parentFile.parentFile.parentFile.parentFile
-        val coreSourceDir = File(projectRoot, "tool/core/src/main/kotlin")
-        val registryFile = File(coreSourceDir, "io/ltirom/tooling/core/ToolMetadataRegistry.kt")
+        // Generate ToolMetadataRegistry in tool:metadata
+        val metadataSourceDir = File(root, "tool/metadata/src/main/kotlin")
+        val registryFile = File(metadataSourceDir, "io/ltirom/tooling/core/ToolMetadataRegistry.kt")
         registryFile.parentFile.mkdirs()
         val specsJsonString = json.encodeToString(kotlinx.serialization.builtins.ListSerializer(ToolSpecification.serializer()), specs)
 
@@ -189,7 +195,7 @@ $chunksContent
         println("Generated ToolMetadataRegistry to ${registryFile.absolutePath} with ${chunks.size} chunks")
 
         // Generate launcher aliases
-        val aliasesDir = File(projectRoot, "tool/aliases")
+        val aliasesDir = File(root, "tool/aliases")
         aliasesDir.deleteRecursively()
         aliasesDir.mkdirs()
 
@@ -324,5 +330,16 @@ $chunksContent
             }
         }
         return md.digest().joinToString("") { "%02x".format(it) }
+    }
+
+    private fun findProjectRoot(start: File): File {
+        var current: File? = start.canonicalFile
+        while (current != null) {
+            if (File(current, "settings.gradle.kts").isFile) {
+                return current
+            }
+            current = current.parentFile
+        }
+        return start.parentFile ?: start
     }
 }

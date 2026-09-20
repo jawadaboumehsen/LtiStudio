@@ -32,7 +32,7 @@ import kotlin.test.assertTrue
 class SetupActivityStateTest {
 
     private fun runActivityTest(
-        testBody: suspend TestScope.(scope: CoroutineScope) -> Unit
+        testBody: suspend TestScope.(scope: CoroutineScope) -> Unit,
     ) = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         Dispatchers.setMain(testDispatcher)

@@ -21,7 +21,6 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.onAllNodesWithText
-import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
@@ -31,6 +30,7 @@ import androidx.compose.ui.test.runDesktopComposeUiTest
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.sp
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
+import kotlinx.datetime.Clock
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.domain.setup.SetupStepDetail
 import org.ide.lti.core.domain.setup.SetupStepStage
@@ -38,7 +38,6 @@ import org.ide.lti.core.domain.setup.StepProvenance
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolchainSetupState
 import org.ide.lti.core.model.workspace.RecentProject
-import kotlinx.datetime.Clock
 import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -245,7 +244,7 @@ class SetupAccessibilityTest {
         }
 
         // Brand and navigation elements must be displayed in compact mode
-        onNodeWithText("LTIROM").assertIsDisplayed()
+        onNodeWithText("Machine environment").assertIsDisplayed()
         onNodeWithText("Recent Workspaces").assertIsDisplayed()
         onNodeWithText("Build service").assertIsDisplayed()
 
@@ -280,7 +279,7 @@ class SetupAccessibilityTest {
         }
 
         // Wide elements
-        onNodeWithText("LTIROM").assertIsDisplayed()
+        onNodeWithText("Machine environment").assertIsDisplayed()
         onNodeWithText("Recent Workspaces").assertIsDisplayed()
         onNodeWithText("Pixel_Port").assertIsDisplayed()
         onNodeWithText("New Workspace").assertIsDisplayed()
@@ -380,7 +379,7 @@ class SetupAccessibilityTest {
 
         // Environment header and navigation visible in compact mode (SC-005)
         onNodeWithText("Environment & Toolchains Cockpit").assertIsDisplayed()
-        onNodeWithText("Overview").assertIsDisplayed()
+        onNodeWithText("Environment overview").assertIsDisplayed()
         onNodeWithText("Build service").assertIsDisplayed()
     }
 
@@ -622,7 +621,7 @@ class SetupAccessibilityTest {
                 storageMeasuredAt = null,
                 primaryAction = PrimaryAction.SET_UP,
             )
-            LtiTheme(sharedBackdrop = backdrop) {
+            LtiTheme(effectsEnabled = false, reducedMotion = true, sharedBackdrop = backdrop) {
                 SetupScreenContent(
                     state = SetupUiState(
                         selectedTab = SetupTab.ENVIRONMENT,
@@ -657,5 +656,49 @@ class SetupAccessibilityTest {
             "Preview must be dismissed after Escape",
         )
         onNodeWithText("Set Up Environment").assertIsFocused()
+    }
+
+    @Test
+    fun testNavigateToRecoveryRendersInterruptedSetupUI() = runDesktopComposeUiTest(width = 1440, height = 900) {
+        var activeTab = SetupTab.ENVIRONMENT
+
+        setContent {
+            val backdrop = rememberLayerBackdrop()
+            LtiTheme(sharedBackdrop = backdrop) {
+                SetupScreenContent(
+                    state = SetupUiState(selectedTab = activeTab),
+                    actions = SetupUiActions(onSelectTab = { activeTab = it }),
+                    backdrop = backdrop,
+                )
+            }
+        }
+
+        // Click Recovery sidebar item
+        onNodeWithText("Recovery").assertIsDisplayed().performClick()
+        assertEquals(SetupTab.RECOVERY, activeTab)
+
+        // Render with RECOVERY selected
+        setContent {
+            val backdrop = rememberLayerBackdrop()
+            LtiTheme(sharedBackdrop = backdrop) {
+                SetupScreenContent(
+                    state = SetupUiState(selectedTab = SetupTab.RECOVERY),
+                    actions = SetupUiActions(),
+                    backdrop = backdrop,
+                )
+            }
+        }
+
+        // Verify key Recovery screen elements from reference design
+        onNodeWithText("Recover interrupted setup").assertIsDisplayed()
+        onNodeWithText("Setup in progress").assertIsDisplayed()
+        onNodeWithText("Service state").assertIsDisplayed()
+        onNodeWithText("Installation and reset stay blocked").assertIsDisplayed()
+        onNodeWithText("Reconnect and reconcile").assertIsDisplayed()
+        onNodeWithText("View operation evidence").assertIsDisplayed()
+        onNodeWithText("Logs").assertIsDisplayed()
+        onNodeWithText("Evidence").assertIsDisplayed()
+        onNodeWithText("Problems").assertIsDisplayed()
+        onNodeWithText("Auto-scroll").assertIsDisplayed()
     }
 }

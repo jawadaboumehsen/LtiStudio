@@ -1,3 +1,12 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.core.designsystem.theme
 
 import androidx.compose.runtime.Composable
@@ -8,7 +17,7 @@ import androidx.compose.ui.unit.sp
 import org.ide.lti.core.designsystem.theme.config.AppTheme
 
 object SetupTokens {
-    val SidebarWidthWide = 224.dp
+    val SidebarWidthWide = 240.dp
     val SidebarWidthCompact = 192.dp
     val ContentMaxWidth = 1120.dp
     val GutterWide = 32.dp
@@ -42,8 +51,8 @@ object SetupTokens {
 
     fun contentSurfaceColor(theme: AppTheme): Color = when (theme) {
         AppTheme.Light -> Color(0xFFF0F0F0) // Porcelain
-        AppTheme.Dark -> Color(0xFF2C2C2C)  // Graphite
-        AppTheme.Blue -> Color(0xFF1E3A8A)  // Deep Blue
+        AppTheme.Dark -> Color(0xFF2C2C2C) // Graphite
+        AppTheme.Blue -> Color(0xFF1E3A8A) // Deep Blue
         is AppTheme.Custom -> Color(0xFF2C2C2C)
     }
 

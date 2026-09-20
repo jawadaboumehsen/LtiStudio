@@ -39,7 +39,7 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import org.ide.lti.core.cli.TerminalLine
+import org.ide.lti.core.model.terminal.TerminalLine
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
 import org.ide.lti.core.designsystem.component.display.GlassPanelContainer
 import org.ide.lti.core.designsystem.component.display.GlassPanelHeader

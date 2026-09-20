@@ -454,9 +454,106 @@ tasks.register("verifyDesignSystemGuardrails") {
     }
 }
 
+/**
+ * Fails the build when a feature module violates architectural boundaries by directly depending
+ * on forbidden infrastructure modules (:core:data, :core:datastore, :core:network, :core:cli, :tool:runtime, :tool:adapter:*).
+ * Features must interact with infrastructure exclusively through domain ports in :core:domain or -api modules.
+ */
+tasks.register("checkArchitecture") {
+    group = "verification"
+    description = "Enforces architectural modularization rules and prevents forbidden dependency edges."
+    val root = rootDir
+
+    inputs.files(
+        subprojects.filter { it.path.startsWith(":feature:") }.map { it.buildFile }
+    ).withPathSensitivity(PathSensitivity.RELATIVE)
+
+    val markerFile = layout.buildDirectory.file("reports/architecture/verified.txt")
+    outputs.file(markerFile)
+
+    doLast {
+        val forbiddenModules = listOf(
+            "core.data",
+            "core:data",
+            "core.datastore",
+            "core:datastore",
+            "core.network",
+            "core:network",
+            "core.cli",
+            "core:cli",
+            "tool.runtime",
+            "tool:runtime",
+            "tool.adapter",
+            "tool:adapter",
+        )
+
+        val violations = mutableListOf<String>()
+        val featureDir = File(root, "feature")
+        if (featureDir.exists()) {
+            featureDir.walkTopDown()
+                .filter { it.isFile && it.name == "build.gradle.kts" }
+                .forEach { buildFile ->
+                    val relPath = buildFile.relativeTo(root).path.replace('\\', '/')
+                    val lines = buildFile.readLines()
+                    lines.forEachIndexed { idx, rawLine ->
+                        val line = rawLine.trim()
+                        if (line.startsWith("//")) return@forEachIndexed
+                        for (forbidden in forbiddenModules) {
+                            if (line.contains("projects.$forbidden") || line.contains("project(\":$forbidden\")")) {
+                                violations += "$relPath:${idx + 1}: Feature module has forbidden dependency on '$forbidden'. Feature modules must depend on domain ports instead."
+                            }
+                        }
+
+                        // Rule 1: No stage imports another stage
+                        if (relPath.contains("feature/rom-studio/stage-")) {
+                            val currentStage = relPath.substringAfter("feature/rom-studio/").substringBefore('/')
+                            if (Regex("""projects\.feature\.romStudio\.stage[A-Z]\w+""").containsMatchIn(line) ||
+                                Regex("""project\([\"']:feature:rom-studio:stage-[^\"']+[\"']\)""").containsMatchIn(line)) {
+                                violations += "$relPath:${idx + 1}: Stage module '$currentStage' has forbidden dependency on another stage. Stages must remain isolated."
+                            }
+                        }
+
+                        // Rule 2: stage-patch has no sdk:patch-mod dependency
+                        if (relPath.contains("feature/rom-studio/stage-patch")) {
+                            if (line.contains("patchMod") || line.contains("patch-mod")) {
+                                violations += "$relPath:${idx + 1}: stage-patch must not depend on sdk:patch-mod. Connect via domain models only."
+                            }
+                        }
+
+                        // Rule 3: feature:workspace depends only on romStudioApi (no shell, no stages)
+                        if (relPath.startsWith("feature/workspace/build.gradle.kts")) {
+                            if (line.contains("feature.romStudio.shell") || line.contains("feature.romStudio.stage")) {
+                                violations += "$relPath:${idx + 1}: feature:workspace must depend only on romStudioApi, not concrete shell or stages."
+                            }
+                        }
+
+                        // Rule 4: romStudio.shell depends only on romStudioApi (no concrete stages)
+                        if (relPath.contains("feature/rom-studio/shell/")) {
+                            if (line.contains("feature.romStudio.stage")) {
+                                violations += "$relPath:${idx + 1}: rom-studio shell must not depend directly on concrete stage modules. Stages are discovered via DI."
+                            }
+                        }
+                    }
+                }
+        }
+
+        if (violations.isNotEmpty()) {
+            throw GradleException(
+                "Architecture guardrail failed with ${violations.size} violation(s):\n" +
+                    violations.joinToString("\n") { "  - $it" },
+            )
+        }
+
+        val marker = markerFile.get().asFile
+        marker.parentFile.mkdirs()
+        marker.writeText("VERIFIED\n")
+    }
+}
+
 allprojects {
     tasks.matching { it.name == "compileKotlinDesktop" }.configureEach {
         dependsOn(rootProject.tasks.named("verifyDesignSystemGuardrails"))
+        dependsOn(rootProject.tasks.named("checkArchitecture"))
     }
 }
 

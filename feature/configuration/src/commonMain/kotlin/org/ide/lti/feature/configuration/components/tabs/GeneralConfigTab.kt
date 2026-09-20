@@ -30,7 +30,6 @@ import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
-import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
@@ -47,6 +46,7 @@ fun GeneralConfigTab(
     modifier: Modifier = Modifier,
 ) {
     val glassColors = GlassTheme.colors
+    val colors = GlassTheme.ideShellColors
     val superGb = target.superPartitionBytes.toDouble() / (1024.0 * 1024.0 * 1024.0)
 
     Column(
@@ -56,7 +56,11 @@ fun GeneralConfigTab(
         // =========================================================================
         // CARD 1: Hardware Target Identity (With Explicit Field Labels)
         // =========================================================================
-        GlassCard(modifier = Modifier.fillMaxWidth()) {
+        GlassCard(
+            modifier = Modifier.fillMaxWidth(),
+            surfaceColor = colors.cardBackground,
+            borderColor = colors.border,
+        ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(Spacing.Small),
@@ -116,7 +120,11 @@ fun GeneralConfigTab(
         // =========================================================================
         // CARD 2: Architecture & Platform Specifications Profile
         // =========================================================================
-        GlassCard(modifier = Modifier.fillMaxWidth()) {
+        GlassCard(
+            modifier = Modifier.fillMaxWidth(),
+            surfaceColor = colors.cardBackground,
+            borderColor = colors.border,
+        ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(Spacing.Small),
@@ -176,7 +184,11 @@ fun GeneralConfigTab(
         // =========================================================================
         // CARD 3: Qualification & Toolchain Doctor Status
         // =========================================================================
-        GlassCard(modifier = Modifier.fillMaxWidth()) {
+        GlassCard(
+            modifier = Modifier.fillMaxWidth(),
+            surfaceColor = colors.cardBackground,
+            borderColor = colors.border,
+        ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(Spacing.Small),
@@ -236,7 +248,11 @@ fun GeneralConfigTab(
         // =========================================================================
         // CARD 4: Storage Footprint & Dynamic Partition Summary
         // =========================================================================
-        GlassCard(modifier = Modifier.fillMaxWidth()) {
+        GlassCard(
+            modifier = Modifier.fillMaxWidth(),
+            surfaceColor = colors.cardBackground,
+            borderColor = colors.border,
+        ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(Spacing.Small),
@@ -297,13 +313,14 @@ private fun TargetSpecBadge(
     modifier: Modifier = Modifier,
 ) {
     val glassColors = GlassTheme.colors
+    val colors = GlassTheme.ideShellColors
     Box(
         modifier = modifier
             .clip(GlassShapes.Card)
-            .background(glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Elevated))
+            .background(colors.cardBackgroundMuted)
             .glassOutlineBorder(
                 width = StrokeWidth.Hairline,
-                color = glassColors.glassBorder.copy(alpha = AlphaTokens.Faint),
+                color = colors.borderMuted,
                 shape = GlassShapes.Card,
             )
             .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Compact),

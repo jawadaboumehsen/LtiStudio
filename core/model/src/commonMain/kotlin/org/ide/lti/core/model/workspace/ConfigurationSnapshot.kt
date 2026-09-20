@@ -23,6 +23,7 @@ data class ConfigurationSnapshot(
     val id: String,
     val workspaceId: String,
     val profileRevision: Int,
+    val schemaVersion: Int = CURRENT_SCHEMA_VERSION,
     val acquisition: AcquisitionSettings,
     val extraction: ExtractionSettings,
     val assembly: AssemblySettings,
@@ -36,9 +37,12 @@ data class ConfigurationSnapshot(
 ) {
     init {
         require(profileRevision >= 1) { "profileRevision must be >= 1, but was $profileRevision" }
+        require(schemaVersion >= 1) { "schemaVersion must be >= 1, but was $schemaVersion" }
     }
 
     companion object {
+        const val CURRENT_SCHEMA_VERSION: Int = 1
+
         val canonicalJson = Json {
             ignoreUnknownKeys = true
             encodeDefaults = true
@@ -103,6 +107,7 @@ data class ConfigurationSnapshot(
             release: ReleaseSettings = ReleaseSettings(),
             publish: PublishSettings = PublishSettings(),
             createdAt: Instant,
+            schemaVersion: Int = CURRENT_SCHEMA_VERSION,
         ): ConfigurationSnapshot {
             val digest = computeDigest(
                 workspaceId = workspaceId,
@@ -120,6 +125,7 @@ data class ConfigurationSnapshot(
                 id = id,
                 workspaceId = workspaceId,
                 profileRevision = profileRevision,
+                schemaVersion = schemaVersion,
                 acquisition = acquisition,
                 extraction = extraction,
                 assembly = assembly,

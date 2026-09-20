@@ -132,4 +132,3 @@ object BackdropTint {
     /** Tint intensity for progressive-blur scroll-edge fades (0.8f). */
     const val ScrollEdgeIntensity: Float = 0.8f
 }
-

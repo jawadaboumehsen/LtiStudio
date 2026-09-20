@@ -16,14 +16,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.produceIn
-import org.ide.lti.core.domain.setup.SetupLogEvent
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
-import org.ide.lti.core.model.setup.EnvironmentReadiness
+import org.ide.lti.core.domain.setup.SetupLogEvent
 import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepStatus
@@ -42,9 +40,9 @@ import org.ide.lti.core.domain.usecase.workspace.OpenWorkspaceUseCase
 import org.ide.lti.core.domain.usecase.workspace.RemoveRecentWorkspaceUseCase
 import org.ide.lti.core.domain.usecase.workspace.SelectAndOpenDirectoryUseCase
 import org.ide.lti.core.domain.workspace.WorkspaceManager
+import org.ide.lti.core.model.setup.EnvironmentReadiness
 import org.ide.lti.core.model.target.DefaultTargetCatalog
 import org.ide.lti.core.model.target.TargetDevice
-import org.ide.lti.core.model.target.TargetStatus
 import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.core.model.workspace.Workspace
 
@@ -89,14 +87,14 @@ class SetupViewModel(
             OpenWorkspaceByPathUseCase(workspaceManager.repository, workspaceManager),
         environmentReadinessPort: EnvironmentReadinessPort? = null,
     ) : this(
-        getRecentWorkspacesUseCase = getRecentWorkspacesUseCase ?:
-            GetRecentWorkspacesUseCase(workspaceManager.repository),
-        openWorkspaceUseCase = openWorkspaceUseCase ?:
-            OpenWorkspaceUseCase(workspaceManager.repository, workspaceManager),
+        getRecentWorkspacesUseCase = getRecentWorkspacesUseCase
+            ?: GetRecentWorkspacesUseCase(workspaceManager.repository),
+        openWorkspaceUseCase = openWorkspaceUseCase
+            ?: OpenWorkspaceUseCase(workspaceManager.repository, workspaceManager),
         openWorkspaceByPathUseCase = openWorkspaceByPathUseCase,
         selectAndOpenDirectoryUseCase = SelectAndOpenDirectoryUseCase(openWorkspaceByPathUseCase),
-        removeRecentWorkspaceUseCase = removeRecentWorkspaceUseCase ?:
-            RemoveRecentWorkspaceUseCase(workspaceManager.repository),
+        removeRecentWorkspaceUseCase = removeRecentWorkspaceUseCase
+            ?: RemoveRecentWorkspaceUseCase(workspaceManager.repository),
         discoverWorkdirWorkspacesUseCase = discoverWorkdirWorkspacesUseCase,
         toolchainService = toolchainService,
         provisionAvbKeyUseCase = provisionAvbKeyUseCase,
@@ -110,7 +108,7 @@ class SetupViewModel(
         val DEFAULT_OFFICIAL_TARGETS = listOf(DefaultTargetCatalog.PQ84P01_DEFAULT)
     }
 
-    private val _fallbackToolchainState = MutableStateFlow(
+    private val fallbackToolchainState = MutableStateFlow(
         ToolchainSetupState(
             steps = ToolchainSetupState.defaultSteps().map { step ->
                 if (toolchainService == null) {
@@ -118,9 +116,11 @@ class SetupViewModel(
                         status = StepStatus.WARNING,
                         description = "Toolchain service not bound in DI. Running in preview/host mode.",
                     )
-                } else step
-            }
-        )
+                } else {
+                    step
+                }
+            },
+        ),
     )
 
     val environmentReadiness: StateFlow<EnvironmentReadiness?> =
@@ -129,22 +129,26 @@ class SetupViewModel(
             ?: MutableStateFlow<EnvironmentReadiness?>(null).asStateFlow()
 
     val toolchainSetupState: StateFlow<ToolchainSetupState> = toolchainService?.state
-        ?: _fallbackToolchainState.asStateFlow()
+        ?: fallbackToolchainState.asStateFlow()
 
     private var autoRunJob: Job? = null
 
-    private val _fallbackSelectedTarget = MutableStateFlow<TargetDevice?>(DEFAULT_OFFICIAL_TARGETS.firstOrNull())
+    private val fallbackSelectedTarget = MutableStateFlow<TargetDevice?>(DEFAULT_OFFICIAL_TARGETS.firstOrNull())
 
-    val availableTargets: StateFlow<List<TargetDevice>> = (getAvailableTargetsUseCase?.invoke()
-        ?: MutableStateFlow(DEFAULT_OFFICIAL_TARGETS))
+    val availableTargets: StateFlow<List<TargetDevice>> = (
+        getAvailableTargetsUseCase?.invoke()
+            ?: MutableStateFlow(DEFAULT_OFFICIAL_TARGETS)
+        )
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = DEFAULT_OFFICIAL_TARGETS,
         )
 
-    val selectedTarget: StateFlow<TargetDevice?> = (getSelectedTargetUseCase?.invoke()
-        ?: _fallbackSelectedTarget.asStateFlow())
+    val selectedTarget: StateFlow<TargetDevice?> = (
+        getSelectedTargetUseCase?.invoke()
+            ?: fallbackSelectedTarget.asStateFlow()
+        )
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -216,7 +220,7 @@ class SetupViewModel(
         workspaceBrowserState.clearWorkspaceError()
     }
 
-    internal val _selectedTab = MutableStateFlow(SetupTab.PROJECTS)
+    private val _selectedTab = MutableStateFlow(SetupTab.PROJECTS)
     val selectedTab: StateFlow<SetupTab> = _selectedTab.asStateFlow()
 
     fun selectTab(tab: SetupTab) {
@@ -280,7 +284,7 @@ class SetupViewModel(
             val outcome = toolBrowserState.repairTool(toolId)
             if (outcome is SetupOutcome.Failed && !ToolCapabilities.isRecipeSupported(toolId)) {
                 environmentSetupState.setEnvironmentNotice(
-                    ToolCapabilities.unavailableReasonFor(toolId) ?: ToolCapabilities.REPAIR_UNAVAILABLE_REASON
+                    ToolCapabilities.unavailableReasonFor(toolId) ?: ToolCapabilities.REPAIR_UNAVAILABLE_REASON,
                 )
             }
         }
@@ -302,20 +306,15 @@ class SetupViewModel(
         workspaceBrowserState.discoverWorkspaces()
     }
 
-
-
-
     /**
      * Selects an official target hardware device.
      */
     fun selectTarget(target: TargetDevice) {
-        _fallbackSelectedTarget.value = target
+        fallbackSelectedTarget.value = target
         viewModelScope.launch {
             selectTargetUseCase?.invoke(target.id)
         }
     }
-
-
 
     /**
      * Provisions or verifies the machine-local AVB 2.0 RSA-4096 signing key.

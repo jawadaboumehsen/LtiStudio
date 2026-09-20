@@ -1,0 +1,7 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ClassSignature:AcquireViewModel.kt:AcquireViewModel : ViewModel</ID>
+  </CurrentIssues>
+</SmellBaseline>

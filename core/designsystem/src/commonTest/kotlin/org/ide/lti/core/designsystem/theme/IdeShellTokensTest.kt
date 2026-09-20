@@ -1,3 +1,12 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.core.designsystem.theme
 
 import androidx.compose.ui.unit.dp
@@ -10,7 +19,7 @@ class IdeShellTokensTest {
     @Test
     fun testLogicalFrameDimensions() {
         assertEquals(40.dp, IdeShellDimens.TopBarHeight, "Top bar height must be 40 dp")
-        assertEquals(56.dp, IdeShellDimens.PipelineRailWidth, "Pipeline rail width must be 56 dp")
+        assertEquals(116.dp, IdeShellDimens.PipelineRailWidth, "Pipeline rail width must be 116 dp")
         assertEquals(230.dp, IdeShellDimens.WorkspaceNavigatorWidth, "Workspace navigator width must be 230 dp")
         assertEquals(32.dp, IdeShellDimens.BreadcrumbHeight, "Breadcrumb bar height must be 32 dp")
         assertEquals(24.dp, IdeShellDimens.StatusBarHeight, "Bottom status bar height must be 24 dp")

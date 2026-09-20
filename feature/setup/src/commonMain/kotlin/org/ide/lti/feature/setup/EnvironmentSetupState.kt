@@ -108,7 +108,7 @@ class EnvironmentSetupState(
 ) {
     private val isToolchainBound: Boolean = toolchainService != null
 
-    private val _fallbackToolchainState = MutableStateFlow(
+    private val fallbackToolchainState = MutableStateFlow(
         ToolchainSetupState(
             steps = ToolchainSetupState.defaultSteps().map { step ->
                 step.copy(
@@ -118,11 +118,11 @@ class EnvironmentSetupState(
             },
             checkedAt = null,
             lastReadyAt = null,
-        )
+        ),
     )
 
     val toolchainSetupState: StateFlow<ToolchainSetupState> =
-        toolchainService?.state ?: _fallbackToolchainState.asStateFlow()
+        toolchainService?.state ?: fallbackToolchainState.asStateFlow()
 
     private val _activeOperation = MutableStateFlow<SetupOperation?>(null)
     val activeOperation: StateFlow<SetupOperation?> = _activeOperation.asStateFlow()

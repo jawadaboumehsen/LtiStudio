@@ -9,15 +9,6 @@
  */
 package org.ide.lti.core.designsystem.component.display
 
-import org.ide.lti.core.designsystem.component.primitives.*
-import org.ide.lti.core.designsystem.component.actions.*
-import org.ide.lti.core.designsystem.component.inputs.*
-import org.ide.lti.core.designsystem.component.display.*
-import org.ide.lti.core.designsystem.component.navigation.*
-import org.ide.lti.core.designsystem.component.layout.*
-import org.ide.lti.core.designsystem.component.feedback.*
-import org.ide.lti.core.designsystem.component.devtools.*
-
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -28,13 +19,15 @@ import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.unit.Dp
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.BackdropEffectScope
-import com.kashif_e.backdrop.effects.blur
-import com.kashif_e.backdrop.effects.lens
-import com.kashif_e.backdrop.effects.vibrancy
 import com.kashif_e.backdrop.highlight.Highlight
 import com.kashif_e.backdrop.shadow.Shadow
-import org.ide.lti.core.designsystem.theme.BackdropBlur
-import org.ide.lti.core.designsystem.theme.CornerRadius
+import org.ide.lti.core.designsystem.component.actions.*
+import org.ide.lti.core.designsystem.component.devtools.*
+import org.ide.lti.core.designsystem.component.feedback.*
+import org.ide.lti.core.designsystem.component.inputs.*
+import org.ide.lti.core.designsystem.component.layout.*
+import org.ide.lti.core.designsystem.component.navigation.*
+import org.ide.lti.core.designsystem.component.primitives.*
 import org.ide.lti.core.designsystem.theme.GlassEffects
 import org.ide.lti.core.designsystem.theme.GlassHighlights
 import org.ide.lti.core.designsystem.theme.GlassShadows

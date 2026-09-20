@@ -18,7 +18,6 @@ import org.ide.lti.core.data.repository.target.TargetRepositoryImpl
 import org.ide.lti.core.data.repository.user.UserDataRepositoryImpl
 import org.ide.lti.core.data.repository.workspace.WorkDirDiscoveryService
 import org.ide.lti.core.data.repository.workspace.WorkspaceRepositoryImpl
-import org.ide.lti.core.data.settings.AppSettingsState
 import org.ide.lti.core.data.utils.NetworkMonitor
 import org.ide.lti.core.data.utils.TimeZoneMonitor
 import org.ide.lti.core.datastore.di.DatastoreModule
@@ -40,19 +39,6 @@ val DataModule = module {
 
     // User Preferences & Settings DataStore
     singleOf(::UserDataRepositoryImpl) { bind<UserDataRepository>() }
-    single {
-        val repo = get<UserDataRepository>()
-        val initialData = repo.currentUserData
-        AppSettingsState(
-            initialTheme = initialData.theme,
-            initialEffectsEnabled = initialData.effectsEnabled,
-            initialReducedMotion = initialData.reducedMotion,
-            initialEditorSettings = initialData.editorSettings,
-            initialNotificationSettings = initialData.notificationSettings,
-            userDataRepository = repo,
-            coroutineScope = CoroutineScope(Dispatchers.Default + SupervisorJob()),
-        )
-    }
 
     // Services & Repositories
     single { WorkDirDiscoveryService() }

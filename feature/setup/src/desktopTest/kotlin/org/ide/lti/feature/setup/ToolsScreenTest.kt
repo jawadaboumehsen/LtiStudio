@@ -12,7 +12,6 @@ package org.ide.lti.feature.setup
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -73,7 +72,7 @@ class ToolsScreenTest {
 
         // Exact specification phrase must be displayed
         onNodeWithText(
-            "Repair requires a supported recipe; otherwise the action is unavailable with a reason."
+            "Repair requires a supported recipe; otherwise the action is unavailable with a reason.",
         ).assertIsDisplayed()
 
         // Rebuild button must be disabled for unsupported recipes

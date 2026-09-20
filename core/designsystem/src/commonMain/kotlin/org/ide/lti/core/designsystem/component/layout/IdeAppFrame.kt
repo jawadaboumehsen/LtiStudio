@@ -1,3 +1,12 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.core.designsystem.component.layout
 
 import androidx.compose.animation.AnimatedVisibility
@@ -46,7 +55,7 @@ fun IdeAppFrame(
     topBar: @Composable () -> Unit,
     pipelineRail: @Composable () -> Unit,
     navigator: @Composable () -> Unit,
-    breadcrumb: @Composable () -> Unit,
+    breadcrumb: (@Composable () -> Unit)? = null,
     content: @Composable () -> Unit,
     statusBar: @Composable () -> Unit,
     modifier: Modifier = Modifier,
@@ -130,18 +139,20 @@ fun IdeAppFrame(
                             .background(colors.contentBackground),
                     ) {
                         // Breadcrumb Bar
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(IdeShellDimens.BreadcrumbHeight)
-                                .background(colors.contentBackground),
-                        ) {
-                            breadcrumb()
+                        if (breadcrumb != null) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(IdeShellDimens.BreadcrumbHeight)
+                                    .background(colors.contentBackground),
+                            ) {
+                                breadcrumb()
+                            }
+                            HorizontalDivider(
+                                thickness = IdeShellDimens.HairlineBorder,
+                                color = colors.border,
+                            )
                         }
-                        HorizontalDivider(
-                            thickness = IdeShellDimens.HairlineBorder,
-                            color = colors.border,
-                        )
 
                         // Bounded Content Region
                         Box(

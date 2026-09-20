@@ -14,8 +14,8 @@ import kotlinx.serialization.Serializable
 /**
  * Identifier for the eight distinct stages in the product-owned ROM pipeline.
  *
- * Eight IDs are declared; execution order is owned by the registry
- * ([PipelineDefinitionRegistry.orderFor]), never by ordinal.
+ * Eight IDs are declared; execution order is owned by the canonical pipeline sequence
+ * ([PipelineStageSequence.ORDER]), never by ordinal.
  *
  * 1. [FIRMWARE_ACQUISITION] - Download or import stock firmware archive
  * 2. [FIRMWARE_EXTRACTION] - Extract payload / images and filesystem trees

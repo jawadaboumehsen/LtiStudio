@@ -9,8 +9,6 @@
  */
 package org.ide.lti.core.designsystem.component.layout
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -52,8 +50,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.drawBackdrop
-import com.kashif_e.backdrop.highlight.Highlight
-import java.awt.Cursor
 import org.ide.lti.core.designsystem.component.actions.DesktopWindowControls
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
 import org.ide.lti.core.designsystem.component.actions.GlassIconToggleButton
@@ -75,8 +71,8 @@ import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
-import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import java.awt.Cursor
 
 /**
  * Navigation element configuration for the leading section of [GlassTopBar].

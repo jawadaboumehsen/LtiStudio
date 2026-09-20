@@ -1,0 +1,667 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
+package org.ide.lti.feature.rom.studio.stage.acquire.panes
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.FolderZip
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Terminal
+import androidx.compose.material.icons.filled.Upload
+import androidx.compose.material.icons.filled.ViewInAr
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import org.ide.lti.core.designsystem.component.actions.GlassButton
+import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
+import org.ide.lti.core.designsystem.component.display.GlassCard
+import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassFontFamily
+import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.IconSize
+import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
+import org.ide.lti.core.designsystem.theme.IdeShellDimens
+import org.ide.lti.core.designsystem.theme.IdeShellShapes
+import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.model.target.TargetDevice
+import org.ide.lti.core.model.workspace.AcquisitionSettings
+
+private data class ArchiveItemUi(
+    val id: String,
+    val fileName: String,
+    val subtitle: String,
+    val sizeString: String,
+    val byteCount: Long,
+    val hashTruncated: String,
+    val fullHash: String,
+    val isVerified: Boolean,
+    val isMissing: Boolean = false,
+    val dateModified: String,
+    val type: String,
+    val sourcePath: String,
+)
+
+@Composable
+public fun ExistingArchivesPane(
+    settings: AcquisitionSettings,
+    target: TargetDevice,
+    onChange: (AcquisitionSettings) -> Unit,
+    onValidate: () -> Unit,
+    onSave: () -> Unit,
+    modifier: Modifier = Modifier,
+    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
+) {
+    val sampleArchives = remember {
+        listOf(
+            ArchiveItemUi(
+                id = "arch_1",
+                fileName = "PQ84P01_20250301_1201.zip",
+                subtitle = "System image archive",
+                sizeString = "3.24 GB",
+                byteCount = 3482915328L,
+                hashTruncated = "a3f9e7c4d1b6a2e9....",
+                fullHash = "a3f9e7c4d1b6a2e9875f3c0a9e12d6b4f2a9e7c1d0f3b8a9c6d7e1f4a2b3c9d0e",
+                isVerified = true,
+                dateModified = "2025-03-01 12:01:18",
+                type = "System image archive",
+                sourcePath = "C:\\ROMs\\Archives",
+            ),
+            ArchiveItemUi(
+                id = "arch_2",
+                fileName = "PQ84P01_vendor_20250301.zip",
+                subtitle = "Vendor image archive",
+                sizeString = "789 MB",
+                byteCount = 827326464L,
+                hashTruncated = "7c22d1b5e3a8f910....",
+                fullHash = "7c22d1b5e3a8f9104b5a6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f",
+                isVerified = true,
+                dateModified = "2025-03-01 11:45:30",
+                type = "Vendor image archive",
+                sourcePath = "C:\\ROMs\\Archives",
+            ),
+            ArchiveItemUi(
+                id = "arch_3",
+                fileName = "PQ84P01_boot_20250215.zip",
+                subtitle = "Boot image archive",
+                sizeString = "96 MB",
+                byteCount = 100663296L,
+                hashTruncated = "d91e6a0f2c4b7798....",
+                fullHash = "d91e6a0f2c4b77985a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f",
+                isVerified = false,
+                isMissing = true,
+                dateModified = "2025-02-15 09:30:00",
+                type = "Boot image archive",
+                sourcePath = "C:\\ROMs\\Archives",
+            ),
+        )
+    }
+
+    var selectedArchiveId by remember { mutableStateOf(sampleArchives.first().id) }
+    val selectedArchive = sampleArchives.find { it.id == selectedArchiveId } ?: sampleArchives.first()
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .testTag("ExistingArchivesPane"),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+    ) {
+        AcquireHeader(
+            title = "Existing archives",
+            subtitle = "Use previously downloaded archives as the source for this build.",
+            targetSpec = "${target.codename} / Development",
+            targetRevision = "Target revision ${target.revision}",
+            additionalContext = "Snapshot 12 • 2025-03-06 08:42",
+            onValidate = onValidate,
+            onSave = onSave,
+            colors = colors,
+        )
+
+        TopInfoInstruction(colors = colors)
+
+        ArchivesTableCard(
+            archives = sampleArchives,
+            selectedId = selectedArchiveId,
+            onSelect = {
+                selectedArchiveId = it.id
+                onChange(settings.copy(archiveRef = it.fileName, expectedSha256 = it.fullHash))
+            },
+            colors = colors,
+        )
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            GlassButton(
+                onClick = {},
+                variant = GlassButtonVariant.Primary,
+                shape = IdeShellShapes.Control,
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "Probe",
+                        tint = colors.textMain,
+                        modifier = Modifier.size(IconSize.ExtraSmall),
+                    )
+                    Text("Probe", color = colors.textMain, fontSize = FontSize.BodySmall)
+                }
+            }
+
+            GlassButton(
+                onClick = {},
+                variant = GlassButtonVariant.Standard,
+                shape = IdeShellShapes.Control,
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Upload,
+                        contentDescription = "Import archive",
+                        tint = colors.textMain,
+                        modifier = Modifier.size(IconSize.ExtraSmall),
+                    )
+                    Text("Import archive", color = colors.textMain, fontSize = FontSize.BodySmall)
+                }
+            }
+        }
+
+        SelectedArchiveCard(archive = selectedArchive, colors = colors)
+
+        BottomLogsDrawer(colors = colors)
+    }
+}
+
+@Composable
+private fun TopInfoInstruction(colors: IdeShellColorScheme) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(colors.cardBackgroundMuted, IdeShellShapes.Card)
+            .border(IdeShellDimens.HairlineBorder, colors.borderMuted, IdeShellShapes.Card)
+            .padding(Spacing.SmallMedium),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+        ) {
+            Icon(
+                imageVector = Icons.Default.Info,
+                contentDescription = null,
+                tint = colors.accentBlue,
+                modifier = Modifier.size(IconSize.Small),
+            )
+            Text(
+                text = "Select archives to use for this build. We verify size and hash before using any archive. " +
+                    "Use Probe to scan the current archive directory, or import an archive from disk.",
+                color = colors.textMuted,
+                fontSize = FontSize.Micro,
+                fontFamily = GlassFontFamily.ide(),
+            )
+        }
+    }
+}
+
+@Composable
+private fun ArchivesTableCard(
+    archives: List<ArchiveItemUi>,
+    selectedId: String,
+    onSelect: (ArchiveItemUi) -> Unit,
+    colors: IdeShellColorScheme,
+) {
+    GlassCard(
+        modifier = Modifier.fillMaxWidth(),
+        surfaceColor = colors.cardBackground,
+        borderColor = colors.border,
+        contentPadding = Spacing.Medium,
+    ) {
+        Column {
+            // Table Header
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = Spacing.Small),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Spacer(Modifier.width(IdeShellDimens.AcquireTableIconColWidth))
+                Text(
+                    text = "Archive",
+                    color = colors.textDim,
+                    fontSize = FontSize.Micro,
+                    fontWeight = FontWeight.SemiBold,
+                    fontFamily = GlassFontFamily.ide(),
+                    modifier = Modifier.weight(2f),
+                )
+                Text(
+                    text = "Size",
+                    color = colors.textDim,
+                    fontSize = FontSize.Micro,
+                    fontWeight = FontWeight.SemiBold,
+                    fontFamily = GlassFontFamily.ide(),
+                    modifier = Modifier.weight(0.8f),
+                )
+                Text(
+                    text = "Measured hash (SHA256)",
+                    color = colors.textDim,
+                    fontSize = FontSize.Micro,
+                    fontWeight = FontWeight.SemiBold,
+                    fontFamily = GlassFontFamily.ide(),
+                    modifier = Modifier.weight(1.5f),
+                )
+                Text(
+                    text = "Verification",
+                    color = colors.textDim,
+                    fontSize = FontSize.Micro,
+                    fontWeight = FontWeight.SemiBold,
+                    fontFamily = GlassFontFamily.ide(),
+                    modifier = Modifier.weight(1f),
+                )
+                Text(
+                    text = "Action",
+                    color = colors.textDim,
+                    fontSize = FontSize.Micro,
+                    fontWeight = FontWeight.SemiBold,
+                    fontFamily = GlassFontFamily.ide(),
+                    modifier = Modifier.width(IdeShellDimens.AcquireTableActionColWidth),
+                )
+            }
+
+            HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+
+            archives.forEach { archive ->
+                ArchiveTableRow(
+                    archive = archive,
+                    isSelected = archive.id == selectedId,
+                    onSelect = onSelect,
+                    colors = colors,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ArchiveTableRow(
+    archive: ArchiveItemUi,
+    isSelected: Boolean,
+    onSelect: (ArchiveItemUi) -> Unit,
+    colors: IdeShellColorScheme,
+) {
+    val clipboardManager = LocalClipboardManager.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = Spacing.Small)
+            .clickable(enabled = !archive.isMissing) { onSelect(archive) },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Checkbox(
+            checked = isSelected,
+            onCheckedChange = { if (!archive.isMissing) onSelect(archive) },
+            enabled = !archive.isMissing,
+            colors = CheckboxDefaults.colors(
+                checkedColor = colors.accentBlue,
+                uncheckedColor = colors.textDim,
+            ),
+            modifier = Modifier.width(IdeShellDimens.AcquireTableIconColWidth),
+        )
+
+        Row(
+            modifier = Modifier.weight(2f),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+        ) {
+            Icon(
+                imageVector = Icons.Default.FolderZip,
+                contentDescription = null,
+                tint = colors.textMuted,
+                modifier = Modifier.size(IconSize.Small),
+            )
+            Column {
+                Text(
+                    text = archive.fileName,
+                    color = colors.textMain,
+                    fontSize = FontSize.BodySmall,
+                    fontWeight = FontWeight.Medium,
+                    fontFamily = GlassFontFamily.code(),
+                )
+                Text(
+                    text = archive.subtitle,
+                    color = colors.textDim,
+                    fontSize = FontSize.Micro,
+                    fontFamily = GlassFontFamily.ide(),
+                )
+            }
+        }
+
+        Text(
+            text = archive.sizeString,
+            color = colors.textMain,
+            fontSize = FontSize.BodySmall,
+            fontFamily = GlassFontFamily.code(),
+            modifier = Modifier.weight(0.8f),
+        )
+
+        Row(
+            modifier = Modifier.weight(1.5f),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+        ) {
+            Text(
+                text = archive.hashTruncated,
+                color = colors.textMain,
+                fontSize = FontSize.BodySmall,
+                fontFamily = GlassFontFamily.code(),
+            )
+            Icon(
+                imageVector = Icons.Default.ContentCopy,
+                contentDescription = "Copy hash",
+                tint = colors.textDim,
+                modifier = Modifier
+                    .size(IconSize.ExtraSmall)
+                    .clickable { clipboardManager.setText(AnnotatedString(archive.fullHash)) },
+            )
+        }
+
+        Row(
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+        ) {
+            if (archive.isVerified) {
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = "Verified",
+                    tint = colors.accentGreen,
+                    modifier = Modifier.size(IconSize.Small),
+                )
+                Column {
+                    Text(
+                        text = "Verified",
+                        color = colors.accentGreen,
+                        fontSize = FontSize.Micro,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = "Hash matches",
+                        color = colors.textDim,
+                        fontSize = FontSize.Micro,
+                    )
+                }
+            } else {
+                Icon(
+                    imageVector = Icons.Default.Cancel,
+                    contentDescription = "Missing",
+                    tint = colors.errorRed,
+                    modifier = Modifier.size(IconSize.Small),
+                )
+                Column {
+                    Text(
+                        text = "Missing",
+                        color = colors.errorRed,
+                        fontSize = FontSize.Micro,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = "File not found",
+                        color = colors.textDim,
+                        fontSize = FontSize.Micro,
+                    )
+                }
+            }
+        }
+
+        Box(modifier = Modifier.width(IdeShellDimens.AcquireTableActionColWidth)) {
+            GlassButton(
+                onClick = { onSelect(archive) },
+                enabled = !archive.isMissing,
+                variant = if (isSelected) GlassButtonVariant.Primary else GlassButtonVariant.Standard,
+                shape = IdeShellShapes.Control,
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.Hairline),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = null,
+                        tint = if (isSelected) colors.textMain else colors.textMuted,
+                        modifier = Modifier.size(IconSize.ExtraSmall),
+                    )
+                    Text(
+                        text = "Select",
+                        color = if (isSelected) colors.textMain else colors.textMuted,
+                        fontSize = FontSize.Micro,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SelectedArchiveCard(archive: ArchiveItemUi, colors: IdeShellColorScheme) {
+    val clipboardManager = LocalClipboardManager.current
+
+    GlassCard(
+        modifier = Modifier.fillMaxWidth(),
+        surfaceColor = colors.cardBackground,
+        borderColor = colors.border,
+        contentPadding = Spacing.Medium,
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
+            Text(
+                text = "Selected archive",
+                color = colors.textMain,
+                fontSize = FontSize.TitleSmall,
+                fontWeight = FontWeight.SemiBold,
+                fontFamily = GlassFontFamily.ide(),
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ViewInAr,
+                    contentDescription = null,
+                    tint = colors.accentBlue,
+                    modifier = Modifier.size(IdeShellDimens.AcquirePreviewBadgeSize),
+                )
+
+                Column(
+                    modifier = Modifier.weight(1.2f),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                ) {
+                    PropertyRow(label = "File", value = archive.fileName, colors = colors)
+                    PropertyRow(
+                        label = "Size",
+                        value = "${archive.sizeString} (${archive.byteCount} bytes)",
+                        colors = colors,
+                    )
+                    PropertyRow(label = "SHA256", colors = colors) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            Text(
+                                text = archive.fullHash,
+                                color = colors.textMain,
+                                fontSize = FontSize.Micro,
+                                fontFamily = GlassFontFamily.code(),
+                            )
+                            Icon(
+                                imageVector = Icons.Default.ContentCopy,
+                                contentDescription = "Copy hash",
+                                tint = colors.textDim,
+                                modifier = Modifier
+                                    .size(IconSize.ExtraSmall)
+                                    .clickable { clipboardManager.setText(AnnotatedString(archive.fullHash)) },
+                            )
+                        }
+                    }
+                }
+
+                Column(
+                    modifier = Modifier.weight(0.8f),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                ) {
+                    PropertyRow(label = "Type", value = archive.type, colors = colors)
+                    PropertyRow(label = "Date modified", value = archive.dateModified, colors = colors)
+                    PropertyRow(label = "Source", value = archive.sourcePath, colors = colors)
+                    PropertyRow(label = "Status", colors = colors) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = colors.accentGreen,
+                                modifier = Modifier.size(IconSize.ExtraSmall),
+                            )
+                            Text(
+                                text = "Ready to use",
+                                color = colors.accentGreen,
+                                fontSize = FontSize.Micro,
+                                fontWeight = FontWeight.Medium,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BottomLogsDrawer(colors: IdeShellColorScheme) {
+    var selectedTab by remember { mutableStateOf(0) }
+    val tabs = listOf("Logs", "Problems", "Validation")
+
+    GlassCard(
+        modifier = Modifier.fillMaxWidth(),
+        surfaceColor = colors.cardBackground,
+        borderColor = colors.border,
+        contentPadding = Spacing.Small,
+    ) {
+        Column {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = Spacing.Small),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+            ) {
+                tabs.forEachIndexed { index, tabTitle ->
+                    val isTabSelected = index == selectedTab
+                    Row(
+                        modifier = Modifier
+                            .clip(IdeShellShapes.Control)
+                            .then(
+                                if (isTabSelected) {
+                                    Modifier.background(colors.controlSelected)
+                                } else {
+                                    Modifier
+                                },
+                            )
+                            .clickable { selectedTab = index }
+                            .padding(horizontal = Spacing.Medium, vertical = Spacing.ExtraSmall),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                    ) {
+                        val icon = when (index) {
+                            0 -> Icons.Default.Terminal
+                            1 -> Icons.Default.Warning
+                            else -> Icons.Default.CheckCircle
+                        }
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            tint = if (isTabSelected) colors.accentBlue else colors.textDim,
+                            modifier = Modifier.size(IconSize.ExtraSmall),
+                        )
+                        Text(
+                            text = tabTitle,
+                            color = if (isTabSelected) colors.textMain else colors.textMuted,
+                            fontSize = FontSize.Micro,
+                            fontWeight = if (isTabSelected) FontWeight.Bold else FontWeight.Normal,
+                            fontFamily = GlassFontFamily.ide(),
+                        )
+                    }
+                }
+            }
+
+            HorizontalDivider(thickness = IdeShellDimens.HairlineBorder, color = colors.borderMuted)
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = Spacing.Small)
+                    .background(colors.cardBackgroundMuted, IdeShellShapes.Control)
+                    .padding(Spacing.Small),
+                verticalArrangement = Arrangement.spacedBy(Spacing.Hairline),
+            ) {
+                val logLines = listOf(
+                    "1  [08:41] Scanning archive directory: C:\\ROMs\\Archives",
+                    "2  [08:41] Found 3 archive(s)",
+                    "3  [08:41] Verified PQ84P01_20250301_1201.zip (SHA256 matches)",
+                    "4  [08:41] Verified PQ84P01_vendor_20250301.zip (SHA256 matches)",
+                    "5  [08:41] Missing archive: PQ84P01_boot_20250215.zip",
+                )
+                logLines.forEach { line ->
+                    Text(
+                        text = line,
+                        color = if (line.contains("Missing")) colors.errorRed else colors.textMuted,
+                        fontSize = FontSize.Micro,
+                        fontFamily = GlassFontFamily.code(),
+                    )
+                }
+            }
+        }
+    }
+}

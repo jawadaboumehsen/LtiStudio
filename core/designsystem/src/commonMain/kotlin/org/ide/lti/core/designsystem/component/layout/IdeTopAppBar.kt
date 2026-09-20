@@ -1,3 +1,12 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.core.designsystem.component.layout
 
 import androidx.compose.foundation.background
@@ -10,10 +19,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.RectangleShape
+import com.kashif_e.backdrop.drawBackdrop
+import org.ide.lti.core.designsystem.theme.GlassEffects
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellDimens
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.config.AppTheme
 
 /**
  * Top application bar matching the approved Stitch Studio design.
@@ -30,11 +43,25 @@ fun IdeTopAppBar(
     windowControls: @Composable (() -> Unit)? = null,
     onDragWindow: (() -> Unit)? = null,
 ) {
+    val actualBackdrop = GlassTheme.backdrop
+    val isBlueGlass = GlassTheme.appTheme == AppTheme.Blue && GlassTheme.effectsEnabled
+    val backgroundModifier = if (isBlueGlass && actualBackdrop != null) {
+        Modifier.drawBackdrop(
+            backdrop = actualBackdrop,
+            shape = { RectangleShape },
+            effects = GlassEffects.TopBar,
+            highlight = { null },
+            onDrawSurface = { drawRect(colors.topBarBackground) },
+        )
+    } else {
+        Modifier.background(colors.topBarBackground)
+    }
+
     Row(
         modifier = modifier
             .fillMaxWidth()
             .height(IdeShellDimens.TopBarHeight)
-            .background(colors.topBarBackground)
+            .then(backgroundModifier)
             .padding(horizontal = Spacing.Small),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,

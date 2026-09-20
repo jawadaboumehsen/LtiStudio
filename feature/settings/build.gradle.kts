@@ -16,7 +16,6 @@ plugins {
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation(projects.core.data)
             implementation(compose.ui)
             implementation(compose.foundation)
             implementation(compose.material3)

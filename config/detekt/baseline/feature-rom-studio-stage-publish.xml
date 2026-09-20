@@ -1,0 +1,26 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ArgumentListWrapping:PublishEditor.kt:("Distribution Provider", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)</ID>
+    <ID>ArgumentListWrapping:PublishEditor.kt:("Publish Review &amp; Recovery", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)</ID>
+    <ID>ArgumentListWrapping:PublishEditor.kt:("Repository &amp; Release Tag", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)</ID>
+    <ID>ArgumentListWrapping:PublishEditor.kt:("Split Assets Configuration", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)</ID>
+    <ID>ArgumentListWrapping:PublishEditor.kt:("Verification &amp; Integrity", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)</ID>
+    <ID>ArgumentListWrapping:PublishEditor.kt:(settings, dirtyPaths, onChange)</ID>
+    <ID>ClassSignature:PublishViewModel.kt:PublishViewModel : ViewModel</ID>
+    <ID>FunctionLiteral:PublishEditor.kt:&lt;anonymous&gt;</ID>
+    <ID>MaxLineLength:PublishEditor.kt:"release-repository-and-tag", "release_repository_and_tag" -&gt; item { RepositoryCard(settings, dirtyPaths, onChange) }</ID>
+    <ID>MaxLineLength:PublishEditor.kt:Text("Distribution Provider", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)</ID>
+    <ID>MaxLineLength:PublishEditor.kt:Text("Publish Review &amp; Recovery", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)</ID>
+    <ID>MaxLineLength:PublishEditor.kt:Text("Repository &amp; Release Tag", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)</ID>
+    <ID>MaxLineLength:PublishEditor.kt:Text("Split Assets Configuration", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)</ID>
+    <ID>MaxLineLength:PublishEditor.kt:Text("Verification &amp; Integrity", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)</ID>
+    <ID>MaximumLineLength:PublishEditor.kt:)</ID>
+    <ID>MaximumLineLength:PublishEditor.kt:}</ID>
+    <ID>StatementWrapping:PublishEditor.kt:;</ID>
+    <ID>StatementWrapping:PublishEditor.kt:val count = it.toIntOrNull() ?: 3; onChange(settings.copy(retentionPerDevice = count))</ID>
+    <ID>StatementWrapping:PublishEditor.kt:val mb = it.toLongOrNull() ?: 1900L; onChange(settings.copy(partSizeBytes = mb * 1024 * 1024))</ID>
+    <ID>UnusedParameter:PublishEditor.kt:settings: PublishSettings</ID>
+  </CurrentIssues>
+</SmellBaseline>

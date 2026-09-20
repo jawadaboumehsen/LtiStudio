@@ -9,20 +9,29 @@
  */
 package org.ide.lti.shared
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
-import org.ide.lti.core.data.settings.AppSettingsState
 import org.ide.lti.core.designsystem.component.layout.GlassBackdrop
+import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.config.AppTheme
+import org.ide.lti.core.ui.settings.AppSettingsState
 import org.ide.lti.feature.settings.navigateToSettings
 import org.ide.lti.feature.setup.SETUP_ROUTE
-import org.ide.lti.feature.workspace.WORKSPACE_ROUTE
+import org.ide.lti.feature.setup.splash.LtiRomSplashScreen
+import org.ide.lti.feature.setup.splash.SplashInitializationBridge
 import org.ide.lti.shared.navigation.RootNavGraph
 import org.koin.compose.koinInject
 
@@ -32,19 +41,37 @@ fun LtiSharedApp(
     openSettingsRequest: Long = 0,
     appSettingsState: AppSettingsState = koinInject(),
 ) {
-    SharedApp(
-        openSettingsRequest = openSettingsRequest,
-        appSettingsState = appSettingsState,
-        modifier = modifier,
-    )
+    var showSplash by remember { mutableStateOf(true) }
+    val splashScope = rememberCoroutineScope()
+    val splashBridge = remember { SplashInitializationBridge(scope = splashScope) }
+
+    if (showSplash) {
+        LtiTheme(
+            appTheme = AppTheme.fromId(appSettingsState.theme),
+            effectsEnabled = appSettingsState.effectsEnabled,
+            reducedMotion = appSettingsState.reducedMotion,
+        ) {
+            Box(
+                modifier = Modifier.fillMaxSize().background(GlassTheme.colors.canvasSurface),
+                contentAlignment = Alignment.Center,
+            ) {
+                LtiRomSplashScreen(
+                    bridge = splashBridge,
+                    onDismissed = { showSplash = false },
+                )
+            }
+        }
+    } else {
+        SharedApp(
+            openSettingsRequest = openSettingsRequest,
+            appSettingsState = appSettingsState,
+            modifier = modifier,
+        )
+    }
 }
 
 @Composable
-private fun SharedApp(
-    openSettingsRequest: Long,
-    appSettingsState: AppSettingsState,
-    modifier: Modifier = Modifier,
-) {
+private fun SharedApp(openSettingsRequest: Long, appSettingsState: AppSettingsState, modifier: Modifier = Modifier) {
     val navController = rememberNavController()
     val backdrop = rememberLayerBackdrop()
 

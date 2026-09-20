@@ -28,14 +28,7 @@ kotlin {
     sourceSets {
         jvmMain.dependencies {
             implementation(projects.core.common)
-            implementation(projects.core.data)
-            implementation(projects.core.domain)
-            implementation(projects.core.model)
-            implementation(projects.core.datastore)
             implementation(projects.core.designsystem)
-            implementation(projects.feature.settings)
-            implementation(projects.feature.setup)
-            implementation(projects.tool.client)
 
             implementation(projects.ltiShared)
 

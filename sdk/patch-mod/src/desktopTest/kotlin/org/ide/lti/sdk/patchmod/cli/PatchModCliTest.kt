@@ -11,10 +11,10 @@ package org.ide.lti.sdk.patchmod.cli
 
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
-import org.ide.lti.core.data.plugin.PackageReadResult
-import org.ide.lti.core.data.plugin.PluginPackageReader
 import org.ide.lti.core.domain.plugin.PluginPackageCodec
 import org.ide.lti.core.domain.plugin.PluginPlanValidator
+import org.ide.lti.sdk.patchmod.runtime.PackageReadResult
+import org.ide.lti.sdk.patchmod.runtime.PluginPackageReader
 import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.createTempDirectory

@@ -9,21 +9,15 @@
  */
 package org.ide.lti.feature.setup.components
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -40,6 +34,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import com.kashif_e.backdrop.backdrops.LayerBackdrop
@@ -50,19 +46,16 @@ import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.TextFieldTrailingSlot
 import org.ide.lti.core.designsystem.component.navigation.GlassFilterChipItem
 import org.ide.lti.core.designsystem.component.navigation.GlassFilterChipRow
+import org.ide.lti.core.designsystem.component.tooltip.GlassTooltipArea
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
-import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import org.ide.lti.core.designsystem.component.tooltip.GlassTooltipArea
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolCategory
 import org.ide.lti.core.domain.setup.ToolComponentItem
@@ -115,8 +108,11 @@ fun ToolMatrixTable(
     val readyCount = tools.count { it.status == StepStatus.SUCCESS }
     val totalCount = tools.size
 
+    val shellColors = GlassTheme.ideShellColors
     GlassCard(
         modifier = modifier.fillMaxWidth(),
+        surfaceColor = shellColors.cardBackground,
+        borderColor = shellColors.border,
         backdrop = backdrop,
         contentPadding = Spacing.CardPadding,
     ) {

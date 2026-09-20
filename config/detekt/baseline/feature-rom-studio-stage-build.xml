@@ -1,0 +1,15 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ArgumentListWrapping:BuildEditor.kt:(settings, target, dirtyPaths, onChange)</ID>
+    <ID>ClassSignature:BuildViewModel.kt:BuildViewModel : ViewModel</ID>
+    <ID>FunctionLiteral:BuildEditor.kt:&lt;anonymous&gt;</ID>
+    <ID>MaxLineLength:BuildEditor.kt:"${target.formattedBootSize} boot · ${target.formattedVendorBootSize} vendor_boot · ${target.formattedInitBootSize} init_boot"</ID>
+    <ID>MaxLineLength:BuildEditor.kt:"flashable-members", "flashable_members" -&gt; item { FlashableMembersCard(settings, target, dirtyPaths, onChange) }</ID>
+    <ID>MaximumLineLength:BuildEditor.kt:}</ID>
+    <ID>NoUnusedImports:BuildEditor.kt:org.ide.lti.feature.rom.studio.stage.build.BuildEditor.kt</ID>
+    <ID>UnusedParameter:BuildEditor.kt:errors: List&lt;ValidationError&gt;</ID>
+    <ID>UnusedParameter:BuildEditor.kt:onChange: (BuildSettings) -&gt; Unit</ID>
+  </CurrentIssues>
+</SmellBaseline>

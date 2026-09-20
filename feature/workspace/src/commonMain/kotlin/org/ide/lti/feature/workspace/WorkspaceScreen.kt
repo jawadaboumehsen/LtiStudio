@@ -364,7 +364,7 @@ fun WorkspaceScreen(
                 }
                 1 -> {
                     TargetDetailPanel(
-                        viewModel = viewModel,
+                        selectedTarget = selectedTarget,
                     )
                 }
                 2 -> {

@@ -1,10 +1,17 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.feature.setup
 
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
@@ -15,7 +22,6 @@ import kotlinx.datetime.Clock
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.model.target.TargetBinding
 import org.ide.lti.core.model.workspace.RecentProject
-import org.ide.lti.core.model.workspace.WorkspaceType
 import org.ide.lti.feature.setup.steps.ProjectsStepContent
 import org.junit.Test
 import kotlin.test.assertEquals

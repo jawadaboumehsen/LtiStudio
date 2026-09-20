@@ -1,3 +1,12 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.feature.setup
 
 import org.ide.lti.core.domain.setup.SetupStepDetail
@@ -7,7 +16,13 @@ import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolchainSetupState
 
 enum class StagePresentationState {
-    UNKNOWN, CHECKING, RESTORED, READY, WARNING, FAILED, UNAVAILABLE
+    UNKNOWN,
+    CHECKING,
+    RESTORED,
+    READY,
+    WARNING,
+    FAILED,
+    UNAVAILABLE,
 }
 
 data class StagePresentation(
@@ -15,11 +30,18 @@ data class StagePresentation(
     val title: String,
     val state: StagePresentationState,
     val description: String,
-    val error: String? = null
+    val error: String? = null,
 )
 
 enum class PrimaryAction {
-    CHECK, CHECKING, SET_UP, STAGE_PROGRESS, RETRY_STAGE, RETRY_CONNECTION, RECONNECT, OPEN_WORKSPACES
+    CHECK,
+    CHECKING,
+    SET_UP,
+    STAGE_PROGRESS,
+    RETRY_STAGE,
+    RETRY_CONNECTION,
+    RECONNECT,
+    OPEN_WORKSPACES,
 }
 
 /**
@@ -80,7 +102,7 @@ data class EnvironmentPresentation(
     val checkedAt: Long?,
     val storageAvailableBytes: Long?,
     val storageMeasuredAt: Long?,
-    val primaryAction: PrimaryAction
+    val primaryAction: PrimaryAction,
 )
 
 object SetupPresentationMapper {
@@ -157,7 +179,7 @@ object SetupPresentationMapper {
                 val opId = state.activeOperationId ?: activeOperation?.operationId ?: "running"
                 EnvironmentState.MutationRunning(
                     operationId = opId,
-                    stage = state.currentStage ?: activeOperation?.stageId
+                    stage = state.currentStage ?: activeOperation?.stageId,
                 )
             }
             isCheckingState(state) -> EnvironmentState.Checking
@@ -172,7 +194,7 @@ object SetupPresentationMapper {
         }
         if (connectionFailed != null) {
             return EnvironmentState.Unavailable(
-                reason = connectionFailed.error ?: connectionFailed.description
+                reason = connectionFailed.error ?: connectionFailed.description,
             )
         }
 
@@ -181,7 +203,7 @@ object SetupPresentationMapper {
             EnvironmentState.Failed(
                 stage = failedStep.stage,
                 error = failedStep.error ?: failedStep.description,
-                checkedAt = state.checkedAt
+                checkedAt = state.checkedAt,
             )
         } else {
             null
@@ -206,7 +228,7 @@ object SetupPresentationMapper {
         return if (state.checkedAt == null && hasHistory) {
             EnvironmentState.Restored(
                 lastReadyAt = state.lastReadyAt ?: state.lastVerifiedTimestamp,
-                checkedAt = null
+                checkedAt = null,
             )
         } else {
             null
@@ -237,7 +259,7 @@ object SetupPresentationMapper {
                 .map { it.title }
             EnvironmentState.CheckedNeedsSetup(
                 missingPrerequisites = missing,
-                checkedAt = state.checkedAt
+                checkedAt = state.checkedAt,
             )
         } else {
             null
@@ -271,7 +293,7 @@ object SetupPresentationMapper {
                 title = detail.title,
                 state = mapStageState(detail, state.isChecking),
                 description = detail.description,
-                error = detail.error
+                error = detail.error,
             )
         }
         val envState = mapEnvironmentState(state, isToolchainBound, activeOperation)
@@ -285,7 +307,7 @@ object SetupPresentationMapper {
             checkedAt = state.checkedAt,
             storageAvailableBytes = state.storageAvailableBytes,
             storageMeasuredAt = state.storageMeasuredAt,
-            primaryAction = action
+            primaryAction = action,
         )
     }
 }

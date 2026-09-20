@@ -8,45 +8,26 @@
  * See https://github.com/openMF/mobile-wallet/blob/master/LICENSE.md
  */
 
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.rememberWindowState
-import com.kashif_e.backdrop.backdrops.layerBackdrop
 import dev.nucleusframework.application.DecoratedWindow
 import dev.nucleusframework.application.LocalNucleusWindow
 import dev.nucleusframework.application.NucleusWindow
 import dev.nucleusframework.application.nucleusApplication
-import androidx.compose.ui.window.FrameWindowScope
-import org.ide.lti.core.data.settings.AppSettingsState
 import org.ide.lti.core.designsystem.component.actions.LocalWindowControlActions
 import org.ide.lti.core.designsystem.component.actions.WindowControlActions
-import org.ide.lti.core.designsystem.icon.AppIcon
-import org.ide.lti.core.designsystem.icon.AppIcons
-import org.ide.lti.core.designsystem.theme.config.AppTheme
 import org.ide.lti.core.designsystem.theme.ComponentSize
-import org.ide.lti.core.designsystem.theme.GlassTheme
-import org.ide.lti.core.designsystem.theme.LtiTheme
-import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.desktop.di.toolingModule
 import org.ide.lti.desktop.key.WindowKeyShortcutHandler
 import org.ide.lti.desktop.menu.dispatcher.DefaultStudioActionDispatcher
 import org.ide.lti.desktop.menu.model.StudioAction
@@ -54,11 +35,8 @@ import org.ide.lti.desktop.menu.model.StudioMenuState
 import org.ide.lti.desktop.menu.ui.StudioMenuBar
 import org.ide.lti.desktop.tray.AppTray
 import org.ide.lti.desktop.window.restoreWindow
-import org.ide.lti.feature.setup.splash.LtiRomSplashScreen
-import org.ide.lti.feature.setup.splash.SplashInitializationBridge
 import org.ide.lti.shared.LtiSharedApp
 import org.ide.lti.shared.di.initKoin
-import org.koin.compose.koinInject
 
 private fun buildWindowControlActions(
     windowState: WindowState,
@@ -119,9 +97,7 @@ private fun buildWindowControlActions(
 
 fun main(args: Array<String>) = nucleusApplication(args) {
     remember {
-        initKoin {
-            modules(toolingModule)
-        }
+        initKoin()
     }
     var mainWinRef by remember { mutableStateOf<NucleusWindow?>(null) }
     var openSettingsRequest by remember { mutableLongStateOf(0L) }
@@ -135,10 +111,6 @@ fun main(args: Array<String>) = nucleusApplication(args) {
     }
 
     val actionDispatcher = remember { DefaultStudioActionDispatcher() }
-
-    var showSplash by remember { mutableStateOf(true) }
-    val splashScope = rememberCoroutineScope()
-    val splashBridge = remember { SplashInitializationBridge(scope = splashScope) }
 
     AppTray(
         onOpenStudio = { restoreWindow(windowState, mainWinRef) },
@@ -183,8 +155,6 @@ fun main(args: Array<String>) = nucleusApplication(args) {
             }
         }
 
-        val appSettingsState: AppSettingsState = koinInject()
-
         CompositionLocalProvider(
             LocalWindowControlActions provides windowControlActions,
         ) {
@@ -193,28 +163,9 @@ fun main(args: Array<String>) = nucleusApplication(args) {
                     StudioMenuBar(state = StudioMenuState(), dispatcher = actionDispatcher)
                 }
             }
-            if (showSplash) {
-                LtiTheme(
-                    appTheme = AppTheme.fromId(appSettingsState.theme),
-                    effectsEnabled = appSettingsState.effectsEnabled,
-                    reducedMotion = appSettingsState.reducedMotion,
-                ) {
-                    Box(
-                        modifier = Modifier.fillMaxSize().background(GlassTheme.colors.canvasSurface),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        LtiRomSplashScreen(
-                            bridge = splashBridge,
-                            onDismissed = { showSplash = false },
-                        )
-                    }
-                }
-            } else {
-                LtiSharedApp(
-                    openSettingsRequest = openSettingsRequest,
-                )
-            }
+            LtiSharedApp(
+                openSettingsRequest = openSettingsRequest,
+            )
         }
     }
-
 }

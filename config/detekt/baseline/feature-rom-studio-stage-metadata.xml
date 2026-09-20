@@ -1,0 +1,10 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ArgumentListWrapping:MetadataEditor.kt:("Compatibility Constraints", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)</ID>
+    <ID>ClassSignature:MetadataViewModel.kt:MetadataViewModel : ViewModel</ID>
+    <ID>MaxLineLength:MetadataEditor.kt:Text("Compatibility Constraints", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)</ID>
+    <ID>MaximumLineLength:MetadataEditor.kt:)</ID>
+  </CurrentIssues>
+</SmellBaseline>

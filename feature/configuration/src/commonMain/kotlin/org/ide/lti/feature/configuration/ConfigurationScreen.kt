@@ -35,6 +35,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
@@ -52,6 +53,8 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.config.AppTheme
+import org.ide.lti.core.model.target.TargetValidationError
 import org.ide.lti.feature.configuration.components.ConfigurationSidebar
 import org.ide.lti.feature.configuration.components.ConfigurationTabHeader
 import org.ide.lti.feature.configuration.components.tabs.GeneralConfigTab
@@ -74,39 +77,21 @@ fun ConfigurationScreen(
     }
 
     val state by viewModel.uiState.collectAsState()
+    val isBlueGlass = GlassTheme.appTheme == AppTheme.Blue
     val glassColors = GlassTheme.colors
+    val colors = GlassTheme.ideShellColors
 
     state.pendingTargetId?.let { pendingTargetId ->
-        GlassDialog(
-            onDismissRequest = {
-                viewModel.resolvePendingTargetSelection(DirtyTargetSelectionDecision.STAY)
-            },
-            title = "Unsaved target changes",
-            content = {
-                Text("Save, discard, or stay before opening $pendingTargetId.")
-            },
-            confirmButton = {
-                GlassTextButton(onClick = {
-                    viewModel.resolvePendingTargetSelection(DirtyTargetSelectionDecision.SAVE)
-                }) { Text("Save") }
-            },
-            dismissButton = {
-                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-                    GlassTextButton(onClick = {
-                        viewModel.resolvePendingTargetSelection(DirtyTargetSelectionDecision.DISCARD)
-                    }) { Text("Discard") }
-                    GlassTextButton(onClick = {
-                        viewModel.resolvePendingTargetSelection(DirtyTargetSelectionDecision.STAY)
-                    }) { Text("Stay") }
-                }
-            },
+        PendingTargetDecisionDialog(
+            pendingTargetId = pendingTargetId,
+            onDecision = viewModel::resolvePendingTargetSelection,
         )
     }
 
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(glassColors.canvasSurface),
+            .background(if (isBlueGlass) Color.Transparent else colors.appBackground),
     ) {
         // TOP BAR
         GlassTopBar(
@@ -157,33 +142,10 @@ fun ConfigurationScreen(
 
                 // Validation or Status Notification Alert
                 if (state.validationErrors.isNotEmpty()) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = Spacing.Medium, vertical = Spacing.Small)
-                            .clip(GlassShapes.Small)
-                            .background(glassColors.diagnostics.error.copy(alpha = AlphaTokens.Hover))
-                            .glassOutlineBorder(
-                                width = StrokeWidth.Hairline,
-                                color = glassColors.diagnostics.error.copy(alpha = AlphaTokens.Border),
-                                shape = GlassShapes.Small,
-                            )
-                            .padding(Spacing.Small),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Warning,
-                            contentDescription = null,
-                            tint = glassColors.diagnostics.error,
-                            modifier = Modifier.size(IconSize.Small),
-                        )
-                        Text(
-                            text = state.validationErrors.joinToString("; ") { it.message },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = glassColors.diagnostics.error,
-                        )
-                    }
+                    ConfigurationValidationBanner(
+                        validationErrors = state.validationErrors,
+                        glassColors = glassColors,
+                    )
                 }
 
                 // Scrollable tab content
@@ -217,39 +179,120 @@ fun ConfigurationScreen(
                 GlassHorizontalDivider(specular = true)
 
                 // Bottom Action Footer Bar
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(glassColors.glassSurface.copy(alpha = AlphaTokens.Faint))
-                        .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                ) {
-                    Spacer(modifier = Modifier.weight(1f))
-
-                    GlassButton(
-                        onClick = viewModel::onRevertChanges,
-                        enabled = state.isDirty,
-                        variant = GlassButtonVariant.Standard,
-                    ) {
-                        Text("Revert")
-                    }
-
-                    GlassButton(
-                        onClick = onBackClick,
-                        variant = GlassButtonVariant.Standard,
-                    ) {
-                        Text("Cancel")
-                    }
-
-                    GlassPrimaryButton(
-                        onClick = { viewModel.onApplyChanges(onSuccess = onBackClick) },
-                        enabled = state.validationErrors.isEmpty() && !state.isSyncing,
-                    ) {
-                        Text(if (state.isSyncing) "Syncing..." else "Apply & Close")
-                    }
-                }
+                ConfigurationActionBar(
+                    isDirty = state.isDirty,
+                    isSyncing = state.isSyncing,
+                    hasValidationErrors = state.validationErrors.isNotEmpty(),
+                    onRevert = viewModel::onRevertChanges,
+                    onCancel = onBackClick,
+                    onApply = { viewModel.onApplyChanges(onSuccess = onBackClick) },
+                    glassColors = glassColors,
+                )
             }
         }
     }
+}
+
+@Composable
+private fun ConfigurationValidationBanner(
+    validationErrors: List<TargetValidationError>,
+    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = Spacing.Medium, vertical = Spacing.Small)
+            .clip(GlassShapes.Small)
+            .background(glassColors.diagnostics.error.copy(alpha = AlphaTokens.Hover))
+            .glassOutlineBorder(
+                width = StrokeWidth.Hairline,
+                color = glassColors.diagnostics.error.copy(alpha = AlphaTokens.Border),
+                shape = GlassShapes.Small,
+            )
+            .padding(Spacing.Small),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+    ) {
+        Icon(
+            imageVector = Icons.Default.Warning,
+            contentDescription = null,
+            tint = glassColors.diagnostics.error,
+            modifier = Modifier.size(IconSize.Small),
+        )
+        Text(
+            text = validationErrors.joinToString("; ") { it.message },
+            style = MaterialTheme.typography.bodySmall,
+            color = glassColors.diagnostics.error,
+        )
+    }
+}
+
+@Composable
+private fun ConfigurationActionBar(
+    isDirty: Boolean,
+    isSyncing: Boolean,
+    hasValidationErrors: Boolean,
+    onRevert: () -> Unit,
+    onCancel: () -> Unit,
+    onApply: () -> Unit,
+    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(glassColors.glassSurface.copy(alpha = AlphaTokens.Faint))
+            .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+    ) {
+        Spacer(modifier = Modifier.weight(1f))
+
+        GlassButton(
+            onClick = onRevert,
+            enabled = isDirty,
+            variant = GlassButtonVariant.Standard,
+        ) {
+            Text("Revert")
+        }
+
+        GlassButton(
+            onClick = onCancel,
+            variant = GlassButtonVariant.Standard,
+        ) {
+            Text("Cancel")
+        }
+
+        GlassPrimaryButton(
+            onClick = onApply,
+            enabled = !hasValidationErrors && !isSyncing,
+        ) {
+            Text(if (isSyncing) "Syncing..." else "Apply & Close")
+        }
+    }
+}
+
+@Composable
+private fun PendingTargetDecisionDialog(pendingTargetId: String, onDecision: (DirtyTargetSelectionDecision) -> Unit) {
+    GlassDialog(
+        onDismissRequest = { onDecision(DirtyTargetSelectionDecision.STAY) },
+        title = "Unsaved target changes",
+        content = {
+            Text("Save, discard, or stay before opening $pendingTargetId.")
+        },
+        confirmButton = {
+            GlassTextButton(onClick = { onDecision(DirtyTargetSelectionDecision.SAVE) }) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
+                GlassTextButton(onClick = { onDecision(DirtyTargetSelectionDecision.DISCARD) }) {
+                    Text("Discard")
+                }
+                GlassTextButton(onClick = { onDecision(DirtyTargetSelectionDecision.STAY) }) {
+                    Text("Stay")
+                }
+            }
+        },
+    )
 }

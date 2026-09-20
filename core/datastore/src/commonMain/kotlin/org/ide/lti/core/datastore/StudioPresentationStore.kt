@@ -42,23 +42,23 @@ public class StudioPresentationStore(
     private val settings: Settings = Settings(),
     private val json: Json = defaultJson(),
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
-) {
+) : org.ide.lti.core.domain.ports.StudioPresentationStorePort {
     private val mutex = Mutex()
 
     private val _presentations = MutableStateFlow(readPresentationsSafe())
-    public val presentations: Flow<Map<String, StudioPresentation>> = _presentations.asStateFlow()
-    public val currentPresentations: Map<String, StudioPresentation> get() = _presentations.value
+    override val presentations: Flow<Map<String, StudioPresentation>> = _presentations.asStateFlow()
+    override val currentPresentations: Map<String, StudioPresentation> get() = _presentations.value
 
-    public fun presentation(workspaceId: String): Flow<StudioPresentation?> =
+    override fun presentation(workspaceId: String): Flow<StudioPresentation?> =
         _presentations.map { map -> map[workspaceId] }
 
-    public suspend fun get(workspaceId: String): StudioPresentation? = withContext(ioDispatcher) {
+    override suspend fun get(workspaceId: String): StudioPresentation? = withContext(ioDispatcher) {
         mutex.withLock {
             _presentations.value[workspaceId]
         }
     }
 
-    public suspend fun put(presentation: StudioPresentation): Unit = withContext(ioDispatcher) {
+    override suspend fun put(presentation: StudioPresentation): Unit = withContext(ioDispatcher) {
         mutex.withLock {
             val sanitized = sanitize(presentation)
             val current = _presentations.value
@@ -68,7 +68,7 @@ public class StudioPresentationStore(
         }
     }
 
-    public suspend fun clear(workspaceId: String): Unit = withContext(ioDispatcher) {
+    override suspend fun clear(workspaceId: String): Unit = withContext(ioDispatcher) {
         mutex.withLock {
             val current = _presentations.value
             if (workspaceId in current) {

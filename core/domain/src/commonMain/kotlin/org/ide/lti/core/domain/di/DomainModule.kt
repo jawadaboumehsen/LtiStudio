@@ -17,6 +17,27 @@ import org.ide.lti.core.domain.ai.AIServiceImpl
 import org.ide.lti.core.domain.connection.ConnectionManager
 import org.ide.lti.core.domain.panels.PanelManager
 import org.ide.lti.core.domain.pipeline.PipelineOrchestrator
+import org.ide.lti.core.domain.pipeline.session.DiscardPipelineDraftChangesUseCase
+import org.ide.lti.core.domain.pipeline.session.ObserveAcquisitionConfigUseCase
+import org.ide.lti.core.domain.pipeline.session.ObserveAssemblyConfigUseCase
+import org.ide.lti.core.domain.pipeline.session.ObserveBuildConfigUseCase
+import org.ide.lti.core.domain.pipeline.session.ObserveCustomizationConfigUseCase
+import org.ide.lti.core.domain.pipeline.session.ObserveDebloatConfigUseCase
+import org.ide.lti.core.domain.pipeline.session.ObserveExtractionConfigUseCase
+import org.ide.lti.core.domain.pipeline.session.ObservePipelineDraftSessionUseCase
+import org.ide.lti.core.domain.pipeline.session.ObservePublishConfigUseCase
+import org.ide.lti.core.domain.pipeline.session.ObserveReleaseConfigUseCase
+import org.ide.lti.core.domain.pipeline.session.PipelineDraftSessionRepository
+import org.ide.lti.core.domain.pipeline.session.SavePipelineDraftUseCase
+import org.ide.lti.core.domain.pipeline.session.UpdateAcquisitionConfigUseCase
+import org.ide.lti.core.domain.pipeline.session.UpdateAssemblyConfigUseCase
+import org.ide.lti.core.domain.pipeline.session.UpdateBuildConfigUseCase
+import org.ide.lti.core.domain.pipeline.session.UpdateCustomizationConfigUseCase
+import org.ide.lti.core.domain.pipeline.session.UpdateDebloatConfigUseCase
+import org.ide.lti.core.domain.pipeline.session.UpdateExtractionConfigUseCase
+import org.ide.lti.core.domain.pipeline.session.UpdatePublishConfigUseCase
+import org.ide.lti.core.domain.pipeline.session.UpdateReleaseConfigUseCase
+import org.ide.lti.core.domain.pipeline.session.ValidatePipelineDraftUseCase
 import org.ide.lti.core.domain.plugin.AuthorProjectTrustUseCase
 import org.ide.lti.core.domain.plugin.InstallPluginUseCase
 import org.ide.lti.core.domain.plugin.PluginLifecycleUseCase
@@ -175,5 +196,28 @@ val DomainModule = module {
     single { InstallPluginUseCase(port = get()) }
     single { PluginLifecycleUseCase(port = get()) }
     single { AuthorProjectTrustUseCase(port = get()) }
+
+    // Pipeline Draft Session & Stage Configuration
+    singleOf(::PipelineDraftSessionRepository)
+    singleOf(::ObservePipelineDraftSessionUseCase)
+    singleOf(::SavePipelineDraftUseCase)
+    singleOf(::ValidatePipelineDraftUseCase)
+    singleOf(::DiscardPipelineDraftChangesUseCase)
+    singleOf(::ObserveAcquisitionConfigUseCase)
+    singleOf(::UpdateAcquisitionConfigUseCase)
+    singleOf(::ObserveExtractionConfigUseCase)
+    singleOf(::UpdateExtractionConfigUseCase)
+    singleOf(::ObserveAssemblyConfigUseCase)
+    singleOf(::UpdateAssemblyConfigUseCase)
+    singleOf(::ObserveDebloatConfigUseCase)
+    singleOf(::UpdateDebloatConfigUseCase)
+    singleOf(::ObserveCustomizationConfigUseCase)
+    singleOf(::UpdateCustomizationConfigUseCase)
+    singleOf(::ObserveBuildConfigUseCase)
+    singleOf(::UpdateBuildConfigUseCase)
+    singleOf(::ObserveReleaseConfigUseCase)
+    singleOf(::UpdateReleaseConfigUseCase)
+    singleOf(::ObservePublishConfigUseCase)
+    singleOf(::UpdatePublishConfigUseCase)
 }
 

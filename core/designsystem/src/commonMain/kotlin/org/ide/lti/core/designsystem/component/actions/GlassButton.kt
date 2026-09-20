@@ -9,15 +9,6 @@
  */
 package org.ide.lti.core.designsystem.component.actions
 
-import org.ide.lti.core.designsystem.component.primitives.*
-import org.ide.lti.core.designsystem.component.actions.*
-import org.ide.lti.core.designsystem.component.inputs.*
-import org.ide.lti.core.designsystem.component.display.*
-import org.ide.lti.core.designsystem.component.navigation.*
-import org.ide.lti.core.designsystem.component.layout.*
-import org.ide.lti.core.designsystem.component.feedback.*
-import org.ide.lti.core.designsystem.component.devtools.*
-
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.LocalIndication
@@ -58,13 +49,11 @@ import androidx.compose.ui.unit.Dp
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.BackdropEffectScope
 import com.kashif_e.backdrop.drawBackdrop
-import com.kashif_e.backdrop.effects.blur
-import com.kashif_e.backdrop.effects.lens
-import com.kashif_e.backdrop.effects.vibrancy
 import com.kashif_e.backdrop.highlight.Highlight
+import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
+import org.ide.lti.core.designsystem.icon.AppIcon
+import org.ide.lti.core.designsystem.icon.GlassIcon
 import org.ide.lti.core.designsystem.theme.AlphaTokens
-import org.ide.lti.core.designsystem.theme.BackdropBlur
-import org.ide.lti.core.designsystem.theme.ColorContrast
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassEffects
@@ -75,8 +64,6 @@ import org.ide.lti.core.designsystem.theme.LetterSpacing
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
-import org.ide.lti.core.designsystem.icon.AppIcon
-import org.ide.lti.core.designsystem.icon.GlassIcon
 import org.ide.lti.core.designsystem.utils.InteractiveHighlight
 import org.ide.lti.core.designsystem.utils.applyInteractiveHighlightTransform
 
@@ -114,7 +101,8 @@ enum class GlassButtonVariant {
     Primary,
     Secondary,
     Standard,
-    Text;
+    Text,
+    ;
 
     fun toStyle(): GlassButtonStyle = when (this) {
         Primary -> GlassButtonStyle.Primary

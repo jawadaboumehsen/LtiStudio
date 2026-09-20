@@ -1,0 +1,19 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ArgumentListWrapping:AssembleEditor.kt:("Boot footer handling", style = MaterialTheme.typography.bodySmall, color = GlassTheme.colors.onGlassSecondary)</ID>
+    <ID>ArgumentListWrapping:AssembleEditor.kt:("Boot preparation and AOT cleanup", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)</ID>
+    <ID>ArgumentListWrapping:AssembleEditor.kt:("bootFooterPolicy / baselineCleanup", dirtyPaths, "Workspace override", "Single baseline cleanup toggle.")</ID>
+    <ID>ArgumentListWrapping:AssembleEditor.kt:("buildType / romVersion", dirtyPaths, "ROM identification", "Stamped into generated system properties.")</ID>
+    <ID>ArgumentListWrapping:AssembleEditor.kt:("includedPartitions", dirtyPaths, "Target capability", "Only target dynamic partitions can be included.")</ID>
+    <ID>ClassSignature:AssembleViewModel.kt:AssembleViewModel : ViewModel</ID>
+    <ID>MaxLineLength:AssembleEditor.kt:Meta("bootFooterPolicy / baselineCleanup", dirtyPaths, "Workspace override", "Single baseline cleanup toggle.")</ID>
+    <ID>MaxLineLength:AssembleEditor.kt:Meta("buildType / romVersion", dirtyPaths, "ROM identification", "Stamped into generated system properties.")</ID>
+    <ID>MaxLineLength:AssembleEditor.kt:Meta("includedPartitions", dirtyPaths, "Target capability", "Only target dynamic partitions can be included.")</ID>
+    <ID>MaxLineLength:AssembleEditor.kt:Text("Boot footer handling", style = MaterialTheme.typography.bodySmall, color = GlassTheme.colors.onGlassSecondary)</ID>
+    <ID>MaxLineLength:AssembleEditor.kt:Text("Boot preparation and AOT cleanup", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)</ID>
+    <ID>MaximumLineLength:AssembleEditor.kt:)</ID>
+    <ID>UnusedParameter:AssembleEditor.kt:errors: List&lt;ValidationError&gt;</ID>
+  </CurrentIssues>
+</SmellBaseline>

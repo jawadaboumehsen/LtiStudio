@@ -1,0 +1,36 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ArgumentListWrapping:PatchEditor.kt:("${index + 1}. $pkg", color = GlassTheme.colors.onGlass, style = MaterialTheme.typography.bodyMedium)</ID>
+    <ID>ArgumentListWrapping:PatchEditor.kt:("Enabled Ordered Modules", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)</ID>
+    <ID>ArgumentListWrapping:PatchEditor.kt:("No modules enabled.", color = GlassTheme.colors.onGlassMuted, style = MaterialTheme.typography.bodySmall)</ID>
+    <ID>ArgumentListWrapping:PatchEditor.kt:("enabledPackages", dirtyPaths, "Ordering", "Higher-indexed modules apply overrides over preceding modules.")</ID>
+    <ID>ArgumentListWrapping:PatchEditor.kt:("lockfile", dirtyPaths, "Catalog", "${settings.lockfile.entries.size} plugin packages resolved in lockfile.")</ID>
+    <ID>ArgumentListWrapping:PatchEditor.kt:("• init.environ.rc: Injected BOOTCLASSPATH extension", color = GlassTheme.colors.onGlass, style = MaterialTheme.typography.bodySmall)</ID>
+    <ID>ArgumentListWrapping:PatchEditor.kt:("• ueventd.rc: Device node permission grant", color = GlassTheme.colors.onGlass, style = MaterialTheme.typography.bodySmall)</ID>
+    <ID>ArgumentListWrapping:PatchEditor.kt:(settings, dirtyPaths, onChange)</ID>
+    <ID>ClassSignature:PatchViewModel.kt:PatchViewModel : ViewModel</ID>
+    <ID>FunctionLiteral:PatchEditor.kt:&lt;anonymous&gt;</ID>
+    <ID>FunctionSignature:PatchEditor.kt:@Composable private fun EnabledModulesCard</ID>
+    <ID>FunctionSignature:PatchEditor.kt:@Composable private fun ModuleCatalogCard</ID>
+    <ID>FunctionSignature:PatchEditor.kt:@Composable private fun PropertyPatchesCard</ID>
+    <ID>MaxLineLength:PatchEditor.kt:"enabled-ordered-modules", "enabled_ordered_modules" -&gt; item { EnabledModulesCard(settings, dirtyPaths, onChange) }</ID>
+    <ID>MaxLineLength:PatchEditor.kt:Meta("enabledPackages", dirtyPaths, "Ordering", "Higher-indexed modules apply overrides over preceding modules.")</ID>
+    <ID>MaxLineLength:PatchEditor.kt:Meta("lockfile", dirtyPaths, "Catalog", "${settings.lockfile.entries.size} plugin packages resolved in lockfile.")</ID>
+    <ID>MaxLineLength:PatchEditor.kt:Text("${index + 1}. $pkg", color = GlassTheme.colors.onGlass, style = MaterialTheme.typography.bodyMedium)</ID>
+    <ID>MaxLineLength:PatchEditor.kt:Text("Enabled Ordered Modules", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)</ID>
+    <ID>MaxLineLength:PatchEditor.kt:Text("No modules enabled.", color = GlassTheme.colors.onGlassMuted, style = MaterialTheme.typography.bodySmall)</ID>
+    <ID>MaxLineLength:PatchEditor.kt:Text("• init.environ.rc: Injected BOOTCLASSPATH extension", color = GlassTheme.colors.onGlass, style = MaterialTheme.typography.bodySmall)</ID>
+    <ID>MaxLineLength:PatchEditor.kt:Text("• ueventd.rc: Device node permission grant", color = GlassTheme.colors.onGlass, style = MaterialTheme.typography.bodySmall)</ID>
+    <ID>MaxLineLength:PatchEditor.kt:private</ID>
+    <ID>MaximumLineLength:PatchEditor.kt:)</ID>
+    <ID>MaximumLineLength:PatchEditor.kt:{</ID>
+    <ID>MaximumLineLength:PatchEditor.kt:}</ID>
+    <ID>ParameterListWrapping:PatchEditor.kt:(CustomizationSettings)</ID>
+    <ID>ParameterListWrapping:PatchEditor.kt:(settings: CustomizationSettings, dirtyPaths: Set&lt;String&gt;, onChange: (CustomizationSettings) -&gt; Unit)</ID>
+    <ID>UnusedParameter:PatchEditor.kt:onChange: (CustomizationSettings) -&gt; Unit</ID>
+    <ID>UnusedParameter:PatchEditor.kt:settings: CustomizationSettings</ID>
+    <ID>UnusedParameter:PatchEditor.kt:target: TargetDevice</ID>
+  </CurrentIssues>
+</SmellBaseline>

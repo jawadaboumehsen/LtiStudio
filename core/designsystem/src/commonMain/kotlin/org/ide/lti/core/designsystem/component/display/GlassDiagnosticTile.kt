@@ -108,6 +108,7 @@ fun GlassDiagnosticTile(
 ) {
     val glassColors = GlassTheme.colors
     val diagnostics = glassColors.diagnostics
+
     @Suppress("DEPRECATION")
     val clipboardManager = LocalClipboardManager.current
     var isCopied by remember(item.id) { mutableStateOf(false) }

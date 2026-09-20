@@ -15,42 +15,9 @@ import androidx.navigation.NavOptions
 import androidx.navigation.compose.composable
 import org.ide.lti.core.model.workspace.Workspace
 
-/** Internal tab selector for [SetupScreen]'s own multi-step UI (Projects / Environment / Launchpad). */
-enum class SetupTab(val id: String) {
-    PROJECTS("projects"),
-    ENVIRONMENT("environment"),
-    LAUNCHPAD("launchpad"),
-    TOOLS("tools");
-
-    companion object {
-        fun fromId(id: String): SetupTab = entries.firstOrNull { it.id == id } ?: PROJECTS
-    }
-}
-
-/**
- * Route-boundary destination for the Setup feature's navigation graph.
- * Legacy launchpad/projects identifiers resolve to [WORKSPACES] here (FR-001, FR-004, FR-006).
- *
- * Machine provisioning destinations ([ENVIRONMENT], [TOOLS]) must never be conflated with
- * ROM configuration or build stages.
- */
-enum class SetupDestination(val id: String) {
-    WORKSPACES("workspaces"),
-    ENVIRONMENT("environment"),
-    TOOLS("tools");
-
-    companion object {
-        fun fromId(id: String): SetupDestination = when (id) {
-            "workspaces" -> WORKSPACES
-            "environment" -> ENVIRONMENT
-            "tools" -> TOOLS
-            "projects", "launchpad" -> WORKSPACES
-            else -> WORKSPACES
-        }
-    }
-}
-
-const val SETUP_ROUTE = "setup"
+typealias SetupTab = org.ide.lti.feature.setup.api.SetupTab
+typealias SetupDestination = org.ide.lti.feature.setup.api.SetupDestination
+const val SETUP_ROUTE: String = org.ide.lti.feature.setup.api.SETUP_ROUTE
 
 fun NavController.navigateToSetup(navOptions: NavOptions? = null) {
     navigate(SETUP_ROUTE, navOptions)

@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -34,7 +33,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,7 +41,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import com.kashif_e.backdrop.backdrops.LayerBackdrop
 import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
-import org.ide.lti.core.designsystem.component.actions.GlassSecondaryButton
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.display.GlassDiagnosticItem
@@ -121,12 +118,15 @@ fun DoctorDiagnosticsDrawer(
                     }
                 },
                 { it.title },
-            )
+            ),
         )
     }
 
+    val shellColors = GlassTheme.ideShellColors
     GlassCard(
         modifier = modifier.fillMaxWidth(),
+        surfaceColor = shellColors.cardBackground,
+        borderColor = shellColors.border,
         backdrop = backdrop,
         contentPadding = Spacing.CardPadding,
     ) {
@@ -226,7 +226,7 @@ fun DoctorDiagnosticsDrawer(
                                         failedChecksCount > 0 -> diagnostics.error.copy(alpha = AlphaTokens.Hover)
                                         warningChecksCount > 0 -> diagnostics.warning.copy(alpha = AlphaTokens.Hover)
                                         else -> diagnostics.success.copy(alpha = AlphaTokens.Hover)
-                                    }
+                                    },
                                 )
                                 .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.ExtraSmall),
                         ) {

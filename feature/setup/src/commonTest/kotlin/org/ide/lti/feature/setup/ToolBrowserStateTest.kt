@@ -11,24 +11,24 @@ package org.ide.lti.feature.setup
 
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.domain.setup.SetupLogEvent
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.flow.flowOf
+import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.domain.setup.SetupPlan
 import org.ide.lti.core.domain.setup.SetupPlanKind
 import org.ide.lti.core.domain.setup.SetupStepStage
@@ -40,7 +40,6 @@ import org.ide.lti.core.domain.setup.ToolchainSetupState
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -48,7 +47,7 @@ import kotlin.test.assertTrue
 class ToolBrowserStateTest {
 
     private fun runToolBrowserTest(
-        testBody: suspend TestScope.(scope: CoroutineScope) -> Unit
+        testBody: suspend TestScope.(scope: CoroutineScope) -> Unit,
     ) = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         Dispatchers.setMain(testDispatcher)
@@ -62,7 +61,7 @@ class ToolBrowserStateTest {
     }
 
     private class SpyToolchainService(
-        initialState: ToolchainSetupState = ToolchainSetupState()
+        initialState: ToolchainSetupState = ToolchainSetupState(),
     ) : ToolchainProvisioningService {
         val _state = MutableStateFlow(initialState)
         override val state: StateFlow<ToolchainSetupState> = _state.asStateFlow()
@@ -105,7 +104,7 @@ class ToolBrowserStateTest {
                     _state.value = _state.value.copy(
                         toolsMatrix = _state.value.toolsMatrix.map {
                             if (it.id == toolId) it.copy(status = StepStatus.SUCCESS, path = "~/LtiRomTools/bin/$toolId") else it
-                        }
+                        },
                     )
                     return SetupOutcome.Succeeded()
                 } else {
@@ -135,7 +134,7 @@ class ToolBrowserStateTest {
                 _state.value = _state.value.copy(
                     toolsMatrix = _state.value.toolsMatrix.map {
                         if (it.id == toolId) it.copy(status = StepStatus.SUCCESS, lastTested = "Just now") else it
-                    }
+                    },
                 )
             } else {
                 _state.value = _state.value.copy(
@@ -145,7 +144,7 @@ class ToolBrowserStateTest {
                         } else {
                             it
                         }
-                    }
+                    },
                 )
             }
             return testToolOutcome
@@ -240,7 +239,7 @@ class ToolBrowserStateTest {
     @Test
     fun testSingleFlightMutationBlocksConcurrentRepair() = runToolBrowserTest { scope ->
         val service = SpyToolchainService(
-            initialState = ToolchainSetupState(isRunning = true)
+            initialState = ToolchainSetupState(isRunning = true),
         )
         val browserState = ToolBrowserState(
             scope = scope,
@@ -326,7 +325,7 @@ class ToolBrowserStateTest {
                     tool("simg2img", StepStatus.PENDING, null, null),
                 ),
                 publishedToolIds = setOf("mkfs.erofs"),
-            )
+            ),
         )
         val browserState = ToolBrowserState(scope = scope, toolchainService = service)
         val byId = browserState.filteredTools.value.associateBy { it.tool.id }
@@ -342,7 +341,7 @@ class ToolBrowserStateTest {
     @Test
     fun testSharedBusyFromCoordinatorSurfacesInToolPresentation() = runToolBrowserTest { scope ->
         val service = SpyToolchainService(
-            initialState = ToolchainSetupState(isRunning = true)
+            initialState = ToolchainSetupState(isRunning = true),
         )
         val browserState = ToolBrowserState(
             scope = scope,
@@ -400,9 +399,9 @@ class ToolBrowserStateTest {
                         category = ToolCategory.FILESYSTEM_AND_IMAGES,
                         binaryName = "mke2fs",
                         status = StepStatus.FAILED,
-                    )
-                )
-            )
+                    ),
+                ),
+            ),
         )
         val browserState = ToolBrowserState(scope = scope, toolchainService = service)
         val before = browserState.filteredTools.value.first { it.tool.id == "mke2fs" }
@@ -413,7 +412,7 @@ class ToolBrowserStateTest {
         service._state.value = service._state.value.copy(
             toolsMatrix = service._state.value.toolsMatrix.map {
                 it.copy(path = "/home/lti/LtiRomTools/bin/mke2fs")
-            }
+            },
         )
 
         val after = browserState.filteredTools.value.first { it.tool.id == "mke2fs" }
@@ -422,6 +421,4 @@ class ToolBrowserStateTest {
         assertFalse(after.isTested, "A path alone never counts as tested")
         assertNull(after.tool.lastTested, "Discovery must never label a failed probe as tested")
     }
-
 }
-

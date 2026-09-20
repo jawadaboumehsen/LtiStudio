@@ -4,7 +4,8 @@ plugins {
 }
 
 dependencies {
-    api(project(":tool:core"))
+    api(projects.tool.api)
+    implementation(projects.tool.runtime)
     implementation(project(":core:model"))
     implementation(project(":core:domain"))
 

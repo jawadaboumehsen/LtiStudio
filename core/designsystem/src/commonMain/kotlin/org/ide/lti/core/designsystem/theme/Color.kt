@@ -362,34 +362,34 @@ object ThemeColors {
     val Light = Color(0xFFFFFFFF)
 
     // Fleet & Linear-inspired Dark Theme Layer Architecture (Obsidian base, Charcoal panels, Elevated cards)
-    val DarkLayerBase = Color(0xFF0D1117)          // Level 0: Deep Obsidian base canvas & gutters
-    val DarkLayerSurface = Color(0xFF161B22)       // Level 1: Charcoal Obsidian panel / topbar / rail surface
-    val DarkLayerElevated = Color(0xFF161B22)      // Level 2: Dark elevated card & dialog surface
-    val DarkLayerControl = Color(0xFF21262D)       // Level 3: Gray active tab / chip / control surface
-    val DarkLayerHighlight = Color(0xFF30363D)     // Hairline card border & outline
-    val DarkLayerBorderSubtle = Color(0xFF21262D)  // Subtle panel divider
-    val FleetBlue = Color(0xFF3574F0)              // Fleet Action & Primary Blue
-    val FleetFocusGlow = Color(0xFF716BF6)         // Fleet Input & Focus Ring Glow
-    val FleetCyan = Color(0xFF38BDF8)              // Fleet Cyan / Sky-blue accent
+    val DarkLayerBase = Color(0xFF0D1117) // Level 0: Deep Obsidian base canvas & gutters
+    val DarkLayerSurface = Color(0xFF161B22) // Level 1: Charcoal Obsidian panel / topbar / rail surface
+    val DarkLayerElevated = Color(0xFF161B22) // Level 2: Dark elevated card & dialog surface
+    val DarkLayerControl = Color(0xFF21262D) // Level 3: Gray active tab / chip / control surface
+    val DarkLayerHighlight = Color(0xFF30363D) // Hairline card border & outline
+    val DarkLayerBorderSubtle = Color(0xFF21262D) // Subtle panel divider
+    val FleetBlue = Color(0xFF3574F0) // Fleet Action & Primary Blue
+    val FleetFocusGlow = Color(0xFF716BF6) // Fleet Input & Focus Ring Glow
+    val FleetCyan = Color(0xFF38BDF8) // Fleet Cyan / Sky-blue accent
 
     // Frosted Light Theme Layer Architecture (blue-tinted frosted palette)
-    val LightLayerBase = Color(0xFFF0F4FA)         // Light canvas & app background (blue-tinted)
-    val LightLayerSurface = Color(0xFFF8FAFD)      // Light editor/content surface
-    val LightLayerElevated = Color(0xFFE8F0FD)     // Light activity rail (distinctly blue-tinted)
-    val LightLayerBorder = Color(0xFFD0D7DE)       // Light border & divider
-    val LightLayerText = Color(0xFF1A202C)         // Light primary text
-    val LightLayerAccent = Color(0xFF1570EF)       // Light cobalt-blue primary accent
+    val LightLayerBase = Color(0xFFF0F4FA) // Light canvas & app background (blue-tinted)
+    val LightLayerSurface = Color(0xFFF8FAFD) // Light editor/content surface
+    val LightLayerElevated = Color(0xFFE8F0FD) // Light activity rail (distinctly blue-tinted)
+    val LightLayerBorder = Color(0xFFD0D7DE) // Light border & divider
+    val LightLayerText = Color(0xFF1A202C) // Light primary text
+    val LightLayerAccent = Color(0xFF1570EF) // Light cobalt-blue primary accent
 
     // Window control preview mini dots
-    val WindowControlClose = Color(0xFFFF5F56)     // macOS Red
-    val WindowControlMinimize = Color(0xFFFFBD2E)  // macOS Yellow
-    val WindowControlMaximize = Color(0xFF27C93F)  // macOS Green
+    val WindowControlClose = Color(0xFFFF5F56) // macOS Red
+    val WindowControlMinimize = Color(0xFFFFBD2E) // macOS Yellow
+    val WindowControlMaximize = Color(0xFF27C93F) // macOS Green
 
     // Blue Glass / AMOLED canvas layer architecture
-    val BlueAmoledCanvas = Color(0xFF060C18)       // Deepest navy-black base canvas
-    val BlueAmoledRail = Color(0xFF07101E)         // Activity rail (deepest sidebar)
-    val BlueAmoledBorder = Color(0xFF1A2B48)       // Border & outline
-    val BlueAmoledBorderMuted = Color(0xFF263D62)  // Muted divider
+    val BlueAmoledCanvas = Color(0xFF060C18) // Deepest navy-black base canvas
+    val BlueAmoledRail = Color(0xFF07101E) // Activity rail (deepest sidebar)
+    val BlueAmoledBorder = Color(0xFF1A2B48) // Border & outline
+    val BlueAmoledBorderMuted = Color(0xFF263D62) // Muted divider
 }
 
 /**
@@ -474,6 +474,28 @@ object PluginThemeColors {
     val ActiveTabBorder = Color(0xFF38BDF8)
     val StatusVerified = Color(0xFF22C55E)
     val StatusUnverified = Color(0xFFF59E0B)
+}
+
+/**
+ * Semantic token colors for Settings and Editor Preferences screens.
+ */
+object SettingsThemeColors {
+    val CardBackground = Color(0xD00A1E38)
+    val CardBorder = Color(0x6638BDF8)
+    val CardCalloutBackground = Color(0xCC051222)
+    val CardCalloutBorder = Color(0x4038BDF8)
+    val ControlBackground = Color(0x80081B34)
+    val ControlBorder = Color(0x4D38BDF8)
+    val KeyCapBackground = Color(0x99061528)
+    val KeyCapBorder = Color(0x4038BDF8)
+    val ButtonSecondaryBackground = Color(0x331E3A6E)
+    val ButtonSecondaryBorder = Color(0x6638BDF8)
+    val ActivePillBackground = Color(0xD5195EB7)
+    val ActivePillBorder = Color(0xFF38BDF8)
+    val SwitchActiveTrack = Color(0xFF2563EB)
+    val StatusDotGreen = Color(0xFF22C55E)
+    val TextSecondary = Color(0xFF94A3B8)
+    val TextTertiary = Color(0xFF64748B)
 }
 
 /** Optical palette for the saturated blue studio canvas used by IDE workspaces. */
@@ -589,26 +611,26 @@ object IdeShellTokens {
         topBarBackground = StudioBackdropColors.ChromeCenter.copy(alpha = AlphaTokens.Prominent),
         railBackground = StudioBackdropColors.SidebarStart.copy(alpha = AlphaTokens.Strong),
         navigatorBackground = StudioBackdropColors.SidebarCenter.copy(alpha = AlphaTokens.Strong),
-        contentBackground = StudioBackdropColors.Base.copy(alpha = AlphaTokens.GlassElevated),
+        contentBackground = Color.Transparent,
         statusBarBackground = StudioBackdropColors.ChromeEnd.copy(alpha = AlphaTokens.High),
-        cardBackground = StudioBackdropColors.Base.copy(alpha = AlphaTokens.GlassTranslucent),
-        cardBackgroundMuted = StudioBackdropColors.ChromeEnd.copy(alpha = AlphaTokens.Strong),
-        border = ThemeColors.FleetCyan.copy(alpha = AlphaTokens.Ambient),
-        borderMuted = ThemeColors.FleetCyan.copy(alpha = AlphaTokens.Glow),
+        cardBackground = Color(0x730A1E38),
+        cardBackgroundMuted = Color(0x40051222),
+        border = Color(0x4D38BDF8),
+        borderMuted = Color(0x2638BDF8),
         textMain = Color(0xFFEDF5FF),
         textMuted = Color(0xFFB8D0EB),
         textDim = Color(0xFF9CBCE0),
         accentGreen = Color(0xFF238636),
         accentGreenHover = Color(0xFF2EA043),
-        accentBlue = Color(0xFF38BDF8),
-        accentBlueHover = Color(0xFF60A5FA),
+        accentBlue = Color(0xFF195EB7),
+        accentBlueHover = Color(0xFF2563EB),
         warningAmber = Color(0xFFEAB308),
         warningAmberBg = Color(0x26EAB308),
         errorRed = Color(0xFFF85149),
         errorRedBg = Color(0x26F85149),
         focusRing = Color(0xFF38BDF8),
         controlHover = Color(0xFF162744).copy(alpha = AlphaTokens.Elevated),
-        controlSelected = Color(0xFF1E3A6E).copy(alpha = AlphaTokens.Elevated),
+        controlSelected = Color(0xD5195EB7),
         isDark = true,
     )
 }

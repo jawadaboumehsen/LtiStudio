@@ -17,6 +17,8 @@ import org.ide.lti.core.domain.plugin.PackageIdentity
 import org.ide.lti.core.domain.plugin.PackageInspection
 import org.ide.lti.core.domain.plugin.PluginInstallPort
 import org.ide.lti.core.domain.plugin.TrustDecision
+import org.ide.lti.sdk.patchmod.runtime.PackageReadResult
+import org.ide.lti.sdk.patchmod.runtime.PluginPackageReader
 import java.io.IOException
 import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files

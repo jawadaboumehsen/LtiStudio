@@ -1,3 +1,12 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.feature.setup
 
 import kotlinx.coroutines.Dispatchers
@@ -7,6 +16,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -14,14 +25,10 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.Clock
 import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
-import org.ide.lti.core.model.setup.EnvironmentReadiness
-import org.ide.lti.core.model.setup.EnvironmentReadinessState
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.domain.setup.DiagnosticCheckItem
-import org.ide.lti.core.domain.setup.SetupOutcome
-import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.flow.flowOf
 import org.ide.lti.core.domain.setup.SetupLogEvent
+import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.domain.setup.SetupPlan
 import org.ide.lti.core.domain.setup.SetupPlanKind
 import org.ide.lti.core.domain.setup.SetupStepStage
@@ -29,18 +36,15 @@ import org.ide.lti.core.domain.setup.StepProvenance
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolchainProvisioningService
 import org.ide.lti.core.domain.setup.ToolchainSetupState
-import org.ide.lti.feature.setup.components.computeSidebarBadge
-import org.ide.lti.feature.setup.components.computeSidebarSubtitle
 import org.ide.lti.core.domain.usecase.target.ProvisionAvbKeyUseCase
-import org.ide.lti.core.domain.usecase.workspace.DiscoverWorkdirWorkspacesUseCase
-import org.ide.lti.core.domain.usecase.workspace.GetRecentWorkspacesUseCase
-import org.ide.lti.core.domain.usecase.workspace.OpenWorkspaceUseCase
-import org.ide.lti.core.domain.usecase.workspace.RemoveRecentWorkspaceUseCase
 import org.ide.lti.core.domain.workspace.WorkspaceManager
-import org.ide.lti.core.model.target.TargetDevice
+import org.ide.lti.core.model.setup.EnvironmentReadiness
+import org.ide.lti.core.model.setup.EnvironmentReadinessState
 import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.core.model.workspace.Workspace
 import org.ide.lti.core.model.workspace.WorkspaceSession
+import org.ide.lti.feature.setup.components.computeSidebarBadge
+import org.ide.lti.feature.setup.components.computeSidebarSubtitle
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -111,7 +115,7 @@ class SetupViewModelTest {
                 } else {
                     it.copy(status = StepStatus.PENDING, provenance = StepProvenance.LIVE)
                 }
-            }
+            },
         ),
     ) : ToolchainProvisioningService {
         val _state = MutableStateFlow(initialState)
@@ -119,6 +123,7 @@ class SetupViewModelTest {
 
         var verifyEnvironmentCount = 0
             private set
+
         /** Plans that were confirmed (executed), in order. The only path that can mutate. */
         val executedPlans = mutableListOf<SetupPlan>()
         val fullSetupCount: Int get() = executedPlans.count { it.kind == SetupPlanKind.FULL_SETUP }
@@ -153,7 +158,7 @@ class SetupViewModelTest {
                     } else {
                         it.copy(status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE)
                     }
-                }
+                },
             )
         }
 
@@ -185,8 +190,14 @@ class SetupViewModelTest {
             lastPreparedKind = kind
             lastPreparedTargetId = targetId
             lastPreparedAutoDoctor = autoDoctorEnabled
-            return SetupPlan(planId = "fake-plan-$prepareCount", revisionHash = "fake-rev", environmentKey = "fake-env",
-                kind = kind, targetStageOrToolId = targetId, autoDoctorEnabled = autoDoctorEnabled)
+            return SetupPlan(
+                planId = "fake-plan-$prepareCount",
+                revisionHash = "fake-rev",
+                environmentKey = "fake-env",
+                kind = kind,
+                targetStageOrToolId = targetId,
+                autoDoctorEnabled = autoDoctorEnabled,
+            )
                 .also { lastPreparedPlan = it }
         }
         private var lastPreparedPlan: SetupPlan? = null
@@ -209,11 +220,12 @@ class SetupViewModelTest {
                         } else {
                             it.copy(status = StepStatus.PENDING, provenance = StepProvenance.LIVE)
                         }
-                    }
+                    },
                 )
                 SetupPlanKind.FULL_SETUP,
                 SetupPlanKind.STAGE_RETRY,
-                SetupPlanKind.REPAIR_TOOL -> if (shouldMarkReadyOnFullSetup) markAllReady()
+                SetupPlanKind.REPAIR_TOOL,
+                -> if (shouldMarkReadyOnFullSetup) markAllReady()
             }
             return SetupOutcome.Succeeded()
         }
@@ -236,11 +248,10 @@ class SetupViewModelTest {
             lastTestedToolId = toolId
             return SetupOutcome.Succeeded()
         }
-
     }
 
     private class FakeEnvironmentReadinessPort(
-        initial: EnvironmentReadiness = EnvironmentReadiness(state = EnvironmentReadinessState.READY)
+        initial: EnvironmentReadiness = EnvironmentReadiness(state = EnvironmentReadinessState.READY),
     ) : EnvironmentReadinessPort {
         val flow = MutableStateFlow(initial)
         override fun observe(): Flow<EnvironmentReadiness> = flow.asStateFlow()
@@ -456,7 +467,6 @@ class SetupViewModelTest {
         }
     }
 
-
     @Test
     fun testAvbKeyProvisioning() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
@@ -482,7 +492,6 @@ class SetupViewModelTest {
             Dispatchers.resetMain()
         }
     }
-
 
     @Test
     fun testDefaultOfficialTargetsAvailable() = runTest {
@@ -539,7 +548,6 @@ class SetupViewModelTest {
         }
     }
 
-
     @Test
     fun testAutoRunEnvironmentSetupAlwaysVerifiesAndNeverSkipsOnInit() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
@@ -580,8 +588,8 @@ class SetupViewModelTest {
                 initialState = ToolchainSetupState(
                     steps = ToolchainSetupState.defaultSteps().map {
                         it.copy(status = StepStatus.PENDING, provenance = StepProvenance.LIVE)
-                    }
-                )
+                    },
+                ),
             )
 
             val viewModel = SetupViewModel(manager, idleBridgeService)
@@ -611,8 +619,8 @@ class SetupViewModelTest {
                         id = "python",
                         title = "Python 3",
                         status = StepStatus.FAILED,
-                    )
-                )
+                    ),
+                ),
             )
 
             val viewModel = SetupViewModel(manager, toolchainService)
@@ -738,8 +746,6 @@ class SetupViewModelTest {
         }
     }
 
-
-
     @Test
     fun testOpenRecentProjectAllowedOffline() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
@@ -766,7 +772,7 @@ class SetupViewModelTest {
                     id = "offline_ws",
                     name = "Offline Workspace",
                     path = "~/LtiRomWorkDir/workspaces/offline_ws",
-                )
+                ),
             )
 
             var workspaceOpened = false
@@ -794,8 +800,8 @@ class SetupViewModelTest {
                 initial = EnvironmentReadiness(
                     state = EnvironmentReadinessState.SERVICE_UNREACHABLE,
                     failingCheck = "Daemon unreachable",
-                    remediation = "Start LtiRomServer"
-                )
+                    remediation = "Start LtiRomServer",
+                ),
             )
             val viewModel = SetupViewModel(
                 workspaceManager = manager,
@@ -829,7 +835,7 @@ class SetupViewModelTest {
                     provenance = StepProvenance.RESTORED,
                     verifiedAtEpochMs = threeHoursAgo,
                 )
-            }
+            },
         )
         assertEquals("Last verified 3h ago — re-checking…", computeSidebarSubtitle(restoredState, now))
         assertEquals("Checking", computeSidebarBadge(restoredState))
@@ -838,7 +844,7 @@ class SetupViewModelTest {
         val verifyingState = restoredState.copy(
             steps = restoredState.steps.mapIndexed { idx, s ->
                 if (idx == 0) s.copy(status = StepStatus.RUNNING) else s
-            }
+            },
         )
         assertEquals("Verifying…", computeSidebarSubtitle(verifyingState, now))
         assertEquals("Checking", computeSidebarBadge(verifyingState))
@@ -862,9 +868,12 @@ class SetupViewModelTest {
         // 6. Action required (failure)
         val failedState = ToolchainSetupState(
             steps = ToolchainSetupState.defaultSteps().mapIndexed { idx, s ->
-                if (idx == 1) s.copy(status = StepStatus.FAILED, provenance = StepProvenance.LIVE)
-                else s.copy(status = StepStatus.PENDING, provenance = StepProvenance.LIVE)
-            }
+                if (idx == 1) {
+                    s.copy(status = StepStatus.FAILED, provenance = StepProvenance.LIVE)
+                } else {
+                    s.copy(status = StepStatus.PENDING, provenance = StepProvenance.LIVE)
+                }
+            },
         )
         assertEquals("Action required", computeSidebarSubtitle(failedState, now))
         assertEquals("Fix needed", computeSidebarBadge(failedState))
@@ -934,13 +943,13 @@ class SetupViewModelTest {
                             status = StepStatus.WARNING,
                             detail = "Non-interactive sudo is not configured.",
                             copyableCommand = "echo \"\$USER ALL=(ALL) NOPASSWD: ALL\" | sudo tee /etc/sudoers.d/ltirom",
-                        )
+                        ),
                     ),
                     stepRunIds = mapOf(
                         SetupStepStage.REPO_SYNCHRONIZATION to "setup:submodule:apktool",
-                        SetupStepStage.TOOLCHAIN_COMPILATION to "setup:build:erofs-utils:cmake"
-                    )
-                )
+                        SetupStepStage.TOOLCHAIN_COMPILATION to "setup:build:erofs-utils:cmake",
+                    ),
+                ),
             )
             val repo = FakeWorkspaceRepository()
             val manager = WorkspaceManager(repo, this)
@@ -985,7 +994,7 @@ class SetupViewModelTest {
                 initialState = ToolchainSetupState(
                     pendingAttemptId = "attempt_rec_42",
                     recoveryBlockReason = "Crash during stage execution",
-                )
+                ),
             )
             val repo2 = FakeWorkspaceRepository()
             val manager2 = WorkspaceManager(repo2, this)
@@ -1037,4 +1046,3 @@ class SetupViewModelTest {
         }
     }
 }
-

@@ -19,14 +19,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.ide.lti.core.cli.DesktopShellExecutor
-import org.ide.lti.core.cli.ShellExecutor
-import org.ide.lti.core.cli.TerminalCommandDispatcher
-import org.ide.lti.core.cli.TerminalCommandDispatcherImpl
-import org.ide.lti.core.cli.TerminalLine
-import org.ide.lti.core.cli.TerminalOutputEvent
-import org.ide.lti.core.data.settings.AppSettingsState
+import org.ide.lti.core.domain.terminal.ShellExecutor
+import org.ide.lti.core.domain.terminal.TerminalCommandDispatcher
+import org.ide.lti.core.domain.terminal.TerminalCommandDispatcherFactory
 import org.ide.lti.core.domain.workspace.WorkspaceManager
+import org.ide.lti.core.model.terminal.TerminalLine
+import org.ide.lti.core.model.terminal.TerminalOutputEvent
+import org.ide.lti.core.ui.settings.AppSettingsState
 
 @Immutable
 data class TerminalUiState(
@@ -39,16 +38,16 @@ data class TerminalUiState(
 class TerminalViewModel(
     workspaceManager: WorkspaceManager,
     appSettingsState: AppSettingsState,
-    shellExecutor: ShellExecutor = DesktopShellExecutor(),
+    dispatcherFactory: TerminalCommandDispatcherFactory? = null,
+    shellExecutor: ShellExecutor? = null,
 ) : ViewModel() {
 
     private val initialCwd = workspaceManager.currentWorkspace.value?.path
         ?: System.getProperty("user.home")
         ?: "."
 
-    private val dispatcher: TerminalCommandDispatcher = TerminalCommandDispatcherImpl(
+    private val dispatcher: TerminalCommandDispatcher = dispatcherFactory?.create(
         initialCwd = initialCwd,
-        shellExecutor = shellExecutor,
         onToggleTheme = {
             appSettingsState.isDarkTheme = !appSettingsState.isDarkTheme
         },
@@ -92,7 +91,25 @@ class TerminalViewModel(
                 else -> false
             }
         },
-    )
+    ) ?: (shellExecutor?.let { executor: ShellExecutor ->
+        object : TerminalCommandDispatcher {
+            override val cwd = MutableStateFlow(initialCwd)
+            override fun dispatch(line: String) = kotlinx.coroutines.flow.flow {
+                executor.run(line, initialCwd).collect { event ->
+                    when (event) {
+                        is org.ide.lti.core.domain.terminal.ShellOutputEvent.Line -> {
+                            if (event.isError) emit(TerminalOutputEvent.Error(event.text))
+                            else emit(TerminalOutputEvent.Output(event.text))
+                        }
+                        is org.ide.lti.core.domain.terminal.ShellOutputEvent.Finished -> Unit
+                    }
+                }
+            }
+        }
+    } ?: object : TerminalCommandDispatcher {
+        override val cwd = MutableStateFlow(initialCwd)
+        override fun dispatch(line: String) = kotlinx.coroutines.flow.emptyFlow<TerminalOutputEvent>()
+    })
 
     private val _uiState = MutableStateFlow(
         TerminalUiState(

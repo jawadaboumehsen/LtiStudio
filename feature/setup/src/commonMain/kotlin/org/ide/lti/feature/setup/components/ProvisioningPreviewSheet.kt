@@ -23,12 +23,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -130,6 +128,7 @@ fun ProvisioningPreviewSheet(
             },
         contentAlignment = Alignment.Center,
     ) {
+        val shellColors = GlassTheme.ideShellColors
         GlassCard(
             modifier = Modifier
                 .widthIn(max = ComponentSize.MaxPanelWidth)
@@ -147,6 +146,8 @@ fun ProvisioningPreviewSheet(
                     indication = null,
                     onClick = { /* Intercept click so dialog doesn't close on inner click */ },
                 ),
+            surfaceColor = shellColors.cardBackground,
+            borderColor = shellColors.border,
             backdrop = backdrop,
             contentPadding = Spacing.CardPadding,
         ) {
@@ -258,8 +259,8 @@ fun ProvisioningPreviewSheet(
                                 severity = GlassBannerSeverity.WARNING,
                                 title = "Root / Sudo Elevation Required",
                                 description =
-                                    "System packages or toolchain binaries require administrative permissions: " +
-                                        reason,
+                                "System packages or toolchain binaries require administrative permissions: " +
+                                    reason,
                                 backdrop = backdrop,
                             )
                         }

@@ -1,0 +1,12 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ClassSignature:StageDescriptor.kt:StudioSubobject</ID>
+    <ID>FunctionSignature:StageEditor.kt:StageEditor$@Composable public fun Content</ID>
+    <ID>FunctionSignature:StageEditorRegistry.kt:public fun StageEditorRegistry.allDescriptors: List&lt;StageDescriptor&gt;</ID>
+    <ID>FunctionSignature:StageEditorRegistry.kt:public fun StageEditorRegistry.descriptorFor: StageDescriptor?</ID>
+    <ID>ImportOrdering:StageDescriptorTest.kt:import kotlin.test.Test import kotlin.test.assertEquals import kotlin.test.assertFailsWith import org.ide.lti.core.model.run.StageId</ID>
+    <ID>ImportOrdering:StudioSubobjectId.kt:import kotlin.jvm.JvmInline import kotlinx.serialization.Serializable</ID>
+  </CurrentIssues>
+</SmellBaseline>

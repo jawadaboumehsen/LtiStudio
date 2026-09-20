@@ -4,6 +4,8 @@
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
  */
 package org.ide.lti.core.designsystem.theme
 
@@ -35,7 +37,7 @@ class GlassOpticalParityTest {
         assertNotNull(bevelHighlight, "GlassHighlights.Bevel() must return a non-null Highlight")
         assertTrue(
             bevelHighlight.style is HighlightStyle.GlassBevel,
-            "Bevel highlight must use HighlightStyle.GlassBevel"
+            "Bevel highlight must use HighlightStyle.GlassBevel",
         )
     }
 
@@ -44,7 +46,7 @@ class GlassOpticalParityTest {
         val pointerLight = HighlightStyle.PointerLight(
             pointerPosition = Offset(100f, 50f),
             intensity = 0.8f,
-            falloff = 2f
+            falloff = 2f,
         )
         assertNotNull(pointerLight, "PointerLight style must be constructible with pointer coordinates")
         val highlight = Highlight(style = pointerLight)
@@ -57,7 +59,7 @@ class GlassOpticalParityTest {
         assertNotNull(highlight, "GlassHighlights.interactive() must return a non-null Highlight")
         assertTrue(
             highlight.style is HighlightStyle.PointerLight,
-            "Interactive highlight must use HighlightStyle.PointerLight"
+            "Interactive highlight must use HighlightStyle.PointerLight",
         )
     }
 }

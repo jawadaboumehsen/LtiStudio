@@ -34,6 +34,7 @@ public data class StudioPresentation(
     val expandedSections: Map<String, Set<String>> = emptyMap(),
     val navigatorWidth: Int = DEFAULT_NAVIGATOR_WIDTH,
     val lastFocusId: String? = null,
+    val inOverview: Boolean = (editorStageId == null),
 ) {
     public companion object {
         public const val MIN_NAVIGATOR_WIDTH: Int = 200

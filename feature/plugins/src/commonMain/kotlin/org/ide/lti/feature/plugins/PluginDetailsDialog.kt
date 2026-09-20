@@ -155,7 +155,12 @@ internal fun PluginDetailsDialog(record: InstalledRecord, references: List<Strin
 
 @Composable
 private fun DetailSection(title: String, content: @Composable () -> Unit) {
-    GlassCard(modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.ExtraExtraSmall)) {
+    val shellColors = GlassTheme.ideShellColors
+    GlassCard(
+        modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.ExtraExtraSmall),
+        surfaceColor = shellColors.cardBackground,
+        borderColor = shellColors.border,
+    ) {
         Column(modifier = Modifier.padding(Spacing.Small)) {
             Text(
                 text = title,

@@ -1,3 +1,12 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.feature.setup.components
 
 import androidx.compose.foundation.layout.Arrangement
@@ -32,8 +41,11 @@ fun DocFeatureCard(
     iconPainter: Painter? = null,
     backdrop: LayerBackdrop? = null,
 ) {
+    val shellColors = GlassTheme.ideShellColors
     GlassCard(
         modifier = modifier.fillMaxWidth(),
+        surfaceColor = shellColors.cardBackground,
+        borderColor = shellColors.border,
         backdrop = backdrop,
         contentPadding = Spacing.CardPadding,
     ) {

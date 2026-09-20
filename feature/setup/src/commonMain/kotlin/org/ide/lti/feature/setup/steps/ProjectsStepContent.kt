@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -106,6 +105,7 @@ fun ProjectsStepContent(
     lazyListState: androidx.compose.foundation.lazy.LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
 ) {
     val glassColors = GlassTheme.colors
+
     @Suppress("DEPRECATION")
     val clipboardManager = LocalClipboardManager.current
     val rootFocusRequester = remember { FocusRequester() }

@@ -1,0 +1,29 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ArgumentListWrapping:DebloatEditor.kt:("Keep Rules (Protected Packages)", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)</ID>
+    <ID>ArgumentListWrapping:DebloatEditor.kt:("keepSelectors", dirtyPaths, "Keep protection", "Explicit keep rules prevent accidental removal of core services.")</ID>
+    <ID>ArgumentListWrapping:DebloatEditor.kt:("presets", dirtyPaths, "Debloat policy", "Recommended preset preserves all critical telephony/IMS services.")</ID>
+    <ID>ArgumentListWrapping:DebloatEditor.kt:("removeSelectors", dirtyPaths, "Package list", "Selected packages will be stripped from /system and /product.")</ID>
+    <ID>ArgumentListWrapping:DebloatEditor.kt:(settings, dirtyPaths, onChange)</ID>
+    <ID>ClassSignature:DebloatViewModel.kt:DebloatViewModel : ViewModel</ID>
+    <ID>FunctionLiteral:DebloatEditor.kt:&lt;anonymous&gt;</ID>
+    <ID>FunctionSignature:DebloatEditor.kt:@Composable private fun RemoveSelectionsCard</ID>
+    <ID>MaxLineLength:DebloatEditor.kt:"Active inventory contains ${settings.removeSelectors.size} packages selected for removal and ${settings.keepSelectors.size} explicitly protected packages."</ID>
+    <ID>MaxLineLength:DebloatEditor.kt:"remove-selections", "remove_selections" -&gt; item { RemoveSelectionsCard(settings, dirtyPaths, onChange) }</ID>
+    <ID>MaxLineLength:DebloatEditor.kt:Meta("keepSelectors", dirtyPaths, "Keep protection", "Explicit keep rules prevent accidental removal of core services.")</ID>
+    <ID>MaxLineLength:DebloatEditor.kt:Meta("presets", dirtyPaths, "Debloat policy", "Recommended preset preserves all critical telephony/IMS services.")</ID>
+    <ID>MaxLineLength:DebloatEditor.kt:Meta("removeSelectors", dirtyPaths, "Package list", "Selected packages will be stripped from /system and /product.")</ID>
+    <ID>MaxLineLength:DebloatEditor.kt:Text("Keep Rules (Protected Packages)", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)</ID>
+    <ID>MaxLineLength:DebloatEditor.kt:private</ID>
+    <ID>MaximumLineLength:DebloatEditor.kt:)</ID>
+    <ID>MaximumLineLength:DebloatEditor.kt:{</ID>
+    <ID>MaximumLineLength:DebloatEditor.kt:}</ID>
+    <ID>ParameterListWrapping:DebloatEditor.kt:(DebloatSettings)</ID>
+    <ID>ParameterListWrapping:DebloatEditor.kt:(settings: DebloatSettings, dirtyPaths: Set&lt;String&gt;, onChange: (DebloatSettings) -&gt; Unit)</ID>
+    <ID>UnusedParameter:DebloatEditor.kt:onChange: (DebloatSettings) -&gt; Unit</ID>
+    <ID>UnusedParameter:DebloatEditor.kt:settings: DebloatSettings</ID>
+    <ID>UnusedParameter:DebloatEditor.kt:target: TargetDevice</ID>
+  </CurrentIssues>
+</SmellBaseline>

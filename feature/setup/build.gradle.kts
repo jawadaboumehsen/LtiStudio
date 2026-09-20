@@ -15,6 +15,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
 
+            api(projects.feature.setupApi)
             implementation(projects.core.domain)
             implementation(compose.ui)
             implementation(compose.foundation)

@@ -4,6 +4,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.ide.lti.core.domain.terminal.ShellOutputEvent
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

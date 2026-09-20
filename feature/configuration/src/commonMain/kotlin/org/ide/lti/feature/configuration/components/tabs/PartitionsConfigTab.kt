@@ -41,6 +41,7 @@ fun PartitionsConfigTab(
     modifier: Modifier = Modifier,
 ) {
     val glassColors = GlassTheme.colors
+    val colors = GlassTheme.ideShellColors
 
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -60,7 +61,11 @@ fun PartitionsConfigTab(
             onPartitionsChange = { onTargetChange(target.copy(bootPartitions = it)) },
         )
 
-        GlassCard(modifier = Modifier.fillMaxWidth()) {
+        GlassCard(
+            modifier = Modifier.fillMaxWidth(),
+            surfaceColor = colors.cardBackground,
+            borderColor = colors.border,
+        ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(Spacing.Small),
@@ -116,7 +121,11 @@ fun PartitionsConfigTab(
             }
         }
 
-        GlassCard(modifier = Modifier.fillMaxWidth()) {
+        GlassCard(
+            modifier = Modifier.fillMaxWidth(),
+            surfaceColor = colors.cardBackground,
+            borderColor = colors.border,
+        ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(Spacing.Small),
@@ -173,9 +182,14 @@ private fun PartitionListCard(
     modifier: Modifier = Modifier,
 ) {
     val glassColors = GlassTheme.colors
+    val colors = GlassTheme.ideShellColors
     var newPartitionName by remember { mutableStateOf("") }
 
-    GlassCard(modifier = modifier.fillMaxWidth()) {
+    GlassCard(
+        modifier = modifier.fillMaxWidth(),
+        surfaceColor = colors.cardBackground,
+        borderColor = colors.border,
+    ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(Spacing.Small),

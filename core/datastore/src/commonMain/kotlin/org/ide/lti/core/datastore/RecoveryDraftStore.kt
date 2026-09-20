@@ -24,46 +24,9 @@ import org.ide.lti.core.model.workspace.ExtractionSettings
 import org.ide.lti.core.model.workspace.PublishSettings
 import org.ide.lti.core.model.workspace.ReleaseSettings
 import java.security.MessageDigest
-
-@Serializable
-public data class RecoveryDraftRecord(
-    val schema: Int = 1,
-    val workspaceId: String,
-    val baseSnapshotId: String?,
-    val baseSnapshotDigest: String?,
-    val draftRevision: Long,
-    val discardGeneration: Long = 0L,
-    val acquisition: AcquisitionSettings,
-    val extraction: ExtractionSettings,
-    val assembly: AssemblySettings,
-    val debloat: DebloatSettings,
-    val customization: CustomizationSettings,
-    val build: BuildSettings,
-    val release: ReleaseSettings,
-    val publish: PublishSettings,
-    val dirtyPaths: Set<String> = emptySet(),
-    val lastPersistedAt: Instant,
-    val checksum: String = "",
-    val tombstoned: Boolean = false,
-)
-
-public data class RecoveryDraftReadResult(
-    val record: RecoveryDraftRecord?,
-    val baseDiverged: Boolean = false,
-    val wasCorrupt: Boolean = false,
-)
-
-public interface RecoveryDraftStorePort {
-    suspend fun persist(record: RecoveryDraftRecord): Result<RecoveryDraftRecord>
-    suspend fun get(
-        workspaceId: String,
-        expectedBaseSnapshotId: String? = null,
-        expectedBaseSnapshotDigest: String? = null,
-    ): RecoveryDraftReadResult?
-    suspend fun advanceDiscardGeneration(workspaceId: String, generation: Long): Result<Unit>
-    suspend fun delete(workspaceId: String): Result<Unit>
-    suspend fun retireIfRevision(workspaceId: String, savedRevision: Long): Result<Boolean>
-}
+public typealias RecoveryDraftRecord = org.ide.lti.core.model.draft.RecoveryDraftRecord
+public typealias RecoveryDraftReadResult = org.ide.lti.core.model.draft.RecoveryDraftReadResult
+public typealias RecoveryDraftStorePort = org.ide.lti.core.domain.ports.RecoveryDraftStorePort
 
 /** Settings-backed, checksummed recovery records. Generation checks are enforced here as the final race barrier. */
 public class RecoveryDraftStore(

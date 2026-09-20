@@ -15,9 +15,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -25,11 +27,8 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.ide.lti.core.domain.setup.DiagnosticCategory
 import org.ide.lti.core.domain.setup.DiagnosticCheckItem
-import org.ide.lti.core.domain.setup.SetupOutcome
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.flow.flowOf
 import org.ide.lti.core.domain.setup.SetupLogEvent
+import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.domain.setup.SetupPlan
 import org.ide.lti.core.domain.setup.SetupPlanAction
 import org.ide.lti.core.domain.setup.SetupPlanKind
@@ -50,7 +49,7 @@ import kotlin.test.assertTrue
 class EnvironmentSetupStateTest {
 
     private fun runEnvironmentTest(
-        testBody: suspend TestScope.(environmentScope: CoroutineScope) -> Unit
+        testBody: suspend TestScope.(environmentScope: CoroutineScope) -> Unit,
     ) = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         Dispatchers.setMain(testDispatcher)
@@ -67,14 +66,15 @@ class EnvironmentSetupStateTest {
         initialState: ToolchainSetupState = ToolchainSetupState(
             steps = ToolchainSetupState.defaultSteps().map {
                 it.copy(status = StepStatus.PENDING, provenance = StepProvenance.LIVE)
-            }
-        )
+            },
+        ),
     ) : ToolchainProvisioningService {
         val _state = MutableStateFlow(initialState)
         override val state: StateFlow<ToolchainSetupState> = _state.asStateFlow()
 
         var verifyEnvironmentCount = 0
             private set
+
         /** Plans that were confirmed (executed), in order. The only path that can mutate. */
         val executedPlans = mutableListOf<SetupPlan>()
         val fullSetupCount: Int get() = executedPlans.count { it.kind == SetupPlanKind.FULL_SETUP }
@@ -84,7 +84,6 @@ class EnvironmentSetupStateTest {
             get() = executedPlans.count { plan -> plan.orderedActions.any { it is SetupPlanAction.InstallPackages } }
         var testToolCount = 0
             private set
-
 
         override suspend fun verifyEnvironment(): ToolchainSetupState {
             verifyEnvironmentCount++
@@ -97,7 +96,6 @@ class EnvironmentSetupStateTest {
         }
 
         override suspend fun provisionAvbKey(): Boolean = true
-
 
         var prepareCount = 0
             private set
@@ -187,7 +185,6 @@ class EnvironmentSetupStateTest {
             testToolCount++
             return SetupOutcome.Succeeded()
         }
-
     }
 
     @Test
@@ -218,9 +215,9 @@ class EnvironmentSetupStateTest {
                         title = "Host Compilers",
                         category = DiagnosticCategory.COMPILERS,
                         status = StepStatus.FAILED,
-                    )
-                )
-            )
+                    ),
+                ),
+            ),
         )
         val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)
 
@@ -281,9 +278,9 @@ class EnvironmentSetupStateTest {
                         title = "Host Compilers",
                         category = DiagnosticCategory.COMPILERS,
                         status = StepStatus.FAILED,
-                    )
-                )
-            )
+                    ),
+                ),
+            ),
         )
         val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)
 
@@ -305,8 +302,8 @@ class EnvironmentSetupStateTest {
                     title = "Host Compilers",
                     category = DiagnosticCategory.COMPILERS,
                     status = StepStatus.FAILED,
-                )
-            )
+                ),
+            ),
         )
         stateHolder.setAutoDoctorEnabled(false)
         assertFalse(stateHolder.isAutoDoctorEnabled.value)
@@ -345,7 +342,7 @@ class EnvironmentSetupStateTest {
                 isRunning = true,
                 currentStage = SetupStepStage.REPO_SYNCHRONIZATION,
                 stepRunIds = mapOf(SetupStepStage.REPO_SYNCHRONIZATION to "durable-run-existing-123"),
-            )
+            ),
         )
 
         // Simulate re-creating the state holder while the underlying service is already mid-run,
@@ -390,7 +387,7 @@ class EnvironmentSetupStateTest {
                 steps = initialSteps,
                 checkedAt = null,
                 lastReadyAt = null,
-            )
+            ),
         )
         val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)
 
@@ -441,7 +438,7 @@ class EnvironmentSetupStateTest {
                     status = StepStatus.PENDING,
                     provenance = StepProvenance.LIVE,
                 ),
-            )
+            ),
         )
         stateHolder.checkEnvironmentStatus()
         testScheduler.advanceUntilIdle()
@@ -464,7 +461,7 @@ class EnvironmentSetupStateTest {
         val presentation = stateHolder.environmentPresentation.value
         assertTrue(
             presentation.environmentState is EnvironmentState.Unavailable,
-            "Missing service must be Unavailable, never ready-warning fallback"
+            "Missing service must be Unavailable, never ready-warning fallback",
         )
         assertEquals(PrimaryAction.RETRY_CONNECTION, presentation.primaryAction)
     }
@@ -476,16 +473,17 @@ class EnvironmentSetupStateTest {
             it.copy(
                 status = StepStatus.PENDING,
                 provenance = StepProvenance.RESTORED,
-                verifiedAtEpochMs = persistedTimestamp
+                verifiedAtEpochMs = persistedTimestamp,
             )
         }
         val spyService = SpyToolchainProvisioningService(
             initialState = ToolchainSetupState(
                 steps = restoredSteps,
                 lastVerifiedTimestamp = persistedTimestamp,
-                checkedAt = null, // No live check in this session
+                // No live check in this session
+                checkedAt = null,
                 lastReadyAt = null,
-            )
+            ),
         )
         val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)
         testScheduler.advanceUntilIdle()
@@ -497,7 +495,7 @@ class EnvironmentSetupStateTest {
         assertEquals(
             PrimaryAction.CHECK,
             presentation.primaryAction,
-            "Restored state must offer Check, not live-ready or Set Up"
+            "Restored state must offer Check, not live-ready or Set Up",
         )
     }
 
@@ -530,8 +528,8 @@ class EnvironmentSetupStateTest {
                         status = StepStatus.PENDING,
                         provenance = StepProvenance.LIVE,
                     ),
-                )
-            )
+                ),
+            ),
         )
         val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)
         testScheduler.advanceUntilIdle()
@@ -589,7 +587,7 @@ class EnvironmentSetupStateTest {
         assertTrue(
             stateHolder.environmentNotice.value!!.contains("plan", ignoreCase = true) ||
                 stateHolder.environmentNotice.value!!.contains("preview", ignoreCase = true) ||
-                stateHolder.environmentNotice.value!!.contains("available", ignoreCase = true)
+                stateHolder.environmentNotice.value!!.contains("available", ignoreCase = true),
         )
     }
 
@@ -640,7 +638,7 @@ class EnvironmentSetupStateTest {
             assertNotNull(op, "Terminal outcome must produce an operation record for $terminalOutcome")
             assertFalse(
                 op.executionState == SetupOperationState.SUCCEEDED,
-                "$terminalOutcome must NEVER be presented as SUCCEEDED"
+                "$terminalOutcome must NEVER be presented as SUCCEEDED",
             )
 
             when (terminalOutcome) {

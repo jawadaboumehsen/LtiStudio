@@ -6,7 +6,8 @@ plugins {
 }
 
 dependencies {
-    implementation(projects.tool.core)
+    implementation(projects.tool.api)
+    implementation(projects.tool.runtime)
     implementation(libs.kotlinx.serialization.json)
 
     testImplementation(libs.kotlin.test)
@@ -35,10 +36,14 @@ tasks.register<JavaExec>("generateToolAdapters") {
     inputs.dir(layout.projectDirectory.dir("../captured-help"))
         .withPathSensitivity(PathSensitivity.RELATIVE)
 
-    outputs.dir(layout.projectDirectory.dir("../adapters/src/main/kotlin"))
+    outputs.dir(layout.projectDirectory.dir("../adapter/android-device/src/main/kotlin"))
+    outputs.dir(layout.projectDirectory.dir("../adapter/android-package/src/main/kotlin"))
+    outputs.dir(layout.projectDirectory.dir("../adapter/image/src/main/kotlin"))
+    outputs.dir(layout.projectDirectory.dir("../adapter/security/src/main/kotlin"))
+    outputs.dir(layout.projectDirectory.dir("../adapter/publishing/src/main/kotlin"))
     outputs.dir(layout.projectDirectory.dir("../aliases"))
     outputs.dir(layout.projectDirectory.dir("../docs"))
-    outputs.file(layout.projectDirectory.file("../core/src/main/kotlin/io/ltirom/tooling/core/ToolMetadataRegistry.kt"))
+    outputs.file(layout.projectDirectory.file("../metadata/src/main/kotlin/io/ltirom/tooling/core/ToolMetadataRegistry.kt"))
 
     outputs.cacheIf { true }
 

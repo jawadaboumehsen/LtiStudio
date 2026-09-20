@@ -35,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
 import org.ide.lti.core.designsystem.component.actions.GlassItemCard
@@ -50,8 +51,10 @@ import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
+import org.ide.lti.core.designsystem.theme.SettingsThemeColors
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.config.AppTheme
 
 @Composable
 fun NotificationScreen(
@@ -77,8 +80,14 @@ fun NotificationScreenContent(
     notifications: List<AppNotificationItem> = defaultSampleNotifications,
 ) {
     var notificationList by remember(notifications) { mutableStateOf(notifications) }
+    val isBlueGlass = GlassTheme.appTheme == AppTheme.Blue
+    val colors = GlassTheme.ideShellColors
 
-    Column(modifier = modifier.fillMaxSize()) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(if (isBlueGlass) Color.Transparent else colors.appBackground),
+    ) {
         GlobalAppTopBar(
             selectedDestination = GlobalAppDestination.Settings,
             onSelectDestination = { destination ->
@@ -130,6 +139,8 @@ fun NotificationScreenContent(
                     // Empty state
                     GlassCard(
                         modifier = Modifier.fillMaxWidth(),
+                        surfaceColor = if (isBlueGlass) SettingsThemeColors.CardBackground else colors.cardBackground,
+                        borderColor = if (isBlueGlass) SettingsThemeColors.CardBorder else colors.border,
                         contentPadding = Spacing.ExtraExtraLarge,
                     ) {
                         GlassEmptyState(

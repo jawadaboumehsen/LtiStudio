@@ -9,7 +9,6 @@
  */
 package org.ide.lti.feature.setup
 
-import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,10 +16,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -43,7 +40,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
-import java.io.File
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -62,6 +58,7 @@ import org.ide.lti.core.domain.setup.ToolchainSetupState
 import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.core.model.workspace.Workspace
 import org.ide.lti.core.model.workspace.WorkspaceType
+import java.io.File
 
 /**
  * Desktop platform implementation checking the LTI_SETUP_BENCHMARK environment variable.
@@ -267,10 +264,12 @@ fun SetupPerformanceScenarioDriver(
                         // Periodically feed additional lines to exercise bounded steady-cap retention while scrolling
                         tick++
                         if (tick % 60 == 0) {
-                            activityState.appendLines(List(25) {
-                                val padded = (streamCounter++).toString().padStart(5, '0')
-                                "[$padded] [STREAM] Live benchmark event while scrolling"
-                            })
+                            activityState.appendLines(
+                                List(25) {
+                                    val padded = (streamCounter++).toString().padStart(5, '0')
+                                    "[$padded] [STREAM] Live benchmark event while scrolling"
+                                },
+                            )
                         }
                         delay(16)
                     }
@@ -376,6 +375,7 @@ fun SetupPerformanceScenarioDriver(
                 SetupDestination.WORKSPACES -> currentTab = SetupTab.PROJECTS
                 SetupDestination.ENVIRONMENT -> currentTab = SetupTab.ENVIRONMENT
                 SetupDestination.TOOLS -> currentTab = SetupTab.TOOLS
+                SetupDestination.RECOVERY -> currentTab = SetupTab.RECOVERY
             }
         },
         onDismissEnvironmentNotice = {},

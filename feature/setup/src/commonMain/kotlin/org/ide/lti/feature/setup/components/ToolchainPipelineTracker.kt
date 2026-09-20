@@ -84,8 +84,11 @@ fun ToolchainPipelineTracker(
         stepMap[stage]?.status == StepStatus.SUCCESS
     }
 
+    val shellColors = GlassTheme.ideShellColors
     GlassCard(
         modifier = modifier.fillMaxWidth(),
+        surfaceColor = shellColors.cardBackground,
+        borderColor = shellColors.border,
         backdrop = backdrop,
         contentPadding = Spacing.CardPadding,
     ) {
@@ -172,13 +175,19 @@ private fun VerticalStageRow(
                 .fillMaxWidth()
                 .clip(GlassShapes.Small)
                 .background(
-                    if (isFailed) diagnostics.error.copy(alpha = AlphaTokens.UltraFaint)
-                    else diagnostics.warning.copy(alpha = AlphaTokens.UltraFaint)
+                    if (isFailed) {
+                        diagnostics.error.copy(alpha = AlphaTokens.UltraFaint)
+                    } else {
+                        diagnostics.warning.copy(alpha = AlphaTokens.UltraFaint)
+                    },
                 )
                 .border(
                     width = StrokeWidth.Hairline,
-                    color = if (isFailed) diagnostics.error.copy(alpha = AlphaTokens.Border)
-                    else diagnostics.warning.copy(alpha = AlphaTokens.Border),
+                    color = if (isFailed) {
+                        diagnostics.error.copy(alpha = AlphaTokens.Border)
+                    } else {
+                        diagnostics.warning.copy(alpha = AlphaTokens.Border)
+                    },
                     shape = GlassShapes.Small,
                 )
                 .padding(Spacing.MediumSmall),

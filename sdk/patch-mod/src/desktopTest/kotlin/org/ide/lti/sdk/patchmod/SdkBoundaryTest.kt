@@ -68,8 +68,9 @@ class SdkBoundaryTest {
                         "build" !in it.relativeTo(repoRoot).path.split(File.separator)
                 }
                 .forEach { file ->
-                    val text = file.readText()
-                    if (text.contains("projects.sdk.patchMod") || text.contains(":sdk:patch-mod")) {
+                    val pattern = Regex("""projects\.sdk\.patchMod\b|":sdk:patch-mod"""")
+                    val hasCliDep = pattern.containsMatchIn(file.readText())
+                    if (hasCliDep) {
                         offenders.add(file.relativeTo(repoRoot).path)
                     }
                 }

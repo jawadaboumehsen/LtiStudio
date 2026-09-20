@@ -22,6 +22,7 @@ import org.ide.lti.core.datastore.ToolchainPreferencesDataSource
 import org.ide.lti.core.datastore.WorkspacePreferencesDataSource
 import org.ide.lti.core.datastore.defaultRunFileStorage
 import org.ide.lti.core.datastore.defaultToolchainJournalStorage
+import org.koin.dsl.bind
 import org.koin.dsl.module
 
 /**
@@ -37,7 +38,7 @@ val DatastoreModule = module {
     single { WorkspacePreferencesDataSource(settings = get(), json = get()) }
     single { TargetPreferencesDataSource(settings = get(), json = get()) }
     single { SnapshotPreferencesDataSource(settings = get(), json = get()) }
-    single { StudioPresentationStore(settings = get(), json = get()) }
+    single { StudioPresentationStore(settings = get(), json = get()) } bind org.ide.lti.core.domain.ports.StudioPresentationStorePort::class
     single { RunRecordDataSource(settings = get(), json = get(), fileStorage = get()) }
 }
 

@@ -9,6 +9,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flow
+import org.ide.lti.core.domain.terminal.ShellExecutor
+import org.ide.lti.core.domain.terminal.ShellOutputEvent
+import org.ide.lti.core.domain.terminal.TerminalCommandDispatcher
+import org.ide.lti.core.model.terminal.TerminalOutputEvent
 import java.io.File
 
 class TerminalCommandDispatcherImpl(

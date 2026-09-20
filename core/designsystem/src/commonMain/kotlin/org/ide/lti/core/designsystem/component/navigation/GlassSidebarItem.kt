@@ -9,22 +9,12 @@
  */
 package org.ide.lti.core.designsystem.component.navigation
 
-import org.ide.lti.core.designsystem.component.primitives.*
-import org.ide.lti.core.designsystem.component.actions.*
-import org.ide.lti.core.designsystem.component.inputs.*
-import org.ide.lti.core.designsystem.component.display.*
-import org.ide.lti.core.designsystem.component.navigation.*
-import org.ide.lti.core.designsystem.component.layout.*
-import org.ide.lti.core.designsystem.component.feedback.*
-import org.ide.lti.core.designsystem.component.devtools.*
-
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -161,7 +151,10 @@ fun GlassSidebarItem(
                 text = label,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                color = if (selected) glassColors.onGlass else if (isHovered) glassColors.onGlass else glassColors.onGlassSecondary,
+                color = when {
+                    selected || isHovered -> glassColors.onGlass
+                    else -> glassColors.onGlassSecondary
+                },
                 modifier = Modifier.weight(1f),
                 maxLines = 1,
                 softWrap = false,
