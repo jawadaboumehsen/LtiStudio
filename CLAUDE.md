@@ -39,7 +39,10 @@ Examples:
 > design-system guardrails/Detekt rules do NOT catch a color/size parameter being omitted entirely
 > (only a wrong literal). This section (`CLAUDE.md`) is the token/component API catalog;
 > `rules/systemdesignrule.md` is the "don't repeat this bug" companion. For recomposition/allocation
-> performance rules (not correctness), see `rules/jetpackcomposerule.md`.
+> performance rules (not correctness), see `rules/jetpackcomposerule.md`. If you're adding a
+> `GlassStyles` role, migrating a component off `GlassEffects.*` onto `Modifier.glass`, or touching
+> the real production shell chrome (`IdeTopAppBar`/`IdeStatusBar`/`IdePipelineRail`/
+> `IdeNavigatorPanel`/`Modifier.ideCardSurface`), read `rules/glass-context.md` first.
 
 LtiRom Studio uses a professional IDE design built around a centralized token system in `core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/`.
 
