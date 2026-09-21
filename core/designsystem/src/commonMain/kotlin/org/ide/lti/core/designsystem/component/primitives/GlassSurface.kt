@@ -93,11 +93,18 @@ fun GlassSurface(
             resolvedEffect = effect,
             highlight = highlight,
             shadow = shadow,
-            onDrawSurface = {
+            onDrawSurface = { fallbackAlphaBoost ->
                 drawRect(finalSurfaceColor)
 
                 if (finalTint.isSpecified && finalTint.alpha > 0f) {
                     drawRect(finalTint, blendMode = BlendMode.SrcOver)
+                }
+                // No real backdrop sample was drawn this frame (render budget exceeded, or a
+                // sticky shader failure) - boost coverage proportionally to how much blur this
+                // surface wanted, so a heavily-blurred surface doesn't read as barely-tinted just
+                // because it degraded.
+                if (fallbackAlphaBoost > 0f) {
+                    drawRect(finalSurfaceColor.copy(alpha = fallbackAlphaBoost))
                 }
             },
         )

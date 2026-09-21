@@ -112,10 +112,17 @@ fun Modifier.glass(
             inputScale = style.inputScale,
             interaction = style.interaction,
             interactionSource = interactionSource,
-            onDrawSurface = {
+            onDrawSurface = { fallbackAlphaBoost ->
                 drawRect(style.surface)
                 if (style.tint.alpha > 0f) {
                     drawRect(style.tint, blendMode = BlendMode.SrcOver)
+                }
+                // No real backdrop sample was drawn this frame (render budget exceeded, or a
+                // sticky shader failure) - boost coverage proportionally to how much blur this
+                // style wanted, so a style authored to heavily obscure the background doesn't
+                // read as barely-tinted just because it degraded.
+                if (fallbackAlphaBoost > 0f) {
+                    drawRect(style.surface.copy(alpha = fallbackAlphaBoost))
                 }
             },
         )
@@ -178,11 +185,14 @@ fun Modifier.glassEffect(
             shape = { shape },
             resolvedEffect = effect,
             highlight = highlight,
-            onDrawSurface = {
+            onDrawSurface = { fallbackAlphaBoost ->
                 drawRect(finalSurfaceColor.copy(alpha = finalSurfaceColor.alpha * AlphaTokens.ButtonFill))
 
                 if (finalTint.isSpecified && finalTint.alpha > 0f) {
                     drawRect(finalTint, blendMode = BlendMode.SrcOver)
+                }
+                if (fallbackAlphaBoost > 0f) {
+                    drawRect(finalSurfaceColor.copy(alpha = fallbackAlphaBoost))
                 }
             },
         )
@@ -452,8 +462,11 @@ fun Modifier.glassScrim(
                 ResolvedGlassEffect(blur = OpticalSizeValue.Fixed(blurRadius), vibrancy = true)
             },
             highlight = GlassHighlights.Plain,
-            onDrawSurface = {
+            onDrawSurface = { fallbackAlphaBoost ->
                 drawRect(resolvedSurfaceColor)
+                if (fallbackAlphaBoost > 0f) {
+                    drawRect(resolvedSurfaceColor.copy(alpha = fallbackAlphaBoost))
+                }
             },
         )
     } else {

@@ -32,6 +32,7 @@ import androidx.compose.ui.node.observeReads
 import androidx.compose.ui.node.requireGraphicsContext
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.graphics.Outline
@@ -49,8 +50,29 @@ import com.kashif_e.backdrop.shadow.InnerShadowElement
 import com.kashif_e.backdrop.shadow.Shadow
 import com.kashif_e.backdrop.shadow.ShadowElement
 import kotlin.math.ceil
+import kotlin.math.min
 
 private val DefaultOnDrawBackdrop: DrawScope.(DrawScope.() -> Unit) -> Unit = { it() }
+
+/**
+ * A [ResolvedGlassEffect.blur] at/above this radius reads as "meant to fully obscure the
+ * background" - used to normalize [DrawBackdropNode]'s fallback alpha boost into `0f..1f`.
+ * Matches the reference value Haze's own `ScrimBlurVisualEffectDelegate.boostForFallback()` uses.
+ */
+private const val FALLBACK_BOOST_REFERENCE_RADIUS_DP = 72f
+
+/**
+ * `0f` when [blur] is unspecified/zero at [shortestSide]; otherwise `blur`'s resolved radius as a
+ * fraction of [FALLBACK_BOOST_REFERENCE_RADIUS_DP], clamped to `0f..1f`. A pure function (no
+ * `DrawBackdropNode` dependency) so the formula itself is directly unit-testable, mirroring
+ * `resolveBackdropRenderBudget`'s shape (Phase D).
+ */
+internal fun resolveFallbackAlphaBoost(blur: OpticalSizeValue<Dp>, shortestSide: Dp): Float {
+    if (!shortestSide.value.isFinite() || shortestSide.value <= 0f) return 0f
+    val blurDp = blur.resolve(shortestSide)
+    if (!blurDp.value.isFinite() || blurDp.value <= 0f) return 0f
+    return (blurDp.value / FALLBACK_BOOST_REFERENCE_RADIUS_DP).coerceIn(0f, 1f)
+}
 
 /**
  * Diagnostic counter for how often [DrawBackdropNode] recomputes its effect graph
@@ -72,7 +94,7 @@ fun Modifier.drawPlainBackdrop(
     exportedBackdrop: LayerBackdrop? = null,
     onDrawBehind: (DrawScope.() -> Unit)? = null,
     onDrawBackdrop: (DrawScope.(drawBackdrop: DrawScope.() -> Unit) -> Unit)? = null,
-    onDrawSurface: (DrawScope.() -> Unit)? = null,
+    onDrawSurface: (DrawScope.(fallbackAlphaBoost: Float) -> Unit)? = null,
     onDrawFront: (DrawScope.() -> Unit)? = null,
     interaction: BackdropInteractionResponse? = null,
     interactionSource: InteractionSource? = null
@@ -123,7 +145,14 @@ private val DefaultShadow = { Shadow.Default }
  * @param exportedBackdrop Optional layer backdrop for advanced composition.
  * @param onDrawBehind Optional callback to draw behind the backdrop.
  * @param onDrawBackdrop Optional callback to customize backdrop drawing.
- * @param onDrawSurface Optional callback to draw on the surface.
+ * @param onDrawSurface Optional callback to draw on the surface. Receives `fallbackAlphaBoost` -
+ * `0f` on a normal draw, or a value in `0f..1f` (proportional to [resolvedEffect]'s configured
+ * blur radius) on a frame where no real backdrop sample was drawn (render budget exceeded even at
+ * the automatic minimum scale, or a sticky shader-construction failure) - so a style authored to
+ * heavily obscure the background can still boost its own fill's opacity instead of silently
+ * reading as barely-tinted; mirrors Haze's `ScrimBlurVisualEffectDelegate.boostForFallback()`.
+ * Existing callers that ignore the parameter (`onDrawSurface = { drawRect(...) }`) keep compiling
+ * unchanged.
  * @param onDrawFront Optional callback to draw in front of everything.
  * @param inputScale Fraction of the element's pixel size (`0f` exclusive to `1f` inclusive) at
  * which the sampled backdrop is captured and blurred before being scaled back up to fill the
@@ -148,7 +177,7 @@ fun Modifier.drawBackdrop(
     exportedBackdrop: LayerBackdrop? = null,
     onDrawBehind: (DrawScope.() -> Unit)? = null,
     onDrawBackdrop: (DrawScope.(drawBackdrop: DrawScope.() -> Unit) -> Unit)? = null,
-    onDrawSurface: (DrawScope.() -> Unit)? = null,
+    onDrawSurface: (DrawScope.(fallbackAlphaBoost: Float) -> Unit)? = null,
     onDrawFront: (DrawScope.() -> Unit)? = null,
     inputScale: Float = 1f,
     interaction: BackdropInteractionResponse? = null,
@@ -226,7 +255,7 @@ private class DrawBackdropElement(
     val layerBlock: (GraphicsLayerScope.() -> Unit)?,
     val onDrawBehind: (DrawScope.() -> Unit)?,
     val onDrawBackdrop: DrawScope.(drawBackdrop: DrawScope.() -> Unit) -> Unit,
-    val onDrawSurface: (DrawScope.() -> Unit)?,
+    val onDrawSurface: (DrawScope.(fallbackAlphaBoost: Float) -> Unit)?,
     val onDrawFront: (DrawScope.() -> Unit)?,
     val inputScale: Float,
     val interaction: BackdropInteractionResponse?,
@@ -331,7 +360,7 @@ private class DrawBackdropNode(
     var layerBlock: (GraphicsLayerScope.() -> Unit)?,
     var onDrawBehind: (DrawScope.() -> Unit)?,
     var onDrawBackdrop: DrawScope.(drawBackdrop: DrawScope.() -> Unit) -> Unit,
-    var onDrawSurface: (DrawScope.() -> Unit)?,
+    var onDrawSurface: (DrawScope.(fallbackAlphaBoost: Float) -> Unit)?,
     var onDrawFront: (DrawScope.() -> Unit)?,
     var inputScale: Float,
     var interaction: BackdropInteractionResponse?,
@@ -420,9 +449,14 @@ private class DrawBackdropNode(
         }
     }
 
-    private val drawBackdropLayer: DrawScope.() -> Unit = {
+    /** Returns `true` if the real backdrop sample was recorded/composited this draw, `false` if
+     * it was skipped because the render budget couldn't find a safe size even at the automatic
+     * minimum scale - see [computeFallbackAlphaBoost]. */
+    private val drawBackdropLayer: DrawScope.() -> Boolean = {
         val layer = graphicsLayer
-        if (layer != null) {
+        if (layer == null) {
+            false
+        } else {
             // Same rounding as recordBackdropBlock's currentPadding - both must agree exactly.
             val currentPadding = ceil(padding).toInt()
             val currentSize = size
@@ -459,11 +493,28 @@ private class DrawBackdropNode(
                     if (currentPadding != 0) IntOffset(-currentPadding, -currentPadding)
                     else IntOffset.Zero
                 drawLayer(layer)
+                true
+            } else {
+                // Doesn't fit the render budget even at the automatic minimum scale - degrade by
+                // skipping the backdrop sample entirely, exactly like FallbackBackdropDelegate;
+                // onDrawSurface's flat fill (boosted via fallbackAlphaBoost) stands alone.
+                false
             }
-            // else: doesn't fit the render budget even at the automatic minimum scale - degrade
-            // by skipping the backdrop sample entirely, exactly like FallbackBackdropDelegate;
-            // onDrawSurface's flat fill (already drawn unconditionally) stands alone.
         }
+    }
+
+    /**
+     * `0f` on a normal draw; a value in `0f..1f` (proportional to [resolvedEffect]'s own
+     * `blur`, ignoring any transient interaction multiplier - this reflects what the *style*
+     * was authored to look like, not a momentary hover-driven value) when no real backdrop
+     * sample was drawn this frame - mirrors Haze's `ScrimBlurVisualEffectDelegate.boostForFallback()`.
+     */
+    private fun computeFallbackAlphaBoost(): Float {
+        val width = effectScope.size.width
+        val height = effectScope.size.height
+        if (!width.isFinite() || !height.isFinite() || width <= 0f || height <= 0f) return 0f
+        val shortestSide: Dp = with(effectScope) { min(width, height).toDp() }
+        return resolveFallbackAlphaBoost(resolvedEffect.blur, shortestSide)
     }
 
     override fun MeasureScope.measure(
@@ -503,8 +554,9 @@ private class DrawBackdropNode(
         } else {
             ShaderBackdropDelegate { drawBackdropLayer() }
         }
-        with(delegate) { draw() }
-        onDrawSurface?.invoke(this)
+        val realBackdropDrawn = with(delegate) { draw() }
+        val fallbackAlphaBoost = if (realBackdropDrawn) 0f else computeFallbackAlphaBoost()
+        onDrawSurface?.invoke(this, fallbackAlphaBoost)
         drawContent()
         onDrawFront?.invoke(this)
 
