@@ -780,9 +780,9 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/actions/GlassButton.kt": {
-    "mtime": 1789956004.6373959,
-    "seen": 1789956164.4690685,
-    "ast_hash": "08d6afdee6a962d5fce20f54f834e5ec",
+    "mtime": 1789957975.0219114,
+    "seen": 1789958267.5167427,
+    "ast_hash": "9e1f293e35f3d109656b4261269d1aa3",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/actions/WindowControlActions.kt": {
@@ -804,9 +804,9 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/display/GlassChip.kt": {
-    "mtime": 1789954163.0969095,
-    "seen": 1789955329.622207,
-    "ast_hash": "65c771b6723838bc100798345864dd07",
+    "mtime": 1789956783.63754,
+    "seen": 1789958267.5167427,
+    "ast_hash": "fd85d77c60a683ffe92523b9946d15d4",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/display/GlassDivider.kt": {
@@ -822,9 +822,9 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/display/GlassIcon.kt": {
-    "mtime": 1789954163.0969095,
-    "seen": 1789955329.622207,
-    "ast_hash": "7d6a50313cdbf6f4db1bb6a9362e9d17",
+    "mtime": 1789957821.1719637,
+    "seen": 1789958267.5167427,
+    "ast_hash": "9b2ca5ef77c8039945246918b93da533",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/display/GlassListTile.kt": {
@@ -834,9 +834,9 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/display/GlassPanel.kt": {
-    "mtime": 1789954163.0969095,
-    "seen": 1789955329.622207,
-    "ast_hash": "80a51a1ddaf4f9a461a2f57e4ead0b4a",
+    "mtime": 1789957116.1695838,
+    "seen": 1789958267.5167427,
+    "ast_hash": "57008d48a05e3e9ccd60c236a711bab2",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/display/ThemePreviewCard.kt": {
@@ -846,9 +846,9 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/feedback/GlassBottomSheet.kt": {
-    "mtime": 1789954163.0984163,
-    "seen": 1789955329.622207,
-    "ast_hash": "8fed0d32ca0ad97911fd5bb5ed3af6af",
+    "mtime": 1789957400.1770372,
+    "seen": 1789958267.5167427,
+    "ast_hash": "fa5b4f6fe3e1f13ca9e08fd19d3f750a",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/feedback/GlassDialog.kt": {
@@ -870,9 +870,9 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/inputs/GlassTextField.kt": {
-    "mtime": 1789954163.1009662,
-    "seen": 1789955329.622207,
-    "ast_hash": "d3463d878133250f2cfed500ebb5bdae",
+    "mtime": 1789957200.9517455,
+    "seen": 1789958267.5167427,
+    "ast_hash": "4c3bbdbb5cc94aa5a3a077ea94bda0a7",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/inputs/GlassToggle.kt": {
@@ -888,9 +888,9 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/layout/GlassDragDivider.kt": {
-    "mtime": 1789954241.6437323,
-    "seen": 1789955329.622207,
-    "ast_hash": "e5b65c99be9af2c9cf3d9b302eb98218",
+    "mtime": 1789957445.314007,
+    "seen": 1789958267.5167427,
+    "ast_hash": "03c586c4045341a5548f4394efb95108",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/layout/GlassLayout.kt": {
@@ -936,15 +936,15 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/navigation/GlassBottomTabs.kt": {
-    "mtime": 1789954163.1069672,
-    "seen": 1789955329.622207,
-    "ast_hash": "c6dca545b2342194c51aac16f39efe5e",
+    "mtime": 1789957308.7003298,
+    "seen": 1789958267.5167427,
+    "ast_hash": "e022f51ca528b1915bed3f8f68baca50",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/navigation/GlassNavigation.kt": {
-    "mtime": 1789866702.2825818,
-    "seen": 1789935395.302028,
-    "ast_hash": "e54b3ad0c496145ccefb9b2f29961159",
+    "mtime": 1789957534.0515018,
+    "seen": 1789958267.5167427,
+    "ast_hash": "f110d28e742b8cde610c984171d34be2",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/navigation/GlassScrollableTabRow.kt": {
@@ -966,9 +966,9 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/navigation/GlassTabBar.kt": {
-    "mtime": 1789954306.8717682,
-    "seen": 1789955329.622207,
-    "ast_hash": "d78a2b97f7c1425bb36922addf8f55c3",
+    "mtime": 1789957868.4533398,
+    "seen": 1789958267.5167427,
+    "ast_hash": "0b6e3ac279b9dc998ef264056bbfbfa9",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/primitives/GlassModifiers.kt": {
@@ -1254,9 +1254,9 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/GlassEffects.kt": {
-    "mtime": 1789942442.9348705,
-    "seen": 1789942979.1625705,
-    "ast_hash": "51af676e7f8c73768ef6e53fbae44ca5",
+    "mtime": 1789958067.5558555,
+    "seen": 1789958267.5167427,
+    "ast_hash": "41f2e5f63bdb0f165eb8a4c17ba5c2ae",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/Motion.kt": {
@@ -7788,9 +7788,9 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/desktopTest/kotlin/org/ide/lti/core/designsystem/theme/GlassOpticalParityTest.kt": {
-    "mtime": 1789866393.781046,
-    "seen": 1789935395.302028,
-    "ast_hash": "182ef6222e36e4b1dcc877a0a645f937",
+    "mtime": 1789958074.631053,
+    "seen": 1789958267.5167427,
+    "ast_hash": "fef648e4b8889d9362b05d2c34b0c8c8",
     "semantic_hash": ""
   },
   "backdrop/src/commonMain/kotlin/com/kashif_e/backdrop/effects/AppleMaterials.kt": {
@@ -19824,9 +19824,9 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/glass/GlassStyles.kt": {
-    "mtime": 1789941346.7801664,
-    "seen": 1789941883.8487623,
-    "ast_hash": "1d79d4620beccc02bb89850c36e5aadd",
+    "mtime": 1789957804.8243265,
+    "seen": 1789958267.5167427,
+    "ast_hash": "f7f5a22df0821b6d736b0eba03e0645f",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/glass/Rim.kt": {
@@ -19848,9 +19848,9 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/desktopTest/kotlin/org/ide/lti/core/designsystem/screenshot/DrawBackdropInputScaleScreenshotTest.kt": {
-    "mtime": 1789954163.111967,
-    "seen": 1789955329.622207,
-    "ast_hash": "8d7ed73d9741854bac742f38d0e5ed60",
+    "mtime": 1789958016.5704985,
+    "seen": 1789958267.5167427,
+    "ast_hash": "50dcdc6390095085feb1f612cb644952",
     "semantic_hash": ""
   },
   "core/designsystem/src/desktopTest/kotlin/org/ide/lti/core/designsystem/theme/glass/GlassStyleToEffectsScreenshotTest.kt": {
