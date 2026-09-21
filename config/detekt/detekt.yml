@@ -587,6 +587,8 @@ lti-design-system:
     excludes: ["**/theme/**"]
   NoBackdropEffectImport:
     active: true
+  NoLeakedBackdropEngineType:
+    active: true
   NoUnprotectedTextClip:
     active: true
   NoWeightInScrollableContainer:
