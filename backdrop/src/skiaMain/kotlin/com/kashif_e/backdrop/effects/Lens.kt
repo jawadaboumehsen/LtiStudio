@@ -6,10 +6,7 @@ import com.kashif_e.backdrop.BackdropEffectScope
 import com.kashif_e.backdrop.GlassDispersionShaderString
 import com.kashif_e.backdrop.GlassRefractionShaderString
 import com.kashif_e.backdrop.platform.PlatformCapabilities
-import org.jetbrains.skia.Data
 import org.jetbrains.skia.ImageFilter
-import org.jetbrains.skia.RuntimeEffect
-import org.jetbrains.skia.RuntimeShaderBuilder
 import kotlin.math.ceil
 import kotlin.math.min
 
@@ -47,9 +44,12 @@ internal fun BackdropEffectScope.lens(
     } else {
         GlassRefractionShaderString
     }
-    val effect = RuntimeEffect.makeForShader(shaderString) ?: return
-    
-    val builder = RuntimeShaderBuilder(effect)
+    // Compiled once per element and reused across every redraw via obtainPlatformShader's cache
+    // (keyed on the shader source itself, since both candidates are fixed constants) -
+    // RuntimeEffect.makeForShader is a real SKSL compile, not a cheap call, and this function now
+    // runs every animation frame during a BackdropInteractionController-driven hover/press
+    // transition, not just once per composition.
+    val builder = obtainPlatformShader(shaderString, shaderString).getBuilder() ?: return
     builder.uniform("size", size.width, size.height)
     builder.uniform("offset", -padding, -padding)
     builder.uniform("cornerRadii", cornerRadii[0], cornerRadii[1], cornerRadii[2], cornerRadii[3])
