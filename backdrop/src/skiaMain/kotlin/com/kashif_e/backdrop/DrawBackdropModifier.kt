@@ -38,6 +38,9 @@ import androidx.compose.ui.graphics.Outline
 import com.kashif_e.backdrop.backdrops.LayerBackdrop
 import com.kashif_e.backdrop.highlight.Highlight
 import com.kashif_e.backdrop.highlight.HighlightElement
+import com.kashif_e.backdrop.delegate.BackdropDelegate
+import com.kashif_e.backdrop.delegate.FallbackBackdropDelegate
+import com.kashif_e.backdrop.delegate.ShaderBackdropDelegate
 import com.kashif_e.backdrop.interaction.BackdropInteractionController
 import com.kashif_e.backdrop.interaction.BackdropInteractionRenderState
 import com.kashif_e.backdrop.interaction.BackdropInteractionResponse
@@ -46,7 +49,6 @@ import com.kashif_e.backdrop.shadow.InnerShadowElement
 import com.kashif_e.backdrop.shadow.Shadow
 import com.kashif_e.backdrop.shadow.ShadowElement
 import kotlin.math.ceil
-import kotlin.math.roundToInt
 
 private val DefaultOnDrawBackdrop: DrawScope.(DrawScope.() -> Unit) -> Unit = { it() }
 
@@ -350,6 +352,13 @@ private class DrawBackdropNode(
     private var interactionController: BackdropInteractionController? = null
     private var lastAppliedInteractionState: BackdropInteractionRenderState? = null
 
+    // Sticky: once a shader-construction failure trips this, stays on FallbackBackdropDelegate
+    // until the node detaches/reattaches - matches Haze's downgradeRuntimeDelegate(). No known
+    // real-world Skiko failure mode trips this (RuntimeShader is always available on desktop
+    // Skia, unlike Android's API-level-gated support Haze's own check exists for); it's
+    // defensive, not a path expected to exercise in practice.
+    private var shaderIncompatible = false
+
     private val layoutLayerBlock: GraphicsLayerScope.() -> Unit = {
         // The clip here is redundant: ContentDrawScope.draw() below already wraps
         // everything it draws — including drawContent() — in
@@ -428,36 +437,32 @@ private class DrawBackdropNode(
             // Budgeted through resolveBackdropRenderBudget (mirrors Haze's GlassRenderBudget)
             // rather than trusting inputScale directly: a pathologically large element (a
             // multi-monitor-spanning backdrop, say) could otherwise ask Skia to retain a layer
-            // past its safe GPU texture limits. Fallback (even at the minimum automatic scale the
-            // element still doesn't fit) has no dedicated degraded path yet - that lands with the
-            // real/fallback delegate split (Phase E) - so it renders at the minimum-scale size
-            // anyway rather than skip the backdrop entirely.
+            // past its safe GPU texture limits.
             val budgetDecision = resolveBackdropRenderBudget(inputScale, IntSize(fullWidth, fullHeight))
-            val recordSize = when (budgetDecision) {
-                is BackdropRenderBudgetDecision.Runtime -> budgetDecision.size
-                is BackdropRenderBudgetDecision.Fallback -> IntSize(
-                    (fullWidth * MIN_AUTOMATIC_INPUT_SCALE).roundToInt().coerceIn(1, MAX_LAYER_DIMENSION_PX),
-                    (fullHeight * MIN_AUTOMATIC_INPUT_SCALE).roundToInt().coerceIn(1, MAX_LAYER_DIMENSION_PX),
-                )
-            }
-            val recordWidth = recordSize.width
-            val recordHeight = recordSize.height
+            val recordSize = (budgetDecision as? BackdropRenderBudgetDecision.Runtime)?.size
+            if (recordSize != null) {
+                val recordWidth = recordSize.width
+                val recordHeight = recordSize.height
 
-            with(this@DrawBackdropNode) {
-                recordLayer(
-                    layer,
-                    size = IntSize(recordWidth, recordHeight),
-                    block = recordBackdropBlock
-                )
-            }
+                with(this@DrawBackdropNode) {
+                    recordLayer(
+                        layer,
+                        size = IntSize(recordWidth, recordHeight),
+                        block = recordBackdropBlock
+                    )
+                }
 
-            layer.pivotOffset = Offset.Zero
-            layer.scaleX = fullWidth.toFloat() / recordWidth
-            layer.scaleY = fullHeight.toFloat() / recordHeight
-            layer.topLeft =
-                if (currentPadding != 0) IntOffset(-currentPadding, -currentPadding)
-                else IntOffset.Zero
-            drawLayer(layer)
+                layer.pivotOffset = Offset.Zero
+                layer.scaleX = fullWidth.toFloat() / recordWidth
+                layer.scaleY = fullHeight.toFloat() / recordHeight
+                layer.topLeft =
+                    if (currentPadding != 0) IntOffset(-currentPadding, -currentPadding)
+                    else IntOffset.Zero
+                drawLayer(layer)
+            }
+            // else: doesn't fit the render budget even at the automatic minimum scale - degrade
+            // by skipping the backdrop sample entirely, exactly like FallbackBackdropDelegate;
+            // onDrawSurface's flat fill (already drawn unconditionally) stands alone.
         }
     }
 
@@ -493,7 +498,12 @@ private class DrawBackdropNode(
         canvas.clipOutline(outline, path)
 
         onDrawBehind?.invoke(this)
-        drawBackdropLayer()
+        val delegate: BackdropDelegate = if (shaderIncompatible) {
+            FallbackBackdropDelegate
+        } else {
+            ShaderBackdropDelegate { drawBackdropLayer() }
+        }
+        with(delegate) { draw() }
         onDrawSurface?.invoke(this)
         drawContent()
         onDrawFront?.invoke(this)
@@ -528,7 +538,15 @@ private class DrawBackdropNode(
     private fun updateEffects() {
         DrawBackdropDiagnostics.updateEffectsCallCount++
         val interactionState = interactionController?.renderState ?: BackdropInteractionRenderState()
-        effectScope.applyResolved(resolvedEffect, interactionState)
+        try {
+            // Narrow: only the shader-construction path itself is caught here, never draw/config
+            // code - matches Haze's wrapRuntimeShaderConstruction scoping.
+            effectScope.applyResolved(resolvedEffect, interactionState)
+            shaderIncompatible = false
+        } catch (e: Exception) {
+            shaderIncompatible = true
+            effectScope.imageFilter = null
+        }
         lastAppliedInteractionState = interactionState
         // On iOS/Skia, convert the ImageFilter to a Compose RenderEffect
         graphicsLayer?.renderEffect = effectScope.imageFilter?.asComposeRenderEffect()
@@ -564,6 +582,7 @@ private class DrawBackdropNode(
         interactionController?.dispose()
         interactionController = null
         lastAppliedInteractionState = null
+        shaderIncompatible = false
         effectScope.reset()
         clipPath = null
     }
