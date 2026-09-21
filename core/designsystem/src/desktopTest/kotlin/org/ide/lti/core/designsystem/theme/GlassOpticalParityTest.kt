@@ -17,19 +17,9 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 /**
- * Validates standardized Glass Material optical presets, dual-tone physical bevels,
- * and interactive pointer-reactive highlights.
+ * Validates dual-tone physical bevels and interactive pointer-reactive highlights.
  */
 class GlassOpticalParityTest {
-
-    @Test
-    fun testGlassMaterialEffectStacksExist() {
-        assertNotNull(GlassEffects.UltraThin, "UltraThin material stack must be non-null")
-        assertNotNull(GlassEffects.Thin, "Thin material stack must be non-null")
-        assertNotNull(GlassEffects.Regular, "Regular material stack must be non-null")
-        assertNotNull(GlassEffects.Thick, "Thick material stack must be non-null")
-        assertNotNull(GlassEffects.Chrome, "Chrome material stack must be non-null")
-    }
 
     @Test
     fun testGlassBevelHighlightPreset() {

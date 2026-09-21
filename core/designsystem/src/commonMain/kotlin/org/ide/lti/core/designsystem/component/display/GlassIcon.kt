@@ -43,12 +43,13 @@ import org.ide.lti.core.designsystem.component.navigation.*
 import org.ide.lti.core.designsystem.component.primitives.*
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
-import org.ide.lti.core.designsystem.theme.GlassEffects
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
+import org.ide.lti.core.designsystem.theme.glass.GlassStyles
 import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
+import org.ide.lti.core.designsystem.theme.glass.toEffects
 import org.ide.lti.core.designsystem.utils.InteractiveHighlight
 import org.ide.lti.core.designsystem.utils.applyInteractiveHighlightTransform
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -71,6 +72,8 @@ fun GlassIcon(
     val actualBackdrop = backdrop ?: GlassTheme.scene
     val finalContentColor = if (contentColor.isSpecified) contentColor else glassColors.onGlass
     var isHovered by remember { mutableStateOf(false) }
+    val iconButtonStyle = GlassStyles.iconButton
+    val iconButtonEffects = remember(iconButtonStyle) { iconButtonStyle.toEffects() }
 
     val interactiveHighlight = remember(animationScope) {
         InteractiveHighlight(
@@ -85,7 +88,7 @@ fun GlassIcon(
                     Modifier.drawBackdrop(
                         backdrop = actualBackdrop.engineBackdrop,
                         shape = { GlassShapes.Capsule },
-                        effects = GlassEffects.Button,
+                        effects = iconButtonEffects,
                         highlight = { if (isHovered) Highlight.Ambient else Highlight.Plain },
                         layerBlock = if (isInteractive) {
                             {

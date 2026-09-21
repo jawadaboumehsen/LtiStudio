@@ -68,22 +68,17 @@ import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.icon.GlassIcon
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
-import org.ide.lti.core.designsystem.theme.GlassEffects
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
+import org.ide.lti.core.designsystem.theme.glass.GlassStyles
+import org.ide.lti.core.designsystem.theme.glass.toEffects
 import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
 import org.ide.lti.core.designsystem.utils.nonLetterColorVisualTransformation
 import org.ide.lti.core.designsystem.utils.tabNavigation
-
-/**
- * Text field glass effect stack.
- * Delegated to canonical [GlassEffects.TextField].
- */
-val GlassTextFieldEffects: BackdropEffectScope.() -> Unit = GlassEffects.TextField
 
 /**
  * Validation and message state for [GlassTextField].
@@ -155,7 +150,7 @@ fun GlassTextField(
     enabled: Boolean = true,
     readOnly: Boolean = false,
     textStyle: TextStyle = LocalTextStyle.current,
-    effects: BackdropEffectScope.() -> Unit = GlassTextFieldEffects,
+    effects: (BackdropEffectScope.() -> Unit)? = null,
     backdrop: GlassSceneState? = null,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     focusRequester: FocusRequester? = null,
@@ -166,6 +161,8 @@ fun GlassTextField(
     val isSuccess = state is TextFieldState.Success
     var isHovered by remember { mutableStateOf(false) }
     val glassColors = GlassTheme.colors
+    val textFieldStyle = GlassStyles.textField
+    val resolvedEffects = effects ?: remember(textFieldStyle) { textFieldStyle.toEffects() }
 
     val animatedBorderColor by animateColorAsState(
         targetValue = when {
@@ -211,7 +208,7 @@ fun GlassTextField(
                     }
                 },
             shape = GlassShapes.TextField,
-            effects = effects,
+            effects = resolvedEffects,
             backdrop = backdrop,
             borderColor = animatedBorderColor,
             highlight = {
@@ -465,6 +462,8 @@ fun GlassOtpTextField(
 ) {
     var otpText by remember { mutableStateOf("") }
     var isError by remember { mutableStateOf(false) }
+    val otpStyle = GlassStyles.textField
+    val otpEffects = remember(otpStyle) { otpStyle.toEffects() }
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -508,7 +507,7 @@ fun GlassOtpTextField(
                                 .padding(Spacing.ExtraSmall)
                                 .glassEffect(
                                     shape = GlassShapes.Small,
-                                    effects = GlassEffects.TextField,
+                                    effects = otpEffects,
                                     tint = if (filled) GlassTheme.colors.glassTint else Color.Unspecified,
                                 )
                                 .glassBorder(

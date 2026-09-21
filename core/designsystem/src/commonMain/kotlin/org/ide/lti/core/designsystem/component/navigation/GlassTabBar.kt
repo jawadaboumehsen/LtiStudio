@@ -40,6 +40,7 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
+import com.kashif_e.backdrop.BackdropEffectScope
 import com.kashif_e.backdrop.drawBackdrop
 import com.kashif_e.backdrop.highlight.Highlight
 import org.ide.lti.core.designsystem.component.actions.*
@@ -54,13 +55,14 @@ import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassColorScheme
-import org.ide.lti.core.designsystem.theme.GlassEffects
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
+import org.ide.lti.core.designsystem.theme.glass.GlassStyles
+import org.ide.lti.core.designsystem.theme.glass.toEffects
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -78,6 +80,8 @@ fun GlassTab(
     val effectsEnabled = GlassTheme.effectsEnabled
     val actualBackdrop = backdrop ?: GlassTheme.scene
     val tabShape = GlassShapes.Capsule
+    val iconButtonStyle = GlassStyles.iconButton
+    val tabEffects = remember(iconButtonStyle) { iconButtonStyle.toEffects() }
 
     val surfaceColor = when {
         selected -> selectedColor
@@ -126,6 +130,7 @@ fun GlassTab(
                 shape = tabShape,
                 surfaceColor = surfaceColor,
                 tintColor = tintColor,
+                effects = tabEffects,
             )
             .glassOutlineBorder(
                 color = borderColor,
@@ -158,6 +163,8 @@ fun GlassTabItem(
     val actualBackdrop = backdrop ?: GlassTheme.scene
     val tabShape = GlassShapes.Small
     val tabColors = resolveTabItemColors(selected, isHovered, glassColors)
+    val iconButtonStyle = GlassStyles.iconButton
+    val tabEffects = remember(iconButtonStyle) { iconButtonStyle.toEffects() }
 
     Row(
         modifier = modifier
@@ -170,6 +177,7 @@ fun GlassTabItem(
                 shape = tabShape,
                 surfaceColor = tabColors.surfaceColor,
                 tintColor = tabColors.tintColor,
+                effects = tabEffects,
             )
             .glassOutlineBorder(
                 color = tabColors.borderColor,
@@ -376,11 +384,12 @@ private fun Modifier.tabGlassSurface(
     shape: Shape,
     surfaceColor: Color,
     tintColor: Color,
+    effects: BackdropEffectScope.() -> Unit,
 ): Modifier = if (effectsEnabled && backdrop != null) {
     this.drawBackdrop(
         backdrop = backdrop.engineBackdrop,
         shape = { shape },
-        effects = GlassEffects.Button,
+        effects = effects,
         highlight = { if (isHovered) Highlight.Ambient else Highlight.Plain },
         onDrawSurface = {
             if (surfaceColor.isSpecified && surfaceColor != Color.Transparent) {

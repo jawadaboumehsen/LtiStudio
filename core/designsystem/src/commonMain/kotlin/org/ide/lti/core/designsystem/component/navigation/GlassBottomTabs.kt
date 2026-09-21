@@ -75,7 +75,6 @@ import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.Elevation
-import org.ide.lti.core.designsystem.theme.GlassEffects
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LensRefraction
@@ -84,7 +83,9 @@ import org.ide.lti.core.designsystem.theme.MotionThreshold
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
+import org.ide.lti.core.designsystem.theme.glass.GlassStyles
 import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
+import org.ide.lti.core.designsystem.theme.glass.toEffects
 import org.ide.lti.core.designsystem.utils.DampedDragAnimation
 import org.ide.lti.core.designsystem.utils.InteractiveHighlight
 import kotlin.math.abs
@@ -302,6 +303,8 @@ private fun GlassBottomTabBarBackground(
     interactiveHighlight: InteractiveHighlight,
 ) {
     val effectsEnabled = GlassTheme.effectsEnabled
+    val bottomTabsStyle = GlassStyles.bottomTabs
+    val bottomTabsEffects = remember(bottomTabsStyle) { bottomTabsStyle.toEffects() }
     Row(
         Modifier
             .graphicsLayer { translationX = panelOffset() }
@@ -310,7 +313,7 @@ private fun GlassBottomTabBarBackground(
                     Modifier.drawBackdrop(
                         backdrop = backdrop.engineBackdrop,
                         shape = { GlassShapes.Capsule },
-                        effects = GlassEffects.BottomTabs,
+                        effects = bottomTabsEffects,
                         layerBlock = {
                             val p = drag.pressProgress
                             val s = lerp(1f, 1f + Spacing.Medium.toPx() / size.width, p)

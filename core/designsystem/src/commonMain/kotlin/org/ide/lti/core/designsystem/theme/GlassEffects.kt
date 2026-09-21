@@ -13,13 +13,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import com.kashif_e.backdrop.BackdropEffectScope
 import com.kashif_e.backdrop.effects.blur
-import com.kashif_e.backdrop.effects.colorControls
 import com.kashif_e.backdrop.effects.frostedGrain
-import com.kashif_e.backdrop.effects.glassChrome
-import com.kashif_e.backdrop.effects.glassRegular
-import com.kashif_e.backdrop.effects.glassThick
-import com.kashif_e.backdrop.effects.glassThin
-import com.kashif_e.backdrop.effects.glassUltraThin
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.vibrancy
 import com.kashif_e.backdrop.highlight.Highlight
@@ -27,32 +21,18 @@ import com.kashif_e.backdrop.highlight.HighlightStyle
 import com.kashif_e.backdrop.shadow.Shadow
 
 /**
- * Centralized registry of all backdrop visual effect stacks across the Liquid Glass design system.
- *
- * Categorized by semantic material tiers matching Apple Liquid Glass & macOS design guidelines:
- * 1. **Chrome Tier**: Precision shell toolbars (TopBar, StatusBar, DockedNav)
- * 2. **Surface & Container Tier**: Standard liquid surfaces (Standard, Card, Panel)
- * 3. **Interactive Controls Tier**: Buttons, chips, inputs, toggles, sliders
- * 4. **Modal & Scrim Tier**: Frosted dialogs, bottom sheets, diffuse scrims
+ * Registry of backdrop effect stacks not (yet) worth a named [org.ide.lti.core.designsystem.theme.glass.GlassStyle]
+ * role - the generic "no specific role" fallback ([Standard], used by the design system's own
+ * generic primitives `Modifier.glassEffect()`/`GlassSurface()` when a caller specifies nothing
+ * more specific) and [Scrim] (used only by `Modifier.glassScrim()`, itself core:designsystem-
+ * internal). Every named component tier this object used to hold (TopBar, StatusBar, DockedNav,
+ * Card, Button, ButtonPill, Chip, TextField, Toggle, Slider, PerformanceMonitor, BottomTabs,
+ * TabSpotlight, Minimap, SplitterGrip, BottomSheet, dialog(), and the generic UltraThin/Thin/
+ * Regular/Thick/Chrome material presets - the last five had no real consumer at all, only a smoke
+ * test asserting they were non-null) has migrated to a [org.ide.lti.core.designsystem.theme.glass.GlassStyles]
+ * role or been deleted as confirmed-dead code.
  */
 object GlassEffects {
-
-    // ==================== 1. CHROME TIER ====================
-
-    // TopBar/StatusBar deleted - GlassTopBar/GlassStatusBar and the real production shell
-    // (IdeTopAppBar/IdeStatusBar) now resolve this tier through GlassStyles.bar instead.
-
-    /**
-     * Docked navigation bar effect stack for bottom rails and side panel rails.
-     * Omits lens refraction to safely support [RectangleShape] without runtime corner exceptions.
-     */
-    val DockedNav: BackdropEffectScope.() -> Unit = {
-        vibrancy()
-        blur(BackdropBlur.Panel.toPx())
-        frostedGrain(0.015f)
-    }
-
-    // ==================== 2. SURFACE & CONTAINER TIER ====================
 
     /**
      * Canonical baseline liquid glass surface effect stack: vibrancy + moderate blur + lens refraction.
@@ -69,135 +49,6 @@ object GlassEffects {
         frostedGrain(0.015f)
     }
 
-    // Card deleted - GlassCard and Modifier.ideCardSurface now resolve this tier through
-    // GlassStyles.card instead.
-
-    /**
-     * Sidebar and tool window panel effect stack — deep frosted glass blur for prominent z-depth.
-     */
-    val Panel: BackdropEffectScope.() -> Unit = {
-        vibrancy()
-        blur(BackdropBlur.Panel.toPx())
-        lens(
-            refractionHeight = LensRefraction.Panel.height.toPx(),
-            refractionAmount = LensRefraction.Panel.amount.toPx(),
-            depthEffect = true,
-            chromaticAberration = true,
-        )
-        frostedGrain(0.015f)
-    }
-
-    // ==================== 3. INTERACTIVE CONTROLS TIER ====================
-
-    /**
-     * Compact button effect stack — crisp/glossy with light blur and tight lens for icon-sized buttons.
-     */
-    val Button: BackdropEffectScope.() -> Unit = {
-        vibrancy()
-        blur(BackdropBlur.Button.toPx())
-        lens(
-            refractionHeight = LensRefraction.Button.height.toPx(),
-            refractionAmount = LensRefraction.Button.amount.toPx(),
-            depthEffect = false,
-            chromaticAberration = true,
-        )
-        frostedGrain(0.015f)
-    }
-
-    // ButtonPill deleted - GlassButton now resolves this tier through GlassStyles.button instead.
-
-    /**
-     * Chip and metadata tag effect stack — ultra-subtle blur and fast lens for compact badges.
-     */
-    val Chip: BackdropEffectScope.() -> Unit = {
-        vibrancy()
-        blur(BackdropBlur.Subtle.toPx())
-        lens(LensRefraction.Button.height.toPx(), LensRefraction.Button.amount.toPx())
-    }
-
-    /**
-     * Text and search input field effect stack — minimum distortion for uncompromised text legibility.
-     */
-    val TextField: BackdropEffectScope.() -> Unit = {
-        vibrancy()
-        blur(BackdropBlur.TextField.toPx())
-        lens(LensRefraction.TextField.height.toPx(), LensRefraction.TextField.amount.toPx())
-    }
-
-    /**
-     * Switch toggle thumb effect stack — tactile displacement for interactive controls.
-     */
-    val Toggle: BackdropEffectScope.() -> Unit = {
-        vibrancy()
-        blur(BackdropBlur.Toggle.toPx())
-        lens(LensRefraction.Toggle.height.toPx(), LensRefraction.Toggle.amount.toPx())
-    }
-
-    /**
-     * Slider thumb effect stack — spotlight displacement.
-     */
-    val Slider: BackdropEffectScope.() -> Unit = {
-        vibrancy()
-        blur(BackdropBlur.Slider.toPx())
-        lens(LensRefraction.Slider.height.toPx(), LensRefraction.Slider.amount.toPx())
-    }
-
-    /**
-     * Ultra-lean performance monitor and high-frequency debug overlay effect stack (blur only).
-     */
-    val PerformanceMonitor: BackdropEffectScope.() -> Unit = {
-        blur(BackdropBlur.Subtle.toPx())
-    }
-
-    /**
-     * Bottom tab bar container effect stack.
-     */
-    val BottomTabs: BackdropEffectScope.() -> Unit = {
-        vibrancy()
-        blur(BackdropBlur.BottomTabs.toPx())
-        lens(LensRefraction.BottomTabs.height.toPx(), LensRefraction.BottomTabs.amount.toPx())
-    }
-
-    /**
-     * Tab bar spotlight pill indicator effect stack.
-     */
-    val TabSpotlight: BackdropEffectScope.() -> Unit = {
-        vibrancy()
-        blur(BackdropBlur.Standard.toPx())
-        lens(LensRefraction.TabSpotlight.height.toPx(), LensRefraction.TabSpotlight.amount.toPx())
-    }
-
-    /**
-     * Micro inset effect stack for layout minimaps and splitter grip handles.
-     */
-    val Minimap: BackdropEffectScope.() -> Unit = {
-        blur(BackdropBlur.Minimap.toPx())
-        lens(LensRefraction.Minimap.height.toPx(), LensRefraction.Minimap.amount.toPx())
-    }
-
-    /**
-     * Splitter grip handle effect stack — semantic alias for [Minimap].
-     */
-    val SplitterGrip: BackdropEffectScope.() -> Unit = Minimap
-
-    // ==================== 4. MODAL & SCRIM TIER ====================
-
-    // dialog() deleted - GlassDialog/GlassLoadingDialog now resolve this tier through
-    // GlassStyles.dialog (including its brightness/saturation colorControls) instead.
-
-    /**
-     * Bottom sheet effect stack — heavy frosted drawer with vibrancy boost.
-     */
-    val BottomSheet: BackdropEffectScope.() -> Unit = {
-        colorControls(saturation = BackdropSaturation.Vibrant)
-        blur(BackdropBlur.BottomSheet.toPx())
-        lens(
-            refractionHeight = LensRefraction.BottomSheet.height.toPx(),
-            refractionAmount = LensRefraction.BottomSheet.amount.toPx(),
-            depthEffect = true,
-        )
-    }
-
     /**
      * Scrim overlay effect stack — diffuse blur for modal scrims and backdrop dimming.
      */
@@ -205,23 +56,6 @@ object GlassEffects {
         vibrancy()
         blur(BackdropBlur.Scrim.toPx())
     }
-
-    // ==================== 5. STANDARDIZED GLASS MATERIALS ====================
-
-    /** Ultra-Thin glass material preset for floating HUDs and lightweight controls. */
-    val UltraThin: BackdropEffectScope.() -> Unit = { glassUltraThin(chromaticAberration = true) }
-
-    /** Thin glass material preset for cards, action sheets, and toolbars. */
-    val Thin: BackdropEffectScope.() -> Unit = { glassThin(chromaticAberration = true) }
-
-    /** Regular glass material preset for standard liquid glass modals and panels. */
-    val Regular: BackdropEffectScope.() -> Unit = { glassRegular(chromaticAberration = true) }
-
-    /** Thick glass material preset for control center widgets and bottom sheets. */
-    val Thick: BackdropEffectScope.() -> Unit = { glassThick(chromaticAberration = true) }
-
-    /** Chrome glass material preset for heavy window chrome and docked bars. */
-    val Chrome: BackdropEffectScope.() -> Unit = { glassChrome(chromaticAberration = true) }
 }
 
 /**

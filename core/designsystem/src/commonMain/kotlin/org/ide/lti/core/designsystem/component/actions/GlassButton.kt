@@ -55,7 +55,6 @@ import org.ide.lti.core.designsystem.icon.GlassIcon
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.FontSize
-import org.ide.lti.core.designsystem.theme.GlassEffects
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
@@ -68,12 +67,6 @@ import org.ide.lti.core.designsystem.theme.glass.toEffects
 import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
 import org.ide.lti.core.designsystem.utils.InteractiveHighlight
 import org.ide.lti.core.designsystem.utils.applyInteractiveHighlightTransform
-
-/**
- * Button glass effect stack for compact icon buttons.
- * Delegated to canonical [GlassEffects.Button].
- */
-val GlassButtonEffects: BackdropEffectScope.() -> Unit = GlassEffects.Button
 
 /**
  * Type-safe button style hierarchy representing visual variants.
@@ -443,7 +436,7 @@ fun GlassIconButton(
     modifier: Modifier = Modifier,
     size: Dp = ComponentSize.IconButtonSize,
     shape: Shape = GlassShapes.Capsule,
-    effects: BackdropEffectScope.() -> Unit = GlassButtonEffects,
+    effects: (BackdropEffectScope.() -> Unit)? = null,
     backdrop: GlassSceneState? = null,
     checked: Boolean? = null,
     selected: Boolean = checked ?: false,
@@ -451,11 +444,16 @@ fun GlassIconButton(
     interactive: Boolean = false,
     content: @Composable () -> Unit,
 ) {
+    // Icon buttons use the compact GlassStyles.iconButton tier, not GlassButton's own default
+    // (GlassStyles.button, the wide text-labeled pill tier) - always resolved and passed
+    // explicitly so it overrides that default regardless.
+    val iconButtonStyle = GlassStyles.iconButton
+    val resolvedEffects = effects ?: remember(iconButtonStyle) { iconButtonStyle.toEffects() }
     GlassButton(
         onClick = onClick,
         modifier = modifier.size(size),
         shape = shape,
-        effects = effects,
+        effects = resolvedEffects,
         backdrop = backdrop,
         minWidth = size,
         minHeight = size,

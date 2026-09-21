@@ -26,6 +26,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -46,20 +47,15 @@ import org.ide.lti.core.designsystem.component.primitives.*
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
-import org.ide.lti.core.designsystem.theme.GlassEffects
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
+import org.ide.lti.core.designsystem.theme.glass.GlassStyles
 import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
-
-/**
- * Sidebar/panel glass effect stack with deep frosted glass blur.
- * Delegated to canonical [GlassEffects.Panel].
- */
-val GlassPanelEffects: BackdropEffectScope.() -> Unit = GlassEffects.Panel
+import org.ide.lti.core.designsystem.theme.glass.toEffects
 
 /**
  * Glass panel component optimized for IDE tool windows and sidebar panels.
@@ -69,7 +65,7 @@ fun GlassPanel(
     modifier: Modifier = Modifier,
     width: Dp? = null,
     shape: Shape = GlassShapes.Panel,
-    effects: BackdropEffectScope.() -> Unit = GlassEffects.Panel,
+    effects: (BackdropEffectScope.() -> Unit)? = null,
     backdrop: GlassSceneState? = null,
     surfaceColor: Color = Color.Unspecified,
     tint: Color = Color.Unspecified,
@@ -80,11 +76,13 @@ fun GlassPanel(
     val panelModifier = modifier
         .then(if (width != null && width > Spacing.None) Modifier.width(width) else Modifier)
         .fillMaxHeight()
+    val panelStyle = GlassStyles.panel
+    val resolvedEffects = effects ?: remember(panelStyle) { panelStyle.toEffects() }
 
     GlassSurface(
         modifier = panelModifier,
         shape = shape,
-        effects = effects,
+        effects = resolvedEffects,
         backdrop = backdrop,
         surfaceColor = surfaceColor,
         tint = tint,

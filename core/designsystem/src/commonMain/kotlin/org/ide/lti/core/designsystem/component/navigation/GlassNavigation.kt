@@ -19,10 +19,10 @@ import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import com.kashif_e.backdrop.BackdropEffectScope
 import com.kashif_e.backdrop.highlight.Highlight
 import org.ide.lti.core.designsystem.component.actions.*
 import org.ide.lti.core.designsystem.component.devtools.*
@@ -33,15 +33,10 @@ import org.ide.lti.core.designsystem.component.layout.*
 import org.ide.lti.core.designsystem.component.primitives.*
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.Elevation
-import org.ide.lti.core.designsystem.theme.GlassEffects
 import org.ide.lti.core.designsystem.theme.LtiTheme
+import org.ide.lti.core.designsystem.theme.glass.GlassStyles
+import org.ide.lti.core.designsystem.theme.glass.toEffects
 import org.jetbrains.compose.ui.tooling.preview.Preview
-
-/**
- * Docked-bar glass effect stack.
- * Delegated to canonical [GlassEffects.DockedNav].
- */
-private val GlassDockedBarEffects: BackdropEffectScope.() -> Unit = GlassEffects.DockedNav
 
 /**
  * Now in Android navigation bar item with icon and label content slots. Wraps Material 3
@@ -92,12 +87,17 @@ fun GlassNavigationBar(
     modifier: Modifier = Modifier,
     content: @Composable RowScope.() -> Unit,
 ) {
+    // Same effect stack as GlassStyles.rail (real usage in IdeNavigatorPanel/IdePipelineRail
+    // confirmed this is optically identical to the production shell's docked-nav tier) - reused
+    // rather than re-defined for this generic/catalog-facing component.
+    val dockedBarStyle = GlassStyles.rail
+    val dockedBarEffects = remember(dockedBarStyle) { dockedBarStyle.toEffects() }
     NavigationBar(
         // Docked flush to the bottom screen edge — RectangleShape, not the module-wide capsule
         // (rounding here would leave gaps against the window's real edge).
         modifier = modifier.glassEffect(
             shape = RectangleShape,
-            effects = GlassDockedBarEffects,
+            effects = dockedBarEffects,
             highlight = { Highlight.Default },
         ),
         containerColor = Color.Transparent,
@@ -157,11 +157,13 @@ fun GlassNavigationRail(
     header: @Composable (ColumnScope.() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val dockedBarStyle = GlassStyles.rail
+    val dockedBarEffects = remember(dockedBarStyle) { dockedBarStyle.toEffects() }
     NavigationRail(
         // Docked flush to the side screen edge — RectangleShape for the same reason as the bar.
         modifier = modifier.glassEffect(
             shape = RectangleShape,
-            effects = GlassDockedBarEffects,
+            effects = dockedBarEffects,
             highlight = { Highlight.Default },
         ),
         containerColor = Color.Transparent,

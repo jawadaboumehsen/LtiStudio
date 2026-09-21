@@ -42,6 +42,7 @@ import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import com.kashif_e.backdrop.BackdropEffectScope
 import com.kashif_e.backdrop.drawBackdrop
 import org.ide.lti.core.designsystem.component.actions.*
 import org.ide.lti.core.designsystem.component.devtools.*
@@ -51,13 +52,14 @@ import org.ide.lti.core.designsystem.component.inputs.*
 import org.ide.lti.core.designsystem.component.navigation.*
 import org.ide.lti.core.designsystem.component.primitives.*
 import org.ide.lti.core.designsystem.theme.AlphaTokens
-import org.ide.lti.core.designsystem.theme.GlassEffects
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
+import org.ide.lti.core.designsystem.theme.glass.GlassStyles
 import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
+import org.ide.lti.core.designsystem.theme.glass.toEffects
 import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
 import java.awt.Cursor
 import org.ide.lti.core.designsystem.theme.CornerRadius as ThemeCornerRadius
@@ -87,6 +89,8 @@ internal fun GlassDragDivider(
 ) {
     var isHovered by remember { mutableStateOf(false) }
     var isDragging by remember { mutableStateOf(false) }
+    val splitterGripStyle = GlassStyles.splitterGrip
+    val splitterGripEffects = remember(splitterGripStyle) { splitterGripStyle.toEffects() }
 
     // Instant alpha during drag for 1:1 mouse tracking, smooth fade on hover
     val alpha by animateFloatAsState(
@@ -179,6 +183,7 @@ internal fun GlassDragDivider(
                         normalColor = normalColor,
                         actualBackdrop = actualBackdrop,
                         orientation = orientation,
+                        effects = splitterGripEffects,
                         effectsEnabled = effectsEnabled,
                     ),
                 ),
@@ -215,6 +220,7 @@ private fun getDividerBackgroundModifier(
     normalColor: Color,
     actualBackdrop: GlassSceneState,
     orientation: DividerOrientation,
+    effects: BackdropEffectScope.() -> Unit,
     effectsEnabled: Boolean = true,
 ): Modifier = when {
     isDragging -> Modifier.background(activeColor)
@@ -237,7 +243,7 @@ private fun getDividerBackgroundModifier(
             .drawBackdrop(
                 backdrop = actualBackdrop.engineBackdrop,
                 shape = { GlassShapes.Capsule },
-                effects = GlassEffects.SplitterGrip,
+                effects = effects,
                 onDrawSurface = {
                     val gradient = when (orientation) {
                         DividerOrientation.Vertical -> Brush.verticalGradient(

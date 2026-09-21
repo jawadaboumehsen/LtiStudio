@@ -24,13 +24,15 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LensRefraction
 
 /**
- * The seven named [GlassStyle] roles from backdrop-refactor-plan-20260920.md §1 - the shared
- * vocabulary that replaces [org.ide.lti.core.designsystem.theme.GlassEffects]' 24 independently
- * drifting stacks. Each role's optics/colors are transcribed from the real component that already
- * owns that visual tier ([org.ide.lti.core.designsystem.theme.GlassEffects.TopBar],
- * `.DockedNav`, `.Panel`, `.Card`, `.Button`, `.dialog()`, `.TabSpotlight`) rather than re-tuned
+ * Named [GlassStyle] roles - the shared vocabulary that replaces
+ * [org.ide.lti.core.designsystem.theme.GlassEffects]' independently drifting stacks. Started as
+ * the plan's original seven (backdrop-refactor-plan-20260920.md §1: bar/rail/navigator/selected/
+ * card/button/dialog) and grew as each remaining GlassEffects consumer got its own migration pass
+ * (chip/panel/textField/bottomTabs/bottomSheet/splitterGrip). Each role's optics/colors are
+ * transcribed from the real component that already owns that visual tier rather than re-tuned
  * from scratch, so a component migrating from its old hand-picked effect stack to
- * `Modifier.glass(GlassStyles.x)` sees no visual change.
+ * `GlassStyles.x.toEffects()` (or `Modifier.glass(GlassStyles.x)`, for the tier that fully
+ * migrated) sees no visual change.
  *
  * Colors are theme-dependent ([GlassTheme.colors]), so these are `@Composable` properties, not
  * static `val`s - a role must re-resolve when the active [org.ide.lti.core.designsystem.theme.AppTheme]
@@ -133,6 +135,139 @@ public object GlassStyles {
                 lensChromaticAberration = true,
                 grain = GRAIN_STANDARD,
                 rim = Rim(),
+            )
+        }
+
+    // Compact/icon-sized button tier - GlassEffects.Button - distinct from [button] above, which
+    // is the wide text-labeled pill tier (GlassEffects.ButtonPill). GlassIcon and the interactive
+    // tab-bar surface (GlassTabBar) are this tier's real consumers.
+    public val iconButton: GlassStyle
+        @Composable
+        @ReadOnlyComposable
+        get() {
+            val colors = GlassTheme.colors
+            return GlassStyle(
+                surface = colors.glassSurface,
+                tint = colors.glassTint,
+                border = colors.glassBorder,
+                shape = GlassShapes.Capsule,
+                blur = OpticalSizeValue.Fixed(BackdropBlur.Button),
+                lens = OpticalSizeValue.Fixed(LensRefraction.Button),
+                lensChromaticAberration = true,
+                grain = GRAIN_STANDARD,
+            )
+        }
+
+    public val chip: GlassStyle
+        @Composable
+        @ReadOnlyComposable
+        get() {
+            val colors = GlassTheme.colors
+            return GlassStyle(
+                surface = colors.glassSurface,
+                tint = colors.glassTint,
+                border = colors.glassBorder,
+                shape = GlassShapes.Capsule,
+                // Matches GlassEffects.Chip - GlassChip's real effects source. Only
+                // blur/lens/vibrancy are actually consumed by GlassChip (via .toEffects()); it
+                // computes surface/border/highlight itself per hover/selected state (animated
+                // background/border color, an ambient highlight only while hovered or selected),
+                // so those fields above are placeholders, not real defaults, for this consumer.
+                blur = OpticalSizeValue.Fixed(BackdropBlur.Subtle),
+                lens = OpticalSizeValue.Fixed(LensRefraction.Button),
+                rim = Rim(),
+            )
+        }
+
+    public val panel: GlassStyle
+        @Composable
+        @ReadOnlyComposable
+        get() {
+            val colors = GlassTheme.colors
+            return GlassStyle(
+                surface = colors.glassSurface,
+                tint = colors.glassTint,
+                border = colors.glassBorder,
+                // Matches GlassEffects.Panel - GlassPanel's real default `effects`.
+                shape = GlassShapes.Panel,
+                blur = OpticalSizeValue.Fixed(BackdropBlur.Panel),
+                lens = OpticalSizeValue.Fixed(LensRefraction.Panel),
+                lensDepthEffect = true,
+                lensChromaticAberration = true,
+                grain = GRAIN_STANDARD,
+            )
+        }
+
+    public val textField: GlassStyle
+        @Composable
+        @ReadOnlyComposable
+        get() {
+            val colors = GlassTheme.colors
+            return GlassStyle(
+                surface = colors.glassSurface,
+                tint = colors.glassTint,
+                border = colors.glassBorder,
+                // Matches GlassEffects.TextField - GlassTextField's real default `effects`.
+                shape = GlassShapes.TextField,
+                blur = OpticalSizeValue.Fixed(BackdropBlur.TextField),
+                lens = OpticalSizeValue.Fixed(LensRefraction.TextField),
+            )
+        }
+
+    public val bottomTabs: GlassStyle
+        @Composable
+        @ReadOnlyComposable
+        get() {
+            val colors = GlassTheme.colors
+            return GlassStyle(
+                surface = colors.glassSurface,
+                tint = colors.glassTint,
+                border = colors.glassBorder,
+                // Matches GlassEffects.BottomTabs - GlassBottomTabs' real default `effects`.
+                shape = GlassShapes.Capsule,
+                blur = OpticalSizeValue.Fixed(BackdropBlur.BottomTabs),
+                lens = OpticalSizeValue.Fixed(LensRefraction.BottomTabs),
+            )
+        }
+
+    public val bottomSheet: GlassStyle
+        @Composable
+        @ReadOnlyComposable
+        get() {
+            val colors = GlassTheme.colors
+            return GlassStyle(
+                surface = colors.glassSurface,
+                tint = colors.glassTint,
+                border = colors.glassBorder,
+                shape = GlassShapes.BottomSheet,
+                blur = OpticalSizeValue.Fixed(BackdropBlur.BottomSheet),
+                lens = OpticalSizeValue.Fixed(LensRefraction.BottomSheet),
+                lensDepthEffect = true,
+                // Matches GlassEffects.BottomSheet - uses colorControls' own saturation boost
+                // instead of vibrancy() (using both would double the boost), same reasoning as
+                // [dialog] below.
+                vibrancy = false,
+                saturation = BackdropSaturation.Vibrant,
+            )
+        }
+
+    // Real usage (GlassDragDivider's splitter grip) confirmed this is GlassEffects.SplitterGrip,
+    // itself a semantic alias for GlassEffects.Minimap - kept as a separate named role for
+    // call-site clarity even though the values match exactly, same reasoning as [navigator].
+    public val splitterGrip: GlassStyle
+        @Composable
+        @ReadOnlyComposable
+        get() {
+            val colors = GlassTheme.colors
+            return GlassStyle(
+                surface = colors.glassSurface,
+                tint = colors.glassTint,
+                border = colors.glassBorder,
+                shape = GlassShapes.Capsule,
+                blur = OpticalSizeValue.Fixed(BackdropBlur.Minimap),
+                lens = OpticalSizeValue.Fixed(LensRefraction.Minimap),
+                // Matches GlassEffects.Minimap/SplitterGrip - neither calls vibrancy().
+                vibrancy = false,
             )
         }
 

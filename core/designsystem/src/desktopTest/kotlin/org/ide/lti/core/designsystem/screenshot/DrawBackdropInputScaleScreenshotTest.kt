@@ -32,10 +32,11 @@ import com.kashif_e.backdrop.drawBackdrop
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius
-import org.ide.lti.core.designsystem.theme.GlassEffects
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
+import org.ide.lti.core.designsystem.theme.glass.GlassStyles
 import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
+import org.ide.lti.core.designsystem.theme.glass.toEffects
 import org.ide.lti.core.testing.screenshot.GoldenImageAssert
 import kotlin.math.abs
 import kotlin.test.Test
@@ -81,11 +82,12 @@ class DrawBackdropInputScaleScreenshotTest {
     @Composable
     private fun ScaledGlassBox(backdrop: GlassSceneState, inputScale: Float, modifier: Modifier = Modifier) {
         val tintColor = GlassTheme.colors.onGlass.copy(alpha = AlphaTokens.Subtle)
+        val iconButtonStyle = GlassStyles.iconButton
         Box(
             modifier = modifier.drawBackdrop(
                 backdrop = backdrop.engineBackdrop,
                 shape = { RoundedCornerShape(CornerRadius.Medium) },
-                effects = GlassEffects.Button,
+                effects = iconButtonStyle.toEffects(),
                 inputScale = inputScale,
                 onDrawSurface = { drawRect(tintColor) },
             ),
