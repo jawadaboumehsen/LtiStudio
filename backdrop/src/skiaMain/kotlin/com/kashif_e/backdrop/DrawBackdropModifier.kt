@@ -424,8 +424,24 @@ private class DrawBackdropNode(
             // own scaleX/scaleY compositing transform stretches it back to full size - the same
             // downsample-then-upscale trade Haze's GlassInputScalePolicy makes. At 1f (the
             // default) recordWidth == fullWidth and scaleX/Y == 1f: byte-identical to pre-B1.
-            val recordWidth = (fullWidth * inputScale).roundToInt().coerceAtLeast(1)
-            val recordHeight = (fullHeight * inputScale).roundToInt().coerceAtLeast(1)
+            //
+            // Budgeted through resolveBackdropRenderBudget (mirrors Haze's GlassRenderBudget)
+            // rather than trusting inputScale directly: a pathologically large element (a
+            // multi-monitor-spanning backdrop, say) could otherwise ask Skia to retain a layer
+            // past its safe GPU texture limits. Fallback (even at the minimum automatic scale the
+            // element still doesn't fit) has no dedicated degraded path yet - that lands with the
+            // real/fallback delegate split (Phase E) - so it renders at the minimum-scale size
+            // anyway rather than skip the backdrop entirely.
+            val budgetDecision = resolveBackdropRenderBudget(inputScale, IntSize(fullWidth, fullHeight))
+            val recordSize = when (budgetDecision) {
+                is BackdropRenderBudgetDecision.Runtime -> budgetDecision.size
+                is BackdropRenderBudgetDecision.Fallback -> IntSize(
+                    (fullWidth * MIN_AUTOMATIC_INPUT_SCALE).roundToInt().coerceIn(1, MAX_LAYER_DIMENSION_PX),
+                    (fullHeight * MIN_AUTOMATIC_INPUT_SCALE).roundToInt().coerceIn(1, MAX_LAYER_DIMENSION_PX),
+                )
+            }
+            val recordWidth = recordSize.width
+            val recordHeight = recordSize.height
 
             with(this@DrawBackdropNode) {
                 recordLayer(
