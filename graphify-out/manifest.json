@@ -1626,9 +1626,9 @@
     "semantic_hash": ""
   },
   "detekt-rules/src/main/kotlin/org/ide/lti/detekt/LtiDesignSystemRuleSetProvider.kt": {
-    "mtime": 1789349134.7666755,
-    "seen": 1789387556.225789,
-    "ast_hash": "8391b64238356e334805ba72556e16a5",
+    "mtime": 1789958715.5014246,
+    "seen": 1789958965.0425553,
+    "ast_hash": "a971b83669873577a4d7db401a1197f0",
     "semantic_hash": ""
   },
   "detekt-rules/src/main/kotlin/org/ide/lti/detekt/NoBackdropEffectImport.kt": {
@@ -2466,9 +2466,9 @@
     "semantic_hash": ""
   },
   "config/detekt/detekt.yml": {
-    "mtime": 1789386696.5390158,
-    "seen": 1789387556.227804,
-    "ast_hash": "0f5713c01547ea19b30cb95ed0c623b7",
+    "mtime": 1789958719.072538,
+    "seen": 1789958965.0435402,
+    "ast_hash": "81060d1998742deae49eea961c664b86",
     "semantic_hash": ""
   },
   "core/analytics/README.md": {
@@ -19917,6 +19917,12 @@
     "mtime": 1789954127.0118053,
     "seen": 1789955329.622207,
     "ast_hash": "6083e768a85869e23474834912dad384",
+    "semantic_hash": ""
+  },
+  "detekt-rules/src/main/kotlin/org/ide/lti/detekt/NoLeakedBackdropEngineType.kt": {
+    "mtime": 1789958711.9309776,
+    "seen": 1789958965.0425553,
+    "ast_hash": "aa7139c0ae296984e21c3b7c0738c604",
     "semantic_hash": ""
   }
 }
