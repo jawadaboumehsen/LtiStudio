@@ -50,4 +50,21 @@ class OpticalSizeValueTest {
             )
         }
     }
+
+    @Test
+    fun scaleMultipliesAFixedValue() {
+        val value = OpticalSizeValue.Fixed(40.dp)
+        assertEquals(26.dp, value.scale(0.65f).resolve(1.dp))
+    }
+
+    @Test
+    fun scaleMultipliesEveryResponsivePointIndependently() {
+        val value = OpticalSizeValue.Responsive(
+            OpticalSizePoint(64.dp, 20.dp),
+            OpticalSizePoint(220.dp, 40.dp),
+        )
+        val scaled = value.scale(0.5f)
+        assertEquals(10.dp, scaled.resolve(20.dp))
+        assertEquals(20.dp, scaled.resolve(4000.dp))
+    }
 }

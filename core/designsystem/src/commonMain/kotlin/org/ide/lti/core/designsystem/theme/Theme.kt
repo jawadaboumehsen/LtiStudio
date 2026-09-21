@@ -165,6 +165,11 @@ object GlassTheme {
         @ReadOnlyComposable
         get() = LocalFocusRingSuppressedByPointer.current
 
+    val accessibility: GlassAccessibilitySettings
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalGlassAccessibilitySettings.current
+
     /** Centralized registry of all backdrop visual effect stacks. */
     val effects: GlassEffects
         get() = GlassEffects
@@ -203,6 +208,7 @@ fun LtiTheme(
     glassColors: GlassColorScheme? = null,
     effectsEnabled: Boolean = true,
     reducedMotion: Boolean = false,
+    accessibility: GlassAccessibilitySettings = GlassAccessibilitySettings(),
     materialColorScheme: ColorScheme? = null,
     sharedScene: GlassSceneState? = null,
     content: @Composable () -> Unit,
@@ -227,6 +233,7 @@ fun LtiTheme(
             LocalGlassSceneState provides scene,
             LocalGlassEffectsEnabled provides effectsEnabled,
             LocalReducedMotion provides reducedMotion,
+            LocalGlassAccessibilitySettings provides accessibility,
             LocalContentColor provides resolvedGlassColors.onGlass,
             LocalFocusRingSuppressedByPointer provides focusRingSuppressedByPointer,
         ) {

@@ -41,6 +41,7 @@ import org.ide.lti.core.designsystem.theme.GlassEffects
 import org.ide.lti.core.designsystem.theme.GlassHighlights
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.LocalGlassAccessibilitySettings
 import org.ide.lti.core.designsystem.theme.LocalGlassColors
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
@@ -48,6 +49,7 @@ import org.ide.lti.core.designsystem.theme.glass.GlassStyle
 import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 import org.ide.lti.core.designsystem.theme.glass.resolve
 import org.ide.lti.core.designsystem.theme.glass.toHighlight
+import org.ide.lti.core.designsystem.theme.withAccessibility
 
 /**
  * The single rendering facade for a [GlassStyle] - backdrop-refactor-plan-20260920.md §1.2. The
@@ -83,9 +85,11 @@ fun Modifier.glass(
     val effectsEnabled = GlassTheme.effectsEnabled && enabled
     val resolvedBackdrop = backdrop ?: GlassTheme.scene
     val usingRealBackdrop = effectsEnabled && resolvedBackdrop != null
+    val accessibility = GlassTheme.accessibility
 
     val borderColor = when {
         style.border.alpha > 0f -> style.border
+        accessibility.increaseContrast || accessibility.showBorders -> glassColors.glassBorderHighlight
         !usingRealBackdrop && style.rim != null -> glassColors.glassBorderHighlight
         else -> Color.Transparent
     }
@@ -99,7 +103,7 @@ fun Modifier.glass(
     // value describing an unchanged style is structurally `==` to the last one and :backdrop's
     // dirty-bitmask diff (not a reference check) sees no change - see DrawBackdropRecompositionTest
     // (backdrop module) for the empirical proof.
-    val resolvedEffect = style.resolve()
+    val resolvedEffect = style.resolve().withAccessibility(accessibility)
 
     val backgroundModifier = if (usingRealBackdrop) {
         Modifier.drawBackdrop(

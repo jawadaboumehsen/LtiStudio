@@ -97,3 +97,16 @@ public inline fun <T> OpticalSizeValue<T>.resolve(shortestSide: Dp, lerp: (a: T,
 /** [resolve] convenience for the common case of a single interpolated [Dp]. */
 public fun OpticalSizeValue<Dp>.resolve(shortestSide: Dp): Dp =
     resolve(shortestSide) { a, b, t -> Dp(a.value + (b.value - a.value) * t) }
+
+/**
+ * Scales every value carried by this [OpticalSizeValue] by [factor], preserving the Fixed/
+ * Responsive shape - used by accessibility's reduce-transparency to shrink a style's authored
+ * blur radius without needing to know the element's shortest side (resolution still happens at
+ * draw time, against the already-scaled value).
+ */
+public fun OpticalSizeValue<Dp>.scale(factor: Float): OpticalSizeValue<Dp> = when (this) {
+    is OpticalSizeValue.Fixed -> OpticalSizeValue.Fixed(value * factor)
+    is OpticalSizeValue.Responsive -> OpticalSizeValue.Responsive(
+        *points.map { OpticalSizePoint(it.shortestDimension, it.value * factor) }.toTypedArray(),
+    )
+}
