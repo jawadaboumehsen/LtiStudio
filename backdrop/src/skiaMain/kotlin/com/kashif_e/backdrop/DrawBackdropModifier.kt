@@ -97,7 +97,8 @@ fun Modifier.drawPlainBackdrop(
     onDrawSurface: (DrawScope.(fallbackAlphaBoost: Float) -> Unit)? = null,
     onDrawFront: (DrawScope.() -> Unit)? = null,
     interaction: BackdropInteractionResponse? = null,
-    interactionSource: InteractionSource? = null
+    interactionSource: InteractionSource? = null,
+    adaptiveInputScale: Boolean = false
 ): Modifier {
     val shapeProvider = ShapeProvider(shape)
     val actualOnDrawBackdrop = onDrawBackdrop ?: DefaultOnDrawBackdrop
@@ -121,7 +122,8 @@ fun Modifier.drawPlainBackdrop(
                 onDrawFront = onDrawFront,
                 inputScale = 1f,
                 interaction = interaction,
-                interactionSource = interactionSource
+                interactionSource = interactionSource,
+                adaptiveInputScale = adaptiveInputScale
             )
         )
 }
@@ -165,6 +167,11 @@ private val DefaultShadow = { Shadow.Default }
  * [resolvedEffect] changes go through.
  * @param interactionSource The [InteractionSource] whose press/hover/focus events drive
  * [interaction]. Typically the same source passed to `Modifier.clickable`/`hoverable`.
+ * @param adaptiveInputScale When `true`, ignores [inputScale] and instead resolves a downscale
+ * tier automatically from the resolved blur radius x visible area, with hysteresis so one frame
+ * of radius/size jitter doesn't flap between tiers - see [BackdropInputScalePolicy], ported from
+ * Haze's `BlurInputScalePolicy`. Opt-in and `false` by default: existing callers keep rendering
+ * at [inputScale] exactly as before.
  */
 fun Modifier.drawBackdrop(
     backdrop: Backdrop,
@@ -181,7 +188,8 @@ fun Modifier.drawBackdrop(
     onDrawFront: (DrawScope.() -> Unit)? = null,
     inputScale: Float = 1f,
     interaction: BackdropInteractionResponse? = null,
-    interactionSource: InteractionSource? = null
+    interactionSource: InteractionSource? = null,
+    adaptiveInputScale: Boolean = false
 ): Modifier {
     requireValidInputScale(inputScale)
     val shapeProvider = ShapeProvider(shape)
@@ -236,7 +244,8 @@ fun Modifier.drawBackdrop(
                 onDrawFront = onDrawFront,
                 inputScale = inputScale,
                 interaction = interaction,
-                interactionSource = interactionSource
+                interactionSource = interactionSource,
+                adaptiveInputScale = adaptiveInputScale
             )
         )
 }
@@ -259,7 +268,8 @@ private class DrawBackdropElement(
     val onDrawFront: (DrawScope.() -> Unit)?,
     val inputScale: Float,
     val interaction: BackdropInteractionResponse?,
-    val interactionSource: InteractionSource?
+    val interactionSource: InteractionSource?,
+    val adaptiveInputScale: Boolean
 ) : ModifierNodeElement<DrawBackdropNode>() {
 
     override fun create(): DrawBackdropNode {
@@ -274,7 +284,8 @@ private class DrawBackdropElement(
             onDrawFront = onDrawFront,
             inputScale = inputScale,
             interaction = interaction,
-            interactionSource = interactionSource
+            interactionSource = interactionSource,
+            adaptiveInputScale = adaptiveInputScale
         )
     }
 
@@ -296,6 +307,7 @@ private class DrawBackdropElement(
         node.inputScale = inputScale
         node.interaction = interaction
         node.interactionSource = interactionSource
+        node.adaptiveInputScale = adaptiveInputScale
         node.updateInteractionController()
         if (dirty.any(GlassEffectDirtyFields.RenderEffectAffectingFlags)) {
             node.invalidateDrawCache()
@@ -316,6 +328,7 @@ private class DrawBackdropElement(
         properties["inputScale"] = inputScale
         properties["interaction"] = interaction
         properties["interactionSource"] = interactionSource
+        properties["adaptiveInputScale"] = adaptiveInputScale
     }
 
     override fun equals(other: Any?): Boolean {
@@ -333,6 +346,7 @@ private class DrawBackdropElement(
         if (inputScale != other.inputScale) return false
         if (interaction != other.interaction) return false
         if (interactionSource != other.interactionSource) return false
+        if (adaptiveInputScale != other.adaptiveInputScale) return false
 
         return true
     }
@@ -349,6 +363,7 @@ private class DrawBackdropElement(
         result = 31 * result + inputScale.hashCode()
         result = 31 * result + (interaction?.hashCode() ?: 0)
         result = 31 * result + (interactionSource?.hashCode() ?: 0)
+        result = 31 * result + adaptiveInputScale.hashCode()
         return result
     }
 }
@@ -364,7 +379,8 @@ private class DrawBackdropNode(
     var onDrawFront: (DrawScope.() -> Unit)?,
     var inputScale: Float,
     var interaction: BackdropInteractionResponse?,
-    var interactionSource: InteractionSource?
+    var interactionSource: InteractionSource?,
+    var adaptiveInputScale: Boolean
 ) : LayoutModifierNode, DrawModifierNode, GlobalPositionAwareModifierNode, ObserverModifierNode, Modifier.Node() {
 
     override val shouldAutoInvalidate: Boolean = false
@@ -387,6 +403,17 @@ private class DrawBackdropNode(
     // Skia, unlike Android's API-level-gated support Haze's own check exists for); it's
     // defensive, not a path expected to exercise in practice.
     private var shaderIncompatible = false
+
+    // Node-owned (mirrors interactionController/shaderIncompatible's lifecycle): the previous
+    // tier gates the next decision, which is what makes the hysteresis real rather than
+    // recomputed from scratch every draw. Only consulted when adaptiveInputScale is true.
+    private val inputScalePolicy = BackdropInputScalePolicy()
+
+    // Set by drawBackdropLayer right before recordLayer() - the *actual* scale the render budget
+    // decided to record at (which may be smaller than the requested inputScale/adaptive tier if
+    // the budget had to clamp further), so recordBackdropBlock's canvas.scale() always matches
+    // the real size the content is being recorded into.
+    private var currentRecordScale: Float = 1f
 
     private val layoutLayerBlock: GraphicsLayerScope.() -> Unit = {
         // The clip here is redundant: ContentDrawScope.draw() below already wraps
@@ -411,16 +438,19 @@ private class DrawBackdropNode(
 
     private val recordBackdropBlock: (DrawScope.() -> Unit) = {
         val canvas = drawContext.canvas
-        // inputScale < 1f: the recording canvas is smaller than the element's real size (see
-        // drawBackdropLayer). Scaling the canvas here - before the padding translate and the
+        // currentRecordScale < 1f: the recording canvas is smaller than the element's real size
+        // (see drawBackdropLayer). Scaling the canvas here - before the padding translate and the
         // backdrop sample - makes every subsequent draw in this block (including the ambient
         // layer's 1:1, unscaled drawLayer() inside LayerBackdrop.drawBackdrop) land downsampled
         // onto the smaller canvas, in the same real-world position it would occupy at full
-        // resolution. At 1f this is a no-op scale, so behavior is unchanged.
-        val needsScale = inputScale != 1f
+        // resolution. At 1f this is a no-op scale, so behavior is unchanged. Reads
+        // currentRecordScale (the render budget's *actual* decision), not the requested
+        // inputScale/adaptive tier directly - those can differ whenever the budget had to clamp
+        // further, and this canvas must match the size it's actually being recorded into.
+        val needsScale = currentRecordScale != 1f
         if (needsScale) {
             canvas.save()
-            canvas.scale(inputScale, inputScale)
+            canvas.scale(currentRecordScale, currentRecordScale)
         }
         // Rounded up (not truncated) and to the exact same integer drawBackdropLayer() uses for
         // the recorded layer's size/offset below - a raw fractional padding here (e.g. 2.5px at
@@ -468,15 +498,27 @@ private class DrawBackdropNode(
             // downsample-then-upscale trade Haze's GlassInputScalePolicy makes. At 1f (the
             // default) recordWidth == fullWidth and scaleX/Y == 1f: byte-identical to pre-B1.
             //
+            // adaptiveInputScale (opt-in) replaces the caller's requested scale with an automatic
+            // hysteresis-driven tier (BackdropInputScalePolicy, ported from Haze's own
+            // BlurInputScalePolicy) instead of trusting a fixed caller-supplied inputScale.
+            val requestedScale = if (adaptiveInputScale) {
+                inputScalePolicy.resolve(resolvedBlurRadiusPx(), fullWidth.toFloat() * fullHeight.toFloat())
+            } else {
+                inputScale
+            }
+
             // Budgeted through resolveBackdropRenderBudget (mirrors Haze's GlassRenderBudget)
-            // rather than trusting inputScale directly: a pathologically large element (a
+            // rather than trusting requestedScale directly: a pathologically large element (a
             // multi-monitor-spanning backdrop, say) could otherwise ask Skia to retain a layer
             // past its safe GPU texture limits.
-            val budgetDecision = resolveBackdropRenderBudget(inputScale, IntSize(fullWidth, fullHeight))
-            val recordSize = (budgetDecision as? BackdropRenderBudgetDecision.Runtime)?.size
-            if (recordSize != null) {
-                val recordWidth = recordSize.width
-                val recordHeight = recordSize.height
+            val budgetDecision = resolveBackdropRenderBudget(requestedScale, IntSize(fullWidth, fullHeight))
+            if (budgetDecision is BackdropRenderBudgetDecision.Runtime) {
+                val recordWidth = budgetDecision.size.width
+                val recordHeight = budgetDecision.size.height
+                // The budget's *actual* decision, not requestedScale directly - these differ
+                // whenever the bisection search had to clamp further than what was requested.
+                // recordBackdropBlock reads this to scale its recording canvas correctly.
+                currentRecordScale = budgetDecision.scale
 
                 with(this@DrawBackdropNode) {
                     recordLayer(
@@ -515,6 +557,19 @@ private class DrawBackdropNode(
         if (!width.isFinite() || !height.isFinite() || width <= 0f || height <= 0f) return 0f
         val shortestSide: Dp = with(effectScope) { min(width, height).toDp() }
         return resolveFallbackAlphaBoost(resolvedEffect.blur, shortestSide)
+    }
+
+    /** [resolvedEffect]'s own `blur`, resolved against the element's current live size - the
+     * same "how much blur did this style actually ask for" input [BackdropInputScalePolicy]
+     * needs, independent of any transient interaction multiplier. */
+    private fun resolvedBlurRadiusPx(): Float {
+        val width = effectScope.size.width
+        val height = effectScope.size.height
+        if (!width.isFinite() || !height.isFinite() || width <= 0f || height <= 0f) return 0f
+        val shortestSide: Dp = with(effectScope) { min(width, height).toDp() }
+        val blurDp = resolvedEffect.blur.resolve(shortestSide)
+        if (!blurDp.value.isFinite() || blurDp.value <= 0f) return 0f
+        return with(effectScope) { blurDp.toPx() }
     }
 
     override fun MeasureScope.measure(
@@ -635,6 +690,8 @@ private class DrawBackdropNode(
         interactionController = null
         lastAppliedInteractionState = null
         shaderIncompatible = false
+        inputScalePolicy.reset()
+        currentRecordScale = 1f
         effectScope.reset()
         clipPath = null
     }

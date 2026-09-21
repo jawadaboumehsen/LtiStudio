@@ -112,6 +112,7 @@ fun Modifier.glass(
             inputScale = style.inputScale,
             interaction = style.interaction,
             interactionSource = interactionSource,
+            adaptiveInputScale = style.adaptiveInputScale,
             onDrawSurface = { fallbackAlphaBoost ->
                 drawRect(style.surface)
                 if (style.tint.alpha > 0f) {

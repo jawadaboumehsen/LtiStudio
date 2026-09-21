@@ -58,6 +58,10 @@ public data class GlassStyle(
     /** Declared hover/press/focus optics response - see [BackdropInteractionResponse]. Animated
      * by a node-owned interaction controller, decoupled from this style's own recomposition. */
     public val interaction: BackdropInteractionResponse? = null,
+    /** When `true`, ignores [inputScale] and resolves a downscale tier automatically from blur
+     * radius x visible area, with hysteresis - see `BackdropInputScalePolicy`. Opt-in per style;
+     * `false` preserves [inputScale] exactly as authored. */
+    public val adaptiveInputScale: Boolean = false,
 ) {
     init {
         require(grain.isFinite() && grain in 0f..1f) { "grain must be finite and in 0f..1f, was $grain" }
