@@ -1,5 +1,6 @@
 package com.kashif_e.backdrop
 
+import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -37,6 +38,9 @@ import androidx.compose.ui.graphics.Outline
 import com.kashif_e.backdrop.backdrops.LayerBackdrop
 import com.kashif_e.backdrop.highlight.Highlight
 import com.kashif_e.backdrop.highlight.HighlightElement
+import com.kashif_e.backdrop.interaction.BackdropInteractionController
+import com.kashif_e.backdrop.interaction.BackdropInteractionRenderState
+import com.kashif_e.backdrop.interaction.BackdropInteractionResponse
 import com.kashif_e.backdrop.shadow.InnerShadow
 import com.kashif_e.backdrop.shadow.InnerShadowElement
 import com.kashif_e.backdrop.shadow.Shadow
@@ -67,7 +71,9 @@ fun Modifier.drawPlainBackdrop(
     onDrawBehind: (DrawScope.() -> Unit)? = null,
     onDrawBackdrop: (DrawScope.(drawBackdrop: DrawScope.() -> Unit) -> Unit)? = null,
     onDrawSurface: (DrawScope.() -> Unit)? = null,
-    onDrawFront: (DrawScope.() -> Unit)? = null
+    onDrawFront: (DrawScope.() -> Unit)? = null,
+    interaction: BackdropInteractionResponse? = null,
+    interactionSource: InteractionSource? = null
 ): Modifier {
     val shapeProvider = ShapeProvider(shape)
     val actualOnDrawBackdrop = onDrawBackdrop ?: DefaultOnDrawBackdrop
@@ -89,7 +95,9 @@ fun Modifier.drawPlainBackdrop(
                 onDrawBackdrop = actualOnDrawBackdrop,
                 onDrawSurface = onDrawSurface,
                 onDrawFront = onDrawFront,
-                inputScale = 1f
+                inputScale = 1f,
+                interaction = interaction,
+                interactionSource = interactionSource
             )
         )
 }
@@ -120,6 +128,12 @@ private val DefaultShadow = { Shadow.Default }
  * element. `1f` (the default) records at full resolution. Values below `1f` cut blur cost roughly
  * with the square of the scale (e.g. `0.5f` blurs a quarter of the pixels) at a cost invisible
  * once blurred; ported from Haze's `GlassInputScalePolicy`.
+ * @param interaction Optional declared hover/press/focus optics response - see
+ * [BackdropInteractionResponse]. Animated by a node-owned [BackdropInteractionController] that
+ * invalidates draw only, never the (expensive) Skia effect-graph rebuild path composition-driven
+ * [resolvedEffect] changes go through.
+ * @param interactionSource The [InteractionSource] whose press/hover/focus events drive
+ * [interaction]. Typically the same source passed to `Modifier.clickable`/`hoverable`.
  */
 fun Modifier.drawBackdrop(
     backdrop: Backdrop,
@@ -134,7 +148,9 @@ fun Modifier.drawBackdrop(
     onDrawBackdrop: (DrawScope.(drawBackdrop: DrawScope.() -> Unit) -> Unit)? = null,
     onDrawSurface: (DrawScope.() -> Unit)? = null,
     onDrawFront: (DrawScope.() -> Unit)? = null,
-    inputScale: Float = 1f
+    inputScale: Float = 1f,
+    interaction: BackdropInteractionResponse? = null,
+    interactionSource: InteractionSource? = null
 ): Modifier {
     requireValidInputScale(inputScale)
     val shapeProvider = ShapeProvider(shape)
@@ -187,7 +203,9 @@ fun Modifier.drawBackdrop(
                 onDrawBackdrop = actualOnDrawBackdrop,
                 onDrawSurface = onDrawSurface,
                 onDrawFront = onDrawFront,
-                inputScale = inputScale
+                inputScale = inputScale,
+                interaction = interaction,
+                interactionSource = interactionSource
             )
         )
 }
@@ -208,7 +226,9 @@ private class DrawBackdropElement(
     val onDrawBackdrop: DrawScope.(drawBackdrop: DrawScope.() -> Unit) -> Unit,
     val onDrawSurface: (DrawScope.() -> Unit)?,
     val onDrawFront: (DrawScope.() -> Unit)?,
-    val inputScale: Float
+    val inputScale: Float,
+    val interaction: BackdropInteractionResponse?,
+    val interactionSource: InteractionSource?
 ) : ModifierNodeElement<DrawBackdropNode>() {
 
     override fun create(): DrawBackdropNode {
@@ -221,7 +241,9 @@ private class DrawBackdropElement(
             onDrawBackdrop = onDrawBackdrop,
             onDrawSurface = onDrawSurface,
             onDrawFront = onDrawFront,
-            inputScale = inputScale
+            inputScale = inputScale,
+            interaction = interaction,
+            interactionSource = interactionSource
         )
     }
 
@@ -241,6 +263,9 @@ private class DrawBackdropElement(
         node.onDrawSurface = onDrawSurface
         node.onDrawFront = onDrawFront
         node.inputScale = inputScale
+        node.interaction = interaction
+        node.interactionSource = interactionSource
+        node.updateInteractionController()
         if (dirty.any(GlassEffectDirtyFields.RenderEffectAffectingFlags)) {
             node.invalidateDrawCache()
         }
@@ -258,6 +283,8 @@ private class DrawBackdropElement(
         properties["onDrawSurface"] = onDrawSurface
         properties["onDrawFront"] = onDrawFront
         properties["inputScale"] = inputScale
+        properties["interaction"] = interaction
+        properties["interactionSource"] = interactionSource
     }
 
     override fun equals(other: Any?): Boolean {
@@ -273,6 +300,8 @@ private class DrawBackdropElement(
         if (onDrawSurface != other.onDrawSurface) return false
         if (onDrawFront != other.onDrawFront) return false
         if (inputScale != other.inputScale) return false
+        if (interaction != other.interaction) return false
+        if (interactionSource != other.interactionSource) return false
 
         return true
     }
@@ -287,6 +316,8 @@ private class DrawBackdropElement(
         result = 31 * result + (onDrawSurface?.hashCode() ?: 0)
         result = 31 * result + (onDrawFront?.hashCode() ?: 0)
         result = 31 * result + inputScale.hashCode()
+        result = 31 * result + (interaction?.hashCode() ?: 0)
+        result = 31 * result + (interactionSource?.hashCode() ?: 0)
         return result
     }
 }
@@ -300,7 +331,9 @@ private class DrawBackdropNode(
     var onDrawBackdrop: DrawScope.(drawBackdrop: DrawScope.() -> Unit) -> Unit,
     var onDrawSurface: (DrawScope.() -> Unit)?,
     var onDrawFront: (DrawScope.() -> Unit)?,
-    var inputScale: Float
+    var inputScale: Float,
+    var interaction: BackdropInteractionResponse?,
+    var interactionSource: InteractionSource?
 ) : LayoutModifierNode, DrawModifierNode, GlobalPositionAwareModifierNode, ObserverModifierNode, Modifier.Node() {
 
     override val shouldAutoInvalidate: Boolean = false
@@ -310,6 +343,12 @@ private class DrawBackdropNode(
     }
 
     private var graphicsLayer: GraphicsLayer? = null
+
+    // Node-owned, attached in onAttach()/disposed in onDetach() - its invalidateDraw() calls
+    // never touch GlassEffectDirtyFields, keeping hover/press animation fully decoupled from the
+    // composition-driven resolvedEffect diff above.
+    private var interactionController: BackdropInteractionController? = null
+    private var lastAppliedInteractionState: BackdropInteractionRenderState? = null
 
     private val layoutLayerBlock: GraphicsLayerScope.() -> Unit = {
         // The clip here is redundant: ContentDrawScope.draw() below already wraps
@@ -417,15 +456,24 @@ private class DrawBackdropNode(
     }
 
     override fun ContentDrawScope.draw() {
-        if (effectScope.update(this)) {
+        val interactionState = interactionController?.renderState
+        val sizeOrDensityChanged = effectScope.update(this)
+        val interactionStateChanged = interactionState != null && interactionState != lastAppliedInteractionState
+        if (sizeOrDensityChanged || interactionStateChanged) {
             updateEffects()
         }
 
         val canvas = drawContext.canvas
         val outline = shapeProvider.shape.createOutline(size, layoutDirection, this)
         val path = clipPath ?: Path().also { clipPath = it }
+        val scale = interactionState?.scale ?: 1f
 
         canvas.save()
+        if (scale != 1f) {
+            canvas.translate(size.width / 2f, size.height / 2f)
+            canvas.scale(scale, scale)
+            canvas.translate(-size.width / 2f, -size.height / 2f)
+        }
         canvas.clipOutline(outline, path)
 
         onDrawBehind?.invoke(this)
@@ -463,15 +511,29 @@ private class DrawBackdropNode(
 
     private fun updateEffects() {
         DrawBackdropDiagnostics.updateEffectsCallCount++
-        effectScope.applyResolved(resolvedEffect)
+        val interactionState = interactionController?.renderState ?: BackdropInteractionRenderState()
+        effectScope.applyResolved(resolvedEffect, interactionState)
+        lastAppliedInteractionState = interactionState
         // On iOS/Skia, convert the ImageFilter to a Compose RenderEffect
         graphicsLayer?.renderEffect = effectScope.imageFilter?.asComposeRenderEffect()
         padding = effectScope.padding
     }
 
+    /** Pushes the current [interaction]/[interactionSource] into [interactionController], if attached. */
+    fun updateInteractionController() {
+        val controller = interactionController ?: return
+        controller.updateResponse(interaction ?: BackdropInteractionResponse())
+        controller.updateInteractionSource(interactionSource)
+    }
+
     override fun onAttach() {
         val graphicsContext = requireGraphicsContext()
         graphicsLayer = graphicsContext.createGraphicsLayer()
+        interactionController = BackdropInteractionController(
+            scope = coroutineScope,
+            invalidateDraw = { invalidateDraw() },
+        )
+        updateInteractionController()
 
         observeEffects()
     }
@@ -483,6 +545,9 @@ private class DrawBackdropNode(
             graphicsLayer = null
         }
 
+        interactionController?.dispose()
+        interactionController = null
+        lastAppliedInteractionState = null
         effectScope.reset()
         clipPath = null
     }

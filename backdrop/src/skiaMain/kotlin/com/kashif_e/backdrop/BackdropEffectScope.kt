@@ -12,6 +12,7 @@ import com.kashif_e.backdrop.effects.frostedGrain
 import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.effects.progressiveBlur
 import com.kashif_e.backdrop.effects.vibrancy
+import com.kashif_e.backdrop.interaction.BackdropInteractionRenderState
 import com.kashif_e.backdrop.platform.PlatformRuntimeShader
 import org.jetbrains.skia.ImageFilter
 import kotlin.math.min
@@ -90,23 +91,30 @@ internal abstract class BackdropEffectScopeImpl : BackdropEffectScope {
      * `GlassStyle.toEffects()` used to apply: skip `colorControls`/`vibrancy` at identity
      * brightness/saturation, skip `blur`/`lens` when resolved to zero, skip `frostedGrain` at
      * zero grain, skip the progressive-blur band entirely when absent.
+     *
+     * [interaction]'s multipliers/delta (animated by `BackdropInteractionController`, identity
+     * when absent) are layered on *after* resolving [resolved]'s own `OpticalSizeValue`s to px -
+     * the same place a hover/press-driven value would have been read from the old
+     * `BackdropEffectScope` lambda receiver, just sourced from the node's own interaction
+     * controller instead of a caller-supplied closure.
      */
-    fun applyResolved(resolved: ResolvedGlassEffect) {
+    fun applyResolved(resolved: ResolvedGlassEffect, interaction: BackdropInteractionRenderState = BackdropInteractionRenderState()) {
         padding = 0f
         imageFilter = null
 
         val shortestSide = min(size.width, size.height).toDp()
 
-        if (resolved.brightness != 0f || resolved.saturation != 1f) {
-            colorControls(brightness = resolved.brightness, saturation = resolved.saturation)
+        val brightness = resolved.brightness + interaction.brightnessDelta
+        if (brightness != 0f || resolved.saturation != 1f) {
+            colorControls(brightness = brightness, saturation = resolved.saturation)
         }
         if (resolved.vibrancy) vibrancy()
 
-        val resolvedBlur = resolved.blur.resolve(shortestSide)
+        val resolvedBlur = resolved.blur.resolve(shortestSide) * interaction.blurMultiplier
         if (resolvedBlur > 0.dp) blur(resolvedBlur.toPx())
 
-        val resolvedLensHeight = resolved.lensHeight.resolve(shortestSide)
-        val resolvedLensAmount = resolved.lensAmount.resolve(shortestSide)
+        val resolvedLensHeight = resolved.lensHeight.resolve(shortestSide) * interaction.lensMultiplier
+        val resolvedLensAmount = resolved.lensAmount.resolve(shortestSide) * interaction.lensMultiplier
         if (resolvedLensHeight > 0.dp || resolvedLensAmount > 0.dp) {
             lens(
                 resolvedLensHeight.toPx(),

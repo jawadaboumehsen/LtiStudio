@@ -10,6 +10,7 @@
 package org.ide.lti.core.designsystem.component.primitives
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
@@ -68,8 +69,16 @@ import org.ide.lti.core.designsystem.theme.glass.toHighlight
  * when a rim was requested, so the edge doesn't go fully undefined - in the real backdrop path,
  * the rim already draws its own shader edge, so an explicit [GlassStyle.border] is the only thing
  * that adds a separate stroke there.
+ *
+ * @param interactionSource Drives [GlassStyle.interaction], if declared - typically the same
+ * source passed to this element's own `Modifier.clickable`/`hoverable`.
  */
-fun Modifier.glass(style: GlassStyle, enabled: Boolean = true, backdrop: GlassSceneState? = null): Modifier = composed {
+fun Modifier.glass(
+    style: GlassStyle,
+    enabled: Boolean = true,
+    backdrop: GlassSceneState? = null,
+    interactionSource: InteractionSource? = null,
+): Modifier = composed {
     val glassColors = GlassTheme.colors
     val effectsEnabled = GlassTheme.effectsEnabled && enabled
     val resolvedBackdrop = backdrop ?: GlassTheme.scene
@@ -101,6 +110,8 @@ fun Modifier.glass(style: GlassStyle, enabled: Boolean = true, backdrop: GlassSc
             shadow = { style.shadow },
             innerShadow = { style.innerShadow },
             inputScale = style.inputScale,
+            interaction = style.interaction,
+            interactionSource = interactionSource,
             onDrawSurface = {
                 drawRect(style.surface)
                 if (style.tint.alpha > 0f) {
