@@ -36,7 +36,7 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.core.designsystem.theme.glass.GlassStyles
 import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
-import org.ide.lti.core.designsystem.theme.glass.toEffects
+import org.ide.lti.core.designsystem.theme.glass.resolve
 import org.ide.lti.core.testing.screenshot.GoldenImageAssert
 import kotlin.math.abs
 import kotlin.test.Test
@@ -87,7 +87,7 @@ class DrawBackdropInputScaleScreenshotTest {
             modifier = modifier.drawBackdrop(
                 backdrop = backdrop.engineBackdrop,
                 shape = { RoundedCornerShape(CornerRadius.Medium) },
-                effects = iconButtonStyle.toEffects(),
+                resolvedEffect = iconButtonStyle.resolve(),
                 inputScale = inputScale,
                 onDrawSurface = { drawRect(tintColor) },
             ),

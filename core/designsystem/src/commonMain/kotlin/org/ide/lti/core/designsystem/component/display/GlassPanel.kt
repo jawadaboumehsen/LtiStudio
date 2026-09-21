@@ -26,7 +26,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -35,7 +34,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
-import com.kashif_e.backdrop.BackdropEffectScope
+import com.kashif_e.backdrop.ResolvedGlassEffect
 import com.kashif_e.backdrop.backdrops.layerBackdrop
 import org.ide.lti.core.designsystem.component.actions.*
 import org.ide.lti.core.designsystem.component.devtools.*
@@ -55,7 +54,7 @@ import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.core.designsystem.theme.glass.GlassStyles
 import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
-import org.ide.lti.core.designsystem.theme.glass.toEffects
+import org.ide.lti.core.designsystem.theme.glass.resolve
 
 /**
  * Glass panel component optimized for IDE tool windows and sidebar panels.
@@ -65,7 +64,7 @@ fun GlassPanel(
     modifier: Modifier = Modifier,
     width: Dp? = null,
     shape: Shape = GlassShapes.Panel,
-    effects: (BackdropEffectScope.() -> Unit)? = null,
+    effect: ResolvedGlassEffect? = null,
     backdrop: GlassSceneState? = null,
     surfaceColor: Color = Color.Unspecified,
     tint: Color = Color.Unspecified,
@@ -77,12 +76,12 @@ fun GlassPanel(
         .then(if (width != null && width > Spacing.None) Modifier.width(width) else Modifier)
         .fillMaxHeight()
     val panelStyle = GlassStyles.panel
-    val resolvedEffects = effects ?: remember(panelStyle) { panelStyle.toEffects() }
+    val resolvedEffect = effect ?: panelStyle.resolve()
 
     GlassSurface(
         modifier = panelModifier,
         shape = shape,
-        effects = resolvedEffects,
+        effect = resolvedEffect,
         backdrop = backdrop,
         surfaceColor = surfaceColor,
         tint = tint,

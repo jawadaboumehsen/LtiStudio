@@ -19,7 +19,6 @@ import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
@@ -35,7 +34,7 @@ import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.Elevation
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.glass.GlassStyles
-import org.ide.lti.core.designsystem.theme.glass.toEffects
+import org.ide.lti.core.designsystem.theme.glass.resolve
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /**
@@ -91,13 +90,13 @@ fun GlassNavigationBar(
     // confirmed this is optically identical to the production shell's docked-nav tier) - reused
     // rather than re-defined for this generic/catalog-facing component.
     val dockedBarStyle = GlassStyles.rail
-    val dockedBarEffects = remember(dockedBarStyle) { dockedBarStyle.toEffects() }
+    val dockedBarEffect = dockedBarStyle.resolve()
     NavigationBar(
         // Docked flush to the bottom screen edge — RectangleShape, not the module-wide capsule
         // (rounding here would leave gaps against the window's real edge).
         modifier = modifier.glassEffect(
             shape = RectangleShape,
-            effects = dockedBarEffects,
+            effect = dockedBarEffect,
             highlight = { Highlight.Default },
         ),
         containerColor = Color.Transparent,
@@ -158,12 +157,12 @@ fun GlassNavigationRail(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val dockedBarStyle = GlassStyles.rail
-    val dockedBarEffects = remember(dockedBarStyle) { dockedBarStyle.toEffects() }
+    val dockedBarEffect = dockedBarStyle.resolve()
     NavigationRail(
         // Docked flush to the side screen edge — RectangleShape for the same reason as the bar.
         modifier = modifier.glassEffect(
             shape = RectangleShape,
-            effects = dockedBarEffects,
+            effect = dockedBarEffect,
             highlight = { Highlight.Default },
         ),
         containerColor = Color.Transparent,

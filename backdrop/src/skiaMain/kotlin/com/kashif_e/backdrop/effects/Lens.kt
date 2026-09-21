@@ -27,11 +27,11 @@ import kotlin.math.min
  * @param depthEffect Whether to include a radial depth component to the refraction
  * @param chromaticAberration Whether to add chromatic dispersion (color separation)
  */
-actual fun BackdropEffectScope.lens(
+internal fun BackdropEffectScope.lens(
     refractionHeight: Float,
     refractionAmount: Float,
-    depthEffect: Boolean,
-    chromaticAberration: Boolean
+    depthEffect: Boolean = false,
+    chromaticAberration: Boolean = false
 ) {
     // Requires RuntimeShader support
     if (!PlatformCapabilities.supportsRuntimeShader) return

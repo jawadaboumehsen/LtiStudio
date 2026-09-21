@@ -49,7 +49,7 @@ import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.core.designsystem.theme.glass.GlassStyles
 import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
-import org.ide.lti.core.designsystem.theme.glass.toEffects
+import org.ide.lti.core.designsystem.theme.glass.resolve
 import org.ide.lti.core.designsystem.utils.InteractiveHighlight
 import org.ide.lti.core.designsystem.utils.applyInteractiveHighlightTransform
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -73,7 +73,7 @@ fun GlassIcon(
     val finalContentColor = if (contentColor.isSpecified) contentColor else glassColors.onGlass
     var isHovered by remember { mutableStateOf(false) }
     val iconButtonStyle = GlassStyles.iconButton
-    val iconButtonEffects = remember(iconButtonStyle) { iconButtonStyle.toEffects() }
+    val iconButtonEffect = iconButtonStyle.resolve()
 
     val interactiveHighlight = remember(animationScope) {
         InteractiveHighlight(
@@ -88,7 +88,7 @@ fun GlassIcon(
                     Modifier.drawBackdrop(
                         backdrop = actualBackdrop.engineBackdrop,
                         shape = { GlassShapes.Capsule },
-                        effects = iconButtonEffects,
+                        resolvedEffect = iconButtonEffect,
                         highlight = { if (isHovered) Highlight.Ambient else Highlight.Plain },
                         layerBlock = if (isInteractive) {
                             {

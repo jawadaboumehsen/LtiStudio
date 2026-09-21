@@ -14,7 +14,7 @@ import com.kashif_e.backdrop.platform.PlatformRuntimeShader
  * 
  * @param intensity Perceptual noise intensity (typically 0.01f to 0.03f, default: 0.015f).
  */
-actual fun BackdropEffectScope.frostedGrain(intensity: Float) {
+internal fun BackdropEffectScope.frostedGrain(intensity: Float = 0.015f) {
     if (!PlatformCapabilities.supportsRuntimeShader) return
     if (intensity <= 0f) return
 

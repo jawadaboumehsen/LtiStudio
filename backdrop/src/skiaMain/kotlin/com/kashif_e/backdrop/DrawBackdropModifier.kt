@@ -48,9 +48,8 @@ private val DefaultOnDrawBackdrop: DrawScope.(DrawScope.() -> Unit) -> Unit = { 
 
 /**
  * Diagnostic counter for how often [DrawBackdropNode] recomputes its effect graph
- * (`effectScope.apply(effects)` + reassigning `renderEffect`) - the expensive part of a glass
- * element's re-render, distinct from the cheap per-frame draw. Used to verify B2 (rim/interaction
- * stage split, backdrop-refactor-plan-20260920.md): hover/press must not retrigger this.
+ * (`effectScope.applyResolved(resolvedEffect)` + reassigning `renderEffect`) - the expensive part
+ * of a glass element's re-render, distinct from the cheap per-frame draw.
  */
 internal object DrawBackdropDiagnostics {
     var updateEffectsCallCount: Int = 0
@@ -59,16 +58,16 @@ internal object DrawBackdropDiagnostics {
 /**
  * Apply a plain backdrop effect without shadow/highlight decorations.
  */
-actual fun Modifier.drawPlainBackdrop(
+fun Modifier.drawPlainBackdrop(
     backdrop: Backdrop,
     shape: () -> Shape,
-    effects: BackdropEffectScope.() -> Unit,
-    layerBlock: (GraphicsLayerScope.() -> Unit)?,
-    exportedBackdrop: LayerBackdrop?,
-    onDrawBehind: (DrawScope.() -> Unit)?,
-    onDrawBackdrop: (DrawScope.(drawBackdrop: DrawScope.() -> Unit) -> Unit)?,
-    onDrawSurface: (DrawScope.() -> Unit)?,
-    onDrawFront: (DrawScope.() -> Unit)?
+    resolvedEffect: ResolvedGlassEffect = ResolvedGlassEffect.None,
+    layerBlock: (GraphicsLayerScope.() -> Unit)? = null,
+    exportedBackdrop: LayerBackdrop? = null,
+    onDrawBehind: (DrawScope.() -> Unit)? = null,
+    onDrawBackdrop: (DrawScope.(drawBackdrop: DrawScope.() -> Unit) -> Unit)? = null,
+    onDrawSurface: (DrawScope.() -> Unit)? = null,
+    onDrawFront: (DrawScope.() -> Unit)? = null
 ): Modifier {
     val shapeProvider = ShapeProvider(shape)
     val actualOnDrawBackdrop = onDrawBackdrop ?: DefaultOnDrawBackdrop
@@ -84,7 +83,7 @@ actual fun Modifier.drawPlainBackdrop(
             DrawBackdropElement(
                 backdrop = backdrop,
                 shapeProvider = shapeProvider,
-                effects = effects,
+                resolvedEffect = resolvedEffect,
                 layerBlock = layerBlock,
                 onDrawBehind = onDrawBehind,
                 onDrawBackdrop = actualOnDrawBackdrop,
@@ -99,22 +98,43 @@ private val DefaultHighlight = { Highlight.Default }
 private val DefaultShadow = { Shadow.Default }
 
 /**
- * Apply a backdrop effect with optional shadow/highlight.
+ * Draw a backdrop with effects, shadows, and highlights.
+ *
+ * This is the main entry point for creating liquid glass and frosted glass effects.
+ *
+ * @param backdrop The backdrop content to draw (use [CanvasBackdrop] for custom drawing).
+ * @param shape The shape of the backdrop area.
+ * @param resolvedEffect The effect stack to apply (blur, color controls, lens, grain, ...) as a
+ * plain, structurally-comparable value - see [ResolvedGlassEffect].
+ * @param highlight Optional highlight effect for glossy appearance.
+ * @param shadow Optional drop shadow.
+ * @param innerShadow Optional inner shadow for depth.
+ * @param layerBlock Optional graphics layer configuration.
+ * @param exportedBackdrop Optional layer backdrop for advanced composition.
+ * @param onDrawBehind Optional callback to draw behind the backdrop.
+ * @param onDrawBackdrop Optional callback to customize backdrop drawing.
+ * @param onDrawSurface Optional callback to draw on the surface.
+ * @param onDrawFront Optional callback to draw in front of everything.
+ * @param inputScale Fraction of the element's pixel size (`0f` exclusive to `1f` inclusive) at
+ * which the sampled backdrop is captured and blurred before being scaled back up to fill the
+ * element. `1f` (the default) records at full resolution. Values below `1f` cut blur cost roughly
+ * with the square of the scale (e.g. `0.5f` blurs a quarter of the pixels) at a cost invisible
+ * once blurred; ported from Haze's `GlassInputScalePolicy`.
  */
-actual fun Modifier.drawBackdrop(
+fun Modifier.drawBackdrop(
     backdrop: Backdrop,
     shape: () -> Shape,
-    effects: BackdropEffectScope.() -> Unit,
-    highlight: (() -> Highlight?)?,
-    shadow: (() -> Shadow?)?,
-    innerShadow: (() -> InnerShadow?)?,
-    layerBlock: (GraphicsLayerScope.() -> Unit)?,
-    exportedBackdrop: LayerBackdrop?,
-    onDrawBehind: (DrawScope.() -> Unit)?,
-    onDrawBackdrop: (DrawScope.(drawBackdrop: DrawScope.() -> Unit) -> Unit)?,
-    onDrawSurface: (DrawScope.() -> Unit)?,
-    onDrawFront: (DrawScope.() -> Unit)?,
-    inputScale: Float
+    resolvedEffect: ResolvedGlassEffect = ResolvedGlassEffect.None,
+    highlight: (() -> Highlight?)? = null,
+    shadow: (() -> Shadow?)? = null,
+    innerShadow: (() -> InnerShadow?)? = null,
+    layerBlock: (GraphicsLayerScope.() -> Unit)? = null,
+    exportedBackdrop: LayerBackdrop? = null,
+    onDrawBehind: (DrawScope.() -> Unit)? = null,
+    onDrawBackdrop: (DrawScope.(drawBackdrop: DrawScope.() -> Unit) -> Unit)? = null,
+    onDrawSurface: (DrawScope.() -> Unit)? = null,
+    onDrawFront: (DrawScope.() -> Unit)? = null,
+    inputScale: Float = 1f
 ): Modifier {
     requireValidInputScale(inputScale)
     val shapeProvider = ShapeProvider(shape)
@@ -161,7 +181,7 @@ actual fun Modifier.drawBackdrop(
             DrawBackdropElement(
                 backdrop = backdrop,
                 shapeProvider = shapeProvider,
-                effects = effects,
+                resolvedEffect = resolvedEffect,
                 layerBlock = layerBlock,
                 onDrawBehind = onDrawBehind,
                 onDrawBackdrop = actualOnDrawBackdrop,
@@ -182,7 +202,7 @@ private fun requireValidInputScale(inputScale: Float) {
 private class DrawBackdropElement(
     val backdrop: Backdrop,
     val shapeProvider: ShapeProvider,
-    val effects: BackdropEffectScope.() -> Unit,
+    val resolvedEffect: ResolvedGlassEffect,
     val layerBlock: (GraphicsLayerScope.() -> Unit)?,
     val onDrawBehind: (DrawScope.() -> Unit)?,
     val onDrawBackdrop: DrawScope.(drawBackdrop: DrawScope.() -> Unit) -> Unit,
@@ -195,7 +215,7 @@ private class DrawBackdropElement(
         return DrawBackdropNode(
             backdrop = backdrop,
             shapeProvider = shapeProvider,
-            effects = effects,
+            resolvedEffect = resolvedEffect,
             layerBlock = layerBlock,
             onDrawBehind = onDrawBehind,
             onDrawBackdrop = onDrawBackdrop,
@@ -206,24 +226,22 @@ private class DrawBackdropElement(
     }
 
     override fun update(node: DrawBackdropNode) {
-        // Only effects (read by updateEffects()'s effectScope.apply(effects) - see
-        // DrawBackdropNode) can change what the effect graph looks like. The other fields here
-        // are near-always-fresh lambda/value literals from the caller's recomposition scope (see
-        // Modifier.glass's style.toEffects(), or any inline `shape = { ... }` / `onDrawSurface =
-        // { ... }`), so unconditionally invalidating on every update() - regardless of which
-        // field actually changed - reruns the expensive effect graph on every recomposition of
-        // any drawBackdrop caller, not just ones where the rendered effect actually changed.
-        val effectsChanged = node.effects !== effects
+        // ResolvedGlassEffect is a plain data class (structural equality), so this diff is a
+        // real per-field comparison, not a reference check - a fresh ResolvedGlassEffect value
+        // describing the same style no longer forces a recompute, and no caller needs to
+        // remember() it for that to hold. Only invalidate the (expensive) Skia effect graph when
+        // a bit that actually renders differently changed - see GlassEffectDirtyFields.
+        val dirty = GlassEffectDirtyFields.diff(node.resolvedEffect, resolvedEffect)
         node.backdrop = backdrop
         node.shapeProvider = shapeProvider
-        node.effects = effects
+        node.resolvedEffect = resolvedEffect
         node.layerBlock = layerBlock
         node.onDrawBehind = onDrawBehind
         node.onDrawBackdrop = onDrawBackdrop
         node.onDrawSurface = onDrawSurface
         node.onDrawFront = onDrawFront
         node.inputScale = inputScale
-        if (effectsChanged) {
+        if (dirty.any(GlassEffectDirtyFields.RenderEffectAffectingFlags)) {
             node.invalidateDrawCache()
         }
         node.invalidateDraw()
@@ -233,7 +251,7 @@ private class DrawBackdropElement(
         name = "drawBackdrop"
         properties["backdrop"] = backdrop
         properties["shapeProvider"] = shapeProvider
-        properties["effects"] = effects
+        properties["resolvedEffect"] = resolvedEffect
         properties["layerBlock"] = layerBlock
         properties["onDrawBehind"] = onDrawBehind
         properties["onDrawBackdrop"] = onDrawBackdrop
@@ -248,7 +266,7 @@ private class DrawBackdropElement(
 
         if (backdrop != other.backdrop) return false
         if (shapeProvider != other.shapeProvider) return false
-        if (effects != other.effects) return false
+        if (resolvedEffect != other.resolvedEffect) return false
         if (layerBlock != other.layerBlock) return false
         if (onDrawBehind != other.onDrawBehind) return false
         if (onDrawBackdrop != other.onDrawBackdrop) return false
@@ -262,7 +280,7 @@ private class DrawBackdropElement(
     override fun hashCode(): Int {
         var result = backdrop.hashCode()
         result = 31 * result + shapeProvider.hashCode()
-        result = 31 * result + effects.hashCode()
+        result = 31 * result + resolvedEffect.hashCode()
         result = 31 * result + (layerBlock?.hashCode() ?: 0)
         result = 31 * result + (onDrawBehind?.hashCode() ?: 0)
         result = 31 * result + onDrawBackdrop.hashCode()
@@ -276,7 +294,7 @@ private class DrawBackdropElement(
 private class DrawBackdropNode(
     var backdrop: Backdrop,
     var shapeProvider: ShapeProvider,
-    var effects: BackdropEffectScope.() -> Unit,
+    var resolvedEffect: ResolvedGlassEffect,
     var layerBlock: (GraphicsLayerScope.() -> Unit)?,
     var onDrawBehind: (DrawScope.() -> Unit)?,
     var onDrawBackdrop: DrawScope.(drawBackdrop: DrawScope.() -> Unit) -> Unit,
@@ -310,7 +328,7 @@ private class DrawBackdropNode(
     private var layoutCoordinates: LayoutCoordinates? by mutableStateOf(null, neverEqualPolicy())
 
     private var padding by mutableFloatStateOf(0f)
-    
+
     // Path for clipping the backdrop to shape
     private var clipPath: Path? = null
 
@@ -445,7 +463,7 @@ private class DrawBackdropNode(
 
     private fun updateEffects() {
         DrawBackdropDiagnostics.updateEffectsCallCount++
-        effectScope.apply(effects)
+        effectScope.applyResolved(resolvedEffect)
         // On iOS/Skia, convert the ImageFilter to a Compose RenderEffect
         graphicsLayer?.renderEffect = effectScope.imageFilter?.asComposeRenderEffect()
         padding = effectScope.padding

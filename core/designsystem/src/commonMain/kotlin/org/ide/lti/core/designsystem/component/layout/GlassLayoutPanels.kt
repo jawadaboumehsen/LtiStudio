@@ -80,10 +80,10 @@ internal fun GlassContentPanel(
         borderWidth = panelConfig.borderWidth,
         highlight = { panelConfig.highlight },
         shadow = { panelConfig.shadow },
-        effects = panelConfig.effects ?: if (isDragging) {
-            LtiLayoutDefaults.DragOptimizedEffects
+        effect = panelConfig.effect ?: if (isDragging) {
+            LtiLayoutDefaults.DragOptimizedEffect
         } else {
-            LtiLayoutDefaults.EnhancedPanelEffects
+            LtiLayoutDefaults.EnhancedPanelEffect
         },
     ) {
         CompositionLocalProvider(LocalContentColor provides glassColors.onGlass) {

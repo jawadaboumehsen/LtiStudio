@@ -39,12 +39,12 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastCoerceIn
 import androidx.compose.ui.util.lerp
+import com.kashif_e.backdrop.OpticalSizeValue
+import com.kashif_e.backdrop.ResolvedGlassEffect
 import com.kashif_e.backdrop.backdrops.layerBackdrop
 import com.kashif_e.backdrop.backdrops.rememberBackdrop
 import com.kashif_e.backdrop.backdrops.rememberCombinedBackdrop
 import com.kashif_e.backdrop.drawBackdrop
-import com.kashif_e.backdrop.effects.blur
-import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.highlight.Highlight
 import com.kashif_e.backdrop.shadow.InnerShadow
 import com.kashif_e.backdrop.shadow.Shadow
@@ -236,13 +236,13 @@ private fun toggleThumbModifier(
             },
         ),
         shape = { GlassShapes.Capsule },
-        effects = {
+        resolvedEffect = run {
             val progress = dampedDragAnimation.pressProgress
-            blur(BackdropBlur.Toggle.toPx() * (1f - progress))
-            lens(
-                LensRefraction.Toggle.height.toPx() * progress,
-                LensRefraction.Toggle.amount.toPx() * progress,
-                chromaticAberration = true,
+            ResolvedGlassEffect(
+                blur = OpticalSizeValue.Fixed(BackdropBlur.Toggle * (1f - progress)),
+                lensHeight = OpticalSizeValue.Fixed(LensRefraction.Toggle.height * progress),
+                lensAmount = OpticalSizeValue.Fixed(LensRefraction.Toggle.amount * progress),
+                lensChromaticAberration = true,
             )
         },
         highlight = {

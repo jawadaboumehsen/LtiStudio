@@ -43,12 +43,12 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastCoerceIn
 import androidx.compose.ui.util.fastRoundToInt
 import androidx.compose.ui.util.lerp
+import com.kashif_e.backdrop.OpticalSizeValue
+import com.kashif_e.backdrop.ResolvedGlassEffect
 import com.kashif_e.backdrop.backdrops.layerBackdrop
 import com.kashif_e.backdrop.backdrops.rememberBackdrop
 import com.kashif_e.backdrop.backdrops.rememberCombinedBackdrop
 import com.kashif_e.backdrop.drawBackdrop
-import com.kashif_e.backdrop.effects.blur
-import com.kashif_e.backdrop.effects.lens
 import com.kashif_e.backdrop.highlight.Highlight
 import com.kashif_e.backdrop.shadow.InnerShadow
 import com.kashif_e.backdrop.shadow.Shadow
@@ -241,13 +241,13 @@ fun GlassSlider(
                                 },
                             ),
                             shape = { GlassShapes.Capsule },
-                            effects = {
+                            resolvedEffect = run {
                                 val progress = dampedDragAnimation.pressProgress
-                                blur(BackdropBlur.Slider.toPx() * (1f - progress))
-                                lens(
-                                    LensRefraction.Slider.height.toPx() * progress,
-                                    LensRefraction.Slider.amount.toPx() * progress,
-                                    chromaticAberration = true,
+                                ResolvedGlassEffect(
+                                    blur = OpticalSizeValue.Fixed(BackdropBlur.Slider * (1f - progress)),
+                                    lensHeight = OpticalSizeValue.Fixed(LensRefraction.Slider.height * progress),
+                                    lensAmount = OpticalSizeValue.Fixed(LensRefraction.Slider.amount * progress),
+                                    lensChromaticAberration = true,
                                 )
                             },
                             highlight = {

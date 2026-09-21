@@ -72,7 +72,7 @@ val BlueThemeConfig: ThemeConfiguration by lazy {
             borderWidth = Dp.Hairline,
             highlight = null,
             shadow = null,
-            effects = LtiLayoutDefaults.EnhancedPanelEffects,
+            effect = LtiLayoutDefaults.EnhancedPanelEffect,
             hasFloatingGaps = false,
             scrollEdgeFade = true,
         ),

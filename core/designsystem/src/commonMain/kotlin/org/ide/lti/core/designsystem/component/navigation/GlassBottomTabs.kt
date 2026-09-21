@@ -52,12 +52,11 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastCoerceIn
 import androidx.compose.ui.util.fastRoundToInt
 import androidx.compose.ui.util.lerp
+import com.kashif_e.backdrop.OpticalSizeValue
+import com.kashif_e.backdrop.ResolvedGlassEffect
 import com.kashif_e.backdrop.backdrops.layerBackdrop
 import com.kashif_e.backdrop.backdrops.rememberCombinedBackdrop
 import com.kashif_e.backdrop.drawBackdrop
-import com.kashif_e.backdrop.effects.blur
-import com.kashif_e.backdrop.effects.lens
-import com.kashif_e.backdrop.effects.vibrancy
 import com.kashif_e.backdrop.highlight.Highlight
 import com.kashif_e.backdrop.shadow.InnerShadow
 import com.kashif_e.backdrop.shadow.Shadow
@@ -85,7 +84,7 @@ import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.core.designsystem.theme.glass.GlassStyles
 import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
-import org.ide.lti.core.designsystem.theme.glass.toEffects
+import org.ide.lti.core.designsystem.theme.glass.resolve
 import org.ide.lti.core.designsystem.utils.DampedDragAnimation
 import org.ide.lti.core.designsystem.utils.InteractiveHighlight
 import kotlin.math.abs
@@ -304,7 +303,7 @@ private fun GlassBottomTabBarBackground(
 ) {
     val effectsEnabled = GlassTheme.effectsEnabled
     val bottomTabsStyle = GlassStyles.bottomTabs
-    val bottomTabsEffects = remember(bottomTabsStyle) { bottomTabsStyle.toEffects() }
+    val bottomTabsEffect = bottomTabsStyle.resolve()
     Row(
         Modifier
             .graphicsLayer { translationX = panelOffset() }
@@ -313,7 +312,7 @@ private fun GlassBottomTabBarBackground(
                     Modifier.drawBackdrop(
                         backdrop = backdrop.engineBackdrop,
                         shape = { GlassShapes.Capsule },
-                        effects = bottomTabsEffects,
+                        resolvedEffect = bottomTabsEffect,
                         layerBlock = {
                             val p = drag.pressProgress
                             val s = lerp(1f, 1f + Spacing.Medium.toPx() / size.width, p)
@@ -367,13 +366,13 @@ private fun GlassBottomTabTintedRow(
                 .drawBackdrop(
                     backdrop = backdrop.engineBackdrop,
                     shape = { GlassShapes.Capsule },
-                    effects = {
+                    resolvedEffect = run {
                         val p = drag.pressProgress
-                        vibrancy()
-                        blur(BackdropBlur.BottomTabs.toPx())
-                        lens(
-                            LensRefraction.BottomTabs.height.toPx() * p,
-                            LensRefraction.BottomTabs.amount.toPx() * p,
+                        ResolvedGlassEffect(
+                            blur = OpticalSizeValue.Fixed(BackdropBlur.BottomTabs),
+                            lensHeight = OpticalSizeValue.Fixed(LensRefraction.BottomTabs.height * p),
+                            lensAmount = OpticalSizeValue.Fixed(LensRefraction.BottomTabs.amount * p),
+                            vibrancy = true,
                         )
                     },
                     highlight = {
@@ -427,12 +426,12 @@ private fun GlassBottomTabSpotlight(
                     Modifier.drawBackdrop(
                         backdrop = rememberCombinedBackdrop(backdrop.engineBackdrop, tabsBackdrop.engineBackdrop),
                         shape = { GlassShapes.Capsule },
-                        effects = {
+                        resolvedEffect = run {
                             val p = drag.pressProgress
-                            lens(
-                                LensRefraction.TabSpotlight.height.toPx() * p,
-                                LensRefraction.TabSpotlight.amount.toPx() * p,
-                                chromaticAberration = true,
+                            ResolvedGlassEffect(
+                                lensHeight = OpticalSizeValue.Fixed(LensRefraction.TabSpotlight.height * p),
+                                lensAmount = OpticalSizeValue.Fixed(LensRefraction.TabSpotlight.amount * p),
+                                lensChromaticAberration = true,
                             )
                         },
                         highlight = {

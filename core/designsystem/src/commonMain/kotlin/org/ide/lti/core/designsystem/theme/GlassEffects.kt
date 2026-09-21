@@ -11,11 +11,8 @@ package org.ide.lti.core.designsystem.theme
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import com.kashif_e.backdrop.BackdropEffectScope
-import com.kashif_e.backdrop.effects.blur
-import com.kashif_e.backdrop.effects.frostedGrain
-import com.kashif_e.backdrop.effects.lens
-import com.kashif_e.backdrop.effects.vibrancy
+import com.kashif_e.backdrop.OpticalSizeValue
+import com.kashif_e.backdrop.ResolvedGlassEffect
 import com.kashif_e.backdrop.highlight.Highlight
 import com.kashif_e.backdrop.highlight.HighlightStyle
 import com.kashif_e.backdrop.shadow.Shadow
@@ -37,25 +34,23 @@ object GlassEffects {
     /**
      * Canonical baseline liquid glass surface effect stack: vibrancy + moderate blur + lens refraction.
      */
-    val Standard: BackdropEffectScope.() -> Unit = {
-        vibrancy()
-        blur(BackdropBlur.Standard.toPx())
-        lens(
-            refractionHeight = LensRefraction.Surface.height.toPx(),
-            refractionAmount = LensRefraction.Surface.amount.toPx(),
-            depthEffect = true,
-            chromaticAberration = true,
-        )
-        frostedGrain(0.015f)
-    }
+    val Standard: ResolvedGlassEffect = ResolvedGlassEffect(
+        blur = OpticalSizeValue.Fixed(BackdropBlur.Standard),
+        lensHeight = OpticalSizeValue.Fixed(LensRefraction.Surface.height),
+        lensAmount = OpticalSizeValue.Fixed(LensRefraction.Surface.amount),
+        lensDepthEffect = true,
+        lensChromaticAberration = true,
+        vibrancy = true,
+        grain = 0.015f,
+    )
 
     /**
      * Scrim overlay effect stack — diffuse blur for modal scrims and backdrop dimming.
      */
-    val Scrim: BackdropEffectScope.() -> Unit = {
-        vibrancy()
-        blur(BackdropBlur.Scrim.toPx())
-    }
+    val Scrim: ResolvedGlassEffect = ResolvedGlassEffect(
+        blur = OpticalSizeValue.Fixed(BackdropBlur.Scrim),
+        vibrancy = true,
+    )
 }
 
 /**

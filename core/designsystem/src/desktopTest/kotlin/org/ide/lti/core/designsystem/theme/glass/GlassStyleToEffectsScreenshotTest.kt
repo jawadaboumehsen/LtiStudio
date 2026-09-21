@@ -37,10 +37,9 @@ import kotlin.test.Test
 import kotlin.test.assertTrue
 
 /**
- * Proves [GlassStyle.toEffects] actually drives a real backdrop draw - not just that it type
- * checks - by rendering a style through the existing `Modifier.drawBackdrop` directly (the
- * `Modifier.glass(style)` resolution function from backdrop-refactor-plan-20260920.md §1.2 that
- * will normally call this doesn't exist yet).
+ * Proves [GlassStyle.resolve] actually drives a real backdrop draw - not just that it type
+ * checks - by rendering a style through `Modifier.drawBackdrop` directly rather than through
+ * `Modifier.glass(style)`.
  */
 class GlassStyleToEffectsScreenshotTest {
 
@@ -66,7 +65,7 @@ class GlassStyleToEffectsScreenshotTest {
                                 .drawBackdrop(
                                     backdrop = backdrop.engineBackdrop,
                                     shape = { style.shape },
-                                    effects = style.toEffects(),
+                                    resolvedEffect = style.resolve(),
                                 ),
                         )
                     }
@@ -96,7 +95,7 @@ class GlassStyleToEffectsScreenshotTest {
         val styledVariance = stripeVariance(styled)
         assertTrue(
             styledVariance < flatVariance * VARIANCE_REDUCTION_CEILING,
-            "GlassStyle.toEffects() did not visibly soften the sampled stripes " +
+            "GlassStyle.resolve() did not visibly soften the sampled stripes " +
                 "(flat variance=$flatVariance, styled variance=$styledVariance) - blur may not be applying",
         )
     }

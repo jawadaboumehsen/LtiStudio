@@ -12,9 +12,9 @@ import org.jetbrains.skia.FilterTileMode
  * @param radius The blur radius in pixels
  * @param edgeTreatment How to handle edges (clamp, repeat, mirror, decal)
  */
-actual fun BackdropEffectScope.blur(
+internal fun BackdropEffectScope.blur(
     radius: Float,
-    edgeTreatment: TileMode
+    edgeTreatment: TileMode = TileMode.Clamp
 ) {
     if (!PlatformCapabilities.supportsBlur) return
     if (radius <= 0f) return

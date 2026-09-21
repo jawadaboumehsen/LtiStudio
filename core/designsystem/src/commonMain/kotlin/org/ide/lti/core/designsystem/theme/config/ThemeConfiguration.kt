@@ -15,7 +15,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
-import com.kashif_e.backdrop.BackdropEffectScope
+import com.kashif_e.backdrop.ResolvedGlassEffect
 import com.kashif_e.backdrop.highlight.Highlight
 import com.kashif_e.backdrop.shadow.Shadow
 import org.ide.lti.core.designsystem.theme.DiagnosticColors
@@ -72,7 +72,7 @@ data class PanelConfiguration(
     val borderWidth: Dp,
     val highlight: Highlight? = null,
     val shadow: Shadow? = null,
-    val effects: (BackdropEffectScope.() -> Unit)? = null,
+    val effect: ResolvedGlassEffect? = null,
     val hasFloatingGaps: Boolean = false,
     val scrollEdgeFade: Boolean = false,
     val focusedBorderColor: Color? = null,

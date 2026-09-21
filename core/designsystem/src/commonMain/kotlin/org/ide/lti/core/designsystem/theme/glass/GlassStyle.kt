@@ -16,21 +16,14 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isSpecified
-import com.kashif_e.backdrop.BackdropEffectScope
+import com.kashif_e.backdrop.OpticalSizePoint
 import com.kashif_e.backdrop.OpticalSizeValue
-import com.kashif_e.backdrop.effects.blur
-import com.kashif_e.backdrop.effects.colorControls
-import com.kashif_e.backdrop.effects.frostedGrain
-import com.kashif_e.backdrop.effects.lens
-import com.kashif_e.backdrop.effects.vibrancy
-import com.kashif_e.backdrop.resolve
+import com.kashif_e.backdrop.ResolvedGlassEffect
 import com.kashif_e.backdrop.shadow.InnerShadow
 import com.kashif_e.backdrop.shadow.Shadow
 import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.StrokeWidth
-import org.ide.lti.core.designsystem.theme.resolve
-import kotlin.math.min
 
 /**
  * The material of one glass role (bar, rail, card, ...), as a value instead of a
@@ -81,26 +74,32 @@ public data class GlassStyle(
 }
 
 /**
- * Resolves [GlassStyle.blur]/[GlassStyle.lens] against the backdrop's own size (read from the
- * [BackdropEffectScope] receiver, so a `Responsive` style scales correctly without the caller
- * having to know the element's size up front) and applies the resolved effect stack.
+ * Resolves this style's effect-relevant fields into a backdrop-owned [ResolvedGlassEffect] -
+ * replaces the old `toEffects()` (`BackdropEffectScope.() -> Unit` lambda). [blur]/[lens] stay
+ * [OpticalSizeValue] rather than resolved px: the shortest-side-dependent resolution now happens
+ * inside `:backdrop`'s `DrawBackdropNode` at draw time, against the element's real live size -
+ * exactly where the old lambda used to read it from the `BackdropEffectScope` receiver. Since
+ * [ResolvedGlassEffect] is a plain `data class`, a fresh call for an unchanged style produces a
+ * structurally-`==` value, so no caller needs to `remember()` the result for `:backdrop`'s
+ * dirty-bitmask diff to see "no change".
  */
-public fun GlassStyle.toEffects(): BackdropEffectScope.() -> Unit = {
-    val shortestSide = min(size.width, size.height).toDp()
-    if (brightness != 0f || saturation != 1f) {
-        colorControls(brightness = brightness, saturation = saturation)
-    }
-    if (vibrancy) vibrancy()
-    val resolvedBlur = blur.resolve(shortestSide)
-    if (resolvedBlur > 0.dp) blur(resolvedBlur.toPx())
-    val resolvedLens = lens.resolve(shortestSide)
-    if (resolvedLens.height > 0.dp || resolvedLens.amount > 0.dp) {
-        lens(
-            resolvedLens.height.toPx(),
-            resolvedLens.amount.toPx(),
-            depthEffect = lensDepthEffect,
-            chromaticAberration = lensChromaticAberration,
+public fun GlassStyle.resolve(): ResolvedGlassEffect = ResolvedGlassEffect(
+    blur = blur,
+    lensHeight = lens.mapValue { it.height },
+    lensAmount = lens.mapValue { it.amount },
+    lensDepthEffect = lensDepthEffect,
+    lensChromaticAberration = lensChromaticAberration,
+    vibrancy = vibrancy,
+    brightness = brightness,
+    saturation = saturation,
+    grain = grain,
+)
+
+/** Maps each point's value with [selector], preserving [OpticalSizeValue]'s Fixed/Responsive shape. */
+private inline fun OpticalSizeValue<LensRefraction>.mapValue(selector: (LensRefraction) -> Dp): OpticalSizeValue<Dp> =
+    when (this) {
+        is OpticalSizeValue.Fixed -> OpticalSizeValue.Fixed(selector(value))
+        is OpticalSizeValue.Responsive -> OpticalSizeValue.Responsive(
+            *points.map { OpticalSizePoint(it.shortestDimension, selector(it.value)) }.toTypedArray(),
         )
     }
-    if (grain > 0f) frostedGrain(grain)
-}

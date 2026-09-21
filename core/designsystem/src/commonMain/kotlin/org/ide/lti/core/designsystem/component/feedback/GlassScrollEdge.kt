@@ -15,9 +15,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
+import com.kashif_e.backdrop.ResolvedGlassEffect
+import com.kashif_e.backdrop.ResolvedProgressiveBlur
 import com.kashif_e.backdrop.drawPlainBackdrop
-import com.kashif_e.backdrop.effects.progressiveBlur
 import org.ide.lti.core.designsystem.component.actions.*
 import org.ide.lti.core.designsystem.component.devtools.*
 import org.ide.lti.core.designsystem.component.display.*
@@ -59,6 +61,7 @@ fun GlassScrollEdgeFade(
 ) {
     if (!GlassTheme.effectsEnabled) return
     val tint = GlassTheme.colors.canvasSurface
+    val blurRadiusPx = with(LocalDensity.current) { BackdropBlur.ScrollEdge.toPx() }
     Box(
         modifier
             .fillMaxWidth()
@@ -66,15 +69,15 @@ fun GlassScrollEdgeFade(
             .drawPlainBackdrop(
                 backdrop = backdrop.engineBackdrop,
                 shape = { RectangleShape },
-                effects = {
-                    progressiveBlur(
-                        blurRadius = BackdropBlur.ScrollEdge.toPx(),
+                resolvedEffect = ResolvedGlassEffect(
+                    progressiveBlur = ResolvedProgressiveBlur(
+                        blurRadiusPx = blurRadiusPx,
                         tintColor = tint,
                         tintIntensity = BackdropTint.ScrollEdgeIntensity,
                         fadeStart = if (edge == GlassScrollEdge.Top) 1f else 0f,
                         fadeEnd = if (edge == GlassScrollEdge.Top) 0f else 1f,
-                    )
-                },
+                    ),
+                ),
             ),
     )
 }

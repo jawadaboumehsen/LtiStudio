@@ -33,9 +33,8 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
-import com.kashif_e.backdrop.effects.blur
-import com.kashif_e.backdrop.effects.lens
-import com.kashif_e.backdrop.effects.vibrancy
+import com.kashif_e.backdrop.OpticalSizeValue
+import com.kashif_e.backdrop.ResolvedGlassEffect
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -91,11 +90,12 @@ fun GlassMessageBubble(
                     .glassEffect(
                         shape = bubbleShape,
                         tint = if (isUser) GlassTheme.colors.glassTint else Color.Unspecified,
-                        effects = {
-                            vibrancy()
-                            blur(BackdropBlur.Button.toPx())
-                            lens(LensRefraction.Button.height.toPx(), LensRefraction.Button.amount.toPx())
-                        },
+                        effect = ResolvedGlassEffect(
+                            blur = OpticalSizeValue.Fixed(BackdropBlur.Button),
+                            lensHeight = OpticalSizeValue.Fixed(LensRefraction.Button.height),
+                            lensAmount = OpticalSizeValue.Fixed(LensRefraction.Button.amount),
+                            vibrancy = true,
+                        ),
                     )
                     .glassBorder(shape = bubbleShape)
                     .then(

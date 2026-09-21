@@ -10,7 +10,6 @@
 package org.ide.lti.core.designsystem.component.primitives
 
 import androidx.compose.foundation.clickable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
@@ -31,10 +30,9 @@ import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.currentValueOf
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
-import com.kashif_e.backdrop.BackdropEffectScope
+import com.kashif_e.backdrop.OpticalSizeValue
+import com.kashif_e.backdrop.ResolvedGlassEffect
 import com.kashif_e.backdrop.drawBackdrop
-import com.kashif_e.backdrop.effects.blur
-import com.kashif_e.backdrop.effects.vibrancy
 import com.kashif_e.backdrop.highlight.Highlight
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BackdropBlur
@@ -47,7 +45,7 @@ import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.core.designsystem.theme.glass.GlassStyle
 import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
-import org.ide.lti.core.designsystem.theme.glass.toEffects
+import org.ide.lti.core.designsystem.theme.glass.resolve
 import org.ide.lti.core.designsystem.theme.glass.toHighlight
 
 /**
@@ -88,18 +86,17 @@ fun Modifier.glass(style: GlassStyle, enabled: Boolean = true, backdrop: GlassSc
         Modifier
     }
 
-    // Remembered so an unrelated recomposition of this call site (e.g. a sibling's hover state)
-    // doesn't hand DrawBackdropElement a fresh closure for an unchanged style, which would defeat
-    // its reference-based dirty-check and force a full effect-graph recompute for nothing - see
-    // DrawBackdropRecompositionTest (backdrop module) for the empirical proof of both halves of
-    // this.
-    val effects = remember(style) { style.toEffects() }
+    // No remember() needed: style.resolve() returns a ResolvedGlassEffect data class, so a fresh
+    // value describing an unchanged style is structurally `==` to the last one and :backdrop's
+    // dirty-bitmask diff (not a reference check) sees no change - see DrawBackdropRecompositionTest
+    // (backdrop module) for the empirical proof.
+    val resolvedEffect = style.resolve()
 
     val backgroundModifier = if (usingRealBackdrop) {
         Modifier.drawBackdrop(
             backdrop = resolvedBackdrop!!.engineBackdrop,
             shape = { style.shape },
-            effects = effects,
+            resolvedEffect = resolvedEffect,
             highlight = { style.rim?.toHighlight() },
             shadow = { style.shadow },
             innerShadow = { style.innerShadow },
@@ -135,7 +132,7 @@ fun Modifier.glass(style: GlassStyle, enabled: Boolean = true, backdrop: GlassSc
  * @param shape The shape to clip the glass to (defaults to [GlassShapes.Medium])
  * @param surfaceColor Optional custom surface color (defaults to [GlassColorScheme.glassSurface])
  * @param tint Optional tint color applied over the backdrop (defaults to [GlassColorScheme.glassTint])
- * @param effects Custom backdrop effect block (defaults to [GlassEffects.Standard])
+ * @param effect Effect stack to apply (defaults to [GlassEffects.Standard])
  * @param highlight Custom highlight style (defaults to [GlassHighlights.Plain])
  *
  * Example:
@@ -154,7 +151,7 @@ fun Modifier.glassEffect(
     shape: Shape = GlassShapes.Medium,
     surfaceColor: Color = Color.Unspecified,
     tint: Color = Color.Unspecified,
-    effects: BackdropEffectScope.() -> Unit = GlassEffects.Standard,
+    effect: ResolvedGlassEffect = GlassEffects.Standard,
     highlight: () -> Highlight? = GlassHighlights.Plain,
 ): Modifier = composed {
     val glassColors = GlassTheme.colors
@@ -168,7 +165,7 @@ fun Modifier.glassEffect(
         this.drawBackdrop(
             backdrop = actualBackdrop.engineBackdrop,
             shape = { shape },
-            effects = effects,
+            resolvedEffect = effect,
             highlight = highlight,
             onDrawSurface = {
                 drawRect(finalSurfaceColor.copy(alpha = finalSurfaceColor.alpha * AlphaTokens.ButtonFill))
@@ -438,13 +435,10 @@ fun Modifier.glassScrim(
         this.drawBackdrop(
             backdrop = actualBackdrop.engineBackdrop,
             shape = { androidx.compose.ui.graphics.RectangleShape },
-            effects = if (blurRadius == BackdropBlur.Scrim) {
+            resolvedEffect = if (blurRadius == BackdropBlur.Scrim) {
                 GlassEffects.Scrim
             } else {
-                {
-                    vibrancy()
-                    blur(blurRadius.toPx())
-                }
+                ResolvedGlassEffect(blur = OpticalSizeValue.Fixed(blurRadius), vibrancy = true)
             },
             highlight = GlassHighlights.Plain,
             onDrawSurface = {

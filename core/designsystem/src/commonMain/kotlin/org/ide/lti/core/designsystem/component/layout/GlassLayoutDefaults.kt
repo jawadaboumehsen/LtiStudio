@@ -16,10 +16,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
-import com.kashif_e.backdrop.BackdropEffectScope
-import com.kashif_e.backdrop.effects.blur
-import com.kashif_e.backdrop.effects.lens
-import com.kashif_e.backdrop.effects.vibrancy
+import com.kashif_e.backdrop.OpticalSizeValue
+import com.kashif_e.backdrop.ResolvedGlassEffect
 import org.ide.lti.core.designsystem.component.actions.*
 import org.ide.lti.core.designsystem.component.devtools.*
 import org.ide.lti.core.designsystem.component.display.*
@@ -146,27 +144,21 @@ object LtiLayoutDefaults {
 
     // ==================== VISUAL POLISH ====================
 
-    /** Immersive glass effect stack for the outer chrome frame. */
-    val ChromeEffects: BackdropEffectScope.() -> Unit = {
-        vibrancy()
-        blur(BackdropBlur.Immersive.toPx())
-        lens(LensRefraction.Surface.height.toPx(), LensRefraction.Surface.amount.toPx())
-    }
-
     /** Enhanced glass effect stack for professional panel appearance with deep frosted glass blur. */
-    val EnhancedPanelEffects: BackdropEffectScope.() -> Unit = {
-        vibrancy()
-        blur(BackdropBlur.Deep.toPx())
-        lens(LensRefraction.Panel.height.toPx(), LensRefraction.Panel.amount.toPx())
-    }
+    val EnhancedPanelEffect: ResolvedGlassEffect = ResolvedGlassEffect(
+        blur = OpticalSizeValue.Fixed(BackdropBlur.Deep),
+        lensHeight = OpticalSizeValue.Fixed(LensRefraction.Panel.height),
+        lensAmount = OpticalSizeValue.Fixed(LensRefraction.Panel.amount),
+        vibrancy = true,
+    )
 
     /**
      * Lightweight effect stack optimized for drag operations.
      * Reduces GPU load during continuous resizing for smooth 60 FPS.
      */
-    val DragOptimizedEffects: BackdropEffectScope.() -> Unit = {
-        blur(BackdropBlur.Subtle.toPx())
-    }
+    val DragOptimizedEffect: ResolvedGlassEffect = ResolvedGlassEffect(
+        blur = OpticalSizeValue.Fixed(BackdropBlur.Subtle),
+    )
 
     /** Elevation for panel shadows */
     val PanelElevation = Elevation.Panel

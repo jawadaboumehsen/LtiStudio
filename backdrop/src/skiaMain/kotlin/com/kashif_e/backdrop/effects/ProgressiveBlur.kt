@@ -28,12 +28,12 @@ private val progressiveBlurEffect: RuntimeEffect? by lazy {
     RuntimeEffect.makeForShader(PROGRESSIVE_BLUR_SKSL)
 }
 
-actual fun BackdropEffectScope.progressiveBlur(
+internal fun BackdropEffectScope.progressiveBlur(
     blurRadius: Float,
-    tintColor: Color,
-    tintIntensity: Float,
-    fadeStart: Float,
-    fadeEnd: Float
+    tintColor: Color = Color.Transparent,
+    tintIntensity: Float = 0f,
+    fadeStart: Float = 1f,
+    fadeEnd: Float = 0.5f
 ) {
     // First apply the blur
     blur(blurRadius)

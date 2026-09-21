@@ -17,7 +17,7 @@ import kotlin.math.pow
 /**
  * Apply a color filter effect to the backdrop.
  */
-fun BackdropEffectScope.colorFilter(colorFilter: ColorFilter) {
+internal fun BackdropEffectScope.colorFilter(colorFilter: ColorFilter) {
     if (!PlatformCapabilities.supportsColorFilter) return
     val colorFilterEffect = PlatformRenderEffect.colorFilter(colorFilter)
     applyEffect(colorFilterEffect)
@@ -26,7 +26,7 @@ fun BackdropEffectScope.colorFilter(colorFilter: ColorFilter) {
 /**
  * Apply an opacity/alpha adjustment to the backdrop.
  */
-actual fun BackdropEffectScope.opacity(alpha: Float) {
+internal fun BackdropEffectScope.opacity(alpha: Float) {
     // 4x5 (20 floats): [R, G, B, A, translate] per row
     val matrix = floatArrayOf(
         1f, 0f, 0f, 0f, 0f,
@@ -40,10 +40,10 @@ actual fun BackdropEffectScope.opacity(alpha: Float) {
 /**
  * Apply brightness, contrast, and saturation adjustments.
  */
-actual fun BackdropEffectScope.colorControls(
-    brightness: Float,
-    contrast: Float,
-    saturation: Float
+internal fun BackdropEffectScope.colorControls(
+    brightness: Float = 0f,
+    contrast: Float = 1f,
+    saturation: Float = 1f
 ) {
     if (brightness == 0f && contrast == 1f && saturation == 1f) {
         return
@@ -54,7 +54,7 @@ actual fun BackdropEffectScope.colorControls(
 /**
  * Apply a vibrancy effect (increased saturation).
  */
-actual fun BackdropEffectScope.vibrancy() {
+internal fun BackdropEffectScope.vibrancy() {
     colorFilter(VibrantColorFilter)
 }
 
@@ -63,7 +63,7 @@ private val VibrantColorFilter by lazy { colorControlsColorFilter(saturation = 1
 /**
  * Apply exposure adjustment (EV-based brightness scaling).
  */
-actual fun BackdropEffectScope.exposureAdjustment(ev: Float) {
+internal fun BackdropEffectScope.exposureAdjustment(ev: Float) {
     val scale = 2f.pow(ev / 2.2f)
     // 4x5 (20 floats): [R, G, B, A, translate] per row
     val matrix = floatArrayOf(
@@ -79,7 +79,7 @@ actual fun BackdropEffectScope.exposureAdjustment(ev: Float) {
  * Apply gamma adjustment.
  * Uses SkSL runtime shader to apply gamma correction to the backdrop.
  */
-actual fun BackdropEffectScope.gammaAdjustment(power: Float) {
+internal fun BackdropEffectScope.gammaAdjustment(power: Float) {
     if (!PlatformCapabilities.supportsRuntimeShader) return
     if (power == 1f) return  // No change needed
     
@@ -105,11 +105,11 @@ actual fun BackdropEffectScope.gammaAdjustment(power: Float) {
  * 
  * Uses SkSL RuntimeShader for cross-platform support on iOS/Desktop/Web.
  */
-actual fun BackdropEffectScope.reflectiveGlass(
-    reflectionStrength: Float,
-    distortionAmount: Float,
-    chromaticAberration: Float,
-    vignetteStrength: Float
+internal fun BackdropEffectScope.reflectiveGlass(
+    reflectionStrength: Float = 0.5f,
+    distortionAmount: Float = 0.1f,
+    chromaticAberration: Float = 0.02f,
+    vignetteStrength: Float = 0.3f
 ) {
     if (!PlatformCapabilities.supportsRuntimeShader) return
     if (reflectionStrength <= 0f) return

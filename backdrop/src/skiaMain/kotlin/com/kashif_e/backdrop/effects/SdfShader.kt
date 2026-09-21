@@ -64,14 +64,14 @@ half4 main(float2 coord) {
 
 /**
  * SDF Shader wrapper for Skia-based platforms (Desktop, iOS, Web).
- * 
+ *
  * @param sdfBitmap The SDF texture as an ImageBitmap
  */
-actual class SdfShader(
+class SdfShader(
     internal val sdfImageBitmap: ImageBitmap
 ) {
-    actual val width: Int get() = sdfImageBitmap.width
-    actual val height: Int get() = sdfImageBitmap.height
+    val width: Int get() = sdfImageBitmap.width
+    val height: Int get() = sdfImageBitmap.height
 
     // Cache the RuntimeEffect to avoid recompilation each frame
     private val runtimeEffect: RuntimeEffect? by lazy {
@@ -97,7 +97,7 @@ actual class SdfShader(
      * @param refractionHeight The height/intensity of the refraction effect in pixels.
      * @param lightAngle The angle of the light source in degrees (0-360).
      */
-    fun BackdropEffectScope.apply(
+    internal fun BackdropEffectScope.apply(
         refractionHeight: Float = 48f.dp.toPx(),
         lightAngle: Float = 45f
     ) {
@@ -134,7 +134,7 @@ actual class SdfShader(
  * Remember an SdfShader instance for the given ImageBitmap.
  */
 @Composable
-actual fun rememberSdfShader(imageBitmap: ImageBitmap): SdfShader {
+fun rememberSdfShader(imageBitmap: ImageBitmap): SdfShader {
     return remember(imageBitmap) {
         SdfShader(imageBitmap)
     }

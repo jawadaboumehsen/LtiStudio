@@ -40,7 +40,7 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
-import com.kashif_e.backdrop.BackdropEffectScope
+import com.kashif_e.backdrop.ResolvedGlassEffect
 import com.kashif_e.backdrop.drawBackdrop
 import com.kashif_e.backdrop.highlight.Highlight
 import org.ide.lti.core.designsystem.component.actions.*
@@ -62,7 +62,7 @@ import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.core.designsystem.theme.glass.GlassStyles
-import org.ide.lti.core.designsystem.theme.glass.toEffects
+import org.ide.lti.core.designsystem.theme.glass.resolve
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -81,7 +81,7 @@ fun GlassTab(
     val actualBackdrop = backdrop ?: GlassTheme.scene
     val tabShape = GlassShapes.Capsule
     val iconButtonStyle = GlassStyles.iconButton
-    val tabEffects = remember(iconButtonStyle) { iconButtonStyle.toEffects() }
+    val tabEffect = iconButtonStyle.resolve()
 
     val surfaceColor = when {
         selected -> selectedColor
@@ -130,7 +130,7 @@ fun GlassTab(
                 shape = tabShape,
                 surfaceColor = surfaceColor,
                 tintColor = tintColor,
-                effects = tabEffects,
+                effect = tabEffect,
             )
             .glassOutlineBorder(
                 color = borderColor,
@@ -164,7 +164,7 @@ fun GlassTabItem(
     val tabShape = GlassShapes.Small
     val tabColors = resolveTabItemColors(selected, isHovered, glassColors)
     val iconButtonStyle = GlassStyles.iconButton
-    val tabEffects = remember(iconButtonStyle) { iconButtonStyle.toEffects() }
+    val tabEffect = iconButtonStyle.resolve()
 
     Row(
         modifier = modifier
@@ -177,7 +177,7 @@ fun GlassTabItem(
                 shape = tabShape,
                 surfaceColor = tabColors.surfaceColor,
                 tintColor = tabColors.tintColor,
-                effects = tabEffects,
+                effect = tabEffect,
             )
             .glassOutlineBorder(
                 color = tabColors.borderColor,
@@ -384,12 +384,12 @@ private fun Modifier.tabGlassSurface(
     shape: Shape,
     surfaceColor: Color,
     tintColor: Color,
-    effects: BackdropEffectScope.() -> Unit,
+    effect: ResolvedGlassEffect,
 ): Modifier = if (effectsEnabled && backdrop != null) {
     this.drawBackdrop(
         backdrop = backdrop.engineBackdrop,
         shape = { shape },
-        effects = effects,
+        resolvedEffect = effect,
         highlight = { if (isHovered) Highlight.Ambient else Highlight.Plain },
         onDrawSurface = {
             if (surfaceColor.isSpecified && surfaceColor != Color.Transparent) {

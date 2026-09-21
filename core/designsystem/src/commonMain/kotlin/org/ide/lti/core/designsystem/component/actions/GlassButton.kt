@@ -46,7 +46,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
-import com.kashif_e.backdrop.BackdropEffectScope
+import com.kashif_e.backdrop.ResolvedGlassEffect
 import com.kashif_e.backdrop.drawBackdrop
 import com.kashif_e.backdrop.highlight.Highlight
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
@@ -63,7 +63,7 @@ import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.core.designsystem.theme.glass.GlassStyles
-import org.ide.lti.core.designsystem.theme.glass.toEffects
+import org.ide.lti.core.designsystem.theme.glass.resolve
 import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
 import org.ide.lti.core.designsystem.utils.InteractiveHighlight
 import org.ide.lti.core.designsystem.utils.applyInteractiveHighlightTransform
@@ -126,7 +126,7 @@ fun GlassButton(
     enabled: Boolean = true,
     shape: Shape = GlassShapes.Capsule,
     variant: GlassButtonVariant = GlassButtonVariant.Standard,
-    effects: (BackdropEffectScope.() -> Unit)? = null,
+    effect: ResolvedGlassEffect? = null,
     backdrop: GlassSceneState? = null,
     minWidth: Dp = GlassButtonDefaults.MinWidth,
     minHeight: Dp = GlassButtonDefaults.MinHeight,
@@ -137,12 +137,12 @@ fun GlassButton(
     val glassColors = GlassTheme.colors
     val effectsEnabled = GlassTheme.effectsEnabled
     val actualBackdrop = backdrop ?: GlassTheme.scene
-    // effects defaults to GlassStyles.button.toEffects() - a fresh closure per call, since
-    // .toEffects() is a plain function - remembered here (not as the parameter default itself,
-    // which re-evaluates on every call using it) so an unrelated recomposition doesn't hand
-    // DrawBackdropElement a new instance and force a spurious effect-graph recompute.
+    // effect defaults to GlassStyles.button.resolve() - a fresh ResolvedGlassEffect value per
+    // call, but that's fine: it's a data class, so it diffs by value against :backdrop's dirty
+    // bitmask, not by reference - no remember() needed for an unrelated recomposition to avoid a
+    // spurious effect-graph recompute.
     val buttonStyle = GlassStyles.button
-    val resolvedEffects = effects ?: remember(buttonStyle) { buttonStyle.toEffects() }
+    val resolvedEffect = effect ?: buttonStyle.resolve()
     var isHovered by remember { mutableStateOf(false) }
     var isFocused by remember { mutableStateOf(false) }
 
@@ -186,7 +186,7 @@ fun GlassButton(
                         Modifier.drawBackdrop(
                             backdrop = actualBackdrop.engineBackdrop,
                             shape = { shape },
-                            effects = resolvedEffects,
+                            resolvedEffect = resolvedEffect,
                             highlight = { if (isHovered) Highlight.Ambient else Highlight.Plain },
                             layerBlock = if (interactiveHighlight != null) {
                                 {
@@ -436,7 +436,7 @@ fun GlassIconButton(
     modifier: Modifier = Modifier,
     size: Dp = ComponentSize.IconButtonSize,
     shape: Shape = GlassShapes.Capsule,
-    effects: (BackdropEffectScope.() -> Unit)? = null,
+    effect: ResolvedGlassEffect? = null,
     backdrop: GlassSceneState? = null,
     checked: Boolean? = null,
     selected: Boolean = checked ?: false,
@@ -448,12 +448,12 @@ fun GlassIconButton(
     // (GlassStyles.button, the wide text-labeled pill tier) - always resolved and passed
     // explicitly so it overrides that default regardless.
     val iconButtonStyle = GlassStyles.iconButton
-    val resolvedEffects = effects ?: remember(iconButtonStyle) { iconButtonStyle.toEffects() }
+    val resolvedEffect = effect ?: iconButtonStyle.resolve()
     GlassButton(
         onClick = onClick,
         modifier = modifier.size(size),
         shape = shape,
-        effects = resolvedEffects,
+        effect = resolvedEffect,
         backdrop = backdrop,
         minWidth = size,
         minHeight = size,

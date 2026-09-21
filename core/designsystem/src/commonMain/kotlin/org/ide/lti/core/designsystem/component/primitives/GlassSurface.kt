@@ -21,7 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.unit.Dp
-import com.kashif_e.backdrop.BackdropEffectScope
+import com.kashif_e.backdrop.ResolvedGlassEffect
 import com.kashif_e.backdrop.drawBackdrop
 import com.kashif_e.backdrop.highlight.Highlight
 import com.kashif_e.backdrop.shadow.Shadow
@@ -37,7 +37,7 @@ import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
  * Default glass effect stack ("Standard" look): vibrancy + moderate blur + lens refraction.
  * Delegated to canonical [GlassEffects.Standard].
  */
-val StandardGlassEffects: BackdropEffectScope.() -> Unit = GlassEffects.Standard
+val StandardGlassEffects: ResolvedGlassEffect = GlassEffects.Standard
 
 /**
  * Base glass surface component. Thin wrapper over [com.kashif_e.backdrop.drawBackdrop].
@@ -49,7 +49,7 @@ val StandardGlassEffects: BackdropEffectScope.() -> Unit = GlassEffects.Standard
  * @param tint Optional tint color (default: from [GlassTheme] colors)
  * @param borderColor Optional border color
  * @param borderWidth Width of the border (default: [StrokeWidth.Standard])
- * @param effects GlassSceneState effect chain (default: [GlassEffects.Standard])
+ * @param effect Effect stack to apply (default: [GlassEffects.Standard])
  * @param highlight Optional highlight decorator (default: [GlassHighlights.Plain])
  * @param shadow Optional shadow decorator (default: [GlassShadows.None])
  * @param content Content to display inside the glass surface
@@ -63,7 +63,7 @@ fun GlassSurface(
     tint: Color = Color.Unspecified,
     borderColor: Color = Color.Unspecified,
     borderWidth: Dp = StrokeWidth.Standard,
-    effects: BackdropEffectScope.() -> Unit = GlassEffects.Standard,
+    effect: ResolvedGlassEffect = GlassEffects.Standard,
     highlight: () -> Highlight? = GlassHighlights.Plain,
     shadow: (() -> Shadow?)? = GlassShadows.None,
     content: @Composable () -> Unit,
@@ -90,7 +90,7 @@ fun GlassSurface(
         Modifier.drawBackdrop(
             backdrop = actualBackdrop.engineBackdrop,
             shape = { shape },
-            effects = effects,
+            resolvedEffect = effect,
             highlight = highlight,
             shadow = shadow,
             onDrawSurface = {

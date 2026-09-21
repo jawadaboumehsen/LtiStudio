@@ -50,6 +50,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import com.kashif_e.backdrop.ResolvedGlassEffect
 import com.kashif_e.backdrop.shadow.Shadow
 import org.ide.lti.core.designsystem.component.actions.*
 import org.ide.lti.core.designsystem.component.devtools.*
@@ -253,7 +254,7 @@ fun GlassSidePanelTabStrip(
         shape = GlassShapes.Panel,
         surfaceColor = glassColors.glassSurfaceElevated,
         tint = Color.Unspecified,
-        effects = {},
+        effect = ResolvedGlassEffect.None,
         shadow = { Shadow(radius = Elevation.Raised, color = glassColors.glassShadow) },
     ) {
         Row(

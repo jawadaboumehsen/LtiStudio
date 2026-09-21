@@ -50,7 +50,7 @@ import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.core.designsystem.theme.glass.GlassStyles
-import org.ide.lti.core.designsystem.theme.glass.toEffects
+import org.ide.lti.core.designsystem.theme.glass.resolve
 import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
 
 /**
@@ -95,7 +95,7 @@ fun GlassChip(
     val actualBackdrop = backdrop ?: GlassTheme.scene
     val chipShape = shape
     val chipStyle = GlassStyles.chip
-    val effects = remember(chipStyle) { chipStyle.toEffects() }
+    val chipEffect = chipStyle.resolve()
 
     val targetBackground = when {
         selected && isHovered -> glassColors.glassAccent.copy(alpha = AlphaTokens.Elevated)
@@ -161,7 +161,7 @@ fun GlassChip(
                     Modifier.drawBackdrop(
                         backdrop = actualBackdrop.engineBackdrop,
                         shape = { chipShape },
-                        effects = effects,
+                        resolvedEffect = chipEffect,
                         highlight = { if (isHovered || selected) Highlight.Ambient else null },
                         onDrawSurface = {
                             drawRect(backgroundColor)

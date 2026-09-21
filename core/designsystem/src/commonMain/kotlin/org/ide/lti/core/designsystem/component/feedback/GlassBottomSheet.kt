@@ -48,7 +48,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.input.pointer.pointerInput
-import com.kashif_e.backdrop.BackdropEffectScope
+import com.kashif_e.backdrop.ResolvedGlassEffect
 import com.kashif_e.backdrop.highlight.Highlight
 import kotlinx.coroutines.launch
 import org.ide.lti.core.designsystem.component.actions.*
@@ -65,7 +65,7 @@ import org.ide.lti.core.designsystem.theme.MotionDuration
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.core.designsystem.theme.glass.GlassStyles
-import org.ide.lti.core.designsystem.theme.glass.toEffects
+import org.ide.lti.core.designsystem.theme.glass.resolve
 import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
 
 /**
@@ -183,7 +183,7 @@ fun GlassBottomSheet(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
     backdrop: GlassSceneState? = null,
-    effects: (BackdropEffectScope.() -> Unit)? = null,
+    effect: ResolvedGlassEffect? = null,
     shape: Shape = GlassShapes.BottomSheet,
     scrimColor: Color = Color.Unspecified,
     dismissThreshold: Float = 0.3f,
@@ -193,7 +193,7 @@ fun GlassBottomSheet(
     val glassColors = GlassTheme.colors
     val reducedMotion = GlassTheme.reducedMotion
     val bottomSheetStyle = GlassStyles.bottomSheet
-    val resolvedEffects = effects ?: remember(bottomSheetStyle) { bottomSheetStyle.toEffects() }
+    val resolvedEffect = effect ?: bottomSheetStyle.resolve()
     val resolvedScrimColor = if (scrimColor.isSpecified) scrimColor else glassColors.glassShadow
 
     // Animation for slide in/out
@@ -253,7 +253,7 @@ fun GlassBottomSheet(
             ) {
                 GlassSurface(
                     shape = shape,
-                    effects = resolvedEffects,
+                    effect = resolvedEffect,
                     backdrop = backdrop,
                     surfaceColor = glassColors.glassSurface,
                     tint = glassColors.glassTint,
@@ -353,7 +353,7 @@ fun GlassBottomSheetScaffold(
     title: String? = null,
     headerContent: (@Composable RowScope.() -> Unit)? = null,
     backdrop: GlassSceneState? = null,
-    effects: (BackdropEffectScope.() -> Unit)? = null,
+    effect: ResolvedGlassEffect? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val state = rememberGlassBottomSheetState(
@@ -377,7 +377,7 @@ fun GlassBottomSheetScaffold(
         state = state,
         onDismissRequest = onDismissRequest,
         backdrop = backdrop,
-        effects = effects,
+        effect = effect,
         modifier = modifier,
     ) {
         // Header
