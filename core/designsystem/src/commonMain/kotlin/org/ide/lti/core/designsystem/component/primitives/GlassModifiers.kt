@@ -10,6 +10,7 @@
 package org.ide.lti.core.designsystem.component.primitives
 
 import androidx.compose.foundation.clickable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
@@ -87,11 +88,18 @@ fun Modifier.glass(style: GlassStyle, enabled: Boolean = true, backdrop: GlassSc
         Modifier
     }
 
+    // Remembered so an unrelated recomposition of this call site (e.g. a sibling's hover state)
+    // doesn't hand DrawBackdropElement a fresh closure for an unchanged style, which would defeat
+    // its reference-based dirty-check and force a full effect-graph recompute for nothing - see
+    // DrawBackdropRecompositionTest (backdrop module) for the empirical proof of both halves of
+    // this.
+    val effects = remember(style) { style.toEffects() }
+
     val backgroundModifier = if (usingRealBackdrop) {
         Modifier.drawBackdrop(
             backdrop = resolvedBackdrop!!.engineBackdrop,
             shape = { style.shape },
-            effects = style.toEffects(),
+            effects = effects,
             highlight = { style.rim?.toHighlight() },
             shadow = { style.shadow },
             innerShadow = { style.innerShadow },

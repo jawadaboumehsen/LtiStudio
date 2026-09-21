@@ -206,6 +206,14 @@ private class DrawBackdropElement(
     }
 
     override fun update(node: DrawBackdropNode) {
+        // Only effects (read by updateEffects()'s effectScope.apply(effects) - see
+        // DrawBackdropNode) can change what the effect graph looks like. The other fields here
+        // are near-always-fresh lambda/value literals from the caller's recomposition scope (see
+        // Modifier.glass's style.toEffects(), or any inline `shape = { ... }` / `onDrawSurface =
+        // { ... }`), so unconditionally invalidating on every update() - regardless of which
+        // field actually changed - reruns the expensive effect graph on every recomposition of
+        // any drawBackdrop caller, not just ones where the rendered effect actually changed.
+        val effectsChanged = node.effects !== effects
         node.backdrop = backdrop
         node.shapeProvider = shapeProvider
         node.effects = effects
@@ -215,7 +223,9 @@ private class DrawBackdropElement(
         node.onDrawSurface = onDrawSurface
         node.onDrawFront = onDrawFront
         node.inputScale = inputScale
-        node.invalidateDrawCache()
+        if (effectsChanged) {
+            node.invalidateDrawCache()
+        }
         node.invalidateDraw()
     }
 

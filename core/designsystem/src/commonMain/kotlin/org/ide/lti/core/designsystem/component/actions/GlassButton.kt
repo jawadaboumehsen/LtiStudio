@@ -133,7 +133,7 @@ fun GlassButton(
     enabled: Boolean = true,
     shape: Shape = GlassShapes.Capsule,
     variant: GlassButtonVariant = GlassButtonVariant.Standard,
-    effects: BackdropEffectScope.() -> Unit = GlassStyles.button.toEffects(),
+    effects: (BackdropEffectScope.() -> Unit)? = null,
     backdrop: GlassSceneState? = null,
     minWidth: Dp = GlassButtonDefaults.MinWidth,
     minHeight: Dp = GlassButtonDefaults.MinHeight,
@@ -144,6 +144,12 @@ fun GlassButton(
     val glassColors = GlassTheme.colors
     val effectsEnabled = GlassTheme.effectsEnabled
     val actualBackdrop = backdrop ?: GlassTheme.scene
+    // effects defaults to GlassStyles.button.toEffects() - a fresh closure per call, since
+    // .toEffects() is a plain function - remembered here (not as the parameter default itself,
+    // which re-evaluates on every call using it) so an unrelated recomposition doesn't hand
+    // DrawBackdropElement a new instance and force a spurious effect-graph recompute.
+    val buttonStyle = GlassStyles.button
+    val resolvedEffects = effects ?: remember(buttonStyle) { buttonStyle.toEffects() }
     var isHovered by remember { mutableStateOf(false) }
     var isFocused by remember { mutableStateOf(false) }
 
@@ -187,7 +193,7 @@ fun GlassButton(
                         Modifier.drawBackdrop(
                             backdrop = actualBackdrop.engineBackdrop,
                             shape = { shape },
-                            effects = effects,
+                            effects = resolvedEffects,
                             highlight = { if (isHovered) Highlight.Ambient else Highlight.Plain },
                             layerBlock = if (interactiveHighlight != null) {
                                 {
