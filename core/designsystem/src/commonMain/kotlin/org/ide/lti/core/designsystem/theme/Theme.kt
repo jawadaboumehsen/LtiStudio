@@ -31,14 +31,14 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
-import com.kashif_e.backdrop.Backdrop
-import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import org.ide.lti.core.designsystem.theme.config.AppTheme
 import org.ide.lti.core.designsystem.theme.config.BackdropConfiguration
 import org.ide.lti.core.designsystem.theme.config.BlueThemeConfig
 import org.ide.lti.core.designsystem.theme.config.BrandingConfiguration
 import org.ide.lti.core.designsystem.theme.config.PanelConfiguration
 import org.ide.lti.core.designsystem.theme.config.ThemeConfiguration
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
+import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 
 /**
  * Composition local for the glass color scheme.
@@ -48,9 +48,11 @@ val LocalGlassColors = staticCompositionLocalOf {
 }
 
 /**
- * Composition local for the ambient shared backdrop.
+ * Composition local for the ambient shared backdrop scene. Internal - [GlassSceneState] is the
+ * only backdrop-related type any module outside `core:designsystem` may hold; read it through
+ * [GlassTheme.scene] instead.
  */
-val LocalGlassBackdrop = staticCompositionLocalOf<Backdrop?> {
+internal val LocalGlassSceneState = staticCompositionLocalOf<GlassSceneState?> {
     null
 }
 
@@ -153,10 +155,10 @@ object GlassTheme {
         @ReadOnlyComposable
         get() = LocalReducedMotion.current
 
-    val backdrop: Backdrop?
+    val scene: GlassSceneState?
         @Composable
         @ReadOnlyComposable
-        get() = LocalGlassBackdrop.current
+        get() = LocalGlassSceneState.current
 
     val focusRingSuppressedByPointer: Boolean
         @Composable
@@ -202,7 +204,7 @@ fun LtiTheme(
     effectsEnabled: Boolean = true,
     reducedMotion: Boolean = false,
     materialColorScheme: ColorScheme? = null,
-    sharedBackdrop: Backdrop? = null,
+    sharedScene: GlassSceneState? = null,
     content: @Composable () -> Unit,
 ) {
     val effectiveAppTheme = appTheme ?: if (darkTheme) AppTheme.Blue else AppTheme.Light
@@ -210,7 +212,7 @@ fun LtiTheme(
 
     val resolvedMaterialScheme = materialColorScheme ?: themeConfig.materialColorScheme
     val resolvedGlassColors = glassColors ?: themeConfig.glassColorScheme
-    val backdrop = sharedBackdrop ?: rememberLayerBackdrop()
+    val scene = sharedScene ?: rememberGlassSceneState()
     var focusRingSuppressedByPointer by remember { mutableStateOf(false) }
 
     MaterialTheme(
@@ -222,7 +224,7 @@ fun LtiTheme(
             LocalAppTheme provides effectiveAppTheme,
             LocalThemeConfiguration provides themeConfig,
             LocalGlassColors provides resolvedGlassColors,
-            LocalGlassBackdrop provides backdrop,
+            LocalGlassSceneState provides scene,
             LocalGlassEffectsEnabled provides effectsEnabled,
             LocalReducedMotion provides reducedMotion,
             LocalContentColor provides resolvedGlassColors.onGlass,

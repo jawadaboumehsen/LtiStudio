@@ -33,7 +33,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.kashif_e.backdrop.Backdrop
 import org.ide.lti.core.designsystem.component.actions.*
 import org.ide.lti.core.designsystem.component.devtools.*
 import org.ide.lti.core.designsystem.component.display.*
@@ -44,6 +43,7 @@ import org.ide.lti.core.designsystem.component.primitives.*
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.core.designsystem.theme.glass.GlassStyles
 
 /**
@@ -78,7 +78,7 @@ fun GlassDialog(
     title: String? = null,
     dismissButton: (@Composable () -> Unit)? = null,
     shape: Shape = GlassShapes.Dialog,
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
     properties: DialogProperties = DialogProperties(),
     content: @Composable () -> Unit,
 ) {
@@ -152,7 +152,7 @@ sealed class LoadingDialogState {
 fun GlassLoadingDialog(
     visibilityState: LoadingDialogState,
     modifier: Modifier = Modifier,
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
 ) {
     val style = GlassStyles.dialog.then { copy(shape = GlassShapes.ExtraLarge) }
 

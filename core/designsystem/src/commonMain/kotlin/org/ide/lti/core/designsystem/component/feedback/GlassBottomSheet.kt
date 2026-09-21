@@ -48,7 +48,6 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.input.pointer.pointerInput
-import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.BackdropEffectScope
 import com.kashif_e.backdrop.highlight.Highlight
 import kotlinx.coroutines.launch
@@ -65,6 +64,7 @@ import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.MotionDuration
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
 
 /**
@@ -187,7 +187,7 @@ fun GlassBottomSheet(
     state: GlassBottomSheetState,
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
     effects: BackdropEffectScope.() -> Unit = GlassBottomSheetEffects,
     shape: Shape = GlassShapes.BottomSheet,
     scrimColor: Color = Color.Unspecified,
@@ -355,7 +355,7 @@ fun GlassBottomSheetScaffold(
     modifier: Modifier = Modifier,
     title: String? = null,
     headerContent: (@Composable RowScope.() -> Unit)? = null,
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
     effects: BackdropEffectScope.() -> Unit = GlassBottomSheetEffects,
     content: @Composable ColumnScope.() -> Unit,
 ) {

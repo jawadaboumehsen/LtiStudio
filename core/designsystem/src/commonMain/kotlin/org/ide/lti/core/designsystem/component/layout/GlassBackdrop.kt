@@ -18,12 +18,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import com.kashif_e.backdrop.backdrops.LayerBackdrop
 import com.kashif_e.backdrop.backdrops.layerBackdrop
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.PreviewSampleColors
 import org.ide.lti.core.designsystem.theme.config.BackdropStyle
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 
 /**
  * Standard Liquid Glass application backdrop canvas.
@@ -31,12 +31,12 @@ import org.ide.lti.core.designsystem.theme.config.BackdropStyle
  * Renders the active [GlassTheme.backdropConfig] polymorphically onto a canvas captured
  * by [backdrop] for real-time GPU glass refraction and specular sampling.
  *
- * @param backdrop The [LayerBackdrop] instance capturing the rendered canvas for glass sampling.
+ * @param backdrop The [GlassSceneState] instance capturing the rendered canvas for glass sampling.
  * @param modifier Modifier to be applied to the canvas.
  */
 @Composable
 fun GlassBackdrop(
-    backdrop: LayerBackdrop,
+    backdrop: GlassSceneState,
     modifier: Modifier = Modifier,
 ) {
     val backdropConfig = GlassTheme.backdropConfig
@@ -45,14 +45,14 @@ fun GlassBackdrop(
     // Runs once per successful recomposition of THIS composable (i.e. once per genuine content
     // change - a theme flip, etc.) - never per draw/frame. Tells every consumer sampling this
     // backdrop (every glass panel) to redraw and pick up the fresh content, even though the
-    // shared LayerBackdrop instance's own identity never changes.
+    // shared GlassSceneState instance's own identity never changes.
     SideEffect {
-        backdrop.notifyContentChanged()
+        backdrop.engineBackdrop.notifyContentChanged()
     }
 
     Canvas(
         modifier = modifier
-            .layerBackdrop(backdrop)
+            .layerBackdrop(backdrop.engineBackdrop)
             .fillMaxSize(),
     ) {
         when (val style = backdropConfig.style) {

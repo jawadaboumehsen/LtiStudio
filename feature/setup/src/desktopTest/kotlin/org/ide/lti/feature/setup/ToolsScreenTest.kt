@@ -16,10 +16,11 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.runDesktopComposeUiTest
-import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import org.ide.lti.core.designsystem.theme.LtiTheme
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
+import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolCategory
 import org.ide.lti.core.domain.setup.ToolComponentItem
@@ -58,8 +59,8 @@ class ToolsScreenTest {
         )
 
         setContent {
-            val backdrop = rememberLayerBackdrop()
-            LtiTheme(sharedBackdrop = backdrop) {
+            val backdrop = rememberGlassSceneState()
+            LtiTheme(sharedScene = backdrop) {
                 ToolsStepContent(
                     state = SetupUiState(
                         filteredToolsMatrix = listOf(unsupportedTool),
@@ -93,8 +94,8 @@ class ToolsScreenTest {
         var recompileTarget: String? = null
 
         setContent {
-            val backdrop = rememberLayerBackdrop()
-            LtiTheme(sharedBackdrop = backdrop) {
+            val backdrop = rememberGlassSceneState()
+            LtiTheme(sharedScene = backdrop) {
                 ToolsStepContent(
                     state = SetupUiState(
                         filteredToolsMatrix = listOf(supportedTool),
@@ -127,8 +128,8 @@ class ToolsScreenTest {
         var testTarget: String? = null
 
         setContent {
-            val backdrop = rememberLayerBackdrop()
-            LtiTheme(sharedBackdrop = backdrop) {
+            val backdrop = rememberGlassSceneState()
+            LtiTheme(sharedScene = backdrop) {
                 ToolsStepContent(
                     state = SetupUiState(
                         filteredToolsMatrix = listOf(failedTool),
@@ -158,8 +159,8 @@ class ToolsScreenTest {
         )
 
         setContent {
-            val backdrop = rememberLayerBackdrop()
-            LtiTheme(sharedBackdrop = backdrop) {
+            val backdrop = rememberGlassSceneState()
+            LtiTheme(sharedScene = backdrop) {
                 ToolsStepContent(
                     state = SetupUiState(
                         toolchainSetupState = ToolchainSetupState(isRunning = true),
@@ -192,8 +193,8 @@ class ToolsScreenTest {
         assertEquals(500, activityState.droppedLineCount.value, "Dropped lines must be exactly 500")
 
         setContent {
-            val backdrop = rememberLayerBackdrop()
-            LtiTheme(sharedBackdrop = backdrop) {
+            val backdrop = rememberGlassSceneState()
+            LtiTheme(sharedScene = backdrop) {
                 ToolsStepContent(
                     state = SetupUiState(
                         filteredToolsMatrix = emptyList(),
@@ -217,8 +218,8 @@ class ToolsScreenTest {
         activityState.appendLines(listOf("Line 1", "Line 2", "Line 3"))
 
         setContent {
-            val backdrop = rememberLayerBackdrop()
-            LtiTheme(sharedBackdrop = backdrop) {
+            val backdrop = rememberGlassSceneState()
+            LtiTheme(sharedScene = backdrop) {
                 SetupActivityPanel(
                     activityState = activityState,
                     title = "Activity Test",
@@ -247,8 +248,8 @@ class ToolsScreenTest {
         activityState.appendLines(listOf("Alpha log entry", "Beta log entry", "Gamma log entry"))
 
         setContent {
-            val backdrop = rememberLayerBackdrop()
-            LtiTheme(sharedBackdrop = backdrop) {
+            val backdrop = rememberGlassSceneState()
+            LtiTheme(sharedScene = backdrop) {
                 SetupActivityPanel(
                     activityState = activityState,
                     title = "Activity Test",

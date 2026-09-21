@@ -52,10 +52,8 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastCoerceIn
 import androidx.compose.ui.util.fastRoundToInt
 import androidx.compose.ui.util.lerp
-import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.backdrops.layerBackdrop
 import com.kashif_e.backdrop.backdrops.rememberCombinedBackdrop
-import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import com.kashif_e.backdrop.drawBackdrop
 import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.lens
@@ -85,6 +83,8 @@ import org.ide.lti.core.designsystem.theme.MotionSpring
 import org.ide.lti.core.designsystem.theme.MotionThreshold
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
+import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 import org.ide.lti.core.designsystem.utils.DampedDragAnimation
 import org.ide.lti.core.designsystem.utils.InteractiveHighlight
 import kotlin.math.abs
@@ -145,16 +145,16 @@ fun GlassBottomTabs(
     selectedTabIndex: () -> Int,
     tabsCount: Int,
     modifier: Modifier = Modifier,
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
     onTabSelected: ((index: Int) -> Unit)? = null,
     tabs: @Composable RowScope.() -> Unit,
 ) {
-    val actualBackdrop = backdrop ?: GlassTheme.backdrop ?: rememberLayerBackdrop()
+    val actualBackdrop = backdrop ?: GlassTheme.scene ?: rememberGlassSceneState()
     val glassColors = GlassTheme.colors
     val accentColor = glassColors.glassAccent
     val containerColor = glassColors.glassSurfaceElevated
 
-    val tabsBackdrop = rememberLayerBackdrop()
+    val tabsBackdrop = rememberGlassSceneState()
 
     BoxWithConstraints(modifier, contentAlignment = Alignment.CenterStart) {
         val density = LocalDensity.current
@@ -295,7 +295,7 @@ fun GlassBottomTabs(
 
 @Composable
 private fun GlassBottomTabBarBackground(
-    backdrop: Backdrop,
+    backdrop: GlassSceneState,
     containerColor: Color,
     panelOffset: () -> Float,
     drag: DampedDragAnimation,
@@ -308,7 +308,7 @@ private fun GlassBottomTabBarBackground(
             .then(
                 if (effectsEnabled) {
                     Modifier.drawBackdrop(
-                        backdrop = backdrop,
+                        backdrop = backdrop.engineBackdrop,
                         shape = { GlassShapes.Capsule },
                         effects = GlassEffects.BottomTabs,
                         layerBlock = {
@@ -340,8 +340,8 @@ private fun GlassBottomTabBarBackground(
 
 @Composable
 private fun GlassBottomTabTintedRow(
-    backdrop: Backdrop,
-    tabsBackdrop: com.kashif_e.backdrop.backdrops.LayerBackdrop,
+    backdrop: GlassSceneState,
+    tabsBackdrop: GlassSceneState,
     containerColor: Color,
     accentColor: Color,
     panelOffset: () -> Float,
@@ -359,10 +359,10 @@ private fun GlassBottomTabTintedRow(
             Modifier
                 .clearAndSetSemantics {}
                 .alpha(0f)
-                .layerBackdrop(tabsBackdrop)
+                .layerBackdrop(tabsBackdrop.engineBackdrop)
                 .graphicsLayer { translationX = panelOffset() }
                 .drawBackdrop(
-                    backdrop = backdrop,
+                    backdrop = backdrop.engineBackdrop,
                     shape = { GlassShapes.Capsule },
                     effects = {
                         val p = drag.pressProgress
@@ -394,8 +394,8 @@ private fun GlassBottomTabTintedRow(
 
 @Composable
 private fun GlassBottomTabSpotlight(
-    backdrop: Backdrop,
-    tabsBackdrop: com.kashif_e.backdrop.backdrops.LayerBackdrop,
+    backdrop: GlassSceneState,
+    tabsBackdrop: GlassSceneState,
     tabsCount: Int,
     tabWidth: Float,
     panelOffset: () -> Float,
@@ -422,7 +422,7 @@ private fun GlassBottomTabSpotlight(
             .then(
                 if (effectsEnabled) {
                     Modifier.drawBackdrop(
-                        backdrop = rememberCombinedBackdrop(backdrop, tabsBackdrop),
+                        backdrop = rememberCombinedBackdrop(backdrop.engineBackdrop, tabsBackdrop.engineBackdrop),
                         shape = { GlassShapes.Capsule },
                         effects = {
                             val p = drag.pressProgress

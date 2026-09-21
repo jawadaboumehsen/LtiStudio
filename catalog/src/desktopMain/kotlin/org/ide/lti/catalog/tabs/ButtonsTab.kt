@@ -38,11 +38,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
-import org.ide.lti.core.designsystem.component.display.GlassIcon
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
 import org.ide.lti.core.designsystem.component.actions.GlassIconToggleButton
 import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
 import org.ide.lti.core.designsystem.component.actions.GlassTextButton
+import org.ide.lti.core.designsystem.component.display.GlassIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassShapes
@@ -58,7 +58,7 @@ fun ButtonsTab() {
     var isPinned by remember { mutableStateOf(true) }
     var isFavorite by remember { mutableStateOf(false) }
 
-    val backdrop = GlassTheme.backdrop
+    val backdrop = GlassTheme.scene
 
     Column(
         modifier = Modifier

@@ -38,8 +38,6 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import com.kashif_e.backdrop.Backdrop
-import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -50,6 +48,8 @@ import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.SetupTokens
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
+import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolCategory
 import org.ide.lti.core.domain.setup.ToolComponentItem
@@ -101,7 +101,7 @@ actual fun SetupPerformanceScenarioHook(
     onOpenConfigurations: () -> Unit,
     onOpenManageTargets: () -> Unit,
     onOpenHelp: () -> Unit,
-    backdrop: Backdrop?,
+    backdrop: GlassSceneState?,
     viewModel: SetupViewModel?,
     defaultContent: @Composable () -> Unit,
 ) {
@@ -121,11 +121,11 @@ actual fun SetupPerformanceScenarioHook(
 @Composable
 fun SetupPerformanceScenarioDriver(
     modifier: Modifier = Modifier,
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
 ) {
     val glassColors = GlassTheme.colors
     val coroutineScope = rememberCoroutineScope()
-    val resolvedBackdrop = backdrop ?: rememberLayerBackdrop()
+    val resolvedBackdrop = backdrop ?: rememberGlassSceneState()
 
     // 1. Synthetic Fixture Data Preloaded at Presentation Boundary
     val benchmarkRecents = remember { createBenchmarkRecents() }

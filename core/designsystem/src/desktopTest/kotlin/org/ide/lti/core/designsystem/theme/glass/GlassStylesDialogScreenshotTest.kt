@@ -25,10 +25,11 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import com.kashif_e.backdrop.backdrops.layerBackdrop
-import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import org.ide.lti.core.designsystem.component.primitives.glass
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.LtiTheme
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
+import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 import org.ide.lti.core.testing.screenshot.GoldenImageAssert
 import kotlin.test.Test
 import kotlin.test.assertTrue
@@ -51,9 +52,9 @@ class GlassStylesDialogScreenshotTest {
         runDesktopComposeUiTest(width = TEST_WIDTH, height = TEST_HEIGHT) {
             setContent {
                 LtiTheme(darkTheme = true) {
-                    val backdrop = rememberLayerBackdrop()
+                    val backdrop = rememberGlassSceneState()
                     Box(Modifier.fillMaxSize()) {
-                        Canvas(Modifier.fillMaxSize().layerBackdrop(backdrop)) { drawStripes() }
+                        Canvas(Modifier.fillMaxSize().layerBackdrop(backdrop.engineBackdrop)) { drawStripes() }
                         if (applyStyle) {
                             Box(
                                 Modifier

@@ -31,7 +31,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import com.kashif_e.backdrop.backdrops.LayerBackdrop
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
@@ -52,6 +51,7 @@ import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.core.domain.setup.StepProvenance
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolchainSetupState
@@ -76,7 +76,7 @@ fun EnvironmentSubsystemHeader(
     state: ToolchainSetupState,
     onCheckEnvironment: () -> Unit,
     modifier: Modifier = Modifier,
-    backdrop: LayerBackdrop? = null,
+    backdrop: GlassSceneState? = null,
     isAutoDoctorEnabled: Boolean = true,
     onSetAutoDoctorEnabled: (Boolean) -> Unit = {},
     onResetToolchainCache: () -> Unit = {},

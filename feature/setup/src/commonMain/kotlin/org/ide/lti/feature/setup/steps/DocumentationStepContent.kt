@@ -22,11 +22,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import com.kashif_e.backdrop.backdrops.LayerBackdrop
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.feature.setup.components.DocFeatureCard
 
 /**
@@ -37,7 +37,7 @@ import org.ide.lti.feature.setup.components.DocFeatureCard
  */
 @Composable
 fun DocumentationStepContent(
-    resolvedBackdrop: LayerBackdrop,
+    resolvedBackdrop: GlassSceneState,
     modifier: Modifier = Modifier,
 ) {
     val glassColors = GlassTheme.colors

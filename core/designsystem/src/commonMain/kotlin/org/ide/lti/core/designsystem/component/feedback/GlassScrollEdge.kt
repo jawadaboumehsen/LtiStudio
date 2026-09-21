@@ -16,7 +16,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.Dp
-import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.drawPlainBackdrop
 import com.kashif_e.backdrop.effects.progressiveBlur
 import org.ide.lti.core.designsystem.component.actions.*
@@ -30,6 +29,7 @@ import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.BackdropTint
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 
 /**
  * Target edge for [GlassScrollEdgeFade].
@@ -43,16 +43,16 @@ enum class GlassScrollEdge {
  * Progressive-blur scroll-edge fade strip for glass panels.
  *
  * Visually softens rows as they scroll under a panel boundary by sampling the
- * scrollable container's [Backdrop].
+ * scrollable container's [GlassSceneState].
  *
- * @param backdrop The panel content's [Backdrop] to sample and blur.
+ * @param backdrop The panel content's [GlassSceneState] to sample and blur.
  * @param edge The panel boundary ([GlassScrollEdge.Top] or [GlassScrollEdge.Bottom]).
  * @param modifier Modifier to be applied to the fade strip.
  * @param height The vertical extent of the fade strip.
  */
 @Composable
 fun GlassScrollEdgeFade(
-    backdrop: Backdrop,
+    backdrop: GlassSceneState,
     edge: GlassScrollEdge,
     modifier: Modifier = Modifier,
     height: Dp = ComponentSize.ScrollEdgeFadeHeight,
@@ -64,7 +64,7 @@ fun GlassScrollEdgeFade(
             .fillMaxWidth()
             .height(height)
             .drawPlainBackdrop(
-                backdrop = backdrop,
+                backdrop = backdrop.engineBackdrop,
                 shape = { RectangleShape },
                 effects = {
                     progressiveBlur(

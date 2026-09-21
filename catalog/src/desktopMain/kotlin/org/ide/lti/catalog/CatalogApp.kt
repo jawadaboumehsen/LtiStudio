@@ -36,7 +36,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import org.ide.lti.catalog.tabs.ButtonsTab
 import org.ide.lti.catalog.tabs.CoreUiTab
 import org.ide.lti.catalog.tabs.DiagnosticsTab
@@ -62,6 +61,8 @@ import org.ide.lti.core.designsystem.theme.LightGlassColorScheme
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
+import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 
 enum class CatalogCategory(val title: String) {
     Tokens("Tokens & Colors"),
@@ -83,7 +84,7 @@ fun CatalogApp() {
     var effectsEnabled by remember { mutableStateOf(true) }
     var selectedCategoryIndex by remember { mutableIntStateOf(0) }
 
-    val backdrop = rememberLayerBackdrop()
+    val backdrop = rememberGlassSceneState()
     val activeGlassColors = if (isDarkTheme) DarkGlassColorScheme else LightGlassColorScheme
 
     LtiTheme(
@@ -91,7 +92,7 @@ fun CatalogApp() {
         glassColors = activeGlassColors,
         effectsEnabled = effectsEnabled,
         reducedMotion = reducedMotion,
-        sharedBackdrop = backdrop,
+        sharedScene = backdrop,
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             GlassBackdrop(backdrop = backdrop)

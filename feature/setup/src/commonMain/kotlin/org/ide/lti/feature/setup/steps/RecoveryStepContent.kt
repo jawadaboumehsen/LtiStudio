@@ -43,7 +43,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
-import com.kashif_e.backdrop.backdrops.LayerBackdrop
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.icon.ideStatusErrorOutline
@@ -60,6 +59,7 @@ import org.ide.lti.core.designsystem.theme.PluginThemeColors
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.config.AppTheme
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.feature.setup.SetupActivityState
 import org.ide.lti.feature.setup.SetupUiActions
 import org.ide.lti.feature.setup.SetupUiState
@@ -78,7 +78,7 @@ import org.ide.lti.feature.setup.SetupUiState
 fun RecoveryStepContent(
     state: SetupUiState,
     actions: SetupUiActions,
-    resolvedBackdrop: LayerBackdrop,
+    resolvedBackdrop: GlassSceneState,
     modifier: Modifier = Modifier,
     activityState: SetupActivityState? = null,
     onOpenHelp: () -> Unit = actions.onOpenHelp,
@@ -223,7 +223,7 @@ private fun RecoveryHeader(onOpenHelp: () -> Unit, colors: IdeShellColorScheme, 
 @Composable
 private fun SetupInProgressCard(
     state: SetupUiState,
-    resolvedBackdrop: LayerBackdrop,
+    resolvedBackdrop: GlassSceneState,
     modifier: Modifier = Modifier,
     colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
@@ -307,7 +307,7 @@ private fun RecoveryPropertyRow(label: String, value: String, colors: IdeShellCo
 @Composable
 private fun ServiceStateCard(
     onReconnect: () -> Unit,
-    resolvedBackdrop: LayerBackdrop,
+    resolvedBackdrop: GlassSceneState,
     modifier: Modifier = Modifier,
     colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
@@ -489,7 +489,7 @@ private fun RecoveryBlockedBanner(colors: IdeShellColorScheme, modifier: Modifie
 @Composable
 private fun RecoveryConsoleDrawer(
     activityState: SetupActivityState?,
-    resolvedBackdrop: LayerBackdrop,
+    resolvedBackdrop: GlassSceneState,
     modifier: Modifier = Modifier,
     colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {

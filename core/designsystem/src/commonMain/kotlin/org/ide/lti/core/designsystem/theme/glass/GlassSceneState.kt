@@ -26,9 +26,7 @@ import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
  * without ever importing `com.kashif_e.backdrop.*` themselves.
  */
 @Stable
-class GlassSceneState internal constructor(
-    internal val engineBackdrop: LayerBackdrop,
-)
+class GlassSceneState internal constructor(internal val engineBackdrop: LayerBackdrop)
 
 /**
  * Creates and remembers a new [GlassSceneState], capturing whatever content this scene's

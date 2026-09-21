@@ -40,7 +40,6 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
-import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.drawBackdrop
 import com.kashif_e.backdrop.highlight.Highlight
 import org.ide.lti.core.designsystem.component.actions.*
@@ -61,6 +60,7 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -71,12 +71,12 @@ fun GlassTab(
     modifier: Modifier = Modifier,
     selectedColor: Color = GlassTheme.colors.glassAccent.copy(alpha = AlphaTokens.PrimaryButtonTint),
     unselectedColor: Color = GlassTheme.colors.glassSurfaceElevated,
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
 ) {
     var isHovered by remember { mutableStateOf(false) }
     val glassColors = GlassTheme.colors
     val effectsEnabled = GlassTheme.effectsEnabled
-    val actualBackdrop = backdrop ?: GlassTheme.backdrop
+    val actualBackdrop = backdrop ?: GlassTheme.scene
     val tabShape = GlassShapes.Capsule
 
     val surfaceColor = when {
@@ -150,12 +150,12 @@ fun GlassTabItem(
     onSelect: () -> Unit,
     modifier: Modifier = Modifier,
     onClose: (() -> Unit)? = null,
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
 ) {
     var isHovered by remember { mutableStateOf(false) }
     val glassColors = GlassTheme.colors
     val effectsEnabled = GlassTheme.effectsEnabled
-    val actualBackdrop = backdrop ?: GlassTheme.backdrop
+    val actualBackdrop = backdrop ?: GlassTheme.scene
     val tabShape = GlassShapes.Small
     val tabColors = resolveTabItemColors(selected, isHovered, glassColors)
 
@@ -295,9 +295,9 @@ fun GlassTabBar(
     onTabSelected: (String) -> Unit,
     modifier: Modifier = Modifier,
     actions: (@Composable () -> Unit)? = null,
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
 ) {
-    val actualBackdrop = backdrop ?: GlassTheme.backdrop
+    val actualBackdrop = backdrop ?: GlassTheme.scene
     Row(
         modifier = modifier
             .height(ComponentSize.TabBarHeight)
@@ -340,9 +340,9 @@ fun GlassTabBar(
     selectedIndex: Int = 0,
     onTabClosed: ((Int) -> Unit)? = null,
     actions: (@Composable () -> Unit)? = null,
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
 ) {
-    val actualBackdrop = backdrop ?: GlassTheme.backdrop
+    val actualBackdrop = backdrop ?: GlassTheme.scene
     Row(
         modifier = modifier
             .height(ComponentSize.TabBarHeight)
@@ -372,34 +372,32 @@ fun GlassTabBar(
 private fun Modifier.tabGlassSurface(
     isHovered: Boolean,
     effectsEnabled: Boolean,
-    backdrop: Backdrop?,
+    backdrop: GlassSceneState?,
     shape: Shape,
     surfaceColor: Color,
     tintColor: Color,
-): Modifier {
-    return if (effectsEnabled && backdrop != null) {
-        this.drawBackdrop(
-            backdrop = backdrop,
-            shape = { shape },
-            effects = GlassEffects.Button,
-            highlight = { if (isHovered) Highlight.Ambient else Highlight.Plain },
-            onDrawSurface = {
-                if (surfaceColor.isSpecified && surfaceColor != Color.Transparent) {
-                    drawRect(surfaceColor.copy(alpha = surfaceColor.alpha * AlphaTokens.ButtonFill))
-                }
-                if (tintColor.isSpecified && tintColor != Color.Transparent) {
-                    drawRect(tintColor)
-                }
-            },
-        )
-    } else {
-        this.drawBehind {
+): Modifier = if (effectsEnabled && backdrop != null) {
+    this.drawBackdrop(
+        backdrop = backdrop.engineBackdrop,
+        shape = { shape },
+        effects = GlassEffects.Button,
+        highlight = { if (isHovered) Highlight.Ambient else Highlight.Plain },
+        onDrawSurface = {
             if (surfaceColor.isSpecified && surfaceColor != Color.Transparent) {
                 drawRect(surfaceColor.copy(alpha = surfaceColor.alpha * AlphaTokens.ButtonFill))
             }
             if (tintColor.isSpecified && tintColor != Color.Transparent) {
                 drawRect(tintColor)
             }
+        },
+    )
+} else {
+    this.drawBehind {
+        if (surfaceColor.isSpecified && surfaceColor != Color.Transparent) {
+            drawRect(surfaceColor.copy(alpha = surfaceColor.alpha * AlphaTokens.ButtonFill))
+        }
+        if (tintColor.isSpecified && tintColor != Color.Transparent) {
+            drawRect(tintColor)
         }
     }
 }

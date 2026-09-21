@@ -37,7 +37,6 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.runDesktopComposeUiTest
-import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
@@ -68,6 +67,8 @@ import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
+import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 import org.ide.lti.core.testing.screenshot.GoldenImageAssert
 import org.junit.Test
 
@@ -353,7 +354,7 @@ class GlassComponentScreenshotTest {
     @Test
     fun testGlassToggleAndSlider() = runDesktopComposeUiTest(width = 420, height = 200) {
         setContent {
-            val backdrop = rememberLayerBackdrop()
+            val backdrop = rememberGlassSceneState()
             var sliderValue by remember { mutableFloatStateOf(0.6f) }
             var toggleChecked by remember { mutableStateOf(true) }
 
@@ -438,7 +439,7 @@ class GlassComponentScreenshotTest {
     @Test
     fun testGlassTopBar() = runDesktopComposeUiTest(width = 800, height = 100) {
         setContent {
-            val backdrop = rememberLayerBackdrop()
+            val backdrop = rememberGlassSceneState()
             LtiTheme(darkTheme = true) {
                 Box(
                     modifier = Modifier

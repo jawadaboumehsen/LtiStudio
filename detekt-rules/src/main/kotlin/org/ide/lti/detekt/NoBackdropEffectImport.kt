@@ -18,10 +18,16 @@ class NoBackdropEffectImport(config: Config = Config.empty) : Rule(
         "import com.kashif_e.backdrop.effects.",
         "import com.kashif_e.backdrop.highlight.",
         "import com.kashif_e.backdrop.shadow.",
+        // backdrops.* covers LayerBackdrop, rememberLayerBackdrop, layerBackdrop,
+        // rememberCombinedBackdrop, rememberBackdrop - the engine's scene-capture API. Outside
+        // core:designsystem/core:ui/backdrop, a GlassSceneState (core:designsystem's opaque
+        // wrapper, see theme/glass/GlassSceneState.kt) is the only backdrop-related type to hold.
+        "import com.kashif_e.backdrop.backdrops.",
     )
     private val forbiddenImportExact = setOf(
         "import com.kashif_e.backdrop.drawBackdrop",
         "import com.kashif_e.backdrop.BackdropEffectScope",
+        "import com.kashif_e.backdrop.Backdrop",
     )
 
     // Mirrors the boundaryScanRoots check in the Gradle-script guardrail: this rule only

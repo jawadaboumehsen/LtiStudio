@@ -34,10 +34,8 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
-import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.BackdropEffectScope
 import com.kashif_e.backdrop.backdrops.layerBackdrop
-import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import org.ide.lti.core.designsystem.component.actions.*
 import org.ide.lti.core.designsystem.component.devtools.*
 import org.ide.lti.core.designsystem.component.feedback.*
@@ -54,6 +52,8 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
+import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 
 /**
  * Sidebar/panel glass effect stack with deep frosted glass blur.
@@ -70,7 +70,7 @@ fun GlassPanel(
     width: Dp? = null,
     shape: Shape = GlassShapes.Panel,
     effects: BackdropEffectScope.() -> Unit = GlassEffects.Panel,
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
     surfaceColor: Color = Color.Unspecified,
     tint: Color = Color.Unspecified,
     borderColor: Color = Color.Unspecified,
@@ -228,7 +228,7 @@ fun GlassPanelHeaderAction(
     contentDescription: String?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
 ) {
     GlassIconButton(
         onClick = onClick,
@@ -257,7 +257,7 @@ fun GlassPanelHeaderAction(
     contentDescription: String?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
 ) = GlassPanelHeaderAction(
     icon = AppIcon.Vector(icon),
     contentDescription = contentDescription,
@@ -314,12 +314,12 @@ fun GlassPanelContainer(
         if (!effectiveScrollEdgeFade) {
             content()
         } else {
-            val contentBackdrop = rememberLayerBackdrop()
+            val contentBackdrop = rememberGlassSceneState()
             Box(modifier = Modifier.fillMaxSize()) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .layerBackdrop(contentBackdrop),
+                        .layerBackdrop(contentBackdrop.engineBackdrop),
                 ) {
                     content()
                 }

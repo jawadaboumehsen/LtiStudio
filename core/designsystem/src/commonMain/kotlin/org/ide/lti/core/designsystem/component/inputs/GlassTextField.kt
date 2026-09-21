@@ -54,7 +54,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
-import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.BackdropEffectScope
 import com.kashif_e.backdrop.highlight.Highlight
 import org.ide.lti.core.designsystem.component.actions.*
@@ -75,6 +74,7 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
 import org.ide.lti.core.designsystem.utils.nonLetterColorVisualTransformation
 import org.ide.lti.core.designsystem.utils.tabNavigation
@@ -156,7 +156,7 @@ fun GlassTextField(
     readOnly: Boolean = false,
     textStyle: TextStyle = LocalTextStyle.current,
     effects: BackdropEffectScope.() -> Unit = GlassTextFieldEffects,
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     focusRequester: FocusRequester? = null,
 ) {
@@ -381,7 +381,7 @@ fun GlassSearchField(
     modifier: Modifier = Modifier,
     placeholder: String = "Search...",
     onSearch: (() -> Unit)? = null,
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
 ) {
     GlassTextField(
         value = value,

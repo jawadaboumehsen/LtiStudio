@@ -21,7 +21,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.unit.Dp
-import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.BackdropEffectScope
 import com.kashif_e.backdrop.drawBackdrop
 import com.kashif_e.backdrop.highlight.Highlight
@@ -32,6 +31,7 @@ import org.ide.lti.core.designsystem.theme.GlassShadows
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 
 /**
  * Default glass effect stack ("Standard" look): vibrancy + moderate blur + lens refraction.
@@ -44,12 +44,12 @@ val StandardGlassEffects: BackdropEffectScope.() -> Unit = GlassEffects.Standard
  *
  * @param modifier Modifier to be applied to the surface
  * @param shape Shape of the glass surface
- * @param backdrop Backdrop instance to sample (default: from [GlassTheme] or a new layer)
+ * @param backdrop GlassSceneState instance to sample (default: from [GlassTheme] or a new layer)
  * @param surfaceColor Optional surface color overlay (default: from [GlassTheme] colors)
  * @param tint Optional tint color (default: from [GlassTheme] colors)
  * @param borderColor Optional border color
  * @param borderWidth Width of the border (default: [StrokeWidth.Standard])
- * @param effects Backdrop effect chain (default: [GlassEffects.Standard])
+ * @param effects GlassSceneState effect chain (default: [GlassEffects.Standard])
  * @param highlight Optional highlight decorator (default: [GlassHighlights.Plain])
  * @param shadow Optional shadow decorator (default: [GlassShadows.None])
  * @param content Content to display inside the glass surface
@@ -58,7 +58,7 @@ val StandardGlassEffects: BackdropEffectScope.() -> Unit = GlassEffects.Standard
 fun GlassSurface(
     modifier: Modifier = Modifier,
     shape: Shape = GlassShapes.Medium,
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
     surfaceColor: Color = Color.Unspecified,
     tint: Color = Color.Unspecified,
     borderColor: Color = Color.Unspecified,
@@ -70,7 +70,7 @@ fun GlassSurface(
 ) {
     val glassColors = GlassTheme.colors
     val effectsEnabled = GlassTheme.effectsEnabled
-    val actualBackdrop = backdrop ?: GlassTheme.backdrop
+    val actualBackdrop = backdrop ?: GlassTheme.scene
 
     val finalSurfaceColor = if (surfaceColor.isSpecified) surfaceColor else glassColors.glassSurface
     val finalTint = if (tint.isSpecified) tint else glassColors.glassTint
@@ -88,7 +88,7 @@ fun GlassSurface(
 
     val backgroundModifier = if (effectsEnabled && actualBackdrop != null) {
         Modifier.drawBackdrop(
-            backdrop = actualBackdrop,
+            backdrop = actualBackdrop.engineBackdrop,
             shape = { shape },
             effects = effects,
             highlight = highlight,

@@ -14,8 +14,9 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.runDesktopComposeUiTest
-import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import org.ide.lti.core.designsystem.theme.LtiTheme
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
+import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 import org.ide.lti.core.domain.setup.SetupStepDetail
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepProvenance
@@ -65,8 +66,8 @@ class EnvironmentScreenTest {
         var retriedStage: SetupStepStage? = null
 
         setContent {
-            val backdrop = rememberLayerBackdrop()
-            LtiTheme(sharedBackdrop = backdrop) {
+            val backdrop = rememberGlassSceneState()
+            LtiTheme(sharedScene = backdrop) {
                 EnvironmentStepContent(
                     state = SetupUiState(toolchainSetupState = state),
                     actions = SetupUiActions(
@@ -106,8 +107,8 @@ class EnvironmentScreenTest {
         var navigatedToProjects = false
 
         setContent {
-            val backdrop = rememberLayerBackdrop()
-            LtiTheme(sharedBackdrop = backdrop) {
+            val backdrop = rememberGlassSceneState()
+            LtiTheme(sharedScene = backdrop) {
                 EnvironmentStepContent(
                     state = SetupUiState(toolchainSetupState = state),
                     actions = SetupUiActions(
@@ -144,8 +145,8 @@ class EnvironmentScreenTest {
         )
 
         setContent {
-            val backdrop = rememberLayerBackdrop()
-            LtiTheme(sharedBackdrop = backdrop) {
+            val backdrop = rememberGlassSceneState()
+            LtiTheme(sharedScene = backdrop) {
                 EnvironmentStepContent(
                     state = SetupUiState(toolchainSetupState = state),
                     actions = SetupUiActions(),
@@ -181,8 +182,8 @@ class EnvironmentScreenTest {
         var autoDoctorToggled = false
 
         setContent {
-            val backdrop = rememberLayerBackdrop()
-            LtiTheme(sharedBackdrop = backdrop) {
+            val backdrop = rememberGlassSceneState()
+            LtiTheme(sharedScene = backdrop) {
                 SetupScreenContent(
                     state = SetupUiState(
                         toolchainSetupState = ToolchainSetupState(lastVerifiedTimestamp = 1700000000000L),
@@ -251,8 +252,8 @@ class EnvironmentScreenTest {
         var navigatedToProjects = false
 
         setContent {
-            val backdrop = rememberLayerBackdrop()
-            LtiTheme(sharedBackdrop = backdrop) {
+            val backdrop = rememberGlassSceneState()
+            LtiTheme(sharedScene = backdrop) {
                 EnvironmentStepContent(
                     state = SetupUiState(toolchainSetupState = state),
                     actions = SetupUiActions(),

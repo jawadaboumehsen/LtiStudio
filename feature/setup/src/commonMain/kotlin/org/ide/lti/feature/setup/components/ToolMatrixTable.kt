@@ -38,7 +38,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import com.kashif_e.backdrop.backdrops.LayerBackdrop
 import org.ide.lti.core.designsystem.component.actions.GlassSecondaryButton
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.GlassChip
@@ -56,6 +55,7 @@ import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolCategory
 import org.ide.lti.core.domain.setup.ToolComponentItem
@@ -88,7 +88,7 @@ fun ToolMatrixTable(
     modifier: Modifier = Modifier,
     isBusy: Boolean = false,
     searchFocusRequester: FocusRequester? = null,
-    backdrop: LayerBackdrop? = null,
+    backdrop: GlassSceneState? = null,
     publishedToolIds: Set<String> = emptySet(),
 ) {
     val glassColors = GlassTheme.colors

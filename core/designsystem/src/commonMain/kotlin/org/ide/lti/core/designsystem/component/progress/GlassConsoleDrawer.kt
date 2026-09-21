@@ -48,7 +48,6 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import com.kashif_e.backdrop.Backdrop
 import kotlinx.coroutines.delay
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
 import org.ide.lti.core.designsystem.component.display.GlassCard
@@ -62,6 +61,7 @@ import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 
 /**
  * Minimalist, dark glass terminal console drawer displaying real-time execution logs.
@@ -80,7 +80,7 @@ fun GlassConsoleDrawer(
     logs: List<String>,
     isRunning: Boolean,
     modifier: Modifier = Modifier,
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
 ) {
     val glassColors = GlassTheme.colors
     val diagnostics = glassColors.diagnostics

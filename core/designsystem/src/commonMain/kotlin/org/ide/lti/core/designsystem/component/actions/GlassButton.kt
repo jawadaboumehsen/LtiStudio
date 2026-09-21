@@ -46,7 +46,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
-import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.BackdropEffectScope
 import com.kashif_e.backdrop.drawBackdrop
 import com.kashif_e.backdrop.highlight.Highlight
@@ -63,6 +62,7 @@ import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.LetterSpacing
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.core.designsystem.theme.glass.GlassStyles
 import org.ide.lti.core.designsystem.theme.glass.toEffects
 import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
@@ -134,7 +134,7 @@ fun GlassButton(
     shape: Shape = GlassShapes.Capsule,
     variant: GlassButtonVariant = GlassButtonVariant.Standard,
     effects: BackdropEffectScope.() -> Unit = GlassStyles.button.toEffects(),
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
     minWidth: Dp = GlassButtonDefaults.MinWidth,
     minHeight: Dp = GlassButtonDefaults.MinHeight,
     contentPadding: PaddingValues = GlassButtonDefaults.ContentPadding,
@@ -143,7 +143,7 @@ fun GlassButton(
 ) {
     val glassColors = GlassTheme.colors
     val effectsEnabled = GlassTheme.effectsEnabled
-    val actualBackdrop = backdrop ?: GlassTheme.backdrop
+    val actualBackdrop = backdrop ?: GlassTheme.scene
     var isHovered by remember { mutableStateOf(false) }
     var isFocused by remember { mutableStateOf(false) }
 
@@ -185,7 +185,7 @@ fun GlassButton(
                 if (variant != GlassButtonVariant.Text) {
                     if (effectsEnabled && actualBackdrop != null) {
                         Modifier.drawBackdrop(
-                            backdrop = actualBackdrop,
+                            backdrop = actualBackdrop.engineBackdrop,
                             shape = { shape },
                             effects = effects,
                             highlight = { if (isHovered) Highlight.Ambient else Highlight.Plain },
@@ -438,7 +438,7 @@ fun GlassIconButton(
     size: Dp = ComponentSize.IconButtonSize,
     shape: Shape = GlassShapes.Capsule,
     effects: BackdropEffectScope.() -> Unit = GlassButtonEffects,
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
     checked: Boolean? = null,
     selected: Boolean = checked ?: false,
     enabled: Boolean = true,

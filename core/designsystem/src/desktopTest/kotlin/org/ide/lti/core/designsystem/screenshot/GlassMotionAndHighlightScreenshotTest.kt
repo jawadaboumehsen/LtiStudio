@@ -39,7 +39,6 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.runDesktopComposeUiTest
-import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import org.ide.lti.core.designsystem.component.display.GlassIcon
 import org.ide.lti.core.designsystem.component.feedback.GlassBottomSheet
 import org.ide.lti.core.designsystem.component.feedback.GlassBottomSheetValue
@@ -57,6 +56,7 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 import org.ide.lti.core.testing.screenshot.GoldenImageAssert
 import org.junit.Test
 
@@ -70,7 +70,7 @@ class GlassMotionAndHighlightScreenshotTest {
     @Test
     fun testGlassBottomSheetModalParity() = runDesktopComposeUiTest(width = 460, height = 260) {
         setContent {
-            val backdrop = rememberLayerBackdrop()
+            val backdrop = rememberGlassSceneState()
             val state = rememberGlassBottomSheetState(initialValue = GlassBottomSheetValue.Expanded)
             LtiTheme(darkTheme = true) {
                 Box(
@@ -114,7 +114,7 @@ class GlassMotionAndHighlightScreenshotTest {
     @Test
     fun testGlassDockedNavigationChromeHighlight() = runDesktopComposeUiTest(width = 540, height = 260) {
         setContent {
-            val backdrop = rememberLayerBackdrop()
+            val backdrop = rememberGlassSceneState()
             LtiTheme(darkTheme = true) {
                 Box(
                     modifier = Modifier
@@ -198,7 +198,7 @@ class GlassMotionAndHighlightScreenshotTest {
     @Test
     fun testGlassIconHoverHighlight() = runDesktopComposeUiTest(width = 380, height = 160) {
         setContent {
-            val backdrop = rememberLayerBackdrop()
+            val backdrop = rememberGlassSceneState()
             LtiTheme(darkTheme = true) {
                 Box(
                     modifier = Modifier
@@ -272,7 +272,7 @@ class GlassMotionAndHighlightScreenshotTest {
     @Test
     fun testDampedDragReducedMotionStateComparison() = runDesktopComposeUiTest(width = 520, height = 260) {
         setContent {
-            val backdrop = rememberLayerBackdrop()
+            val backdrop = rememberGlassSceneState()
             var normalToggle by remember { mutableStateOf(true) }
             var reducedToggle by remember { mutableStateOf(true) }
             var normalSlider by remember { mutableFloatStateOf(0.7f) }

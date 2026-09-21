@@ -37,7 +37,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import com.kashif_e.backdrop.backdrops.LayerBackdrop
 import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
 import org.ide.lti.core.designsystem.component.actions.GlassSecondaryButton
 import org.ide.lti.core.designsystem.component.display.GlassCard
@@ -52,6 +51,7 @@ import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolchainSetupState
@@ -77,7 +77,7 @@ import org.ide.lti.feature.setup.components.ToolchainPipelineTracker
 fun EnvironmentStepContent(
     state: SetupUiState,
     actions: SetupUiActions,
-    resolvedBackdrop: LayerBackdrop,
+    resolvedBackdrop: GlassSceneState,
     modifier: Modifier = Modifier,
     onProceedToLaunchpad: () -> Unit = {},
     onNavigateToProjects: (() -> Unit)? = null,
@@ -136,7 +136,7 @@ fun EnvironmentStepContent(
     onCheckEnvironment: () -> Unit,
     onRetrySetupStep: () -> Unit,
     onProceedToLaunchpad: () -> Unit,
-    resolvedBackdrop: LayerBackdrop,
+    resolvedBackdrop: GlassSceneState,
     modifier: Modifier = Modifier,
     environmentPresentation: EnvironmentPresentation? = null,
     activeOperation: SetupOperation? = null,
@@ -285,7 +285,7 @@ fun EnvironmentStepContent(
 @Composable
 private fun EnvironmentStatusBanners(
     toolchainSetupState: ToolchainSetupState,
-    resolvedBackdrop: LayerBackdrop,
+    resolvedBackdrop: GlassSceneState,
     onCheckEnvironment: () -> Unit,
     glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme,
     diagnostics: org.ide.lti.core.designsystem.theme.DiagnosticColors,
@@ -334,7 +334,7 @@ private fun EnvironmentCockpitTabContent(
     onAutoRemediateDoctor: (() -> Unit)?,
     activityState: SetupActivityState?,
     activityListState: androidx.compose.foundation.lazy.LazyListState,
-    resolvedBackdrop: LayerBackdrop,
+    resolvedBackdrop: GlassSceneState,
 ) {
     when (selectedCockpitTab) {
         "doctor" -> {
@@ -374,7 +374,7 @@ private fun EnvironmentStepActionBar(
     onReconnect: () -> Unit,
     onPreviewSetup: (SetupStepStage?) -> Unit,
     onRetryStage: (SetupStepStage) -> Unit,
-    resolvedBackdrop: LayerBackdrop,
+    resolvedBackdrop: GlassSceneState,
     glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme,
     previewInvokerFocusRequester: FocusRequester? = null,
 ) {
@@ -701,7 +701,7 @@ private fun SetUpActionButton(
 private fun BridgeFailureBanner(
     bridgeStep: org.ide.lti.core.domain.setup.SetupStepDetail,
     launcherLogTail: List<String>,
-    resolvedBackdrop: LayerBackdrop,
+    resolvedBackdrop: GlassSceneState,
     onCheckEnvironment: () -> Unit,
     isBusy: Boolean,
     diagnostics: org.ide.lti.core.designsystem.theme.DiagnosticColors,

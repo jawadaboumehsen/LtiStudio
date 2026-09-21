@@ -16,7 +16,7 @@ plugins {
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            api(projects.backdrop)
+            implementation(projects.backdrop)
             implementation(libs.coil.kt.compose)
             implementation(compose.runtime)
             implementation(compose.foundation)

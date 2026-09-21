@@ -9,11 +9,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import com.kashif_e.backdrop.backdrops.LayerBackdrop
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.core.model.target.TargetDevice
 
 /**
@@ -23,7 +23,7 @@ import org.ide.lti.core.model.target.TargetDevice
 fun TargetTelemetryCard(
     target: TargetDevice,
     modifier: Modifier = Modifier,
-    backdrop: LayerBackdrop? = null,
+    backdrop: GlassSceneState? = null,
 ) {
     GlassCard(
         modifier = modifier.fillMaxWidth(),

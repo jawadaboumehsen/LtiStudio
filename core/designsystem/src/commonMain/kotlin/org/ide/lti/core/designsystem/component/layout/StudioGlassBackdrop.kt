@@ -17,10 +17,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import com.kashif_e.backdrop.backdrops.LayerBackdrop
 import com.kashif_e.backdrop.backdrops.layerBackdrop
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.StudioBackdropColors
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 
 /**
  * Saturated, multi-depth canvas for the professional IDE shell.
@@ -30,12 +30,12 @@ import org.ide.lti.core.designsystem.theme.StudioBackdropColors
  * as glass instead of flat charcoal.
  */
 @Composable
-fun StudioGlassBackdrop(backdrop: LayerBackdrop, modifier: Modifier = Modifier) {
-    SideEffect { backdrop.notifyContentChanged() }
+fun StudioGlassBackdrop(backdrop: GlassSceneState, modifier: Modifier = Modifier) {
+    SideEffect { backdrop.engineBackdrop.notifyContentChanged() }
 
     Canvas(
         modifier = modifier
-            .layerBackdrop(backdrop)
+            .layerBackdrop(backdrop.engineBackdrop)
             .fillMaxSize(),
     ) {
         drawRect(StudioBackdropColors.Base)

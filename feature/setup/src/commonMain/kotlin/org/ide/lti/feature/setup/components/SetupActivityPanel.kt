@@ -54,7 +54,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import com.kashif_e.backdrop.backdrops.LayerBackdrop
 import kotlinx.coroutines.delay
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
 import org.ide.lti.core.designsystem.component.actions.GlassSecondaryButton
@@ -70,6 +69,7 @@ import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.core.domain.setup.SetupLogEvent
 import org.ide.lti.feature.setup.SetupActivityState
 
@@ -106,7 +106,7 @@ fun SetupActivityPanel(
     title: String = "Activity",
     isRunning: Boolean = false,
     defaultExpanded: Boolean = true,
-    backdrop: LayerBackdrop? = null,
+    backdrop: GlassSceneState? = null,
     listState: LazyListState = rememberLazyListState(),
     destination: String? = null,
 ) {

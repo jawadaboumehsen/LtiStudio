@@ -28,10 +28,11 @@ import androidx.compose.ui.test.runDesktopComposeUiTest
 import androidx.compose.ui.unit.Dp
 import com.kashif_e.backdrop.OpticalSizeValue
 import com.kashif_e.backdrop.backdrops.layerBackdrop
-import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import com.kashif_e.backdrop.drawBackdrop
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
+import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
@@ -48,9 +49,9 @@ class GlassStyleToEffectsScreenshotTest {
         lateinit var captured: ImageBitmap
         runDesktopComposeUiTest(width = TEST_WIDTH, height = TEST_HEIGHT) {
             setContent {
-                val backdrop = rememberLayerBackdrop()
+                val backdrop = rememberGlassSceneState()
                 Box(Modifier.fillMaxSize()) {
-                    Canvas(Modifier.fillMaxSize().layerBackdrop(backdrop)) { drawStripes() }
+                    Canvas(Modifier.fillMaxSize().layerBackdrop(backdrop.engineBackdrop)) { drawStripes() }
                     if (applyStyle) {
                         val style = GlassStyle(
                             surface = Color.Transparent,
@@ -63,7 +64,7 @@ class GlassStyleToEffectsScreenshotTest {
                                 .align(Alignment.Center)
                                 .size(ComponentSize.MinPanelWidth, ComponentSize.ActionCardHeight)
                                 .drawBackdrop(
-                                    backdrop = backdrop,
+                                    backdrop = backdrop.engineBackdrop,
                                     shape = { style.shape },
                                     effects = style.toEffects(),
                                 ),

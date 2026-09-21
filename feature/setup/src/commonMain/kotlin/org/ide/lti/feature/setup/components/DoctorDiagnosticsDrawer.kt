@@ -39,7 +39,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import com.kashif_e.backdrop.backdrops.LayerBackdrop
 import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.GlassChip
@@ -56,6 +55,7 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.core.domain.setup.DiagnosticCategory
 import org.ide.lti.core.domain.setup.DiagnosticCheckItem
 import org.ide.lti.core.domain.setup.StepStatus
@@ -79,7 +79,7 @@ import org.ide.lti.core.domain.setup.StepStatus
 fun DoctorDiagnosticsDrawer(
     diagnosticsList: List<DiagnosticCheckItem>,
     modifier: Modifier = Modifier,
-    backdrop: LayerBackdrop? = null,
+    backdrop: GlassSceneState? = null,
     onAutoRemediateDoctor: (() -> Unit)? = null,
 ) {
     val glassColors = GlassTheme.colors

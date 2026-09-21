@@ -40,7 +40,6 @@ import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import com.kashif_e.backdrop.Backdrop
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.icon.AppIcon
@@ -52,6 +51,7 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
 
 /**
@@ -76,7 +76,7 @@ fun GlassActionCard(
     modifier: Modifier = Modifier,
     isPrimary: Boolean = false,
     shortcut: String? = null,
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
 ) {
     var isHovered by remember { mutableStateOf(false) }
     val glassColors = GlassTheme.colors
@@ -195,7 +195,7 @@ fun GlassActionCard(
     modifier: Modifier = Modifier,
     isPrimary: Boolean = false,
     shortcut: String? = null,
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
 ) = GlassActionCard(
     title = title,
     subtitle = subtitle,
@@ -229,7 +229,7 @@ fun GlassItemCard(
     onClick: (() -> Unit)? = null,
     isHighlighted: Boolean = false,
     trailingContent: (@Composable () -> Unit)? = null,
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
 ) {
     var isHovered by remember { mutableStateOf(false) }
     val glassColors = GlassTheme.colors

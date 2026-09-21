@@ -18,7 +18,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
-import com.kashif_e.backdrop.Backdrop
 import kotlinx.coroutines.launch
 import org.ide.lti.core.designsystem.component.actions.*
 import org.ide.lti.core.designsystem.component.devtools.*
@@ -29,6 +28,7 @@ import org.ide.lti.core.designsystem.component.layout.*
 import org.ide.lti.core.designsystem.component.primitives.*
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 
 /**
  * Liquid Glass-styled scrollable tab row with integrated [HorizontalPager].
@@ -45,10 +45,10 @@ fun GlassScrollableTabRow(
     selectedContentColor: Color = GlassTheme.colors.glassAccent,
     unselectedContentColor: Color = GlassTheme.colors.glassSurfaceElevated,
     edgePadding: Dp = Spacing.Small,
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
 ) {
     val scope = rememberCoroutineScope()
-    val actualBackdrop = backdrop ?: GlassTheme.backdrop
+    val actualBackdrop = backdrop ?: GlassTheme.scene
 
     ScrollableTabRow(
         modifier = modifier,

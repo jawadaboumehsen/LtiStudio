@@ -27,15 +27,15 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.runDesktopComposeUiTest
-import com.kashif_e.backdrop.backdrops.LayerBackdrop
 import com.kashif_e.backdrop.backdrops.layerBackdrop
-import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import com.kashif_e.backdrop.drawBackdrop
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassEffects
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
+import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 import org.ide.lti.core.testing.screenshot.GoldenImageAssert
 import kotlin.math.abs
 import kotlin.test.Test
@@ -48,7 +48,7 @@ import kotlin.test.assertTrue
  * other screenshot test staying at 0.0000% diff). This test instead proves the *scaled-down*
  * path (`0.5f`) samples the same real-world region as `1f` - not a cropped corner of it, which is
  * the failure mode a naive "just record a smaller canvas" implementation would produce, since the
- * ambient [LayerBackdrop] draws its captured content at native resolution and relies on the
+ * ambient [GlassSceneState] draws its captured content at native resolution and relies on the
  * recording canvas itself being pre-scaled.
  */
 class DrawBackdropInputScaleScreenshotTest {
@@ -79,11 +79,11 @@ class DrawBackdropInputScaleScreenshotTest {
     }
 
     @Composable
-    private fun ScaledGlassBox(backdrop: LayerBackdrop, inputScale: Float, modifier: Modifier = Modifier) {
+    private fun ScaledGlassBox(backdrop: GlassSceneState, inputScale: Float, modifier: Modifier = Modifier) {
         val tintColor = GlassTheme.colors.onGlass.copy(alpha = AlphaTokens.Subtle)
         Box(
             modifier = modifier.drawBackdrop(
-                backdrop = backdrop,
+                backdrop = backdrop.engineBackdrop,
                 shape = { RoundedCornerShape(CornerRadius.Medium) },
                 effects = GlassEffects.Button,
                 inputScale = inputScale,
@@ -97,9 +97,9 @@ class DrawBackdropInputScaleScreenshotTest {
         lateinit var captured: ImageBitmap
         runDesktopComposeUiTest(width = TEST_WINDOW_WIDTH, height = TEST_WINDOW_HEIGHT) {
             setContent {
-                val backdrop = rememberLayerBackdrop()
+                val backdrop = rememberGlassSceneState()
                 Box(Modifier.fillMaxSize()) {
-                    PatternedBackground(Modifier.fillMaxSize().layerBackdrop(backdrop))
+                    PatternedBackground(Modifier.fillMaxSize().layerBackdrop(backdrop.engineBackdrop))
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         ScaledGlassBox(
                             backdrop,

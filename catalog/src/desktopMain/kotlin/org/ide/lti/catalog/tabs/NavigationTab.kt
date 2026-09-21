@@ -48,7 +48,7 @@ import org.ide.lti.core.designsystem.theme.Spacing
 @Composable
 fun NavigationTab() {
     val scrollState = rememberScrollState()
-    val backdrop = GlassTheme.backdrop
+    val backdrop = GlassTheme.scene
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     var selectedBottomTabIndex by remember { mutableIntStateOf(1) }

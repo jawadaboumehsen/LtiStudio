@@ -25,11 +25,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import com.kashif_e.backdrop.backdrops.LayerBackdrop
 import org.ide.lti.core.designsystem.component.display.GlassPanelContainer
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.core.model.target.TargetDevice
 
 /**
@@ -46,7 +46,7 @@ import org.ide.lti.core.model.target.TargetDevice
 fun TargetDetailPanel(
     selectedTarget: TargetDevice?,
     modifier: Modifier = Modifier,
-    backdrop: LayerBackdrop? = null,
+    backdrop: GlassSceneState? = null,
 ) {
     GlassPanelContainer(
         modifier = modifier.fillMaxSize(),

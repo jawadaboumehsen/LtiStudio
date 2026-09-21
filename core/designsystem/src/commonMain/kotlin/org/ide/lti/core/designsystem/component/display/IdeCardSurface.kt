@@ -13,13 +13,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
-import com.kashif_e.backdrop.Backdrop
 import org.ide.lti.core.designsystem.component.primitives.glass
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.config.AppTheme
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.core.designsystem.theme.glass.GlassStyles
 
 /**
@@ -36,7 +36,7 @@ fun Modifier.ideCardSurface(
     shape: Shape = GlassShapes.ShellCard,
     borderWidth: Dp = GlassDimens.HairlineBorder,
     isMuted: Boolean = false,
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
 ): Modifier {
     val isBlueGlass = GlassTheme.appTheme == AppTheme.Blue && GlassTheme.effectsEnabled
     val surfaceColor = if (isMuted) colors.cardBackgroundMuted else colors.cardBackground

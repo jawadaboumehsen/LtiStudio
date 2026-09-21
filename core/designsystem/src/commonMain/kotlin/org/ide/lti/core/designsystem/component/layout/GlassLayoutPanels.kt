@@ -36,7 +36,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
-import com.kashif_e.backdrop.Backdrop
 import org.ide.lti.core.designsystem.component.actions.*
 import org.ide.lti.core.designsystem.component.devtools.*
 import org.ide.lti.core.designsystem.component.display.*
@@ -46,6 +45,7 @@ import org.ide.lti.core.designsystem.component.navigation.*
 import org.ide.lti.core.designsystem.component.primitives.*
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 
 /**
  * A docked content panel rendered as a seamless [GlassSurface].
@@ -56,7 +56,7 @@ import org.ide.lti.core.designsystem.theme.Spacing
 @Composable
 internal fun GlassContentPanel(
     isDragging: Boolean,
-    backdrop: Backdrop?,
+    backdrop: GlassSceneState?,
     modifier: Modifier = Modifier,
     isFocused: Boolean = false,
     content: @Composable () -> Unit,
@@ -97,7 +97,7 @@ internal fun GlassLeftPanel(
     state: LtiLayoutState,
     width: Dp,
     appearance: GlassLayoutAppearance,
-    backdrop: Backdrop?,
+    backdrop: GlassSceneState?,
     content: @Composable () -> Unit,
 ) {
     AnimatedVisibility(
@@ -163,7 +163,7 @@ internal fun RowScope.GlassCenterColumn(
     density: Density,
     animatedBottomWeight: Float,
     appearance: GlassLayoutAppearance,
-    backdrop: Backdrop?,
+    backdrop: GlassSceneState?,
     mainContent: @Composable () -> Unit,
     bottomPanel: @Composable () -> Unit,
 ) {
@@ -271,7 +271,7 @@ internal fun GlassRightPanel(
     state: LtiLayoutState,
     width: Dp,
     appearance: GlassLayoutAppearance,
-    backdrop: Backdrop?,
+    backdrop: GlassSceneState?,
     content: @Composable () -> Unit,
 ) {
     val hasFloatingGaps = GlassTheme.panel.hasFloatingGaps

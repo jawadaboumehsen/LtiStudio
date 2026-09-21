@@ -30,9 +30,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import com.kashif_e.backdrop.Backdrop
-import com.kashif_e.backdrop.backdrops.LayerBackdrop
-import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.GlassVerticalDivider
@@ -45,6 +42,8 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.PluginThemeColors
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
+import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 import org.ide.lti.core.domain.plugin.key
 import org.ide.lti.feature.plugins.components.PluginSidebar
 import org.koin.compose.viewmodel.koinViewModel
@@ -57,7 +56,7 @@ public fun PluginManagerScreen(
     onNavigateBack: () -> Unit = {},
     onNavigateToSetup: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
     modifier: Modifier = Modifier,
     viewModel: PluginManagerViewModel = koinViewModel(),
 ) {
@@ -125,19 +124,19 @@ public fun PluginManagerContent(
     state: PluginManagerUiState,
     actions: PluginManagerActions = PluginManagerActions(),
     onNavigateToSetup: () -> Unit = {},
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
     modifier: Modifier = Modifier,
 ) {
     // Prefer an explicitly passed or ambient backdrop so this screen doesn't allocate a
-    // redundant LayerBackdrop when one is already available; falls back to a fresh one for
+    // redundant GlassSceneState when one is already available; falls back to a fresh one for
     // isolated preview/test usage. Unlike IdeAppFrame, this screen always paints its own
     // StudioGlassBackdrop canvas below regardless of which backdrop it resolved to - an
     // ambient backdrop from LtiTheme's own internal fallback (LtiTheme always provides one,
     // painted or not) is not a reliable signal that something else already painted it, and
     // skipping the paint here left large areas of this screen sampling an empty backdrop.
-    val resolvedBackdrop = (backdrop as? LayerBackdrop)
-        ?: (GlassTheme.backdrop as? LayerBackdrop)
-        ?: rememberLayerBackdrop()
+    val resolvedBackdrop = (backdrop as? GlassSceneState)
+        ?: (GlassTheme.scene as? GlassSceneState)
+        ?: rememberGlassSceneState()
     val glassColors = GlassTheme.colors
     val onSelectGlobalDestination = remember(onNavigateToSetup, actions) {
         { destination: GlobalAppDestination -> resolveGlobalDestination(destination, onNavigateToSetup, actions) }

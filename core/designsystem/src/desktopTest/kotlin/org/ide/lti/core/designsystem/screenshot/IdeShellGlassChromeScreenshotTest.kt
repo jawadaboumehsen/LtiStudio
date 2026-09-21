@@ -24,7 +24,6 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import com.kashif_e.backdrop.backdrops.layerBackdrop
-import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.component.layout.IdeNavigatorPanel
 import org.ide.lti.core.designsystem.component.layout.IdePipelineRail
@@ -34,6 +33,7 @@ import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.PreviewSampleColors
 import org.ide.lti.core.designsystem.theme.config.AppTheme
+import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
@@ -53,10 +53,10 @@ class IdeShellGlassChromeScreenshotTest {
         lateinit var captured: ImageBitmap
         runDesktopComposeUiTest(width = TEST_WIDTH, height = TEST_HEIGHT) {
             setContent {
-                val backdrop = rememberLayerBackdrop()
-                LtiTheme(appTheme = appTheme, sharedBackdrop = backdrop) {
+                val backdrop = rememberGlassSceneState()
+                LtiTheme(appTheme = appTheme, sharedScene = backdrop) {
                     Box(Modifier.fillMaxSize()) {
-                        Canvas(Modifier.fillMaxSize().layerBackdrop(backdrop)) { drawStripes() }
+                        Canvas(Modifier.fillMaxSize().layerBackdrop(backdrop.engineBackdrop)) { drawStripes() }
                         content()
                     }
                 }

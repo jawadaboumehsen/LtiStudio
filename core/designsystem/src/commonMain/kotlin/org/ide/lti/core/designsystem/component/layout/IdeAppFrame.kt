@@ -37,15 +37,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
-import com.kashif_e.backdrop.backdrops.LayerBackdrop
-import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.LocalGlassBackdrop
+import org.ide.lti.core.designsystem.theme.LocalGlassSceneState
 import org.ide.lti.core.designsystem.theme.config.AppTheme
+import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 
 /**
  * Stateless root layout frame for the professional LtiRom IDE shell.
@@ -73,13 +72,13 @@ fun IdeAppFrame(
     drawerContent: (@Composable () -> Unit)? = null,
 ) {
     val isBlueGlass = GlassTheme.appTheme == AppTheme.Blue && GlassTheme.effectsEnabled
-    val ambientBackdrop = (GlassTheme.backdrop as? LayerBackdrop)
-    val resolvedBackdrop = ambientBackdrop ?: rememberLayerBackdrop()
+    val ambientBackdrop = GlassTheme.scene
+    val resolvedBackdrop = ambientBackdrop ?: rememberGlassSceneState()
 
     val density = LocalDensity.current
     var isCompact by remember { mutableStateOf(false) }
 
-    CompositionLocalProvider(LocalGlassBackdrop provides resolvedBackdrop) {
+    CompositionLocalProvider(LocalGlassSceneState provides resolvedBackdrop) {
         Box(
             modifier = modifier
                 .fillMaxSize()

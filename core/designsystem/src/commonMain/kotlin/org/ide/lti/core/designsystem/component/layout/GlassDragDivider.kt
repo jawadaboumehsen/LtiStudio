@@ -42,8 +42,6 @@ import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import com.kashif_e.backdrop.Backdrop
-import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import com.kashif_e.backdrop.drawBackdrop
 import org.ide.lti.core.designsystem.component.actions.*
 import org.ide.lti.core.designsystem.component.devtools.*
@@ -58,6 +56,8 @@ import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
+import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
 import java.awt.Cursor
 import org.ide.lti.core.designsystem.theme.CornerRadius as ThemeCornerRadius
@@ -82,7 +82,7 @@ internal fun GlassDragDivider(
     appearance: GlassLayoutAppearance,
     onDragStart: () -> Unit,
     onDrag: (Float) -> Unit,
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
     onDragEnd: () -> Unit,
 ) {
     var isHovered by remember { mutableStateOf(false) }
@@ -99,7 +99,7 @@ internal fun GlassDragDivider(
     )
 
     // Get backdrop from theme if not explicitly provided
-    val actualBackdrop = backdrop ?: GlassTheme.backdrop ?: rememberLayerBackdrop()
+    val actualBackdrop = backdrop ?: GlassTheme.scene ?: rememberGlassSceneState()
 
     // Capture colors from theme
     val colors = GlassTheme.colors
@@ -213,7 +213,7 @@ private fun getDividerBackgroundModifier(
     isHovered: Boolean,
     activeColor: Color,
     normalColor: Color,
-    actualBackdrop: Backdrop,
+    actualBackdrop: GlassSceneState,
     orientation: DividerOrientation,
     effectsEnabled: Boolean = true,
 ): Modifier = when {
@@ -235,7 +235,7 @@ private fun getDividerBackgroundModifier(
                 )
             }
             .drawBackdrop(
-                backdrop = actualBackdrop,
+                backdrop = actualBackdrop.engineBackdrop,
                 shape = { GlassShapes.Capsule },
                 effects = GlassEffects.SplitterGrip,
                 onDrawSurface = {

@@ -19,7 +19,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.unit.Dp
-import com.kashif_e.backdrop.Backdrop
 import org.ide.lti.core.designsystem.component.actions.*
 import org.ide.lti.core.designsystem.component.devtools.*
 import org.ide.lti.core.designsystem.component.feedback.*
@@ -31,6 +30,7 @@ import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.core.designsystem.theme.glass.GlassStyles
 
 /**
@@ -47,7 +47,7 @@ import org.ide.lti.core.designsystem.theme.glass.GlassStyles
  * @param tint Optional tint color
  * @param borderColor Optional border color (default: [GlassTheme.colors.glassBorder])
  * @param contentPadding Padding inside the card (default: 16dp)
- * @param backdrop Backdrop to sample (default: the ambient [GlassTheme.backdrop]) - an override
+ * @param backdrop GlassSceneState to sample (default: the ambient [GlassTheme.scene]) - an override
  * stays available for screens that capture their own distinct backdrop (e.g. Setup's Blue Glass
  * mode), matching [org.ide.lti.core.designsystem.component.primitives.glass]'s own `backdrop` param.
  * @param content Content to display inside the card
@@ -60,7 +60,7 @@ fun GlassCard(
     tint: Color = Color.Unspecified,
     borderColor: Color = Color.Unspecified,
     contentPadding: Dp = Spacing.Medium,
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
     content: @Composable () -> Unit,
 ) {
     val glassColors = GlassTheme.colors

@@ -43,11 +43,9 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastCoerceIn
 import androidx.compose.ui.util.fastRoundToInt
 import androidx.compose.ui.util.lerp
-import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.backdrops.layerBackdrop
 import com.kashif_e.backdrop.backdrops.rememberBackdrop
 import com.kashif_e.backdrop.backdrops.rememberCombinedBackdrop
-import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import com.kashif_e.backdrop.drawBackdrop
 import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.lens
@@ -70,6 +68,8 @@ import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
+import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 import org.ide.lti.core.designsystem.utils.DampedDragAnimation
 
 /**
@@ -103,15 +103,15 @@ fun GlassSlider(
     valueRange: ClosedFloatingPointRange<Float>,
     visibilityThreshold: Float,
     modifier: Modifier = Modifier,
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
 ) {
-    val actualBackdrop = backdrop ?: GlassTheme.backdrop ?: rememberLayerBackdrop()
+    val actualBackdrop = backdrop ?: GlassTheme.scene ?: rememberGlassSceneState()
     val glassColors = GlassTheme.colors
     val effectsEnabled = GlassTheme.effectsEnabled
     val accentColor = glassColors.glassAccent
     val trackColor = glassColors.glassBorder
 
-    val trackBackdrop = rememberLayerBackdrop()
+    val trackBackdrop = rememberGlassSceneState()
 
     BoxWithConstraints(
         modifier = modifier
@@ -178,7 +178,7 @@ fun GlassSlider(
                 }
         }
 
-        Box(Modifier.layerBackdrop(trackBackdrop)) {
+        Box(Modifier.layerBackdrop(trackBackdrop.engineBackdrop)) {
             Box(
                 Modifier
                     .clip(GlassShapes.Capsule)
@@ -230,8 +230,8 @@ fun GlassSlider(
                     if (effectsEnabled) {
                         Modifier.drawBackdrop(
                             backdrop = rememberCombinedBackdrop(
-                                actualBackdrop,
-                                rememberBackdrop(trackBackdrop) { drawBackdrop ->
+                                actualBackdrop.engineBackdrop,
+                                rememberBackdrop(trackBackdrop.engineBackdrop) { drawBackdrop ->
                                     val progress = dampedDragAnimation.pressProgress
                                     val scaleX = lerp(2f / 3f, 1f, progress)
                                     val scaleY = lerp(0f, 1f, progress)

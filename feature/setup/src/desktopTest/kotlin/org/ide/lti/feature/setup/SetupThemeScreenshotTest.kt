@@ -18,11 +18,11 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import androidx.compose.ui.unit.Density
-import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import org.ide.lti.core.designsystem.theme.ColorContrast
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.SetupTokens
 import org.ide.lti.core.designsystem.theme.config.AppTheme
+import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 import org.ide.lti.core.domain.setup.SetupStepDetail
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepProvenance
@@ -153,8 +153,8 @@ class SetupThemeScreenshotTest {
 
         for (appTheme in themes) {
             setContent {
-                val backdrop = rememberLayerBackdrop()
-                LtiTheme(appTheme = appTheme, sharedBackdrop = backdrop) {
+                val backdrop = rememberGlassSceneState()
+                LtiTheme(appTheme = appTheme, sharedScene = backdrop) {
                     SetupScreenContent(
                         state = SetupUiState(
                             recentProjects = emptyList(),
@@ -200,8 +200,8 @@ class SetupThemeScreenshotTest {
             ),
         )
         setContent {
-            val backdrop = rememberLayerBackdrop()
-            LtiTheme(appTheme = AppTheme.Blue, sharedBackdrop = backdrop) {
+            val backdrop = rememberGlassSceneState()
+            LtiTheme(appTheme = AppTheme.Blue, sharedScene = backdrop) {
                 SetupScreenContent(
                     state = SetupUiState(
                         toolchainSetupState = overviewState,
@@ -234,8 +234,8 @@ class SetupThemeScreenshotTest {
 
         for (appTheme in themes) {
             setContent {
-                val backdrop = rememberLayerBackdrop()
-                LtiTheme(appTheme = appTheme, sharedBackdrop = backdrop) {
+                val backdrop = rememberGlassSceneState()
+                LtiTheme(appTheme = appTheme, sharedScene = backdrop) {
                     SetupScreenContent(
                         state = SetupUiState(
                             toolchainSetupState = state,
@@ -265,8 +265,8 @@ class SetupThemeScreenshotTest {
 
         for (appTheme in themes) {
             setContent {
-                val backdrop = rememberLayerBackdrop()
-                LtiTheme(appTheme = appTheme, sharedBackdrop = backdrop) {
+                val backdrop = rememberGlassSceneState()
+                LtiTheme(appTheme = appTheme, sharedScene = backdrop) {
                     SetupScreenContent(
                         state = SetupUiState(
                             toolchainSetupState = state,
@@ -301,8 +301,8 @@ class SetupThemeScreenshotTest {
 
         for (appTheme in themes) {
             setContent {
-                val backdrop = rememberLayerBackdrop()
-                LtiTheme(appTheme = appTheme, sharedBackdrop = backdrop) {
+                val backdrop = rememberGlassSceneState()
+                LtiTheme(appTheme = appTheme, sharedScene = backdrop) {
                     SetupScreenContent(
                         state = SetupUiState(
                             toolchainSetupState = state,
@@ -339,8 +339,8 @@ class SetupThemeScreenshotTest {
 
         for (appTheme in themes) {
             setContent {
-                val backdrop = rememberLayerBackdrop()
-                LtiTheme(appTheme = appTheme, sharedBackdrop = backdrop) {
+                val backdrop = rememberGlassSceneState()
+                LtiTheme(appTheme = appTheme, sharedScene = backdrop) {
                     SetupScreenContent(
                         state = SetupUiState(
                             toolchainSetupState = state,
@@ -375,8 +375,8 @@ class SetupThemeScreenshotTest {
 
         for (appTheme in themes) {
             setContent {
-                val backdrop = rememberLayerBackdrop()
-                LtiTheme(appTheme = appTheme, sharedBackdrop = backdrop) {
+                val backdrop = rememberGlassSceneState()
+                LtiTheme(appTheme = appTheme, sharedScene = backdrop) {
                     SetupScreenContent(
                         state = SetupUiState(
                             toolchainSetupState = state,
@@ -411,8 +411,8 @@ class SetupThemeScreenshotTest {
 
         for (appTheme in themes) {
             setContent {
-                val backdrop = rememberLayerBackdrop()
-                LtiTheme(appTheme = appTheme, sharedBackdrop = backdrop) {
+                val backdrop = rememberGlassSceneState()
+                LtiTheme(appTheme = appTheme, sharedScene = backdrop) {
                     SetupScreenContent(
                         state = SetupUiState(
                             toolchainSetupState = state,
@@ -456,11 +456,11 @@ class SetupThemeScreenshotTest {
         for (scale in scales) {
             for (appTheme in themes) {
                 setContent {
-                    val backdrop = rememberLayerBackdrop()
+                    val backdrop = rememberGlassSceneState()
                     CompositionLocalProvider(
                         LocalDensity provides Density(density = scale, fontScale = scale),
                     ) {
-                        LtiTheme(appTheme = appTheme, sharedBackdrop = backdrop) {
+                        LtiTheme(appTheme = appTheme, sharedScene = backdrop) {
                             SetupScreenContent(
                                 state = SetupUiState(selectedTab = SetupTab.ENVIRONMENT),
                                 actions = SetupUiActions(),

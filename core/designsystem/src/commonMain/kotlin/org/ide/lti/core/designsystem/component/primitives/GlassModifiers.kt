@@ -30,9 +30,7 @@ import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.currentValueOf
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
-import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.BackdropEffectScope
-import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import com.kashif_e.backdrop.drawBackdrop
 import com.kashif_e.backdrop.effects.blur
 import com.kashif_e.backdrop.effects.vibrancy
@@ -45,20 +43,22 @@ import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LocalGlassColors
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.core.designsystem.theme.glass.GlassStyle
+import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 import org.ide.lti.core.designsystem.theme.glass.toEffects
 import org.ide.lti.core.designsystem.theme.glass.toHighlight
 
 /**
  * The single rendering facade for a [GlassStyle] - backdrop-refactor-plan-20260920.md §1.2. The
- * only place that reads [GlassTheme.effectsEnabled] / [GlassTheme.backdrop] on behalf of a style;
+ * only place that reads [GlassTheme.effectsEnabled] / [GlassTheme.scene] on behalf of a style;
  * callers pass a value, not a lambda, and (unless they need [backdrop]) never see
- * [com.kashif_e.backdrop.Backdrop] or [BackdropEffectScope] in their own call site.
+ * [GlassSceneState] or [BackdropEffectScope] in their own call site.
  *
- * [backdrop] defaults to the ambient [GlassTheme.backdrop], but some screens deliberately capture
- * their own distinct [com.kashif_e.backdrop.backdrops.LayerBackdrop] instead of sharing the app's
+ * [backdrop] defaults to the ambient [GlassTheme.scene], but some screens deliberately capture
+ * their own distinct [GlassSceneState] instead of sharing the app's
  * (e.g. Setup's Blue Glass mode, `SetupScreen.kt`'s `resolvedBackdrop`) - an override stays
- * possible for exactly that case, matching every pre-existing `backdrop ?: GlassTheme.backdrop`
+ * possible for exactly that case, matching every pre-existing `backdrop ?: GlassTheme.scene`
  * call site this facade is replacing.
  *
  * When effects are disabled (globally via [GlassTheme.effectsEnabled], no backdrop is available,
@@ -70,10 +70,10 @@ import org.ide.lti.core.designsystem.theme.glass.toHighlight
  * the rim already draws its own shader edge, so an explicit [GlassStyle.border] is the only thing
  * that adds a separate stroke there.
  */
-fun Modifier.glass(style: GlassStyle, enabled: Boolean = true, backdrop: Backdrop? = null): Modifier = composed {
+fun Modifier.glass(style: GlassStyle, enabled: Boolean = true, backdrop: GlassSceneState? = null): Modifier = composed {
     val glassColors = GlassTheme.colors
     val effectsEnabled = GlassTheme.effectsEnabled && enabled
-    val resolvedBackdrop = backdrop ?: GlassTheme.backdrop
+    val resolvedBackdrop = backdrop ?: GlassTheme.scene
     val usingRealBackdrop = effectsEnabled && resolvedBackdrop != null
 
     val borderColor = when {
@@ -89,7 +89,7 @@ fun Modifier.glass(style: GlassStyle, enabled: Boolean = true, backdrop: Backdro
 
     val backgroundModifier = if (usingRealBackdrop) {
         Modifier.drawBackdrop(
-            backdrop = resolvedBackdrop,
+            backdrop = resolvedBackdrop!!.engineBackdrop,
             shape = { style.shape },
             effects = style.toEffects(),
             highlight = { style.rim?.toHighlight() },
@@ -123,7 +123,7 @@ fun Modifier.glass(style: GlassStyle, enabled: Boolean = true, backdrop: Backdro
  * Convenience modifier that wraps [com.kashif_e.backdrop.drawBackdrop] with the
  * standard liquid glass effects, shape, and colors.
  *
- * @param backdrop The backdrop instance to sample from (defaults to [GlassTheme.backdrop])
+ * @param backdrop The backdrop instance to sample from (defaults to [GlassTheme.scene])
  * @param shape The shape to clip the glass to (defaults to [GlassShapes.Medium])
  * @param surfaceColor Optional custom surface color (defaults to [GlassColorScheme.glassSurface])
  * @param tint Optional tint color applied over the backdrop (defaults to [GlassColorScheme.glassTint])
@@ -142,7 +142,7 @@ fun Modifier.glass(style: GlassStyle, enabled: Boolean = true, backdrop: Backdro
  * ```
  */
 fun Modifier.glassEffect(
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
     shape: Shape = GlassShapes.Medium,
     surfaceColor: Color = Color.Unspecified,
     tint: Color = Color.Unspecified,
@@ -151,14 +151,14 @@ fun Modifier.glassEffect(
 ): Modifier = composed {
     val glassColors = GlassTheme.colors
     val effectsEnabled = GlassTheme.effectsEnabled
-    val actualBackdrop = backdrop ?: GlassTheme.backdrop
+    val actualBackdrop = backdrop ?: GlassTheme.scene
 
     val finalSurfaceColor = if (surfaceColor.isSpecified) surfaceColor else glassColors.glassSurface
     val finalTint = if (tint.isSpecified) tint else glassColors.glassTint
 
     if (effectsEnabled && actualBackdrop != null) {
         this.drawBackdrop(
-            backdrop = actualBackdrop,
+            backdrop = actualBackdrop.engineBackdrop,
             shape = { shape },
             effects = effects,
             highlight = highlight,
@@ -398,7 +398,7 @@ fun Modifier.glassInteractive(
  *
  * Uses enhanced blur and reduced refraction for scrim-like surfaces.
  *
- * @param backdrop Backdrop instance (default: from GlassTheme or create new)
+ * @param backdrop GlassSceneState instance (default: from GlassTheme or create new)
  * @param blurRadius Custom blur radius (default: 16.dp)
  * @param surfaceColor Surface color (default: semi-transparent black)
  *
@@ -414,11 +414,11 @@ fun Modifier.glassInteractive(
  * ```
  */
 fun Modifier.glassScrim(
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
     blurRadius: Dp = BackdropBlur.Scrim,
     surfaceColor: Color = Color.Unspecified,
 ): Modifier = composed {
-    val actualBackdrop = backdrop ?: GlassTheme.backdrop ?: rememberLayerBackdrop()
+    val actualBackdrop = backdrop ?: GlassTheme.scene ?: rememberGlassSceneState()
     val effectsEnabled = GlassTheme.effectsEnabled
     val resolvedSurfaceColor = if (surfaceColor.isSpecified) {
         surfaceColor
@@ -428,7 +428,7 @@ fun Modifier.glassScrim(
 
     if (effectsEnabled) {
         this.drawBackdrop(
-            backdrop = actualBackdrop,
+            backdrop = actualBackdrop.engineBackdrop,
             shape = { androidx.compose.ui.graphics.RectangleShape },
             effects = if (blurRadius == BackdropBlur.Scrim) {
                 GlassEffects.Scrim

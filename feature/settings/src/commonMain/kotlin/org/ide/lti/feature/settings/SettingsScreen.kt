@@ -34,9 +34,6 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
-import com.kashif_e.backdrop.Backdrop
-import com.kashif_e.backdrop.backdrops.LayerBackdrop
-import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import org.ide.lti.core.designsystem.component.layout.GlobalAppDestination
 import org.ide.lti.core.designsystem.component.layout.GlobalAppTopBar
 import org.ide.lti.core.designsystem.component.layout.IdeAppFrame
@@ -52,6 +49,8 @@ import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.config.AppTheme
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
+import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 import org.ide.lti.core.ui.settings.AppSettingsState
 import org.ide.lti.feature.settings.components.AboutSettingsPane
 import org.ide.lti.feature.settings.components.AppearanceSettingsPane
@@ -68,7 +67,7 @@ fun SettingsScreen(
     onNavigateToWorkspace: () -> Unit = onBackClick,
     modifier: Modifier = Modifier,
     showHeader: Boolean = true,
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
     appSettingsState: AppSettingsState = koinInject(),
 ) {
     SettingsScreenContent(
@@ -89,13 +88,13 @@ fun SettingsScreenContent(
     onNavigateToWorkspace: () -> Unit = onBackClick,
     modifier: Modifier = Modifier,
     showHeader: Boolean = true,
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
     appSettingsState: AppSettingsState = koinInject(),
 ) {
     val currentTheme = AppTheme.fromId(appSettingsState.theme)
     val isBlueGlass = currentTheme == AppTheme.Blue && appSettingsState.effectsEnabled
-    val ambientBackdrop = (backdrop as? LayerBackdrop) ?: (GlassTheme.backdrop as? LayerBackdrop)
-    val localBackdrop = rememberLayerBackdrop()
+    val ambientBackdrop = (backdrop as? GlassSceneState) ?: (GlassTheme.scene as? GlassSceneState)
+    val localBackdrop = rememberGlassSceneState()
     val resolvedBackdrop = if (isBlueGlass) {
         localBackdrop
     } else {
@@ -106,7 +105,7 @@ fun SettingsScreenContent(
         appTheme = currentTheme,
         effectsEnabled = appSettingsState.effectsEnabled,
         reducedMotion = appSettingsState.reducedMotion,
-        sharedBackdrop = resolvedBackdrop,
+        sharedScene = resolvedBackdrop,
     ) {
         val colors = GlassTheme.ideShellColors
         val density = LocalDensity.current

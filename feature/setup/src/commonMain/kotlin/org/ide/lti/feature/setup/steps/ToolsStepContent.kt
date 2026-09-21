@@ -29,9 +29,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import com.kashif_e.backdrop.backdrops.LayerBackdrop
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.feature.setup.SetupActivityState
 import org.ide.lti.feature.setup.SetupUiActions
 import org.ide.lti.feature.setup.SetupUiState
@@ -56,7 +56,7 @@ import org.ide.lti.feature.setup.components.ToolMatrixTable
 fun ToolsStepContent(
     state: SetupUiState,
     actions: SetupUiActions,
-    resolvedBackdrop: LayerBackdrop,
+    resolvedBackdrop: GlassSceneState,
     modifier: Modifier = Modifier,
     toolBrowserState: ToolBrowserState? = null,
     activityState: SetupActivityState? = null,

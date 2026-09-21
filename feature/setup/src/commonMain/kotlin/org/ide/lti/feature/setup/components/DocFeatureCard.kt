@@ -22,12 +22,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.font.FontWeight
-import com.kashif_e.backdrop.backdrops.LayerBackdrop
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 
 /**
  * Summary card for a single architecture/documentation topic on the Documentation tab.
@@ -39,7 +39,7 @@ fun DocFeatureCard(
     description: String,
     modifier: Modifier = Modifier,
     iconPainter: Painter? = null,
-    backdrop: LayerBackdrop? = null,
+    backdrop: GlassSceneState? = null,
 ) {
     val shellColors = GlassTheme.ideShellColors
     GlassCard(

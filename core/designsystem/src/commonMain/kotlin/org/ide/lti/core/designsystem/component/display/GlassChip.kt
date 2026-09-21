@@ -33,7 +33,6 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
-import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.drawBackdrop
 import com.kashif_e.backdrop.highlight.Highlight
 import org.ide.lti.core.designsystem.component.actions.*
@@ -50,6 +49,7 @@ import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
 
 /**
@@ -86,12 +86,12 @@ fun GlassChip(
     leadingIcon: (@Composable () -> Unit)? = null,
     trailingIcon: (@Composable () -> Unit)? = null,
     enabled: Boolean = true,
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
 ) {
     var isHovered by remember { mutableStateOf(false) }
     val glassColors = GlassTheme.colors
     val effectsEnabled = GlassTheme.effectsEnabled
-    val actualBackdrop = backdrop ?: GlassTheme.backdrop
+    val actualBackdrop = backdrop ?: GlassTheme.scene
     val chipShape = shape
 
     val targetBackground = when {
@@ -156,7 +156,7 @@ fun GlassChip(
             .then(
                 if (effectsEnabled && actualBackdrop != null) {
                     Modifier.drawBackdrop(
-                        backdrop = actualBackdrop,
+                        backdrop = actualBackdrop.engineBackdrop,
                         shape = { chipShape },
                         effects = GlassEffects.Chip,
                         highlight = { if (isHovered || selected) Highlight.Ambient else null },

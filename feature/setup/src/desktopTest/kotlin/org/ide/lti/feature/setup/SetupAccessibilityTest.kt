@@ -29,9 +29,10 @@ import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.sp
-import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import kotlinx.datetime.Clock
 import org.ide.lti.core.designsystem.theme.LtiTheme
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
+import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 import org.ide.lti.core.domain.setup.SetupStepDetail
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepProvenance
@@ -63,8 +64,8 @@ class SetupAccessibilityTest {
         var openCalled = false
 
         setContent {
-            val backdrop = rememberLayerBackdrop()
-            LtiTheme(sharedBackdrop = backdrop) {
+            val backdrop = rememberGlassSceneState()
+            LtiTheme(sharedScene = backdrop) {
                 SetupScreenContent(
                     state = SetupUiState(),
                     actions = SetupUiActions(
@@ -98,8 +99,8 @@ class SetupAccessibilityTest {
     @Test
     fun testCtrlFFocusesDestinationSearch() = runDesktopComposeUiTest(width = 1440, height = 900) {
         setContent {
-            val backdrop = rememberLayerBackdrop()
-            LtiTheme(sharedBackdrop = backdrop) {
+            val backdrop = rememberGlassSceneState()
+            LtiTheme(sharedScene = backdrop) {
                 SetupScreenContent(
                     state = SetupUiState(selectedTab = SetupTab.PROJECTS),
                     actions = SetupUiActions(),
@@ -123,8 +124,8 @@ class SetupAccessibilityTest {
     @Test
     fun testCtrlFFromEnvironmentTabSwitchesAndFocusesSearchWithoutCrashing() = runDesktopComposeUiTest(width = 1440, height = 900) {
         setContent {
-            val backdrop = rememberLayerBackdrop()
-            LtiTheme(sharedBackdrop = backdrop) {
+            val backdrop = rememberGlassSceneState()
+            LtiTheme(sharedScene = backdrop) {
                 SetupScreenContent(
                     state = SetupUiState(selectedTab = SetupTab.ENVIRONMENT),
                     actions = SetupUiActions(),
@@ -156,8 +157,8 @@ class SetupAccessibilityTest {
         var helpDismissed = false
 
         setContent {
-            val backdrop = rememberLayerBackdrop()
-            LtiTheme(sharedBackdrop = backdrop) {
+            val backdrop = rememberGlassSceneState()
+            LtiTheme(sharedScene = backdrop) {
                 SetupScreenContent(
                     state = SetupUiState(),
                     actions = SetupUiActions(),
@@ -194,8 +195,8 @@ class SetupAccessibilityTest {
         )
 
         setContent {
-            val backdrop = rememberLayerBackdrop()
-            LtiTheme(sharedBackdrop = backdrop) {
+            val backdrop = rememberGlassSceneState()
+            LtiTheme(sharedScene = backdrop) {
                 SetupScreenContent(
                     state = SetupUiState(
                         selectedTab = SetupTab.ENVIRONMENT,
@@ -229,8 +230,8 @@ class SetupAccessibilityTest {
         )
 
         setContent {
-            val backdrop = rememberLayerBackdrop()
-            LtiTheme(sharedBackdrop = backdrop) {
+            val backdrop = rememberGlassSceneState()
+            LtiTheme(sharedScene = backdrop) {
                 SetupScreenContent(
                     state = SetupUiState(
                         recentProjects = listOf(testProject),
@@ -264,8 +265,8 @@ class SetupAccessibilityTest {
         )
 
         setContent {
-            val backdrop = rememberLayerBackdrop()
-            LtiTheme(sharedBackdrop = backdrop) {
+            val backdrop = rememberGlassSceneState()
+            LtiTheme(sharedScene = backdrop) {
                 SetupScreenContent(
                     state = SetupUiState(
                         recentProjects = listOf(testProject),
@@ -304,8 +305,8 @@ class SetupAccessibilityTest {
         )
 
         setContent {
-            val backdrop = rememberLayerBackdrop()
-            LtiTheme(sharedBackdrop = backdrop) {
+            val backdrop = rememberGlassSceneState()
+            LtiTheme(sharedScene = backdrop) {
                 MaterialTheme(typography = largeTypography) {
                     SetupScreenContent(
                         state = SetupUiState(
@@ -331,8 +332,8 @@ class SetupAccessibilityTest {
         var activeTab = SetupTab.PROJECTS
 
         setContent {
-            val backdrop = rememberLayerBackdrop()
-            LtiTheme(sharedBackdrop = backdrop) {
+            val backdrop = rememberGlassSceneState()
+            LtiTheme(sharedScene = backdrop) {
                 SetupScreenContent(
                     state = SetupUiState(
                         searchQuery = "CustomQuery",
@@ -364,8 +365,8 @@ class SetupAccessibilityTest {
         val state = ToolchainSetupState(steps = testSteps, lastVerifiedTimestamp = 1700000000000L)
 
         setContent {
-            val backdrop = rememberLayerBackdrop()
-            LtiTheme(sharedBackdrop = backdrop) {
+            val backdrop = rememberGlassSceneState()
+            LtiTheme(sharedScene = backdrop) {
                 SetupScreenContent(
                     state = SetupUiState(
                         toolchainSetupState = state,
@@ -393,8 +394,8 @@ class SetupAccessibilityTest {
         )
 
         setContent {
-            val backdrop = rememberLayerBackdrop()
-            LtiTheme(sharedBackdrop = backdrop) {
+            val backdrop = rememberGlassSceneState()
+            LtiTheme(sharedScene = backdrop) {
                 SetupScreenContent(
                     state = SetupUiState(
                         recentProjects = listOf(testProject),
@@ -428,8 +429,8 @@ class SetupAccessibilityTest {
         )
 
         setContent {
-            val backdrop = rememberLayerBackdrop()
-            LtiTheme(sharedBackdrop = backdrop) {
+            val backdrop = rememberGlassSceneState()
+            LtiTheme(sharedScene = backdrop) {
                 SetupScreenContent(
                     state = SetupUiState(
                         selectedTab = SetupTab.ENVIRONMENT,
@@ -488,8 +489,8 @@ class SetupAccessibilityTest {
         )
 
         setContent {
-            val backdrop = rememberLayerBackdrop()
-            LtiTheme(sharedBackdrop = backdrop) {
+            val backdrop = rememberGlassSceneState()
+            LtiTheme(sharedScene = backdrop) {
                 SetupScreenContent(
                     state = SetupUiState(
                         selectedTab = SetupTab.ENVIRONMENT,
@@ -518,8 +519,8 @@ class SetupAccessibilityTest {
         )
 
         setContent {
-            val backdrop = rememberLayerBackdrop()
-            LtiTheme(sharedBackdrop = backdrop) {
+            val backdrop = rememberGlassSceneState()
+            LtiTheme(sharedScene = backdrop) {
                 SetupScreenContent(
                     state = SetupUiState(
                         selectedTab = SetupTab.ENVIRONMENT,
@@ -547,8 +548,8 @@ class SetupAccessibilityTest {
         )
 
         setContent {
-            val backdrop = rememberLayerBackdrop()
-            LtiTheme(sharedBackdrop = backdrop) {
+            val backdrop = rememberGlassSceneState()
+            LtiTheme(sharedScene = backdrop) {
                 SetupScreenContent(
                     state = SetupUiState(
                         selectedTab = SetupTab.ENVIRONMENT,
@@ -583,8 +584,8 @@ class SetupAccessibilityTest {
     @Test
     fun testSingleToolsMatrixAndSingleStatusOwnerInHierarchy() = runDesktopComposeUiTest(width = 1440, height = 900) {
         setContent {
-            val backdrop = rememberLayerBackdrop()
-            LtiTheme(sharedBackdrop = backdrop) {
+            val backdrop = rememberGlassSceneState()
+            LtiTheme(sharedScene = backdrop) {
                 SetupScreenContent(
                     state = SetupUiState(selectedTab = SetupTab.ENVIRONMENT),
                     actions = SetupUiActions(),
@@ -609,7 +610,7 @@ class SetupAccessibilityTest {
         // must open the preview via a button that carries the invoker focus requester, and dismissing
         // the preview (Escape) must move keyboard focus back onto that exact button (T039).
         setContent {
-            val backdrop = rememberLayerBackdrop()
+            val backdrop = rememberGlassSceneState()
             var activeOperation by remember { mutableStateOf<SetupOperation?>(null) }
             val presentation = EnvironmentPresentation(
                 environmentState = EnvironmentState.CheckedNeedsSetup(),
@@ -621,7 +622,7 @@ class SetupAccessibilityTest {
                 storageMeasuredAt = null,
                 primaryAction = PrimaryAction.SET_UP,
             )
-            LtiTheme(effectsEnabled = false, reducedMotion = true, sharedBackdrop = backdrop) {
+            LtiTheme(effectsEnabled = false, reducedMotion = true, sharedScene = backdrop) {
                 SetupScreenContent(
                     state = SetupUiState(
                         selectedTab = SetupTab.ENVIRONMENT,
@@ -663,8 +664,8 @@ class SetupAccessibilityTest {
         var activeTab = SetupTab.ENVIRONMENT
 
         setContent {
-            val backdrop = rememberLayerBackdrop()
-            LtiTheme(sharedBackdrop = backdrop) {
+            val backdrop = rememberGlassSceneState()
+            LtiTheme(sharedScene = backdrop) {
                 SetupScreenContent(
                     state = SetupUiState(selectedTab = activeTab),
                     actions = SetupUiActions(onSelectTab = { activeTab = it }),
@@ -679,8 +680,8 @@ class SetupAccessibilityTest {
 
         // Render with RECOVERY selected
         setContent {
-            val backdrop = rememberLayerBackdrop()
-            LtiTheme(sharedBackdrop = backdrop) {
+            val backdrop = rememberGlassSceneState()
+            LtiTheme(sharedScene = backdrop) {
                 SetupScreenContent(
                     state = SetupUiState(selectedTab = SetupTab.RECOVERY),
                     actions = SetupUiActions(),

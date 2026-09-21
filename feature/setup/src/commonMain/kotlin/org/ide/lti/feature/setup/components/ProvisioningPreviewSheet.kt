@@ -48,7 +48,6 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
-import com.kashif_e.backdrop.backdrops.LayerBackdrop
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
 import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
 import org.ide.lti.core.designsystem.component.actions.GlassSecondaryButton
@@ -67,6 +66,7 @@ import org.ide.lti.core.designsystem.theme.SetupTokens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.core.domain.setup.SetupPlan
 import org.ide.lti.core.domain.setup.SetupPlanKind
 import org.ide.lti.feature.setup.PlannedSetupChanges
@@ -86,7 +86,7 @@ fun ProvisioningPreviewSheet(
     onSetAutoDoctorEnabled: (Boolean) -> Unit,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
-    backdrop: LayerBackdrop,
+    backdrop: GlassSceneState,
     modifier: Modifier = Modifier,
     plan: SetupPlan? = null,
     contextualError: String? = null,

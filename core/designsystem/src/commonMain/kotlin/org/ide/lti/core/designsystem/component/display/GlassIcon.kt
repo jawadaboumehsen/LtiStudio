@@ -32,8 +32,6 @@ import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.semantics.Role
-import com.kashif_e.backdrop.Backdrop
-import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import com.kashif_e.backdrop.drawBackdrop
 import com.kashif_e.backdrop.highlight.Highlight
 import org.ide.lti.core.designsystem.component.actions.*
@@ -49,6 +47,8 @@ import org.ide.lti.core.designsystem.theme.GlassEffects
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
+import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 import org.ide.lti.core.designsystem.utils.InteractiveHighlight
 import org.ide.lti.core.designsystem.utils.applyInteractiveHighlightTransform
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -58,7 +58,7 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 fun GlassIcon(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
     isInteractive: Boolean = true,
     tint: Color = Color.Unspecified,
     surfaceColor: Color = Color.Unspecified,
@@ -68,7 +68,7 @@ fun GlassIcon(
     val animationScope = rememberCoroutineScope()
     val glassColors = GlassTheme.colors
     val effectsEnabled = GlassTheme.effectsEnabled
-    val actualBackdrop = backdrop ?: GlassTheme.backdrop
+    val actualBackdrop = backdrop ?: GlassTheme.scene
     val finalContentColor = if (contentColor.isSpecified) contentColor else glassColors.onGlass
     var isHovered by remember { mutableStateOf(false) }
 
@@ -83,7 +83,7 @@ fun GlassIcon(
             .then(
                 if (effectsEnabled && actualBackdrop != null) {
                     Modifier.drawBackdrop(
-                        backdrop = actualBackdrop,
+                        backdrop = actualBackdrop.engineBackdrop,
                         shape = { GlassShapes.Capsule },
                         effects = GlassEffects.Button,
                         highlight = { if (isHovered) Highlight.Ambient else Highlight.Plain },
@@ -159,7 +159,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawIconSurface(
 @Preview
 @Composable
 private fun GlassIconPreview() {
-    val backdrop = rememberLayerBackdrop()
+    val backdrop = rememberGlassSceneState()
     GlassIcon(
         onClick = {},
         backdrop = backdrop,

@@ -31,7 +31,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import com.kashif_e.backdrop.Backdrop
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
 import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
 import org.ide.lti.core.designsystem.component.actions.GlassSecondaryButton
@@ -47,6 +46,7 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 
 /**
  * Severity levels for [GlassBanner] alerting and notification messages.
@@ -96,7 +96,7 @@ fun GlassBanner(
     primaryAction: GlassBannerAction? = null,
     secondaryAction: GlassBannerAction? = null,
     onDismiss: (() -> Unit)? = null,
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
 ) {
     val glassColors = GlassTheme.colors
     val diagnostics = glassColors.diagnostics

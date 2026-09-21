@@ -36,7 +36,6 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.OpticalSizeValue
 import org.ide.lti.core.designsystem.component.actions.*
 import org.ide.lti.core.designsystem.component.devtools.*
@@ -52,6 +51,7 @@ import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.PreviewSampleColors
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.core.designsystem.theme.glass.GlassStyles
 import org.ide.lti.core.designsystem.theme.glass.Rim
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -83,7 +83,7 @@ fun GlassLayout(
     modifier: Modifier = Modifier,
     showToggleButtons: Boolean = false,
     appearance: GlassLayoutAppearance = GlassLayoutAppearance.Default,
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
 ) = GlassLayout(
     state = state,
     modifier = modifier,
@@ -139,10 +139,10 @@ fun GlassLayout(
     statusBar: @Composable () -> Unit = { GlassStatusBar(drawOwnChrome = false) },
     showToggleButtons: Boolean = false,
     appearance: GlassLayoutAppearance = GlassLayoutAppearance.Default,
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
 ) {
     val density = LocalDensity.current
-    val actualBackdrop = backdrop ?: GlassTheme.backdrop
+    val actualBackdrop = backdrop ?: GlassTheme.scene
     val glassColors = GlassTheme.colors
 
     // The outermost application chrome frame - its own real, documented tier (BackdropBlur.Immersive),

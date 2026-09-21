@@ -34,7 +34,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import com.kashif_e.backdrop.Backdrop
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
 import org.ide.lti.core.designsystem.component.tooltip.GlassTooltipArea
 import org.ide.lti.core.designsystem.icon.AppIcons
@@ -46,6 +45,7 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 
 /**
  * Execution status for an individual stage in a [GlassStepper].
@@ -132,7 +132,7 @@ fun GlassStepper(
     isBusy: Boolean = false,
     onRetryStep: ((stepId: String) -> Unit)? = null,
     onStepClick: ((stepId: String) -> Unit)? = null,
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
 ) {
     val glassColors = GlassTheme.colors
     val diagnostics = glassColors.diagnostics

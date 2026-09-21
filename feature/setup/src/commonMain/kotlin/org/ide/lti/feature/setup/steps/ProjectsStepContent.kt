@@ -48,7 +48,6 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import com.kashif_e.backdrop.backdrops.LayerBackdrop
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
@@ -77,6 +76,7 @@ import org.ide.lti.core.designsystem.theme.SetupTokens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.feature.setup.SetupUiActions
 import org.ide.lti.feature.setup.SetupUiState
@@ -97,7 +97,7 @@ import org.ide.lti.feature.setup.WorkspaceAction
 fun ProjectsStepContent(
     state: SetupUiState,
     actions: SetupUiActions,
-    resolvedBackdrop: LayerBackdrop,
+    resolvedBackdrop: GlassSceneState,
     modifier: Modifier = Modifier,
     onNavigateToEnvironment: () -> Unit = {},
     searchFocusRequester: FocusRequester = remember { FocusRequester() },
@@ -216,7 +216,6 @@ fun ProjectsStepContent(
                         onCopyPath = {
                             clipboardManager.setText(AnnotatedString(project.path))
                         },
-                        resolvedBackdrop = resolvedBackdrop,
                     )
                 }
             }
@@ -232,7 +231,6 @@ private fun WorkspaceRowItem(
     onOpen: () -> Unit,
     onRemove: () -> Unit,
     onCopyPath: () -> Unit,
-    resolvedBackdrop: LayerBackdrop,
     modifier: Modifier = Modifier,
 ) {
     val glassColors = GlassTheme.colors
@@ -508,7 +506,7 @@ private fun WorkspaceSearchSection(
     onSearchQueryChange: (String) -> Unit,
     totalCount: Int,
     searchFocusRequester: FocusRequester,
-    resolvedBackdrop: LayerBackdrop,
+    resolvedBackdrop: GlassSceneState,
     modifier: Modifier = Modifier,
 ) {
     val glassColors = GlassTheme.colors

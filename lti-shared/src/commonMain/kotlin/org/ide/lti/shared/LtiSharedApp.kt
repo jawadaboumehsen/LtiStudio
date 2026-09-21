@@ -22,12 +22,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
-import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import org.ide.lti.core.designsystem.component.layout.GlassBackdrop
 import org.ide.lti.core.designsystem.component.layout.StudioGlassBackdrop
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.config.AppTheme
+import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 import org.ide.lti.core.ui.settings.AppSettingsState
 import org.ide.lti.feature.settings.navigateToSettings
 import org.ide.lti.feature.setup.SETUP_ROUTE
@@ -74,7 +74,7 @@ fun LtiSharedApp(
 @Composable
 private fun SharedApp(openSettingsRequest: Long, appSettingsState: AppSettingsState, modifier: Modifier = Modifier) {
     val navController = rememberNavController()
-    val backdrop = rememberLayerBackdrop()
+    val backdrop = rememberGlassSceneState()
 
     LaunchedEffect(openSettingsRequest) {
         if (openSettingsRequest > 0) {
@@ -88,7 +88,7 @@ private fun SharedApp(openSettingsRequest: Long, appSettingsState: AppSettingsSt
         appTheme = appTheme,
         effectsEnabled = appSettingsState.effectsEnabled,
         reducedMotion = appSettingsState.reducedMotion,
-        sharedBackdrop = backdrop,
+        sharedScene = backdrop,
     ) {
         Box(modifier = modifier.fillMaxSize()) {
             if (appTheme == AppTheme.Blue) {

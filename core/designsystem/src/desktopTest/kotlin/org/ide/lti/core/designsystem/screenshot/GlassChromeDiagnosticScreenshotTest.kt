@@ -39,7 +39,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.sp
-import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import org.ide.lti.core.designsystem.component.display.GlassPanelContainer
 import org.ide.lti.core.designsystem.component.display.GlassPanelHeader
 import org.ide.lti.core.designsystem.component.display.GlassPanelHeaderAction
@@ -58,6 +57,7 @@ import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 import org.ide.lti.core.testing.screenshot.GoldenImageAssert
 import org.junit.Test
 
@@ -349,9 +349,9 @@ class GlassChromeDiagnosticScreenshotTest {
         height = TEST_HEIGHT,
     ) {
         setContent {
-            val backdrop = rememberLayerBackdrop()
+            val backdrop = rememberGlassSceneState()
 
-            LtiTheme(sharedBackdrop = backdrop, darkTheme = true) {
+            LtiTheme(sharedScene = backdrop, darkTheme = true) {
                 val layoutState = rememberLtiLayoutState(
                     initialLeftWeight = 0.22f,
                     initialRightWeight = 0.26f,
@@ -420,9 +420,9 @@ class GlassChromeDiagnosticScreenshotTest {
         height = TEST_HEIGHT,
     ) {
         setContent {
-            val backdrop = rememberLayerBackdrop()
+            val backdrop = rememberGlassSceneState()
 
-            LtiTheme(sharedBackdrop = backdrop, darkTheme = false) {
+            LtiTheme(sharedScene = backdrop, darkTheme = false) {
                 val layoutState = rememberLtiLayoutState(
                     initialLeftWeight = 0.22f,
                     initialRightWeight = 0.26f,
@@ -492,9 +492,9 @@ class GlassChromeDiagnosticScreenshotTest {
         height = TEST_HEIGHT,
     ) {
         setContent {
-            val backdrop = rememberLayerBackdrop()
+            val backdrop = rememberGlassSceneState()
 
-            LtiTheme(sharedBackdrop = backdrop, darkTheme = true) {
+            LtiTheme(sharedScene = backdrop, darkTheme = true) {
                 val layoutState = rememberLtiLayoutState(
                     initialLeftWeight = 0.22f,
                     initialRightWeight = 0.26f,

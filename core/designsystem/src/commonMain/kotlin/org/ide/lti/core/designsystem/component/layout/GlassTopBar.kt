@@ -48,7 +48,6 @@ import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import com.kashif_e.backdrop.Backdrop
 import com.kashif_e.backdrop.drawBackdrop
 import org.ide.lti.core.designsystem.component.actions.DesktopWindowControls
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
@@ -72,6 +71,7 @@ import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.core.designsystem.theme.glass.GlassStyles
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import java.awt.Cursor
@@ -131,10 +131,10 @@ fun GlassTopBar(
     windowControls: WindowControlActions? = null,
     showWindowControls: Boolean = true,
     shape: Shape = RectangleShape,
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
     drawOwnChrome: Boolean = true,
 ) {
-    val actualBackdrop = backdrop ?: GlassTheme.backdrop
+    val actualBackdrop = backdrop ?: GlassTheme.scene
     val glassColors = GlassTheme.colors
     val localControls = LocalWindowControlActions.current
 
@@ -172,7 +172,6 @@ fun GlassTopBar(
             if (panelToggles != null) {
                 SegmentedPanelLayoutToggle(
                     toggles = panelToggles,
-                    backdrop = actualBackdrop,
                 )
             }
 
@@ -186,7 +185,6 @@ fun GlassTopBar(
                 } else if (search != null) {
                     GlassCommandPalettePill(
                         search = search,
-                        backdrop = actualBackdrop,
                     )
                 }
             }
@@ -222,7 +220,7 @@ fun GlassTopBar(
 @Composable
 private fun GlassTopBarLeftSection(
     navigation: TopBarNavigation,
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
 ) {
     val glassColors = GlassTheme.colors
     Row(
@@ -346,7 +344,6 @@ private fun GlassTopBarLeftSection(
 private fun GlassCommandPalettePill(
     search: TopBarSearch,
     modifier: Modifier = Modifier,
-    backdrop: Backdrop? = null,
 ) {
     val glassColors = GlassTheme.colors
     var isHovered by remember { mutableStateOf(false) }
@@ -439,11 +436,7 @@ private fun GlassCommandPalettePill(
  * Segmented layout mode toggle buttons for IDE panels.
  */
 @Composable
-private fun SegmentedPanelLayoutToggle(
-    toggles: TopBarPanelToggles,
-    modifier: Modifier = Modifier,
-    backdrop: Backdrop? = null,
-) {
+private fun SegmentedPanelLayoutToggle(toggles: TopBarPanelToggles, modifier: Modifier = Modifier) {
     val glassColors = GlassTheme.colors
     val toggleShape = GlassShapes.Small
 

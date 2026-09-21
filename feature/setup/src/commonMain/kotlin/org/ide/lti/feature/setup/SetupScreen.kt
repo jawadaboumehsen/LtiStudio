@@ -56,9 +56,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import com.kashif_e.backdrop.Backdrop
-import com.kashif_e.backdrop.backdrops.LayerBackdrop
-import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import org.ide.lti.core.designsystem.component.actions.LocalWindowControlActions
 import org.ide.lti.core.designsystem.component.actions.WindowControlActions
 import org.ide.lti.core.designsystem.component.display.GlassVerticalDivider
@@ -84,6 +81,8 @@ import org.ide.lti.core.designsystem.theme.MotionEasing
 import org.ide.lti.core.designsystem.theme.SetupTokens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.config.AppTheme
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
+import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.model.workspace.Workspace
@@ -109,7 +108,7 @@ fun SetupScreen(
     onOpenConfigurations: () -> Unit = {},
     onOpenManageTargets: () -> Unit = onOpenConfigurations,
     onOpenHelp: () -> Unit = {},
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
     viewModel: SetupViewModel = koinViewModel(),
 ) {
     val toolchainSetupState by viewModel.toolchainSetupState.collectAsState()
@@ -246,7 +245,7 @@ fun SetupScreenContent(
     modifier: Modifier = Modifier,
     onOpenConfigurations: () -> Unit = {},
     windowControls: WindowControlActions? = null,
-    backdrop: Backdrop? = null,
+    backdrop: GlassSceneState? = null,
     initialTab: SetupTab? = null,
     isHelpSheetOpen: Boolean = false,
     onDismissHelpSheet: () -> Unit = {},
@@ -258,11 +257,11 @@ fun SetupScreenContent(
 ) {
     val colors = GlassTheme.ideShellColors
     val isBlueGlass = GlassTheme.appTheme == AppTheme.Blue && GlassTheme.effectsEnabled
-    val ambientBackdrop = (backdrop as? LayerBackdrop) ?: (GlassTheme.backdrop as? LayerBackdrop)
+    val ambientBackdrop = (backdrop as? GlassSceneState) ?: (GlassTheme.scene as? GlassSceneState)
     val resolvedBackdrop = if (isBlueGlass) {
-        rememberLayerBackdrop()
+        rememberGlassSceneState()
     } else {
-        ambientBackdrop ?: rememberLayerBackdrop()
+        ambientBackdrop ?: rememberGlassSceneState()
     }
     var localSelectedTab by remember { mutableStateOf(initialTab ?: state.selectedTab) }
     val effectiveTab = initialTab?.let { localSelectedTab } ?: state.selectedTab

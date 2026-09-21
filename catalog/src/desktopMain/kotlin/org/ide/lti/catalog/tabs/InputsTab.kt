@@ -35,9 +35,9 @@ import org.ide.lti.core.designsystem.component.inputs.GlassOtpTextField
 import org.ide.lti.core.designsystem.component.inputs.GlassPasswordField
 import org.ide.lti.core.designsystem.component.inputs.GlassSlider
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
+import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.component.inputs.TextFieldLeadingSlot
 import org.ide.lti.core.designsystem.component.inputs.TextFieldState
-import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
@@ -46,7 +46,7 @@ import org.ide.lti.core.designsystem.theme.Spacing
 @Composable
 fun InputsTab() {
     val scrollState = rememberScrollState()
-    val backdrop = GlassTheme.backdrop
+    val backdrop = GlassTheme.scene
 
     var textValue by remember { mutableStateOf("workspace-alpha") }
     var emailValue by remember { mutableStateOf("developer@ltirom.org") }

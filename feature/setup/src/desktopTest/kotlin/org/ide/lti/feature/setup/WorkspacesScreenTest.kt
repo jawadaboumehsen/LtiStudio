@@ -17,9 +17,10 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.runDesktopComposeUiTest
-import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop
 import kotlinx.datetime.Clock
 import org.ide.lti.core.designsystem.theme.LtiTheme
+import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
+import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 import org.ide.lti.core.model.target.TargetBinding
 import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.feature.setup.steps.ProjectsStepContent
@@ -46,8 +47,8 @@ class WorkspacesScreenTest {
         var openCalled = false
 
         setContent {
-            val backdrop = rememberLayerBackdrop()
-            LtiTheme(sharedBackdrop = backdrop) {
+            val backdrop = rememberGlassSceneState()
+            LtiTheme(sharedScene = backdrop) {
                 ProjectsStepContent(
                     state = SetupUiState(
                         recentProjects = emptyList(),
@@ -81,8 +82,8 @@ class WorkspacesScreenTest {
         )
 
         setContent {
-            val backdrop = rememberLayerBackdrop()
-            LtiTheme(sharedBackdrop = backdrop) {
+            val backdrop = rememberGlassSceneState()
+            LtiTheme(sharedScene = backdrop) {
                 ProjectsStepContent(
                     state = SetupUiState(
                         recentProjects = listOf(existingProject),
@@ -120,8 +121,8 @@ class WorkspacesScreenTest {
         var openedProject: RecentProject? = null
 
         setContent {
-            val backdrop = rememberLayerBackdrop()
-            LtiTheme(sharedBackdrop = backdrop) {
+            val backdrop = rememberGlassSceneState()
+            LtiTheme(sharedScene = backdrop) {
                 ProjectsStepContent(
                     state = SetupUiState(
                         recentProjects = listOf(p1, p2),
@@ -152,8 +153,8 @@ class WorkspacesScreenTest {
         var openCalled = false
 
         setContent {
-            val backdrop = rememberLayerBackdrop()
-            LtiTheme(sharedBackdrop = backdrop) {
+            val backdrop = rememberGlassSceneState()
+            LtiTheme(sharedScene = backdrop) {
                 ProjectsStepContent(
                     state = SetupUiState(
                         recentProjects = emptyList(),
@@ -196,8 +197,8 @@ class WorkspacesScreenTest {
 
         // The legacy route remains accepted, but now renders the reference-aligned Setup overview.
         setContent {
-            val backdrop = rememberLayerBackdrop()
-            LtiTheme(sharedBackdrop = backdrop) {
+            val backdrop = rememberGlassSceneState()
+            LtiTheme(sharedScene = backdrop) {
                 SetupScreenContent(
                     state = SetupUiState(),
                     actions = SetupUiActions(),
