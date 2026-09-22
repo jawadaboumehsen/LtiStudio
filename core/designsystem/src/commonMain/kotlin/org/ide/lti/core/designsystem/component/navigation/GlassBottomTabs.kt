@@ -431,7 +431,6 @@ private fun GlassBottomTabSpotlight(
                             ResolvedGlassEffect(
                                 lensHeight = OpticalSizeValue.Fixed(LensRefraction.TabSpotlight.height * p),
                                 lensAmount = OpticalSizeValue.Fixed(LensRefraction.TabSpotlight.amount * p),
-                                lensChromaticAberration = true,
                             )
                         },
                         highlight = {

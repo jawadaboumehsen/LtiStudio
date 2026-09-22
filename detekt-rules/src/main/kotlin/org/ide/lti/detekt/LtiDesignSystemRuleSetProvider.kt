@@ -18,6 +18,7 @@ class LtiDesignSystemRuleSetProvider : RuleSetProvider {
             ::NoLeakedBackdropEngineType,
             ::NoUnprotectedTextClip,
             ::NoWeightInScrollableContainer,
+            ::NoBooleanChromaticAberration,
         ),
     )
 }

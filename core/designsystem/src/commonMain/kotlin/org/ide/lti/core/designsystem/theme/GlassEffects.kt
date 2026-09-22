@@ -39,7 +39,6 @@ object GlassEffects {
         lensHeight = OpticalSizeValue.Fixed(LensRefraction.Surface.height),
         lensAmount = OpticalSizeValue.Fixed(LensRefraction.Surface.amount),
         lensDepthEffect = true,
-        lensChromaticAberration = true,
         vibrancy = true,
         grain = 0.015f,
     )

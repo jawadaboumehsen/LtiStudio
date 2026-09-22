@@ -242,7 +242,6 @@ private fun toggleThumbModifier(
                 blur = OpticalSizeValue.Fixed(BackdropBlur.Toggle * (1f - progress)),
                 lensHeight = OpticalSizeValue.Fixed(LensRefraction.Toggle.height * progress),
                 lensAmount = OpticalSizeValue.Fixed(LensRefraction.Toggle.amount * progress),
-                lensChromaticAberration = true,
             )
         },
         highlight = {

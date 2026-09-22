@@ -593,6 +593,8 @@ lti-design-system:
     active: true
   NoWeightInScrollableContainer:
     active: true
+  NoBooleanChromaticAberration:
+    active: true
 
 naming:
   active: true

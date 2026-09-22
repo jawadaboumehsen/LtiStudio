@@ -108,7 +108,6 @@ public object GlassStyles {
                 blur = OpticalSizeValue.Fixed(BackdropBlur.Card),
                 lens = OpticalSizeValue.Fixed(LensRefraction.Card),
                 lensDepthEffect = true,
-                lensChromaticAberration = true,
                 grain = GRAIN_STANDARD,
                 rim = Rim(),
                 shadow = Shadow(radius = Elevation.Raised, color = Color.Black.copy(alpha = AlphaTokens.Glow)),
@@ -132,7 +131,6 @@ public object GlassStyles {
                 // defaults, for this specific consumer.
                 blur = OpticalSizeValue.Fixed(BackdropBlur.ButtonPill),
                 lens = OpticalSizeValue.Fixed(LensRefraction.ButtonPill),
-                lensChromaticAberration = true,
                 grain = GRAIN_STANDARD,
                 rim = Rim(),
             )
@@ -153,7 +151,6 @@ public object GlassStyles {
                 shape = GlassShapes.Capsule,
                 blur = OpticalSizeValue.Fixed(BackdropBlur.Button),
                 lens = OpticalSizeValue.Fixed(LensRefraction.Button),
-                lensChromaticAberration = true,
                 grain = GRAIN_STANDARD,
             )
         }
@@ -193,7 +190,6 @@ public object GlassStyles {
                 blur = OpticalSizeValue.Fixed(BackdropBlur.Panel),
                 lens = OpticalSizeValue.Fixed(LensRefraction.Panel),
                 lensDepthEffect = true,
-                lensChromaticAberration = true,
                 grain = GRAIN_STANDARD,
             )
         }

@@ -247,7 +247,6 @@ fun GlassSlider(
                                     blur = OpticalSizeValue.Fixed(BackdropBlur.Slider * (1f - progress)),
                                     lensHeight = OpticalSizeValue.Fixed(LensRefraction.Slider.height * progress),
                                     lensAmount = OpticalSizeValue.Fixed(LensRefraction.Slider.amount * progress),
-                                    lensChromaticAberration = true,
                                 )
                             },
                             highlight = {
