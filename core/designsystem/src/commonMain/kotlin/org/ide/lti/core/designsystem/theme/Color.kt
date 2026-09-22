@@ -640,7 +640,7 @@ object IdeShellTokens {
 
     val Blue = IdeShellColorScheme(
         appBackground = Color.Transparent,
-        topBarBackground = Color(0xFF0C427F).copy(alpha = AlphaTokens.Prominent),
+        topBarBackground = Color(0xFF0C427F).copy(alpha = AlphaTokens.Half),
         railBackground = StudioBackdropColors.SidebarStart.copy(alpha = AlphaTokens.Strong),
         navigatorBackground = StudioBackdropColors.SidebarCenter.copy(alpha = AlphaTokens.Strong),
         contentBackground = Color.Transparent,

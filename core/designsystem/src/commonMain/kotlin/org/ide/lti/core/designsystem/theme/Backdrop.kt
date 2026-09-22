@@ -34,7 +34,10 @@ object BackdropBlur {
     // Semantic aliases
     val Button: Dp = 2.dp
     val TextField: Dp = 2.dp
-    val TopBar: Dp = 4.dp
+
+    /** Frosted-glass top bar blur - deliberately closer to [Card]'s intensity than [Standard]'s,
+     * since a full-width, low-height bar reads as barely-softened at a subtle radius. */
+    val TopBar: Dp = 8.dp
     val Minimap: Dp = 4.dp
 
     /** Scaled-up blur for wide, text-labeled pill buttons (GlassButton), where the icon-tier

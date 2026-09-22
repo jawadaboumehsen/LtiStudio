@@ -1200,15 +1200,15 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/Backdrop.kt": {
-    "mtime": 1789962116.1603901,
-    "seen": 1789962354.091489,
-    "ast_hash": "42cfdbc8e8c19958978fb0987fff02b5",
+    "mtime": 1790081661.6584158,
+    "seen": 1790081918.0844853,
+    "ast_hash": "4d95f762d3c383229c0b3860ddcedb21",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/Color.kt": {
-    "mtime": 1789947031.4909425,
-    "seen": 1789947132.4596982,
-    "ast_hash": "eb38120169694e80d6200b50dec0d51f",
+    "mtime": 1790081666.1294696,
+    "seen": 1790081918.0844853,
+    "ast_hash": "1d8e1d8d3c5e897a432a753278f4d472",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/ColorContrast.kt": {
@@ -1224,9 +1224,9 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/GlassEffects.kt": {
-    "mtime": 1790079741.8994055,
-    "seen": 1790080003.6707346,
-    "ast_hash": "bef0929365f9cdb537c15d39f469a179",
+    "mtime": 1790080592.6487806,
+    "seen": 1790081458.9453773,
+    "ast_hash": "b4562d32cea390848218aec4983d9dd7",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/Motion.kt": {
@@ -1608,27 +1608,27 @@
     "semantic_hash": ""
   },
   "detekt-rules/src/main/kotlin/org/ide/lti/detekt/NoRawAlphaLiteral.kt": {
-    "mtime": 1789349162.2486646,
-    "seen": 1789387556.225789,
-    "ast_hash": "c908f6ea50f1a4bdc35d2e3688e415ec",
+    "mtime": 1790080805.0471444,
+    "seen": 1790081458.9460719,
+    "ast_hash": "33cdda94eb0cf8491b3c3733f5bba5ce",
     "semantic_hash": ""
   },
   "detekt-rules/src/main/kotlin/org/ide/lti/detekt/NoRawColorLiteral.kt": {
-    "mtime": 1789349170.6962512,
-    "seen": 1789387556.225789,
-    "ast_hash": "09935fb342fcc1a87d4e0c61aac5387e",
+    "mtime": 1790080793.076571,
+    "seen": 1790081458.9460719,
+    "ast_hash": "a7e203c0bd641b54fbab1c987c42b6e3",
     "semantic_hash": ""
   },
   "detekt-rules/src/main/kotlin/org/ide/lti/detekt/NoRawDimensionLiteral.kt": {
-    "mtime": 1789349179.3563695,
-    "seen": 1789387556.225789,
-    "ast_hash": "0848be27f909a7c8587012bb23d4a7d0",
+    "mtime": 1790080818.7432714,
+    "seen": 1790081458.9460719,
+    "ast_hash": "c36a6fc3aba0fc3fec2dbe6f94ecdc23",
     "semantic_hash": ""
   },
   "detekt-rules/src/main/kotlin/org/ide/lti/detekt/NoRawMotionLiteral.kt": {
-    "mtime": 1789349192.3723772,
-    "seen": 1789387556.225789,
-    "ast_hash": "ad17a01838d1139e0d4fd37901683945",
+    "mtime": 1790080833.9514227,
+    "seen": 1790081458.9460719,
+    "ast_hash": "c41cfb07586eba00615934715da9b058",
     "semantic_hash": ""
   },
   "feature/settings/build.gradle.kts": {
@@ -2436,9 +2436,9 @@
     "semantic_hash": ""
   },
   "config/detekt/detekt.yml": {
-    "mtime": 1790079424.3502464,
-    "seen": 1790080003.6727653,
-    "ast_hash": "ef6b91bd3ce9ab9add296787984a790e",
+    "mtime": 1790080774.905552,
+    "seen": 1790081458.9503396,
+    "ast_hash": "c02339ce33733f16e6ec9791e6501ed6",
     "semantic_hash": ""
   },
   "core/analytics/README.md": {
@@ -19788,9 +19788,9 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/glass/Rim.kt": {
-    "mtime": 1789928969.091458,
-    "seen": 1789935395.302028,
-    "ast_hash": "05de0e90404e775be19ba77886ff14e7",
+    "mtime": 1790080603.0015044,
+    "seen": 1790081458.9453773,
+    "ast_hash": "2101bfe9dd706cd3de6d6feaee973f97",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonTest/kotlin/org/ide/lti/core/designsystem/theme/glass/GlassStyleTest.kt": {
