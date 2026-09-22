@@ -42,6 +42,7 @@ public data class ResolvedGlassEffect(
     public val lensAmount: OpticalSizeValue<Dp> = OpticalSizeValue.Fixed(0.dp),
     public val lensDepthEffect: Boolean = false,
     public val lensChromaticAberration: Boolean = false,
+    public val lensSurfaceProfile: SurfaceProfile = SurfaceProfile.Standard,
     public val vibrancy: Boolean = false,
     public val brightness: Float = 0f,
     public val saturation: Float = 1f,

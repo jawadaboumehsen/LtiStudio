@@ -5,7 +5,9 @@ import androidx.compose.ui.unit.LayoutDirection
 import com.kashif_e.backdrop.BackdropEffectScope
 import com.kashif_e.backdrop.GlassDispersionShaderString
 import com.kashif_e.backdrop.GlassRefractionShaderString
+import com.kashif_e.backdrop.SurfaceProfile
 import com.kashif_e.backdrop.platform.PlatformCapabilities
+import com.kashif_e.backdrop.shaderIndex
 import org.jetbrains.skia.ImageFilter
 import kotlin.math.ceil
 import kotlin.math.min
@@ -23,12 +25,16 @@ import kotlin.math.min
  * @param refractionAmount The intensity of the refraction distortion
  * @param depthEffect Whether to include a radial depth component to the refraction
  * @param chromaticAberration Whether to add chromatic dispersion (color separation)
+ * @param surfaceProfile Which displacement-vs-depth curve gives the bevel its character - see
+ * [SurfaceProfile]. Defaults to [SurfaceProfile.Standard], byte-identical to this effect's
+ * original curve.
  */
 internal fun BackdropEffectScope.lens(
     refractionHeight: Float,
     refractionAmount: Float,
     depthEffect: Boolean = false,
-    chromaticAberration: Boolean = false
+    chromaticAberration: Boolean = false,
+    surfaceProfile: SurfaceProfile = SurfaceProfile.Standard
 ) {
     // Requires RuntimeShader support
     if (!PlatformCapabilities.supportsRuntimeShader) return
@@ -56,6 +62,7 @@ internal fun BackdropEffectScope.lens(
     builder.uniform("refractionHeight", refractionHeight)
     builder.uniform("refractionAmount", refractionAmount)
     builder.uniform("depthEffect", if (depthEffect) 1f else 0f)
+    builder.uniform("surfaceProfile", surfaceProfile.shaderIndex)
     if (chromaticAberration) {
         builder.uniform("chromaticAberration", 0.018f)
     }

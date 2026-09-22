@@ -19,9 +19,11 @@ internal object GlassEffectDirtyFields {
     const val Saturation = 1 shl 7
     const val Grain = 1 shl 8
     const val ProgressiveBlur = 1 shl 9
+    const val LensSurfaceProfile = 1 shl 10
 
     const val RenderEffectAffectingFlags = Blur or LensHeight or LensAmount or LensDepthEffect or
-        LensChromaticAberration or Vibrancy or Brightness or Saturation or Grain or ProgressiveBlur
+        LensChromaticAberration or Vibrancy or Brightness or Saturation or Grain or ProgressiveBlur or
+        LensSurfaceProfile
 
     /** `old == null` (first attach) is treated as every field having changed. */
     fun diff(old: ResolvedGlassEffect?, new: ResolvedGlassEffect): Bitmask {
@@ -38,6 +40,7 @@ internal object GlassEffectDirtyFields {
         if (old.saturation != new.saturation) mask += Saturation
         if (old.grain != new.grain) mask += Grain
         if (old.progressiveBlur != new.progressiveBlur) mask += ProgressiveBlur
+        if (old.lensSurfaceProfile != new.lensSurfaceProfile) mask += LensSurfaceProfile
         return mask
     }
 
@@ -52,5 +55,6 @@ internal object GlassEffectDirtyFields {
         if (Saturation in mask) add("Saturation")
         if (Grain in mask) add("Grain")
         if (ProgressiveBlur in mask) add("ProgressiveBlur")
+        if (LensSurfaceProfile in mask) add("LensSurfaceProfile")
     }.joinToString(prefix = "[", postfix = "]")
 }

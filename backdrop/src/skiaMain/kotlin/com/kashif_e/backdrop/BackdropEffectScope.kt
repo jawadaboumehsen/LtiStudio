@@ -131,6 +131,7 @@ internal abstract class BackdropEffectScopeImpl : BackdropEffectScope {
                 resolvedLensAmount.toPx(),
                 depthEffect = resolved.lensDepthEffect,
                 chromaticAberration = resolved.lensChromaticAberration,
+                surfaceProfile = resolved.lensSurfaceProfile,
             )
         }
 

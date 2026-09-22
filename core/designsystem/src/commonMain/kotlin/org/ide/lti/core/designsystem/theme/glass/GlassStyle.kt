@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.isSpecified
 import com.kashif_e.backdrop.OpticalSizePoint
 import com.kashif_e.backdrop.OpticalSizeValue
 import com.kashif_e.backdrop.ResolvedGlassEffect
+import com.kashif_e.backdrop.SurfaceProfile
 import com.kashif_e.backdrop.interaction.BackdropInteractionResponse
 import com.kashif_e.backdrop.shadow.InnerShadow
 import com.kashif_e.backdrop.shadow.Shadow
@@ -47,6 +48,9 @@ public data class GlassStyle(
     public val lens: OpticalSizeValue<LensRefraction> = OpticalSizeValue.Fixed(LensRefraction.Surface),
     public val lensDepthEffect: Boolean = false,
     public val lensChromaticAberration: Boolean = false,
+    /** Which displacement-vs-depth curve gives the bevel its character - see [SurfaceProfile].
+     * Defaults to [SurfaceProfile.Standard], this engine's original curve. */
+    public val lensSurfaceProfile: SurfaceProfile = SurfaceProfile.Standard,
     public val vibrancy: Boolean = true,
     public val brightness: Float = 0f,
     public val saturation: Float = 1f,
@@ -97,6 +101,7 @@ public fun GlassStyle.resolve(): ResolvedGlassEffect = ResolvedGlassEffect(
     lensAmount = lens.mapValue { it.amount },
     lensDepthEffect = lensDepthEffect,
     lensChromaticAberration = lensChromaticAberration,
+    lensSurfaceProfile = lensSurfaceProfile,
     vibrancy = vibrancy,
     brightness = brightness,
     saturation = saturation,

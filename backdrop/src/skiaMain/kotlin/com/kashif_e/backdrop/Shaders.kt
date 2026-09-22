@@ -50,6 +50,55 @@ float2 gradSdRoundedRect(float2 coord, float2 halfSize, float radius) {
 }"""
 
 /**
+ * Per-profile displacement-vs-depth curves shared by both refraction shaders - see
+ * [com.kashif_e.backdrop.SurfaceProfile]'s doc comment for the source and the reason these are
+ * closed-form curves rather than a ray-traced lookup.
+ */
+private const val SurfaceProfileCurves = """
+float opticalBevel(float x) {
+    float t = clamp(x, 0.0, 1.0);
+    return t * t * (3.0 - 2.0 * t);
+}
+
+float circleHeight(float x) {
+    float t = clamp(x, 0.0, 1.0);
+    float u = 1.0 - t;
+    return sqrt(max(0.0, 1.0 - u * u));
+}
+
+float squircleHeight(float x) {
+    float t = clamp(x, 0.0, 1.0);
+    float u = 1.0 - t;
+    float u4 = u * u * u * u;
+    return pow(max(0.0, 1.0 - u4), 0.25);
+}
+
+float concaveHeight(float x) {
+    return 1.0 - circleHeight(x);
+}
+
+float lipHeight(float x) {
+    float t = clamp(x, 0.0, 1.0);
+    float blend = t * t * (3.0 - 2.0 * t);
+    return mix(circleHeight(x), concaveHeight(x), blend);
+}
+
+// u: 1 at the edge, 0 at the refraction band's inner boundary (this shader's own convention).
+// surfaceProfile: SurfaceProfile.ordinal as a float (0=Standard, 1=Circle, 2=Squircle,
+// 3=Concave, 4=Lip). Standard reuses opticalBevel(u) directly - untouched, so its output stays
+// byte-identical to every caller that doesn't opt into a profile. The other four evaluate their
+// curve against x = 1 - u, matching the kube.io article's "distance from edge, 0 at the edge"
+// convention the formulas above were copied from.
+float surfaceBevel(float u, float surfaceProfile) {
+    if (surfaceProfile < 0.5) return opticalBevel(u);
+    float x = 1.0 - u;
+    if (surfaceProfile < 1.5) return circleHeight(x);
+    if (surfaceProfile < 2.5) return squircleHeight(x);
+    if (surfaceProfile < 3.5) return concaveHeight(x);
+    return lipHeight(x);
+}"""
+
+/**
  * Lens/refraction shader for rounded rectangles.
  * Creates a physically accurate glass bevel distortion effect.
  */
@@ -62,19 +111,16 @@ uniform float4 cornerRadii;
 uniform float refractionHeight;
 uniform float refractionAmount;
 uniform float depthEffect;
+uniform float surfaceProfile;
 
 $RoundedRectSDF
-
-float opticalBevel(float x) {
-    float t = clamp(x, 0.0, 1.0);
-    return t * t * (3.0 - 2.0 * t);
-}
+$SurfaceProfileCurves
 
 half4 main(float2 coord) {
     float2 halfSize = size * 0.5;
     float2 centeredCoord = (coord + offset) - halfSize;
     float radius = radiusAt(centeredCoord, cornerRadii);
-    
+
     float sd = sdRoundedRect(centeredCoord, halfSize, radius);
     if (sd > 0.0) {
         return content.eval(coord);
@@ -83,15 +129,15 @@ half4 main(float2 coord) {
         return content.eval(coord);
     }
     sd = min(sd, 0.0);
-    
+
     float u = 1.0 - (-sd / refractionHeight);
-    float d = opticalBevel(u) * refractionAmount;
+    float d = surfaceBevel(u, surfaceProfile) * refractionAmount;
     float edgeDamp = smoothstep(0.0, 1.5, -sd);
     d *= edgeDamp;
-    
+
     float gradRadius = min(radius * 1.5, min(halfSize.x, halfSize.y));
     float2 grad = normalize(gradSdRoundedRect(centeredCoord, halfSize, gradRadius) + depthEffect * normalize(centeredCoord));
-    
+
     float2 refractedCoord = coord - d * grad;
     return content.eval(refractedCoord);
 }"""
@@ -110,19 +156,16 @@ uniform float refractionHeight;
 uniform float refractionAmount;
 uniform float depthEffect;
 uniform float chromaticAberration;
+uniform float surfaceProfile;
 
 $RoundedRectSDF
-
-float opticalBevel(float x) {
-    float t = clamp(x, 0.0, 1.0);
-    return t * t * (3.0 - 2.0 * t);
-}
+$SurfaceProfileCurves
 
 half4 main(float2 coord) {
     float2 halfSize = size * 0.5;
     float2 centeredCoord = (coord + offset) - halfSize;
     float radius = radiusAt(centeredCoord, cornerRadii);
-    
+
     float sd = sdRoundedRect(centeredCoord, halfSize, radius);
     if (sd > 0.0) {
         return content.eval(coord);
@@ -131,9 +174,9 @@ half4 main(float2 coord) {
         return content.eval(coord);
     }
     sd = min(sd, 0.0);
-    
+
     float u = 1.0 - (-sd / refractionHeight);
-    float d = opticalBevel(u) * refractionAmount;
+    float d = surfaceBevel(u, surfaceProfile) * refractionAmount;
     float edgeDamp = smoothstep(0.0, 1.5, -sd);
     d *= edgeDamp;
     
