@@ -81,6 +81,17 @@ val LocalFocusRingSuppressedByPointer = staticCompositionLocalOf {
 }
 
 /**
+ * Composition local for whether the composition is under memory pressure (e.g. the app window is
+ * minimized/backgrounded). Glass rendering releases its compiled-shader caches while `true` -
+ * mirrors Haze's `onTrimMemory(MODERATE)` firing "whenever its composition lifecycle reaches
+ * ON_STOP" on Desktop/Web. A host observes its own platform signal (window minimize state, etc.)
+ * and passes it to [LtiTheme]'s `lowMemory` parameter, exactly like [LocalReducedMotion].
+ */
+val LocalGlassLowMemory = staticCompositionLocalOf {
+    false
+}
+
+/**
  * Composition local for whether the dark theme is active.
  */
 val LocalIsDarkTheme = staticCompositionLocalOf {
@@ -170,6 +181,11 @@ object GlassTheme {
         @ReadOnlyComposable
         get() = LocalGlassAccessibilitySettings.current
 
+    val lowMemory: Boolean
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalGlassLowMemory.current
+
     /** Centralized registry of all backdrop visual effect stacks. */
     val effects: GlassEffects
         get() = GlassEffects
@@ -209,6 +225,7 @@ fun LtiTheme(
     effectsEnabled: Boolean = true,
     reducedMotion: Boolean = false,
     accessibility: GlassAccessibilitySettings = GlassAccessibilitySettings(),
+    lowMemory: Boolean = false,
     materialColorScheme: ColorScheme? = null,
     sharedScene: GlassSceneState? = null,
     content: @Composable () -> Unit,
@@ -234,6 +251,7 @@ fun LtiTheme(
             LocalGlassEffectsEnabled provides effectsEnabled,
             LocalReducedMotion provides reducedMotion,
             LocalGlassAccessibilitySettings provides accessibility,
+            LocalGlassLowMemory provides lowMemory,
             LocalContentColor provides resolvedGlassColors.onGlass,
             LocalFocusRingSuppressedByPointer provides focusRingSuppressedByPointer,
         ) {

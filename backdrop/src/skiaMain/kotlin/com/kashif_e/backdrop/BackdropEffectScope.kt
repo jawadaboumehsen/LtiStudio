@@ -44,6 +44,12 @@ internal sealed interface BackdropEffectScope : Density {
 
     /** Obtain a cached runtime shader for the given key and source. */
     fun obtainPlatformShader(key: String, source: String): PlatformRuntimeShader
+
+    /** Releases every cached compiled shader - rebuildable, so the next draw recompiles lazily
+     * from source. Called when the composition backgrounds (window minimized/occluded), mirroring
+     * Haze's `onTrimMemory(MODERATE)` on Desktop/Web ("whenever its composition lifecycle reaches
+     * ON_STOP"). Never touches live density/size/layoutDirection - only the rebuildable cache. */
+    fun trimShaderCache()
 }
 
 internal abstract class BackdropEffectScopeImpl : BackdropEffectScope {
@@ -61,6 +67,10 @@ internal abstract class BackdropEffectScopeImpl : BackdropEffectScope {
         return shaderCache.getOrPut(key) {
             PlatformRuntimeShader.compile(source)
         }
+    }
+
+    override fun trimShaderCache() {
+        shaderCache.clear()
     }
 
     fun update(scope: DrawScope): Boolean {

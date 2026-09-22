@@ -3,6 +3,7 @@ package com.kashif_e.backdrop
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertNotSame
 import kotlin.test.assertSame
 
@@ -56,5 +57,35 @@ class BackdropEffectScopeTest {
             "reset() (called from DrawBackdropNode.onDetach()) must drop cached shaders so a " +
                 "detached-then-reattached node doesn't hold stale compiled state",
         )
+    }
+
+    /**
+     * [BackdropEffectScopeImpl.trimShaderCache] backs the `lowMemory` transition trim
+     * (`DrawBackdropElement.update()`) - it must drop cached shaders exactly like `reset()`, so
+     * the next draw recompiles lazily instead of reusing GPU-retained compiled state from before
+     * the composition backgrounded.
+     */
+    @Test
+    fun trimShaderCacheClearsCachedShaders() {
+        val scope = newScope()
+        val source = "half4 main(float2 coord) { return half4(1); }"
+
+        val beforeTrim = scope.obtainPlatformShader("test-shader", source)
+        scope.trimShaderCache()
+        val afterTrim = scope.obtainPlatformShader("test-shader", source)
+
+        assertNotSame(beforeTrim, afterTrim, "trimShaderCache() must drop cached shaders")
+    }
+
+    @Test
+    fun trimShaderCacheDoesNotTouchLiveDensityOrSize() {
+        val scope = newScope()
+        scope.density = 2f
+        scope.fontScale = 1.5f
+
+        scope.trimShaderCache()
+
+        assertEquals(2f, scope.density, "trimShaderCache() must only clear the shader cache")
+        assertEquals(1.5f, scope.fontScale, "trimShaderCache() must only clear the shader cache")
     }
 }

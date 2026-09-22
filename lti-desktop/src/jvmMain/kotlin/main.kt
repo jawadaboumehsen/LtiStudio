@@ -165,6 +165,7 @@ fun main(args: Array<String>) = nucleusApplication(args) {
             }
             LtiSharedApp(
                 openSettingsRequest = openSettingsRequest,
+                lowMemory = windowState.isMinimized,
             )
         }
     }

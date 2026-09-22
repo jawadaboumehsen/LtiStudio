@@ -1,5 +1,6 @@
 package com.kashif_e.backdrop
 
+import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -45,6 +46,7 @@ import com.kashif_e.backdrop.delegate.ShaderBackdropDelegate
 import com.kashif_e.backdrop.interaction.BackdropInteractionController
 import com.kashif_e.backdrop.interaction.BackdropInteractionRenderState
 import com.kashif_e.backdrop.interaction.BackdropInteractionResponse
+import com.kashif_e.backdrop.interaction.DefaultAnimationSpec
 import com.kashif_e.backdrop.shadow.InnerShadow
 import com.kashif_e.backdrop.shadow.InnerShadowElement
 import com.kashif_e.backdrop.shadow.Shadow
@@ -98,7 +100,9 @@ fun Modifier.drawPlainBackdrop(
     onDrawFront: (DrawScope.() -> Unit)? = null,
     interaction: BackdropInteractionResponse? = null,
     interactionSource: InteractionSource? = null,
-    adaptiveInputScale: Boolean = false
+    adaptiveInputScale: Boolean = false,
+    interactionAnimationSpec: AnimationSpec<Float>? = null,
+    lowMemory: Boolean = false
 ): Modifier {
     val shapeProvider = ShapeProvider(shape)
     val actualOnDrawBackdrop = onDrawBackdrop ?: DefaultOnDrawBackdrop
@@ -123,7 +127,9 @@ fun Modifier.drawPlainBackdrop(
                 inputScale = 1f,
                 interaction = interaction,
                 interactionSource = interactionSource,
-                adaptiveInputScale = adaptiveInputScale
+                adaptiveInputScale = adaptiveInputScale,
+                interactionAnimationSpec = interactionAnimationSpec,
+                lowMemory = lowMemory
             )
         )
 }
@@ -172,6 +178,15 @@ private val DefaultShadow = { Shadow.Default }
  * of radius/size jitter doesn't flap between tiers - see [BackdropInputScalePolicy], ported from
  * Haze's `BlurInputScalePolicy`. Opt-in and `false` by default: existing callers keep rendering
  * at [inputScale] exactly as before.
+ * @param interactionAnimationSpec Overrides the [AnimationSpec] the [BackdropInteractionController]
+ * animates [interaction]'s channels with - pass `androidx.compose.animation.core.snap()` (or any
+ * spec derived from a reduced-motion preference) to make hover/press/focus optics jump instead of
+ * animate. `null` (the default) keeps the controller's own spring default.
+ * @param lowMemory When it transitions from `false` to `true`, releases this node's compiled
+ * shader cache (rebuildable - the next draw recompiles lazily from source). Intended for a host to
+ * flip on when the composition backgrounds (e.g. the window is minimized), mirroring Haze's
+ * `onTrimMemory(MODERATE)` on Desktop/Web. `false` by default: existing callers keep every
+ * compiled shader retained for the node's whole lifetime, exactly as before.
  */
 fun Modifier.drawBackdrop(
     backdrop: Backdrop,
@@ -189,7 +204,9 @@ fun Modifier.drawBackdrop(
     inputScale: Float = 1f,
     interaction: BackdropInteractionResponse? = null,
     interactionSource: InteractionSource? = null,
-    adaptiveInputScale: Boolean = false
+    adaptiveInputScale: Boolean = false,
+    interactionAnimationSpec: AnimationSpec<Float>? = null,
+    lowMemory: Boolean = false
 ): Modifier {
     requireValidInputScale(inputScale)
     val shapeProvider = ShapeProvider(shape)
@@ -245,7 +262,9 @@ fun Modifier.drawBackdrop(
                 inputScale = inputScale,
                 interaction = interaction,
                 interactionSource = interactionSource,
-                adaptiveInputScale = adaptiveInputScale
+                adaptiveInputScale = adaptiveInputScale,
+                interactionAnimationSpec = interactionAnimationSpec,
+                lowMemory = lowMemory
             )
         )
 }
@@ -269,7 +288,9 @@ private class DrawBackdropElement(
     val inputScale: Float,
     val interaction: BackdropInteractionResponse?,
     val interactionSource: InteractionSource?,
-    val adaptiveInputScale: Boolean
+    val adaptiveInputScale: Boolean,
+    val interactionAnimationSpec: AnimationSpec<Float>?,
+    val lowMemory: Boolean
 ) : ModifierNodeElement<DrawBackdropNode>() {
 
     override fun create(): DrawBackdropNode {
@@ -285,7 +306,9 @@ private class DrawBackdropElement(
             inputScale = inputScale,
             interaction = interaction,
             interactionSource = interactionSource,
-            adaptiveInputScale = adaptiveInputScale
+            adaptiveInputScale = adaptiveInputScale,
+            interactionAnimationSpec = interactionAnimationSpec,
+            lowMemory = lowMemory
         )
     }
 
@@ -296,6 +319,10 @@ private class DrawBackdropElement(
         // remember() it for that to hold. Only invalidate the (expensive) Skia effect graph when
         // a bit that actually renders differently changed - see GlassEffectDirtyFields.
         val dirty = GlassEffectDirtyFields.diff(node.resolvedEffect, resolvedEffect)
+        // Trim exactly on the false->true transition (a one-shot event, not a continuous state) -
+        // mirrors Haze's onTrimMemory firing once when the composition lifecycle reaches ON_STOP,
+        // not on every recomposition while backgrounded.
+        val enteringLowMemory = lowMemory && !node.lowMemory
         node.backdrop = backdrop
         node.shapeProvider = shapeProvider
         node.resolvedEffect = resolvedEffect
@@ -308,7 +335,12 @@ private class DrawBackdropElement(
         node.interaction = interaction
         node.interactionSource = interactionSource
         node.adaptiveInputScale = adaptiveInputScale
+        node.interactionAnimationSpec = interactionAnimationSpec
+        node.lowMemory = lowMemory
         node.updateInteractionController()
+        if (enteringLowMemory) {
+            node.trimShaderCache()
+        }
         if (dirty.any(GlassEffectDirtyFields.RenderEffectAffectingFlags)) {
             node.invalidateDrawCache()
         }
@@ -329,6 +361,8 @@ private class DrawBackdropElement(
         properties["interaction"] = interaction
         properties["interactionSource"] = interactionSource
         properties["adaptiveInputScale"] = adaptiveInputScale
+        properties["interactionAnimationSpec"] = interactionAnimationSpec
+        properties["lowMemory"] = lowMemory
     }
 
     override fun equals(other: Any?): Boolean {
@@ -347,6 +381,8 @@ private class DrawBackdropElement(
         if (interaction != other.interaction) return false
         if (interactionSource != other.interactionSource) return false
         if (adaptiveInputScale != other.adaptiveInputScale) return false
+        if (interactionAnimationSpec != other.interactionAnimationSpec) return false
+        if (lowMemory != other.lowMemory) return false
 
         return true
     }
@@ -364,6 +400,8 @@ private class DrawBackdropElement(
         result = 31 * result + (interaction?.hashCode() ?: 0)
         result = 31 * result + (interactionSource?.hashCode() ?: 0)
         result = 31 * result + adaptiveInputScale.hashCode()
+        result = 31 * result + (interactionAnimationSpec?.hashCode() ?: 0)
+        result = 31 * result + lowMemory.hashCode()
         return result
     }
 }
@@ -380,7 +418,9 @@ private class DrawBackdropNode(
     var inputScale: Float,
     var interaction: BackdropInteractionResponse?,
     var interactionSource: InteractionSource?,
-    var adaptiveInputScale: Boolean
+    var adaptiveInputScale: Boolean,
+    var interactionAnimationSpec: AnimationSpec<Float>?,
+    var lowMemory: Boolean
 ) : LayoutModifierNode, DrawModifierNode, GlobalPositionAwareModifierNode, ObserverModifierNode, Modifier.Node() {
 
     override val shouldAutoInvalidate: Boolean = false
@@ -408,6 +448,13 @@ private class DrawBackdropNode(
     // tier gates the next decision, which is what makes the hysteresis real rather than
     // recomputed from scratch every draw. Only consulted when adaptiveInputScale is true.
     private val inputScalePolicy = BackdropInputScalePolicy()
+
+    // Ticked once per genuine render-affecting update (never once per draw frame) inside
+    // updateEffects() - weights inputScalePolicy's area input by recent update burstiness, so a
+    // small element recomputed every animation frame downscales even though its static area alone
+    // wouldn't cross a tier threshold. Only consulted when adaptiveInputScale is true.
+    private val updateCadence = BackdropInputUpdateCadence()
+    private var currentCadenceMultiplier: Int = BackdropInputUpdateCadence.NONE_MULTIPLIER
 
     // Set by drawBackdropLayer right before recordLayer() - the *actual* scale the render budget
     // decided to record at (which may be smaller than the requested inputScale/adaptive tier if
@@ -502,7 +549,8 @@ private class DrawBackdropNode(
             // hysteresis-driven tier (BackdropInputScalePolicy, ported from Haze's own
             // BlurInputScalePolicy) instead of trusting a fixed caller-supplied inputScale.
             val requestedScale = if (adaptiveInputScale) {
-                inputScalePolicy.resolve(resolvedBlurRadiusPx(), fullWidth.toFloat() * fullHeight.toFloat())
+                val area = fullWidth.toFloat() * fullHeight.toFloat() * currentCadenceMultiplier
+                inputScalePolicy.resolve(resolvedBlurRadiusPx(), area)
             } else {
                 inputScale
             }
@@ -644,6 +692,9 @@ private class DrawBackdropNode(
 
     private fun updateEffects() {
         DrawBackdropDiagnostics.updateEffectsCallCount++
+        if (adaptiveInputScale) {
+            currentCadenceMultiplier = updateCadence.recordUpdate(System.nanoTime())
+        }
         val interactionState = interactionController?.renderState ?: BackdropInteractionRenderState()
         try {
             // Narrow: only the shader-construction path itself is caught here, never draw/config
@@ -663,8 +714,16 @@ private class DrawBackdropNode(
     /** Pushes the current [interaction]/[interactionSource] into [interactionController], if attached. */
     fun updateInteractionController() {
         val controller = interactionController ?: return
-        controller.updateResponse(interaction ?: BackdropInteractionResponse())
+        controller.updateResponse(
+            response = interaction ?: BackdropInteractionResponse(),
+            animationSpec = interactionAnimationSpec ?: DefaultAnimationSpec
+        )
         controller.updateInteractionSource(interactionSource)
+    }
+
+    /** Releases this node's compiled shader cache - see [lowMemory]. */
+    fun trimShaderCache() {
+        effectScope.trimShaderCache()
     }
 
     override fun onAttach() {
@@ -691,6 +750,8 @@ private class DrawBackdropNode(
         lastAppliedInteractionState = null
         shaderIncompatible = false
         inputScalePolicy.reset()
+        updateCadence.reset()
+        currentCadenceMultiplier = BackdropInputUpdateCadence.NONE_MULTIPLIER
         currentRecordScale = 1f
         effectScope.reset()
         clipPath = null

@@ -135,4 +135,5 @@ internal data class BackdropInteractionRenderState(
     val scale: Float = 1f,
 )
 
-private val DefaultAnimationSpec: AnimationSpec<Float> = spring(stiffness = 300f)
+/** Used whenever a caller doesn't supply its own `animationSpec` to [BackdropInteractionController.updateResponse]. */
+internal val DefaultAnimationSpec: AnimationSpec<Float> = spring(stiffness = 300f)

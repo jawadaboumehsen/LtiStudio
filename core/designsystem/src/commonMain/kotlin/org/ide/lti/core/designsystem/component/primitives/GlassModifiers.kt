@@ -49,6 +49,7 @@ import org.ide.lti.core.designsystem.theme.glass.GlassStyle
 import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 import org.ide.lti.core.designsystem.theme.glass.resolve
 import org.ide.lti.core.designsystem.theme.glass.toHighlight
+import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
 import org.ide.lti.core.designsystem.theme.withAccessibility
 
 /**
@@ -117,6 +118,8 @@ fun Modifier.glass(
             interaction = style.interaction,
             interactionSource = interactionSource,
             adaptiveInputScale = style.adaptiveInputScale,
+            interactionAnimationSpec = resolveAnimationSpec(reducedMotion = GlassTheme.reducedMotion),
+            lowMemory = GlassTheme.lowMemory,
             onDrawSurface = { fallbackAlphaBoost ->
                 drawRect(style.surface)
                 if (style.tint.alpha > 0f) {

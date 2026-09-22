@@ -40,6 +40,7 @@ import org.koin.compose.koinInject
 fun LtiSharedApp(
     modifier: Modifier = Modifier,
     openSettingsRequest: Long = 0,
+    lowMemory: Boolean = false,
     appSettingsState: AppSettingsState = koinInject(),
 ) {
     var showSplash by remember { mutableStateOf(true) }
@@ -51,6 +52,7 @@ fun LtiSharedApp(
             appTheme = AppTheme.fromId(appSettingsState.theme),
             effectsEnabled = appSettingsState.effectsEnabled,
             reducedMotion = appSettingsState.reducedMotion,
+            lowMemory = lowMemory,
         ) {
             Box(
                 modifier = Modifier.fillMaxSize().background(GlassTheme.colors.canvasSurface),
@@ -65,6 +67,7 @@ fun LtiSharedApp(
     } else {
         SharedApp(
             openSettingsRequest = openSettingsRequest,
+            lowMemory = lowMemory,
             appSettingsState = appSettingsState,
             modifier = modifier,
         )
@@ -72,7 +75,12 @@ fun LtiSharedApp(
 }
 
 @Composable
-private fun SharedApp(openSettingsRequest: Long, appSettingsState: AppSettingsState, modifier: Modifier = Modifier) {
+private fun SharedApp(
+    openSettingsRequest: Long,
+    lowMemory: Boolean,
+    appSettingsState: AppSettingsState,
+    modifier: Modifier = Modifier,
+) {
     val navController = rememberNavController()
     val backdrop = rememberGlassSceneState()
 
@@ -88,6 +96,7 @@ private fun SharedApp(openSettingsRequest: Long, appSettingsState: AppSettingsSt
         appTheme = appTheme,
         effectsEnabled = appSettingsState.effectsEnabled,
         reducedMotion = appSettingsState.reducedMotion,
+        lowMemory = lowMemory,
         sharedScene = backdrop,
     ) {
         Box(modifier = modifier.fillMaxSize()) {
