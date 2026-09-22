@@ -22,6 +22,7 @@ import org.ide.lti.core.designsystem.theme.LtiSeedColor
 import org.ide.lti.core.designsystem.theme.ThemeColors
 import org.ide.lti.core.designsystem.theme.deriveDiagnosticColors
 import org.ide.lti.core.designsystem.theme.deriveSyntaxColorScheme
+import org.ide.lti.core.designsystem.theme.withVibrantPrimary
 
 /**
  * Complete specification for the Frosted Glass Light application theme.
@@ -35,7 +36,7 @@ val LightThemeConfig: ThemeConfiguration by lazy {
     val materialScheme = dynamicColorScheme(
         seedColor = LtiSeedColor,
         isDark = false,
-    )
+    ).withVibrantPrimary(LtiSeedColor, isDark = false)
     val glassScheme = LightGlassColorScheme
     val syntax = deriveSyntaxColorScheme(
         primaryColor = materialScheme.primary,

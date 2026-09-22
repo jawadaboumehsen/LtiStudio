@@ -22,6 +22,7 @@ import org.ide.lti.core.designsystem.theme.LtiSeedColor
 import org.ide.lti.core.designsystem.theme.ThemeColors
 import org.ide.lti.core.designsystem.theme.deriveDiagnosticColors
 import org.ide.lti.core.designsystem.theme.deriveSyntaxColorScheme
+import org.ide.lti.core.designsystem.theme.withVibrantPrimary
 
 /**
  * Complete specification for the signature AMOLED Blue application theme.
@@ -37,7 +38,7 @@ val BlueThemeConfig: ThemeConfiguration by lazy {
         seedColor = LtiSeedColor,
         isDark = true,
         isAmoled = true,
-    )
+    ).withVibrantPrimary(LtiSeedColor, isDark = true)
     val glassScheme = BlueGlassColorScheme
     val syntax = deriveSyntaxColorScheme(
         primaryColor = materialScheme.primary,

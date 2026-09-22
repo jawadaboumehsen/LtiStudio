@@ -1206,9 +1206,9 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/Color.kt": {
-    "mtime": 1790081666.1294696,
-    "seen": 1790081918.0844853,
-    "ast_hash": "1d8e1d8d3c5e897a432a753278f4d472",
+    "mtime": 1790107809.0159695,
+    "seen": 1790107986.0647092,
+    "ast_hash": "43e53a1031ca18af3117a73cf72ba077",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/ColorContrast.kt": {
@@ -1254,9 +1254,9 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/config/BlueThemeConfig.kt": {
-    "mtime": 1789961822.678001,
-    "seen": 1789962354.091489,
-    "ast_hash": "ad4888a719930255e289d5e30b46fc28",
+    "mtime": 1790107815.8750708,
+    "seen": 1790107986.0647092,
+    "ast_hash": "1caeda96949811885eab7b76238a8cb9",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/config/DarkThemeConfig.kt": {
@@ -1266,9 +1266,9 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/config/LightThemeConfig.kt": {
-    "mtime": 1789961819.5616612,
-    "seen": 1789962354.091489,
-    "ast_hash": "fb73555deb74a8dd2477e86cac446827",
+    "mtime": 1790107827.049315,
+    "seen": 1790107986.0647092,
+    "ast_hash": "a68b9efb697593c7b435ee45e345a20b",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/config/ThemeConfiguration.kt": {
@@ -2358,9 +2358,9 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1789942625.9259863,
-    "seen": 1789942979.167109,
-    "ast_hash": "5dddf76372b30e8185d24d71357fe801",
+    "mtime": 1790107287.110072,
+    "seen": 1790107986.0667212,
+    "ast_hash": "54420d2e5b0cbd877e84dbeef84831cb",
     "semantic_hash": ""
   },
   "CODE_OF_CONDUCT.md": {
@@ -2643,12 +2643,6 @@
     "mtime": 1788066398.5174358,
     "seen": 1788496709.4533372,
     "ast_hash": "3f3859f16c097317cc00d6c201d4f3df",
-    "semantic_hash": ""
-  },
-  "rules/systemdesignrule.md": {
-    "mtime": 1788191493.8018732,
-    "seen": 1788496709.4533372,
-    "ast_hash": "6d53bea6bef67ed4bff769d8ededc147",
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/composeResources/drawable/bottomPanel.svg": {
@@ -12756,8 +12750,8 @@
     "semantic_hash": ""
   },
   "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/component/layout/IdeTopAppBar.kt": {
-    "mtime": 1789946091.9471643,
-    "seen": 1789946470.727521,
+    "mtime": 1790107194.0466034,
+    "seen": 1790107986.0647092,
     "ast_hash": "8065c780efac5509e7a35612e7a28841",
     "semantic_hash": ""
   },

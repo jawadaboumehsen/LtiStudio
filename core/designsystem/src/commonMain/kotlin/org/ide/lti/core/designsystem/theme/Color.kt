@@ -195,6 +195,18 @@ fun deriveVibrantAccent(seedColor: Color = LtiSeedColor, isDark: Boolean): Color
 }
 
 /**
+ * Overrides `primary`/`onPrimary` with [deriveVibrantAccent]'s vivid seed hue, so
+ * `MaterialTheme.colorScheme.primary` itself is the punchy brand accent instead of M3's
+ * tonal-mapped, desaturated primary - the single color source every consumer reads for
+ * icon fills, selected states, and focus rings (no separate accent field needed).
+ */
+fun ColorScheme.withVibrantPrimary(seedColor: Color = LtiSeedColor, isDark: Boolean): ColorScheme =
+    copy(
+        primary = deriveVibrantAccent(seedColor, isDark),
+        onPrimary = if (isDark) Color(0xFF071019) else Color.White,
+    )
+
+/**
  * Derives a [GlassColorScheme] from a generated [ColorScheme] and theme mode.
  */
 fun dynamicGlassColorScheme(
