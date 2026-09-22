@@ -573,18 +573,46 @@ ktlint:
 
 lti-design-system:
   active: true
+  # These four rules used to exclude the whole **/theme/** tree, which also silently exempted
+  # theme/ files that CONSUME tokens (GlassEffects.kt, Rim.kt, GlassStyles.kt, ...) rather than
+  # DEFINE them - GlassEffects.kt's shadow presets hardcoded `alpha = 0.15f`/`0.2f`/`0.3f` instead
+  # of referencing the identical AlphaTokens.Glow/Hover/Scrim values for years, invisible because
+  # the blanket exclude never checked it. Narrowed to the actual token-definition files (the ones
+  # CLAUDE.md documents as owning a token catalog) plus GlassStyle.kt/Rim.kt's `0.dp` validation
+  # lower-bound checks (zero is not a design literal a token could replace). Every other theme/
+  # file - including any new one added later - is now governed like the rest of the app.
+  themeDefinitionExcludes: &themeDefinitionExcludes
+    # Test files legitimately assert literal expected values against real tokens
+    # (assertEquals(56.dp, GlassDimens.TopBarHeight, ...)) - not a design decision bypassing one.
+    - "**/commonTest/**"
+    - "**/desktopTest/**"
+    - "**/test/**"
+    - "**/theme/Alpha.kt"
+    - "**/theme/Backdrop.kt"
+    - "**/theme/Color.kt"
+    - "**/theme/ColorContrast.kt"
+    - "**/theme/Dimens.kt"
+    - "**/theme/GlassShapes.kt"
+    - "**/theme/Motion.kt"
+    - "**/theme/SetupTokens.kt"
+    - "**/theme/Type.kt"
+    - "**/theme/config/BlueThemeConfig.kt"
+    - "**/theme/config/DarkThemeConfig.kt"
+    - "**/theme/config/LightThemeConfig.kt"
+    - "**/theme/glass/GlassStyle.kt"
+    - "**/theme/glass/Rim.kt"
   NoRawColorLiteral:
     active: true
-    excludes: ["**/theme/**"]
+    excludes: *themeDefinitionExcludes
   NoRawAlphaLiteral:
     active: true
-    excludes: ["**/theme/**"]
+    excludes: *themeDefinitionExcludes
   NoRawDimensionLiteral:
     active: true
-    excludes: ["**/theme/**"]
+    excludes: *themeDefinitionExcludes
   NoRawMotionLiteral:
     active: true
-    excludes: ["**/theme/**"]
+    excludes: *themeDefinitionExcludes
   NoBackdropEffectImport:
     active: true
   NoLeakedBackdropEngineType:

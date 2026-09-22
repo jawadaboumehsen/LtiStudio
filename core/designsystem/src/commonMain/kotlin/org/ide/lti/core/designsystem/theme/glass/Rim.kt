@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isSpecified
 import com.kashif_e.backdrop.highlight.Highlight
 import com.kashif_e.backdrop.highlight.glassBevel
+import org.ide.lti.core.designsystem.theme.StrokeWidth
 
 /**
  * A [GlassStyle]'s edge treatment: how bright the light-struck side of the rim reads, how present
@@ -33,7 +34,7 @@ public data class Rim(
     public val specularAlpha: Float = 0.75f,
     public val shadowAlpha: Float = 0.25f,
     public val angleDegrees: Float = 90f,
-    public val width: Dp = 1.dp,
+    public val width: Dp = StrokeWidth.Standard,
 ) {
     init {
         require(specularAlpha.isFinite() && specularAlpha in 0f..1f) {

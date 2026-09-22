@@ -24,65 +24,54 @@ class NoRawMotionLiteral(config: Config = Config.empty) : Rule(
         return t.isEmpty() || t.startsWith("//") || t.startsWith("*") || t.startsWith("/*") || t.startsWith("import ")
     }
 
-    private fun computeLineOffsets(text: String): List<Int> {
-        val offsets = mutableListOf<Int>()
-        offsets.add(0)
-        for (i in 0 until text.length) {
-            if (text[i] == '\n') {
-                offsets.add(i + 1)
-            }
-        }
-        return offsets
-    }
-
     override fun visitKtFile(file: KtFile) {
         super.visitKtFile(file)
-        val text = file.text
-        val lines = text.lines()
-        val offsets = computeLineOffsets(text)
-
-        lines.forEachIndexed { idx, rawLine ->
+        // Fixed offset 0 - see NoBooleanChromaticAberration's comment: a computed per-line
+        // character offset crashed detekt 2.0.0-alpha.6's Entity.from() with "Wrong offset" during
+        // finding reporting, even for a genuinely in-range offset. The line content in the message
+        // is enough to locate the violation.
+        file.text.lines().forEachIndexed { idx, rawLine ->
             if (isCommentOrImport(rawLine)) return@forEachIndexed
             val line = rawLine.trim()
-            val offset = if (idx < offsets.size) offsets[idx] else 0
+            val lineNumber = idx + 1
 
             if (durationMillisRegex.containsMatchIn(line)) {
                 report(
                     Finding(
-                        entity = Entity.from(file, offset),
-                        message = "raw durationMillis literal bypasses theme/Motion.kt (MotionDuration). [$line]",
+                        entity = Entity.from(file, offset = 0),
+                        message = "raw durationMillis literal bypasses theme/Motion.kt (MotionDuration). (line $lineNumber: $line)",
                     ),
                 )
             }
             if (tweenRegex.containsMatchIn(line)) {
                 report(
                     Finding(
-                        entity = Entity.from(file, offset),
-                        message = "raw tween duration literal bypasses theme/Motion.kt (MotionDuration). [$line]",
+                        entity = Entity.from(file, offset = 0),
+                        message = "raw tween duration literal bypasses theme/Motion.kt (MotionDuration). (line $lineNumber: $line)",
                     ),
                 )
             }
             if (springRegex.containsMatchIn(line)) {
                 report(
                     Finding(
-                        entity = Entity.from(file, offset),
-                        message = "raw spring numeric literal bypasses theme/Motion.kt (MotionSpring). [$line]",
+                        entity = Entity.from(file, offset = 0),
+                        message = "raw spring numeric literal bypasses theme/Motion.kt (MotionSpring). (line $lineNumber: $line)",
                     ),
                 )
             }
             if (springParamsRegex.containsMatchIn(line)) {
                 report(
                     Finding(
-                        entity = Entity.from(file, offset),
-                        message = "raw spring parameter literal bypasses theme/Motion.kt (MotionSpring). [$line]",
+                        entity = Entity.from(file, offset = 0),
+                        message = "raw spring parameter literal bypasses theme/Motion.kt (MotionSpring). (line $lineNumber: $line)",
                     ),
                 )
             }
             if (cubicBezierEasingRegex.containsMatchIn(line)) {
                 report(
                     Finding(
-                        entity = Entity.from(file, offset),
-                        message = "raw CubicBezierEasing literal bypasses theme/Motion.kt (MotionEasing). [$line]",
+                        entity = Entity.from(file, offset = 0),
+                        message = "raw CubicBezierEasing literal bypasses theme/Motion.kt (MotionEasing). (line $lineNumber: $line)",
                     ),
                 )
             }

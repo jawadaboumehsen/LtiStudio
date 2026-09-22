@@ -87,7 +87,7 @@ object GlassShadows {
     val Card: () -> Shadow? = {
         Shadow(
             radius = Elevation.Raised,
-            color = Color.Black.copy(alpha = 0.15f),
+            color = Color.Black.copy(alpha = AlphaTokens.Glow),
         )
     }
 
@@ -95,7 +95,7 @@ object GlassShadows {
     val Elevated: () -> Shadow? = {
         Shadow(
             radius = Elevation.Panel,
-            color = Color.Black.copy(alpha = 0.2f),
+            color = Color.Black.copy(alpha = AlphaTokens.Hover),
         )
     }
 
@@ -103,7 +103,7 @@ object GlassShadows {
     val Modal: () -> Shadow? = {
         Shadow(
             radius = Elevation.Modal,
-            color = Color.Black.copy(alpha = 0.3f),
+            color = Color.Black.copy(alpha = AlphaTokens.Scrim),
         )
     }
 
@@ -111,7 +111,7 @@ object GlassShadows {
     val ToggleThumb: () -> Shadow? = {
         Shadow(
             radius = Elevation.Raised,
-            color = Color.Black.copy(alpha = 0.2f),
+            color = Color.Black.copy(alpha = AlphaTokens.Hover),
         )
     }
 }

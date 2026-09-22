@@ -20,32 +20,20 @@ class NoRawAlphaLiteral(config: Config = Config.empty) : Rule(
         return t.isEmpty() || t.startsWith("//") || t.startsWith("*") || t.startsWith("/*") || t.startsWith("import ")
     }
 
-    private fun computeLineOffsets(text: String): List<Int> {
-        val offsets = mutableListOf<Int>()
-        offsets.add(0)
-        for (i in 0 until text.length) {
-            if (text[i] == '\n') {
-                offsets.add(i + 1)
-            }
-        }
-        return offsets
-    }
-
     override fun visitKtFile(file: KtFile) {
         super.visitKtFile(file)
-        val text = file.text
-        val lines = text.lines()
-        val offsets = computeLineOffsets(text)
-
-        lines.forEachIndexed { idx, rawLine ->
+        // Fixed offset 0 - see NoBooleanChromaticAberration's comment: a computed per-line
+        // character offset crashed detekt 2.0.0-alpha.6's Entity.from() with "Wrong offset" during
+        // finding reporting, even for a genuinely in-range offset. The line content in the message
+        // is enough to locate the violation.
+        file.text.lines().forEachIndexed { idx, rawLine ->
             if (isCommentOrImport(rawLine)) return@forEachIndexed
             val line = rawLine.trim()
             if (alphaLiteralRegex.containsMatchIn(line)) {
-                val offset = if (idx < offsets.size) offsets[idx] else 0
                 report(
                     Finding(
-                        entity = Entity.from(file, offset),
-                        message = "raw alpha literal bypasses theme/Alpha.kt (AlphaTokens). [$line]",
+                        entity = Entity.from(file, offset = 0),
+                        message = "raw alpha literal bypasses theme/Alpha.kt (AlphaTokens). (line ${idx + 1}: $line)",
                     ),
                 )
             }
