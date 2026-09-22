@@ -156,6 +156,18 @@ object GlassTheme {
         @ReadOnlyComposable
         get() = LocalThemeConfiguration.current.ideShellColorScheme
 
+    /** Code editor token palette - not an M3 role, stays as its own non-M3 addition. */
+    val syntaxColors: SyntaxColorScheme
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalThemeConfiguration.current.syntaxColorScheme
+
+    /** Diagnostic/git-status semantic tokens (error/warning/success/info/...) - not M3 roles. */
+    val diagnosticColors: DiagnosticColors
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalThemeConfiguration.current.diagnosticColors
+
     val effectsEnabled: Boolean
         @Composable
         @ReadOnlyComposable
