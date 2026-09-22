@@ -31,18 +31,14 @@ Examples:
 ## Design System Architecture & Centralized Tokens
 
 > [!IMPORTANT]
-> Before editing anything under `core/designsystem/theme/`, `core/designsystem/component/`,
-> `core/ui/`, or any file rendering text/icons on a `Glass*` surface, read
-> `rules/systemdesignrule.md` (project root) first. It documents hard rules and known blind spots
-> discovered by real bugs this session — most load-bearing: any content-lambda-accepting glass
-> component must make `LocalContentColor` resolve to something other than black, and the
-> design-system guardrails/Detekt rules do NOT catch a color/size parameter being omitted entirely
-> (only a wrong literal). This section (`CLAUDE.md`) is the token/component API catalog;
-> `rules/systemdesignrule.md` is the "don't repeat this bug" companion. For recomposition/allocation
-> performance rules (not correctness), see `rules/jetpackcomposerule.md`. If you're adding a
-> `GlassStyles` role, migrating a component off `GlassEffects.*` onto `Modifier.glass`, or touching
-> the real production shell chrome (`IdeTopAppBar`/`IdeStatusBar`/`IdePipelineRail`/
-> `IdeNavigatorPanel`/`Modifier.ideCardSurface`), read `rules/glass-context.md` first.
+> The design system is mid-consolidation to one source of truth per concern (color, layers,
+> effects, components) — see `specs/006-design-system-consolidation/`. The token/component names
+> documented below are the pre-consolidation state and are being replaced; check that spec before
+> treating this section as current. For recomposition/allocation performance rules (not
+> correctness), see `rules/jetpackcomposerule.md`. If you're adding a `GlassStyles` role,
+> migrating a component off `GlassEffects.*` onto `Modifier.glass`, or touching the real
+> production shell chrome (`IdeTopAppBar`/`IdeStatusBar`/`IdePipelineRail`/`IdeNavigatorPanel`/
+> `Modifier.ideCardSurface`), read `rules/glass-context.md` first.
 
 LtiRom Studio uses a professional IDE design built around a centralized token system in `core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/`.
 
