@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.workspace.panels.run
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -93,7 +94,6 @@ private fun ActiveRunContent(
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val glassColors = GlassTheme.colors
     val typography = GlassTheme.typography
 
     Column(
@@ -116,7 +116,7 @@ private fun ActiveRunContent(
                     Text(
                         text = "ROM Build Pipeline",
                         style = typography.titleMedium,
-                        color = glassColors.onGlass,
+                        color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -127,7 +127,7 @@ private fun ActiveRunContent(
                             "No workspace opened"
                         },
                         style = typography.bodySmall,
-                        color = glassColors.onGlassSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -244,7 +244,7 @@ private fun ActiveRunContent(
                     Text(
                         text = uiState.errorMessage ?: "",
                         style = typography.bodySmall,
-                        color = glassColors.diagnostics.error,
+                        color = GlassTheme.diagnosticColors.error,
                     )
                     GlassChip(
                         label = "Dismiss",
@@ -267,7 +267,7 @@ private fun ActiveRunContent(
         Text(
             text = "Verified Artifacts",
             style = typography.titleSmall,
-            color = glassColors.onGlass,
+            color = MaterialTheme.colorScheme.onSurface,
         )
 
         val artifacts = uiState.latestRun?.artifacts ?: emptyList()
@@ -275,7 +275,7 @@ private fun ActiveRunContent(
             Text(
                 text = if (uiState.isRunning) "Artifacts will appear after build completes." else "No build artifacts produced yet.",
                 style = typography.bodySmall,
-                color = glassColors.onGlassSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         } else {
             LazyColumn(
@@ -303,7 +303,6 @@ private fun ActiveRunContent(
 
 @Composable
 private fun ArtifactItem(artifact: Artifact) {
-    val glassColors = GlassTheme.colors
     val typography = GlassTheme.typography
 
     GlassCard(
@@ -321,7 +320,7 @@ private fun ArtifactItem(artifact: Artifact) {
                 Text(
                     text = artifact.linuxPath.substringAfterLast("/"),
                     style = typography.labelMedium,
-                    color = glassColors.onGlass,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 GlassChip(
                     label = when (artifact.kind) {

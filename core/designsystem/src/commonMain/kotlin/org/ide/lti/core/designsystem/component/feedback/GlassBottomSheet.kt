@@ -12,8 +12,8 @@ package org.ide.lti.core.designsystem.component.feedback
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
@@ -44,12 +44,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
+import org.ide.lti.core.designsystem.theme.HazeShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.input.pointer.pointerInput
-import com.kashif_e.backdrop.ResolvedGlassEffect
-import com.kashif_e.backdrop.highlight.Highlight
+import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.ide.lti.core.designsystem.component.actions.*
 import org.ide.lti.core.designsystem.component.devtools.*
@@ -58,15 +57,11 @@ import org.ide.lti.core.designsystem.component.inputs.*
 import org.ide.lti.core.designsystem.component.layout.*
 import org.ide.lti.core.designsystem.component.navigation.*
 import org.ide.lti.core.designsystem.component.primitives.*
+import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
-import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.MotionDuration
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
-import org.ide.lti.core.designsystem.theme.glass.GlassStyles
-import org.ide.lti.core.designsystem.theme.glass.resolve
-import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
 
 /**
  * State for managing the bottom sheet visibility and animations.
@@ -182,39 +177,29 @@ fun GlassBottomSheet(
     state: GlassBottomSheetState,
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
-    backdrop: GlassSceneState? = null,
-    effect: ResolvedGlassEffect? = null,
-    shape: Shape = GlassShapes.BottomSheet,
+    shape: HazeShape = GlassShapes.HazeBottomSheet,
     scrimColor: Color = Color.Unspecified,
     dismissThreshold: Float = 0.3f,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val scope = rememberCoroutineScope()
-    val glassColors = GlassTheme.colors
-    val reducedMotion = GlassTheme.reducedMotion
-    val bottomSheetStyle = GlassStyles.bottomSheet
-    val resolvedEffect = effect ?: bottomSheetStyle.resolve()
-    val resolvedScrimColor = if (scrimColor.isSpecified) scrimColor else glassColors.glassShadow
+    val resolvedScrimColor = if (scrimColor.isSpecified) scrimColor else MaterialTheme.colorScheme.scrim
 
     // Animation for slide in/out
     val targetOffsetY = if (state.currentValue == GlassBottomSheetValue.Expanded) 0f else 1f
     val animatedOffsetY by animateFloatAsState(
         targetValue = targetOffsetY,
-        animationSpec = if (reducedMotion) {
-            snap()
-        } else {
-            spring(
-                dampingRatio = Spring.DampingRatioMediumBouncy,
-                stiffness = Spring.StiffnessMedium,
-            )
-        },
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium,
+        ),
         label = "bottomSheetOffset",
     )
 
     // Scrim alpha animation
     val scrimAlpha by animateFloatAsState(
         targetValue = if (state.currentValue == GlassBottomSheetValue.Expanded) 1f else 0f,
-        animationSpec = resolveAnimationSpec(reducedMotion, MotionDuration.Standard),
+        animationSpec = tween(MotionDuration.Standard),
         label = "scrimAlpha",
     )
 
@@ -253,12 +238,9 @@ fun GlassBottomSheet(
             ) {
                 GlassSurface(
                     shape = shape,
-                    effect = resolvedEffect,
-                    backdrop = backdrop,
-                    surfaceColor = glassColors.glassSurface,
-                    tint = glassColors.glassTint,
-                    borderColor = glassColors.glassBorder,
-                    highlight = { Highlight.Default },
+                    surfaceColor = MaterialTheme.colorScheme.surfaceContainer,
+                    tint = MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Subtle),
+                    borderColor = MaterialTheme.colorScheme.outline,
                 ) {
                     Column(
                         modifier = Modifier
@@ -291,7 +273,7 @@ fun GlassBottomSheet(
                                                 animate(
                                                     initialValue = state.offsetY,
                                                     targetValue = 0f,
-                                                    animationSpec = if (reducedMotion) snap() else spring(),
+                                                    animationSpec = spring(),
                                                 ) { value, _ ->
                                                     state.offsetY = value
                                                 }
@@ -319,7 +301,7 @@ fun GlassBottomSheet(
                                     .width(ComponentSize.DragHandleWidth)
                                     .height(ComponentSize.DragHandleHeight)
                                     .background(
-                                        color = glassColors.onGlassMuted,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         shape = GlassShapes.Capsule,
                                     ),
                             )
@@ -352,8 +334,6 @@ fun GlassBottomSheetScaffold(
     modifier: Modifier = Modifier,
     title: String? = null,
     headerContent: (@Composable RowScope.() -> Unit)? = null,
-    backdrop: GlassSceneState? = null,
-    effect: ResolvedGlassEffect? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val state = rememberGlassBottomSheetState(
@@ -376,8 +356,6 @@ fun GlassBottomSheetScaffold(
     GlassBottomSheet(
         state = state,
         onDismissRequest = onDismissRequest,
-        backdrop = backdrop,
-        effect = effect,
         modifier = modifier,
     ) {
         // Header
@@ -393,7 +371,7 @@ fun GlassBottomSheetScaffold(
                     androidx.compose.material3.Text(
                         title,
                         style = MaterialTheme.typography.titleLarge,
-                        color = GlassTheme.colors.onGlass,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
 
@@ -436,13 +414,13 @@ fun GlassBottomSheetExample(
                 androidx.compose.material3.Text(
                     "This is a bottom sheet with glass morphism effects.",
                     style = MaterialTheme.typography.bodyLarge,
-                    color = GlassTheme.colors.onGlass,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
 
                 androidx.compose.material3.Text(
                     "Drag down to dismiss, or tap outside.",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = GlassTheme.colors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
                 Spacer(Modifier.height(Spacing.Small))

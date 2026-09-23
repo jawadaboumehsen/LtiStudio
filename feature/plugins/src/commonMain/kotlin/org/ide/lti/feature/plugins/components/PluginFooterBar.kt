@@ -44,10 +44,10 @@ public fun PluginFooterBar(
     showConceptBadge: Boolean = false,
     trailingContent: (@Composable () -> Unit)? = null,
 ) {
-    val glassColors = GlassTheme.colors
+    val dividerColor = MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Faint)
     val borderModifier = Modifier.drawBehind {
         drawLine(
-            color = glassColors.glassBorder.copy(alpha = AlphaTokens.Faint),
+            color = dividerColor,
             start = Offset(0f, 0f),
             end = Offset(size.width, 0f),
             strokeWidth = StrokeWidth.Hairline.toPx(),
@@ -59,7 +59,7 @@ public fun PluginFooterBar(
             .fillMaxWidth()
             .height(if (trailingContent != null) ComponentSize.TopBarHeight else ComponentSize.StatusBarHeightAlt)
             .then(borderModifier)
-            .background(glassColors.chromeSurface)
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
             .padding(horizontal = Spacing.Medium),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -73,13 +73,13 @@ public fun PluginFooterBar(
                 Icon(
                     painter = AppIcons.InfoPainterResource(),
                     contentDescription = "Information",
-                    tint = glassColors.onGlassMuted,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(IconSize.Small),
                 )
                 Text(
                     text = message,
                     style = MaterialTheme.typography.labelSmall,
-                    color = glassColors.onGlassMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     softWrap = false,
                     overflow = TextOverflow.Ellipsis,
@@ -99,7 +99,7 @@ public fun PluginFooterBar(
                 Text(
                     text = "Design preview · Test fixture",
                     style = MaterialTheme.typography.labelSmall,
-                    color = glassColors.onGlassMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }

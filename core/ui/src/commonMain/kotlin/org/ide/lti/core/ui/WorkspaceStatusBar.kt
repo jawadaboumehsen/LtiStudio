@@ -50,7 +50,6 @@ fun WorkspaceStatusBar(
     fileType: String? = null,
     drawOwnChrome: Boolean = true,
 ) {
-    val glassColors = GlassTheme.colors
 
     GlassStatusBar(
         modifier = modifier,
@@ -62,10 +61,10 @@ fun WorkspaceStatusBar(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.Five),
                 modifier = Modifier
                     .clip(GlassShapes.ExtraSmall)
-                    .background(glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Elevated))
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = AlphaTokens.Elevated))
                     .glassOutlineBorder(
                         width = StrokeWidth.Hairline,
-                        color = glassColors.glassBorder,
+                        color = MaterialTheme.colorScheme.outline,
                         shape = GlassShapes.ExtraSmall,
                     )
                     .padding(horizontal = Spacing.Compact, vertical = Spacing.ExtraExtraSmall),
@@ -74,12 +73,12 @@ fun WorkspaceStatusBar(
                     modifier = Modifier
                         .size(IconSize.Indicator)
                         .clip(GlassShapes.Capsule)
-                        .background(glassColors.glassAccent),
+                        .background(MaterialTheme.colorScheme.primary),
                 )
                 Text(
                     text = branchName,
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = FontSize.MicroAlt),
-                    color = glassColors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
 
@@ -87,7 +86,7 @@ fun WorkspaceStatusBar(
                 Text(
                     text = ".",
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = FontSize.MicroAlt),
-                    color = glassColors.onGlassMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
 
@@ -95,7 +94,7 @@ fun WorkspaceStatusBar(
                 Text(
                     text = it,
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = FontSize.MicroAlt),
-                    color = glassColors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         },
@@ -104,27 +103,27 @@ fun WorkspaceStatusBar(
                 Text(
                     text = "Ln $line, Col $col",
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = FontSize.MicroAlt),
-                    color = glassColors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
 
             Text(
                 text = encoding,
                 style = MaterialTheme.typography.labelSmall.copy(fontSize = FontSize.MicroAlt),
-                color = glassColors.onGlassSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
             Text(
                 text = lineEnding.displayName,
                 style = MaterialTheme.typography.labelSmall.copy(fontSize = FontSize.MicroAlt),
-                color = glassColors.onGlassMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
             fileType?.let {
                 Text(
                     text = it.uppercase(),
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = FontSize.MicroAlt),
-                    color = glassColors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         },

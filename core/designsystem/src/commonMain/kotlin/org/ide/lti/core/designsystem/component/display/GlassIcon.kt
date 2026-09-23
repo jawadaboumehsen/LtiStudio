@@ -9,135 +9,75 @@
  */
 package org.ide.lti.core.designsystem.component.display
 
-import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
-import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.isSpecified
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.semantics.Role
-import com.kashif_e.backdrop.drawBackdrop
-import com.kashif_e.backdrop.highlight.Highlight
-import org.ide.lti.core.designsystem.component.actions.*
-import org.ide.lti.core.designsystem.component.devtools.*
-import org.ide.lti.core.designsystem.component.feedback.*
-import org.ide.lti.core.designsystem.component.inputs.*
-import org.ide.lti.core.designsystem.component.layout.*
-import org.ide.lti.core.designsystem.component.navigation.*
-import org.ide.lti.core.designsystem.component.primitives.*
-import org.ide.lti.core.designsystem.icon.AppIcons
-import org.ide.lti.core.designsystem.theme.AlphaTokens
+import dev.chrisbanes.haze.ExperimentalHazeApi
+import dev.chrisbanes.haze.HazeInput
+import dev.chrisbanes.haze.glass.GlassStyle
+import dev.chrisbanes.haze.glass.hazeGlass
+import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.StrokeWidth
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
-import org.ide.lti.core.designsystem.theme.glass.GlassStyles
-import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
-import org.ide.lti.core.designsystem.theme.glass.resolve
-import org.ide.lti.core.designsystem.utils.InteractiveHighlight
-import org.ide.lti.core.designsystem.utils.applyInteractiveHighlightTransform
-import org.jetbrains.compose.ui.tooling.preview.Preview
 
-@OptIn(ExperimentalComposeUiApi::class)
+/**
+ * Circular glass icon button - built on Haze's real `Modifier.hazeGlass`, same
+ * `hovered { } / pressed { }` pattern as [org.ide.lti.core.designsystem.component.actions.GlassButton].
+ */
+@OptIn(ExperimentalHazeApi::class)
 @Composable
 fun GlassIcon(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    backdrop: GlassSceneState? = null,
-    isInteractive: Boolean = true,
     tint: Color = Color.Unspecified,
     surfaceColor: Color = Color.Unspecified,
     contentColor: Color = Color.Unspecified,
     icon: @Composable () -> Unit,
 ) {
-    val animationScope = rememberCoroutineScope()
-    val glassColors = GlassTheme.colors
-    val effectsEnabled = GlassTheme.effectsEnabled
-    val actualBackdrop = backdrop ?: GlassTheme.scene
-    val finalContentColor = if (contentColor.isSpecified) contentColor else glassColors.onGlass
-    var isHovered by remember { mutableStateOf(false) }
-    val iconButtonStyle = GlassStyles.iconButton
-    val iconButtonEffect = iconButtonStyle.resolve()
-
-    val interactiveHighlight = remember(animationScope) {
-        InteractiveHighlight(
-            animationScope = animationScope,
-        )
-    }
+    val colors = MaterialTheme.colorScheme
+    val finalContentColor = if (contentColor.isSpecified) contentColor else colors.onSurface
+    val resolvedSurface = if (surfaceColor.isSpecified) surfaceColor else colors.surfaceContainer
+    val resolvedTint = if (tint.isSpecified) tint else Color.Transparent
+    val interactionSource = remember { MutableInteractionSource() }
 
     Box(
         modifier = modifier
-            .then(
-                if (effectsEnabled && actualBackdrop != null) {
-                    Modifier.drawBackdrop(
-                        backdrop = actualBackdrop.engineBackdrop,
-                        shape = { GlassShapes.Capsule },
-                        resolvedEffect = iconButtonEffect,
-                        highlight = { if (isHovered) Highlight.Ambient else Highlight.Plain },
-                        layerBlock = if (isInteractive) {
-                            {
-                                applyInteractiveHighlightTransform(interactiveHighlight)
-                            }
-                        } else {
-                            null
-                        },
-                        onDrawSurface = {
-                            drawIconSurface(
-                                surfaceColor = surfaceColor,
-                                glassSurfaceColor = glassColors.glassSurface,
-                                tint = tint,
-                            )
-                        },
-                    )
-                } else {
-                    Modifier
-                        .clip(GlassShapes.Capsule)
-                        .drawBehind {
-                            drawIconSurface(
-                                surfaceColor = surfaceColor,
-                                glassSurfaceColor = glassColors.glassSurface,
-                                tint = tint,
-                            )
-                        }
+            .hazeGlass(
+                input = HazeInput.Backdrop(GlassTheme.hazeState),
+                style = remember(resolvedSurface, resolvedTint) {
+                    GlassStyle.regular then GlassStyle {
+                        shape(GlassShapes.HazeCapsule)
+                        backgroundColor(resolvedSurface)
+                        tint(resolvedTint)
+                        hovered { lightingIntensity(0.35f) }
+                        pressed { scale(0.94f) }
+                    }
                 },
+                interactionSource = interactionSource,
             )
+            .clip(GlassShapes.HazeCapsule)
             .glassOutlineBorder(
-                color = glassColors.glassBorder,
+                color = colors.outline,
                 width = StrokeWidth.Hairline,
-                shape = GlassShapes.Capsule,
+                shape = GlassShapes.HazeCapsule,
             )
-            .onPointerEvent(PointerEventType.Enter) { isHovered = true }
-            .onPointerEvent(PointerEventType.Exit) { isHovered = false }
             .clickable(
-                interactionSource = null,
-                indication = if (isInteractive) null else LocalIndication.current,
+                interactionSource = interactionSource,
+                indication = null,
                 role = Role.Button,
                 onClick = onClick,
-            )
-            .then(
-                if (isInteractive) {
-                    Modifier
-                        .then(interactiveHighlight.modifier)
-                        .then(interactiveHighlight.gestureModifier)
-                } else {
-                    Modifier
-                },
             ),
         contentAlignment = Alignment.Center,
     ) {
@@ -145,32 +85,4 @@ fun GlassIcon(
             icon()
         }
     }
-}
-
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawIconSurface(
-    surfaceColor: Color,
-    glassSurfaceColor: Color,
-    tint: Color,
-) {
-    drawRect(if (surfaceColor.isSpecified) surfaceColor else glassSurfaceColor)
-    if (tint.isSpecified && tint != Color.Transparent) {
-        drawRect(tint, blendMode = BlendMode.Hue)
-        drawRect(tint.copy(alpha = tint.alpha * AlphaTokens.Half))
-    }
-}
-
-@Preview
-@Composable
-private fun GlassIconPreview() {
-    val backdrop = rememberGlassSceneState()
-    GlassIcon(
-        onClick = {},
-        backdrop = backdrop,
-        icon = {
-            Icon(
-                painter = AppIcons.FolderPainterResource(),
-                contentDescription = null,
-            )
-        },
-    )
 }

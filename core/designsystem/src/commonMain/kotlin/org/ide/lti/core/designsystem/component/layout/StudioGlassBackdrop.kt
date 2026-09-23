@@ -12,30 +12,27 @@ package org.ide.lti.core.designsystem.component.layout
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import com.kashif_e.backdrop.backdrops.layerBackdrop
+import dev.chrisbanes.haze.hazeSource
 import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.StudioBackdropColors
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 
 /**
  * Saturated, multi-depth canvas for the professional IDE shell.
  *
- * The canvas remains the sampled source for real backdrop blur/refraction. Its concentrated
+ * The canvas remains the sampled source for real Haze blur/refraction. Its concentrated
  * blue light fields deliberately sit behind chrome and navigation so translucent surfaces read
  * as glass instead of flat charcoal.
  */
 @Composable
-fun StudioGlassBackdrop(backdrop: GlassSceneState, modifier: Modifier = Modifier) {
-    SideEffect { backdrop.engineBackdrop.notifyContentChanged() }
-
+fun StudioGlassBackdrop(modifier: Modifier = Modifier) {
     Canvas(
         modifier = modifier
-            .layerBackdrop(backdrop.engineBackdrop)
+            .hazeSource(GlassTheme.hazeState)
             .fillMaxSize(),
     ) {
         drawRect(StudioBackdropColors.Base)

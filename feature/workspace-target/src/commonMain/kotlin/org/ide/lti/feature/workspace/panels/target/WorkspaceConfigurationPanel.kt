@@ -121,7 +121,6 @@ fun WorkspaceConfigurationPanel(
 
 @Composable
 private fun ConfigurationHeader(uiState: WorkspaceConfigurationUiState) {
-    val glassColors = GlassTheme.colors
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -132,12 +131,12 @@ private fun ConfigurationHeader(uiState: WorkspaceConfigurationUiState) {
                 text = "Target Configuration",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = glassColors.onGlass,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = uiState.currentWorkspace?.name ?: "Workspace",
                 style = MaterialTheme.typography.bodySmall,
-                color = glassColors.onGlassSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         GlassChip(
@@ -170,7 +169,6 @@ private fun ConfigurationNotices(uiState: WorkspaceConfigurationUiState) {
 
 @Composable
 private fun TargetProfileCard(target: TargetDevice) {
-    val glassColors = GlassTheme.colors
     GlassCard(
         modifier = Modifier.fillMaxWidth(),
         contentPadding = Spacing.CardPadding,
@@ -185,12 +183,12 @@ private fun TargetProfileCard(target: TargetDevice) {
                     text = target.name,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = glassColors.onGlass,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     text = "${target.codename} • ${target.socPlatform}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = glassColors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             GlassChip(label = target.filesystemType.uppercase(), selected = false)
@@ -204,7 +202,7 @@ private fun SectionTitle(text: String) {
         text = text,
         style = MaterialTheme.typography.labelLarge,
         fontWeight = FontWeight.SemiBold,
-        color = GlassTheme.colors.onGlass,
+        color = MaterialTheme.colorScheme.onSurface,
     )
 }
 
@@ -291,7 +289,6 @@ private fun ArchiveImportCard(
     isUploading: Boolean,
     onPickArchive: () -> Unit,
 ) {
-    val glassColors = GlassTheme.colors
     GlassCard(
         modifier = Modifier.fillMaxWidth(),
         contentPadding = Spacing.CardPadding,
@@ -301,7 +298,7 @@ private fun ArchiveImportCard(
                 text = "Archive File: ${importedArchiveName ?: "None selected"}",
                 style = MaterialTheme.typography.bodySmall,
                 fontFamily = codeFontFamily(),
-                color = if (importedArchiveName != null) glassColors.onGlass else glassColors.onGlassSecondary,
+                color = if (importedArchiveName != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Row(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
@@ -318,7 +315,7 @@ private fun ArchiveImportCard(
                     CircularProgressIndicator(
                         modifier = Modifier.size(IconSize.Small),
                         strokeWidth = StrokeWidth.Standard,
-                        color = glassColors.glassAccent,
+                        color = MaterialTheme.colorScheme.primary,
                     )
                 }
             }
@@ -400,7 +397,6 @@ private fun FirmwareItemCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
 
     Box(
         modifier = modifier
@@ -408,17 +404,17 @@ private fun FirmwareItemCard(
             .clip(GlassShapes.Small)
             .background(
                 if (isSelected) {
-                    glassColors.glassAccent.copy(alpha = AlphaTokens.Hover)
+                    MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Hover)
                 } else {
-                    glassColors.glassSurface.copy(alpha = AlphaTokens.Subtle)
+                    MaterialTheme.colorScheme.surfaceContainer.copy(alpha = AlphaTokens.Subtle)
                 },
             )
             .border(
                 width = if (isSelected) StrokeWidth.Focused else StrokeWidth.Hairline,
                 color = if (isSelected) {
-                    glassColors.glassAccent
+                    MaterialTheme.colorScheme.primary
                 } else {
-                    glassColors.glassBorder.copy(alpha = AlphaTokens.Faint)
+                    MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Faint)
                 },
                 shape = GlassShapes.Small,
             )
@@ -442,7 +438,7 @@ private fun FirmwareItemCard(
                         text = firmware.version,
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                        color = if (isSelected) glassColors.glassAccent else glassColors.onGlass,
+                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -465,7 +461,7 @@ private fun FirmwareItemCard(
                     text = "${firmware.buildId} • Android ${firmware.androidVersion}",
                     style = MaterialTheme.typography.bodySmall,
                     fontFamily = codeFontFamily(),
-                    color = glassColors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )

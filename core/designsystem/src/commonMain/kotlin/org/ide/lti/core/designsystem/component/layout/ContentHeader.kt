@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -22,8 +23,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.theme.FontSize
-import org.ide.lti.core.designsystem.theme.GlassTheme
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.ideFontFamily
 
@@ -43,7 +42,6 @@ fun ContentHeader(
     breadcrumbs: List<String> = emptyList(),
     subtitle: String? = null,
     statusBadge: (@Composable () -> Unit)? = null,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
     actions: (@Composable RowScope.() -> Unit)? = null,
 ) {
     Column(
@@ -63,7 +61,7 @@ fun ContentHeader(
                     val isLast = index == breadcrumbs.lastIndex
                     Text(
                         text = segment,
-                        color = if (isLast) colors.textMain else colors.textDim,
+                        color = if (isLast) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                         fontFamily = ideFontFamily(),
                         fontSize = FontSize.CodeMedium,
                         fontWeight = if (isLast) FontWeight.Medium else FontWeight.Normal,
@@ -71,7 +69,7 @@ fun ContentHeader(
                     if (!isLast) {
                         Text(
                             text = "/",
-                            color = colors.textDim,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontFamily = ideFontFamily(),
                             fontSize = FontSize.CodeMedium,
                         )
@@ -95,7 +93,7 @@ fun ContentHeader(
                 ) {
                     Text(
                         text = title,
-                        color = colors.textMain,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontFamily = ideFontFamily(),
                         fontSize = FontSize.HeadlineSmall,
                         fontWeight = FontWeight.Bold,
@@ -107,7 +105,7 @@ fun ContentHeader(
                 if (!subtitle.isNullOrBlank()) {
                     Text(
                         text = subtitle,
-                        color = colors.textMuted,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontFamily = ideFontFamily(),
                         fontSize = FontSize.BodyMedium,
                         fontWeight = FontWeight.Normal,

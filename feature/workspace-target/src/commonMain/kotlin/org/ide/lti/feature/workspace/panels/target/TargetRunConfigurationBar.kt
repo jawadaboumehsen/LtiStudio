@@ -59,7 +59,6 @@ import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
-import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
 import org.ide.lti.core.model.target.AdbDeviceState
 import org.ide.lti.core.model.target.ConnectedTargetDevice
 import org.ide.lti.core.model.target.DeviceConnectionType
@@ -113,7 +112,6 @@ fun TargetRunConfigurationBar(
     onOpenWifiPairing: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
     val capsuleShape = GlassShapes.Pill
 
     var isTargetMenuOpen by remember { mutableStateOf(false) }
@@ -123,17 +121,17 @@ fun TargetRunConfigurationBar(
         modifier = modifier
             .height(ComponentSize.SegmentedToggleHeight)
             .clip(capsuleShape)
-            .background(glassColors.glassSurface.copy(alpha = AlphaTokens.Subtle))
+            .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = AlphaTokens.Subtle))
             .glassOutlineBorder(
                 width = StrokeWidth.Hairline,
-                color = glassColors.glassBorder.copy(alpha = AlphaTokens.Faint),
+                color = MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Faint),
                 shape = capsuleShape,
             )
             .padding(Spacing.ExtraExtraSmall),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
     ) {
-        CompositionLocalProvider(LocalContentColor provides glassColors.onGlass) {
+        CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
             // =========================================================================
             // SEGMENT 1: Target ROM / Build Configuration Pill
             // e.g. [ 📱 REDMAGIC Astra • Global OS (NP05J_GB) ▾ ]
@@ -185,7 +183,7 @@ fun TargetRunConfigurationBar(
                                 painter = AppIcons.SettingsPainterResource(),
                                 contentDescription = null,
                                 modifier = Modifier.size(IconSize.Small),
-                                tint = glassColors.glassAccent,
+                                tint = MaterialTheme.colorScheme.primary,
                             )
                         },
                         onClick = {
@@ -204,7 +202,7 @@ fun TargetRunConfigurationBar(
                                 painter = AppIcons.EditPainterResource(),
                                 contentDescription = null,
                                 modifier = Modifier.size(IconSize.Small),
-                                tint = glassColors.glassAccent,
+                                tint = MaterialTheme.colorScheme.primary,
                             )
                         },
                         onClick = {
@@ -221,7 +219,7 @@ fun TargetRunConfigurationBar(
                                 painter = AppIcons.AddPainterResource(),
                                 contentDescription = null,
                                 modifier = Modifier.size(IconSize.Small),
-                                tint = glassColors.glassAccent,
+                                tint = MaterialTheme.colorScheme.primary,
                             )
                         },
                         onClick = {
@@ -240,7 +238,7 @@ fun TargetRunConfigurationBar(
                                 painter = AppIcons.ClosePainterResource(),
                                 contentDescription = null,
                                 modifier = Modifier.size(IconSize.Small),
-                                tint = glassColors.onGlassSecondary,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         },
                         onClick = {
@@ -334,7 +332,7 @@ fun TargetRunConfigurationBar(
                                 imageVector = Icons.Default.Refresh,
                                 contentDescription = null,
                                 modifier = Modifier.size(IconSize.Small),
-                                tint = glassColors.glassAccent,
+                                tint = MaterialTheme.colorScheme.primary,
                             )
                         },
                         onClick = {
@@ -478,18 +476,16 @@ private fun TargetPillButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
     var isHovered by remember { mutableStateOf(false) }
 
     val backgroundState = when {
-        isMenuOpen -> glassColors.glassAccent.copy(alpha = AlphaTokens.Hover)
-        isHovered -> glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Hover)
-        else -> glassColors.glassSurface.copy(alpha = AlphaTokens.Faint)
+        isMenuOpen -> MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Hover)
+        isHovered -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = AlphaTokens.Hover)
+        else -> MaterialTheme.colorScheme.surfaceContainer.copy(alpha = AlphaTokens.Faint)
     }
 
     val animatedBg by animateColorAsState(
         targetValue = backgroundState,
-        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion),
         label = "pillBg",
     )
 
@@ -519,7 +515,7 @@ private fun TargetPillButton(
                     fontWeight = FontWeight.Medium,
                     fontFamily = codeFontFamily(),
                 ),
-                color = if (isMenuOpen || isHovered) glassColors.onGlass else glassColors.onGlassSecondary,
+                color = if (isMenuOpen || isHovered) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 softWrap = false,
                 overflow = TextOverflow.Ellipsis,
@@ -530,7 +526,7 @@ private fun TargetPillButton(
                 painter = AppIcons.ChevronDownPainterResource(),
                 contentDescription = "Dropdown",
                 modifier = Modifier.size(IconSize.Small),
-                tint = if (isMenuOpen || isHovered) glassColors.onGlass else glassColors.onGlassMuted,
+                tint = if (isMenuOpen || isHovered) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

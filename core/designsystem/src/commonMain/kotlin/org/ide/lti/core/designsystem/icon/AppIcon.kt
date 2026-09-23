@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.designsystem.icon
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Modifier
@@ -34,7 +35,7 @@ fun GlassIcon(
     icon: AppIcon,
     modifier: Modifier = Modifier,
     contentDescription: String? = null,
-    tint: androidx.compose.ui.graphics.Color = org.ide.lti.core.designsystem.theme.GlassTheme.colors.onGlassSecondary,
+    tint: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurfaceVariant,
 ) {
     when (icon) {
         is AppIcon.Vector -> androidx.compose.material3.Icon(

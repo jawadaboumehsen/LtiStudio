@@ -46,7 +46,7 @@ internal fun PluginDetailsDialog(record: InstalledRecord, references: List<Strin
             }
         },
     ) {
-        CompositionLocalProvider(LocalContentColor provides GlassTheme.colors.onGlass) {
+        CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
             LazyColumn(
                 modifier = Modifier.fillMaxWidth().height(ComponentSize.ActionCardHeight * 3),
                 verticalArrangement = Arrangement.spacedBy(Spacing.Small),
@@ -74,14 +74,14 @@ internal fun PluginDetailsDialog(record: InstalledRecord, references: List<Strin
                             Text(
                                 text = "Not referenced by any active workspace or dependency.",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = GlassTheme.colors.onGlassSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         } else {
                             references.forEach { ref ->
                                 Text(
                                     text = "• $ref",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = GlassTheme.colors.onGlass,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                 )
                             }
                         }
@@ -94,14 +94,14 @@ internal fun PluginDetailsDialog(record: InstalledRecord, references: List<Strin
                             Text(
                                 text = "None declared.",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = GlassTheme.colors.onGlassSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         } else {
                             record.dependencies.forEach { dep ->
                                 Text(
                                     text = "• ${dep.publisher}:${dep.id} (${dep.versionRange})",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = GlassTheme.colors.onGlass,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                 )
                             }
                         }
@@ -114,14 +114,14 @@ internal fun PluginDetailsDialog(record: InstalledRecord, references: List<Strin
                             Text(
                                 text = "None declared.",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = GlassTheme.colors.onGlassSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         } else {
                             record.conflicts.forEach { c ->
                                 Text(
                                     text = "• ${c.publisher}:${c.id} (${c.versionRange})",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = GlassTheme.colors.onGlass,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                 )
                             }
                         }
@@ -134,7 +134,7 @@ internal fun PluginDetailsDialog(record: InstalledRecord, references: List<Strin
                             text = "Data-only package. Author code is compiled to smali/DEX payloads and " +
                                 "executed by ROM engine operations. No arbitrary shell script execution permitted.",
                             style = MaterialTheme.typography.bodySmall,
-                            color = GlassTheme.colors.onGlassSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
@@ -144,7 +144,7 @@ internal fun PluginDetailsDialog(record: InstalledRecord, references: List<Strin
                         Text(
                             text = "Standard LtiRom SDK Data Plugin License. All operations declarative.",
                             style = MaterialTheme.typography.bodySmall,
-                            color = GlassTheme.colors.onGlassSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
@@ -155,18 +155,16 @@ internal fun PluginDetailsDialog(record: InstalledRecord, references: List<Strin
 
 @Composable
 private fun DetailSection(title: String, content: @Composable () -> Unit) {
-    val shellColors = GlassTheme.ideShellColors
     GlassCard(
         modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.ExtraExtraSmall),
-        surfaceColor = shellColors.cardBackground,
-        borderColor = shellColors.border,
+        surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
     ) {
         Column(modifier = Modifier.padding(Spacing.Small)) {
             Text(
                 text = title,
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.SemiBold,
-                color = GlassTheme.colors.glassAccent,
+                color = MaterialTheme.colorScheme.primary,
             )
             Spacer(modifier = Modifier.height(Spacing.ExtraSmall))
             content()
@@ -184,14 +182,14 @@ private fun DetailRow(label: String, value: String) {
         Text(
             text = label,
             style = MaterialTheme.typography.bodySmall,
-            color = GlassTheme.colors.onGlassMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
             text = value,
             style = MaterialTheme.typography.bodySmall,
             fontWeight = FontWeight.Medium,
             fontFamily = codeFontFamily(),
-            color = GlassTheme.colors.onGlass,
+            color = MaterialTheme.colorScheme.onSurface,
         )
     }
 }

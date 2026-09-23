@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.rom.studio.stage.assemble.panes
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -63,7 +64,6 @@ import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -91,7 +91,6 @@ public fun BuildPropertiesPane(
     onValidate: () -> Unit,
     onSave: () -> Unit,
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     var buildType by remember(settings.buildType) {
         mutableStateOf(if (settings.buildType.isNotBlank()) settings.buildType else "userdebug")
@@ -142,13 +141,13 @@ public fun BuildPropertiesPane(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(GlassShapes.ShellCard)
-                        .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+                        .ideCardSurface(shape = GlassShapes.ShellCard)
                         .padding(Spacing.Medium),
                     verticalArrangement = Arrangement.spacedBy(Spacing.Small),
                 ) {
                     Text(
                         text = "General configuration",
-                        color = colors.textMain,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = FontSize.BodySmall,
                         fontWeight = FontWeight.SemiBold,
                         fontFamily = ideFontFamily(),
@@ -166,7 +165,6 @@ public fun BuildPropertiesPane(
                                 onChange(settings.copy(buildType = it))
                             },
                             modifier = Modifier.weight(1f),
-                            colors = colors,
                         )
 
                         // ROM version field
@@ -180,14 +178,14 @@ public fun BuildPropertiesPane(
                             ) {
                                 Text(
                                     text = "ROM version",
-                                    color = colors.textDim,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontSize = FontSize.Micro,
                                     fontFamily = ideFontFamily(),
                                 )
                                 Icon(
                                     imageVector = Icons.Default.Info,
                                     contentDescription = null,
-                                    tint = colors.accentBlue,
+                                    tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(IconSize.ExtraSmall),
                                 )
                             }
@@ -199,18 +197,18 @@ public fun BuildPropertiesPane(
                                     onChange(settings.copy(romVersion = it))
                                 },
                                 textStyle = TextStyle(
-                                    color = colors.textMain,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     fontSize = FontSize.Micro,
                                     fontFamily = codeFontFamily(),
                                 ),
-                                cursorBrush = SolidColor(colors.accentBlue),
+                                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                                 singleLine = true,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .background(colors.cardBackgroundMuted, GlassShapes.ShellControl)
+                                    .background(MaterialTheme.colorScheme.surfaceContainer, GlassShapes.ShellControl)
                                     .border(
                                         width = GlassDimens.HairlineBorder,
-                                        color = colors.borderMuted,
+                                        color = MaterialTheme.colorScheme.outlineVariant,
                                         shape = GlassShapes.ShellControl,
                                     )
                                     .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Small),
@@ -220,7 +218,7 @@ public fun BuildPropertiesPane(
 
                     Text(
                         text = "Use semantic versioning (e.g. 1.0.0 or 1.0.0-dev).",
-                        color = colors.textDim,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = FontSize.Micro,
                         fontFamily = ideFontFamily(),
                     )
@@ -231,7 +229,7 @@ public fun BuildPropertiesPane(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(GlassShapes.ShellCard)
-                        .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+                        .ideCardSurface(shape = GlassShapes.ShellCard)
                         .padding(Spacing.Medium),
                     verticalArrangement = Arrangement.spacedBy(Spacing.Small),
                 ) {
@@ -248,7 +246,7 @@ public fun BuildPropertiesPane(
                             ) {
                                 Text(
                                     text = "Property overrides",
-                                    color = colors.textMain,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     fontSize = FontSize.BodySmall,
                                     fontWeight = FontWeight.SemiBold,
                                     fontFamily = ideFontFamily(),
@@ -256,14 +254,14 @@ public fun BuildPropertiesPane(
                                 Icon(
                                     imageVector = Icons.Default.Info,
                                     contentDescription = null,
-                                    tint = colors.accentBlue,
+                                    tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(IconSize.ExtraSmall),
                                 )
                             }
                             Text(
                                 text = "Add or override system properties for the build. " +
                                     "Invalid entries are highlighted.",
-                                color = colors.textMuted,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = FontSize.Micro,
                                 fontFamily = ideFontFamily(),
                             )
@@ -284,10 +282,10 @@ public fun BuildPropertiesPane(
                                     Icon(
                                         imageVector = Icons.Default.Add,
                                         contentDescription = null,
-                                        tint = colors.textMain,
+                                        tint = MaterialTheme.colorScheme.onSurface,
                                         modifier = Modifier.size(IconSize.ExtraSmall),
                                     )
-                                    Text("+ Add property", color = colors.textMain, fontSize = FontSize.Micro)
+                                    Text("+ Add property", color = MaterialTheme.colorScheme.onSurface, fontSize = FontSize.Micro)
                                 }
                             }
 
@@ -311,10 +309,10 @@ public fun BuildPropertiesPane(
                                     Icon(
                                         imageVector = Icons.Default.Delete,
                                         contentDescription = null,
-                                        tint = colors.textMuted,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.size(IconSize.ExtraSmall),
                                     )
-                                    Text("Remove selected", color = colors.textMuted, fontSize = FontSize.Micro)
+                                    Text("Remove selected", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro)
                                 }
                             }
                         }
@@ -327,7 +325,7 @@ public fun BuildPropertiesPane(
                     ) {
                         Text(
                             text = "#",
-                            color = colors.textDim,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = FontSize.Micro,
                             fontWeight = FontWeight.SemiBold,
                             fontFamily = ideFontFamily(),
@@ -343,15 +341,15 @@ public fun BuildPropertiesPane(
                                     }
                                 },
                                 colors = CheckboxDefaults.colors(
-                                    checkedColor = colors.accentBlue,
-                                    uncheckedColor = colors.textDim,
+                                    checkedColor = MaterialTheme.colorScheme.primary,
+                                    uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant,
                                 ),
                                 modifier = Modifier.size(IconSize.Small),
                             )
                         }
                         Text(
                             text = "Property name",
-                            color = colors.textDim,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = FontSize.Micro,
                             fontWeight = FontWeight.SemiBold,
                             fontFamily = ideFontFamily(),
@@ -359,7 +357,7 @@ public fun BuildPropertiesPane(
                         )
                         Text(
                             text = "Value",
-                            color = colors.textDim,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = FontSize.Micro,
                             fontWeight = FontWeight.SemiBold,
                             fontFamily = ideFontFamily(),
@@ -367,7 +365,7 @@ public fun BuildPropertiesPane(
                         )
                         Text(
                             text = "Source",
-                            color = colors.textDim,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = FontSize.Micro,
                             fontWeight = FontWeight.SemiBold,
                             fontFamily = ideFontFamily(),
@@ -376,7 +374,7 @@ public fun BuildPropertiesPane(
                         Spacer(Modifier.width(Spacing.Large))
                     }
 
-                    HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
+                    HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
 
                     // Properties Table Rows
                     properties.forEachIndexed { index, prop ->
@@ -388,7 +386,6 @@ public fun BuildPropertiesPane(
                                 if (checked) selectedIndices.add(index) else selectedIndices.remove(index)
                             },
                             entry = prop,
-                            colors = colors,
                         )
                     }
                 }
@@ -398,7 +395,7 @@ public fun BuildPropertiesPane(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(GlassShapes.ShellCard)
-                        .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+                        .ideCardSurface(shape = GlassShapes.ShellCard)
                         .padding(Spacing.Medium),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -410,20 +407,20 @@ public fun BuildPropertiesPane(
                         Icon(
                             imageVector = Icons.Default.Info,
                             contentDescription = null,
-                            tint = colors.accentBlue,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(IconSize.Medium),
                         )
                         Column(verticalArrangement = Arrangement.spacedBy(Spacing.Hairline)) {
                             Text(
                                 text = "Validation",
-                                color = colors.textMain,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontSize = FontSize.BodySmall,
                                 fontWeight = FontWeight.SemiBold,
                                 fontFamily = ideFontFamily(),
                             )
                             Text(
                                 text = "Found 1 error. Fix the highlighted fields and run validation again.",
-                                color = colors.textMuted,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = FontSize.Micro,
                                 fontFamily = ideFontFamily(),
                             )
@@ -442,10 +439,10 @@ public fun BuildPropertiesPane(
                             Icon(
                                 imageVector = Icons.Default.Check,
                                 contentDescription = null,
-                                tint = colors.textMain,
+                                tint = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.size(IconSize.ExtraSmall),
                             )
-                            Text("Validate", color = colors.textMain, fontSize = FontSize.Micro)
+                            Text("Validate", color = MaterialTheme.colorScheme.onSurface, fontSize = FontSize.Micro)
                         }
                     }
                 }
@@ -461,7 +458,7 @@ public fun BuildPropertiesPane(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(GlassShapes.ShellCard)
-                        .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+                        .ideCardSurface(shape = GlassShapes.ShellCard)
                         .padding(Spacing.Medium),
                     verticalArrangement = Arrangement.spacedBy(Spacing.Small),
                 ) {
@@ -472,12 +469,12 @@ public fun BuildPropertiesPane(
                         Icon(
                             imageVector = Icons.Default.Lock,
                             contentDescription = "Locked",
-                            tint = colors.textMuted,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(IconSize.Small),
                         )
                         Text(
                             text = "Reserved fields",
-                            color = colors.textMain,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontSize = FontSize.BodySmall,
                             fontWeight = FontWeight.SemiBold,
                             fontFamily = ideFontFamily(),
@@ -486,14 +483,14 @@ public fun BuildPropertiesPane(
 
                     Text(
                         text = "Device identifiers and security settings are managed by the build system.",
-                        color = colors.textMuted,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = FontSize.Micro,
                         fontFamily = ideFontFamily(),
                     )
 
-                    ReservedFieldItem("Target device", target.codename, colors)
-                    ReservedFieldItem("AVB signing", "Use default keys", colors)
-                    ReservedFieldItem("Verified Boot", "Enforcing (default)", colors)
+                    ReservedFieldItem("Target device", target.codename)
+                    ReservedFieldItem("AVB signing", "Use default keys")
+                    ReservedFieldItem("Verified Boot", "Enforcing (default)")
                 }
 
                 // Card 2: Help
@@ -501,7 +498,7 @@ public fun BuildPropertiesPane(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(GlassShapes.ShellCard)
-                        .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+                        .ideCardSurface(shape = GlassShapes.ShellCard)
                         .padding(Spacing.Medium),
                     verticalArrangement = Arrangement.spacedBy(Spacing.Small),
                 ) {
@@ -512,12 +509,12 @@ public fun BuildPropertiesPane(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.HelpOutline,
                             contentDescription = "Help",
-                            tint = colors.accentBlue,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(IconSize.Small),
                         )
                         Text(
                             text = "Help",
-                            color = colors.textMain,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontSize = FontSize.BodySmall,
                             fontWeight = FontWeight.SemiBold,
                             fontFamily = ideFontFamily(),
@@ -538,7 +535,7 @@ public fun BuildPropertiesPane(
                             ) {
                                 Text(
                                     text = tabName,
-                                    color = if (isSelected) colors.accentBlue else colors.textMuted,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontSize = FontSize.Micro,
                                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                                     fontFamily = ideFontFamily(),
@@ -548,14 +545,14 @@ public fun BuildPropertiesPane(
                                         modifier = Modifier
                                             .width(Spacing.Large)
                                             .height(GlassDimens.HairlineBorder)
-                                            .background(colors.accentBlue),
+                                            .background(MaterialTheme.colorScheme.primary),
                                     )
                                 }
                             }
                         }
                     }
 
-                    HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
+                    HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
 
                     val helpText = "Build properties allow you to override system properties that will " +
                         "be included in the generated system image.\n\n" +
@@ -563,7 +560,7 @@ public fun BuildPropertiesPane(
                         "Reserved fields are locked to prevent configuration errors."
                     Text(
                         text = helpText,
-                        color = colors.textMuted,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = FontSize.Micro,
                         fontFamily = ideFontFamily(),
                     )
@@ -578,14 +575,14 @@ public fun BuildPropertiesPane(
                     ) {
                         Text(
                             text = "Open build properties documentation",
-                            color = colors.accentBlue,
+                            color = MaterialTheme.colorScheme.primary,
                             fontSize = FontSize.Micro,
                             fontFamily = ideFontFamily(),
                         )
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.OpenInNew,
                             contentDescription = null,
-                            tint = colors.accentBlue,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(IconSize.ExtraSmall),
                         )
                     }
@@ -600,7 +597,6 @@ private fun BuildTypeDropdown(
     selected: String,
     onSelect: (String) -> Unit,
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme,
 ) {
     var expanded by remember { mutableStateOf(false) }
     val options = listOf("userdebug", "user", "eng")
@@ -615,14 +611,14 @@ private fun BuildTypeDropdown(
         ) {
             Text(
                 text = "Build type",
-                color = colors.textDim,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
             )
             Icon(
                 imageVector = Icons.Default.Info,
                 contentDescription = null,
-                tint = colors.accentBlue,
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(IconSize.ExtraSmall),
             )
         }
@@ -632,8 +628,8 @@ private fun BuildTypeDropdown(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(GlassShapes.ShellControl)
-                    .background(colors.cardBackgroundMuted)
-                    .border(GlassDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
+                    .background(MaterialTheme.colorScheme.surfaceContainer)
+                    .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outlineVariant, GlassShapes.ShellControl)
                     .clickable { expanded = true }
                     .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Small),
                 verticalAlignment = Alignment.CenterVertically,
@@ -641,14 +637,14 @@ private fun BuildTypeDropdown(
             ) {
                 Text(
                     text = selected,
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = FontSize.Micro,
                     fontFamily = codeFontFamily(),
                 )
                 Icon(
                     imageVector = Icons.Default.KeyboardArrowDown,
                     contentDescription = null,
-                    tint = colors.textDim,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(IconSize.Small),
                 )
             }
@@ -662,7 +658,7 @@ private fun BuildTypeDropdown(
                         text = {
                             Text(
                                 text = option,
-                                color = if (option == selected) colors.accentBlue else colors.textMain,
+                                color = if (option == selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                                 fontSize = FontSize.Micro,
                                 fontFamily = codeFontFamily(),
                             )
@@ -684,7 +680,6 @@ private fun PropertyRowItem(
     isChecked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     entry: PropertyEntry,
-    colors: IdeShellColorScheme,
 ) {
     Column(
         modifier = Modifier
@@ -697,7 +692,7 @@ private fun PropertyRowItem(
         ) {
             Text(
                 text = index.toString(),
-                color = colors.textDim,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = codeFontFamily(),
                 modifier = Modifier.width(Spacing.Large),
@@ -708,8 +703,8 @@ private fun PropertyRowItem(
                     checked = isChecked,
                     onCheckedChange = onCheckedChange,
                     colors = CheckboxDefaults.colors(
-                        checkedColor = colors.accentBlue,
-                        uncheckedColor = colors.textDim,
+                        checkedColor = MaterialTheme.colorScheme.primary,
+                        uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant,
                     ),
                     modifier = Modifier.size(IconSize.Small),
                 )
@@ -720,17 +715,17 @@ private fun PropertyRowItem(
                 modifier = Modifier
                     .weight(1.5f)
                     .padding(end = Spacing.ExtraSmall)
-                    .background(colors.cardBackgroundMuted, GlassShapes.ShellControl)
+                    .background(MaterialTheme.colorScheme.surfaceContainer, GlassShapes.ShellControl)
                     .border(
                         GlassDimens.HairlineBorder,
-                        if (entry.hasError) colors.errorRed else colors.borderMuted,
+                        if (entry.hasError) GlassTheme.diagnosticColors.error else MaterialTheme.colorScheme.outlineVariant,
                         GlassShapes.ShellControl,
                     )
                     .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),
             ) {
                 Text(
                     text = entry.key,
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = FontSize.Micro,
                     fontFamily = codeFontFamily(),
                 )
@@ -741,10 +736,10 @@ private fun PropertyRowItem(
                 modifier = Modifier
                     .weight(2f)
                     .padding(end = Spacing.ExtraSmall)
-                    .background(colors.cardBackgroundMuted, GlassShapes.ShellControl)
+                    .background(MaterialTheme.colorScheme.surfaceContainer, GlassShapes.ShellControl)
                     .border(
                         GlassDimens.HairlineBorder,
-                        if (entry.hasError) colors.errorRed else colors.borderMuted,
+                        if (entry.hasError) GlassTheme.diagnosticColors.error else MaterialTheme.colorScheme.outlineVariant,
                         GlassShapes.ShellControl,
                     )
                     .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),
@@ -756,7 +751,7 @@ private fun PropertyRowItem(
                 ) {
                     Text(
                         text = entry.value,
-                        color = colors.textMain,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = FontSize.Micro,
                         fontFamily = codeFontFamily(),
                         modifier = Modifier.weight(1f),
@@ -765,7 +760,7 @@ private fun PropertyRowItem(
                         Icon(
                             imageVector = Icons.Default.Error,
                             contentDescription = "Error",
-                            tint = colors.errorRed,
+                            tint = GlassTheme.diagnosticColors.error,
                             modifier = Modifier.size(IconSize.ExtraSmall),
                         )
                     }
@@ -775,7 +770,7 @@ private fun PropertyRowItem(
             // Source
             Text(
                 text = entry.source,
-                color = colors.textMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
                 modifier = Modifier.weight(0.8f),
@@ -789,7 +784,7 @@ private fun PropertyRowItem(
                 Icon(
                     imageVector = Icons.Default.MoreVert,
                     contentDescription = "More actions",
-                    tint = colors.textDim,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(IconSize.ExtraSmall),
                 )
             }
@@ -798,7 +793,7 @@ private fun PropertyRowItem(
         if (entry.hasError && entry.errorMessage != null) {
             Text(
                 text = entry.errorMessage,
-                color = colors.errorRed,
+                color = GlassTheme.diagnosticColors.error,
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
                 modifier = Modifier.padding(
@@ -811,11 +806,11 @@ private fun PropertyRowItem(
 }
 
 @Composable
-private fun ReservedFieldItem(label: String, value: String, colors: IdeShellColorScheme) {
+private fun ReservedFieldItem(label: String, value: String) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
         Text(
             text = label,
-            color = colors.textDim,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.Micro,
             fontFamily = ideFontFamily(),
         )
@@ -823,22 +818,22 @@ private fun ReservedFieldItem(label: String, value: String, colors: IdeShellColo
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(colors.cardBackgroundMuted, GlassShapes.ShellControl)
-                .border(GlassDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
+                .background(MaterialTheme.colorScheme.surfaceContainer, GlassShapes.ShellControl)
+                .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outlineVariant, GlassShapes.ShellControl)
                 .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Small),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
                 text = value,
-                color = colors.textMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = codeFontFamily(),
             )
             Icon(
                 imageVector = Icons.Default.Lock,
                 contentDescription = "Locked",
-                tint = colors.textDim,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(IconSize.ExtraSmall),
             )
         }

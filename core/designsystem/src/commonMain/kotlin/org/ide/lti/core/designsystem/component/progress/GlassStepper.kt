@@ -45,7 +45,6 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 
 /**
  * Execution status for an individual stage in a [GlassStepper].
@@ -132,12 +131,10 @@ fun GlassStepper(
     isBusy: Boolean = false,
     onRetryStep: ((stepId: String) -> Unit)? = null,
     onStepClick: ((stepId: String) -> Unit)? = null,
-    backdrop: GlassSceneState? = null,
 ) {
-    val glassColors = GlassTheme.colors
-    val diagnostics = glassColors.diagnostics
+    val diagnostics = GlassTheme.diagnosticColors
 
-    CompositionLocalProvider(LocalContentColor provides glassColors.onGlass) {
+    CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
         when (orientation) {
             GlassStepperOrientation.Horizontal -> {
                 Row(
@@ -170,7 +167,7 @@ fun GlassStepper(
                                 tint = if (isPreviousComplete) {
                                     diagnostics.success.copy(alpha = AlphaTokens.Border)
                                 } else {
-                                    glassColors.onGlassMuted.copy(alpha = AlphaTokens.Faint)
+                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = AlphaTokens.Faint)
                                 },
                                 modifier = Modifier.size(IconSize.Small),
                             )
@@ -203,7 +200,7 @@ fun GlassStepper(
                                 tint = if (isPreviousComplete) {
                                     diagnostics.success.copy(alpha = AlphaTokens.Border)
                                 } else {
-                                    glassColors.onGlassMuted.copy(alpha = AlphaTokens.Faint)
+                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = AlphaTokens.Faint)
                                 },
                                 modifier = Modifier.size(IconSize.Small),
                             )
@@ -224,8 +221,7 @@ private fun GlassStepNode(
     onClick: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
-    val diagnostics = glassColors.diagnostics
+    val diagnostics = GlassTheme.diagnosticColors
 
     val isSuccess = step.status == GlassStepStatus.SUCCESS
     val isRunning = step.status == GlassStepStatus.RUNNING
@@ -233,39 +229,39 @@ private fun GlassStepNode(
     val isWarning = step.status == GlassStepStatus.WARNING
 
     val statusColor = when (step.status) {
-        GlassStepStatus.RUNNING -> glassColors.glassAccent
+        GlassStepStatus.RUNNING -> MaterialTheme.colorScheme.primary
         GlassStepStatus.SUCCESS -> diagnostics.success
         GlassStepStatus.WARNING -> diagnostics.warning
         GlassStepStatus.FAILED -> diagnostics.error
-        GlassStepStatus.PENDING -> glassColors.onGlassMuted
-        GlassStepStatus.SKIPPED -> glassColors.onGlassMuted
-        GlassStepStatus.CANCELLED -> glassColors.onGlassMuted
-        GlassStepStatus.INTERRUPTED -> glassColors.onGlassMuted
-        GlassStepStatus.RESTORED -> glassColors.onGlassMuted
+        GlassStepStatus.PENDING -> MaterialTheme.colorScheme.onSurfaceVariant
+        GlassStepStatus.SKIPPED -> MaterialTheme.colorScheme.onSurfaceVariant
+        GlassStepStatus.CANCELLED -> MaterialTheme.colorScheme.onSurfaceVariant
+        GlassStepStatus.INTERRUPTED -> MaterialTheme.colorScheme.onSurfaceVariant
+        GlassStepStatus.RESTORED -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     val backgroundColor = when {
-        isRunning -> glassColors.glassAccent.copy(alpha = AlphaTokens.GlassSecondaryTint)
+        isRunning -> MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.GlassSecondaryTint)
         isSuccess -> diagnostics.success.copy(alpha = AlphaTokens.Faint)
         isFailed -> diagnostics.error.copy(alpha = AlphaTokens.Faint)
         isWarning -> diagnostics.warning.copy(alpha = AlphaTokens.Faint)
-        else -> glassColors.glassSurface
+        else -> MaterialTheme.colorScheme.surfaceContainer
     }
 
     val borderColor = when {
-        isRunning -> glassColors.glassAccent
+        isRunning -> MaterialTheme.colorScheme.primary
         isSuccess -> diagnostics.success.copy(alpha = AlphaTokens.Border)
         isFailed -> diagnostics.error.copy(alpha = AlphaTokens.Border)
         isWarning -> diagnostics.warning.copy(alpha = AlphaTokens.Border)
-        else -> glassColors.glassBorder
+        else -> MaterialTheme.colorScheme.outline
     }
 
     val iconBgColor = when {
-        isRunning -> glassColors.glassAccent.copy(alpha = AlphaTokens.GlassSecondaryTint)
+        isRunning -> MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.GlassSecondaryTint)
         isSuccess -> diagnostics.success.copy(alpha = AlphaTokens.GlassSecondaryTint)
         isFailed -> diagnostics.error.copy(alpha = AlphaTokens.GlassSecondaryTint)
         isWarning -> diagnostics.warning.copy(alpha = AlphaTokens.GlassSecondaryTint)
-        else -> glassColors.onGlassMuted.copy(alpha = AlphaTokens.Faint)
+        else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = AlphaTokens.Faint)
     }
 
     val clickModifier = if (onClick != null) {
@@ -304,7 +300,7 @@ private fun GlassStepNode(
                         GlassStepStatus.RUNNING -> CircularProgressIndicator(
                             modifier = Modifier.size(IconSize.Small),
                             strokeWidth = StrokeWidth.Hairline,
-                            color = glassColors.glassAccent,
+                            color = MaterialTheme.colorScheme.primary,
                         )
                         GlassStepStatus.SUCCESS -> Icon(
                             painter = AppIcons.CheckPainterResource(),
@@ -327,36 +323,36 @@ private fun GlassStepNode(
                         GlassStepStatus.PENDING -> Text(
                             text = "$index",
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                            color = glassColors.onGlassMuted,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         GlassStepStatus.SKIPPED -> Icon(
                             painter = AppIcons.ChevronRightPainterResource(),
                             contentDescription = "Skipped",
-                            tint = glassColors.onGlassMuted,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(IconSize.Small),
                         )
                         GlassStepStatus.CANCELLED -> Icon(
                             painter = AppIcons.ClearPainterResource(),
                             contentDescription = "Cancelled",
-                            tint = glassColors.onGlassMuted,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(IconSize.Small),
                         )
                         GlassStepStatus.INTERRUPTED -> Icon(
                             painter = AppIcons.ideStatusWarning(),
                             contentDescription = "Interrupted",
-                            tint = glassColors.onGlassMuted,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(IconSize.Small),
                         )
                         GlassStepStatus.RESTORED -> Box(contentAlignment = Alignment.Center) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(IconSize.Small),
                                 strokeWidth = StrokeWidth.Hairline,
-                                color = glassColors.onGlassMuted,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                             Icon(
                                 painter = AppIcons.CheckPainterResource(),
                                 contentDescription = "Restored",
-                                tint = glassColors.onGlassMuted.copy(alpha = AlphaTokens.Muted),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = AlphaTokens.Muted),
                                 modifier = Modifier.size(IconSize.Indicator),
                             )
                         }
@@ -376,7 +372,7 @@ private fun GlassStepNode(
                             Icon(
                                 painter = AppIcons.RefreshPainterResource(),
                                 contentDescription = "Retry",
-                                tint = if (!isBusy) diagnostics.error else glassColors.onGlassMuted,
+                                tint = if (!isBusy) diagnostics.error else MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(IconSize.Small),
                             )
                         }
@@ -387,7 +383,7 @@ private fun GlassStepNode(
             Text(
                 text = step.shortTitle,
                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                color = if (isRunning || isSuccess) glassColors.onGlass else glassColors.onGlassSecondary,
+                color = if (isRunning || isSuccess) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 softWrap = false,
                 overflow = TextOverflow.Ellipsis,

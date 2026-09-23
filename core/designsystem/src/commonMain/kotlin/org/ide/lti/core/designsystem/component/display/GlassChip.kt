@@ -10,13 +10,13 @@
 package org.ide.lti.core.designsystem.component.display
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import org.ide.lti.core.designsystem.theme.HazeShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,30 +28,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
-import com.kashif_e.backdrop.drawBackdrop
-import com.kashif_e.backdrop.highlight.Highlight
-import org.ide.lti.core.designsystem.component.actions.*
-import org.ide.lti.core.designsystem.component.devtools.*
-import org.ide.lti.core.designsystem.component.feedback.*
-import org.ide.lti.core.designsystem.component.inputs.*
-import org.ide.lti.core.designsystem.component.layout.*
-import org.ide.lti.core.designsystem.component.navigation.*
-import org.ide.lti.core.designsystem.component.primitives.*
+import dev.chrisbanes.haze.ExperimentalHazeApi
+import dev.chrisbanes.haze.HazeInput
+import dev.chrisbanes.haze.glass.GlassStyle
+import dev.chrisbanes.haze.glass.hazeGlass
+import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
-import org.ide.lti.core.designsystem.theme.glass.GlassStyles
-import org.ide.lti.core.designsystem.theme.glass.resolve
-import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
 
 /**
  * Type-safe interaction mode for [GlassChip].
@@ -63,7 +54,8 @@ sealed interface ChipMode {
 }
 
 /**
- * Standardized Liquid Glass Chip component supporting action and toggleable filter modes.
+ * Standardized Liquid Glass Chip component - built on Haze's real `Modifier.hazeGlass`, same
+ * `hovered { }` interaction pattern as [org.ide.lti.core.designsystem.component.actions.GlassButton].
  *
  * @param label The text label of the chip.
  * @param modifier Optional modifier.
@@ -73,65 +65,43 @@ sealed interface ChipMode {
  * @param leadingIcon Optional leading icon slot.
  * @param trailingIcon Optional trailing icon slot.
  * @param enabled Whether interaction is enabled.
- * @param backdrop Optional custom backdrop instance.
  */
-@OptIn(ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalHazeApi::class)
 @Composable
 fun GlassChip(
     label: String,
     modifier: Modifier = Modifier,
-    shape: Shape = GlassShapes.Capsule,
+    shape: HazeShape = GlassShapes.HazeCapsule,
     selected: Boolean = false,
     onClick: (() -> Unit)? = null,
     onSelectedChange: ((Boolean) -> Unit)? = null,
     leadingIcon: (@Composable () -> Unit)? = null,
     trailingIcon: (@Composable () -> Unit)? = null,
     enabled: Boolean = true,
-    backdrop: GlassSceneState? = null,
 ) {
     var isHovered by remember { mutableStateOf(false) }
-    val glassColors = GlassTheme.colors
-    val effectsEnabled = GlassTheme.effectsEnabled
-    val actualBackdrop = backdrop ?: GlassTheme.scene
-    val chipShape = shape
-    val chipStyle = GlassStyles.chip
-    val chipEffect = chipStyle.resolve()
+    val colors = MaterialTheme.colorScheme
 
     val targetBackground = when {
-        selected && isHovered -> glassColors.glassAccent.copy(alpha = AlphaTokens.Elevated)
-        selected -> glassColors.glassAccent.copy(alpha = AlphaTokens.Hover)
-        isHovered -> glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Elevated)
-        else -> glassColors.glassSurface.copy(alpha = AlphaTokens.Elevated)
+        selected && isHovered -> colors.primary.copy(alpha = AlphaTokens.Elevated)
+        selected -> colors.primary.copy(alpha = AlphaTokens.Hover)
+        isHovered -> colors.surfaceContainerHigh.copy(alpha = AlphaTokens.Elevated)
+        else -> colors.surfaceContainer.copy(alpha = AlphaTokens.Elevated)
     }
-
-    val targetBorder = when {
-        selected && isHovered -> glassColors.glassBorderHighlight.copy(alpha = AlphaTokens.Prominent)
-        selected -> glassColors.glassAccent.copy(alpha = AlphaTokens.Prominent)
-        isHovered -> glassColors.glassBorderHighlight.copy(alpha = AlphaTokens.Prominent)
-        else -> glassColors.glassBorderHighlight.copy(alpha = AlphaTokens.Hover)
+    val targetBorder = if (selected || isHovered) {
+        colors.primary.copy(alpha = AlphaTokens.Prominent)
+    } else {
+        colors.primary.copy(alpha = AlphaTokens.Hover)
     }
-
     val targetText = when {
-        selected && isHovered -> glassColors.onGlass
-        selected -> glassColors.glassAccent
-        isHovered -> glassColors.onGlass
-        else -> glassColors.onGlassSecondary
+        selected -> colors.primary
+        isHovered -> colors.onSurface
+        else -> colors.onSurfaceVariant
     }
 
-    val backgroundColor by animateColorAsState(
-        targetValue = targetBackground,
-        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion),
-    )
-
-    val borderColor by animateColorAsState(
-        targetValue = targetBorder,
-        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion),
-    )
-
-    val textColor by animateColorAsState(
-        targetValue = targetText,
-        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion),
-    )
+    val backgroundColor by animateColorAsState(targetBackground)
+    val borderColor by animateColorAsState(targetBorder)
+    val textColor by animateColorAsState(targetText)
 
     val effectiveClick: (() -> Unit)? = when {
         !enabled -> null
@@ -142,43 +112,35 @@ fun GlassChip(
         else -> null
     }
 
-    val clickableModifier = if (effectiveClick != null) {
-        Modifier.clickable(
-            interactionSource = remember { MutableInteractionSource() },
-            indication = null,
-            role = if (onSelectedChange != null) Role.Checkbox else Role.Button,
-            onClick = effectiveClick,
-        )
-    } else {
-        Modifier
-    }
-
     Box(
         modifier = modifier
-            .clip(chipShape)
-            .then(
-                if (effectsEnabled && actualBackdrop != null) {
-                    Modifier.drawBackdrop(
-                        backdrop = actualBackdrop.engineBackdrop,
-                        shape = { chipShape },
-                        resolvedEffect = chipEffect,
-                        highlight = { if (isHovered || selected) Highlight.Ambient else null },
-                        onDrawSurface = {
-                            drawRect(backgroundColor)
-                        },
-                    )
-                } else {
-                    Modifier.background(backgroundColor)
+            .hazeGlass(
+                input = HazeInput.Backdrop(GlassTheme.hazeState),
+                style = remember(shape, backgroundColor) {
+                    GlassStyle.regular then GlassStyle {
+                        this.shape(shape)
+                        backgroundColor(backgroundColor)
+                        hovered { lightingIntensity(0.35f) }
+                        pressed { scale(0.96f) }
+                    }
                 },
             )
-            .glassOutlineBorder(
-                color = borderColor,
-                width = StrokeWidth.Hairline,
-                shape = chipShape,
-            )
+            .clip(shape)
+            .glassOutlineBorder(color = borderColor, width = StrokeWidth.Hairline, shape = shape)
             .onPointerEvent(PointerEventType.Enter) { if (enabled) isHovered = true }
             .onPointerEvent(PointerEventType.Exit) { if (enabled) isHovered = false }
-            .then(clickableModifier)
+            .then(
+                if (effectiveClick != null) {
+                    Modifier.clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        role = if (onSelectedChange != null) Role.Checkbox else Role.Button,
+                        onClick = effectiveClick,
+                    )
+                } else {
+                    Modifier
+                },
+            )
             .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Compact),
         contentAlignment = Alignment.Center,
     ) {
@@ -189,9 +151,7 @@ fun GlassChip(
             leadingIcon?.invoke()
             Text(
                 text = label,
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontSize = FontSize.Chip,
-                ),
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = FontSize.Chip),
                 color = textColor,
                 maxLines = 1,
                 softWrap = false,

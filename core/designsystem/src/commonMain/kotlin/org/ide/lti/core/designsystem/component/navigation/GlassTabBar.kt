@@ -34,15 +34,14 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
-import com.kashif_e.backdrop.ResolvedGlassEffect
-import com.kashif_e.backdrop.drawBackdrop
-import com.kashif_e.backdrop.highlight.Highlight
+import dev.chrisbanes.haze.ExperimentalHazeApi
+import dev.chrisbanes.haze.HazeInput
+import dev.chrisbanes.haze.glass.GlassStyle
+import dev.chrisbanes.haze.glass.hazeGlass
 import org.ide.lti.core.designsystem.component.actions.*
 import org.ide.lti.core.designsystem.component.devtools.*
 import org.ide.lti.core.designsystem.component.display.*
@@ -54,56 +53,47 @@ import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
-import org.ide.lti.core.designsystem.theme.GlassColorScheme
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.HazeShape
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
-import org.ide.lti.core.designsystem.theme.glass.GlassStyles
-import org.ide.lti.core.designsystem.theme.glass.resolve
 
-@OptIn(ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalHazeApi::class)
 @Composable
 fun GlassTab(
     text: String,
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    selectedColor: Color = GlassTheme.colors.glassAccent.copy(alpha = AlphaTokens.PrimaryButtonTint),
-    unselectedColor: Color = GlassTheme.colors.glassSurfaceElevated,
-    backdrop: GlassSceneState? = null,
+    selectedColor: Color = MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.PrimaryButtonTint),
+    unselectedColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
 ) {
     var isHovered by remember { mutableStateOf(false) }
-    val glassColors = GlassTheme.colors
-    val effectsEnabled = GlassTheme.effectsEnabled
-    val actualBackdrop = backdrop ?: GlassTheme.scene
-    val tabShape = GlassShapes.Capsule
-    val iconButtonStyle = GlassStyles.iconButton
-    val tabEffect = iconButtonStyle.resolve()
+    val tabShape = GlassShapes.HazeCapsule
 
     val surfaceColor = when {
         selected -> selectedColor
-        isHovered -> glassColors.glassSurfaceElevated
+        isHovered -> MaterialTheme.colorScheme.surfaceContainerHigh
         else -> unselectedColor
     }
     val tintColor = if (selected) {
-        glassColors.glassAccent.copy(alpha = AlphaTokens.Hover)
+        MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Hover)
     } else {
         Color.Transparent
     }
     val contentColor = when {
-        selected -> glassColors.onGlass
-        isHovered -> glassColors.onGlassSecondary
-        else -> glassColors.onGlassMuted
+        selected -> MaterialTheme.colorScheme.onSurface
+        isHovered -> MaterialTheme.colorScheme.onSurfaceVariant
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     val borderColor = when {
-        selected && isHovered -> glassColors.glassBorderHighlight
-        selected -> glassColors.glassBorder
-        isHovered -> glassColors.glassBorder.copy(alpha = AlphaTokens.Border)
-        else -> glassColors.glassBorder.copy(alpha = AlphaTokens.Disabled)
+        selected && isHovered -> MaterialTheme.colorScheme.primary
+        selected -> MaterialTheme.colorScheme.outline
+        isHovered -> MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Border)
+        else -> MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Disabled)
     }
 
     Tab(
@@ -119,19 +109,11 @@ fun GlassTab(
         },
         selected = selected,
         onClick = onClick,
-        selectedContentColor = glassColors.onGlass,
-        unselectedContentColor = glassColors.onGlassMuted,
+        selectedContentColor = MaterialTheme.colorScheme.onSurface,
+        unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = modifier
+            .tabGlassSurface(tabShape, surfaceColor, tintColor)
             .clip(tabShape)
-            .tabGlassSurface(
-                isHovered = isHovered,
-                effectsEnabled = effectsEnabled,
-                backdrop = actualBackdrop,
-                shape = tabShape,
-                surfaceColor = surfaceColor,
-                tintColor = tintColor,
-                effect = tabEffect,
-            )
             .glassOutlineBorder(
                 color = borderColor,
                 width = StrokeWidth.Hairline,
@@ -147,7 +129,7 @@ fun GlassTab(
  * Tab item for panel tab bars.
  * Displays a single tab with optional close action and real glass backdrop.
  */
-@OptIn(ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalHazeApi::class)
 @Composable
 fun GlassTabItem(
     title: String,
@@ -155,30 +137,17 @@ fun GlassTabItem(
     onSelect: () -> Unit,
     modifier: Modifier = Modifier,
     onClose: (() -> Unit)? = null,
-    backdrop: GlassSceneState? = null,
 ) {
     var isHovered by remember { mutableStateOf(false) }
-    val glassColors = GlassTheme.colors
-    val effectsEnabled = GlassTheme.effectsEnabled
-    val actualBackdrop = backdrop ?: GlassTheme.scene
-    val tabShape = GlassShapes.Small
-    val tabColors = resolveTabItemColors(selected, isHovered, glassColors)
-    val iconButtonStyle = GlassStyles.iconButton
-    val tabEffect = iconButtonStyle.resolve()
+    val tabShape = GlassShapes.HazeSmall
+    val tabColors = resolveTabItemColors(selected, isHovered)
+    val selectedUnderlineColor = MaterialTheme.colorScheme.primary
 
     Row(
         modifier = modifier
             .height(ComponentSize.TabItemHeight)
+            .tabGlassSurface(tabShape, tabColors.surfaceColor, tabColors.tintColor)
             .clip(tabShape)
-            .tabGlassSurface(
-                isHovered = isHovered,
-                effectsEnabled = effectsEnabled,
-                backdrop = actualBackdrop,
-                shape = tabShape,
-                surfaceColor = tabColors.surfaceColor,
-                tintColor = tabColors.tintColor,
-                effect = tabEffect,
-            )
             .glassOutlineBorder(
                 color = tabColors.borderColor,
                 width = StrokeWidth.Hairline,
@@ -198,9 +167,9 @@ fun GlassTabItem(
                         drawLine(
                             brush = Brush.horizontalGradient(
                                 colors = listOf(
-                                    glassColors.glassBorderHighlight.copy(alpha = AlphaTokens.Prominent),
-                                    glassColors.glassHighlight.copy(alpha = AlphaTokens.Medium),
-                                    glassColors.glassBorderHighlight.copy(alpha = AlphaTokens.Glow),
+                                    selectedUnderlineColor.copy(alpha = AlphaTokens.Prominent),
+                                    selectedUnderlineColor.copy(alpha = AlphaTokens.Medium),
+                                    selectedUnderlineColor.copy(alpha = AlphaTokens.Glow),
                                     Color.Transparent,
                                 ),
                                 startX = 0f,
@@ -231,7 +200,7 @@ fun GlassTabItem(
             GlassIconButton(
                 onClick = onClose,
                 size = IconSize.Medium,
-                shape = GlassShapes.ExtraSmall,
+                shape = GlassShapes.HazeExtraSmall,
             ) {
                 Icon(
                     painter = AppIcons.ClosePainterResource(),
@@ -250,22 +219,22 @@ private class TabItemColors(
     val borderColor: Color,
 )
 
+@Composable
 private fun resolveTabItemColors(
     selected: Boolean,
     isHovered: Boolean,
-    glassColors: GlassColorScheme,
 ): TabItemColors {
-    val surfaceColor = if (selected || isHovered) glassColors.glassSurfaceElevated else Color.Transparent
-    val tintColor = if (selected) glassColors.glassAccent.copy(alpha = AlphaTokens.Hover) else Color.Transparent
+    val surfaceColor = if (selected || isHovered) MaterialTheme.colorScheme.surfaceContainerHigh else Color.Transparent
+    val tintColor = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Hover) else Color.Transparent
     val textColor = when {
-        selected -> glassColors.onGlass
-        isHovered -> glassColors.onGlassSecondary
-        else -> glassColors.onGlassMuted
+        selected -> MaterialTheme.colorScheme.onSurface
+        isHovered -> MaterialTheme.colorScheme.onSurfaceVariant
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
     val borderColor = when {
-        selected && isHovered -> glassColors.glassBorderHighlight
-        selected -> glassColors.glassBorder
-        isHovered -> glassColors.glassBorder.copy(alpha = AlphaTokens.Border)
+        selected && isHovered -> MaterialTheme.colorScheme.primary
+        selected -> MaterialTheme.colorScheme.outline
+        isHovered -> MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Border)
         else -> Color.Transparent
     }
     return TabItemColors(surfaceColor, tintColor, textColor, borderColor)
@@ -303,9 +272,7 @@ fun GlassTabBar(
     onTabSelected: (String) -> Unit,
     modifier: Modifier = Modifier,
     actions: (@Composable () -> Unit)? = null,
-    backdrop: GlassSceneState? = null,
 ) {
-    val actualBackdrop = backdrop ?: GlassTheme.scene
     Row(
         modifier = modifier
             .height(ComponentSize.TabBarHeight)
@@ -329,7 +296,6 @@ fun GlassTabBar(
                     selected = isSelected,
                     onSelect = { onTabSelected(tab.id) },
                     onClose = closeAction,
-                    backdrop = actualBackdrop,
                 )
             }
         }
@@ -348,9 +314,7 @@ fun GlassTabBar(
     selectedIndex: Int = 0,
     onTabClosed: ((Int) -> Unit)? = null,
     actions: (@Composable () -> Unit)? = null,
-    backdrop: GlassSceneState? = null,
 ) {
-    val actualBackdrop = backdrop ?: GlassTheme.scene
     Row(
         modifier = modifier
             .height(ComponentSize.TabBarHeight)
@@ -369,7 +333,6 @@ fun GlassTabBar(
                     selected = index == selectedIndex,
                     onSelect = { onTabSelected(index) },
                     onClose = onTabClosed?.let { { it(index) } },
-                    backdrop = actualBackdrop,
                 )
             }
         }
@@ -377,36 +340,19 @@ fun GlassTabBar(
     }
 }
 
+@OptIn(ExperimentalHazeApi::class)
+@Composable
 private fun Modifier.tabGlassSurface(
-    isHovered: Boolean,
-    effectsEnabled: Boolean,
-    backdrop: GlassSceneState?,
-    shape: Shape,
+    shape: HazeShape,
     surfaceColor: Color,
     tintColor: Color,
-    effect: ResolvedGlassEffect,
-): Modifier = if (effectsEnabled && backdrop != null) {
-    this.drawBackdrop(
-        backdrop = backdrop.engineBackdrop,
-        shape = { shape },
-        resolvedEffect = effect,
-        highlight = { if (isHovered) Highlight.Ambient else Highlight.Plain },
-        onDrawSurface = {
-            if (surfaceColor.isSpecified && surfaceColor != Color.Transparent) {
-                drawRect(surfaceColor.copy(alpha = surfaceColor.alpha * AlphaTokens.ButtonFill))
-            }
-            if (tintColor.isSpecified && tintColor != Color.Transparent) {
-                drawRect(tintColor)
-            }
-        },
-    )
-} else {
-    this.drawBehind {
-        if (surfaceColor.isSpecified && surfaceColor != Color.Transparent) {
-            drawRect(surfaceColor.copy(alpha = surfaceColor.alpha * AlphaTokens.ButtonFill))
+): Modifier = this.hazeGlass(
+    input = HazeInput.Backdrop(GlassTheme.hazeState),
+    style = remember(shape, surfaceColor, tintColor) {
+        GlassStyle.regular.then {
+            this.shape(shape)
+            backgroundColor(surfaceColor)
+            tint(tintColor)
         }
-        if (tintColor.isSpecified && tintColor != Color.Transparent) {
-            drawRect(tintColor)
-        }
-    }
-}
+    },
+)

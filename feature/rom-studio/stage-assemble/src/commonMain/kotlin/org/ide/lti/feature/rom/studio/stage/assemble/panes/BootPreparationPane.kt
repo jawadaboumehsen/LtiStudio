@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.rom.studio.stage.assemble.panes
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -53,7 +54,6 @@ import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -73,7 +73,6 @@ public fun BootPreparationPane(
     onValidate: () -> Unit,
     onSave: () -> Unit,
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     var bootSource by remember { mutableStateOf("From extracted build (recommended)") }
     var kernelRamdiskHandling by remember { mutableStateOf("Use extracted components") }
@@ -97,20 +96,20 @@ public fun BootPreparationPane(
                 modifier = Modifier
                     .weight(1f)
                     .clip(GlassShapes.ShellCard)
-                    .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+                    .ideCardSurface(shape = GlassShapes.ShellCard)
                     .padding(Spacing.Medium),
                 verticalArrangement = Arrangement.spacedBy(Spacing.Small),
             ) {
                 Text(
                     text = "Configuration",
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = FontSize.BodyMedium,
                     fontWeight = FontWeight.SemiBold,
                     fontFamily = ideFontFamily(),
                 )
                 Text(
                     text = "Prepare the boot image using the target policy and selected components.",
-                    color = colors.textMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                     fontFamily = ideFontFamily(),
                 )
@@ -127,7 +126,6 @@ public fun BootPreparationPane(
                     onSelect = { bootSource = it },
                     helperText = "Uses boot image from the current workspace sources.",
                     hasInfoIcon = true,
-                    colors = colors,
                 )
 
                 // Field 2: Kernel and ramdisk handling
@@ -141,14 +139,13 @@ public fun BootPreparationPane(
                     ),
                     onSelect = { kernelRamdiskHandling = it },
                     helperText = "Keep kernel and ramdisk from source unless patches modify them.",
-                    colors = colors,
                 )
 
                 // Field 3: Patch integration (Checkbox)
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
                     Text(
                         text = "Patch integration",
-                        color = colors.textDim,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = FontSize.Micro,
                         fontFamily = ideFontFamily(),
                     )
@@ -163,20 +160,20 @@ public fun BootPreparationPane(
                             checked = applyBootPatches,
                             onCheckedChange = { applyBootPatches = it },
                             colors = CheckboxDefaults.colors(
-                                checkedColor = colors.accentBlue,
-                                uncheckedColor = colors.textDim,
+                                checkedColor = MaterialTheme.colorScheme.primary,
+                                uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant,
                             ),
                         )
                         Text(
                             text = "Apply compatible boot patches",
-                            color = colors.textMain,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontSize = FontSize.BodySmall,
                             fontFamily = ideFontFamily(),
                         )
                     }
                     Text(
                         text = "Includes kernel modules and ramdisk modifications from the Patches stage.",
-                        color = colors.textMuted,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = FontSize.Micro,
                         fontFamily = ideFontFamily(),
                         modifier = Modifier.padding(start = Spacing.Large),
@@ -194,7 +191,6 @@ public fun BootPreparationPane(
                     ),
                     onSelect = { avbHandling = it },
                     helperText = "Maintain verified boot settings from source.",
-                    colors = colors,
                 )
 
                 // Field 5: Boot footer policy
@@ -213,7 +209,6 @@ public fun BootPreparationPane(
                     },
                     helperText = "Footer configuration will follow target revision 4 policy.",
                     hasInfoIcon = true,
-                    colors = colors,
                 )
             }
 
@@ -227,13 +222,13 @@ public fun BootPreparationPane(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(GlassShapes.ShellCard)
-                        .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+                        .ideCardSurface(shape = GlassShapes.ShellCard)
                         .padding(Spacing.Medium),
                     verticalArrangement = Arrangement.spacedBy(Spacing.Small),
                 ) {
                     Text(
                         text = "Inspected boot image",
-                        color = colors.textMain,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = FontSize.BodySmall,
                         fontWeight = FontWeight.SemiBold,
                         fontFamily = ideFontFamily(),
@@ -241,11 +236,11 @@ public fun BootPreparationPane(
 
                     val clipboardManager = LocalClipboardManager.current
                     Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
-                        InspectedRow("Source", "extracted/boot.img", colors)
-                        InspectedRow("Device", target.codename, colors)
-                        InspectedRow("Android version", "14", colors)
-                        InspectedRow("Kernel version", "5.15.110-android14-g123abc", colors)
-                        InspectedRow("Build date", "2024-11-02 10:24:17", colors)
+                        InspectedRow("Source", "extracted/boot.img")
+                        InspectedRow("Device", target.codename)
+                        InspectedRow("Android version", "14")
+                        InspectedRow("Kernel version", "5.15.110-android14-g123abc")
+                        InspectedRow("Build date", "2024-11-02 10:24:17")
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -254,7 +249,7 @@ public fun BootPreparationPane(
                         ) {
                             Text(
                                 text = "Image hash (SHA-256)",
-                                color = colors.textMuted,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = FontSize.Micro,
                                 fontFamily = ideFontFamily(),
                             )
@@ -264,7 +259,7 @@ public fun BootPreparationPane(
                             ) {
                                 Text(
                                     text = "7e3f9a0c6b21...d4e8c2f1",
-                                    color = colors.textMain,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     fontSize = FontSize.Micro,
                                     fontFamily = codeFontFamily(),
                                 )
@@ -279,7 +274,7 @@ public fun BootPreparationPane(
                                     Icon(
                                         imageVector = Icons.Default.ContentCopy,
                                         contentDescription = "Copy hash",
-                                        tint = colors.textMuted,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.size(IconSize.ExtraSmall),
                                     )
                                 }
@@ -293,13 +288,13 @@ public fun BootPreparationPane(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(GlassShapes.ShellCard)
-                        .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+                        .ideCardSurface(shape = GlassShapes.ShellCard)
                         .padding(Spacing.Medium),
                     verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
                 ) {
                     Text(
                         text = "Footer verification",
-                        color = colors.textMain,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = FontSize.BodySmall,
                         fontWeight = FontWeight.SemiBold,
                         fontFamily = ideFontFamily(),
@@ -312,12 +307,12 @@ public fun BootPreparationPane(
                         Icon(
                             imageVector = Icons.Default.CheckCircle,
                             contentDescription = null,
-                            tint = colors.accentGreen,
+                            tint = GlassTheme.diagnosticColors.success,
                             modifier = Modifier.size(IconSize.Small),
                         )
                         Text(
                             text = "Valid",
-                            color = colors.accentGreen,
+                            color = GlassTheme.diagnosticColors.success,
                             fontSize = FontSize.BodySmall,
                             fontWeight = FontWeight.Bold,
                             fontFamily = ideFontFamily(),
@@ -326,7 +321,7 @@ public fun BootPreparationPane(
 
                     Text(
                         text = "Boot footer matches target policy (revision 4).",
-                        color = colors.textMuted,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = FontSize.Micro,
                         fontFamily = ideFontFamily(),
                     )
@@ -337,7 +332,7 @@ public fun BootPreparationPane(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(GlassShapes.ShellCard)
-                        .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+                        .ideCardSurface(shape = GlassShapes.ShellCard)
                         .padding(Spacing.Medium),
                     verticalArrangement = Arrangement.spacedBy(Spacing.Small),
                 ) {
@@ -347,7 +342,7 @@ public fun BootPreparationPane(
                     ) {
                         Text(
                             text = "Affected files preview",
-                            color = colors.textMain,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontSize = FontSize.BodySmall,
                             fontWeight = FontWeight.SemiBold,
                             fontFamily = ideFontFamily(),
@@ -355,7 +350,7 @@ public fun BootPreparationPane(
                         Icon(
                             imageVector = Icons.Default.Info,
                             contentDescription = null,
-                            tint = colors.accentBlue,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(IconSize.ExtraSmall),
                         )
                     }
@@ -368,30 +363,30 @@ public fun BootPreparationPane(
                     ) {
                         Text(
                             text = "Path",
-                            color = colors.textDim,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = FontSize.Micro,
                             fontWeight = FontWeight.SemiBold,
                             fontFamily = ideFontFamily(),
                         )
                         Text(
                             text = "Action",
-                            color = colors.textDim,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = FontSize.Micro,
                             fontWeight = FontWeight.SemiBold,
                             fontFamily = ideFontFamily(),
                         )
                     }
 
-                    HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
+                    HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
 
                     // Rows
-                    AffectedFileRow("boot.img", "Rebuild", IdeStatusSeverity.Warning, colors)
-                    AffectedFileRow("kernel", "Included", IdeStatusSeverity.Ready, colors)
-                    AffectedFileRow("ramdisk", "Included", IdeStatusSeverity.Ready, colors)
-                    AffectedFileRow("kernel_modules/*", "Included", IdeStatusSeverity.Ready, colors)
-                    AffectedFileRow("init_boot.img", "Unchanged", IdeStatusSeverity.Running, colors)
+                    AffectedFileRow("boot.img", "Rebuild", IdeStatusSeverity.Warning)
+                    AffectedFileRow("kernel", "Included", IdeStatusSeverity.Ready)
+                    AffectedFileRow("ramdisk", "Included", IdeStatusSeverity.Ready)
+                    AffectedFileRow("kernel_modules/*", "Included", IdeStatusSeverity.Ready)
+                    AffectedFileRow("init_boot.img", "Unchanged", IdeStatusSeverity.Running)
 
-                    HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
+                    HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
 
                     // Footnote Info
                     Row(
@@ -402,14 +397,14 @@ public fun BootPreparationPane(
                         Icon(
                             imageVector = Icons.Default.Info,
                             contentDescription = null,
-                            tint = colors.accentBlue,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(IconSize.ExtraSmall),
                         )
                         val filesNotice = "Files shown are relative to the output image. " +
                             "The final boot image will be generated during the Build stage."
                         Text(
                             text = filesNotice,
-                            color = colors.textDim,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = FontSize.Micro,
                             fontFamily = ideFontFamily(),
                         )
@@ -428,7 +423,6 @@ private fun BootSelectField(
     onSelect: (String) -> Unit,
     helperText: String,
     hasInfoIcon: Boolean = false,
-    colors: IdeShellColorScheme,
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -439,7 +433,7 @@ private fun BootSelectField(
         ) {
             Text(
                 text = label,
-                color = colors.textDim,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
             )
@@ -447,7 +441,7 @@ private fun BootSelectField(
                 Icon(
                     imageVector = Icons.Default.Info,
                     contentDescription = null,
-                    tint = colors.accentBlue,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(IconSize.ExtraSmall),
                 )
             }
@@ -458,8 +452,8 @@ private fun BootSelectField(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(GlassShapes.ShellControl)
-                    .background(colors.cardBackgroundMuted)
-                    .border(GlassDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
+                    .background(MaterialTheme.colorScheme.surfaceContainer)
+                    .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outlineVariant, GlassShapes.ShellControl)
                     .clickable { expanded = true }
                     .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Small),
                 verticalAlignment = Alignment.CenterVertically,
@@ -467,14 +461,14 @@ private fun BootSelectField(
             ) {
                 Text(
                     text = value,
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = FontSize.Micro,
                     fontFamily = ideFontFamily(),
                 )
                 Icon(
                     imageVector = Icons.Default.KeyboardArrowDown,
                     contentDescription = null,
-                    tint = colors.textDim,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(IconSize.Small),
                 )
             }
@@ -488,7 +482,7 @@ private fun BootSelectField(
                         text = {
                             Text(
                                 text = option,
-                                color = if (option == value) colors.accentBlue else colors.textMain,
+                                color = if (option == value) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                                 fontSize = FontSize.Micro,
                                 fontFamily = ideFontFamily(),
                             )
@@ -504,7 +498,7 @@ private fun BootSelectField(
 
         Text(
             text = helperText,
-            color = colors.textMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.Micro,
             fontFamily = ideFontFamily(),
         )
@@ -512,7 +506,7 @@ private fun BootSelectField(
 }
 
 @Composable
-private fun InspectedRow(label: String, value: String, colors: IdeShellColorScheme) {
+private fun InspectedRow(label: String, value: String) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -520,13 +514,13 @@ private fun InspectedRow(label: String, value: String, colors: IdeShellColorSche
     ) {
         Text(
             text = label,
-            color = colors.textMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.Micro,
             fontFamily = ideFontFamily(),
         )
         Text(
             text = value,
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = FontSize.Micro,
             fontFamily = codeFontFamily(),
         )
@@ -534,7 +528,7 @@ private fun InspectedRow(label: String, value: String, colors: IdeShellColorSche
 }
 
 @Composable
-private fun AffectedFileRow(path: String, action: String, severity: IdeStatusSeverity, colors: IdeShellColorScheme) {
+private fun AffectedFileRow(path: String, action: String, severity: IdeStatusSeverity) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -549,12 +543,12 @@ private fun AffectedFileRow(path: String, action: String, severity: IdeStatusSev
             Icon(
                 imageVector = Icons.Default.Description,
                 contentDescription = null,
-                tint = colors.textMuted,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(IconSize.Small),
             )
             Text(
                 text = path,
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = FontSize.Micro,
                 fontFamily = codeFontFamily(),
             )
@@ -564,7 +558,6 @@ private fun AffectedFileRow(path: String, action: String, severity: IdeStatusSev
             label = action,
             severity = severity,
             useDot = true,
-            colors = colors,
         )
     }
 }

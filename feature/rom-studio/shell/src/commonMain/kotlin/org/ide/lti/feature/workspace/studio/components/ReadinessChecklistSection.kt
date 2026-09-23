@@ -9,6 +9,8 @@
  */
 package org.ide.lti.feature.workspace.studio.components
 
+import org.ide.lti.core.designsystem.theme.AlphaTokens
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -54,7 +56,6 @@ import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.feature.workspace.studio.ReadinessId
 import org.ide.lti.feature.workspace.studio.ReadinessItemUi
@@ -71,13 +72,12 @@ public fun ReadinessChecklistSection(
     reviewCount: Int,
     onAction: (WorkspaceActionUi) -> Unit,
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     Column(
         modifier = modifier
             .fillMaxWidth()
             .testTag("ReadinessMatrix")
-            .ideCardSurface(colors = colors),
+            .ideCardSurface(),
     ) {
         // Card Header
         Row(
@@ -90,14 +90,14 @@ public fun ReadinessChecklistSection(
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
                 Text(
                     text = "Build readiness",
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = FontSize.TitleMedium,
                     fontWeight = FontWeight.SemiBold,
                     fontFamily = GlassFontFamily.ide(),
                 )
                 Text(
                     text = "Complete the required items to prepare your next build.",
-                    color = colors.textDim,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.BodySmall,
                     fontFamily = GlassFontFamily.ide(),
                 )
@@ -105,7 +105,7 @@ public fun ReadinessChecklistSection(
             if (reviewCount > 0) {
                 Text(
                     text = "$reviewCount require review",
-                    color = colors.textDim,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                     fontFamily = GlassFontFamily.ide(),
                 )
@@ -116,7 +116,7 @@ public fun ReadinessChecklistSection(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(Spacing.Hairline)
-                .background(colors.borderMuted),
+                .background(MaterialTheme.colorScheme.outlineVariant),
         )
 
         items.forEachIndexed { index, item ->
@@ -125,14 +125,13 @@ public fun ReadinessChecklistSection(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(Spacing.Hairline)
-                        .background(colors.borderMuted),
+                        .background(MaterialTheme.colorScheme.outlineVariant),
                 )
             }
 
             ReadinessRowItem(
                 item = item,
                 onAction = onAction,
-                colors = colors,
             )
         }
     }
@@ -142,7 +141,6 @@ public fun ReadinessChecklistSection(
 private fun ReadinessRowItem(
     item: ReadinessItemUi,
     onAction: (WorkspaceActionUi) -> Unit,
-    colors: IdeShellColorScheme,
     modifier: Modifier = Modifier,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -153,7 +151,7 @@ private fun ReadinessRowItem(
             .fillMaxWidth()
             .testTag("ReadinessRow_${item.id.name}")
             .background(
-                if (isHovered) colors.controlHover else Color.Transparent,
+                if (isHovered) MaterialTheme.colorScheme.surfaceContainerHigh else Color.Transparent,
             )
             .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
         verticalAlignment = Alignment.CenterVertically,
@@ -170,14 +168,14 @@ private fun ReadinessRowItem(
             Box(
                 modifier = Modifier
                     .size(GlassDimens.OverviewStageIconBoxSize)
-                    .background(colors.cardBackgroundMuted, GlassShapes.ShellControl)
-                    .border(GlassDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl),
+                    .background(MaterialTheme.colorScheme.surfaceContainer, GlassShapes.ShellControl)
+                    .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outlineVariant, GlassShapes.ShellControl),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = resolveReadinessIcon(item.id),
                     contentDescription = item.title,
-                    tint = colors.textMuted,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(IconSize.Medium),
                 )
             }
@@ -185,14 +183,14 @@ private fun ReadinessRowItem(
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.Hairline)) {
                 Text(
                     text = item.title,
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = FontSize.BodyMedium,
                     fontWeight = FontWeight.SemiBold,
                     fontFamily = GlassFontFamily.ide(),
                 )
                 Text(
                     text = item.contextLabel,
-                    color = colors.textDim,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                     fontFamily = GlassFontFamily.ide(),
                 )
@@ -204,7 +202,6 @@ private fun ReadinessRowItem(
             IdeStatusBadge(
                 label = item.statusLabel,
                 severity = mapReadinessSeverity(item),
-                colors = colors,
                 useDot = true,
             )
         }
@@ -212,7 +209,7 @@ private fun ReadinessRowItem(
         // Description
         Text(
             text = item.description,
-            color = colors.textDim,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.BodySmall,
             fontFamily = if (item.id == ReadinessId.PUBLICATION) {
                 GlassFontFamily.code()
@@ -228,7 +225,6 @@ private fun ReadinessRowItem(
             ReadinessActionButton(
                 item = item,
                 onAction = onAction,
-                colors = colors,
             )
         }
     }
@@ -238,7 +234,6 @@ private fun ReadinessRowItem(
 private fun ReadinessActionButton(
     item: ReadinessItemUi,
     onAction: (WorkspaceActionUi) -> Unit,
-    colors: IdeShellColorScheme,
 ) {
     val action = item.action ?: return
     val btnInteraction = remember { MutableInteractionSource() }
@@ -251,7 +246,6 @@ private fun ReadinessActionButton(
         isHovered = isBtnHovered,
         isPressed = isBtnPressed,
         isPublication = item.id == ReadinessId.PUBLICATION,
-        colors = colors,
     )
 
     Box(
@@ -280,30 +274,30 @@ private fun ReadinessActionButton(
 
 private data class ActionButtonStyle(val bg: Color, val text: Color, val border: Color)
 
+@Composable
 private fun resolveActionButtonStyle(
     isPrimary: Boolean,
     isHovered: Boolean,
     isPressed: Boolean,
     isPublication: Boolean,
-    colors: IdeShellColorScheme,
 ): ActionButtonStyle = when {
     isPrimary -> ActionButtonStyle(
-        bg = if (isPressed || isHovered) colors.accentBlueHover else colors.accentBlue,
+        bg = if (isPressed || isHovered) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary,
         text = BrandColors.OnLogoBadge,
-        border = colors.accentBlue,
+        border = MaterialTheme.colorScheme.primary,
     )
     isPublication -> ActionButtonStyle(
         bg = Color.Transparent,
-        text = colors.textDim,
+        text = MaterialTheme.colorScheme.onSurfaceVariant,
         border = Color.Transparent,
     )
     else -> {
         val bg = when {
-            isPressed -> colors.controlSelected
-            isHovered -> colors.controlHover
-            else -> colors.cardBackgroundMuted
+            isPressed -> MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Faded)
+            isHovered -> MaterialTheme.colorScheme.surfaceContainerHigh
+            else -> MaterialTheme.colorScheme.surfaceContainer
         }
-        ActionButtonStyle(bg = bg, text = colors.textMuted, border = colors.border)
+        ActionButtonStyle(bg = bg, text = MaterialTheme.colorScheme.onSurfaceVariant, border = MaterialTheme.colorScheme.outline)
     }
 }
 

@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.designsystem.component.display
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -37,7 +38,7 @@ import org.ide.lti.core.designsystem.theme.StrokeWidth
  * @param modifier Optional modifier.
  * @param thickness Divider thickness (defaults to [StrokeWidth.Hairline]).
  * @param specular Whether to apply a subtle horizontal specular light gradient beam.
- * @param color Override color (defaults to [GlassTheme.colors.glassBorder] with faint alpha).
+ * @param color Override color (defaults to [MaterialTheme.colorScheme.outline] with faint alpha).
  */
 @Composable
 fun GlassHorizontalDivider(
@@ -46,7 +47,6 @@ fun GlassHorizontalDivider(
     specular: Boolean = false,
     color: Color = Color.Unspecified,
 ) {
-    val glassColors = GlassTheme.colors
     val dividerModifier = if (specular) {
         modifier
             .fillMaxWidth()
@@ -54,14 +54,14 @@ fun GlassHorizontalDivider(
             .background(
                 brush = Brush.horizontalGradient(
                     colors = listOf(
-                        glassColors.glassBorderHighlight.copy(alpha = AlphaTokens.Hover),
-                        glassColors.glassBorderHighlight.copy(alpha = AlphaTokens.Prominent),
-                        glassColors.glassBorder.copy(alpha = AlphaTokens.Hover),
+                        MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Hover),
+                        MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Prominent),
+                        MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Hover),
                     ),
                 ),
             )
     } else {
-        val finalColor = if (color != Color.Unspecified) color else glassColors.glassBorder.copy(alpha = AlphaTokens.Faint)
+        val finalColor = if (color != Color.Unspecified) color else MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Faint)
         modifier
             .fillMaxWidth()
             .height(thickness)
@@ -77,7 +77,7 @@ fun GlassHorizontalDivider(
  * @param modifier Optional modifier.
  * @param thickness Divider thickness (defaults to [StrokeWidth.Hairline]).
  * @param specular Whether to apply a subtle vertical specular light gradient beam.
- * @param color Override color (defaults to [GlassTheme.colors.glassBorder] with faint alpha).
+ * @param color Override color (defaults to [MaterialTheme.colorScheme.outline] with faint alpha).
  */
 @Composable
 fun GlassVerticalDivider(
@@ -86,7 +86,6 @@ fun GlassVerticalDivider(
     specular: Boolean = false,
     color: Color = Color.Unspecified,
 ) {
-    val glassColors = GlassTheme.colors
     val dividerModifier = if (specular) {
         modifier
             .fillMaxHeight()
@@ -94,14 +93,14 @@ fun GlassVerticalDivider(
             .background(
                 brush = Brush.verticalGradient(
                     colors = listOf(
-                        glassColors.glassBorderHighlight.copy(alpha = AlphaTokens.Hover),
-                        glassColors.glassBorderHighlight.copy(alpha = AlphaTokens.Prominent),
-                        glassColors.glassBorder.copy(alpha = AlphaTokens.Hover),
+                        MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Hover),
+                        MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Prominent),
+                        MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Hover),
                     ),
                 ),
             )
     } else {
-        val finalColor = if (color != Color.Unspecified) color else glassColors.glassBorder.copy(alpha = AlphaTokens.Faint)
+        val finalColor = if (color != Color.Unspecified) color else MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Faint)
         modifier
             .fillMaxHeight()
             .width(thickness)

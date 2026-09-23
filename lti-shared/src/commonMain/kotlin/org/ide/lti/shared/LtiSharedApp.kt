@@ -12,6 +12,7 @@ package org.ide.lti.shared
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -24,10 +25,8 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
 import org.ide.lti.core.designsystem.component.layout.GlassBackdrop
 import org.ide.lti.core.designsystem.component.layout.StudioGlassBackdrop
-import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.LtiTheme
-import org.ide.lti.core.designsystem.theme.config.AppTheme
-import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 import org.ide.lti.core.ui.settings.AppSettingsState
 import org.ide.lti.feature.settings.navigateToSettings
 import org.ide.lti.feature.setup.SETUP_ROUTE
@@ -50,12 +49,10 @@ fun LtiSharedApp(
     if (showSplash) {
         LtiTheme(
             appTheme = AppTheme.fromId(appSettingsState.theme),
-            effectsEnabled = appSettingsState.effectsEnabled,
-            reducedMotion = appSettingsState.reducedMotion,
-            lowMemory = lowMemory,
+
         ) {
             Box(
-                modifier = Modifier.fillMaxSize().background(GlassTheme.colors.canvasSurface),
+                modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface),
                 contentAlignment = Alignment.Center,
             ) {
                 LtiRomSplashScreen(
@@ -82,7 +79,6 @@ private fun SharedApp(
     modifier: Modifier = Modifier,
 ) {
     val navController = rememberNavController()
-    val backdrop = rememberGlassSceneState()
 
     LaunchedEffect(openSettingsRequest) {
         if (openSettingsRequest > 0) {
@@ -94,18 +90,14 @@ private fun SharedApp(
 
     LtiTheme(
         appTheme = appTheme,
-        effectsEnabled = appSettingsState.effectsEnabled,
-        reducedMotion = appSettingsState.reducedMotion,
-        lowMemory = lowMemory,
-        sharedScene = backdrop,
     ) {
         Box(modifier = modifier.fillMaxSize()) {
-            if (appTheme == AppTheme.Blue) {
-                StudioGlassBackdrop(backdrop = backdrop)
-            } else {
-                GlassBackdrop(backdrop = backdrop)
-            }
-
+//            if (appTheme == AppTheme.Blue) {
+//                StudioGlassBackdrop()
+//            } else {
+//                GlassBackdrop()
+//            }
+            StudioGlassBackdrop()
             RootNavGraph(
                 navHostController = navController,
                 startDestination = SETUP_ROUTE,

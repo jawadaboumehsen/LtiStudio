@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.setup.steps
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -76,7 +77,6 @@ import org.ide.lti.core.designsystem.theme.SetupTokens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.feature.setup.SetupUiActions
 import org.ide.lti.feature.setup.SetupUiState
@@ -97,14 +97,12 @@ import org.ide.lti.feature.setup.WorkspaceAction
 fun ProjectsStepContent(
     state: SetupUiState,
     actions: SetupUiActions,
-    resolvedBackdrop: GlassSceneState,
     modifier: Modifier = Modifier,
     onNavigateToEnvironment: () -> Unit = {},
     searchFocusRequester: FocusRequester = remember { FocusRequester() },
     focusSearchOnMount: Boolean = false,
     lazyListState: androidx.compose.foundation.lazy.LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
 ) {
-    val glassColors = GlassTheme.colors
 
     @Suppress("DEPRECATION")
     val clipboardManager = LocalClipboardManager.current
@@ -177,7 +175,6 @@ fun ProjectsStepContent(
                     )
                 },
                 onDismiss = actions.onDismissWorkspaceError,
-                backdrop = resolvedBackdrop,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
@@ -188,7 +185,6 @@ fun ProjectsStepContent(
             onSearchQueryChange = actions.onSearchQueryChange,
             totalCount = state.recentProjects.size,
             searchFocusRequester = searchFocusRequester,
-            resolvedBackdrop = resolvedBackdrop,
         )
 
         // 3. Virtualized Recents List / Distinct Empty State
@@ -233,19 +229,18 @@ private fun WorkspaceRowItem(
     onCopyPath: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
     var isMenuExpanded by remember { mutableStateOf(false) }
 
     val borderColor = if (isSelected) {
-        glassColors.focusRing
+        MaterialTheme.colorScheme.primary
     } else {
-        glassColors.glassBorder
+        MaterialTheme.colorScheme.outline
     }
 
     val backgroundColor = if (isSelected) {
-        glassColors.glassSurfaceElevated
+        MaterialTheme.colorScheme.surfaceContainerHigh
     } else {
-        glassColors.glassSurface
+        MaterialTheme.colorScheme.surfaceContainer
     }
 
     Box(
@@ -278,13 +273,13 @@ private fun WorkspaceRowItem(
                     modifier = Modifier
                         .size(ComponentSize.SidePanelRailButtonSize)
                         .clip(GlassShapes.Medium)
-                        .background(glassColors.glassAccent.copy(alpha = AlphaTokens.Glow)),
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Glow)),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         painter = AppIcons.FolderPainterResource(),
                         contentDescription = null,
-                        tint = glassColors.glassAccent,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(IconSize.Medium),
                     )
                 }
@@ -297,7 +292,7 @@ private fun WorkspaceRowItem(
                         text = project.name,
                         fontSize = SetupTokens.TextSection,
                         fontWeight = FontWeight.SemiBold,
-                        color = glassColors.onGlass,
+                        color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -305,7 +300,7 @@ private fun WorkspaceRowItem(
                         text = project.path,
                         fontSize = SetupTokens.TextMetadata,
                         fontFamily = codeFontFamily(),
-                        color = glassColors.onGlassSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -428,7 +423,6 @@ private fun WorkspaceHeaderSection(
     onOpenFolder: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -442,14 +436,14 @@ private fun WorkspaceHeaderSection(
                 text = "Workspaces",
                 fontSize = SetupTokens.TextTitle,
                 fontWeight = FontWeight.Bold,
-                color = glassColors.onGlass,
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
                 text = "Open an existing workspace or create an independent target environment",
                 fontSize = SetupTokens.TextBody,
-                color = glassColors.onGlassSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -473,7 +467,7 @@ private fun WorkspaceHeaderSection(
                     Text(
                         text = "Ctrl+O",
                         fontSize = SetupTokens.TextMetadata,
-                        color = glassColors.onGlassMuted,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -492,7 +486,7 @@ private fun WorkspaceHeaderSection(
                     Text(
                         text = "Ctrl+N",
                         fontSize = SetupTokens.TextMetadata,
-                        color = glassColors.onGlassMuted,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -506,10 +500,8 @@ private fun WorkspaceSearchSection(
     onSearchQueryChange: (String) -> Unit,
     totalCount: Int,
     searchFocusRequester: FocusRequester,
-    resolvedBackdrop: GlassSceneState,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -524,7 +516,7 @@ private fun WorkspaceSearchSection(
                 text = "Recent Workspaces",
                 fontSize = SetupTokens.TextSection,
                 fontWeight = FontWeight.SemiBold,
-                color = glassColors.onGlass,
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -547,7 +539,6 @@ private fun WorkspaceSearchSection(
                 } else {
                     TextFieldTrailingSlot.None
                 },
-                backdrop = resolvedBackdrop,
                 focusRequester = searchFocusRequester,
             )
         }

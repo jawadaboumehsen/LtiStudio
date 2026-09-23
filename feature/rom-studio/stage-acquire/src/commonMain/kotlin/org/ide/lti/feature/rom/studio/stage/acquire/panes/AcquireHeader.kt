@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.rom.studio.stage.acquire.panes
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -30,7 +31,6 @@ import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 
 /**
@@ -47,7 +47,6 @@ public fun AcquireHeader(
     onValidate: () -> Unit = {},
     onSave: () -> Unit = {},
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -65,31 +64,31 @@ public fun AcquireHeader(
             ) {
                 Text(
                     text = "ROM Setup",
-                    color = colors.textDim,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.BodySmall,
                     fontFamily = GlassFontFamily.ide(),
                 )
                 Text(
                     text = "/",
-                    color = colors.textDim,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.BodySmall,
                     fontFamily = GlassFontFamily.ide(),
                 )
                 Text(
                     text = "Acquire",
-                    color = colors.textDim,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.BodySmall,
                     fontFamily = GlassFontFamily.ide(),
                 )
                 Text(
                     text = "/",
-                    color = colors.textDim,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.BodySmall,
                     fontFamily = GlassFontFamily.ide(),
                 )
                 Text(
                     text = title,
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = FontSize.BodySmall,
                     fontWeight = FontWeight.Medium,
                     fontFamily = GlassFontFamily.ide(),
@@ -98,7 +97,7 @@ public fun AcquireHeader(
 
             Text(
                 text = targetSpec,
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = FontSize.BodySmall,
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = GlassFontFamily.ide(),
@@ -113,7 +112,7 @@ public fun AcquireHeader(
         ) {
             Text(
                 text = title,
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = FontSize.TitleLarge,
                 fontWeight = FontWeight.Bold,
                 fontFamily = GlassFontFamily.ide(),
@@ -126,14 +125,14 @@ public fun AcquireHeader(
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
                         text = targetRevision,
-                        color = colors.textMuted,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = FontSize.Micro,
                         fontFamily = GlassFontFamily.ide(),
                     )
                     if (additionalContext != null) {
                         Text(
                             text = additionalContext,
-                            color = colors.textDim,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = FontSize.Micro,
                             fontFamily = GlassFontFamily.ide(),
                         )
@@ -153,11 +152,11 @@ public fun AcquireHeader(
                             imageVector = Icons.Default.Check,
                             contentDescription = null,
                             modifier = Modifier.size(IconSize.ExtraSmall),
-                            tint = colors.textMain,
+                            tint = MaterialTheme.colorScheme.onSurface,
                         )
                         Text(
                             text = "Validate",
-                            color = colors.textMain,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontSize = FontSize.BodySmall,
                         )
                     }
@@ -176,11 +175,11 @@ public fun AcquireHeader(
                             imageVector = Icons.Default.Save,
                             contentDescription = null,
                             modifier = Modifier.size(IconSize.ExtraSmall),
-                            tint = colors.textMain,
+                            tint = MaterialTheme.colorScheme.onSurface,
                         )
                         Text(
                             text = "Save",
-                            color = colors.textMain,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontSize = FontSize.BodySmall,
                         )
                     }
@@ -191,7 +190,7 @@ public fun AcquireHeader(
         // Line 3: Subtitle
         Text(
             text = subtitle,
-            color = colors.textMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.BodySmall,
             fontFamily = GlassFontFamily.ide(),
         )

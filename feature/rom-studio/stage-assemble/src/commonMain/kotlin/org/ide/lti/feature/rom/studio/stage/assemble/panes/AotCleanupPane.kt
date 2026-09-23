@@ -9,6 +9,8 @@
  */
 package org.ide.lti.feature.rom.studio.stage.assemble.panes
 
+import org.ide.lti.core.designsystem.theme.AlphaTokens
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -45,7 +47,6 @@ import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -65,7 +66,6 @@ public fun AotCleanupPane(
     onValidate: () -> Unit,
     onSave: () -> Unit,
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     Column(
         modifier = modifier
@@ -78,7 +78,7 @@ public fun AotCleanupPane(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(GlassShapes.ShellCard)
-                .background(colors.infoBannerFill)
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Subtle))
                 .padding(Spacing.Medium),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
@@ -86,7 +86,7 @@ public fun AotCleanupPane(
             Icon(
                 imageVector = Icons.Default.Info,
                 contentDescription = null,
-                tint = colors.accentBlue,
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(IconSize.Small),
             )
             val notice = "Removes precompiled ART artifacts (oat, odex, vdex) from the work tree " +
@@ -94,7 +94,7 @@ public fun AotCleanupPane(
                 "on first boot. This helps avoid runtime issues after framework or app changes."
             Text(
                 text = notice,
-                color = colors.textMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
                 modifier = Modifier.weight(1f),
@@ -109,14 +109,14 @@ public fun AotCleanupPane(
             ) {
                 Text(
                     text = "Learn more",
-                    color = colors.accentBlue,
+                    color = MaterialTheme.colorScheme.primary,
                     fontSize = FontSize.Micro,
                     fontFamily = ideFontFamily(),
                 )
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.OpenInNew,
                     contentDescription = null,
-                    tint = colors.accentBlue,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(IconSize.ExtraSmall),
                 )
             }
@@ -127,7 +127,7 @@ public fun AotCleanupPane(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(GlassShapes.ShellCard)
-                .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+                .ideCardSurface(shape = GlassShapes.ShellCard)
                 .padding(Spacing.Medium),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
@@ -135,13 +135,13 @@ public fun AotCleanupPane(
             GlassToggle(
                 checked = settings.baselineCleanup,
                 onCheckedChange = { onChange(settings.copy(baselineCleanup = it)) },
-                activeColor = colors.accentBlue,
+                activeColor = MaterialTheme.colorScheme.primary,
             )
 
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
                 Text(
                     text = "Enable baseline cleanup (recommended)",
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = FontSize.BodySmall,
                     fontWeight = FontWeight.SemiBold,
                     fontFamily = ideFontFamily(),
@@ -149,13 +149,13 @@ public fun AotCleanupPane(
                 Text(
                     text = "Remove existing oat, odex and vdex files from " +
                         "system, system_ext and product work trees.",
-                    color = colors.textMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                     fontFamily = ideFontFamily(),
                 )
                 Text(
                     text = "Safe to keep enabled for most builds.",
-                    color = colors.accentBlue,
+                    color = MaterialTheme.colorScheme.primary,
                     fontSize = FontSize.Micro,
                     fontFamily = ideFontFamily(),
                 )
@@ -167,7 +167,7 @@ public fun AotCleanupPane(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(GlassShapes.ShellCard)
-                .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+                .ideCardSurface(shape = GlassShapes.ShellCard)
                 .padding(Spacing.Medium),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
@@ -176,7 +176,7 @@ public fun AotCleanupPane(
                 checked = false,
                 onCheckedChange = { },
                 enabled = false,
-                activeColor = colors.textDim,
+                activeColor = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
@@ -187,12 +187,12 @@ public fun AotCleanupPane(
                     Icon(
                         imageVector = Icons.Default.Lock,
                         contentDescription = "Locked",
-                        tint = colors.textMuted,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(IconSize.ExtraSmall),
                     )
                     Text(
                         text = "Mandatory cleanup after bytecode changes",
-                        color = colors.textMain,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = FontSize.BodySmall,
                         fontWeight = FontWeight.SemiBold,
                         fontFamily = ideFontFamily(),
@@ -203,13 +203,13 @@ public fun AotCleanupPane(
                     "have been modified in this workspace."
                 Text(
                     text = mandatoryNotice,
-                    color = colors.textMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                     fontFamily = ideFontFamily(),
                 )
                 Text(
                     text = "This option is always enabled and cannot be disabled.",
-                    color = colors.textDim,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                     fontFamily = ideFontFamily(),
                 )
@@ -221,13 +221,13 @@ public fun AotCleanupPane(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(GlassShapes.ShellCard)
-                .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+                .ideCardSurface(shape = GlassShapes.ShellCard)
                 .padding(Spacing.Medium),
             verticalArrangement = Arrangement.spacedBy(Spacing.Small),
         ) {
             Text(
                 text = "Affected paths in work tree",
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = FontSize.BodySmall,
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = ideFontFamily(),
@@ -240,7 +240,7 @@ public fun AotCleanupPane(
             ) {
                 Text(
                     text = "#",
-                    color = colors.textDim,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                     fontWeight = FontWeight.SemiBold,
                     fontFamily = ideFontFamily(),
@@ -248,7 +248,7 @@ public fun AotCleanupPane(
                 )
                 Text(
                     text = "Path (relative to work tree)",
-                    color = colors.textDim,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                     fontWeight = FontWeight.SemiBold,
                     fontFamily = ideFontFamily(),
@@ -256,7 +256,7 @@ public fun AotCleanupPane(
                 )
                 Text(
                     text = "Type",
-                    color = colors.textDim,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                     fontWeight = FontWeight.SemiBold,
                     fontFamily = ideFontFamily(),
@@ -264,7 +264,7 @@ public fun AotCleanupPane(
                 )
                 Text(
                     text = "Status",
-                    color = colors.textDim,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                     fontWeight = FontWeight.SemiBold,
                     fontFamily = ideFontFamily(),
@@ -272,23 +272,23 @@ public fun AotCleanupPane(
                 )
             }
 
-            HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
+            HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
 
             // Table Rows
-            AffectedPathRow(1, "system/framework", "oat / odex / vdex", "Found (342 files)", colors)
-            AffectedPathRow(2, "system/app", "oat / odex / vdex", "Found (612 files)", colors)
-            AffectedPathRow(3, "system/priv-app", "oat / odex / vdex", "Found (428 files)", colors)
-            AffectedPathRow(4, "system_ext", "oat / odex / vdex", "Found (96 files)", colors)
-            AffectedPathRow(5, "product", "oat / odex / vdex", "Found (118 files)", colors)
+            AffectedPathRow(1, "system/framework", "oat / odex / vdex", "Found (342 files)")
+            AffectedPathRow(2, "system/app", "oat / odex / vdex", "Found (612 files)")
+            AffectedPathRow(3, "system/priv-app", "oat / odex / vdex", "Found (428 files)")
+            AffectedPathRow(4, "system_ext", "oat / odex / vdex", "Found (96 files)")
+            AffectedPathRow(5, "product", "oat / odex / vdex", "Found (118 files)")
         }
 
         // Bottom Console / Logs Drawer
-        AotLogsDrawer(colors = colors)
+        AotLogsDrawer()
     }
 }
 
 @Composable
-private fun AffectedPathRow(index: Int, path: String, type: String, status: String, colors: IdeShellColorScheme) {
+private fun AffectedPathRow(index: Int, path: String, type: String, status: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -297,28 +297,28 @@ private fun AffectedPathRow(index: Int, path: String, type: String, status: Stri
     ) {
         Text(
             text = index.toString(),
-            color = colors.textDim,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.Micro,
             fontFamily = codeFontFamily(),
             modifier = Modifier.width(Spacing.ExtraLarge),
         )
         Text(
             text = path,
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = FontSize.Micro,
             fontFamily = codeFontFamily(),
             modifier = Modifier.weight(2.5f),
         )
         Text(
             text = type,
-            color = colors.textMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.Micro,
             fontFamily = ideFontFamily(),
             modifier = Modifier.weight(1.5f),
         )
         Text(
             text = status,
-            color = colors.textMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.Micro,
             fontFamily = ideFontFamily(),
             modifier = Modifier.weight(1.5f),
@@ -327,7 +327,7 @@ private fun AffectedPathRow(index: Int, path: String, type: String, status: Stri
 }
 
 @Composable
-private fun AotLogsDrawer(colors: IdeShellColorScheme) {
+private fun AotLogsDrawer() {
     var selectedTab by remember { mutableStateOf(0) }
     val tabs = listOf("Logs", "Preview changes", "Problems")
 
@@ -335,7 +335,7 @@ private fun AotLogsDrawer(colors: IdeShellColorScheme) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Small),
     ) {
         Row(
@@ -351,7 +351,7 @@ private fun AotLogsDrawer(colors: IdeShellColorScheme) {
                         .clip(GlassShapes.ShellControl)
                         .then(
                             if (isTabSelected) {
-                                Modifier.background(colors.controlSelected)
+                                Modifier.background(MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Faded))
                             } else {
                                 Modifier
                             },
@@ -369,12 +369,12 @@ private fun AotLogsDrawer(colors: IdeShellColorScheme) {
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
-                        tint = if (isTabSelected) colors.accentBlue else colors.textDim,
+                        tint = if (isTabSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(IconSize.ExtraSmall),
                     )
                     Text(
                         text = tabTitle,
-                        color = if (isTabSelected) colors.textMain else colors.textMuted,
+                        color = if (isTabSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = FontSize.Micro,
                         fontWeight = if (isTabSelected) FontWeight.Bold else FontWeight.Normal,
                         fontFamily = ideFontFamily(),
@@ -383,13 +383,13 @@ private fun AotLogsDrawer(colors: IdeShellColorScheme) {
             }
         }
 
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
 
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = Spacing.Small)
-                .background(colors.cardBackgroundMuted, GlassShapes.ShellControl)
+                .background(MaterialTheme.colorScheme.surfaceContainer, GlassShapes.ShellControl)
                 .padding(Spacing.Small),
             verticalArrangement = Arrangement.spacedBy(Spacing.Hairline),
         ) {
@@ -402,7 +402,7 @@ private fun AotLogsDrawer(colors: IdeShellColorScheme) {
             logLines.forEach { line ->
                 Text(
                     text = line,
-                    color = colors.textMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                     fontFamily = codeFontFamily(),
                 )

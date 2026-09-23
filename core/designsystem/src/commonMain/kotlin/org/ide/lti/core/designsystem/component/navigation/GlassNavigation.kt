@@ -19,10 +19,13 @@ import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
-import com.kashif_e.backdrop.highlight.Highlight
+import dev.chrisbanes.haze.ExperimentalHazeApi
+import dev.chrisbanes.haze.HazeInput
+import dev.chrisbanes.haze.glass.GlassStyle
+import dev.chrisbanes.haze.glass.hazeGlass
 import org.ide.lti.core.designsystem.component.actions.*
 import org.ide.lti.core.designsystem.component.devtools.*
 import org.ide.lti.core.designsystem.component.display.*
@@ -32,9 +35,9 @@ import org.ide.lti.core.designsystem.component.layout.*
 import org.ide.lti.core.designsystem.component.primitives.*
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.Elevation
+import org.ide.lti.core.designsystem.theme.GlassShapes
+import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LtiTheme
-import org.ide.lti.core.designsystem.theme.glass.GlassStyles
-import org.ide.lti.core.designsystem.theme.glass.resolve
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /**
@@ -86,19 +89,10 @@ fun GlassNavigationBar(
     modifier: Modifier = Modifier,
     content: @Composable RowScope.() -> Unit,
 ) {
-    // Same effect stack as GlassStyles.rail (real usage in IdeNavigatorPanel/IdePipelineRail
-    // confirmed this is optically identical to the production shell's docked-nav tier) - reused
-    // rather than re-defined for this generic/catalog-facing component.
-    val dockedBarStyle = GlassStyles.rail
-    val dockedBarEffect = dockedBarStyle.resolve()
     NavigationBar(
-        // Docked flush to the bottom screen edge — RectangleShape, not the module-wide capsule
+        // Docked flush to the bottom screen edge — flat (0dp) shape, not the module-wide capsule
         // (rounding here would leave gaps against the window's real edge).
-        modifier = modifier.glassEffect(
-            shape = RectangleShape,
-            effect = dockedBarEffect,
-            highlight = { Highlight.Default },
-        ),
+        modifier = modifier.dockedGlassSurface(),
         containerColor = Color.Transparent,
         tonalElevation = Elevation.None,
         content = content,
@@ -156,21 +150,22 @@ fun GlassNavigationRail(
     header: @Composable (ColumnScope.() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val dockedBarStyle = GlassStyles.rail
-    val dockedBarEffect = dockedBarStyle.resolve()
     NavigationRail(
-        // Docked flush to the side screen edge — RectangleShape for the same reason as the bar.
-        modifier = modifier.glassEffect(
-            shape = RectangleShape,
-            effect = dockedBarEffect,
-            highlight = { Highlight.Default },
-        ),
+        // Docked flush to the side screen edge — flat shape for the same reason as the bar.
+        modifier = modifier.dockedGlassSurface(),
         containerColor = Color.Transparent,
         contentColor = LtiNavigationDefaults.navigationContentColor(),
         header = header,
         content = content,
     )
 }
+
+@OptIn(ExperimentalHazeApi::class)
+@Composable
+private fun Modifier.dockedGlassSurface(): Modifier = this.hazeGlass(
+    input = HazeInput.Backdrop(GlassTheme.hazeState),
+    style = remember { GlassStyle.regular.then { shape(GlassShapes.HazeFlat) } },
+)
 
 @Preview
 @Composable

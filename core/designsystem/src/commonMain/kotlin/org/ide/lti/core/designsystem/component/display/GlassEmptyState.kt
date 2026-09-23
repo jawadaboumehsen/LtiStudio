@@ -88,17 +88,16 @@ fun GlassEmptyState(
     description: String? = null,
     badgeSize: Dp = ComponentSize.EmptyStateBadgeSize,
     iconSize: Dp = IconSize.ExtraLarge,
-    iconTint: Color = GlassTheme.colors.glassAccent,
+    iconTint: Color = MaterialTheme.colorScheme.primary,
     titleStyle: TextStyle = MaterialTheme.typography.titleMedium,
-    titleColor: Color = GlassTheme.colors.onGlass,
-    descriptionColor: Color = GlassTheme.colors.onGlassSecondary,
+    titleColor: Color = MaterialTheme.colorScheme.onSurface,
+    descriptionColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     orientation: GlassEmptyStateOrientation = GlassEmptyStateOrientation.Vertical,
     onIconClick: (() -> Unit)? = null,
     action: (@Composable () -> Unit)? = null,
 ) {
-    val glassColors = GlassTheme.colors
 
-    CompositionLocalProvider(LocalContentColor provides glassColors.onGlass) {
+    CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
         when (orientation) {
             GlassEmptyStateOrientation.Vertical -> {
                 Column(
@@ -194,10 +193,10 @@ fun GlassEmptyState(
     description: String? = null,
     badgeSize: Dp = ComponentSize.EmptyStateBadgeSize,
     iconSize: Dp = IconSize.ExtraLarge,
-    iconTint: Color = GlassTheme.colors.glassAccent,
+    iconTint: Color = MaterialTheme.colorScheme.primary,
     titleStyle: TextStyle = MaterialTheme.typography.titleMedium,
-    titleColor: Color = GlassTheme.colors.onGlass,
-    descriptionColor: Color = GlassTheme.colors.onGlassSecondary,
+    titleColor: Color = MaterialTheme.colorScheme.onSurface,
+    descriptionColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     orientation: GlassEmptyStateOrientation = GlassEmptyStateOrientation.Vertical,
     onIconClick: (() -> Unit)? = null,
     action: (@Composable () -> Unit)? = null,
@@ -226,10 +225,9 @@ fun GlassEmptyStateBadge(
     modifier: Modifier = Modifier,
     badgeSize: Dp = ComponentSize.EmptyStateBadgeSize,
     iconSize: Dp = IconSize.ExtraLarge,
-    iconTint: Color = GlassTheme.colors.glassAccent,
+    iconTint: Color = MaterialTheme.colorScheme.primary,
     onClick: (() -> Unit)? = null,
 ) {
-    val glassColors = GlassTheme.colors
 
     if (onClick != null) {
         GlassIconButton(
@@ -253,6 +251,7 @@ fun GlassEmptyStateBadge(
             }
         }
     } else {
+        val glowColor = MaterialTheme.colorScheme.primary
         Box(
             modifier = modifier
                 .size(badgeSize)
@@ -260,7 +259,7 @@ fun GlassEmptyStateBadge(
                     drawCircle(
                         brush = Brush.radialGradient(
                             colors = listOf(
-                                glassColors.glassAccent.copy(alpha = AlphaTokens.Glow),
+                                glowColor.copy(alpha = AlphaTokens.Glow),
                                 Color.Transparent,
                             ),
                             center = center,
@@ -269,10 +268,10 @@ fun GlassEmptyStateBadge(
                     )
                 }
                 .clip(GlassShapes.Capsule)
-                .background(glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Elevated))
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = AlphaTokens.Elevated))
                 .glassOutlineBorder(
                     width = StrokeWidth.Hairline,
-                    color = glassColors.glassBorderHighlight.copy(alpha = AlphaTokens.Border),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Border),
                     shape = GlassShapes.Capsule,
                 ),
             contentAlignment = Alignment.Center,

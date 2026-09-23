@@ -37,9 +37,9 @@ import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassShapes
+import androidx.compose.material3.MaterialTheme
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.LetterSpacing
 import org.ide.lti.core.designsystem.theme.Spacing
 
@@ -60,38 +60,37 @@ fun IdeStatusBadge(
     label: String,
     severity: IdeStatusSeverity,
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
     useDot: Boolean = false,
 ) {
     val style = when (severity) {
         IdeStatusSeverity.Ready -> StatusBadgeStyle(
-            bgColor = colors.accentGreen.copy(alpha = AlphaTokens.Glow),
-            fgColor = colors.accentGreen,
-            borderColor = colors.accentGreen.copy(alpha = AlphaTokens.Muted),
+            bgColor = GlassTheme.diagnosticColors.success.copy(alpha = AlphaTokens.Glow),
+            fgColor = GlassTheme.diagnosticColors.success,
+            borderColor = GlassTheme.diagnosticColors.success.copy(alpha = AlphaTokens.Muted),
             icon = Icons.Default.CheckCircle,
         )
         IdeStatusSeverity.Warning -> StatusBadgeStyle(
-            bgColor = colors.warningAmberBg,
-            fgColor = colors.warningAmber,
-            borderColor = colors.warningAmber.copy(alpha = AlphaTokens.Muted),
+            bgColor = GlassTheme.diagnosticColors.warning.copy(alpha = AlphaTokens.Subtle),
+            fgColor = GlassTheme.diagnosticColors.warning,
+            borderColor = GlassTheme.diagnosticColors.warning.copy(alpha = AlphaTokens.Muted),
             icon = Icons.Default.Warning,
         )
         IdeStatusSeverity.Blocking, IdeStatusSeverity.Failed -> StatusBadgeStyle(
-            bgColor = colors.errorRedBg,
-            fgColor = colors.errorRed,
-            borderColor = colors.errorRed.copy(alpha = AlphaTokens.Muted),
+            bgColor = GlassTheme.diagnosticColors.error.copy(alpha = AlphaTokens.Subtle),
+            fgColor = GlassTheme.diagnosticColors.error,
+            borderColor = GlassTheme.diagnosticColors.error.copy(alpha = AlphaTokens.Muted),
             icon = Icons.Default.Error,
         )
         IdeStatusSeverity.Running -> StatusBadgeStyle(
-            bgColor = colors.accentBlue.copy(alpha = AlphaTokens.Glow),
-            fgColor = colors.accentBlue,
-            borderColor = colors.accentBlue.copy(alpha = AlphaTokens.Muted),
+            bgColor = MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Glow),
+            fgColor = MaterialTheme.colorScheme.primary,
+            borderColor = MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Muted),
             icon = Icons.Default.Refresh,
         )
         IdeStatusSeverity.Neutral -> StatusBadgeStyle(
-            bgColor = colors.borderMuted.copy(alpha = AlphaTokens.Hover),
-            fgColor = colors.textMuted,
-            borderColor = colors.borderMuted,
+            bgColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = AlphaTokens.Hover),
+            fgColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            borderColor = MaterialTheme.colorScheme.outlineVariant,
             icon = Icons.Default.Info,
         )
     }

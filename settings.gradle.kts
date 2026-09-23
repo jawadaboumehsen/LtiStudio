@@ -36,7 +36,13 @@ rootProject.name = "LtiRomGui"
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 include(":detekt-rules")
-include(":backdrop")
+include(":haze-utils")
+include(":haze")
+include(":haze-blur")
+include(":haze-glass")
+include(":haze-glass-material3")
+include(":haze-blur-material3")
+include(":haze-materials")
 include(":lti-shared")
 include(":lti-desktop")
 
@@ -72,7 +78,6 @@ include(":feature:rom-studio:stage-publish")
 include(":feature:configuration")
 include(":feature:plugins")
 
-include(":catalog")
 
 include(":tool:api")
 include(":tool:runtime")

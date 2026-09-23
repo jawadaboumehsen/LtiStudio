@@ -19,8 +19,6 @@ import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import kotlinx.datetime.Clock
 import org.ide.lti.core.designsystem.theme.LtiTheme
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
-import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 import org.ide.lti.core.model.target.TargetBinding
 import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.feature.setup.steps.ProjectsStepContent
@@ -203,7 +201,6 @@ class WorkspacesScreenTest {
                     state = SetupUiState(),
                     actions = SetupUiActions(),
                     initialTab = SetupTab.LAUNCHPAD,
-                    backdrop = backdrop,
                 )
             }
         }

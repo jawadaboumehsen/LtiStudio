@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -43,15 +44,15 @@ import org.ide.lti.core.designsystem.component.display.LtiRomStudioMark
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.icon.GlassIcon
+import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.BrandColors
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.designsystem.theme.config.AppTheme
 import org.ide.lti.core.designsystem.theme.ideFontFamily
 
 /** Global destinations rendered by the single application top-bar family. */
@@ -78,7 +79,6 @@ fun GlobalAppTopBar(
     contextLabel: String = "",
     contextIcon: AppIcon = AppIcons.FolderOpen,
     tagPrefix: String = "GlobalTopBar",
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
     centerContent: @Composable RowScope.() -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
     windowControlActions: WindowControlActions? = null,
@@ -90,9 +90,8 @@ fun GlobalAppTopBar(
 
     IdeTopAppBar(
         modifier = modifier.testTag("GlobalAppTopBar"),
-        colors = colors,
         leadingContent = {
-            BrandIdentity(colors = colors, tag = "${tagPrefix}Brand")
+            BrandIdentity(tag = "${tagPrefix}Brand")
         },
         centerContent = {
             Row(
@@ -104,7 +103,6 @@ fun GlobalAppTopBar(
                     DestinationTab(
                         destination = destination,
                         selected = destination == selectedDestination,
-                        colors = colors,
                         tag = "${tagPrefix}_${destination.name}",
                         onClick = { onSelectDestination(destination) },
                     )
@@ -119,12 +117,12 @@ fun GlobalAppTopBar(
                     GlassIcon(
                         icon = contextIcon,
                         contentDescription = null,
-                        tint = colors.textMuted,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(IconSize.Small),
                     )
                     Text(
                         text = contextLabel,
-                        color = colors.textMain,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontFamily = ideFontFamily(),
                         fontWeight = FontWeight.Medium,
                     )
@@ -156,8 +154,7 @@ fun GlobalAppTopBar(
 }
 
 @Composable
-private fun BrandIdentity(colors: IdeShellColorScheme, tag: String = "GlobalTopBarBrand") {
-    val isBlue = GlassTheme.appTheme == AppTheme.Blue
+private fun BrandIdentity(tag: String = "GlobalTopBarBrand") {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.Compact),
@@ -170,8 +167,8 @@ private fun BrandIdentity(colors: IdeShellColorScheme, tag: String = "GlobalTopB
                 .background(
                     brush = Brush.linearGradient(
                         colors = listOf(
-                            colors.cardBackground,
-                            colors.cardBackgroundMuted,
+                            MaterialTheme.colorScheme.surfaceContainerHigh,
+                            MaterialTheme.colorScheme.surfaceContainer,
                         ),
                     ),
                 )
@@ -182,7 +179,7 @@ private fun BrandIdentity(colors: IdeShellColorScheme, tag: String = "GlobalTopB
         }
         Text(
             text = "LtiRom Studio",
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
             fontFamily = ideFontFamily(),
             fontWeight = FontWeight.Bold,
         )
@@ -193,26 +190,25 @@ private fun BrandIdentity(colors: IdeShellColorScheme, tag: String = "GlobalTopB
 private fun DestinationTab(
     destination: GlobalAppDestination,
     selected: Boolean,
-    colors: IdeShellColorScheme,
     tag: String = "GlobalTopBar_${destination.name}",
     onClick: () -> Unit,
 ) {
     val isBlue = GlassTheme.appTheme == AppTheme.Blue
     val background = when {
-        selected && isBlue -> colors.tabSelected
-        selected -> colors.controlSelected
+        selected && isBlue -> MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Faded)
+        selected -> MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Faded)
         else -> Color.Transparent
     }
     val contentColor = when {
         selected && isBlue -> BrandColors.OnLogoBadge
-        selected -> colors.textMain
-        else -> colors.textMuted
+        selected -> MaterialTheme.colorScheme.onSurface
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
     val border = if (selected) {
         Modifier.border(
             GlassDimens.HairlineBorder,
-            if (isBlue) colors.tabSelectedBorder else colors.accentBlue,
-            org.ide.lti.core.designsystem.theme.GlassShapes.ShellPill,
+            if (isBlue) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.primary,
+            GlassShapes.ShellPill,
         )
     } else {
         Modifier
@@ -221,7 +217,7 @@ private fun DestinationTab(
     Row(
         modifier = Modifier
             .testTag(tag)
-            .clip(org.ide.lti.core.designsystem.theme.GlassShapes.ShellPill)
+            .clip(GlassShapes.ShellPill)
             .then(border)
             .background(background)
             .selectable(

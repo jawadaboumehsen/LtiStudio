@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.designsystem.component.navigation
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.material3.ScrollableTabRow
@@ -26,9 +27,7 @@ import org.ide.lti.core.designsystem.component.feedback.*
 import org.ide.lti.core.designsystem.component.inputs.*
 import org.ide.lti.core.designsystem.component.layout.*
 import org.ide.lti.core.designsystem.component.primitives.*
-import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 
 /**
  * Liquid Glass-styled scrollable tab row with integrated [HorizontalPager].
@@ -41,14 +40,12 @@ fun GlassScrollableTabRow(
     tabContents: List<TabContent>,
     pagerState: PagerState,
     modifier: Modifier = Modifier,
-    containerColor: Color = GlassTheme.colors.glassSurface,
-    selectedContentColor: Color = GlassTheme.colors.glassAccent,
-    unselectedContentColor: Color = GlassTheme.colors.glassSurfaceElevated,
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainer,
+    selectedContentColor: Color = MaterialTheme.colorScheme.primary,
+    unselectedContentColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
     edgePadding: Dp = Spacing.Small,
-    backdrop: GlassSceneState? = null,
 ) {
     val scope = rememberCoroutineScope()
-    val actualBackdrop = backdrop ?: GlassTheme.scene
 
     ScrollableTabRow(
         modifier = modifier,
@@ -64,7 +61,6 @@ fun GlassScrollableTabRow(
                 selected = pagerState.currentPage == index,
                 selectedColor = selectedContentColor,
                 unselectedColor = unselectedContentColor,
-                backdrop = actualBackdrop,
                 onClick = {
                     scope.launch {
                         pagerState.animateScrollToPage(index)

@@ -26,9 +26,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,65 +38,65 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.LocalGlassSceneState
-import org.ide.lti.core.designsystem.theme.config.AppTheme
-import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 
 /**
  * Stateless root layout frame for the professional LtiRom IDE shell.
  *
  * Implements the normative geometry:
  * - 56 dp persistent full-width top app bar
- * - 150 dp persistent pipeline-stage rail
- * - 215 dp context-sensitive navigator panel (or collapsible drawer below compact breakpoint)
+ * - 150 dp optional pipeline-stage rail (screens with a stage/pipeline concept, e.g. Setup, Studio)
+ * - 215 dp context-sensitive navigator panel - the screen's own tab navigation when there is no
+ *   separate pipeline rail (or collapsible drawer below compact breakpoint)
+ * - 215 dp context-sensitive right panel (inspector/properties)
  * - 32 dp breadcrumb bar
  * - Central content region owning its bounded vertical scroll inside an inset glass panel
  * - 32 dp persistent full-width status bar
+ *
+ * The top bar, pipeline rail, navigator, right panel, and status bar all sample the same
+ * shared [GlassTheme.hazeState] with the identical [GlassShapes.HazeFlat] shape and
+ * `surfaceContainer` tint (see [IdeTopAppBar]/[IdePipelineRail]/[IdeNavigatorPanel]/
+ * [IdeStatusBar]), so flush edges render as one continuous glass frame around the inset
+ * content panel rather than as separate disjoint pieces.
  */
 @Composable
 fun IdeAppFrame(
     topBar: @Composable () -> Unit,
-    pipelineRail: @Composable () -> Unit,
+    pipelineRail: (@Composable () -> Unit)? = null,
     navigator: (@Composable () -> Unit)? = null,
+    rightPanel: (@Composable () -> Unit)? = null,
     breadcrumb: (@Composable () -> Unit)? = null,
     content: @Composable () -> Unit,
     statusBar: @Composable () -> Unit,
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
     isDrawerOpen: Boolean = false,
     onDismissDrawer: () -> Unit = {},
     drawerContent: (@Composable () -> Unit)? = null,
 ) {
-    val isBlueGlass = GlassTheme.appTheme == AppTheme.Blue && GlassTheme.effectsEnabled
-    val ambientBackdrop = GlassTheme.scene
-    val resolvedBackdrop = ambientBackdrop ?: rememberGlassSceneState()
+    val isBlueGlass = GlassTheme.appTheme == AppTheme.Blue
 
     val density = LocalDensity.current
     var isCompact by remember { mutableStateOf(false) }
 
-    CompositionLocalProvider(LocalGlassSceneState provides resolvedBackdrop) {
-        Box(
-            modifier = modifier
-                .fillMaxSize()
-                .onSizeChanged { size ->
-                    val widthDp = with(density) { size.width.toDp() }
-                    isCompact = widthDp < GlassDimens.CompactBreakpoint
-                }
-                .background(colors.appBackground),
-        ) {
-            if (ambientBackdrop == null) {
-                if (isBlueGlass) {
-                    StudioGlassBackdrop(backdrop = resolvedBackdrop)
-                } else {
-                    GlassBackdrop(backdrop = resolvedBackdrop)
-                }
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .onSizeChanged { size ->
+                val widthDp = with(density) { size.width.toDp() }
+                isCompact = widthDp < GlassDimens.CompactBreakpoint
             }
+            .background(MaterialTheme.colorScheme.surface),
+    ) {
+        if (isBlueGlass) {
+            StudioGlassBackdrop()
+        } else {
+            GlassBackdrop()
+        }
 
-            Column(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
                 // Full-width Top App Bar
                 Box(
                     modifier = Modifier
@@ -107,7 +107,7 @@ fun IdeAppFrame(
                 }
                 HorizontalDivider(
                     thickness = GlassDimens.HairlineBorder,
-                    color = colors.border,
+                    color = MaterialTheme.colorScheme.outline,
                 )
 
                 // Middle Body
@@ -116,18 +116,21 @@ fun IdeAppFrame(
                         .fillMaxWidth()
                         .weight(1f),
                 ) {
-                    // Persistent Pipeline Rail
-                    Box(
-                        modifier = Modifier
-                            .width(GlassDimens.PipelineRailWidth)
-                            .fillMaxHeight(),
-                    ) {
-                        pipelineRail()
+                    // Persistent Pipeline Rail (optional - only screens with a stage/pipeline
+                    // concept pass one; others rely on navigator alone as the left panel)
+                    if (pipelineRail != null) {
+                        Box(
+                            modifier = Modifier
+                                .width(GlassDimens.PipelineRailWidth)
+                                .fillMaxHeight(),
+                        ) {
+                            pipelineRail()
+                        }
+                        VerticalDivider(
+                            thickness = GlassDimens.HairlineBorder,
+                            color = MaterialTheme.colorScheme.outline,
+                        )
                     }
-                    VerticalDivider(
-                        thickness = GlassDimens.HairlineBorder,
-                        color = colors.border,
-                    )
 
                     // Workspace Navigator (Inline if not compact and present)
                     if (navigator != null && !isCompact) {
@@ -140,7 +143,7 @@ fun IdeAppFrame(
                         }
                         VerticalDivider(
                             thickness = GlassDimens.HairlineBorder,
-                            color = colors.border,
+                            color = MaterialTheme.colorScheme.outline,
                         )
                     }
 
@@ -151,10 +154,10 @@ fun IdeAppFrame(
                             .fillMaxHeight()
                             .padding(GlassDimens.ContentInset)
                             .clip(GlassShapes.ShellPanel)
-                            .background(colors.contentPanel)
+                            .background(MaterialTheme.colorScheme.surface)
                             .border(
                                 width = GlassDimens.HairlineBorder,
-                                color = colors.contentPanelBorder,
+                                color = MaterialTheme.colorScheme.outline,
                                 shape = GlassShapes.ShellPanel,
                             ),
                     ) {
@@ -169,7 +172,7 @@ fun IdeAppFrame(
                             }
                             HorizontalDivider(
                                 thickness = GlassDimens.HairlineBorder,
-                                color = colors.borderMuted,
+                                color = MaterialTheme.colorScheme.outlineVariant,
                             )
                         }
 
@@ -182,12 +185,27 @@ fun IdeAppFrame(
                             content()
                         }
                     }
+
+                    // Context-Sensitive Right Panel (Inspector/Properties)
+                    if (rightPanel != null && !isCompact) {
+                        VerticalDivider(
+                            thickness = GlassDimens.HairlineBorder,
+                            color = MaterialTheme.colorScheme.outline,
+                        )
+                        Box(
+                            modifier = Modifier
+                                .width(GlassDimens.WorkspaceNavigatorWidth)
+                                .fillMaxHeight(),
+                        ) {
+                            rightPanel()
+                        }
+                    }
                 }
 
                 // Bottom Status Bar
                 HorizontalDivider(
                     thickness = GlassDimens.HairlineBorder,
-                    color = colors.border,
+                    color = MaterialTheme.colorScheme.outline,
                 )
                 Box(
                     modifier = Modifier
@@ -198,15 +216,13 @@ fun IdeAppFrame(
                 }
             }
 
-            // Overlay Drawer for compact viewports
-            if (isCompact && (navigator != null || drawerContent != null)) {
-                IdeCompactDrawer(
-                    isOpen = isDrawerOpen,
-                    onDismiss = onDismissDrawer,
-                    colors = colors,
-                    content = { drawerContent?.invoke() ?: navigator?.invoke() },
-                )
-            }
+        // Overlay Drawer for compact viewports
+        if (isCompact && (navigator != null || drawerContent != null)) {
+            IdeCompactDrawer(
+                isOpen = isDrawerOpen,
+                onDismiss = onDismissDrawer,
+                content = { drawerContent?.invoke() ?: navigator?.invoke() },
+            )
         }
     }
 }
@@ -215,7 +231,6 @@ fun IdeAppFrame(
 private fun IdeCompactDrawer(
     isOpen: Boolean,
     onDismiss: () -> Unit,
-    colors: IdeShellColorScheme,
     content: @Composable () -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -227,7 +242,7 @@ private fun IdeCompactDrawer(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(colors.appBackground.copy(alpha = AlphaTokens.Prominent))
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = AlphaTokens.Prominent))
                 .clickable(
                     interactionSource = interactionSource,
                     indication = null,
@@ -238,7 +253,7 @@ private fun IdeCompactDrawer(
                 modifier = Modifier
                     .width(GlassDimens.WorkspaceNavigatorWidth)
                     .fillMaxHeight()
-                    .background(colors.navigatorBackground)
+                    .background(MaterialTheme.colorScheme.surfaceContainer)
                     .clickable(
                         interactionSource = interactionSource,
                         indication = null,

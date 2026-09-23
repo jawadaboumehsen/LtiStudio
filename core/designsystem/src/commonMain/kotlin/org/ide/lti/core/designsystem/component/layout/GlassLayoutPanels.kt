@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.designsystem.component.layout
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.expandVertically
@@ -43,50 +44,31 @@ import org.ide.lti.core.designsystem.component.feedback.*
 import org.ide.lti.core.designsystem.component.inputs.*
 import org.ide.lti.core.designsystem.component.navigation.*
 import org.ide.lti.core.designsystem.component.primitives.*
-import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 
 /**
  * A docked content panel rendered as a seamless [GlassSurface].
- *
- * Uses the active theme's [PanelConfiguration] polymorphically for shape, surface color,
- * borders, tints, and specular highlights without hardcoded theme branching.
  */
 @Composable
 internal fun GlassContentPanel(
-    isDragging: Boolean,
-    backdrop: GlassSceneState?,
     modifier: Modifier = Modifier,
     isFocused: Boolean = false,
     content: @Composable () -> Unit,
 ) {
-    val glassColors = GlassTheme.colors
-    val panelConfig = GlassTheme.panel
-
     val currentBorderColor = if (isFocused) {
-        panelConfig.focusedBorderColor ?: glassColors.focusRing
+        MaterialTheme.colorScheme.primary
     } else {
-        panelConfig.borderColor
+        MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Faint)
     }
 
     GlassSurface(
         modifier = modifier,
-        shape = panelConfig.shape,
-        backdrop = backdrop,
-        surfaceColor = panelConfig.surfaceColor,
-        tint = panelConfig.tint,
+        shape = GlassShapes.HazePanel,
         borderColor = currentBorderColor,
-        borderWidth = panelConfig.borderWidth,
-        highlight = { panelConfig.highlight },
-        shadow = { panelConfig.shadow },
-        effect = panelConfig.effect ?: if (isDragging) {
-            LtiLayoutDefaults.DragOptimizedEffect
-        } else {
-            LtiLayoutDefaults.EnhancedPanelEffect
-        },
     ) {
-        CompositionLocalProvider(LocalContentColor provides glassColors.onGlass) {
+        CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
             content()
         }
     }
@@ -97,7 +79,6 @@ internal fun GlassLeftPanel(
     state: LtiLayoutState,
     width: Dp,
     appearance: GlassLayoutAppearance,
-    backdrop: GlassSceneState?,
     content: @Composable () -> Unit,
 ) {
     AnimatedVisibility(
@@ -111,22 +92,13 @@ internal fun GlassLeftPanel(
             animationSpec = LtiLayoutAnimations.PanelExpandSpring,
         ) + fadeOut(animationSpec = LtiLayoutAnimations.PanelFade),
     ) {
-        val hasFloatingGaps = GlassTheme.panel.hasFloatingGaps
-        val panelModifier = if (hasFloatingGaps) {
-            Modifier
-                .width(width)
-                .fillMaxHeight()
-                .padding(start = Spacing.Small, top = Spacing.Small, bottom = Spacing.Small)
-        } else {
-            Modifier
-                .width(width)
-                .fillMaxHeight()
-        }
+        val panelModifier = Modifier
+            .width(width)
+            .fillMaxHeight()
+            .padding(start = Spacing.Small, top = Spacing.Small, bottom = Spacing.Small)
 
         Row(modifier = Modifier.fillMaxHeight()) {
             GlassContentPanel(
-                isDragging = state.isDragging,
-                backdrop = backdrop,
                 isFocused = state.focusedPanel == LayoutPanel.Left,
                 modifier = panelModifier
                     .pointerInput(state) {
@@ -163,7 +135,6 @@ internal fun RowScope.GlassCenterColumn(
     density: Density,
     animatedBottomWeight: Float,
     appearance: GlassLayoutAppearance,
-    backdrop: GlassSceneState?,
     mainContent: @Composable () -> Unit,
     bottomPanel: @Composable () -> Unit,
 ) {
@@ -179,21 +150,12 @@ internal fun RowScope.GlassCenterColumn(
         val bottomPanelHeight = (availableHeight * animatedBottomWeight)
             .coerceIn(LtiLayoutDefaults.MinPanelHeight, LtiLayoutDefaults.MaxPanelHeight)
 
-        val hasFloatingGaps = GlassTheme.panel.hasFloatingGaps
-        val editorModifier = if (hasFloatingGaps) {
-            Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .padding(horizontal = Spacing.ExtraSmall, vertical = Spacing.Small)
-        } else {
-            Modifier
-                .weight(1f)
-                .fillMaxWidth()
-        }
+        val editorModifier = Modifier
+            .weight(1f)
+            .fillMaxWidth()
+            .padding(horizontal = Spacing.ExtraSmall, vertical = Spacing.Small)
 
         GlassContentPanel(
-            isDragging = state.isDragging,
-            backdrop = backdrop,
             isFocused = state.focusedPanel == LayoutPanel.Center,
             modifier = editorModifier
                 .pointerInput(state) {
@@ -233,20 +195,12 @@ internal fun RowScope.GlassCenterColumn(
                     onDragEnd = { state.onBottomDragEnd() },
                 )
 
-                val bottomModifier = if (hasFloatingGaps) {
-                    Modifier
-                        .height(bottomPanelHeight)
-                        .fillMaxWidth()
-                        .padding(start = Spacing.ExtraSmall, end = Spacing.ExtraSmall, bottom = Spacing.Small)
-                } else {
-                    Modifier
-                        .height(bottomPanelHeight)
-                        .fillMaxWidth()
-                }
+                val bottomModifier = Modifier
+                    .height(bottomPanelHeight)
+                    .fillMaxWidth()
+                    .padding(start = Spacing.ExtraSmall, end = Spacing.ExtraSmall, bottom = Spacing.Small)
 
                 GlassContentPanel(
-                    isDragging = state.isDragging,
-                    backdrop = backdrop,
                     isFocused = state.focusedPanel == LayoutPanel.Bottom,
                     modifier = bottomModifier
                         .pointerInput(state) {
@@ -271,20 +225,12 @@ internal fun GlassRightPanel(
     state: LtiLayoutState,
     width: Dp,
     appearance: GlassLayoutAppearance,
-    backdrop: GlassSceneState?,
     content: @Composable () -> Unit,
 ) {
-    val hasFloatingGaps = GlassTheme.panel.hasFloatingGaps
-    val rightPanelModifier = if (hasFloatingGaps) {
-        Modifier
-            .width(width)
-            .fillMaxHeight()
-            .padding(end = Spacing.Small, top = Spacing.Small, bottom = Spacing.Small)
-    } else {
-        Modifier
-            .width(width)
-            .fillMaxHeight()
-    }
+    val rightPanelModifier = Modifier
+        .width(width)
+        .fillMaxHeight()
+        .padding(end = Spacing.Small, top = Spacing.Small, bottom = Spacing.Small)
 
     AnimatedVisibility(
         visible = state.showRight,
@@ -311,8 +257,6 @@ internal fun GlassRightPanel(
             )
 
             GlassContentPanel(
-                isDragging = state.isDragging,
-                backdrop = backdrop,
                 isFocused = state.focusedPanel == LayoutPanel.Right,
                 modifier = rightPanelModifier
                     .pointerInput(state) {

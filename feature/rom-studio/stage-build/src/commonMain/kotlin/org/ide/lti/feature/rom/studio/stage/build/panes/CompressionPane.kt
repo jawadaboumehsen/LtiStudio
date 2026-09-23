@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.rom.studio.stage.build.panes
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -44,7 +45,6 @@ import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -64,7 +64,6 @@ public fun CompressionPane(
     onValidate: () -> Unit = {},
     onSave: () -> Unit = {},
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     Column(
         modifier = modifier
@@ -72,21 +71,21 @@ public fun CompressionPane(
             .testTag("CompressionPane"),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
-        ErofsSettingsCard(settings = settings, onChange = onChange, colors = colors)
+        ErofsSettingsCard(settings = settings, onChange = onChange)
 
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
         ) {
             Box(modifier = Modifier.weight(1f)) {
-                ApplyToImagesCard(colors = colors)
+                ApplyToImagesCard()
             }
             Box(modifier = Modifier.weight(1f)) {
-                AboutErofsCard(colors = colors)
+                AboutErofsCard()
             }
         }
 
-        CompressionFootnoteCard(colors = colors)
+        CompressionFootnoteCard()
     }
 }
 
@@ -95,66 +94,61 @@ public fun CompressionPane(
 private fun ErofsSettingsCard(
     settings: BuildSettings,
     onChange: (BuildSettings) -> Unit,
-    colors: IdeShellColorScheme,
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.Hairline)) {
             Text(
                 text = "EROFS compression",
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = FontSize.BodySmall,
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = ideFontFamily(),
             )
             Text(
                 text = "Choose the compression algorithm and parameters for system and product images.",
-                color = colors.textMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
             )
         }
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
 
         CompressionParameterRow(
             label = "Algorithm",
             value = "lz4hc",
             source = "Source: Android build tools (mkfs.erofs)",
             explanation = "lz4hc offers a good balance of size and performance for modern devices.",
-            colors = colors,
         )
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
 
         CompressionParameterRow(
             label = "Compression level",
             value = "12",
             source = "Range: 1 - 12 (higher = better compression, slower build)",
             explanation = "Recommended: 12 for release builds",
-            colors = colors,
         )
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
 
         CompressionParameterRow(
             label = "Block size",
             value = "4 KiB (4096)",
             source = "Derived from: Android device configuration",
             explanation = "Using 4 KiB for broad device compatibility.",
-            colors = colors,
         )
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
 
         CompressionParameterRow(
             label = "Alignment",
             value = "4 KiB (4096)",
             source = "Derived from: device partition layout",
             explanation = "Keep alignment at 4 KiB to match target devices.",
-            colors = colors,
         )
     }
 }
@@ -165,7 +159,6 @@ private fun CompressionParameterRow(
     value: String,
     source: String,
     explanation: String,
-    colors: IdeShellColorScheme,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -173,7 +166,7 @@ private fun CompressionParameterRow(
     ) {
         Text(
             text = label,
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = FontSize.BodySmall,
             fontWeight = FontWeight.Medium,
             fontFamily = ideFontFamily(),
@@ -184,8 +177,8 @@ private fun CompressionParameterRow(
             modifier = Modifier
                 .weight(1.3f)
                 .clip(GlassShapes.ShellControl)
-                .background(colors.cardBackgroundMuted)
-                .border(GlassDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
+                .background(MaterialTheme.colorScheme.surfaceContainer)
+                .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outlineVariant, GlassShapes.ShellControl)
                 .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),
         ) {
             Row(
@@ -195,14 +188,14 @@ private fun CompressionParameterRow(
             ) {
                 Text(
                     text = value,
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = FontSize.Micro,
                     fontFamily = codeFontFamily(),
                 )
                 Icon(
                     imageVector = Icons.Default.KeyboardArrowDown,
                     contentDescription = null,
-                    tint = colors.textDim,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(IconSize.ExtraSmall),
                 )
             }
@@ -214,20 +207,20 @@ private fun CompressionParameterRow(
             modifier = Modifier
                 .weight(1.7f)
                 .clip(GlassShapes.ShellControl)
-                .background(colors.cardBackgroundMuted)
-                .border(GlassDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
+                .background(MaterialTheme.colorScheme.surfaceContainer)
+                .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outlineVariant, GlassShapes.ShellControl)
                 .padding(Spacing.Small),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.Hairline)) {
                 Text(
                     text = source,
-                    color = colors.textDim,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                     fontFamily = ideFontFamily(),
                 )
                 Text(
                     text = explanation,
-                    color = colors.textMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                     fontFamily = ideFontFamily(),
                 )
@@ -237,7 +230,7 @@ private fun CompressionParameterRow(
 }
 
 @Composable
-private fun ApplyToImagesCard(colors: IdeShellColorScheme) {
+private fun ApplyToImagesCard() {
     var systemChecked by remember { mutableStateOf(true) }
     var productChecked by remember { mutableStateOf(true) }
     var systemExtChecked by remember { mutableStateOf(true) }
@@ -248,32 +241,32 @@ private fun ApplyToImagesCard(colors: IdeShellColorScheme) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.Hairline)) {
             Text(
                 text = "Apply to images",
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = FontSize.BodySmall,
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = ideFontFamily(),
             )
             Text(
                 text = "Select which partitions should use EROFS compression.",
-                color = colors.textMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
             )
         }
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
 
-        ChecklistItem("system", "Required (Android 14)", systemChecked, { systemChecked = it }, true, colors)
-        ChecklistItem("product", "Recommended", productChecked, { productChecked = it }, false, colors)
-        ChecklistItem("system_ext", "Recommended", systemExtChecked, { systemExtChecked = it }, false, colors)
-        ChecklistItem("vendor", "If supported by device", vendorChecked, { vendorChecked = it }, false, colors)
-        ChecklistItem("odm", "If supported by device", odmChecked, { odmChecked = it }, false, colors)
+        ChecklistItem("system", "Required (Android 14)", systemChecked, { systemChecked = it }, true)
+        ChecklistItem("product", "Recommended", productChecked, { productChecked = it }, false)
+        ChecklistItem("system_ext", "Recommended", systemExtChecked, { systemExtChecked = it }, false)
+        ChecklistItem("vendor", "If supported by device", vendorChecked, { vendorChecked = it }, false)
+        ChecklistItem("odm", "If supported by device", odmChecked, { odmChecked = it }, false)
     }
 }
 
@@ -284,7 +277,6 @@ private fun ChecklistItem(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     locked: Boolean,
-    colors: IdeShellColorScheme,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.Hairline),
@@ -300,13 +292,13 @@ private fun ChecklistItem(
                 onCheckedChange = if (locked) null else onCheckedChange,
                 enabled = !locked,
                 colors = CheckboxDefaults.colors(
-                    checkedColor = colors.accentBlue,
-                    uncheckedColor = colors.textDim,
+                    checkedColor = MaterialTheme.colorScheme.primary,
+                    uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 ),
             )
             Text(
                 text = name,
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = FontSize.Micro,
                 fontWeight = FontWeight.Medium,
                 fontFamily = codeFontFamily(),
@@ -314,7 +306,7 @@ private fun ChecklistItem(
         }
         Text(
             text = badge,
-            color = colors.textDim,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.Micro,
             fontFamily = ideFontFamily(),
         )
@@ -322,12 +314,12 @@ private fun ChecklistItem(
 }
 
 @Composable
-private fun AboutErofsCard(colors: IdeShellColorScheme) {
+private fun AboutErofsCard() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
@@ -335,21 +327,21 @@ private fun AboutErofsCard(colors: IdeShellColorScheme) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
         ) {
-            Icon(Icons.Default.Info, null, tint = colors.accentBlue, modifier = Modifier.size(IconSize.Small))
+            Icon(Icons.Default.Info, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(IconSize.Small))
             Text(
                 text = "About EROFS",
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = FontSize.BodySmall,
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = ideFontFamily(),
             )
         }
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
 
         Text(
             text = "EROFS (Enhanced Read-Only File System) provides high compression ratios " +
                 "and fast read performance for Android system images.",
-            color = colors.textMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.Micro,
             fontFamily = ideFontFamily(),
         )
@@ -357,7 +349,7 @@ private fun AboutErofsCard(colors: IdeShellColorScheme) {
         Text(
             text = "Settings here apply to image build steps and are validated against the " +
                 "Android build tools in your environment.",
-            color = colors.textMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.Micro,
             fontFamily = ideFontFamily(),
         )
@@ -365,20 +357,20 @@ private fun AboutErofsCard(colors: IdeShellColorScheme) {
 }
 
 @Composable
-private fun CompressionFootnoteCard(colors: IdeShellColorScheme) {
+private fun CompressionFootnoteCard() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Small),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
-        Icon(Icons.Default.Info, null, tint = colors.textDim, modifier = Modifier.size(IconSize.Small))
+        Icon(Icons.Default.Info, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(IconSize.Small))
         Text(
             text = "Run validation to verify settings against your current configuration.",
-            color = colors.textDim,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.Micro,
             fontFamily = ideFontFamily(),
         )

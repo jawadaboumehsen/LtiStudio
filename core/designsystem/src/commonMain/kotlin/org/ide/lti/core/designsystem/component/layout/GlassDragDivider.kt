@@ -11,6 +11,8 @@ package org.ide.lti.core.designsystem.component.layout
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.spring
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
@@ -42,8 +44,6 @@ import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import com.kashif_e.backdrop.ResolvedGlassEffect
-import com.kashif_e.backdrop.drawBackdrop
 import org.ide.lti.core.designsystem.component.actions.*
 import org.ide.lti.core.designsystem.component.devtools.*
 import org.ide.lti.core.designsystem.component.display.*
@@ -53,14 +53,8 @@ import org.ide.lti.core.designsystem.component.navigation.*
 import org.ide.lti.core.designsystem.component.primitives.*
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.GlassShapes
-import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
-import org.ide.lti.core.designsystem.theme.glass.GlassStyles
-import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
-import org.ide.lti.core.designsystem.theme.glass.resolve
-import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
 import java.awt.Cursor
 import org.ide.lti.core.designsystem.theme.CornerRadius as ThemeCornerRadius
 
@@ -74,7 +68,6 @@ import org.ide.lti.core.designsystem.theme.CornerRadius as ThemeCornerRadius
  * @param appearance Visual appearance configuration from parent layout.
  * @param onDragStart Callback when drag starts.
  * @param onDrag Callback during drag with delta in pixels.
- * @param backdrop Shared backdrop for glass effects.
  * @param onDragEnd Callback when drag ends or is cancelled.
  */
 @OptIn(ExperimentalComposeUiApi::class)
@@ -84,39 +77,26 @@ internal fun GlassDragDivider(
     appearance: GlassLayoutAppearance,
     onDragStart: () -> Unit,
     onDrag: (Float) -> Unit,
-    backdrop: GlassSceneState? = null,
     onDragEnd: () -> Unit,
 ) {
     var isHovered by remember { mutableStateOf(false) }
     var isDragging by remember { mutableStateOf(false) }
-    val splitterGripStyle = GlassStyles.splitterGrip
-    val splitterGripEffect = splitterGripStyle.resolve()
 
     // Instant alpha during drag for 1:1 mouse tracking, smooth fade on hover
     val alpha by animateFloatAsState(
         targetValue = if (isHovered || isDragging) 1f else 0f,
-        animationSpec = if (isDragging) {
-            snap()
-        } else {
-            resolveAnimationSpec(GlassTheme.reducedMotion)
-        },
+        animationSpec = if (isDragging) snap() else spring(),
     )
 
-    // Get backdrop from theme if not explicitly provided
-    val actualBackdrop = backdrop ?: GlassTheme.scene ?: rememberGlassSceneState()
-
-    // Capture colors from theme
-    val colors = GlassTheme.colors
-    val effectsEnabled = GlassTheme.effectsEnabled
     val normalColor = if (appearance.dividerColor.isSpecified) {
         appearance.dividerColor
     } else {
-        colors.glassBorder.copy(alpha = AlphaTokens.Hover)
+        MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Hover)
     }
     val activeColor = if (appearance.dividerActiveColor.isSpecified) {
         appearance.dividerActiveColor
     } else {
-        colors.glassAccent
+        MaterialTheme.colorScheme.primary
     }
 
     val (cursor, sizeModifier, lineModifier) = getDividerModifiers(orientation, appearance)
@@ -181,10 +161,7 @@ internal fun GlassDragDivider(
                         isHovered = isHovered,
                         activeColor = activeColor,
                         normalColor = normalColor,
-                        actualBackdrop = actualBackdrop,
                         orientation = orientation,
-                        effect = splitterGripEffect,
-                        effectsEnabled = effectsEnabled,
                     ),
                 ),
         )
@@ -218,13 +195,19 @@ private fun getDividerBackgroundModifier(
     isHovered: Boolean,
     activeColor: Color,
     normalColor: Color,
-    actualBackdrop: GlassSceneState,
     orientation: DividerOrientation,
-    effect: ResolvedGlassEffect,
-    effectsEnabled: Boolean = true,
 ): Modifier = when {
     isDragging -> Modifier.background(activeColor)
-    isHovered -> if (effectsEnabled) {
+    isHovered -> {
+        val gradientColors = listOf(
+            activeColor.copy(alpha = AlphaTokens.Muted),
+            activeColor.copy(alpha = AlphaTokens.Prominent),
+            activeColor.copy(alpha = AlphaTokens.Muted),
+        )
+        val gradient = when (orientation) {
+            DividerOrientation.Vertical -> Brush.verticalGradient(gradientColors)
+            DividerOrientation.Horizontal -> Brush.horizontalGradient(gradientColors)
+        }
         Modifier
             .drawBehind {
                 drawRoundRect(
@@ -240,32 +223,7 @@ private fun getDividerBackgroundModifier(
                     ),
                 )
             }
-            .drawBackdrop(
-                backdrop = actualBackdrop.engineBackdrop,
-                shape = { GlassShapes.Capsule },
-                resolvedEffect = effect,
-                onDrawSurface = {
-                    val gradient = when (orientation) {
-                        DividerOrientation.Vertical -> Brush.verticalGradient(
-                            colors = listOf(
-                                activeColor.copy(alpha = AlphaTokens.Muted),
-                                activeColor.copy(alpha = AlphaTokens.Prominent),
-                                activeColor.copy(alpha = AlphaTokens.Muted),
-                            ),
-                        )
-                        DividerOrientation.Horizontal -> Brush.horizontalGradient(
-                            colors = listOf(
-                                activeColor.copy(alpha = AlphaTokens.Muted),
-                                activeColor.copy(alpha = AlphaTokens.Prominent),
-                                activeColor.copy(alpha = AlphaTokens.Muted),
-                            ),
-                        )
-                    }
-                    drawRect(gradient)
-                },
-            )
-    } else {
-        Modifier.background(activeColor)
+            .background(gradient)
     }
     else -> Modifier.background(normalColor)
 }

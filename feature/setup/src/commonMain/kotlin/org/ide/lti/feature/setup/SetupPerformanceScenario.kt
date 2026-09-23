@@ -11,7 +11,6 @@ package org.ide.lti.feature.setup
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.core.model.workspace.Workspace
 
 /**
@@ -80,7 +79,6 @@ expect fun SetupPerformanceScenarioHook(
     onOpenConfigurations: () -> Unit = {},
     onOpenManageTargets: () -> Unit = onOpenConfigurations,
     onOpenHelp: () -> Unit = {},
-    backdrop: GlassSceneState? = null,
     viewModel: SetupViewModel? = null,
     defaultContent: @Composable () -> Unit,
 )

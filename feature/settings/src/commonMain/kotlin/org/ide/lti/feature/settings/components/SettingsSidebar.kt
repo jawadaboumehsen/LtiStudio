@@ -71,17 +71,17 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import org.ide.lti.core.designsystem.component.display.LtiRomStudioMark
+import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StudioBackdropColors
 import org.ide.lti.core.designsystem.theme.codeFontFamily
-import org.ide.lti.core.designsystem.theme.config.AppTheme
 import org.ide.lti.feature.settings.model.SettingsCategory
 
 /**
@@ -92,7 +92,6 @@ fun SettingsSidebar(
     selectedCategory: SettingsCategory,
     onSelectCategory: (SettingsCategory) -> Unit,
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
     appVersion: String = "v0.9.0 (Build 1247)",
 ) {
     val isBlueGlass = GlassTheme.appTheme == AppTheme.Blue
@@ -119,7 +118,7 @@ fun SettingsSidebar(
             ),
         )
     } else {
-        Modifier.background(colors.navigatorBackground)
+        Modifier.background(MaterialTheme.colorScheme.surfaceContainer)
     }
 
     Column(
@@ -129,7 +128,7 @@ fun SettingsSidebar(
             .then(backgroundModifier)
             .border(
                 width = GlassDimens.HairlineBorder,
-                color = colors.border,
+                color = MaterialTheme.colorScheme.outline,
             )
             .padding(Spacing.Medium),
     ) {
@@ -138,7 +137,7 @@ fun SettingsSidebar(
             text = "Settings",
             fontSize = FontSize.TitleLarge,
             fontWeight = FontWeight.Bold,
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(bottom = Spacing.SmallMedium),
         )
 
@@ -146,7 +145,6 @@ fun SettingsSidebar(
         SettingsSearchBar(
             query = searchQuery,
             onQueryChange = { searchQuery = it },
-            colors = colors,
             modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.Medium),
         )
 
@@ -164,7 +162,6 @@ fun SettingsSidebar(
                     category = category,
                     isSelected = isSelected,
                     onClick = { onSelectCategory(category) },
-                    colors = colors,
                 )
             }
         }
@@ -184,17 +181,17 @@ fun SettingsSidebar(
                 modifier = Modifier
                     .size(IconSize.ExtraLarge)
                     .clip(GlassShapes.Card)
-                    .background(colors.cardBackground)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                     .border(
                         width = GlassDimens.HairlineBorder,
-                        color = colors.border,
+                        color = MaterialTheme.colorScheme.outline,
                         shape = GlassShapes.Card,
                     ),
                 contentAlignment = Alignment.Center,
             ) {
                 LtiRomStudioMark(
                     modifier = Modifier.size(IconSize.Medium),
-                    tint = colors.accentBlue,
+                    tint = MaterialTheme.colorScheme.primary,
                 )
             }
 
@@ -203,13 +200,13 @@ fun SettingsSidebar(
                     text = "LtiRom Studio",
                     fontWeight = FontWeight.SemiBold,
                     fontSize = FontSize.BodySmall,
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     text = appVersion,
                     fontFamily = codeFontFamily(),
                     fontSize = FontSize.LabelSmall,
-                    color = colors.textDim,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -220,13 +217,12 @@ fun SettingsSidebar(
 private fun SettingsSearchBar(
     query: String,
     onQueryChange: (String) -> Unit,
-    colors: IdeShellColorScheme,
     modifier: Modifier = Modifier,
 ) {
-    val searchBg = colors.contentBackground
-    val searchBorder = colors.border
-    val textColor = colors.textMain
-    val placeholderColor = colors.textMuted
+    val searchBg = MaterialTheme.colorScheme.surface
+    val searchBorder = MaterialTheme.colorScheme.outline
+    val textColor = MaterialTheme.colorScheme.onSurface
+    val placeholderColor = MaterialTheme.colorScheme.onSurfaceVariant
 
     Row(
         modifier = modifier
@@ -265,7 +261,7 @@ private fun SettingsSearchBar(
                     color = textColor,
                     fontSize = FontSize.BodySmall,
                 ),
-                cursorBrush = SolidColor(colors.accentBlue),
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                 modifier = Modifier.fillMaxWidth(),
             )
         }
@@ -293,13 +289,12 @@ private fun SettingsCategoryRow(
     category: SettingsCategory,
     isSelected: Boolean,
     onClick: () -> Unit,
-    colors: IdeShellColorScheme,
     modifier: Modifier = Modifier,
 ) {
     var isHovered by remember { mutableStateOf(false) }
 
-    val activeBg = colors.tabSelected
-    val hoverBg = colors.controlHover
+    val activeBg = MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Faded)
+    val hoverBg = MaterialTheme.colorScheme.surfaceContainerHigh
     val targetBg = when {
         isSelected -> activeBg
         isHovered -> hoverBg
@@ -307,7 +302,7 @@ private fun SettingsCategoryRow(
     }
 
     val animatedBg by animateColorAsState(targetValue = targetBg)
-    val activeBorder = colors.tabSelectedBorder
+    val activeBorder = MaterialTheme.colorScheme.outline
 
     val borderModifier = if (isSelected) {
         Modifier.border(
@@ -320,15 +315,15 @@ private fun SettingsCategoryRow(
     }
 
     val iconColor = when {
-        isSelected -> colors.accentBlue
-        isHovered -> colors.textMain
-        else -> colors.textDim
+        isSelected -> MaterialTheme.colorScheme.primary
+        isHovered -> MaterialTheme.colorScheme.onSurface
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     val labelColor = when {
-        isSelected -> colors.textMain
-        isHovered -> colors.textMain
-        else -> colors.textMuted
+        isSelected -> MaterialTheme.colorScheme.onSurface
+        isHovered -> MaterialTheme.colorScheme.onSurface
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     val icon = resolveCategoryIcon(category)

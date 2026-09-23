@@ -9,6 +9,8 @@
  */
 package org.ide.lti.feature.workspace.studio.components
 
+import org.ide.lti.core.designsystem.theme.AlphaTokens
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -45,7 +47,6 @@ import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.feature.workspace.studio.WorkspaceActionUi
 
@@ -60,7 +61,6 @@ public fun OverviewBreadcrumbHeader(
     onReload: () -> Unit,
     onAction: (WorkspaceActionUi) -> Unit = {},
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     Column(
         modifier = modifier
@@ -92,20 +92,20 @@ public fun OverviewBreadcrumbHeader(
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
                 Text(
                     text = displayTitle,
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = FontSize.TitleLarge,
                     fontWeight = FontWeight.Bold,
                     fontFamily = GlassFontFamily.ide(),
                 )
                 Text(
                     text = displaySubtitle,
-                    color = colors.textDim,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.BodySmall,
                     fontFamily = GlassFontFamily.ide(),
                 )
             }
 
-            OverviewHeaderTargetAndActions(onReload = onReload, onAction = onAction, colors = colors)
+            OverviewHeaderTargetAndActions(onReload = onReload, onAction = onAction)
         }
     }
 }
@@ -114,7 +114,6 @@ public fun OverviewBreadcrumbHeader(
 private fun OverviewHeaderTargetAndActions(
     onReload: () -> Unit,
     onAction: (WorkspaceActionUi) -> Unit,
-    colors: IdeShellColorScheme,
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -126,14 +125,14 @@ private fun OverviewHeaderTargetAndActions(
         ) {
             Text(
                 text = "PQ84P01 / Development",
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = FontSize.BodyMedium,
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = GlassFontFamily.ide(),
             )
             Text(
                 text = "Target revision 4 · Draft changes",
-                color = colors.textDim,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = GlassFontFamily.ide(),
             )
@@ -143,7 +142,7 @@ private fun OverviewHeaderTargetAndActions(
         Box(
             modifier = Modifier
                 .testTag("OverviewValidateAndSave")
-                .background(colors.accentBlue, GlassShapes.ShellControl)
+                .background(MaterialTheme.colorScheme.primary, GlassShapes.ShellControl)
                 .clickable(
                     onClick = {
                         onAction(WorkspaceActionUi.Validate)
@@ -176,8 +175,8 @@ private fun OverviewHeaderTargetAndActions(
         // Outlined "Discard changes" button
         Box(
             modifier = Modifier
-                .background(colors.cardBackgroundMuted, GlassShapes.ShellControl)
-                .border(GlassDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
+                .background(MaterialTheme.colorScheme.surfaceContainer, GlassShapes.ShellControl)
+                .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outlineVariant, GlassShapes.ShellControl)
                 .clickable(onClick = {})
                 .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Small),
             contentAlignment = Alignment.Center,
@@ -189,12 +188,12 @@ private fun OverviewHeaderTargetAndActions(
                 Icon(
                     imageVector = Icons.Default.Cancel,
                     contentDescription = null,
-                    tint = colors.textMuted,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(IconSize.Small),
                 )
                 Text(
                     text = "Discard changes",
-                    color = colors.textMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.BodySmall,
                     fontWeight = FontWeight.Medium,
                     fontFamily = GlassFontFamily.ide(),
@@ -208,9 +207,9 @@ private fun OverviewHeaderTargetAndActions(
         val isReloadPressed by reloadInteraction.collectIsPressedAsState()
 
         val reloadBg = when {
-            isReloadPressed -> colors.controlSelected
-            isReloadHovered -> colors.controlHover
-            else -> colors.cardBackgroundMuted
+            isReloadPressed -> MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Faded)
+            isReloadHovered -> MaterialTheme.colorScheme.surfaceContainerHigh
+            else -> MaterialTheme.colorScheme.surfaceContainer
         }
 
         Box(
@@ -218,7 +217,7 @@ private fun OverviewHeaderTargetAndActions(
                 .testTag("ReloadStateButton")
                 .semantics { role = Role.Button }
                 .background(reloadBg, GlassShapes.ShellControl)
-                .border(GlassDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
+                .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outlineVariant, GlassShapes.ShellControl)
                 .clickable(
                     interactionSource = reloadInteraction,
                     indication = null,
@@ -230,7 +229,7 @@ private fun OverviewHeaderTargetAndActions(
             Icon(
                 imageVector = Icons.Default.Refresh,
                 contentDescription = "Reload State",
-                tint = colors.textMuted,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(IconSize.Small),
             )
         }

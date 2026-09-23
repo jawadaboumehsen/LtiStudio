@@ -61,7 +61,6 @@ import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 
 /**
  * Minimalist, dark glass terminal console drawer displaying real-time execution logs.
@@ -80,10 +79,8 @@ fun GlassConsoleDrawer(
     logs: List<String>,
     isRunning: Boolean,
     modifier: Modifier = Modifier,
-    backdrop: GlassSceneState? = null,
 ) {
-    val glassColors = GlassTheme.colors
-    val diagnostics = glassColors.diagnostics
+    val diagnostics = GlassTheme.diagnosticColors
 
     @Suppress("DEPRECATION")
     val clipboardManager = LocalClipboardManager.current
@@ -113,7 +110,6 @@ fun GlassConsoleDrawer(
 
     GlassCard(
         modifier = modifier.fillMaxWidth(),
-        backdrop = backdrop,
         contentPadding = Spacing.CardPadding,
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium)) {
@@ -138,7 +134,7 @@ fun GlassConsoleDrawer(
                             AppIcons.ChevronRightPainterResource()
                         },
                         contentDescription = "Toggle Terminal Logs",
-                        tint = glassColors.onGlassSecondary,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(IconSize.Small),
                     )
 
@@ -146,7 +142,7 @@ fun GlassConsoleDrawer(
                         text = "Execution Terminal Logs",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = glassColors.onGlass,
+                        color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         softWrap = false,
                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
@@ -161,7 +157,7 @@ fun GlassConsoleDrawer(
                         CircularProgressIndicator(
                             modifier = Modifier.size(IconSize.Small),
                             strokeWidth = StrokeWidth.Hairline,
-                            color = glassColors.glassAccent,
+                            color = MaterialTheme.colorScheme.primary,
                         )
                     }
                 }
@@ -186,7 +182,7 @@ fun GlassConsoleDrawer(
                                         AppIcons.CopyPainterResource()
                                     },
                                     contentDescription = "Copy all",
-                                    tint = if (isCopied) diagnostics.success else glassColors.onGlassSecondary,
+                                    tint = if (isCopied) diagnostics.success else MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(IconSize.Small),
                                 )
                             }
@@ -196,7 +192,7 @@ fun GlassConsoleDrawer(
                     Text(
                         text = if (isExpanded) "Hide Terminal" else "View Output",
                         style = MaterialTheme.typography.labelSmall,
-                        color = glassColors.glassAccent,
+                        color = MaterialTheme.colorScheme.primary,
                         maxLines = 1,
                         softWrap = false,
                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
@@ -216,10 +212,10 @@ fun GlassConsoleDrawer(
                         .fillMaxWidth()
                         .heightIn(max = ComponentSize.DialogDefaultHeight)
                         .clip(GlassShapes.Small)
-                        .background(glassColors.glassSurface)
+                        .background(MaterialTheme.colorScheme.surfaceContainer)
                         .border(
                             width = StrokeWidth.Hairline,
-                            color = glassColors.glassBorder,
+                            color = MaterialTheme.colorScheme.outline,
                             shape = GlassShapes.Small,
                         )
                         .padding(Spacing.SmallMedium),
@@ -229,7 +225,7 @@ fun GlassConsoleDrawer(
                             text = "No execution output generated yet. " +
                                 "Run setup or diagnostics to capture terminal streams.",
                             style = MaterialTheme.typography.labelSmall.copy(fontFamily = codeFontFamily()),
-                            color = glassColors.onGlassMuted,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     } else {
                         LazyColumn(
@@ -248,8 +244,8 @@ fun GlassConsoleDrawer(
                                         line.contains("FAILED", ignoreCase = true) -> diagnostics.error
                                     line.contains("WARNING", ignoreCase = true) -> diagnostics.warning
                                     line.contains("Step", ignoreCase = true) ||
-                                        line.contains("Complete", ignoreCase = true) -> glassColors.glassAccent
-                                    else -> glassColors.onGlassSecondary
+                                        line.contains("Complete", ignoreCase = true) -> MaterialTheme.colorScheme.primary
+                                    else -> MaterialTheme.colorScheme.onSurfaceVariant
                                 }
 
                                 Text(

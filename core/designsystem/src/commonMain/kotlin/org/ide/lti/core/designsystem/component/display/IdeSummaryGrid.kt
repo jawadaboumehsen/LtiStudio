@@ -28,8 +28,8 @@ import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassShapes
+import androidx.compose.material3.MaterialTheme
 import org.ide.lti.core.designsystem.theme.GlassTheme
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.LetterSpacing
 import org.ide.lti.core.designsystem.theme.Spacing
 
@@ -49,13 +49,12 @@ data class IdeSummaryItem(
 fun IdeSummaryGrid(
     items: List<IdeSummaryItem>,
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .background(colors.cardBackground, GlassShapes.ShellCard)
-            .border(GlassDimens.HairlineBorder, colors.border, GlassShapes.ShellCard)
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh, GlassShapes.ShellCard)
+            .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outline, GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
@@ -67,7 +66,7 @@ fun IdeSummaryGrid(
             ) {
                 Text(
                     text = item.title.uppercase(),
-                    color = colors.textDim,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                     fontWeight = FontWeight.SemiBold,
                     fontFamily = GlassFontFamily.code(),
@@ -75,7 +74,7 @@ fun IdeSummaryGrid(
                 )
                 Text(
                     text = item.value,
-                    color = if (item.isUnavailable) colors.textDim else colors.textMain,
+                    color = if (item.isUnavailable) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
                     fontSize = FontSize.CodeMedium,
                     fontWeight = FontWeight.Medium,
                     fontFamily = GlassFontFamily.code(),
@@ -84,7 +83,7 @@ fun IdeSummaryGrid(
                 if (item.detail != null) {
                     Text(
                         text = item.detail,
-                        color = colors.textMuted,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = FontSize.Micro,
                         fontFamily = GlassFontFamily.ide(),
                         modifier = Modifier.padding(top = Spacing.Hairline),

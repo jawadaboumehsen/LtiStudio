@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -24,8 +25,6 @@ import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
-import org.ide.lti.core.designsystem.theme.GlassTheme
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 
 /**
@@ -35,21 +34,20 @@ import org.ide.lti.core.designsystem.theme.Spacing
 fun IdeBreadcrumbBar(
     segments: List<String>,
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
     onSegmentClick: ((Int) -> Unit)? = null,
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
             .height(GlassDimens.BreadcrumbHeight)
-            .background(colors.contentBackground)
+            .background(MaterialTheme.colorScheme.surface)
             .padding(horizontal = Spacing.Medium),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
         segments.forEachIndexed { index, segment ->
             val isLast = index == segments.size - 1
-            val textColor = if (isLast) colors.textMain else colors.textDim
+            val textColor = if (isLast) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
             val fontWeight = if (isLast) FontWeight.Medium else FontWeight.Normal
 
             Text(
@@ -68,7 +66,7 @@ fun IdeBreadcrumbBar(
             if (!isLast) {
                 Text(
                     text = "/",
-                    color = colors.textDim,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.BodySmall,
                     fontFamily = GlassFontFamily.ide(),
                 )

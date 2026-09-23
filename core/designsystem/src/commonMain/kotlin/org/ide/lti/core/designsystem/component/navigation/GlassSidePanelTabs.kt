@@ -50,8 +50,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
-import com.kashif_e.backdrop.ResolvedGlassEffect
-import com.kashif_e.backdrop.shadow.Shadow
 import org.ide.lti.core.designsystem.component.actions.*
 import org.ide.lti.core.designsystem.component.devtools.*
 import org.ide.lti.core.designsystem.component.display.*
@@ -62,7 +60,6 @@ import org.ide.lti.core.designsystem.component.primitives.*
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
-import org.ide.lti.core.designsystem.theme.Elevation
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
@@ -132,7 +129,6 @@ fun GlassSidePanelRail(
 ) {
     if (tabs.isEmpty()) return
 
-    val glassColors = GlassTheme.colors
 
     // The rail's inner edge (facing the divider) is followed by the divider hairline plus the
     // content area's own Spacing.Small gap before the panel's visible border, while the outer
@@ -192,9 +188,9 @@ fun GlassSidePanelRail(
                 .background(
                     Brush.verticalGradient(
                         listOf(
-                            glassColors.glassBorderHighlight.copy(alpha = AlphaTokens.Prominent),
-                            glassColors.glassBorder.copy(alpha = AlphaTokens.Hover),
-                            glassColors.glassBorder.copy(alpha = AlphaTokens.Faint),
+                            MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Prominent),
+                            MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Hover),
+                            MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Faint),
                         ),
                     ),
                 ),
@@ -247,15 +243,11 @@ fun GlassSidePanelTabStrip(
 ) {
     if (tabs.isEmpty()) return
 
-    val glassColors = GlassTheme.colors
 
     GlassSurface(
         modifier = modifier.fillMaxWidth(),
-        shape = GlassShapes.Panel,
-        surfaceColor = glassColors.glassSurfaceElevated,
-        tint = Color.Unspecified,
-        effect = ResolvedGlassEffect.None,
-        shadow = { Shadow(radius = Elevation.Raised, color = glassColors.glassShadow) },
+        shape = GlassShapes.HazePanel,
+        surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
     ) {
         Row(
             modifier = Modifier
@@ -271,7 +263,7 @@ fun GlassSidePanelTabStrip(
                 GlassButton(
                     onClick = { onSelectedIndexChange(index) },
                     variant = if (isSelected) GlassButtonVariant.Primary else GlassButtonVariant.Standard,
-                    shape = GlassShapes.Compact,
+                    shape = GlassShapes.HazeCompact,
                     minWidth = Spacing.None,
                     minHeight = ComponentSize.TopBarButtonSize,
                     contentPadding = PaddingValues(
@@ -342,7 +334,6 @@ fun GlassSidePanelTabs(
             onSelectedIndexChange?.invoke(clickedIndex)
         }
 
-        val glassColors = GlassTheme.colors
 
         Row(
             modifier = Modifier.fillMaxSize(),
@@ -363,7 +354,7 @@ fun GlassSidePanelTabs(
                         .weight(1f)
                         .fillMaxHeight(),
                 ) {
-                    CompositionLocalProvider(LocalContentColor provides glassColors.onGlass) {
+                    CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
                         tabs[activeIndex].content()
                     }
                 }
@@ -397,24 +388,23 @@ private fun GlassSidePanelRailButton(
     desc: String,
     content: @Composable () -> Unit,
 ) {
-    val glassColors = GlassTheme.colors
     var isHovered by remember { mutableStateOf(false) }
 
     val shape = GlassShapes.Compact
     val backgroundColor = when {
-        isSelected -> glassColors.glassAccent.copy(alpha = AlphaTokens.Hover)
-        isHovered -> glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Subtle)
+        isSelected -> MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Hover)
+        isHovered -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = AlphaTokens.Subtle)
         else -> Color.Transparent
     }
     val borderColor = when {
-        isSelected -> glassColors.glassBorderHighlight.copy(alpha = AlphaTokens.Prominent)
-        isHovered -> glassColors.glassBorder.copy(alpha = AlphaTokens.Faint)
+        isSelected -> MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Prominent)
+        isHovered -> MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Faint)
         else -> Color.Transparent
     }
     val iconTint = when {
-        isSelected -> glassColors.onGlass
-        isHovered -> glassColors.onGlass
-        else -> glassColors.onGlassMuted
+        isSelected -> MaterialTheme.colorScheme.onSurface
+        isHovered -> MaterialTheme.colorScheme.onSurface
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     Box(

@@ -60,7 +60,7 @@ fun GlassWifiPairingDialog(
             Text(
                 text = "Enable wireless debugging on the device and enter the pairing details shown there.",
                 style = MaterialTheme.typography.bodySmall,
-                color = GlassTheme.colors.onGlassSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             GlassTextField(
                 value = host,
@@ -87,7 +87,7 @@ fun GlassWifiPairingDialog(
                 Text(
                     text = errorMessage,
                     style = MaterialTheme.typography.labelSmall,
-                    color = GlassTheme.colors.diagnostics.error,
+                    color = GlassTheme.diagnosticColors.error,
                 )
             }
         }

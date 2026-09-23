@@ -66,7 +66,6 @@ import org.ide.lti.core.designsystem.theme.SetupTokens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.core.domain.setup.SetupPlan
 import org.ide.lti.core.domain.setup.SetupPlanKind
 import org.ide.lti.feature.setup.PlannedSetupChanges
@@ -86,12 +85,10 @@ fun ProvisioningPreviewSheet(
     onSetAutoDoctorEnabled: (Boolean) -> Unit,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
-    backdrop: GlassSceneState,
     modifier: Modifier = Modifier,
     plan: SetupPlan? = null,
     contextualError: String? = null,
 ) {
-    val glassColors = GlassTheme.colors
     val focusManager = LocalFocusManager.current
     val focusRequester = remember { FocusRequester() }
 
@@ -102,7 +99,7 @@ fun ProvisioningPreviewSheet(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(glassColors.glassSurface.copy(alpha = AlphaTokens.Scrim))
+            .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = AlphaTokens.Scrim))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -128,7 +125,6 @@ fun ProvisioningPreviewSheet(
             },
         contentAlignment = Alignment.Center,
     ) {
-        val shellColors = GlassTheme.ideShellColors
         GlassCard(
             modifier = Modifier
                 .widthIn(max = ComponentSize.MaxPanelWidth)
@@ -146,9 +142,7 @@ fun ProvisioningPreviewSheet(
                     indication = null,
                     onClick = { /* Intercept click so dialog doesn't close on inner click */ },
                 ),
-            surfaceColor = shellColors.cardBackground,
-            borderColor = shellColors.border,
-            backdrop = backdrop,
+            surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             contentPadding = Spacing.CardPadding,
         ) {
             Column(
@@ -169,12 +163,12 @@ fun ProvisioningPreviewSheet(
                             text = "Provisioning Preview",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.SemiBold,
-                            color = glassColors.onGlass,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                         Text(
                             text = previewSubtitle(plan),
                             style = MaterialTheme.typography.bodySmall,
-                            color = glassColors.onGlassSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
 
@@ -186,7 +180,7 @@ fun ProvisioningPreviewSheet(
                             painter = AppIcons.ClosePainterResource(),
                             contentDescription = "Dismiss preview",
                             modifier = Modifier.size(IconSize.Medium),
-                            tint = glassColors.onGlassSecondary,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
@@ -206,7 +200,6 @@ fun ProvisioningPreviewSheet(
                                 severity = GlassBannerSeverity.ERROR,
                                 title = "Operation Warning / Error",
                                 description = contextualError,
-                                backdrop = backdrop,
                             )
                         }
                     }
@@ -220,15 +213,15 @@ fun ProvisioningPreviewSheet(
                             Text(
                                 text = "Target Subsystem:",
                                 style = MaterialTheme.typography.labelMedium,
-                                color = glassColors.onGlassMuted,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                             Box(
                                 modifier = Modifier
                                     .clip(GlassShapes.Small)
-                                    .background(glassColors.glassSurface)
+                                    .background(MaterialTheme.colorScheme.surfaceContainer)
                                     .border(
                                         width = StrokeWidth.Standard,
-                                        color = glassColors.glassBorder,
+                                        color = MaterialTheme.colorScheme.outline,
                                         shape = GlassShapes.Small,
                                     )
                                     .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),
@@ -236,7 +229,7 @@ fun ProvisioningPreviewSheet(
                                 Text(
                                     text = plannedChanges.targetDistro,
                                     style = MaterialTheme.typography.labelMedium.copy(fontFamily = codeFontFamily()),
-                                    color = glassColors.onGlass,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                 )
                             }
                             if (plan != null) {
@@ -244,7 +237,7 @@ fun ProvisioningPreviewSheet(
                                 Text(
                                     text = "Plan: ${plan.planId.take(8)}",
                                     style = MaterialTheme.typography.labelSmall.copy(fontFamily = codeFontFamily()),
-                                    color = glassColors.onGlassMuted,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                         }
@@ -261,7 +254,6 @@ fun ProvisioningPreviewSheet(
                                 description =
                                 "System packages or toolchain binaries require administrative permissions: " +
                                     reason,
-                                backdrop = backdrop,
                             )
                         }
                     }
@@ -276,7 +268,7 @@ fun ProvisioningPreviewSheet(
                                     text = "System Packages (${plannedChanges.packagesToInstall.size})",
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = glassColors.onGlass,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                 )
                                 FlowRow(
                                     modifier = Modifier.fillMaxWidth(),
@@ -287,10 +279,10 @@ fun ProvisioningPreviewSheet(
                                         Box(
                                             modifier = Modifier
                                                 .clip(GlassShapes.Small)
-                                                .background(glassColors.glassSurface)
+                                                .background(MaterialTheme.colorScheme.surfaceContainer)
                                                 .border(
                                                     width = StrokeWidth.Hairline,
-                                                    color = glassColors.glassBorder,
+                                                    color = MaterialTheme.colorScheme.outline,
                                                     shape = GlassShapes.Small,
                                                 )
                                                 .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),
@@ -298,7 +290,7 @@ fun ProvisioningPreviewSheet(
                                             Text(
                                                 text = pkg,
                                                 style = MaterialTheme.typography.bodySmall.copy(fontFamily = codeFontFamily()),
-                                                color = glassColors.onGlassSecondary,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             )
                                         }
                                     }
@@ -317,16 +309,16 @@ fun ProvisioningPreviewSheet(
                                     text = "Git Submodules (${plannedChanges.submodulesToSync.size})",
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = glassColors.onGlass,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                 )
                                 Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clip(GlassShapes.Small)
-                                        .background(glassColors.glassSurface)
+                                        .background(MaterialTheme.colorScheme.surfaceContainer)
                                         .border(
                                             width = StrokeWidth.Hairline,
-                                            color = glassColors.glassBorder,
+                                            color = MaterialTheme.colorScheme.outline,
                                             shape = GlassShapes.Small,
                                         )
                                         .padding(Spacing.Small),
@@ -336,7 +328,7 @@ fun ProvisioningPreviewSheet(
                                         Text(
                                             text = sub,
                                             style = MaterialTheme.typography.bodySmall.copy(fontFamily = codeFontFamily()),
-                                            color = glassColors.onGlassSecondary,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         )
                                     }
                                 }
@@ -354,7 +346,7 @@ fun ProvisioningPreviewSheet(
                                     text = "Tools to Compile (${plannedChanges.toolsToCompile.size})",
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = glassColors.onGlass,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                 )
                                 FlowRow(
                                     modifier = Modifier.fillMaxWidth(),
@@ -365,10 +357,10 @@ fun ProvisioningPreviewSheet(
                                         Box(
                                             modifier = Modifier
                                                 .clip(GlassShapes.Small)
-                                                .background(glassColors.glassSurface)
+                                                .background(MaterialTheme.colorScheme.surfaceContainer)
                                                 .border(
                                                     width = StrokeWidth.Hairline,
-                                                    color = glassColors.glassBorder,
+                                                    color = MaterialTheme.colorScheme.outline,
                                                     shape = GlassShapes.Small,
                                                 )
                                                 .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),
@@ -376,7 +368,7 @@ fun ProvisioningPreviewSheet(
                                             Text(
                                                 text = tool,
                                                 style = MaterialTheme.typography.bodySmall.copy(fontFamily = codeFontFamily()),
-                                                color = glassColors.onGlassSecondary,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             )
                                         }
                                     }
@@ -395,12 +387,12 @@ fun ProvisioningPreviewSheet(
                                     text = "Tools to Publish (${plannedChanges.toolsToPublish.size})",
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = glassColors.onGlass,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                 )
                                 Text(
                                     text = plannedChanges.toolsToPublish.joinToString(", "),
                                     style = MaterialTheme.typography.bodySmall.copy(fontFamily = codeFontFamily()),
-                                    color = glassColors.onGlassSecondary,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                         }
@@ -416,7 +408,7 @@ fun ProvisioningPreviewSheet(
                                     "No system packages or toolchain compilations required for this operation."
                                 },
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = glassColors.onGlassMuted,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
@@ -440,12 +432,12 @@ fun ProvisioningPreviewSheet(
                                     text = "Automated Doctor Remediation",
                                     style = MaterialTheme.typography.labelMedium,
                                     fontWeight = FontWeight.Medium,
-                                    color = glassColors.onGlass,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                 )
                                 Text(
                                     text = "Automatically fix non-interactive package prerequisites during setup",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = glassColors.onGlassSecondary,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                         }

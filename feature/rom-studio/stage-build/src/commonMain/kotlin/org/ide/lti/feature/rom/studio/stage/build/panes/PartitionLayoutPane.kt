@@ -9,6 +9,8 @@
  */
 package org.ide.lti.feature.rom.studio.stage.build.panes
 
+import org.ide.lti.core.designsystem.theme.AlphaTokens
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -37,7 +39,6 @@ import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -56,7 +57,6 @@ public fun PartitionLayoutPane(
     onValidate: () -> Unit = {},
     onSave: () -> Unit = {},
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     Column(
         modifier = modifier
@@ -64,32 +64,32 @@ public fun PartitionLayoutPane(
             .testTag("PartitionLayoutPane"),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
-        PartitionLayoutNoticeCard(colors = colors)
-        SuperPartitionStorageCard(colors = colors)
-        PartitionTableCard(colors = colors)
-        AboutPartitionLayoutCard(colors = colors)
+        PartitionLayoutNoticeCard()
+        SuperPartitionStorageCard()
+        PartitionTableCard()
+        AboutPartitionLayoutCard()
     }
 }
 
 @Composable
-private fun PartitionLayoutNoticeCard(colors: IdeShellColorScheme) {
+private fun PartitionLayoutNoticeCard() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .background(colors.infoBannerFill)
-            .border(GlassDimens.HairlineBorder, colors.infoBannerBorder, GlassShapes.ShellCard)
+            .background(MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Subtle))
+            .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Ambient), GlassShapes.ShellCard)
             .padding(Spacing.Medium),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
         ) {
-            Icon(Icons.Default.Info, null, tint = colors.accentBlue, modifier = Modifier.size(IconSize.Small))
+            Icon(Icons.Default.Info, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(IconSize.Small))
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.Hairline)) {
                 Text(
                     text = "Partition layout is read from the source images and cannot be modified here.",
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = FontSize.Micro,
                     fontWeight = FontWeight.Medium,
                     fontFamily = ideFontFamily(),
@@ -97,7 +97,7 @@ private fun PartitionLayoutNoticeCard(colors: IdeShellColorScheme) {
                 Text(
                     text = "To change partition sizes, use a different target revision " +
                         "or rebind with a compatible source build.",
-                    color = colors.textMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                     fontFamily = ideFontFamily(),
                 )
@@ -107,12 +107,12 @@ private fun PartitionLayoutNoticeCard(colors: IdeShellColorScheme) {
 }
 
 @Composable
-private fun SuperPartitionStorageCard(colors: IdeShellColorScheme) {
+private fun SuperPartitionStorageCard() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
@@ -124,14 +124,14 @@ private fun SuperPartitionStorageCard(colors: IdeShellColorScheme) {
             Column {
                 Text(
                     text = "Super partition",
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = FontSize.BodySmall,
                     fontWeight = FontWeight.SemiBold,
                     fontFamily = ideFontFamily(),
                 )
                 Text(
                     text = "13.62 GB total",
-                    color = colors.textDim,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                     fontFamily = ideFontFamily(),
                 )
@@ -139,14 +139,14 @@ private fun SuperPartitionStorageCard(colors: IdeShellColorScheme) {
             Column(horizontalAlignment = Alignment.End) {
                 Text(
                     text = "11.43 GB / 13.62 GB",
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = FontSize.BodySmall,
                     fontWeight = FontWeight.SemiBold,
                     fontFamily = ideFontFamily(),
                 )
                 Text(
                     text = "2.19 GB free",
-                    color = colors.textDim,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                     fontFamily = ideFontFamily(),
                 )
@@ -159,19 +159,19 @@ private fun SuperPartitionStorageCard(colors: IdeShellColorScheme) {
                 .fillMaxWidth()
                 .height(Spacing.Small)
                 .clip(GlassShapes.ShellControl)
-                .background(colors.cardBackgroundMuted),
+                .background(MaterialTheme.colorScheme.surfaceContainer),
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth(0.839f)
                     .height(Spacing.Small)
-                    .background(colors.accentBlue),
+                    .background(MaterialTheme.colorScheme.primary),
             )
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(Spacing.Small)
-                    .background(colors.border),
+                    .background(MaterialTheme.colorScheme.outline),
             )
         }
 
@@ -185,10 +185,10 @@ private fun SuperPartitionStorageCard(colors: IdeShellColorScheme) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
             ) {
-                Box(modifier = Modifier.size(Spacing.Small).clip(GlassShapes.Circle).background(colors.accentBlue))
+                Box(modifier = Modifier.size(Spacing.Small).clip(GlassShapes.Circle).background(MaterialTheme.colorScheme.primary))
                 Text(
                     text = "Used 11.43 GB (83.9%)",
-                    color = colors.textMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                     fontFamily = ideFontFamily(),
                 )
@@ -197,10 +197,10 @@ private fun SuperPartitionStorageCard(colors: IdeShellColorScheme) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
             ) {
-                Box(modifier = Modifier.size(Spacing.Small).clip(GlassShapes.Circle).background(colors.border))
+                Box(modifier = Modifier.size(Spacing.Small).clip(GlassShapes.Circle).background(MaterialTheme.colorScheme.outline))
                 Text(
                     text = "Free 2.19 GB (16.1%)",
-                    color = colors.textDim,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                     fontFamily = ideFontFamily(),
                 )
@@ -221,7 +221,7 @@ private data class PartitionDetail(
 )
 
 @Composable
-private fun PartitionTableCard(colors: IdeShellColorScheme) {
+private fun PartitionTableCard() {
     val items = listOf(
         PartitionDetail("1", "super", "—", "dynamic", "13.62 GB", "11.43 GB", "2.19 GB", "super.img"),
         PartitionDetail("2", "system", "/system", "dynamic", "4.00 GB", "3.21 GB", "788 MB", "super.img"),
@@ -240,61 +240,61 @@ private fun PartitionTableCard(colors: IdeShellColorScheme) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
-        PartitionTableHeader(colors)
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
+        PartitionTableHeader()
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
         items.forEach { item ->
-            PartitionTableRow(item = item, colors = colors)
+            PartitionTableRow(item = item)
         }
     }
 }
 
 @Composable
-private fun PartitionTableHeader(colors: IdeShellColorScheme) {
+private fun PartitionTableHeader() {
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.Small),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text("#", color = colors.textDim, fontSize = FontSize.Micro, modifier = Modifier.width(Spacing.Large))
-        Text("Partition", color = colors.textDim, fontSize = FontSize.Micro, modifier = Modifier.weight(1.3f))
-        Text("Mount point", color = colors.textDim, fontSize = FontSize.Micro, modifier = Modifier.weight(1.3f))
-        Text("Type", color = colors.textDim, fontSize = FontSize.Micro, modifier = Modifier.weight(1.0f))
-        Text("Size", color = colors.textDim, fontSize = FontSize.Micro, modifier = Modifier.weight(1.0f))
-        Text("Used", color = colors.textDim, fontSize = FontSize.Micro, modifier = Modifier.weight(1.0f))
-        Text("Free", color = colors.textDim, fontSize = FontSize.Micro, modifier = Modifier.weight(1.0f))
-        Text("Image source", color = colors.textDim, fontSize = FontSize.Micro, modifier = Modifier.weight(1.2f))
+        Text("#", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.width(Spacing.Large))
+        Text("Partition", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.weight(1.3f))
+        Text("Mount point", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.weight(1.3f))
+        Text("Type", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.weight(1.0f))
+        Text("Size", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.weight(1.0f))
+        Text("Used", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.weight(1.0f))
+        Text("Free", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.weight(1.0f))
+        Text("Image source", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.weight(1.2f))
     }
 }
 
 @Composable
-private fun PartitionTableRow(item: PartitionDetail, colors: IdeShellColorScheme) {
+private fun PartitionTableRow(item: PartitionDetail) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.Small, vertical = Spacing.ExtraExtraSmall),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(item.index, color = colors.textDim, fontSize = FontSize.Micro, modifier = Modifier.width(Spacing.Large))
+        Text(item.index, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.width(Spacing.Large))
         Text(
             text = item.name,
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.SemiBold,
             fontSize = FontSize.Micro,
             modifier = Modifier.weight(1.3f),
         )
-        Text(item.mountPoint, color = colors.textMuted, fontSize = FontSize.Micro, modifier = Modifier.weight(1.3f))
+        Text(item.mountPoint, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.weight(1.3f))
         Box(modifier = Modifier.weight(1.0f)) {
             Box(
                 modifier = Modifier
                     .clip(GlassShapes.ShellBadge)
-                    .background(colors.cardBackgroundMuted)
-                    .border(GlassDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellBadge)
+                    .background(MaterialTheme.colorScheme.surfaceContainer)
+                    .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outlineVariant, GlassShapes.ShellBadge)
                     .padding(horizontal = Spacing.ExtraSmall, vertical = Spacing.Hairline),
             ) {
                 Text(
                     text = item.type,
-                    color = colors.textMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                     fontFamily = codeFontFamily(),
                 )
@@ -302,26 +302,26 @@ private fun PartitionTableRow(item: PartitionDetail, colors: IdeShellColorScheme
         }
         Text(
             text = item.size,
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.Medium,
             fontSize = FontSize.Micro,
             modifier = Modifier.weight(1.0f),
         )
         Text(
             text = item.used,
-            color = colors.textMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.Micro,
             modifier = Modifier.weight(1.0f),
         )
         Text(
             text = item.free,
-            color = colors.textDim,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.Micro,
             modifier = Modifier.weight(1.0f),
         )
         Text(
             text = item.source,
-            color = colors.textMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontFamily = codeFontFamily(),
             fontSize = FontSize.Micro,
             modifier = Modifier.weight(1.2f),
@@ -330,12 +330,12 @@ private fun PartitionTableRow(item: PartitionDetail, colors: IdeShellColorScheme
 }
 
 @Composable
-private fun AboutPartitionLayoutCard(colors: IdeShellColorScheme) {
+private fun AboutPartitionLayoutCard() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
@@ -343,10 +343,10 @@ private fun AboutPartitionLayoutCard(colors: IdeShellColorScheme) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
         ) {
-            Icon(Icons.Default.Info, null, tint = colors.accentBlue, modifier = Modifier.size(IconSize.Small))
+            Icon(Icons.Default.Info, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(IconSize.Small))
             Text(
                 text = "About partition layout",
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = FontSize.BodySmall,
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = ideFontFamily(),
@@ -356,7 +356,7 @@ private fun AboutPartitionLayoutCard(colors: IdeShellColorScheme) {
             text = "This layout is read from the selected source images for target revision 4. " +
                 "To modify partition sizes, choose a different target revision and " +
                 "rebind source images in the Acquire stage.",
-            color = colors.textMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.Micro,
             fontFamily = ideFontFamily(),
         )

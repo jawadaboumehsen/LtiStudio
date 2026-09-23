@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.ui
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
@@ -64,7 +65,6 @@ fun GlassCodeEditor(
 ) {
     val verticalScrollState = rememberScrollState()
     val horizontalScrollState = rememberScrollState()
-    val glassColors = GlassTheme.colors
     val codeFont = codeFontFamily()
 
     var textFieldValue by remember {
@@ -98,24 +98,26 @@ fun GlassCodeEditor(
     }
 
     // Memoize the VisualTransformation keyed on tokens and active syntax theme colors
-    val visualTransformation = remember(tokens, glassColors.syntax) {
-        SyntaxHighlightingTransformation(glassColors.syntax, tokens)
+    val syntaxColors = GlassTheme.syntaxColors
+    val visualTransformation = remember(tokens, syntaxColors) {
+        SyntaxHighlightingTransformation(syntaxColors, tokens)
     }
 
     Box(
         modifier = modifier
-            .background(glassColors.canvasSurface)
+            .background(MaterialTheme.colorScheme.surface)
             .padding(Spacing.Medium),
     ) {
         Row(modifier = Modifier.fillMaxSize()) {
             // Line numbers
             if (showLineNumbers) {
                 val lineCount = remember(content) { content.count { it == '\n' } + 1 }
-                val lineStyle = remember(codeFont, glassColors.onGlassMuted) {
+                val lineNumberColor = MaterialTheme.colorScheme.onSurfaceVariant
+                val lineStyle = remember(codeFont, lineNumberColor) {
                     TextStyle(
                         fontFamily = codeFont,
                         fontSize = FontSize.Code,
-                        color = glassColors.onGlassMuted,
+                        color = lineNumberColor,
                         lineHeight = LineHeight.Code,
                     )
                 }
@@ -163,10 +165,10 @@ fun GlassCodeEditor(
                 textStyle = TextStyle(
                     fontFamily = codeFont,
                     fontSize = FontSize.Code,
-                    color = glassColors.syntax.plain,
+                    color = GlassTheme.syntaxColors.plain,
                     lineHeight = LineHeight.Code,
                 ),
-                cursorBrush = SolidColor(glassColors.glassAccent),
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                 visualTransformation = visualTransformation,
                 readOnly = readOnly,
                 modifier = Modifier

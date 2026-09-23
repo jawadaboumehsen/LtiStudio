@@ -26,7 +26,20 @@ import com.kyant.capsule.continuities.G2Continuity
 import com.kyant.capsule.lerp as capsuleLerp
 
 /**
- * Standard cached squircle shapes for glass UI components.
+ * The shape type Haze's `dev.chrisbanes.haze.glass.GlassStyleScope.shape()` requires - Haze's
+ * whole mask/shader pipeline extracts 4 simple per-corner pixel radii from this exact type
+ * (`CornerRadii.kt`'s `RoundedCornerShape.toCornerRadiiPx()`), so it cannot accept the squircle
+ * [ContinuousCapsule]/[ContinuousRoundedRectangle] shapes below - those use G1/G2 Bezier curvature
+ * blending, not circular-arc corners, and don't reduce to that model. Every `Haze*` preset in
+ * [GlassShapes] is this type; components handing a shape to `hazeGlass` declare their `shape`
+ * parameter as this type so they never import or name `RoundedCornerShape` themselves.
+ */
+typealias HazeShape = RoundedCornerShape
+
+/**
+ * Standard cached squircle shapes for glass UI components, plus their [HazeShape]-typed
+ * equivalents for the few places that hand a shape to Haze's real `Modifier.hazeGlass` (each
+ * `Haze*` preset below is dp-matched 1:1 to the squircle preset with the same base name).
  * Powered by Capsule 1.1.1's G2 curvature continuity, ensuring mathematically seamless
  * transitions from straight edges to corner arcs without inflection artifacts.
  *
@@ -42,7 +55,7 @@ object GlassShapes {
     /** High-performance G1 tangential continuity (optimized for rapid animations). */
     val ContinuityG1: Continuity = G1Continuity
 
-    // --- Core Shape Presets ---
+    // --- Core squircle shape presets (own rendering: .clip()/.background()/glassOutlineBorder) ---
     val None = RectangleShape
     val ExtraSmall = ContinuousRoundedRectangle(CornerRadius.ExtraSmall, continuity = ContinuityG2)
     val Small = ContinuousRoundedRectangle(CornerRadius.Small, continuity = ContinuityG2)
@@ -67,6 +80,29 @@ object GlassShapes {
         bottomStart = CornerRadius.None,
         continuity = ContinuityG2,
     )
+
+    // --- Haze-typed equivalents (Modifier.hazeGlass / GlassStyleScope.shape()) ---
+    // Each preset here is the HazeShape counterpart of the squircle preset with the same base
+    // name above - same dp values, real RoundedCornerShape geometry (self-clamping, so a "full
+    // capsule" is just percent = 50, not a separate curve model). Referenced directly by
+    // components; never constructed ad-hoc at a call site.
+    val HazeExtraSmall: HazeShape = RoundedCornerShape(CornerRadius.ExtraSmall)
+    val HazeSmall: HazeShape = RoundedCornerShape(CornerRadius.Small)
+    val HazeCompact: HazeShape = RoundedCornerShape(CornerRadius.Compact)
+    val HazeMediumSmall: HazeShape = RoundedCornerShape(CornerRadius.MediumSmall)
+    val HazeMedium: HazeShape = RoundedCornerShape(CornerRadius.Medium)
+    val HazeLarge: HazeShape = RoundedCornerShape(CornerRadius.Large)
+    val HazeExtraLarge: HazeShape = RoundedCornerShape(CornerRadius.ExtraLarge)
+    val HazeCapsule: HazeShape = RoundedCornerShape(percent = 50)
+    val HazeCard: HazeShape = RoundedCornerShape(CornerRadius.Card)
+    val HazeDialog: HazeShape = RoundedCornerShape(CornerRadius.Dialog)
+    val HazePanel: HazeShape = RoundedCornerShape(CornerRadius.Panel)
+
+    /** [HazeShape] equivalent of [None] - square-cornered, for full-width bars (top/status bar chrome). */
+    val HazeFlat: HazeShape = RoundedCornerShape(0.dp)
+
+    /** [HazeShape] equivalent of [BottomSheet] - top-rounded-only, for modal bottom sheets. */
+    val HazeBottomSheet: HazeShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
 
     // --- IDE Shell Shapes (folded in from the former IdeShellShapes, Feature 005) ---
     // Kept as plain RoundedCornerShape (not ContinuousRoundedRectangle) and under `Shell`-prefixed

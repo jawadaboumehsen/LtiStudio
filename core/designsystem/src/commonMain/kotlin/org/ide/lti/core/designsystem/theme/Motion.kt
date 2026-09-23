@@ -54,9 +54,6 @@ object MotionSpring {
 
     /** Medium bouncy damping ratio for interactive feedback (0.5f). */
     const val DampingRatioMediumBouncy: Float = 0.5f
-
-    /** Critical damping ratio with no bounce/overshoot (1.0f). */
-    const val DampingRatioNoBouncy: Float = 1.0f
 }
 
 /**
@@ -79,9 +76,6 @@ object MotionEasing {
 object MotionThreshold {
     /** Fine precision threshold for sub-pixel and normalized progress animations (0.001f). */
     const val Fine: Float = 0.001f
-
-    /** Offset threshold for positional and drag animations (0.5f). */
-    const val Offset: Float = 0.5f
 }
 
 /**

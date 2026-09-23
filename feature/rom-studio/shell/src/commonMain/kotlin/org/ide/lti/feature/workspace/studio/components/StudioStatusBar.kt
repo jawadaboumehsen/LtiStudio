@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.workspace.studio.components
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -32,7 +33,6 @@ import org.ide.lti.core.designsystem.component.layout.IdeStatusBar
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -46,25 +46,21 @@ import org.ide.lti.feature.workspace.studio.WorkspaceShellUiState
 public fun StudioStatusBar(
     uiState: WorkspaceShellUiState,
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
     onOpenProblems: (() -> Unit)? = null,
     onOpenActivity: (() -> Unit)? = null,
 ) {
     IdeStatusBar(
         modifier = modifier.testTag("StudioStatusBar"),
-        colors = colors,
         leadingContent = {
             if (uiState.targetContext != null) {
-                StatusBarWorkspaceTarget(targetContext = uiState.targetContext, colors = colors)
+                StatusBarWorkspaceTarget(targetContext = uiState.targetContext)
             }
             StatusBarProblems(
                 problemCount = uiState.problemCount,
-                colors = colors,
                 onOpenProblems = onOpenProblems,
             )
             StatusBarActivity(
                 activity = uiState.activity,
-                colors = colors,
                 onOpenActivity = onOpenActivity,
             )
         },
@@ -73,15 +69,15 @@ public fun StudioStatusBar(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
             ) {
-                StatusBarConnection(connection = uiState.connection, colors = colors)
+                StatusBarConnection(connection = uiState.connection)
                 Text(
                     text = "|",
-                    color = colors.borderMuted,
+                    color = MaterialTheme.colorScheme.outlineVariant,
                     fontFamily = ideFontFamily(),
                 )
                 Text(
                     text = "Design concept · Sample data",
-                    color = colors.textDim,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontFamily = ideFontFamily(),
                 )
             }
@@ -90,7 +86,7 @@ public fun StudioStatusBar(
 }
 
 @Composable
-private fun StatusBarWorkspaceTarget(targetContext: TargetContextUi, colors: IdeShellColorScheme) {
+private fun StatusBarWorkspaceTarget(targetContext: TargetContextUi) {
     val targetText = when (val t = targetContext.targetId) {
         is DisplayValue.Available -> t.text
         is DisplayValue.Unavailable -> t.reason
@@ -112,25 +108,25 @@ private fun StatusBarWorkspaceTarget(targetContext: TargetContextUi, colors: Ide
             imageVector = Icons.Default.Storage,
             contentDescription = null,
             modifier = Modifier.size(IconSize.Small),
-            tint = colors.textDim,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
             text = "Workspace: $targetText / $profileText • Target revision: $revText",
-            color = colors.textMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontFamily = ideFontFamily(),
             fontSize = FontSize.Micro,
         )
     }
     Text(
         text = "|",
-        color = colors.borderMuted,
+        color = MaterialTheme.colorScheme.outlineVariant,
         fontFamily = ideFontFamily(),
         fontSize = FontSize.Micro,
     )
 }
 
 @Composable
-private fun StatusBarProblems(problemCount: Int, colors: IdeShellColorScheme, onOpenProblems: (() -> Unit)?) {
+private fun StatusBarProblems(problemCount: Int, onOpenProblems: (() -> Unit)?) {
     val problemsClickModifier = if (onOpenProblems != null) {
         Modifier
             .clickable(onClick = onOpenProblems)
@@ -151,19 +147,19 @@ private fun StatusBarProblems(problemCount: Int, colors: IdeShellColorScheme, on
                 imageVector = Icons.Default.Warning,
                 contentDescription = null,
                 modifier = Modifier.size(IconSize.Small),
-                tint = colors.warningAmber,
+                tint = GlassTheme.diagnosticColors.warning,
             )
         } else {
             Icon(
                 imageVector = Icons.Default.Check,
                 contentDescription = null,
                 modifier = Modifier.size(IconSize.Small),
-                tint = colors.accentGreen,
+                tint = GlassTheme.diagnosticColors.success,
             )
         }
         Text(
             text = "Problems: $problemCount",
-            color = if (problemCount > 0) colors.warningAmber else colors.textDim,
+            color = if (problemCount > 0) GlassTheme.diagnosticColors.warning else MaterialTheme.colorScheme.onSurfaceVariant,
             fontFamily = codeFontFamily(),
             fontWeight = FontWeight.Medium,
         )
@@ -171,7 +167,7 @@ private fun StatusBarProblems(problemCount: Int, colors: IdeShellColorScheme, on
 }
 
 @Composable
-private fun StatusBarActivity(activity: ActivityUiState, colors: IdeShellColorScheme, onOpenActivity: (() -> Unit)?) {
+private fun StatusBarActivity(activity: ActivityUiState, onOpenActivity: (() -> Unit)?) {
     val activityClickModifier = if (onOpenActivity != null) {
         Modifier
             .clickable(onClick = onOpenActivity)
@@ -191,7 +187,7 @@ private fun StatusBarActivity(activity: ActivityUiState, colors: IdeShellColorSc
             imageVector = Icons.Default.Circle,
             contentDescription = null,
             modifier = Modifier.size(IconSize.Indicator),
-            tint = colors.textDim,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         val activityText = when (activity) {
             is ActivityUiState.Idle -> "idle"
@@ -199,23 +195,23 @@ private fun StatusBarActivity(activity: ActivityUiState, colors: IdeShellColorSc
         }
         Text(
             text = "Activity: $activityText",
-            color = colors.textDim,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontFamily = codeFontFamily(),
         )
     }
 }
 
 @Composable
-private fun StatusBarConnection(connection: ConnectionUiState, colors: IdeShellColorScheme) {
+private fun StatusBarConnection(connection: ConnectionUiState) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
         modifier = Modifier.testTag("StatusBar_Connection"),
     ) {
         val (connColor, connText) = when (connection) {
-            is ConnectionUiState.Connected -> colors.accentGreen to "Connected"
-            is ConnectionUiState.Connecting -> colors.warningAmber to "Connecting..."
-            is ConnectionUiState.Disconnected -> colors.textDim to "Disconnected"
+            is ConnectionUiState.Connected -> GlassTheme.diagnosticColors.success to "Connected"
+            is ConnectionUiState.Connecting -> GlassTheme.diagnosticColors.warning to "Connecting..."
+            is ConnectionUiState.Disconnected -> MaterialTheme.colorScheme.onSurfaceVariant to "Disconnected"
         }
         Icon(
             imageVector = Icons.Default.Circle,
@@ -225,7 +221,7 @@ private fun StatusBarConnection(connection: ConnectionUiState, colors: IdeShellC
         )
         Text(
             text = connText,
-            color = colors.textMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontFamily = ideFontFamily(),
         )
     }

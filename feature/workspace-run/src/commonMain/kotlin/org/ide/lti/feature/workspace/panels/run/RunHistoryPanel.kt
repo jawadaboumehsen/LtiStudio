@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.workspace.panels.run
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -37,7 +38,6 @@ public fun RunHistoryPanel(
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val glassColors = GlassTheme.colors
     val typography = GlassTheme.typography
 
     Column(
@@ -56,7 +56,7 @@ public fun RunHistoryPanel(
                 Text(
                     text = "Build History",
                     style = typography.titleMedium,
-                    color = glassColors.onGlass,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     text = if (uiState.currentWorkspace != null) {
@@ -65,7 +65,7 @@ public fun RunHistoryPanel(
                         "No workspace opened"
                     },
                     style = typography.bodySmall,
-                    color = glassColors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
 
@@ -92,7 +92,7 @@ public fun RunHistoryPanel(
                     Text(
                         text = "No recorded build runs for this workspace yet.",
                         style = typography.bodyMedium,
-                        color = glassColors.onGlassSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -133,7 +133,7 @@ public fun RunHistoryPanel(
                         Text(
                             text = "Run ${selected.id}",
                             style = typography.titleSmall,
-                            color = glassColors.onGlass,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
 
                         StagePipelineView(
@@ -147,14 +147,14 @@ public fun RunHistoryPanel(
                         Text(
                             text = "Artifacts (${selected.artifacts.size})",
                             style = typography.labelMedium,
-                            color = glassColors.onGlass,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
 
                         if (selected.artifacts.isEmpty()) {
                             Text(
                                 text = "No artifacts recorded for this run.",
                                 style = typography.bodySmall,
-                                color = glassColors.onGlassSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         } else {
                             Column(
@@ -193,7 +193,6 @@ private fun RunListItemCard(
     onSelect: () -> Unit,
     onDelete: () -> Unit,
 ) {
-    val glassColors = GlassTheme.colors
     val typography = GlassTheme.typography
 
     GlassCard(
@@ -213,7 +212,7 @@ private fun RunListItemCard(
                 Text(
                     text = run.id,
                     style = typography.labelMedium,
-                    color = if (isSelected) glassColors.glassAccent else glassColors.onGlass,
+                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                 )
                 GlassChip(
                     label = run.state.name,
@@ -229,7 +228,7 @@ private fun RunListItemCard(
                 Text(
                     text = "${run.stages.size} stages | ${run.artifacts.size} artifacts",
                     style = typography.bodySmall,
-                    color = glassColors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 GlassChip(
                     label = "Delete",
@@ -242,7 +241,6 @@ private fun RunListItemCard(
 
 @Composable
 private fun HistoryArtifactItem(artifact: Artifact) {
-    val glassColors = GlassTheme.colors
     val typography = GlassTheme.typography
 
     GlassCard(modifier = Modifier.fillMaxWidth()) {
@@ -257,13 +255,13 @@ private fun HistoryArtifactItem(artifact: Artifact) {
                 Text(
                     text = artifact.linuxPath.substringAfterLast("/"),
                     style = typography.labelMedium,
-                    color = glassColors.onGlass,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 val sizeStr = artifact.sizeBytes?.let { "${it / (1024 * 1024)} MB" } ?: "Unknown size"
                 Text(
                     text = sizeStr,
                     style = typography.bodySmall,
-                    color = glassColors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
 

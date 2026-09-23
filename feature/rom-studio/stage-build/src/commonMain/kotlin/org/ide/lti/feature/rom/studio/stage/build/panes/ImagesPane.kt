@@ -9,6 +9,8 @@
  */
 package org.ide.lti.feature.rom.studio.stage.build.panes
 
+import org.ide.lti.core.designsystem.theme.AlphaTokens
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -53,7 +55,6 @@ import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -73,7 +74,6 @@ public fun ImagesPane(
     onValidate: () -> Unit = {},
     onSave: () -> Unit = {},
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     Column(
         modifier = modifier
@@ -81,22 +81,22 @@ public fun ImagesPane(
             .testTag("ImagesPane"),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
-        ImagesNoticeCard(colors = colors)
-        ImagesTableCard(settings = settings, colors = colors)
-        ImagesSummaryCard(colors = colors)
-        ImagesValidationCard(onRunValidation = onValidate, colors = colors)
-        ImagesFootnoteCard(colors = colors)
+        ImagesNoticeCard()
+        ImagesTableCard(settings = settings)
+        ImagesSummaryCard()
+        ImagesValidationCard(onRunValidation = onValidate)
+        ImagesFootnoteCard()
     }
 }
 
 @Composable
-private fun ImagesNoticeCard(colors: IdeShellColorScheme) {
+private fun ImagesNoticeCard() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .background(colors.infoBannerFill)
-            .border(GlassDimens.HairlineBorder, colors.infoBannerBorder, GlassShapes.ShellCard)
+            .background(MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Subtle))
+            .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Ambient), GlassShapes.ShellCard)
             .padding(Spacing.Medium),
     ) {
         Row(
@@ -107,7 +107,7 @@ private fun ImagesNoticeCard(colors: IdeShellColorScheme) {
             Icon(
                 imageVector = Icons.Default.Info,
                 contentDescription = null,
-                tint = colors.accentBlue,
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(IconSize.Medium),
             )
             Column(
@@ -116,14 +116,14 @@ private fun ImagesNoticeCard(colors: IdeShellColorScheme) {
             ) {
                 Text(
                     text = "Build Android system images from the prepared source trees.",
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = FontSize.Micro,
                     fontWeight = FontWeight.Medium,
                     fontFamily = ideFontFamily(),
                 )
                 Text(
                     text = "Images use the patched checkpoints from earlier stages. Validate sizes before packaging.",
-                    color = colors.textMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                     fontFamily = ideFontFamily(),
                 )
@@ -136,12 +136,12 @@ private fun ImagesNoticeCard(colors: IdeShellColorScheme) {
                 Icon(
                     imageVector = Icons.Default.Description,
                     contentDescription = null,
-                    tint = colors.accentBlue,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(IconSize.Small),
                 )
                 Text(
                     text = "How image building works",
-                    color = colors.accentBlue,
+                    color = MaterialTheme.colorScheme.primary,
                     fontSize = FontSize.Micro,
                     fontFamily = ideFontFamily(),
                 )
@@ -163,7 +163,7 @@ private data class ImageRowData(
 
 @Suppress("UnusedParameter")
 @Composable
-private fun ImagesTableCard(settings: BuildSettings, colors: IdeShellColorScheme) {
+private fun ImagesTableCard(settings: BuildSettings) {
     val rows = listOf(
         ImageRowData(
             index = "1",
@@ -211,49 +211,49 @@ private fun ImagesTableCard(settings: BuildSettings, colors: IdeShellColorScheme
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
-        ImagesTableHeader(colors)
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
+        ImagesTableHeader()
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
         rows.forEach { row ->
-            ImagesTableRow(row = row, colors = colors)
+            ImagesTableRow(row = row)
         }
     }
 }
 
 @Composable
-private fun ImagesTableHeader(colors: IdeShellColorScheme) {
+private fun ImagesTableHeader() {
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.Small),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text("#", color = colors.textDim, fontSize = FontSize.Micro, modifier = Modifier.width(Spacing.Large))
-        Text("Partition", color = colors.textDim, fontSize = FontSize.Micro, modifier = Modifier.weight(1.0f))
+        Text("#", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.width(Spacing.Large))
+        Text("Partition", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.weight(1.0f))
         Text(
             text = "Source (patched checkpoint)",
-            color = colors.textDim,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.Micro,
             modifier = Modifier.weight(2.0f),
         )
-        Text("Image builder", color = colors.textDim, fontSize = FontSize.Micro, modifier = Modifier.weight(1.5f))
-        Text("Output path", color = colors.textDim, fontSize = FontSize.Micro, modifier = Modifier.weight(1.5f))
-        Text("Status", color = colors.textDim, fontSize = FontSize.Micro, modifier = Modifier.weight(1.0f))
-        Text("Size (est.)", color = colors.textDim, fontSize = FontSize.Micro, modifier = Modifier.weight(1.0f))
+        Text("Image builder", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.weight(1.5f))
+        Text("Output path", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.weight(1.5f))
+        Text("Status", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.weight(1.0f))
+        Text("Size (est.)", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.weight(1.0f))
     }
 }
 
 @Composable
-private fun ImagesTableRow(row: ImageRowData, colors: IdeShellColorScheme) {
+private fun ImagesTableRow(row: ImageRowData) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(row.index, color = colors.textDim, fontSize = FontSize.Micro, modifier = Modifier.width(Spacing.Large))
+        Text(row.index, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.width(Spacing.Large))
         Text(
             text = row.partition,
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.SemiBold,
             fontSize = FontSize.Micro,
             modifier = Modifier.weight(1.0f),
@@ -261,7 +261,7 @@ private fun ImagesTableRow(row: ImageRowData, colors: IdeShellColorScheme) {
         if (row.isSourceConfigured) {
             Text(
                 text = row.source,
-                color = colors.textMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontFamily = codeFontFamily(),
                 fontSize = FontSize.Micro,
                 modifier = Modifier.weight(2.0f),
@@ -269,7 +269,7 @@ private fun ImagesTableRow(row: ImageRowData, colors: IdeShellColorScheme) {
         } else {
             Text(
                 text = row.source,
-                color = colors.textDim,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontStyle = FontStyle.Italic,
                 fontSize = FontSize.Micro,
                 modifier = Modifier.weight(2.0f),
@@ -279,8 +279,8 @@ private fun ImagesTableRow(row: ImageRowData, colors: IdeShellColorScheme) {
             modifier = Modifier
                 .weight(1.5f)
                 .clip(GlassShapes.ShellControl)
-                .background(colors.cardBackgroundMuted)
-                .border(GlassDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
+                .background(MaterialTheme.colorScheme.surfaceContainer)
+                .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outlineVariant, GlassShapes.ShellControl)
                 .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraExtraSmall),
         ) {
             Row(
@@ -290,13 +290,13 @@ private fun ImagesTableRow(row: ImageRowData, colors: IdeShellColorScheme) {
             ) {
                 Text(
                     text = row.builder,
-                    color = if (row.isReady) colors.textMain else colors.textDim,
+                    color = if (row.isReady) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                 )
                 Icon(
                     imageVector = Icons.Default.KeyboardArrowDown,
                     contentDescription = null,
-                    tint = colors.textDim,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(IconSize.ExtraSmall),
                 )
             }
@@ -304,21 +304,21 @@ private fun ImagesTableRow(row: ImageRowData, colors: IdeShellColorScheme) {
         Spacer(Modifier.width(Spacing.Small))
         Text(
             text = row.outputPath,
-            color = colors.textMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontFamily = codeFontFamily(),
             fontSize = FontSize.Micro,
             modifier = Modifier.weight(1.5f),
         )
         Box(modifier = Modifier.weight(1.0f)) {
             if (row.isReady) {
-                IdeStatusBadge(label = "Ready", severity = IdeStatusSeverity.Ready, colors = colors)
+                IdeStatusBadge(label = "Ready", severity = IdeStatusSeverity.Ready)
             } else {
-                IdeStatusBadge(label = "Disabled", severity = IdeStatusSeverity.Neutral, colors = colors)
+                IdeStatusBadge(label = "Disabled", severity = IdeStatusSeverity.Neutral)
             }
         }
         Text(
             text = row.sizeEst,
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.SemiBold,
             fontSize = FontSize.Micro,
             modifier = Modifier.weight(1.0f),
@@ -327,12 +327,12 @@ private fun ImagesTableRow(row: ImageRowData, colors: IdeShellColorScheme) {
 }
 
 @Composable
-private fun ImagesSummaryCard(colors: IdeShellColorScheme) {
+private fun ImagesSummaryCard() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
@@ -343,7 +343,7 @@ private fun ImagesSummaryCard(colors: IdeShellColorScheme) {
         ) {
             Text(
                 text = "Image size summary",
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = FontSize.BodySmall,
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = ideFontFamily(),
@@ -355,12 +355,12 @@ private fun ImagesSummaryCard(colors: IdeShellColorScheme) {
                 Icon(
                     imageVector = Icons.Default.Check,
                     contentDescription = null,
-                    tint = colors.accentGreen,
+                    tint = GlassTheme.diagnosticColors.success,
                     modifier = Modifier.size(IconSize.ExtraSmall),
                 )
                 Text(
                     text = "Within recommended size",
-                    color = colors.accentGreen,
+                    color = GlassTheme.diagnosticColors.success,
                     fontSize = FontSize.Micro,
                     fontWeight = FontWeight.Medium,
                     fontFamily = ideFontFamily(),
@@ -373,14 +373,14 @@ private fun ImagesSummaryCard(colors: IdeShellColorScheme) {
                 .fillMaxWidth()
                 .height(Spacing.Small)
                 .clip(GlassShapes.ShellControl)
-                .background(colors.cardBackgroundMuted),
+                .background(MaterialTheme.colorScheme.surfaceContainer),
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth(0.58f)
                     .height(Spacing.Small)
                     .clip(GlassShapes.ShellControl)
-                    .background(colors.accentBlue),
+                    .background(MaterialTheme.colorScheme.primary),
             )
         }
 
@@ -391,13 +391,13 @@ private fun ImagesSummaryCard(colors: IdeShellColorScheme) {
         ) {
             Text(
                 text = "Estimated total size: 3.49 GB",
-                color = colors.textMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
             )
             Text(
                 text = "Target limit: 6.00 GB (typical)",
-                color = colors.textDim,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
             )
@@ -406,14 +406,14 @@ private fun ImagesSummaryCard(colors: IdeShellColorScheme) {
 }
 
 @Composable
-private fun ImagesValidationCard(onRunValidation: () -> Unit, colors: IdeShellColorScheme) {
+private fun ImagesValidationCard(onRunValidation: () -> Unit) {
     var expanded by remember { mutableStateOf(true) }
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
@@ -431,12 +431,12 @@ private fun ImagesValidationCard(onRunValidation: () -> Unit, colors: IdeShellCo
                 Icon(
                     imageVector = if (expanded) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp,
                     contentDescription = null,
-                    tint = colors.textMuted,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(IconSize.Small),
                 )
                 Text(
                     text = "Validation",
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = FontSize.BodySmall,
                     fontWeight = FontWeight.SemiBold,
                     fontFamily = ideFontFamily(),
@@ -451,9 +451,9 @@ private fun ImagesValidationCard(onRunValidation: () -> Unit, colors: IdeShellCo
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
-                    ImagesValidationCheckItem("System image size is within recommended limits", colors)
-                    ImagesValidationCheckItem("Product image size is within recommended limits", colors)
-                    ImagesValidationCheckItem("Vendor image size is within recommended limits", colors)
+                    ImagesValidationCheckItem("System image size is within recommended limits")
+                    ImagesValidationCheckItem("Product image size is within recommended limits")
+                    ImagesValidationCheckItem("Vendor image size is within recommended limits")
                 }
 
                 Column(
@@ -462,7 +462,7 @@ private fun ImagesValidationCard(onRunValidation: () -> Unit, colors: IdeShellCo
                 ) {
                     Text(
                         text = "Last validated 2024-06-12 10:24",
-                        color = colors.textDim,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = FontSize.Micro,
                         fontFamily = ideFontFamily(),
                     )
@@ -478,15 +478,15 @@ private fun ImagesValidationCard(onRunValidation: () -> Unit, colors: IdeShellCo
                             Icon(
                                 imageVector = Icons.Default.Refresh,
                                 contentDescription = null,
-                                tint = colors.textMain,
+                                tint = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.size(IconSize.ExtraSmall),
                             )
-                            Text("Run validation", color = colors.textMain, fontSize = FontSize.Micro)
+                            Text("Run validation", color = MaterialTheme.colorScheme.onSurface, fontSize = FontSize.Micro)
                         }
                     }
                     Text(
                         text = "Checks image sizes and configuration before packaging.",
-                        color = colors.textDim,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = FontSize.Micro,
                         fontFamily = ideFontFamily(),
                     )
@@ -497,32 +497,32 @@ private fun ImagesValidationCard(onRunValidation: () -> Unit, colors: IdeShellCo
 }
 
 @Composable
-private fun ImagesValidationCheckItem(text: String, colors: IdeShellColorScheme) {
+private fun ImagesValidationCheckItem(text: String) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
-        Icon(Icons.Default.Check, null, tint = colors.accentGreen, modifier = Modifier.size(IconSize.ExtraSmall))
-        Text(text = text, color = colors.textMuted, fontSize = FontSize.Micro, fontFamily = ideFontFamily())
+        Icon(Icons.Default.Check, null, tint = GlassTheme.diagnosticColors.success, modifier = Modifier.size(IconSize.ExtraSmall))
+        Text(text = text, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, fontFamily = ideFontFamily())
     }
 }
 
 @Composable
-private fun ImagesFootnoteCard(colors: IdeShellColorScheme) {
+private fun ImagesFootnoteCard() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Small),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
-        Icon(Icons.Default.Info, null, tint = colors.textDim, modifier = Modifier.size(IconSize.Small))
+        Icon(Icons.Default.Info, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(IconSize.Small))
         Text(
             text = "These images will be included in the flashable package after signing. " +
                 "Continue to the next step when validation passes.",
-            color = colors.textDim,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.Micro,
             fontFamily = ideFontFamily(),
         )

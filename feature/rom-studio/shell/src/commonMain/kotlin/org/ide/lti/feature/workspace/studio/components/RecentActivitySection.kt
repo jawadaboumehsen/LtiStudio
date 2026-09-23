@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.workspace.studio.components
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -37,7 +38,6 @@ import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.feature.workspace.studio.ActivityItemUi
 import org.ide.lti.feature.workspace.studio.WorkspaceActionUi
@@ -52,13 +52,12 @@ public fun RecentActivitySection(
     onOpenHistory: () -> Unit,
     onAction: (WorkspaceActionUi) -> Unit,
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     Column(
         modifier = modifier
             .fillMaxWidth()
             .testTag("RecentActivitySection")
-            .ideCardSurface(colors = colors),
+            .ideCardSurface(),
     ) {
         // Card Header Row matching Mockup 09
         Row(
@@ -71,20 +70,20 @@ public fun RecentActivitySection(
             Icon(
                 imageVector = Icons.Default.History,
                 contentDescription = null,
-                tint = colors.textDim,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(IconSize.Medium),
             )
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
                 Text(
                     text = "Recent activity",
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = FontSize.TitleMedium,
                     fontWeight = FontWeight.SemiBold,
                     fontFamily = GlassFontFamily.ide(),
                 )
                 Text(
                     text = "Latest events for this workspace.",
-                    color = colors.textDim,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.BodySmall,
                     fontFamily = GlassFontFamily.ide(),
                 )
@@ -95,7 +94,7 @@ public fun RecentActivitySection(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(Spacing.Hairline)
-                .background(colors.borderMuted),
+                .background(MaterialTheme.colorScheme.outlineVariant),
         )
 
         // Empty or Populated Container
@@ -115,19 +114,19 @@ public fun RecentActivitySection(
                     Icon(
                         imageVector = Icons.Default.History,
                         contentDescription = null,
-                        tint = colors.textDim,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(IconSize.Large),
                     )
                     Text(
                         text = "Build history will appear here.",
-                        color = colors.textMain,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = FontSize.BodyMedium,
                         fontWeight = FontWeight.Medium,
                         fontFamily = GlassFontFamily.ide(),
                     )
                     Text(
                         text = "Run a build to see activity, logs and results.",
-                        color = colors.textDim,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = FontSize.BodySmall,
                         fontFamily = GlassFontFamily.ide(),
                     )
@@ -141,7 +140,7 @@ public fun RecentActivitySection(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(Spacing.Hairline)
-                                .background(colors.borderMuted),
+                                .background(MaterialTheme.colorScheme.outlineVariant),
                         )
                     }
 
@@ -155,14 +154,14 @@ public fun RecentActivitySection(
                         Column(verticalArrangement = Arrangement.spacedBy(Spacing.Hairline)) {
                             Text(
                                 text = activity.title,
-                                color = colors.textMain,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontSize = FontSize.BodyMedium,
                                 fontWeight = FontWeight.SemiBold,
                                 fontFamily = GlassFontFamily.ide(),
                             )
                             Text(
                                 text = "${activity.timestamp} · ${activity.description}",
-                                color = colors.textDim,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = FontSize.BodySmall,
                                 fontFamily = GlassFontFamily.ide(),
                             )
@@ -171,7 +170,7 @@ public fun RecentActivitySection(
                         if (activity.action != null) {
                             Text(
                                 text = "Details",
-                                color = colors.accentBlue,
+                                color = MaterialTheme.colorScheme.primary,
                                 fontSize = FontSize.BodySmall,
                                 fontWeight = FontWeight.Medium,
                                 fontFamily = GlassFontFamily.ide(),

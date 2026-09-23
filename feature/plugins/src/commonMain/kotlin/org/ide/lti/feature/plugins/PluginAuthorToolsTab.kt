@@ -82,7 +82,6 @@ internal fun PluginAuthorToolsTab(
     onRunTask: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
 
     Column(modifier = modifier.fillMaxSize()) {
         Column(
@@ -97,12 +96,12 @@ internal fun PluginAuthorToolsTab(
                     text = "Kotlin author tools",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
-                    color = glassColors.onGlass,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     text = "Build and test LtiRom modules with a simplified workflow.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = glassColors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
 
@@ -159,7 +158,6 @@ private fun AuthorProjectHeaderCard(
     onRevokeProject: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
     val hasPath = projectPath.isNotBlank()
     val displayTitle = if (hasPath) {
         formatPluginDisplayName(projectPath.substringAfterLast('/').substringAfterLast('\\').ifBlank { projectPath })
@@ -192,17 +190,17 @@ private fun AuthorProjectHeaderCard(
                     Text(
                         text = "Project",
                         style = MaterialTheme.typography.labelSmall,
-                        color = glassColors.onGlassMuted,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(modifier = Modifier.height(Spacing.ExtraExtraSmall))
                     Row(
                         modifier = Modifier
                             .clip(GlassShapes.MediumSmall)
-                            .background(glassColors.chromeSurface)
+                            .background(MaterialTheme.colorScheme.surfaceContainerLow)
                             .glassOutlineBorder(
                                 width = StrokeWidth.Hairline,
-                                color = glassColors.glassBorder.copy(alpha = AlphaTokens.Faint),
-                                shape = GlassShapes.MediumSmall,
+                                color = MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Faint),
+                                shape = GlassShapes.HazeMediumSmall,
                             )
                             .clickable { onProjectPathChange(projectPath) }
                             .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Compact),
@@ -213,7 +211,7 @@ private fun AuthorProjectHeaderCard(
                             text = "$displayTitle ▾",
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.SemiBold,
-                            color = glassColors.onGlass,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                     }
                 }
@@ -222,7 +220,7 @@ private fun AuthorProjectHeaderCard(
                     Text(
                         text = "Project location",
                         style = MaterialTheme.typography.labelSmall,
-                        color = glassColors.onGlassMuted,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(modifier = Modifier.height(Spacing.ExtraExtraSmall))
                     Row(
@@ -232,7 +230,7 @@ private fun AuthorProjectHeaderCard(
                         Icon(
                             painter = AppIcons.FolderPainterResource(),
                             contentDescription = "Project Location",
-                            tint = glassColors.glassAccent,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(IconSize.Small),
                         )
                         Column {
@@ -240,13 +238,13 @@ private fun AuthorProjectHeaderCard(
                                 text = "Local author project",
                                 style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.Medium,
-                                color = glassColors.onGlass,
+                                color = MaterialTheme.colorScheme.onSurface,
                             )
                             Text(
                                 text = locationText,
                                 style = MaterialTheme.typography.labelSmall,
                                 fontFamily = codeFontFamily(),
-                                color = glassColors.onGlassSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
                                 softWrap = false,
                                 overflow = TextOverflow.Ellipsis,
@@ -262,7 +260,7 @@ private fun AuthorProjectHeaderCard(
                     GlassButton(
                         onClick = { onCheckProject(projectPath) },
                         variant = GlassButtonVariant.Primary,
-                        shape = GlassShapes.MediumSmall,
+                        shape = GlassShapes.HazeMediumSmall,
                         minHeight = ComponentSize.PluginActionBtnCompactHeight,
                         contentPadding = PaddingValues(
                             horizontal = Spacing.Medium,
@@ -285,7 +283,7 @@ private fun AuthorProjectHeaderCard(
                     GlassButton(
                         onClick = { onCheckProject(projectPath) },
                         variant = GlassButtonVariant.Primary,
-                        shape = GlassShapes.MediumSmall,
+                        shape = GlassShapes.HazeMediumSmall,
                         minHeight = ComponentSize.PluginActionBtnCompactHeight,
                         contentPadding = PaddingValues(
                             horizontal = Spacing.Small,
@@ -315,12 +313,11 @@ private fun AuthorTrustStatusRow(
     onRevokeProject: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
     val isApproved = trustCheck is TrustCheck.Approved || trustCheck == null
     val trustTint = if (isApproved) {
-        glassColors.diagnostics.success
+        GlassTheme.diagnosticColors.success
     } else {
-        glassColors.diagnostics.warning
+        GlassTheme.diagnosticColors.warning
     }
     val trustPainter = if (isApproved) {
         AppIcons.CheckPainterResource()
@@ -357,7 +354,7 @@ private fun AuthorTrustStatusRow(
         GlassButton(
             onClick = if (trustCheck is TrustCheck.Approved) onRevokeProject else onApproveProject,
             variant = GlassButtonVariant.Standard,
-            shape = GlassShapes.MediumSmall,
+            shape = GlassShapes.HazeMediumSmall,
             minHeight = ComponentSize.PluginActionBtnCompactHeight,
             contentPadding = PaddingValues(
                 horizontal = Spacing.Medium,
@@ -377,7 +374,6 @@ private fun AuthorTasksSidebar(
     onSelectTask: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
     val fixedTasks = listOf(
         SdkAuthorTask("compileModPayload", "Compile payload") { AppIcons.SettingsPainterResource() },
         SdkAuthorTask("generateModPlan", "Generate plan") { AppIconsRomStages.releaseMetadata() },
@@ -408,12 +404,12 @@ private fun AuthorTasksSidebar(
                 text = "Author tasks",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = glassColors.onGlass,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = "Run tasks to build, test and package your module.",
                 style = MaterialTheme.typography.bodySmall,
-                color = glassColors.onGlassSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
             GlassHorizontalDivider(specular = true)
@@ -469,13 +465,12 @@ private fun getAuthorTaskStatusColor(
 
 @Composable
 private fun AuthorTaskStatusBadge(isTaskSuccessful: Boolean, taskResult: AuthorTaskResult?) {
-    val glassColors = GlassTheme.colors
     if (isTaskSuccessful) {
         Box(
             modifier = Modifier
                 .size(IconSize.Medium)
                 .clip(GlassShapes.Circle)
-                .background(glassColors.diagnostics.success),
+                .background(GlassTheme.diagnosticColors.success),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
@@ -490,7 +485,7 @@ private fun AuthorTaskStatusBadge(isTaskSuccessful: Boolean, taskResult: AuthorT
             modifier = Modifier
                 .size(IconSize.Medium)
                 .clip(GlassShapes.Circle)
-                .background(glassColors.diagnostics.error),
+                .background(GlassTheme.diagnosticColors.error),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
@@ -512,7 +507,6 @@ private fun AuthorTaskRowItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
     val bg = if (isSelected) {
         PluginThemeColors.SelectedRowBackground
     } else {
@@ -536,10 +530,10 @@ private fun AuthorTaskRowItem(
         isSelected = isSelected,
         isTaskSuccessful = isTaskSuccessful,
         taskResult = taskResult,
-        onGlassAccent = glassColors.glassAccent,
-        onGlassSecondary = glassColors.onGlassSecondary,
-        errorColor = glassColors.diagnostics.error,
-        mutedColor = glassColors.onGlassMuted,
+        onGlassAccent = MaterialTheme.colorScheme.primary,
+        onGlassSecondary = MaterialTheme.colorScheme.onSurfaceVariant,
+        errorColor = GlassTheme.diagnosticColors.error,
+        mutedColor = MaterialTheme.colorScheme.onSurfaceVariant,
     )
 
     Row(
@@ -562,7 +556,7 @@ private fun AuthorTaskRowItem(
             Icon(
                 painter = task.icon(),
                 contentDescription = task.title,
-                tint = if (isSelected) BrandColors.OnLogoBadge else glassColors.onGlassSecondary,
+                tint = if (isSelected) BrandColors.OnLogoBadge else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(IconSize.Medium),
             )
             Column {
@@ -570,7 +564,7 @@ private fun AuthorTaskRowItem(
                     text = task.title,
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                    color = if (isSelected) BrandColors.OnLogoBadge else glassColors.onGlass,
+                    color = if (isSelected) BrandColors.OnLogoBadge else MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     softWrap = false,
                     overflow = TextOverflow.Ellipsis,
@@ -602,7 +596,6 @@ private fun AuthorExecutionPanel(
     onRunTask: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
     val canRun = projectPath.isNotBlank() && !isRunningTask
 
     Column(
@@ -632,12 +625,12 @@ private fun AuthorExecutionPanel(
                         text = "Build package",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = glassColors.onGlass,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                     Text(
                         text = "Compile, validate, test and package your module.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = glassColors.onGlassSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
 
@@ -645,7 +638,7 @@ private fun AuthorExecutionPanel(
                     onClick = { onRunTask(selectedTask) },
                     enabled = canRun,
                     variant = GlassButtonVariant.Primary,
-                    shape = GlassShapes.MediumSmall,
+                    shape = GlassShapes.HazeMediumSmall,
                     minHeight = ComponentSize.PluginActionBtnCompactHeight,
                     contentPadding = PaddingValues(
                         horizontal = Spacing.Medium,
@@ -684,7 +677,7 @@ private fun AuthorExecutionPanel(
             text = "Diagnostics",
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold,
-            color = glassColors.onGlass,
+            color = MaterialTheme.colorScheme.onSurface,
         )
 
         PluginDiagnosticsTable(
@@ -696,7 +689,7 @@ private fun AuthorExecutionPanel(
             text = "Output",
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold,
-            color = glassColors.onGlass,
+            color = MaterialTheme.colorScheme.onSurface,
         )
 
         AuthorPackageOutputCard(
@@ -712,7 +705,7 @@ private fun AuthorExecutionPanel(
                 .glassOutlineBorder(
                     width = StrokeWidth.Hairline,
                     color = PluginThemeColors.CardBorder,
-                    shape = GlassShapes.MediumSmall,
+                    shape = GlassShapes.HazeMediumSmall,
                 )
                 .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
         ) {
@@ -723,13 +716,13 @@ private fun AuthorExecutionPanel(
                 Icon(
                     painter = AppIcons.InfoPainterResource(),
                     contentDescription = "Information",
-                    tint = glassColors.glassAccent,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(IconSize.Small),
                 )
                 Text(
                     text = "Author tasks execute local code. Installation is a separate action.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = glassColors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -742,7 +735,6 @@ private fun AuthorPackageOutputCard(
     taskResult: AuthorTaskResult?,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
     val packageTaskCompleted = packageTaskSucceeded(selectedTask, taskResult)
 
     Box(
@@ -753,7 +745,7 @@ private fun AuthorPackageOutputCard(
             .glassOutlineBorder(
                 width = StrokeWidth.Hairline,
                 color = PluginThemeColors.CardBorder,
-                shape = GlassShapes.MediumSmall,
+                shape = GlassShapes.HazeMediumSmall,
             ),
     ) {
         Row(
@@ -776,7 +768,7 @@ private fun AuthorPackageOutputCard(
                         .glassOutlineBorder(
                             width = StrokeWidth.Hairline,
                             color = PluginThemeColors.SelectedRowBorder,
-                            shape = GlassShapes.MediumSmall,
+                            shape = GlassShapes.HazeMediumSmall,
                         ),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -797,7 +789,7 @@ private fun AuthorPackageOutputCard(
                         },
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
-                        color = glassColors.onGlass,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                     Text(
                         text = if (packageTaskCompleted) {
@@ -806,7 +798,7 @@ private fun AuthorPackageOutputCard(
                             "No package has been produced yet. Run the package task to compile and package your module."
                         },
                         style = MaterialTheme.typography.bodySmall,
-                        color = glassColors.onGlassSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         softWrap = false,
                         overflow = TextOverflow.Ellipsis,

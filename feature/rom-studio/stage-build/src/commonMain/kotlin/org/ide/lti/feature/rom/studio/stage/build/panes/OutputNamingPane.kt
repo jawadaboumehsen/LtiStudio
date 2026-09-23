@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.rom.studio.stage.build.panes
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -44,7 +45,6 @@ import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -64,7 +64,6 @@ public fun OutputNamingPane(
     onValidate: () -> Unit = {},
     onSave: () -> Unit = {},
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     Column(
         modifier = modifier
@@ -72,8 +71,8 @@ public fun OutputNamingPane(
             .testTag("OutputNamingPane"),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
-        OutputNamingUnifiedCard(settings = settings, onChange = onChange, colors = colors)
-        OutputNamingFootnoteCard(colors = colors)
+        OutputNamingUnifiedCard(settings = settings, onChange = onChange)
+        OutputNamingFootnoteCard()
     }
 }
 
@@ -81,23 +80,22 @@ public fun OutputNamingPane(
 private fun OutputNamingUnifiedCard(
     settings: BuildSettings,
     onChange: (BuildSettings) -> Unit,
-    colors: IdeShellColorScheme,
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Large),
     ) {
-        FilenameTemplateSection(settings = settings, onChange = onChange, colors = colors)
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
-        FilenamePreviewSection(colors = colors)
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
-        InvalidCharacterCheckSection(colors = colors)
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
-        OutputFolderSection(colors = colors)
+        FilenameTemplateSection(settings = settings, onChange = onChange)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
+        FilenamePreviewSection()
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
+        InvalidCharacterCheckSection()
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
+        OutputFolderSection()
     }
 }
 
@@ -105,7 +103,6 @@ private fun OutputNamingUnifiedCard(
 private fun FilenameTemplateSection(
     settings: BuildSettings,
     onChange: (BuildSettings) -> Unit,
-    colors: IdeShellColorScheme,
 ) {
     var templateText by remember { mutableStateOf("{device}-{version}-{date}.zip") }
     val variables = listOf("{device}", "{version}", "{date}", "{variant}", "{buildtype}", "{revision}")
@@ -114,14 +111,14 @@ private fun FilenameTemplateSection(
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.Hairline)) {
             Text(
                 text = "Filename template",
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = FontSize.BodySmall,
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = ideFontFamily(),
             )
             Text(
                 text = "Use variables to generate consistent, descriptive output filenames.",
-                color = colors.textMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
             )
@@ -131,8 +128,8 @@ private fun FilenameTemplateSection(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(GlassShapes.ShellControl)
-                .background(colors.cardBackgroundMuted)
-                .border(GlassDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
+                .background(MaterialTheme.colorScheme.surfaceContainer)
+                .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outlineVariant, GlassShapes.ShellControl)
                 .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
         ) {
             Row(
@@ -142,13 +139,13 @@ private fun FilenameTemplateSection(
             ) {
                 Text(
                     text = templateText,
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = FontSize.BodySmall,
                     fontFamily = codeFontFamily(),
                 )
                 Text(
                     text = "{}",
-                    color = colors.textDim,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.BodySmall,
                     fontFamily = codeFontFamily(),
                 )
@@ -162,7 +159,7 @@ private fun FilenameTemplateSection(
         ) {
             Text(
                 text = "Insert variable:",
-                color = colors.textDim,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
             )
@@ -170,8 +167,8 @@ private fun FilenameTemplateSection(
                 Box(
                     modifier = Modifier
                         .clip(GlassShapes.ShellControl)
-                        .background(colors.cardBackgroundMuted)
-                        .border(GlassDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
+                        .background(MaterialTheme.colorScheme.surfaceContainer)
+                        .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outlineVariant, GlassShapes.ShellControl)
                         .clickable {
                             templateText = templateText.replace(".zip", "$variable.zip")
                             onChange(settings.copy(filenameTemplate = templateText))
@@ -180,7 +177,7 @@ private fun FilenameTemplateSection(
                 ) {
                     Text(
                         text = variable,
-                        color = colors.accentBlue,
+                        color = MaterialTheme.colorScheme.primary,
                         fontSize = FontSize.Micro,
                         fontFamily = codeFontFamily(),
                     )
@@ -192,10 +189,10 @@ private fun FilenameTemplateSection(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
         ) {
-            Icon(Icons.Default.Info, null, tint = colors.accentBlue, modifier = Modifier.size(IconSize.ExtraSmall))
+            Icon(Icons.Default.Info, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(IconSize.ExtraSmall))
             Text(
                 text = "Click a variable to insert it at the cursor position.",
-                color = colors.textDim,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
             )
@@ -204,19 +201,19 @@ private fun FilenameTemplateSection(
 }
 
 @Composable
-private fun FilenamePreviewSection(colors: IdeShellColorScheme) {
+private fun FilenamePreviewSection() {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.Hairline)) {
             Text(
                 text = "Preview",
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = FontSize.BodySmall,
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = ideFontFamily(),
             )
             Text(
                 text = "Example filename using current settings and workspace information.",
-                color = colors.textMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
             )
@@ -226,8 +223,8 @@ private fun FilenamePreviewSection(colors: IdeShellColorScheme) {
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(GlassShapes.ShellControl)
-                .background(colors.cardBackgroundMuted)
-                .border(GlassDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
+                .background(MaterialTheme.colorScheme.surfaceContainer)
+                .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outlineVariant, GlassShapes.ShellControl)
                 .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
         ) {
             Row(
@@ -237,7 +234,7 @@ private fun FilenamePreviewSection(colors: IdeShellColorScheme) {
             ) {
                 Text(
                     text = "pixel_7-pro-14.0-20250312.zip",
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = FontSize.BodySmall,
                     fontFamily = codeFontFamily(),
                 )
@@ -248,12 +245,12 @@ private fun FilenamePreviewSection(colors: IdeShellColorScheme) {
                     Icon(
                         imageVector = Icons.Default.Check,
                         contentDescription = null,
-                        tint = colors.accentGreen,
+                        tint = GlassTheme.diagnosticColors.success,
                         modifier = Modifier.size(IconSize.ExtraSmall),
                     )
                     Text(
                         text = "Valid filename",
-                        color = colors.accentGreen,
+                        color = GlassTheme.diagnosticColors.success,
                         fontSize = FontSize.Micro,
                         fontWeight = FontWeight.Medium,
                     )
@@ -264,7 +261,7 @@ private fun FilenamePreviewSection(colors: IdeShellColorScheme) {
 }
 
 @Composable
-private fun InvalidCharacterCheckSection(colors: IdeShellColorScheme) {
+private fun InvalidCharacterCheckSection() {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -273,14 +270,14 @@ private fun InvalidCharacterCheckSection(colors: IdeShellColorScheme) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.Hairline)) {
             Text(
                 text = "Invalid character check",
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = FontSize.BodySmall,
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = ideFontFamily(),
             )
             Text(
                 text = "Filenames cannot contain the following characters:",
-                color = colors.textMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
             )
@@ -289,13 +286,13 @@ private fun InvalidCharacterCheckSection(colors: IdeShellColorScheme) {
         Box(
             modifier = Modifier
                 .clip(GlassShapes.ShellControl)
-                .background(colors.cardBackgroundMuted)
-                .border(GlassDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
+                .background(MaterialTheme.colorScheme.surfaceContainer)
+                .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outlineVariant, GlassShapes.ShellControl)
                 .padding(horizontal = Spacing.Medium, vertical = Spacing.ExtraSmall),
         ) {
             Text(
                 text = "\\  /  :  *  ?  \"  <  >  |",
-                color = colors.textDim,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = codeFontFamily(),
             )
@@ -308,12 +305,12 @@ private fun InvalidCharacterCheckSection(colors: IdeShellColorScheme) {
             Icon(
                 imageVector = Icons.Default.Check,
                 contentDescription = null,
-                tint = colors.accentGreen,
+                tint = GlassTheme.diagnosticColors.success,
                 modifier = Modifier.size(IconSize.ExtraSmall),
             )
             Text(
                 text = "No invalid characters detected",
-                color = colors.accentGreen,
+                color = GlassTheme.diagnosticColors.success,
                 fontSize = FontSize.Micro,
                 fontWeight = FontWeight.Medium,
             )
@@ -322,19 +319,19 @@ private fun InvalidCharacterCheckSection(colors: IdeShellColorScheme) {
 }
 
 @Composable
-private fun OutputFolderSection(colors: IdeShellColorScheme) {
+private fun OutputFolderSection() {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.Hairline)) {
             Text(
                 text = "Output folder",
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = FontSize.BodySmall,
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = ideFontFamily(),
             )
             Text(
                 text = "Build artifacts will be saved to:",
-                color = colors.textMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
             )
@@ -349,13 +346,13 @@ private fun OutputFolderSection(colors: IdeShellColorScheme) {
                 modifier = Modifier
                     .weight(1f)
                     .clip(GlassShapes.ShellControl)
-                    .background(colors.cardBackgroundMuted)
-                    .border(GlassDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
+                    .background(MaterialTheme.colorScheme.surfaceContainer)
+                    .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outlineVariant, GlassShapes.ShellControl)
                     .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
             ) {
                 Text(
                     text = "D:\\ROMs\\PQ84P01\\out\\pixel_7-pro",
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = FontSize.BodySmall,
                     fontFamily = codeFontFamily(),
                 )
@@ -373,10 +370,10 @@ private fun OutputFolderSection(colors: IdeShellColorScheme) {
                     Icon(
                         imageVector = Icons.Default.Folder,
                         contentDescription = null,
-                        tint = colors.textMain,
+                        tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(IconSize.ExtraSmall),
                     )
-                    Text("Change...", color = colors.textMain, fontSize = FontSize.Micro)
+                    Text("Change...", color = MaterialTheme.colorScheme.onSurface, fontSize = FontSize.Micro)
                 }
             }
         }
@@ -385,10 +382,10 @@ private fun OutputFolderSection(colors: IdeShellColorScheme) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
         ) {
-            Icon(Icons.Default.Info, null, tint = colors.accentBlue, modifier = Modifier.size(IconSize.ExtraSmall))
+            Icon(Icons.Default.Info, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(IconSize.ExtraSmall))
             Text(
                 text = "The output folder is derived from your workspace and device name.",
-                color = colors.textDim,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
             )
@@ -397,20 +394,20 @@ private fun OutputFolderSection(colors: IdeShellColorScheme) {
 }
 
 @Composable
-private fun OutputNamingFootnoteCard(colors: IdeShellColorScheme) {
+private fun OutputNamingFootnoteCard() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Small),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
-        Icon(Icons.Default.Info, null, tint = colors.textDim, modifier = Modifier.size(IconSize.Small))
+        Icon(Icons.Default.Info, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(IconSize.Small))
         Text(
             text = "These settings apply to the next build only. They do not rename existing files.",
-            color = colors.textDim,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.Micro,
             fontFamily = ideFontFamily(),
         )

@@ -43,11 +43,9 @@ import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.GlassShapes
-import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
-import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
 
 /**
  * Standardized Liquid Glass Sidebar Navigation Item (e.g. for Setup, Drawer, Sidebar panels).
@@ -74,29 +72,26 @@ fun GlassSidebarItem(
     modifier: Modifier = Modifier,
     badge: String? = null,
 ) {
-    val glassColors = GlassTheme.colors
     var isHovered by remember { mutableStateOf(false) }
     var isFocused by remember { mutableStateOf(false) }
 
     val targetBackground = when {
-        selected -> glassColors.glassAccent.copy(alpha = AlphaTokens.Glow)
-        isHovered -> glassColors.onGlass.copy(alpha = AlphaTokens.UltraFaint)
+        selected -> MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Glow)
+        isHovered -> MaterialTheme.colorScheme.onSurface.copy(alpha = AlphaTokens.UltraFaint)
         else -> Color.Transparent
     }
     val targetBorderColor = when {
-        selected -> glassColors.glassAccent.copy(alpha = AlphaTokens.Faded)
-        isFocused -> glassColors.focusRing
-        isHovered -> glassColors.glassBorder.copy(alpha = AlphaTokens.Glow)
+        selected -> MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Faded)
+        isFocused -> MaterialTheme.colorScheme.primary
+        isHovered -> MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Glow)
         else -> Color.Transparent
     }
 
     val backgroundColor by animateColorAsState(
         targetValue = targetBackground,
-        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion),
     )
     val borderColor by animateColorAsState(
         targetValue = targetBorderColor,
-        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion),
     )
 
     Box(
@@ -127,11 +122,10 @@ fun GlassSidebarItem(
         ) {
             val iconTint by animateColorAsState(
                 targetValue = when {
-                    selected -> glassColors.glassAccent
-                    isHovered -> glassColors.onGlass
-                    else -> glassColors.onGlassSecondary
+                    selected -> MaterialTheme.colorScheme.primary
+                    isHovered -> MaterialTheme.colorScheme.onSurface
+                    else -> MaterialTheme.colorScheme.onSurfaceVariant
                 },
-                animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion),
             )
             when (icon) {
                 is AppIcon.Vector -> Icon(
@@ -152,8 +146,8 @@ fun GlassSidebarItem(
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
                 color = when {
-                    selected || isHovered -> glassColors.onGlass
-                    else -> glassColors.onGlassSecondary
+                    selected || isHovered -> MaterialTheme.colorScheme.onSurface
+                    else -> MaterialTheme.colorScheme.onSurfaceVariant
                 },
                 modifier = Modifier.weight(1f),
                 maxLines = 1,
@@ -164,7 +158,7 @@ fun GlassSidebarItem(
                 Text(
                     text = badge,
                     style = MaterialTheme.typography.labelSmall,
-                    color = if (selected) glassColors.onGlass else glassColors.onGlassMuted,
+                    color = if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     softWrap = false,
                     overflow = TextOverflow.Ellipsis,

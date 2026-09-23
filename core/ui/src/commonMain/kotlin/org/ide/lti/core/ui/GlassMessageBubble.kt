@@ -33,22 +33,15 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
-import com.kashif_e.backdrop.OpticalSizeValue
-import com.kashif_e.backdrop.ResolvedGlassEffect
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
-import org.ide.lti.core.designsystem.component.primitives.glassBorder
-import org.ide.lti.core.designsystem.component.primitives.glassEffect
+import org.ide.lti.core.designsystem.component.primitives.GlassSurface
 import org.ide.lti.core.designsystem.icon.AppIcons
-import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize
-import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassShapes
-import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.model.ai.MessageRole
 
@@ -84,20 +77,8 @@ fun GlassMessageBubble(
             horizontalAlignment = if (isUser) Alignment.End else Alignment.Start,
         ) {
             // Message bubble with hover effect
-            val bubbleShape = GlassShapes.Medium
-            Box(
+            GlassSurface(
                 modifier = Modifier
-                    .glassEffect(
-                        shape = bubbleShape,
-                        tint = if (isUser) GlassTheme.colors.glassTint else Color.Unspecified,
-                        effect = ResolvedGlassEffect(
-                            blur = OpticalSizeValue.Fixed(BackdropBlur.Button),
-                            lensHeight = OpticalSizeValue.Fixed(LensRefraction.Button.height),
-                            lensAmount = OpticalSizeValue.Fixed(LensRefraction.Button.amount),
-                            vibrancy = true,
-                        ),
-                    )
-                    .glassBorder(shape = bubbleShape)
                     .then(
                         if (showCopyButton) {
                             Modifier
@@ -106,16 +87,18 @@ fun GlassMessageBubble(
                         } else {
                             Modifier
                         },
-                    )
-                    .padding(Spacing.SmallMedium),
+                    ),
+                shape = GlassShapes.HazeMedium,
+                tint = if (isUser) MaterialTheme.colorScheme.primary else Color.Unspecified,
             ) {
+                Box(modifier = Modifier.padding(Spacing.SmallMedium)) {
                 Column {
                     // Message content with selection support
                     SelectionContainer {
                         Text(
                             text = content,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = GlassTheme.colors.onGlass,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                     }
 
@@ -140,6 +123,7 @@ fun GlassMessageBubble(
                         }
                     }
                 }
+                }
             }
 
             // Timestamp
@@ -147,7 +131,7 @@ fun GlassMessageBubble(
             Text(
                 text = formattedTime,
                 style = MaterialTheme.typography.labelSmall,
-                color = GlassTheme.colors.onGlassMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = Spacing.SmallMedium, vertical = Spacing.ExtraSmall),
             )
         }

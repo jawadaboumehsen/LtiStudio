@@ -53,7 +53,7 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
-import org.ide.lti.core.designsystem.theme.config.AppTheme
+import org.ide.lti.core.designsystem.theme.AppTheme
 
 @Composable
 fun NotificationScreen(
@@ -80,12 +80,11 @@ fun NotificationScreenContent(
 ) {
     var notificationList by remember(notifications) { mutableStateOf(notifications) }
     val isBlueGlass = GlassTheme.appTheme == AppTheme.Blue
-    val colors = GlassTheme.ideShellColors
 
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(if (isBlueGlass) Color.Transparent else colors.appBackground),
+            .background(if (isBlueGlass) Color.Transparent else MaterialTheme.colorScheme.surface),
     ) {
         GlobalAppTopBar(
             selectedDestination = GlobalAppDestination.Settings,
@@ -138,8 +137,7 @@ fun NotificationScreenContent(
                     // Empty state
                     GlassCard(
                         modifier = Modifier.fillMaxWidth(),
-                        surfaceColor = colors.cardBackground,
-                        borderColor = colors.border,
+                        surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                         contentPadding = Spacing.ExtraExtraLarge,
                     ) {
                         GlassEmptyState(
@@ -169,14 +167,14 @@ fun NotificationScreenContent(
                                         Text(
                                             text = item.time,
                                             style = MaterialTheme.typography.labelSmall,
-                                            color = GlassTheme.colors.onGlassMuted,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         )
                                         if (item.isUnread) {
                                             Box(
                                                 modifier = Modifier
                                                     .size(ComponentSize.StatusDotSize)
                                                     .clip(GlassShapes.Capsule)
-                                                    .background(GlassTheme.colors.glassAccent),
+                                                    .background(MaterialTheme.colorScheme.primary),
                                             )
                                         }
                                     }

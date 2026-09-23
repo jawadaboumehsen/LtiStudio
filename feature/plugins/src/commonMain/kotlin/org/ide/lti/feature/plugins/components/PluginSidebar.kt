@@ -149,20 +149,19 @@ private fun SidebarNavItem(
     onClick: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
     var isHovered by remember { mutableStateOf(false) }
 
     val bg = when {
         selected -> PluginThemeColors.ActiveTabBackground
-        isHovered -> glassColors.onGlass.copy(alpha = AlphaTokens.UltraFaint)
+        isHovered -> MaterialTheme.colorScheme.onSurface.copy(alpha = AlphaTokens.UltraFaint)
         else -> Color.Transparent
     }
 
     val contentColor = when {
-        !enabled -> glassColors.onGlassMuted.copy(alpha = AlphaTokens.Disabled)
+        !enabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = AlphaTokens.Disabled)
         selected -> BrandColors.OnLogoBadge
-        isHovered -> glassColors.onGlass
-        else -> glassColors.onGlassSecondary
+        isHovered -> MaterialTheme.colorScheme.onSurface
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     val shape = GlassShapes.MediumSmall

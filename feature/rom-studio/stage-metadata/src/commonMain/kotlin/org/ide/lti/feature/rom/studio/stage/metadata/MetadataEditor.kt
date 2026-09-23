@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.rom.studio.stage.metadata
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,7 +35,6 @@ import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -55,7 +55,6 @@ public fun MetadataEditor(
     onValidate: () -> Unit = {},
     onSave: () -> Unit = {},
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     val errors = validationErrors.filter { it.fieldPath.startsWith("release.") || !it.fieldPath.contains('.') }
 
@@ -74,22 +73,22 @@ public fun MetadataEditor(
         ) {
             when (selectedObjectId.lowercase()) {
                 "ota-url", "ota_url" -> item {
-                    OtaCard(settings, errors, dirtyPaths, onChange, colors)
+                    OtaCard(settings, errors, dirtyPaths, onChange)
                 }
                 "changelog" -> item {
-                    ChangelogCard(settings, errors, dirtyPaths, onChange, colors)
+                    ChangelogCard(settings, errors, dirtyPaths, onChange)
                 }
                 "compatibility" -> item {
-                    CompatibilityCard(target, dirtyPaths, colors)
+                    CompatibilityCard(target, dirtyPaths)
                 }
                 "manifest-preview", "manifest_preview" -> item {
-                    ManifestCard(settings, target, colors)
+                    ManifestCard(settings, target)
                 }
                 else -> item {
-                    IdentityCard(settings, target, dirtyPaths, onChange, colors)
+                    IdentityCard(settings, target, dirtyPaths, onChange)
                 }
             }
-            item { Diagnostics(errors, colors) }
+            item { Diagnostics(errors) }
         }
     }
 }
@@ -100,13 +99,12 @@ private fun IdentityCard(
     target: TargetDevice,
     dirtyPaths: Set<String>,
     onChange: (ReleaseSettings) -> Unit,
-    colors: IdeShellColorScheme,
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
@@ -115,13 +113,13 @@ private fun IdentityCard(
             fontSize = FontSize.BodySmall,
             fontWeight = FontWeight.SemiBold,
             fontFamily = ideFontFamily(),
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
         )
         Text(
             text = "Pinned target provides device identity; select distribution channel:",
             fontSize = FontSize.Micro,
             fontFamily = ideFontFamily(),
-            color = colors.textMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         GlassTextField(
             target.codename,
@@ -135,7 +133,7 @@ private fun IdentityCard(
             fontSize = FontSize.BodySmall,
             fontWeight = FontWeight.Medium,
             fontFamily = ideFontFamily(),
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
         )
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
             listOf("internal", "beta", "stable").forEach { channel ->
@@ -146,7 +144,7 @@ private fun IdentityCard(
                 )
             }
         }
-        Meta("channel", dirtyPaths, "Release channel", "Distribution channel ring.", colors)
+        Meta("channel", dirtyPaths, "Release channel", "Distribution channel ring.")
     }
 }
 
@@ -156,13 +154,12 @@ private fun OtaCard(
     errors: List<ValidationError>,
     dirtyPaths: Set<String>,
     onChange: (ReleaseSettings) -> Unit,
-    colors: IdeShellColorScheme,
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
@@ -171,13 +168,13 @@ private fun OtaCard(
             fontSize = FontSize.BodySmall,
             fontWeight = FontWeight.SemiBold,
             fontFamily = ideFontFamily(),
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
         )
         Text(
             text = "Base URL must use HTTPS and must not end with a slash.",
             fontSize = FontSize.Micro,
             fontFamily = ideFontFamily(),
-            color = colors.textMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         GlassTextField(
             settings.otaBaseUrl,
@@ -187,7 +184,7 @@ private fun OtaCard(
             label = "HTTPS distribution base URL",
             state = fieldState(errors, "otaBaseUrl"),
         )
-        Meta("otaBaseUrl", dirtyPaths, "OTA endpoint", "Server endpoint hosting delta/full payloads.", colors)
+        Meta("otaBaseUrl", dirtyPaths, "OTA endpoint", "Server endpoint hosting delta/full payloads.")
     }
 }
 
@@ -197,13 +194,12 @@ private fun ChangelogCard(
     errors: List<ValidationError>,
     dirtyPaths: Set<String>,
     onChange: (ReleaseSettings) -> Unit,
-    colors: IdeShellColorScheme,
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
@@ -212,13 +208,13 @@ private fun ChangelogCard(
             fontSize = FontSize.BodySmall,
             fontWeight = FontWeight.SemiBold,
             fontFamily = ideFontFamily(),
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
         )
         Text(
             text = "Summarize key updates and release highlights:",
             fontSize = FontSize.Micro,
             fontFamily = ideFontFamily(),
-            color = colors.textMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         GlassTextField(
             settings.changelog,
@@ -227,17 +223,17 @@ private fun ChangelogCard(
             config = TextFieldConfig(singleLine = false, maxLines = 10),
             state = fieldState(errors, "changelog"),
         )
-        Meta("changelog", dirtyPaths, "Changelog", "Rendered in system updater UI on client devices.", colors)
+        Meta("changelog", dirtyPaths, "Changelog", "Rendered in system updater UI on client devices.")
     }
 }
 
 @Composable
-private fun CompatibilityCard(target: TargetDevice, dirtyPaths: Set<String>, colors: IdeShellColorScheme) {
+private fun CompatibilityCard(target: TargetDevice, dirtyPaths: Set<String>) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
@@ -246,7 +242,7 @@ private fun CompatibilityCard(target: TargetDevice, dirtyPaths: Set<String>, col
             fontSize = FontSize.BodySmall,
             fontWeight = FontWeight.SemiBold,
             fontFamily = ideFontFamily(),
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
         )
         GlassTextField(
             target.friendlyTitle,
@@ -262,12 +258,12 @@ private fun CompatibilityCard(target: TargetDevice, dirtyPaths: Set<String>, col
             readOnly = true,
             state = TextFieldState.Helper("Rebind through target catalog."),
         )
-        Meta("target", dirtyPaths, "Pinned target", "Governed by hardware security policy.", colors)
+        Meta("target", dirtyPaths, "Pinned target", "Governed by hardware security policy.")
     }
 }
 
 @Composable
-private fun ManifestCard(settings: ReleaseSettings, target: TargetDevice, colors: IdeShellColorScheme) {
+private fun ManifestCard(settings: ReleaseSettings, target: TargetDevice) {
     val manifest = buildString {
         appendLine("{")
         appendLine("  \"device\": \"${target.codename}\",")
@@ -281,7 +277,7 @@ private fun ManifestCard(settings: ReleaseSettings, target: TargetDevice, colors
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
@@ -290,7 +286,7 @@ private fun ManifestCard(settings: ReleaseSettings, target: TargetDevice, colors
             fontSize = FontSize.BodySmall,
             fontWeight = FontWeight.SemiBold,
             fontFamily = ideFontFamily(),
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
         )
         GlassTextField(
             manifest,
@@ -304,13 +300,13 @@ private fun ManifestCard(settings: ReleaseSettings, target: TargetDevice, colors
 }
 
 @Composable
-private fun Meta(path: String, dirty: Set<String>, source: String, help: String, colors: IdeShellColorScheme) {
+private fun Meta(path: String, dirty: Set<String>, source: String, help: String) {
     val isDirty = dirty.any { it.startsWith(path.substringBefore('/')) }
     Text(
         text = "$source${if (isDirty) " · Dirty" else ""} · $help",
         fontSize = FontSize.Micro,
         fontFamily = codeFontFamily(),
-        color = if (isDirty) colors.accentBlue else colors.textDim,
+        color = if (isDirty) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
     )
 }
 
@@ -325,7 +321,7 @@ private fun fieldState(errors: List<ValidationError>, field: String): TextFieldS
 }
 
 @Composable
-private fun Diagnostics(errors: List<ValidationError>, colors: IdeShellColorScheme) {
+private fun Diagnostics(errors: List<ValidationError>) {
     if (errors.isEmpty()) return
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
         errors.forEach {
@@ -334,9 +330,9 @@ private fun Diagnostics(errors: List<ValidationError>, colors: IdeShellColorSche
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
                 color = if (it.severity == Severity.ERROR) {
-                    colors.errorRed
+                    GlassTheme.diagnosticColors.error
                 } else {
-                    colors.warningAmber
+                    GlassTheme.diagnosticColors.warning
                 },
             )
         }

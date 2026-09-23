@@ -21,7 +21,6 @@ kotlin {
             api(projects.core.model)
             api(projects.core.domain)
             api(projects.core.common)
-            implementation(projects.backdrop)
             implementation(libs.jb.composeViewmodel)
             implementation(libs.jb.lifecycleViewmodel)
             implementation(libs.jb.lifecycleViewmodelSavedState)

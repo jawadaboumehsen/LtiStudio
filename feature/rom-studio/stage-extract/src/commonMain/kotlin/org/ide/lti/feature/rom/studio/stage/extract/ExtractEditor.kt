@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.rom.studio.stage.extract
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,7 +42,6 @@ import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -62,7 +62,6 @@ public fun ExtractEditor(
     onValidate: () -> Unit = {},
     onSave: () -> Unit = {},
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     val errors = validationErrors.filter { it.fieldPath.startsWith("extraction.") || !it.fieldPath.contains('.') }
 
@@ -81,19 +80,19 @@ public fun ExtractEditor(
         ) {
             when (selectedObjectId.lowercase()) {
                 "dynamic-partitions", "dynamic_partitions" -> item {
-                    DynamicPartitionsCard(settings, target, errors, dirtyPaths, colors, onChange)
+                    DynamicPartitionsCard(settings, target, errors, dirtyPaths, onChange)
                 }
                 "boot-partitions", "boot_partitions" -> item {
-                    BootPartitionsCard(settings, target, errors, dirtyPaths, colors, onChange)
+                    BootPartitionsCard(settings, target, errors, dirtyPaths, onChange)
                 }
                 "slot", "filesystem-handling", "filesystem_handling" -> item {
-                    SlotFilesystemCard(settings, target, dirtyPaths, colors, onChange)
+                    SlotFilesystemCard(settings, target, dirtyPaths, onChange)
                 }
                 else -> item {
-                    ArchiveLayoutCard(settings, errors, dirtyPaths, colors, onChange)
+                    ArchiveLayoutCard(settings, errors, dirtyPaths, onChange)
                 }
             }
-            item { Diagnostics(errors, colors) }
+            item { Diagnostics(errors) }
         }
     }
 }
@@ -103,33 +102,32 @@ private fun ArchiveLayoutCard(
     settings: ExtractionSettings,
     errors: List<ValidationError>,
     dirtyPaths: Set<String>,
-    colors: IdeShellColorScheme,
     onChange: (ExtractionSettings) -> Unit,
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
         Text(
             text = "Archive layout",
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = FontSize.TitleSmall,
             fontWeight = FontWeight.SemiBold,
             fontFamily = ideFontFamily(),
         )
         Text(
             text = "Source archive inspection is artifact-derived and read-only here.",
-            color = colors.textMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.BodySmall,
             fontFamily = ideFontFamily(),
         )
         Text(
             text = "Adapter",
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = FontSize.BodySmall,
             fontWeight = FontWeight.Medium,
             fontFamily = ideFontFamily(),
@@ -143,8 +141,8 @@ private fun ArchiveLayoutCard(
                 )
             }
         }
-        Meta("adapter", dirtyPaths, "Target capability", "Auto selects a supported archive adapter.", colors)
-        Diagnostics(errors.filter { it.fieldPath.endsWith("adapter") }, colors)
+        Meta("adapter", dirtyPaths, "Target capability", "Auto selects a supported archive adapter.")
+        Diagnostics(errors.filter { it.fieldPath.endsWith("adapter") })
     }
 }
 
@@ -154,27 +152,26 @@ private fun DynamicPartitionsCard(
     target: TargetDevice,
     errors: List<ValidationError>,
     dirtyPaths: Set<String>,
-    colors: IdeShellColorScheme,
     onChange: (ExtractionSettings) -> Unit,
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
         Text(
             text = "Dynamic partitions",
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = FontSize.TitleSmall,
             fontWeight = FontWeight.SemiBold,
             fontFamily = ideFontFamily(),
         )
         Text(
             text = "Select only partitions declared by the pinned target.",
-            color = colors.textMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.BodySmall,
             fontFamily = ideFontFamily(),
         )
@@ -182,7 +179,6 @@ private fun DynamicPartitionsCard(
             options = target.dynamicPartitions,
             selected = settings.dynamicPartitions,
             groupLabel = "Dynamic partition",
-            colors = colors,
         ) {
             onChange(settings.copy(dynamicPartitions = it))
         }
@@ -191,9 +187,8 @@ private fun DynamicPartitionsCard(
             dirty = dirtyPaths,
             source = "Target capability",
             help = "Constrained to target.dynamicPartitions.",
-            colors = colors,
         )
-        Diagnostics(errors.filter { it.fieldPath.endsWith("dynamicPartitions") }, colors)
+        Diagnostics(errors.filter { it.fieldPath.endsWith("dynamicPartitions") })
     }
 }
 
@@ -203,20 +198,19 @@ private fun BootPartitionsCard(
     target: TargetDevice,
     errors: List<ValidationError>,
     dirtyPaths: Set<String>,
-    colors: IdeShellColorScheme,
     onChange: (ExtractionSettings) -> Unit,
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
         Text(
             text = "Boot partitions",
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = FontSize.TitleSmall,
             fontWeight = FontWeight.SemiBold,
             fontFamily = ideFontFamily(),
@@ -225,7 +219,6 @@ private fun BootPartitionsCard(
             options = target.bootPartitions,
             selected = settings.bootPartitions,
             groupLabel = "Boot partition",
-            colors = colors,
         ) {
             onChange(settings.copy(bootPartitions = it))
         }
@@ -234,9 +227,8 @@ private fun BootPartitionsCard(
             dirty = dirtyPaths,
             source = "Target capability",
             help = "Pinned to target.bootPartitions.",
-            colors = colors,
         )
-        Diagnostics(errors.filter { it.fieldPath.endsWith("bootPartitions") }, colors)
+        Diagnostics(errors.filter { it.fieldPath.endsWith("bootPartitions") })
     }
 }
 
@@ -245,20 +237,19 @@ private fun SlotFilesystemCard(
     settings: ExtractionSettings,
     target: TargetDevice,
     dirtyPaths: Set<String>,
-    colors: IdeShellColorScheme,
     onChange: (ExtractionSettings) -> Unit,
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
         Text(
             text = "Slot and filesystem handling",
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = FontSize.TitleSmall,
             fontWeight = FontWeight.SemiBold,
             fontFamily = ideFontFamily(),
@@ -266,7 +257,7 @@ private fun SlotFilesystemCard(
         val bootSlots = target.packagePolicy.bootSlots.joinToString()
         Text(
             text = "Supported slots: $bootSlots · active ${target.activeSlotSuffix}",
-            color = colors.textMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.BodySmall,
             fontFamily = ideFontFamily(),
         )
@@ -293,11 +284,11 @@ private fun SlotFilesystemCard(
             GlassToggle(
                 checked = settings.reuseVerifiedExtraction,
                 onCheckedChange = { onChange(settings.copy(reuseVerifiedExtraction = it)) },
-                activeColor = colors.accentBlue,
+                activeColor = MaterialTheme.colorScheme.primary,
             )
             Text(
                 text = "Reuse existing extraction only after verified digest",
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = FontSize.BodySmall,
                 fontFamily = ideFontFamily(),
             )
@@ -307,7 +298,6 @@ private fun SlotFilesystemCard(
             dirty = dirtyPaths,
             source = "Workspace override",
             help = "Reuse checks digest and sidecar.",
-            colors = colors,
         )
     }
 }
@@ -317,33 +307,27 @@ private fun PartitionChoices(
     options: List<String>,
     selected: List<String>,
     groupLabel: String,
-    colors: IdeShellColorScheme,
     onChange: (List<String>) -> Unit,
 ) {
     IdeTable(
         modifier = Modifier.fillMaxWidth(),
-        colors = colors,
     ) {
-        IdeTableHeader(colors = colors) {
+        IdeTableHeader() {
             IdeTableHeaderCell(
                 text = "Select",
                 modifier = Modifier.width(GlassDimens.AcquireTableIconColWidth),
-                colors = colors,
             )
             IdeTableHeaderCell(
                 text = "Partition",
                 modifier = Modifier.weight(2f),
-                colors = colors,
             )
             IdeTableHeaderCell(
                 text = "Group",
                 modifier = Modifier.weight(1.5f),
-                colors = colors,
             )
             IdeTableHeaderCell(
                 text = "Status",
                 modifier = Modifier.weight(1.5f),
-                colors = colors,
             )
         }
 
@@ -352,20 +336,19 @@ private fun PartitionChoices(
             IdeTableRow(
                 isSelected = isChecked,
                 onClick = { onChange(if (isChecked) selected - name else selected + name) },
-                colors = colors,
             ) {
                 Checkbox(
                     checked = isChecked,
                     onCheckedChange = { onChange(if (isChecked) selected - name else selected + name) },
                     colors = CheckboxDefaults.colors(
-                        checkedColor = colors.accentBlue,
-                        uncheckedColor = colors.textDim,
+                        checkedColor = MaterialTheme.colorScheme.primary,
+                        uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant,
                     ),
                     modifier = Modifier.width(GlassDimens.AcquireTableIconColWidth),
                 )
                 Text(
                     text = name,
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = FontSize.BodySmall,
                     fontWeight = FontWeight.Medium,
                     fontFamily = codeFontFamily(),
@@ -373,14 +356,14 @@ private fun PartitionChoices(
                 )
                 Text(
                     text = groupLabel,
-                    color = colors.textMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.BodySmall,
                     fontFamily = ideFontFamily(),
                     modifier = Modifier.weight(1.5f),
                 )
                 Text(
                     text = "Target capability",
-                    color = colors.accentGreen,
+                    color = GlassTheme.diagnosticColors.success,
                     fontSize = FontSize.Micro,
                     fontWeight = FontWeight.Medium,
                     fontFamily = ideFontFamily(),
@@ -392,24 +375,24 @@ private fun PartitionChoices(
 }
 
 @Composable
-private fun Meta(path: String, dirty: Set<String>, source: String, help: String, colors: IdeShellColorScheme) {
+private fun Meta(path: String, dirty: Set<String>, source: String, help: String) {
     val isDirty = dirty.any { it.startsWith(path.substringBefore('/')) }
     Text(
         text = "$source${if (isDirty) " · Dirty" else ""} · $help",
-        color = if (isDirty) colors.accentBlue else colors.textMuted,
+        color = if (isDirty) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
         fontSize = FontSize.Micro,
         fontFamily = ideFontFamily(),
     )
 }
 
 @Composable
-private fun Diagnostics(errors: List<ValidationError>, colors: IdeShellColorScheme) {
+private fun Diagnostics(errors: List<ValidationError>) {
     if (errors.isEmpty()) return
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
         errors.forEach {
             Text(
                 text = "${it.severity}: ${it.message}",
-                color = if (it.severity == Severity.ERROR) colors.errorRed else colors.warningAmber,
+                color = if (it.severity == Severity.ERROR) GlassTheme.diagnosticColors.error else GlassTheme.diagnosticColors.warning,
                 fontSize = FontSize.BodySmall,
                 fontFamily = ideFontFamily(),
             )

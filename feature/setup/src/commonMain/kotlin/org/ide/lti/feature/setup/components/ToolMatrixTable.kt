@@ -55,7 +55,6 @@ import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolCategory
 import org.ide.lti.core.domain.setup.ToolComponentItem
@@ -88,11 +87,9 @@ fun ToolMatrixTable(
     modifier: Modifier = Modifier,
     isBusy: Boolean = false,
     searchFocusRequester: FocusRequester? = null,
-    backdrop: GlassSceneState? = null,
     publishedToolIds: Set<String> = emptySet(),
 ) {
-    val glassColors = GlassTheme.colors
-    val diagnostics = glassColors.diagnostics
+    val diagnostics = GlassTheme.diagnosticColors
 
     val categoryChipItems = remember {
         listOf(GlassFilterChipItem(label = "All", count = -1, value = "All")) +
@@ -108,12 +105,9 @@ fun ToolMatrixTable(
     val readyCount = tools.count { it.status == StepStatus.SUCCESS }
     val totalCount = tools.size
 
-    val shellColors = GlassTheme.ideShellColors
     GlassCard(
         modifier = modifier.fillMaxWidth(),
-        surfaceColor = shellColors.cardBackground,
-        borderColor = shellColors.border,
-        backdrop = backdrop,
+        surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         contentPadding = Spacing.CardPadding,
     ) {
         Column(
@@ -139,7 +133,7 @@ fun ToolMatrixTable(
                             text = "Toolchain Binaries Matrix",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
-                            color = glassColors.onGlass,
+                            color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
                             softWrap = false,
                             overflow = TextOverflow.Ellipsis,
@@ -153,7 +147,7 @@ fun ToolMatrixTable(
                     Text(
                         text = "Native Android ROM engineering tools compiled and staged in ~/LtiRomTools/bin",
                         style = MaterialTheme.typography.bodySmall,
-                        color = glassColors.onGlassSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         softWrap = false,
                         overflow = TextOverflow.Ellipsis,
@@ -207,7 +201,7 @@ fun ToolMatrixTable(
                     Text(
                         text = "No toolchain binaries matching criteria.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = glassColors.onGlassMuted,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             } else {
@@ -242,8 +236,7 @@ private fun ToolMatrixItemRow(
     onRecompile: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
-    val diagnostics = glassColors.diagnostics
+    val diagnostics = GlassTheme.diagnosticColors
 
     val isRecipeSupported = ToolBrowserState.isRecipeSupported(tool.id)
     val isRunning = tool.status == StepStatus.RUNNING || isBusy
@@ -254,23 +247,23 @@ private fun ToolMatrixItemRow(
 
     val statusColor = when (tool.status) {
         StepStatus.SUCCESS -> diagnostics.success
-        StepStatus.RUNNING -> glassColors.glassAccent
+        StepStatus.RUNNING -> MaterialTheme.colorScheme.primary
         StepStatus.WARNING -> diagnostics.warning
         StepStatus.FAILED -> diagnostics.error
-        StepStatus.PENDING -> glassColors.onGlassMuted
+        StepStatus.PENDING -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     Box(
         modifier = modifier
             .fillMaxWidth()
             .clip(GlassShapes.Medium)
-            .background(glassColors.glassSurface)
+            .background(MaterialTheme.colorScheme.surfaceContainer)
             .border(
                 width = StrokeWidth.Standard,
                 color = if (tool.status == StepStatus.SUCCESS) {
                     diagnostics.success.copy(alpha = AlphaTokens.UltraFaint)
                 } else {
-                    glassColors.glassBorder
+                    MaterialTheme.colorScheme.outline
                 },
                 shape = GlassShapes.Medium,
             )
@@ -317,7 +310,6 @@ private fun ToolStatusIndicator(
     statusColor: androidx.compose.ui.graphics.Color,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
     Box(
         modifier = modifier
             .size(ComponentSize.SegmentedButtonSize)
@@ -334,7 +326,7 @@ private fun ToolStatusIndicator(
             CircularProgressIndicator(
                 modifier = Modifier.size(IconSize.Small),
                 strokeWidth = StrokeWidth.Hairline,
-                color = glassColors.onGlass,
+                color = MaterialTheme.colorScheme.onSurface,
             )
         } else {
             Box(
@@ -356,8 +348,7 @@ private fun ToolItemDetails(
     isRecipeSupported: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
-    val diagnostics = glassColors.diagnostics
+    val diagnostics = GlassTheme.diagnosticColors
 
     Column(
         modifier = modifier,
@@ -371,7 +362,7 @@ private fun ToolItemDetails(
                 text = tool.name,
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
-                color = glassColors.onGlass,
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 softWrap = false,
                 overflow = TextOverflow.Ellipsis,
@@ -380,7 +371,7 @@ private fun ToolItemDetails(
                 text = tool.binaryName,
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = codeFontFamily(),
-                color = glassColors.onGlassSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 softWrap = false,
                 overflow = TextOverflow.Ellipsis,
@@ -417,7 +408,7 @@ private fun ToolItemDetails(
                 text = tool.path ?: "~/LtiRomTools/bin/${tool.binaryName}",
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = codeFontFamily(),
-                color = if (tool.status == StepStatus.SUCCESS) glassColors.onGlassSecondary else glassColors.onGlassMuted,
+                color = if (tool.status == StepStatus.SUCCESS) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 softWrap = false,
                 overflow = TextOverflow.Ellipsis,
@@ -444,7 +435,7 @@ private fun ToolItemDetails(
                     Text(
                         text = "#$cap",
                         style = MaterialTheme.typography.labelSmall,
-                        color = glassColors.onGlassMuted,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         softWrap = false,
                         overflow = TextOverflow.Ellipsis,

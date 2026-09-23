@@ -11,9 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.GlassChip
-import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.core.model.target.TargetDevice
 
 /**
@@ -23,11 +21,9 @@ import org.ide.lti.core.model.target.TargetDevice
 fun TargetTelemetryCard(
     target: TargetDevice,
     modifier: Modifier = Modifier,
-    backdrop: GlassSceneState? = null,
 ) {
     GlassCard(
         modifier = modifier.fillMaxWidth(),
-        backdrop = backdrop,
         contentPadding = Spacing.CardPadding,
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium)) {
@@ -35,7 +31,7 @@ fun TargetTelemetryCard(
                 text = "Hardware Telemetry",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
-                color = GlassTheme.colors.onGlass,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             TelemetryRow("SoC Platform", target.socPlatform)
             TelemetryRow("Filesystem", target.filesystemType)
@@ -61,12 +57,12 @@ private fun TelemetryRow(label: String, value: String) {
         Text(
             text = label,
             style = MaterialTheme.typography.bodySmall,
-            color = GlassTheme.colors.onGlassMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
             text = value,
             style = MaterialTheme.typography.bodySmall,
-            color = GlassTheme.colors.onGlass,
+            color = MaterialTheme.colorScheme.onSurface,
         )
     }
 }

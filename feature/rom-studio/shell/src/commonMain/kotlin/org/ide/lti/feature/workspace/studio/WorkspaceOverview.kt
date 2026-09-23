@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.workspace.studio
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -41,7 +42,6 @@ import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.feature.workspace.studio.components.OverviewBreadcrumbHeader
 import org.ide.lti.feature.workspace.studio.components.OverviewCallToAction
@@ -67,7 +67,6 @@ public fun WorkspaceOverview(
     onReload: () -> Unit = {},
     onEditProfile: () -> Unit = {},
     onOpenHistory: () -> Unit = {},
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     val scrollState = rememberScrollState()
 
@@ -91,7 +90,6 @@ public fun WorkspaceOverview(
                 subtitle = state.subtitle,
                 onReload = onReload,
                 onAction = onAction,
-                colors = colors,
             )
 
             // 2. Two-column body: Build Readiness (left) and Target Card (right)
@@ -104,14 +102,12 @@ public fun WorkspaceOverview(
                     items = state.readinessItems,
                     reviewCount = state.reviewCount,
                     onAction = onAction,
-                    colors = colors,
                     modifier = Modifier.weight(1f),
                 )
 
                 TargetProfileCard(
                     summary = state.targetSummary,
                     onEditProfile = onEditProfile,
-                    colors = colors,
                     modifier = Modifier.width(GlassDimens.OverviewTargetCardWidth),
                 )
             }
@@ -121,7 +117,6 @@ public fun WorkspaceOverview(
                 buildState = state.buildState,
                 nextAction = state.nextAction,
                 onAction = onAction,
-                colors = colors,
             )
 
             // 4. Recent activity feed
@@ -129,22 +124,21 @@ public fun WorkspaceOverview(
                 activities = state.recentActivity,
                 onOpenHistory = onOpenHistory,
                 onAction = onAction,
-                colors = colors,
             )
 
             // 5. Bottom Dock Strip: Problems / Activity / Artifacts
-            OverviewDockStrip(colors = colors)
+            OverviewDockStrip()
         }
     }
 }
 
 @Composable
-private fun OverviewDockStrip(colors: IdeShellColorScheme, modifier: Modifier = Modifier) {
+private fun OverviewDockStrip(modifier: Modifier = Modifier) {
     Row(
         modifier = modifier
             .fillMaxWidth()
             .height(GlassDimens.OverviewDockStripHeight)
-            .ideCardSurface(colors = colors)
+            .ideCardSurface()
             .padding(horizontal = Spacing.Medium),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -153,22 +147,22 @@ private fun OverviewDockStrip(colors: IdeShellColorScheme, modifier: Modifier = 
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.Large),
         ) {
-            DockItem(icon = Icons.Default.Warning, label = "Problems", colors = colors)
-            DockItem(icon = Icons.AutoMirrored.Filled.List, label = "Activity", colors = colors)
-            DockItem(icon = Icons.Default.Folder, label = "Artifacts", colors = colors)
+            DockItem(icon = Icons.Default.Warning, label = "Problems")
+            DockItem(icon = Icons.AutoMirrored.Filled.List, label = "Activity")
+            DockItem(icon = Icons.Default.Folder, label = "Artifacts")
         }
 
         Icon(
             imageVector = Icons.Default.KeyboardArrowUp,
             contentDescription = "Expand dock",
-            tint = colors.textDim,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(IconSize.Small),
         )
     }
 }
 
 @Composable
-private fun DockItem(icon: ImageVector, label: String, colors: IdeShellColorScheme, modifier: Modifier = Modifier) {
+private fun DockItem(icon: ImageVector, label: String, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier.clickable(onClick = {}),
         verticalAlignment = Alignment.CenterVertically,
@@ -177,12 +171,12 @@ private fun DockItem(icon: ImageVector, label: String, colors: IdeShellColorSche
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = colors.textDim,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(IconSize.Small),
         )
         Text(
             text = label,
-            color = colors.textDim,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.Micro,
             fontFamily = GlassFontFamily.ide(),
         )

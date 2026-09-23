@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import org.ide.lti.core.designsystem.theme.HazeShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -26,13 +27,18 @@ import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import dev.chrisbanes.haze.ExperimentalHazeApi
+import dev.chrisbanes.haze.HazeInput
+import dev.chrisbanes.haze.glass.GlassStyle
+import dev.chrisbanes.haze.glass.hazeGlass
 import org.ide.lti.core.designsystem.component.actions.*
 import org.ide.lti.core.designsystem.component.devtools.*
 import org.ide.lti.core.designsystem.component.display.*
@@ -43,8 +49,6 @@ import org.ide.lti.core.designsystem.component.primitives.*
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
-import org.ide.lti.core.designsystem.theme.glass.GlassStyles
 
 /**
  * Type-safe action buttons configuration for [GlassDialog].
@@ -68,8 +72,10 @@ sealed interface DialogActions {
 }
 
 /**
- * Glass dialog component with scrim and glass surface.
+ * Glass dialog component with scrim and glass surface - built on Haze's real
+ * `Modifier.hazeGlass`, overlay tier ([MaterialTheme.colorScheme.surfaceContainerHighest]).
  */
+@OptIn(ExperimentalHazeApi::class)
 @Composable
 fun GlassDialog(
     onDismissRequest: () -> Unit,
@@ -77,13 +83,11 @@ fun GlassDialog(
     modifier: Modifier = Modifier,
     title: String? = null,
     dismissButton: (@Composable () -> Unit)? = null,
-    shape: Shape = GlassShapes.Dialog,
-    backdrop: GlassSceneState? = null,
+    shape: HazeShape = GlassShapes.HazePanel,
     properties: DialogProperties = DialogProperties(),
     content: @Composable () -> Unit,
 ) {
-    val glassColors = GlassTheme.colors
-    val style = GlassStyles.dialog.then { copy(shape = shape) }
+    val colors = MaterialTheme.colorScheme
 
     Dialog(
         onDismissRequest = onDismissRequest,
@@ -93,9 +97,18 @@ fun GlassDialog(
             modifier = modifier
                 .fillMaxWidth()
                 .padding(Spacing.Medium)
-                .glass(style, backdrop = backdrop),
+                .hazeGlass(
+                    input = HazeInput.Backdrop(GlassTheme.hazeState),
+                    style = remember(shape, colors.surfaceContainerHighest) {
+                        GlassStyle.regular.then {
+                            this.shape(shape)
+                            backgroundColor(colors.surfaceContainerHighest)
+                        }
+                    },
+                )
+                .clip(shape),
         ) {
-            CompositionLocalProvider(LocalContentColor provides glassColors.onGlass) {
+            CompositionLocalProvider(LocalContentColor provides colors.onSurface) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -106,7 +119,7 @@ fun GlassDialog(
                             text = title,
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.SemiBold,
-                            color = GlassTheme.colors.onGlass,
+                            color = colors.onSurface,
                             maxLines = 1,
                             softWrap = false,
                             overflow = TextOverflow.Ellipsis,
@@ -148,13 +161,13 @@ sealed class LoadingDialogState {
 /**
  * Glass loading dialog with circular progress indicator.
  */
+@OptIn(ExperimentalHazeApi::class)
 @Composable
 fun GlassLoadingDialog(
     visibilityState: LoadingDialogState,
     modifier: Modifier = Modifier,
-    backdrop: GlassSceneState? = null,
 ) {
-    val style = GlassStyles.dialog.then { copy(shape = GlassShapes.ExtraLarge) }
+    val colors = MaterialTheme.colorScheme
 
     when (visibilityState) {
         is LoadingDialogState.Hidden -> Unit
@@ -170,7 +183,16 @@ fun GlassLoadingDialog(
                     modifier = modifier
                         .fillMaxWidth()
                         .padding(Spacing.DialogPadding)
-                        .glass(style, backdrop = backdrop),
+                        .hazeGlass(
+                            input = HazeInput.Backdrop(GlassTheme.hazeState),
+                            style = remember(colors.surfaceContainerHighest) {
+                                GlassStyle.regular.then {
+                                    shape(GlassShapes.HazePanel)
+                                    backgroundColor(colors.surfaceContainerHighest)
+                                }
+                            },
+                        )
+                        .clip(GlassShapes.HazePanel),
                 ) {
                     Column(
                         modifier = Modifier
@@ -182,11 +204,11 @@ fun GlassLoadingDialog(
                         Text(
                             text = "Loading..",
                             style = MaterialTheme.typography.titleMedium,
-                            color = GlassTheme.colors.onGlass,
+                            color = colors.onSurface,
                             modifier = Modifier.padding(bottom = Spacing.Medium),
                         )
                         CircularProgressIndicator(
-                            color = GlassTheme.colors.glassAccent,
+                            color = colors.primary,
                         )
                     }
                 }

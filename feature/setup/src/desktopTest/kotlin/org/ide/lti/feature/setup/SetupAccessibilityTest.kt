@@ -31,8 +31,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.sp
 import kotlinx.datetime.Clock
 import org.ide.lti.core.designsystem.theme.LtiTheme
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
-import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 import org.ide.lti.core.domain.setup.SetupStepDetail
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepProvenance
@@ -72,7 +70,6 @@ class SetupAccessibilityTest {
                         onCreateWorkspace = { createCalled = true },
                         onOpenFolder = { openCalled = true },
                     ),
-                    backdrop = backdrop,
                 )
             }
         }
@@ -104,7 +101,6 @@ class SetupAccessibilityTest {
                 SetupScreenContent(
                     state = SetupUiState(selectedTab = SetupTab.PROJECTS),
                     actions = SetupUiActions(),
-                    backdrop = backdrop,
                 )
             }
         }
@@ -129,7 +125,6 @@ class SetupAccessibilityTest {
                 SetupScreenContent(
                     state = SetupUiState(selectedTab = SetupTab.ENVIRONMENT),
                     actions = SetupUiActions(),
-                    backdrop = backdrop,
                     // initialTab makes SetupScreenContent own its tab state internally
                     // (localSelectedTab) so onTabChange actually drives recomposition here,
                     // exactly as it does when SetupScreen wires a real ViewModel.
@@ -162,7 +157,6 @@ class SetupAccessibilityTest {
                 SetupScreenContent(
                     state = SetupUiState(),
                     actions = SetupUiActions(),
-                    backdrop = backdrop,
                     isHelpSheetOpen = true,
                     onDismissHelpSheet = { helpDismissed = true },
                 )
@@ -205,7 +199,6 @@ class SetupAccessibilityTest {
                     actions = SetupUiActions(
                         onDismissPreview = { previewDismissed = true },
                     ),
-                    backdrop = backdrop,
                 )
             }
         }
@@ -239,7 +232,6 @@ class SetupAccessibilityTest {
                         selectedTab = SetupTab.PROJECTS,
                     ),
                     actions = SetupUiActions(),
-                    backdrop = backdrop,
                 )
             }
         }
@@ -274,7 +266,6 @@ class SetupAccessibilityTest {
                         selectedTab = SetupTab.PROJECTS,
                     ),
                     actions = SetupUiActions(),
-                    backdrop = backdrop,
                 )
             }
         }
@@ -315,7 +306,6 @@ class SetupAccessibilityTest {
                             selectedTab = SetupTab.PROJECTS,
                         ),
                         actions = SetupUiActions(),
-                        backdrop = backdrop,
                     )
                 }
             }
@@ -342,7 +332,6 @@ class SetupAccessibilityTest {
                     actions = SetupUiActions(
                         onSelectTab = { activeTab = it },
                     ),
-                    backdrop = backdrop,
                 )
             }
         }
@@ -373,7 +362,6 @@ class SetupAccessibilityTest {
                         selectedTab = SetupTab.ENVIRONMENT,
                     ),
                     actions = SetupUiActions(),
-                    backdrop = backdrop,
                 )
             }
         }
@@ -403,7 +391,6 @@ class SetupAccessibilityTest {
                         selectedTab = SetupTab.PROJECTS,
                     ),
                     actions = SetupUiActions(),
-                    backdrop = backdrop,
                 )
             }
         }
@@ -440,7 +427,6 @@ class SetupAccessibilityTest {
                         onCreateWorkspace = { createCalled = true },
                         onOpenFolder = { openCalled = true },
                     ),
-                    backdrop = backdrop,
                 )
             }
         }
@@ -499,7 +485,6 @@ class SetupAccessibilityTest {
                     actions = SetupUiActions(
                         onDismissPreview = { previewDismissed = true },
                     ),
-                    backdrop = backdrop,
                 )
             }
         }
@@ -529,7 +514,6 @@ class SetupAccessibilityTest {
                     actions = SetupUiActions(
                         onConfirmOperation = { operationConfirmed = true },
                     ),
-                    backdrop = backdrop,
                 )
             }
         }
@@ -556,7 +540,6 @@ class SetupAccessibilityTest {
                         activeOperation = activeOp,
                     ),
                     actions = SetupUiActions(),
-                    backdrop = backdrop,
                 )
             }
         }
@@ -589,7 +572,6 @@ class SetupAccessibilityTest {
                 SetupScreenContent(
                     state = SetupUiState(selectedTab = SetupTab.ENVIRONMENT),
                     actions = SetupUiActions(),
-                    backdrop = backdrop,
                 )
             }
         }
@@ -639,7 +621,6 @@ class SetupAccessibilityTest {
                         },
                         onDismissPreview = { activeOperation = null },
                     ),
-                    backdrop = backdrop,
                 )
             }
         }
@@ -669,7 +650,6 @@ class SetupAccessibilityTest {
                 SetupScreenContent(
                     state = SetupUiState(selectedTab = activeTab),
                     actions = SetupUiActions(onSelectTab = { activeTab = it }),
-                    backdrop = backdrop,
                 )
             }
         }
@@ -685,7 +665,6 @@ class SetupAccessibilityTest {
                 SetupScreenContent(
                     state = SetupUiState(selectedTab = SetupTab.RECOVERY),
                     actions = SetupUiActions(),
-                    backdrop = backdrop,
                 )
             }
         }

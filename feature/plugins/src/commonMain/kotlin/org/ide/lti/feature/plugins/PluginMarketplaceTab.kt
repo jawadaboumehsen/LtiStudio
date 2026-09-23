@@ -151,7 +151,6 @@ internal fun PluginMarketplaceTab(
             }
         }
 
-        val glassColors = GlassTheme.colors
         PluginFooterBar(
             message = "Connect to refresh trust and revocation information.",
             trailingContent = {
@@ -162,7 +161,7 @@ internal fun PluginMarketplaceTab(
                     GlassButton(
                         onClick = { showConfigureModal = true },
                         variant = GlassButtonVariant.Standard,
-                        shape = GlassShapes.MediumSmall,
+                        shape = GlassShapes.HazeMediumSmall,
                         minHeight = ComponentSize.PluginActionBtnCompactHeight,
                         contentPadding = PaddingValues(
                             horizontal = Spacing.Medium,
@@ -176,7 +175,7 @@ internal fun PluginMarketplaceTab(
                             Icon(
                                 painter = AppIcons.SettingsPainterResource(),
                                 contentDescription = "Configure sources",
-                                tint = glassColors.onGlassSecondary,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(IconSize.Small),
                             )
                             Text("Configure sources")
@@ -185,7 +184,7 @@ internal fun PluginMarketplaceTab(
                     GlassButton(
                         onClick = onNavigateToImport,
                         variant = GlassButtonVariant.Primary,
-                        shape = GlassShapes.MediumSmall,
+                        shape = GlassShapes.HazeMediumSmall,
                         minHeight = ComponentSize.PluginActionBtnCompactHeight,
                         contentPadding = PaddingValues(
                             horizontal = Spacing.Medium,
@@ -245,7 +244,6 @@ private fun MarketplaceHeader(
     onSearchChange: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
 
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -256,12 +254,12 @@ private fun MarketplaceHeader(
                 text = "Marketplace",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
-                color = glassColors.onGlass,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = "Find and install operation packages for your project.",
                 style = MaterialTheme.typography.bodySmall,
-                color = glassColors.onGlassSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
@@ -277,10 +275,10 @@ private fun MarketplaceHeader(
                 Row(
                     modifier = Modifier
                         .clip(GlassShapes.Small)
-                        .background(glassColors.chromeSurface)
+                        .background(MaterialTheme.colorScheme.surfaceContainerLow)
                         .glassOutlineBorder(
                             width = StrokeWidth.Hairline,
-                            color = glassColors.glassBorder.copy(alpha = AlphaTokens.Faint),
+                            color = MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Faint),
                             shape = GlassShapes.Small,
                         )
                         .clickable(role = Role.Button, onClick = onOpenConfigure)
@@ -291,13 +289,13 @@ private fun MarketplaceHeader(
                     Icon(
                         painter = painterResource(Res.drawable.ideToolwindowsRepositories),
                         contentDescription = "Repository",
-                        tint = glassColors.glassAccent,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(IconSize.Small),
                     )
                     Text(
                         text = "${source?.label ?: "No catalog configured"} ▾",
                         style = MaterialTheme.typography.labelMedium,
-                        color = glassColors.onGlass,
+                        color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         softWrap = false,
                         overflow = TextOverflow.Ellipsis,
@@ -316,7 +314,7 @@ private fun MarketplaceHeader(
                 Text(
                     text = cacheAgeText,
                     style = MaterialTheme.typography.labelSmall,
-                    color = glassColors.onGlassMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.clickable(onClick = onRefresh),
                 )
 
@@ -347,7 +345,6 @@ private fun MarketplaceMasterTable(
     onNavigateToImport: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
 
     Box(
         modifier = modifier
@@ -376,12 +373,12 @@ private fun MarketplaceMasterTable(
                             "No packages match '$searchQuery'."
                         },
                         style = MaterialTheme.typography.bodyMedium,
-                        color = glassColors.onGlassSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     GlassButton(
                         onClick = onNavigateToImport,
                         variant = GlassButtonVariant.Standard,
-                        shape = GlassShapes.MediumSmall,
+                        shape = GlassShapes.HazeMediumSmall,
                         minHeight = ComponentSize.PluginActionBtnCompactHeight,
                     ) {
                         Text("Import local package (.ltimod)")
@@ -412,7 +409,6 @@ private fun MarketplaceMasterTable(
 
 @Composable
 private fun MarketplaceTableHeader(modifier: Modifier = Modifier) {
-    val glassColors = GlassTheme.colors
 
     Row(
         modifier = modifier
@@ -425,21 +421,21 @@ private fun MarketplaceTableHeader(modifier: Modifier = Modifier) {
             text = "Package",
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold,
-            color = glassColors.onGlassMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.weight(1f),
         )
         Text(
             text = "Publisher",
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold,
-            color = glassColors.onGlassMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.width(ComponentSize.ButtonMinWidth * 2),
         )
         Text(
             text = "SDK compatibility",
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold,
-            color = glassColors.onGlassMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.width(ComponentSize.ButtonMinWidth * 2),
         )
         Spacer(modifier = Modifier.width(ComponentSize.PluginActionBtnCompactWidth + Spacing.Medium))
@@ -462,14 +458,13 @@ private fun MarketplaceTableRow(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
     val rowBg = if (isSelected) PluginThemeColors.SelectedRowBackground else Color.Transparent
-    val contentTint = if (isSelected) BrandColors.OnLogoBadge else glassColors.onGlassSecondary
-    val titleColor = if (isSelected) BrandColors.OnLogoBadge else glassColors.onGlass
+    val contentTint = if (isSelected) BrandColors.OnLogoBadge else MaterialTheme.colorScheme.onSurfaceVariant
+    val titleColor = if (isSelected) BrandColors.OnLogoBadge else MaterialTheme.colorScheme.onSurface
     val subtitleColor = if (isSelected) {
         BrandColors.OnLogoBadge.copy(alpha = AlphaTokens.Hover)
     } else {
-        glassColors.onGlassSecondary
+        MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     val borderModifier = if (isSelected) {
@@ -479,9 +474,10 @@ private fun MarketplaceTableRow(
             shape = GlassShapes.Small,
         )
     } else {
+        val dividerColor = MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Faint)
         Modifier.drawBehind {
             drawLine(
-                color = glassColors.glassBorder.copy(alpha = AlphaTokens.Faint),
+                color = dividerColor,
                 start = Offset(0f, size.height),
                 end = Offset(size.width, size.height),
                 strokeWidth = StrokeWidth.Hairline.toPx(),
@@ -559,7 +555,7 @@ private fun MarketplaceTableRow(
         GlassButton(
             onClick = onClick,
             variant = GlassButtonVariant.Standard,
-            shape = GlassShapes.MediumSmall,
+            shape = GlassShapes.HazeMediumSmall,
             minWidth = ComponentSize.PluginActionBtnCompactWidth,
             minHeight = ComponentSize.PluginActionBtnCompactHeight,
             contentPadding = PaddingValues(
@@ -579,7 +575,6 @@ private fun MarketplaceTableRow(
 
 @Composable
 private fun MarketplaceInspectorHeader(entry: IndexEntry) {
-    val glassColors = GlassTheme.colors
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
@@ -592,7 +587,7 @@ private fun MarketplaceInspectorHeader(entry: IndexEntry) {
                 .glassOutlineBorder(
                     width = StrokeWidth.Hairline,
                     color = PluginThemeColors.SelectedRowBorder,
-                    shape = GlassShapes.MediumSmall,
+                    shape = GlassShapes.HazeMediumSmall,
                 ),
             contentAlignment = Alignment.Center,
         ) {
@@ -609,7 +604,7 @@ private fun MarketplaceInspectorHeader(entry: IndexEntry) {
                 text = formatPluginDisplayName(entry.id),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = glassColors.onGlass,
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 softWrap = false,
                 overflow = TextOverflow.Ellipsis,
@@ -617,7 +612,7 @@ private fun MarketplaceInspectorHeader(entry: IndexEntry) {
             Text(
                 text = entry.publisher,
                 style = MaterialTheme.typography.labelSmall,
-                color = glassColors.onGlassMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -633,7 +628,7 @@ private fun MarketplaceUnverifiedWarningCard() {
             .glassOutlineBorder(
                 width = StrokeWidth.Hairline,
                 color = PluginThemeColors.WarningBorder,
-                shape = GlassShapes.MediumSmall,
+                shape = GlassShapes.HazeMediumSmall,
             )
             .padding(Spacing.Medium),
     ) {
@@ -677,7 +672,6 @@ private fun MarketplaceInspectorPanel(
     onInstallClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
     val isInstalling = installState is InstallState.Downloading || installState is InstallState.Quarantined
     val sourceVerified = marketplaceSourceIsVerified(fetchResult)
 
@@ -704,7 +698,7 @@ private fun MarketplaceInspectorPanel(
                         "Select a package to inspect details."
                     },
                     style = MaterialTheme.typography.bodyMedium,
-                    color = glassColors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         } else {
@@ -719,7 +713,7 @@ private fun MarketplaceInspectorPanel(
                 Text(
                     text = entry.targetSummary,
                     style = MaterialTheme.typography.bodySmall,
-                    color = glassColors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
                 GlassHorizontalDivider(specular = true)
@@ -757,7 +751,7 @@ private fun MarketplaceInspectorPanel(
                         onClick = onInstallClick,
                         enabled = !isInstalling,
                         variant = GlassButtonVariant.Primary,
-                        shape = GlassShapes.MediumSmall,
+                        shape = GlassShapes.HazeMediumSmall,
                         minHeight = ComponentSize.PluginActionBtnHeight,
                         modifier = Modifier.fillMaxWidth(),
                     ) {
@@ -771,7 +765,6 @@ private fun MarketplaceInspectorPanel(
 
 @Composable
 private fun MarketplacePropertyRow(label: String, value: String, modifier: Modifier = Modifier) {
-    val glassColors = GlassTheme.colors
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
@@ -779,13 +772,13 @@ private fun MarketplacePropertyRow(label: String, value: String, modifier: Modif
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
-            color = glassColors.onGlassMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
             text = value,
             style = MaterialTheme.typography.bodySmall,
             fontWeight = FontWeight.Medium,
-            color = glassColors.onGlass,
+            color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
             softWrap = false,
             overflow = TextOverflow.Ellipsis,
@@ -821,7 +814,7 @@ private fun ConfigureSourceDialog(
             Text(
                 text = "Marketplace index repository must be a strictly secure HTTPS endpoint.",
                 style = MaterialTheme.typography.bodySmall,
-                color = GlassTheme.colors.onGlassSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             GlassTextField(
                 value = url,
@@ -861,7 +854,7 @@ private fun MarketplaceTrustDialog(entry: IndexEntry, onDismiss: () -> Unit, onC
             Text(
                 text = "Publisher: ${entry.publisher}\nVersion: ${entry.version}\nTarget: ${entry.targetSummary}",
                 style = MaterialTheme.typography.bodySmall,
-                color = GlassTheme.colors.onGlass,
+                color = MaterialTheme.colorScheme.onSurface,
             )
 
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {

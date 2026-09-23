@@ -77,9 +77,7 @@ fun SetupJourneySidebar(
         }
     },
 ) {
-    val glassColors = GlassTheme.colors
-    val colors = GlassTheme.ideShellColors
-    val isBlue = GlassTheme.appTheme == org.ide.lti.core.designsystem.theme.config.AppTheme.Blue
+    val isBlue = GlassTheme.appTheme == org.ide.lti.core.designsystem.theme.AppTheme.Blue
 
     val isWorkspacesActive = currentStep == SetupTab.LAUNCHPAD
     val isEnvironmentActive = selectedDestination == SetupDestination.ENVIRONMENT || currentStep == SetupTab.ENVIRONMENT
@@ -97,7 +95,7 @@ fun SetupJourneySidebar(
             ),
         )
     } else {
-        Modifier.background(colors.navigatorBackground)
+        Modifier.background(MaterialTheme.colorScheme.surfaceContainer)
     }
 
     Column(
@@ -111,7 +109,7 @@ fun SetupJourneySidebar(
         Text(
             text = "Machine environment",
             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-            color = if (isBlue) glassColors.onGlassMuted else colors.textDim,
+            color = if (isBlue) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),
         )
 

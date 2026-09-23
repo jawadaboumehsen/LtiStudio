@@ -39,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -54,8 +55,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
-import com.kashif_e.backdrop.ResolvedGlassEffect
-import com.kashif_e.backdrop.highlight.Highlight
+import dev.chrisbanes.haze.ExperimentalHazeApi
+import dev.chrisbanes.haze.HazeInput
+import dev.chrisbanes.haze.glass.GlassStyle
+import dev.chrisbanes.haze.glass.hazeGlass
 import org.ide.lti.core.designsystem.component.actions.*
 import org.ide.lti.core.designsystem.component.devtools.*
 import org.ide.lti.core.designsystem.component.display.*
@@ -73,10 +76,6 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
-import org.ide.lti.core.designsystem.theme.glass.GlassStyles
-import org.ide.lti.core.designsystem.theme.glass.resolve
-import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
 import org.ide.lti.core.designsystem.utils.nonLetterColorVisualTransformation
 import org.ide.lti.core.designsystem.utils.tabNavigation
 
@@ -150,8 +149,6 @@ fun GlassTextField(
     enabled: Boolean = true,
     readOnly: Boolean = false,
     textStyle: TextStyle = LocalTextStyle.current,
-    effect: ResolvedGlassEffect? = null,
-    backdrop: GlassSceneState? = null,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     focusRequester: FocusRequester? = null,
 ) {
@@ -160,21 +157,19 @@ fun GlassTextField(
     val isWarning = state is TextFieldState.Warning
     val isSuccess = state is TextFieldState.Success
     var isHovered by remember { mutableStateOf(false) }
-    val glassColors = GlassTheme.colors
-    val textFieldStyle = GlassStyles.textField
-    val resolvedEffect = effect ?: textFieldStyle.resolve()
 
+    val colors = MaterialTheme.colorScheme
     val animatedBorderColor by animateColorAsState(
         targetValue = when {
-            isError -> MaterialTheme.colorScheme.error
-            isWarning -> glassColors.diagnostics.warning
-            isSuccess -> glassColors.diagnostics.success
-            isFocused -> glassColors.glassBorderHighlight
-            isHovered -> glassColors.glassBorder.copy(alpha = AlphaTokens.Prominent)
-            else -> glassColors.glassBorder
+            isError -> colors.error
+            isWarning -> GlassTheme.diagnosticColors.warning
+            isSuccess -> GlassTheme.diagnosticColors.success
+            isFocused -> colors.primary
+            isHovered -> colors.outline.copy(alpha = AlphaTokens.Prominent)
+            else -> colors.outline
         },
-        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion),
     )
+    val focusGradientColor = colors.primary
 
     Column(
         modifier = modifier
@@ -198,7 +193,7 @@ fun GlassTextField(
                         drawRect(
                             brush = Brush.verticalGradient(
                                 colors = listOf(
-                                    glassColors.glassAccent.copy(alpha = AlphaTokens.Subtle),
+                                    focusGradientColor.copy(alpha = AlphaTokens.Subtle),
                                     Color.Transparent,
                                 ),
                                 startY = 0f,
@@ -207,17 +202,8 @@ fun GlassTextField(
                         )
                     }
                 },
-            shape = GlassShapes.TextField,
-            effect = resolvedEffect,
-            backdrop = backdrop,
+            shape = GlassShapes.HazeMedium,
             borderColor = animatedBorderColor,
-            highlight = {
-                when {
-                    isFocused -> Highlight.Default
-                    isHovered -> Highlight.Ambient
-                    else -> Highlight.Plain
-                }
-            },
         ) {
             Row(
                 modifier = Modifier
@@ -238,7 +224,7 @@ fun GlassTextField(
                             } else {
                                 GlassIcon(
                                     icon = leading.icon,
-                                    tint = GlassTheme.colors.onGlassSecondary,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(IconSize.Medium),
                                 )
                             }
@@ -261,7 +247,7 @@ fun GlassTextField(
                         enabled = enabled,
                         readOnly = readOnly,
                         textStyle = textStyle.copy(
-                            color = if (enabled) GlassTheme.colors.onGlass else GlassTheme.colors.onGlassMuted,
+                            color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                         ),
                         visualTransformation = config.visualTransformation,
                         keyboardOptions = config.keyboardOptions,
@@ -269,14 +255,14 @@ fun GlassTextField(
                         singleLine = config.singleLine,
                         maxLines = config.maxLines,
                         interactionSource = interactionSource,
-                        cursorBrush = SolidColor(GlassTheme.colors.glassAccent),
+                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                         decorationBox = { innerTextField ->
                             Box {
                                 if (value.isEmpty() && placeholder != null) {
                                     Text(
                                         text = placeholder,
                                         style = textStyle,
-                                        color = GlassTheme.colors.onGlassMuted,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
                                 innerTextField()
@@ -298,7 +284,7 @@ fun GlassTextField(
                             } else {
                                 GlassIcon(
                                     icon = trailing.icon,
-                                    tint = GlassTheme.colors.onGlassSecondary,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(IconSize.Medium),
                                 )
                             }
@@ -329,7 +315,7 @@ fun GlassTextField(
                                 Icon(
                                     painter = painter,
                                     contentDescription = if (trailing.isVisible) "Hide password" else "Show password",
-                                    tint = GlassTheme.colors.onGlassSecondary,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(IconSize.Medium),
                                 )
                             }
@@ -353,9 +339,9 @@ fun GlassTextField(
         }
         val messageColor = when (state) {
             is TextFieldState.Error -> MaterialTheme.colorScheme.error
-            is TextFieldState.Warning -> glassColors.diagnostics.warning
-            is TextFieldState.Success -> glassColors.diagnostics.success
-            else -> glassColors.onGlassMuted
+            is TextFieldState.Warning -> GlassTheme.diagnosticColors.warning
+            is TextFieldState.Success -> GlassTheme.diagnosticColors.success
+            else -> MaterialTheme.colorScheme.onSurfaceVariant
         }
         if (message != null) {
             Text(
@@ -378,7 +364,6 @@ fun GlassSearchField(
     modifier: Modifier = Modifier,
     placeholder: String = "Search...",
     onSearch: (() -> Unit)? = null,
-    backdrop: GlassSceneState? = null,
 ) {
     GlassTextField(
         value = value,
@@ -391,7 +376,6 @@ fun GlassSearchField(
             singleLine = true,
             keyboardActions = KeyboardActions(onSearch = { onSearch?.invoke() }),
         ),
-        backdrop = backdrop,
     )
 }
 
@@ -453,6 +437,7 @@ fun GlassPasswordField(
 /**
  * OTP / PIN input field with glass styling.
  */
+@OptIn(ExperimentalHazeApi::class)
 @Composable
 fun GlassOtpTextField(
     onOtpTextCorrectlyEntered: () -> Unit,
@@ -462,8 +447,7 @@ fun GlassOtpTextField(
 ) {
     var otpText by remember { mutableStateOf("") }
     var isError by remember { mutableStateOf(false) }
-    val otpStyle = GlassStyles.textField
-    val otpEffect = otpStyle.resolve()
+    val colors = MaterialTheme.colorScheme
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -505,16 +489,27 @@ fun GlassOtpTextField(
                             modifier = Modifier
                                 .size(ComponentSize.OtpBoxSize)
                                 .padding(Spacing.ExtraSmall)
-                                .glassEffect(
-                                    shape = GlassShapes.Small,
-                                    effect = otpEffect,
-                                    tint = if (filled) GlassTheme.colors.glassTint else Color.Unspecified,
+                                .hazeGlass(
+                                    input = HazeInput.Backdrop(GlassTheme.hazeState),
+                                    style = remember(filled, colors) {
+                                        GlassStyle.regular.then {
+                                            shape(GlassShapes.HazeSmall)
+                                            tint(
+                                                if (filled) {
+                                                    colors.primary
+                                                } else {
+                                                    Color.Unspecified
+                                                },
+                                            )
+                                        }
+                                    },
                                 )
-                                .glassBorder(
+                                .clip(GlassShapes.Small)
+                                .glassOutlineBorder(
                                     color = if (filled) {
-                                        GlassTheme.colors.glassBorderHighlight
+                                        MaterialTheme.colorScheme.primary
                                     } else {
-                                        GlassTheme.colors.glassBorder
+                                        MaterialTheme.colorScheme.outline
                                     },
                                     width = StrokeWidth.Standard,
                                     shape = GlassShapes.Small,
@@ -524,7 +519,7 @@ fun GlassOtpTextField(
                             Text(
                                 text = char,
                                 style = MaterialTheme.typography.titleMedium,
-                                color = GlassTheme.colors.onGlass,
+                                color = MaterialTheme.colorScheme.onSurface,
                             )
                         }
                     }
@@ -545,6 +540,6 @@ fun GlassOtpTextField(
 @Composable
 private fun resolveLabelColor(isError: Boolean, enabled: Boolean): Color = when {
     isError -> MaterialTheme.colorScheme.error
-    !enabled -> GlassTheme.colors.onGlassMuted
-    else -> GlassTheme.colors.onGlassSecondary
+    !enabled -> MaterialTheme.colorScheme.onSurfaceVariant
+    else -> MaterialTheme.colorScheme.onSurfaceVariant
 }

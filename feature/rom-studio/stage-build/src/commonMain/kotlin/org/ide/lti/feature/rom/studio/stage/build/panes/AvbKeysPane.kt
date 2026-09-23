@@ -9,6 +9,8 @@
  */
 package org.ide.lti.feature.rom.studio.stage.build.panes
 
+import org.ide.lti.core.designsystem.theme.AlphaTokens
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -43,7 +45,6 @@ import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
@@ -64,7 +65,6 @@ public fun AvbKeysPane(
     onValidate: () -> Unit = {},
     onSave: () -> Unit = {},
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     Column(
         modifier = modifier
@@ -72,31 +72,31 @@ public fun AvbKeysPane(
             .testTag("AvbKeysPane"),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
-        AvbNoticeCard(colors = colors)
-        AvbKeysTableCard(colors = colors)
+        AvbNoticeCard()
+        AvbKeysTableCard()
 
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
         ) {
             Box(modifier = Modifier.weight(1.2f)) {
-                SelectedKeyDetailsCard(colors = colors)
+                SelectedKeyDetailsCard()
             }
             Box(modifier = Modifier.weight(1f)) {
-                KeyManagementCard(colors = colors)
+                KeyManagementCard()
             }
         }
     }
 }
 
 @Composable
-private fun AvbNoticeCard(colors: IdeShellColorScheme) {
+private fun AvbNoticeCard() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .background(colors.infoBannerFill)
-            .border(GlassDimens.HairlineBorder, colors.infoBannerBorder, GlassShapes.ShellCard)
+            .background(MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Subtle))
+            .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Ambient), GlassShapes.ShellCard)
             .padding(Spacing.Medium),
     ) {
         Row(
@@ -112,14 +112,14 @@ private fun AvbNoticeCard(colors: IdeShellColorScheme) {
                 Icon(
                     imageVector = Icons.Default.Info,
                     contentDescription = null,
-                    tint = colors.accentBlue,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(IconSize.Small),
                 )
                 Text(
                     text = "AVB (Android Verified Boot) signs partitions to ensure integrity at boot. " +
                         "Select key material for each applicable partition. " +
                         "Private keys are stored securely and are never displayed.",
-                    color = colors.textMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                     fontFamily = ideFontFamily(),
                 )
@@ -127,7 +127,7 @@ private fun AvbNoticeCard(colors: IdeShellColorScheme) {
             Spacer(Modifier.width(Spacing.Small))
             Text(
                 text = "Learn more ↗",
-                color = colors.accentBlue,
+                color = MaterialTheme.colorScheme.primary,
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
                 modifier = Modifier.clickable { },
@@ -146,7 +146,7 @@ private data class AvbKeyRow(
 )
 
 @Composable
-private fun AvbKeysTableCard(colors: IdeShellColorScheme) {
+private fun AvbKeysTableCard() {
     val rows = listOf(
         AvbKeyRow("boot", "release-avb", "SHA256: 7a3f9d1e4c2b8a6f...", true, "Enforce"),
         AvbKeyRow("vendor_boot", "release-avb", "SHA256: 2d8c7f6b9e1a0d4...", true, "Enforce"),
@@ -160,50 +160,50 @@ private fun AvbKeysTableCard(colors: IdeShellColorScheme) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
-        AvbTableHeader(colors)
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
+        AvbTableHeader()
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
 
         rows.forEach { row ->
-            AvbTableRow(row = row, colors = colors)
+            AvbTableRow(row = row)
         }
 
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
-        AvbMissingKeyErrorBanner(colors)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
+        AvbMissingKeyErrorBanner()
     }
 }
 
 @Composable
-private fun AvbTableHeader(colors: IdeShellColorScheme) {
+private fun AvbTableHeader() {
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.Small),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text("Partition", color = colors.textDim, fontSize = FontSize.Micro, modifier = Modifier.weight(1.2f))
-        Text("Key to use", color = colors.textDim, fontSize = FontSize.Micro, modifier = Modifier.weight(1.5f))
+        Text("Partition", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.weight(1.2f))
+        Text("Key to use", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.weight(1.5f))
         Text(
             text = "Public key fingerprint",
-            color = colors.textDim,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.Micro,
             modifier = Modifier.weight(1.8f),
         )
-        Text("Availability", color = colors.textDim, fontSize = FontSize.Micro, modifier = Modifier.weight(1.2f))
-        Text("Target policy", color = colors.textDim, fontSize = FontSize.Micro, modifier = Modifier.weight(1.0f))
+        Text("Availability", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.weight(1.2f))
+        Text("Target policy", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.weight(1.0f))
     }
 }
 
 @Composable
-private fun AvbTableRow(row: AvbKeyRow, colors: IdeShellColorScheme) {
+private fun AvbTableRow(row: AvbKeyRow) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.Small, vertical = Spacing.ExtraExtraSmall),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = row.partition,
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.SemiBold,
             fontSize = FontSize.Micro,
             modifier = Modifier.weight(1.2f),
@@ -213,10 +213,10 @@ private fun AvbTableRow(row: AvbKeyRow, colors: IdeShellColorScheme) {
             modifier = Modifier
                 .weight(1.5f)
                 .clip(GlassShapes.ShellControl)
-                .background(colors.cardBackgroundMuted)
+                .background(MaterialTheme.colorScheme.surfaceContainer)
                 .border(
                     width = StrokeWidth.Standard,
-                    color = if (row.isMissing) colors.errorRed else colors.borderMuted,
+                    color = if (row.isMissing) GlassTheme.diagnosticColors.error else MaterialTheme.colorScheme.outlineVariant,
                     shape = GlassShapes.ShellControl,
                 )
                 .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraExtraSmall),
@@ -228,14 +228,14 @@ private fun AvbTableRow(row: AvbKeyRow, colors: IdeShellColorScheme) {
             ) {
                 Text(
                     text = row.keyToUse,
-                    color = if (row.isMissing) colors.errorRed else colors.textMain,
+                    color = if (row.isMissing) GlassTheme.diagnosticColors.error else MaterialTheme.colorScheme.onSurface,
                     fontFamily = codeFontFamily(),
                     fontSize = FontSize.Micro,
                 )
                 Icon(
                     imageVector = Icons.Default.KeyboardArrowDown,
                     contentDescription = null,
-                    tint = if (row.isMissing) colors.errorRed else colors.textDim,
+                    tint = if (row.isMissing) GlassTheme.diagnosticColors.error else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(IconSize.ExtraSmall),
                 )
             }
@@ -250,7 +250,7 @@ private fun AvbTableRow(row: AvbKeyRow, colors: IdeShellColorScheme) {
         ) {
             Text(
                 text = row.fingerprint,
-                color = colors.textDim,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontFamily = codeFontFamily(),
                 fontSize = FontSize.Micro,
             )
@@ -258,7 +258,7 @@ private fun AvbTableRow(row: AvbKeyRow, colors: IdeShellColorScheme) {
                 Icon(
                     imageVector = Icons.Default.ContentCopy,
                     contentDescription = null,
-                    tint = colors.textDim,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(IconSize.ExtraSmall),
                 )
             }
@@ -266,7 +266,7 @@ private fun AvbTableRow(row: AvbKeyRow, colors: IdeShellColorScheme) {
 
         Box(modifier = Modifier.weight(1.2f)) {
             if (row.isMissing) {
-                IdeStatusBadge(label = "Missing key", severity = IdeStatusSeverity.Failed, colors = colors)
+                IdeStatusBadge(label = "Missing key", severity = IdeStatusSeverity.Failed)
             } else {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -276,9 +276,9 @@ private fun AvbTableRow(row: AvbKeyRow, colors: IdeShellColorScheme) {
                         modifier = Modifier
                             .size(Spacing.ExtraSmall)
                             .clip(GlassShapes.Circle)
-                            .background(colors.accentGreen),
+                            .background(GlassTheme.diagnosticColors.success),
                     )
-                    Text("Available", color = colors.accentGreen, fontSize = FontSize.Micro)
+                    Text("Available", color = GlassTheme.diagnosticColors.success, fontSize = FontSize.Micro)
                 }
             }
         }
@@ -287,8 +287,8 @@ private fun AvbTableRow(row: AvbKeyRow, colors: IdeShellColorScheme) {
             modifier = Modifier
                 .weight(1.0f)
                 .clip(GlassShapes.ShellControl)
-                .background(colors.cardBackgroundMuted)
-                .border(GlassDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
+                .background(MaterialTheme.colorScheme.surfaceContainer)
+                .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outlineVariant, GlassShapes.ShellControl)
                 .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraExtraSmall),
         ) {
             Row(
@@ -296,11 +296,11 @@ private fun AvbTableRow(row: AvbKeyRow, colors: IdeShellColorScheme) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(row.targetPolicy, color = colors.textMuted, fontSize = FontSize.Micro)
+                Text(row.targetPolicy, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro)
                 Icon(
                     imageVector = Icons.Default.KeyboardArrowDown,
                     contentDescription = null,
-                    tint = colors.textDim,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(IconSize.ExtraSmall),
                 )
             }
@@ -309,13 +309,13 @@ private fun AvbTableRow(row: AvbKeyRow, colors: IdeShellColorScheme) {
 }
 
 @Composable
-private fun AvbMissingKeyErrorBanner(colors: IdeShellColorScheme) {
+private fun AvbMissingKeyErrorBanner() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellControl)
-            .background(colors.errorRedBg)
-            .border(GlassDimens.HairlineBorder, colors.errorRed, GlassShapes.ShellControl)
+            .background(GlassTheme.diagnosticColors.error.copy(alpha = AlphaTokens.Subtle))
+            .border(GlassDimens.HairlineBorder, GlassTheme.diagnosticColors.error, GlassShapes.ShellControl)
             .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -324,10 +324,10 @@ private fun AvbMissingKeyErrorBanner(colors: IdeShellColorScheme) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
         ) {
-            Icon(Icons.Default.Close, null, tint = colors.errorRed, modifier = Modifier.size(IconSize.Small))
+            Icon(Icons.Default.Close, null, tint = GlassTheme.diagnosticColors.error, modifier = Modifier.size(IconSize.Small))
             Text(
                 text = "Select a key for vbmeta_vendor to continue.",
-                color = colors.errorRed,
+                color = GlassTheme.diagnosticColors.error,
                 fontSize = FontSize.Micro,
                 fontWeight = FontWeight.Medium,
                 fontFamily = ideFontFamily(),
@@ -335,7 +335,7 @@ private fun AvbMissingKeyErrorBanner(colors: IdeShellColorScheme) {
         }
         Text(
             text = "Manage credentials ↗",
-            color = colors.accentBlue,
+            color = MaterialTheme.colorScheme.primary,
             fontSize = FontSize.Micro,
             fontFamily = ideFontFamily(),
             modifier = Modifier.clickable { },
@@ -344,52 +344,51 @@ private fun AvbMissingKeyErrorBanner(colors: IdeShellColorScheme) {
 }
 
 @Composable
-private fun SelectedKeyDetailsCard(colors: IdeShellColorScheme) {
+private fun SelectedKeyDetailsCard() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
         Text(
             text = "Selected key details",
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = FontSize.BodySmall,
             fontWeight = FontWeight.SemiBold,
             fontFamily = ideFontFamily(),
         )
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
 
-        KeyDetailRow("Key alias", "release-avb", isCode = true, colors = colors)
-        KeyDetailRow("Algorithm", "RSA 4096 (AVB v2.0)", isCode = false, colors = colors)
-        KeyDetailRow("Created", "2024-05-18", isCode = false, colors = colors)
-        KeyDetailRow("Expires", "Never", isCode = false, colors = colors)
+        KeyDetailRow("Key alias", "release-avb", isCode = true)
+        KeyDetailRow("Algorithm", "RSA 4096 (AVB v2.0)", isCode = false)
+        KeyDetailRow("Created", "2024-05-18", isCode = false)
+        KeyDetailRow("Expires", "Never", isCode = false)
         KeyDetailRow(
             label = "Usage",
             value = "Boot, vendor_boot, dtbo, vbmeta, vbmeta_system",
             isCode = false,
-            colors = colors,
         )
     }
 }
 
 @Composable
-private fun KeyDetailRow(label: String, value: String, isCode: Boolean, colors: IdeShellColorScheme) {
+private fun KeyDetailRow(label: String, value: String, isCode: Boolean) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.Hairline),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = label,
-            color = colors.textDim,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.Micro,
             modifier = Modifier.width(Spacing.ExtraExtraLarge + Spacing.ExtraExtraLarge),
         )
         Text(
             text = value,
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = FontSize.Micro,
             fontFamily = if (isCode) codeFontFamily() else ideFontFamily(),
             modifier = Modifier.weight(1f),
@@ -398,12 +397,12 @@ private fun KeyDetailRow(label: String, value: String, isCode: Boolean, colors: 
 }
 
 @Composable
-private fun KeyManagementCard(colors: IdeShellColorScheme) {
+private fun KeyManagementCard() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
@@ -411,20 +410,20 @@ private fun KeyManagementCard(colors: IdeShellColorScheme) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
         ) {
-            Icon(Icons.Default.Info, null, tint = colors.accentBlue, modifier = Modifier.size(IconSize.Small))
+            Icon(Icons.Default.Info, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(IconSize.Small))
             Text(
                 text = "Key management",
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = FontSize.BodySmall,
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = ideFontFamily(),
             )
         }
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
 
         Text(
             text = "Manage and import AVB keys in Settings > Credentials.",
-            color = colors.textMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.Micro,
             fontFamily = ideFontFamily(),
         )
@@ -436,7 +435,7 @@ private fun KeyManagementCard(colors: IdeShellColorScheme) {
         ) {
             Text(
                 text = "Open credentials ↗",
-                color = colors.accentBlue,
+                color = MaterialTheme.colorScheme.primary,
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
             )

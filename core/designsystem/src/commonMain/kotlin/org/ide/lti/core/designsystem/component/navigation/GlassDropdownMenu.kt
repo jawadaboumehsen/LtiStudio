@@ -48,7 +48,7 @@ public fun GlassDropdownMenu(
         onDismissRequest = onDismissRequest,
         modifier = modifier,
         offset = dpOffset,
-        containerColor = GlassTheme.colors.glassSurfaceElevated,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         shape = GlassShapes.Medium,
     ) {
         Column(
@@ -66,7 +66,7 @@ public fun GlassDropdownMenuHeader(title: String) {
     Text(
         text = title,
         style = MaterialTheme.typography.labelSmall,
-        color = GlassTheme.colors.onGlassMuted,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(horizontal = Spacing.Medium, vertical = Spacing.ExtraSmall),
     )
 }
@@ -90,13 +90,13 @@ public fun GlassDropdownMenuItem(
                 Text(
                     text = text,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = if (isSelected) GlassTheme.colors.glassAccent else GlassTheme.colors.onGlass,
+                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                 )
                 if (subtitle != null) {
                     Text(
                         text = subtitle,
                         style = MaterialTheme.typography.labelSmall,
-                        color = GlassTheme.colors.onGlassMuted,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -106,8 +106,8 @@ public fun GlassDropdownMenuItem(
         leadingIcon = leadingIcon,
         enabled = enabled,
         colors = MenuDefaults.itemColors(
-            textColor = GlassTheme.colors.onGlass,
-            leadingIconColor = GlassTheme.colors.onGlassSecondary,
+            textColor = MaterialTheme.colorScheme.onSurface,
+            leadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
         ),
     )
 }
@@ -119,6 +119,6 @@ public fun GlassDropdownMenuItem(
 public fun GlassDropdownMenuDivider() {
     HorizontalDivider(
         modifier = Modifier.padding(vertical = Spacing.ExtraSmall),
-        color = GlassTheme.colors.glassBorder.copy(alpha = AlphaTokens.Subtle),
+        color = MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Subtle),
     )
 }

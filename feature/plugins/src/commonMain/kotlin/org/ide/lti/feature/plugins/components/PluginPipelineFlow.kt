@@ -52,18 +52,17 @@ public fun PluginPipelineFlow(
     selectedTask: String = "",
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
 
     val (dexStatus, dexColor) = resolveStageStatus(
         targetTasks = setOf("compileModPayload"),
         selectedTask = selectedTask,
         isRunning = isRunningTask,
         taskResult = taskResult,
-        defaultColor = glassColors.onGlassMuted,
-        runningColor = glassColors.glassAccent,
-        successColor = glassColors.diagnostics.success,
-        errorColor = glassColors.diagnostics.error,
-        warningColor = glassColors.diagnostics.warning,
+        defaultColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        runningColor = MaterialTheme.colorScheme.primary,
+        successColor = GlassTheme.diagnosticColors.success,
+        errorColor = GlassTheme.diagnosticColors.error,
+        warningColor = GlassTheme.diagnosticColors.warning,
     )
 
     val (planStatus, planColor) = resolveStageStatus(
@@ -71,11 +70,11 @@ public fun PluginPipelineFlow(
         selectedTask = selectedTask,
         isRunning = isRunningTask,
         taskResult = taskResult,
-        defaultColor = glassColors.onGlassMuted,
-        runningColor = glassColors.glassAccent,
-        successColor = glassColors.diagnostics.success,
-        errorColor = glassColors.diagnostics.error,
-        warningColor = glassColors.diagnostics.warning,
+        defaultColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        runningColor = MaterialTheme.colorScheme.primary,
+        successColor = GlassTheme.diagnosticColors.success,
+        errorColor = GlassTheme.diagnosticColors.error,
+        warningColor = GlassTheme.diagnosticColors.warning,
     )
 
     val (pkgStatus, pkgColor) = resolveStageStatus(
@@ -83,11 +82,11 @@ public fun PluginPipelineFlow(
         selectedTask = selectedTask,
         isRunning = isRunningTask,
         taskResult = taskResult,
-        defaultColor = glassColors.onGlassMuted,
-        runningColor = glassColors.glassAccent,
-        successColor = glassColors.diagnostics.success,
-        errorColor = glassColors.diagnostics.error,
-        warningColor = glassColors.diagnostics.warning,
+        defaultColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        runningColor = MaterialTheme.colorScheme.primary,
+        successColor = GlassTheme.diagnosticColors.success,
+        errorColor = GlassTheme.diagnosticColors.error,
+        warningColor = GlassTheme.diagnosticColors.warning,
     )
 
     Row(
@@ -106,7 +105,7 @@ public fun PluginPipelineFlow(
         Icon(
             painter = AppIcons.ChevronRightPainterResource(),
             contentDescription = "Next stage",
-            tint = glassColors.onGlassMuted,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(IconSize.Small),
         )
 
@@ -121,7 +120,7 @@ public fun PluginPipelineFlow(
         Icon(
             painter = AppIcons.ChevronRightPainterResource(),
             contentDescription = "Next stage",
-            tint = glassColors.onGlassMuted,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(IconSize.Small),
         )
 
@@ -166,7 +165,6 @@ private fun PipelineStageCard(
     icon: @Composable () -> Painter,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
 
     Box(
         modifier = modifier
@@ -188,7 +186,7 @@ private fun PipelineStageCard(
             Icon(
                 painter = icon(),
                 contentDescription = title,
-                tint = glassColors.glassAccent,
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(IconSize.Large),
             )
             Column(modifier = Modifier.weight(1f)) {
@@ -196,7 +194,7 @@ private fun PipelineStageCard(
                     text = title,
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = glassColors.onGlass,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     softWrap = false,
                     overflow = TextOverflow.Ellipsis,

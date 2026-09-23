@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -44,15 +45,14 @@ import org.ide.lti.core.designsystem.component.display.GlassHorizontalDivider
 import org.ide.lti.core.designsystem.component.display.ThemePreviewCard
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.theme.AccentPresetColors
+import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.BrandColors
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
-import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.designsystem.theme.config.AppTheme
 import org.ide.lti.core.ui.settings.AppSettingsState
 
 /**
@@ -73,7 +73,6 @@ fun AppearanceSettingsPane(
     onRestoreDefaults: () -> Unit,
     onApplyChanges: () -> Unit,
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     var reduceTransparency by remember { mutableStateOf(false) }
     var showFocusIndicators by remember { mutableStateOf(true) }
@@ -93,12 +92,12 @@ fun AppearanceSettingsPane(
                 text = "Appearance",
                 fontSize = FontSize.HeadlineMedium,
                 fontWeight = FontWeight.Bold,
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = "Make the studio comfortable for long sessions.",
                 fontSize = FontSize.BodyMedium,
-                color = colors.textMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
@@ -115,8 +114,7 @@ fun AppearanceSettingsPane(
                 // Card 1: App style
                 GlassCard(
                     modifier = Modifier.fillMaxWidth(),
-                    surfaceColor = colors.cardBackground,
-                    borderColor = colors.border,
+                    surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                     contentPadding = Spacing.CardPadding,
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
@@ -125,12 +123,12 @@ fun AppearanceSettingsPane(
                                 text = "App style",
                                 fontSize = FontSize.TitleMedium,
                                 fontWeight = FontWeight.SemiBold,
-                                color = colors.textMain,
+                                color = MaterialTheme.colorScheme.onSurface,
                             )
                             Text(
                                 text = "Choose how LtiRom Studio looks on your screen.",
                                 fontSize = FontSize.BodySmall,
-                                color = colors.textMuted,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
 
@@ -156,7 +154,6 @@ fun AppearanceSettingsPane(
                         AccentColorRow(
                             selectedAccent = selectedAccentName,
                             onSelectAccent = { selectedAccentName = it },
-                            colors = colors,
                         )
 
                         GlassHorizontalDivider()
@@ -165,7 +162,6 @@ fun AppearanceSettingsPane(
                         InterfaceDensityRow(
                             isComfortable = isComfortable,
                             onDensityChange = { isComfortable = it },
-                            colors = colors,
                         )
 
                         GlassHorizontalDivider()
@@ -174,7 +170,6 @@ fun AppearanceSettingsPane(
                         TextSizeRow(
                             selectedSize = selectedTextSize,
                             onSelectSize = { selectedTextSize = it },
-                            colors = colors,
                         )
                     }
                 }
@@ -182,8 +177,7 @@ fun AppearanceSettingsPane(
                 // Card 2: Glass & motion
                 GlassCard(
                     modifier = Modifier.fillMaxWidth(),
-                    surfaceColor = colors.cardBackground,
-                    borderColor = colors.border,
+                    surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                     contentPadding = Spacing.CardPadding,
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
@@ -192,12 +186,12 @@ fun AppearanceSettingsPane(
                                 text = "Glass & motion",
                                 fontSize = FontSize.TitleMedium,
                                 fontWeight = FontWeight.SemiBold,
-                                color = colors.textMain,
+                                color = MaterialTheme.colorScheme.onSurface,
                             )
                             Text(
                                 text = "Navigation stays expressive. Editors stay readable.",
                                 fontSize = FontSize.BodySmall,
-                                color = colors.textMuted,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
 
@@ -207,7 +201,6 @@ fun AppearanceSettingsPane(
                             description = "Use opaque surfaces without changing the layout.",
                             checked = reduceTransparency,
                             onCheckedChange = { reduceTransparency = it },
-                            colors = colors,
                         )
 
                         GlassHorizontalDivider()
@@ -218,7 +211,6 @@ fun AppearanceSettingsPane(
                             description = "Minimize animations and transitions.",
                             checked = appSettingsState.reducedMotion,
                             onCheckedChange = { appSettingsState.reducedMotion = it },
-                            colors = colors,
                         )
 
                         GlassHorizontalDivider()
@@ -229,7 +221,6 @@ fun AppearanceSettingsPane(
                             description = "Highlight focused elements for better visibility.",
                             checked = showFocusIndicators,
                             onCheckedChange = { showFocusIndicators = it },
-                            colors = colors,
                         )
                     }
                 }
@@ -245,12 +236,12 @@ fun AppearanceSettingsPane(
                         text = "Preview",
                         fontSize = FontSize.TitleMedium,
                         fontWeight = FontWeight.SemiBold,
-                        color = colors.textMain,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                     Text(
                         text = "A sample of the current look and feel.",
                         fontSize = FontSize.BodySmall,
-                        color = colors.textMuted,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
 
@@ -258,7 +249,6 @@ fun AppearanceSettingsPane(
                     theme = currentTheme,
                     reduceTransparency = reduceTransparency,
                     isComfortable = isComfortable,
-                    colors = colors,
                 )
             }
         }
@@ -278,10 +268,10 @@ fun AppearanceSettingsPane(
             Box(
                 modifier = Modifier
                     .clip(GlassShapes.Small)
-                    .background(colors.buttonSecondaryBackground)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                     .border(
                         width = GlassDimens.HairlineBorder,
-                        color = colors.buttonSecondaryBorder,
+                        color = MaterialTheme.colorScheme.outline,
                         shape = GlassShapes.Small,
                     )
                     .clickable(
@@ -303,7 +293,7 @@ fun AppearanceSettingsPane(
                     text = "Restore defaults",
                     fontSize = FontSize.BodySmall,
                     fontWeight = FontWeight.Medium,
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
             }
 
@@ -315,17 +305,17 @@ fun AppearanceSettingsPane(
                 Text(
                     text = "Changes apply to this app only.",
                     fontSize = FontSize.LabelSmall,
-                    color = colors.textDim,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
                 // Cancel Button
                 Box(
                     modifier = Modifier
                         .clip(GlassShapes.Small)
-                        .background(colors.buttonSecondaryBackground)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                         .border(
                             width = GlassDimens.HairlineBorder,
-                            color = colors.buttonSecondaryBorder,
+                            color = MaterialTheme.colorScheme.outline,
                             shape = GlassShapes.Small,
                         )
                         .clickable(
@@ -339,7 +329,7 @@ fun AppearanceSettingsPane(
                     Text(
                         text = "Cancel",
                         fontSize = FontSize.BodySmall,
-                        color = colors.textMain,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
 
@@ -347,10 +337,10 @@ fun AppearanceSettingsPane(
                 Box(
                     modifier = Modifier
                         .clip(GlassShapes.Small)
-                        .background(colors.accentBlue)
+                        .background(MaterialTheme.colorScheme.primary)
                         .border(
                             width = GlassDimens.HairlineBorder,
-                            color = colors.accentBlue,
+                            color = MaterialTheme.colorScheme.primary,
                             shape = GlassShapes.Small,
                         )
                         .clickable(
@@ -372,7 +362,7 @@ fun AppearanceSettingsPane(
                 Text(
                     text = "Design concept",
                     fontSize = FontSize.LabelSmall,
-                    color = colors.textDim,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -380,7 +370,7 @@ fun AppearanceSettingsPane(
 }
 
 @Composable
-private fun AccentColorRow(selectedAccent: String, onSelectAccent: (String) -> Unit, colors: IdeShellColorScheme) {
+private fun AccentColorRow(selectedAccent: String, onSelectAccent: (String) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     val accents = listOf("Cobalt Blue", "Cyan", "Emerald", "Purple", "Amber", "Crimson")
 
@@ -403,12 +393,12 @@ private fun AccentColorRow(selectedAccent: String, onSelectAccent: (String) -> U
                 text = "Accent color",
                 fontSize = FontSize.BodyMedium,
                 fontWeight = FontWeight.Medium,
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = "Used for highlights, selections and interactive elements.",
                 fontSize = FontSize.BodySmall,
-                color = colors.textMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
@@ -416,10 +406,10 @@ private fun AccentColorRow(selectedAccent: String, onSelectAccent: (String) -> U
             Row(
                 modifier = Modifier
                     .clip(GlassShapes.Small)
-                    .background(colors.cardBackground)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                     .border(
                         width = GlassDimens.HairlineBorder,
-                        color = colors.border,
+                        color = MaterialTheme.colorScheme.outline,
                         shape = GlassShapes.Small,
                     )
                     .clickable { expanded = true }
@@ -436,12 +426,12 @@ private fun AccentColorRow(selectedAccent: String, onSelectAccent: (String) -> U
                 Text(
                     text = selectedAccent,
                     fontSize = FontSize.BodySmall,
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Icon(
                     imageVector = Icons.Default.ArrowDropDown,
                     contentDescription = null,
-                    tint = colors.textMuted,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(IconSize.Small),
                 )
             }
@@ -468,7 +458,6 @@ private fun AccentColorRow(selectedAccent: String, onSelectAccent: (String) -> U
 private fun InterfaceDensityRow(
     isComfortable: Boolean,
     onDensityChange: (Boolean) -> Unit,
-    colors: IdeShellColorScheme,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -480,12 +469,12 @@ private fun InterfaceDensityRow(
                 text = "Interface density",
                 fontSize = FontSize.BodyMedium,
                 fontWeight = FontWeight.Medium,
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = "Controls the spacing of UI elements.",
                 fontSize = FontSize.BodySmall,
-                color = colors.textMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
@@ -493,10 +482,10 @@ private fun InterfaceDensityRow(
         Row(
             modifier = Modifier
                 .clip(GlassShapes.Small)
-                .background(colors.cardBackground)
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                 .border(
                     width = GlassDimens.HairlineBorder,
-                    color = colors.border,
+                    color = MaterialTheme.colorScheme.outline,
                     shape = GlassShapes.Small,
                 )
                 .padding(Spacing.ExtraExtraSmall),
@@ -506,22 +495,20 @@ private fun InterfaceDensityRow(
                 label = "Comfortable",
                 isSelected = isComfortable,
                 onClick = { onDensityChange(true) },
-                colors = colors,
             )
             DensitySegmentItem(
                 label = "Compact",
                 isSelected = !isComfortable,
                 onClick = { onDensityChange(false) },
-                colors = colors,
             )
         }
     }
 }
 
 @Composable
-private fun DensitySegmentItem(label: String, isSelected: Boolean, onClick: () -> Unit, colors: IdeShellColorScheme) {
-    val activeBg = colors.controlSelected
-    val activeBorder = colors.accentBlue
+private fun DensitySegmentItem(label: String, isSelected: Boolean, onClick: () -> Unit) {
+    val activeBg = MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Faded)
+    val activeBorder = MaterialTheme.colorScheme.primary
 
     Box(
         modifier = Modifier
@@ -544,13 +531,13 @@ private fun DensitySegmentItem(label: String, isSelected: Boolean, onClick: () -
             text = label,
             fontSize = FontSize.BodySmall,
             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
         )
     }
 }
 
 @Composable
-private fun TextSizeRow(selectedSize: String, onSelectSize: (String) -> Unit, colors: IdeShellColorScheme) {
+private fun TextSizeRow(selectedSize: String, onSelectSize: (String) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     val sizes = listOf("90%", "100%", "110%", "125%")
 
@@ -564,12 +551,12 @@ private fun TextSizeRow(selectedSize: String, onSelectSize: (String) -> Unit, co
                 text = "Text size",
                 fontSize = FontSize.BodyMedium,
                 fontWeight = FontWeight.Medium,
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = "Scales text throughout the app.",
                 fontSize = FontSize.BodySmall,
-                color = colors.textMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
@@ -577,10 +564,10 @@ private fun TextSizeRow(selectedSize: String, onSelectSize: (String) -> Unit, co
             Row(
                 modifier = Modifier
                     .clip(GlassShapes.Small)
-                    .background(colors.cardBackground)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                     .border(
                         width = GlassDimens.HairlineBorder,
-                        color = colors.border,
+                        color = MaterialTheme.colorScheme.outline,
                         shape = GlassShapes.Small,
                     )
                     .clickable { expanded = true }
@@ -591,12 +578,12 @@ private fun TextSizeRow(selectedSize: String, onSelectSize: (String) -> Unit, co
                 Text(
                     text = selectedSize,
                     fontSize = FontSize.BodySmall,
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Icon(
                     imageVector = Icons.Default.ArrowDropDown,
                     contentDescription = null,
-                    tint = colors.textMuted,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(IconSize.Small),
                 )
             }
@@ -625,7 +612,6 @@ private fun SettingsSwitchRow(
     description: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
-    colors: IdeShellColorScheme,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -640,19 +626,19 @@ private fun SettingsSwitchRow(
                 text = title,
                 fontSize = FontSize.BodyMedium,
                 fontWeight = FontWeight.Medium,
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = description,
                 fontSize = FontSize.BodySmall,
-                color = colors.textMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
         GlassToggle(
             checked = checked,
             onCheckedChange = onCheckedChange,
-            activeColor = colors.accentBlue,
+            activeColor = MaterialTheme.colorScheme.primary,
         )
     }
 }

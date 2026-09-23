@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.rom.studio.stage.publish
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,7 +34,6 @@ import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -56,7 +56,6 @@ public fun PublishEditor(
     onValidate: () -> Unit = {},
     onSave: () -> Unit = {},
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     val errors = validationErrors.filter { it.fieldPath.startsWith("publish.") || !it.fieldPath.contains('.') }
 
@@ -75,31 +74,31 @@ public fun PublishEditor(
         ) {
             when (selectedObjectId.lowercase()) {
                 "release-repository-and-tag", "release_repository_and_tag" -> item {
-                    RepositoryCard(settings, dirtyPaths, onChange, colors)
+                    RepositoryCard(settings, dirtyPaths, onChange)
                 }
                 "split-assets", "split_assets" -> item {
-                    SplitAssetsCard(settings, dirtyPaths, onChange, colors)
+                    SplitAssetsCard(settings, dirtyPaths, onChange)
                 }
                 "credentials" -> item {
-                    CredentialsCard(settings, dirtyPaths, onChange, colors)
+                    CredentialsCard(settings, dirtyPaths, onChange)
                 }
                 "ota-manifest", "ota_manifest" -> item {
-                    OtaManifestCard(settings, dirtyPaths, onChange, colors)
+                    OtaManifestCard(settings, dirtyPaths, onChange)
                 }
                 "retention" -> item {
-                    RetentionCard(settings, dirtyPaths, onChange, colors)
+                    RetentionCard(settings, dirtyPaths, onChange)
                 }
                 "verification" -> item {
-                    VerificationCard(settings, colors)
+                    VerificationCard(settings)
                 }
                 "publish-review-and-recovery", "publish_review_and_recovery" -> item {
-                    ReviewCard(settings, target, colors)
+                    ReviewCard(settings, target)
                 }
                 else -> item {
-                    ProviderCard(settings, dirtyPaths, onChange, colors)
+                    ProviderCard(settings, dirtyPaths, onChange)
                 }
             }
-            item { Diagnostics(errors, colors) }
+            item { Diagnostics(errors) }
         }
     }
 }
@@ -109,13 +108,12 @@ private fun ProviderCard(
     settings: PublishSettings,
     dirtyPaths: Set<String>,
     onChange: (PublishSettings) -> Unit,
-    colors: IdeShellColorScheme,
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
@@ -124,13 +122,13 @@ private fun ProviderCard(
             fontSize = FontSize.BodySmall,
             fontWeight = FontWeight.SemiBold,
             fontFamily = ideFontFamily(),
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
         )
         Text(
             text = "Select target release channel delivery platform:",
             fontSize = FontSize.Micro,
             fontFamily = ideFontFamily(),
-            color = colors.textMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
@@ -142,7 +140,7 @@ private fun ProviderCard(
                 )
             }
         }
-        Meta("provider", dirtyPaths, "Provider", "Destination hosting platform for ROM release packages.", colors)
+        Meta("provider", dirtyPaths, "Provider", "Destination hosting platform for ROM release packages.")
     }
 }
 
@@ -151,13 +149,12 @@ private fun RepositoryCard(
     settings: PublishSettings,
     dirtyPaths: Set<String>,
     onChange: (PublishSettings) -> Unit,
-    colors: IdeShellColorScheme,
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
@@ -166,7 +163,7 @@ private fun RepositoryCard(
             fontSize = FontSize.BodySmall,
             fontWeight = FontWeight.SemiBold,
             fontFamily = ideFontFamily(),
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
         )
         GlassTextField(
             settings.repository.orEmpty(),
@@ -185,7 +182,7 @@ private fun RepositoryCard(
             fontSize = FontSize.BodySmall,
             fontWeight = FontWeight.Medium,
             fontFamily = ideFontFamily(),
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
         )
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
             CollisionPolicy.entries.forEach { policy ->
@@ -196,7 +193,7 @@ private fun RepositoryCard(
                 )
             }
         }
-        Meta("repository", dirtyPaths, "Repository", "Git tag and target release location.", colors)
+        Meta("repository", dirtyPaths, "Repository", "Git tag and target release location.")
     }
 }
 
@@ -205,13 +202,12 @@ private fun SplitAssetsCard(
     settings: PublishSettings,
     dirtyPaths: Set<String>,
     onChange: (PublishSettings) -> Unit,
-    colors: IdeShellColorScheme,
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
@@ -220,13 +216,13 @@ private fun SplitAssetsCard(
             fontSize = FontSize.BodySmall,
             fontWeight = FontWeight.SemiBold,
             fontFamily = ideFontFamily(),
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
         )
         Text(
             text = "ROM zip packages exceeding upload caps are partitioned into raw split parts (.zip.00, .zip.01).",
             fontSize = FontSize.Micro,
             fontFamily = ideFontFamily(),
-            color = colors.textMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         GlassTextField(
             (settings.partSizeBytes / (1024 * 1024)).toString(),
@@ -234,7 +230,7 @@ private fun SplitAssetsCard(
             label = "Max asset part size (MB)",
             state = TextFieldState.Helper("Default 1900 MB fits within 2 GB release asset limits."),
         )
-        Meta("partSizeBytes", dirtyPaths, "Asset chunking", "Ensures compatibility with distribution CDN caps.", colors)
+        Meta("partSizeBytes", dirtyPaths, "Asset chunking", "Ensures compatibility with distribution CDN caps.")
     }
 }
 
@@ -243,13 +239,12 @@ private fun CredentialsCard(
     settings: PublishSettings,
     dirtyPaths: Set<String>,
     onChange: (PublishSettings) -> Unit,
-    colors: IdeShellColorScheme,
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
@@ -258,13 +253,13 @@ private fun CredentialsCard(
             fontSize = FontSize.BodySmall,
             fontWeight = FontWeight.SemiBold,
             fontFamily = ideFontFamily(),
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
         )
         Text(
             text = "Named opaque credential reference. Secrets are never stored in pipeline configuration.",
             fontSize = FontSize.Micro,
             fontFamily = ideFontFamily(),
-            color = colors.textMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         GlassTextField(
             settings.credentialRef.orEmpty(),
@@ -272,7 +267,7 @@ private fun CredentialsCard(
             label = "Credential reference key",
             state = TextFieldState.Helper("Managed via SecretStorePort in platform keystore."),
         )
-        Meta("credentialRef", dirtyPaths, "CredentialRef", "Zero plaintext secret storage guarantee.", colors)
+        Meta("credentialRef", dirtyPaths, "CredentialRef", "Zero plaintext secret storage guarantee.")
     }
 }
 
@@ -281,13 +276,12 @@ private fun OtaManifestCard(
     settings: PublishSettings,
     dirtyPaths: Set<String>,
     onChange: (PublishSettings) -> Unit,
-    colors: IdeShellColorScheme,
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
@@ -296,7 +290,7 @@ private fun OtaManifestCard(
             fontSize = FontSize.BodySmall,
             fontWeight = FontWeight.SemiBold,
             fontFamily = ideFontFamily(),
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
         )
         GlassTextField(
             settings.manifestRepository.orEmpty(),
@@ -310,7 +304,7 @@ private fun OtaManifestCard(
             label = "Branch",
             state = TextFieldState.Helper("e.g. main or gh-pages"),
         )
-        Meta("manifestRepository", dirtyPaths, "OTA sync", "Auto-updates channel feed on publish.", colors)
+        Meta("manifestRepository", dirtyPaths, "OTA sync", "Auto-updates channel feed on publish.")
     }
 }
 
@@ -319,13 +313,12 @@ private fun RetentionCard(
     settings: PublishSettings,
     dirtyPaths: Set<String>,
     onChange: (PublishSettings) -> Unit,
-    colors: IdeShellColorScheme,
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
@@ -334,13 +327,13 @@ private fun RetentionCard(
             fontSize = FontSize.BodySmall,
             fontWeight = FontWeight.SemiBold,
             fontFamily = ideFontFamily(),
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
         )
         Text(
             text = "Retention removes only older per-device manifest entries, not ROM assets or local downloads.",
             fontSize = FontSize.Micro,
             fontFamily = ideFontFamily(),
-            color = colors.textMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         GlassTextField(
             settings.retentionPerDevice.toString(),
@@ -348,18 +341,18 @@ private fun RetentionCard(
             label = "Retained manifest entries per device",
             state = TextFieldState.Helper("Older manifest entries pruned after newer stable publish."),
         )
-        Meta("retentionPerDevice", dirtyPaths, "Retention", "Prunes older manifest entries only.", colors)
+        Meta("retentionPerDevice", dirtyPaths, "Retention", "Prunes older manifest entries only.")
     }
 }
 
 @Suppress("UnusedParameter")
 @Composable
-private fun VerificationCard(settings: PublishSettings, colors: IdeShellColorScheme) {
+private fun VerificationCard(settings: PublishSettings) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
@@ -368,11 +361,11 @@ private fun VerificationCard(settings: PublishSettings, colors: IdeShellColorSch
             fontSize = FontSize.BodySmall,
             fontWeight = FontWeight.SemiBold,
             fontFamily = ideFontFamily(),
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
         )
         Text(
             text = "Verification status: Ready for release pre-flight. AVB signatures and SHA256 checksums verified.",
-            color = colors.accentGreen,
+            color = GlassTheme.diagnosticColors.success,
             fontSize = FontSize.Micro,
             fontFamily = ideFontFamily(),
         )
@@ -381,12 +374,12 @@ private fun VerificationCard(settings: PublishSettings, colors: IdeShellColorSch
 
 @Suppress("UnusedParameter")
 @Composable
-private fun ReviewCard(settings: PublishSettings, target: TargetDevice, colors: IdeShellColorScheme) {
+private fun ReviewCard(settings: PublishSettings, target: TargetDevice) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
@@ -395,14 +388,14 @@ private fun ReviewCard(settings: PublishSettings, target: TargetDevice, colors: 
             fontSize = FontSize.BodySmall,
             fontWeight = FontWeight.SemiBold,
             fontFamily = ideFontFamily(),
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
         )
         Text(
             text = "Target: ${target.codename} (${target.friendlyTitle})\n" +
                 "Provider: ${settings.provider.name}\n" +
                 "Repository: ${settings.repository ?: "None"}\n" +
                 "Collision Policy: ${settings.collisionPolicy.name}",
-            color = colors.textMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.Micro,
             fontFamily = codeFontFamily(),
         )
@@ -410,18 +403,18 @@ private fun ReviewCard(settings: PublishSettings, target: TargetDevice, colors: 
 }
 
 @Composable
-private fun Meta(path: String, dirty: Set<String>, source: String, help: String, colors: IdeShellColorScheme) {
+private fun Meta(path: String, dirty: Set<String>, source: String, help: String) {
     val isDirty = dirty.any { it.startsWith(path.substringBefore('/')) }
     Text(
         text = "$source${if (isDirty) " · Dirty" else ""} · $help",
         fontSize = FontSize.Micro,
         fontFamily = codeFontFamily(),
-        color = if (isDirty) colors.accentBlue else colors.textDim,
+        color = if (isDirty) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
     )
 }
 
 @Composable
-private fun Diagnostics(errors: List<ValidationError>, colors: IdeShellColorScheme) {
+private fun Diagnostics(errors: List<ValidationError>) {
     if (errors.isEmpty()) return
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
         errors.forEach {
@@ -430,9 +423,9 @@ private fun Diagnostics(errors: List<ValidationError>, colors: IdeShellColorSche
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
                 color = if (it.severity == Severity.ERROR) {
-                    colors.errorRed
+                    GlassTheme.diagnosticColors.error
                 } else {
-                    colors.warningAmber
+                    GlassTheme.diagnosticColors.warning
                 },
             )
         }

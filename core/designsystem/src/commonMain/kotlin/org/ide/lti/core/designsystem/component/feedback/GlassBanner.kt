@@ -46,7 +46,6 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 
 /**
  * Severity levels for [GlassBanner] alerting and notification messages.
@@ -96,13 +95,11 @@ fun GlassBanner(
     primaryAction: GlassBannerAction? = null,
     secondaryAction: GlassBannerAction? = null,
     onDismiss: (() -> Unit)? = null,
-    backdrop: GlassSceneState? = null,
 ) {
-    val glassColors = GlassTheme.colors
-    val diagnostics = glassColors.diagnostics
+    val diagnostics = GlassTheme.diagnosticColors
 
     val severityColor = when (severity) {
-        GlassBannerSeverity.INFO -> glassColors.glassAccent
+        GlassBannerSeverity.INFO -> MaterialTheme.colorScheme.primary
         GlassBannerSeverity.WARNING -> diagnostics.warning
         GlassBannerSeverity.ERROR -> diagnostics.error
         GlassBannerSeverity.SUCCESS -> diagnostics.success
@@ -115,7 +112,7 @@ fun GlassBanner(
         GlassBannerSeverity.SUCCESS -> AppIcons.ideStatusSuccess
     }
 
-    CompositionLocalProvider(LocalContentColor provides glassColors.onGlass) {
+    CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
         Box(
             modifier = modifier
                 .fillMaxWidth()
@@ -155,7 +152,7 @@ fun GlassBanner(
                         text = title,
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = glassColors.onGlass,
+                        color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         softWrap = false,
                         overflow = TextOverflow.Ellipsis,
@@ -164,7 +161,7 @@ fun GlassBanner(
                         Text(
                             text = description,
                             style = MaterialTheme.typography.bodySmall,
-                            color = glassColors.onGlassSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -209,7 +206,7 @@ fun GlassBanner(
                                 Icon(
                                     painter = AppIcons.ClosePainterResource(),
                                     contentDescription = "Dismiss",
-                                    tint = glassColors.onGlassSecondary,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(IconSize.Small),
                                 )
                             }

@@ -22,10 +22,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -36,7 +34,6 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import com.kashif_e.backdrop.OpticalSizeValue
 import org.ide.lti.core.designsystem.component.actions.*
 import org.ide.lti.core.designsystem.component.devtools.*
 import org.ide.lti.core.designsystem.component.display.*
@@ -45,15 +42,10 @@ import org.ide.lti.core.designsystem.component.inputs.*
 import org.ide.lti.core.designsystem.component.navigation.*
 import org.ide.lti.core.designsystem.component.primitives.*
 import org.ide.lti.core.designsystem.theme.AlphaTokens
-import org.ide.lti.core.designsystem.theme.BackdropBlur
-import org.ide.lti.core.designsystem.theme.GlassTheme
-import org.ide.lti.core.designsystem.theme.LensRefraction
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.PreviewSampleColors
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
-import org.ide.lti.core.designsystem.theme.glass.GlassStyles
-import org.ide.lti.core.designsystem.theme.glass.Rim
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /**
@@ -83,7 +75,6 @@ fun GlassLayout(
     modifier: Modifier = Modifier,
     showToggleButtons: Boolean = false,
     appearance: GlassLayoutAppearance = GlassLayoutAppearance.Default,
-    backdrop: GlassSceneState? = null,
 ) = GlassLayout(
     state = state,
     modifier = modifier,
@@ -109,7 +100,6 @@ fun GlassLayout(
     statusBar = slots.statusBar ?: { GlassStatusBar(drawOwnChrome = false) },
     showToggleButtons = showToggleButtons,
     appearance = appearance,
-    backdrop = backdrop,
 )
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -139,155 +129,132 @@ fun GlassLayout(
     statusBar: @Composable () -> Unit = { GlassStatusBar(drawOwnChrome = false) },
     showToggleButtons: Boolean = false,
     appearance: GlassLayoutAppearance = GlassLayoutAppearance.Default,
-    backdrop: GlassSceneState? = null,
 ) {
     val density = LocalDensity.current
-    val actualBackdrop = backdrop ?: GlassTheme.scene
-    val glassColors = GlassTheme.colors
+    val horizontalDividerColor = MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Faint)
 
-    // The outermost application chrome frame - its own real, documented tier (BackdropBlur.Immersive),
-    // distinct from GlassStyles.bar's tuning for a bar drawing its own standalone chrome (e.g. a
-    // catalog preview). No rim: this frame has never drawn one (highlight = null previously).
-    val frameStyle = GlassStyles.bar.then {
-        copy(
-            blur = OpticalSizeValue.Fixed(BackdropBlur.Immersive),
-            lens = OpticalSizeValue.Fixed(LensRefraction.Surface),
-            rim = Rim.None,
-        )
-    }
-
-    Box(
+    GlassSurface(
         modifier = modifier
             .fillMaxSize()
             .onSizeChanged { state.containerSize = it }
             .semantics {
                 contentDescription = "LtiRomGui IDE Layout with resizable panels"
-            }
-            .glass(frameStyle),
+            },
+        shape = GlassShapes.HazeFlat,
     ) {
-        CompositionLocalProvider(LocalContentColor provides glassColors.onGlass) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                // Top Bar (flush to the top and side edges of the frame)
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    topBar()
-                }
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Top Bar (flush to the top and side edges of the frame)
+            Box(modifier = Modifier.fillMaxWidth()) {
+                topBar()
+            }
 
-                // Hairline horizontal divider below top bar
-                val horizontalDividerColor = if (GlassTheme.panel.hasFloatingGaps) {
-                    glassColors.glassBorder
-                } else {
-                    glassColors.glassBorder.copy(alpha = AlphaTokens.Faint)
-                }
+            // Hairline horizontal divider below top bar
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(StrokeWidth.Hairline)
+                    .background(horizontalDividerColor),
+            )
+
+            // Middle Row: Left Rail (Chrome) + Content GlassSurface + Right Rail (Chrome)
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+            ) {
+                leftRail()
+
+                // Content area: panels dock with theme-specific geometry and gutters
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(StrokeWidth.Hairline)
-                        .background(horizontalDividerColor),
-                )
-
-                // Middle Row: Left Rail (Chrome) + Content GlassSurface + Right Rail (Chrome)
-                Row(
                     modifier = Modifier
                         .weight(1f)
-                        .fillMaxWidth(),
+                        .fillMaxHeight(),
                 ) {
-                    leftRail()
+                    Row(modifier = Modifier.fillMaxSize()) {
+                        val animatedLeftWeight by animateFloatAsState(
+                            targetValue = state.leftWeight,
+                            animationSpec = if (state.isDragging) {
+                                snap()
+                            } else {
+                                spring(
+                                    dampingRatio = Spring.DampingRatioLowBouncy,
+                                    stiffness = Spring.StiffnessLow,
+                                )
+                            },
+                            label = "leftWeight",
+                        )
 
-                    // Content area: panels dock with theme-specific geometry and gutters
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight(),
-                    ) {
-                        Row(modifier = Modifier.fillMaxSize()) {
-                            val animatedLeftWeight by animateFloatAsState(
-                                targetValue = state.leftWeight,
-                                animationSpec = if (state.isDragging) {
-                                    snap()
-                                } else {
-                                    spring(
-                                        dampingRatio = Spring.DampingRatioLowBouncy,
-                                        stiffness = Spring.StiffnessLow,
-                                    )
-                                },
-                                label = "leftWeight",
-                            )
+                        val animatedRightWeight by animateFloatAsState(
+                            targetValue = state.rightWeight,
+                            animationSpec = if (state.isDragging) {
+                                snap()
+                            } else {
+                                spring(
+                                    dampingRatio = Spring.DampingRatioLowBouncy,
+                                    stiffness = Spring.StiffnessLow,
+                                )
+                            },
+                            label = "rightWeight",
+                        )
 
-                            val animatedRightWeight by animateFloatAsState(
-                                targetValue = state.rightWeight,
-                                animationSpec = if (state.isDragging) {
-                                    snap()
-                                } else {
-                                    spring(
-                                        dampingRatio = Spring.DampingRatioLowBouncy,
-                                        stiffness = Spring.StiffnessLow,
-                                    )
-                                },
-                                label = "rightWeight",
-                            )
+                        val animatedBottomWeight by animateFloatAsState(
+                            targetValue = state.bottomWeight,
+                            animationSpec = if (state.isDragging) {
+                                snap()
+                            } else {
+                                spring(
+                                    dampingRatio = Spring.DampingRatioLowBouncy,
+                                    stiffness = Spring.StiffnessLow,
+                                )
+                            },
+                            label = "bottomWeight",
+                        )
 
-                            val animatedBottomWeight by animateFloatAsState(
-                                targetValue = state.bottomWeight,
-                                animationSpec = if (state.isDragging) {
-                                    snap()
-                                } else {
-                                    spring(
-                                        dampingRatio = Spring.DampingRatioLowBouncy,
-                                        stiffness = Spring.StiffnessLow,
-                                    )
-                                },
-                                label = "bottomWeight",
-                            )
+                        val availableWidth = with(density) { state.containerSize.width.toDp() }
+                        val leftPanelWidth = (availableWidth * animatedLeftWeight)
+                            .coerceIn(LtiLayoutDefaults.MinPanelWidth, LtiLayoutDefaults.MaxPanelWidth)
+                        val rightPanelWidth = (availableWidth * animatedRightWeight)
+                            .coerceIn(LtiLayoutDefaults.MinPanelWidth, LtiLayoutDefaults.MaxPanelWidth)
 
-                            val availableWidth = with(density) { state.containerSize.width.toDp() }
-                            val leftPanelWidth = (availableWidth * animatedLeftWeight)
-                                .coerceIn(LtiLayoutDefaults.MinPanelWidth, LtiLayoutDefaults.MaxPanelWidth)
-                            val rightPanelWidth = (availableWidth * animatedRightWeight)
-                                .coerceIn(LtiLayoutDefaults.MinPanelWidth, LtiLayoutDefaults.MaxPanelWidth)
+                        GlassLeftPanel(
+                            state = state,
+                            width = leftPanelWidth,
+                            appearance = appearance,
+                            content = leftPanel,
+                        )
 
-                            GlassLeftPanel(
-                                state = state,
-                                width = leftPanelWidth,
-                                appearance = appearance,
-                                backdrop = actualBackdrop,
-                                content = leftPanel,
-                            )
+                        GlassCenterColumn(
+                            state = state,
+                            density = density,
+                            animatedBottomWeight = animatedBottomWeight,
+                            appearance = appearance,
+                            mainContent = mainContent,
+                            bottomPanel = bottomPanel,
+                        )
 
-                            GlassCenterColumn(
-                                state = state,
-                                density = density,
-                                animatedBottomWeight = animatedBottomWeight,
-                                appearance = appearance,
-                                backdrop = actualBackdrop,
-                                mainContent = mainContent,
-                                bottomPanel = bottomPanel,
-                            )
-
-                            GlassRightPanel(
-                                state = state,
-                                width = rightPanelWidth,
-                                appearance = appearance,
-                                backdrop = actualBackdrop,
-                                content = rightPanel,
-                            )
-                        }
+                        GlassRightPanel(
+                            state = state,
+                            width = rightPanelWidth,
+                            appearance = appearance,
+                            content = rightPanel,
+                        )
                     }
-
-                    rightRail()
                 }
 
-                // Hairline horizontal divider above status bar
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(StrokeWidth.Hairline)
-                        .background(horizontalDividerColor),
-                )
+                rightRail()
+            }
 
-                // Status Bar (flush to the bottom and side edges of the frame)
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    statusBar()
-                }
+            // Hairline horizontal divider above status bar
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(StrokeWidth.Hairline)
+                    .background(horizontalDividerColor),
+            )
+
+            // Status Bar (flush to the bottom and side edges of the frame)
+            Box(modifier = Modifier.fillMaxWidth()) {
+                statusBar()
             }
         }
     }

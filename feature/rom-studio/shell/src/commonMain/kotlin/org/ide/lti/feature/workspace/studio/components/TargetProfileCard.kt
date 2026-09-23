@@ -9,6 +9,8 @@
  */
 package org.ide.lti.feature.workspace.studio.components
 
+import org.ide.lti.core.designsystem.theme.AlphaTokens
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -44,7 +46,6 @@ import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.feature.workspace.studio.DisplayValue
 import org.ide.lti.feature.workspace.studio.TargetSummaryUi
@@ -59,33 +60,31 @@ public fun TargetProfileCard(
     summary: TargetSummaryUi,
     onEditProfile: () -> Unit,
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     Column(
         modifier = modifier
             .testTag("TargetProfileCard")
-            .ideCardSurface(colors = colors)
+            .ideCardSurface()
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
-        TargetProfileHeader(onEditProfile = onEditProfile, colors = colors)
-        TargetProfileSubheader(summary = summary, colors = colors)
+        TargetProfileHeader(onEditProfile = onEditProfile)
+        TargetProfileSubheader(summary = summary)
 
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(Spacing.Hairline)
-                .background(colors.borderMuted),
+                .background(MaterialTheme.colorScheme.outlineVariant),
         )
 
-        TargetProfileParams(summary = summary, colors = colors)
+        TargetProfileParams(summary = summary)
     }
 }
 
 @Composable
 private fun TargetProfileHeader(
     onEditProfile: () -> Unit,
-    colors: IdeShellColorScheme,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -95,7 +94,7 @@ private fun TargetProfileHeader(
     ) {
         Text(
             text = "Target",
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = FontSize.TitleMedium,
             fontWeight = FontWeight.SemiBold,
             fontFamily = GlassFontFamily.ide(),
@@ -106,9 +105,9 @@ private fun TargetProfileHeader(
         val isEditPressed by editInteraction.collectIsPressedAsState()
 
         val editBg = when {
-            isEditPressed -> colors.controlSelected
-            isEditHovered -> colors.controlHover
-            else -> colors.cardBackgroundMuted
+            isEditPressed -> MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Faded)
+            isEditHovered -> MaterialTheme.colorScheme.surfaceContainerHigh
+            else -> MaterialTheme.colorScheme.surfaceContainer
         }
 
         Box(
@@ -116,7 +115,7 @@ private fun TargetProfileHeader(
                 .testTag("EditProfileButton")
                 .semantics { role = Role.Button }
                 .background(editBg, GlassShapes.ShellControl)
-                .border(GlassDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
+                .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outlineVariant, GlassShapes.ShellControl)
                 .clickable(
                     interactionSource = editInteraction,
                     indication = null,
@@ -132,12 +131,12 @@ private fun TargetProfileHeader(
                 Icon(
                     imageVector = Icons.Default.Edit,
                     contentDescription = "Edit profile",
-                    tint = colors.textMuted,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(IconSize.Small),
                 )
                 Text(
                     text = "Edit",
-                    color = colors.textMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.BodySmall,
                     fontWeight = FontWeight.Medium,
                     fontFamily = GlassFontFamily.ide(),
@@ -150,7 +149,6 @@ private fun TargetProfileHeader(
 @Composable
 private fun TargetProfileSubheader(
     summary: TargetSummaryUi,
-    colors: IdeShellColorScheme,
     modifier: Modifier = Modifier,
 ) {
     val revText = when (val rev = summary.revision) {
@@ -168,14 +166,14 @@ private fun TargetProfileSubheader(
     ) {
         Text(
             text = "Target revision $revText",
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = FontSize.BodyMedium,
             fontWeight = FontWeight.SemiBold,
             fontFamily = GlassFontFamily.ide(),
         )
         Text(
             text = bindingText,
-            color = colors.textDim,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.BodySmall,
             fontFamily = GlassFontFamily.ide(),
         )
@@ -183,7 +181,7 @@ private fun TargetProfileSubheader(
 }
 
 @Composable
-private fun TargetProfileParams(summary: TargetSummaryUi, colors: IdeShellColorScheme, modifier: Modifier = Modifier) {
+private fun TargetProfileParams(summary: TargetSummaryUi, modifier: Modifier = Modifier) {
     val deviceIdValue = resolveValue(summary.deviceId, "PQ84P01")
     val androidTargetValue = resolveValue(summary.androidTarget, "Android 14 (UPS1A)")
     val partitionSlotValue = resolveValue(summary.partitionSlot, "A/B (Seamless)")
@@ -193,11 +191,11 @@ private fun TargetProfileParams(summary: TargetSummaryUi, colors: IdeShellColorS
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
     ) {
-        TargetParamRow(label = "Device", value = deviceIdValue, colors = colors)
-        TargetParamRow(label = "Channel", value = "Development", colors = colors)
-        TargetParamRow(label = "Android base", value = androidTargetValue, colors = colors)
-        TargetParamRow(label = "Partition slot", value = partitionSlotValue, colors = colors)
-        TargetParamRow(label = "Build type", value = buildFlavorValue, colors = colors)
+        TargetParamRow(label = "Device", value = deviceIdValue)
+        TargetParamRow(label = "Channel", value = "Development")
+        TargetParamRow(label = "Android base", value = androidTargetValue)
+        TargetParamRow(label = "Partition slot", value = partitionSlotValue)
+        TargetParamRow(label = "Build type", value = buildFlavorValue)
     }
 }
 
@@ -207,7 +205,7 @@ private fun resolveValue(displayValue: DisplayValue, fallback: String): String =
 }
 
 @Composable
-private fun TargetParamRow(label: String, value: String, colors: IdeShellColorScheme, modifier: Modifier = Modifier) {
+private fun TargetParamRow(label: String, value: String, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -215,13 +213,13 @@ private fun TargetParamRow(label: String, value: String, colors: IdeShellColorSc
     ) {
         Text(
             text = label,
-            color = colors.textDim,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.BodySmall,
             fontFamily = GlassFontFamily.ide(),
         )
         Text(
             text = value,
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = FontSize.BodySmall,
             fontWeight = FontWeight.Medium,
             fontFamily = GlassFontFamily.ide(),

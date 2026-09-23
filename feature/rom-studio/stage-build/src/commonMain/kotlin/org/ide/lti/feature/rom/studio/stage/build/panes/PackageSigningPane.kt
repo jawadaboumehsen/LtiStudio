@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.rom.studio.stage.build.panes
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -34,7 +35,6 @@ import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.ideFontFamily
 import org.ide.lti.core.model.target.TargetDevice
@@ -53,7 +53,6 @@ public fun PackageSigningPane(
     onValidate: () -> Unit = {},
     onSave: () -> Unit = {},
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     val signing = settings.signing
 
@@ -67,25 +66,24 @@ public fun PackageSigningPane(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(GlassShapes.ShellCard)
-                .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+                .ideCardSurface(shape = GlassShapes.ShellCard)
                 .padding(Spacing.Medium),
             verticalArrangement = Arrangement.spacedBy(Spacing.Small),
         ) {
             Text(
                 text = "Signing policies",
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = FontSize.BodySmall,
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = ideFontFamily(),
             )
-            HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
+            HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
 
             SigningToggleRow(
                 label = "Sign individual partition images with AVB",
                 description = "Protects individual partition payloads with AVB hashtrees and descriptors.",
                 checked = signing.signImages,
                 onCheckedChange = { onChange(settings.copy(signing = signing.copy(signImages = it))) },
-                colors = colors,
             )
 
             SigningToggleRow(
@@ -93,7 +91,6 @@ public fun PackageSigningPane(
                 description = "Generates APK/ZIP signatures required for OTA and recovery flashing.",
                 checked = signing.signPackage,
                 onCheckedChange = { onChange(settings.copy(signing = signing.copy(signPackage = it))) },
-                colors = colors,
             )
         }
 
@@ -101,15 +98,15 @@ public fun PackageSigningPane(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(GlassShapes.ShellCard)
-                .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+                .ideCardSurface(shape = GlassShapes.ShellCard)
                 .padding(Spacing.Small),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
         ) {
-            Icon(Icons.Default.Info, null, tint = colors.textDim, modifier = Modifier.size(IconSize.Small))
+            Icon(Icons.Default.Info, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(IconSize.Small))
             Text(
                 text = "Signed packages are required for OTA updates and locked bootloader recovery flashing.",
-                color = colors.textDim,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
             )
@@ -123,7 +120,6 @@ private fun SigningToggleRow(
     description: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
-    colors: IdeShellColorScheme,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.ExtraExtraSmall),
@@ -134,21 +130,21 @@ private fun SigningToggleRow(
             checked = checked,
             onCheckedChange = onCheckedChange,
             colors = CheckboxDefaults.colors(
-                checkedColor = colors.accentBlue,
-                uncheckedColor = colors.textDim,
+                checkedColor = MaterialTheme.colorScheme.primary,
+                uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant,
             ),
         )
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.Hairline)) {
             Text(
                 text = label,
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = FontSize.Micro,
                 fontWeight = FontWeight.Medium,
                 fontFamily = ideFontFamily(),
             )
             Text(
                 text = description,
-                color = colors.textDim,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
             )

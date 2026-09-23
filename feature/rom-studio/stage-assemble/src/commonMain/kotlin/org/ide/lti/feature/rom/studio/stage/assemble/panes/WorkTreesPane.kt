@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.rom.studio.stage.assemble.panes
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,7 +43,6 @@ import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -61,7 +61,6 @@ public fun WorkTreesPane(
     onValidate: () -> Unit,
     onSave: () -> Unit,
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     val partitions = target.dynamicPartitions.ifEmpty {
         listOf("system", "system_ext", "product", "vendor", "odm")
@@ -77,43 +76,39 @@ public fun WorkTreesPane(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(GlassShapes.ShellCard)
-                .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+                .ideCardSurface(shape = GlassShapes.ShellCard)
                 .padding(Spacing.Medium),
             verticalArrangement = Arrangement.spacedBy(Spacing.Small),
         ) {
             Text(
                 text = "Included partitions",
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = FontSize.TitleSmall,
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = ideFontFamily(),
             )
             Text(
                 text = "Select dynamic partitions to unpack and assemble into the staging work tree.",
-                color = colors.textMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
             )
 
             IdeTable(
                 modifier = Modifier.fillMaxWidth(),
-                colors = colors,
             ) {
-                IdeTableHeader(colors = colors) {
+                IdeTableHeader() {
                     IdeTableHeaderCell(
                         text = "Select",
                         modifier = Modifier.width(GlassDimens.AcquireTableIconColWidth),
-                        colors = colors,
                     )
                     IdeTableHeaderCell(
                         text = "Partition",
                         modifier = Modifier.weight(2f),
-                        colors = colors,
                     )
                     IdeTableHeaderCell(
                         text = "Status",
                         modifier = Modifier.weight(1f),
-                        colors = colors,
                     )
                 }
 
@@ -129,7 +124,6 @@ public fun WorkTreesPane(
                             }
                             onChange(settings.copy(includedPartitions = updated))
                         },
-                        colors = colors,
                     ) {
                         Checkbox(
                             checked = isIncluded,
@@ -142,8 +136,8 @@ public fun WorkTreesPane(
                                 onChange(settings.copy(includedPartitions = updated))
                             },
                             colors = CheckboxDefaults.colors(
-                                checkedColor = colors.accentBlue,
-                                uncheckedColor = colors.textDim,
+                                checkedColor = MaterialTheme.colorScheme.primary,
+                                uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant,
                             ),
                             modifier = Modifier.width(GlassDimens.AcquireTableIconColWidth),
                         )
@@ -155,12 +149,12 @@ public fun WorkTreesPane(
                             Icon(
                                 imageVector = Icons.Default.Folder,
                                 contentDescription = null,
-                                tint = if (isIncluded) colors.accentBlue else colors.textDim,
+                                tint = if (isIncluded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(IconSize.Small),
                             )
                             Text(
                                 text = name,
-                                color = if (isIncluded) colors.textMain else colors.textMuted,
+                                color = if (isIncluded) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = FontSize.BodySmall,
                                 fontFamily = codeFontFamily(),
                             )
@@ -171,7 +165,6 @@ public fun WorkTreesPane(
                                 label = if (isIncluded) "Included" else "Excluded",
                                 severity = if (isIncluded) IdeStatusSeverity.Ready else IdeStatusSeverity.Neutral,
                                 useDot = true,
-                                colors = colors,
                             )
                         }
                     }
@@ -184,7 +177,7 @@ public fun WorkTreesPane(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(GlassShapes.ShellCard)
-                .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+                .ideCardSurface(shape = GlassShapes.ShellCard)
                 .padding(Spacing.Medium),
             verticalArrangement = Arrangement.spacedBy(Spacing.Small),
         ) {
@@ -194,7 +187,7 @@ public fun WorkTreesPane(
             ) {
                 Text(
                     text = "Staged work tree status",
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = FontSize.TitleSmall,
                     fontWeight = FontWeight.SemiBold,
                     fontFamily = ideFontFamily(),
@@ -202,14 +195,14 @@ public fun WorkTreesPane(
                 Icon(
                     imageVector = Icons.Default.Info,
                     contentDescription = null,
-                    tint = colors.accentBlue,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(IconSize.ExtraSmall),
                 )
             }
 
             Text(
                 text = "Work tree staging root: D:\\ROM\\workspace\\staging",
-                color = colors.textDim,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = codeFontFamily(),
             )

@@ -23,7 +23,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassTheme
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.domain.pipeline.configuration.ValidationError
 import org.ide.lti.core.model.target.TargetDevice
@@ -52,7 +51,6 @@ public fun BuildEditor(
     onValidate: () -> Unit = {},
     onSave: () -> Unit = {},
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     val scrollState = rememberScrollState()
 
@@ -76,14 +74,12 @@ public fun BuildEditor(
                     onChange = onChange,
                     onValidate = onValidate,
                     onSave = onSave,
-                    colors = colors,
                 )
                 "partition-layout", "partition_layout", "partition layout" -> PartitionLayoutPane(
                     settings = settings,
                     target = target,
                     onValidate = onValidate,
                     onSave = onSave,
-                    colors = colors,
                 )
                 "flashable-members", "flashable_members", "flashable members" -> FlashableMembersPane(
                     settings = settings,
@@ -91,7 +87,6 @@ public fun BuildEditor(
                     onChange = onChange,
                     onValidate = onValidate,
                     onSave = onSave,
-                    colors = colors,
                 )
                 "avb-keys", "avb_keys", "avb keys" -> AvbKeysPane(
                     settings = settings,
@@ -99,7 +94,6 @@ public fun BuildEditor(
                     onChange = onChange,
                     onValidate = onValidate,
                     onSave = onSave,
-                    colors = colors,
                 )
                 "package-signing", "package_signing", "package signing" -> PackageSigningPane(
                     settings = settings,
@@ -107,7 +101,6 @@ public fun BuildEditor(
                     onChange = onChange,
                     onValidate = onValidate,
                     onSave = onSave,
-                    colors = colors,
                 )
                 "output-naming", "output_naming", "output naming" -> OutputNamingPane(
                     settings = settings,
@@ -115,7 +108,6 @@ public fun BuildEditor(
                     onChange = onChange,
                     onValidate = onValidate,
                     onSave = onSave,
-                    colors = colors,
                 )
                 else -> CompressionPane(
                     settings = settings,
@@ -123,7 +115,6 @@ public fun BuildEditor(
                     onChange = onChange,
                     onValidate = onValidate,
                     onSave = onSave,
-                    colors = colors,
                 )
             }
         }

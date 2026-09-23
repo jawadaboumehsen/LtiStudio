@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.designsystem.component.actions
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -57,7 +58,6 @@ import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.WindowControlColors
-import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
 
 /**
  * Window control actions interface for desktop platform integration.
@@ -125,34 +125,26 @@ fun WindowControlButton(
     isCloseButton: Boolean = false,
 ) {
     var isHovered by remember { mutableStateOf(false) }
-    val glassColors = GlassTheme.colors
 
     val targetBackgroundColor = when {
         isCloseButton && isHovered -> WindowControlColors.CloseHover
-        isHovered -> glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Elevated)
+        isHovered -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = AlphaTokens.Elevated)
         else -> Color.Transparent
     }
 
     val targetIconTint = when {
-        isCloseButton && isHovered -> glassColors.onGlass
-        isHovered -> glassColors.onGlass
-        else -> glassColors.onGlassMuted
+        isCloseButton && isHovered -> MaterialTheme.colorScheme.onSurface
+        isHovered -> MaterialTheme.colorScheme.onSurface
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
-    val backgroundColor by animateColorAsState(
-        targetValue = targetBackgroundColor,
-        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion),
-    )
-
-    val iconTint by animateColorAsState(
-        targetValue = targetIconTint,
-        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion),
-    )
+    val backgroundColor by animateColorAsState(targetBackgroundColor)
+    val iconTint by animateColorAsState(targetIconTint)
 
     val borderModifier = if (isHovered && !isCloseButton) {
         Modifier.glassOutlineBorder(
             width = StrokeWidth.Hairline,
-            color = glassColors.glassBorderHighlight.copy(alpha = AlphaTokens.Hover),
+            color = MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Hover),
             shape = GlassShapes.ExtraSmall,
         )
     } else {

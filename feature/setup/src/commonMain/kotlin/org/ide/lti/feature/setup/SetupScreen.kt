@@ -80,9 +80,6 @@ import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.MotionEasing
 import org.ide.lti.core.designsystem.theme.SetupTokens
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.designsystem.theme.config.AppTheme
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
-import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.model.workspace.Workspace
@@ -108,7 +105,6 @@ fun SetupScreen(
     onOpenConfigurations: () -> Unit = {},
     onOpenManageTargets: () -> Unit = onOpenConfigurations,
     onOpenHelp: () -> Unit = {},
-    backdrop: GlassSceneState? = null,
     viewModel: SetupViewModel = koinViewModel(),
 ) {
     val toolchainSetupState by viewModel.toolchainSetupState.collectAsState()
@@ -215,14 +211,12 @@ fun SetupScreen(
         onOpenConfigurations = onOpenConfigurations,
         onOpenManageTargets = onOpenManageTargets,
         onOpenHelp = onOpenHelp,
-        backdrop = backdrop,
         viewModel = viewModel,
     ) {
         SetupScreenContent(
             state = uiState,
             actions = uiActions,
             onOpenConfigurations = onOpenConfigurations,
-            backdrop = backdrop,
             modifier = modifier,
             isHelpSheetOpen = isHelpSheetOpen,
             onDismissHelpSheet = { isHelpSheetOpen = false },
@@ -245,7 +239,6 @@ fun SetupScreenContent(
     modifier: Modifier = Modifier,
     onOpenConfigurations: () -> Unit = {},
     windowControls: WindowControlActions? = null,
-    backdrop: GlassSceneState? = null,
     initialTab: SetupTab? = null,
     isHelpSheetOpen: Boolean = false,
     onDismissHelpSheet: () -> Unit = {},
@@ -255,14 +248,6 @@ fun SetupScreenContent(
     toolsScrollState: androidx.compose.foundation.ScrollState = androidx.compose.foundation.rememberScrollState(),
     activityListState: androidx.compose.foundation.lazy.LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
 ) {
-    val colors = GlassTheme.ideShellColors
-    val isBlueGlass = GlassTheme.appTheme == AppTheme.Blue && GlassTheme.effectsEnabled
-    val ambientBackdrop = (backdrop as? GlassSceneState) ?: (GlassTheme.scene as? GlassSceneState)
-    val resolvedBackdrop = if (isBlueGlass) {
-        rememberGlassSceneState()
-    } else {
-        ambientBackdrop ?: rememberGlassSceneState()
-    }
     var localSelectedTab by remember { mutableStateOf(initialTab ?: state.selectedTab) }
     val effectiveTab = initialTab?.let { localSelectedTab } ?: state.selectedTab
     var internalHelpSheetOpen by remember { mutableStateOf(isHelpSheetOpen) }
@@ -371,7 +356,7 @@ fun SetupScreenContent(
     IdeAppFrame(
         modifier = modifier
             .fillMaxSize()
-            .background(colors.appBackground)
+            .background(MaterialTheme.colorScheme.surface)
             .widthIn(min = SetupTokens.MinWindowWidth)
             .onSizeChanged { size ->
                 val widthDp = with(density) { size.width.toDp() }
@@ -471,11 +456,10 @@ fun SetupScreenContent(
                     Text(
                         text = "Machine environment",
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                        color = colors.textDim,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = Spacing.Small, vertical = Spacing.Small),
                     )
                 },
-                colors = colors,
             )
         },
         navigator = if (isToolsActive) {
@@ -495,7 +479,6 @@ fun SetupScreenContent(
                         }
                         actions.onSelectToolCategory(cat)
                     },
-                    colors = colors,
                 )
             }
         } else {
@@ -504,7 +487,6 @@ fun SetupScreenContent(
         statusBar = {
             IdeStatusBar(
                 modifier = Modifier.fillMaxWidth(),
-                colors = colors,
                 leadingContent = {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -513,7 +495,7 @@ fun SetupScreenContent(
                         Icon(
                             imageVector = Icons.Default.Storage,
                             contentDescription = null,
-                            tint = colors.textDim,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(IconSize.Small),
                         )
                         val receipt = state.activeOperation?.operationId
@@ -522,7 +504,7 @@ fun SetupScreenContent(
                         Text(
                             text = "Machine environment setup • Setup receipt: $receipt",
                             fontSize = FontSize.Micro,
-                            color = colors.textMuted,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontFamily = GlassFontFamily.ide(),
                         )
                     }
@@ -536,25 +518,24 @@ fun SetupScreenContent(
                             modifier = Modifier
                                 .size(IconSize.Indicator)
                                 .clip(GlassShapes.Capsule)
-                                .background(colors.warningAmber),
+                                .background(GlassTheme.diagnosticColors.warning),
                         )
                         Text(
                             text = "Service disconnected",
                             fontSize = FontSize.Micro,
-                            color = colors.textMuted,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontFamily = GlassFontFamily.ide(),
                         )
                         Text(
                             text = "No active maintenance",
                             fontSize = FontSize.Micro,
-                            color = colors.textDim,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontFamily = GlassFontFamily.ide(),
                         )
                     }
                 },
             )
         },
-        colors = colors,
         content = {
             Column(modifier = Modifier.fillMaxSize()) {
                 if (state.environmentNotice != null) {
@@ -570,7 +551,6 @@ fun SetupScreenContent(
                             label = "Dismiss",
                             onClick = actions.onDismissEnvironmentNotice,
                         ),
-                        backdrop = resolvedBackdrop,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
@@ -613,7 +593,6 @@ fun SetupScreenContent(
                                     state = state,
                                     actions = actions,
                                     onNavigateToProjects = { onTabChange(SetupTab.PROJECTS) },
-                                    resolvedBackdrop = resolvedBackdrop,
                                     activityState = activityState,
                                     activityListState = activityListState,
                                     previewInvokerFocusRequester = previewInvokerFocusRequester,
@@ -623,7 +602,6 @@ fun SetupScreenContent(
                                 ProjectsStepContent(
                                     state = state,
                                     actions = actions,
-                                    resolvedBackdrop = resolvedBackdrop,
                                     onNavigateToEnvironment = { onTabChange(SetupTab.ENVIRONMENT) },
                                     searchFocusRequester = searchFocusRequester,
                                     focusSearchOnMount = pendingSearchFocus,
@@ -638,7 +616,6 @@ fun SetupScreenContent(
                                 ToolsStepContent(
                                     state = state,
                                     actions = actions,
-                                    resolvedBackdrop = resolvedBackdrop,
                                     toolBrowserState = toolBrowserState,
                                     activityState = activityState,
                                     searchFocusRequester = toolSearchFocusRequester,
@@ -650,7 +627,6 @@ fun SetupScreenContent(
                                 RecoveryStepContent(
                                     state = state,
                                     actions = actions,
-                                    resolvedBackdrop = resolvedBackdrop,
                                     activityState = activityState,
                                     onOpenHelp = actions.onOpenHelp,
                                 )
@@ -683,9 +659,8 @@ fun SetupScreenContent(
         modifier = Modifier.semantics {
             paneTitle = "Help & Documentation"
         },
-        backdrop = resolvedBackdrop,
     ) {
-        DocumentationStepContent(resolvedBackdrop = resolvedBackdrop)
+        DocumentationStepContent()
     }
 
     val activeOperationForPreview = state.activeOperation
@@ -702,7 +677,6 @@ fun SetupScreenContent(
                 actions.onDismissPreview()
                 (lastInvokingFocusRequester ?: rootFocusRequester).requestFocus()
             },
-            backdrop = resolvedBackdrop,
             plan = activeOperationForPreview.plan,
             contextualError = activeOperationForPreview.failure,
         )
@@ -711,7 +685,6 @@ fun SetupScreenContent(
 
 @Composable
 private fun SetupOverviewContent(state: SetupUiState, onOpenEnvironment: () -> Unit, modifier: Modifier = Modifier) {
-    val colors = GlassTheme.colors
     val toolchain = state.toolchainSetupState
     val readyCount = toolchain.steps.count { step -> step.status == StepStatus.SUCCESS }
     val wslStatus = setupStatusLabel(
@@ -734,69 +707,69 @@ private fun SetupOverviewContent(state: SetupUiState, onOpenEnvironment: () -> U
         Text(
             text = "Set up your build environment",
             style = MaterialTheme.typography.headlineSmall,
-            color = colors.onGlass,
+            color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.SemiBold,
         )
         Text(
             "Prepare this machine before configuring your ROM.",
             style = MaterialTheme.typography.bodyMedium,
-            color = colors.onGlassSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = Spacing.ExtraSmall, bottom = Spacing.Medium),
         )
-        GlassSurface(modifier = Modifier.fillMaxWidth(), shape = GlassShapes.Medium) {
+        GlassSurface(modifier = Modifier.fillMaxWidth(), shape = GlassShapes.HazeMedium) {
             Column(modifier = Modifier.padding(Spacing.PanelPadding)) {
                 Text(
                     "$readyCount of ${toolchain.steps.size} checks ready",
                     style = MaterialTheme.typography.titleMedium,
-                    color = colors.onGlass,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.SemiBold,
                 )
                 Text(
                     "Review the local services required to build and sign a ROM.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = colors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = Spacing.ExtraSmall, bottom = Spacing.Small),
                 )
-                SetupOverviewReadinessRow("1", "Host system", "Detected", colors.onGlassSecondary)
-                SetupOverviewReadinessRow("2", "WSL runtime", wslStatus, colors.onGlassSecondary)
-                SetupOverviewReadinessRow("3", "Build service", serviceStatus, colors.onGlass)
-                SetupOverviewReadinessRow("4", "Tool packages", toolsStatus, colors.onGlassSecondary)
+                SetupOverviewReadinessRow("1", "Host system", "Detected", MaterialTheme.colorScheme.onSurfaceVariant)
+                SetupOverviewReadinessRow("2", "WSL runtime", wslStatus, MaterialTheme.colorScheme.onSurfaceVariant)
+                SetupOverviewReadinessRow("3", "Build service", serviceStatus, MaterialTheme.colorScheme.onSurface)
+                SetupOverviewReadinessRow("4", "Tool packages", toolsStatus, MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         GlassSurface(
             modifier = Modifier.fillMaxWidth().padding(top = Spacing.Medium),
-            shape = GlassShapes.Medium,
+            shape = GlassShapes.HazeMedium,
         ) {
             Column(modifier = Modifier.padding(Spacing.PanelPadding)) {
                 Text(
                     "Next step",
                     style = MaterialTheme.typography.titleMedium,
-                    color = colors.onGlass,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.SemiBold,
                 )
                 Text(
                     "Verify the local build service, then check pinned tool packages.",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = colors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = Spacing.ExtraSmall),
                 )
                 Text(
                     "Open Build service",
                     style = MaterialTheme.typography.labelLarge,
-                    color = colors.glassAccent,
+                    color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(top = Spacing.Small).clickable(onClick = onOpenEnvironment),
                 )
             }
         }
         GlassSurface(
             modifier = Modifier.fillMaxWidth().padding(top = Spacing.Medium),
-            shape = GlassShapes.Medium,
+            shape = GlassShapes.HazeMedium,
         ) {
             Column(modifier = Modifier.padding(Spacing.PanelPadding)) {
                 Text(
                     "Setup activity",
                     style = MaterialTheme.typography.titleMedium,
-                    color = colors.onGlass,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.SemiBold,
                 )
                 Text(
@@ -806,7 +779,7 @@ private fun SetupOverviewContent(state: SetupUiState, onOpenEnvironment: () -> U
                         "${toolchain.steps.size} environment checks are available for review."
                     },
                     style = MaterialTheme.typography.bodyMedium,
-                    color = colors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = Spacing.ExtraSmall),
                 )
             }
@@ -821,16 +794,15 @@ private fun SetupOverviewReadinessRow(
     status: String,
     titleColor: androidx.compose.ui.graphics.Color,
 ) {
-    val colors = GlassTheme.colors
     Row(modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.ExtraSmall)) {
-        Text(index, style = MaterialTheme.typography.labelMedium, color = colors.onGlassMuted)
+        Text(index, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(
             title,
             style = MaterialTheme.typography.bodyMedium,
             color = titleColor,
             modifier = Modifier.padding(start = Spacing.Small).weight(1f),
         )
-        Text(status, style = MaterialTheme.typography.labelMedium, color = colors.onGlassSecondary)
+        Text(status, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -844,7 +816,6 @@ private fun setupStatusLabel(status: StepStatus?): String = when (status) {
 /** Persistent right-hand context panel matching the Setup dashboard reference. */
 @Composable
 private fun SetupEnvironmentSummary(state: SetupUiState, modifier: Modifier = Modifier) {
-    val colors = GlassTheme.colors
     val toolchain = state.toolchainSetupState
     val serviceStatus = when {
         toolchain.isBusy -> "Checking"
@@ -855,28 +826,28 @@ private fun SetupEnvironmentSummary(state: SetupUiState, modifier: Modifier = Mo
     val readiness = if (toolchain.isAllReady) "Ready" else "Not ready"
 
     Column(modifier = modifier) {
-        GlassSurface(modifier = Modifier.fillMaxWidth(), shape = GlassShapes.Medium) {
+        GlassSurface(modifier = Modifier.fillMaxWidth(), shape = GlassShapes.HazeMedium) {
             Column(modifier = Modifier.padding(Spacing.PanelPadding)) {
-                Text("Environment summary", color = colors.onGlass)
-                Text("Platform", color = colors.onGlassSecondary)
-                Text("Windows", color = colors.onGlass)
-                Text("Runtime", color = colors.onGlassSecondary)
-                Text("WSL 2", color = colors.onGlass)
-                Text("Build service", color = colors.onGlassSecondary)
-                Text(serviceStatus, color = colors.onGlass)
-                Text("Tool readiness", color = colors.onGlassSecondary)
-                Text(readiness, color = colors.onGlass)
+                Text("Environment summary", color = MaterialTheme.colorScheme.onSurface)
+                Text("Platform", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Windows", color = MaterialTheme.colorScheme.onSurface)
+                Text("Runtime", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("WSL 2", color = MaterialTheme.colorScheme.onSurface)
+                Text("Build service", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(serviceStatus, color = MaterialTheme.colorScheme.onSurface)
+                Text("Tool readiness", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(readiness, color = MaterialTheme.colorScheme.onSurface)
             }
         }
         GlassSurface(
             modifier = Modifier.fillMaxWidth().padding(top = Spacing.Medium),
-            shape = GlassShapes.Medium,
+            shape = GlassShapes.HazeMedium,
         ) {
             Column(modifier = Modifier.padding(Spacing.PanelPadding)) {
-                Text("Setup does not start a ROM build.", color = colors.onGlass)
+                Text("Setup does not start a ROM build.", color = MaterialTheme.colorScheme.onSurface)
                 Text(
                     "This screen prepares your machine before you configure a ROM.",
-                    color = colors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }

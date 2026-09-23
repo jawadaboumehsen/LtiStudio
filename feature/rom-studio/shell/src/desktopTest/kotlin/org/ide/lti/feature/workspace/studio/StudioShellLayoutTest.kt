@@ -28,10 +28,9 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassTheme
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.IdeShellTokens
 import org.ide.lti.core.designsystem.theme.LtiTheme
-import org.ide.lti.core.designsystem.theme.config.AppTheme
+import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.model.run.StageId
 import org.junit.Rule
 import org.junit.Test

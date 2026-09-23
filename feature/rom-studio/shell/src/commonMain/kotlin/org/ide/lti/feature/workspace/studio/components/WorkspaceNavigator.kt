@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.workspace.studio.components
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -33,7 +34,6 @@ import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -47,7 +47,6 @@ public fun WorkspaceNavigator(
     uiState: WorkspaceShellUiState,
     onSelectSection: (WorkspaceSection) -> Unit,
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     val items = listOf(
         IdeNavigatorItem(
@@ -99,11 +98,9 @@ public fun WorkspaceNavigator(
             }
         },
         modifier = modifier.testTag("WorkspaceNavigator"),
-        colors = colors,
         footerContent = {
             WorkspaceNavigatorFooter(
                 targetContext = uiState.targetContext,
-                colors = colors,
             )
         },
     )
@@ -112,7 +109,6 @@ public fun WorkspaceNavigator(
 @Composable
 internal fun WorkspaceNavigatorFooter(
     targetContext: TargetContextUi?,
-    colors: IdeShellColorScheme,
     modifier: Modifier = Modifier,
 ) {
     val profileText = when (val p = targetContext?.profile) {
@@ -131,10 +127,10 @@ internal fun WorkspaceNavigatorFooter(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(GlassShapes.ShellControl)
-                .background(colors.cardBackgroundMuted)
+                .background(MaterialTheme.colorScheme.surfaceContainer)
                 .border(
                     width = GlassDimens.HairlineBorder,
-                    color = colors.borderMuted,
+                    color = MaterialTheme.colorScheme.outlineVariant,
                     shape = GlassShapes.ShellControl,
                 )
                 .padding(Spacing.Small),
@@ -150,7 +146,7 @@ internal fun WorkspaceNavigatorFooter(
                 ) {
                     Text(
                         text = "Active Kernel Spec",
-                        color = colors.textDim,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = FontSize.Micro,
                         fontFamily = ideFontFamily(),
                         fontWeight = FontWeight.Medium,
@@ -159,7 +155,7 @@ internal fun WorkspaceNavigatorFooter(
                         modifier = Modifier
                             .size(IconSize.Indicator)
                             .clip(GlassShapes.Circle)
-                            .background(colors.accentGreen),
+                            .background(GlassTheme.diagnosticColors.success),
                     )
                 }
 
@@ -169,14 +165,14 @@ internal fun WorkspaceNavigatorFooter(
                     } else {
                         "5.15.137-android14"
                     },
-                    color = colors.textMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                     fontFamily = codeFontFamily(),
                 )
 
                 HorizontalDivider(
                     thickness = GlassDimens.HairlineBorder,
-                    color = colors.borderMuted,
+                    color = MaterialTheme.colorScheme.outlineVariant,
                     modifier = Modifier.padding(vertical = Spacing.Hairline),
                 )
 
@@ -187,13 +183,13 @@ internal fun WorkspaceNavigatorFooter(
                 ) {
                     Text(
                         text = "GKI compliant",
-                        color = colors.textDim,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = FontSize.Micro,
                         fontFamily = ideFontFamily(),
                     )
                     Text(
                         text = "Yes",
-                        color = colors.textMain,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = FontSize.Micro,
                         fontFamily = ideFontFamily(),
                         fontWeight = FontWeight.Medium,

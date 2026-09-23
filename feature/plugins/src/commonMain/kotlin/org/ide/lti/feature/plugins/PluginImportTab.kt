@@ -75,7 +75,6 @@ internal fun PluginImportTab(
     onConfirmInstall: (TrustDecision) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
     var acknowledgedUnverified by remember(inspection?.identity?.key, importPath) {
         mutableStateOf(false)
     }
@@ -103,18 +102,18 @@ internal fun PluginImportTab(
                 Text(
                     text = "Workspace / Import package",
                     style = MaterialTheme.typography.labelSmall,
-                    color = glassColors.onGlassMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
                     text = "Review package installation",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
-                    color = glassColors.onGlass,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     text = "Inspect and review package details before installing into your workspace.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = glassColors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
 
@@ -179,7 +178,6 @@ private fun ImportPackageHeader(
     onInspectPath: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
     val hasPath = importPath.isNotBlank()
 
     Column(
@@ -199,7 +197,7 @@ private fun ImportPackageHeader(
                     .glassOutlineBorder(
                         width = StrokeWidth.Hairline,
                         color = PluginThemeColors.SelectedRowBorder,
-                        shape = GlassShapes.MediumSmall,
+                        shape = GlassShapes.HazeMediumSmall,
                     ),
                 contentAlignment = Alignment.Center,
             ) {
@@ -216,7 +214,7 @@ private fun ImportPackageHeader(
                     text = displayFileName,
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    color = glassColors.onGlass,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     text = if (hasPath) {
@@ -225,7 +223,7 @@ private fun ImportPackageHeader(
                         "Select a local package archive (.ltimod / .zip) to inspect"
                     },
                     style = MaterialTheme.typography.bodySmall,
-                    color = glassColors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -246,7 +244,7 @@ private fun ImportPackageHeader(
                     onClick = { onInspectPath(importPath) },
                     enabled = hasPath,
                     variant = GlassButtonVariant.Primary,
-                    shape = GlassShapes.MediumSmall,
+                    shape = GlassShapes.HazeMediumSmall,
                     minHeight = ComponentSize.PluginActionBtnCompactHeight,
                 ) {
                     Text("Inspect")
@@ -258,7 +256,6 @@ private fun ImportPackageHeader(
 
 @Composable
 private fun ImportInspectFirstEmptyState(modifier: Modifier = Modifier) {
-    val glassColors = GlassTheme.colors
 
     Box(
         modifier = modifier
@@ -282,13 +279,13 @@ private fun ImportInspectFirstEmptyState(modifier: Modifier = Modifier) {
                 modifier = Modifier
                     .size(ComponentSize.ActionCardHeight)
                     .clip(GlassShapes.Medium)
-                    .background(glassColors.glassAccent.copy(alpha = AlphaTokens.Glow)),
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Glow)),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     painter = AppIcons.FilePainterResource(),
                     contentDescription = "Inspect archive",
-                    tint = glassColors.glassAccent,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(IconSize.ExtraLarge),
                 )
             }
@@ -301,13 +298,13 @@ private fun ImportInspectFirstEmptyState(modifier: Modifier = Modifier) {
                     text = "Select and inspect a package archive",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = glassColors.onGlass,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     text = "Select a local package archive (.ltimod / .zip) and click Inspect to review " +
                         "package identity, integrity, signature status, and compatibility before installing.",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = glassColors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -321,7 +318,6 @@ private fun ImportPackageIdentityCard(
     displayFileName: String,
     importPath: String,
 ) {
-    val glassColors = GlassTheme.colors
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -330,7 +326,7 @@ private fun ImportPackageIdentityCard(
             .glassOutlineBorder(
                 width = StrokeWidth.Hairline,
                 color = PluginThemeColors.CardBorder,
-                shape = GlassShapes.MediumSmall,
+                shape = GlassShapes.HazeMediumSmall,
             )
             .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
     ) {
@@ -341,7 +337,7 @@ private fun ImportPackageIdentityCard(
                 text = "Package identity",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
-                color = glassColors.onGlass,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             GlassHorizontalDivider(specular = true)
 
@@ -358,7 +354,6 @@ private fun ImportPackageIdentityCard(
 
 @Composable
 private fun ImportSdkCompatibilityCard(hasBlockingErrors: Boolean) {
-    val glassColors = GlassTheme.colors
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -367,7 +362,7 @@ private fun ImportSdkCompatibilityCard(hasBlockingErrors: Boolean) {
             .glassOutlineBorder(
                 width = StrokeWidth.Hairline,
                 color = PluginThemeColors.CardBorder,
-                shape = GlassShapes.MediumSmall,
+                shape = GlassShapes.HazeMediumSmall,
             )
             .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
     ) {
@@ -378,7 +373,7 @@ private fun ImportSdkCompatibilityCard(hasBlockingErrors: Boolean) {
                 text = "SDK compatibility",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
-                color = glassColors.onGlass,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -391,14 +386,14 @@ private fun ImportSdkCompatibilityCard(hasBlockingErrors: Boolean) {
                         AppIcons.CheckPainterResource()
                     },
                     contentDescription = if (hasBlockingErrors) "Blocked" else "Inspection passed",
-                    tint = if (hasBlockingErrors) glassColors.diagnostics.error else glassColors.diagnostics.success,
+                    tint = if (hasBlockingErrors) GlassTheme.diagnosticColors.error else GlassTheme.diagnosticColors.success,
                     modifier = Modifier.size(IconSize.Small),
                 )
                 Text(
                     text = if (hasBlockingErrors) "Blocked" else "Inspection passed",
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
-                    color = if (hasBlockingErrors) glassColors.diagnostics.error else glassColors.diagnostics.success,
+                    color = if (hasBlockingErrors) GlassTheme.diagnosticColors.error else GlassTheme.diagnosticColors.success,
                 )
             }
             Text(
@@ -408,7 +403,7 @@ private fun ImportSdkCompatibilityCard(hasBlockingErrors: Boolean) {
                     "No blocking compatibility errors were reported."
                 },
                 style = MaterialTheme.typography.bodySmall,
-                color = glassColors.onGlassSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -416,7 +411,6 @@ private fun ImportSdkCompatibilityCard(hasBlockingErrors: Boolean) {
 
 @Composable
 private fun ImportContentIntegrityCard(hasBlockingErrors: Boolean) {
-    val glassColors = GlassTheme.colors
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -425,7 +419,7 @@ private fun ImportContentIntegrityCard(hasBlockingErrors: Boolean) {
             .glassOutlineBorder(
                 width = StrokeWidth.Hairline,
                 color = PluginThemeColors.CardBorder,
-                shape = GlassShapes.MediumSmall,
+                shape = GlassShapes.HazeMediumSmall,
             )
             .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
     ) {
@@ -436,7 +430,7 @@ private fun ImportContentIntegrityCard(hasBlockingErrors: Boolean) {
                 text = "Content integrity",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
-                color = glassColors.onGlass,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -449,14 +443,14 @@ private fun ImportContentIntegrityCard(hasBlockingErrors: Boolean) {
                         AppIcons.CheckPainterResource()
                     },
                     contentDescription = if (hasBlockingErrors) "Failed" else "Inspection passed",
-                    tint = if (hasBlockingErrors) glassColors.diagnostics.error else glassColors.diagnostics.success,
+                    tint = if (hasBlockingErrors) GlassTheme.diagnosticColors.error else GlassTheme.diagnosticColors.success,
                     modifier = Modifier.size(IconSize.Small),
                 )
                 Text(
                     text = if (hasBlockingErrors) "Failed" else "Inspection passed",
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
-                    color = if (hasBlockingErrors) glassColors.diagnostics.error else glassColors.diagnostics.success,
+                    color = if (hasBlockingErrors) GlassTheme.diagnosticColors.error else GlassTheme.diagnosticColors.success,
                 )
             }
             Text(
@@ -466,7 +460,7 @@ private fun ImportContentIntegrityCard(hasBlockingErrors: Boolean) {
                     "No blocking structure or integrity errors were reported."
                 },
                 style = MaterialTheme.typography.bodySmall,
-                color = glassColors.onGlassSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -474,8 +468,7 @@ private fun ImportContentIntegrityCard(hasBlockingErrors: Boolean) {
 
 @Composable
 private fun ImportSignatureCard(isSigned: Boolean) {
-    val glassColors = GlassTheme.colors
-    val sigColor = if (isSigned) glassColors.diagnostics.success else glassColors.onGlassMuted
+    val sigColor = if (isSigned) GlassTheme.diagnosticColors.success else MaterialTheme.colorScheme.onSurfaceVariant
     val sigPainter = if (isSigned) AppIcons.CheckPainterResource() else AppIcons.InfoPainterResource()
 
     Box(
@@ -486,7 +479,7 @@ private fun ImportSignatureCard(isSigned: Boolean) {
             .glassOutlineBorder(
                 width = StrokeWidth.Hairline,
                 color = PluginThemeColors.CardBorder,
-                shape = GlassShapes.MediumSmall,
+                shape = GlassShapes.HazeMediumSmall,
             )
             .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
     ) {
@@ -497,7 +490,7 @@ private fun ImportSignatureCard(isSigned: Boolean) {
                 text = "Signature",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
-                color = glassColors.onGlass,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -523,7 +516,7 @@ private fun ImportSignatureCard(isSigned: Boolean) {
                     "This package is not digitally signed."
                 },
                 style = MaterialTheme.typography.bodySmall,
-                color = glassColors.onGlassSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -605,7 +598,7 @@ private fun ImportRightReviewColumn(
                 },
                 enabled = canInstall && !isInstalling,
                 variant = GlassButtonVariant.Primary,
-                shape = GlassShapes.MediumSmall,
+                shape = GlassShapes.HazeMediumSmall,
                 minHeight = ComponentSize.PluginActionBtnCompactHeight,
                 contentPadding = PaddingValues(
                     horizontal = Spacing.Medium,
@@ -629,7 +622,7 @@ private fun ImportRightReviewColumn(
             GlassButton(
                 onClick = onCancel,
                 variant = GlassButtonVariant.Standard,
-                shape = GlassShapes.MediumSmall,
+                shape = GlassShapes.HazeMediumSmall,
                 minHeight = ComponentSize.PluginActionBtnCompactHeight,
                 contentPadding = PaddingValues(
                     horizontal = Spacing.Medium,
@@ -643,7 +636,7 @@ private fun ImportRightReviewColumn(
                     Icon(
                         painter = AppIcons.ClearPainterResource(),
                         contentDescription = "Cancel",
-                        tint = GlassTheme.colors.onGlassSecondary,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(IconSize.Small),
                     )
                     Text("Cancel")
@@ -663,7 +656,7 @@ private fun UnsignedSecurityAlertCard(modifier: Modifier = Modifier) {
             .glassOutlineBorder(
                 width = StrokeWidth.Hairline,
                 color = PluginThemeColors.WarningBorder,
-                shape = GlassShapes.MediumSmall,
+                shape = GlassShapes.HazeMediumSmall,
             )
             .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
     ) {
@@ -697,7 +690,6 @@ private fun UnsignedSecurityAlertCard(modifier: Modifier = Modifier) {
 
 @Composable
 private fun PackageEffectsCard(modifier: Modifier = Modifier) {
-    val glassColors = GlassTheme.colors
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -706,7 +698,7 @@ private fun PackageEffectsCard(modifier: Modifier = Modifier) {
             .glassOutlineBorder(
                 width = StrokeWidth.Hairline,
                 color = PluginThemeColors.CardBorder,
-                shape = GlassShapes.MediumSmall,
+                shape = GlassShapes.HazeMediumSmall,
             )
             .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
     ) {
@@ -717,7 +709,7 @@ private fun PackageEffectsCard(modifier: Modifier = Modifier) {
                 text = "Declared effects",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
-                color = glassColors.onGlass,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             GlassHorizontalDivider(specular = true)
 
@@ -728,13 +720,13 @@ private fun PackageEffectsCard(modifier: Modifier = Modifier) {
                 Icon(
                     painter = AppIcons.InfoPainterResource(),
                     contentDescription = "Effects unavailable",
-                    tint = glassColors.onGlassSecondary,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(IconSize.Small),
                 )
                 Text(
                     text = "This inspection contract does not expose an operation/effect summary.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = glassColors.onGlass,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
             }
         }
@@ -743,7 +735,6 @@ private fun PackageEffectsCard(modifier: Modifier = Modifier) {
 
 @Composable
 private fun DependencyResolutionCard(inspection: PackageInspection, modifier: Modifier = Modifier) {
-    val glassColors = GlassTheme.colors
     val hasBlockingErrors = inspection.report.hasBlockingErrors()
     val dependencyCount = inspection.dependencies.size
     val conflictCount = inspection.conflicts.size
@@ -755,7 +746,7 @@ private fun DependencyResolutionCard(inspection: PackageInspection, modifier: Mo
             .glassOutlineBorder(
                 width = StrokeWidth.Hairline,
                 color = PluginThemeColors.CardBorder,
-                shape = GlassShapes.MediumSmall,
+                shape = GlassShapes.HazeMediumSmall,
             )
             .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
     ) {
@@ -766,7 +757,7 @@ private fun DependencyResolutionCard(inspection: PackageInspection, modifier: Mo
                 text = "Dependency resolution",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
-                color = glassColors.onGlass,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -780,9 +771,9 @@ private fun DependencyResolutionCard(inspection: PackageInspection, modifier: Mo
                     },
                     contentDescription = if (hasBlockingErrors || conflictCount > 0) "Blocked" else "Resolved",
                     tint = if (hasBlockingErrors || conflictCount > 0) {
-                        glassColors.diagnostics.error
+                        GlassTheme.diagnosticColors.error
                     } else {
-                        glassColors.diagnostics.success
+                        GlassTheme.diagnosticColors.success
                     },
                     modifier = Modifier.size(IconSize.Small),
                 )
@@ -795,16 +786,16 @@ private fun DependencyResolutionCard(inspection: PackageInspection, modifier: Mo
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
                     color = if (hasBlockingErrors || conflictCount > 0) {
-                        glassColors.diagnostics.error
+                        GlassTheme.diagnosticColors.error
                     } else {
-                        glassColors.diagnostics.success
+                        GlassTheme.diagnosticColors.success
                     },
                 )
             }
             Text(
                 text = "$dependencyCount declared dependencies · $conflictCount declared conflicts.",
                 style = MaterialTheme.typography.bodySmall,
-                color = glassColors.onGlassSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -816,12 +807,11 @@ private fun UnsignedAcknowledgementRow(
     onAcknowledgedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
     Row(
         modifier = modifier
             .fillMaxWidth()
             .clip(GlassShapes.MediumSmall)
-            .background(glassColors.chromeSurface)
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
             .clickable(role = Role.Checkbox) {
                 onAcknowledgedChange(!acknowledged)
             }
@@ -834,11 +824,11 @@ private fun UnsignedAcknowledgementRow(
                 .size(ComponentSize.PluginStepperNodeSize)
                 .clip(GlassShapes.ExtraSmall)
                 .background(
-                    if (acknowledged) glassColors.glassAccent else glassColors.glassSurface,
+                    if (acknowledged) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainer,
                 )
                 .glassOutlineBorder(
                     width = StrokeWidth.Hairline,
-                    color = glassColors.glassBorder,
+                    color = MaterialTheme.colorScheme.outline,
                     shape = GlassShapes.ExtraSmall,
                 ),
             contentAlignment = Alignment.Center,
@@ -858,12 +848,12 @@ private fun UnsignedAcknowledgementRow(
                 text = "I trust this local package",
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.SemiBold,
-                color = glassColors.onGlass,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = "I understand the risks and want to install this package.",
                 style = MaterialTheme.typography.bodySmall,
-                color = glassColors.onGlassSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -871,7 +861,6 @@ private fun UnsignedAcknowledgementRow(
 
 @Composable
 private fun ImportDetailRow(label: String, value: String, modifier: Modifier = Modifier) {
-    val glassColors = GlassTheme.colors
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -880,13 +869,13 @@ private fun ImportDetailRow(label: String, value: String, modifier: Modifier = M
         Text(
             text = label,
             style = MaterialTheme.typography.bodySmall,
-            color = glassColors.onGlassMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
             text = value,
             style = MaterialTheme.typography.bodySmall,
             fontWeight = FontWeight.Medium,
-            color = glassColors.onGlass,
+            color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
             softWrap = false,
             overflow = TextOverflow.Ellipsis,
@@ -896,7 +885,6 @@ private fun ImportDetailRow(label: String, value: String, modifier: Modifier = M
 
 @Composable
 private fun UnsupportedLegacyFormatPanel(formatName: String, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
-    val glassColors = GlassTheme.colors
 
     Box(
         modifier = modifier
@@ -920,14 +908,14 @@ private fun UnsupportedLegacyFormatPanel(formatName: String, onDismiss: () -> Un
                 Icon(
                     painter = AppIcons.ClearPainterResource(),
                     contentDescription = "Legacy Format Warning",
-                    tint = glassColors.diagnostics.warning,
+                    tint = GlassTheme.diagnosticColors.warning,
                     modifier = Modifier.size(IconSize.Medium),
                 )
                 Text(
                     text = "Unsupported legacy package: $formatName",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = glassColors.onGlass,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
             }
 
@@ -935,7 +923,7 @@ private fun UnsupportedLegacyFormatPanel(formatName: String, onDismiss: () -> Un
                 text = "This archive uses a deprecated raw format. " +
                     "To ensure reproducible builds and tamper protection, please repackage using Author Tools.",
                 style = MaterialTheme.typography.bodySmall,
-                color = glassColors.onGlassSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
             GlassButton(

@@ -29,7 +29,6 @@ import org.ide.lti.core.designsystem.component.display.GlassPanelContainer
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.core.model.target.TargetDevice
 
 /**
@@ -46,7 +45,6 @@ import org.ide.lti.core.model.target.TargetDevice
 fun TargetDetailPanel(
     selectedTarget: TargetDevice?,
     modifier: Modifier = Modifier,
-    backdrop: GlassSceneState? = null,
 ) {
     GlassPanelContainer(
         modifier = modifier.fillMaxSize(),
@@ -70,7 +68,6 @@ fun TargetDetailPanel(
                 if (selectedTarget != null) {
                     TargetTelemetryCard(
                         target = selectedTarget,
-                        backdrop = backdrop,
                     )
                 }
             }
@@ -101,7 +98,6 @@ private fun BreadcrumbTrail(
     selectedTarget: TargetDevice,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
@@ -110,7 +106,7 @@ private fun BreadcrumbTrail(
         Text(
             text = "Target",
             style = MaterialTheme.typography.bodyMedium,
-            color = glassColors.onGlassMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             softWrap = false,
             overflow = TextOverflow.Ellipsis,
@@ -118,7 +114,7 @@ private fun BreadcrumbTrail(
         Text(
             text = "/",
             style = MaterialTheme.typography.bodyMedium,
-            color = glassColors.onGlassMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             softWrap = false,
             overflow = TextOverflow.Ellipsis,
@@ -127,7 +123,7 @@ private fun BreadcrumbTrail(
             text = "${selectedTarget.name} (${selectedTarget.codename})",
             style = MaterialTheme.typography.bodyMedium.copy(fontFamily = codeFontFamily()),
             fontWeight = FontWeight.SemiBold,
-            color = glassColors.glassAccent,
+            color = MaterialTheme.colorScheme.primary,
             maxLines = 1,
             softWrap = false,
             overflow = TextOverflow.Ellipsis,

@@ -32,8 +32,6 @@ fun HardwareConfigTab(
     onTargetChange: (TargetDevice) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
-    val colors = GlassTheme.ideShellColors
 
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -41,8 +39,7 @@ fun HardwareConfigTab(
     ) {
         GlassCard(
             modifier = Modifier.fillMaxWidth(),
-            surfaceColor = colors.cardBackground,
-            borderColor = colors.border,
+            surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -51,12 +48,12 @@ fun HardwareConfigTab(
                 Text(
                     text = "Silicon & Filesystem",
                     style = MaterialTheme.typography.titleSmall,
-                    color = glassColors.onGlass,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     text = "Chipset platform and super partition filesystem used for unpack/pack.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = glassColors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
                 Spacer(modifier = Modifier.height(Spacing.ExtraSmall))
@@ -85,8 +82,7 @@ fun HardwareConfigTab(
 
         GlassCard(
             modifier = Modifier.fillMaxWidth(),
-            surfaceColor = colors.cardBackground,
-            borderColor = colors.border,
+            surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -95,12 +91,12 @@ fun HardwareConfigTab(
                 Text(
                     text = "Super Partition Geometry",
                     style = MaterialTheme.typography.titleSmall,
-                    color = glassColors.onGlass,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     text = "Dynamic partition metadata sizing, in bytes.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = glassColors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
                 Row(
@@ -147,8 +143,7 @@ fun HardwareConfigTab(
 
         GlassCard(
             modifier = Modifier.fillMaxWidth(),
-            surfaceColor = colors.cardBackground,
-            borderColor = colors.border,
+            surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -157,12 +152,12 @@ fun HardwareConfigTab(
                 Text(
                     text = "Fastboot & Slotting",
                     style = MaterialTheme.typography.titleSmall,
-                    color = glassColors.onGlass,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     text = "Identifiers used by fastboot flashing and A/B slot management.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = glassColors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
                 Row(
@@ -200,7 +195,7 @@ fun HardwareConfigTab(
                     Text(
                         text = "Virtual A/B",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = glassColors.onGlass,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.weight(1f),
                     )
                     GlassToggle(
@@ -216,7 +211,7 @@ fun HardwareConfigTab(
                     Text(
                         text = "Standalone system_ext",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = glassColors.onGlass,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.weight(1f),
                     )
                     GlassToggle(

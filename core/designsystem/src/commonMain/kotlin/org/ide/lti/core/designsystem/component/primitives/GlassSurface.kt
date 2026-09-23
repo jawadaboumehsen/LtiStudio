@@ -10,122 +10,73 @@
 package org.ide.lti.core.designsystem.component.primitives
 
 import androidx.compose.foundation.layout.Box
+import org.ide.lti.core.designsystem.theme.HazeShape
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.unit.Dp
-import com.kashif_e.backdrop.ResolvedGlassEffect
-import com.kashif_e.backdrop.drawBackdrop
-import com.kashif_e.backdrop.highlight.Highlight
-import com.kashif_e.backdrop.shadow.Shadow
-import org.ide.lti.core.designsystem.theme.GlassEffects
-import org.ide.lti.core.designsystem.theme.GlassHighlights
-import org.ide.lti.core.designsystem.theme.GlassShadows
+import dev.chrisbanes.haze.ExperimentalHazeApi
+import dev.chrisbanes.haze.HazeInput
+import dev.chrisbanes.haze.glass.GlassStyle
+import dev.chrisbanes.haze.glass.hazeGlass
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.StrokeWidth
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 
 /**
- * Default glass effect stack ("Standard" look): vibrancy + moderate blur + lens refraction.
- * Delegated to canonical [GlassEffects.Standard].
- */
-val StandardGlassEffects: ResolvedGlassEffect = GlassEffects.Standard
-
-/**
- * Base glass surface component. Thin wrapper over [com.kashif_e.backdrop.drawBackdrop].
+ * Base glass surface component - built on Haze's real `Modifier.hazeGlass`.
  *
  * @param modifier Modifier to be applied to the surface
  * @param shape Shape of the glass surface
- * @param backdrop GlassSceneState instance to sample (default: from [GlassTheme] or a new layer)
- * @param surfaceColor Optional surface color overlay (default: from [GlassTheme] colors)
- * @param tint Optional tint color (default: from [GlassTheme] colors)
+ * @param surfaceColor Optional surface color overlay (default: [MaterialTheme.colorScheme.surfaceContainer])
+ * @param tint Optional tint color
  * @param borderColor Optional border color
  * @param borderWidth Width of the border (default: [StrokeWidth.Standard])
- * @param effect Effect stack to apply (default: [GlassEffects.Standard])
- * @param highlight Optional highlight decorator (default: [GlassHighlights.Plain])
- * @param shadow Optional shadow decorator (default: [GlassShadows.None])
  * @param content Content to display inside the glass surface
  */
+@OptIn(ExperimentalHazeApi::class)
 @Composable
 fun GlassSurface(
     modifier: Modifier = Modifier,
-    shape: Shape = GlassShapes.Medium,
-    backdrop: GlassSceneState? = null,
+    shape: HazeShape = GlassShapes.HazePanel,
     surfaceColor: Color = Color.Unspecified,
     tint: Color = Color.Unspecified,
     borderColor: Color = Color.Unspecified,
     borderWidth: Dp = StrokeWidth.Standard,
-    effect: ResolvedGlassEffect = GlassEffects.Standard,
-    highlight: () -> Highlight? = GlassHighlights.Plain,
-    shadow: (() -> Shadow?)? = GlassShadows.None,
     content: @Composable () -> Unit,
 ) {
-    val glassColors = GlassTheme.colors
-    val effectsEnabled = GlassTheme.effectsEnabled
-    val actualBackdrop = backdrop ?: GlassTheme.scene
+    val colors = MaterialTheme.colorScheme
+    val resolvedSurface = if (surfaceColor.isSpecified) surfaceColor else colors.surfaceContainer
+    val resolvedTint = if (tint.isSpecified) tint else Color.Transparent
 
-    val finalSurfaceColor = if (surfaceColor.isSpecified) surfaceColor else glassColors.glassSurface
-    val finalTint = if (tint.isSpecified) tint else glassColors.glassTint
-    val finalBorderColor = if (borderColor.isSpecified) borderColor else Color.Unspecified
-
-    val borderModifier = if (finalBorderColor.isSpecified) {
-        Modifier.glassOutlineBorder(
-            color = finalBorderColor,
-            width = borderWidth,
-            shape = shape,
-        )
+    val borderModifier = if (borderColor.isSpecified) {
+        Modifier.glassOutlineBorder(color = borderColor, width = borderWidth, shape = shape)
     } else {
         Modifier
-    }
-
-    val backgroundModifier = if (effectsEnabled && actualBackdrop != null) {
-        Modifier.drawBackdrop(
-            backdrop = actualBackdrop.engineBackdrop,
-            shape = { shape },
-            resolvedEffect = effect,
-            highlight = highlight,
-            shadow = shadow,
-            onDrawSurface = { fallbackAlphaBoost ->
-                drawRect(finalSurfaceColor)
-
-                if (finalTint.isSpecified && finalTint.alpha > 0f) {
-                    drawRect(finalTint, blendMode = BlendMode.SrcOver)
-                }
-                // No real backdrop sample was drawn this frame (render budget exceeded, or a
-                // sticky shader failure) - boost coverage proportionally to how much blur this
-                // surface wanted, so a heavily-blurred surface doesn't read as barely-tinted just
-                // because it degraded.
-                if (fallbackAlphaBoost > 0f) {
-                    drawRect(finalSurfaceColor.copy(alpha = fallbackAlphaBoost))
-                }
-            },
-        )
-    } else {
-        Modifier
-            .clip(shape)
-            .drawBehind {
-                drawRect(finalSurfaceColor)
-
-                if (finalTint.isSpecified && finalTint.alpha > 0f) {
-                    drawRect(finalTint, blendMode = BlendMode.SrcOver)
-                }
-            }
     }
 
     Box(
         modifier = modifier
-            .then(backgroundModifier)
+            .hazeGlass(
+                input = HazeInput.Backdrop(GlassTheme.hazeState),
+                style = remember(shape, resolvedSurface, resolvedTint) {
+                    GlassStyle.regular.then {
+                        backgroundColor(resolvedSurface)
+                        tint(resolvedTint)
+                        this.shape(shape)
+                    }
+                },
+            )
+            .clip(shape)
             .then(borderModifier),
     ) {
-        CompositionLocalProvider(LocalContentColor provides glassColors.onGlass) {
+        CompositionLocalProvider(LocalContentColor provides colors.onSurface) {
             content()
         }
     }

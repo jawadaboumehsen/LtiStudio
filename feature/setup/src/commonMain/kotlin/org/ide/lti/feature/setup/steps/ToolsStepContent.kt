@@ -31,7 +31,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.feature.setup.SetupActivityState
 import org.ide.lti.feature.setup.SetupUiActions
 import org.ide.lti.feature.setup.SetupUiState
@@ -56,7 +55,6 @@ import org.ide.lti.feature.setup.components.ToolMatrixTable
 fun ToolsStepContent(
     state: SetupUiState,
     actions: SetupUiActions,
-    resolvedBackdrop: GlassSceneState,
     modifier: Modifier = Modifier,
     toolBrowserState: ToolBrowserState? = null,
     activityState: SetupActivityState? = null,
@@ -64,7 +62,6 @@ fun ToolsStepContent(
     focusSearchOnMount: Boolean = false,
     scrollState: ScrollState = rememberScrollState(),
 ) {
-    val glassColors = GlassTheme.colors
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
@@ -124,7 +121,7 @@ fun ToolsStepContent(
                     text = "Toolchain & Native Binaries",
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = glassColors.onGlass,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     softWrap = false,
                     overflow = TextOverflow.Ellipsis,
@@ -132,7 +129,7 @@ fun ToolsStepContent(
                 Text(
                     text = "Browse, test, and rebuild native Android ROM engineering tools compiled for your subsystem",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = glassColors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -167,7 +164,6 @@ fun ToolsStepContent(
                 },
                 isBusy = state.toolchainSetupState.isBusy,
                 searchFocusRequester = searchFocusRequester,
-                backdrop = resolvedBackdrop,
                 publishedToolIds = state.toolchainSetupState.publishedToolIds,
             )
 
@@ -177,7 +173,6 @@ fun ToolsStepContent(
                 title = "Tool Execution & Activity",
                 isRunning = state.toolchainSetupState.isRunning,
                 defaultExpanded = true,
-                backdrop = resolvedBackdrop,
             )
         }
     }

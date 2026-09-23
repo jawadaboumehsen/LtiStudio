@@ -1,0 +1,163 @@
+// Copyright 2025, Christopher Banes and the Haze project contributors
+// SPDX-License-Identifier: Apache-2.0
+
+@file:OptIn(InternalHazeApi::class, ExperimentalHazeApi::class)
+
+package dev.chrisbanes.haze.blur
+
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.graphics.isSpecified
+import androidx.compose.ui.graphics.layer.CompositingStrategy
+import androidx.compose.ui.graphics.layer.GraphicsLayer
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.unit.roundToIntSize
+import androidx.compose.ui.unit.toIntSize
+import dev.chrisbanes.haze.ExperimentalHazeApi
+import dev.chrisbanes.haze.HazeEffectRuntimeDrawScope
+import dev.chrisbanes.haze.InternalHazeApi
+import dev.chrisbanes.haze.withGraphicsLayer
+import kotlin.math.max
+
+@OptIn(InternalHazeApi::class)
+/**
+ * Draws a color effect with optional mask.
+ *
+ * Rendering order: content → color effect → mask → alpha → blendMode
+ *
+ * @param colorEffect The color effect to draw
+ * @param context The visual effect context
+ * @param offset Offset to translate the effect by
+ * @param expandedSize Size for drawing (defaults to canvas size)
+ * @param mask Optional brush mask to apply to the effect
+ */
+internal fun DrawScope.drawScrim(colorEffect: HazeColorEffect, context: HazeEffectRuntimeDrawScope, offset: Offset = Offset.Zero, expandedSize: Size = this.size, mask: Brush? = null) {
+  when (colorEffect) {
+    is TintBrushHazeColorEffect -> {
+      if (mask != null) {
+        context.withGraphicsLayer { layer ->
+          layer.compositingStrategy = CompositingStrategy.Offscreen
+          layer.record(size = size.toIntSize()) {
+            drawRect(brush = colorEffect.brush, blendMode = colorEffect.blendMode)
+            drawRect(brush = mask, blendMode = BlendMode.DstIn)
+          }
+          translate(offset) {
+            drawLayer(layer)
+          }
+        }
+      } else {
+        drawRect(
+          brush = colorEffect.brush,
+          topLeft = offset,
+          size = size,
+          blendMode = colorEffect.blendMode,
+        )
+      }
+    }
+    is TintColorHazeColorEffect -> {
+      if (mask != null) {
+        // When we have a mask, combine the tint color with the mask
+        context.withGraphicsLayer { layer ->
+          layer.compositingStrategy = CompositingStrategy.Offscreen
+          layer.record(size = size.toIntSize()) {
+            drawRect(color = colorEffect.color, blendMode = colorEffect.blendMode)
+            drawRect(brush = mask, blendMode = BlendMode.DstIn)
+          }
+          translate(offset) {
+            drawLayer(layer)
+          }
+        }
+      } else {
+        drawRect(
+          color = colorEffect.color,
+          size = expandedSize,
+          blendMode = colorEffect.blendMode,
+        )
+      }
+    }
+    is ColorFilterHazeColorEffect -> {
+      if (mask != null) {
+        context.withGraphicsLayer { layer ->
+          layer.compositingStrategy = CompositingStrategy.Offscreen
+          layer.record(size = size.toIntSize()) {
+            drawRect(color = Color.White, colorFilter = colorEffect.colorFilter)
+            drawRect(brush = mask, blendMode = BlendMode.DstIn)
+          }
+          translate(offset) {
+            val canvas = drawContext.canvas
+            val paint = Paint().apply { blendMode = colorEffect.blendMode }
+            val bounds = Rect(Offset.Zero, size)
+            canvas.saveLayer(bounds, paint)
+            drawLayer(layer)
+            canvas.restore()
+          }
+        }
+      } else {
+        drawRect(
+          color = Color.White,
+          size = expandedSize,
+          colorFilter = colorEffect.colorFilter,
+          blendMode = colorEffect.blendMode,
+        )
+      }
+    }
+  }
+}
+
+internal fun DrawScope.createScaledContentLayer(
+  context: HazeEffectRuntimeDrawScope,
+  backgroundColor: Color,
+  scaleFactor: Float,
+  layerSize: Size,
+  existingLayer: GraphicsLayer? = null,
+): GraphicsLayer? {
+  val scaledLayerSize = (layerSize * scaleFactor).roundToIntSize()
+
+  if (scaledLayerSize.width <= 0 || scaledLayerSize.height <= 0) {
+    // If we have a 0px dimension we can't do anything so just return
+    return null
+  }
+
+  // Now we need to draw `contentNode` into each of an 'effect' graphic layers.
+  // The RenderEffect applied will provide the blurring effect.
+  val graphicsContext = context.requireGraphicsContext()
+  val layer = existingLayer?.takeUnless { it.isReleased }
+    ?: graphicsContext.createGraphicsLayer()
+
+  layer.record(size = scaledLayerSize) {
+    if (backgroundColor.isSpecified) {
+      drawRect(backgroundColor)
+    }
+
+    scale(scale = scaleFactor, pivot = Offset.Zero) {
+      with(context) { this@record.drawInput() }
+    }
+  }
+
+  return layer
+}
+
+internal fun DrawScope.drawScaledContent(
+  offset: Offset,
+  scaledSize: Size,
+  clip: Boolean = true,
+  block: DrawScope.() -> Unit,
+) {
+  val scaleFactor = max(size.width / scaledSize.width, size.height / scaledSize.height)
+  withTransform({ if (clip) clipRect() }) {
+    translate(offset) {
+      scale(scale = scaleFactor, pivot = Offset.Zero) {
+        block()
+      }
+    }
+  }
+}

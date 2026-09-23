@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.workspace.studio.components
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -40,7 +41,6 @@ import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
@@ -58,7 +58,6 @@ public fun StudioTopAppBar(
     onValidate: () -> Unit,
     onSave: () -> Unit,
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
     windowControls: @Composable (() -> Unit)? = null,
     onDragWindow: (() -> Unit)? = null,
 ) {
@@ -76,7 +75,6 @@ public fun StudioTopAppBar(
             )
         },
         contextLabel = "",
-        colors = colors,
         centerContent = {},
         actions = {
             // User Profile Badge
@@ -84,12 +82,12 @@ public fun StudioTopAppBar(
                 modifier = Modifier
                     .size(IconSize.ActionCard)
                     .clip(GlassShapes.Circle)
-                    .background(colors.accentBlue),
+                    .background(MaterialTheme.colorScheme.primary),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = "JD",
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = FontSize.Micro,
                     fontWeight = FontWeight.Bold,
                     fontFamily = ideFontFamily(),
@@ -104,7 +102,6 @@ public fun StudioTopAppBar(
 @Composable
 internal fun TopBarTargetSpecifier(
     targetContext: TargetContextUi,
-    colors: IdeShellColorScheme,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -144,10 +141,10 @@ internal fun TopBarTargetSpecifier(
         Row(
             modifier = Modifier
                 .clip(GlassShapes.ShellControl)
-                .background(colors.cardBackgroundMuted)
+                .background(MaterialTheme.colorScheme.surfaceContainer)
                 .border(
                     width = GlassDimens.HairlineBorder,
-                    color = colors.border,
+                    color = MaterialTheme.colorScheme.outline,
                     shape = GlassShapes.ShellControl,
                 )
                 .padding(horizontal = Spacing.Small, vertical = Spacing.Hairline),
@@ -156,26 +153,26 @@ internal fun TopBarTargetSpecifier(
         ) {
             Text(
                 text = "TARGET:",
-                color = colors.textDim,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = codeFontFamily(),
             )
             Text(
                 text = targetText,
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = FontSize.Micro,
                 fontFamily = codeFontFamily(),
                 fontWeight = FontWeight.SemiBold,
             )
             Text(
                 text = "/",
-                color = colors.textDim,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = codeFontFamily(),
             )
             Text(
                 text = profileText,
-                color = colors.accentBlue,
+                color = MaterialTheme.colorScheme.primary,
                 fontSize = FontSize.Micro,
                 fontFamily = codeFontFamily(),
             )
@@ -186,12 +183,12 @@ internal fun TopBarTargetSpecifier(
             modifier = Modifier
                 .width(GlassDimens.HairlineBorder)
                 .height(Spacing.Medium)
-                .background(colors.border),
+                .background(MaterialTheme.colorScheme.outline),
         )
 
         Text(
             text = "Target $revText",
-            color = colors.textDim,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.Micro,
             fontFamily = ideFontFamily(),
         )
@@ -199,10 +196,10 @@ internal fun TopBarTargetSpecifier(
         Box(
             modifier = Modifier
                 .clip(GlassShapes.ShellControl)
-                .background(colors.warningAmberBg)
+                .background(GlassTheme.diagnosticColors.warning.copy(alpha = AlphaTokens.Subtle))
                 .border(
                     width = GlassDimens.HairlineBorder,
-                    color = colors.warningAmber.copy(alpha = AlphaTokens.Muted),
+                    color = GlassTheme.diagnosticColors.warning.copy(alpha = AlphaTokens.Muted),
                     shape = GlassShapes.ShellControl,
                 )
                 .padding(horizontal = Spacing.Small, vertical = Spacing.Hairline),
@@ -210,7 +207,7 @@ internal fun TopBarTargetSpecifier(
         ) {
             Text(
                 text = targetContext.draftBadge ?: "Draft changes",
-                color = colors.warningAmber,
+                color = GlassTheme.diagnosticColors.warning,
                 fontSize = FontSize.Micro,
                 fontFamily = codeFontFamily(),
             )
@@ -223,7 +220,6 @@ internal fun TopBarActionButton(
     label: String,
     isLoading: Boolean,
     isEnabled: Boolean,
-    colors: IdeShellColorScheme,
     onClick: () -> Unit,
     testTag: String,
     modifier: Modifier = Modifier,
@@ -231,18 +227,18 @@ internal fun TopBarActionButton(
     isPrimary: Boolean = false,
 ) {
     val bg = when {
-        !isEnabled -> colors.topBarBackground
-        isPrimary -> colors.accentGreen
-        else -> colors.controlHover
+        !isEnabled -> MaterialTheme.colorScheme.surfaceContainer
+        isPrimary -> GlassTheme.diagnosticColors.success
+        else -> MaterialTheme.colorScheme.surfaceContainerHigh
     }
     val borderColor = when {
-        isPrimary -> colors.accentGreenHover
-        else -> colors.border
+        isPrimary -> GlassTheme.diagnosticColors.success
+        else -> MaterialTheme.colorScheme.outline
     }
     val contentColor = when {
         isPrimary -> BrandColors.OnLogoBadge
-        !isEnabled -> colors.textDim
-        else -> colors.textMain
+        !isEnabled -> MaterialTheme.colorScheme.onSurfaceVariant
+        else -> MaterialTheme.colorScheme.onSurface
     }
     Box(
         modifier = modifier
@@ -267,7 +263,7 @@ internal fun TopBarActionButton(
                 CircularProgressIndicator(
                     modifier = Modifier.size(IconSize.Small),
                     strokeWidth = StrokeWidth.Hairline,
-                    color = if (isPrimary) colors.appBackground else colors.accentBlue,
+                    color = if (isPrimary) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.primary,
                 )
             } else if (icon != null) {
                 Icon(

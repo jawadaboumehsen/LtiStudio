@@ -51,7 +51,6 @@ import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolchainSetupState
@@ -77,7 +76,6 @@ import org.ide.lti.feature.setup.components.ToolchainPipelineTracker
 fun EnvironmentStepContent(
     state: SetupUiState,
     actions: SetupUiActions,
-    resolvedBackdrop: GlassSceneState,
     modifier: Modifier = Modifier,
     onProceedToLaunchpad: () -> Unit = {},
     onNavigateToProjects: (() -> Unit)? = null,
@@ -97,7 +95,6 @@ fun EnvironmentStepContent(
         onRetryStage = actions.onRetryStage,
         onPreviewSetup = actions.onPreviewSetup,
         onProceedToLaunchpad = onProceedToLaunchpad,
-        resolvedBackdrop = resolvedBackdrop,
         modifier = modifier,
         onAutoRemediateDoctor = actions.onAutoRemediateDoctor,
         autoRunOnLaunch = autoRunOnLaunch,
@@ -136,7 +133,6 @@ fun EnvironmentStepContent(
     onCheckEnvironment: () -> Unit,
     onRetrySetupStep: () -> Unit,
     onProceedToLaunchpad: () -> Unit,
-    resolvedBackdrop: GlassSceneState,
     modifier: Modifier = Modifier,
     environmentPresentation: EnvironmentPresentation? = null,
     activeOperation: SetupOperation? = null,
@@ -155,8 +151,7 @@ fun EnvironmentStepContent(
     activityListState: androidx.compose.foundation.lazy.LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
     previewInvokerFocusRequester: FocusRequester? = null,
 ) {
-    val glassColors = GlassTheme.colors
-    val diagnostics = glassColors.diagnostics
+    val diagnostics = GlassTheme.diagnosticColors
 
     val presentation = environmentPresentation ?: SetupPresentationMapper.mapEnvironment(
         state = toolchainSetupState,
@@ -197,7 +192,7 @@ fun EnvironmentStepContent(
                     text = "Environment & Toolchains Cockpit",
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = glassColors.onGlass,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     softWrap = false,
                     overflow = TextOverflow.Ellipsis,
@@ -205,7 +200,7 @@ fun EnvironmentStepContent(
                 Text(
                     text = "Professional diagnostics, WSL 2 subsystem bridge, 35-tool matrix, and build pipeline",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = glassColors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -215,7 +210,6 @@ fun EnvironmentStepContent(
             EnvironmentSubsystemHeader(
                 state = toolchainSetupState,
                 onCheckEnvironment = onCheckEnvironment,
-                backdrop = resolvedBackdrop,
                 isAutoDoctorEnabled = isAutoDoctorEnabled,
                 onSetAutoDoctorEnabled = onSetAutoDoctorEnabled,
                 onResetToolchainCache = onResetToolchainCache,
@@ -223,9 +217,7 @@ fun EnvironmentStepContent(
 
             EnvironmentStatusBanners(
                 toolchainSetupState = toolchainSetupState,
-                resolvedBackdrop = resolvedBackdrop,
                 onCheckEnvironment = onCheckEnvironment,
-                glassColors = glassColors,
                 diagnostics = diagnostics,
             )
 
@@ -233,7 +225,6 @@ fun EnvironmentStepContent(
                 steps = toolchainSetupState.steps,
                 onRetryStep = onRetrySetupStep,
                 isBusy = toolchainSetupState.isBusy,
-                backdrop = resolvedBackdrop,
                 onRetryStage = onRetryStage,
             )
 
@@ -253,7 +244,6 @@ fun EnvironmentStepContent(
                 selectedId = selectedCockpitTab,
                 onTabSelected = onSelectCockpitTab,
                 modifier = Modifier.fillMaxWidth(),
-                backdrop = resolvedBackdrop,
             )
 
             EnvironmentCockpitTabContent(
@@ -262,7 +252,6 @@ fun EnvironmentStepContent(
                 onAutoRemediateDoctor = onAutoRemediateDoctor,
                 activityState = activityState,
                 activityListState = activityListState,
-                resolvedBackdrop = resolvedBackdrop,
             )
 
             EnvironmentStepActionBar(
@@ -274,8 +263,6 @@ fun EnvironmentStepContent(
                 onReconnect = onReconnect,
                 onPreviewSetup = onPreviewSetup,
                 onRetryStage = onRetryStage,
-                resolvedBackdrop = resolvedBackdrop,
-                glassColors = glassColors,
                 previewInvokerFocusRequester = previewInvokerFocusRequester,
             )
         }
@@ -285,9 +272,7 @@ fun EnvironmentStepContent(
 @Composable
 private fun EnvironmentStatusBanners(
     toolchainSetupState: ToolchainSetupState,
-    resolvedBackdrop: GlassSceneState,
     onCheckEnvironment: () -> Unit,
-    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme,
     diagnostics: org.ide.lti.core.designsystem.theme.DiagnosticColors,
 ) {
     val bridgeStep = toolchainSetupState.steps.firstOrNull { it.stage == SetupStepStage.SERVER_CONNECTIVITY }
@@ -296,11 +281,9 @@ private fun EnvironmentStatusBanners(
         BridgeFailureBanner(
             bridgeStep = bridgeStep,
             launcherLogTail = launcherLogTail,
-            resolvedBackdrop = resolvedBackdrop,
             onCheckEnvironment = onCheckEnvironment,
             isBusy = toolchainSetupState.isBusy,
             diagnostics = diagnostics,
-            glassColors = glassColors,
         )
     }
 
@@ -311,7 +294,6 @@ private fun EnvironmentStatusBanners(
             severity = GlassBannerSeverity.WARNING,
             title = "Non-Interactive Sudo Configuration Required",
             description = "Automated package remediation requires passwordless sudo without interactive TTY prompts. Run in WSL terminal:\n$cmd",
-            backdrop = resolvedBackdrop,
         )
     }
 
@@ -322,7 +304,6 @@ private fun EnvironmentStatusBanners(
             severity = GlassBannerSeverity.INFO,
             title = "Active Durable Run",
             description = "Executing durable background run ($runSummary). Reattaches automatically across session restarts.",
-            backdrop = resolvedBackdrop,
         )
     }
 }
@@ -334,13 +315,11 @@ private fun EnvironmentCockpitTabContent(
     onAutoRemediateDoctor: (() -> Unit)?,
     activityState: SetupActivityState?,
     activityListState: androidx.compose.foundation.lazy.LazyListState,
-    resolvedBackdrop: GlassSceneState,
 ) {
     when (selectedCockpitTab) {
         "doctor" -> {
             DoctorDiagnosticsDrawer(
                 diagnosticsList = toolchainSetupState.diagnostics,
-                backdrop = resolvedBackdrop,
                 onAutoRemediateDoctor = onAutoRemediateDoctor,
             )
         }
@@ -350,14 +329,12 @@ private fun EnvironmentCockpitTabContent(
                     activityState = activityState,
                     title = "Execution Terminal Logs",
                     isRunning = toolchainSetupState.isBusy,
-                    backdrop = resolvedBackdrop,
                     listState = activityListState,
                 )
             } else {
                 GlassConsoleDrawer(
                     logs = toolchainSetupState.logs,
                     isRunning = toolchainSetupState.isBusy,
-                    backdrop = resolvedBackdrop,
                 )
             }
         }
@@ -374,16 +351,11 @@ private fun EnvironmentStepActionBar(
     onReconnect: () -> Unit,
     onPreviewSetup: (SetupStepStage?) -> Unit,
     onRetryStage: (SetupStepStage) -> Unit,
-    resolvedBackdrop: GlassSceneState,
-    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme,
     previewInvokerFocusRequester: FocusRequester? = null,
 ) {
-    val shellColors = GlassTheme.ideShellColors
     GlassCard(
         modifier = Modifier.fillMaxWidth(),
-        surfaceColor = shellColors.cardBackground,
-        borderColor = shellColors.border,
-        backdrop = resolvedBackdrop,
+        surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         contentPadding = Spacing.CardPadding,
     ) {
         FlowRow(
@@ -408,7 +380,6 @@ private fun EnvironmentStepActionBar(
                 onReconnect = onReconnect,
                 onPreviewSetup = onPreviewSetup,
                 onRetryStage = onRetryStage,
-                glassColors = glassColors,
             )
         }
     }
@@ -452,13 +423,12 @@ private fun EnvironmentPrimaryActionButton(
     onReconnect: () -> Unit,
     onPreviewSetup: (SetupStepStage?) -> Unit,
     onRetryStage: (SetupStepStage) -> Unit,
-    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme,
     previewInvokerFocusRequester: FocusRequester? = null,
 ) {
     val isBusy = toolchainSetupState.isBusy
     when (presentation.primaryAction) {
-        PrimaryAction.CHECKING -> CheckingActionButton(glassColors)
-        PrimaryAction.STAGE_PROGRESS -> StageProgressActionButton(glassColors)
+        PrimaryAction.CHECKING -> CheckingActionButton()
+        PrimaryAction.STAGE_PROGRESS -> StageProgressActionButton()
         PrimaryAction.OPEN_WORKSPACES -> OpenWorkspacesActionButton(
             enabled = !isBusy,
             onNavigateToProjects = onNavigateToProjects,
@@ -493,7 +463,7 @@ private fun EnvironmentPrimaryActionButton(
 }
 
 @Composable
-private fun CheckingActionButton(glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme) {
+private fun CheckingActionButton() {
     GlassPrimaryButton(onClick = {}, enabled = false) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -502,7 +472,7 @@ private fun CheckingActionButton(glassColors: org.ide.lti.core.designsystem.them
             CircularProgressIndicator(
                 modifier = Modifier.size(IconSize.Small),
                 strokeWidth = StrokeWidth.Hairline,
-                color = glassColors.onGlass,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(text = "Checking...", maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
         }
@@ -511,7 +481,6 @@ private fun CheckingActionButton(glassColors: org.ide.lti.core.designsystem.them
 
 @Composable
 private fun StageProgressActionButton(
-    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme,
 ) {
     GlassPrimaryButton(onClick = {}, enabled = false) {
         Row(
@@ -521,7 +490,7 @@ private fun StageProgressActionButton(
             CircularProgressIndicator(
                 modifier = Modifier.size(IconSize.Small),
                 strokeWidth = StrokeWidth.Hairline,
-                color = glassColors.onGlass,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = "Running Setup...",
@@ -701,19 +670,14 @@ private fun SetUpActionButton(
 private fun BridgeFailureBanner(
     bridgeStep: org.ide.lti.core.domain.setup.SetupStepDetail,
     launcherLogTail: List<String>,
-    resolvedBackdrop: GlassSceneState,
     onCheckEnvironment: () -> Unit,
     isBusy: Boolean,
     diagnostics: org.ide.lti.core.designsystem.theme.DiagnosticColors,
-    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme,
 ) {
     val failureReason = bridgeStep.description
-    val shellColors = GlassTheme.ideShellColors
     GlassCard(
         modifier = Modifier.fillMaxWidth(),
-        surfaceColor = shellColors.cardBackground,
-        borderColor = shellColors.border,
-        backdrop = resolvedBackdrop,
+        surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         contentPadding = Spacing.CardPadding,
     ) {
         Column(
@@ -734,7 +698,7 @@ private fun BridgeFailureBanner(
                     text = "Server Daemon Bridge Failure",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = glassColors.onGlass,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Spacer(Modifier.weight(1f))
                 GlassPrimaryButton(
@@ -766,10 +730,10 @@ private fun BridgeFailureBanner(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(GlassShapes.Small)
-                        .background(glassColors.glassSurface)
+                        .background(MaterialTheme.colorScheme.surfaceContainer)
                         .border(
                             width = StrokeWidth.Standard,
-                            color = glassColors.glassBorder,
+                            color = MaterialTheme.colorScheme.outline,
                             shape = GlassShapes.Small,
                         )
                         .padding(Spacing.Small),
@@ -779,7 +743,7 @@ private fun BridgeFailureBanner(
                         style = MaterialTheme.typography.bodySmall.copy(
                             fontFamily = codeFontFamily(),
                         ),
-                        color = glassColors.onGlassMuted,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }

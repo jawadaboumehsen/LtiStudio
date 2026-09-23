@@ -51,7 +51,6 @@ import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.core.domain.setup.StepProvenance
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolchainSetupState
@@ -76,25 +75,20 @@ fun EnvironmentSubsystemHeader(
     state: ToolchainSetupState,
     onCheckEnvironment: () -> Unit,
     modifier: Modifier = Modifier,
-    backdrop: GlassSceneState? = null,
     isAutoDoctorEnabled: Boolean = true,
     onSetAutoDoctorEnabled: (Boolean) -> Unit = {},
     onResetToolchainCache: () -> Unit = {},
 ) {
-    val glassColors = GlassTheme.colors
-    val diagnostics = glassColors.diagnostics
+    val diagnostics = GlassTheme.diagnosticColors
 
     val isWslHealthy = state.steps.firstOrNull { it.stage.name == "WSL_DETECTION" }?.status == StepStatus.SUCCESS
     val isServerConnected =
         state.steps.firstOrNull { it.stage.name == "SERVER_CONNECTIVITY" }?.status == StepStatus.SUCCESS
     val isServerFailed = state.steps.firstOrNull { it.stage.name == "SERVER_CONNECTIVITY" }?.status == StepStatus.FAILED
 
-    val shellColors = GlassTheme.ideShellColors
     GlassCard(
         modifier = modifier.fillMaxWidth(),
-        surfaceColor = shellColors.cardBackground,
-        borderColor = shellColors.border,
-        backdrop = backdrop,
+        surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         contentPadding = Spacing.CardPadding,
     ) {
         Column(
@@ -116,14 +110,12 @@ fun EnvironmentSubsystemHeader(
                     WslRuntimeBadge(
                         isWslHealthy = isWslHealthy,
                         activeDistro = state.activeDistro,
-                        glassColors = glassColors,
                         diagnostics = diagnostics,
                     )
                     DaemonBridgeBadge(
                         isServerConnected = isServerConnected,
                         isServerFailed = isServerFailed,
                         latencyMs = state.daemonPingMs,
-                        glassColors = glassColors,
                         diagnostics = diagnostics,
                     )
                 }
@@ -145,7 +137,7 @@ fun EnvironmentSubsystemHeader(
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(IconSize.Small),
                                     strokeWidth = StrokeWidth.Hairline,
-                                    color = glassColors.onGlass,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                 )
                             } else {
                                 Icon(
@@ -167,7 +159,6 @@ fun EnvironmentSubsystemHeader(
                     severity = GlassBannerSeverity.WARNING,
                     title = "Non-Interactive Sudo Required",
                     description = "Run in WSL terminal: $cmd",
-                    backdrop = backdrop,
                 )
             }
 
@@ -194,7 +185,7 @@ fun EnvironmentSubsystemHeader(
                     Text(
                         text = lastVerifiedText,
                         style = MaterialTheme.typography.labelSmall,
-                        color = glassColors.onGlassMuted,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         softWrap = false,
                         overflow = TextOverflow.Ellipsis,
@@ -210,7 +201,7 @@ fun EnvironmentSubsystemHeader(
                         checked = isAutoDoctorEnabled,
                         onCheckedChange = onSetAutoDoctorEnabled,
                         enabled = !state.isBusy,
-                        textColor = glassColors.onGlassSecondary,
+                        textColor = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
 
                     // Reset & Rebuild destructive action (quiet icon button)
@@ -226,7 +217,7 @@ fun EnvironmentSubsystemHeader(
                                 painter = AppIcons.DeletePainterResource(),
                                 contentDescription = "Reset toolchain cache & rebuild from scratch",
                                 modifier = Modifier.size(IconSize.Small),
-                                tint = glassColors.onGlassSecondary,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
@@ -252,20 +243,19 @@ private fun formatRelativeTime(instant: Instant): String {
 private fun WslRuntimeBadge(
     isWslHealthy: Boolean,
     activeDistro: String?,
-    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme,
     diagnostics: org.ide.lti.core.designsystem.theme.DiagnosticColors,
 ) {
     // WSL 2 Distro Badge
     Box(
         modifier = Modifier
             .clip(GlassShapes.Medium)
-            .background(glassColors.glassSurface)
+            .background(MaterialTheme.colorScheme.surfaceContainer)
             .border(
                 width = StrokeWidth.Standard,
                 color = if (isWslHealthy) {
                     diagnostics.success.copy(alpha = AlphaTokens.Border)
                 } else {
-                    glassColors.glassBorder
+                    MaterialTheme.colorScheme.outline
                 },
                 shape = GlassShapes.Medium,
             )
@@ -287,13 +277,13 @@ private fun WslRuntimeBadge(
                 Text(
                     text = "WSL 2 Runtime",
                     style = MaterialTheme.typography.labelSmall,
-                    color = glassColors.onGlassMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
                     text = activeDistro ?: "Ubuntu",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
-                    color = glassColors.onGlass,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     softWrap = false,
                     overflow = TextOverflow.Ellipsis,
@@ -308,20 +298,19 @@ private fun DaemonBridgeBadge(
     isServerConnected: Boolean,
     isServerFailed: Boolean,
     latencyMs: Long?,
-    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme,
     diagnostics: org.ide.lti.core.designsystem.theme.DiagnosticColors,
 ) {
     // Daemon Bridge & Latency Meter
     Box(
         modifier = Modifier
             .clip(GlassShapes.Medium)
-            .background(glassColors.glassSurface)
+            .background(MaterialTheme.colorScheme.surfaceContainer)
             .border(
                 width = StrokeWidth.Standard,
                 color = when {
                     isServerConnected -> diagnostics.success.copy(alpha = AlphaTokens.Border)
                     isServerFailed -> diagnostics.error.copy(alpha = AlphaTokens.Border)
-                    else -> glassColors.glassBorder
+                    else -> MaterialTheme.colorScheme.outline
                 },
                 shape = GlassShapes.Medium,
             )
@@ -339,7 +328,7 @@ private fun DaemonBridgeBadge(
                         when {
                             isServerConnected -> diagnostics.success
                             isServerFailed -> diagnostics.error
-                            else -> glassColors.onGlassMuted
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
                         },
                     ),
             )
@@ -347,7 +336,7 @@ private fun DaemonBridgeBadge(
                 Text(
                     text = "Daemon Bridge",
                     style = MaterialTheme.typography.labelSmall,
-                    color = glassColors.onGlassMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -361,7 +350,7 @@ private fun DaemonBridgeBadge(
                         },
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (isServerFailed) diagnostics.error else glassColors.onGlass,
+                        color = if (isServerFailed) diagnostics.error else MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         softWrap = false,
                         overflow = TextOverflow.Ellipsis,
@@ -381,10 +370,10 @@ private fun DaemonBridgeBadge(
     Box(
         modifier = Modifier
             .clip(GlassShapes.Medium)
-            .background(glassColors.glassSurface)
+            .background(MaterialTheme.colorScheme.surfaceContainer)
             .border(
                 width = StrokeWidth.Standard,
-                color = glassColors.glassBorder,
+                color = MaterialTheme.colorScheme.outline,
                 shape = GlassShapes.Medium,
             )
             .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Small),
@@ -393,7 +382,7 @@ private fun DaemonBridgeBadge(
             Text(
                 text = "Storage Headroom",
                 style = MaterialTheme.typography.labelSmall,
-                color = glassColors.onGlassMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -404,7 +393,7 @@ private fun DaemonBridgeBadge(
                     style = MaterialTheme.typography.titleSmall,
                     fontFamily = codeFontFamily(),
                     fontWeight = FontWeight.Medium,
-                    color = glassColors.onGlass,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     softWrap = false,
                     overflow = TextOverflow.Ellipsis,

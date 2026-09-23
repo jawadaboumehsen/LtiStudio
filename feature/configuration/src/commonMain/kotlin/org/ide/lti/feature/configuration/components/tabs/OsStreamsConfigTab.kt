@@ -39,8 +39,6 @@ fun OsStreamsConfigTab(
     onTargetChange: (TargetDevice) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
-    val colors = GlassTheme.ideShellColors
     var activeRegion by remember(target.id) {
         mutableStateOf(target.availableRegions.firstOrNull() ?: TargetRegion.GLOBAL)
     }
@@ -66,8 +64,7 @@ fun OsStreamsConfigTab(
     ) {
         GlassCard(
             modifier = Modifier.fillMaxWidth(),
-            surfaceColor = colors.cardBackground,
-            borderColor = colors.border,
+            surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -76,12 +73,12 @@ fun OsStreamsConfigTab(
                 Text(
                     text = "Deployment Region",
                     style = MaterialTheme.typography.titleSmall,
-                    color = glassColors.onGlass,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     text = "Baseline OS market/region driving OTA endpoints and locale streams.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = glassColors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
                 Spacer(modifier = Modifier.height(Spacing.ExtraSmall))
@@ -109,8 +106,7 @@ fun OsStreamsConfigTab(
 
         GlassCard(
             modifier = Modifier.fillMaxWidth(),
-            surfaceColor = colors.cardBackground,
-            borderColor = colors.border,
+            surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -119,12 +115,12 @@ fun OsStreamsConfigTab(
                 Text(
                     text = "Baseline Firmware Stream (${activeRegion.displayName})",
                     style = MaterialTheme.typography.titleSmall,
-                    color = glassColors.onGlass,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     text = "Firmware identity used to acquire and verify the baseline OTA/image dump for this region.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = glassColors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
                 Spacer(modifier = Modifier.height(Spacing.ExtraSmall))
@@ -177,8 +173,7 @@ fun OsStreamsConfigTab(
 
         GlassCard(
             modifier = Modifier.fillMaxWidth(),
-            surfaceColor = colors.cardBackground,
-            borderColor = colors.border,
+            surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -187,12 +182,12 @@ fun OsStreamsConfigTab(
                 Text(
                     text = "Firmware Acquisition Policy",
                     style = MaterialTheme.typography.titleSmall,
-                    color = glassColors.onGlass,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     text = "Baseline firmware acquisition mode (official OTA download or raw archive import) is bound per-workspace inside Configuration Snapshots.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = glassColors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }

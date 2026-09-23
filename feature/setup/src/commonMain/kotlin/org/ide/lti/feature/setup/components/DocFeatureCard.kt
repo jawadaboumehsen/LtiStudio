@@ -27,7 +27,6 @@ import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 
 /**
  * Summary card for a single architecture/documentation topic on the Documentation tab.
@@ -39,14 +38,10 @@ fun DocFeatureCard(
     description: String,
     modifier: Modifier = Modifier,
     iconPainter: Painter? = null,
-    backdrop: GlassSceneState? = null,
 ) {
-    val shellColors = GlassTheme.ideShellColors
     GlassCard(
         modifier = modifier.fillMaxWidth(),
-        surfaceColor = shellColors.cardBackground,
-        borderColor = shellColors.border,
-        backdrop = backdrop,
+        surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         contentPadding = Spacing.CardPadding,
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
@@ -58,7 +53,7 @@ fun DocFeatureCard(
                     Icon(
                         painter = iconPainter,
                         contentDescription = null,
-                        tint = GlassTheme.colors.glassAccent,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(IconSize.Medium),
                     )
                 }
@@ -66,14 +61,14 @@ fun DocFeatureCard(
                     text = title,
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
-                    color = GlassTheme.colors.onGlass,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
             }
             GlassChip(label = badge, selected = false)
             Text(
                 text = description,
                 style = MaterialTheme.typography.bodySmall,
-                color = GlassTheme.colors.onGlassSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

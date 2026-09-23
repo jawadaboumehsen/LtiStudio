@@ -93,7 +93,7 @@ public fun GlassCommandPalette(
                             Text(
                                 text = category.displayName,
                                 style = MaterialTheme.typography.labelSmall,
-                                color = GlassTheme.colors.onGlassMuted,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(horizontal = Spacing.Medium, vertical = Spacing.ExtraSmall),
                             )
                         }
@@ -130,20 +130,20 @@ private fun CommandRow(command: CommandItem, onExecute: () -> Unit) {
                 imageVector = command.icon.imageVector,
                 contentDescription = null,
                 modifier = Modifier.size(IconSize.Medium),
-                tint = GlassTheme.colors.onGlassSecondary,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             is AppIcon.Painted -> Icon(
                 painter = command.icon.painter(),
                 contentDescription = null,
                 modifier = Modifier.size(IconSize.Medium),
-                tint = GlassTheme.colors.onGlassSecondary,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = command.title,
                 style = MaterialTheme.typography.bodyMedium,
-                color = GlassTheme.colors.onGlass,
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 softWrap = false,
                 overflow = TextOverflow.Ellipsis,
@@ -151,7 +151,7 @@ private fun CommandRow(command: CommandItem, onExecute: () -> Unit) {
             Text(
                 text = command.subtitle,
                 style = MaterialTheme.typography.labelSmall,
-                color = GlassTheme.colors.onGlassMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 softWrap = false,
                 overflow = TextOverflow.Ellipsis,
@@ -161,7 +161,7 @@ private fun CommandRow(command: CommandItem, onExecute: () -> Unit) {
             Text(
                 text = command.shortcut,
                 style = MaterialTheme.typography.labelSmall,
-                color = GlassTheme.colors.onGlassMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 softWrap = false,
                 overflow = TextOverflow.Ellipsis,

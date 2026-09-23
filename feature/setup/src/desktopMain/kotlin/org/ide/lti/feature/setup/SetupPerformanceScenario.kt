@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.setup
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -48,8 +49,6 @@ import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.SetupTokens
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
-import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolCategory
 import org.ide.lti.core.domain.setup.ToolComponentItem
@@ -101,7 +100,6 @@ actual fun SetupPerformanceScenarioHook(
     onOpenConfigurations: () -> Unit,
     onOpenManageTargets: () -> Unit,
     onOpenHelp: () -> Unit,
-    backdrop: GlassSceneState?,
     viewModel: SetupViewModel?,
     defaultContent: @Composable () -> Unit,
 ) {
@@ -110,7 +108,6 @@ actual fun SetupPerformanceScenarioHook(
     } else {
         SetupPerformanceScenarioDriver(
             modifier = modifier,
-            backdrop = backdrop,
         )
     }
 }
@@ -121,11 +118,8 @@ actual fun SetupPerformanceScenarioHook(
 @Composable
 fun SetupPerformanceScenarioDriver(
     modifier: Modifier = Modifier,
-    backdrop: GlassSceneState? = null,
 ) {
-    val glassColors = GlassTheme.colors
     val coroutineScope = rememberCoroutineScope()
-    val resolvedBackdrop = backdrop ?: rememberGlassSceneState()
 
     // 1. Synthetic Fixture Data Preloaded at Presentation Boundary
     val benchmarkRecents = remember { createBenchmarkRecents() }
@@ -423,7 +417,6 @@ fun SetupPerformanceScenarioDriver(
         SetupScreenContent(
             state = syntheticUiState,
             actions = syntheticUiActions,
-            backdrop = resolvedBackdrop,
             toolBrowserState = null,
             activityState = activityState,
             workspacesListState = workspacesListState,
@@ -436,7 +429,6 @@ fun SetupPerformanceScenarioDriver(
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(top = Spacing.ExtraLarge, end = Spacing.Large),
-            backdrop = resolvedBackdrop,
         ) {
             Column(
                 modifier = Modifier.padding(Spacing.SmallMedium),
@@ -454,20 +446,20 @@ fun SetupPerformanceScenarioDriver(
                         Text(
                             text = "Warmup: ${warmupRemainingSeconds}s",
                             fontSize = SetupTokens.TextMetadata,
-                            color = glassColors.onGlassSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     } else if (isRunningScenario) {
                         Text(
                             text = "Running: ${activeSegmentName ?: ""}",
                             fontSize = SetupTokens.TextMetadata,
                             fontWeight = FontWeight.SemiBold,
-                            color = glassColors.glassAccent,
+                            color = MaterialTheme.colorScheme.primary,
                         )
                     } else if (isCompleted) {
                         Text(
                             text = "Completed (30s)",
                             fontSize = SetupTokens.TextMetadata,
-                            color = glassColors.onGlass,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                     }
                 }
@@ -475,7 +467,7 @@ fun SetupPerformanceScenarioDriver(
                 Text(
                     text = statusMessage,
                     fontSize = SetupTokens.TextMetadata,
-                    color = glassColors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
                 Row(
@@ -498,7 +490,7 @@ fun SetupPerformanceScenarioDriver(
                     Text(
                         text = "Ctrl+Shift+B",
                         fontSize = SetupTokens.TextMetadata,
-                        color = glassColors.onGlassMuted,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Mifos Initiative
+ * Copyright 2026 Mifos Initiative
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -9,35 +9,160 @@
  */
 package org.ide.lti.core.designsystem.theme
 
-import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Color
-import com.materialkolor.dynamicColorScheme
-import org.ide.lti.core.designsystem.theme.config.AppTheme
-import org.ide.lti.core.designsystem.theme.config.createDarkFleetColorScheme
 
 /**
- * Brand seed color used to dynamically generate the Material3 color scheme and glass palette.
- * Light Sky Blue (#38BDF8) - paired with an AMOLED true-black dark surface base (see
- * [DarkGlassColorScheme]'s `isAmoled = true`). Matches [BrandColors.LogoGradientEnd], so the app's
- * accent (buttons, focus rings, selected icon backgrounds, syntax highlighting) and the logo badge
- * gradient read as the same color.
+ * Light theme color literals - official Material3 pattern
+ * (developer.android.com/develop/ui/compose/designsystems/material3): flat `Color(0x..)`
+ * constants feeding a `lightColorScheme()`/`darkColorScheme()` builder below, no dynamic
+ * generation. Frosted, blue-tinted light palette.
  */
-val LtiSeedColor = Color(0xFF38BDF8)
+private val md_theme_light_primary = Color(0xFF1570EF)
+private val md_theme_light_onPrimary = Color(0xFFFFFFFF)
+private val md_theme_light_secondary = Color(0xFF1F883D)
+private val md_theme_light_onSecondary = Color(0xFFFFFFFF)
+private val md_theme_light_background = Color(0xFFF0F4FA)
+private val md_theme_light_onBackground = Color(0xFF1A202C)
+private val md_theme_light_surface = Color(0xFFF8FAFD)
+private val md_theme_light_onSurface = Color(0xFF1A202C)
+private val md_theme_light_surfaceVariant = Color(0xFFE8F0FD)
+private val md_theme_light_onSurfaceVariant = Color(0xFF4A5568)
+private val md_theme_light_outline = Color(0xFFD0D7DE)
+private val md_theme_light_outlineVariant = Color(0xFFAFBFD0)
+private val md_theme_light_error = Color(0xFFCF222E)
+private val md_theme_light_onError = Color(0xFFFFFFFF)
+private val md_theme_light_scrim = Color(0xFF000000)
+private val md_theme_light_surfaceContainerLowest = Color(0xFFFFFFFF)
+private val md_theme_light_surfaceContainerLow = Color(0xFFF8FAFD)
+private val md_theme_light_surfaceContainer = Color(0xFFE8F0FD)
+private val md_theme_light_surfaceContainerHigh = Color(0xFFFFFFFF)
+private val md_theme_light_surfaceContainerHighest = Color(0xFFD6E8FF)
+
+/** Dark theme color literals - Fleet-inspired neutral obsidian palette. */
+private val md_theme_dark_primary = Color(0xFF3574F0)
+private val md_theme_dark_onPrimary = Color(0xFFFFFFFF)
+private val md_theme_dark_secondary = Color(0xFF21262D)
+private val md_theme_dark_onSecondary = Color(0xFFF1F5F9)
+private val md_theme_dark_background = Color(0xFF0D1117)
+private val md_theme_dark_onBackground = Color(0xFFF3F4F6)
+private val md_theme_dark_surface = Color(0xFF161B22)
+private val md_theme_dark_onSurface = Color(0xFFF3F4F6)
+private val md_theme_dark_surfaceVariant = Color(0xFF21262D)
+private val md_theme_dark_onSurfaceVariant = Color(0xFF8C93A0)
+private val md_theme_dark_outline = Color(0xFF30363D)
+private val md_theme_dark_outlineVariant = Color(0xFF21262D)
+private val md_theme_dark_error = Color(0xFFF85149)
+private val md_theme_dark_onError = Color(0xFF0D1117)
+private val md_theme_dark_scrim = Color(0xFF000000)
+private val md_theme_dark_surfaceContainerLowest = Color(0xFF0D1117)
+private val md_theme_dark_surfaceContainerLow = Color(0xFF161B22)
+private val md_theme_dark_surfaceContainer = Color(0xFF262C36)
+private val md_theme_dark_surfaceContainerHigh = Color(0xFF2D333D)
+private val md_theme_dark_surfaceContainerHighest = Color(0xFF363D48)
+
+/** Blue theme color literals - signature AMOLED sky-blue palette. */
+private val md_theme_blue_primary = Color(0xFF38BDF8)
+private val md_theme_blue_onPrimary = Color(0xFF071019)
+private val md_theme_blue_secondary = Color(0xFF195EB7)
+private val md_theme_blue_onSecondary = Color(0xFFEDF5FF)
+private val md_theme_blue_background = Color(0xFF060C18)
+private val md_theme_blue_onBackground = Color(0xFFEDF5FF)
+private val md_theme_blue_surface = Color(0xFF060C18)
+private val md_theme_blue_onSurface = Color(0xFFEDF5FF)
+private val md_theme_blue_surfaceVariant = Color(0xFF07101E)
+private val md_theme_blue_onSurfaceVariant = Color(0xFFB8D0EB)
+private val md_theme_blue_outline = Color(0xFF1A2B48)
+private val md_theme_blue_outlineVariant = Color(0xFF263D62)
+private val md_theme_blue_error = Color(0xFFF85149)
+private val md_theme_blue_onError = Color(0xFF071019)
+private val md_theme_blue_scrim = Color(0xFF000000)
+private val md_theme_blue_surfaceContainerLowest = Color(0xFF060C18)
+private val md_theme_blue_surfaceContainerLow = Color(0xFF07101E)
+private val md_theme_blue_surfaceContainer = Color(0xFF0B2140)
+private val md_theme_blue_surfaceContainerHigh = Color(0xFF0C427F)
+private val md_theme_blue_surfaceContainerHighest = Color(0xFF195EB7)
+
+/** Official-pattern M3 color scheme for the Light theme. */
+internal val LightColorScheme = lightColorScheme(
+    primary = md_theme_light_primary,
+    onPrimary = md_theme_light_onPrimary,
+    secondary = md_theme_light_secondary,
+    onSecondary = md_theme_light_onSecondary,
+    background = md_theme_light_background,
+    onBackground = md_theme_light_onBackground,
+    surface = md_theme_light_surface,
+    onSurface = md_theme_light_onSurface,
+    surfaceVariant = md_theme_light_surfaceVariant,
+    onSurfaceVariant = md_theme_light_onSurfaceVariant,
+    outline = md_theme_light_outline,
+    outlineVariant = md_theme_light_outlineVariant,
+    error = md_theme_light_error,
+    onError = md_theme_light_onError,
+    scrim = md_theme_light_scrim,
+    surfaceContainerLowest = md_theme_light_surfaceContainerLowest,
+    surfaceContainerLow = md_theme_light_surfaceContainerLow,
+    surfaceContainer = md_theme_light_surfaceContainer,
+    surfaceContainerHigh = md_theme_light_surfaceContainerHigh,
+    surfaceContainerHighest = md_theme_light_surfaceContainerHighest,
+)
+
+/** Official-pattern M3 color scheme for the Dark theme. */
+internal val DarkColorScheme = darkColorScheme(
+    primary = md_theme_dark_primary,
+    onPrimary = md_theme_dark_onPrimary,
+    secondary = md_theme_dark_secondary,
+    onSecondary = md_theme_dark_onSecondary,
+    background = md_theme_dark_background,
+    onBackground = md_theme_dark_onBackground,
+    surface = md_theme_dark_surface,
+    onSurface = md_theme_dark_onSurface,
+    surfaceVariant = md_theme_dark_surfaceVariant,
+    onSurfaceVariant = md_theme_dark_onSurfaceVariant,
+    outline = md_theme_dark_outline,
+    outlineVariant = md_theme_dark_outlineVariant,
+    error = md_theme_dark_error,
+    onError = md_theme_dark_onError,
+    scrim = md_theme_dark_scrim,
+    surfaceContainerLowest = md_theme_dark_surfaceContainerLowest,
+    surfaceContainerLow = md_theme_dark_surfaceContainerLow,
+    surfaceContainer = md_theme_dark_surfaceContainer,
+    surfaceContainerHigh = md_theme_dark_surfaceContainerHigh,
+    surfaceContainerHighest = md_theme_dark_surfaceContainerHighest,
+)
+
+/** Official-pattern M3 color scheme for the signature AMOLED Blue theme. */
+internal val BlueColorScheme = darkColorScheme(
+    primary = md_theme_blue_primary,
+    onPrimary = md_theme_blue_onPrimary,
+    secondary = md_theme_blue_secondary,
+    onSecondary = md_theme_blue_onSecondary,
+    background = md_theme_blue_background,
+    onBackground = md_theme_blue_onBackground,
+    surface = md_theme_blue_surface,
+    onSurface = md_theme_blue_onSurface,
+    surfaceVariant = md_theme_blue_surfaceVariant,
+    onSurfaceVariant = md_theme_blue_onSurfaceVariant,
+    outline = md_theme_blue_outline,
+    outlineVariant = md_theme_blue_outlineVariant,
+    error = md_theme_blue_error,
+    onError = md_theme_blue_onError,
+    scrim = md_theme_blue_scrim,
+    surfaceContainerLowest = md_theme_blue_surfaceContainerLowest,
+    surfaceContainerLow = md_theme_blue_surfaceContainerLow,
+    surfaceContainer = md_theme_blue_surfaceContainer,
+    surfaceContainerHigh = md_theme_blue_surfaceContainerHigh,
+    surfaceContainerHighest = md_theme_blue_surfaceContainerHighest,
+)
 
 /**
- * Syntax highlighting color scheme for code editor tokens.
- *
- * @property keyword Language keywords (e.g. `fun`, `val`, `class`, `return`).
- * @property function Function names and declarations (e.g. `remember()`, `tokenize()`).
- * @property string String literals and characters (e.g. `"..."`, `'a'`).
- * @property number Numeric literals (e.g. `42`, `3.14f`, `0xFF`).
- * @property comment Single-line and multi-line comments (e.g. `// ...`, `/* ... */`).
- * @property type Type names and classes (e.g. `String`, `List`, `Modifier`).
- * @property annotation Annotations (e.g. `@Composable`, `@OptIn`).
- * @property plain Default code text (variables, punctuation, operators).
+ * Syntax highlighting color scheme for code editor tokens - not an M3 role, kept as its own
+ * flat, literal, non-M3 addition (same reasoning as [DiagnosticColors]).
  */
 @Immutable
 data class SyntaxColorScheme(
@@ -51,60 +176,42 @@ data class SyntaxColorScheme(
     val plain: Color,
 )
 
-/**
- * Derives a [SyntaxColorScheme] from a brand primary [Color] and theme mode using HCT dynamic color science.
- * Ensures WCAG AA contrast (>= 4.5:1) against `canvasSurface` in both dark and light modes.
- */
-fun deriveSyntaxColorScheme(
-    primaryColor: Color,
-    onSurfaceColor: Color,
-    isDark: Boolean,
-): SyntaxColorScheme {
-    val seedArgb = ((primaryColor.alpha * 255).toInt() shl 24) or
-        ((primaryColor.red * 255).toInt() shl 16) or
-        ((primaryColor.green * 255).toInt() shl 8) or
-        (primaryColor.blue * 255).toInt()
-    val seedHct = com.materialkolor.hct.Hct.fromInt(seedArgb)
+internal val LightSyntaxColors = SyntaxColorScheme(
+    keyword = Color(0xFFB1720A),
+    function = Color(0xFF9333A3),
+    string = Color(0xFF1A7F37),
+    number = Color(0xFF1F5FBF),
+    comment = Color(0xFF6E7781),
+    type = Color(0xFF0E7C86),
+    annotation = Color(0xFF8A6D00),
+    plain = md_theme_light_onSurface,
+)
 
-    return if (isDark) {
-        val tone = 80.0
-        val commentTone = 68.0
-        SyntaxColorScheme(
-            keyword = Color(com.materialkolor.hct.Hct.from(32.0, 60.0, tone).toInt()),
-            function = Color(com.materialkolor.hct.Hct.from(300.0, 50.0, tone).toInt()),
-            string = Color(com.materialkolor.hct.Hct.from(135.0, 50.0, tone).toInt()),
-            number = Color(com.materialkolor.hct.Hct.from(212.0, 50.0, tone).toInt()),
-            type = Color(com.materialkolor.hct.Hct.from(168.0, 50.0, tone).toInt()),
-            annotation = Color(com.materialkolor.hct.Hct.from(80.0, 60.0, tone).toInt()),
-            comment = Color(com.materialkolor.hct.Hct.from(seedHct.hue, 12.0, commentTone).toInt()),
-            plain = onSurfaceColor,
-        )
-    } else {
-        val tone = 38.0
-        val commentTone = 46.0
-        SyntaxColorScheme(
-            keyword = Color(com.materialkolor.hct.Hct.from(28.0, 65.0, tone).toInt()),
-            function = Color(com.materialkolor.hct.Hct.from(300.0, 55.0, tone).toInt()),
-            string = Color(com.materialkolor.hct.Hct.from(140.0, 55.0, 36.0).toInt()),
-            number = Color(com.materialkolor.hct.Hct.from(255.0, 55.0, 36.0).toInt()),
-            type = Color(com.materialkolor.hct.Hct.from(175.0, 55.0, 34.0).toInt()),
-            annotation = Color(com.materialkolor.hct.Hct.from(80.0, 60.0, 36.0).toInt()),
-            comment = Color(com.materialkolor.hct.Hct.from(seedHct.hue, 12.0, commentTone).toInt()),
-            plain = onSurfaceColor,
-        )
-    }
-}
+internal val DarkSyntaxColors = SyntaxColorScheme(
+    keyword = Color(0xFFE8A657),
+    function = Color(0xFFD8A6F0),
+    string = Color(0xFF8FD19E),
+    number = Color(0xFF8FC2F0),
+    comment = Color(0xFF8B949E),
+    type = Color(0xFF7EE0D6),
+    annotation = Color(0xFFE0D68F),
+    plain = md_theme_dark_onSurface,
+)
+
+internal val BlueSyntaxColors = SyntaxColorScheme(
+    keyword = Color(0xFFE8A657),
+    function = Color(0xFFD8A6F0),
+    string = Color(0xFF8FD19E),
+    number = Color(0xFF8FC2F0),
+    comment = Color(0xFF9CBCE0),
+    type = Color(0xFF7EE0D6),
+    annotation = Color(0xFFE0D68F),
+    plain = md_theme_blue_onSurface,
+)
 
 /**
- * Semantic diagnostic and git-status color tokens.
- *
- * @property error Error state or indicator (e.g. build errors, fatal diagnostics).
- * @property warning Warning state or indicator (e.g. linter warnings, deprecations).
- * @property success Success state or indicator (e.g. tests passed, build succeeded).
- * @property info Information state or indicator (e.g. hints, notes).
- * @property gitModified Git modified status indicator.
- * @property gitAdded Git added/untracked status indicator.
- * @property gitDeleted Git deleted status indicator.
+ * Semantic diagnostic and git-status color tokens - not an M3 role, kept as its own flat,
+ * literal, non-M3 addition.
  */
 @Immutable
 data class DiagnosticColors(
@@ -117,314 +224,63 @@ data class DiagnosticColors(
     val gitDeleted: Color,
 )
 
-/**
- * Derives a [DiagnosticColors] scheme using HCT dynamic color science.
- * Ensures WCAG AA contrast (>= 4.5:1 text/diagnostic, >= 3.0:1 UI) against both
- * `canvasSurface` and `glassSurface` in both dark and light modes.
- */
-fun deriveDiagnosticColors(
-    isDark: Boolean,
-): DiagnosticColors {
-    return if (isDark) {
-        val tone = 80.0
-        DiagnosticColors(
-            error = Color(com.materialkolor.hct.Hct.from(25.0, 70.0, tone).toInt()),
-            warning = Color(com.materialkolor.hct.Hct.from(75.0, 70.0, tone).toInt()),
-            success = Color(com.materialkolor.hct.Hct.from(145.0, 60.0, tone).toInt()),
-            info = Color(com.materialkolor.hct.Hct.from(220.0, 60.0, tone).toInt()),
-            gitModified = Color(com.materialkolor.hct.Hct.from(50.0, 65.0, tone).toInt()),
-            gitAdded = Color(com.materialkolor.hct.Hct.from(140.0, 60.0, tone).toInt()),
-            gitDeleted = Color(com.materialkolor.hct.Hct.from(15.0, 70.0, tone).toInt()),
-        )
-    } else {
-        val tone = 36.0
-        DiagnosticColors(
-            error = Color(com.materialkolor.hct.Hct.from(25.0, 70.0, tone).toInt()),
-            warning = Color(com.materialkolor.hct.Hct.from(75.0, 70.0, 32.0).toInt()),
-            success = Color(com.materialkolor.hct.Hct.from(145.0, 60.0, 32.0).toInt()),
-            info = Color(com.materialkolor.hct.Hct.from(220.0, 60.0, tone).toInt()),
-            gitModified = Color(com.materialkolor.hct.Hct.from(50.0, 65.0, 32.0).toInt()),
-            gitAdded = Color(com.materialkolor.hct.Hct.from(140.0, 60.0, 32.0).toInt()),
-            gitDeleted = Color(com.materialkolor.hct.Hct.from(15.0, 70.0, tone).toInt()),
-        )
-    }
-}
-
-/**
- * Glass color scheme definition for translucent UI surfaces.
- */
-@Immutable
-data class GlassColorScheme(
-    val glassSurface: Color,
-    val glassSurfaceElevated: Color,
-    val chromeSurface: Color,
-    val canvasSurface: Color,
-    val glassTint: Color,
-    val glassTintSecondary: Color,
-    val glassBorder: Color,
-    val glassBorderHighlight: Color,
-    val onGlass: Color,
-    val onGlassSecondary: Color,
-    val onGlassMuted: Color,
-    val glassHighlight: Color,
-    val glassShadow: Color,
-    val glassAccent: Color,
-    val focusRing: Color,
-    val syntax: SyntaxColorScheme,
-    val diagnostics: DiagnosticColors,
+internal val LightDiagnosticColors = DiagnosticColors(
+    error = Color(0xFFCF222E),
+    warning = Color(0xFF9A6700),
+    success = Color(0xFF1F883D),
+    info = Color(0xFF1570EF),
+    gitModified = Color(0xFF9A6700),
+    gitAdded = Color(0xFF1F883D),
+    gitDeleted = Color(0xFFCF222E),
 )
 
-/**
- * Derives a vibrant, high-chroma accent color from [LtiSeedColor]'s own hue.
- *
- * Material3's dynamic `colorScheme.primary` role tonal-maps any seed to a fixed, desaturated
- * tone (e.g. a vivid cyan seed becomes a pastel steel-teal in dark mode) - correct for general
- * M3 surfaces, but it defeats the point of a punchy brand accent used for icon fills, selected
- * states, and focus rings. This samples the seed's real hue at a high, fixed chroma instead, the
- * same direct-HCT approach [deriveSyntaxColorScheme] already uses for syntax token colors.
- */
-fun deriveVibrantAccent(seedColor: Color = LtiSeedColor, isDark: Boolean): Color {
-    val seedArgb = ((seedColor.alpha * 255).toInt() shl 24) or
-        ((seedColor.red * 255).toInt() shl 16) or
-        ((seedColor.green * 255).toInt() shl 8) or
-        (seedColor.blue * 255).toInt()
-    val seedHct = com.materialkolor.hct.Hct.fromInt(seedArgb)
-    val tone = if (isDark) 75.0 else 45.0
-    val chroma = if (seedHct.chroma < 10.0) 0.0 else maxOf(seedHct.chroma, 60.0)
-    return Color(com.materialkolor.hct.Hct.from(seedHct.hue, chroma, tone).toInt())
+internal val DarkDiagnosticColors = DiagnosticColors(
+    error = Color(0xFFF85149),
+    warning = Color(0xFFD29922),
+    success = Color(0xFF3FB950),
+    info = Color(0xFF3574F0),
+    gitModified = Color(0xFFD29922),
+    gitAdded = Color(0xFF3FB950),
+    gitDeleted = Color(0xFFF85149),
+)
+
+internal val BlueDiagnosticColors = DiagnosticColors(
+    error = Color(0xFFF85149),
+    warning = Color(0xFFEAB308),
+    success = Color(0xFF22C55E),
+    info = Color(0xFF38BDF8),
+    gitModified = Color(0xFFEAB308),
+    gitAdded = Color(0xFF22C55E),
+    gitDeleted = Color(0xFFF85149),
+)
+
+/** Brand seed - logo badge gradient end color, matches the Blue theme's primary. */
+val BrandLogoGradientEnd = Color(0xFF38BDF8)
+
+/** Fleet-inspired decorative accent colors for the splash screen's ambient glow and progress bar. */
+object FleetAccentColors {
+    val Blue = Color(0xFF3574F0)
+    val Cyan = Color(0xFF38BDF8)
 }
 
-/**
- * Overrides `primary`/`onPrimary` with [deriveVibrantAccent]'s vivid seed hue, so
- * `MaterialTheme.colorScheme.primary` itself is the punchy brand accent instead of M3's
- * tonal-mapped, desaturated primary - the single color source every consumer reads for
- * icon fills, selected states, and focus rings (no separate accent field needed).
- */
-fun ColorScheme.withVibrantPrimary(seedColor: Color = LtiSeedColor, isDark: Boolean): ColorScheme =
-    copy(
-        primary = deriveVibrantAccent(seedColor, isDark),
-        onPrimary = if (isDark) Color(0xFF071019) else Color.White,
-    )
-
-/**
- * Derives a [GlassColorScheme] from a generated [ColorScheme] and theme mode.
- */
-fun dynamicGlassColorScheme(
-    colorScheme: ColorScheme,
-    isDark: Boolean,
-    seedColor: Color = LtiSeedColor,
-    appTheme: AppTheme = AppTheme.Blue,
-): GlassColorScheme {
-    val vibrantAccent = deriveVibrantAccent(seedColor, isDark)
-    val syntaxColors = deriveSyntaxColorScheme(
-        primaryColor = colorScheme.primary,
-        onSurfaceColor = colorScheme.onSurface,
-        isDark = isDark,
-    )
-    val diagnosticColors = deriveDiagnosticColors(
-        isDark = isDark,
-    )
-    return if (isDark) {
-        if (appTheme == AppTheme.Dark) {
-            // Apple Liquid Glass Dark Theme: Translucent charcoal surfaces, luminous specular hairlines, subtle frost tint, Fleet electric blue accents
-            GlassColorScheme(
-                glassSurface = colorScheme.surface.copy(alpha = AlphaTokens.GlassTranslucent),
-                glassSurfaceElevated = colorScheme.surfaceContainer.copy(alpha = AlphaTokens.GlassElevated),
-                chromeSurface = colorScheme.surfaceContainerLowest.copy(alpha = AlphaTokens.GlassChrome),
-                canvasSurface = colorScheme.surfaceContainerLowest,
-                glassTint = Color.White.copy(alpha = AlphaTokens.UltraFaint),
-                glassTintSecondary = ThemeColors.FleetBlue.copy(alpha = AlphaTokens.GlassSecondaryTint),
-                glassBorder = Color.White.copy(alpha = AlphaTokens.GlassBorderSpecular),
-                glassBorderHighlight = Color.White.copy(alpha = AlphaTokens.GlassBorderSpecularHighlight),
-                onGlass = colorScheme.onSurface,
-                onGlassSecondary = colorScheme.onSurfaceVariant,
-                onGlassMuted = colorScheme.onSurfaceVariant.copy(alpha = AlphaTokens.TextMuted),
-                glassHighlight = Color.White.copy(alpha = AlphaTokens.GlassHighlightBright),
-                glassShadow = Color.Black.copy(alpha = AlphaTokens.GlassShadowDeep),
-                glassAccent = ThemeColors.FleetBlue,
-                focusRing = ThemeColors.FleetFocusGlow,
-                syntax = syntaxColors,
-                diagnostics = diagnosticColors,
-            )
-        } else {
-            // Blue Theme: Signature vibrant glass tints, sky blue accents, luminous cyan specular hairlines
-            GlassColorScheme(
-                glassSurface = colorScheme.surface.copy(alpha = AlphaTokens.Elevated),
-                glassSurfaceElevated = colorScheme.surfaceContainerHigh.copy(alpha = AlphaTokens.Prominent),
-                chromeSurface = colorScheme.surfaceContainerLowest.copy(alpha = AlphaTokens.Elevated),
-                canvasSurface = colorScheme.surfaceContainerLow,
-                glassTint = colorScheme.primary.copy(alpha = AlphaTokens.Glow),
-                glassTintSecondary = colorScheme.secondary.copy(alpha = AlphaTokens.Glow),
-                glassBorder = colorScheme.primary.copy(alpha = AlphaTokens.Faded),
-                glassBorderHighlight = colorScheme.primary.copy(alpha = AlphaTokens.IconTint),
-                onGlass = colorScheme.onSurface,
-                onGlassSecondary = colorScheme.onSurfaceVariant,
-                onGlassMuted = colorScheme.onSurfaceVariant.copy(alpha = AlphaTokens.TextMuted),
-                glassHighlight = colorScheme.primary.copy(alpha = AlphaTokens.Strong),
-                glassShadow = colorScheme.scrim.copy(alpha = AlphaTokens.Prominent),
-                glassAccent = vibrantAccent,
-                focusRing = vibrantAccent,
-                syntax = syntaxColors,
-                diagnostics = diagnosticColors,
-            )
-        }
-    } else {
-        // Light Theme: Platinum frosted glass surfaces, delicate hairline borders, crisp white specular rim
-        GlassColorScheme(
-            glassSurface = colorScheme.surface.copy(alpha = AlphaTokens.Elevated),
-            glassSurfaceElevated = colorScheme.surfaceContainerHighest.copy(alpha = AlphaTokens.PrimaryButtonTint),
-            chromeSurface = colorScheme.surfaceContainer.copy(alpha = AlphaTokens.Elevated),
-            canvasSurface = colorScheme.surfaceContainerLowest,
-            glassTint = colorScheme.primary.copy(alpha = AlphaTokens.Subtle),
-            glassTintSecondary = colorScheme.secondary.copy(alpha = AlphaTokens.Subtle),
-            glassBorder = colorScheme.outline.copy(alpha = AlphaTokens.Hover),
-            glassBorderHighlight = colorScheme.primary.copy(alpha = AlphaTokens.Prominent),
-            onGlass = colorScheme.onSurface,
-            onGlassSecondary = colorScheme.onSurfaceVariant,
-            onGlassMuted = colorScheme.onSurfaceVariant.copy(alpha = AlphaTokens.TextMuted),
-            glassHighlight = Color.White.copy(alpha = AlphaTokens.IconTint),
-            glassShadow = colorScheme.scrim.copy(alpha = AlphaTokens.Faint),
-            glassAccent = vibrantAccent,
-            focusRing = vibrantAccent,
-            syntax = syntaxColors,
-            diagnostics = diagnosticColors,
-        )
-    }
+/** Centralized token colors for brand assets and logos. */
+object BrandColors {
+    /** Foreground color for glyphs/icons drawn directly on the brand badge fill. */
+    val OnLogoBadge = Color.White
 }
 
-/**
- * Composable helper to remember dynamic glass colors derived from a [ColorScheme].
- */
-@Composable
-fun rememberDynamicGlassColorScheme(
-    colorScheme: ColorScheme,
-    isDark: Boolean,
-    seedColor: Color = LtiSeedColor,
-    appTheme: AppTheme = AppTheme.Blue,
-): GlassColorScheme {
-    return remember(colorScheme, isDark, seedColor, appTheme) {
-        dynamicGlassColorScheme(colorScheme, isDark, seedColor, appTheme)
-    }
-}
-
-/**
- * Dynamically generated default Blue Glass Color Scheme (Signature AMOLED).
- */
-val BlueGlassColorScheme: GlassColorScheme
-    get() = dynamicGlassColorScheme(
-        colorScheme = dynamicColorScheme(seedColor = LtiSeedColor, isDark = true, isAmoled = true),
-        isDark = true,
-        seedColor = LtiSeedColor,
-        appTheme = AppTheme.Blue,
-    )
-
-/**
- * Dynamically generated default Dark Glass Color Scheme (Fleet Neutral Dark).
- */
-val DarkGlassColorScheme: GlassColorScheme
-    get() = dynamicGlassColorScheme(
-        colorScheme = createDarkFleetColorScheme(),
-        isDark = true,
-        seedColor = ThemeColors.FleetBlue,
-        appTheme = AppTheme.Dark,
-    )
-
-/**
- * Dynamically generated default Light Glass Color Scheme.
- */
-val LightGlassColorScheme: GlassColorScheme
-    get() = dynamicGlassColorScheme(
-        colorScheme = dynamicColorScheme(seedColor = LtiSeedColor, isDark = false),
-        isDark = false,
-        seedColor = LtiSeedColor,
-        appTheme = AppTheme.Light,
-    )
-
-/**
- * Centralized token colors for window control buttons (e.g. native Windows close hover).
- */
+/** Centralized token colors for window control buttons (e.g. native Windows close hover). */
 object WindowControlColors {
     val CloseHover = Color(0xFFE81123)
 }
 
-/**
- * Centralized token colors for brand assets and logos.
- */
-object BrandColors {
-    val LogoGradientEnd = Color(0xFF38BDF8)
-
-    /** Foreground color for glyphs/icons drawn directly on [LogoGradientEnd]'s brand badge fill. */
-    val OnLogoBadge = Color.White
-}
-
-/**
- * Centralized token colors for interactive press/drag highlight overlays. These are deliberately
- * theme-agnostic additive light sources (drawn with BlendMode.Plus), not surface colors.
- */
+/** Centralized token colors for cross-component press/drag interaction affordances. */
 object InteractionColors {
+    /** Additive press-highlight overlay drawn under [BlendMode.Plus][androidx.compose.ui.graphics.BlendMode.Plus]. */
     val PressHighlight = Color.White
 }
 
-/**
- * Centralized theme indicator and layer token colors.
- */
-object ThemeColors {
-    val Blue = Color(0xFF38BDF8)
-    val Dark = Color(0xFF3574F0)
-    val Light = Color(0xFFFFFFFF)
-
-    // Fleet & Linear-inspired Dark Theme Layer Architecture (Obsidian base, Charcoal panels, Elevated cards)
-    val DarkLayerBase = Color(0xFF0D1117) // Level 0: Deep Obsidian base canvas & gutters
-    val DarkLayerSurface = Color(0xFF161B22) // Level 1: Charcoal Obsidian panel / topbar / rail surface
-    val DarkLayerElevated = Color(0xFF161B22) // Level 2: Dark elevated card & dialog surface
-    val DarkLayerControl = Color(0xFF21262D) // Level 3: Gray active tab / chip / control surface
-    val DarkLayerHighlight = Color(0xFF30363D) // Hairline card border & outline
-    val DarkLayerBorderSubtle = Color(0xFF21262D) // Subtle panel divider
-    val FleetBlue = Color(0xFF3574F0) // Fleet Action & Primary Blue
-    val FleetFocusGlow = Color(0xFF716BF6) // Fleet Input & Focus Ring Glow
-    val FleetCyan = Color(0xFF38BDF8) // Fleet Cyan / Sky-blue accent
-
-    // Frosted Light Theme Layer Architecture (blue-tinted frosted palette)
-    val LightLayerBase = Color(0xFFF0F4FA) // Light canvas & app background (blue-tinted)
-    val LightLayerSurface = Color(0xFFF8FAFD) // Light editor/content surface
-    val LightLayerElevated = Color(0xFFE8F0FD) // Light activity rail (distinctly blue-tinted)
-    val LightLayerBorder = Color(0xFFD0D7DE) // Light border & divider
-    val LightLayerText = Color(0xFF1A202C) // Light primary text
-    val LightLayerAccent = Color(0xFF1570EF) // Light cobalt-blue primary accent
-
-    // Window control preview mini dots
-    val WindowControlClose = Color(0xFFFF5F56) // macOS Red
-    val WindowControlMinimize = Color(0xFFFFBD2E) // macOS Yellow
-    val WindowControlMaximize = Color(0xFF27C93F) // macOS Green
-
-    // Blue Glass / AMOLED canvas layer architecture
-    val BlueAmoledCanvas = Color(0xFF060C18) // Deepest navy-black base canvas
-    val BlueAmoledRail = Color(0xFF07101E) // Activity rail (deepest sidebar)
-    val BlueAmoledBorder = Color(0xFF1A2B48) // Border & outline
-    val BlueAmoledBorderMuted = Color(0xFF263D62) // Muted divider
-}
-
-/**
- * Centralized token colors for performance monitoring metrics.
- */
-object PerformanceMonitorColors {
-    val Good = Color(0xFF4EC9B0)
-    val Warning = Color(0xFFD7BA7D)
-    val Degraded = Color(0xFFCE9178)
-    val Bad = Color(0xFFF48771)
-}
-
-/**
- * Centralized token colors for toggle switch active states.
- */
-object ToggleColors {
-    val ActiveLight = Color(0xFF34C759)
-    val ActiveDark = Color(0xFF30D158)
-}
-
-/**
- * Centralized token colors for layout previews and placeholders.
- */
+/** Sample tint colors for design-system previews only (not real UI chrome). */
 object PreviewSampleColors {
     val Blue = Color(0xFF2196F3)
     val Purple = Color(0xFF9C27B0)
@@ -432,9 +288,22 @@ object PreviewSampleColors {
     val Green = Color(0xFF4CAF50)
 }
 
-/**
- * Centralized token colors for scenic landscape/wallpaper preview backdrops.
- */
+/** Centralized token colors for the multi-panel [org.ide.lti.core.designsystem.component.layout.GlassLayout] shell. */
+object GlassLayoutColors {
+    val PanelShadow = Color(0x26000000)
+}
+
+/** Centralized token colors for theme accent color selection. */
+object AccentPresetColors {
+    val Blue = Color(0xFF2563EB)
+    val Cyan = Color(0xFF06B6D4)
+    val Emerald = Color(0xFF10B981)
+    val Purple = Color(0xFF8B5CF6)
+    val Amber = Color(0xFFF59E0B)
+    val Crimson = Color(0xFFEF4444)
+}
+
+/** Illustrative sky/mountain gradient colors for the settings theme-picker's scenic wallpaper preview. */
 object WallpaperColors {
     val DarkSkyTop = Color(0xFF070B10)
     val DarkSkyMiddle = Color(0xFF101720)
@@ -449,52 +318,7 @@ object WallpaperColors {
     val LightMountainNear = Color(0xFF475569)
 }
 
-/**
- * Centralized token colors for theme accent color selection.
- */
-object AccentPresetColors {
-    val Blue = Color(0xFF2563EB)
-    val Cyan = Color(0xFF06B6D4)
-    val Emerald = Color(0xFF10B981)
-    val Purple = Color(0xFF8B5CF6)
-    val Amber = Color(0xFFF59E0B)
-    val Crimson = Color(0xFFEF4444)
-}
-
-/**
- * Centralized token colors for glass layout shadows and dividers.
- */
-object GlassLayoutColors {
-    val PanelShadow = Color(0x26000000)
-}
-
-/**
- * Semantic token colors for Plugin Manager screens (Concepts 12, 13, 14, 15).
- *
- * @deprecated Use [GlassTheme.ideShellColors] or [GlassTheme.colors] instead to ensure theme reactivity.
- */
-@Deprecated(
-    message = "Use GlassTheme.ideShellColors instead to support multi-theme reactivity.",
-    replaceWith = ReplaceWith("GlassTheme.ideShellColors"),
-)
-object PluginThemeColors {
-    val SelectedRowBackground: Color @Composable get() = GlassTheme.ideShellColors.controlSelected
-    val SelectedRowBorder: Color @Composable get() = GlassTheme.ideShellColors.focusRing
-    val CardBackground: Color @Composable get() = GlassTheme.ideShellColors.cardBackground
-    val CardBorder: Color @Composable get() = GlassTheme.ideShellColors.border
-    val HeaderBackground: Color @Composable get() = GlassTheme.ideShellColors.tableHeader
-    val TableRowAlt: Color @Composable get() = GlassTheme.ideShellColors.cardBackgroundMuted
-    val WarningBackground: Color @Composable get() = GlassTheme.ideShellColors.warningBackground
-    val WarningBorder: Color @Composable get() = GlassTheme.ideShellColors.warningBorder
-    val WarningText: Color @Composable get() = GlassTheme.ideShellColors.warningText
-    val WarningBody: Color @Composable get() = GlassTheme.ideShellColors.warningBody
-    val ActiveTabBackground: Color @Composable get() = GlassTheme.ideShellColors.tabSelected
-    val ActiveTabBorder: Color @Composable get() = GlassTheme.ideShellColors.tabSelectedBorder
-    val StatusVerified: Color @Composable get() = GlassTheme.ideShellColors.statusSuccess
-    val StatusUnverified: Color @Composable get() = GlassTheme.ideShellColors.statusWarning
-}
-
-/** Optical palette for the saturated blue studio canvas used by IDE workspaces. */
+/** Saturated, multi-depth aura colors for the professional Studio IDE shell backdrop canvas. */
 object StudioBackdropColors {
     val Base = Color(0xFF031A33)
     val PrimaryAura = Color(0xFF1677D2)
@@ -507,197 +331,70 @@ object StudioBackdropColors {
     val SidebarEnd = Color(0xC9062342)
 }
 
-/**
- * Complete color tokens for the IDE application frame, navigation, and overview.
- */
-@Immutable
-data class IdeShellColorScheme(
-    val appBackground: Color,
-    val topBarBackground: Color,
-    val railBackground: Color,
-    val navigatorBackground: Color,
-    val contentBackground: Color,
-    val statusBarBackground: Color,
-    val cardBackground: Color,
-    val cardBackgroundMuted: Color,
-    val border: Color,
-    val borderMuted: Color,
-    val textMain: Color,
-    val textMuted: Color,
-    val textDim: Color,
-    val accentGreen: Color,
-    val accentGreenHover: Color,
-    val accentBlue: Color,
-    val accentBlueHover: Color,
-    val warningAmber: Color,
-    val warningAmberBg: Color,
-    val errorRed: Color,
-    val errorRedBg: Color,
-    val focusRing: Color,
-    val controlHover: Color,
-    val controlSelected: Color,
-    val isDark: Boolean,
-    val contentPanel: Color = contentBackground,
-    val contentPanelBorder: Color = border,
-    val railSelected: Color = controlSelected,
-    val railSelectedBorder: Color = border,
-    val tabSelected: Color = controlSelected,
-    val tabSelectedBorder: Color = border,
-    val infoBannerFill: Color = accentBlue.copy(alpha = AlphaTokens.Subtle),
-    val infoBannerBorder: Color = accentBlue.copy(alpha = AlphaTokens.Ambient),
-    val tableHeader: Color = cardBackground,
-    val rowSelected: Color = controlSelected.copy(alpha = AlphaTokens.Faded),
-    val cardCalloutBackground: Color = cardBackgroundMuted,
-    val cardCalloutBorder: Color = borderMuted,
-    val keyCapBackground: Color = cardBackgroundMuted,
-    val keyCapBorder: Color = borderMuted,
-    val buttonSecondaryBackground: Color = controlHover,
-    val buttonSecondaryBorder: Color = border,
-    val switchActiveTrack: Color = accentBlue,
-    val statusSuccess: Color = accentGreen,
-    val statusWarning: Color = warningAmber,
-    val warningBackground: Color = warningAmberBg,
-    val warningBorder: Color = warningAmber,
-    val warningText: Color = warningAmber,
-    val warningBody: Color = textMuted,
-)
+/** Centralized token colors for the plugin manager's cards, tables, tabs, and status chips. */
+object PluginThemeColors {
+    val SelectedRowBackground: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Faded)
 
-/**
- * Predefined palette configurations for the IDE shell across Dark, Light, and Blue themes.
- *
- * Every field that reduces to a color already named in [ThemeColors]/[AccentPresetColors] (same
- * ARGB, or same RGB at a different alpha) references that constant directly instead of repeating
- * the literal hex - those are the same design color read by two different consumers (this shell
- * chrome palette and, for Dark/Light, the layer architecture those objects document), not two
- * independently-tuned values that happen to coincide. Fields with no source-of-truth match (most
- * of Blue's translucent glass tints, all per-status colors) are genuinely shell-specific and stay
- * as literals here.
- */
-object IdeShellTokens {
-    val Dark = IdeShellColorScheme(
-        appBackground = ThemeColors.DarkLayerBase,
-        topBarBackground = ThemeColors.DarkLayerSurface,
-        railBackground = Color(0xFF13181F),
-        navigatorBackground = ThemeColors.DarkLayerSurface,
-        contentBackground = ThemeColors.DarkLayerBase,
-        statusBarBackground = ThemeColors.DarkLayerSurface,
-        cardBackground = ThemeColors.DarkLayerSurface,
-        cardBackgroundMuted = ThemeColors.DarkLayerBase,
-        border = ThemeColors.DarkLayerHighlight,
-        borderMuted = ThemeColors.DarkLayerControl,
-        textMain = Color(0xFFF0F6FC),
-        textMuted = Color(0xFFC9D1D9),
-        textDim = Color(0xFF8B949E),
-        accentGreen = Color(0xFF238636),
-        accentGreenHover = Color(0xFF2EA043),
-        accentBlue = ThemeColors.Dark,
-        accentBlueHover = Color(0xFF4A8FF5),
-        warningAmber = Color(0xFFD29922),
-        warningAmberBg = Color(0x26BB8009),
-        errorRed = Color(0xFFF85149),
-        errorRedBg = Color(0x26F85149),
-        focusRing = ThemeColors.Dark,
-        controlHover = ThemeColors.DarkLayerControl,
-        controlSelected = ThemeColors.DarkLayerControl,
-        isDark = true,
-        contentPanel = ThemeColors.DarkLayerBase,
-        contentPanelBorder = ThemeColors.DarkLayerHighlight,
-        railSelected = ThemeColors.DarkLayerControl,
-        railSelectedBorder = ThemeColors.DarkLayerHighlight,
-        tabSelected = ThemeColors.DarkLayerControl,
-        tabSelectedBorder = ThemeColors.DarkLayerHighlight,
-        infoBannerFill = ThemeColors.Dark.copy(alpha = 0x26 / 255f),
-        infoBannerBorder = ThemeColors.Dark.copy(alpha = 0x4D / 255f),
-        tableHeader = ThemeColors.DarkLayerSurface,
-        rowSelected = ThemeColors.Dark.copy(alpha = 0x26 / 255f),
-    )
+    val SelectedRowBorder: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = MaterialTheme.colorScheme.primary
 
-    val Light = IdeShellColorScheme(
-        appBackground = ThemeColors.LightLayerBase,
-        topBarBackground = ThemeColors.Light,
-        railBackground = ThemeColors.LightLayerElevated,
-        navigatorBackground = ThemeColors.Light,
-        contentBackground = ThemeColors.LightLayerSurface,
-        statusBarBackground = ThemeColors.Light,
-        cardBackground = ThemeColors.Light,
-        cardBackgroundMuted = ThemeColors.LightLayerBase,
-        border = ThemeColors.LightLayerBorder,
-        borderMuted = Color(0xFFAFBFD0),
-        textMain = ThemeColors.LightLayerText,
-        textMuted = Color(0xFF4A5568),
-        textDim = Color(0xFF5D6A7E),
-        accentGreen = Color(0xFF1F883D),
-        accentGreenHover = Color(0xFF1A7F37),
-        accentBlue = ThemeColors.LightLayerAccent,
-        accentBlueHover = Color(0xFF1254CC),
-        warningAmber = Color(0xFF9A6700),
-        warningAmberBg = Color(0x26D4A72C),
-        errorRed = Color(0xFFCF222E),
-        errorRedBg = Color(0x26CF222E),
-        focusRing = ThemeColors.LightLayerAccent,
-        controlHover = Color(0xFFEBF0F9),
-        controlSelected = Color(0xFFD6E8FF),
-        isDark = false,
-        contentPanel = ThemeColors.LightLayerSurface,
-        contentPanelBorder = ThemeColors.LightLayerBorder,
-        railSelected = Color(0xFFD6E8FF),
-        railSelectedBorder = Color(0xFFB8D0EB),
-        tabSelected = Color(0xFFD6E8FF),
-        tabSelectedBorder = Color(0xFFB8D0EB),
-        infoBannerFill = ThemeColors.LightLayerAccent.copy(alpha = 0x1A / 255f),
-        infoBannerBorder = ThemeColors.LightLayerAccent.copy(alpha = 0x40 / 255f),
-        tableHeader = ThemeColors.LightLayerBase,
-        rowSelected = ThemeColors.LightLayerAccent.copy(alpha = 0x26 / 255f),
-    )
+    val CardBackground: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = MaterialTheme.colorScheme.surfaceContainerHigh
 
-    val Blue = IdeShellColorScheme(
-        appBackground = Color.Transparent,
-        topBarBackground = Color(0xFF0C427F).copy(alpha = AlphaTokens.Half),
-        railBackground = StudioBackdropColors.SidebarStart.copy(alpha = AlphaTokens.Strong),
-        navigatorBackground = StudioBackdropColors.SidebarCenter.copy(alpha = AlphaTokens.Strong),
-        contentBackground = Color.Transparent,
-        statusBarBackground = Color(0xD2072445).copy(alpha = AlphaTokens.High),
-        cardBackground = Color(0x730A1E38),
-        cardBackgroundMuted = Color(0x40051222),
-        border = ThemeColors.Blue.copy(alpha = 0x4D / 255f),
-        borderMuted = ThemeColors.Blue.copy(alpha = 0x26 / 255f),
-        textMain = Color(0xFFEDF5FF),
-        textMuted = Color(0xFFB8D0EB),
-        textDim = Color(0xFF9CBCE0),
-        accentGreen = Color(0xFF238636),
-        accentGreenHover = Color(0xFF2EA043),
-        accentBlue = Color(0xFF195EB7),
-        accentBlueHover = AccentPresetColors.Blue,
-        warningAmber = Color(0xFFEAB308),
-        warningAmberBg = Color(0x26EAB308),
-        errorRed = Color(0xFFF85149),
-        errorRedBg = Color(0x26F85149),
-        focusRing = ThemeColors.Blue,
-        controlHover = Color(0xFF162744).copy(alpha = AlphaTokens.Elevated),
-        controlSelected = Color(0xD5195EB7),
-        isDark = true,
-        contentPanel = Color(0xEB081B33),
-        contentPanelBorder = ThemeColors.Blue.copy(alpha = 0x40 / 255f),
-        railSelected = Color(0xFF195EB7),
-        railSelectedBorder = ThemeColors.Blue.copy(alpha = 0x4D / 255f),
-        tabSelected = Color(0xFF195EB7),
-        tabSelectedBorder = ThemeColors.Blue.copy(alpha = 0x4D / 255f),
-        infoBannerFill = ThemeColors.Blue.copy(alpha = 0x1A / 255f),
-        infoBannerBorder = ThemeColors.Blue.copy(alpha = 0x59 / 255f),
-        tableHeader = Color(0xD90B2140),
-        rowSelected = Color(0x40195EB7),
-        cardCalloutBackground = Color(0xCC051222),
-        cardCalloutBorder = ThemeColors.Blue.copy(alpha = 0x40 / 255f),
-        keyCapBackground = Color(0x99061528),
-        keyCapBorder = ThemeColors.Blue.copy(alpha = 0x40 / 255f),
-        buttonSecondaryBackground = Color(0x331E3A6E),
-        buttonSecondaryBorder = ThemeColors.Blue.copy(alpha = 0x66 / 255f),
-        switchActiveTrack = AccentPresetColors.Blue,
-        statusSuccess = Color(0xFF22C55E),
-        statusWarning = AccentPresetColors.Amber,
-        warningBackground = Color(0xD12B1C09),
-        warningBorder = Color(0xCCB96A13),
-        warningText = AccentPresetColors.Amber,
-        warningBody = Color(0xFFD4B088),
-    )
+    val CardBorder: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = MaterialTheme.colorScheme.outline
+
+    val HeaderBackground: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = MaterialTheme.colorScheme.surfaceContainerHigh
+
+    val TableRowAlt: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = MaterialTheme.colorScheme.surfaceContainer
+
+    val WarningBackground: Color
+        @Composable
+        get() = GlassTheme.diagnosticColors.warning.copy(alpha = AlphaTokens.Subtle)
+
+    val WarningBorder: Color
+        @Composable
+        get() = GlassTheme.diagnosticColors.warning
+
+    val WarningText: Color
+        @Composable
+        get() = GlassTheme.diagnosticColors.warning
+
+    val WarningBody: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = MaterialTheme.colorScheme.onSurfaceVariant
+
+    val ActiveTabBackground: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Faded)
+
+    val ActiveTabBorder: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = MaterialTheme.colorScheme.outline
+
+    val StatusVerified: Color
+        @Composable
+        get() = GlassTheme.diagnosticColors.success
+
+    val StatusUnverified: Color
+        @Composable
+        get() = GlassTheme.diagnosticColors.warning
 }

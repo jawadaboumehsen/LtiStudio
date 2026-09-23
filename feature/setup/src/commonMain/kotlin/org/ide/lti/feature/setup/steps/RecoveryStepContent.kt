@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -54,12 +55,10 @@ import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.PluginThemeColors
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
-import org.ide.lti.core.designsystem.theme.config.AppTheme
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
+import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.feature.setup.SetupActivityState
 import org.ide.lti.feature.setup.SetupUiActions
 import org.ide.lti.feature.setup.SetupUiState
@@ -78,11 +77,9 @@ import org.ide.lti.feature.setup.SetupUiState
 fun RecoveryStepContent(
     state: SetupUiState,
     actions: SetupUiActions,
-    resolvedBackdrop: GlassSceneState,
     modifier: Modifier = Modifier,
     activityState: SetupActivityState? = null,
     onOpenHelp: () -> Unit = actions.onOpenHelp,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     val scrollState = rememberScrollState()
 
@@ -100,10 +97,7 @@ fun RecoveryStepContent(
         verticalArrangement = Arrangement.spacedBy(Spacing.Large),
     ) {
         // 1. Breadcrumb and Screen Header
-        RecoveryHeader(
-            onOpenHelp = onOpenHelp,
-            colors = colors,
-        )
+        RecoveryHeader(onOpenHelp = onOpenHelp)
 
         // 2. Side-by-Side Status & Action Cards
         Row(
@@ -112,33 +106,25 @@ fun RecoveryStepContent(
         ) {
             SetupInProgressCard(
                 state = state,
-                resolvedBackdrop = resolvedBackdrop,
                 modifier = Modifier.weight(0.65f),
-                colors = colors,
             )
 
             ServiceStateCard(
                 onReconnect = actions.onReconnect,
-                resolvedBackdrop = resolvedBackdrop,
                 modifier = Modifier.weight(0.35f),
-                colors = colors,
             )
         }
 
         // 3. Blocked Reset & Installation Callout Banner
-        RecoveryBlockedBanner(colors = colors)
+        RecoveryBlockedBanner()
 
         // 4. Tabbed Terminal & Log Drawer
-        RecoveryConsoleDrawer(
-            activityState = activityState,
-            resolvedBackdrop = resolvedBackdrop,
-            colors = colors,
-        )
+        RecoveryConsoleDrawer(activityState = activityState)
     }
 }
 
 @Composable
-private fun RecoveryHeader(onOpenHelp: () -> Unit, colors: IdeShellColorScheme, modifier: Modifier = Modifier) {
+private fun RecoveryHeader(onOpenHelp: () -> Unit, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
@@ -150,18 +136,18 @@ private fun RecoveryHeader(onOpenHelp: () -> Unit, colors: IdeShellColorScheme, 
         ) {
             Text(
                 text = "Machine environment",
-                color = colors.textDim,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.BodySmall,
                 fontFamily = GlassFontFamily.ide(),
             )
             Text(
                 text = "/",
-                color = colors.borderMuted,
+                color = MaterialTheme.colorScheme.outlineVariant,
                 fontSize = FontSize.BodySmall,
             )
             Text(
                 text = "Recovery",
-                color = colors.accentBlue,
+                color = MaterialTheme.colorScheme.primary,
                 fontSize = FontSize.BodySmall,
                 fontWeight = FontWeight.Medium,
                 fontFamily = GlassFontFamily.ide(),
@@ -179,12 +165,12 @@ private fun RecoveryHeader(onOpenHelp: () -> Unit, colors: IdeShellColorScheme, 
                     text = "Recover interrupted setup",
                     fontSize = FontSize.HeadlineMedium,
                     fontWeight = FontWeight.Bold,
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     text = "Resume and complete machine environment setup after an unexpected interruption.",
                     fontSize = FontSize.BodyMedium,
-                    color = colors.textMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
 
@@ -199,19 +185,19 @@ private fun RecoveryHeader(onOpenHelp: () -> Unit, colors: IdeShellColorScheme, 
                 Icon(
                     imageVector = Icons.Default.HelpOutline,
                     contentDescription = "Help",
-                    tint = colors.accentBlue,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(IconSize.Medium),
                 )
                 Column {
                     Text(
                         text = "Help",
-                        color = colors.accentBlue,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = FontSize.BodyMedium,
                     )
                     Text(
                         text = "Recovery setup and troubleshooting",
-                        color = colors.textDim,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = FontSize.Micro,
                     )
                 }
@@ -223,18 +209,14 @@ private fun RecoveryHeader(onOpenHelp: () -> Unit, colors: IdeShellColorScheme, 
 @Composable
 private fun SetupInProgressCard(
     state: SetupUiState,
-    resolvedBackdrop: GlassSceneState,
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     val activeOp = state.activeOperation
     val receiptId = activeOp?.operationId ?: state.toolchainSetupState.pendingAttemptId ?: "setup-042"
 
     GlassCard(
         modifier = modifier.testTag("SetupInProgressCard"),
-        surfaceColor = colors.cardBackground,
-        borderColor = colors.border,
-        backdrop = resolvedBackdrop,
+        surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         contentPadding = Spacing.CardPadding,
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
@@ -246,7 +228,7 @@ private fun SetupInProgressCard(
                 Icon(
                     imageVector = Icons.Default.Schedule,
                     contentDescription = null,
-                    tint = colors.accentBlue,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(IconSize.Large),
                 )
                 Column {
@@ -254,27 +236,26 @@ private fun SetupInProgressCard(
                         text = "Setup in progress",
                         fontWeight = FontWeight.Bold,
                         fontSize = FontSize.BodyLarge,
-                        color = colors.textMain,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                     Text(
                         text = "Environment setup was interrupted. The current operation has not completed.",
                         fontSize = FontSize.BodySmall,
-                        color = colors.textMuted,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
 
             // Key-Value Properties Table
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-                RecoveryPropertyRow("Operation", "Install pinned tool packages", colors)
-                RecoveryPropertyRow("Receipt ID", receiptId, colors, isCode = true)
-                RecoveryPropertyRow("Last confirmed step", "Verifying mkfs.erofs", colors)
-                RecoveryPropertyRow("Environment", "Development environment", colors)
-                RecoveryPropertyRow("Submitted", "2025-03-12 10:14:32", colors, isCode = true)
+                RecoveryPropertyRow("Operation", "Install pinned tool packages")
+                RecoveryPropertyRow("Receipt ID", receiptId, isCode = true)
+                RecoveryPropertyRow("Last confirmed step", "Verifying mkfs.erofs")
+                RecoveryPropertyRow("Environment", "Development environment")
+                RecoveryPropertyRow("Submitted", "2025-03-12 10:14:32", isCode = true)
                 RecoveryPropertyRow(
                     label = "Last update",
                     value = "2025-03-12 10:18:05\nWaiting to reconnect to service...",
-                    colors = colors,
                     isCode = true,
                 )
             }
@@ -283,20 +264,20 @@ private fun SetupInProgressCard(
 }
 
 @Composable
-private fun RecoveryPropertyRow(label: String, value: String, colors: IdeShellColorScheme, isCode: Boolean = false) {
+private fun RecoveryPropertyRow(label: String, value: String, isCode: Boolean = false) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.Top,
     ) {
         Text(
             text = label,
-            color = colors.textDim,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.BodySmall,
             modifier = Modifier.width(GlassDimens.ReadinessLabelColumnWidth),
         )
         Text(
             text = value,
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = FontSize.BodySmall,
             fontFamily = if (isCode) codeFontFamily() else GlassFontFamily.ide(),
             fontWeight = if (isCode) FontWeight.Normal else FontWeight.Medium,
@@ -307,15 +288,11 @@ private fun RecoveryPropertyRow(label: String, value: String, colors: IdeShellCo
 @Composable
 private fun ServiceStateCard(
     onReconnect: () -> Unit,
-    resolvedBackdrop: GlassSceneState,
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     GlassCard(
         modifier = modifier.testTag("ServiceStateCard"),
-        surfaceColor = colors.cardBackground,
-        borderColor = colors.border,
-        backdrop = resolvedBackdrop,
+        surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         contentPadding = Spacing.CardPadding,
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.MediumSmall)) {
@@ -329,12 +306,12 @@ private fun ServiceStateCard(
                     text = "Service state",
                     fontWeight = FontWeight.SemiBold,
                     fontSize = FontSize.BodyMedium,
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Icon(
                     imageVector = Icons.Default.HelpOutline,
                     contentDescription = "Service status info",
-                    tint = colors.textDim,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(IconSize.Small),
                 )
             }
@@ -344,8 +321,8 @@ private fun ServiceStateCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(GlassShapes.Small)
-                    .background(colors.cardBackgroundMuted)
-                    .border(GlassDimens.HairlineBorder, colors.borderMuted, GlassShapes.Small)
+                    .background(MaterialTheme.colorScheme.surfaceContainer)
+                    .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outlineVariant, GlassShapes.Small)
                     .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
                 contentAlignment = Alignment.CenterStart,
             ) {
@@ -356,12 +333,12 @@ private fun ServiceStateCard(
                     Icon(
                         imageVector = Icons.Default.HelpOutline,
                         contentDescription = null,
-                        tint = colors.textMain,
+                        tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(IconSize.Medium),
                     )
                     Text(
                         text = "Unknown",
-                        color = colors.textMain,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = FontSize.BodyMedium,
                         fontWeight = FontWeight.Bold,
                     )
@@ -371,7 +348,7 @@ private fun ServiceStateCard(
             // Explanatory Caption
             Text(
                 text = "Service connection is lost.\nThis may take a few minutes.",
-                color = colors.textMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.BodySmall,
             )
 
@@ -386,10 +363,10 @@ private fun ServiceStateCard(
                     .clip(GlassShapes.Small)
                     .border(
                         width = GlassDimens.HairlineBorder,
-                        color = if (isBlue) PluginThemeColors.ActiveTabBorder else colors.accentBlue,
+                        color = if (isBlue) PluginThemeColors.ActiveTabBorder else MaterialTheme.colorScheme.primary,
                         shape = GlassShapes.Small,
                     )
-                    .background(if (isBlue) PluginThemeColors.ActiveTabBackground else colors.accentBlue)
+                    .background(if (isBlue) PluginThemeColors.ActiveTabBackground else MaterialTheme.colorScheme.primary)
                     .clickable(onClick = onReconnect)
                     .padding(vertical = Spacing.SmallMedium, horizontal = Spacing.Medium),
                 horizontalArrangement = Arrangement.Center,
@@ -418,10 +395,10 @@ private fun ServiceStateCard(
                     .clip(GlassShapes.Small)
                     .border(
                         width = GlassDimens.HairlineBorder,
-                        color = colors.borderMuted,
+                        color = MaterialTheme.colorScheme.outlineVariant,
                         shape = GlassShapes.Small,
                     )
-                    .background(colors.cardBackgroundMuted)
+                    .background(MaterialTheme.colorScheme.surfaceContainer)
                     .clickable(onClick = {})
                     .padding(vertical = Spacing.SmallMedium, horizontal = Spacing.Medium),
                 horizontalArrangement = Arrangement.Center,
@@ -430,13 +407,13 @@ private fun ServiceStateCard(
                 Icon(
                     imageVector = Icons.Default.Description,
                     contentDescription = null,
-                    tint = colors.textMain,
+                    tint = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.size(IconSize.Small),
                 )
                 Spacer(modifier = Modifier.width(Spacing.Small))
                 Text(
                     text = "View operation evidence",
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = FontSize.BodyMedium,
                 )
             }
@@ -445,12 +422,12 @@ private fun ServiceStateCard(
 }
 
 @Composable
-private fun RecoveryBlockedBanner(colors: IdeShellColorScheme, modifier: Modifier = Modifier) {
+private fun RecoveryBlockedBanner(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .fillMaxWidth()
             .clip(GlassShapes.Card)
-            .background(colors.cardBackground)
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
             .border(
                 width = GlassDimens.HairlineBorder,
                 color = PluginThemeColors.WarningBorder,
@@ -473,13 +450,13 @@ private fun RecoveryBlockedBanner(colors: IdeShellColorScheme, modifier: Modifie
                     text = "Installation and reset stay blocked",
                     fontWeight = FontWeight.Bold,
                     fontSize = FontSize.BodyMedium,
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     text = "Installation and reset stay blocked until terminal status is confirmed. " +
                         "This prevents partial installation and keeps the environment consistent.",
                     fontSize = FontSize.BodySmall,
-                    color = colors.textMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -489,9 +466,7 @@ private fun RecoveryBlockedBanner(colors: IdeShellColorScheme, modifier: Modifie
 @Composable
 private fun RecoveryConsoleDrawer(
     activityState: SetupActivityState?,
-    resolvedBackdrop: GlassSceneState,
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     var selectedTab by remember { mutableStateOf("logs") }
     var autoScroll by remember { mutableStateOf(true) }
@@ -524,9 +499,7 @@ private fun RecoveryConsoleDrawer(
 
     GlassCard(
         modifier = modifier.fillMaxWidth().testTag("RecoveryConsoleDrawer"),
-        surfaceColor = colors.cardBackground,
-        borderColor = colors.border,
-        backdrop = resolvedBackdrop,
+        surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         contentPadding = Spacing.CardPadding,
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium)) {
@@ -543,21 +516,18 @@ private fun RecoveryConsoleDrawer(
                         icon = Icons.Default.Terminal,
                         isSelected = selectedTab == "logs",
                         onClick = { selectedTab = "logs" },
-                        colors = colors,
                     )
                     ConsoleTabItem(
                         title = "Evidence",
                         icon = Icons.Default.Description,
                         isSelected = selectedTab == "evidence",
                         onClick = { selectedTab = "evidence" },
-                        colors = colors,
                     )
                     ConsoleTabItem(
                         title = "Problems",
                         icon = Icons.Default.Warning,
                         isSelected = selectedTab == "problems",
                         onClick = { selectedTab = "problems" },
-                        colors = colors,
                         accentTint = PluginThemeColors.WarningText,
                     )
                 }
@@ -574,7 +544,7 @@ private fun RecoveryConsoleDrawer(
                     Text(
                         text = "Auto-scroll",
                         fontSize = FontSize.BodySmall,
-                        color = colors.textMuted,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     val isBlue = GlassTheme.appTheme == AppTheme.Blue
                     Box(
@@ -584,17 +554,17 @@ private fun RecoveryConsoleDrawer(
                             .clip(GlassShapes.Capsule)
                             .background(
                                 if (autoScroll) {
-                                    if (isBlue) PluginThemeColors.ActiveTabBackground else colors.accentBlue
+                                    if (isBlue) PluginThemeColors.ActiveTabBackground else MaterialTheme.colorScheme.primary
                                 } else {
-                                    colors.cardBackgroundMuted
+                                    MaterialTheme.colorScheme.surfaceContainer
                                 },
                             )
                             .border(
                                 width = GlassDimens.HairlineBorder,
                                 color = if (autoScroll) {
-                                    if (isBlue) PluginThemeColors.ActiveTabBorder else colors.accentBlue
+                                    if (isBlue) PluginThemeColors.ActiveTabBorder else MaterialTheme.colorScheme.primary
                                 } else {
-                                    colors.borderMuted
+                                    MaterialTheme.colorScheme.outlineVariant
                                 },
                                 shape = GlassShapes.Capsule,
                             )
@@ -616,8 +586,8 @@ private fun RecoveryConsoleDrawer(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(GlassShapes.Small)
-                    .background(colors.appBackground.copy(alpha = AlphaTokens.Elevated))
-                    .border(GlassDimens.HairlineBorder, colors.borderMuted, GlassShapes.Small)
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = AlphaTokens.Elevated))
+                    .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outlineVariant, GlassShapes.Small)
                     .padding(Spacing.Medium),
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
@@ -629,14 +599,14 @@ private fun RecoveryConsoleDrawer(
                         ) {
                             Text(
                                 text = "${index + 1}",
-                                color = colors.textDim.copy(alpha = AlphaTokens.Half),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = AlphaTokens.Half),
                                 fontSize = FontSize.BodySmall,
                                 fontFamily = codeFontFamily(),
                                 modifier = Modifier.width(Spacing.Large),
                             )
                             Text(
                                 text = "[$time] $log",
-                                color = if (index >= 5) colors.textMuted else colors.textMain,
+                                color = if (index >= 5) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
                                 fontSize = FontSize.BodySmall,
                                 fontFamily = codeFontFamily(),
                             )
@@ -654,21 +624,20 @@ private fun ConsoleTabItem(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     isSelected: Boolean,
     onClick: () -> Unit,
-    colors: IdeShellColorScheme,
     accentTint: androidx.compose.ui.graphics.Color? = null,
 ) {
     val isBlue = GlassTheme.appTheme == AppTheme.Blue
-    val activeBorder = if (isBlue) PluginThemeColors.SelectedRowBorder else colors.accentBlue
+    val activeBorder = if (isBlue) PluginThemeColors.SelectedRowBorder else MaterialTheme.colorScheme.primary
     val contentTint = when {
         isSelected && isBlue -> BrandColors.OnLogoBadge
-        isSelected -> colors.accentBlue
+        isSelected -> MaterialTheme.colorScheme.primary
         accentTint != null -> accentTint
-        else -> colors.textMuted
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
     val textContentColor = when {
         isSelected && isBlue -> BrandColors.OnLogoBadge
-        isSelected -> colors.textMain
-        else -> colors.textMuted
+        isSelected -> MaterialTheme.colorScheme.onSurface
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     Row(
@@ -680,7 +649,7 @@ private fun ConsoleTabItem(
             .then(
                 if (isSelected) {
                     Modifier
-                        .background(if (isBlue) PluginThemeColors.SelectedRowBackground else colors.controlSelected)
+                        .background(if (isBlue) PluginThemeColors.SelectedRowBackground else MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Faded))
                         .border(
                             width = GlassDimens.HairlineBorder,
                             color = activeBorder,

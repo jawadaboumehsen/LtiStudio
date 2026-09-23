@@ -16,8 +16,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
-import com.kashif_e.backdrop.OpticalSizeValue
-import com.kashif_e.backdrop.ResolvedGlassEffect
 import org.ide.lti.core.designsystem.component.actions.*
 import org.ide.lti.core.designsystem.component.devtools.*
 import org.ide.lti.core.designsystem.component.display.*
@@ -25,11 +23,9 @@ import org.ide.lti.core.designsystem.component.feedback.*
 import org.ide.lti.core.designsystem.component.inputs.*
 import org.ide.lti.core.designsystem.component.navigation.*
 import org.ide.lti.core.designsystem.component.primitives.*
-import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.Elevation
 import org.ide.lti.core.designsystem.theme.GlassLayoutColors
-import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.MotionDuration
 import org.ide.lti.core.designsystem.theme.MotionEasing
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -143,22 +139,6 @@ object LtiLayoutDefaults {
     val MaxPanelHeight = ComponentSize.MaxPanelHeight
 
     // ==================== VISUAL POLISH ====================
-
-    /** Enhanced glass effect stack for professional panel appearance with deep frosted glass blur. */
-    val EnhancedPanelEffect: ResolvedGlassEffect = ResolvedGlassEffect(
-        blur = OpticalSizeValue.Fixed(BackdropBlur.Deep),
-        lensHeight = OpticalSizeValue.Fixed(LensRefraction.Panel.height),
-        lensAmount = OpticalSizeValue.Fixed(LensRefraction.Panel.amount),
-        vibrancy = true,
-    )
-
-    /**
-     * Lightweight effect stack optimized for drag operations.
-     * Reduces GPU load during continuous resizing for smooth 60 FPS.
-     */
-    val DragOptimizedEffect: ResolvedGlassEffect = ResolvedGlassEffect(
-        blur = OpticalSizeValue.Fixed(BackdropBlur.Subtle),
-    )
 
     /** Elevation for panel shadows */
     val PanelElevation = Elevation.Panel

@@ -28,14 +28,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import org.ide.lti.core.designsystem.theme.HazeShape
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
-import com.kashif_e.backdrop.ResolvedGlassEffect
-import com.kashif_e.backdrop.backdrops.layerBackdrop
 import org.ide.lti.core.designsystem.component.actions.*
 import org.ide.lti.core.designsystem.component.devtools.*
 import org.ide.lti.core.designsystem.component.feedback.*
@@ -47,14 +45,9 @@ import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
-import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
-import org.ide.lti.core.designsystem.theme.glass.GlassStyles
-import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
-import org.ide.lti.core.designsystem.theme.glass.resolve
 
 /**
  * Glass panel component optimized for IDE tool windows and sidebar panels.
@@ -63,9 +56,7 @@ import org.ide.lti.core.designsystem.theme.glass.resolve
 fun GlassPanel(
     modifier: Modifier = Modifier,
     width: Dp? = null,
-    shape: Shape = GlassShapes.Panel,
-    effect: ResolvedGlassEffect? = null,
-    backdrop: GlassSceneState? = null,
+    shape: HazeShape = GlassShapes.HazePanel,
     surfaceColor: Color = Color.Unspecified,
     tint: Color = Color.Unspecified,
     borderColor: Color = Color.Unspecified,
@@ -75,14 +66,10 @@ fun GlassPanel(
     val panelModifier = modifier
         .then(if (width != null && width > Spacing.None) Modifier.width(width) else Modifier)
         .fillMaxHeight()
-    val panelStyle = GlassStyles.panel
-    val resolvedEffect = effect ?: panelStyle.resolve()
 
     GlassSurface(
         modifier = panelModifier,
         shape = shape,
-        effect = resolvedEffect,
-        backdrop = backdrop,
         surfaceColor = surfaceColor,
         tint = tint,
         borderColor = borderColor,
@@ -139,13 +126,13 @@ fun GlassPanelHeader(
                     is AppIcon.Vector -> Icon(
                         imageVector = icon.imageVector,
                         contentDescription = null,
-                        tint = GlassTheme.colors.onGlassSecondary,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(IconSize.Medium),
                     )
                     is AppIcon.Painted -> Icon(
                         painter = icon.painter(),
                         contentDescription = null,
-                        tint = GlassTheme.colors.onGlassSecondary,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(IconSize.Medium),
                     )
                 }
@@ -154,7 +141,7 @@ fun GlassPanelHeader(
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleSmall,
-                color = GlassTheme.colors.onGlass,
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 softWrap = false,
                 overflow = TextOverflow.Ellipsis,
@@ -225,13 +212,11 @@ fun GlassPanelHeaderAction(
     contentDescription: String?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    backdrop: GlassSceneState? = null,
 ) {
     GlassIconButton(
         onClick = onClick,
         modifier = modifier,
         size = ComponentSize.PanelHeaderActionTouchTarget,
-        backdrop = backdrop,
     ) {
         when (icon) {
             is AppIcon.Vector -> Icon(
@@ -254,83 +239,36 @@ fun GlassPanelHeaderAction(
     contentDescription: String?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    backdrop: GlassSceneState? = null,
 ) = GlassPanelHeaderAction(
     icon = AppIcon.Vector(icon),
     contentDescription = contentDescription,
     onClick = onClick,
     modifier = modifier,
-    backdrop = backdrop,
 )
 
 /**
- * Container for panel content with optional header and progressive-blur scroll-edge fades.
+ * Container for panel content with an optional header.
  *
  * @param modifier Modifier to be applied to the container.
  * @param header Optional header composable slot.
- * @param scrollEdgeFade Whether to apply progressive-blur scroll-edge fades at the top and bottom.
  * @param content The main panel content.
  */
 @Composable
 fun GlassPanelContainer(
     modifier: Modifier = Modifier,
     header: (@Composable () -> Unit)? = null,
-    scrollEdgeFade: Boolean = false,
     content: @Composable () -> Unit,
 ) {
-    val panelConfig = GlassTheme.panel
-    val effectiveScrollEdgeFade = scrollEdgeFade || panelConfig.scrollEdgeFade
-
     Column(modifier = modifier.fillMaxSize()) {
         header?.let {
             it()
-            if (panelConfig.scrollEdgeFade) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(StrokeWidth.Hairline)
-                        .background(
-                            Brush.horizontalGradient(
-                                listOf(
-                                    GlassTheme.colors.glassBorderHighlight.copy(alpha = AlphaTokens.Hover),
-                                    GlassTheme.colors.glassBorderHighlight.copy(alpha = AlphaTokens.Prominent),
-                                    GlassTheme.colors.glassBorder.copy(alpha = AlphaTokens.Hover),
-                                ),
-                            ),
-                        ),
-                )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(StrokeWidth.Standard)
-                        .background(GlassTheme.colors.glassBorder),
-                )
-            }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(StrokeWidth.Standard)
+                    .background(MaterialTheme.colorScheme.outline),
+            )
         }
-        if (!effectiveScrollEdgeFade) {
-            content()
-        } else {
-            val contentBackdrop = rememberGlassSceneState()
-            Box(modifier = Modifier.fillMaxSize()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .layerBackdrop(contentBackdrop.engineBackdrop),
-                ) {
-                    content()
-                }
-                GlassScrollEdgeFade(
-                    backdrop = contentBackdrop,
-                    edge = GlassScrollEdge.Top,
-                    modifier = Modifier.align(Alignment.TopCenter),
-                )
-                GlassScrollEdgeFade(
-                    backdrop = contentBackdrop,
-                    edge = GlassScrollEdge.Bottom,
-                    modifier = Modifier.align(Alignment.BottomCenter),
-                )
-            }
-        }
+        content()
     }
 }

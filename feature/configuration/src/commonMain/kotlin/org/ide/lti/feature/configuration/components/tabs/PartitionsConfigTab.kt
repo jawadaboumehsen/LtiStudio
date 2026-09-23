@@ -40,8 +40,6 @@ fun PartitionsConfigTab(
     onTargetChange: (TargetDevice) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
-    val colors = GlassTheme.ideShellColors
 
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -63,8 +61,7 @@ fun PartitionsConfigTab(
 
         GlassCard(
             modifier = Modifier.fillMaxWidth(),
-            surfaceColor = colors.cardBackground,
-            borderColor = colors.border,
+            surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -73,12 +70,12 @@ fun PartitionsConfigTab(
                 Text(
                     text = "Boot Chain Partition Sizes",
                     style = MaterialTheme.typography.titleSmall,
-                    color = glassColors.onGlass,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     text = "Fixed-size boot chain images, in bytes.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = glassColors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
                 Spacer(modifier = Modifier.height(Spacing.ExtraSmall))
@@ -123,8 +120,7 @@ fun PartitionsConfigTab(
 
         GlassCard(
             modifier = Modifier.fillMaxWidth(),
-            surfaceColor = colors.cardBackground,
-            borderColor = colors.border,
+            surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -133,12 +129,12 @@ fun PartitionsConfigTab(
                 Text(
                     text = "Packaging Policy",
                     style = MaterialTheme.typography.titleSmall,
-                    color = glassColors.onGlass,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     text = "Flashable ZIP assembly rules for this target's packagePolicy.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = glassColors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
                 GlassTextField(
@@ -158,7 +154,7 @@ fun PartitionsConfigTab(
                     Text(
                         text = "Exclude vbmeta from package",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = glassColors.onGlass,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.weight(1f),
                     )
                     GlassToggle(
@@ -181,14 +177,11 @@ private fun PartitionListCard(
     onPartitionsChange: (List<String>) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
-    val colors = GlassTheme.ideShellColors
     var newPartitionName by remember { mutableStateOf("") }
 
     GlassCard(
         modifier = modifier.fillMaxWidth(),
-        surfaceColor = colors.cardBackground,
-        borderColor = colors.border,
+        surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -197,12 +190,12 @@ private fun PartitionListCard(
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleSmall,
-                color = glassColors.onGlass,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = description,
                 style = MaterialTheme.typography.bodySmall,
-                color = glassColors.onGlassSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
             Spacer(modifier = Modifier.height(Spacing.ExtraSmall))

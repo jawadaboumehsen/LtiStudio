@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.rom.studio.stage.acquire.panes
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -53,7 +54,6 @@ import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -69,7 +69,6 @@ public fun DownloadPolicyPane(
     onValidate: () -> Unit,
     onSave: () -> Unit,
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     var sourceUrl by remember(settings) {
         mutableStateOf("https://downloads.vendor-example.com/firmware/")
@@ -103,16 +102,14 @@ public fun DownloadPolicyPane(
             onTimeoutChange = { timeoutSeconds = it },
             userAgent = userAgent,
             onUserAgentChange = { userAgent = it },
-            colors = colors,
         )
 
         AdvancedOptionsAccordion(
             isOpen = isAdvancedOpen,
             onToggle = { isAdvancedOpen = !isAdvancedOpen },
-            colors = colors,
         )
 
-        NeedHelpBanner(colors = colors)
+        NeedHelpBanner()
     }
 }
 
@@ -128,13 +125,12 @@ private fun PolicySettingsCard(
     onTimeoutChange: (Int) -> Unit,
     userAgent: String,
     onUserAgentChange: (String) -> Unit,
-    colors: IdeShellColorScheme,
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Large),
     ) {
@@ -145,14 +141,14 @@ private fun PolicySettingsCard(
         ) {
             Text(
                 text = "Policy settings",
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = FontSize.TitleSmall,
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = ideFontFamily(),
             )
             Text(
                 text = "Applies to all downloads in this workspace.",
-                color = colors.textDim,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
             )
@@ -162,7 +158,6 @@ private fun PolicySettingsCard(
             label = "Source URL",
             helperText = "Base URL for downloading source files.",
             isOverride = false,
-            colors = colors,
         ) {
             GlassTextField(
                 value = sourceUrl,
@@ -175,7 +170,6 @@ private fun PolicySettingsCard(
             label = "Retry count",
             helperText = null,
             isOverride = false,
-            colors = colors,
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -186,18 +180,17 @@ private fun PolicySettingsCard(
                     onValueChange = onRetryCountChange,
                     min = 0,
                     max = 5,
-                    colors = colors,
                 )
                 Column {
                     Text(
                         text = "Range: 0 – 5",
-                        color = colors.textMuted,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = FontSize.Micro,
                         fontFamily = ideFontFamily(),
                     )
                     Text(
                         text = "Number of retry attempts for failed downloads.",
-                        color = colors.textDim,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = FontSize.Micro,
                         fontFamily = ideFontFamily(),
                     )
@@ -209,7 +202,6 @@ private fun PolicySettingsCard(
             label = "Resume interrupted downloads",
             helperText = "Resume partial files when supported by the server.",
             isOverride = false,
-            colors = colors,
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -218,11 +210,11 @@ private fun PolicySettingsCard(
                 GlassToggle(
                     checked = resume,
                     onCheckedChange = onResumeChange,
-                    activeColor = colors.accentBlue,
+                    activeColor = MaterialTheme.colorScheme.primary,
                 )
                 Text(
                     text = if (resume) "Enabled" else "Disabled",
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = FontSize.BodySmall,
                     fontFamily = ideFontFamily(),
                 )
@@ -233,12 +225,10 @@ private fun PolicySettingsCard(
             label = "Timeout per attempt (seconds)",
             helperText = "Time to wait for a response before retrying.",
             isOverride = true,
-            colors = colors,
         ) {
             NumberSpinnerInput(
                 value = timeoutSeconds,
                 onValueChange = onTimeoutChange,
-                colors = colors,
             )
         }
 
@@ -246,7 +236,6 @@ private fun PolicySettingsCard(
             label = "User agent (optional)",
             helperText = "Identifies this application to the server.",
             isOverride = false,
-            colors = colors,
         ) {
             GlassTextField(
                 value = userAgent,
@@ -262,7 +251,6 @@ private fun PolicyFieldRow(
     label: String,
     helperText: String?,
     isOverride: Boolean,
-    colors: IdeShellColorScheme,
     control: @Composable () -> Unit,
 ) {
     Row(
@@ -272,7 +260,7 @@ private fun PolicyFieldRow(
         Column(modifier = Modifier.width(GlassDimens.AcquirePolicyLabelWidth)) {
             Text(
                 text = label,
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = FontSize.BodySmall,
                 fontWeight = FontWeight.Medium,
                 fontFamily = ideFontFamily(),
@@ -285,7 +273,7 @@ private fun PolicyFieldRow(
                 Spacer(Modifier.height(Spacing.ExtraSmall))
                 Text(
                     text = helperText,
-                    color = colors.textDim,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                     fontFamily = ideFontFamily(),
                 )
@@ -294,15 +282,15 @@ private fun PolicyFieldRow(
 
         Spacer(Modifier.width(Spacing.Large))
 
-        StatusPillBadge(isOverride = isOverride, colors = colors)
+        StatusPillBadge(isOverride = isOverride)
     }
 }
 
 @Composable
-private fun StatusPillBadge(isOverride: Boolean, colors: IdeShellColorScheme) {
-    val bg = if (isOverride) colors.accentGreen.copy(alpha = AlphaTokens.Glow) else colors.cardBackgroundMuted
-    val borderColor = if (isOverride) colors.accentGreen.copy(alpha = AlphaTokens.Muted) else colors.borderMuted
-    val textColor = if (isOverride) colors.accentGreen else colors.textMuted
+private fun StatusPillBadge(isOverride: Boolean) {
+    val bg = if (isOverride) GlassTheme.diagnosticColors.success.copy(alpha = AlphaTokens.Glow) else MaterialTheme.colorScheme.surfaceContainer
+    val borderColor = if (isOverride) GlassTheme.diagnosticColors.success.copy(alpha = AlphaTokens.Muted) else MaterialTheme.colorScheme.outlineVariant
+    val textColor = if (isOverride) GlassTheme.diagnosticColors.success else MaterialTheme.colorScheme.onSurfaceVariant
 
     Box(
         modifier = Modifier
@@ -323,12 +311,12 @@ private fun StatusPillBadge(isOverride: Boolean, colors: IdeShellColorScheme) {
 }
 
 @Composable
-private fun NumberStepper(value: Int, onValueChange: (Int) -> Unit, min: Int, max: Int, colors: IdeShellColorScheme) {
+private fun NumberStepper(value: Int, onValueChange: (Int) -> Unit, min: Int, max: Int) {
     Row(
         modifier = Modifier
             .clip(GlassShapes.ShellControl)
-            .background(colors.cardBackgroundMuted)
-            .border(GlassDimens.HairlineBorder, colors.border, GlassShapes.ShellControl),
+            .background(MaterialTheme.colorScheme.surfaceContainer)
+            .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outline, GlassShapes.ShellControl),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
@@ -340,14 +328,14 @@ private fun NumberStepper(value: Int, onValueChange: (Int) -> Unit, min: Int, ma
             Icon(
                 imageVector = Icons.Default.Remove,
                 contentDescription = "Decrease",
-                tint = if (value > min) colors.textMain else colors.textDim,
+                tint = if (value > min) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(IconSize.Small),
             )
         }
 
         Text(
             text = value.toString(),
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = FontSize.BodySmall,
             fontWeight = FontWeight.Bold,
             fontFamily = codeFontFamily(),
@@ -363,7 +351,7 @@ private fun NumberStepper(value: Int, onValueChange: (Int) -> Unit, min: Int, ma
             Icon(
                 imageVector = Icons.Default.Add,
                 contentDescription = "Increase",
-                tint = if (value < max) colors.textMain else colors.textDim,
+                tint = if (value < max) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(IconSize.Small),
             )
         }
@@ -371,20 +359,20 @@ private fun NumberStepper(value: Int, onValueChange: (Int) -> Unit, min: Int, ma
 }
 
 @Composable
-private fun NumberSpinnerInput(value: Int, onValueChange: (Int) -> Unit, colors: IdeShellColorScheme) {
+private fun NumberSpinnerInput(value: Int, onValueChange: (Int) -> Unit) {
     Row(
         modifier = Modifier
             .width(GlassDimens.AcquirePolicyInputWidth)
             .clip(GlassShapes.ShellControl)
-            .background(colors.cardBackgroundMuted)
-            .border(GlassDimens.HairlineBorder, colors.border, GlassShapes.ShellControl)
+            .background(MaterialTheme.colorScheme.surfaceContainer)
+            .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outline, GlassShapes.ShellControl)
             .padding(horizontal = Spacing.Small, vertical = Spacing.Hairline),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
             text = value.toString(),
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = FontSize.BodySmall,
             fontFamily = codeFontFamily(),
         )
@@ -393,7 +381,7 @@ private fun NumberSpinnerInput(value: Int, onValueChange: (Int) -> Unit, colors:
             Icon(
                 imageVector = Icons.Default.KeyboardArrowUp,
                 contentDescription = "Up",
-                tint = colors.textMuted,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier
                     .size(IconSize.ExtraSmall)
                     .clickable { onValueChange(value + 30) },
@@ -401,7 +389,7 @@ private fun NumberSpinnerInput(value: Int, onValueChange: (Int) -> Unit, colors:
             Icon(
                 imageVector = Icons.Default.KeyboardArrowDown,
                 contentDescription = "Down",
-                tint = colors.textMuted,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier
                     .size(IconSize.ExtraSmall)
                     .clickable { if (value > 30) onValueChange(value - 30) },
@@ -411,12 +399,12 @@ private fun NumberSpinnerInput(value: Int, onValueChange: (Int) -> Unit, colors:
 }
 
 @Composable
-private fun AdvancedOptionsAccordion(isOpen: Boolean, onToggle: () -> Unit, colors: IdeShellColorScheme) {
+private fun AdvancedOptionsAccordion(isOpen: Boolean, onToggle: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .clickable(onClick = onToggle)
             .padding(Spacing.Medium),
     ) {
@@ -432,14 +420,14 @@ private fun AdvancedOptionsAccordion(isOpen: Boolean, onToggle: () -> Unit, colo
                 Icon(
                     imageVector = Icons.Default.ChevronRight,
                     contentDescription = if (isOpen) "Collapse" else "Expand",
-                    tint = colors.textMuted,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier
                         .size(IconSize.Small)
                         .rotate(if (isOpen) 90f else 0f),
                 )
                 Text(
                     text = "Advanced options",
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = FontSize.BodySmall,
                     fontWeight = FontWeight.Medium,
                     fontFamily = ideFontFamily(),
@@ -448,7 +436,7 @@ private fun AdvancedOptionsAccordion(isOpen: Boolean, onToggle: () -> Unit, colo
 
             Text(
                 text = "Proxy, headers and download limits",
-                color = colors.textDim,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
             )
@@ -463,13 +451,13 @@ private fun AdvancedOptionsAccordion(isOpen: Boolean, onToggle: () -> Unit, colo
             ) {
                 Text(
                     text = "Configured proxy: Direct connection (no proxy configured)",
-                    color = colors.textMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.BodySmall,
                     fontFamily = ideFontFamily(),
                 )
                 Text(
                     text = "Max parallel worker threads: 4",
-                    color = colors.textMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.BodySmall,
                     fontFamily = ideFontFamily(),
                 )
@@ -479,13 +467,13 @@ private fun AdvancedOptionsAccordion(isOpen: Boolean, onToggle: () -> Unit, colo
 }
 
 @Composable
-private fun NeedHelpBanner(colors: IdeShellColorScheme) {
+private fun NeedHelpBanner() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .background(colors.infoBannerFill, GlassShapes.ShellCard)
-            .border(GlassDimens.HairlineBorder, colors.infoBannerBorder, GlassShapes.ShellCard)
+            .background(MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Subtle), GlassShapes.ShellCard)
+            .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Ambient), GlassShapes.ShellCard)
             .padding(Spacing.Medium),
     ) {
         Row(
@@ -495,14 +483,14 @@ private fun NeedHelpBanner(colors: IdeShellColorScheme) {
             Icon(
                 imageVector = Icons.Default.Info,
                 contentDescription = null,
-                tint = colors.accentBlue,
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(IconSize.Medium),
             )
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = "Need help?",
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = FontSize.BodySmall,
                     fontWeight = FontWeight.Bold,
                     fontFamily = ideFontFamily(),
@@ -512,7 +500,7 @@ private fun NeedHelpBanner(colors: IdeShellColorScheme) {
                     text = "Specify the base URL for source files and configure retry and resume behavior. " +
                         "Use conservative settings for unstable networks. " +
                         "You can validate the configuration before saving.",
-                    color = colors.textMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                     fontFamily = ideFontFamily(),
                 )
@@ -525,14 +513,14 @@ private fun NeedHelpBanner(colors: IdeShellColorScheme) {
             ) {
                 Text(
                     text = "Open documentation",
-                    color = colors.accentBlue,
+                    color = MaterialTheme.colorScheme.primary,
                     fontSize = FontSize.BodySmall,
                     fontFamily = ideFontFamily(),
                 )
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.OpenInNew,
                     contentDescription = null,
-                    tint = colors.accentBlue,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(IconSize.ExtraSmall),
                 )
             }

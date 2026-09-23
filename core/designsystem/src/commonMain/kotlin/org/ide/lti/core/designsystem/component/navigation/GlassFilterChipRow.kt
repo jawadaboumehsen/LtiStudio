@@ -66,9 +66,8 @@ fun GlassFilterChipRow(
     onSelect: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
 
-    CompositionLocalProvider(LocalContentColor provides glassColors.onGlass) {
+    CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
         FlowRow(
             modifier = modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
@@ -84,14 +83,14 @@ fun GlassFilterChipRow(
                         .clip(GlassShapes.Capsule)
                         .background(
                             if (isSelected) {
-                                glassColors.glassAccent.copy(alpha = AlphaTokens.GlassSecondaryTint)
+                                MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.GlassSecondaryTint)
                             } else {
-                                glassColors.onGlass.copy(alpha = AlphaTokens.UltraFaint)
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = AlphaTokens.UltraFaint)
                             },
                         )
                         .border(
                             width = StrokeWidth.Hairline,
-                            color = if (isSelected) glassColors.glassAccent else glassColors.glassBorder,
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
                             shape = GlassShapes.Capsule,
                         )
                         .clickable { onSelect(item.value) }
@@ -102,7 +101,7 @@ fun GlassFilterChipRow(
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                         ),
-                        color = if (isSelected) glassColors.glassAccent else glassColors.onGlassSecondary,
+                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         softWrap = false,
                         overflow = TextOverflow.Ellipsis,

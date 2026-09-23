@@ -19,8 +19,6 @@ import androidx.compose.ui.test.runDesktopComposeUiTest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import org.ide.lti.core.designsystem.theme.LtiTheme
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
-import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolCategory
 import org.ide.lti.core.domain.setup.ToolComponentItem
@@ -223,7 +221,6 @@ class ToolsScreenTest {
                 SetupActivityPanel(
                     activityState = activityState,
                     title = "Activity Test",
-                    backdrop = backdrop,
                 )
             }
         }
@@ -253,7 +250,6 @@ class ToolsScreenTest {
                 SetupActivityPanel(
                     activityState = activityState,
                     title = "Activity Test",
-                    backdrop = backdrop,
                 )
             }
         }

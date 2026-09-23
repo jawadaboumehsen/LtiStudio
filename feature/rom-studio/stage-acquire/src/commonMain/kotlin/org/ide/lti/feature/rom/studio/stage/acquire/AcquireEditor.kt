@@ -23,7 +23,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassTheme
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.AcquisitionSettings
@@ -43,7 +42,6 @@ public fun AcquireEditor(
     onValidate: () -> Unit = {},
     onSave: () -> Unit = {},
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     val scrollState = rememberScrollState()
 
@@ -66,7 +64,6 @@ public fun AcquireEditor(
                     target = target,
                     onValidate = onValidate,
                     onSave = onSave,
-                    colors = colors,
                 )
                 "download-policy", "download_policy", "download" -> DownloadPolicyPane(
                     settings = settings,
@@ -74,7 +71,6 @@ public fun AcquireEditor(
                     onChange = onChange,
                     onValidate = onValidate,
                     onSave = onSave,
-                    colors = colors,
                 )
                 "existing-archives", "existing_archives", "archives" -> ExistingArchivesPane(
                     settings = settings,
@@ -82,7 +78,6 @@ public fun AcquireEditor(
                     onChange = onChange,
                     onValidate = onValidate,
                     onSave = onSave,
-                    colors = colors,
                 )
                 "firmware-baseline", "firmware_baseline", "baseline" -> FirmwareBaselinePane(
                     settings = settings,
@@ -90,7 +85,6 @@ public fun AcquireEditor(
                     onChange = onChange,
                     onValidate = onValidate,
                     onSave = onSave,
-                    colors = colors,
                 )
                 else -> SourceModePane(
                     settings = settings,
@@ -98,7 +92,6 @@ public fun AcquireEditor(
                     onChange = onChange,
                     onValidate = onValidate,
                     onSave = onSave,
-                    colors = colors,
                 )
             }
         }

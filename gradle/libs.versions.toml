@@ -55,7 +55,7 @@ koin = "4.0.1-RC1"
 koinAnnotationsVersion = "1.4.0-RC4"
 
 # CMP Libraries
-compose-plugin = "1.10.0"
+compose-plugin = "1.12.0"
 coil = "3.0.4"
 backHandlerVersion = "2.1.0"
 constraintLayout = "0.4.0"
@@ -68,7 +68,7 @@ fileKit = "0.8.7"
 wire = "5.0.0"
 liquidGlass ="1.0.0-beta02"
 capsule = "1.1.1"
-nucleus = "2.1.10"
+nucleus = "2.5.18"
 composeIcons = "1.1.1"
 # Jetbrains CMP
 windowsSizeClass = "0.5.0"
@@ -262,7 +262,7 @@ capsule = { module = "top.ltfan.capsule:capsule", version.ref = "capsule" }
 nucleus-application = { module = "dev.nucleusframework:nucleus.nucleus-application", version.ref = "nucleus" }
 nucleus-decorated-window = { module = "dev.nucleusframework:nucleus.decorated-window-tao", version.ref = "nucleus" }
 nucleus-fs-watcher = { module = "dev.nucleusframework:nucleus.fs-watcher", version.ref = "nucleus" }
-composenativetray = { module = "dev.nucleusframework:composenativetray", version = "2.1.0" }
+composenativetray = { module = "dev.nucleusframework:composenativetray", version = "2.1.6" }
 
 
 [bundles]

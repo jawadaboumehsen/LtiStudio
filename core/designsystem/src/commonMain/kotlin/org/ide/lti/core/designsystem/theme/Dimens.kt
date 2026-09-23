@@ -120,7 +120,6 @@ object ComponentSize {
     val ToggleTrackHeight: Dp = 28.dp
     val ToggleThumbWidth: Dp = 40.dp
     val ToggleThumbHeight: Dp = 24.dp
-    val ToggleDragWidth: Dp = 20.dp
     val SliderTrackHeight: Dp = 6.dp
     val SliderThumbWidth: Dp = 40.dp
     val SliderThumbHeight: Dp = 24.dp
@@ -191,9 +190,7 @@ object ComponentSize {
  */
 object Elevation {
     val None: Dp = 0.dp
-    val Raised: Dp = 4.dp
     val Panel: Dp = 8.dp
-    val Modal: Dp = 16.dp
 }
 
 /**

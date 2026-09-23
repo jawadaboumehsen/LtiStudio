@@ -41,8 +41,8 @@ import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassShapes
+import androidx.compose.material3.MaterialTheme
 import org.ide.lti.core.designsystem.theme.GlassTheme
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 
 /**
@@ -52,14 +52,13 @@ import org.ide.lti.core.designsystem.theme.Spacing
 @Composable
 public fun IdeTable(
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(
         modifier = modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors = colors, shape = GlassShapes.ShellCard),
+            .ideCardSurface(shape = GlassShapes.ShellCard),
         content = content,
     )
 }
@@ -70,7 +69,6 @@ public fun IdeTable(
 @Composable
 public fun IdeTableHeader(
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
     content: @Composable RowScope.() -> Unit,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
@@ -78,7 +76,7 @@ public fun IdeTableHeader(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(GlassDimens.TableHeaderRowHeight)
-                .background(colors.tableHeader)
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                 .padding(horizontal = Spacing.Medium),
             verticalAlignment = Alignment.CenterVertically,
             content = content,
@@ -87,7 +85,7 @@ public fun IdeTableHeader(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(Spacing.Hairline)
-                .background(colors.borderMuted),
+                .background(MaterialTheme.colorScheme.outlineVariant),
         )
     }
 }
@@ -101,15 +99,14 @@ public fun IdeTableRow(
     isEnabled: Boolean = true,
     onClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
     content: @Composable RowScope.() -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
 
     val rowBg = when {
-        isSelected -> colors.rowSelected
-        isHovered && isEnabled -> colors.controlHover
+        isSelected -> MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Faded)
+        isHovered && isEnabled -> MaterialTheme.colorScheme.surfaceContainerHigh
         else -> Color.Transparent
     }
 
@@ -144,7 +141,7 @@ public fun IdeTableRow(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(Spacing.Hairline)
-                .background(colors.borderMuted),
+                .background(MaterialTheme.colorScheme.outlineVariant),
         )
     }
 }
@@ -156,11 +153,10 @@ public fun IdeTableRow(
 public fun IdeTableHeaderCell(
     text: String,
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     Text(
         text = text,
-        color = colors.textDim,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         fontSize = FontSize.Micro,
         fontWeight = FontWeight.SemiBold,
         fontFamily = GlassFontFamily.ide(),
@@ -175,14 +171,13 @@ public fun IdeTableHeaderCell(
 public fun IdeTableRadioIndicator(
     isSelected: Boolean,
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     Box(
         modifier = modifier
             .size(GlassDimens.TableSelectionIndicatorSize)
             .border(
                 width = GlassDimens.HairlineBorder,
-                color = if (isSelected) colors.accentBlue else colors.border,
+                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
                 shape = GlassShapes.Circle,
             ),
         contentAlignment = Alignment.Center,
@@ -191,7 +186,7 @@ public fun IdeTableRadioIndicator(
             Box(
                 modifier = Modifier
                     .size(GlassDimens.StatusBadgeIconSize)
-                    .background(colors.accentBlue, GlassShapes.Circle),
+                    .background(MaterialTheme.colorScheme.primary, GlassShapes.Circle),
             )
         }
     }

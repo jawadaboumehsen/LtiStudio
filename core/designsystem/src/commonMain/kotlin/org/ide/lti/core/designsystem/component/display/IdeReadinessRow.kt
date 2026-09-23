@@ -51,9 +51,9 @@ import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassShapes
+import androidx.compose.material3.MaterialTheme
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 
 /**
@@ -71,13 +71,12 @@ fun IdeReadinessRow(
     actionLabel: String? = null,
     onAction: (() -> Unit)? = null,
     actionEnabled: Boolean = true,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .background(colors.cardBackground, GlassShapes.ShellControl)
-            .border(GlassDimens.HairlineBorder, colors.border, GlassShapes.ShellControl)
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh, GlassShapes.ShellControl)
+            .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outline, GlassShapes.ShellControl)
             .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
@@ -92,12 +91,12 @@ fun IdeReadinessRow(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = colors.textMuted,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(IconSize.Small),
             )
             Text(
                 text = stageName,
-                color = colors.textMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = GlassFontFamily.code(),
@@ -108,7 +107,7 @@ fun IdeReadinessRow(
         // Column 2: Label
         Text(
             text = label,
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = FontSize.BodySmall,
             fontWeight = FontWeight.Medium,
             fontFamily = GlassFontFamily.ide(),
@@ -121,14 +120,13 @@ fun IdeReadinessRow(
             IdeStatusBadge(
                 label = statusText,
                 severity = severity,
-                colors = colors,
             )
         }
 
         // Column 4: Explanation
         Text(
             text = explanation,
-            color = colors.textDim,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.Micro,
             fontFamily = GlassFontFamily.ide(),
             modifier = Modifier.weight(1f),
@@ -143,8 +141,8 @@ fun IdeReadinessRow(
 
             val btnBg = when {
                 !actionEnabled -> Color.Transparent
-                isActionPressed -> colors.controlHover
-                isActionHovered -> colors.controlHover.copy(alpha = AlphaTokens.Half)
+                isActionPressed -> MaterialTheme.colorScheme.surfaceContainerHigh
+                isActionHovered -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = AlphaTokens.Half)
                 else -> Color.Transparent
             }
 
@@ -161,7 +159,7 @@ fun IdeReadinessRow(
                     )
                     .border(
                         width = GlassDimens.HairlineBorder,
-                        color = if (actionEnabled) colors.accentBlue else colors.border,
+                        color = if (actionEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
                         shape = GlassShapes.ShellControl,
                     )
                     .clickable(
@@ -175,7 +173,7 @@ fun IdeReadinessRow(
             ) {
                 Text(
                     text = actionLabel,
-                    color = if (actionEnabled) colors.accentBlue else colors.textDim,
+                    color = if (actionEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                     fontWeight = FontWeight.Medium,
                     fontFamily = GlassFontFamily.ide(),

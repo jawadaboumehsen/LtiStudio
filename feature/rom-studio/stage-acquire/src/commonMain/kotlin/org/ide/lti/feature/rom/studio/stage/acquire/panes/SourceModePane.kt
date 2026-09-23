@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.rom.studio.stage.acquire.panes
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,7 +26,6 @@ import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.ideFontFamily
 import org.ide.lti.core.model.target.TargetDevice
@@ -41,7 +41,6 @@ public fun SourceModePane(
     onValidate: () -> Unit,
     onSave: () -> Unit,
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     Column(
         modifier = modifier
@@ -53,20 +52,20 @@ public fun SourceModePane(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(GlassShapes.ShellCard)
-                .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+                .ideCardSurface(shape = GlassShapes.ShellCard)
                 .padding(Spacing.Medium),
             verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
         ) {
             Text(
                 text = "Source mode",
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = FontSize.TitleSmall,
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = ideFontFamily(),
             )
             Text(
                 text = "Pinned target: ${target.friendlyTitle}",
-                color = colors.textMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.BodySmall,
                 fontFamily = ideFontFamily(),
             )

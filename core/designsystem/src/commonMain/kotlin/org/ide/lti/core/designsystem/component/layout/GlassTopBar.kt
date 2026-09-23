@@ -36,34 +36,35 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import com.kashif_e.backdrop.drawBackdrop
+import androidx.compose.ui.unit.dp
+import dev.chrisbanes.haze.ExperimentalHazeApi
+import dev.chrisbanes.haze.HazeInput
+import dev.chrisbanes.haze.glass.GlassStyle
+import dev.chrisbanes.haze.glass.hazeGlass
 import org.ide.lti.core.designsystem.component.actions.DesktopWindowControls
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
 import org.ide.lti.core.designsystem.component.actions.GlassIconToggleButton
 import org.ide.lti.core.designsystem.component.actions.LocalWindowControlActions
 import org.ide.lti.core.designsystem.component.actions.WindowControlActions
 import org.ide.lti.core.designsystem.component.actions.windowDragGesture
-import org.ide.lti.core.designsystem.component.primitives.glass
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.BrandColors
+import org.ide.lti.core.designsystem.theme.BrandLogoGradientEnd
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.FontSize
-import org.ide.lti.core.designsystem.theme.GlassEffects
 import org.ide.lti.core.designsystem.theme.GlassShapes
+import org.ide.lti.core.designsystem.theme.HazeShape
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.LetterSpacing
@@ -71,8 +72,6 @@ import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
-import org.ide.lti.core.designsystem.theme.glass.GlassStyles
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import java.awt.Cursor
 
@@ -120,6 +119,7 @@ data class TopBarSearch(
  * Single, unified canonical Top App Bar across the application adhering to Clean Architecture
  * and SOLID principles with type-safe sealed interfaces and cohesive data classes.
  */
+@OptIn(ExperimentalHazeApi::class)
 @Composable
 fun GlassTopBar(
     modifier: Modifier = Modifier,
@@ -130,20 +130,31 @@ fun GlassTopBar(
     actions: (@Composable RowScope.() -> Unit)? = null,
     windowControls: WindowControlActions? = null,
     showWindowControls: Boolean = true,
-    shape: Shape = RectangleShape,
-    backdrop: GlassSceneState? = null,
+    shape: HazeShape = GlassShapes.HazeFlat,
     drawOwnChrome: Boolean = true,
 ) {
-    val actualBackdrop = backdrop ?: GlassTheme.scene
-    val glassColors = GlassTheme.colors
     val localControls = LocalWindowControlActions.current
 
     val effectiveWindowControls = windowControls ?: localControls
     val effectiveDrag = effectiveWindowControls.onDragWindow
     val effectiveDragDelta = effectiveWindowControls.onDragDelta
 
-    val chromeModifier = if (drawOwnChrome) {
-        Modifier.glass(GlassStyles.bar.then { copy(shape = shape) })
+    // Real glass chrome only for the Blue theme - Dark/Light render flat, matching every other
+    // shell surface's isBlueGlass gating (see IdeCardSurface.ideCardSurface()).
+    val isBlueGlass = drawOwnChrome && GlassTheme.appTheme == AppTheme.Blue
+    val surfaceColor = MaterialTheme.colorScheme.surfaceContainer
+    val chromeModifier = if (isBlueGlass) {
+        Modifier.hazeGlass(
+            input = HazeInput.Backdrop(GlassTheme.hazeState),
+            style = remember(shape, surfaceColor) {
+                GlassStyle.regular.then {
+                    this.shape(shape)
+                    backgroundColor(surfaceColor)
+                }
+            },
+        )
+    } else if (drawOwnChrome) {
+        Modifier.background(surfaceColor)
     } else {
         Modifier
     }
@@ -161,11 +172,10 @@ fun GlassTopBar(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
-        CompositionLocalProvider(LocalContentColor provides glassColors.onGlass) {
+        CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
             // LEADING SECTION: Navigation & Brand
             GlassTopBarLeftSection(
                 navigation = navigation,
-                backdrop = actualBackdrop,
             )
 
             // Panel layout segmented toggles if configured
@@ -202,7 +212,7 @@ fun GlassTopBar(
                             .padding(horizontal = Spacing.Compact)
                             .width(StrokeWidth.Standard)
                             .height(ComponentSize.TopBarDividerHeight)
-                            .background(glassColors.glassBorder.copy(alpha = AlphaTokens.Faint)),
+                            .background(MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Faint)),
                     )
 
                     DesktopWindowControls(
@@ -220,9 +230,7 @@ fun GlassTopBar(
 @Composable
 private fun GlassTopBarLeftSection(
     navigation: TopBarNavigation,
-    backdrop: GlassSceneState? = null,
 ) {
-    val glassColors = GlassTheme.colors
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.Compact),
@@ -233,7 +241,6 @@ private fun GlassTopBarLeftSection(
                 GlassIconButton(
                     onClick = navigation.onClick,
                     size = ComponentSize.TopBarButtonSize,
-                    backdrop = backdrop,
                 ) {
                     Icon(
                         painter = AppIcons.ArrowBackPainterResource(),
@@ -246,7 +253,6 @@ private fun GlassTopBarLeftSection(
                 GlassIconButton(
                     onClick = navigation.onClick,
                     size = ComponentSize.TopBarButtonSize,
-                    backdrop = backdrop,
                 ) {
                     Icon(
                         painter = AppIcons.MenuPainterResource(),
@@ -268,7 +274,11 @@ private fun GlassTopBarLeftSection(
                         modifier = Modifier
                             .size(ComponentSize.LogoBadgeSize)
                             .clip(GlassShapes.ExtraSmall)
-                            .background(GlassTheme.branding.logoBadgeBrush),
+                            .background(
+                                Brush.linearGradient(
+                                    listOf(MaterialTheme.colorScheme.primary, BrandLogoGradientEnd),
+                                ),
+                            ),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
@@ -288,7 +298,7 @@ private fun GlassTopBarLeftSection(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = LetterSpacing.Widest,
                         ),
-                        color = glassColors.onGlass,
+                        color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         softWrap = false,
                         overflow = TextOverflow.Ellipsis,
@@ -300,16 +310,16 @@ private fun GlassTopBarLeftSection(
                             text = "/",
                             style = MaterialTheme.typography.titleSmall.copy(
                                 fontSize = FontSize.TitleSmall,
-                                color = glassColors.onGlassMuted,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             ),
                         )
                         Box(
                             modifier = Modifier
                                 .clip(GlassShapes.ExtraSmall)
-                                .background(glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Elevated))
+                                .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = AlphaTokens.Elevated))
                                 .glassOutlineBorder(
                                     width = StrokeWidth.Hairline,
-                                    color = glassColors.glassBorder,
+                                    color = MaterialTheme.colorScheme.outline,
                                     shape = GlassShapes.ExtraSmall,
                                 )
                                 .padding(
@@ -323,7 +333,7 @@ private fun GlassTopBarLeftSection(
                                     fontSize = FontSize.Micro,
                                     letterSpacing = LetterSpacing.Snug,
                                 ),
-                                color = glassColors.onGlassSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
                                 softWrap = false,
                                 overflow = TextOverflow.Ellipsis,
@@ -345,18 +355,17 @@ private fun GlassCommandPalettePill(
     search: TopBarSearch,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
     var isHovered by remember { mutableStateOf(false) }
 
     val borderColor = if (isHovered) {
-        glassColors.glassBorderHighlight.copy(alpha = AlphaTokens.Medium)
+        MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Medium)
     } else {
-        glassColors.glassBorder.copy(alpha = AlphaTokens.Faint)
+        MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Faint)
     }
     val surfaceColor = if (isHovered) {
-        glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Hover)
+        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = AlphaTokens.Hover)
     } else {
-        glassColors.glassSurface.copy(alpha = AlphaTokens.Subtle)
+        MaterialTheme.colorScheme.surfaceContainer.copy(alpha = AlphaTokens.Subtle)
     }
 
     Row(
@@ -384,14 +393,14 @@ private fun GlassCommandPalettePill(
         Icon(
             painter = AppIcons.SearchPainterResource(),
             contentDescription = null,
-            tint = if (isHovered) glassColors.onGlass else glassColors.onGlassMuted,
+            tint = if (isHovered) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(IconSize.Small),
         )
 
         Text(
             text = search.placeholder,
             style = MaterialTheme.typography.bodySmall.copy(fontSize = FontSize.Chip),
-            color = if (isHovered) glassColors.onGlassSecondary else glassColors.onGlassMuted,
+            color = if (isHovered) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             modifier = Modifier.weight(1f),
         )
@@ -399,13 +408,13 @@ private fun GlassCommandPalettePill(
         Box(
             modifier = Modifier
                 .clip(GlassShapes.ExtraSmall)
-                .background(glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Elevated))
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = AlphaTokens.Elevated))
                 .glassOutlineBorder(
                     width = StrokeWidth.Hairline,
                     color = if (isHovered) {
-                        glassColors.glassBorderHighlight.copy(alpha = AlphaTokens.Medium)
+                        MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Medium)
                     } else {
-                        glassColors.glassBorderHighlight.copy(alpha = AlphaTokens.Hover)
+                        MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Hover)
                     },
                     shape = GlassShapes.ExtraSmall,
                 )
@@ -423,7 +432,7 @@ private fun GlassCommandPalettePill(
                     fontWeight = FontWeight.SemiBold,
                     letterSpacing = LetterSpacing.Loose,
                 ),
-                color = if (isHovered) glassColors.onGlass else glassColors.onGlassSecondary,
+                color = if (isHovered) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -437,17 +446,16 @@ private fun GlassCommandPalettePill(
  */
 @Composable
 private fun SegmentedPanelLayoutToggle(toggles: TopBarPanelToggles, modifier: Modifier = Modifier) {
-    val glassColors = GlassTheme.colors
     val toggleShape = GlassShapes.Small
 
     Row(
         modifier = modifier
             .height(ComponentSize.SegmentedToggleHeight)
             .clip(toggleShape)
-            .background(glassColors.glassSurface.copy(alpha = AlphaTokens.Subtle))
+            .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = AlphaTokens.Subtle))
             .glassOutlineBorder(
                 width = StrokeWidth.Hairline,
-                color = glassColors.glassBorder.copy(alpha = AlphaTokens.Faint),
+                color = MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Faint),
                 shape = toggleShape,
             )
             .padding(Spacing.ExtraExtraSmall),
@@ -459,13 +467,13 @@ private fun SegmentedPanelLayoutToggle(toggles: TopBarPanelToggles, modifier: Mo
             selected = toggles.isLeftVisible,
             onSelectedChange = { toggles.onToggleLeft() },
             size = ComponentSize.SegmentedButtonSize,
-            shape = GlassShapes.Compact,
+            shape = GlassShapes.ShellControl,
         ) {
             Icon(
                 painter = AppIcons.leftPanelPainterResource(),
                 contentDescription = "Toggle Left Panel (Files)",
                 modifier = Modifier.size(IconSize.Segmented),
-                tint = if (toggles.isLeftVisible) glassColors.onGlass else glassColors.onGlassMuted,
+                tint = if (toggles.isLeftVisible) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
@@ -474,13 +482,13 @@ private fun SegmentedPanelLayoutToggle(toggles: TopBarPanelToggles, modifier: Mo
             selected = toggles.isBottomVisible,
             onSelectedChange = { toggles.onToggleBottom() },
             size = ComponentSize.SegmentedButtonSize,
-            shape = GlassShapes.Compact,
+            shape = GlassShapes.ShellControl,
         ) {
             Icon(
                 painter = AppIcons.bottomPanelPainterResource(),
                 contentDescription = "Toggle Bottom Panel (Terminal)",
                 modifier = Modifier.size(IconSize.Segmented),
-                tint = if (toggles.isBottomVisible) glassColors.onGlass else glassColors.onGlassMuted,
+                tint = if (toggles.isBottomVisible) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
@@ -489,13 +497,13 @@ private fun SegmentedPanelLayoutToggle(toggles: TopBarPanelToggles, modifier: Mo
             selected = toggles.isRightVisible,
             onSelectedChange = { toggles.onToggleRight() },
             size = ComponentSize.SegmentedButtonSize,
-            shape = GlassShapes.Compact,
+            shape = GlassShapes.ShellControl,
         ) {
             Icon(
                 painter = AppIcons.rightPanelPainterResource(),
                 contentDescription = "Toggle Right Panel (AI Assistant)",
                 modifier = Modifier.size(IconSize.Segmented),
-                tint = if (toggles.isRightVisible) glassColors.onGlass else glassColors.onGlassMuted,
+                tint = if (toggles.isRightVisible) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

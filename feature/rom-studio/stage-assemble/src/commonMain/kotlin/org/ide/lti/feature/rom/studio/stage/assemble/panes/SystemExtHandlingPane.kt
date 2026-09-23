@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.rom.studio.stage.assemble.panes
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -47,7 +48,6 @@ import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -67,7 +67,6 @@ public fun SystemExtHandlingPane(
     onValidate: () -> Unit,
     onSave: () -> Unit,
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     val isSeparate = settings.systemExtMode.equals("separate", ignoreCase = true) ||
         settings.systemExtMode.equals("auto", ignoreCase = true) ||
@@ -79,29 +78,28 @@ public fun SystemExtHandlingPane(
             .testTag("SystemExtHandlingPane"),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
-        SystemExtTopInfoCard(colors = colors)
+        SystemExtTopInfoCard()
 
         SystemExtHandlingModeSection(
             isSeparate = isSeparate,
             settings = settings,
             onChange = onChange,
-            colors = colors,
         )
 
-        SystemExtPathsCard(colors = colors)
+        SystemExtPathsCard()
 
-        SystemExtWarningBanner(colors = colors)
+        SystemExtWarningBanner()
     }
 }
 
 @Composable
-private fun SystemExtTopInfoCard(colors: IdeShellColorScheme) {
+private fun SystemExtTopInfoCard() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .background(colors.infoBannerFill)
-            .border(GlassDimens.HairlineBorder, colors.infoBannerBorder, GlassShapes.ShellCard)
+            .background(MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Subtle))
+            .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Ambient), GlassShapes.ShellCard)
             .padding(Spacing.Medium),
     ) {
         Row(
@@ -117,7 +115,7 @@ private fun SystemExtTopInfoCard(colors: IdeShellColorScheme) {
 
             Text(
                 text = infoText,
-                color = colors.textMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
                 modifier = Modifier.weight(1f),
@@ -134,19 +132,19 @@ private fun SystemExtTopInfoCard(colors: IdeShellColorScheme) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.HelpOutline,
                     contentDescription = "Help",
-                    tint = colors.accentBlue,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(IconSize.ExtraSmall),
                 )
                 Text(
                     text = "Help",
-                    color = colors.accentBlue,
+                    color = MaterialTheme.colorScheme.primary,
                     fontSize = FontSize.Micro,
                     fontFamily = ideFontFamily(),
                 )
                 Icon(
                     imageVector = Icons.Default.ChevronRight,
                     contentDescription = null,
-                    tint = colors.accentBlue,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(IconSize.ExtraSmall),
                 )
             }
@@ -159,12 +157,11 @@ private fun SystemExtHandlingModeSection(
     isSeparate: Boolean,
     settings: AssemblySettings,
     onChange: (AssemblySettings) -> Unit,
-    colors: IdeShellColorScheme,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
         Text(
             text = "Handling mode",
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = FontSize.BodyMedium,
             fontWeight = FontWeight.SemiBold,
             fontFamily = ideFontFamily(),
@@ -174,7 +171,7 @@ private fun SystemExtHandlingModeSection(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(GlassShapes.ShellCard)
-                .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+                .ideCardSurface(shape = GlassShapes.ShellCard)
                 .padding(Spacing.Medium),
             verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
         ) {
@@ -190,7 +187,6 @@ private fun SystemExtHandlingModeSection(
                     isEnabled = true,
                     onSelect = { onChange(settings.copy(systemExtMode = "separate")) },
                     modifier = Modifier.weight(1f),
-                    colors = colors,
                 )
 
                 HandlingModeCard(
@@ -202,7 +198,6 @@ private fun SystemExtHandlingModeSection(
                     isEnabled = false,
                     onSelect = { onChange(settings.copy(systemExtMode = "fold")) },
                     modifier = Modifier.weight(1f),
-                    colors = colors,
                 )
             }
 
@@ -214,13 +209,13 @@ private fun SystemExtHandlingModeSection(
                 Icon(
                     imageVector = Icons.Default.Info,
                     contentDescription = null,
-                    tint = colors.accentBlue,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(IconSize.Small),
                 )
                 Text(
                     text = "Changing the handling mode will invalidate downstream checkpoints:" +
                         " Build, Metadata, Publish.",
-                    color = colors.textMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                     fontFamily = ideFontFamily(),
                 )
@@ -230,11 +225,11 @@ private fun SystemExtHandlingModeSection(
 }
 
 @Composable
-private fun SystemExtPathsCard(colors: IdeShellColorScheme) {
+private fun SystemExtPathsCard() {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
         Text(
             text = "Paths and preview",
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = FontSize.BodyMedium,
             fontWeight = FontWeight.SemiBold,
             fontFamily = ideFontFamily(),
@@ -244,24 +239,24 @@ private fun SystemExtPathsCard(colors: IdeShellColorScheme) {
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(GlassShapes.ShellCard)
-                .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+                .ideCardSurface(shape = GlassShapes.ShellCard)
                 .padding(Spacing.Medium),
             verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
         ) {
-            SystemExtFlowDiagram(colors = colors)
+            SystemExtFlowDiagram()
 
             HorizontalDivider(
                 thickness = GlassDimens.HairlineBorder,
-                color = colors.borderMuted,
+                color = MaterialTheme.colorScheme.outlineVariant,
             )
 
-            SystemExtDerivedPaths(colors = colors)
+            SystemExtDerivedPaths()
         }
     }
 }
 
 @Composable
-private fun SystemExtFlowDiagram(colors: IdeShellColorScheme) {
+private fun SystemExtFlowDiagram() {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -278,12 +273,12 @@ private fun SystemExtFlowDiagram(colors: IdeShellColorScheme) {
                 Icon(
                     imageVector = Icons.Default.Folder,
                     contentDescription = null,
-                    tint = colors.accentBlue,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(IconSize.Small),
                 )
                 Text(
                     text = "Input directory",
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = FontSize.BodySmall,
                     fontWeight = FontWeight.Medium,
                     fontFamily = ideFontFamily(),
@@ -293,15 +288,15 @@ private fun SystemExtFlowDiagram(colors: IdeShellColorScheme) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(colors.cardBackgroundMuted, GlassShapes.ShellControl)
-                    .border(GlassDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
+                    .background(MaterialTheme.colorScheme.surfaceContainer, GlassShapes.ShellControl)
+                    .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outlineVariant, GlassShapes.ShellControl)
                     .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Small),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(
                     text = "D:\\ROM\\source\\extract\\system_ext",
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = FontSize.Micro,
                     fontFamily = codeFontFamily(),
                     modifier = Modifier.weight(1f),
@@ -313,7 +308,7 @@ private fun SystemExtFlowDiagram(colors: IdeShellColorScheme) {
                 ) {
                     Text(
                         text = "Browse...",
-                        color = colors.textMain,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = FontSize.Micro,
                     )
                 }
@@ -321,7 +316,7 @@ private fun SystemExtFlowDiagram(colors: IdeShellColorScheme) {
 
             Text(
                 text = "Extracted from vendor image during Extract stage.",
-                color = colors.textDim,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
             )
@@ -330,7 +325,7 @@ private fun SystemExtFlowDiagram(colors: IdeShellColorScheme) {
         Icon(
             imageVector = Icons.AutoMirrored.Filled.ArrowForward,
             contentDescription = null,
-            tint = colors.accentBlue,
+            tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(IconSize.Medium),
         )
 
@@ -345,12 +340,12 @@ private fun SystemExtFlowDiagram(colors: IdeShellColorScheme) {
                 Icon(
                     imageVector = Icons.Default.Folder,
                     contentDescription = null,
-                    tint = colors.textMuted,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(IconSize.Small),
                 )
                 Text(
                     text = "Output directory (workspace)",
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = FontSize.BodySmall,
                     fontWeight = FontWeight.Medium,
                     fontFamily = ideFontFamily(),
@@ -360,13 +355,13 @@ private fun SystemExtFlowDiagram(colors: IdeShellColorScheme) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(colors.cardBackgroundMuted, GlassShapes.ShellControl)
-                    .border(GlassDimens.HairlineBorder, colors.borderMuted, GlassShapes.ShellControl)
+                    .background(MaterialTheme.colorScheme.surfaceContainer, GlassShapes.ShellControl)
+                    .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outlineVariant, GlassShapes.ShellControl)
                     .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Medium),
             ) {
                 Text(
                     text = "D:\\ROM\\workspace\\out\\system_ext",
-                    color = colors.textMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                     fontFamily = codeFontFamily(),
                 )
@@ -374,7 +369,7 @@ private fun SystemExtFlowDiagram(colors: IdeShellColorScheme) {
 
             Text(
                 text = "Derived path (based on workspace and handling mode).",
-                color = colors.textDim,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
             )
@@ -383,21 +378,21 @@ private fun SystemExtFlowDiagram(colors: IdeShellColorScheme) {
 }
 
 @Composable
-private fun SystemExtDerivedPaths(colors: IdeShellColorScheme) {
+private fun SystemExtDerivedPaths() {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
         Text(
             text = "Derived paths",
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = FontSize.BodySmall,
             fontWeight = FontWeight.SemiBold,
             fontFamily = ideFontFamily(),
         )
 
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
-            DerivedPathRow("Workspace root", "D:\\ROM\\workspace", colors)
-            DerivedPathRow("system_ext (output)", "D:\\ROM\\workspace\\out\\system_ext", colors)
-            DerivedPathRow("Image (build output)", "D:\\ROM\\workspace\\images\\system_ext.img", colors)
-            DerivedPathRow("Mount point (build)", "out\\mount\\system_ext", colors)
+            DerivedPathRow("Workspace root", "D:\\ROM\\workspace")
+            DerivedPathRow("system_ext (output)", "D:\\ROM\\workspace\\out\\system_ext")
+            DerivedPathRow("Image (build output)", "D:\\ROM\\workspace\\images\\system_ext.img")
+            DerivedPathRow("Mount point (build)", "out\\mount\\system_ext")
         }
     }
 }
@@ -411,13 +406,12 @@ private fun HandlingModeCard(
     isEnabled: Boolean,
     onSelect: () -> Unit,
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme,
 ) {
-    val borderColor = if (isSelected) colors.accentBlue else colors.borderMuted
+    val borderColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
     val bgColor = if (isSelected) {
-        colors.accentBlue.copy(alpha = AlphaTokens.Subtle)
+        MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Subtle)
     } else {
-        colors.cardBackground
+        MaterialTheme.colorScheme.surfaceContainerHigh
     }
 
     Box(
@@ -437,17 +431,17 @@ private fun HandlingModeCard(
                 onClick = if (isEnabled) onSelect else null,
                 enabled = isEnabled,
                 colors = RadioButtonDefaults.colors(
-                    selectedColor = colors.accentBlue,
-                    unselectedColor = colors.textDim,
-                    disabledSelectedColor = colors.textDim,
-                    disabledUnselectedColor = colors.textDim.copy(alpha = AlphaTokens.Disabled),
+                    selectedColor = MaterialTheme.colorScheme.primary,
+                    unselectedColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    disabledSelectedColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    disabledUnselectedColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = AlphaTokens.Disabled),
                 ),
             )
 
             val iconTint = when {
-                isSelected -> colors.accentBlue
-                isEnabled -> colors.textMuted
-                else -> colors.textDim
+                isSelected -> MaterialTheme.colorScheme.primary
+                isEnabled -> MaterialTheme.colorScheme.onSurfaceVariant
+                else -> MaterialTheme.colorScheme.onSurfaceVariant
             }
 
             Icon(
@@ -460,20 +454,20 @@ private fun HandlingModeCard(
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
                 Text(
                     text = title,
-                    color = if (isEnabled) colors.textMain else colors.textMuted,
+                    color = if (isEnabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.BodyMedium,
                     fontWeight = FontWeight.SemiBold,
                     fontFamily = ideFontFamily(),
                 )
                 Text(
                     text = subtitle,
-                    color = if (isEnabled) colors.textMuted else colors.textDim,
+                    color = if (isEnabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                     fontFamily = ideFontFamily(),
                 )
                 Text(
                     text = description,
-                    color = colors.textDim,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                     fontFamily = ideFontFamily(),
                 )
@@ -483,7 +477,7 @@ private fun HandlingModeCard(
 }
 
 @Composable
-private fun DerivedPathRow(label: String, value: String, colors: IdeShellColorScheme) {
+private fun DerivedPathRow(label: String, value: String) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -491,14 +485,14 @@ private fun DerivedPathRow(label: String, value: String, colors: IdeShellColorSc
     ) {
         Text(
             text = label,
-            color = colors.textMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.Micro,
             fontFamily = ideFontFamily(),
             modifier = Modifier.width(GlassDimens.AcquirePolicyLabelWidth),
         )
         Text(
             text = value,
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = FontSize.Micro,
             fontFamily = codeFontFamily(),
             modifier = Modifier.weight(1f),
@@ -507,15 +501,15 @@ private fun DerivedPathRow(label: String, value: String, colors: IdeShellColorSc
 }
 
 @Composable
-private fun SystemExtWarningBanner(colors: IdeShellColorScheme) {
+private fun SystemExtWarningBanner() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellControl)
-            .background(colors.cardBackground)
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
             .border(
                 width = GlassDimens.HairlineBorder,
-                color = colors.warningAmber.copy(alpha = AlphaTokens.Border),
+                color = GlassTheme.diagnosticColors.warning.copy(alpha = AlphaTokens.Border),
                 shape = GlassShapes.ShellControl,
             )
             .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
@@ -528,12 +522,12 @@ private fun SystemExtWarningBanner(colors: IdeShellColorScheme) {
                 modifier = Modifier
                     .size(IconSize.Large)
                     .clip(GlassShapes.ShellPill)
-                    .background(colors.warningAmber),
+                    .background(GlassTheme.diagnosticColors.warning),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = "!",
-                    color = colors.cardBackgroundMuted,
+                    color = MaterialTheme.colorScheme.surfaceContainer,
                     fontSize = FontSize.BodySmall,
                     fontWeight = FontWeight.Bold,
                     fontFamily = ideFontFamily(),
@@ -543,7 +537,7 @@ private fun SystemExtWarningBanner(colors: IdeShellColorScheme) {
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
                 Text(
                     text = "Downstream checkpoints will be invalidated",
-                    color = colors.warningAmber,
+                    color = GlassTheme.diagnosticColors.warning,
                     fontSize = FontSize.BodySmall,
                     fontWeight = FontWeight.SemiBold,
                     fontFamily = ideFontFamily(),
@@ -551,7 +545,7 @@ private fun SystemExtWarningBanner(colors: IdeShellColorScheme) {
                 Text(
                     text = "If you change the handling mode, the following stages must be rerun: " +
                         "Build, Metadata, Publish.",
-                    color = colors.warningAmber,
+                    color = GlassTheme.diagnosticColors.warning,
                     fontSize = FontSize.Micro,
                     fontFamily = ideFontFamily(),
                 )

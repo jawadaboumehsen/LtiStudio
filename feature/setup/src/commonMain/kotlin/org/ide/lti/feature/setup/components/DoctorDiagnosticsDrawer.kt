@@ -55,7 +55,6 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.core.domain.setup.DiagnosticCategory
 import org.ide.lti.core.domain.setup.DiagnosticCheckItem
 import org.ide.lti.core.domain.setup.StepStatus
@@ -79,11 +78,9 @@ import org.ide.lti.core.domain.setup.StepStatus
 fun DoctorDiagnosticsDrawer(
     diagnosticsList: List<DiagnosticCheckItem>,
     modifier: Modifier = Modifier,
-    backdrop: GlassSceneState? = null,
     onAutoRemediateDoctor: (() -> Unit)? = null,
 ) {
-    val glassColors = GlassTheme.colors
-    val diagnostics = glassColors.diagnostics
+    val diagnostics = GlassTheme.diagnosticColors
 
     val hasIssues = diagnosticsList.any { it.status == StepStatus.FAILED || it.status == StepStatus.WARNING }
     var isExpanded by remember(hasIssues) { mutableStateOf(hasIssues) }
@@ -122,12 +119,9 @@ fun DoctorDiagnosticsDrawer(
         )
     }
 
-    val shellColors = GlassTheme.ideShellColors
     GlassCard(
         modifier = modifier.fillMaxWidth(),
-        surfaceColor = shellColors.cardBackground,
-        borderColor = shellColors.border,
-        backdrop = backdrop,
+        surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         contentPadding = Spacing.CardPadding,
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
@@ -153,7 +147,7 @@ fun DoctorDiagnosticsDrawer(
                             AppIcons.ChevronRightPainterResource()
                         },
                         contentDescription = "Toggle Diagnostics Drawer",
-                        tint = glassColors.onGlassSecondary,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(IconSize.Small),
                     )
 
@@ -161,7 +155,7 @@ fun DoctorDiagnosticsDrawer(
                         text = "Pre-Flight System Diagnostics (${diagnosticsList.size} Checks)",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = glassColors.onGlass,
+                        color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         softWrap = false,
                         overflow = TextOverflow.Ellipsis,
@@ -178,7 +172,7 @@ fun DoctorDiagnosticsDrawer(
                 Text(
                     text = if (isExpanded) "Hide Details" else "Inspect Checks",
                     style = MaterialTheme.typography.labelSmall,
-                    color = glassColors.glassAccent,
+                    color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.align(Alignment.CenterEnd),
                     maxLines = 1,
                     softWrap = false,
@@ -196,7 +190,7 @@ fun DoctorDiagnosticsDrawer(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(GlassShapes.Medium)
-                    .background(glassColors.glassSurface)
+                    .background(MaterialTheme.colorScheme.surfaceContainer)
                     .border(
                         width = StrokeWidth.Standard,
                         color = when {
@@ -257,7 +251,7 @@ fun DoctorDiagnosticsDrawer(
                                 },
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.SemiBold,
-                                color = glassColors.onGlass,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 maxLines = 1,
                                 softWrap = false,
                                 overflow = TextOverflow.Ellipsis,
@@ -265,7 +259,7 @@ fun DoctorDiagnosticsDrawer(
                             Text(
                                 text = "$passedChecksCount Passed · $warningChecksCount Warnings · $failedChecksCount Failures",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = glassColors.onGlassSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
                                 softWrap = false,
                                 overflow = TextOverflow.Ellipsis,
@@ -338,7 +332,7 @@ fun DoctorDiagnosticsDrawer(
                                         text = "Doctor Automated Self-Healing",
                                         style = MaterialTheme.typography.titleSmall,
                                         fontWeight = FontWeight.SemiBold,
-                                        color = glassColors.onGlass,
+                                        color = MaterialTheme.colorScheme.onSurface,
                                         maxLines = 1,
                                         softWrap = false,
                                         overflow = TextOverflow.Ellipsis,
@@ -346,7 +340,7 @@ fun DoctorDiagnosticsDrawer(
                                     Text(
                                         text = "The doctor will automatically provision missing compilers, packages, and kernel configurations via root elevation.",
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = glassColors.onGlassSecondary,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         maxLines = 2,
                                         overflow = TextOverflow.Ellipsis,
                                     )

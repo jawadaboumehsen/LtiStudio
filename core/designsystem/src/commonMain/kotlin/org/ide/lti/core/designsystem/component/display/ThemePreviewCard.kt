@@ -45,16 +45,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
-import org.ide.lti.core.designsystem.theme.BrandColors
+import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
-import org.ide.lti.core.designsystem.theme.ThemeColors
-import org.ide.lti.core.designsystem.theme.config.AppTheme
-import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
+import org.ide.lti.core.designsystem.theme.colorSchemeFor
 
 /**
  * Standardized Liquid Glass Theme Preview Card displaying an interactive miniature IDE mockup.
@@ -80,35 +78,28 @@ fun ThemePreviewCard(
     subtitle: String? = null,
 ) {
     var isHovered by remember { mutableStateOf(false) }
-    val glassColors = GlassTheme.colors
+    val previewScheme = colorSchemeFor(theme)
 
     val targetBorder = when {
-        isSelected -> theme.indicatorColor
-        isHovered -> glassColors.glassBorderHighlight
-        else -> glassColors.glassBorder
+        isSelected -> previewScheme.primary
+        isHovered -> MaterialTheme.colorScheme.primary
+        else -> MaterialTheme.colorScheme.outline
     }
 
-    val borderColor by animateColorAsState(
-        targetValue = targetBorder,
-        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion),
-    )
+    val borderColor by animateColorAsState(targetValue = targetBorder)
 
     val targetSurface = when {
-        isSelected -> glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Elevated)
-        isHovered -> glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Subtle)
-        else -> glassColors.glassSurface
+        isSelected -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = AlphaTokens.Elevated)
+        isHovered -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = AlphaTokens.Subtle)
+        else -> MaterialTheme.colorScheme.surfaceContainer
     }
 
-    val surfaceColor by animateColorAsState(
-        targetValue = targetSurface,
-        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion),
-    )
+    val surfaceColor by animateColorAsState(targetValue = targetSurface)
 
     val defaultSubtitle = when (theme) {
-        is AppTheme.Blue -> "Signature AMOLED"
-        is AppTheme.Dark -> "Fleet Obsidian"
-        is AppTheme.Light -> "Frosted Minimal"
-        else -> "Custom Theme"
+        AppTheme.Blue -> "Signature AMOLED"
+        AppTheme.Dark -> "Fleet Obsidian"
+        AppTheme.Light -> "Frosted Minimal"
     }
 
     Column(
@@ -146,10 +137,10 @@ fun ThemePreviewCard(
                 verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
             ) {
                 Text(
-                    text = theme.displayName,
+                    text = themeDisplayName(theme),
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
-                    color = glassColors.onGlass,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     softWrap = false,
                     overflow = TextOverflow.Ellipsis,
@@ -157,7 +148,7 @@ fun ThemePreviewCard(
                 Text(
                     text = subtitle ?: defaultSubtitle,
                     style = MaterialTheme.typography.bodySmall,
-                    color = glassColors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     softWrap = false,
                     overflow = TextOverflow.Ellipsis,
@@ -170,10 +161,10 @@ fun ThemePreviewCard(
                     modifier = Modifier
                         .size(Spacing.Large)
                         .clip(GlassShapes.Capsule)
-                        .background(theme.indicatorColor)
+                        .background(previewScheme.primary)
                         .glassOutlineBorder(
                             width = StrokeWidth.Hairline,
-                            color = theme.indicatorColor,
+                            color = previewScheme.primary,
                             shape = GlassShapes.Capsule,
                         ),
                     contentAlignment = Alignment.Center,
@@ -182,12 +173,18 @@ fun ThemePreviewCard(
                         painter = AppIcons.CheckPainterResource(),
                         contentDescription = "Selected",
                         modifier = Modifier.size(IconSize.Small),
-                        tint = if (theme == AppTheme.Light) ThemeColors.LightLayerText else BrandColors.OnLogoBadge,
+                        tint = previewScheme.onPrimary,
                     )
                 }
             }
         }
     }
+}
+
+private fun themeDisplayName(theme: AppTheme): String = when (theme) {
+    AppTheme.Blue -> "Blue Glass"
+    AppTheme.Dark -> "Dark"
+    AppTheme.Light -> "Light"
 }
 
 /**
@@ -198,54 +195,14 @@ private fun MiniIdePreview(
     theme: AppTheme,
     modifier: Modifier = Modifier,
 ) {
-    val windowCanvasColor = when (theme) {
-        is AppTheme.Blue -> ThemeColors.BlueAmoledCanvas
-        is AppTheme.Dark -> ThemeColors.DarkLayerBase
-        is AppTheme.Light -> ThemeColors.LightLayerBase
-        else -> ThemeColors.DarkLayerBase
-    }
-
-    val windowBorderColor = when (theme) {
-        is AppTheme.Blue -> ThemeColors.BlueAmoledBorder
-        is AppTheme.Dark -> ThemeColors.DarkLayerHighlight
-        is AppTheme.Light -> ThemeColors.LightLayerBorder
-        else -> ThemeColors.DarkLayerHighlight
-    }
-
-    val sidebarColor = when (theme) {
-        is AppTheme.Blue -> ThemeColors.BlueAmoledRail
-        is AppTheme.Dark -> ThemeColors.DarkLayerSurface
-        is AppTheme.Light -> ThemeColors.LightLayerElevated
-        else -> ThemeColors.DarkLayerSurface
-    }
-
-    val editorColor = when (theme) {
-        is AppTheme.Blue -> ThemeColors.BlueAmoledCanvas
-        is AppTheme.Dark -> ThemeColors.DarkLayerElevated
-        is AppTheme.Light -> ThemeColors.LightLayerSurface
-        else -> ThemeColors.DarkLayerElevated
-    }
-
-    val tokenKeywordColor = when (theme) {
-        is AppTheme.Blue -> ThemeColors.FleetCyan
-        is AppTheme.Dark -> ThemeColors.FleetBlue
-        is AppTheme.Light -> ThemeColors.LightLayerAccent
-        else -> ThemeColors.FleetBlue
-    }
-
-    val tokenIdentifierColor = when (theme) {
-        is AppTheme.Blue -> ThemeColors.FleetCyan
-        is AppTheme.Dark -> ThemeColors.FleetFocusGlow
-        is AppTheme.Light -> ThemeColors.LightLayerText
-        else -> ThemeColors.FleetFocusGlow
-    }
-
-    val tokenFadedColor = when (theme) {
-        is AppTheme.Blue -> ThemeColors.BlueAmoledBorderMuted
-        is AppTheme.Dark -> ThemeColors.DarkLayerControl
-        is AppTheme.Light -> ThemeColors.LightLayerBorder
-        else -> ThemeColors.DarkLayerControl
-    }
+    val previewScheme = colorSchemeFor(theme)
+    val windowCanvasColor = previewScheme.surface
+    val windowBorderColor = previewScheme.outline
+    val sidebarColor = previewScheme.surfaceContainer
+    val editorColor = previewScheme.surface
+    val tokenKeywordColor = previewScheme.primary
+    val tokenIdentifierColor = previewScheme.secondary
+    val tokenFadedColor = previewScheme.outlineVariant
 
     Box(
         modifier = modifier
@@ -274,19 +231,19 @@ private fun MiniIdePreview(
                     modifier = Modifier
                         .size(IconSize.MiniDot)
                         .clip(GlassShapes.Capsule)
-                        .background(ThemeColors.WindowControlClose),
+                        .background(GlassTheme.diagnosticColors.error),
                 )
                 Box(
                     modifier = Modifier
                         .size(IconSize.MiniDot)
                         .clip(GlassShapes.Capsule)
-                        .background(ThemeColors.WindowControlMinimize),
+                        .background(GlassTheme.diagnosticColors.warning),
                 )
                 Box(
                     modifier = Modifier
                         .size(IconSize.MiniDot)
                         .clip(GlassShapes.Capsule)
-                        .background(ThemeColors.WindowControlMaximize),
+                        .background(GlassTheme.diagnosticColors.success),
                 )
             }
 

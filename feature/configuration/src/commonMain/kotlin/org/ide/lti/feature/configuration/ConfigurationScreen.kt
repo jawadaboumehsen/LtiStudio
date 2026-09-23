@@ -52,8 +52,8 @@ import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.StrokeWidth
-import org.ide.lti.core.designsystem.theme.config.AppTheme
 import org.ide.lti.core.model.target.TargetValidationError
 import org.ide.lti.feature.configuration.components.ConfigurationSidebar
 import org.ide.lti.feature.configuration.components.ConfigurationTabHeader
@@ -78,8 +78,6 @@ fun ConfigurationScreen(
 
     val state by viewModel.uiState.collectAsState()
     val isBlueGlass = GlassTheme.appTheme == AppTheme.Blue
-    val glassColors = GlassTheme.colors
-    val colors = GlassTheme.ideShellColors
 
     state.pendingTargetId?.let { pendingTargetId ->
         PendingTargetDecisionDialog(
@@ -91,7 +89,7 @@ fun ConfigurationScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(if (isBlueGlass) Color.Transparent else colors.appBackground),
+            .background(if (isBlueGlass) Color.Transparent else MaterialTheme.colorScheme.surface),
     ) {
         // TOP BAR
         GlassTopBar(
@@ -100,7 +98,7 @@ fun ConfigurationScreen(
                 Text(
                     text = "Target & Run Configurations",
                     style = MaterialTheme.typography.titleMedium,
-                    color = glassColors.onGlass,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
             },
             drawOwnChrome = true,
@@ -144,7 +142,6 @@ fun ConfigurationScreen(
                 if (state.validationErrors.isNotEmpty()) {
                     ConfigurationValidationBanner(
                         validationErrors = state.validationErrors,
-                        glassColors = glassColors,
                     )
                 }
 
@@ -186,7 +183,6 @@ fun ConfigurationScreen(
                     onRevert = viewModel::onRevertChanges,
                     onCancel = onBackClick,
                     onApply = { viewModel.onApplyChanges(onSuccess = onBackClick) },
-                    glassColors = glassColors,
                 )
             }
         }
@@ -196,17 +192,16 @@ fun ConfigurationScreen(
 @Composable
 private fun ConfigurationValidationBanner(
     validationErrors: List<TargetValidationError>,
-    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = Spacing.Medium, vertical = Spacing.Small)
             .clip(GlassShapes.Small)
-            .background(glassColors.diagnostics.error.copy(alpha = AlphaTokens.Hover))
+            .background(GlassTheme.diagnosticColors.error.copy(alpha = AlphaTokens.Hover))
             .glassOutlineBorder(
                 width = StrokeWidth.Hairline,
-                color = glassColors.diagnostics.error.copy(alpha = AlphaTokens.Border),
+                color = GlassTheme.diagnosticColors.error.copy(alpha = AlphaTokens.Border),
                 shape = GlassShapes.Small,
             )
             .padding(Spacing.Small),
@@ -216,13 +211,13 @@ private fun ConfigurationValidationBanner(
         Icon(
             imageVector = Icons.Default.Warning,
             contentDescription = null,
-            tint = glassColors.diagnostics.error,
+            tint = GlassTheme.diagnosticColors.error,
             modifier = Modifier.size(IconSize.Small),
         )
         Text(
             text = validationErrors.joinToString("; ") { it.message },
             style = MaterialTheme.typography.bodySmall,
-            color = glassColors.diagnostics.error,
+            color = GlassTheme.diagnosticColors.error,
         )
     }
 }
@@ -235,12 +230,11 @@ private fun ConfigurationActionBar(
     onRevert: () -> Unit,
     onCancel: () -> Unit,
     onApply: () -> Unit,
-    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(glassColors.glassSurface.copy(alpha = AlphaTokens.Faint))
+            .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = AlphaTokens.Faint))
             .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.Small),

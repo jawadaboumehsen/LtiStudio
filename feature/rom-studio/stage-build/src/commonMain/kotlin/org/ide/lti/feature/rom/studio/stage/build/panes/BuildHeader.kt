@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.rom.studio.stage.build.panes
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -32,7 +33,6 @@ import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.ideFontFamily
 
@@ -54,7 +54,6 @@ public fun BuildHeader(
     onValidate: () -> Unit = {},
     onSave: () -> Unit = {},
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -64,7 +63,6 @@ public fun BuildHeader(
         BuildHeaderLeft(
             title = title,
             subtitle = subtitle,
-            colors = colors,
             modifier = Modifier.weight(1f),
         )
 
@@ -77,7 +75,6 @@ public fun BuildHeader(
             validateIsPrimary = validateIsPrimary,
             onValidate = onValidate,
             onSave = onSave,
-            colors = colors,
         )
     }
 }
@@ -86,7 +83,6 @@ public fun BuildHeader(
 private fun BuildHeaderLeft(
     title: String,
     subtitle: String,
-    colors: IdeShellColorScheme,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -99,31 +95,31 @@ private fun BuildHeaderLeft(
         ) {
             Text(
                 text = "ROM Setup",
-                color = colors.textDim,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
             )
             Text(
                 text = "/",
-                color = colors.textDim,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
             )
             Text(
                 text = "Build",
-                color = colors.textDim,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
             )
             Text(
                 text = "/",
-                color = colors.textDim,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
             )
             Text(
                 text = title,
-                color = colors.textMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontWeight = FontWeight.Medium,
                 fontFamily = ideFontFamily(),
@@ -134,7 +130,7 @@ private fun BuildHeaderLeft(
 
         Text(
             text = title,
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = FontSize.TitleLarge,
             fontWeight = FontWeight.Bold,
             fontFamily = ideFontFamily(),
@@ -144,7 +140,7 @@ private fun BuildHeaderLeft(
 
         Text(
             text = subtitle,
-            color = colors.textMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.BodySmall,
             fontFamily = ideFontFamily(),
         )
@@ -162,7 +158,6 @@ private fun BuildHeaderRight(
     validateIsPrimary: Boolean,
     onValidate: () -> Unit,
     onSave: () -> Unit,
-    colors: IdeShellColorScheme,
 ) {
     Column(
         horizontalAlignment = Alignment.End,
@@ -170,7 +165,7 @@ private fun BuildHeaderRight(
     ) {
         Text(
             text = targetSpec,
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = FontSize.BodySmall,
             fontWeight = FontWeight.SemiBold,
             fontFamily = ideFontFamily(),
@@ -183,14 +178,14 @@ private fun BuildHeaderRight(
             Column(horizontalAlignment = Alignment.End) {
                 Text(
                     text = targetRevision,
-                    color = colors.textMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                     fontFamily = ideFontFamily(),
                 )
                 if (additionalContext != null) {
                     Text(
                         text = additionalContext,
-                        color = colors.textDim,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = FontSize.Micro,
                         fontFamily = ideFontFamily(),
                     )
@@ -215,11 +210,11 @@ private fun BuildHeaderRight(
                         imageVector = Icons.Default.Check,
                         contentDescription = null,
                         modifier = Modifier.size(IconSize.ExtraSmall),
-                        tint = colors.textMain,
+                        tint = MaterialTheme.colorScheme.onSurface,
                     )
                     Text(
                         text = "Validate",
-                        color = colors.textMain,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = FontSize.BodySmall,
                     )
                 }
@@ -243,11 +238,11 @@ private fun BuildHeaderRight(
                         imageVector = saveButtonIcon,
                         contentDescription = null,
                         modifier = Modifier.size(IconSize.ExtraSmall),
-                        tint = colors.textMain,
+                        tint = MaterialTheme.colorScheme.onSurface,
                     )
                     Text(
                         text = saveButtonLabel,
-                        color = colors.textMain,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = FontSize.BodySmall,
                     )
                 }

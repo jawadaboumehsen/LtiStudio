@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.workspace.studio.components
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -44,7 +45,6 @@ import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.feature.workspace.studio.BuildStateUi
 import org.ide.lti.feature.workspace.studio.WorkspaceActionUi
@@ -59,13 +59,12 @@ public fun OverviewCallToAction(
     nextAction: WorkspaceActionUi?,
     onAction: (WorkspaceActionUi) -> Unit,
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
             .testTag("OverviewCtaBar")
-            .ideCardSurface(colors = colors)
+            .ideCardSurface()
             .padding(Spacing.Medium),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.Large),
@@ -76,9 +75,9 @@ public fun OverviewCallToAction(
         val isPressed by interactionSource.collectIsPressedAsState()
 
         val btnBg = when {
-            isPressed -> colors.accentBlueHover
-            isHovered -> colors.accentBlueHover
-            else -> colors.accentBlue
+            isPressed -> MaterialTheme.colorScheme.primary
+            isHovered -> MaterialTheme.colorScheme.primary
+            else -> MaterialTheme.colorScheme.primary
         }
 
         val buttonLabel = when (buildState) {
@@ -128,7 +127,7 @@ public fun OverviewCallToAction(
             modifier = Modifier
                 .width(Spacing.Hairline)
                 .height(Spacing.ExtraLarge)
-                .background(colors.borderMuted),
+                .background(MaterialTheme.colorScheme.outlineVariant),
         )
 
         // 3. Status prompt explanation on the right
@@ -149,14 +148,14 @@ public fun OverviewCallToAction(
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
             Text(
                 text = promptTitle,
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = FontSize.BodyMedium,
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = GlassFontFamily.ide(),
             )
             Text(
                 text = promptDetail,
-                color = colors.textDim,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.BodySmall,
                 fontFamily = GlassFontFamily.ide(),
             )

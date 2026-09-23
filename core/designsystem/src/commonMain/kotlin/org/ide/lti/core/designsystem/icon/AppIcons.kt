@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.designsystem.icon
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
@@ -164,7 +165,7 @@ object AppIcons {
         Icon(
             painter = painterResource(Res.drawable.rightPanel),
             contentDescription = "Right Panel",
-            tint = GlassTheme.colors.onGlass,
+            tint = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.size(IconSize.Segmented),
         )
     }
@@ -173,7 +174,7 @@ object AppIcons {
         Icon(
             painter = painterResource(Res.drawable.leftPanel_1),
             contentDescription = "Left Panel",
-            tint = GlassTheme.colors.onGlass,
+            tint = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.size(IconSize.Segmented),
         )
     }
@@ -182,7 +183,7 @@ object AppIcons {
         Icon(
             painter = painterResource(Res.drawable.bottomPanel),
             contentDescription = "Bottom Panel",
-            tint = GlassTheme.colors.onGlass,
+            tint = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.size(IconSize.Segmented),
         )
     }

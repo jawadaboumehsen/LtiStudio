@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Widgets
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -29,8 +30,6 @@ import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.icon.ideGeneralLanguage
 import org.ide.lti.core.designsystem.theme.FontSize
-import org.ide.lti.core.designsystem.theme.GlassTheme
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.feature.settings.model.SettingsCategory
 
@@ -41,7 +40,6 @@ import org.ide.lti.feature.settings.model.SettingsCategory
 fun GenericCategoryPane(
     category: SettingsCategory,
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     Column(
         modifier = modifier.fillMaxWidth().testTag("GenericCategoryPane_${category.name}"),
@@ -52,18 +50,17 @@ fun GenericCategoryPane(
                 text = category.title,
                 fontSize = FontSize.HeadlineMedium,
                 fontWeight = FontWeight.Bold,
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = category.subtitle,
                 fontSize = FontSize.BodyMedium,
-                color = colors.textMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
         GlassCard(
-            surfaceColor = colors.cardBackground,
-            borderColor = colors.border,
+            surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             contentPadding = Spacing.CardPadding,
             modifier = Modifier.fillMaxWidth(),
         ) {
@@ -72,7 +69,7 @@ fun GenericCategoryPane(
                     text = "${category.title} Configuration",
                     fontSize = FontSize.TitleMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
 
                 when (category) {

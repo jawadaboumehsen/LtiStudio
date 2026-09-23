@@ -26,7 +26,6 @@ import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.feature.setup.components.DocFeatureCard
 
 /**
@@ -37,10 +36,8 @@ import org.ide.lti.feature.setup.components.DocFeatureCard
  */
 @Composable
 fun DocumentationStepContent(
-    resolvedBackdrop: GlassSceneState,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
 
     Column(
         modifier = modifier
@@ -55,12 +52,12 @@ fun DocumentationStepContent(
                 text = "Documentation & Architecture",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.SemiBold,
-                color = glassColors.onGlass,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = "Comprehensive architecture guides for WSL2 runtime, ROM packaging, and toolchains",
                 style = MaterialTheme.typography.bodyMedium,
-                color = glassColors.onGlassSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
@@ -75,7 +72,6 @@ fun DocumentationStepContent(
                 description = "Windows client communicates via local HTTP/SSE bridge to LtiRomServer running natively in WSL2.",
                 iconPainter = AppIcons.SparklesPainterResource(),
                 modifier = Modifier.weight(1f, fill = false).widthIn(min = ComponentSize.MinPanelWidth),
-                backdrop = resolvedBackdrop,
             )
             DocFeatureCard(
                 title = "Workspaces Storage",
@@ -83,7 +79,6 @@ fun DocumentationStepContent(
                 description = "High-performance ext4 Linux directory for isolated ROM workspaces, manifests, and staging.",
                 iconPainter = AppIcons.FolderPainterResource(),
                 modifier = Modifier.weight(1f, fill = false).widthIn(min = ComponentSize.MinPanelWidth),
-                backdrop = resolvedBackdrop,
             )
             DocFeatureCard(
                 title = "Dynamic Partitions",
@@ -91,7 +86,6 @@ fun DocumentationStepContent(
                 description = "EROFS and EXT4 dynamic partition extraction, resizing, and repackaging using erofs-utils and mke2fs.android.",
                 iconPainter = AppIcons.LayoutSplitPainterResource(),
                 modifier = Modifier.weight(1f, fill = false).widthIn(min = ComponentSize.MinPanelWidth),
-                backdrop = resolvedBackdrop,
             )
             DocFeatureCard(
                 title = "Native Toolchains",
@@ -99,7 +93,6 @@ fun DocumentationStepContent(
                 description = "Host-compiled binaries (adb, fastboot, img2sdat, signapk, avbtool) managed automatically in the Linux environment.",
                 iconPainter = AppIcons.SettingsPainterResource(),
                 modifier = Modifier.weight(1f, fill = false).widthIn(min = ComponentSize.MinPanelWidth),
-                backdrop = resolvedBackdrop,
             )
         }
     }

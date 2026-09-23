@@ -69,7 +69,7 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
-import org.ide.lti.core.designsystem.theme.config.AppTheme
+import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.domain.ports.KeySource
 import org.ide.lti.core.model.setup.EnvironmentReadinessState
 import org.ide.lti.core.model.target.TargetDevice
@@ -104,12 +104,11 @@ fun CreateWorkspaceScreen(
     }
 
     val isBlueGlass = GlassTheme.appTheme == AppTheme.Blue
-    val colors = GlassTheme.ideShellColors
 
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(if (isBlueGlass) Color.Transparent else colors.appBackground)
+            .background(if (isBlueGlass) Color.Transparent else MaterialTheme.colorScheme.surface)
             .padding(Spacing.Large),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
@@ -164,7 +163,6 @@ fun CreateWorkspaceScreen(
 
 @Composable
 private fun CreateWorkspaceHeader(onBackClick: () -> Unit, enabled: Boolean) {
-    val glassColors = GlassTheme.colors
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
@@ -175,7 +173,7 @@ private fun CreateWorkspaceHeader(onBackClick: () -> Unit, enabled: Boolean) {
                 painter = AppIcons.ArrowBackPainterResource(),
                 contentDescription = "Back",
                 modifier = Modifier.size(IconSize.Medium),
-                tint = glassColors.onGlass,
+                tint = MaterialTheme.colorScheme.onSurface,
             )
         }
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
@@ -183,12 +181,12 @@ private fun CreateWorkspaceHeader(onBackClick: () -> Unit, enabled: Boolean) {
                 text = "New Target Workspace",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
-                color = glassColors.onGlass,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = "Provision an isolated, verified build workspace with official firmware baselines",
                 style = MaterialTheme.typography.bodySmall,
-                color = glassColors.onGlassSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -200,13 +198,12 @@ private fun SectionTitle(text: String) {
         text = text,
         style = MaterialTheme.typography.labelLarge,
         fontWeight = FontWeight.SemiBold,
-        color = GlassTheme.colors.onGlass,
+        color = MaterialTheme.colorScheme.onSurface,
     )
 }
 
 @Composable
 private fun TargetPickerSection(uiState: CreateWorkspaceUiState, onSelectTarget: (TargetDevice) -> Unit) {
-    val glassColors = GlassTheme.colors
     var isTargetPickerOpen by remember { mutableStateOf(false) }
     val currentTarget = uiState.selectedTarget
     val targetText = if (currentTarget != null) {
@@ -222,10 +219,10 @@ private fun TargetPickerSection(uiState: CreateWorkspaceUiState, onSelectTarget:
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(GlassShapes.Small)
-                    .background(glassColors.glassSurface.copy(alpha = AlphaTokens.Subtle))
+                    .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = AlphaTokens.Subtle))
                     .border(
                         width = StrokeWidth.Hairline,
-                        color = glassColors.glassBorder.copy(alpha = AlphaTokens.Faint),
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Faint),
                         shape = GlassShapes.Small,
                     )
                     .clickable(enabled = !uiState.isProvisioning) {
@@ -241,12 +238,12 @@ private fun TargetPickerSection(uiState: CreateWorkspaceUiState, onSelectTarget:
                     Text(
                         text = targetText,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = if (currentTarget != null) glassColors.onGlass else glassColors.onGlassSecondary,
+                        color = if (currentTarget != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Icon(
                         painter = AppIcons.ChevronDownPainterResource(),
                         contentDescription = "Open target picker",
-                        tint = glassColors.onGlassSecondary,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(IconSize.Small),
                     )
                 }
@@ -289,7 +286,7 @@ private fun WorkspaceNameSection(uiState: CreateWorkspaceUiState, onNameChange: 
             Text(
                 text = error,
                 style = MaterialTheme.typography.bodySmall,
-                color = GlassTheme.colors.diagnostics.error,
+                color = GlassTheme.diagnosticColors.error,
             )
         }
     }
@@ -321,7 +318,6 @@ private fun KeySourceSection(uiState: CreateWorkspaceUiState, onKeySourceChange:
 
 @Composable
 private fun ProvisioningProgressCard(uiState: CreateWorkspaceUiState) {
-    val glassColors = GlassTheme.colors
     val stepperSteps = remember(
         uiState.currentStage, uiState.isProvisioning, uiState.errorMessage, uiState.createdWorkspace,
     ) {
@@ -338,13 +334,13 @@ private fun ProvisioningProgressCard(uiState: CreateWorkspaceUiState) {
                 text = "Provisioning Progress",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
-                color = glassColors.onGlass,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             GlassStepper(steps = stepperSteps, isBusy = uiState.isProvisioning)
             Text(
                 text = uiState.currentStage.label,
                 style = MaterialTheme.typography.bodySmall,
-                color = glassColors.onGlassSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -397,7 +393,7 @@ private fun CreateWorkspaceActions(
                 CircularProgressIndicator(
                     modifier = Modifier.size(IconSize.Small),
                     strokeWidth = StrokeWidth.Standard,
-                    color = GlassTheme.colors.onGlass,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Spacer(modifier = Modifier.width(Spacing.Small))
                 Text("Provisioning...")

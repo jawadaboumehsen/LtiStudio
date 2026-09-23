@@ -10,67 +10,48 @@
 package org.ide.lti.core.designsystem.component.inputs
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.scale
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastCoerceIn
-import androidx.compose.ui.util.fastRoundToInt
-import androidx.compose.ui.util.lerp
-import com.kashif_e.backdrop.OpticalSizeValue
-import com.kashif_e.backdrop.ResolvedGlassEffect
-import com.kashif_e.backdrop.backdrops.layerBackdrop
-import com.kashif_e.backdrop.backdrops.rememberBackdrop
-import com.kashif_e.backdrop.backdrops.rememberCombinedBackdrop
-import com.kashif_e.backdrop.drawBackdrop
-import com.kashif_e.backdrop.highlight.Highlight
-import com.kashif_e.backdrop.shadow.InnerShadow
-import com.kashif_e.backdrop.shadow.Shadow
-import kotlinx.coroutines.flow.collectLatest
-import org.ide.lti.core.designsystem.component.actions.*
-import org.ide.lti.core.designsystem.component.devtools.*
-import org.ide.lti.core.designsystem.component.display.*
-import org.ide.lti.core.designsystem.component.feedback.*
-import org.ide.lti.core.designsystem.component.layout.*
-import org.ide.lti.core.designsystem.component.navigation.*
-import org.ide.lti.core.designsystem.component.primitives.*
+import dev.chrisbanes.haze.ExperimentalHazeApi
+import dev.chrisbanes.haze.HazeInput
+import dev.chrisbanes.haze.glass.GlassStyle
+import dev.chrisbanes.haze.glass.GlassTransformTarget
+import dev.chrisbanes.haze.glass.hazeGlass
 import org.ide.lti.core.designsystem.theme.AlphaTokens
-import org.ide.lti.core.designsystem.theme.BackdropBlur
 import org.ide.lti.core.designsystem.theme.ComponentSize
-import org.ide.lti.core.designsystem.theme.Elevation
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
-import org.ide.lti.core.designsystem.theme.LensRefraction
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
-import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
-import org.ide.lti.core.designsystem.utils.DampedDragAnimation
+import kotlin.math.roundToInt
 
 /**
  * Stepping behavior for [GlassSlider].
@@ -95,200 +76,86 @@ data class SliderVisuals(
     }
 }
 
-@Suppress("LongMethod")
+/**
+ * Glass slider - built on Haze's real `Modifier.hazeGlass`, same shape as Haze's own sample
+ * `GlassSlider` (haze/sample/shared/.../sample/components/GlassSlider.kt): a plain track, a
+ * circular glass thumb whose hover/press response comes from Haze's own interaction system
+ * (`interactionSource` + `interactionTransformTarget`), not hand-rolled drag-damping.
+ */
+@OptIn(ExperimentalHazeApi::class)
 @Composable
 fun GlassSlider(
     value: () -> Float,
     onValueChange: (Float) -> Unit,
     valueRange: ClosedFloatingPointRange<Float>,
-    visibilityThreshold: Float,
     modifier: Modifier = Modifier,
-    backdrop: GlassSceneState? = null,
 ) {
-    val actualBackdrop = backdrop ?: GlassTheme.scene ?: rememberGlassSceneState()
-    val glassColors = GlassTheme.colors
-    val effectsEnabled = GlassTheme.effectsEnabled
-    val accentColor = glassColors.glassAccent
-    val trackColor = glassColors.glassBorder
+    val colors = MaterialTheme.colorScheme
+    var width by remember { mutableFloatStateOf(1f) }
+    val layoutDirection = LocalLayoutDirection.current
+    val thumbDiameter = with(LocalDensity.current) { ComponentSize.SliderThumbWidth.toPx() }
+    val currentValue = value()
+    val rangeLength = (valueRange.endInclusive - valueRange.start).takeIf { it > 0f } ?: 1f
+    val fraction = ((currentValue - valueRange.start) / rangeLength).fastCoerceIn(0f, 1f)
+    val interactionSource = remember { MutableInteractionSource() }
 
-    val trackBackdrop = rememberGlassSceneState()
+    fun updateAt(x: Float) {
+        val directionFraction = (x / width).fastCoerceIn(0f, 1f)
+        val logicalFraction = if (layoutDirection == LayoutDirection.Rtl) 1f - directionFraction else directionFraction
+        onValueChange(valueRange.start + logicalFraction * (valueRange.endInclusive - valueRange.start))
+    }
 
-    BoxWithConstraints(
+    Box(
+        contentAlignment = Alignment.CenterStart,
         modifier = modifier
             .fillMaxWidth()
+            .height(ComponentSize.SliderThumbHeight)
+            .onSizeChanged { width = it.width.toFloat().coerceAtLeast(1f) }
             .semantics {
-                progressBarRangeInfo = ProgressBarRangeInfo(
-                    current = value(),
-                    range = valueRange,
-                )
-                setProgress { target ->
-                    val coerced = target.coerceIn(valueRange)
-                    if (coerced != value()) {
-                        onValueChange(coerced)
-                        true
-                    } else {
-                        false
-                    }
+                progressBarRangeInfo = ProgressBarRangeInfo(currentValue, valueRange)
+                setProgress { requested ->
+                    onValueChange(requested.coerceIn(valueRange.start, valueRange.endInclusive))
+                    true
                 }
+            }
+            .pointerInput(width) {
+                detectDragGestures(
+                    onDragStart = { updateAt(it.x) },
+                ) { change, _ ->
+                    updateAt(change.position.x)
+                    change.consume()
+                }
+            }
+            .pointerInput(width) {
+                detectTapGestures { updateAt(it.x) }
             },
-        contentAlignment = Alignment.CenterStart,
     ) {
-        val trackWidth = constraints.maxWidth
-
-        val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
-        val animationScope = rememberCoroutineScope()
-        val reducedMotion = GlassTheme.reducedMotion
-        var didDrag by remember { mutableStateOf(false) }
-        val dampedDragAnimation = remember(animationScope, reducedMotion) {
-            DampedDragAnimation(
-                animationScope = animationScope,
-                initialValue = value(),
-                valueRange = valueRange,
-                visibilityThreshold = visibilityThreshold,
-                initialScale = 1f,
-                pressedScale = 1.5f,
-                reducedMotion = reducedMotion,
-                onDragStarted = {},
-                onDragStopped = {
-                    if (didDrag) {
-                        onValueChange(targetValue)
-                    }
-                },
-                onDrag = { _, dragAmount ->
-                    if (!didDrag) {
-                        didDrag = dragAmount.x != 0f
-                    }
-                    val delta = (valueRange.endInclusive - valueRange.start) * (dragAmount.x / trackWidth)
-                    onValueChange(
-                        if (isLtr) {
-                            (targetValue + delta).coerceIn(valueRange)
-                        } else {
-                            (targetValue - delta).coerceIn(valueRange)
-                        },
-                    )
-                },
-            )
-        }
-        LaunchedEffect(dampedDragAnimation) {
-            snapshotFlow { value() }
-                .collectLatest { value ->
-                    if (dampedDragAnimation.targetValue != value) {
-                        dampedDragAnimation.updateValue(value)
-                    }
-                }
-        }
-
-        Box(Modifier.layerBackdrop(trackBackdrop.engineBackdrop)) {
-            Box(
-                Modifier
-                    .clip(GlassShapes.Capsule)
-                    .background(trackColor)
-                    .pointerInput(animationScope) {
-                        detectTapGestures { position ->
-                            val delta = (valueRange.endInclusive - valueRange.start) * (position.x / trackWidth)
-                            val targetValue =
-                                (
-                                    if (isLtr) {
-                                        valueRange.start + delta
-                                    } else {
-                                        valueRange.endInclusive - delta
-                                    }
-                                    )
-                                    .coerceIn(valueRange)
-                            dampedDragAnimation.animateToValue(targetValue)
-                            onValueChange(targetValue)
-                        }
-                    }
-                    .height(ComponentSize.SliderTrackHeight)
-                    .fillMaxWidth(),
-            )
-
-            Box(
-                Modifier
-                    .clip(GlassShapes.Capsule)
-                    .background(accentColor)
-                    .height(ComponentSize.SliderTrackHeight)
-                    .layout { measurable, constraints ->
-                        val placeable = measurable.measure(constraints)
-                        val width = (constraints.maxWidth * dampedDragAnimation.progress).fastRoundToInt()
-                        layout(width, placeable.height) {
-                            placeable.place(0, 0)
-                        }
-                    },
-            )
-        }
-
         Box(
             Modifier
-                .graphicsLayer {
-                    translationX =
-                        (-size.width / 2f + trackWidth * dampedDragAnimation.progress)
-                            .fastCoerceIn(-size.width / 4f, trackWidth - size.width * 3f / 4f) * if (isLtr) 1f else -1f
-                }
-                .then(dampedDragAnimation.modifier)
-                .then(
-                    if (effectsEnabled) {
-                        Modifier.drawBackdrop(
-                            backdrop = rememberCombinedBackdrop(
-                                actualBackdrop.engineBackdrop,
-                                rememberBackdrop(trackBackdrop.engineBackdrop) { drawBackdrop ->
-                                    val progress = dampedDragAnimation.pressProgress
-                                    val scaleX = lerp(2f / 3f, 1f, progress)
-                                    val scaleY = lerp(0f, 1f, progress)
-                                    scale(scaleX, scaleY) {
-                                        drawBackdrop()
-                                    }
-                                },
-                            ),
-                            shape = { GlassShapes.Capsule },
-                            resolvedEffect = run {
-                                val progress = dampedDragAnimation.pressProgress
-                                ResolvedGlassEffect(
-                                    blur = OpticalSizeValue.Fixed(BackdropBlur.Slider * (1f - progress)),
-                                    lensHeight = OpticalSizeValue.Fixed(LensRefraction.Slider.height * progress),
-                                    lensAmount = OpticalSizeValue.Fixed(LensRefraction.Slider.amount * progress),
-                                )
-                            },
-                            highlight = {
-                                val progress = dampedDragAnimation.pressProgress
-                                Highlight.Ambient.copy(
-                                    width = Highlight.Ambient.width / 1.5f,
-                                    blurRadius = Highlight.Ambient.blurRadius / 1.5f,
-                                    alpha = progress,
-                                )
-                            },
-                            shadow = {
-                                Shadow(
-                                    radius = Elevation.Raised,
-                                    color = glassColors.glassShadow.copy(alpha = AlphaTokens.Faint),
-                                )
-                            },
-                            innerShadow = {
-                                val progress = dampedDragAnimation.pressProgress
-                                InnerShadow(
-                                    radius = Elevation.Raised * progress,
-                                    alpha = progress,
-                                )
-                            },
-                            layerBlock = {
-                                scaleX = dampedDragAnimation.scaleX
-                                scaleY = dampedDragAnimation.scaleY
-                                val velocity = dampedDragAnimation.velocity / 10f
-                                scaleX /= 1f - (velocity * 0.75f).fastCoerceIn(-0.2f, 0.2f)
-                                scaleY *= 1f - (velocity * 0.25f).fastCoerceIn(-0.2f, 0.2f)
-                            },
-                            onDrawSurface = {
-                                val progress = dampedDragAnimation.pressProgress
-                                drawRect(glassColors.onGlass.copy(alpha = 1f - progress))
-                            },
-                        )
-                    } else {
-                        Modifier
-                            .clip(GlassShapes.Capsule)
-                            .background(glassColors.onGlass)
-                    },
+                .fillMaxWidth()
+                .height(ComponentSize.SliderTrackHeight)
+                .clip(GlassShapes.Capsule)
+                .background(colors.outline),
+        )
+        Box(
+            Modifier
+                .fillMaxWidth(fraction)
+                .height(ComponentSize.SliderTrackHeight)
+                .clip(GlassShapes.Capsule)
+                .background(colors.primary),
+        )
+        Box(
+            modifier = Modifier
+                .offset { IntOffset((fraction * (width - thumbDiameter)).roundToInt(), 0) }
+                .size(ComponentSize.SliderThumbWidth)
+                .hazeGlass(
+                    input = HazeInput.Backdrop(GlassTheme.hazeState),
+                    style = remember { GlassStyle.clear then GlassStyle { shape(GlassShapes.HazeCapsule) } },
+                    interactionSource = interactionSource,
+                    interactionTransformTarget = GlassTransformTarget.MaterialAndContent,
                 )
-                .size(ComponentSize.SliderThumbWidth, ComponentSize.SliderThumbHeight),
+                .clip(GlassShapes.Circle)
+                .background(colors.onSurface.copy(alpha = AlphaTokens.Muted)),
         )
     }
 }

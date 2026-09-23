@@ -9,6 +9,8 @@
  */
 package org.ide.lti.feature.rom.studio.stage.acquire.panes
 
+import org.ide.lti.core.designsystem.theme.AlphaTokens
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -53,7 +55,6 @@ import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -84,7 +85,6 @@ public fun FirmwareBaselinePane(
     onValidate: () -> Unit = {},
     onSave: () -> Unit = {},
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     val firmwares = remember {
         listOf(
@@ -184,7 +184,7 @@ public fun FirmwareBaselinePane(
             .testTag("FirmwareBaselinePane"),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
-        RegionSelectorRow(colors = colors)
+        RegionSelectorRow()
 
         FirmwareVersionsTable(
             firmwares = firmwares,
@@ -194,7 +194,6 @@ public fun FirmwareBaselinePane(
                     selectedId = fw.id
                 }
             },
-            colors = colors,
         )
 
         Row(
@@ -202,19 +201,19 @@ public fun FirmwareBaselinePane(
             horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
         ) {
             Box(modifier = Modifier.weight(1f)) {
-                SelectedBaselineDetailsCard(firmware = selectedFw, colors = colors)
+                SelectedBaselineDetailsCard(firmware = selectedFw)
             }
             Box(modifier = Modifier.weight(1f)) {
-                ChecksumAndProvenanceCard(firmware = selectedFw, colors = colors)
+                ChecksumAndProvenanceCard(firmware = selectedFw)
             }
         }
 
-        FirmwareInfoBanner(colors = colors)
+        FirmwareInfoBanner()
     }
 }
 
 @Composable
-private fun RegionSelectorRow(colors: IdeShellColorScheme) {
+private fun RegionSelectorRow() {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -227,34 +226,34 @@ private fun RegionSelectorRow(colors: IdeShellColorScheme) {
             Icon(
                 imageVector = Icons.Default.Language,
                 contentDescription = null,
-                tint = colors.accentBlue,
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(IconSize.Small),
             )
             Text(
                 text = "Region",
-                color = colors.textDim,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.BodySmall,
                 fontFamily = ideFontFamily(),
             )
             Row(
                 modifier = Modifier
                     .clip(GlassShapes.ShellControl)
-                    .background(colors.cardBackgroundMuted)
-                    .border(GlassDimens.HairlineBorder, colors.border, GlassShapes.ShellControl)
+                    .background(MaterialTheme.colorScheme.surfaceContainer)
+                    .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outline, GlassShapes.ShellControl)
                     .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
             ) {
                 Text(
                     text = "Global (Worldwide)",
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = FontSize.BodySmall,
                     fontFamily = ideFontFamily(),
                 )
                 Icon(
                     imageVector = Icons.Default.KeyboardArrowDown,
                     contentDescription = null,
-                    tint = colors.textDim,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(IconSize.ExtraSmall),
                 )
             }
@@ -267,12 +266,12 @@ private fun RegionSelectorRow(colors: IdeShellColorScheme) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.HelpOutline,
                 contentDescription = null,
-                tint = colors.accentBlue,
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(IconSize.Small),
             )
             Text(
                 text = "Select the region matching your target device. Incorrect region may cause incompatibility.",
-                color = colors.textDim,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
             )
@@ -285,42 +284,34 @@ private fun FirmwareVersionsTable(
     firmwares: List<FirmwareVersionRowUi>,
     selectedId: String,
     onSelect: (FirmwareVersionRowUi) -> Unit,
-    colors: IdeShellColorScheme,
 ) {
     IdeTable(
         modifier = Modifier.fillMaxWidth(),
-        colors = colors,
     ) {
-        IdeTableHeader(colors = colors) {
+        IdeTableHeader() {
             IdeTableHeaderCell(
                 text = "Select",
                 modifier = Modifier.width(GlassDimens.AcquireTableSelectColWidth),
-                colors = colors,
             )
             IdeTableHeaderCell(
                 text = "Release identifier",
                 modifier = Modifier.weight(2f),
-                colors = colors,
             )
             IdeTableHeaderCell(
                 text = "Version",
                 modifier = Modifier.weight(1.4f),
-                colors = colors,
             )
             IdeTableHeaderCell(
                 text = "Release date",
                 modifier = Modifier.weight(1.2f),
-                colors = colors,
             )
             IdeTableHeaderCell(
                 text = "Status",
                 modifier = Modifier.weight(1.2f),
-                colors = colors,
             )
             IdeTableHeaderCell(
                 text = "Notes",
                 modifier = Modifier.weight(2f),
-                colors = colors,
             )
         }
 
@@ -329,7 +320,6 @@ private fun FirmwareVersionsTable(
                 fw = fw,
                 isSelected = fw.id == selectedId,
                 onSelect = onSelect,
-                colors = colors,
             )
         }
     }
@@ -340,14 +330,12 @@ private fun FirmwareVersionRowItem(
     fw: FirmwareVersionRowUi,
     isSelected: Boolean,
     onSelect: (FirmwareVersionRowUi) -> Unit,
-    colors: IdeShellColorScheme,
 ) {
-    val textColor = if (fw.isCompatible) colors.textMain else colors.textDim
+    val textColor = if (fw.isCompatible) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
     IdeTableRow(
         isSelected = isSelected,
         isEnabled = fw.isCompatible,
         onClick = { if (fw.isCompatible) onSelect(fw) },
-        colors = colors,
     ) {
         Box(
             modifier = Modifier.width(GlassDimens.AcquireTableSelectColWidth),
@@ -355,7 +343,6 @@ private fun FirmwareVersionRowItem(
         ) {
             IdeTableRadioIndicator(
                 isSelected = isSelected,
-                colors = colors,
             )
         }
 
@@ -393,12 +380,12 @@ private fun FirmwareVersionRowItem(
                 Icon(
                     imageVector = Icons.Default.CheckCircle,
                     contentDescription = "Compatible",
-                    tint = colors.accentGreen,
+                    tint = GlassTheme.diagnosticColors.success,
                     modifier = Modifier.size(IconSize.ExtraSmall),
                 )
                 Text(
                     text = "Compatible",
-                    color = colors.accentGreen,
+                    color = GlassTheme.diagnosticColors.success,
                     fontSize = FontSize.Micro,
                     fontWeight = FontWeight.Medium,
                 )
@@ -406,12 +393,12 @@ private fun FirmwareVersionRowItem(
                 Icon(
                     imageVector = Icons.Default.RemoveCircleOutline,
                     contentDescription = "Incompatible",
-                    tint = colors.textDim,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(IconSize.ExtraSmall),
                 )
                 Text(
                     text = "Incompatible",
-                    color = colors.textDim,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                 )
             }
@@ -419,7 +406,7 @@ private fun FirmwareVersionRowItem(
 
         Text(
             text = fw.notes,
-            color = if (fw.isCompatible) colors.textMuted else colors.textDim,
+            color = if (fw.isCompatible) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.Micro,
             fontFamily = ideFontFamily(),
             modifier = Modifier.weight(2f),
@@ -428,28 +415,28 @@ private fun FirmwareVersionRowItem(
 }
 
 @Composable
-private fun SelectedBaselineDetailsCard(firmware: FirmwareVersionRowUi, colors: IdeShellColorScheme) {
+private fun SelectedBaselineDetailsCard(firmware: FirmwareVersionRowUi) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors = colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
     ) {
         Text(
             text = "Selected baseline details",
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = FontSize.TitleSmall,
             fontWeight = FontWeight.SemiBold,
             fontFamily = ideFontFamily(),
         )
 
-        PropertyRow(label = "Release identifier", value = firmware.releaseIdentifier, colors = colors)
-        PropertyRow(label = "Version", value = firmware.version, colors = colors)
-        PropertyRow(label = "Region", value = "Global (Worldwide)", colors = colors)
-        PropertyRow(label = "Release date", value = firmware.releaseDate, colors = colors)
-        PropertyRow(label = "Status", colors = colors) {
+        PropertyRow(label = "Release identifier", value = firmware.releaseIdentifier)
+        PropertyRow(label = "Version", value = firmware.version)
+        PropertyRow(label = "Region", value = "Global (Worldwide)")
+        PropertyRow(label = "Release date", value = firmware.releaseDate)
+        PropertyRow(label = "Status") {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
@@ -457,23 +444,23 @@ private fun SelectedBaselineDetailsCard(firmware: FirmwareVersionRowUi, colors: 
                 Icon(
                     imageVector = Icons.Default.CheckCircle,
                     contentDescription = null,
-                    tint = colors.accentGreen,
+                    tint = GlassTheme.diagnosticColors.success,
                     modifier = Modifier.size(IconSize.ExtraSmall),
                 )
                 Text(
                     text = "Compatible",
-                    color = colors.accentGreen,
+                    color = GlassTheme.diagnosticColors.success,
                     fontSize = FontSize.Micro,
                     fontWeight = FontWeight.Medium,
                 )
             }
         }
-        PropertyRow(label = "Description", value = firmware.description, colors = colors)
+        PropertyRow(label = "Description", value = firmware.description)
     }
 }
 
 @Composable
-private fun ChecksumAndProvenanceCard(firmware: FirmwareVersionRowUi, colors: IdeShellColorScheme) {
+private fun ChecksumAndProvenanceCard(firmware: FirmwareVersionRowUi) {
     val clipboardManager = LocalClipboardManager.current
     var selectedTab by remember { mutableStateOf(0) }
 
@@ -481,7 +468,7 @@ private fun ChecksumAndProvenanceCard(firmware: FirmwareVersionRowUi, colors: Id
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors = colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
     ) {
@@ -492,7 +479,7 @@ private fun ChecksumAndProvenanceCard(firmware: FirmwareVersionRowUi, colors: Id
         ) {
             Text(
                 text = "Checksum & provenance",
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = FontSize.TitleSmall,
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = ideFontFamily(),
@@ -501,7 +488,7 @@ private fun ChecksumAndProvenanceCard(firmware: FirmwareVersionRowUi, colors: Id
             Row(
                 modifier = Modifier
                     .clip(GlassShapes.ShellControl)
-                    .background(colors.cardBackgroundMuted)
+                    .background(MaterialTheme.colorScheme.surfaceContainer)
                     .padding(Spacing.Hairline),
             ) {
                 listOf("Checksums", "Source").forEachIndexed { index, tabTitle ->
@@ -509,13 +496,13 @@ private fun ChecksumAndProvenanceCard(firmware: FirmwareVersionRowUi, colors: Id
                     Box(
                         modifier = Modifier
                             .clip(GlassShapes.ShellControl)
-                            .background(if (isTabSelected) colors.controlSelected else colors.cardBackgroundMuted)
+                            .background(if (isTabSelected) MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Faded) else MaterialTheme.colorScheme.surfaceContainer)
                             .clickable { selectedTab = index }
                             .padding(horizontal = Spacing.Small, vertical = Spacing.Hairline),
                     ) {
                         Text(
                             text = tabTitle,
-                            color = if (isTabSelected) colors.textMain else colors.textDim,
+                            color = if (isTabSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = FontSize.Micro,
                             fontFamily = ideFontFamily(),
                         )
@@ -524,7 +511,7 @@ private fun ChecksumAndProvenanceCard(firmware: FirmwareVersionRowUi, colors: Id
             }
         }
 
-        PropertyRow(label = "SHA-256", colors = colors) {
+        PropertyRow(label = "SHA-256") {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -532,14 +519,14 @@ private fun ChecksumAndProvenanceCard(firmware: FirmwareVersionRowUi, colors: Id
             ) {
                 Text(
                     text = firmware.sha256,
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = FontSize.Micro,
                     fontFamily = codeFontFamily(),
                 )
                 Icon(
                     imageVector = Icons.Default.ContentCopy,
                     contentDescription = "Copy hash",
-                    tint = colors.textDim,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier
                         .size(IconSize.ExtraSmall)
                         .clickable { clipboardManager.setText(AnnotatedString(firmware.sha256)) },
@@ -547,7 +534,7 @@ private fun ChecksumAndProvenanceCard(firmware: FirmwareVersionRowUi, colors: Id
             }
         }
 
-        PropertyRow(label = "SHA-1", colors = colors) {
+        PropertyRow(label = "SHA-1") {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -555,14 +542,14 @@ private fun ChecksumAndProvenanceCard(firmware: FirmwareVersionRowUi, colors: Id
             ) {
                 Text(
                     text = firmware.sha1,
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = FontSize.Micro,
                     fontFamily = codeFontFamily(),
                 )
                 Icon(
                     imageVector = Icons.Default.ContentCopy,
                     contentDescription = "Copy hash",
-                    tint = colors.textDim,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier
                         .size(IconSize.ExtraSmall)
                         .clickable { clipboardManager.setText(AnnotatedString(firmware.sha1)) },
@@ -570,20 +557,20 @@ private fun ChecksumAndProvenanceCard(firmware: FirmwareVersionRowUi, colors: Id
             }
         }
 
-        PropertyRow(label = "File size", value = firmware.fileSize, colors = colors)
-        PropertyRow(label = "Source", value = firmware.source, colors = colors)
-        PropertyRow(label = "Retrieved", value = firmware.retrieved, colors = colors)
+        PropertyRow(label = "File size", value = firmware.fileSize)
+        PropertyRow(label = "Source", value = firmware.source)
+        PropertyRow(label = "Retrieved", value = firmware.retrieved)
     }
 }
 
 @Composable
-private fun FirmwareInfoBanner(colors: IdeShellColorScheme) {
+private fun FirmwareInfoBanner() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .background(colors.infoBannerFill, GlassShapes.ShellCard)
-            .border(GlassDimens.HairlineBorder, colors.infoBannerBorder, GlassShapes.ShellCard)
+            .background(MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Subtle), GlassShapes.ShellCard)
+            .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Ambient), GlassShapes.ShellCard)
             .padding(Spacing.SmallMedium),
     ) {
         Row(
@@ -593,13 +580,13 @@ private fun FirmwareInfoBanner(colors: IdeShellColorScheme) {
             Icon(
                 imageVector = Icons.Default.Info,
                 contentDescription = null,
-                tint = colors.accentBlue,
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(IconSize.Small),
             )
             Text(
                 text = "Save applies to the next build only. " +
                     "You can change the firmware baseline at any time before starting a build.",
-                color = colors.textMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
             )

@@ -43,7 +43,6 @@ import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.core.domain.setup.SetupStepDetail
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepProvenance
@@ -67,9 +66,7 @@ fun ToolchainPipelineTracker(
     modifier: Modifier = Modifier,
     onRetryStage: (SetupStepStage) -> Unit = { onRetryStep() },
     isBusy: Boolean = false,
-    backdrop: GlassSceneState? = null,
 ) {
-    val glassColors = GlassTheme.colors
 
     val orderedStages = listOf(
         SetupStepStage.WSL_DETECTION,
@@ -84,12 +81,9 @@ fun ToolchainPipelineTracker(
         stepMap[stage]?.status == StepStatus.SUCCESS
     }
 
-    val shellColors = GlassTheme.ideShellColors
     GlassCard(
         modifier = modifier.fillMaxWidth(),
-        surfaceColor = shellColors.cardBackground,
-        borderColor = shellColors.border,
-        backdrop = backdrop,
+        surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         contentPadding = Spacing.CardPadding,
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
@@ -108,7 +102,7 @@ fun ToolchainPipelineTracker(
                         text = "Toolchain Provisioning Pipeline",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = glassColors.onGlass,
+                        color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         softWrap = false,
                         overflow = TextOverflow.Ellipsis,
@@ -151,8 +145,7 @@ private fun VerticalStageRow(
     isBusy: Boolean,
     onRetryStage: (SetupStepStage) -> Unit,
 ) {
-    val glassColors = GlassTheme.colors
-    val diagnostics = glassColors.diagnostics
+    val diagnostics = GlassTheme.diagnosticColors
 
     val stageDisplayName = when (stage) {
         SetupStepStage.WSL_DETECTION -> "WSL 2 Runtime"
@@ -216,7 +209,7 @@ private fun VerticalStageRow(
                             text = stageDisplayName,
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold,
-                            color = glassColors.onGlass,
+                            color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
                             softWrap = false,
                             overflow = TextOverflow.Ellipsis,
@@ -240,10 +233,10 @@ private fun VerticalStageRow(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(GlassShapes.ExtraSmall)
-                            .background(glassColors.glassSurface)
+                            .background(MaterialTheme.colorScheme.surfaceContainer)
                             .border(
                                 width = StrokeWidth.Hairline,
-                                color = glassColors.glassBorder,
+                                color = MaterialTheme.colorScheme.outline,
                                 shape = GlassShapes.ExtraSmall,
                             )
                             .padding(Spacing.Small),
@@ -253,7 +246,7 @@ private fun VerticalStageRow(
                             style = MaterialTheme.typography.bodySmall.copy(
                                 fontFamily = codeFontFamily(),
                             ),
-                            color = glassColors.onGlassMuted,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
@@ -287,10 +280,10 @@ private fun VerticalStageRow(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(GlassShapes.Small)
-                .background(glassColors.glassSurface)
+                .background(MaterialTheme.colorScheme.surfaceContainer)
                 .border(
                     width = StrokeWidth.Hairline,
-                    color = glassColors.glassBorder,
+                    color = MaterialTheme.colorScheme.outline,
                     shape = GlassShapes.Small,
                 )
                 .padding(horizontal = Spacing.MediumSmall, vertical = Spacing.Small),
@@ -310,7 +303,7 @@ private fun VerticalStageRow(
                             CircularProgressIndicator(
                                 modifier = Modifier.size(IconSize.Small),
                                 strokeWidth = StrokeWidth.Hairline,
-                                color = glassColors.glassAccent,
+                                color = MaterialTheme.colorScheme.primary,
                             )
                         }
                         isSuccess -> {
@@ -325,7 +318,7 @@ private fun VerticalStageRow(
                             Icon(
                                 painter = AppIcons.ideStatusWarning(),
                                 contentDescription = "Pending",
-                                tint = glassColors.onGlassMuted,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(IconSize.Small),
                             )
                         }
@@ -335,7 +328,7 @@ private fun VerticalStageRow(
                         text = stageDisplayName,
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium,
-                        color = glassColors.onGlass,
+                        color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         softWrap = false,
                         overflow = TextOverflow.Ellipsis,
@@ -346,7 +339,7 @@ private fun VerticalStageRow(
                     Text(
                         text = if (isRestored) "Re-checking…" else step.description,
                         style = MaterialTheme.typography.bodySmall,
-                        color = glassColors.onGlassSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         softWrap = false,
                         overflow = TextOverflow.Ellipsis,

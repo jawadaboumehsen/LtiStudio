@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.rom.studio.stage.build.panes
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -46,7 +47,6 @@ import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -66,7 +66,6 @@ public fun FlashableMembersPane(
     onValidate: () -> Unit = {},
     onSave: () -> Unit = {},
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     Column(
         modifier = modifier
@@ -79,17 +78,17 @@ public fun FlashableMembersPane(
             horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
         ) {
             Box(modifier = Modifier.weight(1.3f)) {
-                TargetImageSelectionCard(colors = colors)
+                TargetImageSelectionCard()
             }
             Box(modifier = Modifier.weight(1f)) {
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
-                    PackagePreviewCard(colors = colors)
-                    CompatibilityWarningsCard(colors = colors)
+                    PackagePreviewCard()
+                    CompatibilityWarningsCard()
                 }
             }
         }
 
-        FlashableFootnoteCard(colors = colors)
+        FlashableFootnoteCard()
     }
 }
 
@@ -225,14 +224,14 @@ private fun defaultFlashableItems(): List<FlashableItem> = listOf(
 )
 
 @Composable
-private fun TargetImageSelectionCard(colors: IdeShellColorScheme) {
+private fun TargetImageSelectionCard() {
     val items = remember { defaultFlashableItems() }
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
@@ -243,7 +242,7 @@ private fun TargetImageSelectionCard(colors: IdeShellColorScheme) {
         ) {
             Text(
                 text = "Target image selection",
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = FontSize.BodySmall,
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = ideFontFamily(),
@@ -256,12 +255,12 @@ private fun TargetImageSelectionCard(colors: IdeShellColorScheme) {
                 Icon(
                     imageVector = Icons.Default.Info,
                     contentDescription = null,
-                    tint = colors.accentBlue,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(IconSize.ExtraSmall),
                 )
                 Text(
                     text = "Compatibility info",
-                    color = colors.accentBlue,
+                    color = MaterialTheme.colorScheme.primary,
                     fontSize = FontSize.Micro,
                     fontFamily = ideFontFamily(),
                 )
@@ -269,11 +268,11 @@ private fun TargetImageSelectionCard(colors: IdeShellColorScheme) {
         }
         Text(
             text = "Choose which target-supported images to include. Required images are locked.",
-            color = colors.textDim,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.Micro,
             fontFamily = ideFontFamily(),
         )
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
 
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.Small),
@@ -281,39 +280,39 @@ private fun TargetImageSelectionCard(colors: IdeShellColorScheme) {
         ) {
             Text(
                 text = "Include",
-                color = colors.textDim,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 modifier = Modifier.width(Spacing.ExtraLarge),
             )
             Text(
                 text = "Image / Member",
-                color = colors.textDim,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 modifier = Modifier.weight(1.5f),
             )
             Text(
                 text = "Partition",
-                color = colors.textDim,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 modifier = Modifier.weight(1.0f),
             )
             Text(
                 text = "Status",
-                color = colors.textDim,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 modifier = Modifier.weight(0.8f),
             )
         }
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
 
         items.forEach { item ->
-            FlashableItemRow(item = item, colors = colors)
+            FlashableItemRow(item = item)
         }
     }
 }
 
 @Composable
-private fun FlashableItemRow(item: FlashableItem, colors: IdeShellColorScheme) {
+private fun FlashableItemRow(item: FlashableItem) {
     var isChecked by remember { mutableStateOf(item.isInitiallyChecked) }
 
     Row(
@@ -330,19 +329,19 @@ private fun FlashableItemRow(item: FlashableItem, colors: IdeShellColorScheme) {
                 onCheckedChange = if (item.isLocked) null else { checked -> isChecked = checked },
                 enabled = !item.isLocked,
                 colors = CheckboxDefaults.colors(
-                    checkedColor = colors.accentBlue,
-                    uncheckedColor = colors.textDim,
+                    checkedColor = MaterialTheme.colorScheme.primary,
+                    uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 ),
             )
             if (item.isLocked) {
-                Icon(Icons.Default.Lock, null, tint = colors.textDim, modifier = Modifier.size(IconSize.ExtraSmall))
+                Icon(Icons.Default.Lock, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(IconSize.ExtraSmall))
             } else {
-                Text("-", color = colors.textDim, fontSize = FontSize.Micro)
+                Text("-", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro)
             }
         }
         Text(
             text = item.label,
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = FontSize.Micro,
             fontWeight = FontWeight.Medium,
             fontFamily = ideFontFamily(),
@@ -350,15 +349,15 @@ private fun FlashableItemRow(item: FlashableItem, colors: IdeShellColorScheme) {
         )
         Text(
             text = item.partitionName,
-            color = colors.textDim,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.Micro,
             fontFamily = codeFontFamily(),
             modifier = Modifier.weight(1.0f),
         )
         val statusColor = when (item.badge) {
-            "Required" -> colors.accentGreen
-            "Recommended" -> colors.accentBlue
-            else -> colors.textDim
+            "Required" -> GlassTheme.diagnosticColors.success
+            "Recommended" -> MaterialTheme.colorScheme.primary
+            else -> MaterialTheme.colorScheme.onSurfaceVariant
         }
         Text(
             text = item.badge,
@@ -374,7 +373,7 @@ private fun FlashableItemRow(item: FlashableItem, colors: IdeShellColorScheme) {
 private data class PackagePreviewItem(val name: String, val size: String, val partition: String)
 
 @Composable
-private fun PackagePreviewCard(colors: IdeShellColorScheme) {
+private fun PackagePreviewCard() {
     val previewItems = listOf(
         PackagePreviewItem("boot.img", "96 MB", "boot"),
         PackagePreviewItem("vendor_boot.img", "64 MB", "vendor_boot"),
@@ -390,7 +389,7 @@ private fun PackagePreviewCard(colors: IdeShellColorScheme) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
@@ -401,35 +400,35 @@ private fun PackagePreviewCard(colors: IdeShellColorScheme) {
         ) {
             Text(
                 text = "Package preview",
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = FontSize.BodySmall,
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = ideFontFamily(),
             )
             Text(
                 text = "8 items · 2.1 GB",
-                color = colors.textDim,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
             )
         }
         Text(
             text = "Files to be included in the signed package",
-            color = colors.textDim,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.Micro,
             fontFamily = ideFontFamily(),
         )
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
 
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.Small),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("File name", color = colors.textDim, fontSize = FontSize.Micro, modifier = Modifier.weight(1.3f))
-            Text("Size", color = colors.textDim, fontSize = FontSize.Micro, modifier = Modifier.weight(0.9f))
-            Text("Partition", color = colors.textDim, fontSize = FontSize.Micro, modifier = Modifier.weight(1.0f))
+            Text("File name", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.weight(1.3f))
+            Text("Size", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.weight(0.9f))
+            Text("Partition", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.weight(1.0f))
         }
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
 
         previewItems.forEach { item ->
             Row(
@@ -438,21 +437,21 @@ private fun PackagePreviewCard(colors: IdeShellColorScheme) {
             ) {
                 Text(
                     text = item.name,
-                    color = colors.textMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                     fontFamily = codeFontFamily(),
                     modifier = Modifier.weight(1.3f),
                 )
                 Text(
                     text = item.size,
-                    color = colors.textDim,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                     fontFamily = ideFontFamily(),
                     modifier = Modifier.weight(0.9f),
                 )
                 Text(
                     text = item.partition,
-                    color = colors.textDim,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                     fontFamily = codeFontFamily(),
                     modifier = Modifier.weight(1.0f),
@@ -463,12 +462,12 @@ private fun PackagePreviewCard(colors: IdeShellColorScheme) {
 }
 
 @Composable
-private fun CompatibilityWarningsCard(colors: IdeShellColorScheme) {
+private fun CompatibilityWarningsCard() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
@@ -479,14 +478,14 @@ private fun CompatibilityWarningsCard(colors: IdeShellColorScheme) {
         ) {
             Text(
                 text = "Compatibility & warnings",
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = FontSize.BodySmall,
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = ideFontFamily(),
             )
-            IdeStatusBadge(severity = IdeStatusSeverity.Warning, label = "2 warnings", colors = colors)
+            IdeStatusBadge(severity = IdeStatusSeverity.Warning, label = "2 warnings")
         }
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -495,12 +494,12 @@ private fun CompatibilityWarningsCard(colors: IdeShellColorScheme) {
             Icon(
                 imageVector = Icons.Default.Check,
                 contentDescription = null,
-                tint = colors.accentGreen,
+                tint = GlassTheme.diagnosticColors.success,
                 modifier = Modifier.size(IconSize.ExtraSmall),
             )
             Text(
                 text = "All required images are included",
-                color = colors.textMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
             )
@@ -513,12 +512,12 @@ private fun CompatibilityWarningsCard(colors: IdeShellColorScheme) {
             Icon(
                 imageVector = Icons.Default.Check,
                 contentDescription = null,
-                tint = colors.accentGreen,
+                tint = GlassTheme.diagnosticColors.success,
                 modifier = Modifier.size(IconSize.ExtraSmall),
             )
             Text(
                 text = "Package layout is valid for target device (PQ84P01)",
-                color = colors.textMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
             )
@@ -531,19 +530,19 @@ private fun CompatibilityWarningsCard(colors: IdeShellColorScheme) {
             Icon(
                 imageVector = Icons.Default.Warning,
                 contentDescription = null,
-                tint = colors.warningAmber,
+                tint = GlassTheme.diagnosticColors.warning,
                 modifier = Modifier.size(IconSize.ExtraSmall),
             )
             Column {
                 Text(
                     text = "Recovery image not included (optional)",
-                    color = colors.textMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                     fontFamily = ideFontFamily(),
                 )
                 Text(
                     text = "Device can still boot using stock recovery",
-                    color = colors.textDim,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                     fontFamily = ideFontFamily(),
                 )
@@ -557,19 +556,19 @@ private fun CompatibilityWarningsCard(colors: IdeShellColorScheme) {
             Icon(
                 imageVector = Icons.Default.Warning,
                 contentDescription = null,
-                tint = colors.warningAmber,
+                tint = GlassTheme.diagnosticColors.warning,
                 modifier = Modifier.size(IconSize.ExtraSmall),
             )
             Column {
                 Text(
                     text = "Super image not included",
-                    color = colors.textMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                     fontFamily = ideFontFamily(),
                 )
                 Text(
                     text = "Ensure device supports sparse images or dynamic partitions",
-                    color = colors.textDim,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                     fontFamily = ideFontFamily(),
                 )
@@ -579,12 +578,12 @@ private fun CompatibilityWarningsCard(colors: IdeShellColorScheme) {
 }
 
 @Composable
-private fun FlashableFootnoteCard(colors: IdeShellColorScheme) {
+private fun FlashableFootnoteCard() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Small),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -593,18 +592,18 @@ private fun FlashableFootnoteCard(colors: IdeShellColorScheme) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
         ) {
-            Icon(Icons.Default.Info, null, tint = colors.textDim, modifier = Modifier.size(IconSize.Small))
+            Icon(Icons.Default.Info, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(IconSize.Small))
             Text(
                 text = "Only include images that are supported by your target device. " +
                     "Including unnecessary images may increase package size.",
-                color = colors.textDim,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
             )
         }
         Text(
             text = "Learn more ↗",
-            color = colors.accentBlue,
+            color = MaterialTheme.colorScheme.primary,
             fontSize = FontSize.Micro,
             fontFamily = ideFontFamily(),
             modifier = Modifier.clickable { },

@@ -9,10 +9,8 @@
  */
 package org.ide.lti.core.designsystem.component.actions
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -20,36 +18,29 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.BlendMode
+import org.ide.lti.core.designsystem.theme.HazeShape
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.isSpecified
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
-import com.kashif_e.backdrop.ResolvedGlassEffect
-import com.kashif_e.backdrop.drawBackdrop
-import com.kashif_e.backdrop.highlight.Highlight
-import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
+import dev.chrisbanes.haze.ExperimentalHazeApi
+import dev.chrisbanes.haze.HazeInput
+import dev.chrisbanes.haze.glass.GlassStyle
+import dev.chrisbanes.haze.glass.GlassTransformTarget
+import dev.chrisbanes.haze.glass.hazeGlass
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.GlassIcon
 import org.ide.lti.core.designsystem.theme.AlphaTokens
@@ -60,13 +51,6 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.LetterSpacing
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.designsystem.theme.StrokeWidth
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
-import org.ide.lti.core.designsystem.theme.glass.GlassStyles
-import org.ide.lti.core.designsystem.theme.glass.resolve
-import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
-import org.ide.lti.core.designsystem.utils.InteractiveHighlight
-import org.ide.lti.core.designsystem.utils.applyInteractiveHighlightTransform
 
 /**
  * Type-safe button style hierarchy representing visual variants.
@@ -116,147 +100,75 @@ object GlassButtonDefaults {
 }
 
 /**
- * Glass button component with interactive lighting and GPU-accelerated backdrop effects.
+ * Glass button component - built on Haze's real `Modifier.hazeGlass`, same shape as Haze's own
+ * sample `GlassButton` (haze/sample/shared/.../sample/components/GlassButton.kt): one
+ * `GlassStyle.regular.then { }` per press/hover/focus state, no hand-rolled animation.
  */
-@OptIn(ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalHazeApi::class)
 @Composable
 fun GlassButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    shape: Shape = GlassShapes.Capsule,
+    shape: HazeShape = GlassShapes.HazeCapsule,
     variant: GlassButtonVariant = GlassButtonVariant.Standard,
-    effect: ResolvedGlassEffect? = null,
-    backdrop: GlassSceneState? = null,
     minWidth: Dp = GlassButtonDefaults.MinWidth,
     minHeight: Dp = GlassButtonDefaults.MinHeight,
     contentPadding: PaddingValues = GlassButtonDefaults.ContentPadding,
-    interactive: Boolean = true,
     content: @Composable RowScope.() -> Unit,
 ) {
-    val glassColors = GlassTheme.colors
-    val effectsEnabled = GlassTheme.effectsEnabled
-    val actualBackdrop = backdrop ?: GlassTheme.scene
-    // effect defaults to GlassStyles.button.resolve() - a fresh ResolvedGlassEffect value per
-    // call, but that's fine: it's a data class, so it diffs by value against :backdrop's dirty
-    // bitmask, not by reference - no remember() needed for an unrelated recomposition to avoid a
-    // spurious effect-graph recompute.
-    val buttonStyle = GlassStyles.button
-    val resolvedEffect = effect ?: buttonStyle.resolve()
-    var isHovered by remember { mutableStateOf(false) }
-    var isFocused by remember { mutableStateOf(false) }
-
-    val animationScope = rememberCoroutineScope()
-    val interactiveHighlight = if (interactive) {
-        remember(animationScope) {
-            InteractiveHighlight(animationScope)
-        }
-    } else {
-        null
-    }
-
-    val (baseSurfaceColor, tint, contentColor) = resolveButtonColors(variant, glassColors)
-    val finalContentColor = if (enabled) contentColor else glassColors.onGlassMuted
-    val baseBorderColor = resolveButtonBorderColor(variant, glassColors)
-
-    val showFocusRing = isFocused && !GlassTheme.focusRingSuppressedByPointer
-    val targetSurfaceColor = resolveHoverSurfaceColor(isHovered, variant, baseSurfaceColor, glassColors)
-    val targetBorderColor = resolveTargetBorderColor(showFocusRing, isHovered, baseBorderColor, glassColors)
-    val targetBorderWidth = resolveTargetBorderWidth(showFocusRing)
-
-    val surfaceColor by animateColorAsState(
-        targetValue = targetSurfaceColor,
-        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion),
-    )
-    val borderColor by animateColorAsState(
-        targetValue = targetBorderColor,
-        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion),
-    )
-    val borderWidth by animateDpAsState(
-        targetValue = targetBorderWidth,
-        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion),
-    )
+    val colors = MaterialTheme.colorScheme
+    val interactionSource = remember { MutableInteractionSource() }
 
     Row(
         modifier = modifier
             .defaultMinSize(minWidth = minWidth, minHeight = minHeight)
             .then(
                 if (variant != GlassButtonVariant.Text) {
-                    if (effectsEnabled && actualBackdrop != null) {
-                        Modifier.drawBackdrop(
-                            backdrop = actualBackdrop.engineBackdrop,
-                            shape = { shape },
-                            resolvedEffect = resolvedEffect,
-                            highlight = { if (isHovered) Highlight.Ambient else Highlight.Plain },
-                            layerBlock = if (interactiveHighlight != null) {
-                                {
-                                    applyInteractiveHighlightTransform(interactiveHighlight)
+                    Modifier.hazeGlass(
+                        input = HazeInput.Backdrop(GlassTheme.hazeState),
+                        style = remember(shape, variant, enabled, colors) {
+                            GlassStyle.regular then GlassStyle {
+                                this.shape(shape)
+                                backgroundColor(backgroundColor(variant, colors))
+                                tint(tint(variant, colors, enabled))
+                                hovered {
+                                    lightingIntensity(0.35f)
+                                    refractionMultiplier(1.02f)
                                 }
-                            } else {
-                                null
-                            },
-                            onDrawSurface = {
-                                drawButtonSurface(
-                                    surfaceColor = surfaceColor,
-                                    tint = tint,
-                                    enabled = enabled,
-                                    glassShadowColor = glassColors.glassShadow,
-                                    vividTint = variant == GlassButtonVariant.Primary,
-                                )
-                            },
-                        )
-                    } else {
-                        Modifier
-                            .clip(shape)
-                            .drawBehind {
-                                drawButtonSurface(
-                                    surfaceColor = surfaceColor,
-                                    tint = tint,
-                                    enabled = enabled,
-                                    glassShadowColor = glassColors.glassShadow,
-                                    vividTint = variant == GlassButtonVariant.Primary,
-                                )
+                                focused {
+                                    lightingIntensity(0.5f)
+                                    whitePointDelta(0.03f)
+                                }
+                                pressed {
+                                    lightingIntensity(0.9f)
+                                    refractionMultiplier(1.08f)
+                                    scale(0.98f)
+                                }
                             }
-                    }
-                } else {
-                    Modifier
-                },
-            )
-            .then(
-                if (borderColor != Color.Transparent) {
-                    Modifier.glassOutlineBorder(
-                        color = borderColor,
-                        width = borderWidth,
-                        shape = shape,
+                        },
+                        interactionSource = interactionSource,
+                        interactionTransformTarget = GlassTransformTarget.MaterialAndContent,
                     )
                 } else {
                     Modifier
                 },
             )
-            .onPointerEvent(PointerEventType.Enter) { isHovered = true }
-            .onPointerEvent(PointerEventType.Exit) { isHovered = false }
-            .onFocusChanged { isFocused = it.isFocused }
+            .clip(shape)
             .clickable(
                 enabled = enabled,
-                interactionSource = null,
-                indication = if (interactiveHighlight != null) null else LocalIndication.current,
+                interactionSource = interactionSource,
+                indication = null,
                 role = Role.Button,
                 onClick = onClick,
             )
-            .then(
-                if (interactiveHighlight != null) {
-                    Modifier
-                        .then(interactiveHighlight.modifier)
-                        .then(interactiveHighlight.gestureModifier)
-                } else {
-                    Modifier
-                },
-            )
+            .semantics(mergeDescendants = true) { role = Role.Button }
             .padding(contentPadding),
         horizontalArrangement = Arrangement.spacedBy(Spacing.Small, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        CompositionLocalProvider(LocalContentColor provides finalContentColor) {
+        val contentColor = if (enabled) contentColor(variant, colors) else colors.onSurfaceVariant
+        CompositionLocalProvider(LocalContentColor provides contentColor) {
             ProvideTextStyle(GlassButtonDefaults.TextStyle) {
                 content()
             }
@@ -264,102 +176,23 @@ fun GlassButton(
     }
 }
 
-private fun resolveTargetBorderColor(
-    isFocused: Boolean,
-    isHovered: Boolean,
-    baseBorderColor: Color,
-    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme,
-): Color = if (isFocused) {
-    glassColors.focusRing
-} else {
-    resolveHoverBorderColor(isHovered, baseBorderColor, glassColors)
-}
-
-private fun resolveTargetBorderWidth(isFocused: Boolean): Dp =
-    if (isFocused) StrokeWidth.Focused else StrokeWidth.Hairline
-
-private fun resolveButtonColors(
-    variant: GlassButtonVariant,
-    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme,
-): Triple<Color, Color, Color> = when (variant) {
-    GlassButtonVariant.Primary -> Triple(
-        glassColors.glassSurfaceElevated,
-        glassColors.glassAccent.copy(alpha = AlphaTokens.PrimaryButtonTint),
-        glassColors.onGlass,
-    )
-    GlassButtonVariant.Secondary -> Triple(
-        glassColors.glassSurface,
-        glassColors.glassTintSecondary,
-        glassColors.onGlass,
-    )
-    GlassButtonVariant.Standard -> Triple(
-        glassColors.glassSurface,
-        glassColors.glassTint,
-        glassColors.onGlass,
-    )
-    GlassButtonVariant.Text -> Triple(
-        Color.Transparent,
-        Color.Transparent,
-        glassColors.onGlass,
-    )
-}
-
-private fun resolveButtonBorderColor(
-    variant: GlassButtonVariant,
-    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme,
-): Color = when (variant) {
-    GlassButtonVariant.Primary -> glassColors.glassBorderHighlight
-    GlassButtonVariant.Secondary -> glassColors.glassBorder
-    GlassButtonVariant.Standard -> glassColors.glassBorder
+private fun backgroundColor(variant: GlassButtonVariant, colors: ColorScheme): Color = when (variant) {
+    GlassButtonVariant.Primary -> colors.surfaceContainerHigh
+    GlassButtonVariant.Secondary, GlassButtonVariant.Standard -> colors.surfaceContainer
     GlassButtonVariant.Text -> Color.Transparent
 }
 
-private fun resolveHoverSurfaceColor(
-    isHovered: Boolean,
-    variant: GlassButtonVariant,
-    baseSurfaceColor: Color,
-    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme,
-): Color = if (isHovered && variant != GlassButtonVariant.Text) {
-    glassColors.glassSurfaceElevated
-} else {
-    baseSurfaceColor
+private fun tint(variant: GlassButtonVariant, colors: ColorScheme, enabled: Boolean): Color {
+    val alpha = if (enabled) 1f else 0.4f
+    return when (variant) {
+        GlassButtonVariant.Primary -> colors.primary.copy(alpha = AlphaTokens.Strong * alpha)
+        GlassButtonVariant.Secondary -> colors.secondary.copy(alpha = AlphaTokens.Glow * alpha)
+        GlassButtonVariant.Standard -> colors.primary.copy(alpha = AlphaTokens.Glow * alpha)
+        GlassButtonVariant.Text -> Color.Transparent
+    }
 }
 
-private fun resolveHoverBorderColor(
-    isHovered: Boolean,
-    baseBorderColor: Color,
-    glassColors: org.ide.lti.core.designsystem.theme.GlassColorScheme,
-): Color = if (isHovered && baseBorderColor != Color.Transparent) {
-    glassColors.glassBorderHighlight
-} else {
-    baseBorderColor
-}
-
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawButtonSurface(
-    surfaceColor: Color,
-    tint: Color,
-    enabled: Boolean,
-    glassShadowColor: Color,
-    vividTint: Boolean = false,
-) {
-    if (surfaceColor.isSpecified && surfaceColor != Color.Transparent) {
-        drawRect(surfaceColor.copy(alpha = surfaceColor.alpha * AlphaTokens.ButtonFill))
-    }
-    if (tint.isSpecified && tint != Color.Transparent) {
-        if (vividTint) {
-            // Full-strength SrcOver instead of a Hue-only blend: the accent color reads as
-            // itself (matching the brand logo badge) rather than being diluted by the dark
-            // base surface underneath, which a Hue blend deliberately preserves the lightness of.
-            drawRect(tint, blendMode = BlendMode.SrcOver)
-        } else {
-            drawRect(tint, blendMode = BlendMode.Hue)
-            drawRect(tint.copy(alpha = tint.alpha * AlphaTokens.Half))
-        }
-    }
-    if (!enabled) {
-        drawRect(glassShadowColor.copy(alpha = AlphaTokens.Disabled))
-    }
-}
+private fun contentColor(variant: GlassButtonVariant, colors: ColorScheme): Color = colors.onSurface
 
 /**
  * Convenience composable for a primary glass button.
@@ -368,7 +201,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawButtonSurface(
 fun GlassPrimaryButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    shape: Shape = GlassShapes.Capsule,
+    shape: HazeShape = GlassShapes.HazeCapsule,
     enabled: Boolean = true,
     content: @Composable RowScope.() -> Unit,
 ) {
@@ -389,7 +222,7 @@ fun GlassPrimaryButton(
 fun GlassSecondaryButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    shape: Shape = GlassShapes.Capsule,
+    shape: HazeShape = GlassShapes.HazeCapsule,
     enabled: Boolean = true,
     content: @Composable RowScope.() -> Unit,
 ) {
@@ -425,41 +258,26 @@ fun GlassTextButton(
 
 /**
  * Glass icon button component optimized for toolbars.
- *
- * @param interactive Whether the button applies the squash-and-stretch press/drag transform
- * (see [InteractiveHighlight]). Defaults to `false` ΓÇö icon buttons are small, frequently-clicked
- * controls (toolbars, rails, panel headers) where that motion reads as jittery rather than fluid.
  */
 @Composable
 fun GlassIconButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     size: Dp = ComponentSize.IconButtonSize,
-    shape: Shape = GlassShapes.Capsule,
-    effect: ResolvedGlassEffect? = null,
-    backdrop: GlassSceneState? = null,
+    shape: HazeShape = GlassShapes.HazeCapsule,
     checked: Boolean? = null,
     selected: Boolean = checked ?: false,
     enabled: Boolean = true,
-    interactive: Boolean = false,
     content: @Composable () -> Unit,
 ) {
-    // Icon buttons use the compact GlassStyles.iconButton tier, not GlassButton's own default
-    // (GlassStyles.button, the wide text-labeled pill tier) - always resolved and passed
-    // explicitly so it overrides that default regardless.
-    val iconButtonStyle = GlassStyles.iconButton
-    val resolvedEffect = effect ?: iconButtonStyle.resolve()
     GlassButton(
         onClick = onClick,
         modifier = modifier.size(size),
         shape = shape,
-        effect = resolvedEffect,
-        backdrop = backdrop,
         minWidth = size,
         minHeight = size,
         contentPadding = PaddingValues(Spacing.None),
         enabled = enabled,
-        interactive = interactive,
         variant = if (selected) GlassButtonVariant.Primary else GlassButtonVariant.Standard,
     ) {
         content()
@@ -489,7 +307,7 @@ fun GlassIconButton(
         GlassIcon(
             icon = icon,
             contentDescription = contentDescription,
-            tint = if (selected) GlassTheme.colors.onGlass else GlassTheme.colors.onGlassSecondary,
+            tint = if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(IconSize.Medium),
         )
     }
@@ -504,9 +322,8 @@ fun GlassIconToggleButton(
     onSelectedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     size: Dp = ComponentSize.IconButtonSize,
-    shape: Shape = GlassShapes.Capsule,
+    shape: HazeShape = GlassShapes.HazeCapsule,
     enabled: Boolean = true,
-    interactive: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     GlassIconButton(
@@ -516,7 +333,6 @@ fun GlassIconToggleButton(
         shape = shape,
         selected = selected,
         enabled = enabled,
-        interactive = interactive,
         content = content,
     )
 }
@@ -544,7 +360,7 @@ fun GlassIconToggleButton(
         GlassIcon(
             icon = icon,
             contentDescription = contentDescription,
-            tint = if (checked) GlassTheme.colors.onGlass else GlassTheme.colors.onGlassSecondary,
+            tint = if (checked) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(IconSize.Medium),
         )
     }

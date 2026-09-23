@@ -101,7 +101,7 @@ fun GlassListTile(
                 Text(
                     text = trailing.text,
                     style = MaterialTheme.typography.bodySmall,
-                    color = GlassTheme.colors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     softWrap = false,
                     overflow = TextOverflow.Ellipsis,
@@ -135,7 +135,6 @@ fun GlassListTile(
     onClick: (() -> Unit)? = null,
     enabled: Boolean = true,
 ) {
-    val glassColors = GlassTheme.colors
     val clickableModifier = if (onClick != null && enabled) {
         Modifier.clickable(
             interactionSource = remember { MutableInteractionSource() },
@@ -166,10 +165,10 @@ fun GlassListTile(
                     modifier = Modifier
                         .size(ComponentSize.ListTileBadgeSize)
                         .clip(GlassShapes.Small)
-                        .background(glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Elevated))
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = AlphaTokens.Elevated))
                         .glassOutlineBorder(
                             width = StrokeWidth.Hairline,
-                            color = glassColors.glassBorder,
+                            color = MaterialTheme.colorScheme.outline,
                             shape = GlassShapes.Small,
                         ),
                     contentAlignment = Alignment.Center,
@@ -178,13 +177,13 @@ fun GlassListTile(
                         is AppIcon.Vector -> Icon(
                             imageVector = leadingIcon.imageVector,
                             contentDescription = null,
-                            tint = if (enabled) glassColors.onGlassSecondary else glassColors.onGlassMuted,
+                            tint = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(IconSize.Medium),
                         )
                         is AppIcon.Painted -> Icon(
                             painter = leadingIcon.painter(),
                             contentDescription = null,
-                            tint = if (enabled) glassColors.onGlassSecondary else glassColors.onGlassMuted,
+                            tint = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(IconSize.Medium),
                         )
                     }
@@ -196,7 +195,7 @@ fun GlassListTile(
                     text = headline,
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Medium,
-                    color = if (enabled) glassColors.onGlass else glassColors.onGlassMuted,
+                    color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     softWrap = false,
                     overflow = TextOverflow.Ellipsis,
@@ -205,7 +204,7 @@ fun GlassListTile(
                     Text(
                         text = supportingText,
                         style = MaterialTheme.typography.bodySmall,
-                        color = glassColors.onGlassSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         softWrap = false,
                         overflow = TextOverflow.Ellipsis,
@@ -260,7 +259,6 @@ fun GlassValueTile(
     onClick: (() -> Unit)? = null,
     enabled: Boolean = true,
 ) {
-    val glassColors = GlassTheme.colors
     GlassListTile(
         headline = title,
         supportingText = description,
@@ -276,7 +274,7 @@ fun GlassValueTile(
                 Text(
                     text = value,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = glassColors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     softWrap = false,
                     overflow = TextOverflow.Ellipsis,
@@ -285,7 +283,7 @@ fun GlassValueTile(
                     Icon(
                         painter = AppIcons.ChevronRightPainterResource(),
                         contentDescription = null,
-                        tint = glassColors.onGlassMuted,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(IconSize.Small),
                     )
                 }

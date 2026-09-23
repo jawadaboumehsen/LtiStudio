@@ -69,7 +69,6 @@ import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
 import org.ide.lti.core.domain.setup.SetupLogEvent
 import org.ide.lti.feature.setup.SetupActivityState
 
@@ -106,7 +105,6 @@ fun SetupActivityPanel(
     title: String = "Activity",
     isRunning: Boolean = false,
     defaultExpanded: Boolean = true,
-    backdrop: GlassSceneState? = null,
     listState: LazyListState = rememberLazyListState(),
     destination: String? = null,
 ) {
@@ -186,14 +184,11 @@ fun SetupActivityPanel(
         }
     }
 
-    val shellColors = GlassTheme.ideShellColors
     GlassCard(
         modifier = modifier
             .fillMaxWidth()
             .semantics { paneTitle = title },
-        surfaceColor = shellColors.cardBackground,
-        borderColor = shellColors.border,
-        backdrop = backdrop,
+        surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         contentPadding = Spacing.CardPadding,
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium)) {
@@ -259,7 +254,6 @@ private fun ActivityPanelHeader(
     isCopiedAll: Boolean,
     onCopyAll: () -> Unit,
 ) {
-    val glassColors = GlassTheme.colors
 
     FlowRow(
         modifier = Modifier
@@ -309,7 +303,7 @@ private fun ActivityPanelHeader(
             Text(
                 text = if (isExpanded) "Hide Output" else "View Output",
                 style = MaterialTheme.typography.labelSmall,
-                color = glassColors.glassAccent,
+                color = MaterialTheme.colorScheme.primary,
                 maxLines = 1,
                 softWrap = false,
                 overflow = TextOverflow.Ellipsis,
@@ -326,7 +320,6 @@ private fun ActivityHeaderLeftBadges(
     droppedCount: Int,
     isRunning: Boolean,
 ) {
-    val glassColors = GlassTheme.colors
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -339,7 +332,7 @@ private fun ActivityHeaderLeftBadges(
                 AppIcons.ChevronRightPainterResource()
             },
             contentDescription = "Toggle Activity Panel",
-            tint = glassColors.onGlassSecondary,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(IconSize.Small),
         )
 
@@ -347,7 +340,7 @@ private fun ActivityHeaderLeftBadges(
             text = title,
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.SemiBold,
-            color = glassColors.onGlass,
+            color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
             softWrap = false,
             overflow = TextOverflow.Ellipsis,
@@ -368,7 +361,7 @@ private fun ActivityHeaderLeftBadges(
             CircularProgressIndicator(
                 modifier = Modifier.size(IconSize.Small),
                 strokeWidth = StrokeWidth.Hairline,
-                color = glassColors.glassAccent,
+                color = MaterialTheme.colorScheme.primary,
             )
         }
     }
@@ -380,7 +373,6 @@ private fun ActivityFollowButton(
     onPauseFollow: () -> Unit,
     onJumpToLatest: () -> Unit,
 ) {
-    val glassColors = GlassTheme.colors
     if (followingLatest) {
         GlassSecondaryButton(onClick = onPauseFollow) {
             Text(
@@ -396,7 +388,7 @@ private fun ActivityFollowButton(
             Text(
                 text = "Jump to latest",
                 style = MaterialTheme.typography.labelSmall,
-                color = glassColors.glassAccent,
+                color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 softWrap = false,
@@ -413,8 +405,7 @@ private fun ActivitySelectionActions(
     onCopySelection: () -> Unit,
     onClearSelection: () -> Unit,
 ) {
-    val glassColors = GlassTheme.colors
-    val diagnostics = glassColors.diagnostics
+    val diagnostics = GlassTheme.diagnosticColors
 
     GlassSecondaryButton(onClick = onCopySelection) {
         Row(
@@ -429,7 +420,7 @@ private fun ActivitySelectionActions(
                 },
                 contentDescription = "Copy selection",
                 modifier = Modifier.size(IconSize.Small),
-                tint = if (isCopiedSelection) diagnostics.success else glassColors.onGlass,
+                tint = if (isCopiedSelection) diagnostics.success else MaterialTheme.colorScheme.onSurface,
             )
             val label = if (isCopiedSelection) "Copied!" else "Copy selection ($selectedCount)"
             Text(
@@ -451,7 +442,7 @@ private fun ActivitySelectionActions(
                 painter = AppIcons.ClearPainterResource(),
                 contentDescription = "Clear selection",
                 modifier = Modifier.size(IconSize.Small),
-                tint = glassColors.onGlassSecondary,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -462,8 +453,7 @@ private fun ActivityCopyAllButton(
     isCopiedAll: Boolean,
     onCopyAll: () -> Unit,
 ) {
-    val glassColors = GlassTheme.colors
-    val diagnostics = glassColors.diagnostics
+    val diagnostics = GlassTheme.diagnosticColors
 
     GlassTooltipArea(tooltipText = if (isCopiedAll) "Copied all logs!" else "Copy all") {
         GlassIconButton(
@@ -477,7 +467,7 @@ private fun ActivityCopyAllButton(
                     AppIcons.CopyPainterResource()
                 },
                 contentDescription = "Copy all",
-                tint = if (isCopiedAll) diagnostics.success else glassColors.onGlassSecondary,
+                tint = if (isCopiedAll) diagnostics.success else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(IconSize.Small),
             )
         }
@@ -491,7 +481,6 @@ private fun ActivityPanelViewport(
     listState: LazyListState,
     onSelectEvent: (String) -> Unit,
 ) {
-    val glassColors = GlassTheme.colors
     val horizontalScrollState = rememberScrollState()
 
     Box(
@@ -499,10 +488,10 @@ private fun ActivityPanelViewport(
             .fillMaxWidth()
             .heightIn(max = ComponentSize.DialogDefaultHeight)
             .clip(GlassShapes.Small)
-            .background(glassColors.glassSurface)
+            .background(MaterialTheme.colorScheme.surfaceContainer)
             .border(
                 width = StrokeWidth.Hairline,
-                color = glassColors.glassBorder,
+                color = MaterialTheme.colorScheme.outline,
                 shape = GlassShapes.Small,
             )
             .padding(Spacing.SmallMedium),
@@ -512,7 +501,7 @@ private fun ActivityPanelViewport(
                 text = "No execution output generated yet. " +
                     "Run setup, diagnostics, or tool verification to capture terminal streams.",
                 style = MaterialTheme.typography.labelSmall.copy(fontFamily = codeFontFamily()),
-                color = glassColors.onGlassMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         } else {
             LazyColumn(
@@ -544,8 +533,7 @@ private fun ActivityLogItemRow(
     isSelected: Boolean,
     onClick: () -> Unit,
 ) {
-    val glassColors = GlassTheme.colors
-    val diagnostics = glassColors.diagnostics
+    val diagnostics = GlassTheme.diagnosticColors
     val line = event.text
 
     val lineTint = when {
@@ -553,8 +541,8 @@ private fun ActivityLogItemRow(
             line.contains("FAILED", ignoreCase = true) -> diagnostics.error
         line.contains("WARNING", ignoreCase = true) -> diagnostics.warning
         line.contains("Step", ignoreCase = true) ||
-            line.contains("Complete", ignoreCase = true) -> glassColors.glassAccent
-        else -> glassColors.onGlassSecondary
+            line.contains("Complete", ignoreCase = true) -> MaterialTheme.colorScheme.primary
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     Box(
@@ -563,17 +551,17 @@ private fun ActivityLogItemRow(
             .clip(GlassShapes.Small)
             .background(
                 if (isSelected) {
-                    glassColors.glassAccent.copy(alpha = AlphaTokens.Subtle)
+                    MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Subtle)
                 } else {
-                    glassColors.glassSurface
+                    MaterialTheme.colorScheme.surfaceContainer
                 },
             )
             .border(
                 width = StrokeWidth.Hairline,
                 color = if (isSelected) {
-                    glassColors.glassAccent.copy(alpha = AlphaTokens.Border)
+                    MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Border)
                 } else {
-                    glassColors.glassBorder.copy(alpha = AlphaTokens.UltraFaint)
+                    MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.UltraFaint)
                 },
                 shape = GlassShapes.Small,
             )

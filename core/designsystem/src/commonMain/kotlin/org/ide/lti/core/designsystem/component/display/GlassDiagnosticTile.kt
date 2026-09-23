@@ -106,8 +106,7 @@ fun GlassDiagnosticTile(
     item: GlassDiagnosticItem,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
-    val diagnostics = glassColors.diagnostics
+    val diagnostics = GlassTheme.diagnosticColors
 
     @Suppress("DEPRECATION")
     val clipboardManager = LocalClipboardManager.current
@@ -124,23 +123,23 @@ fun GlassDiagnosticTile(
         GlassStepStatus.SUCCESS -> diagnostics.success
         GlassStepStatus.WARNING -> diagnostics.warning
         GlassStepStatus.FAILED -> diagnostics.error
-        GlassStepStatus.RUNNING -> glassColors.glassAccent
-        GlassStepStatus.PENDING -> glassColors.onGlassMuted
-        GlassStepStatus.SKIPPED -> glassColors.onGlassMuted
-        GlassStepStatus.CANCELLED -> glassColors.onGlassMuted
-        GlassStepStatus.INTERRUPTED -> glassColors.onGlassMuted
-        GlassStepStatus.RESTORED -> glassColors.onGlassMuted
+        GlassStepStatus.RUNNING -> MaterialTheme.colorScheme.primary
+        GlassStepStatus.PENDING -> MaterialTheme.colorScheme.onSurfaceVariant
+        GlassStepStatus.SKIPPED -> MaterialTheme.colorScheme.onSurfaceVariant
+        GlassStepStatus.CANCELLED -> MaterialTheme.colorScheme.onSurfaceVariant
+        GlassStepStatus.INTERRUPTED -> MaterialTheme.colorScheme.onSurfaceVariant
+        GlassStepStatus.RESTORED -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
-    CompositionLocalProvider(LocalContentColor provides glassColors.onGlass) {
+    CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
         Box(
             modifier = modifier
                 .fillMaxWidth()
                 .clip(GlassShapes.Small)
-                .background(glassColors.glassSurface)
+                .background(MaterialTheme.colorScheme.surfaceContainer)
                 .border(
                     width = StrokeWidth.Hairline,
-                    color = glassColors.glassBorder,
+                    color = MaterialTheme.colorScheme.outline,
                     shape = GlassShapes.Small,
                 )
                 .padding(Spacing.SmallMedium),
@@ -164,7 +163,7 @@ fun GlassDiagnosticTile(
                         Text(
                             text = item.title,
                             style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
-                            color = glassColors.onGlass,
+                            color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
                             softWrap = false,
                             overflow = TextOverflow.Ellipsis,
@@ -193,7 +192,7 @@ fun GlassDiagnosticTile(
                 Text(
                     text = item.detail,
                     style = MaterialTheme.typography.labelSmall,
-                    color = glassColors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
                 item.copyableCommand?.let { cmd ->
@@ -201,10 +200,10 @@ fun GlassDiagnosticTile(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(GlassShapes.Small)
-                            .background(glassColors.onGlass.copy(alpha = AlphaTokens.UltraFaint))
+                            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = AlphaTokens.UltraFaint))
                             .border(
                                 width = StrokeWidth.Hairline,
-                                color = glassColors.glassBorder,
+                                color = MaterialTheme.colorScheme.outline,
                                 shape = GlassShapes.Small,
                             )
                             .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraExtraSmall),
@@ -212,7 +211,7 @@ fun GlassDiagnosticTile(
                         Text(
                             text = cmd,
                             style = MaterialTheme.typography.labelSmall.copy(fontFamily = codeFontFamily()),
-                            color = glassColors.onGlass,
+                            color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
                             softWrap = false,
                             overflow = TextOverflow.Ellipsis,
@@ -239,7 +238,7 @@ fun GlassDiagnosticTile(
                                         AppIcons.CopyPainterResource()
                                     },
                                     contentDescription = "Copy",
-                                    tint = if (isCopied) diagnostics.success else glassColors.onGlassSecondary,
+                                    tint = if (isCopied) diagnostics.success else MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(IconSize.Small),
                                 )
                             }

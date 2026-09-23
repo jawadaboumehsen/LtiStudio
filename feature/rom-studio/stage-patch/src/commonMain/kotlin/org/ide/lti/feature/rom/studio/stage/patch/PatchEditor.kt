@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.rom.studio.stage.patch
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,7 +35,6 @@ import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -55,7 +55,6 @@ public fun PatchEditor(
     onValidate: () -> Unit = {},
     onSave: () -> Unit = {},
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     val errors = validationErrors.filter { it.fieldPath.startsWith("customization.") || !it.fieldPath.contains('.') }
 
@@ -74,25 +73,25 @@ public fun PatchEditor(
         ) {
             when (selectedObjectId.lowercase()) {
                 "enabled-ordered-modules", "enabled_ordered_modules" -> item {
-                    EnabledModulesCard(settings, dirtyPaths, onChange, colors)
+                    EnabledModulesCard(settings, dirtyPaths, onChange)
                 }
                 "file-changes", "file_changes" -> item {
-                    FileChangesCard(settings, colors)
+                    FileChangesCard(settings)
                 }
                 "text-patches", "text_patches" -> item {
-                    TextPatchesCard(settings, colors)
+                    TextPatchesCard(settings)
                 }
                 "property-patches", "property_patches" -> item {
-                    PropertyPatchesCard(settings, dirtyPaths, onChange, colors)
+                    PropertyPatchesCard(settings, dirtyPaths, onChange)
                 }
                 "conflicts" -> item {
-                    ConflictsCard(settings, colors)
+                    ConflictsCard(settings)
                 }
                 else -> item {
-                    ModuleCatalogCard(settings, dirtyPaths, onChange, colors)
+                    ModuleCatalogCard(settings, dirtyPaths, onChange)
                 }
             }
-            item { Diagnostics(errors, colors) }
+            item { Diagnostics(errors) }
         }
     }
 }
@@ -102,13 +101,12 @@ private fun ModuleCatalogCard(
     settings: CustomizationSettings,
     dirtyPaths: Set<String>,
     onChange: (CustomizationSettings) -> Unit,
-    colors: IdeShellColorScheme,
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
@@ -117,13 +115,13 @@ private fun ModuleCatalogCard(
             fontSize = FontSize.BodySmall,
             fontWeight = FontWeight.SemiBold,
             fontFamily = ideFontFamily(),
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
         )
         Text(
             text = "Installed and available plugin extensions in repository:",
             fontSize = FontSize.Micro,
             fontFamily = ideFontFamily(),
-            color = colors.textMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
         settings.lockfile.entries.forEach { entry ->
@@ -140,13 +138,13 @@ private fun ModuleCatalogCard(
                         fontSize = FontSize.BodySmall,
                         fontWeight = FontWeight.Medium,
                         fontFamily = codeFontFamily(),
-                        color = colors.textMain,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                     Text(
                         text = "v${entry.version} by ${entry.publisher}",
                         fontSize = FontSize.Micro,
                         fontFamily = ideFontFamily(),
-                        color = colors.textMuted,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 GlassToggle(
@@ -159,11 +157,11 @@ private fun ModuleCatalogCard(
                         }
                         onChange(settings.copy(enabledPackages = updated))
                     },
-                    activeColor = colors.accentBlue,
+                    activeColor = MaterialTheme.colorScheme.primary,
                 )
             }
         }
-        Meta("lockfile", dirtyPaths, "Catalog", "${settings.lockfile.entries.size} packages in lockfile.", colors)
+        Meta("lockfile", dirtyPaths, "Catalog", "${settings.lockfile.entries.size} packages in lockfile.")
     }
 }
 
@@ -172,13 +170,12 @@ private fun EnabledModulesCard(
     settings: CustomizationSettings,
     dirtyPaths: Set<String>,
     onChange: (CustomizationSettings) -> Unit,
-    colors: IdeShellColorScheme,
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
@@ -187,19 +184,19 @@ private fun EnabledModulesCard(
             fontSize = FontSize.BodySmall,
             fontWeight = FontWeight.SemiBold,
             fontFamily = ideFontFamily(),
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
         )
         Text(
             text = "Execution sequence for patch hooks during assembly:",
             fontSize = FontSize.Micro,
             fontFamily = ideFontFamily(),
-            color = colors.textMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
         if (settings.enabledPackages.isEmpty()) {
             Text(
                 text = "No modules enabled.",
-                color = colors.textDim,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
             )
@@ -212,7 +209,7 @@ private fun EnabledModulesCard(
                 ) {
                     Text(
                         text = "${index + 1}. $pkg",
-                        color = colors.textMain,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = FontSize.Micro,
                         fontFamily = codeFontFamily(),
                     )
@@ -221,23 +218,23 @@ private fun EnabledModulesCard(
                         variant = GlassButtonVariant.Standard,
                         shape = GlassShapes.ShellControl,
                     ) {
-                        Text("Disable", color = colors.errorRed, fontSize = FontSize.Micro)
+                        Text("Disable", color = GlassTheme.diagnosticColors.error, fontSize = FontSize.Micro)
                     }
                 }
             }
         }
-        Meta("enabledPackages", dirtyPaths, "Ordering", "Higher-indexed modules apply overrides.", colors)
+        Meta("enabledPackages", dirtyPaths, "Ordering", "Higher-indexed modules apply overrides.")
     }
 }
 
 @Suppress("UnusedParameter")
 @Composable
-private fun FileChangesCard(settings: CustomizationSettings, colors: IdeShellColorScheme) {
+private fun FileChangesCard(settings: CustomizationSettings) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
@@ -246,13 +243,13 @@ private fun FileChangesCard(settings: CustomizationSettings, colors: IdeShellCol
             fontSize = FontSize.BodySmall,
             fontWeight = FontWeight.SemiBold,
             fontFamily = ideFontFamily(),
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
         )
         Text(
             text = "Overlay files declared across enabled mods:",
             fontSize = FontSize.Micro,
             fontFamily = ideFontFamily(),
-            color = colors.textMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         listOf(
             "/system/etc/permissions/privapp-permissions-microg.xml",
@@ -261,7 +258,7 @@ private fun FileChangesCard(settings: CustomizationSettings, colors: IdeShellCol
         ).forEach { path ->
             Text(
                 text = "• $path",
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = FontSize.Micro,
                 fontFamily = codeFontFamily(),
             )
@@ -271,12 +268,12 @@ private fun FileChangesCard(settings: CustomizationSettings, colors: IdeShellCol
 
 @Suppress("UnusedParameter")
 @Composable
-private fun TextPatchesCard(settings: CustomizationSettings, colors: IdeShellColorScheme) {
+private fun TextPatchesCard(settings: CustomizationSettings) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
@@ -285,23 +282,23 @@ private fun TextPatchesCard(settings: CustomizationSettings, colors: IdeShellCol
             fontSize = FontSize.BodySmall,
             fontWeight = FontWeight.SemiBold,
             fontFamily = ideFontFamily(),
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
         )
         Text(
             text = "Search & replace rule operations for init scripts and configs:",
             fontSize = FontSize.Micro,
             fontFamily = ideFontFamily(),
-            color = colors.textMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
             text = "• init.environ.rc: Injected BOOTCLASSPATH extension",
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = FontSize.Micro,
             fontFamily = codeFontFamily(),
         )
         Text(
             text = "• ueventd.rc: Device node permission grant",
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = FontSize.Micro,
             fontFamily = codeFontFamily(),
         )
@@ -313,13 +310,12 @@ private fun PropertyPatchesCard(
     settings: CustomizationSettings,
     dirtyPaths: Set<String>,
     onChange: (CustomizationSettings) -> Unit,
-    colors: IdeShellColorScheme,
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
@@ -328,13 +324,13 @@ private fun PropertyPatchesCard(
             fontSize = FontSize.BodySmall,
             fontWeight = FontWeight.SemiBold,
             fontFamily = ideFontFamily(),
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
         )
         Text(
             text = "Custom build and runtime system properties:",
             fontSize = FontSize.Micro,
             fontFamily = ideFontFamily(),
-            color = colors.textMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
         settings.settings.forEach { (mod, props) ->
@@ -343,7 +339,7 @@ private fun PropertyPatchesCard(
                 fontSize = FontSize.Micro,
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = ideFontFamily(),
-                color = colors.accentBlue,
+                color = MaterialTheme.colorScheme.primary,
             )
             props.forEach { (k, v) ->
                 Row(
@@ -353,7 +349,7 @@ private fun PropertyPatchesCard(
                 ) {
                     Text(
                         text = k,
-                        color = colors.textMain,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = FontSize.Micro,
                         fontFamily = codeFontFamily(),
                     )
@@ -361,18 +357,18 @@ private fun PropertyPatchesCard(
                 }
             }
         }
-        Meta("settings", dirtyPaths, "Properties", "Appended to build.prop during assembly.", colors)
+        Meta("settings", dirtyPaths, "Properties", "Appended to build.prop during assembly.")
     }
 }
 
 @Suppress("UnusedParameter")
 @Composable
-private fun ConflictsCard(settings: CustomizationSettings, colors: IdeShellColorScheme) {
+private fun ConflictsCard(settings: CustomizationSettings) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
@@ -381,11 +377,11 @@ private fun ConflictsCard(settings: CustomizationSettings, colors: IdeShellColor
             fontSize = FontSize.BodySmall,
             fontWeight = FontWeight.SemiBold,
             fontFamily = ideFontFamily(),
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
         )
         Text(
             text = "No conflicting file overlays or colliding property modifications detected.",
-            color = colors.accentGreen,
+            color = GlassTheme.diagnosticColors.success,
             fontSize = FontSize.Micro,
             fontFamily = ideFontFamily(),
         )
@@ -393,18 +389,18 @@ private fun ConflictsCard(settings: CustomizationSettings, colors: IdeShellColor
 }
 
 @Composable
-private fun Meta(path: String, dirty: Set<String>, source: String, help: String, colors: IdeShellColorScheme) {
+private fun Meta(path: String, dirty: Set<String>, source: String, help: String) {
     val isDirty = dirty.any { it.startsWith(path.substringBefore('/')) }
     Text(
         text = "$source${if (isDirty) " · Dirty" else ""} · $help",
         fontSize = FontSize.Micro,
         fontFamily = codeFontFamily(),
-        color = if (isDirty) colors.accentBlue else colors.textDim,
+        color = if (isDirty) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
     )
 }
 
 @Composable
-private fun Diagnostics(errors: List<ValidationError>, colors: IdeShellColorScheme) {
+private fun Diagnostics(errors: List<ValidationError>) {
     if (errors.isEmpty()) return
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
         errors.forEach {
@@ -413,9 +409,9 @@ private fun Diagnostics(errors: List<ValidationError>, colors: IdeShellColorSche
                 fontSize = FontSize.Micro,
                 fontFamily = ideFontFamily(),
                 color = if (it.severity == Severity.ERROR) {
-                    colors.errorRed
+                    GlassTheme.diagnosticColors.error
                 } else {
-                    colors.warningAmber
+                    GlassTheme.diagnosticColors.warning
                 },
             )
         }

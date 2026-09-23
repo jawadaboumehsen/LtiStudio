@@ -81,16 +81,15 @@ private fun StepperStepNode(
     isCurrent: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
     val circleColor = when {
-        isCompleted -> glassColors.diagnostics.success
-        isCurrent -> glassColors.glassAccent
-        else -> glassColors.chromeSurface
+        isCompleted -> GlassTheme.diagnosticColors.success
+        isCurrent -> MaterialTheme.colorScheme.primary
+        else -> MaterialTheme.colorScheme.surfaceContainerLow
     }
 
     val contentColor = when {
         isCompleted || isCurrent -> BrandColors.OnLogoBadge
-        else -> glassColors.onGlassMuted
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     val statusLabel = when {
@@ -111,7 +110,7 @@ private fun StepperStepNode(
                 .background(circleColor)
                 .glassOutlineBorder(
                     width = StrokeWidth.Hairline,
-                    color = if (isCurrent) glassColors.glassBorderHighlight else glassColors.glassBorder,
+                    color = if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
                     shape = GlassShapes.Circle,
                 ),
             contentAlignment = Alignment.Center,
@@ -137,14 +136,14 @@ private fun StepperStepNode(
             text = step.title,
             style = MaterialTheme.typography.labelMedium,
             fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Medium,
-            color = if (isCurrent) glassColors.onGlass else glassColors.onGlassSecondary,
+            color = if (isCurrent) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
             softWrap = false,
             overflow = TextOverflow.Ellipsis,
         )
         Text(
             text = statusLabel,
             style = MaterialTheme.typography.labelSmall,
-            color = if (isCurrent) glassColors.glassAccent else glassColors.onGlassMuted,
+            color = if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
             softWrap = false,
             overflow = TextOverflow.Ellipsis,
         )
@@ -153,11 +152,10 @@ private fun StepperStepNode(
 
 @Composable
 private fun StepperConnector(isLineActive: Boolean, modifier: Modifier = Modifier) {
-    val glassColors = GlassTheme.colors
     val lineColor = if (isLineActive) {
-        glassColors.glassAccent
+        MaterialTheme.colorScheme.primary
     } else {
-        glassColors.glassBorder
+        MaterialTheme.colorScheme.outline
     }
 
     Box(

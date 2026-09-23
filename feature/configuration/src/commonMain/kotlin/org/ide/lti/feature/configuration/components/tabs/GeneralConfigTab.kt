@@ -45,8 +45,6 @@ fun GeneralConfigTab(
     onTargetChange: (TargetDevice) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
-    val colors = GlassTheme.ideShellColors
     val superGb = target.superPartitionBytes.toDouble() / (1024.0 * 1024.0 * 1024.0)
 
     Column(
@@ -58,8 +56,7 @@ fun GeneralConfigTab(
         // =========================================================================
         GlassCard(
             modifier = Modifier.fillMaxWidth(),
-            surfaceColor = colors.cardBackground,
-            borderColor = colors.border,
+            surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -68,12 +65,12 @@ fun GeneralConfigTab(
                 Text(
                     text = "Hardware Target Identity",
                     style = MaterialTheme.typography.titleSmall,
-                    color = glassColors.onGlass,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     text = "Primary metadata identifying this hardware target device within the toolchain.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = glassColors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
                 Spacer(modifier = Modifier.height(Spacing.ExtraSmall))
@@ -122,8 +119,7 @@ fun GeneralConfigTab(
         // =========================================================================
         GlassCard(
             modifier = Modifier.fillMaxWidth(),
-            surfaceColor = colors.cardBackground,
-            borderColor = colors.border,
+            surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -132,12 +128,12 @@ fun GeneralConfigTab(
                 Text(
                     text = "Architecture & Platform Specifications",
                     style = MaterialTheme.typography.titleSmall,
-                    color = glassColors.onGlass,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     text = "System configuration matrix used by build engines, unpackers, and doctor validation.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = glassColors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
                 Spacer(modifier = Modifier.height(Spacing.ExtraSmall))
@@ -186,8 +182,7 @@ fun GeneralConfigTab(
         // =========================================================================
         GlassCard(
             modifier = Modifier.fillMaxWidth(),
-            surfaceColor = colors.cardBackground,
-            borderColor = colors.border,
+            surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -196,12 +191,12 @@ fun GeneralConfigTab(
                 Text(
                     text = "Qualification Status",
                     style = MaterialTheme.typography.titleSmall,
-                    color = glassColors.onGlass,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     text = "Defines stability tier for toolchain doctor and automated build validation rules.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = glassColors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
                 Row(
@@ -237,9 +232,9 @@ fun GeneralConfigTab(
                     text = statusExplanation,
                     style = MaterialTheme.typography.bodySmall.copy(fontSize = FontSize.Chip),
                     color = when (target.status) {
-                        TargetStatus.QUALIFIED -> glassColors.diagnostics.success
-                        TargetStatus.EXPERIMENTAL -> glassColors.diagnostics.warning
-                        TargetStatus.UNVERIFIED -> glassColors.diagnostics.error
+                        TargetStatus.QUALIFIED -> GlassTheme.diagnosticColors.success
+                        TargetStatus.EXPERIMENTAL -> GlassTheme.diagnosticColors.warning
+                        TargetStatus.UNVERIFIED -> GlassTheme.diagnosticColors.error
                     },
                 )
             }
@@ -250,8 +245,7 @@ fun GeneralConfigTab(
         // =========================================================================
         GlassCard(
             modifier = Modifier.fillMaxWidth(),
-            surfaceColor = colors.cardBackground,
-            borderColor = colors.border,
+            surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -260,12 +254,12 @@ fun GeneralConfigTab(
                 Text(
                     text = "Storage Geometry & Partition Footprint",
                     style = MaterialTheme.typography.titleSmall,
-                    color = glassColors.onGlass,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     text = "Active partition topology and super.img allocation quota.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = glassColors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
                 Spacer(modifier = Modifier.height(Spacing.ExtraSmall))
@@ -312,15 +306,13 @@ private fun TargetSpecBadge(
     value: String,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
-    val colors = GlassTheme.ideShellColors
     Box(
         modifier = modifier
             .clip(GlassShapes.Card)
-            .background(colors.cardBackgroundMuted)
+            .background(MaterialTheme.colorScheme.surfaceContainer)
             .glassOutlineBorder(
                 width = StrokeWidth.Hairline,
-                color = colors.borderMuted,
+                color = MaterialTheme.colorScheme.outlineVariant,
                 shape = GlassShapes.Card,
             )
             .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Compact),
@@ -332,7 +324,7 @@ private fun TargetSpecBadge(
                     fontSize = FontSize.Micro,
                     fontWeight = FontWeight.Medium,
                 ),
-                color = glassColors.onGlassSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
                 text = value,
@@ -341,7 +333,7 @@ private fun TargetSpecBadge(
                     fontFamily = codeFontFamily(),
                     fontWeight = FontWeight.SemiBold,
                 ),
-                color = glassColors.onGlass,
+                color = MaterialTheme.colorScheme.onSurface,
             )
         }
     }

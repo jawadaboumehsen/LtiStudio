@@ -27,7 +27,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
@@ -36,14 +35,15 @@ import androidx.compose.ui.text.TextStyle
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
 import org.ide.lti.core.designsystem.component.primitives.GlassSurface
 import org.ide.lti.core.designsystem.icon.AppIcons
+import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.HazeShape
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
-import org.ide.lti.core.designsystem.theme.config.AppTheme
 
 /**
  * Lti chat input field with send button.
@@ -59,17 +59,16 @@ fun GlassChatInput(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     placeholder: String = "Type a message...",
-    shape: Shape = if (GlassTheme.appTheme == AppTheme.Dark) GlassShapes.MediumSmall else GlassShapes.Pill,
+    shape: HazeShape = if (GlassTheme.appTheme == AppTheme.Dark) GlassShapes.HazeMediumSmall else GlassShapes.HazeCapsule,
 ) {
     var inputText by remember { mutableStateOf("") }
     var isFocused by remember { mutableStateOf(false) }
-    val glassColors = GlassTheme.colors
 
     GlassSurface(
         modifier = modifier.fillMaxWidth(),
         shape = shape,
-        surfaceColor = glassColors.glassSurfaceElevated,
-        borderColor = if (isFocused) glassColors.focusRing else glassColors.glassBorder,
+        surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        borderColor = if (isFocused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
         borderWidth = StrokeWidth.Hairline,
     ) {
         Row(
@@ -88,9 +87,9 @@ fun GlassChatInput(
                 onValueChange = { inputText = it },
                 textStyle = TextStyle(
                     fontSize = FontSize.BodyMedium,
-                    color = if (enabled) glassColors.onGlass else glassColors.onGlassMuted,
+                    color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                 ),
-                cursorBrush = SolidColor(glassColors.glassAccent),
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                 enabled = enabled,
                 modifier = Modifier
                     .weight(1f)
@@ -109,7 +108,7 @@ fun GlassChatInput(
                         Text(
                             text = placeholder,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = glassColors.onGlassMuted,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                     innerTextField()
@@ -118,7 +117,7 @@ fun GlassChatInput(
 
             Spacer(modifier = Modifier.width(Spacing.Small))
 
-            val sendButtonShape = if (GlassTheme.appTheme == AppTheme.Dark) GlassShapes.Small else GlassShapes.Capsule
+            val sendButtonShape = if (GlassTheme.appTheme == AppTheme.Dark) GlassShapes.HazeSmall else GlassShapes.HazeCapsule
             GlassIconButton(
                 onClick = {
                     if (inputText.isNotBlank()) {

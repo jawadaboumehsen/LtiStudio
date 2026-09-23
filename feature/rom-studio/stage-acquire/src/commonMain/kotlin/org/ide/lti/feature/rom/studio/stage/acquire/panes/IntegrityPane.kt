@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.rom.studio.stage.acquire.panes
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -47,7 +48,6 @@ import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.AcquisitionSettings
@@ -60,7 +60,6 @@ public fun IntegrityPane(
     onValidate: () -> Unit = {},
     onSave: () -> Unit = {},
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     Column(
         modifier = modifier
@@ -68,19 +67,19 @@ public fun IntegrityPane(
             .testTag("IntegrityPane"),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
-        VerifiedBanner(colors = colors)
+        VerifiedBanner()
 
-        SourceFileCard(settings = settings, target = target, colors = colors)
+        SourceFileCard(settings = settings, target = target)
 
-        VerificationCard(colors = colors)
+        VerificationCard()
 
-        IntegrityInfoBanner(colors = colors)
+        IntegrityInfoBanner()
     }
 }
 
 @Composable
-private fun VerifiedBanner(colors: IdeShellColorScheme) {
-    val green = colors.accentGreen
+private fun VerifiedBanner() {
+    val green = GlassTheme.diagnosticColors.success
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -105,14 +104,14 @@ private fun VerifiedBanner(colors: IdeShellColorScheme) {
             Column {
                 Text(
                     text = "Verified",
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = FontSize.TitleMedium,
                     fontWeight = FontWeight.Bold,
                     fontFamily = GlassFontFamily.ide(),
                 )
                 Text(
                     text = "The downloaded file matches the expected SHA-256 hash.",
-                    color = colors.textMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.BodySmall,
                     fontFamily = GlassFontFamily.ide(),
                 )
@@ -122,7 +121,7 @@ private fun VerifiedBanner(colors: IdeShellColorScheme) {
 }
 
 @Composable
-private fun SourceFileCard(settings: AcquisitionSettings, target: TargetDevice, colors: IdeShellColorScheme) {
+private fun SourceFileCard(settings: AcquisitionSettings, target: TargetDevice) {
     val clipboardManager = LocalClipboardManager.current
     val fileName = settings.archiveRef?.substringAfterLast('/')
         ?: "${target.codename}_4.0.0_factory.zip"
@@ -138,32 +137,32 @@ private fun SourceFileCard(settings: AcquisitionSettings, target: TargetDevice, 
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors = colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
         Text(
             text = "Source file",
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = FontSize.TitleSmall,
             fontWeight = FontWeight.SemiBold,
             fontFamily = GlassFontFamily.ide(),
         )
 
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
 
-        PropertyRow(label = "File name", colors = colors) {
+        PropertyRow(label = "File name") {
             Text(
                 text = fileName,
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = FontSize.BodySmall,
                 fontFamily = GlassFontFamily.code(),
             )
         }
 
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
 
-        PropertyRow(label = "Source URL", colors = colors) {
+        PropertyRow(label = "Source URL") {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -173,60 +172,58 @@ private fun SourceFileCard(settings: AcquisitionSettings, target: TargetDevice, 
                     ?: "https://example.com/firmware/$fileName"
                 Text(
                     text = url,
-                    color = colors.accentBlue,
+                    color = MaterialTheme.colorScheme.primary,
                     fontSize = FontSize.BodySmall,
                     fontFamily = GlassFontFamily.ide(),
                 )
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.OpenInNew,
                     contentDescription = "Open link",
-                    tint = colors.accentBlue,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(IconSize.ExtraSmall),
                 )
             }
         }
 
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
 
-        PropertyRow(label = "Source provenance", value = "Vendor official release", colors = colors)
+        PropertyRow(label = "Source provenance", value = "Vendor official release")
 
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
 
-        PropertyRow(label = "File size", value = "2.48 GB (2,662,609,920 bytes)", colors = colors)
+        PropertyRow(label = "File size", value = "2.48 GB (2,662,609,920 bytes)")
 
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
 
-        PropertyRow(label = "Downloaded", value = "2024-05-14 10:21:37", colors = colors)
+        PropertyRow(label = "Downloaded", value = "2024-05-14 10:21:37")
 
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
 
-        PropertyRow(label = "Expected SHA-256", colors = colors) {
+        PropertyRow(label = "Expected SHA-256") {
             HashCopyRow(
                 hash = truncatedHash,
                 onCopy = { clipboardManager.setText(AnnotatedString(fullHash)) },
-                colors = colors,
             )
         }
 
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
 
-        PropertyRow(label = "Measured SHA-256", colors = colors) {
+        PropertyRow(label = "Measured SHA-256") {
             HashCopyRow(
                 hash = truncatedHash,
                 onCopy = { clipboardManager.setText(AnnotatedString(fullHash)) },
-                colors = colors,
             )
         }
     }
 }
 
 @Composable
-private fun VerificationCard(colors: IdeShellColorScheme) {
+private fun VerificationCard() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .ideCardSurface(colors = colors, shape = GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
@@ -237,7 +234,7 @@ private fun VerificationCard(colors: IdeShellColorScheme) {
         ) {
             Text(
                 text = "Verification",
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = FontSize.TitleSmall,
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = GlassFontFamily.ide(),
@@ -255,17 +252,17 @@ private fun VerificationCard(colors: IdeShellColorScheme) {
                     Icon(
                         imageVector = Icons.Default.Refresh,
                         contentDescription = "Verify",
-                        tint = colors.textMain,
+                        tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(IconSize.ExtraSmall),
                     )
-                    Text("Verify", color = colors.textMain, fontSize = FontSize.BodySmall)
+                    Text("Verify", color = MaterialTheme.colorScheme.onSurface, fontSize = FontSize.BodySmall)
                 }
             }
         }
 
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
 
-        PropertyRow(label = "Status", colors = colors) {
+        PropertyRow(label = "Status") {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
@@ -273,12 +270,12 @@ private fun VerificationCard(colors: IdeShellColorScheme) {
                 Icon(
                     imageVector = Icons.Default.CheckCircle,
                     contentDescription = "Verified",
-                    tint = colors.accentGreen,
+                    tint = GlassTheme.diagnosticColors.success,
                     modifier = Modifier.size(IconSize.Small),
                 )
                 Text(
                     text = "Verified",
-                    color = colors.accentGreen,
+                    color = GlassTheme.diagnosticColors.success,
                     fontSize = FontSize.BodySmall,
                     fontWeight = FontWeight.Medium,
                     fontFamily = GlassFontFamily.ide(),
@@ -286,32 +283,31 @@ private fun VerificationCard(colors: IdeShellColorScheme) {
             }
         }
 
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
 
-        PropertyRow(label = "Method", value = "SHA-256 (local computation)", colors = colors)
+        PropertyRow(label = "Method", value = "SHA-256 (local computation)")
 
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
 
-        PropertyRow(label = "Checked at", value = "2024-05-14 10:21:45", colors = colors)
+        PropertyRow(label = "Checked at", value = "2024-05-14 10:21:45")
 
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = colors.borderMuted)
+        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
 
         PropertyRow(
             label = "Result",
             value = "The file integrity is confirmed. The measured hash matches the expected hash.",
-            colors = colors,
         )
     }
 }
 
 @Composable
-private fun IntegrityInfoBanner(colors: IdeShellColorScheme) {
+private fun IntegrityInfoBanner() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
-            .background(colors.infoBannerFill, GlassShapes.ShellCard)
-            .border(GlassDimens.HairlineBorder, colors.infoBannerBorder, GlassShapes.ShellCard)
+            .background(MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Subtle), GlassShapes.ShellCard)
+            .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Ambient), GlassShapes.ShellCard)
             .padding(Spacing.SmallMedium),
     ) {
         Row(
@@ -321,12 +317,12 @@ private fun IntegrityInfoBanner(colors: IdeShellColorScheme) {
             Icon(
                 imageVector = Icons.Default.Info,
                 contentDescription = null,
-                tint = colors.accentBlue,
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(IconSize.Small),
             )
             Text(
                 text = "Integrity verification ensures the downloaded file has not been corrupted or tampered with.",
-                color = colors.textMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.BodySmall,
                 fontFamily = GlassFontFamily.ide(),
             )
@@ -335,11 +331,11 @@ private fun IntegrityInfoBanner(colors: IdeShellColorScheme) {
 }
 
 @Composable
-internal fun PropertyRow(label: String, value: String, colors: IdeShellColorScheme) {
-    PropertyRow(label = label, colors = colors) {
+internal fun PropertyRow(label: String, value: String) {
+    PropertyRow(label = label) {
         Text(
             text = value,
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = FontSize.BodySmall,
             fontFamily = GlassFontFamily.ide(),
         )
@@ -347,14 +343,14 @@ internal fun PropertyRow(label: String, value: String, colors: IdeShellColorSche
 }
 
 @Composable
-internal fun PropertyRow(label: String, colors: IdeShellColorScheme, content: @Composable () -> Unit) {
+internal fun PropertyRow(label: String, content: @Composable () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = label,
-            color = colors.textDim,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.BodySmall,
             fontFamily = GlassFontFamily.ide(),
             modifier = Modifier.width(GlassDimens.DetailsGridLabelColWidth),
@@ -366,7 +362,7 @@ internal fun PropertyRow(label: String, colors: IdeShellColorScheme, content: @C
 }
 
 @Composable
-internal fun HashCopyRow(hash: String, onCopy: () -> Unit, colors: IdeShellColorScheme) {
+internal fun HashCopyRow(hash: String, onCopy: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -374,14 +370,14 @@ internal fun HashCopyRow(hash: String, onCopy: () -> Unit, colors: IdeShellColor
     ) {
         Text(
             text = hash,
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = FontSize.BodySmall,
             fontFamily = GlassFontFamily.code(),
         )
         Icon(
             imageVector = Icons.Default.ContentCopy,
             contentDescription = "Copy hash",
-            tint = colors.textDim,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier
                 .size(IconSize.ExtraSmall)
                 .clickable(onClick = onCopy),

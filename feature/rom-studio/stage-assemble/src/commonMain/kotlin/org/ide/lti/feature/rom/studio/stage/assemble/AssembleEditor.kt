@@ -23,7 +23,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassTheme
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.domain.pipeline.configuration.ValidationError
 import org.ide.lti.core.model.target.TargetDevice
@@ -46,7 +45,6 @@ public fun AssembleEditor(
     onValidate: () -> Unit = {},
     onSave: () -> Unit = {},
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     val scrollState = rememberScrollState()
 
@@ -70,7 +68,6 @@ public fun AssembleEditor(
                     onChange = onChange,
                     onValidate = onValidate,
                     onSave = onSave,
-                    colors = colors,
                 )
                 "aot-cleanup", "aot_cleanup", "aot" -> AotCleanupPane(
                     settings = settings,
@@ -78,7 +75,6 @@ public fun AssembleEditor(
                     onChange = onChange,
                     onValidate = onValidate,
                     onSave = onSave,
-                    colors = colors,
                 )
                 "boot-preparation", "boot_preparation", "boot" -> BootPreparationPane(
                     settings = settings,
@@ -86,7 +82,6 @@ public fun AssembleEditor(
                     onChange = onChange,
                     onValidate = onValidate,
                     onSave = onSave,
-                    colors = colors,
                 )
                 "build-properties", "build_properties", "properties" -> BuildPropertiesPane(
                     settings = settings,
@@ -94,7 +89,6 @@ public fun AssembleEditor(
                     onChange = onChange,
                     onValidate = onValidate,
                     onSave = onSave,
-                    colors = colors,
                 )
                 else -> WorkTreesPane(
                     settings = settings,
@@ -102,7 +96,6 @@ public fun AssembleEditor(
                     onChange = onChange,
                     onValidate = onValidate,
                     onSave = onSave,
-                    colors = colors,
                 )
             }
         }

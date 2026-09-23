@@ -47,12 +47,6 @@ object AlphaTokens {
     /** Prominent opacity for active highlight gradients (60%). */
     const val Prominent: Float = 0.60f
 
-    /** High opacity for readable secondary text or distinct accents (70%). */
-    const val High: Float = 0.70f
-
-    /** Intense opacity for saturated icon tint layers (75%). */
-    const val IconTint: Float = 0.75f
-
     /** Solid translucent glass panel backdrop opacity (92%). */
     const val Heavy: Float = 0.92f
 
@@ -61,9 +55,6 @@ object AlphaTokens {
 
     /** Ambient opacity for a soft gradient glow layer (35%). */
     const val Ambient: Float = 0.35f
-
-    /** Soft opacity for a gradient glow's inner layer (45%). */
-    const val Soft: Float = 0.45f
 
     /** Strong opacity for a gradient glow's brightest core (55%). */
     const val Strong: Float = 0.55f
@@ -81,36 +72,6 @@ object AlphaTokens {
      * over translucent glass surfaces without washing out or hiding backdrop blur (55%).
      */
     const val PrimaryButtonTint: Float = 0.55f
-
-    /**
-     * Fill opacity multiplier for GlassButton's surface layer, applied on top of the shared
-     * glassSurface/glassSurfaceElevated tokens' own alpha. Buttons are wide, mostly-flat pills
-     * where the lens refraction shader only distorts a thin band near the edges (see
-     * backdrop/effects/Lens.kt) — the working full-surface blur underneath needs a translucent
-     * fill, not a near-opaque one, or it gets painted over and the glass reads as flat (35%).
-     */
-    const val ButtonFill: Float = 0.35f
-
-    /** Translucent dark glass base surface opacity (68%). Allows backdrop blur and depth to shine through. */
-    const val GlassTranslucent: Float = 0.68f
-
-    /** Elevated translucent dark glass card/dialog surface opacity (76%). Provides elevation depth separation. */
-    const val GlassElevated: Float = 0.76f
-
-    /** Chrome/topbar/dock translucent dark glass surface opacity (82%). */
-    const val GlassChrome: Float = 0.82f
-
-    /** Translucent white specular hairline border opacity for Apple dark glass (14%). */
-    const val GlassBorderSpecular: Float = 0.14f
-
-    /** Glinting hover/focus specular hairline border opacity for Apple dark glass (32%). */
-    const val GlassBorderSpecularHighlight: Float = 0.32f
-
-    /** Crisp specular rim highlight opacity (45%). */
-    const val GlassHighlightBright: Float = 0.45f
-
-    /** Deep ambient elevation shadow opacity for dark glass (45%). */
-    const val GlassShadowDeep: Float = 0.45f
 
     /** Subtle secondary accent glow tint for dark glass surfaces (8%). */
     const val GlassSecondaryTint: Float = 0.08f

@@ -140,21 +140,20 @@ private fun GlassFileTreeItem(
     modifier: Modifier = Modifier,
     isSelected: Boolean = false,
 ) {
-    val glassColors = GlassTheme.colors
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
 
     val itemShape = GlassShapes.Compact
 
     val itemBackground = when {
-        isSelected -> glassColors.glassAccent.copy(alpha = AlphaTokens.Hover)
-        isHovered -> glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Subtle)
+        isSelected -> MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Hover)
+        isHovered -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = AlphaTokens.Subtle)
         else -> Color.Transparent
     }
 
     val itemBorderColor = when {
-        isSelected -> glassColors.glassBorderHighlight.copy(alpha = AlphaTokens.Half)
-        isHovered -> glassColors.glassBorder.copy(alpha = AlphaTokens.Faint)
+        isSelected -> MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Half)
+        isHovered -> MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Faint)
         else -> Color.Transparent
     }
 
@@ -201,7 +200,7 @@ private fun GlassFileTreeItem(
                 },
                 contentDescription = null,
                 modifier = Modifier.size(IconSize.Medium),
-                tint = if (isSelected) glassColors.glassAccent else glassColors.onGlassMuted,
+                tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(modifier = Modifier.width(Spacing.ExtraSmall))
         } else {
@@ -221,9 +220,9 @@ private fun GlassFileTreeItem(
             text = node.name,
             style = MaterialTheme.typography.bodyMedium,
             color = when {
-                isSelected -> glassColors.onGlass
-                node.type == FileType.DIRECTORY -> glassColors.onGlass
-                else -> glassColors.onGlassSecondary
+                isSelected -> MaterialTheme.colorScheme.onSurface
+                node.type == FileType.DIRECTORY -> MaterialTheme.colorScheme.onSurface
+                else -> MaterialTheme.colorScheme.onSurfaceVariant
             },
             fontWeight = when {
                 isSelected -> FontWeight.SemiBold
@@ -242,7 +241,6 @@ private fun LtiFileIcon(
     fileType: FileType,
     isExpanded: Boolean = false,
 ) {
-    val glassColors = GlassTheme.colors
     val icon: AppIcon = when (fileType) {
         FileType.DIRECTORY -> if (isExpanded) {
             AppIcon.Painted(AppIcons.FolderOpenPainterResource)
@@ -254,9 +252,9 @@ private fun LtiFileIcon(
     }
 
     val tint = when (fileType) {
-        FileType.DIRECTORY -> glassColors.glassAccent
-        FileType.FILE -> glassColors.onGlassSecondary
-        FileType.SYMLINK -> glassColors.onGlassMuted
+        FileType.DIRECTORY -> MaterialTheme.colorScheme.primary
+        FileType.FILE -> MaterialTheme.colorScheme.onSurfaceVariant
+        FileType.SYMLINK -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     when (icon) {

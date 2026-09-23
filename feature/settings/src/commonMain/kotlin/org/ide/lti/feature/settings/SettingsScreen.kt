@@ -22,8 +22,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,23 +34,23 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import dev.chrisbanes.haze.ExperimentalHazeApi
+import dev.chrisbanes.haze.HazeInput
+import dev.chrisbanes.haze.glass.GlassStyle
+import dev.chrisbanes.haze.glass.hazeGlass
 import org.ide.lti.core.designsystem.component.layout.GlobalAppDestination
 import org.ide.lti.core.designsystem.component.layout.GlobalAppTopBar
 import org.ide.lti.core.designsystem.component.layout.IdeAppFrame
 import org.ide.lti.core.designsystem.component.layout.IdeNavigatorItem
 import org.ide.lti.core.designsystem.component.layout.IdeNavigatorPanel
-import org.ide.lti.core.designsystem.component.layout.IdePipelineRail
-import org.ide.lti.core.designsystem.component.layout.IdePipelineStageItem
 import org.ide.lti.core.designsystem.component.layout.IdeStatusBar
+import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
+import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.designsystem.theme.config.AppTheme
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
-import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 import org.ide.lti.core.ui.settings.AppSettingsState
 import org.ide.lti.feature.settings.components.AboutSettingsPane
 import org.ide.lti.feature.settings.components.AppearanceSettingsPane
@@ -67,7 +67,6 @@ fun SettingsScreen(
     onNavigateToWorkspace: () -> Unit = onBackClick,
     modifier: Modifier = Modifier,
     showHeader: Boolean = true,
-    backdrop: GlassSceneState? = null,
     appSettingsState: AppSettingsState = koinInject(),
 ) {
     SettingsScreenContent(
@@ -76,7 +75,6 @@ fun SettingsScreen(
         onNavigateToSetup = onNavigateToSetup,
         onNavigateToWorkspace = onNavigateToWorkspace,
         showHeader = showHeader,
-        backdrop = backdrop,
         appSettingsState = appSettingsState,
     )
 }
@@ -88,43 +86,15 @@ fun SettingsScreenContent(
     onNavigateToWorkspace: () -> Unit = onBackClick,
     modifier: Modifier = Modifier,
     showHeader: Boolean = true,
-    backdrop: GlassSceneState? = null,
     appSettingsState: AppSettingsState = koinInject(),
 ) {
     val currentTheme = AppTheme.fromId(appSettingsState.theme)
-    val isBlueGlass = currentTheme == AppTheme.Blue && appSettingsState.effectsEnabled
-    val ambientBackdrop = (backdrop as? GlassSceneState) ?: (GlassTheme.scene as? GlassSceneState)
-    val localBackdrop = rememberGlassSceneState()
-    val resolvedBackdrop = if (isBlueGlass) {
-        localBackdrop
-    } else {
-        ambientBackdrop ?: localBackdrop
-    }
 
-    LtiTheme(
-        appTheme = currentTheme,
-        effectsEnabled = appSettingsState.effectsEnabled,
-        reducedMotion = appSettingsState.reducedMotion,
-        sharedScene = resolvedBackdrop,
-    ) {
-        val colors = GlassTheme.ideShellColors
+    LtiTheme(appTheme = currentTheme) {
         val density = LocalDensity.current
         var isCompact by remember { mutableStateOf(false) }
 
         var selectedCategory by remember { mutableStateOf(SettingsCategory.EditorPreferences) }
-
-        val pipelineStages = remember {
-            listOf(
-                IdePipelineStageItem(id = "acquire", label = "Acquire", icon = "Download"),
-                IdePipelineStageItem(id = "extract", label = "Extract", icon = "Folder"),
-                IdePipelineStageItem(id = "assemble", label = "Assemble", icon = "Inventory2"),
-                IdePipelineStageItem(id = "debloat", label = "Debloat", icon = "Delete"),
-                IdePipelineStageItem(id = "patches", label = "Patches", icon = "Edit"),
-                IdePipelineStageItem(id = "build", label = "Build", icon = "Bolt"),
-                IdePipelineStageItem(id = "metadata", label = "Metadata", icon = "Description"),
-                IdePipelineStageItem(id = "publish", label = "Publish", icon = "Public"),
-            )
-        }
 
         val settingsNavItems = remember {
             listOf(
@@ -145,7 +115,7 @@ fun SettingsScreenContent(
         IdeAppFrame(
             modifier = modifier
                 .fillMaxSize()
-                .background(colors.appBackground)
+                .background(MaterialTheme.colorScheme.surface)
                 .onSizeChanged { size ->
                     val widthDp = with(density) { size.width.toDp() }
                     isCompact = widthDp < GlassDimens.CompactBreakpoint
@@ -162,17 +132,8 @@ fun SettingsScreenContent(
                                 GlobalAppDestination.Settings -> Unit
                             }
                         },
-                        colors = colors,
                     )
                 }
-            },
-            pipelineRail = {
-                IdePipelineRail(
-                    stages = pipelineStages,
-                    selectedStageId = null,
-                    onSelectStage = { _ -> onNavigateToWorkspace() },
-                    colors = colors,
-                )
             },
             navigator = {
                 IdeNavigatorPanel(
@@ -181,85 +142,66 @@ fun SettingsScreenContent(
                     items = settingsNavItems,
                     selectedItemId = selectedNavId,
                     onSelectItem = { id -> selectedCategory = navIdToCategory(id) },
-                    colors = colors,
                 )
             },
             statusBar = {
                 IdeStatusBar(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = colors,
                     leadingContent = {
                         Text(
                             text = "Settings • ${selectedCategory.title}",
                             fontSize = FontSize.LabelSmall,
-                            color = colors.textDim,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     },
                     trailingContent = {
                         Text(
                             text = "LtiRom Studio v0.9.0 • Ready",
                             fontSize = FontSize.LabelSmall,
-                            color = colors.textMuted,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     },
                 )
             },
+            rightPanel = {
+                SettingsHelpColumn(category = selectedCategory)
+            },
             content = {
-                Row(modifier = Modifier.fillMaxSize()) {
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                            .verticalScroll(rememberScrollState())
-                            .padding(
-                                horizontal = Spacing.ScreenHorizontal,
-                                vertical = Spacing.ScreenVertical,
-                            ),
-                    ) {
-                        when (selectedCategory) {
-                            SettingsCategory.EditorPreferences, SettingsCategory.Editor -> {
-                                EditorSettingsPane(colors = colors)
-                            }
-                            SettingsCategory.Appearance -> {
-                                AppearanceSettingsPane(
-                                    appSettingsState = appSettingsState,
-                                    onRestoreDefaults = {
-                                        appSettingsState.theme = AppSettingsState.THEME_BLUE
-                                        appSettingsState.effectsEnabled = true
-                                        appSettingsState.reducedMotion = false
-                                    },
-                                    onApplyChanges = {},
-                                    colors = colors,
-                                )
-                            }
-                            SettingsCategory.About -> {
-                                AboutSettingsPane(colors = colors)
-                            }
-                            SettingsCategory.Notifications -> {
-                                NotificationsSettingsPane(colors = colors)
-                            }
-                            else -> {
-                                GenericCategoryPane(
-                                    category = selectedCategory,
-                                    colors = colors,
-                                )
-                            }
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(
+                            horizontal = Spacing.ScreenHorizontal,
+                            vertical = Spacing.ScreenVertical,
+                        ),
+                ) {
+                    when (selectedCategory) {
+                        SettingsCategory.EditorPreferences, SettingsCategory.Editor -> {
+                            EditorSettingsPane()
                         }
-                    }
-
-                    if (!isCompact) {
-                        VerticalDivider(
-                            thickness = GlassDimens.HairlineBorder,
-                            color = colors.border,
-                        )
-                        SettingsHelpColumn(
-                            category = selectedCategory,
-                            colors = colors,
-                            modifier = Modifier
-                                .width(GlassDimens.WorkspaceNavigatorWidth)
-                                .fillMaxHeight()
-                                .padding(Spacing.Medium),
-                        )
+                        SettingsCategory.Appearance -> {
+                            AppearanceSettingsPane(
+                                appSettingsState = appSettingsState,
+                                onRestoreDefaults = {
+                                    appSettingsState.theme = AppSettingsState.THEME_BLUE
+                                    appSettingsState.effectsEnabled = true
+                                    appSettingsState.reducedMotion = false
+                                },
+                                onApplyChanges = {},
+                            )
+                        }
+                        SettingsCategory.About -> {
+                            AboutSettingsPane()
+                        }
+                        SettingsCategory.Notifications -> {
+                            NotificationsSettingsPane()
+                        }
+                        else -> {
+                            GenericCategoryPane(
+                                category = selectedCategory,
+                            )
+                        }
                     }
                 }
             },
@@ -267,32 +209,52 @@ fun SettingsScreenContent(
     }
 }
 
+@OptIn(ExperimentalHazeApi::class)
 @Composable
 private fun SettingsHelpColumn(
     category: SettingsCategory,
-    colors: IdeShellColorScheme,
     modifier: Modifier = Modifier,
 ) {
+    val isBlueGlass = GlassTheme.appTheme == AppTheme.Blue
+    val surfaceColor = MaterialTheme.colorScheme.surfaceContainer
+    val chromeModifier = if (isBlueGlass) {
+        Modifier.hazeGlass(
+            input = HazeInput.Backdrop(GlassTheme.hazeState),
+            style = remember(surfaceColor) {
+                GlassStyle.regular.then {
+                    shape(GlassShapes.HazeFlat)
+                    backgroundColor(surfaceColor)
+                }
+            },
+        )
+    } else {
+        Modifier.background(surfaceColor)
+    }
+
     Column(
-        modifier = modifier.verticalScroll(rememberScrollState()),
+        modifier = modifier
+            .fillMaxHeight()
+            .then(chromeModifier)
+            .verticalScroll(rememberScrollState())
+            .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
         Text(
             text = "About these settings",
             fontSize = FontSize.TitleSmall,
             fontWeight = FontWeight.SemiBold,
-            color = colors.textMain,
+            color = MaterialTheme.colorScheme.onSurface,
         )
 
         Text(
             text = category.subtitle,
             fontSize = FontSize.BodySmall,
-            color = colors.textDim,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
         HorizontalDivider(
             thickness = GlassDimens.HairlineBorder,
-            color = colors.border,
+            color = MaterialTheme.colorScheme.outline,
         )
 
         Column(
@@ -302,12 +264,12 @@ private fun SettingsHelpColumn(
                 text = "Preferences storage",
                 fontSize = FontSize.LabelSmall,
                 fontWeight = FontWeight.Medium,
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = "Studio settings are synchronized across workspaces and persisted locally.",
                 fontSize = FontSize.LabelSmall,
-                color = colors.textMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
@@ -318,12 +280,12 @@ private fun SettingsHelpColumn(
                 text = "Quick navigation",
                 fontSize = FontSize.LabelSmall,
                 fontWeight = FontWeight.Medium,
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = "Use Ctrl+, to open settings or Ctrl+K to search files and studio actions.",
                 fontSize = FontSize.LabelSmall,
-                color = colors.textMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

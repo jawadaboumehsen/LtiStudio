@@ -42,8 +42,6 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.PluginThemeColors
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
-import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 import org.ide.lti.core.domain.plugin.key
 import org.ide.lti.feature.plugins.components.PluginSidebar
 import org.koin.compose.viewmodel.koinViewModel
@@ -56,7 +54,6 @@ public fun PluginManagerScreen(
     onNavigateBack: () -> Unit = {},
     onNavigateToSetup: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
-    backdrop: GlassSceneState? = null,
     modifier: Modifier = Modifier,
     viewModel: PluginManagerViewModel = koinViewModel(),
 ) {
@@ -114,7 +111,6 @@ public fun PluginManagerScreen(
         state = uiState,
         actions = actions,
         onNavigateToSetup = onNavigateToSetup,
-        backdrop = backdrop,
         modifier = modifier,
     )
 }
@@ -124,36 +120,24 @@ public fun PluginManagerContent(
     state: PluginManagerUiState,
     actions: PluginManagerActions = PluginManagerActions(),
     onNavigateToSetup: () -> Unit = {},
-    backdrop: GlassSceneState? = null,
     modifier: Modifier = Modifier,
 ) {
-    // Prefer an explicitly passed or ambient backdrop so this screen doesn't allocate a
-    // redundant GlassSceneState when one is already available; falls back to a fresh one for
-    // isolated preview/test usage. Unlike IdeAppFrame, this screen always paints its own
-    // StudioGlassBackdrop canvas below regardless of which backdrop it resolved to - an
-    // ambient backdrop from LtiTheme's own internal fallback (LtiTheme always provides one,
-    // painted or not) is not a reliable signal that something else already painted it, and
-    // skipping the paint here left large areas of this screen sampling an empty backdrop.
-    val resolvedBackdrop = (backdrop as? GlassSceneState)
-        ?: (GlassTheme.scene as? GlassSceneState)
-        ?: rememberGlassSceneState()
-    val glassColors = GlassTheme.colors
     val onSelectGlobalDestination = remember(onNavigateToSetup, actions) {
         { destination: GlobalAppDestination -> resolveGlobalDestination(destination, onNavigateToSetup, actions) }
     }
 
-    CompositionLocalProvider(LocalContentColor provides glassColors.onGlass) {
+    CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
         Box(
             modifier = modifier
                 .fillMaxSize()
                 .clip(GlassShapes.Panel)
                 .glassOutlineBorder(
                     width = StrokeWidth.Hairline,
-                    color = glassColors.glassBorder,
+                    color = MaterialTheme.colorScheme.outline,
                     shape = GlassShapes.Panel,
                 ),
         ) {
-            StudioGlassBackdrop(backdrop = resolvedBackdrop)
+            StudioGlassBackdrop()
 
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -297,7 +281,6 @@ private fun resolveGlobalDestination(
 
 @Composable
 private fun PluginStatusBanner(message: String, isError: Boolean, onDismiss: () -> Unit) {
-    val glassColors = GlassTheme.colors
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -318,7 +301,7 @@ private fun PluginStatusBanner(message: String, isError: Boolean, onDismiss: () 
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodySmall,
-                color = if (isError) glassColors.diagnostics.error else glassColors.diagnostics.success,
+                color = if (isError) GlassTheme.diagnosticColors.error else GlassTheme.diagnosticColors.success,
             )
             GlassButton(onClick = onDismiss, variant = GlassButtonVariant.Text) {
                 Text("Dismiss")

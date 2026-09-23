@@ -17,6 +17,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -73,19 +74,20 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import org.ide.lti.core.designsystem.component.primitives.glass
+import dev.chrisbanes.haze.ExperimentalHazeApi
+import dev.chrisbanes.haze.HazeInput
+import dev.chrisbanes.haze.glass.GlassStyle
+import dev.chrisbanes.haze.glass.hazeGlass
 import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.LetterSpacing
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.designsystem.theme.config.AppTheme
-import org.ide.lti.core.designsystem.theme.glass.GlassStyles
 
 @Immutable
 data class IdeNavigatorItem(
@@ -99,6 +101,7 @@ data class IdeNavigatorItem(
 /**
  * 230 dp wide workspace navigator with section items and a contextual footer.
  */
+@OptIn(ExperimentalHazeApi::class)
 @Composable
 fun IdeNavigatorPanel(
     headerTitle: String,
@@ -107,18 +110,30 @@ fun IdeNavigatorPanel(
     selectedItemId: String?,
     onSelectItem: (String) -> Unit,
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
     footerContent: (@Composable () -> Unit)? = null,
 ) {
     // Real glass chrome only for the Blue theme - see IdeTopAppBar.
-    val isBlueGlass = GlassTheme.appTheme == AppTheme.Blue && GlassTheme.effectsEnabled
-    val style = GlassStyles.navigator.then { copy(surface = colors.navigatorBackground) }
+    val isBlueGlass = GlassTheme.appTheme == AppTheme.Blue
+    val surfaceColor = MaterialTheme.colorScheme.surfaceContainer
+    val chromeModifier = if (isBlueGlass) {
+        Modifier.hazeGlass(
+            input = HazeInput.Backdrop(GlassTheme.hazeState),
+            style = remember(surfaceColor) {
+                GlassStyle.regular.then {
+                    shape(GlassShapes.HazeFlat)
+                    backgroundColor(surfaceColor)
+                }
+            },
+        )
+    } else {
+        Modifier.background(surfaceColor)
+    }
 
     Column(
         modifier = modifier
             .width(GlassDimens.WorkspaceNavigatorWidth)
             .fillMaxHeight()
-            .glass(style, enabled = isBlueGlass)
+            .then(chromeModifier)
             .padding(vertical = Spacing.Small),
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
@@ -133,7 +148,7 @@ fun IdeNavigatorPanel(
             ) {
                 Text(
                     text = headerTitle,
-                    color = colors.textDim,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.Micro,
                     fontWeight = FontWeight.SemiBold,
                     fontFamily = GlassFontFamily.code(),
@@ -143,17 +158,17 @@ fun IdeNavigatorPanel(
                     Box(
                         modifier = Modifier
                             .clip(GlassShapes.ShellBadge)
-                            .background(colors.cardBackgroundMuted)
+                            .background(MaterialTheme.colorScheme.surfaceContainer)
                             .border(
                                 width = GlassDimens.HairlineBorder,
-                                color = colors.border,
+                                color = MaterialTheme.colorScheme.outline,
                                 shape = GlassShapes.ShellBadge,
                             )
                             .padding(horizontal = Spacing.ExtraSmall, vertical = Spacing.Hairline),
                     ) {
                         Text(
                             text = headerSubtitle,
-                            color = colors.textDim,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = FontSize.Micro,
                             fontFamily = GlassFontFamily.code(),
                         )
@@ -169,7 +184,6 @@ fun IdeNavigatorPanel(
                     item = item,
                     isSelected = item.id == selectedItemId,
                     onSelectItem = onSelectItem,
-                    colors = colors,
                 )
             }
         }
@@ -179,7 +193,7 @@ fun IdeNavigatorPanel(
             Column(modifier = Modifier.fillMaxWidth()) {
                 HorizontalDivider(
                     thickness = GlassDimens.HairlineBorder,
-                    color = colors.borderMuted,
+                    color = MaterialTheme.colorScheme.outlineVariant,
                 )
                 Box(modifier = Modifier.fillMaxWidth().padding(Spacing.Small)) {
                     footerContent()
@@ -194,7 +208,6 @@ private fun NavigatorItemRow(
     item: IdeNavigatorItem,
     isSelected: Boolean,
     onSelectItem: (String) -> Unit,
-    colors: IdeShellColorScheme,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
@@ -202,17 +215,17 @@ private fun NavigatorItemRow(
 
     val bg = when {
         !item.enabled -> Color.Transparent
-        isSelected -> colors.accentBlue
-        isPressed -> colors.controlHover
-        isHovered -> colors.controlHover.copy(alpha = AlphaTokens.Prominent)
+        isSelected -> MaterialTheme.colorScheme.primary
+        isPressed -> MaterialTheme.colorScheme.surfaceContainerHigh
+        isHovered -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = AlphaTokens.Prominent)
         else -> Color.Transparent
     }
 
     val contentColor = when {
-        !item.enabled -> colors.textDim.copy(alpha = AlphaTokens.Disabled)
-        isSelected -> colors.textMain
-        isHovered -> colors.textMain
-        else -> colors.textMuted
+        !item.enabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = AlphaTokens.Disabled)
+        isSelected -> MaterialTheme.colorScheme.onSurface
+        isHovered -> MaterialTheme.colorScheme.onSurface
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     Row(
@@ -262,7 +275,7 @@ private fun NavigatorItemRow(
         if (item.badge != null) {
             Text(
                 text = item.badge,
-                color = if (isSelected) colors.textMain else colors.textDim,
+                color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = GlassFontFamily.code(),
             )

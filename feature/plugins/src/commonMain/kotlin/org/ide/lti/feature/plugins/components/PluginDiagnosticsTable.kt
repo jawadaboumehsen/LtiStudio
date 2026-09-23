@@ -49,7 +49,6 @@ import org.ide.lti.core.domain.plugin.AuthorDiagnostic
  */
 @Composable
 public fun PluginDiagnosticsTable(diagnostics: List<AuthorDiagnostic>, modifier: Modifier = Modifier) {
-    val glassColors = GlassTheme.colors
 
     Column(
         modifier = modifier
@@ -82,7 +81,6 @@ public fun PluginDiagnosticsTable(diagnostics: List<AuthorDiagnostic>, modifier:
 
 @Composable
 private fun DiagnosticTableHeader(modifier: Modifier = Modifier) {
-    val glassColors = GlassTheme.colors
 
     Row(
         modifier = modifier
@@ -95,35 +93,35 @@ private fun DiagnosticTableHeader(modifier: Modifier = Modifier) {
             text = "#",
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold,
-            color = glassColors.onGlassMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.width(ComponentSize.PluginDiagnosticsTableColIndex),
         )
         Text(
             text = "Severity",
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold,
-            color = glassColors.onGlassMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.width(ComponentSize.PluginDiagnosticsTableColSeverity),
         )
         Text(
             text = "File",
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold,
-            color = glassColors.onGlassMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.width(ComponentSize.PluginDiagnosticsTableColFile),
         )
         Text(
             text = "Message",
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold,
-            color = glassColors.onGlassMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.weight(2f),
         )
         Text(
             text = "Code",
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold,
-            color = glassColors.onGlassMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.width(ComponentSize.PluginDiagnosticsTableColTime),
         )
     }
@@ -131,7 +129,6 @@ private fun DiagnosticTableHeader(modifier: Modifier = Modifier) {
 
 @Composable
 private fun DiagnosticEmptyState(modifier: Modifier = Modifier) {
-    val glassColors = GlassTheme.colors
 
     Row(
         modifier = modifier
@@ -143,25 +140,25 @@ private fun DiagnosticEmptyState(modifier: Modifier = Modifier) {
         Text(
             text = "No diagnostic errors or warnings emitted.",
             style = MaterialTheme.typography.bodySmall,
-            color = glassColors.onGlassSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
 
 @Composable
 private fun DiagnosticTableRow(idx: Int, diag: AuthorDiagnostic, modifier: Modifier = Modifier) {
-    val glassColors = GlassTheme.colors
     val isError = diag.severity.equals("error", ignoreCase = true)
     val isWarn = diag.severity.equals("warning", ignoreCase = true)
     val sevColor = when {
-        isError -> glassColors.diagnostics.error
-        isWarn -> glassColors.diagnostics.warning
-        else -> glassColors.diagnostics.info
+        isError -> GlassTheme.diagnosticColors.error
+        isWarn -> GlassTheme.diagnosticColors.warning
+        else -> GlassTheme.diagnosticColors.info
     }
 
+    val dividerColor = MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Faint)
     val borderModifier = Modifier.drawBehind {
         drawLine(
-            color = glassColors.glassBorder.copy(alpha = AlphaTokens.Faint),
+            color = dividerColor,
             start = Offset(0f, size.height),
             end = Offset(size.width, size.height),
             strokeWidth = StrokeWidth.Hairline.toPx(),
@@ -179,7 +176,7 @@ private fun DiagnosticTableRow(idx: Int, diag: AuthorDiagnostic, modifier: Modif
             text = (idx + 1).toString(),
             style = MaterialTheme.typography.bodySmall,
             fontFamily = codeFontFamily(),
-            color = glassColors.onGlassMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.width(ComponentSize.PluginDiagnosticsTableColIndex),
         )
 
@@ -212,7 +209,7 @@ private fun DiagnosticTableRow(idx: Int, diag: AuthorDiagnostic, modifier: Modif
             text = diag.file ?: "-",
             style = MaterialTheme.typography.bodySmall,
             fontFamily = codeFontFamily(),
-            color = glassColors.onGlassSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             softWrap = false,
             overflow = TextOverflow.Ellipsis,
@@ -222,7 +219,7 @@ private fun DiagnosticTableRow(idx: Int, diag: AuthorDiagnostic, modifier: Modif
         Text(
             text = diag.message,
             style = MaterialTheme.typography.bodySmall,
-            color = glassColors.onGlass,
+            color = MaterialTheme.colorScheme.onSurface,
             maxLines = 2,
             softWrap = false,
             overflow = TextOverflow.Ellipsis,
@@ -233,7 +230,7 @@ private fun DiagnosticTableRow(idx: Int, diag: AuthorDiagnostic, modifier: Modif
             text = diag.code.ifBlank { "—" },
             style = MaterialTheme.typography.bodySmall,
             fontFamily = codeFontFamily(),
-            color = glassColors.onGlassMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             softWrap = false,
             overflow = TextOverflow.Ellipsis,

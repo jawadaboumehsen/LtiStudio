@@ -9,41 +9,60 @@
  */
 package org.ide.lti.core.designsystem.component.display
 
+import androidx.compose.foundation.background
+import org.ide.lti.core.designsystem.theme.HazeShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.Dp
-import org.ide.lti.core.designsystem.component.primitives.glass
+import dev.chrisbanes.haze.ExperimentalHazeApi
+import dev.chrisbanes.haze.HazeInput
+import dev.chrisbanes.haze.glass.GlassStyle
+import dev.chrisbanes.haze.glass.hazeGlass
+import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
+import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.config.AppTheme
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
-import org.ide.lti.core.designsystem.theme.glass.GlassStyles
 
 /**
- * Surface styling modifier for cards hosted within the IDE workspace shell.
+ * Surface styling modifier for cards hosted within the IDE workspace shell - built on Haze's
+ * real `Modifier.hazeGlass`.
  *
- * When [AppTheme.Blue] is active with effects enabled, applies the liquid glass effect
- * stack with backdrop blur, lens refraction, specular highlights, and card elevation shadow.
- * In [AppTheme.Dark] and [AppTheme.Light], renders the opaque design system surface background
- * and hairline border.
+ * When [AppTheme.Blue] is active, applies the real glass material. In [AppTheme.Dark] and
+ * [AppTheme.Light], renders the opaque design system surface background and hairline border only
+ * (matching the rest of the shell chrome, which stays flat outside Blue).
  */
+@OptIn(ExperimentalHazeApi::class)
 @Composable
 fun Modifier.ideCardSurface(
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
-    shape: Shape = GlassShapes.ShellCard,
+    shape: HazeShape = GlassShapes.HazeCard,
     borderWidth: Dp = GlassDimens.HairlineBorder,
     isMuted: Boolean = false,
-    backdrop: GlassSceneState? = null,
 ): Modifier {
-    val isBlueGlass = GlassTheme.appTheme == AppTheme.Blue && GlassTheme.effectsEnabled
-    val surfaceColor = if (isMuted) colors.cardBackgroundMuted else colors.cardBackground
-    val borderColor = if (isMuted) colors.borderMuted else colors.border
-    val style = GlassStyles.card.then {
-        copy(shape = shape, surface = surfaceColor, border = borderColor, borderWidth = borderWidth)
-    }
+    val isBlueGlass = GlassTheme.appTheme == AppTheme.Blue
+    val colors = MaterialTheme.colorScheme
+    val surfaceColor = if (isMuted) colors.surfaceContainer else colors.surfaceContainerHigh
+    val borderColor = if (isMuted) colors.outlineVariant else colors.outline
 
-    return this.glass(style, enabled = isBlueGlass, backdrop = backdrop)
+    return this
+        .clip(shape)
+        .then(
+            if (isBlueGlass) {
+                Modifier.hazeGlass(
+                    input = HazeInput.Backdrop(GlassTheme.hazeState),
+                    style = remember(shape, surfaceColor) {
+                        GlassStyle.regular.then {
+                            this.shape(shape)
+                            backgroundColor(surfaceColor)
+                        }
+                    },
+                )
+            } else {
+                Modifier.background(surfaceColor)
+            },
+        )
+        .glassOutlineBorder(color = borderColor, width = borderWidth, shape = shape)
 }

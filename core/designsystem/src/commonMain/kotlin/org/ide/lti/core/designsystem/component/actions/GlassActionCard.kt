@@ -51,8 +51,6 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
-import org.ide.lti.core.designsystem.theme.resolveAnimationSpec
 
 /**
  * Standardized Liquid Glass Vertical Action Card (e.g. for Setup, Welcome, Dashboard screens).
@@ -76,59 +74,49 @@ fun GlassActionCard(
     modifier: Modifier = Modifier,
     isPrimary: Boolean = false,
     shortcut: String? = null,
-    backdrop: GlassSceneState? = null,
 ) {
     var isHovered by remember { mutableStateOf(false) }
-    val glassColors = GlassTheme.colors
 
     val targetBorder = when {
-        isPrimary && isHovered -> glassColors.glassBorderHighlight.copy(alpha = AlphaTokens.Prominent)
-        isPrimary -> glassColors.glassAccent.copy(alpha = AlphaTokens.Border)
-        isHovered -> glassColors.glassBorderHighlight
-        else -> glassColors.glassBorder
+        isPrimary && isHovered -> MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Prominent)
+        isPrimary -> MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Border)
+        isHovered -> MaterialTheme.colorScheme.primary
+        else -> MaterialTheme.colorScheme.outline
     }
 
     val targetSurface = when {
-        isHovered -> glassColors.glassSurfaceElevated
-        isPrimary -> glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Subtle)
-        else -> glassColors.glassSurface
+        isHovered -> MaterialTheme.colorScheme.surfaceContainerHigh
+        isPrimary -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = AlphaTokens.Subtle)
+        else -> MaterialTheme.colorScheme.surfaceContainer
     }
 
-    val borderColor by animateColorAsState(
-        targetValue = targetBorder,
-        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion),
-    )
-
-    val surfaceColor by animateColorAsState(
-        targetValue = targetSurface,
-        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion),
-    )
+    val borderColor by animateColorAsState(targetBorder)
+    val surfaceColor by animateColorAsState(targetSurface)
 
     GlassCard(
         modifier = modifier
             .height(ComponentSize.ActionCardHeight)
             .onPointerEvent(PointerEventType.Enter) { isHovered = true }
             .onPointerEvent(PointerEventType.Exit) { isHovered = false }
+            .glassOutlineBorder(color = borderColor, width = StrokeWidth.Hairline, shape = GlassShapes.ShellCard)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 role = Role.Button,
                 onClick = onClick,
             ),
-        shape = GlassShapes.Card,
+        shape = GlassShapes.ShellCard,
         surfaceColor = surfaceColor,
-        borderColor = borderColor,
         contentPadding = Spacing.Medium,
-        backdrop = backdrop,
     ) {
         Column(verticalArrangement = Arrangement.Center) {
             Box(
                 modifier = Modifier
                     .size(IconSize.ActionCard)
                     .clip(GlassShapes.Capsule)
-                    .background(glassColors.glassSurfaceElevated.copy(alpha = AlphaTokens.Faint))
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = AlphaTokens.Faint))
                     .glassOutlineBorder(
-                        color = if (isPrimary || isHovered) glassColors.glassBorderHighlight else glassColors.glassBorder,
+                        color = if (isPrimary || isHovered) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
                         width = StrokeWidth.Hairline,
                         shape = GlassShapes.Capsule,
                     ),
@@ -139,13 +127,13 @@ fun GlassActionCard(
                         imageVector = icon.imageVector,
                         contentDescription = title,
                         modifier = Modifier.size(IconSize.Medium),
-                        tint = if (isPrimary || isHovered) glassColors.glassAccent else glassColors.onGlassSecondary,
+                        tint = if (isPrimary || isHovered) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     is AppIcon.Painted -> Icon(
                         painter = icon.painter(),
                         contentDescription = title,
                         modifier = Modifier.size(IconSize.Medium),
-                        tint = if (isPrimary || isHovered) glassColors.glassAccent else glassColors.onGlassSecondary,
+                        tint = if (isPrimary || isHovered) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -154,7 +142,7 @@ fun GlassActionCard(
                 text = title,
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
-                color = glassColors.onGlass,
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 softWrap = false,
                 overflow = TextOverflow.Ellipsis,
@@ -163,7 +151,7 @@ fun GlassActionCard(
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.bodySmall,
-                color = glassColors.onGlassSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 softWrap = false,
                 overflow = TextOverflow.Ellipsis,
@@ -173,7 +161,7 @@ fun GlassActionCard(
                 Text(
                     text = shortcut,
                     style = MaterialTheme.typography.labelSmall,
-                    color = glassColors.onGlassMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     softWrap = false,
                     overflow = TextOverflow.Ellipsis,
@@ -195,7 +183,6 @@ fun GlassActionCard(
     modifier: Modifier = Modifier,
     isPrimary: Boolean = false,
     shortcut: String? = null,
-    backdrop: GlassSceneState? = null,
 ) = GlassActionCard(
     title = title,
     subtitle = subtitle,
@@ -204,7 +191,6 @@ fun GlassActionCard(
     modifier = modifier,
     isPrimary = isPrimary,
     shortcut = shortcut,
-    backdrop = backdrop,
 )
 
 /**
@@ -217,7 +203,6 @@ fun GlassActionCard(
  * @param modifier Optional modifier.
  * @param isHighlighted Whether the card is highlighted (e.g. unread notification or active project).
  * @param trailingContent Optional trailing composable slot (e.g. timestamp, chevron, or action button).
- * @param backdrop Optional backdrop instance.
  */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -229,26 +214,19 @@ fun GlassItemCard(
     onClick: (() -> Unit)? = null,
     isHighlighted: Boolean = false,
     trailingContent: (@Composable () -> Unit)? = null,
-    backdrop: GlassSceneState? = null,
 ) {
     var isHovered by remember { mutableStateOf(false) }
-    val glassColors = GlassTheme.colors
 
     val targetBorder = when {
-        isHighlighted && isHovered -> glassColors.glassBorderHighlight.copy(alpha = AlphaTokens.Prominent)
-        isHighlighted -> glassColors.glassBorderHighlight
-        isHovered -> glassColors.glassBorderHighlight
-        else -> glassColors.glassBorder
+        isHighlighted && isHovered -> MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Prominent)
+        isHighlighted -> MaterialTheme.colorScheme.primary
+        isHovered -> MaterialTheme.colorScheme.primary
+        else -> MaterialTheme.colorScheme.outline
     }
 
-    val borderColor by animateColorAsState(
-        targetValue = targetBorder,
-        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion),
-    )
-
+    val borderColor by animateColorAsState(targetBorder)
     val surfaceColor by animateColorAsState(
-        targetValue = if (isHovered) glassColors.glassSurfaceElevated else glassColors.glassSurface,
-        animationSpec = resolveAnimationSpec(GlassTheme.reducedMotion),
+        if (isHovered) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.surfaceContainer,
     )
 
     val clickableModifier = if (onClick != null) {
@@ -267,12 +245,11 @@ fun GlassItemCard(
             .fillMaxWidth()
             .onPointerEvent(PointerEventType.Enter) { isHovered = true }
             .onPointerEvent(PointerEventType.Exit) { isHovered = false }
+            .glassOutlineBorder(color = borderColor, width = StrokeWidth.Hairline, shape = GlassShapes.ShellCard)
             .then(clickableModifier),
-        shape = GlassShapes.Card,
+        shape = GlassShapes.ShellCard,
         surfaceColor = surfaceColor,
-        borderColor = borderColor,
         contentPadding = Spacing.Medium,
-        backdrop = backdrop,
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -283,9 +260,9 @@ fun GlassItemCard(
                     modifier = Modifier
                         .size(ComponentSize.TopBarButtonSize)
                         .clip(GlassShapes.Capsule)
-                        .background(glassColors.glassSurfaceElevated)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                         .glassOutlineBorder(
-                            color = if (isHighlighted || isHovered) glassColors.glassBorderHighlight else glassColors.glassBorder,
+                            color = if (isHighlighted || isHovered) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
                             width = StrokeWidth.Hairline,
                             shape = GlassShapes.Capsule,
                         ),
@@ -296,13 +273,13 @@ fun GlassItemCard(
                             imageVector = icon.imageVector,
                             contentDescription = null,
                             modifier = Modifier.size(IconSize.Medium),
-                            tint = if (isHighlighted) glassColors.glassAccent else glassColors.onGlassSecondary,
+                            tint = if (isHighlighted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         is AppIcon.Painted -> Icon(
                             painter = icon.painter(),
                             contentDescription = null,
                             modifier = Modifier.size(IconSize.Medium),
-                            tint = if (isHighlighted) glassColors.glassAccent else glassColors.onGlassSecondary,
+                            tint = if (isHighlighted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
@@ -314,7 +291,7 @@ fun GlassItemCard(
                     text = title,
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = if (isHighlighted) FontWeight.Bold else FontWeight.SemiBold,
-                    color = glassColors.onGlass,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     softWrap = false,
                     overflow = TextOverflow.Ellipsis,
@@ -323,7 +300,7 @@ fun GlassItemCard(
                     Text(
                         text = subtitle,
                         style = MaterialTheme.typography.bodySmall,
-                        color = glassColors.onGlassSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         softWrap = false,
                         overflow = TextOverflow.Ellipsis,
@@ -337,7 +314,7 @@ fun GlassItemCard(
                 Icon(
                     painter = AppIcons.ChevronRightPainterResource(),
                     contentDescription = null,
-                    tint = if (isHovered) glassColors.onGlass else glassColors.onGlassMuted,
+                    tint = if (isHovered) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(IconSize.Medium),
                 )
             }

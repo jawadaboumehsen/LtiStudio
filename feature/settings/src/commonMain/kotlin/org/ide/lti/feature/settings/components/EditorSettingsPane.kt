@@ -42,6 +42,7 @@ import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -63,7 +64,6 @@ import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 
@@ -83,7 +83,6 @@ import org.ide.lti.core.designsystem.theme.codeFontFamily
 @Composable
 fun EditorSettingsPane(
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     var selectedEncoding by remember { mutableStateOf("UTF-8") }
     var selectedEol by remember { mutableStateOf("LF (Unix)") }
@@ -98,11 +97,11 @@ fun EditorSettingsPane(
 
     var draftRecoveryEnabled by remember { mutableStateOf(true) }
 
-    val cardBg = colors.cardBackground
-    val cardBorder = colors.border
-    val textPrimary = colors.textMain
-    val textMuted = colors.textMuted
-    val textDim = colors.textDim
+    val cardBg = MaterialTheme.colorScheme.surfaceContainerHigh
+    val cardBorder = MaterialTheme.colorScheme.outline
+    val textPrimary = MaterialTheme.colorScheme.onSurface
+    val textMuted = MaterialTheme.colorScheme.onSurfaceVariant
+    val textDim = MaterialTheme.colorScheme.onSurfaceVariant
 
     Column(
         modifier = modifier.fillMaxWidth().testTag("EditorSettingsPane"),
@@ -134,7 +133,6 @@ fun EditorSettingsPane(
             cardBorder = cardBorder,
             textPrimary = textPrimary,
             textMuted = textMuted,
-            colors = colors,
         )
 
         EditorAppearanceCard(
@@ -152,7 +150,6 @@ fun EditorSettingsPane(
             cardBorder = cardBorder,
             textPrimary = textPrimary,
             textMuted = textMuted,
-            colors = colors,
         )
 
         KeyboardShortcutsCard(
@@ -160,7 +157,6 @@ fun EditorSettingsPane(
             cardBorder = cardBorder,
             textPrimary = textPrimary,
             textMuted = textMuted,
-            colors = colors,
         )
 
         DraftRecoveryCard(
@@ -170,7 +166,6 @@ fun EditorSettingsPane(
             cardBorder = cardBorder,
             textPrimary = textPrimary,
             textMuted = textMuted,
-            colors = colors,
         )
 
         EditorStatusBar(
@@ -289,12 +284,10 @@ private fun GeneralSettingsCard(
     cardBorder: Color,
     textPrimary: Color,
     textMuted: Color,
-    colors: IdeShellColorScheme,
 ) {
     GlassCard(
         modifier = Modifier.fillMaxWidth(),
         surfaceColor = cardBg,
-        borderColor = cardBorder,
         contentPadding = Spacing.CardPadding,
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
@@ -315,7 +308,6 @@ private fun GeneralSettingsCard(
                 onSelect = onSelectEncoding,
                 textPrimary = textPrimary,
                 textMuted = textMuted,
-                colors = colors,
             )
 
             EditorDropdownRow(
@@ -327,7 +319,6 @@ private fun GeneralSettingsCard(
                 onSelect = onSelectEol,
                 textPrimary = textPrimary,
                 textMuted = textMuted,
-                colors = colors,
             )
 
             EditorToggleRow(
@@ -338,7 +329,6 @@ private fun GeneralSettingsCard(
                 onCheckedChange = onToggleTrimWhitespace,
                 textPrimary = textPrimary,
                 textMuted = textMuted,
-                colors = colors,
             )
 
             EditorToggleRow(
@@ -349,7 +339,6 @@ private fun GeneralSettingsCard(
                 onCheckedChange = onToggleEnsureNewline,
                 textPrimary = textPrimary,
                 textMuted = textMuted,
-                colors = colors,
             )
         }
     }
@@ -371,12 +360,10 @@ private fun EditorAppearanceCard(
     cardBorder: Color,
     textPrimary: Color,
     textMuted: Color,
-    colors: IdeShellColorScheme,
 ) {
     GlassCard(
         modifier = Modifier.fillMaxWidth(),
         surfaceColor = cardBg,
-        borderColor = cardBorder,
         contentPadding = Spacing.CardPadding,
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
@@ -393,7 +380,6 @@ private fun EditorAppearanceCard(
                 onTextScaleChange = onTextScaleChange,
                 textPrimary = textPrimary,
                 textMuted = textMuted,
-                colors = colors,
             )
 
             EditorDropdownRow(
@@ -405,7 +391,6 @@ private fun EditorAppearanceCard(
                 onSelect = onSelectDensity,
                 textPrimary = textPrimary,
                 textMuted = textMuted,
-                colors = colors,
             )
 
             EditorToggleRow(
@@ -416,7 +401,6 @@ private fun EditorAppearanceCard(
                 onCheckedChange = onToggleFocusIndicator,
                 textPrimary = textPrimary,
                 textMuted = textMuted,
-                colors = colors,
             )
 
             EditorToggleRow(
@@ -427,7 +411,6 @@ private fun EditorAppearanceCard(
                 onCheckedChange = onToggleLineNumbers,
                 textPrimary = textPrimary,
                 textMuted = textMuted,
-                colors = colors,
             )
 
             EditorToggleRow(
@@ -438,7 +421,6 @@ private fun EditorAppearanceCard(
                 onCheckedChange = onToggleIndentGuides,
                 textPrimary = textPrimary,
                 textMuted = textMuted,
-                colors = colors,
             )
         }
     }
@@ -450,7 +432,6 @@ private fun TextScaleStepperRow(
     onTextScaleChange: (Int) -> Unit,
     textPrimary: Color,
     textMuted: Color,
-    colors: IdeShellColorScheme,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -490,10 +471,10 @@ private fun TextScaleStepperRow(
             Row(
                 modifier = Modifier
                     .clip(GlassShapes.Small)
-                    .background(colors.buttonSecondaryBackground)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                     .border(
                         width = GlassDimens.HairlineBorder,
-                        color = colors.buttonSecondaryBorder,
+                        color = MaterialTheme.colorScheme.outline,
                         shape = GlassShapes.Small,
                     )
                     .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),
@@ -536,10 +517,10 @@ private fun TextScaleStepperRow(
             Box(
                 modifier = Modifier
                     .clip(GlassShapes.Small)
-                    .background(colors.buttonSecondaryBackground)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                     .border(
                         width = GlassDimens.HairlineBorder,
-                        color = colors.buttonSecondaryBorder,
+                        color = MaterialTheme.colorScheme.outline,
                         shape = GlassShapes.Small,
                     )
                     .clickable { onTextScaleChange(100) }
@@ -563,12 +544,10 @@ private fun KeyboardShortcutsCard(
     cardBorder: Color,
     textPrimary: Color,
     textMuted: Color,
-    colors: IdeShellColorScheme,
 ) {
     GlassCard(
         modifier = Modifier.fillMaxWidth(),
         surfaceColor = cardBg,
-        borderColor = cardBorder,
         contentPadding = Spacing.CardPadding,
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
@@ -597,19 +576,16 @@ private fun KeyboardShortcutsCard(
                             label = "Find",
                             keys = listOf("Ctrl", "+", "F"),
                             textPrimary = textPrimary,
-                            colors = colors,
                         )
                         ShortcutItem(
                             label = "Find next",
                             keys = listOf("F3"),
                             textPrimary = textPrimary,
-                            colors = colors,
                         )
                         ShortcutItem(
                             label = "Find previous",
                             keys = listOf("Shift", "+", "F3"),
                             textPrimary = textPrimary,
-                            colors = colors,
                         )
                     }
 
@@ -621,19 +597,16 @@ private fun KeyboardShortcutsCard(
                             label = "Go to line",
                             keys = listOf("Ctrl", "+", "G"),
                             textPrimary = textPrimary,
-                            colors = colors,
                         )
                         ShortcutItem(
                             label = "Toggle comment",
                             keys = listOf("Ctrl", "+", "/"),
                             textPrimary = textPrimary,
-                            colors = colors,
                         )
                         ShortcutItem(
                             label = "Format document",
                             keys = listOf("Ctrl", "+", "Shift", "+", "F"),
                             textPrimary = textPrimary,
-                            colors = colors,
                         )
                     }
                 }
@@ -643,10 +616,10 @@ private fun KeyboardShortcutsCard(
                 Row(
                     modifier = Modifier
                         .clip(GlassShapes.Small)
-                        .background(colors.buttonSecondaryBackground)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                         .border(
                             width = GlassDimens.HairlineBorder,
-                            color = colors.buttonSecondaryBorder,
+                            color = MaterialTheme.colorScheme.outline,
                             shape = GlassShapes.Small,
                         )
                         .clickable { /* open shortcuts list */ }
@@ -680,12 +653,10 @@ private fun DraftRecoveryCard(
     cardBorder: Color,
     textPrimary: Color,
     textMuted: Color,
-    colors: IdeShellColorScheme,
 ) {
     GlassCard(
         modifier = Modifier.fillMaxWidth(),
         surfaceColor = cardBg,
-        borderColor = cardBorder,
         contentPadding = Spacing.CardPadding,
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
@@ -740,7 +711,7 @@ private fun DraftRecoveryCard(
                         GlassToggle(
                             checked = draftRecoveryEnabled,
                             onCheckedChange = onToggleDraftRecovery,
-                            activeColor = colors.switchActiveTrack,
+                            activeColor = MaterialTheme.colorScheme.primary,
                         )
                         Text(
                             text = if (draftRecoveryEnabled) "Enabled" else "Disabled",
@@ -755,10 +726,10 @@ private fun DraftRecoveryCard(
                     modifier = Modifier
                         .weight(0.9f)
                         .clip(GlassShapes.Card)
-                        .background(colors.cardCalloutBackground)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                         .border(
                             width = GlassDimens.HairlineBorder,
-                            color = colors.cardCalloutBorder,
+                            color = MaterialTheme.colorScheme.outline,
                             shape = GlassShapes.Card,
                         )
                         .padding(Spacing.Medium),
@@ -768,7 +739,7 @@ private fun DraftRecoveryCard(
                     Icon(
                         imageVector = Icons.Default.Info,
                         contentDescription = null,
-                        tint = colors.accentBlue,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(IconSize.Large),
                     )
                     Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
@@ -794,7 +765,6 @@ private fun DraftRecoveryCard(
 
 @Composable
 private fun EditorStatusBar(textPrimary: Color, textMuted: Color, textDim: Color) {
-    val colors = GlassTheme.ideShellColors
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -831,7 +801,7 @@ private fun EditorStatusBar(textPrimary: Color, textMuted: Color, textDim: Color
                     modifier = Modifier
                         .size(IconSize.Indicator)
                         .clip(GlassShapes.Circle)
-                        .background(colors.statusSuccess),
+                        .background(GlassTheme.diagnosticColors.success),
                 )
                 Text(
                     text = "Connected",
@@ -892,7 +862,6 @@ private fun EditorDropdownRow(
     onSelect: (String) -> Unit,
     textPrimary: Color,
     textMuted: Color,
-    colors: IdeShellColorScheme,
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -931,10 +900,10 @@ private fun EditorDropdownRow(
             Row(
                 modifier = Modifier
                     .clip(GlassShapes.Small)
-                    .background(colors.buttonSecondaryBackground)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                     .border(
                         width = GlassDimens.HairlineBorder,
-                        color = colors.buttonSecondaryBorder,
+                        color = MaterialTheme.colorScheme.outline,
                         shape = GlassShapes.Small,
                     )
                     .clickable { expanded = true }
@@ -959,7 +928,7 @@ private fun EditorDropdownRow(
             DropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false },
-                modifier = Modifier.background(colors.cardBackground),
+                modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh),
             ) {
                 options.forEach { option ->
                     DropdownMenuItem(
@@ -990,7 +959,6 @@ private fun EditorToggleRow(
     onCheckedChange: (Boolean) -> Unit,
     textPrimary: Color,
     textMuted: Color,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -1030,7 +998,7 @@ private fun EditorToggleRow(
             GlassToggle(
                 checked = checked,
                 onCheckedChange = onCheckedChange,
-                activeColor = colors.switchActiveTrack,
+                activeColor = MaterialTheme.colorScheme.primary,
             )
             Text(
                 text = if (checked) "Enabled" else "Disabled",
@@ -1043,7 +1011,7 @@ private fun EditorToggleRow(
 }
 
 @Composable
-private fun ShortcutItem(label: String, keys: List<String>, textPrimary: Color, colors: IdeShellColorScheme) {
+private fun ShortcutItem(label: String, keys: List<String>, textPrimary: Color) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -1071,10 +1039,10 @@ private fun ShortcutItem(label: String, keys: List<String>, textPrimary: Color, 
                     Box(
                         modifier = Modifier
                             .clip(GlassShapes.ExtraSmall)
-                            .background(colors.keyCapBackground)
+                            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                             .border(
                                 width = GlassDimens.HairlineBorder,
-                                color = colors.keyCapBorder,
+                                color = MaterialTheme.colorScheme.outline,
                                 shape = GlassShapes.ExtraSmall,
                             )
                             .padding(

@@ -12,6 +12,7 @@ package org.ide.lti.feature.settings.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -26,8 +27,6 @@ import org.ide.lti.core.designsystem.component.display.GlassHorizontalDivider
 import org.ide.lti.core.designsystem.component.display.GlassToggleTile
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.FontSize
-import org.ide.lti.core.designsystem.theme.GlassTheme
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 
 /**
@@ -36,7 +35,6 @@ import org.ide.lti.core.designsystem.theme.Spacing
 @Composable
 fun NotificationsSettingsPane(
     modifier: Modifier = Modifier,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
 ) {
     var pushEnabled by remember { mutableStateOf(true) }
     var soundEnabled by remember { mutableStateOf(false) }
@@ -51,18 +49,17 @@ fun NotificationsSettingsPane(
                 text = "Notifications",
                 fontSize = FontSize.HeadlineMedium,
                 fontWeight = FontWeight.Bold,
-                color = colors.textMain,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = "System alerts, auditory cues, and background job notifications.",
                 fontSize = FontSize.BodyMedium,
-                color = colors.textMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
         GlassCard(
-            surfaceColor = colors.cardBackground,
-            borderColor = colors.border,
+            surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             contentPadding = Spacing.CardPadding,
             modifier = Modifier.fillMaxWidth(),
         ) {
@@ -71,7 +68,7 @@ fun NotificationsSettingsPane(
                     text = "System Alerts & Audio",
                     fontSize = FontSize.TitleMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
 
                 GlassToggleTile(
@@ -95,8 +92,7 @@ fun NotificationsSettingsPane(
         }
 
         GlassCard(
-            surfaceColor = colors.cardBackground,
-            borderColor = colors.border,
+            surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             contentPadding = Spacing.CardPadding,
             modifier = Modifier.fillMaxWidth(),
         ) {
@@ -105,7 +101,7 @@ fun NotificationsSettingsPane(
                     text = "Persistence & Window Focus",
                     fontSize = FontSize.TitleMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = colors.textMain,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
 
                 GlassToggleTile(

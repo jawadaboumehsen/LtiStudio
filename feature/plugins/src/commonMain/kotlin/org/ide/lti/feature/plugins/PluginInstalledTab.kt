@@ -86,7 +86,6 @@ internal fun PluginInstalledTab(
     onUninstall: (InstalledRecord) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
     val filtered = records.filter { record ->
         searchQuery.isBlank() ||
             record.identity.publisher.contains(searchQuery, ignoreCase = true) ||
@@ -110,18 +109,18 @@ internal fun PluginInstalledTab(
                 Text(
                     text = "Workspace / Plugin Manager",
                     style = MaterialTheme.typography.labelMedium,
-                    color = glassColors.onGlassMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
                     text = "Installed plugins",
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
-                    color = glassColors.onGlass,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     text = "Manage plugins for this workspace.",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = glassColors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
 
@@ -156,11 +155,11 @@ internal fun PluginInstalledTab(
                         Row(
                             modifier = Modifier
                                 .clip(GlassShapes.MediumSmall)
-                                .background(glassColors.chromeSurface)
+                                .background(MaterialTheme.colorScheme.surfaceContainerLow)
                                 .glassOutlineBorder(
                                     width = StrokeWidth.Hairline,
-                                    color = glassColors.glassBorder.copy(alpha = AlphaTokens.Faint),
-                                    shape = GlassShapes.MediumSmall,
+                                    color = MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Faint),
+                                    shape = GlassShapes.HazeMediumSmall,
                                 )
                                 .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Compact),
                             verticalAlignment = Alignment.CenterVertically,
@@ -169,20 +168,20 @@ internal fun PluginInstalledTab(
                             Icon(
                                 painter = AppIcons.ideGeneralFilter(),
                                 contentDescription = "Filter",
-                                tint = glassColors.onGlassSecondary,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(IconSize.Small),
                             )
                             Text(
                                 text = "Compatible with ${activeWorkspaceId ?: "PQ84P01"} ▾",
                                 style = MaterialTheme.typography.labelMedium,
-                                color = glassColors.onGlass,
+                                color = MaterialTheme.colorScheme.onSurface,
                             )
                         }
 
                         GlassButton(
                             onClick = onNavigateToImport,
                             variant = GlassButtonVariant.Standard,
-                            shape = GlassShapes.MediumSmall,
+                            shape = GlassShapes.HazeMediumSmall,
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
@@ -191,7 +190,7 @@ internal fun PluginInstalledTab(
                                 Icon(
                                     painter = AppIcons.AddPainterResource(),
                                     contentDescription = "Import",
-                                    tint = glassColors.onGlass,
+                                    tint = MaterialTheme.colorScheme.onSurface,
                                     modifier = Modifier.size(IconSize.Small),
                                 )
                                 Text("Import package")
@@ -242,7 +241,6 @@ private fun InstalledMasterTable(
     onSelectKey: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
 
     Box(
         modifier = modifier
@@ -261,7 +259,7 @@ private fun InstalledMasterTable(
                         "No installed plugins match '$searchQuery'."
                     },
                     style = MaterialTheme.typography.bodyMedium,
-                    color = glassColors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         } else {
@@ -289,7 +287,6 @@ private fun InstalledMasterTable(
 
 @Composable
 private fun InstalledTableHeader(modifier: Modifier = Modifier) {
-    val glassColors = GlassTheme.colors
 
     Row(
         modifier = modifier
@@ -302,42 +299,42 @@ private fun InstalledTableHeader(modifier: Modifier = Modifier) {
             text = "#",
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold,
-            color = glassColors.onGlassMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.width(ComponentSize.PluginTableIndexColWidth),
         )
         Text(
             text = "Name",
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold,
-            color = glassColors.onGlassMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.weight(1f),
         )
         Text(
             text = "Version",
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold,
-            color = glassColors.onGlassMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.width(ComponentSize.PluginTableVersionColWidth),
         )
         Text(
             text = "Source",
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold,
-            color = glassColors.onGlassMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.width(ComponentSize.PluginTableSourceColWidth),
         )
         Text(
             text = "Status",
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold,
-            color = glassColors.onGlassMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.width(ComponentSize.PluginTableStatusColWidth),
         )
         Text(
             text = "References",
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold,
-            color = glassColors.onGlassMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.width(ComponentSize.PluginTableRefsColWidth),
         )
     }
@@ -352,7 +349,6 @@ private fun InstalledTableRow(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
     val rowBg = if (isSelected) {
         PluginThemeColors.SelectedRowBackground
     } else {
@@ -366,9 +362,10 @@ private fun InstalledTableRow(
             shape = GlassShapes.Small,
         )
     } else {
+        val dividerColor = MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Faint)
         Modifier.drawBehind {
             drawLine(
-                color = glassColors.glassBorder.copy(alpha = AlphaTokens.Faint),
+                color = dividerColor,
                 start = Offset(0f, size.height),
                 end = Offset(size.width, size.height),
                 strokeWidth = StrokeWidth.Hairline.toPx(),
@@ -394,7 +391,7 @@ private fun InstalledTableRow(
             text = (index + 1).toString(),
             style = MaterialTheme.typography.bodyMedium,
             fontFamily = codeFontFamily(),
-            color = if (isSelected) glassColors.onGlass else glassColors.onGlassMuted,
+            color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.width(ComponentSize.PluginTableIndexColWidth),
         )
 
@@ -406,14 +403,14 @@ private fun InstalledTableRow(
             Icon(
                 painter = painterResource(Res.drawable.ideNodesPlugin),
                 contentDescription = "Plugin",
-                tint = if (isSelected) BrandColors.OnLogoBadge else glassColors.onGlassSecondary,
+                tint = if (isSelected) BrandColors.OnLogoBadge else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(IconSize.Large),
             )
             Text(
                 text = formatPluginDisplayName(record.identity.id),
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                color = if (isSelected) BrandColors.OnLogoBadge else glassColors.onGlass,
+                color = if (isSelected) BrandColors.OnLogoBadge else MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 softWrap = false,
                 overflow = TextOverflow.Ellipsis,
@@ -424,14 +421,14 @@ private fun InstalledTableRow(
             text = record.identity.version,
             style = MaterialTheme.typography.bodyMedium,
             fontFamily = codeFontFamily(),
-            color = if (isSelected) glassColors.onGlass else glassColors.onGlassSecondary,
+            color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.width(ComponentSize.PluginTableVersionColWidth),
         )
 
         Text(
             text = "Local",
             style = MaterialTheme.typography.bodyMedium,
-            color = if (isSelected) glassColors.onGlass else glassColors.onGlassSecondary,
+            color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             softWrap = false,
             overflow = TextOverflow.Ellipsis,
@@ -460,7 +457,7 @@ private fun InstalledTableRow(
         Text(
             text = referencesCount.toString(),
             style = MaterialTheme.typography.bodyMedium,
-            color = if (isSelected) glassColors.onGlass else glassColors.onGlassSecondary,
+            color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.width(ComponentSize.PluginTableRefsColWidth),
         )
     }
@@ -480,7 +477,6 @@ private fun InstalledInspectorPanel(
     onUninstall: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
 
     Box(
         modifier = modifier
@@ -499,7 +495,7 @@ private fun InstalledInspectorPanel(
                         "Select a plugin to inspect details."
                     },
                     style = MaterialTheme.typography.bodyMedium,
-                    color = glassColors.onGlassSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         } else {
@@ -543,7 +539,6 @@ private fun InstalledInspectorHeader(
     onOpenDetails: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
 
     Row(
         modifier = modifier.clickable { onOpenDetails() },
@@ -562,7 +557,7 @@ private fun InstalledInspectorHeader(
                 text = formatPluginDisplayName(record.identity.id),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
-                color = glassColors.onGlass,
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 softWrap = false,
                 overflow = TextOverflow.Ellipsis,
@@ -571,7 +566,7 @@ private fun InstalledInspectorHeader(
                 text = "Version ${record.identity.version}",
                 style = MaterialTheme.typography.bodyMedium,
                 fontFamily = codeFontFamily(),
-                color = glassColors.onGlassMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -623,7 +618,6 @@ private fun InstalledInspectorActions(
     onUninstall: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
 
     Column(
         modifier = modifier,
@@ -642,7 +636,7 @@ private fun InstalledInspectorActions(
             },
             enabled = !record.revoked && !record.archived,
             variant = if (isEnabled) GlassButtonVariant.Secondary else GlassButtonVariant.Primary,
-            shape = GlassShapes.MediumSmall,
+            shape = GlassShapes.HazeMediumSmall,
             modifier = Modifier.fillMaxWidth().height(ComponentSize.PluginActionBtnHeight),
         ) {
             Row(
@@ -675,7 +669,7 @@ private fun InstalledInspectorActions(
                         .glassOutlineBorder(
                             width = StrokeWidth.Hairline,
                             color = PluginThemeColors.CardBorder,
-                            shape = GlassShapes.MediumSmall,
+                            shape = GlassShapes.HazeMediumSmall,
                         )
                         .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
                 ) {
@@ -691,7 +685,7 @@ private fun InstalledInspectorActions(
                             Icon(
                                 painter = AppIcons.DeletePainterResource(),
                                 contentDescription = "Uninstall",
-                                tint = glassColors.onGlassMuted,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(IconSize.Medium),
                             )
                             Column {
@@ -699,12 +693,12 @@ private fun InstalledInspectorActions(
                                     text = "Uninstall",
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = glassColors.onGlass,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                 )
                                 Text(
                                     text = "Referenced by saved snapshots (${refs.size})",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = glassColors.onGlassMuted,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                         }
@@ -712,7 +706,7 @@ private fun InstalledInspectorActions(
                         Icon(
                             painter = AppIcons.InfoPainterResource(),
                             contentDescription = "Snapshot constraint",
-                            tint = glassColors.onGlassMuted,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(IconSize.Small),
                         )
                     }
@@ -721,7 +715,7 @@ private fun InstalledInspectorActions(
                 Text(
                     text = "This plugin is referenced by saved snapshots and cannot be uninstalled.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = glassColors.onGlassMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         } else {
@@ -732,7 +726,7 @@ private fun InstalledInspectorActions(
                 GlassButton(
                     onClick = onUninstall,
                     variant = GlassButtonVariant.Standard,
-                    shape = GlassShapes.MediumSmall,
+                    shape = GlassShapes.HazeMediumSmall,
                     modifier = Modifier.weight(1f),
                 ) {
                     Text("Uninstall")
@@ -740,7 +734,7 @@ private fun InstalledInspectorActions(
                 GlassButton(
                     onClick = onArchive,
                     variant = GlassButtonVariant.Standard,
-                    shape = GlassShapes.MediumSmall,
+                    shape = GlassShapes.HazeMediumSmall,
                     modifier = Modifier.weight(1f),
                 ) {
                     Text("Archive")
@@ -752,7 +746,6 @@ private fun InstalledInspectorActions(
 
 @Composable
 private fun InspectorRow(label: String, value: String, explanation: String? = null, modifier: Modifier = Modifier) {
-    val glassColors = GlassTheme.colors
 
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -766,13 +759,13 @@ private fun InspectorRow(label: String, value: String, explanation: String? = nu
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodySmall,
-                color = glassColors.onGlassMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
                 text = value,
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.SemiBold,
-                color = glassColors.onGlass,
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 softWrap = false,
                 overflow = TextOverflow.Ellipsis,
@@ -783,7 +776,7 @@ private fun InspectorRow(label: String, value: String, explanation: String? = nu
             Text(
                 text = explanation,
                 style = MaterialTheme.typography.bodySmall,
-                color = glassColors.onGlassSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

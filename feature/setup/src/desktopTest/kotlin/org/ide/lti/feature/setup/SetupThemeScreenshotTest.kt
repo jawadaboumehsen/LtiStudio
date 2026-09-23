@@ -21,8 +21,7 @@ import androidx.compose.ui.unit.Density
 import org.ide.lti.core.designsystem.theme.ColorContrast
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.SetupTokens
-import org.ide.lti.core.designsystem.theme.config.AppTheme
-import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
+import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.domain.setup.SetupStepDetail
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepProvenance
@@ -162,7 +161,6 @@ class SetupThemeScreenshotTest {
                             selectedTab = SetupTab.PROJECTS,
                         ),
                         actions = SetupUiActions(),
-                        backdrop = backdrop,
                     )
                 }
             }
@@ -208,7 +206,6 @@ class SetupThemeScreenshotTest {
                         selectedTab = SetupTab.LAUNCHPAD,
                     ),
                     actions = SetupUiActions(),
-                    backdrop = backdrop,
                 )
             }
         }
@@ -242,7 +239,6 @@ class SetupThemeScreenshotTest {
                             selectedTab = SetupTab.ENVIRONMENT,
                         ),
                         actions = SetupUiActions(),
-                        backdrop = backdrop,
                     )
                 }
             }
@@ -273,7 +269,6 @@ class SetupThemeScreenshotTest {
                             selectedTab = SetupTab.ENVIRONMENT,
                         ),
                         actions = SetupUiActions(),
-                        backdrop = backdrop,
                     )
                 }
             }
@@ -310,7 +305,6 @@ class SetupThemeScreenshotTest {
                             selectedTab = SetupTab.ENVIRONMENT,
                         ),
                         actions = SetupUiActions(),
-                        backdrop = backdrop,
                     )
                 }
             }
@@ -347,7 +341,6 @@ class SetupThemeScreenshotTest {
                             selectedTab = SetupTab.ENVIRONMENT,
                         ),
                         actions = SetupUiActions(),
-                        backdrop = backdrop,
                     )
                 }
             }
@@ -383,7 +376,6 @@ class SetupThemeScreenshotTest {
                             selectedTab = SetupTab.ENVIRONMENT,
                         ),
                         actions = SetupUiActions(),
-                        backdrop = backdrop,
                     )
                 }
             }
@@ -419,7 +411,6 @@ class SetupThemeScreenshotTest {
                             selectedTab = SetupTab.ENVIRONMENT,
                         ),
                         actions = SetupUiActions(),
-                        backdrop = backdrop,
                     )
                 }
             }
@@ -464,7 +455,6 @@ class SetupThemeScreenshotTest {
                             SetupScreenContent(
                                 state = SetupUiState(selectedTab = SetupTab.ENVIRONMENT),
                                 actions = SetupUiActions(),
-                                backdrop = backdrop,
                             )
                         }
                     }

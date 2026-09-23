@@ -52,7 +52,6 @@ fun ConfigurationSidebar(
     onDeleteTarget: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
     val filteredTargets = remember(targets, searchQuery) {
         if (searchQuery.isBlank()) {
             targets
@@ -99,7 +98,7 @@ fun ConfigurationSidebar(
                         .clip(GlassShapes.Small)
                         .background(
                             if (isSelected) {
-                                glassColors.glassAccent.copy(alpha = AlphaTokens.Subtle)
+                                MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Subtle)
                             } else {
                                 Color.Transparent
                             },
@@ -113,14 +112,14 @@ fun ConfigurationSidebar(
                         Text(
                             text = target.name.ifBlank { "Untitled Target" },
                             style = MaterialTheme.typography.bodyMedium,
-                            color = glassColors.onGlass,
+                            color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
                         Text(
                             text = target.codename.ifBlank { target.id },
                             style = MaterialTheme.typography.labelSmall,
-                            color = glassColors.onGlassSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )

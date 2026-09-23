@@ -47,7 +47,6 @@ import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.domain.pipeline.PipelineStageSequence
@@ -275,7 +274,6 @@ public fun StudioShellContent(
     onSave: () -> Unit,
     modifier: Modifier = Modifier,
     stageEditorRegistry: StageEditorRegistry? = null,
-    colors: IdeShellColorScheme = GlassTheme.ideShellColors,
     selectedObjectId: String? = null,
     onSelectStageObject: ((StageId, String) -> Unit)? = null,
     onOpenProblems: (() -> Unit)? = null,
@@ -362,14 +360,12 @@ public fun StudioShellContent(
 
     IdeAppFrame(
         modifier = modifier.testTag("StudioShellLayout"),
-        colors = colors,
         topBar = {
             StudioTopAppBar(
                 uiState = uiState,
                 onSelectGlobalDestination = onSelectGlobalDestination,
                 onValidate = onValidate,
                 onSave = onSave,
-                colors = colors,
                 windowControls = windowControls,
                 onDragWindow = onDragWindow,
             )
@@ -385,7 +381,6 @@ public fun StudioShellContent(
                     }
                 },
                 modifier = Modifier.testTag("IdePipelineRail"),
-                colors = colors,
             )
         },
         navigator = {
@@ -400,14 +395,12 @@ public fun StudioShellContent(
                         stage = descriptor,
                         selectedObjectId = selectedObjectId,
                         onSelectStageObject = onSelectStageObject,
-                        colors = colors,
                     )
                 }
             } else {
                 WorkspaceNavigator(
                     uiState = uiState,
                     onSelectSection = onSelectWorkspaceSection,
-                    colors = colors,
                 )
             }
         },
@@ -422,13 +415,11 @@ public fun StudioShellContent(
                         title = headerTitle,
                         breadcrumbs = breadcrumbItems,
                         subtitle = headerSubtitle,
-                        colors = colors,
                         actions = {
                             val targetContext = uiState.targetContext
                             if (targetContext != null) {
                                 TopBarTargetSpecifier(
                                     targetContext = targetContext,
-                                    colors = colors,
                                 )
                             }
 
@@ -437,7 +428,6 @@ public fun StudioShellContent(
                                 label = "Validate",
                                 isLoading = isValidating,
                                 isEnabled = !isValidating,
-                                colors = colors,
                                 onClick = onValidate,
                                 testTag = "TopBar_Validate",
                             )
@@ -448,7 +438,6 @@ public fun StudioShellContent(
                                 isLoading = isSaving,
                                 isEnabled = !isSaving,
                                 isPrimary = true,
-                                colors = colors,
                                 onClick = onSave,
                                 testTag = "TopBar_Save",
                             )
@@ -465,7 +454,6 @@ public fun StudioShellContent(
         statusBar = {
             StudioStatusBar(
                 uiState = uiState,
-                colors = colors,
                 onOpenProblems = onOpenProblems,
                 onOpenActivity = onOpenActivity,
             )
@@ -478,7 +466,6 @@ private fun StageNavigator(
     stage: StageDescriptor,
     selectedObjectId: String?,
     onSelectStageObject: ((StageId, String) -> Unit)?,
-    colors: IdeShellColorScheme,
     modifier: Modifier = Modifier,
 ) {
     val navItems = remember(stage) {
@@ -501,7 +488,6 @@ private fun StageNavigator(
             onSelectStageObject?.invoke(stage.stageId, objectId)
         },
         modifier = modifier.testTag("StageNavigator"),
-        colors = colors,
         footerContent = null,
     )
 }
@@ -517,7 +503,6 @@ private fun StageObjectEditor(
     onSave: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val glassColors = GlassTheme.colors
 
     LazyColumn(
         modifier = modifier
@@ -541,20 +526,20 @@ private fun StageObjectEditor(
                             painter = stage.iconKey.painter(),
                             contentDescription = stage.accessibleLabel,
                             modifier = Modifier.size(IconSize.ActionCard),
-                            tint = glassColors.glassAccent,
+                            tint = MaterialTheme.colorScheme.primary,
                         )
                         Column {
                             Text(
                                 text = "${stage.title} Editor: ${objectId ?: "Settings"}",
                                 style = MaterialTheme.typography.titleLarge,
-                                color = glassColors.onGlass,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontWeight = FontWeight.Bold,
                             )
                             val position = PipelineStageSequence.ORDER.indexOf(stage.stageId) + 1
                             Text(
                                 text = "Pipeline Stage $position • Dedicated configuration editor placeholder",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = glassColors.onGlassSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
@@ -563,7 +548,7 @@ private fun StageObjectEditor(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(StrokeWidth.Hairline)
-                            .background(glassColors.glassBorder.copy(alpha = AlphaTokens.Faint)),
+                            .background(MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Faint)),
                     )
 
                     Text(
@@ -571,7 +556,7 @@ private fun StageObjectEditor(
                             "(subobject: ${objectId ?: "default"}) are under active development. " +
                             "Configuration parameters defined in this stage can be reviewed below.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = glassColors.onGlass,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
 
                     Row(
@@ -582,17 +567,17 @@ private fun StageObjectEditor(
                             onClick = {},
                             enabled = false,
                             variant = GlassButtonVariant.Standard,
-                            shape = GlassShapes.Compact,
+                            shape = GlassShapes.HazeCompact,
                         ) {
-                            Text("Execute Stage (Unavailable in Studio)", color = glassColors.onGlassMuted)
+                            Text("Execute Stage (Unavailable in Studio)", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
 
                         GlassButton(
                             onClick = onSave,
                             variant = GlassButtonVariant.Primary,
-                            shape = GlassShapes.Compact,
+                            shape = GlassShapes.HazeCompact,
                         ) {
-                            Text("Save Draft", color = glassColors.onGlass)
+                            Text("Save Draft", color = MaterialTheme.colorScheme.onSurface)
                         }
                     }
                 }
@@ -609,20 +594,20 @@ private fun StageObjectEditor(
                         Text(
                             text = "Validation Issues for ${objectId ?: "this object"}:",
                             style = MaterialTheme.typography.titleSmall,
-                            color = glassColors.diagnostics.error,
+                            color = GlassTheme.diagnosticColors.error,
                             fontWeight = FontWeight.SemiBold,
                         )
                         validationErrors.forEach { err ->
                             Text(
                                 text = "• [${err.fieldPath}] ${err.message}",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = glassColors.onGlass,
+                                color = MaterialTheme.colorScheme.onSurface,
                             )
                             if (err.remediation != null) {
                                 Text(
                                     text = "  Remediation: ${err.remediation}",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = glassColors.onGlassSecondary,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                         }

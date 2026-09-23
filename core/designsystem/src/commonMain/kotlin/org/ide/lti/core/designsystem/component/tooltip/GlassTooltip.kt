@@ -76,11 +76,11 @@ public fun GlassTooltipArea(
             Popup(popupPositionProvider = remember(density) { TooltipAbovePositionProvider(density) }) {
                 Text(
                     text = tooltipText,
-                    color = GlassTheme.colors.onGlass,
+                    color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.labelMedium,
                     modifier = Modifier
                         .background(
-                            color = GlassTheme.colors.glassSurfaceElevated.copy(alpha = AlphaTokens.Elevated),
+                            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = AlphaTokens.Elevated),
                             shape = GlassShapes.Compact,
                         )
                         .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),

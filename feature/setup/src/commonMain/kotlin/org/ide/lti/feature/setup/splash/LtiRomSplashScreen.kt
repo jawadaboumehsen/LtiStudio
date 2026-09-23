@@ -60,7 +60,7 @@ import org.ide.lti.core.designsystem.theme.MotionDuration
 import org.ide.lti.core.designsystem.theme.MotionEasing
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
-import org.ide.lti.core.designsystem.theme.ThemeColors
+import org.ide.lti.core.designsystem.theme.FleetAccentColors
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 
 /**
@@ -84,7 +84,6 @@ fun LtiRomSplashScreen(
     modifier: Modifier = Modifier,
     onCollectSettings: (suspend () -> Unit)? = null,
 ) {
-    val glassColors = GlassTheme.colors
     val splashState by bridge.state.collectAsState()
 
     // 1. Entry Choreography (Emphasized Decelerate)
@@ -143,6 +142,8 @@ fun LtiRomSplashScreen(
         }
     }
 
+    val primaryColor = MaterialTheme.colorScheme.primary
+
     Box(
         modifier = modifier
             .size(width = ComponentSize.SplashCardWidth, height = ComponentSize.SplashCardHeight)
@@ -152,14 +153,14 @@ fun LtiRomSplashScreen(
                 scaleY = exitScale.value
             }
             .clip(GlassShapes.Large)
-            .background(glassColors.glassSurface)
+            .background(MaterialTheme.colorScheme.surfaceContainer)
             .border(
                 width = StrokeWidth.Standard,
                 brush = Brush.linearGradient(
                     listOf(
-                        glassColors.glassBorderHighlight,
-                        glassColors.glassBorder,
-                        glassColors.glassAccent.copy(alpha = AlphaTokens.Border),
+                        MaterialTheme.colorScheme.primary,
+                        MaterialTheme.colorScheme.outline,
+                        MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Border),
                     ),
                 ),
                 shape = GlassShapes.Large,
@@ -171,8 +172,8 @@ fun LtiRomSplashScreen(
             drawCircle(
                 brush = Brush.radialGradient(
                     colors = listOf(
-                        glassColors.glassAccent.copy(alpha = ambientBreath),
-                        ThemeColors.FleetCyan.copy(alpha = ambientBreath * AlphaTokens.Border),
+                        primaryColor.copy(alpha = ambientBreath),
+                        FleetAccentColors.Cyan.copy(alpha = ambientBreath * AlphaTokens.Border),
                         Color.Transparent,
                     ),
                     center = center.copy(y = center.y - Spacing.SectionGap.toPx()),
@@ -208,10 +209,10 @@ fun LtiRomSplashScreen(
                         drawCircle(
                             brush = Brush.sweepGradient(
                                 listOf(
-                                    glassColors.glassAccent,
-                                    ThemeColors.FleetCyan,
-                                    ThemeColors.FleetBlue,
-                                    glassColors.glassAccent,
+                                    primaryColor,
+                                    FleetAccentColors.Cyan,
+                                    FleetAccentColors.Blue,
+                                    primaryColor,
                                 ),
                             ),
                             style = Stroke(width = StrokeWidth.Active.toPx()),
@@ -221,7 +222,7 @@ fun LtiRomSplashScreen(
                         text = "ROM",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = glassColors.glassAccent,
+                        color = MaterialTheme.colorScheme.primary,
                         letterSpacing = LetterSpacing.Widest,
                         maxLines = 1,
                         softWrap = false,
@@ -243,7 +244,7 @@ fun LtiRomSplashScreen(
                         text = "LTIROM STUDIO",
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
-                        color = glassColors.onGlass,
+                        color = MaterialTheme.colorScheme.onSurface,
                         letterSpacing = LetterSpacing.Widest,
                         maxLines = 1,
                         softWrap = false,
@@ -259,10 +260,10 @@ fun LtiRomSplashScreen(
                         Box(
                             modifier = Modifier
                                 .clip(GlassShapes.Capsule)
-                                .background(glassColors.glassAccent.copy(alpha = AlphaTokens.Hover))
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Hover))
                                 .border(
                                     width = StrokeWidth.Standard,
-                                    color = glassColors.glassAccent.copy(alpha = AlphaTokens.Border),
+                                    color = MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Border),
                                     shape = GlassShapes.Capsule,
                                 )
                                 .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.ExtraExtraSmall),
@@ -271,7 +272,7 @@ fun LtiRomSplashScreen(
                                 text = "v2025.1 PREVIEW",
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.SemiBold,
-                                color = glassColors.glassAccent,
+                                color = MaterialTheme.colorScheme.primary,
                                 maxLines = 1,
                                 softWrap = false,
                                 overflow = TextOverflow.Ellipsis,
@@ -281,7 +282,7 @@ fun LtiRomSplashScreen(
                         Text(
                             text = "OFFICIAL TARGET: REDMAGIC ASTRA",
                             style = MaterialTheme.typography.labelSmall,
-                            color = glassColors.onGlassMuted,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             letterSpacing = LetterSpacing.CodeWide,
                             maxLines = 1,
                             softWrap = false,
@@ -315,7 +316,7 @@ fun LtiRomSplashScreen(
                         Text(
                             text = message,
                             style = MaterialTheme.typography.bodySmall,
-                            color = glassColors.onGlassSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -326,7 +327,7 @@ fun LtiRomSplashScreen(
                             text = "Step ${init.stepIndex}/${init.totalSteps} · ${(animatedProgress * 100).toInt()}%",
                             style = MaterialTheme.typography.labelSmall,
                             fontFamily = codeFontFamily(),
-                            color = glassColors.onGlassMuted,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.align(Alignment.CenterEnd),
                             maxLines = 1,
                             softWrap = false,
@@ -341,7 +342,7 @@ fun LtiRomSplashScreen(
                         .fillMaxWidth()
                         .height(StrokeWidth.Active)
                         .clip(GlassShapes.Capsule)
-                        .background(glassColors.glassSurface),
+                        .background(MaterialTheme.colorScheme.surfaceContainer),
                 ) {
                     Box(
                         modifier = Modifier
@@ -350,9 +351,9 @@ fun LtiRomSplashScreen(
                             .background(
                                 Brush.horizontalGradient(
                                     listOf(
-                                        glassColors.glassAccent,
-                                        ThemeColors.FleetCyan,
-                                        ThemeColors.FleetBlue,
+                                        MaterialTheme.colorScheme.primary,
+                                        FleetAccentColors.Cyan,
+                                        FleetAccentColors.Blue,
                                     ),
                                 ),
                             ),
@@ -367,7 +368,7 @@ fun LtiRomSplashScreen(
                         text = "Build #LR-251.8492 · OpenJDK 21",
                         style = MaterialTheme.typography.labelSmall,
                         fontFamily = codeFontFamily(),
-                        color = glassColors.onGlassMuted,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier
                             .align(Alignment.CenterStart)
                             .padding(end = ComponentSize.ButtonMinWidth * 2),
@@ -377,7 +378,7 @@ fun LtiRomSplashScreen(
                     Text(
                         text = "Snapdragon 8 Elite (PQ84P01)",
                         style = MaterialTheme.typography.labelSmall,
-                        color = glassColors.onGlassMuted,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.align(Alignment.CenterEnd),
                         maxLines = 1,
                         softWrap = false,
