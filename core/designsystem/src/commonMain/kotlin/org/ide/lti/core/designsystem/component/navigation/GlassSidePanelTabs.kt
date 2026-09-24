@@ -61,7 +61,6 @@ import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
-import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
@@ -128,7 +127,6 @@ fun GlassSidePanelRail(
     railPosition: SidePanelRailPosition = SidePanelRailPosition.Left,
 ) {
     if (tabs.isEmpty()) return
-
 
     // The rail's inner edge (facing the divider) is followed by the divider hairline plus the
     // content area's own Spacing.Small gap before the panel's visible border, while the outer
@@ -243,7 +241,6 @@ fun GlassSidePanelTabStrip(
 ) {
     if (tabs.isEmpty()) return
 
-
     GlassSurface(
         modifier = modifier.fillMaxWidth(),
         shape = GlassShapes.HazePanel,
@@ -333,7 +330,6 @@ fun GlassSidePanelTabs(
             }
             onSelectedIndexChange?.invoke(clickedIndex)
         }
-
 
         Row(
             modifier = Modifier.fillMaxSize(),

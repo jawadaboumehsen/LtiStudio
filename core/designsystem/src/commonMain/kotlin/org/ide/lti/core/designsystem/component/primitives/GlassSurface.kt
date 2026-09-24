@@ -9,8 +9,8 @@
  */
 package org.ide.lti.core.designsystem.component.primitives
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import org.ide.lti.core.designsystem.theme.HazeShape
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -23,10 +23,10 @@ import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.unit.Dp
 import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeInput
-import dev.chrisbanes.haze.glass.GlassStyle
 import dev.chrisbanes.haze.glass.hazeGlass
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.HazeShape
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 
 /**
@@ -47,13 +47,14 @@ fun GlassSurface(
     shape: HazeShape = GlassShapes.HazePanel,
     surfaceColor: Color = Color.Unspecified,
     tint: Color = Color.Unspecified,
+    captureBacking: Color = Color.Unspecified,
     borderColor: Color = Color.Unspecified,
     borderWidth: Dp = StrokeWidth.Standard,
     content: @Composable () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
+    val theme = GlassTheme.appTheme
     val resolvedSurface = if (surfaceColor.isSpecified) surfaceColor else colors.surfaceContainer
-    val resolvedTint = if (tint.isSpecified) tint else Color.Transparent
 
     val borderModifier = if (borderColor.isSpecified) {
         Modifier.glassOutlineBorder(color = borderColor, width = borderWidth, shape = shape)
@@ -61,18 +62,26 @@ fun GlassSurface(
         Modifier
     }
 
+    val glassOrSolidModifier = if (GlassTheme.effectsEnabled) {
+        Modifier.hazeGlass(
+            input = HazeInput.Sources(GlassTheme.hazeState),
+            style = remember(theme, shape, tint, captureBacking) {
+                org.ide.lti.core.designsystem.theme.GlassMaterialStyles.baseStyle(
+                    theme = theme,
+                    opticalTint = tint,
+                    captureBacking = captureBacking,
+                ).then {
+                    this.shape(shape)
+                }
+            },
+        )
+    } else {
+        Modifier.background(resolvedSurface, shape = shape)
+    }
+
     Box(
         modifier = modifier
-            .hazeGlass(
-                input = HazeInput.Backdrop(GlassTheme.hazeState),
-                style = remember(shape, resolvedSurface, resolvedTint) {
-                    GlassStyle.regular.then {
-                        backgroundColor(resolvedSurface)
-                        tint(resolvedTint)
-                        this.shape(shape)
-                    }
-                },
-            )
+            .then(glassOrSolidModifier)
             .clip(shape)
             .then(borderModifier),
     ) {

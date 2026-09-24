@@ -245,12 +245,14 @@ class WorkspaceOverviewMapperTest {
     @Test
     fun testReadinessItems_reviewCountMatchesItemsRequiringReview() {
         val draft = createDraft()
+        // SOURCE blocking -> reviewRequired = true
+        // SIGNING warning -> reviewRequired = true
         val state = WorkspaceOverviewMapper.map(
             workspace = testWorkspace,
             targetDevice = testTargetDevice,
             draft = draft,
-            hasExplicitValidSource = false, // SOURCE blocking -> reviewRequired = true
-            signingVerified = false, // SIGNING warning -> reviewRequired = true
+            hasExplicitValidSource = false,
+            signingVerified = false,
         )
 
         assertEquals(state.readinessItems.count { it.reviewRequired }, state.reviewCount)
@@ -309,13 +311,14 @@ class WorkspaceOverviewMapperTest {
             ),
         )
 
+        // Warning
         val state = WorkspaceOverviewMapper.map(
             workspace = testWorkspace,
             targetDevice = testTargetDevice,
             draft = createDraft(),
             validationReport = validationReport,
             hasExplicitValidSource = true,
-            signingVerified = false, // Warning
+            signingVerified = false,
         )
 
         val debloatItem = state.readinessItems[1]
@@ -334,12 +337,13 @@ class WorkspaceOverviewMapperTest {
 
     @Test
     fun testReadinessItems_signingWarningSetsNextActionWhenDebloatAndPatchesAreNeutral() {
+        // Warning
         val state = WorkspaceOverviewMapper.map(
             workspace = testWorkspace,
             targetDevice = testTargetDevice,
             draft = createDraft(debloatEnabled = false, customizationEnabled = false),
             hasExplicitValidSource = true,
-            signingVerified = false, // Warning
+            signingVerified = false,
         )
 
         val signingItem = state.readinessItems[3]

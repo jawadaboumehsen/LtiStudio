@@ -9,19 +9,38 @@
  */
 package org.ide.lti.shared
 
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.getBoundsInRoot
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
-import androidx.compose.ui.test.runDesktopComposeUiTest
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.v2.runDesktopComposeUiTest
+import org.ide.lti.core.designsystem.theme.AppTheme
+import org.ide.lti.core.designsystem.theme.GlassSceneHost
 import org.ide.lti.core.designsystem.theme.LtiTheme
+import org.ide.lti.core.designsystem.theme.colorSchemeFor
+import org.ide.lti.core.testing.optical.GlassOpticalVerifier
 import org.ide.lti.core.ui.settings.AppSettingsState
 import org.ide.lti.feature.settings.SettingsScreenContent
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
+import org.ide.lti.core.designsystem.component.layout.GlassBackdrop
+import org.ide.lti.feature.settings.model.SettingsCategory
 import org.ide.lti.shared.di.initKoin
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import org.koin.core.context.GlobalContext
 import org.koin.core.context.stopKoin
 import kotlin.math.abs
 import kotlin.test.assertEquals
@@ -72,46 +91,140 @@ class AppSettingsStateWiringTest {
 
     @OptIn(ExperimentalTestApi::class)
     @Test
-    fun testFluidEffectsToggleChangesRendering() = runDesktopComposeUiTest(width = 800, height = 600) {
-        val settingsState = AppSettingsState(
-            initialDarkTheme = true,
-            initialEffectsEnabled = true,
-        )
+    fun testFluidEffectsToggleChangesRendering() = runDesktopComposeUiTest(width = 1120, height = 700) {
+        val settingsState = GlobalContext.get().get<AppSettingsState>()
+        settingsState.theme = AppSettingsState.THEME_BLUE
+        settingsState.effectsEnabled = true
 
-        // Use SettingsScreenContent wrapped in LtiTheme — it renders GlassSurface components
-        // that visibly differ when effectsEnabled changes. LtiSharedApp shows a splash screen
-        // with no glass blur components and always produces a 0% pixel diff.
+        // Launch production app root (LtiSharedApp) which hosts GlassSceneHost at the root
         setContent {
-            LtiTheme(
-                darkTheme = settingsState.isDarkTheme,
-                effectsEnabled = settingsState.effectsEnabled,
-            ) {
-                SettingsScreenContent(
-                    onBackClick = {},
-                    appSettingsState = settingsState,
-                )
-            }
+            LtiSharedApp(
+                openSettingsRequest = 1L,
+                initialShowSplash = false,
+                appSettingsState = settingsState,
+            )
         }
 
         waitForIdle()
-        val imageEffectsOn = onRoot().captureToImage()
 
-        // Toggle fluid glass effects OFF
-        settingsState.effectsEnabled = false
+        // 1. Navigate to Appearance in settings navigator
+        onNodeWithTag("NavigatorItem_appearance").performClick()
         waitForIdle()
+
+        // 2. Ensure "Glass & motion" card and "Reduce transparency" switch are visible
+        onNodeWithTag("GlassCard_glass_and_motion").performScrollTo().assertIsDisplayed()
+        waitForIdle()
+
+        val switchNode = onNodeWithTag("ReduceTransparencySwitch")
+        switchNode.assertIsDisplayed()
+        waitForIdle()
+
+        // 3. Capture State A (Effects ON)
+        val imageEffectsOn = onRoot().captureToImage()
+        assertEquals(true, settingsState.effectsEnabled)
+
+        // 4. Click the switch UI node to toggle "Reduce transparency" via user interaction
+        switchNode.performClick()
+        waitForIdle()
+        assertEquals(false, settingsState.effectsEnabled)
+
+        // 6. Capture State B (Effects OFF)
         val imageEffectsOff = onRoot().captureToImage()
 
+        // 7. Verify overall visual difference
         val (diffPixels, diffPercent) = computePixelDiffPercent(imageEffectsOn, imageEffectsOff)
         val total = imageEffectsOn.width * imageEffectsOn.height
         val formattedEffects = "%.4f".format(diffPercent)
         println(
             "[VERIFICATION] Fluid Glass Effects toggle diff: $diffPixels / $total pixels ($formattedEffects%)",
         )
-
         assertTrue(
             diffPercent > 0.0,
             "Toggling effectsEnabled must cause a visual rendering difference (found $diffPercent% diff)",
         )
+
+        val scheme = colorSchemeFor(AppTheme.Blue)
+
+        // 8. Local assertion on GlassCard_glass_and_motion
+        val cardBoundsDp = onNodeWithTag("GlassCard_glass_and_motion").getBoundsInRoot()
+        // Sample a validated text-free interior patch on the right side of the card
+        val cardTextFreePatch = Rect(
+            left = cardBoundsDp.right.value - 60f,
+            top = cardBoundsDp.top.value + 16f,
+            right = cardBoundsDp.right.value - 20f,
+            bottom = cardBoundsDp.top.value + 36f,
+        )
+
+        // 8. Component-level fluid-to-solid transition & solid fallback verification on GlassCard_glass_and_motion
+        // Note: Direct optical backdrop transmission is rigorously verified via controlled A/B backdrop modulation
+        // in GlassCardOpticalBehaviorTest. Here, we verify that the user's toggle interaction triggers a genuine
+        // fluid-to-solid transition delta and settles into the exact theme-compliant solid fallback token.
+        val pixelMapOn = imageEffectsOn.toPixelMap()
+        val pixelMapOff = imageEffectsOff.toPixelMap()
+        var cardLuminanceDeltaSum = 0.0
+        var patchPixelCount = 0
+        for (y in cardTextFreePatch.top.toInt() until cardTextFreePatch.bottom.toInt()) {
+            for (x in cardTextFreePatch.left.toInt() until cardTextFreePatch.right.toInt()) {
+                val lOn = GlassOpticalVerifier.relativeLuminance(pixelMapOn[x, y])
+                val lOff = GlassOpticalVerifier.relativeLuminance(pixelMapOff[x, y])
+                cardLuminanceDeltaSum += kotlin.math.abs(lOn - lOff)
+                patchPixelCount++
+            }
+        }
+        val cardTransitionDelta = if (patchPixelCount > 0) cardLuminanceDeltaSum / patchPixelCount else 0.0
+        println("[VERIFICATION] Fluid-to-solid card transition delta: $cardTransitionDelta")
+        assertTrue(
+            cardTransitionDelta > 0.002,
+            "Toggling effects off must produce a measurable visual delta transitioning from fluid glass to solid fallback (found $cardTransitionDelta, expected > 0.002)",
+        )
+
+        GlassOpticalVerifier.assertSolidFallbackColor(
+            cardRender = imageEffectsOff,
+            cardBounds = cardTextFreePatch,
+            expectedColor = scheme.surfaceContainerHigh,
+            tolerance = 0.02f,
+            insetPx = 0,
+        )
+
+        // 9. Shell-level fluid-to-solid transition & solid fallback verification on GlobalAppTopBar
+        val topBarBoundsDp = onNodeWithTag("GlobalAppTopBar").getBoundsInRoot()
+        val brandBoundsDp = onNodeWithTag("GlobalTopBarBrand").getBoundsInRoot()
+        val destBoundsDp = onNodeWithTag("GlobalTopBarDestinations").getBoundsInRoot()
+        val clearLeft = brandBoundsDp.right.value + 12f
+        val clearRight = destBoundsDp.left.value - 12f
+        val topBarClearPatch = Rect(
+            left = clearLeft,
+            top = topBarBoundsDp.top.value + 10f,
+            right = (clearLeft + 40f).coerceAtMost(clearRight),
+            bottom = topBarBoundsDp.bottom.value - 10f,
+        )
+
+        // Verify that toggling effects off transitions the shell top bar from fluid glass to solid fallback
+        var topBarLuminanceDeltaSum = 0.0
+        var topBarPixelCount = 0
+        for (y in topBarClearPatch.top.toInt() until topBarClearPatch.bottom.toInt()) {
+            for (x in topBarClearPatch.left.toInt() until topBarClearPatch.right.toInt()) {
+                val lOn = GlassOpticalVerifier.relativeLuminance(pixelMapOn[x, y])
+                val lOff = GlassOpticalVerifier.relativeLuminance(pixelMapOff[x, y])
+                topBarLuminanceDeltaSum += kotlin.math.abs(lOn - lOff)
+                topBarPixelCount++
+            }
+        }
+        val topBarTransitionDelta = if (topBarPixelCount > 0) topBarLuminanceDeltaSum / topBarPixelCount else 0.0
+        println("[VERIFICATION] Fluid-to-solid top bar transition delta: $topBarTransitionDelta")
+        assertTrue(
+            topBarTransitionDelta > 0.01,
+            "Toggling effects off must produce a measurable visual delta transitioning top bar from fluid glass to solid fallback (found $topBarTransitionDelta, expected > 0.01)",
+        )
+
+        GlassOpticalVerifier.assertSolidFallbackColor(
+            cardRender = imageEffectsOff,
+            cardBounds = topBarClearPatch,
+            expectedColor = scheme.surfaceContainer,
+            tolerance = 0.02f,
+            insetPx = 0,
+        )
+
     }
 
     @OptIn(ExperimentalTestApi::class)

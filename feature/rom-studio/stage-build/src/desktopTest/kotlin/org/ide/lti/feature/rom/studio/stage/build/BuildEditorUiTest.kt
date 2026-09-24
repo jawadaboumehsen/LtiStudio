@@ -33,7 +33,7 @@ class BuildEditorUiTest {
         val settings = BuildSettings()
 
         composeTestRule.setContent {
-            LtiTheme(effectsEnabled = false, reducedMotion = true) {
+            LtiTheme {
                 BuildEditor(
                     settings = settings,
                     target = target,

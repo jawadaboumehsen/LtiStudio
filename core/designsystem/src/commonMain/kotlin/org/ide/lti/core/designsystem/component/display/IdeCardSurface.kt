@@ -9,60 +9,37 @@
  */
 package org.ide.lti.core.designsystem.component.display
 
-import androidx.compose.foundation.background
-import org.ide.lti.core.designsystem.theme.HazeShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.Dp
-import dev.chrisbanes.haze.ExperimentalHazeApi
-import dev.chrisbanes.haze.HazeInput
-import dev.chrisbanes.haze.glass.GlassStyle
-import dev.chrisbanes.haze.glass.hazeGlass
-import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
-import org.ide.lti.core.designsystem.theme.AppTheme
+import org.ide.lti.core.designsystem.component.layout.ideShellSurface
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
-import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.HazeShape
 
 /**
  * Surface styling modifier for cards hosted within the IDE workspace shell - built on Haze's
- * real `Modifier.hazeGlass`.
+ * real `Modifier.hazeGlass` via [ideShellSurface].
  *
- * When [AppTheme.Blue] is active, applies the real glass material. In [AppTheme.Dark] and
- * [AppTheme.Light], renders the opaque design system surface background and hairline border only
- * (matching the rest of the shell chrome, which stays flat outside Blue).
+ * Cards render real glass across Blue, Dark, and Light themes, falling back to flat solid
+ * surfaces when glass effects are disabled.
  */
-@OptIn(ExperimentalHazeApi::class)
 @Composable
 fun Modifier.ideCardSurface(
     shape: HazeShape = GlassShapes.HazeCard,
     borderWidth: Dp = GlassDimens.HairlineBorder,
     isMuted: Boolean = false,
 ): Modifier {
-    val isBlueGlass = GlassTheme.appTheme == AppTheme.Blue
     val colors = MaterialTheme.colorScheme
     val surfaceColor = if (isMuted) colors.surfaceContainer else colors.surfaceContainerHigh
     val borderColor = if (isMuted) colors.outlineVariant else colors.outline
 
-    return this
-        .clip(shape)
-        .then(
-            if (isBlueGlass) {
-                Modifier.hazeGlass(
-                    input = HazeInput.Backdrop(GlassTheme.hazeState),
-                    style = remember(shape, surfaceColor) {
-                        GlassStyle.regular.then {
-                            this.shape(shape)
-                            backgroundColor(surfaceColor)
-                        }
-                    },
-                )
-            } else {
-                Modifier.background(surfaceColor)
-            },
-        )
-        .glassOutlineBorder(color = borderColor, width = borderWidth, shape = shape)
+    return this.ideShellSurface(
+        shape = shape,
+        surfaceColor = surfaceColor,
+        drawBorder = true,
+        borderColor = borderColor,
+        borderWidth = borderWidth,
+    )
 }

@@ -38,7 +38,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import org.ide.lti.core.designsystem.theme.AlphaTokens
-import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
@@ -76,8 +75,6 @@ fun IdeAppFrame(
     onDismissDrawer: () -> Unit = {},
     drawerContent: (@Composable () -> Unit)? = null,
 ) {
-    val isBlueGlass = GlassTheme.appTheme == AppTheme.Blue
-
     val density = LocalDensity.current
     var isCompact by remember { mutableStateOf(false) }
 
@@ -87,134 +84,133 @@ fun IdeAppFrame(
             .onSizeChanged { size ->
                 val widthDp = with(density) { size.width.toDp() }
                 isCompact = widthDp < GlassDimens.CompactBreakpoint
-            }
-            .background(MaterialTheme.colorScheme.surface),
+            },
     ) {
-        if (isBlueGlass) {
-            StudioGlassBackdrop()
-        } else {
-            GlassBackdrop()
-        }
-
         Column(modifier = Modifier.fillMaxSize()) {
-                // Full-width Top App Bar
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(GlassDimens.TopBarHeight),
-                ) {
-                    topBar()
-                }
-                HorizontalDivider(
-                    thickness = GlassDimens.HairlineBorder,
-                    color = MaterialTheme.colorScheme.outline,
-                )
+            // Full-width Top App Bar
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(GlassDimens.TopBarHeight),
+            ) {
+                topBar()
+            }
+            HorizontalDivider(
+                thickness = GlassDimens.HairlineBorder,
+                color = MaterialTheme.colorScheme.outline,
+            )
 
-                // Middle Body
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                ) {
-                    // Persistent Pipeline Rail (optional - only screens with a stage/pipeline
-                    // concept pass one; others rely on navigator alone as the left panel)
-                    if (pipelineRail != null) {
-                        Box(
-                            modifier = Modifier
-                                .width(GlassDimens.PipelineRailWidth)
-                                .fillMaxHeight(),
-                        ) {
-                            pipelineRail()
-                        }
-                        VerticalDivider(
-                            thickness = GlassDimens.HairlineBorder,
-                            color = MaterialTheme.colorScheme.outline,
-                        )
-                    }
-
-                    // Workspace Navigator (Inline if not compact and present)
-                    if (navigator != null && !isCompact) {
-                        Box(
-                            modifier = Modifier
-                                .width(GlassDimens.WorkspaceNavigatorWidth)
-                                .fillMaxHeight(),
-                        ) {
-                            navigator()
-                        }
-                        VerticalDivider(
-                            thickness = GlassDimens.HairlineBorder,
-                            color = MaterialTheme.colorScheme.outline,
-                        )
-                    }
-
-                    // Inset Central Content Column
-                    Column(
+            // Middle Body
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+            ) {
+                // Persistent Pipeline Rail (optional - only screens with a stage/pipeline
+                // concept pass one; others rely on navigator alone as the left panel)
+                if (pipelineRail != null) {
+                    Box(
                         modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                            .padding(GlassDimens.ContentInset)
-                            .clip(GlassShapes.ShellPanel)
-                            .background(MaterialTheme.colorScheme.surface)
-                            .border(
-                                width = GlassDimens.HairlineBorder,
-                                color = MaterialTheme.colorScheme.outline,
-                                shape = GlassShapes.ShellPanel,
-                            ),
+                            .width(GlassDimens.PipelineRailWidth)
+                            .fillMaxHeight(),
                     ) {
-                        // Breadcrumb Bar
-                        if (breadcrumb != null) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(GlassDimens.BreadcrumbHeight),
-                            ) {
-                                breadcrumb()
-                            }
-                            HorizontalDivider(
-                                thickness = GlassDimens.HairlineBorder,
-                                color = MaterialTheme.colorScheme.outlineVariant,
-                            )
-                        }
+                        pipelineRail()
+                    }
+                    VerticalDivider(
+                        thickness = GlassDimens.HairlineBorder,
+                        color = MaterialTheme.colorScheme.outline,
+                    )
+                }
 
-                        // Bounded Content Region
+                // Workspace Navigator (Inline if not compact and present)
+                if (navigator != null && !isCompact) {
+                    Box(
+                        modifier = Modifier
+                            .width(GlassDimens.WorkspaceNavigatorWidth)
+                            .fillMaxHeight(),
+                    ) {
+                        navigator()
+                    }
+                    VerticalDivider(
+                        thickness = GlassDimens.HairlineBorder,
+                        color = MaterialTheme.colorScheme.outline,
+                    )
+                }
+
+                val centralColumnBackground = if (GlassTheme.effectsEnabled) {
+                    MaterialTheme.colorScheme.surface.copy(alpha = AlphaTokens.Half)
+                } else {
+                    MaterialTheme.colorScheme.surface
+                }
+
+                // Inset Central Content Column
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .padding(GlassDimens.ContentInset)
+                        .clip(GlassShapes.ShellPanel)
+                        .background(centralColumnBackground)
+                        .border(
+                            width = GlassDimens.HairlineBorder,
+                            color = MaterialTheme.colorScheme.outline,
+                            shape = GlassShapes.ShellPanel,
+                        ),
+                ) {
+                    // Breadcrumb Bar
+                    if (breadcrumb != null) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .weight(1f),
+                                .height(GlassDimens.BreadcrumbHeight),
                         ) {
-                            content()
+                            breadcrumb()
                         }
+                        HorizontalDivider(
+                            thickness = GlassDimens.HairlineBorder,
+                            color = MaterialTheme.colorScheme.outlineVariant,
+                        )
                     }
 
-                    // Context-Sensitive Right Panel (Inspector/Properties)
-                    if (rightPanel != null && !isCompact) {
-                        VerticalDivider(
-                            thickness = GlassDimens.HairlineBorder,
-                            color = MaterialTheme.colorScheme.outline,
-                        )
-                        Box(
-                            modifier = Modifier
-                                .width(GlassDimens.WorkspaceNavigatorWidth)
-                                .fillMaxHeight(),
-                        ) {
-                            rightPanel()
-                        }
+                    // Bounded Content Region
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                    ) {
+                        content()
                     }
                 }
 
-                // Bottom Status Bar
-                HorizontalDivider(
-                    thickness = GlassDimens.HairlineBorder,
-                    color = MaterialTheme.colorScheme.outline,
-                )
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(GlassDimens.StatusBarHeight),
-                ) {
-                    statusBar()
+                // Context-Sensitive Right Panel (Inspector/Properties)
+                if (rightPanel != null && !isCompact) {
+                    VerticalDivider(
+                        thickness = GlassDimens.HairlineBorder,
+                        color = MaterialTheme.colorScheme.outline,
+                    )
+                    Box(
+                        modifier = Modifier
+                            .width(GlassDimens.WorkspaceNavigatorWidth)
+                            .fillMaxHeight(),
+                    ) {
+                        rightPanel()
+                    }
                 }
             }
+
+            // Bottom Status Bar
+            HorizontalDivider(
+                thickness = GlassDimens.HairlineBorder,
+                color = MaterialTheme.colorScheme.outline,
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(GlassDimens.StatusBarHeight),
+            ) {
+                statusBar()
+            }
+        }
 
         // Overlay Drawer for compact viewports
         if (isCompact && (navigator != null || drawerContent != null)) {

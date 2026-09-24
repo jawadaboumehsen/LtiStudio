@@ -26,11 +26,13 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import com.github.takahirom.roborazzi.RoborazziOptions
+import io.github.takahirom.roborazzi.captureRoboImage
+import org.ide.lti.core.designsystem.component.layout.GlassBackdrop
+import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassTheme
-import org.ide.lti.core.designsystem.theme.IdeShellTokens
 import org.ide.lti.core.designsystem.theme.LtiTheme
-import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.model.run.StageId
 import org.junit.Rule
 import org.junit.Test
@@ -43,41 +45,81 @@ class StudioShellLayoutTest {
     val composeTestRule = createComposeRule()
 
     @Test
-    fun testWorkspaceShellFollowsEveryApplicationTheme() {
-        var theme by mutableStateOf<AppTheme>(AppTheme.Blue)
-        var observedColors: IdeShellColorScheme? = null
+    fun testWorkspaceShellThemeBlue() {
+        renderAndCaptureShell(AppTheme.Blue, "workspace_shell_blue")
+    }
 
+    @Test
+    fun testWorkspaceShellThemeDark() {
+        renderAndCaptureShell(AppTheme.Dark, "workspace_shell_dark")
+    }
+
+    @Test
+    fun testWorkspaceShellThemeLight() {
+        renderAndCaptureShell(AppTheme.Light, "workspace_shell_light")
+    }
+
+    @Test
+    fun testWorkspaceShellEffectsOff() {
+        renderAndCaptureShell(AppTheme.Dark, "workspace_shell_effects_off", effectsEnabled = false)
+    }
+
+    @Test
+    fun testWorkspaceShellEffectsOffBlue() {
+        renderAndCaptureShell(AppTheme.Blue, "workspace_shell_effects_off_blue", effectsEnabled = false)
+    }
+
+    @Test
+    fun testWorkspaceShellEffectsOffLight() {
+        renderAndCaptureShell(AppTheme.Light, "workspace_shell_effects_off_light", effectsEnabled = false)
+    }
+
+    @Test
+    fun testWorkspaceShellThemesProduceDistinctVisuals() {
+        val blueImage = renderAndCaptureShell(AppTheme.Blue, "workspace_shell_blue")
+        val darkImage = renderAndCaptureShell(AppTheme.Dark, "workspace_shell_dark")
+        val lightImage = renderAndCaptureShell(AppTheme.Light, "workspace_shell_light")
+
+        assertTrue(pixelDifferencePercent(blueImage, darkImage) > MIN_THEME_DIFF_PERCENT)
+        assertTrue(pixelDifferencePercent(darkImage, lightImage) > MIN_THEME_DIFF_PERCENT)
+    }
+
+    private fun renderAndCaptureShell(
+        theme: AppTheme,
+        name: String,
+        effectsEnabled: Boolean = true,
+    ): ImageBitmap {
+        var observedTheme: AppTheme? = null
         composeTestRule.setContent {
-            LtiTheme(appTheme = theme) {
-                observedColors = GlassTheme.ideShellColors
-                StudioShellContent(
-                    uiState = WorkspaceShellUiState(),
-                    onSelectGlobalDestination = {},
-                    onSelectWorkspaceSection = {},
-                    onSelectStage = {},
-                    onValidate = {},
-                    onSave = {},
-                    content = { Box(Modifier.fillMaxSize()) },
-                )
+            LtiTheme(appTheme = theme, effectsEnabled = effectsEnabled) {
+                observedTheme = GlassTheme.appTheme
+                Box(Modifier.fillMaxSize()) {
+                    GlassBackdrop()
+                    StudioShellContent(
+                        uiState = WorkspaceShellUiState(),
+                        onSelectGlobalDestination = {},
+                        onSelectWorkspaceSection = {},
+                        onSelectStage = {},
+                        onValidate = {},
+                        onSave = {},
+                        content = { Box(Modifier.fillMaxSize()) },
+                    )
+                }
             }
         }
 
         composeTestRule.waitForIdle()
-        assertEquals(IdeShellTokens.Blue, observedColors)
-        val blueImage = composeTestRule.onNodeWithTag("StudioShellLayout").captureToImage()
-
-        theme = AppTheme.Dark
-        composeTestRule.waitForIdle()
-        assertEquals(IdeShellTokens.Dark, observedColors)
-        val darkImage = composeTestRule.onNodeWithTag("StudioShellLayout").captureToImage()
-
-        theme = AppTheme.Light
-        composeTestRule.waitForIdle()
-        assertEquals(IdeShellTokens.Light, observedColors)
-        val lightImage = composeTestRule.onNodeWithTag("StudioShellLayout").captureToImage()
-
-        assertTrue(pixelDifferencePercent(blueImage, darkImage) > MIN_THEME_DIFF_PERCENT)
-        assertTrue(pixelDifferencePercent(darkImage, lightImage) > MIN_THEME_DIFF_PERCENT)
+        assertEquals(theme, observedTheme)
+        val node = composeTestRule.onNodeWithTag("StudioShellLayout")
+        val image = node.captureToImage()
+        node.captureRoboImage(
+            filePath = "src/desktopTest/resources/screenshots/$name.png",
+            roborazziOptions = RoborazziOptions(
+                compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0.005f),
+                recordOptions = RoborazziOptions.RecordOptions(resizeScale = 1.0),
+            ),
+        )
+        return image
     }
 
     @Test
@@ -98,16 +140,18 @@ class StudioShellLayoutTest {
         )
 
         composeTestRule.setContent {
-            Box(Modifier.size(GlassDimens.ReferenceWindowWidth, GlassDimens.ReferenceWindowHeight)) {
-                StudioShellContent(
-                    uiState = uiState,
-                    onSelectGlobalDestination = {},
-                    onSelectWorkspaceSection = {},
-                    onSelectStage = {},
-                    onValidate = {},
-                    onSave = {},
-                    content = { Box(Modifier.fillMaxSize().testTag("MainContent")) },
-                )
+            LtiTheme {
+                Box(Modifier.size(GlassDimens.ReferenceWindowWidth, GlassDimens.ReferenceWindowHeight)) {
+                    StudioShellContent(
+                        uiState = uiState,
+                        onSelectGlobalDestination = {},
+                        onSelectWorkspaceSection = {},
+                        onSelectStage = {},
+                        onValidate = {},
+                        onSave = {},
+                        content = { Box(Modifier.fillMaxSize().testTag("MainContent")) },
+                    )
+                }
             }
         }
 
@@ -160,16 +204,18 @@ class StudioShellLayoutTest {
         )
 
         composeTestRule.setContent {
-            Box(Modifier.size(GlassDimens.ReferenceWindowWidth, GlassDimens.ReferenceWindowHeight)) {
-                StudioShellContent(
-                    uiState = uiState,
-                    onSelectGlobalDestination = {},
-                    onSelectWorkspaceSection = {},
-                    onSelectStage = {},
-                    onValidate = {},
-                    onSave = {},
-                    content = { Box(Modifier.fillMaxSize().testTag("MainContent")) },
-                )
+            LtiTheme {
+                Box(Modifier.size(GlassDimens.ReferenceWindowWidth, GlassDimens.ReferenceWindowHeight)) {
+                    StudioShellContent(
+                        uiState = uiState,
+                        onSelectGlobalDestination = {},
+                        onSelectWorkspaceSection = {},
+                        onSelectStage = {},
+                        onValidate = {},
+                        onSave = {},
+                        content = { Box(Modifier.fillMaxSize().testTag("MainContent")) },
+                    )
+                }
             }
         }
 
@@ -195,16 +241,18 @@ class StudioShellLayoutTest {
     @Test
     fun testExactlyOneTopBarAndOneStatusBar() {
         composeTestRule.setContent {
-            Box(Modifier.size(GlassDimens.ReferenceWindowWidth, GlassDimens.ReferenceWindowHeight)) {
-                StudioShellContent(
-                    uiState = WorkspaceShellUiState(),
-                    onSelectGlobalDestination = {},
-                    onSelectWorkspaceSection = {},
-                    onSelectStage = {},
-                    onValidate = {},
-                    onSave = {},
-                    content = { Box(Modifier.fillMaxSize()) },
-                )
+            LtiTheme {
+                Box(Modifier.size(GlassDimens.ReferenceWindowWidth, GlassDimens.ReferenceWindowHeight)) {
+                    StudioShellContent(
+                        uiState = WorkspaceShellUiState(),
+                        onSelectGlobalDestination = {},
+                        onSelectWorkspaceSection = {},
+                        onSelectStage = {},
+                        onValidate = {},
+                        onSave = {},
+                        content = { Box(Modifier.fillMaxSize()) },
+                    )
+                }
             }
         }
 
@@ -219,18 +267,20 @@ class StudioShellLayoutTest {
         var selectedSection: WorkspaceSection? = null
 
         composeTestRule.setContent {
-            Box(Modifier.size(GlassDimens.ReferenceWindowWidth, GlassDimens.ReferenceWindowHeight)) {
-                StudioShellContent(
-                    uiState = WorkspaceShellUiState(
-                        pipelineItems = createDefaultPipelineRailItems(StageId.FIRMWARE_ACQUISITION),
-                    ),
-                    onSelectGlobalDestination = { clickedDestination = it },
-                    onSelectWorkspaceSection = { selectedSection = it },
-                    onSelectStage = { selectedStage = it },
-                    onValidate = {},
-                    onSave = {},
-                    content = { Box(Modifier.fillMaxSize()) },
-                )
+            LtiTheme {
+                Box(Modifier.size(GlassDimens.ReferenceWindowWidth, GlassDimens.ReferenceWindowHeight)) {
+                    StudioShellContent(
+                        uiState = WorkspaceShellUiState(
+                            pipelineItems = createDefaultPipelineRailItems(StageId.FIRMWARE_ACQUISITION),
+                        ),
+                        onSelectGlobalDestination = { clickedDestination = it },
+                        onSelectWorkspaceSection = { selectedSection = it },
+                        onSelectStage = { selectedStage = it },
+                        onValidate = {},
+                        onSave = {},
+                        content = { Box(Modifier.fillMaxSize()) },
+                    )
+                }
             }
         }
 
@@ -258,16 +308,18 @@ class StudioShellLayoutTest {
         )
 
         composeTestRule.setContent {
-            Box(Modifier.size(GlassDimens.ReferenceWindowWidth, GlassDimens.ReferenceWindowHeight)) {
-                StudioShellContent(
-                    uiState = uiState,
-                    onSelectGlobalDestination = {},
-                    onSelectWorkspaceSection = {},
-                    onSelectStage = {},
-                    onValidate = {},
-                    onSave = {},
-                    content = { Box(Modifier.fillMaxSize()) },
-                )
+            LtiTheme {
+                Box(Modifier.size(GlassDimens.ReferenceWindowWidth, GlassDimens.ReferenceWindowHeight)) {
+                    StudioShellContent(
+                        uiState = uiState,
+                        onSelectGlobalDestination = {},
+                        onSelectWorkspaceSection = {},
+                        onSelectStage = {},
+                        onValidate = {},
+                        onSave = {},
+                        content = { Box(Modifier.fillMaxSize()) },
+                    )
+                }
             }
         }
 

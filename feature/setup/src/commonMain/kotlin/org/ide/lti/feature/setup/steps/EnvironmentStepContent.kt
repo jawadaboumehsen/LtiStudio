@@ -480,8 +480,7 @@ private fun CheckingActionButton() {
 }
 
 @Composable
-private fun StageProgressActionButton(
-) {
+private fun StageProgressActionButton() {
     GlassPrimaryButton(onClick = {}, enabled = false) {
         Row(
             verticalAlignment = Alignment.CenterVertically,

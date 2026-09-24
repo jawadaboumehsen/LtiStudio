@@ -356,7 +356,6 @@ fun SetupScreenContent(
     IdeAppFrame(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surface)
             .widthIn(min = SetupTokens.MinWindowWidth)
             .onSizeChanged { size ->
                 val widthDp = with(density) { size.width.toDp() }

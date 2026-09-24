@@ -74,7 +74,7 @@ fun AppearanceSettingsPane(
     onApplyChanges: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var reduceTransparency by remember { mutableStateOf(false) }
+    val reduceTransparency = !appSettingsState.effectsEnabled
     var showFocusIndicators by remember { mutableStateOf(true) }
     var isComfortable by remember { mutableStateOf(true) }
     var selectedAccentName by remember { mutableStateOf("Cobalt Blue") }
@@ -176,7 +176,7 @@ fun AppearanceSettingsPane(
 
                 // Card 2: Glass & motion
                 GlassCard(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().testTag("GlassCard_glass_and_motion"),
                     surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                     contentPadding = Spacing.CardPadding,
                 ) {
@@ -200,7 +200,8 @@ fun AppearanceSettingsPane(
                             title = "Reduce transparency",
                             description = "Use opaque surfaces without changing the layout.",
                             checked = reduceTransparency,
-                            onCheckedChange = { reduceTransparency = it },
+                            onCheckedChange = { appSettingsState.effectsEnabled = !it },
+                            toggleTestTag = "ReduceTransparencySwitch",
                         )
 
                         GlassHorizontalDivider()
@@ -278,7 +279,6 @@ fun AppearanceSettingsPane(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
                         onClick = {
-                            reduceTransparency = false
                             showFocusIndicators = true
                             isComfortable = true
                             selectedAccentName = "Cobalt Blue"
@@ -388,7 +388,10 @@ private fun AccentColorRow(selectedAccent: String, onSelectAccent: (String) -> U
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
+        Column(
+            modifier = Modifier.weight(1f).padding(end = Spacing.Medium),
+            verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
+        ) {
             Text(
                 text = "Accent color",
                 fontSize = FontSize.BodyMedium,
@@ -464,7 +467,10 @@ private fun InterfaceDensityRow(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
+        Column(
+            modifier = Modifier.weight(1f).padding(end = Spacing.Medium),
+            verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
+        ) {
             Text(
                 text = "Interface density",
                 fontSize = FontSize.BodyMedium,
@@ -532,6 +538,8 @@ private fun DensitySegmentItem(label: String, isSelected: Boolean, onClick: () -
             fontSize = FontSize.BodySmall,
             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
             color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            softWrap = false,
         )
     }
 }
@@ -546,7 +554,10 @@ private fun TextSizeRow(selectedSize: String, onSelectSize: (String) -> Unit) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
+        Column(
+            modifier = Modifier.weight(1f).padding(end = Spacing.Medium),
+            verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
+        ) {
             Text(
                 text = "Text size",
                 fontSize = FontSize.BodyMedium,
@@ -612,6 +623,7 @@ private fun SettingsSwitchRow(
     description: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
+    toggleTestTag: String? = null,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -636,6 +648,7 @@ private fun SettingsSwitchRow(
         }
 
         GlassToggle(
+            modifier = if (toggleTestTag != null) Modifier.testTag(toggleTestTag) else Modifier,
             checked = checked,
             onCheckedChange = onCheckedChange,
             activeColor = MaterialTheme.colorScheme.primary,

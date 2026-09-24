@@ -9,6 +9,7 @@
  */
 plugins {
     alias(libs.plugins.cmp.feature.convention)
+    alias(libs.plugins.roborazzi)
 }
 
 kotlin {
@@ -32,8 +33,11 @@ kotlin {
             implementation(libs.koin.test)
         }
         desktopTest.dependencies {
+            implementation(projects.core.testing)
             implementation(compose.desktop.uiTestJUnit4)
             implementation(compose.desktop.currentOs)
+            implementation(libs.roborazzi.core)
+            implementation(libs.roborazzi.compose.desktop)
         }
     }
 }

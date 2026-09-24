@@ -1,5 +1,8 @@
-// Top-level build file where you can add configuration options common to all sub-projects/modules.
-import org.gradle.api.tasks.PathSensitivity
+buildscript {
+    dependencies {
+        classpath(libs.android.gradlePlugin)
+    }
+}
 
 plugins {
     alias(libs.plugins.kotlin.jvm) apply false
@@ -15,6 +18,7 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform) apply false
     alias(libs.plugins.wire) apply false
     alias(libs.plugins.ktrofit) apply false
+    alias(libs.plugins.roborazzi) apply false
 }
 
 object DynamicVersion {

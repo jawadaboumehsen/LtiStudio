@@ -19,13 +19,8 @@ import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import dev.chrisbanes.haze.ExperimentalHazeApi
-import dev.chrisbanes.haze.HazeInput
-import dev.chrisbanes.haze.glass.GlassStyle
-import dev.chrisbanes.haze.glass.hazeGlass
 import org.ide.lti.core.designsystem.component.actions.*
 import org.ide.lti.core.designsystem.component.devtools.*
 import org.ide.lti.core.designsystem.component.display.*
@@ -36,7 +31,6 @@ import org.ide.lti.core.designsystem.component.primitives.*
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.Elevation
 import org.ide.lti.core.designsystem.theme.GlassShapes
-import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -160,11 +154,10 @@ fun GlassNavigationRail(
     )
 }
 
-@OptIn(ExperimentalHazeApi::class)
 @Composable
-private fun Modifier.dockedGlassSurface(): Modifier = this.hazeGlass(
-    input = HazeInput.Backdrop(GlassTheme.hazeState),
-    style = remember { GlassStyle.regular.then { shape(GlassShapes.HazeFlat) } },
+private fun Modifier.dockedGlassSurface(): Modifier = this.ideShellSurface(
+    shape = GlassShapes.HazeFlat,
+    drawBorder = false,
 )
 
 @Preview

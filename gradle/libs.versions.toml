@@ -24,6 +24,7 @@ coreKtxVersion = "1.15.0"
 # Testing Dependencies
 junitVersion = "4.13.2"
 truth = "1.4.4"
+roborazzi = "1.45.1"
 
 # Utility Dependencies
 dependencyGuard = "0.5.0"
@@ -263,6 +264,9 @@ nucleus-application = { module = "dev.nucleusframework:nucleus.nucleus-applicati
 nucleus-decorated-window = { module = "dev.nucleusframework:nucleus.decorated-window-tao", version.ref = "nucleus" }
 nucleus-fs-watcher = { module = "dev.nucleusframework:nucleus.fs-watcher", version.ref = "nucleus" }
 composenativetray = { module = "dev.nucleusframework:composenativetray", version = "2.1.6" }
+roborazzi-core = { module = "io.github.takahirom.roborazzi:roborazzi-core", version.ref = "roborazzi" }
+roborazzi-compose = { module = "io.github.takahirom.roborazzi:roborazzi-compose", version.ref = "roborazzi" }
+roborazzi-compose-desktop = { module = "io.github.takahirom.roborazzi:roborazzi-compose-desktop", version.ref = "roborazzi" }
 
 
 [bundles]
@@ -299,4 +303,5 @@ dependencyGuard = { id = "com.dropbox.dependency-guard", version.ref = "dependen
 detekt = { id = "dev.detekt", version.ref = "detekt" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotlessVersion" }
+roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }
 

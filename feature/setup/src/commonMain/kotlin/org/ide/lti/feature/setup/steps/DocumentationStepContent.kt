@@ -24,7 +24,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.ComponentSize
-import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.feature.setup.components.DocFeatureCard
 
@@ -38,7 +37,6 @@ import org.ide.lti.feature.setup.components.DocFeatureCard
 fun DocumentationStepContent(
     modifier: Modifier = Modifier,
 ) {
-
     Column(
         modifier = modifier
             .widthIn(max = ComponentSize.SetupMaxContentWidth)

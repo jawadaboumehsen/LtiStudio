@@ -9,11 +9,9 @@
  */
 package org.ide.lti.feature.settings
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -34,21 +32,17 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
-import dev.chrisbanes.haze.ExperimentalHazeApi
-import dev.chrisbanes.haze.HazeInput
-import dev.chrisbanes.haze.glass.GlassStyle
-import dev.chrisbanes.haze.glass.hazeGlass
 import org.ide.lti.core.designsystem.component.layout.GlobalAppDestination
 import org.ide.lti.core.designsystem.component.layout.GlobalAppTopBar
 import org.ide.lti.core.designsystem.component.layout.IdeAppFrame
 import org.ide.lti.core.designsystem.component.layout.IdeNavigatorItem
 import org.ide.lti.core.designsystem.component.layout.IdeNavigatorPanel
 import org.ide.lti.core.designsystem.component.layout.IdeStatusBar
+import org.ide.lti.core.designsystem.component.layout.ideShellSurface
 import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
-import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.ui.settings.AppSettingsState
@@ -87,14 +81,19 @@ fun SettingsScreenContent(
     modifier: Modifier = Modifier,
     showHeader: Boolean = true,
     appSettingsState: AppSettingsState = koinInject(),
+    initialCategory: SettingsCategory = SettingsCategory.EditorPreferences,
 ) {
     val currentTheme = AppTheme.fromId(appSettingsState.theme)
 
-    LtiTheme(appTheme = currentTheme) {
+    LtiTheme(
+        appTheme = currentTheme,
+        effectsEnabled = appSettingsState.effectsEnabled,
+        reducedMotion = appSettingsState.reducedMotion,
+    ) {
         val density = LocalDensity.current
         var isCompact by remember { mutableStateOf(false) }
 
-        var selectedCategory by remember { mutableStateOf(SettingsCategory.EditorPreferences) }
+        var selectedCategory by remember(initialCategory) { mutableStateOf(initialCategory) }
 
         val settingsNavItems = remember {
             listOf(
@@ -115,7 +114,6 @@ fun SettingsScreenContent(
         IdeAppFrame(
             modifier = modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.surface)
                 .onSizeChanged { size ->
                     val widthDp = with(density) { size.width.toDp() }
                     isCompact = widthDp < GlassDimens.CompactBreakpoint
@@ -209,32 +207,15 @@ fun SettingsScreenContent(
     }
 }
 
-@OptIn(ExperimentalHazeApi::class)
 @Composable
 private fun SettingsHelpColumn(
     category: SettingsCategory,
     modifier: Modifier = Modifier,
 ) {
-    val isBlueGlass = GlassTheme.appTheme == AppTheme.Blue
-    val surfaceColor = MaterialTheme.colorScheme.surfaceContainer
-    val chromeModifier = if (isBlueGlass) {
-        Modifier.hazeGlass(
-            input = HazeInput.Backdrop(GlassTheme.hazeState),
-            style = remember(surfaceColor) {
-                GlassStyle.regular.then {
-                    shape(GlassShapes.HazeFlat)
-                    backgroundColor(surfaceColor)
-                }
-            },
-        )
-    } else {
-        Modifier.background(surfaceColor)
-    }
-
     Column(
         modifier = modifier
             .fillMaxHeight()
-            .then(chromeModifier)
+            .ideShellSurface(shape = GlassShapes.HazeFlat, drawBorder = false)
             .verticalScroll(rememberScrollState())
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),

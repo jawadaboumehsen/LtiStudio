@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.designsystem.component.navigation
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -40,7 +41,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeInput
-import dev.chrisbanes.haze.glass.GlassStyle
 import dev.chrisbanes.haze.glass.hazeGlass
 import org.ide.lti.core.designsystem.component.actions.*
 import org.ide.lti.core.designsystem.component.devtools.*
@@ -53,6 +53,7 @@ import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.GlassMaterialStyles
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.HazeShape
@@ -346,13 +347,21 @@ private fun Modifier.tabGlassSurface(
     shape: HazeShape,
     surfaceColor: Color,
     tintColor: Color,
-): Modifier = this.hazeGlass(
-    input = HazeInput.Backdrop(GlassTheme.hazeState),
-    style = remember(shape, surfaceColor, tintColor) {
-        GlassStyle.regular.then {
-            this.shape(shape)
-            backgroundColor(surfaceColor)
-            tint(tintColor)
-        }
-    },
-)
+): Modifier {
+    val theme = GlassTheme.appTheme
+    return if (GlassTheme.effectsEnabled) {
+        this.hazeGlass(
+            input = HazeInput.Sources(GlassTheme.hazeState),
+            style = remember(theme, shape, tintColor) {
+                GlassMaterialStyles.baseStyle(
+                    theme = theme,
+                    opticalTint = tintColor,
+                ).then {
+                    this.shape(shape)
+                }
+            },
+        )
+    } else {
+        this.background(surfaceColor, shape = shape)
+    }
+}

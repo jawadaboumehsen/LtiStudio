@@ -9,7 +9,7 @@
  */
 plugins {
     alias(libs.plugins.cmp.feature.convention)
-    
+    alias(libs.plugins.roborazzi)
 }
 
 
@@ -24,5 +24,15 @@ kotlin {
             implementation(libs.kotlinx.serialization.json)
             implementation(compose.materialIconsExtended)
         }
+        desktopTest.dependencies {
+            implementation(compose.desktop.uiTestJUnit4)
+            implementation(compose.desktop.currentOs)
+            implementation(libs.roborazzi.core)
+            implementation(libs.roborazzi.compose.desktop)
+        }
     }
+}
+
+tasks.register("test") {
+    dependsOn("desktopTest")
 }

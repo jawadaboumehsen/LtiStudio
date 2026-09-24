@@ -37,18 +37,13 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.ExperimentalHazeApi
-import dev.chrisbanes.haze.HazeInput
-import dev.chrisbanes.haze.glass.GlassStyle
-import dev.chrisbanes.haze.glass.hazeGlass
 import org.ide.lti.core.designsystem.component.actions.DesktopWindowControls
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
 import org.ide.lti.core.designsystem.component.actions.GlassIconToggleButton
@@ -58,14 +53,12 @@ import org.ide.lti.core.designsystem.component.actions.windowDragGesture
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
-import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.BrandColors
 import org.ide.lti.core.designsystem.theme.BrandLogoGradientEnd
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.HazeShape
-import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.LetterSpacing
 import org.ide.lti.core.designsystem.theme.LtiTheme
@@ -139,22 +132,13 @@ fun GlassTopBar(
     val effectiveDrag = effectiveWindowControls.onDragWindow
     val effectiveDragDelta = effectiveWindowControls.onDragDelta
 
-    // Real glass chrome only for the Blue theme - Dark/Light render flat, matching every other
-    // shell surface's isBlueGlass gating (see IdeCardSurface.ideCardSurface()).
-    val isBlueGlass = drawOwnChrome && GlassTheme.appTheme == AppTheme.Blue
     val surfaceColor = MaterialTheme.colorScheme.surfaceContainer
-    val chromeModifier = if (isBlueGlass) {
-        Modifier.hazeGlass(
-            input = HazeInput.Backdrop(GlassTheme.hazeState),
-            style = remember(shape, surfaceColor) {
-                GlassStyle.regular.then {
-                    this.shape(shape)
-                    backgroundColor(surfaceColor)
-                }
-            },
+    val chromeModifier = if (drawOwnChrome) {
+        Modifier.ideShellSurface(
+            shape = shape,
+            surfaceColor = surfaceColor,
+            drawBorder = false,
         )
-    } else if (drawOwnChrome) {
-        Modifier.background(surfaceColor)
     } else {
         Modifier
     }

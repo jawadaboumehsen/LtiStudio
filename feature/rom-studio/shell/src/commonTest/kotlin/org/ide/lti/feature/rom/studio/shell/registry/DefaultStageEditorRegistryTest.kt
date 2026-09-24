@@ -11,10 +11,6 @@ package org.ide.lti.feature.rom.studio.shell.registry
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
-import kotlin.test.assertNotNull
 import org.ide.lti.core.domain.pipeline.PipelineStageSequence
 import org.ide.lti.core.model.run.StageId
 import org.ide.lti.feature.rom.studio.api.StageDescriptor
@@ -23,6 +19,10 @@ import org.ide.lti.feature.rom.studio.api.StageEditorContext
 import org.ide.lti.feature.rom.studio.api.StudioIconKey
 import org.ide.lti.feature.rom.studio.api.StudioSubobject
 import org.ide.lti.feature.rom.studio.api.StudioSubobjectId
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
 
 class DefaultStageEditorRegistryTest {
 
@@ -35,6 +35,7 @@ class DefaultStageEditorRegistryTest {
                 iconKey = StudioIconKey.ACQUIRE,
                 subobjects = subobjects,
             )
+
             @Composable
             override fun Content(context: StageEditorContext, modifier: Modifier) {}
         }

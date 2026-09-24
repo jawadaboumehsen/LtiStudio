@@ -29,6 +29,7 @@ import org.ide.lti.core.designsystem.component.display.IdeSummaryItem
 import org.ide.lti.core.designsystem.component.layout.IdeAppFrame
 import org.ide.lti.core.designsystem.component.layout.IdePipelineRail
 import org.ide.lti.core.designsystem.component.layout.IdePipelineStageItem
+import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.testing.screenshot.GoldenImageAssert
 import org.junit.Rule
 import org.junit.Test
@@ -85,15 +86,17 @@ class IdeShellComponentTest {
     fun testPipelineRailItemStableBoundsAcrossSelection() {
         var selectedStage by mutableStateOf("Acquire")
         composeTestRule.setContent {
-            IdePipelineRail(
-                modifier = Modifier.testTag("Rail"),
-                stages = listOf(
-                    IdePipelineStageItem(id = "Acquire", label = "Acquire", icon = "download"),
-                    IdePipelineStageItem(id = "Extract", label = "Extract", icon = "folder"),
-                ),
-                selectedStageId = selectedStage,
-                onSelectStage = { selectedStage = it },
-            )
+            LtiTheme {
+                IdePipelineRail(
+                    modifier = Modifier.testTag("Rail"),
+                    stages = listOf(
+                        IdePipelineStageItem(id = "Acquire", label = "Acquire", icon = "download"),
+                        IdePipelineStageItem(id = "Extract", label = "Extract", icon = "folder"),
+                    ),
+                    selectedStageId = selectedStage,
+                    onSelectStage = { selectedStage = it },
+                )
+            }
         }
 
         val bounds1 = composeTestRule.onNodeWithTag("RailItem_Acquire").fetchSemanticsNode().boundsInRoot
@@ -109,19 +112,21 @@ class IdeShellComponentTest {
     fun testDisabledPipelineItemCannotBeActivated() {
         var clicked = false
         composeTestRule.setContent {
-            IdePipelineRail(
-                stages = listOf(
-                    IdePipelineStageItem(
-                        id = "Publish",
-                        label = "Publish",
-                        icon = "publish",
-                        enabled = false,
-                        disabledReason = "Build required first",
+            LtiTheme {
+                IdePipelineRail(
+                    stages = listOf(
+                        IdePipelineStageItem(
+                            id = "Publish",
+                            label = "Publish",
+                            icon = "publish",
+                            enabled = false,
+                            disabledReason = "Build required first",
+                        ),
                     ),
-                ),
-                selectedStageId = null,
-                onSelectStage = { clicked = true },
-            )
+                    selectedStageId = null,
+                    onSelectStage = { clicked = true },
+                )
+            }
         }
 
         composeTestRule.onNodeWithTag("RailItem_Publish")

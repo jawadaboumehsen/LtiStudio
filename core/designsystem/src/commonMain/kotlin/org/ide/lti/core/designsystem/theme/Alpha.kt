@@ -59,6 +59,12 @@ object AlphaTokens {
     /** Strong opacity for a gradient glow's brightest core (55%). */
     const val Strong: Float = 0.55f
 
+    /** High opacity for radiant glow cores (70%). */
+    const val Vibrant: Float = 0.70f
+
+    /** Intense opacity for saturated aurora lighting cores (75%). */
+    const val Intense: Float = 0.75f
+
     /**
      * Dedicated opacity for muted text on translucent glass surfaces (85%).
      * Ensures high contrast and legibility over luminous backdrop gradients while preserving

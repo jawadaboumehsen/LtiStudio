@@ -17,7 +17,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -56,6 +55,7 @@ import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.material.icons.filled.Widgets
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -75,16 +75,11 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import dev.chrisbanes.haze.ExperimentalHazeApi
-import dev.chrisbanes.haze.HazeInput
-import dev.chrisbanes.haze.glass.GlassStyle
-import dev.chrisbanes.haze.glass.hazeGlass
 import org.ide.lti.core.designsystem.theme.AlphaTokens
-import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassShapes
-import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.LetterSpacing
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -112,28 +107,11 @@ fun IdeNavigatorPanel(
     modifier: Modifier = Modifier,
     footerContent: (@Composable () -> Unit)? = null,
 ) {
-    // Real glass chrome only for the Blue theme - see IdeTopAppBar.
-    val isBlueGlass = GlassTheme.appTheme == AppTheme.Blue
-    val surfaceColor = MaterialTheme.colorScheme.surfaceContainer
-    val chromeModifier = if (isBlueGlass) {
-        Modifier.hazeGlass(
-            input = HazeInput.Backdrop(GlassTheme.hazeState),
-            style = remember(surfaceColor) {
-                GlassStyle.regular.then {
-                    shape(GlassShapes.HazeFlat)
-                    backgroundColor(surfaceColor)
-                }
-            },
-        )
-    } else {
-        Modifier.background(surfaceColor)
-    }
-
     Column(
         modifier = modifier
             .width(GlassDimens.WorkspaceNavigatorWidth)
             .fillMaxHeight()
-            .then(chromeModifier)
+            .ideShellSurface(shape = GlassShapes.HazeFlat, drawBorder = false)
             .padding(vertical = Spacing.Small),
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
@@ -223,7 +201,7 @@ private fun NavigatorItemRow(
 
     val contentColor = when {
         !item.enabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = AlphaTokens.Disabled)
-        isSelected -> MaterialTheme.colorScheme.onSurface
+        isSelected -> MaterialTheme.colorScheme.onPrimary
         isHovered -> MaterialTheme.colorScheme.onSurface
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }

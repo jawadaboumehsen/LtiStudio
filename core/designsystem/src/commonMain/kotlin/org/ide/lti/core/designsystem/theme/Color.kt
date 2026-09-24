@@ -54,7 +54,7 @@ private val md_theme_dark_onBackground = Color(0xFFF3F4F6)
 private val md_theme_dark_surface = Color(0xFF161B22)
 private val md_theme_dark_onSurface = Color(0xFFF3F4F6)
 private val md_theme_dark_surfaceVariant = Color(0xFF21262D)
-private val md_theme_dark_onSurfaceVariant = Color(0xFF8C93A0)
+private val md_theme_dark_onSurfaceVariant = Color(0xFF969DAA)
 private val md_theme_dark_outline = Color(0xFF30363D)
 private val md_theme_dark_outlineVariant = Color(0xFF21262D)
 private val md_theme_dark_error = Color(0xFFF85149)
@@ -66,27 +66,27 @@ private val md_theme_dark_surfaceContainer = Color(0xFF262C36)
 private val md_theme_dark_surfaceContainerHigh = Color(0xFF2D333D)
 private val md_theme_dark_surfaceContainerHighest = Color(0xFF363D48)
 
-/** Blue theme color literals - signature AMOLED sky-blue palette. */
-private val md_theme_blue_primary = Color(0xFF38BDF8)
-private val md_theme_blue_onPrimary = Color(0xFF071019)
-private val md_theme_blue_secondary = Color(0xFF195EB7)
-private val md_theme_blue_onSecondary = Color(0xFFEDF5FF)
-private val md_theme_blue_background = Color(0xFF060C18)
-private val md_theme_blue_onBackground = Color(0xFFEDF5FF)
-private val md_theme_blue_surface = Color(0xFF060C18)
-private val md_theme_blue_onSurface = Color(0xFFEDF5FF)
-private val md_theme_blue_surfaceVariant = Color(0xFF07101E)
-private val md_theme_blue_onSurfaceVariant = Color(0xFFB8D0EB)
-private val md_theme_blue_outline = Color(0xFF1A2B48)
-private val md_theme_blue_outlineVariant = Color(0xFF263D62)
+/** Blue theme color literals - signature studio sapphire and midnight obsidian palette. */
+private val md_theme_blue_primary = Color(0xFF3B82F6)
+private val md_theme_blue_onPrimary = Color(0xFFFFFFFF)
+private val md_theme_blue_secondary = Color(0xFF38BDF8)
+private val md_theme_blue_onSecondary = Color(0xFF060B14)
+private val md_theme_blue_background = Color(0xFF060B14)
+private val md_theme_blue_onBackground = Color(0xFFF1F5F9)
+private val md_theme_blue_surface = Color(0xFF080E1A)
+private val md_theme_blue_onSurface = Color(0xFFF1F5F9)
+private val md_theme_blue_surfaceVariant = Color(0xFF121B2C)
+private val md_theme_blue_onSurfaceVariant = Color(0xFF94A9C9)
+private val md_theme_blue_outline = Color(0xFF223554)
+private val md_theme_blue_outlineVariant = Color(0xFF2C436B)
 private val md_theme_blue_error = Color(0xFFF85149)
-private val md_theme_blue_onError = Color(0xFF071019)
+private val md_theme_blue_onError = Color(0xFF060B14)
 private val md_theme_blue_scrim = Color(0xFF000000)
-private val md_theme_blue_surfaceContainerLowest = Color(0xFF060C18)
-private val md_theme_blue_surfaceContainerLow = Color(0xFF07101E)
-private val md_theme_blue_surfaceContainer = Color(0xFF0B2140)
-private val md_theme_blue_surfaceContainerHigh = Color(0xFF0C427F)
-private val md_theme_blue_surfaceContainerHighest = Color(0xFF195EB7)
+private val md_theme_blue_surfaceContainerLowest = Color(0xFF060B14)
+private val md_theme_blue_surfaceContainerLow = Color(0xFF0C1322)
+private val md_theme_blue_surfaceContainer = Color(0xFF10192B)
+private val md_theme_blue_surfaceContainerHigh = Color(0xFF16233B)
+private val md_theme_blue_surfaceContainerHighest = Color(0xFF1F3050)
 
 /** Official-pattern M3 color scheme for the Light theme. */
 internal val LightColorScheme = lightColorScheme(
@@ -318,17 +318,43 @@ object WallpaperColors {
     val LightMountainNear = Color(0xFF475569)
 }
 
-/** Saturated, multi-depth aura colors for the professional Studio IDE shell backdrop canvas. */
+/** Multi-spectral cosmic sapphire aura colors for the Blue theme backdrop canvas. */
 object StudioBackdropColors {
-    val Base = Color(0xFF031A33)
-    val PrimaryAura = Color(0xFF1677D2)
-    val CyanAura = Color(0xFF38BDF8)
-    val SidebarAura = Color(0xFF075FC7)
-    val VioletAura = Color(0xFF4949B8)
-    val Vignette = Color(0xFF010813)
+    val Base = Color(0xFF060B14)
+    val PrimaryAura = Color(0xFF1D4ED8)
+    val PrimaryAuraSubtle = Color(0xFF1E3A8A)
+    val CyanAura = Color(0xFF0891B2)
+    val CyanAuraSubtle = Color(0xFF0E7490)
+    val SidebarAura = Color(0xFF2563EB)
+    val VioletAura = Color(0xFF6366F1)
+    val AmberAura = Color(0xFF92400E)
+    val Vignette = Color(0xFF020408)
     val SidebarStart = Color(0xC9195FB5)
     val SidebarCenter = Color(0xA90C4385)
     val SidebarEnd = Color(0xC9062342)
+}
+
+/** Multi-depth cosmic celestial aura colors for the Dark theme backdrop canvas. */
+object DarkBackdropColors {
+    val Base = Color(0xFF090B10)
+    val IndigoAura = Color(0xFF3B4874)
+    val IndigoAuraSubtle = Color(0xFF222B45)
+    val CyanAura = Color(0xFF0E4E63)
+    val CyanAuraSubtle = Color(0xFF0A3140)
+    val AmethystAura = Color(0xFF4C2A66)
+    val AmberAura = Color(0xFF5A3D1E)
+    val Vignette = Color(0xFF040508)
+}
+
+/** Soft prismatic bloom colors for the Light theme backdrop canvas. */
+object LightBackdropColors {
+    val Base = Color(0xFFF5F7FA)
+    val SkyBloom = Color(0xFFBAE6FD)
+    val SkyBloomSubtle = Color(0xFFE0F2FE)
+    val LilacBloom = Color(0xFFE9D5FF)
+    val LilacBloomSubtle = Color(0xFFF3E8FF)
+    val PeachBloom = Color(0xFFFFEDD5)
+    val Vignette = Color(0xFFE2E8F0)
 }
 
 /** Centralized token colors for the plugin manager's cards, tables, tabs, and status chips. */

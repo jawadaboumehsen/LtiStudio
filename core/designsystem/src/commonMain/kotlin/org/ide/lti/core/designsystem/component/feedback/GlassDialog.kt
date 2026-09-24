@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.designsystem.component.feedback
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,7 +20,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import org.ide.lti.core.designsystem.theme.HazeShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -37,7 +37,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeInput
-import dev.chrisbanes.haze.glass.GlassStyle
 import dev.chrisbanes.haze.glass.hazeGlass
 import org.ide.lti.core.designsystem.component.actions.*
 import org.ide.lti.core.designsystem.component.devtools.*
@@ -48,6 +47,7 @@ import org.ide.lti.core.designsystem.component.navigation.*
 import org.ide.lti.core.designsystem.component.primitives.*
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.HazeShape
 import org.ide.lti.core.designsystem.theme.Spacing
 
 /**
@@ -88,6 +88,22 @@ fun GlassDialog(
     content: @Composable () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
+    val theme = GlassTheme.appTheme
+
+    val dialogSurfaceModifier = if (GlassTheme.effectsEnabled && PlatformDialogPolicy.supportsCrossWindowBlur) {
+        Modifier.hazeGlass(
+            input = HazeInput.Sources(GlassTheme.hazeState),
+            style = remember(theme, shape) {
+                org.ide.lti.core.designsystem.theme.GlassMaterialStyles.baseStyle(
+                    theme = theme,
+                ).then {
+                    this.shape(shape)
+                }
+            },
+        )
+    } else {
+        Modifier.background(colors.surfaceContainerHighest, shape = shape)
+    }
 
     Dialog(
         onDismissRequest = onDismissRequest,
@@ -97,15 +113,7 @@ fun GlassDialog(
             modifier = modifier
                 .fillMaxWidth()
                 .padding(Spacing.Medium)
-                .hazeGlass(
-                    input = HazeInput.Backdrop(GlassTheme.hazeState),
-                    style = remember(shape, colors.surfaceContainerHighest) {
-                        GlassStyle.regular.then {
-                            this.shape(shape)
-                            backgroundColor(colors.surfaceContainerHighest)
-                        }
-                    },
-                )
+                .then(dialogSurfaceModifier)
                 .clip(shape),
         ) {
             CompositionLocalProvider(LocalContentColor provides colors.onSurface) {
@@ -172,6 +180,22 @@ fun GlassLoadingDialog(
     when (visibilityState) {
         is LoadingDialogState.Hidden -> Unit
         is LoadingDialogState.Shown -> {
+            val theme = GlassTheme.appTheme
+            val loadingSurfaceModifier = if (GlassTheme.effectsEnabled && PlatformDialogPolicy.supportsCrossWindowBlur) {
+                Modifier.hazeGlass(
+                    input = HazeInput.Sources(GlassTheme.hazeState),
+                    style = remember(theme) {
+                        org.ide.lti.core.designsystem.theme.GlassMaterialStyles.baseStyle(
+                            theme = theme,
+                        ).then {
+                            shape(GlassShapes.HazePanel)
+                        }
+                    },
+                )
+            } else {
+                Modifier.background(colors.surfaceContainerHighest, shape = GlassShapes.HazePanel)
+            }
+
             Dialog(
                 onDismissRequest = {},
                 properties = DialogProperties(
@@ -183,15 +207,7 @@ fun GlassLoadingDialog(
                     modifier = modifier
                         .fillMaxWidth()
                         .padding(Spacing.DialogPadding)
-                        .hazeGlass(
-                            input = HazeInput.Backdrop(GlassTheme.hazeState),
-                            style = remember(colors.surfaceContainerHighest) {
-                                GlassStyle.regular.then {
-                                    shape(GlassShapes.HazePanel)
-                                    backgroundColor(colors.surfaceContainerHighest)
-                                }
-                            },
-                        )
+                        .then(loadingSurfaceModifier)
                         .clip(GlassShapes.HazePanel),
                 ) {
                     Column(

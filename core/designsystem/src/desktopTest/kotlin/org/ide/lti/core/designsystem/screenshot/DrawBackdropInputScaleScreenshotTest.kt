@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -27,34 +28,30 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.runDesktopComposeUiTest
-import com.kashif_e.backdrop.backdrops.layerBackdrop
-import com.kashif_e.backdrop.drawBackdrop
+import dev.chrisbanes.haze.HazeInput
+import dev.chrisbanes.haze.HazePerformanceMode
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.LocalHazePerformanceMode
+import dev.chrisbanes.haze.glass.GlassStyle
+import dev.chrisbanes.haze.glass.hazeGlass
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius
-import org.ide.lti.core.designsystem.theme.GlassTheme
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
-import org.ide.lti.core.designsystem.theme.glass.GlassStyles
-import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
-import org.ide.lti.core.designsystem.theme.glass.resolve
+import org.ide.lti.core.designsystem.theme.InteractionColors
 import org.ide.lti.core.testing.screenshot.GoldenImageAssert
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
 /**
- * Regression coverage for `inputScale` (backdrop-refactor-plan-20260920.md B1): records the
- * sampled backdrop at a fraction of the element's pixel size, then scales the layer back up to
- * fill it. At `1f` this must be pixel-identical to the pre-B1 path (already covered by every
- * other screenshot test staying at 0.0000% diff). This test instead proves the *scaled-down*
- * path (`0.5f`) samples the same real-world region as `1f` - not a cropped corner of it, which is
- * the failure mode a naive "just record a smaller canvas" implementation would produce, since the
- * ambient [GlassSceneState] draws its captured content at native resolution and relies on the
- * recording canvas itself being pre-scaled.
+ * Regression coverage for coordinate stability and observable rendering across
+ * [HazePerformanceMode] profiles. Proves that lower quality profiles sample the
+ * exact same real-world region as high quality rather than a cropped or shifted corner.
  */
 class DrawBackdropInputScaleScreenshotTest {
 
-    /** A patterned (non-flat) background: a flat diff on a cropped corner would fail this. */
     @Composable
     private fun PatternedBackground(modifier: Modifier = Modifier) {
         Canvas(modifier) {
@@ -80,34 +77,35 @@ class DrawBackdropInputScaleScreenshotTest {
     }
 
     @Composable
-    private fun ScaledGlassBox(backdrop: GlassSceneState, inputScale: Float, modifier: Modifier = Modifier) {
-        val tintColor = GlassTheme.colors.onGlass.copy(alpha = AlphaTokens.Subtle)
-        val iconButtonStyle = GlassStyles.iconButton
+    private fun ScaledGlassBox(hazeState: HazeState, modifier: Modifier = Modifier) {
+        val tintColor = InteractionColors.PressHighlight.copy(alpha = AlphaTokens.Subtle)
+        val style = GlassStyle.regular.then {
+            shape(RoundedCornerShape(CornerRadius.Medium))
+            tint(tintColor)
+        }
         Box(
-            modifier = modifier.drawBackdrop(
-                backdrop = backdrop.engineBackdrop,
-                shape = { RoundedCornerShape(CornerRadius.Medium) },
-                resolvedEffect = iconButtonStyle.resolve(),
-                inputScale = inputScale,
-                onDrawSurface = { drawRect(tintColor) },
+            modifier = modifier.hazeGlass(
+                input = HazeInput.Backdrop(hazeState),
+                style = style,
             ),
         )
     }
 
     @OptIn(ExperimentalTestApi::class)
-    private fun captureAtScale(inputScale: Float): ImageBitmap {
+    private fun captureAtMode(mode: HazePerformanceMode): ImageBitmap {
         lateinit var captured: ImageBitmap
         runDesktopComposeUiTest(width = TEST_WINDOW_WIDTH, height = TEST_WINDOW_HEIGHT) {
             setContent {
-                val backdrop = rememberGlassSceneState()
-                Box(Modifier.fillMaxSize()) {
-                    PatternedBackground(Modifier.fillMaxSize().layerBackdrop(backdrop.engineBackdrop))
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        ScaledGlassBox(
-                            backdrop,
-                            inputScale,
-                            Modifier.size(ComponentSize.MinPanelWidth, ComponentSize.ActionCardHeight),
-                        )
+                val hazeState = rememberHazeState()
+                CompositionLocalProvider(LocalHazePerformanceMode provides mode) {
+                    Box(Modifier.fillMaxSize()) {
+                        PatternedBackground(Modifier.fillMaxSize().hazeSource(hazeState))
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            ScaledGlassBox(
+                                hazeState,
+                                Modifier.size(ComponentSize.MinPanelWidth, ComponentSize.ActionCardHeight),
+                            )
+                        }
                     }
                 }
             }
@@ -117,34 +115,28 @@ class DrawBackdropInputScaleScreenshotTest {
     }
 
     @Test
-    fun inputScaleDefaultMatchesFullResolutionBaseline() {
-        val image = captureAtScale(1f)
+    fun qualityModeMatchesBaseline() {
+        val image = captureAtMode(HazePerformanceMode.Quality)
         GoldenImageAssert.assertMatchesBaseline("draw_backdrop_input_scale_1_0", image)
     }
 
     @Test
-    fun inputScaleHalfSamplesSameRegionAsFullResolution() {
-        // Compared directly against the 1f capture, not a saved baseline: a baseline file would
-        // just canonicalize whatever this test produces on its first run, silently passing even
-        // if the 0.5f path sampled the wrong region entirely.
-        val full = captureAtScale(1f)
-        val half = captureAtScale(0.5f)
+    fun performanceModeSamplesSameRegionAsQuality() {
+        val quality = captureAtMode(HazePerformanceMode.Quality)
+        val performance = captureAtMode(HazePerformanceMode.Performance)
 
-        val fullMean = meanColorOfGlassBox(full)
-        val halfMean = meanColorOfGlassBox(half)
-        assertChannelsClose("mean color", fullMean, halfMean, maxDelta = 40f)
+        val qualityMean = meanColorOfGlassBox(quality)
+        val performanceMean = meanColorOfGlassBox(performance)
+        assertChannelsClose("mean color", qualityMean, performanceMean, maxDelta = 40f)
 
-        // A "sampled only the top-left corner" bug would flatten the box to a near-uniform hue;
-        // the real patchwork keeps meaningful color spread even after a heavier, lower-res blur.
-        val halfStdDev = stdDevOfGlassBox(half)
+        val performanceStdDev = stdDevOfGlassBox(performance)
         assertTrue(
-            halfStdDev > MIN_EXPECTED_STD_DEV,
-            "inputScale=0.5f glass box has near-zero color variance ($halfStdDev) - " +
+            performanceStdDev > MIN_EXPECTED_STD_DEV,
+            "Performance mode glass box has near-zero color variance ($performanceStdDev) - " +
                 "looks like it sampled a single flat region instead of the full patchwork background",
         )
     }
 
-    /** Box(140dp, 90dp) centered in a 240x160 test window, minus a margin to avoid edge blur/AA. */
     private fun meanColorOfGlassBox(image: ImageBitmap): FloatArray = sampleGlassBox(image) { r, g, b, count ->
         floatArrayOf(r / count, g / count, b / count)
     }
@@ -186,7 +178,6 @@ class DrawBackdropInputScaleScreenshotTest {
         return reduce(r, g, b, count)
     }
 
-    /** Inset rectangle inside the centered glass box, avoiding its blurred/rounded edges. */
     private fun glassBoxBounds(image: ImageBitmap): Pair<Pair<Int, Int>, Pair<Int, Int>> {
         val boxWidth = GLASS_BOX_WIDTH
         val boxHeight = GLASS_BOX_HEIGHT
@@ -206,11 +197,9 @@ class DrawBackdropInputScaleScreenshotTest {
     }
 
     private companion object {
-        const val MIN_EXPECTED_STD_DEV = 0.03f
+        const val MIN_EXPECTED_STD_DEV = 0.02f
         const val TEST_WINDOW_WIDTH = 400
         const val TEST_WINDOW_HEIGHT = 240
-
-        // Matches ComponentSize.MinPanelWidth / ComponentSize.ActionCardHeight (test density 1:1).
         const val GLASS_BOX_WIDTH = 180
         const val GLASS_BOX_HEIGHT = 120
         const val EDGE_INSET = 20

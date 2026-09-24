@@ -9,9 +9,9 @@
  */
 package org.ide.lti.core.designsystem.icon
 
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
@@ -49,7 +49,6 @@ import org.ide.lti.core.designsystem.generated.resources.ideUser
 import org.ide.lti.core.designsystem.generated.resources.ideVcsArrowRight
 import org.ide.lti.core.designsystem.generated.resources.leftPanel_1
 import org.ide.lti.core.designsystem.generated.resources.rightPanel
-import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.jetbrains.compose.resources.painterResource
 

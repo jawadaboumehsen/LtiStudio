@@ -45,8 +45,7 @@ class WorkspacesScreenTest {
         var openCalled = false
 
         setContent {
-            val backdrop = rememberGlassSceneState()
-            LtiTheme(sharedScene = backdrop) {
+            LtiTheme {
                 ProjectsStepContent(
                     state = SetupUiState(
                         recentProjects = emptyList(),
@@ -57,7 +56,6 @@ class WorkspacesScreenTest {
                         onCreateWorkspace = { createCalled = true },
                         onOpenFolder = { openCalled = true },
                     ),
-                    resolvedBackdrop = backdrop,
                 )
             }
         }
@@ -80,8 +78,7 @@ class WorkspacesScreenTest {
         )
 
         setContent {
-            val backdrop = rememberGlassSceneState()
-            LtiTheme(sharedScene = backdrop) {
+            LtiTheme {
                 ProjectsStepContent(
                     state = SetupUiState(
                         recentProjects = listOf(existingProject),
@@ -89,7 +86,6 @@ class WorkspacesScreenTest {
                         searchQuery = "UnknownROM",
                     ),
                     actions = SetupUiActions(),
-                    resolvedBackdrop = backdrop,
                 )
             }
         }
@@ -119,8 +115,7 @@ class WorkspacesScreenTest {
         var openedProject: RecentProject? = null
 
         setContent {
-            val backdrop = rememberGlassSceneState()
-            LtiTheme(sharedScene = backdrop) {
+            LtiTheme {
                 ProjectsStepContent(
                     state = SetupUiState(
                         recentProjects = listOf(p1, p2),
@@ -130,7 +125,6 @@ class WorkspacesScreenTest {
                     actions = SetupUiActions(
                         onRecentProjectClick = { openedProject = it },
                     ),
-                    resolvedBackdrop = backdrop,
                 )
             }
         }
@@ -151,8 +145,7 @@ class WorkspacesScreenTest {
         var openCalled = false
 
         setContent {
-            val backdrop = rememberGlassSceneState()
-            LtiTheme(sharedScene = backdrop) {
+            LtiTheme {
                 ProjectsStepContent(
                     state = SetupUiState(
                         recentProjects = emptyList(),
@@ -162,7 +155,6 @@ class WorkspacesScreenTest {
                         onCreateWorkspace = { createCalled = true },
                         onOpenFolder = { openCalled = true },
                     ),
-                    resolvedBackdrop = backdrop,
                 )
             }
         }
@@ -195,8 +187,7 @@ class WorkspacesScreenTest {
 
         // The legacy route remains accepted, but now renders the reference-aligned Setup overview.
         setContent {
-            val backdrop = rememberGlassSceneState()
-            LtiTheme(sharedScene = backdrop) {
+            LtiTheme {
                 SetupScreenContent(
                     state = SetupUiState(),
                     actions = SetupUiActions(),

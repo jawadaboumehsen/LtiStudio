@@ -24,8 +24,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
 import org.ide.lti.core.designsystem.component.layout.GlassBackdrop
-import org.ide.lti.core.designsystem.component.layout.StudioGlassBackdrop
 import org.ide.lti.core.designsystem.theme.AppTheme
+import org.ide.lti.core.designsystem.theme.GlassSceneHost
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.ui.settings.AppSettingsState
 import org.ide.lti.feature.settings.navigateToSettings
@@ -40,34 +40,41 @@ fun LtiSharedApp(
     modifier: Modifier = Modifier,
     openSettingsRequest: Long = 0,
     lowMemory: Boolean = false,
+    initialShowSplash: Boolean = true,
     appSettingsState: AppSettingsState = koinInject(),
 ) {
-    var showSplash by remember { mutableStateOf(true) }
+    var showSplash by remember { mutableStateOf(initialShowSplash) }
     val splashScope = rememberCoroutineScope()
     val splashBridge = remember { SplashInitializationBridge(scope = splashScope) }
 
-    if (showSplash) {
-        LtiTheme(
-            appTheme = AppTheme.fromId(appSettingsState.theme),
+    val appTheme = AppTheme.fromId(appSettingsState.theme)
 
+    GlassSceneHost(
+        effectsEnabled = appSettingsState.effectsEnabled,
+    ) {
+        LtiTheme(
+            appTheme = appTheme,
+            effectsEnabled = appSettingsState.effectsEnabled,
+            reducedMotion = appSettingsState.reducedMotion,
         ) {
-            Box(
-                modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface),
-                contentAlignment = Alignment.Center,
-            ) {
-                LtiRomSplashScreen(
-                    bridge = splashBridge,
-                    onDismissed = { showSplash = false },
+            if (showSplash) {
+                Box(
+                    modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    LtiRomSplashScreen(
+                        bridge = splashBridge,
+                        onDismissed = { showSplash = false },
+                    )
+                }
+            } else {
+                SharedApp(
+                    openSettingsRequest = openSettingsRequest,
+                    lowMemory = lowMemory,
+                    modifier = modifier,
                 )
             }
         }
-    } else {
-        SharedApp(
-            openSettingsRequest = openSettingsRequest,
-            lowMemory = lowMemory,
-            appSettingsState = appSettingsState,
-            modifier = modifier,
-        )
     }
 }
 
@@ -75,7 +82,6 @@ fun LtiSharedApp(
 private fun SharedApp(
     openSettingsRequest: Long,
     lowMemory: Boolean,
-    appSettingsState: AppSettingsState,
     modifier: Modifier = Modifier,
 ) {
     val navController = rememberNavController()
@@ -86,23 +92,12 @@ private fun SharedApp(
         }
     }
 
-    val appTheme = AppTheme.fromId(appSettingsState.theme)
-
-    LtiTheme(
-        appTheme = appTheme,
-    ) {
-        Box(modifier = modifier.fillMaxSize()) {
-//            if (appTheme == AppTheme.Blue) {
-//                StudioGlassBackdrop()
-//            } else {
-//                GlassBackdrop()
-//            }
-            StudioGlassBackdrop()
-            RootNavGraph(
-                navHostController = navController,
-                startDestination = SETUP_ROUTE,
-                modifier = Modifier.fillMaxSize(),
-            )
-        }
+    Box(modifier = modifier.fillMaxSize()) {
+        GlassBackdrop()
+        RootNavGraph(
+            navHostController = navController,
+            startDestination = SETUP_ROUTE,
+            modifier = Modifier.fillMaxSize(),
+        )
     }
 }

@@ -9,6 +9,9 @@
  */
 package org.ide.lti.feature.plugins
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asSkiaBitmap
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -16,8 +19,11 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.runDesktopComposeUiTest
+import com.github.takahirom.roborazzi.RoborazziOptions
+import io.github.takahirom.roborazzi.captureRoboImage
+import org.ide.lti.core.designsystem.component.layout.GlassBackdrop
 import org.ide.lti.core.designsystem.theme.LtiTheme
-import org.ide.lti.core.designsystem.theme.config.AppTheme
+import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.domain.pipeline.configuration.ValidationReport
 import org.ide.lti.core.domain.plugin.AuthorDiagnostic
 import org.ide.lti.core.domain.plugin.AuthorTaskResult
@@ -40,8 +46,7 @@ import kotlin.test.assertEquals
 @OptIn(ExperimentalTestApi::class)
 class PluginThemeScreenshotTest {
 
-    @Test
-    fun testInstalledBlueGlassScreenshot() = runDesktopComposeUiTest(width = WIDTH, height = HEIGHT) {
+    private fun createInstalledUiState(): PluginManagerUiState {
         val records = listOf(
             InstalledRecord(
                 identity = PackageIdentity("com.ltirom.plugin", "buildprops", "1.0.0", "sha256:1c34"),
@@ -76,7 +81,7 @@ class PluginThemeScreenshotTest {
             "lti.official:framework-hooks" to listOf("Workspace 'PQ84P01'"),
             "lti.community:resource-overlay" to emptyList(),
         )
-        val state = PluginManagerUiState(
+        return PluginManagerUiState(
             destination = PluginDestination.INSTALLED,
             activeWorkspaceId = "PQ84P01",
             installedPackages = records,
@@ -84,20 +89,9 @@ class PluginThemeScreenshotTest {
             searchQuery = "",
             selectedPackageKey = "com.ltirom.plugin:buildprops",
         )
-
-        setContent {
-            LtiTheme(appTheme = AppTheme.Blue) {
-                PluginManagerContent(
-                    state = state,
-                    actions = PluginManagerActions(),
-                )
-            }
-        }
-        capture("installed_blue")
     }
 
-    @Test
-    fun testMarketplaceBlueGlassScreenshot() = runDesktopComposeUiTest(width = WIDTH, height = HEIGHT) {
+    private fun createMarketplaceUiState(): PluginManagerUiState {
         val entries = listOf(
             IndexEntry(
                 publisher = "Example developer",
@@ -131,7 +125,7 @@ class PluginThemeScreenshotTest {
             ),
         )
         val source = IndexSource("Development catalog · Sample source", "https://packages.ltirom.dev/index.json")
-        val state = PluginManagerUiState(
+        return PluginManagerUiState(
             destination = PluginDestination.MARKETPLACE,
             activeWorkspaceId = "PQ84P01",
             marketplaceSource = source,
@@ -145,20 +139,9 @@ class PluginThemeScreenshotTest {
             searchQuery = "",
             selectedPackageKey = "buildprops",
         )
-
-        setContent {
-            LtiTheme(appTheme = AppTheme.Blue) {
-                PluginManagerContent(
-                    state = state,
-                    actions = PluginManagerActions(),
-                )
-            }
-        }
-        capture("marketplace_blue")
     }
 
-    @Test
-    fun testImportBlueGlassScreenshot() = runDesktopComposeUiTest(width = WIDTH, height = HEIGHT) {
+    private fun createImportUiState(): PluginManagerUiState {
         val inspection = PackageInspection(
             identity = PackageIdentity("lti.community", "framework-hook-sample", "1.0.0", "sha256:7f83b165"),
             hasSignature = false,
@@ -166,7 +149,7 @@ class PluginThemeScreenshotTest {
             dependencies = emptyList(),
             conflicts = emptyList(),
         )
-        val state = PluginManagerUiState(
+        return PluginManagerUiState(
             destination = PluginDestination.IMPORT,
             activeWorkspaceId = "PQ84P01",
             importPathInput = "C:\\Users\\dev\\Downloads\\framework-hook-sample-1.0.0.lti-mod.zip",
@@ -175,20 +158,9 @@ class PluginThemeScreenshotTest {
             isLegacyUnsupportedFormat = false,
             legacyFormatName = null,
         )
-
-        setContent {
-            LtiTheme(appTheme = AppTheme.Blue) {
-                PluginManagerContent(
-                    state = state,
-                    actions = PluginManagerActions(),
-                )
-            }
-        }
-        capture("import_blue")
     }
 
-    @Test
-    fun testAuthorToolsBlueGlassScreenshot() = runDesktopComposeUiTest(width = WIDTH, height = HEIGHT) {
+    private fun createAuthorToolsUiState(): PluginManagerUiState {
         val diagnostics = listOf(
             AuthorDiagnostic(
                 severity = "Info",
@@ -208,7 +180,7 @@ class PluginThemeScreenshotTest {
             stderr = "",
             diagnostics = diagnostics,
         )
-        val state = PluginManagerUiState(
+        return PluginManagerUiState(
             destination = PluginDestination.AUTHOR_TOOLS,
             activeWorkspaceId = "PQ84P01",
             authorProjectPathInput = "C:\\Users\\dev\\Projects\\framework-hook-sample",
@@ -219,16 +191,146 @@ class PluginThemeScreenshotTest {
             authorTaskResult = taskResult,
             isAuthorTaskRunning = false,
         )
+    }
 
+    @Test
+    fun testInstalledDarkGlassScreenshot() = runDesktopComposeUiTest(width = WIDTH, height = HEIGHT) {
+        renderAndCapture(AppTheme.Dark, createInstalledUiState(), "installed_dark")
+    }
+
+    @Test
+    fun testInstalledBlueGlassScreenshot() = runDesktopComposeUiTest(width = WIDTH, height = HEIGHT) {
+        renderAndCapture(AppTheme.Blue, createInstalledUiState(), "installed_blue")
+    }
+
+    @Test
+    fun testInstalledLightGlassScreenshot() = runDesktopComposeUiTest(width = WIDTH, height = HEIGHT) {
+        renderAndCapture(AppTheme.Light, createInstalledUiState(), "installed_light")
+    }
+
+    @Test
+    fun testInstalledEffectsOffScreenshot() = runDesktopComposeUiTest(width = WIDTH, height = HEIGHT) {
+        renderAndCapture(AppTheme.Dark, createInstalledUiState(), "installed_effects_off", effectsEnabled = false)
+    }
+
+    @Test
+    fun testInstalledEffectsOffBlueScreenshot() = runDesktopComposeUiTest(width = WIDTH, height = HEIGHT) {
+        renderAndCapture(AppTheme.Blue, createInstalledUiState(), "installed_effects_off_blue", effectsEnabled = false)
+    }
+
+    @Test
+    fun testInstalledEffectsOffLightScreenshot() = runDesktopComposeUiTest(width = WIDTH, height = HEIGHT) {
+        renderAndCapture(AppTheme.Light, createInstalledUiState(), "installed_effects_off_light", effectsEnabled = false)
+    }
+
+    @Test
+    fun testMarketplaceDarkGlassScreenshot() = runDesktopComposeUiTest(width = WIDTH, height = HEIGHT) {
+        renderAndCapture(AppTheme.Dark, createMarketplaceUiState(), "marketplace_dark")
+    }
+
+    @Test
+    fun testMarketplaceBlueGlassScreenshot() = runDesktopComposeUiTest(width = WIDTH, height = HEIGHT) {
+        renderAndCapture(AppTheme.Blue, createMarketplaceUiState(), "marketplace_blue")
+    }
+
+    @Test
+    fun testMarketplaceLightGlassScreenshot() = runDesktopComposeUiTest(width = WIDTH, height = HEIGHT) {
+        renderAndCapture(AppTheme.Light, createMarketplaceUiState(), "marketplace_light")
+    }
+
+    @Test
+    fun testMarketplaceEffectsOffScreenshot() = runDesktopComposeUiTest(width = WIDTH, height = HEIGHT) {
+        renderAndCapture(AppTheme.Dark, createMarketplaceUiState(), "marketplace_effects_off", effectsEnabled = false)
+    }
+
+    @Test
+    fun testMarketplaceEffectsOffBlueScreenshot() = runDesktopComposeUiTest(width = WIDTH, height = HEIGHT) {
+        renderAndCapture(AppTheme.Blue, createMarketplaceUiState(), "marketplace_effects_off_blue", effectsEnabled = false)
+    }
+
+    @Test
+    fun testMarketplaceEffectsOffLightScreenshot() = runDesktopComposeUiTest(width = WIDTH, height = HEIGHT) {
+        renderAndCapture(AppTheme.Light, createMarketplaceUiState(), "marketplace_effects_off_light", effectsEnabled = false)
+    }
+
+    @Test
+    fun testImportDarkGlassScreenshot() = runDesktopComposeUiTest(width = WIDTH, height = HEIGHT) {
+        renderAndCapture(AppTheme.Dark, createImportUiState(), "import_dark")
+    }
+
+    @Test
+    fun testImportBlueGlassScreenshot() = runDesktopComposeUiTest(width = WIDTH, height = HEIGHT) {
+        renderAndCapture(AppTheme.Blue, createImportUiState(), "import_blue")
+    }
+
+    @Test
+    fun testImportLightGlassScreenshot() = runDesktopComposeUiTest(width = WIDTH, height = HEIGHT) {
+        renderAndCapture(AppTheme.Light, createImportUiState(), "import_light")
+    }
+
+    @Test
+    fun testImportEffectsOffScreenshot() = runDesktopComposeUiTest(width = WIDTH, height = HEIGHT) {
+        renderAndCapture(AppTheme.Dark, createImportUiState(), "import_effects_off", effectsEnabled = false)
+    }
+
+    @Test
+    fun testImportEffectsOffBlueScreenshot() = runDesktopComposeUiTest(width = WIDTH, height = HEIGHT) {
+        renderAndCapture(AppTheme.Blue, createImportUiState(), "import_effects_off_blue", effectsEnabled = false)
+    }
+
+    @Test
+    fun testImportEffectsOffLightScreenshot() = runDesktopComposeUiTest(width = WIDTH, height = HEIGHT) {
+        renderAndCapture(AppTheme.Light, createImportUiState(), "import_effects_off_light", effectsEnabled = false)
+    }
+
+    @Test
+    fun testAuthorToolsDarkGlassScreenshot() = runDesktopComposeUiTest(width = WIDTH, height = HEIGHT) {
+        renderAndCapture(AppTheme.Dark, createAuthorToolsUiState(), "author_tools_dark")
+    }
+
+    @Test
+    fun testAuthorToolsBlueGlassScreenshot() = runDesktopComposeUiTest(width = WIDTH, height = HEIGHT) {
+        renderAndCapture(AppTheme.Blue, createAuthorToolsUiState(), "author_tools_blue")
+    }
+
+    @Test
+    fun testAuthorToolsLightGlassScreenshot() = runDesktopComposeUiTest(width = WIDTH, height = HEIGHT) {
+        renderAndCapture(AppTheme.Light, createAuthorToolsUiState(), "author_tools_light")
+    }
+
+    @Test
+    fun testAuthorToolsEffectsOffScreenshot() = runDesktopComposeUiTest(width = WIDTH, height = HEIGHT) {
+        renderAndCapture(AppTheme.Dark, createAuthorToolsUiState(), "author_tools_effects_off", effectsEnabled = false)
+    }
+
+    @Test
+    fun testAuthorToolsEffectsOffBlueScreenshot() = runDesktopComposeUiTest(width = WIDTH, height = HEIGHT) {
+        renderAndCapture(AppTheme.Blue, createAuthorToolsUiState(), "author_tools_effects_off_blue", effectsEnabled = false)
+    }
+
+    @Test
+    fun testAuthorToolsEffectsOffLightScreenshot() = runDesktopComposeUiTest(width = WIDTH, height = HEIGHT) {
+        renderAndCapture(AppTheme.Light, createAuthorToolsUiState(), "author_tools_effects_off_light", effectsEnabled = false)
+    }
+
+    private fun androidx.compose.ui.test.DesktopComposeUiTest.renderAndCapture(
+        theme: AppTheme,
+        state: PluginManagerUiState,
+        name: String,
+        effectsEnabled: Boolean = true,
+    ) {
         setContent {
-            LtiTheme(appTheme = AppTheme.Blue) {
-                PluginManagerContent(
-                    state = state,
-                    actions = PluginManagerActions(),
-                )
+            LtiTheme(appTheme = theme, effectsEnabled = effectsEnabled) {
+                Box(Modifier.fillMaxSize()) {
+                    GlassBackdrop()
+                    PluginManagerContent(
+                        state = state,
+                        actions = PluginManagerActions(),
+                    )
+                }
             }
         }
-        capture("author_tools_blue")
+        capture(name)
     }
 
     private fun androidx.compose.ui.test.DesktopComposeUiTest.capture(name: String) {
@@ -245,6 +347,19 @@ class PluginThemeScreenshotTest {
         if (!reportsDir.exists()) reportsDir.mkdirs()
         val bytes = Image.makeFromBitmap(bitmap.asSkiaBitmap()).encodeToData(EncodedImageFormat.PNG)?.bytes
         if (bytes != null) File(reportsDir, "$name.png").writeBytes(bytes)
+
+        val targetPath = "src/desktopTest/resources/screenshots/$name.png"
+        bitmap.captureRoboImage(
+            filePath = targetPath,
+            roborazziOptions = RoborazziOptions(
+                compareOptions = RoborazziOptions.CompareOptions(
+                    changeThreshold = 0.005f,
+                ),
+                recordOptions = RoborazziOptions.RecordOptions(
+                    resizeScale = 1.0,
+                ),
+            ),
+        )
     }
 
     private companion object {

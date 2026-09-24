@@ -33,7 +33,7 @@ class AssembleEditorUiTest {
         val settings = AssemblySettings()
 
         composeTestRule.setContent {
-            LtiTheme(effectsEnabled = false, reducedMotion = true) {
+            LtiTheme {
                 AssembleEditor(
                     settings = settings,
                     target = target,

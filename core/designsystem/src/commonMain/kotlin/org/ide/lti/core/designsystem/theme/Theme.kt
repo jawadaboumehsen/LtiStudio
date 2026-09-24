@@ -16,14 +16,21 @@ import androidx.compose.material3.Shapes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
+import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.glass.GlassReducedMotionPolicy
+import dev.chrisbanes.haze.glass.LocalGlassAccessibilitySettings
 import dev.chrisbanes.haze.rememberHazeState
 
 /** The three application themes - official pattern's `darkTheme: Boolean`, generalized to three. */
 enum class AppTheme {
-    Light, Dark, Blue;
+    Light,
+    Dark,
+    Blue,
+    ;
 
     /** Persisted theme id (`AppSettingsState.THEME_*`) for this theme. */
     val id: String
@@ -38,7 +45,7 @@ enum class AppTheme {
         val allThemes: List<AppTheme> = listOf(Blue, Dark, Light)
 
         /** Resolves the persisted theme id (`AppSettingsState.THEME_*`) to an [AppTheme], defaulting to [Blue]. */
-        fun fromId(id: String): AppTheme = when (id) {
+        fun fromId(id: String?): AppTheme = when (id) {
             "light" -> Light
             "dark" -> Dark
             else -> Blue
@@ -64,6 +71,21 @@ fun colorSchemeFor(theme: AppTheme): ColorScheme = when (theme) {
  * CompositionLocal is our app's choice of how to share the one instance [LtiTheme] creates.
  */
 val LocalHazeState = staticCompositionLocalOf<HazeState?> { null }
+
+/**
+ * Composition local for the [GlassReducedMotionPolicy] that interactive glass surfaces should use.
+ * Haze does not ship a `LocalGlassReducedMotionPolicy`, so we own it here and thread it through
+ * [LtiTheme] based on the user's "Reduce motion" accessibility setting.
+ *
+ * Default is [GlassReducedMotionPolicy.System] — honour the OS-level preference.
+ */
+val LocalGlassReducedMotionPolicy = compositionLocalOf { GlassReducedMotionPolicy.System }
+
+/**
+ * Composition local controlling whether glass rendering effects are enabled app-wide.
+ * When `false`, all glass components fall back to solid, opaque surfaces and solid borders.
+ */
+val LocalGlassEffectsEnabled = compositionLocalOf { true }
 
 /**
  * M3 [Shapes] built from [GlassShapes]' corner radius tokens (same dp values, plain
@@ -129,6 +151,33 @@ object GlassTheme {
         get() = requireNotNull(LocalHazeState.current) {
             "GlassTheme.hazeState read outside LtiTheme - wrap the composition in LtiTheme { }"
         }
+
+    /**
+     * The [GlassReducedMotionPolicy] that all interactive glass surfaces should pass to
+     * `hazeGlass(interactionReducedMotionPolicy = …)`.  Driven by the user's "Reduce motion"
+     * preference via [LtiTheme] → [LocalGlassReducedMotionPolicy].
+     */
+    val reducedMotionPolicy: GlassReducedMotionPolicy
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalGlassReducedMotionPolicy.current
+
+    /**
+     * Optional local content [HazeState] for floating controls or sheets overlapping scrolling content.
+     */
+    val localContentHazeState: HazeState?
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalContentHazeState.current
+
+    /**
+     * Whether fluid glass effects are currently enabled app-wide.
+     * When `false`, all glass surfaces render flat solid fills instead of `hazeGlass`.
+     */
+    val effectsEnabled: Boolean
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalGlassEffectsEnabled.current
 }
 
 /**
@@ -136,19 +185,61 @@ object GlassTheme {
  * (developer.android.com/develop/ui/compose/designsystems/material3), generalized from a boolean
  * `darkTheme` to the three-way [AppTheme]: switch color scheme, feed [MaterialTheme] color scheme
  * + typography + shapes, done.
+ *
+ * @param effectsEnabled When `false`, all design-system glass surfaces render flat solid fills,
+ *   fulfilling the user-facing "Reduce transparency: Use opaque surfaces" setting, while also
+ *   updating [LocalGlassAccessibilitySettings] with `reduceTransparency = true`. When `null`,
+ *   inherits [LocalGlassEffectsEnabled] from an enclosing [GlassSceneHost] or [LtiTheme], or defaults
+ *   to `true` (effects enabled). Monotonically constrained: if an enclosing host disabled effects,
+ *   a child theme cannot override it to `true`.
+ * @param reducedMotion When `true`, interactive glass surfaces use
+ *   [GlassReducedMotionPolicy.Reduced] instead of deferring to the OS preference. When `null`,
+ *   inherits the ambient [LocalGlassReducedMotionPolicy] from an enclosing [LtiTheme], or defaults
+ *   to `false` (system motion policy) if unprovided.
  */
+@OptIn(ExperimentalHazeApi::class)
 @Composable
 fun LtiTheme(
     modifier: Modifier = Modifier,
     appTheme: AppTheme = AppTheme.Blue,
+    effectsEnabled: Boolean? = null,
+    reducedMotion: Boolean? = null,
     content: @Composable () -> Unit,
 ) {
     val colorScheme = colorSchemeFor(appTheme)
-    val hazeState = rememberHazeState()
+    val parentSceneHost = LocalGlassSceneHost.current
+    val existingHazeState = LocalHazeState.current
+    val hazeState = existingHazeState ?: rememberHazeState()
+
+    val parentEffectsEnabled = parentSceneHost?.effectsEnabled ?: LocalGlassEffectsEnabled.current
+    // Monotonic accessibility: an off parent can never be overridden to on by a nested theme
+    val resolvedEffectsEnabled = if (!parentEffectsEnabled) {
+        false
+    } else {
+        effectsEnabled ?: true
+    }
+
+    val parentMotionPolicy = LocalGlassReducedMotionPolicy.current
+    val resolvedMotionPolicy = when {
+        reducedMotion != null -> if (reducedMotion) GlassReducedMotionPolicy.Reduced else GlassReducedMotionPolicy.System
+        else -> parentMotionPolicy
+    }
+
+    val currentAccessibilitySettings = LocalGlassAccessibilitySettings.current
+    val accessibilitySettings = if (effectsEnabled != null || currentAccessibilitySettings.reduceTransparency) {
+        currentAccessibilitySettings.copy(
+            reduceTransparency = currentAccessibilitySettings.reduceTransparency || !resolvedEffectsEnabled,
+        )
+    } else {
+        currentAccessibilitySettings
+    }
 
     CompositionLocalProvider(
         LocalAppTheme provides appTheme,
         LocalHazeState provides hazeState,
+        LocalGlassEffectsEnabled provides resolvedEffectsEnabled,
+        LocalGlassAccessibilitySettings provides accessibilitySettings,
+        LocalGlassReducedMotionPolicy provides resolvedMotionPolicy,
     ) {
         MaterialTheme(
             colorScheme = colorScheme,

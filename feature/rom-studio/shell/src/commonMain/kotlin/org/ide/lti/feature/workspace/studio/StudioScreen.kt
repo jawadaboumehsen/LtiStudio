@@ -503,7 +503,6 @@ private fun StageObjectEditor(
     onSave: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-
     LazyColumn(
         modifier = modifier
             .fillMaxSize()

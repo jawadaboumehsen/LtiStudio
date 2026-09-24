@@ -26,20 +26,20 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import androidx.compose.ui.unit.Dp
-import com.kashif_e.backdrop.OpticalSizeValue
-import com.kashif_e.backdrop.backdrops.layerBackdrop
-import com.kashif_e.backdrop.drawBackdrop
+import androidx.compose.ui.unit.dp
+import dev.chrisbanes.haze.HazeInput
+import dev.chrisbanes.haze.glass.GlassStyle
+import dev.chrisbanes.haze.glass.hazeGlass
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.CornerRadius
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
-import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
 /**
- * Proves [GlassStyle.resolve] actually drives a real backdrop draw - not just that it type
- * checks - by rendering a style through `Modifier.drawBackdrop` directly rather than through
- * `Modifier.glass(style)`.
+ * Proves [GlassStyle] actually drives a real Haze glass effect - not just that it type
+ * checks - by rendering a style through `Modifier.hazeGlass` over high-frequency stripes.
  */
 class GlassStyleToEffectsScreenshotTest {
 
@@ -48,24 +48,21 @@ class GlassStyleToEffectsScreenshotTest {
         lateinit var captured: ImageBitmap
         runDesktopComposeUiTest(width = TEST_WIDTH, height = TEST_HEIGHT) {
             setContent {
-                val backdrop = rememberGlassSceneState()
+                val hazeState = rememberHazeState()
                 Box(Modifier.fillMaxSize()) {
-                    Canvas(Modifier.fillMaxSize().layerBackdrop(backdrop.engineBackdrop)) { drawStripes() }
+                    Canvas(Modifier.fillMaxSize().hazeSource(hazeState)) { drawStripes() }
                     if (applyStyle) {
-                        val style = GlassStyle(
-                            surface = Color.Transparent,
-                            shape = RoundedCornerShape(CornerRadius.Medium),
-                            blur = OpticalSizeValue.Fixed(BLUR_RADIUS),
-                            vibrancy = false,
-                        )
+                        val style = GlassStyle {
+                            shape(RoundedCornerShape(CornerRadius.Medium))
+                            optics(blurRadius = BLUR_RADIUS)
+                        }
                         Box(
                             Modifier
                                 .align(Alignment.Center)
                                 .size(ComponentSize.MinPanelWidth, ComponentSize.ActionCardHeight)
-                                .drawBackdrop(
-                                    backdrop = backdrop.engineBackdrop,
-                                    shape = { style.shape },
-                                    resolvedEffect = style.resolve(),
+                                .hazeGlass(
+                                    input = HazeInput.Backdrop(hazeState),
+                                    style = style,
                                 ),
                         )
                     }
@@ -89,13 +86,11 @@ class GlassStyleToEffectsScreenshotTest {
         val flat = captureStripes(applyStyle = false)
         val styled = captureStripes(applyStyle = true)
 
-        // A blurred region has much lower local variance than the sharp stripes it sampled -
-        // compare the same central row on both captures.
         val flatVariance = stripeVariance(flat)
         val styledVariance = stripeVariance(styled)
         assertTrue(
             styledVariance < flatVariance * VARIANCE_REDUCTION_CEILING,
-            "GlassStyle.resolve() did not visibly soften the sampled stripes " +
+            "GlassStyle with blur did not visibly soften the sampled stripes " +
                 "(flat variance=$flatVariance, styled variance=$styledVariance) - blur may not be applying",
         )
     }
@@ -112,7 +107,7 @@ class GlassStyleToEffectsScreenshotTest {
         const val TEST_WIDTH = 200
         const val TEST_HEIGHT = 140
         const val STRIPE_COUNT = 10
-        val BLUR_RADIUS: Dp = Dp(16f)
+        val BLUR_RADIUS: Dp = 16.dp
         const val VARIANCE_REDUCTION_CEILING = 0.6
     }
 }

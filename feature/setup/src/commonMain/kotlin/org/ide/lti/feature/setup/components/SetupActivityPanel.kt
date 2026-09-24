@@ -254,7 +254,6 @@ private fun ActivityPanelHeader(
     isCopiedAll: Boolean,
     onCopyAll: () -> Unit,
 ) {
-
     FlowRow(
         modifier = Modifier
             .fillMaxWidth()
@@ -320,7 +319,6 @@ private fun ActivityHeaderLeftBadges(
     droppedCount: Int,
     isRunning: Boolean,
 ) {
-
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),

@@ -42,35 +42,37 @@ class WorkspaceFrameIntegrationTest {
         var currentDestination by mutableStateOf(GlobalDestination.Workspace)
 
         composeTestRule.setContent {
-            Box(Modifier.fillMaxSize()) {
-                when (currentDestination) {
-                    GlobalDestination.Workspace -> {
-                        StudioShellContent(
-                            uiState = WorkspaceShellUiState(globalDestination = GlobalDestination.Workspace),
-                            onSelectGlobalDestination = { currentDestination = it },
-                            onSelectWorkspaceSection = {},
-                            onSelectStage = {},
-                            onValidate = {},
-                            onSave = {},
-                            content = { Box(Modifier.fillMaxSize().testTag("WorkspaceContent")) },
-                        )
-                    }
-                    GlobalDestination.Setup -> {
-                        TestDestinationScreen(
-                            destination = GlobalAppDestination.Setup,
-                            contentTag = "SetupScreenContent",
-                            onSelectDestination = { currentDestination = it.toStudioDestination() },
-                        )
-                    }
-                    GlobalDestination.Settings -> {
-                        TestDestinationScreen(
-                            destination = GlobalAppDestination.Settings,
-                            contentTag = "SettingsScreenContent",
-                            onSelectDestination = { currentDestination = it.toStudioDestination() },
-                        )
-                    }
-                    GlobalDestination.PluginManager -> {
-                        Box(Modifier.fillMaxSize().testTag("PluginsScreenContent"))
+            org.ide.lti.core.designsystem.theme.LtiTheme {
+                Box(Modifier.fillMaxSize()) {
+                    when (currentDestination) {
+                        GlobalDestination.Workspace -> {
+                            StudioShellContent(
+                                uiState = WorkspaceShellUiState(globalDestination = GlobalDestination.Workspace),
+                                onSelectGlobalDestination = { currentDestination = it },
+                                onSelectWorkspaceSection = {},
+                                onSelectStage = {},
+                                onValidate = {},
+                                onSave = {},
+                                content = { Box(Modifier.fillMaxSize().testTag("WorkspaceContent")) },
+                            )
+                        }
+                        GlobalDestination.Setup -> {
+                            TestDestinationScreen(
+                                destination = GlobalAppDestination.Setup,
+                                contentTag = "SetupScreenContent",
+                                onSelectDestination = { currentDestination = it.toStudioDestination() },
+                            )
+                        }
+                        GlobalDestination.Settings -> {
+                            TestDestinationScreen(
+                                destination = GlobalAppDestination.Settings,
+                                contentTag = "SettingsScreenContent",
+                                onSelectDestination = { currentDestination = it.toStudioDestination() },
+                            )
+                        }
+                        GlobalDestination.PluginManager -> {
+                            Box(Modifier.fillMaxSize().testTag("PluginsScreenContent"))
+                        }
                     }
                 }
             }
@@ -100,21 +102,23 @@ class WorkspaceFrameIntegrationTest {
         var activeSection by mutableStateOf<WorkspaceSection?>(WorkspaceSection.Overview)
 
         composeTestRule.setContent {
-            Box(Modifier.fillMaxSize()) {
-                StudioShellContent(
-                    uiState = WorkspaceShellUiState(
-                        globalDestination = GlobalDestination.Workspace,
-                        selectedWorkspaceSection = activeSection,
-                    ),
-                    onSelectGlobalDestination = {},
-                    onSelectWorkspaceSection = { activeSection = it },
-                    onSelectStage = {},
-                    onValidate = {},
-                    onSave = {},
-                    content = {
-                        Box(Modifier.fillMaxSize().testTag("Section_${activeSection?.name}"))
-                    },
-                )
+            org.ide.lti.core.designsystem.theme.LtiTheme {
+                Box(Modifier.fillMaxSize()) {
+                    StudioShellContent(
+                        uiState = WorkspaceShellUiState(
+                            globalDestination = GlobalDestination.Workspace,
+                            selectedWorkspaceSection = activeSection,
+                        ),
+                        onSelectGlobalDestination = {},
+                        onSelectWorkspaceSection = { activeSection = it },
+                        onSelectStage = {},
+                        onValidate = {},
+                        onSave = {},
+                        content = {
+                            Box(Modifier.fillMaxSize().testTag("Section_${activeSection?.name}"))
+                        },
+                    )
+                }
             }
         }
 

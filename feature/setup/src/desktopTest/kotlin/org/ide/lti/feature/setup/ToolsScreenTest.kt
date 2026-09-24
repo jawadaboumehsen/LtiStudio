@@ -57,14 +57,12 @@ class ToolsScreenTest {
         )
 
         setContent {
-            val backdrop = rememberGlassSceneState()
-            LtiTheme(sharedScene = backdrop) {
+            LtiTheme {
                 ToolsStepContent(
                     state = SetupUiState(
                         filteredToolsMatrix = listOf(unsupportedTool),
                     ),
                     actions = SetupUiActions(),
-                    resolvedBackdrop = backdrop,
                 )
             }
         }
@@ -92,8 +90,7 @@ class ToolsScreenTest {
         var recompileTarget: String? = null
 
         setContent {
-            val backdrop = rememberGlassSceneState()
-            LtiTheme(sharedScene = backdrop) {
+            LtiTheme {
                 ToolsStepContent(
                     state = SetupUiState(
                         filteredToolsMatrix = listOf(supportedTool),
@@ -101,7 +98,6 @@ class ToolsScreenTest {
                     actions = SetupUiActions(
                         onRecompileTool = { recompileTarget = it },
                     ),
-                    resolvedBackdrop = backdrop,
                 )
             }
         }
@@ -126,8 +122,7 @@ class ToolsScreenTest {
         var testTarget: String? = null
 
         setContent {
-            val backdrop = rememberGlassSceneState()
-            LtiTheme(sharedScene = backdrop) {
+            LtiTheme {
                 ToolsStepContent(
                     state = SetupUiState(
                         filteredToolsMatrix = listOf(failedTool),
@@ -135,7 +130,6 @@ class ToolsScreenTest {
                     actions = SetupUiActions(
                         onTestTool = { testTarget = it },
                     ),
-                    resolvedBackdrop = backdrop,
                 )
             }
         }
@@ -157,15 +151,13 @@ class ToolsScreenTest {
         )
 
         setContent {
-            val backdrop = rememberGlassSceneState()
-            LtiTheme(sharedScene = backdrop) {
+            LtiTheme {
                 ToolsStepContent(
                     state = SetupUiState(
                         toolchainSetupState = ToolchainSetupState(isRunning = true),
                         filteredToolsMatrix = listOf(tool),
                     ),
                     actions = SetupUiActions(),
-                    resolvedBackdrop = backdrop,
                 )
             }
         }
@@ -191,15 +183,13 @@ class ToolsScreenTest {
         assertEquals(500, activityState.droppedLineCount.value, "Dropped lines must be exactly 500")
 
         setContent {
-            val backdrop = rememberGlassSceneState()
-            LtiTheme(sharedScene = backdrop) {
+            LtiTheme {
                 ToolsStepContent(
                     state = SetupUiState(
                         filteredToolsMatrix = emptyList(),
                     ),
                     actions = SetupUiActions(),
                     activityState = activityState,
-                    resolvedBackdrop = backdrop,
                 )
             }
         }
@@ -216,8 +206,7 @@ class ToolsScreenTest {
         activityState.appendLines(listOf("Line 1", "Line 2", "Line 3"))
 
         setContent {
-            val backdrop = rememberGlassSceneState()
-            LtiTheme(sharedScene = backdrop) {
+            LtiTheme {
                 SetupActivityPanel(
                     activityState = activityState,
                     title = "Activity Test",
@@ -245,8 +234,7 @@ class ToolsScreenTest {
         activityState.appendLines(listOf("Alpha log entry", "Beta log entry", "Gamma log entry"))
 
         setContent {
-            val backdrop = rememberGlassSceneState()
-            LtiTheme(sharedScene = backdrop) {
+            LtiTheme {
                 SetupActivityPanel(
                     activityState = activityState,
                     title = "Activity Test",

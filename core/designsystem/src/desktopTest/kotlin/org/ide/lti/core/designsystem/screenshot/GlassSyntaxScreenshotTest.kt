@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Mifos Initiative
+ * Copyright 2026 Mifos Initiative
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -36,6 +36,7 @@ import org.ide.lti.core.designsystem.component.display.GlassPanelContainer
 import org.ide.lti.core.designsystem.component.display.GlassPanelHeader
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -51,11 +52,11 @@ class GlassSyntaxScreenshotTest {
     @Test
     fun testGlassSyntaxHighlightingDark() = runDesktopComposeUiTest(width = 540, height = 320) {
         setContent {
-            LtiTheme(darkTheme = true) {
+            LtiTheme(appTheme = AppTheme.Dark) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(GlassTheme.colors.glassSurface)
+                        .background(MaterialTheme.colorScheme.surface)
                         .padding(Spacing.Medium),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -72,11 +73,11 @@ class GlassSyntaxScreenshotTest {
     @Test
     fun testGlassSyntaxHighlightingLight() = runDesktopComposeUiTest(width = 540, height = 320) {
         setContent {
-            LtiTheme(darkTheme = false) {
+            LtiTheme(appTheme = AppTheme.Light) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(GlassTheme.colors.glassSurface)
+                        .background(MaterialTheme.colorScheme.surface)
                         .padding(Spacing.Medium),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -91,8 +92,7 @@ class GlassSyntaxScreenshotTest {
 
     @Composable
     private fun SyntaxHighlightedCodeCard() {
-        val glassColors = GlassTheme.colors
-        val syntax = glassColors.syntax
+        val syntax = GlassTheme.syntaxColors
 
         GlassCard(
             modifier = Modifier.fillMaxSize(),
@@ -109,7 +109,7 @@ class GlassSyntaxScreenshotTest {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(glassColors.canvasSurface)
+                        .background(MaterialTheme.colorScheme.surface)
                         .padding(Spacing.SmallMedium),
                 ) {
                     Column(modifier = Modifier.fillMaxSize()) {
@@ -158,7 +158,7 @@ class GlassSyntaxScreenshotTest {
                                     style = MaterialTheme.typography.labelSmall.copy(
                                         fontFamily = FontFamily.Monospace,
                                         fontSize = 11.sp,
-                                        color = glassColors.onGlassMuted.copy(alpha = AlphaTokens.Half),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = AlphaTokens.Half),
                                     ),
                                 )
                                 Text(

@@ -64,14 +64,12 @@ class EnvironmentScreenTest {
         var retriedStage: SetupStepStage? = null
 
         setContent {
-            val backdrop = rememberGlassSceneState()
-            LtiTheme(sharedScene = backdrop) {
+            LtiTheme {
                 EnvironmentStepContent(
                     state = SetupUiState(toolchainSetupState = state),
                     actions = SetupUiActions(
                         onRetryStage = { retriedStage = it },
                     ),
-                    resolvedBackdrop = backdrop,
                     autoRunOnLaunch = false,
                 )
             }
@@ -105,14 +103,12 @@ class EnvironmentScreenTest {
         var navigatedToProjects = false
 
         setContent {
-            val backdrop = rememberGlassSceneState()
-            LtiTheme(sharedScene = backdrop) {
+            LtiTheme {
                 EnvironmentStepContent(
                     state = SetupUiState(toolchainSetupState = state),
                     actions = SetupUiActions(
                         onRetryStage = { retriedStage = it },
                     ),
-                    resolvedBackdrop = backdrop,
                     onNavigateToProjects = { navigatedToProjects = true },
                     autoRunOnLaunch = false,
                 )
@@ -143,12 +139,10 @@ class EnvironmentScreenTest {
         )
 
         setContent {
-            val backdrop = rememberGlassSceneState()
-            LtiTheme(sharedScene = backdrop) {
+            LtiTheme {
                 EnvironmentStepContent(
                     state = SetupUiState(toolchainSetupState = state),
                     actions = SetupUiActions(),
-                    resolvedBackdrop = backdrop,
                     autoRunOnLaunch = false,
                 )
             }
@@ -180,8 +174,7 @@ class EnvironmentScreenTest {
         var autoDoctorToggled = false
 
         setContent {
-            val backdrop = rememberGlassSceneState()
-            LtiTheme(sharedScene = backdrop) {
+            LtiTheme {
                 SetupScreenContent(
                     state = SetupUiState(
                         toolchainSetupState = ToolchainSetupState(lastVerifiedTimestamp = 1700000000000L),
@@ -249,12 +242,10 @@ class EnvironmentScreenTest {
         var navigatedToProjects = false
 
         setContent {
-            val backdrop = rememberGlassSceneState()
-            LtiTheme(sharedScene = backdrop) {
+            LtiTheme {
                 EnvironmentStepContent(
                     state = SetupUiState(toolchainSetupState = state),
                     actions = SetupUiActions(),
-                    resolvedBackdrop = backdrop,
                     onNavigateToProjects = { navigatedToProjects = true },
                     autoRunOnLaunch = false,
                 )

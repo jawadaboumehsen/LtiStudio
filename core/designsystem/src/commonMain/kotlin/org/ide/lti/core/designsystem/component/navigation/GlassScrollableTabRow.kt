@@ -9,9 +9,9 @@
  */
 package org.ide.lti.core.designsystem.component.navigation
 
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable

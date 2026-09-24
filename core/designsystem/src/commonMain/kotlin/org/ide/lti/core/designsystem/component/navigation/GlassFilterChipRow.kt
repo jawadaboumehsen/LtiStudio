@@ -29,7 +29,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.GlassShapes
-import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 
@@ -66,7 +65,6 @@ fun GlassFilterChipRow(
     onSelect: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-
     CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
         FlowRow(
             modifier = modifier.fillMaxWidth(),

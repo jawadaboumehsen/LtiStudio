@@ -13,8 +13,11 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
@@ -24,26 +27,19 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.runDesktopComposeUiTest
-import com.kashif_e.backdrop.backdrops.layerBackdrop
-import org.ide.lti.core.designsystem.component.primitives.glass
+import dev.chrisbanes.haze.HazeInput
+import dev.chrisbanes.haze.glass.GlassStyle
+import dev.chrisbanes.haze.glass.hazeGlass
+import dev.chrisbanes.haze.hazeSource
+import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.GlassShapes
+import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LtiTheme
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
-import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 import org.ide.lti.core.testing.screenshot.GoldenImageAssert
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
-/**
- * GlassDialog wraps its content in `androidx.compose.ui.window.Dialog`, which opens a separate
- * platform window - `runDesktopComposeUiTest`'s `onRoot().captureToImage()` only captures the
- * test's own root, not that window's content, so GlassDialog itself can't be golden-tested
- * directly (confirmed: no existing test in this codebase captures a real Dialog-wrapped
- * composable). This tests the actual thing that changed - GlassStyles.dialog resolving through
- * Modifier.glass, including the colorControls brightness/saturation call GlassDialog's old
- * `effects` lambda had that plain GlassStyle.toEffects() didn't reproduce until now - directly,
- * the same way GlassStyleToEffectsScreenshotTest verifies `card` without needing GlassCard itself.
- */
 class GlassStylesDialogScreenshotTest {
 
     @OptIn(ExperimentalTestApi::class)
@@ -51,16 +47,26 @@ class GlassStylesDialogScreenshotTest {
         lateinit var captured: ImageBitmap
         runDesktopComposeUiTest(width = TEST_WIDTH, height = TEST_HEIGHT) {
             setContent {
-                LtiTheme(darkTheme = true) {
-                    val backdrop = rememberGlassSceneState()
+                LtiTheme(appTheme = AppTheme.Dark) {
+                    val colors = MaterialTheme.colorScheme
+                    val shape = GlassShapes.HazePanel
                     Box(Modifier.fillMaxSize()) {
-                        Canvas(Modifier.fillMaxSize().layerBackdrop(backdrop.engineBackdrop)) { drawStripes() }
+                        Canvas(Modifier.fillMaxSize().hazeSource(GlassTheme.hazeState)) { drawStripes() }
                         if (applyStyle) {
                             Box(
                                 Modifier
                                     .align(Alignment.Center)
                                     .size(ComponentSize.MinPanelWidth, ComponentSize.ActionCardHeight)
-                                    .glass(GlassStyles.dialog, backdrop = backdrop),
+                                    .hazeGlass(
+                                        input = HazeInput.Backdrop(GlassTheme.hazeState),
+                                        style = remember(shape, colors.surfaceContainerHighest) {
+                                            GlassStyle.regular.then {
+                                                this.shape(shape)
+                                                backgroundColor(colors.surfaceContainerHighest)
+                                            }
+                                        },
+                                    )
+                                    .clip(shape),
                             )
                         }
                     }
@@ -93,8 +99,8 @@ class GlassStylesDialogScreenshotTest {
         val styledVariance = stripeVariance(captureStripes(applyStyle = true))
         assertTrue(
             styledVariance < flatVariance * VARIANCE_REDUCTION_CEILING,
-            "GlassStyles.dialog did not visibly soften the sampled stripes " +
-                "(flat=$flatVariance, styled=$styledVariance) - colorControls may have broken the effect chain",
+            "Dialog glass style did not visibly soften the sampled stripes " +
+                "(flat=$flatVariance, styled=$styledVariance)",
         )
     }
 

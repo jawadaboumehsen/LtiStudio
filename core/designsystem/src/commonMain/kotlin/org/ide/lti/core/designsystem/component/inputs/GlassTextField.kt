@@ -10,6 +10,7 @@
 package org.ide.lti.core.designsystem.component.inputs
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -57,7 +58,6 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeInput
-import dev.chrisbanes.haze.glass.GlassStyle
 import dev.chrisbanes.haze.glass.hazeGlass
 import org.ide.lti.core.designsystem.component.actions.*
 import org.ide.lti.core.designsystem.component.devtools.*
@@ -71,6 +71,7 @@ import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.icon.GlassIcon
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.GlassMaterialStyles
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
@@ -481,30 +482,35 @@ fun GlassOtpTextField(
                 imeAction = ImeAction.Done,
             ),
             decorationBox = {
+                val theme = GlassTheme.appTheme
                 Row(horizontalArrangement = Arrangement.Center) {
                     repeat(otpCount) { index ->
                         val char = if (index >= otpText.length) "" else otpText[index].toString()
                         val filled = char.isNotEmpty()
+                        val otpSurface = if (filled) colors.primaryContainer else colors.surfaceContainerHighest
+                        val otpTint = if (filled) colors.primary else Color.Unspecified
+                        val otpBoxSurfaceModifier = if (GlassTheme.effectsEnabled) {
+                            Modifier.hazeGlass(
+                                input = HazeInput.Sources(GlassTheme.hazeState),
+                                style = remember(theme, otpTint) {
+                                    GlassMaterialStyles.baseStyle(
+                                        theme = theme,
+                                        opticalTint = otpTint,
+                                    ).then {
+                                        shape(GlassShapes.HazeSmall)
+                                    }
+                                },
+                            )
+                        } else {
+                            Modifier.background(otpSurface, GlassShapes.HazeSmall)
+                        }
+
                         Box(
                             modifier = Modifier
                                 .size(ComponentSize.OtpBoxSize)
                                 .padding(Spacing.ExtraSmall)
-                                .hazeGlass(
-                                    input = HazeInput.Backdrop(GlassTheme.hazeState),
-                                    style = remember(filled, colors) {
-                                        GlassStyle.regular.then {
-                                            shape(GlassShapes.HazeSmall)
-                                            tint(
-                                                if (filled) {
-                                                    colors.primary
-                                                } else {
-                                                    Color.Unspecified
-                                                },
-                                            )
-                                        }
-                                    },
-                                )
-                                .clip(GlassShapes.Small)
+                                .then(otpBoxSurfaceModifier)
+                                .clip(GlassShapes.HazeSmall)
                                 .glassOutlineBorder(
                                     color = if (filled) {
                                         MaterialTheme.colorScheme.primary
@@ -512,7 +518,7 @@ fun GlassOtpTextField(
                                         MaterialTheme.colorScheme.outline
                                     },
                                     width = StrokeWidth.Standard,
-                                    shape = GlassShapes.Small,
+                                    shape = GlassShapes.HazeSmall,
                                 ),
                             contentAlignment = Alignment.Center,
                         ) {

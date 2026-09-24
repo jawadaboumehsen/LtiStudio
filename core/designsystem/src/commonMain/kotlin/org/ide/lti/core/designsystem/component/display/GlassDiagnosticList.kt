@@ -9,16 +9,15 @@
  */
 package org.ide.lti.core.designsystem.component.display
 
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
-import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 
 /**
@@ -34,7 +33,6 @@ fun GlassDiagnosticList(
     items: List<GlassDiagnosticItem>,
     modifier: Modifier = Modifier,
 ) {
-
     CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
         Column(
             modifier = modifier.fillMaxWidth(),

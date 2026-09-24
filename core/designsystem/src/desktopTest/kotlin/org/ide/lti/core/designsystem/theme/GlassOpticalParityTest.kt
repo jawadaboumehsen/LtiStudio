@@ -9,47 +9,92 @@
  */
 package org.ide.lti.core.designsystem.theme
 
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Text
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import com.kashif_e.backdrop.highlight.Highlight
-import com.kashif_e.backdrop.highlight.HighlightStyle
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performMouseInput
+import androidx.compose.ui.test.runDesktopComposeUiTest
+import androidx.compose.ui.unit.dp
+import dev.chrisbanes.haze.HazeInput
+import dev.chrisbanes.haze.glass.GlassStyle
+import dev.chrisbanes.haze.glass.hazeGlass
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
 import kotlin.test.Test
 import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
 
 /**
- * Validates dual-tone physical bevels and interactive pointer-reactive highlights.
+ * Validates public Haze optical models, presets, and interactive pointer-reactive highlights.
  */
 class GlassOpticalParityTest {
 
     @Test
-    fun testGlassBevelHighlightPreset() {
-        val bevelHighlight = GlassHighlights.Bevel()
-        assertNotNull(bevelHighlight, "GlassHighlights.Bevel() must return a non-null Highlight")
-        assertTrue(
-            bevelHighlight.style is HighlightStyle.GlassBevel,
-            "Bevel highlight must use HighlightStyle.GlassBevel",
-        )
+    fun testBuiltInGlassPresetsAreValid() {
+        val regular = GlassStyle.regular
+        assertNotNull(regular, "GlassStyle.regular preset must be non-null")
+
+        val clear = GlassStyle.clear
+        assertNotNull(clear, "GlassStyle.clear preset must be non-null")
     }
 
     @Test
-    fun testPointerLightHighlightStyle() {
-        val pointerLight = HighlightStyle.PointerLight(
-            pointerPosition = Offset(100f, 50f),
-            intensity = 0.8f,
-            falloff = 2f,
-        )
-        assertNotNull(pointerLight, "PointerLight style must be constructible with pointer coordinates")
-        val highlight = Highlight(style = pointerLight)
-        assertNotNull(highlight, "Highlight wrapping PointerLight must be non-null")
+    fun testInteractiveResponseDslStyleCreation() {
+        val interactiveStyle = GlassStyle {
+            specularIntensity(0.6f)
+            hovered {
+                lightingIntensity(0.8f)
+                whitePointDelta(0.1f)
+                refractionMultiplier(1.2f)
+            }
+            pressed {
+                lightingIntensity(1.0f)
+                whitePointDelta(0.2f)
+            }
+        }
+        assertNotNull(interactiveStyle, "GlassStyle with interaction response must be constructible")
     }
 
+    @OptIn(ExperimentalTestApi::class)
     @Test
-    fun testInteractiveHighlightHelper() {
-        val highlight = GlassHighlights.interactive(Offset(120f, 60f))
-        assertNotNull(highlight, "GlassHighlights.interactive() must return a non-null Highlight")
-        assertTrue(
-            highlight.style is HighlightStyle.PointerLight,
-            "Interactive highlight must use HighlightStyle.PointerLight",
-        )
+    fun testInteractiveGlassRendersAndRespondsToPointer() = runDesktopComposeUiTest {
+        setContent {
+            val hazeState = rememberHazeState()
+            val interactiveStyle = GlassStyle {
+                specularIntensity(0.6f)
+                hovered {
+                    lightingIntensity(0.8f)
+                    whitePointDelta(0.1f)
+                }
+            }
+
+            Box(Modifier.fillMaxSize()) {
+                Canvas(Modifier.fillMaxSize().hazeSource(hazeState)) {
+                    drawCircle(Color.Blue, radius = 50f, center = Offset(100f, 100f))
+                }
+                Box(
+                    modifier = Modifier
+                        .size(120.dp, 60.dp)
+                        .hazeGlass(
+                            input = HazeInput.Backdrop(hazeState),
+                            style = interactiveStyle,
+                        ),
+                ) {
+                    Text("Interactive Glass")
+                }
+            }
+        }
+
+        onNodeWithText("Interactive Glass").assertExists()
+        onRoot().performMouseInput {
+            moveTo(Offset(60f, 30f))
+        }
     }
 }

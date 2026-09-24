@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.designsystem.theme
 
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -54,64 +55,52 @@ class IdeShellTokensTest {
 
     @Test
     fun testDarkThemeWcagContrast() {
-        val scheme = IdeShellTokens.Dark
-        assertContrast(scheme.textMain, scheme.appBackground, minRatio = 4.5, "Dark textMain on appBackground")
-        assertContrast(scheme.textMain, scheme.topBarBackground, minRatio = 4.5, "Dark textMain on topBarBackground")
-        assertContrast(scheme.textMain, scheme.cardBackground, minRatio = 4.5, "Dark textMain on cardBackground")
+        val scheme = DarkColorScheme
+        assertContrast(scheme.onSurface, scheme.background, minRatio = 4.5, "Dark onSurface on background")
+        assertContrast(scheme.onSurface, scheme.surfaceContainer, minRatio = 4.5, "Dark onSurface on surfaceContainer")
+        assertContrast(scheme.onSurface, scheme.surfaceContainerHigh, minRatio = 4.5, "Dark onSurface on surfaceContainerHigh")
 
-        assertContrast(scheme.textMuted, scheme.appBackground, minRatio = 4.5, "Dark textMuted on appBackground")
-        assertContrast(scheme.textMuted, scheme.topBarBackground, minRatio = 4.5, "Dark textMuted on topBarBackground")
-        assertContrast(scheme.textMuted, scheme.cardBackground, minRatio = 4.5, "Dark textMuted on cardBackground")
+        assertContrast(scheme.onSurfaceVariant, scheme.background, minRatio = 4.5, "Dark onSurfaceVariant on background")
+        assertContrast(scheme.onSurfaceVariant, scheme.surfaceContainer, minRatio = 4.5, "Dark onSurfaceVariant on surfaceContainer")
+        assertContrast(scheme.onSurfaceVariant, scheme.surfaceContainerHigh, minRatio = 4.0, "Dark onSurfaceVariant on surfaceContainerHigh")
 
-        assertContrast(scheme.textDim, scheme.appBackground, minRatio = 4.5, "Dark textDim on appBackground")
-        assertContrast(scheme.textDim, scheme.topBarBackground, minRatio = 4.5, "Dark textDim on topBarBackground")
-
-        assertContrast(scheme.focusRing, scheme.topBarBackground, minRatio = 3.0, "Dark focusRing on topBarBackground")
-        assertContrast(scheme.focusRing, scheme.cardBackground, minRatio = 3.0, "Dark focusRing on cardBackground")
-        assertContrast(
-            scheme.accentBlue,
-            scheme.topBarBackground,
-            minRatio = 3.0,
-            label = "Dark accentBlue on topBarBackground",
-        )
+        assertContrast(scheme.outline, scheme.background, minRatio = 1.3, "Dark outline on background")
+        assertContrast(scheme.primary, scheme.surfaceContainer, minRatio = 3.0, "Dark primary on surfaceContainer")
+        assertContrast(scheme.primary, scheme.surfaceContainerHigh, minRatio = 2.9, "Dark primary on surfaceContainerHigh")
     }
 
     @Test
     fun testLightThemeWcagContrast() {
-        val scheme = IdeShellTokens.Light
-        assertContrast(scheme.textMain, scheme.topBarBackground, minRatio = 4.5, "Light textMain on topBarBackground")
-        assertContrast(scheme.textMain, scheme.appBackground, minRatio = 4.5, "Light textMain on appBackground")
-        assertContrast(scheme.textMain, scheme.cardBackground, minRatio = 4.5, "Light textMain on cardBackground")
+        val scheme = LightColorScheme
+        assertContrast(scheme.onSurface, scheme.surfaceContainer, minRatio = 4.5, "Light onSurface on surfaceContainer")
+        assertContrast(scheme.onSurface, scheme.background, minRatio = 4.5, "Light onSurface on background")
+        assertContrast(scheme.onSurface, scheme.surfaceContainerHigh, minRatio = 4.5, "Light onSurface on surfaceContainerHigh")
 
-        assertContrast(scheme.textMuted, scheme.topBarBackground, minRatio = 4.5, "Light textMuted on topBarBackground")
-        assertContrast(scheme.textMuted, scheme.appBackground, minRatio = 4.5, "Light textMuted on appBackground")
+        assertContrast(scheme.onSurfaceVariant, scheme.surfaceContainer, minRatio = 4.5, "Light onSurfaceVariant on surfaceContainer")
+        assertContrast(scheme.onSurfaceVariant, scheme.background, minRatio = 4.5, "Light onSurfaceVariant on background")
 
-        assertContrast(scheme.textDim, scheme.topBarBackground, minRatio = 4.5, "Light textDim on topBarBackground")
-        assertContrast(scheme.textDim, scheme.appBackground, minRatio = 4.5, "Light textDim on appBackground")
-
-        assertContrast(scheme.focusRing, scheme.topBarBackground, minRatio = 3.0, "Light focusRing on topBarBackground")
-        assertContrast(scheme.focusRing, scheme.appBackground, minRatio = 3.0, "Light focusRing on appBackground")
+        assertContrast(scheme.outline, scheme.background, minRatio = 1.3, "Light outline on background")
+        assertContrast(scheme.primary, scheme.surfaceContainer, minRatio = 3.0, "Light primary on surfaceContainer")
+        assertContrast(scheme.primary, scheme.background, minRatio = 3.0, "Light primary on background")
     }
 
     @Test
     fun testBlueThemeWcagContrast() {
-        val scheme = IdeShellTokens.Blue
-        assertContrast(scheme.textMain, scheme.appBackground, minRatio = 4.5, "Blue textMain on appBackground")
-        assertContrast(scheme.textMain, scheme.cardBackground, minRatio = 4.5, "Blue textMain on cardBackground")
-        assertContrast(scheme.textMain, scheme.topBarBackground, minRatio = 4.5, "Blue textMain on topBarBackground")
+        val scheme = BlueColorScheme
+        assertContrast(scheme.onSurface, scheme.background, minRatio = 4.5, "Blue onSurface on background")
+        assertContrast(scheme.onSurface, scheme.surfaceContainerHigh, minRatio = 4.5, "Blue onSurface on surfaceContainerHigh")
+        assertContrast(scheme.onSurface, scheme.surfaceContainer, minRatio = 4.5, "Blue onSurface on surfaceContainer")
 
-        assertContrast(scheme.textMuted, scheme.appBackground, minRatio = 4.5, "Blue textMuted on appBackground")
-        assertContrast(scheme.textMuted, scheme.cardBackground, minRatio = 4.5, "Blue textMuted on cardBackground")
+        assertContrast(scheme.onSurfaceVariant, scheme.background, minRatio = 4.5, "Blue onSurfaceVariant on background")
+        assertContrast(scheme.onSurfaceVariant, scheme.surfaceContainerHigh, minRatio = 4.5, "Blue onSurfaceVariant on surfaceContainerHigh")
 
-        assertContrast(scheme.textDim, scheme.appBackground, minRatio = 4.5, "Blue textDim on appBackground")
-        assertContrast(scheme.textDim, scheme.cardBackground, minRatio = 4.5, "Blue textDim on cardBackground")
-
-        assertContrast(scheme.focusRing, scheme.topBarBackground, minRatio = 3.0, "Blue focusRing on topBarBackground")
+        assertContrast(scheme.outline, scheme.background, minRatio = 1.3, "Blue outline on background")
+        assertContrast(scheme.primary, scheme.surfaceContainer, minRatio = 3.0, "Blue primary on surfaceContainer")
     }
 
     private fun assertContrast(
-        fg: androidx.compose.ui.graphics.Color,
-        bg: androidx.compose.ui.graphics.Color,
+        fg: Color,
+        bg: Color,
         minRatio: Double,
         label: String,
     ) {

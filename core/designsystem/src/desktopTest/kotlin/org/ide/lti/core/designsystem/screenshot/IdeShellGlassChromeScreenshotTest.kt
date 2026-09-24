@@ -23,17 +23,17 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.runDesktopComposeUiTest
-import com.kashif_e.backdrop.backdrops.layerBackdrop
+import dev.chrisbanes.haze.hazeSource
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.component.layout.IdeNavigatorPanel
 import org.ide.lti.core.designsystem.component.layout.IdePipelineRail
 import org.ide.lti.core.designsystem.component.layout.IdeStatusBar
 import org.ide.lti.core.designsystem.component.layout.IdeTopAppBar
+import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.PreviewSampleColors
-import org.ide.lti.core.designsystem.theme.config.AppTheme
-import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
@@ -49,14 +49,17 @@ import kotlin.test.assertTrue
 class IdeShellGlassChromeScreenshotTest {
 
     @OptIn(ExperimentalTestApi::class)
-    private fun captureOverStripes(appTheme: AppTheme, content: @Composable () -> Unit): ImageBitmap {
+    private fun captureOverStripes(
+        appTheme: AppTheme,
+        effectsEnabled: Boolean = true,
+        content: @Composable () -> Unit,
+    ): ImageBitmap {
         lateinit var captured: ImageBitmap
         runDesktopComposeUiTest(width = TEST_WIDTH, height = TEST_HEIGHT) {
             setContent {
-                val backdrop = rememberGlassSceneState()
-                LtiTheme(appTheme = appTheme, sharedScene = backdrop) {
+                LtiTheme(appTheme = appTheme, effectsEnabled = effectsEnabled) {
                     Box(Modifier.fillMaxSize()) {
-                        Canvas(Modifier.fillMaxSize().layerBackdrop(backdrop.engineBackdrop)) { drawStripes() }
+                        Canvas(Modifier.fillMaxSize().hazeSource(GlassTheme.hazeState)) { drawStripes() }
                         content()
                     }
                 }
@@ -83,37 +86,58 @@ class IdeShellGlassChromeScreenshotTest {
     }
 
     @Test
-    fun topAppBarBlursUnderBlueThemeAndStaysFlatUnderDarkTheme() {
-        // GlassDimens.TopBarHeight = 56dp - sample well inside the bar, not the flat canvas below it.
+    fun topAppBarBlursUnderAllThemesWhenEffectsEnabled() {
+        val flatReference = stripeVariance(captureOverStripes(AppTheme.Blue) {}, sampleY = BAR_SAMPLE_Y)
+
         val blueVariance = stripeVariance(captureOverStripes(AppTheme.Blue) { IdeTopAppBar() }, sampleY = BAR_SAMPLE_Y)
         val darkVariance = stripeVariance(captureOverStripes(AppTheme.Dark) { IdeTopAppBar() }, sampleY = BAR_SAMPLE_Y)
-        val flatReference = stripeVariance(captureOverStripes(AppTheme.Blue) {}, sampleY = BAR_SAMPLE_Y)
+        val lightVariance = stripeVariance(captureOverStripes(AppTheme.Light) { IdeTopAppBar() }, sampleY = BAR_SAMPLE_Y)
 
         assertTrue(
             blueVariance < flatReference * VARIANCE_REDUCTION_CEILING,
-            "IdeTopAppBar did not visibly blur under AppTheme.Blue - the isBlueGlass gate or " +
-                "Modifier.glass wiring may be broken",
-        )
-        // IdeShellTokens.Dark's topBarBackground is fully opaque, so the correct flat-fallback
-        // signal isn't "still shows the raw stripes" (opaque paint hides them completely either
-        // way) - it's "uniform, stripe-free solid fill", i.e. variance near zero, and meaningfully
-        // *more* uniform than the real blurred capture (which still carries some residual pattern
-        // from the sampled backdrop).
-        assertTrue(
-            darkVariance < UNIFORM_FILL_VARIANCE_CEILING,
-            "IdeTopAppBar under AppTheme.Dark was not a uniform opaque fill (variance=$darkVariance) - " +
-                "may be sampling the backdrop when it shouldn't",
+            "IdeTopAppBar did not visibly blur under AppTheme.Blue",
         )
         assertTrue(
-            blueVariance > darkVariance,
-            "IdeTopAppBar under AppTheme.Blue was as uniform as the opaque Dark fallback - " +
-                "the isBlueGlass gate may not be reaching the real backdrop path",
+            darkVariance < flatReference * VARIANCE_REDUCTION_CEILING,
+            "IdeTopAppBar did not visibly blur under AppTheme.Dark",
+        )
+        assertTrue(
+            lightVariance < flatReference * VARIANCE_REDUCTION_CEILING,
+            "IdeTopAppBar did not visibly blur under AppTheme.Light",
+        )
+    }
+
+    @Test
+    fun topAppBarRendersUniformSolidFillWhenEffectsDisabled() {
+        val disabledBlueVariance = stripeVariance(
+            captureOverStripes(AppTheme.Blue, effectsEnabled = false) { IdeTopAppBar() },
+            sampleY = BAR_SAMPLE_Y,
+        )
+        val disabledDarkVariance = stripeVariance(
+            captureOverStripes(AppTheme.Dark, effectsEnabled = false) { IdeTopAppBar() },
+            sampleY = BAR_SAMPLE_Y,
+        )
+        val disabledLightVariance = stripeVariance(
+            captureOverStripes(AppTheme.Light, effectsEnabled = false) { IdeTopAppBar() },
+            sampleY = BAR_SAMPLE_Y,
+        )
+
+        assertTrue(
+            disabledBlueVariance < UNIFORM_FILL_VARIANCE_CEILING,
+            "IdeTopAppBar under Blue with effects disabled was not uniform (variance=$disabledBlueVariance)",
+        )
+        assertTrue(
+            disabledDarkVariance < UNIFORM_FILL_VARIANCE_CEILING,
+            "IdeTopAppBar under Dark with effects disabled was not uniform (variance=$disabledDarkVariance)",
+        )
+        assertTrue(
+            disabledLightVariance < UNIFORM_FILL_VARIANCE_CEILING,
+            "IdeTopAppBar under Light with effects disabled was not uniform (variance=$disabledLightVariance)",
         )
     }
 
     @Test
     fun statusBarBlursUnderBlueTheme() {
-        // GlassDimens.StatusBarHeight = 32dp - sample well inside the bar.
         val flatReference = stripeVariance(captureOverStripes(AppTheme.Blue) {}, sampleY = BAR_SAMPLE_Y)
         val blue = captureOverStripes(AppTheme.Blue) { IdeStatusBar() }
         assertTrue(
@@ -123,7 +147,7 @@ class IdeShellGlassChromeScreenshotTest {
     }
 
     @Test
-    fun ideCardSurfaceBlursUnderBlueThemeAndStaysFlatUnderDarkTheme() {
+    fun ideCardSurfaceBlursUnderBlueAndDarkThemes() {
         val cardBox: @Composable () -> Unit = {
             Box(
                 Modifier
@@ -131,17 +155,22 @@ class IdeShellGlassChromeScreenshotTest {
                     .ideCardSurface(),
             )
         }
-        val blueVariance = stripeVariance(captureOverStripes(AppTheme.Blue, cardBox))
-        val darkVariance = stripeVariance(captureOverStripes(AppTheme.Dark, cardBox))
         val flatReference = stripeVariance(captureOverStripes(AppTheme.Blue) {})
+        val blueVariance = stripeVariance(captureOverStripes(AppTheme.Blue, content = cardBox))
+        val darkVariance = stripeVariance(captureOverStripes(AppTheme.Dark, content = cardBox))
+        val disabledVariance = stripeVariance(captureOverStripes(AppTheme.Blue, effectsEnabled = false, content = cardBox))
 
         assertTrue(
             blueVariance < flatReference * VARIANCE_REDUCTION_CEILING,
             "ideCardSurface did not visibly blur under AppTheme.Blue",
         )
         assertTrue(
-            darkVariance < UNIFORM_FILL_VARIANCE_CEILING,
-            "ideCardSurface under AppTheme.Dark was not a uniform opaque fill (variance=$darkVariance)",
+            darkVariance < flatReference * VARIANCE_REDUCTION_CEILING,
+            "ideCardSurface did not visibly blur under AppTheme.Dark",
+        )
+        assertTrue(
+            disabledVariance < UNIFORM_FILL_VARIANCE_CEILING,
+            "ideCardSurface under effectsEnabled = false was not uniform (variance=$disabledVariance)",
         )
     }
 

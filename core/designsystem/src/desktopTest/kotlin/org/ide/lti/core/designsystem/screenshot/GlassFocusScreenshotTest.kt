@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -40,7 +41,7 @@ import org.ide.lti.core.designsystem.component.actions.GlassIconButton
 import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
 import org.ide.lti.core.designsystem.component.actions.GlassTextButton
 import org.ide.lti.core.designsystem.icon.AppIcons
-import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -61,11 +62,11 @@ class GlassFocusScreenshotTest {
                 focusRequester.requestFocus()
             }
 
-            LtiTheme(darkTheme = true) {
+            LtiTheme(appTheme = AppTheme.Dark) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(GlassTheme.colors.glassSurface)
+                        .background(MaterialTheme.colorScheme.surface)
                         .padding(Spacing.Medium),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -122,11 +123,11 @@ class GlassFocusScreenshotTest {
     @Test
     fun testGlassButtonFocusRingSuppressedOnMouseClick() = runDesktopComposeUiTest(width = 320, height = 160) {
         setContent {
-            LtiTheme(darkTheme = true) {
+            LtiTheme(appTheme = AppTheme.Dark) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(GlassTheme.colors.glassSurface)
+                        .background(MaterialTheme.colorScheme.surface)
                         .padding(Spacing.Medium),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -151,11 +152,11 @@ class GlassFocusScreenshotTest {
     @Test
     fun testGlassButtonFocusRingReappearsOnKeyPressWhileFocused() = runDesktopComposeUiTest(width = 320, height = 160) {
         setContent {
-            LtiTheme(darkTheme = true) {
+            LtiTheme(appTheme = AppTheme.Dark) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(GlassTheme.colors.glassSurface)
+                        .background(MaterialTheme.colorScheme.surface)
                         .padding(Spacing.Medium),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -171,10 +172,13 @@ class GlassFocusScreenshotTest {
 
         onNodeWithText("Clicked").performClick()
         waitForIdle()
-        onNodeWithText("Clicked").performKeyInput { pressKey(Key.Tab) }
+
+        onRoot().performKeyInput {
+            pressKey(Key.Tab)
+        }
         waitForIdle()
 
         val image = onRoot().captureToImage()
-        GoldenImageAssert.assertMatchesBaseline("glass_button_focus_ring_reappears_on_keypress", image)
+        GoldenImageAssert.assertMatchesBaseline("glass_button_focus_ring_reappears_on_key_press", image)
     }
 }

@@ -605,9 +605,9 @@ internal class HazeEffectNode(
     }
 
     val shouldDrawEffect = shouldPrepareDraw && if (retainOutputWhenSourceUnavailable) {
-      areas.isNotEmpty() || shouldDrawRetainedOutput()
+      areas.isNotEmpty() || shouldDrawRetainedOutput() || typedEffectRenderer != null
     } else {
-      hasDrawableSourceLayers
+      hasDrawableSourceLayers || typedEffectRenderer != null
     }
     if (shouldDrawEffect) {
       prepareEffectDraw()
@@ -966,12 +966,12 @@ internal class HazeEffectNode(
     syncPointerInputDelegate()
 
     if (dirtyTracker.any(LayerBoundsDirtyFields)) {
-      if (state != null && areas.isNotEmpty() && size.isSpecified && position.isSpecified) {
+      if ((state != null && (areas.isNotEmpty() || typedEffectRenderer != null)) && size.isSpecified && position.isSpecified) {
         val clippedLayerBounds = Rect(Offset.Zero, size)
           .letIf(shouldExpandLayer()) {
             calculateEffectLayerBounds(it, requireDensity())
           }
-          .letIf(shouldClipToAreaBounds()) { rect ->
+          .letIf(shouldClipToAreaBounds() && areas.isNotEmpty()) { rect ->
             var left = Float.POSITIVE_INFINITY
             var top = Float.POSITIVE_INFINITY
             var right = Float.NEGATIVE_INFINITY

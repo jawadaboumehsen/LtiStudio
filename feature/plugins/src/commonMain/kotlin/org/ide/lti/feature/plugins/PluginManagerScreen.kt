@@ -35,7 +35,6 @@ import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.GlassVerticalDivider
 import org.ide.lti.core.designsystem.component.layout.GlobalAppDestination
 import org.ide.lti.core.designsystem.component.layout.GlobalAppTopBar
-import org.ide.lti.core.designsystem.component.layout.StudioGlassBackdrop
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
@@ -137,8 +136,6 @@ public fun PluginManagerContent(
                     shape = GlassShapes.Panel,
                 ),
         ) {
-            StudioGlassBackdrop()
-
             Column(
                 modifier = Modifier.fillMaxSize(),
             ) {

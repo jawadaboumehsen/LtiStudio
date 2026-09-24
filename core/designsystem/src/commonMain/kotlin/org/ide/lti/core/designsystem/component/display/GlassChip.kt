@@ -10,13 +10,13 @@
 package org.ide.lti.core.designsystem.component.display
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
-import org.ide.lti.core.designsystem.theme.HazeShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,13 +34,13 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeInput
-import dev.chrisbanes.haze.glass.GlassStyle
 import dev.chrisbanes.haze.glass.hazeGlass
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.HazeShape
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 
@@ -112,19 +112,27 @@ fun GlassChip(
         else -> null
     }
 
+    val theme = GlassTheme.appTheme
+    val chipModifier = if (GlassTheme.effectsEnabled) {
+        Modifier.hazeGlass(
+            input = HazeInput.Sources(GlassTheme.hazeState),
+            style = remember(theme, shape) {
+                org.ide.lti.core.designsystem.theme.GlassMaterialStyles.baseStyle(
+                    theme = theme,
+                ).then {
+                    this.shape(shape)
+                    hovered { lightingIntensity(0.35f) }
+                    pressed { scale(0.96f) }
+                }
+            },
+        )
+    } else {
+        Modifier.background(backgroundColor, shape = shape)
+    }
+
     Box(
         modifier = modifier
-            .hazeGlass(
-                input = HazeInput.Backdrop(GlassTheme.hazeState),
-                style = remember(shape, backgroundColor) {
-                    GlassStyle.regular then GlassStyle {
-                        this.shape(shape)
-                        backgroundColor(backgroundColor)
-                        hovered { lightingIntensity(0.35f) }
-                        pressed { scale(0.96f) }
-                    }
-                },
-            )
+            .then(chipModifier)
             .clip(shape)
             .glassOutlineBorder(color = borderColor, width = StrokeWidth.Hairline, shape = shape)
             .onPointerEvent(PointerEventType.Enter) { if (enabled) isHovered = true }

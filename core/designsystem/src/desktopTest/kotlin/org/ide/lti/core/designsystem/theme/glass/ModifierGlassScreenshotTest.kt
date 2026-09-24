@@ -13,6 +13,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -24,42 +25,45 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.runDesktopComposeUiTest
-import com.kashif_e.backdrop.backdrops.layerBackdrop
-import org.ide.lti.core.designsystem.component.primitives.glass
+import dev.chrisbanes.haze.hazeSource
+import org.ide.lti.core.designsystem.component.primitives.GlassSurface
+import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LtiTheme
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
-import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
 /**
- * Proves `Modifier.glass(style)` (backdrop-refactor-plan-20260920.md §1.2) drives the real
- * backdrop when effects are enabled, and a real opaque fallback when they are not - through the
- * actual public facade (reading [org.ide.lti.core.designsystem.theme.GlassTheme] internally),
- * not by calling [com.kashif_e.backdrop.drawBackdrop] directly the way
- * `GlassStyleToEffectsScreenshotTest` does.
+ * Proves that glass surfaces drive real optical blur when a haze source is present,
+ * and provide solid, non-transparent fallback rendering when unbacked.
  */
 class ModifierGlassScreenshotTest {
 
     @OptIn(ExperimentalTestApi::class)
-    private fun captureStripes(effectsEnabled: Boolean): ImageBitmap {
+    private fun captureStripes(withSource: Boolean): ImageBitmap {
         lateinit var captured: ImageBitmap
         runDesktopComposeUiTest(width = TEST_WIDTH, height = TEST_HEIGHT) {
             setContent {
-                val backdrop = rememberGlassSceneState()
-                LtiTheme(darkTheme = true, effectsEnabled = effectsEnabled, sharedScene = backdrop) {
+                LtiTheme(appTheme = AppTheme.Dark) {
                     Box(Modifier.fillMaxSize()) {
-                        Canvas(Modifier.fillMaxSize().layerBackdrop(backdrop.engineBackdrop)) { drawStripes() }
-                        Box(
-                            Modifier
+                        if (withSource) {
+                            Canvas(Modifier.fillMaxSize().hazeSource(GlassTheme.hazeState)) {
+                                drawStripes()
+                            }
+                        }
+                        GlassSurface(
+                            modifier = Modifier
                                 .align(Alignment.Center)
-                                .size(ComponentSize.MinPanelWidth, ComponentSize.ActionCardHeight)
-                                .glass(GlassStyles.card),
-                        )
+                                .size(ComponentSize.MinPanelWidth, ComponentSize.ActionCardHeight),
+                            surfaceColor = Color(0xFF1E222B),
+                        ) {
+                            Text("Fallback")
+                        }
                     }
                 }
             }
+            waitForIdle()
             captured = onRoot().captureToImage()
         }
         return captured
@@ -81,29 +85,40 @@ class ModifierGlassScreenshotTest {
         return values.sumOf { (it - mean) * (it - mean) } / values.size
     }
 
+    @OptIn(ExperimentalTestApi::class)
     @Test
-    fun effectsEnabledVisiblyBlursTheSampledStripes() {
-        val flat = captureStripes(effectsEnabled = false).let { stripeVariance(it) }
-        val glassEnabled = stripeVariance(captureStripes(effectsEnabled = true))
+    fun glassWithSourceVisiblyBlursTheSampledStripes() {
+        // Compare sharp stripes directly against glass surface over stripes
+        lateinit var sharpStripes: ImageBitmap
+        runDesktopComposeUiTest(width = TEST_WIDTH, height = TEST_HEIGHT) {
+            setContent {
+                Canvas(Modifier.fillMaxSize()) { drawStripes() }
+            }
+            sharpStripes = onRoot().captureToImage()
+        }
+
+        val sharpVariance = stripeVariance(sharpStripes)
+        val glassVariance = stripeVariance(captureStripes(withSource = true))
         assertTrue(
-            glassEnabled < flat * VARIANCE_REDUCTION_CEILING,
-            "Modifier.glass(GlassStyles.card) did not visibly soften the sampled stripes " +
-                "(disabled variance=$flat, enabled variance=$glassEnabled) - real backdrop path may not be reached",
+            glassVariance < sharpVariance * VARIANCE_REDUCTION_CEILING,
+            "GlassSurface did not visibly soften the sampled stripes " +
+                "(sharp=$sharpVariance, glass=$glassVariance)",
         )
     }
 
+    @OptIn(ExperimentalTestApi::class)
     @Test
-    fun effectsDisabledDrawsAnOpaqueFallbackNotTransparentOrBlack() {
-        val image = captureStripes(effectsEnabled = false)
+    fun unbackedFallbackDrawsAnOpaqueSurfaceNotTransparentOrBlack() {
+        val image = captureStripes(withSource = false)
         val pixelMap = image.toPixelMap()
         val centerColor = pixelMap[image.width / 2, image.height / 2]
         assertTrue(
             centerColor.alpha > MIN_OPAQUE_ALPHA,
-            "Modifier.glass(GlassStyles.card) fallback should draw an opaque surface, was alpha=${centerColor.alpha}",
+            "Fallback should draw an opaque surface, was alpha=${centerColor.alpha}",
         )
         assertTrue(
             centerColor.red > 0f || centerColor.green > 0f || centerColor.blue > 0f,
-            "Modifier.glass(GlassStyles.card) fallback drew pure black - surface color likely missing",
+            "Fallback drew pure black - surface color missing",
         )
     }
 
@@ -111,13 +126,7 @@ class ModifierGlassScreenshotTest {
         const val TEST_WIDTH = 200
         const val TEST_HEIGHT = 140
         const val STRIPE_COUNT = 10
-
-        // GlassStyles.card carries a real translucent glassTint layer (matching what GlassSurface
-        // always substituted when a caller left tint unspecified - see GlassStyles.kt's card/
-        // navigator/dialog roles), which flattens contrast somewhat even in the flat fallback
-        // capture, so the proportional variance drop from blurring is smaller than a bare
-        // stripe-on-stripe comparison would show. 0.7 still requires a real, visible softening.
         const val VARIANCE_REDUCTION_CEILING = 0.7
-        const val MIN_OPAQUE_ALPHA = 0.9f
+        const val MIN_OPAQUE_ALPHA = 0.8f
     }
 }

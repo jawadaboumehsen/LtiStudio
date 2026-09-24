@@ -9,7 +9,6 @@
  */
 package org.ide.lti.core.designsystem.component.navigation
 
-import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -49,11 +48,9 @@ import androidx.compose.ui.util.fastCoerceIn
 import androidx.compose.ui.util.fastRoundToInt
 import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeInput
-import dev.chrisbanes.haze.glass.GlassStyle
 import dev.chrisbanes.haze.glass.hazeGlass
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.drop
-import kotlinx.coroutines.launch
 import org.ide.lti.core.designsystem.component.actions.*
 import org.ide.lti.core.designsystem.component.devtools.*
 import org.ide.lti.core.designsystem.component.display.*
@@ -63,6 +60,7 @@ import org.ide.lti.core.designsystem.component.layout.*
 import org.ide.lti.core.designsystem.component.primitives.*
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.GlassMaterialStyles
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.MotionThreshold
@@ -209,22 +207,28 @@ private fun GlassBottomTabBarBackground(
     containerColor: Color,
     interactiveHighlight: InteractiveHighlight,
 ) {
+    val theme = GlassTheme.appTheme
+    val surfaceModifier = if (GlassTheme.effectsEnabled) {
+        Modifier.hazeGlass(
+            input = HazeInput.Sources(GlassTheme.hazeState),
+            style = remember(theme) {
+                GlassMaterialStyles.baseStyle(theme = theme).then {
+                    shape(GlassShapes.HazeCapsule)
+                }
+            },
+        )
+    } else {
+        Modifier.background(containerColor, GlassShapes.HazeCapsule)
+    }
+
     Row(
         Modifier
-            .hazeGlass(
-                input = HazeInput.Backdrop(GlassTheme.hazeState),
-                style = remember(containerColor) {
-                    GlassStyle.regular.then {
-                        shape(GlassShapes.HazeCapsule)
-                        backgroundColor(containerColor)
-                    }
-                },
-            )
-            .clip(GlassShapes.Capsule)
+            .then(surfaceModifier)
+            .clip(GlassShapes.HazeCapsule)
             .glassOutlineBorder(
                 color = MaterialTheme.colorScheme.outline,
                 width = StrokeWidth.Hairline,
-                shape = GlassShapes.Capsule,
+                shape = GlassShapes.HazeCapsule,
             )
             .then(interactiveHighlight.modifier)
             .then(interactiveHighlight.gestureModifier)

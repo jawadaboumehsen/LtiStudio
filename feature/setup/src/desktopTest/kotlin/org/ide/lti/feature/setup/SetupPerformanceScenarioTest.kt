@@ -21,6 +21,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.junit.Rule
 import java.io.File
 import kotlin.test.AfterTest
@@ -129,12 +130,14 @@ class SetupPerformanceScenarioTest {
         SetupBenchmarkConfig.warmupDurationMs = 10_000L
 
         composeTestRule.setContent {
-            SetupPerformanceScenarioHook(
-                modifier = Modifier,
-                defaultContent = {
-                    Text("Default Setup Content Should Not Render")
-                },
-            )
+            LtiTheme {
+                SetupPerformanceScenarioHook(
+                    modifier = Modifier,
+                    defaultContent = {
+                        Text("Default Setup Content Should Not Render")
+                    },
+                )
+            }
         }
 
         composeTestRule.onNodeWithText("BENCHMARK HARNESS").assertIsDisplayed()
@@ -165,12 +168,14 @@ class SetupPerformanceScenarioTest {
         SetupBenchmarkConfig.warmupDurationMs = 10_000L
 
         composeTestRule.setContent {
-            SetupPerformanceScenarioHook(
-                modifier = Modifier,
-                defaultContent = {
-                    Text("Default Setup Content Should Not Render")
-                },
-            )
+            LtiTheme {
+                SetupPerformanceScenarioHook(
+                    modifier = Modifier,
+                    defaultContent = {
+                        Text("Default Setup Content Should Not Render")
+                    },
+                )
+            }
         }
 
         composeTestRule.onNodeWithText("BENCHMARK HARNESS").assertIsDisplayed()

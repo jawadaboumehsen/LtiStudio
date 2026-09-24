@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Mifos Initiative
+ * Copyright 2026 Mifos Initiative
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -38,7 +38,7 @@ import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.navigation.GlassNavigationBar
 import org.ide.lti.core.designsystem.component.navigation.GlassNavigationBarItem
 import org.ide.lti.core.designsystem.icon.AppIcons
-import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -47,7 +47,7 @@ import org.junit.Test
 
 /**
  * Visual screenshot regression tests verifying that components render solid,
- * opaque fallbacks when Fluid Glass Effects are disabled (effectsEnabled = false).
+ * opaque fallbacks when operating unbacked by a hazeSource.
  */
 class GlassEffectsDisabledScreenshotTest {
 
@@ -55,11 +55,11 @@ class GlassEffectsDisabledScreenshotTest {
     @Test
     fun testEffectsDisabledButtons() = runDesktopComposeUiTest(width = 480, height = 180) {
         setContent {
-            LtiTheme(darkTheme = true, effectsEnabled = false) {
+            LtiTheme(appTheme = AppTheme.Dark) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(GlassTheme.colors.canvasSurface)
+                        .background(MaterialTheme.colorScheme.surface)
                         .padding(Spacing.Medium),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -96,11 +96,11 @@ class GlassEffectsDisabledScreenshotTest {
     @Test
     fun testEffectsDisabledCard() = runDesktopComposeUiTest(width = 400, height = 240) {
         setContent {
-            LtiTheme(darkTheme = true, effectsEnabled = false) {
+            LtiTheme(appTheme = AppTheme.Dark) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(GlassTheme.colors.canvasSurface)
+                        .background(MaterialTheme.colorScheme.surface)
                         .padding(Spacing.Large),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -112,13 +112,13 @@ class GlassEffectsDisabledScreenshotTest {
                             Text(
                                 text = "Design System Card",
                                 style = MaterialTheme.typography.titleMedium,
-                                color = GlassTheme.colors.onGlass,
+                                color = MaterialTheme.colorScheme.onSurface,
                             )
                             Spacer(Modifier.height(Spacing.ExtraSmall))
                             Text(
                                 text = "Solid fallback rendering with GPU glass effects disabled.",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = GlassTheme.colors.onGlassSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                             Spacer(Modifier.height(Spacing.SmallMedium))
                             Row(
@@ -143,11 +143,11 @@ class GlassEffectsDisabledScreenshotTest {
     @Test
     fun testEffectsDisabledNavigationBar() = runDesktopComposeUiTest(width = 480, height = 120) {
         setContent {
-            LtiTheme(darkTheme = true, effectsEnabled = false) {
+            LtiTheme(appTheme = AppTheme.Dark) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(GlassTheme.colors.canvasSurface)
+                        .background(MaterialTheme.colorScheme.surface)
                         .padding(Spacing.Small),
                     contentAlignment = Alignment.BottomCenter,
                 ) {

@@ -9,7 +9,6 @@
  */
 package org.ide.lti.core.designsystem.component.layout
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -22,14 +21,9 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.ExperimentalHazeApi
-import dev.chrisbanes.haze.HazeInput
-import dev.chrisbanes.haze.glass.GlassStyle
-import dev.chrisbanes.haze.glass.hazeGlass
 import org.ide.lti.core.designsystem.component.actions.*
 import org.ide.lti.core.designsystem.component.devtools.*
 import org.ide.lti.core.designsystem.component.display.*
@@ -37,9 +31,7 @@ import org.ide.lti.core.designsystem.component.feedback.*
 import org.ide.lti.core.designsystem.component.inputs.*
 import org.ide.lti.core.designsystem.component.navigation.*
 import org.ide.lti.core.designsystem.component.primitives.*
-import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.ComponentSize
-import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.Spacing
 
@@ -65,20 +57,13 @@ fun GlassStatusBar(
     trailingContent: (@Composable RowScope.() -> Unit)? = null,
     drawOwnChrome: Boolean = true,
 ) {
-    val isBlueGlass = drawOwnChrome && GlassTheme.appTheme == AppTheme.Blue
     val surfaceColor = MaterialTheme.colorScheme.surfaceContainer
-    val chromeModifier = if (isBlueGlass) {
-        Modifier.hazeGlass(
-            input = HazeInput.Backdrop(GlassTheme.hazeState),
-            style = remember(surfaceColor) {
-                GlassStyle.regular.then {
-                    shape(GlassShapes.HazeFlat)
-                    backgroundColor(surfaceColor)
-                }
-            },
+    val chromeModifier = if (drawOwnChrome) {
+        Modifier.ideShellSurface(
+            shape = GlassShapes.HazeFlat,
+            surfaceColor = surfaceColor,
+            drawBorder = false,
         )
-    } else if (drawOwnChrome) {
-        Modifier.background(surfaceColor)
     } else {
         Modifier
     }

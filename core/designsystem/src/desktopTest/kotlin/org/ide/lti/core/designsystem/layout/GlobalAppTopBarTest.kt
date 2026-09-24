@@ -9,6 +9,8 @@
  */
 package org.ide.lti.core.designsystem.layout
 
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -20,15 +22,13 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import org.ide.lti.core.designsystem.component.layout.GlobalAppDestination
 import org.ide.lti.core.designsystem.component.layout.GlobalAppTopBar
+import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.GlassTheme
-import org.ide.lti.core.designsystem.theme.IdeShellColorScheme
-import org.ide.lti.core.designsystem.theme.IdeShellTokens
 import org.ide.lti.core.designsystem.theme.LtiTheme
-import org.ide.lti.core.designsystem.theme.config.AppTheme
+import org.ide.lti.core.designsystem.theme.colorSchemeFor
 import org.junit.Rule
 import org.junit.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 class GlobalAppTopBarTest {
 
@@ -38,12 +38,14 @@ class GlobalAppTopBarTest {
     @Test
     fun testSharedShellRendersOneBarAndAllGlobalDestinations() {
         composeTestRule.setContent {
-            GlobalAppTopBar(
-                selectedDestination = GlobalAppDestination.Workspace,
-                onSelectDestination = {},
-                contextLabel = "Pixel 9 Pro",
-                windowControls = {},
-            )
+            LtiTheme {
+                GlobalAppTopBar(
+                    selectedDestination = GlobalAppDestination.Workspace,
+                    onSelectDestination = {},
+                    contextLabel = "Pixel 9 Pro",
+                    windowControls = {},
+                )
+            }
         }
 
         composeTestRule.onAllNodesWithTag("GlobalAppTopBar").assertCountEquals(1)
@@ -64,15 +66,17 @@ class GlobalAppTopBarTest {
         var selection: GlobalAppDestination? = null
         var selectionCount = 0
         composeTestRule.setContent {
-            GlobalAppTopBar(
-                selectedDestination = GlobalAppDestination.Setup,
-                onSelectDestination = {
-                    selection = it
-                    selectionCount += 1
-                },
-                contextLabel = "Environment",
-                windowControls = {},
-            )
+            LtiTheme {
+                GlobalAppTopBar(
+                    selectedDestination = GlobalAppDestination.Setup,
+                    onSelectDestination = {
+                        selection = it
+                        selectionCount += 1
+                    },
+                    contextLabel = "Environment",
+                    windowControls = {},
+                )
+            }
         }
 
         composeTestRule.onNodeWithTag("GlobalTopBar_Settings")
@@ -84,21 +88,19 @@ class GlobalAppTopBarTest {
     }
 
     @Test
-    fun testBlueThemeProvidesTranslucentIdeShellSurfaces() {
-        var observedColors: IdeShellColorScheme? = null
+    fun testBlueThemeProvidesExpectedColorScheme() {
+        var observedTheme: AppTheme? = null
+        var observedSurface: Color? = null
         composeTestRule.setContent {
             LtiTheme(appTheme = AppTheme.Blue) {
-                observedColors = GlassTheme.ideShellColors
+                observedTheme = GlassTheme.appTheme
+                observedSurface = MaterialTheme.colorScheme.surface
             }
         }
 
         composeTestRule.runOnIdle {
-            val colors = requireNotNull(observedColors)
-            assertEquals(IdeShellTokens.Blue, colors)
-            assertTrue(colors.appBackground.alpha < 1f)
-            assertTrue(colors.topBarBackground.alpha < 1f)
-            assertTrue(colors.navigatorBackground.alpha < 1f)
-            assertTrue(colors.contentBackground.alpha < 1f)
+            assertEquals(AppTheme.Blue, observedTheme)
+            assertEquals(colorSchemeFor(AppTheme.Blue).surface, observedSurface)
         }
     }
 }

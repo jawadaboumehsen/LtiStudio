@@ -67,7 +67,6 @@ fun ToolchainPipelineTracker(
     onRetryStage: (SetupStepStage) -> Unit = { onRetryStep() },
     isBusy: Boolean = false,
 ) {
-
     val orderedStages = listOf(
         SetupStepStage.WSL_DETECTION,
         SetupStepStage.SERVER_CONNECTIVITY,

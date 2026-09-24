@@ -17,10 +17,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -51,13 +49,13 @@ import org.ide.lti.core.designsystem.component.navigation.GlassSidePanelTabStrip
 import org.ide.lti.core.designsystem.component.navigation.SidePanelRailPosition
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
-import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 import org.ide.lti.core.testing.screenshot.GoldenImageAssert
 import org.junit.Test
 
@@ -112,10 +110,10 @@ class GlassChromeDiagnosticScreenshotTest {
         depth: Int,
         isSelected: Boolean = false,
     ) {
-        val glassColors = GlassTheme.colors
+        val colors = MaterialTheme.colorScheme
         val bgModifier = if (isSelected) {
             Modifier.background(
-                glassColors.glassAccent.copy(alpha = AlphaTokens.Hover),
+                colors.primary.copy(alpha = AlphaTokens.Hover),
                 RoundedCornerShape(CornerRadius.Compact),
             )
         } else {
@@ -143,18 +141,18 @@ class GlassChromeDiagnosticScreenshotTest {
                 },
                 contentDescription = null,
                 tint = if (isFolder) {
-                    glassColors.glassAccent
+                    colors.primary
                 } else if (isSelected) {
-                    glassColors.onGlass
+                    colors.onSurface
                 } else {
-                    glassColors.onGlassMuted
+                    colors.outline
                 },
                 modifier = Modifier.size(IconSize.Small),
             )
             Text(
                 text = name,
                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                color = if (isSelected) glassColors.onGlass else glassColors.onGlassSecondary,
+                color = if (isSelected) colors.onSurface else colors.onSurfaceVariant,
                 fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal,
             )
         }
@@ -163,8 +161,7 @@ class GlassChromeDiagnosticScreenshotTest {
     // Realistic Editor Panel
     @Composable
     private fun MockEditorPanel() {
-        val glassColors = GlassTheme.colors
-        val syntax = glassColors.syntax
+        val syntax = GlassTheme.syntaxColors
         GlassPanelContainer(
             header = {
                 GlassPanelHeader(
@@ -183,7 +180,7 @@ class GlassChromeDiagnosticScreenshotTest {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(glassColors.canvasSurface)
+                    .background(MaterialTheme.colorScheme.surface)
                     .padding(Spacing.SmallMedium),
             ) {
                 Column(modifier = Modifier.fillMaxSize()) {
@@ -250,7 +247,7 @@ class GlassChromeDiagnosticScreenshotTest {
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontFamily = FontFamily.Monospace,
                                     fontSize = 11.sp,
-                                    color = glassColors.onGlassMuted.copy(alpha = AlphaTokens.Half),
+                                    color = MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Half),
                                 ),
                             )
                             Text(
@@ -271,7 +268,7 @@ class GlassChromeDiagnosticScreenshotTest {
     // Realistic AI Assistant Panel
     @Composable
     private fun MockAIAssistantPanel() {
-        val glassColors = GlassTheme.colors
+        val colors = MaterialTheme.colorScheme
         GlassPanelContainer(
             header = {
                 GlassPanelHeader(
@@ -291,10 +288,10 @@ class GlassChromeDiagnosticScreenshotTest {
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(CornerRadius.MediumSmall))
-                            .background(glassColors.glassSurfaceElevated)
+                            .background(colors.surfaceContainerHigh)
                             .border(
                                 StrokeWidth.Hairline,
-                                glassColors.glassBorder,
+                                colors.outlineVariant,
                                 RoundedCornerShape(CornerRadius.MediumSmall),
                             )
                             .padding(Spacing.SmallMedium),
@@ -303,7 +300,7 @@ class GlassChromeDiagnosticScreenshotTest {
                             text = "Analyzing GlassLayout and chrome geometry. " +
                                 "Top bar and status bar layout alignment ready for review.",
                             style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
-                            color = glassColors.onGlassSecondary,
+                            color = colors.onSurfaceVariant,
                         )
                     }
                 }
@@ -312,10 +309,10 @@ class GlassChromeDiagnosticScreenshotTest {
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(CornerRadius.Compact))
-                        .background(glassColors.glassSurface)
+                        .background(colors.surface)
                         .border(
                             StrokeWidth.Hairline,
-                            glassColors.glassBorder,
+                            colors.outlineVariant,
                             RoundedCornerShape(CornerRadius.Compact),
                         )
                         .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),
@@ -324,13 +321,13 @@ class GlassChromeDiagnosticScreenshotTest {
                     Text(
                         text = "Ask AI Assistant...",
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                        color = glassColors.onGlassMuted,
+                        color = colors.outline,
                         modifier = Modifier.weight(1f),
                     )
                     Icon(
                         painter = AppIcons.EditPainterResource(),
                         contentDescription = "Send",
-                        tint = glassColors.glassAccent,
+                        tint = colors.primary,
                         modifier = Modifier.size(IconSize.Small),
                     )
                 }
@@ -349,9 +346,7 @@ class GlassChromeDiagnosticScreenshotTest {
         height = TEST_HEIGHT,
     ) {
         setContent {
-            val backdrop = rememberGlassSceneState()
-
-            LtiTheme(sharedScene = backdrop, darkTheme = true) {
+            LtiTheme(appTheme = AppTheme.Dark) {
                 val layoutState = rememberLtiLayoutState(
                     initialLeftWeight = 0.22f,
                     initialRightWeight = 0.26f,
@@ -361,31 +356,31 @@ class GlassChromeDiagnosticScreenshotTest {
                 )
 
                 val leftTabs = listOf(
-                    org.ide.lti.core.designsystem.component.navigation.GlassSidePanelTab(
+                    GlassSidePanelTab(
                         icon = AppIcons.Folder,
                         label = "Explorer",
                     ) { MockExplorerPanel() },
                 )
 
                 val rightTabs = listOf(
-                    org.ide.lti.core.designsystem.component.navigation.GlassSidePanelTab(
+                    GlassSidePanelTab(
                         icon = AppIcons.Sparkles,
                         label = "AI Assistant",
                     ) { MockAIAssistantPanel() },
                 )
 
                 Box(modifier = Modifier.fillMaxSize()) {
-                    GlassBackdrop(backdrop = backdrop)
+                    GlassBackdrop()
 
                     GlassLayout(
                         state = layoutState,
                         modifier = Modifier.fillMaxSize(),
                         leftRail = {
-                            org.ide.lti.core.designsystem.component.navigation.GlassSidePanelRail(
+                            GlassSidePanelRail(
                                 tabs = leftTabs,
                                 selectedIndex = 0,
                                 onSelectedIndexChange = {},
-                                railPosition = org.ide.lti.core.designsystem.component.navigation.SidePanelRailPosition.Left,
+                                railPosition = SidePanelRailPosition.Left,
                             )
                         },
                         leftPanel = { MockExplorerPanel() },
@@ -393,11 +388,11 @@ class GlassChromeDiagnosticScreenshotTest {
                         bottomPanel = {},
                         rightPanel = { MockAIAssistantPanel() },
                         rightRail = {
-                            org.ide.lti.core.designsystem.component.navigation.GlassSidePanelRail(
+                            GlassSidePanelRail(
                                 tabs = rightTabs,
                                 selectedIndex = 0,
                                 onSelectedIndexChange = {},
-                                railPosition = org.ide.lti.core.designsystem.component.navigation.SidePanelRailPosition.Right,
+                                railPosition = SidePanelRailPosition.Right,
                             )
                         },
                     )
@@ -420,9 +415,7 @@ class GlassChromeDiagnosticScreenshotTest {
         height = TEST_HEIGHT,
     ) {
         setContent {
-            val backdrop = rememberGlassSceneState()
-
-            LtiTheme(sharedScene = backdrop, darkTheme = false) {
+            LtiTheme(appTheme = AppTheme.Light) {
                 val layoutState = rememberLtiLayoutState(
                     initialLeftWeight = 0.22f,
                     initialRightWeight = 0.26f,
@@ -432,31 +425,31 @@ class GlassChromeDiagnosticScreenshotTest {
                 )
 
                 val leftTabs = listOf(
-                    org.ide.lti.core.designsystem.component.navigation.GlassSidePanelTab(
+                    GlassSidePanelTab(
                         icon = AppIcons.Folder,
                         label = "Explorer",
                     ) { MockExplorerPanel() },
                 )
 
                 val rightTabs = listOf(
-                    org.ide.lti.core.designsystem.component.navigation.GlassSidePanelTab(
+                    GlassSidePanelTab(
                         icon = AppIcons.Sparkles,
                         label = "AI Assistant",
                     ) { MockAIAssistantPanel() },
                 )
 
                 Box(modifier = Modifier.fillMaxSize()) {
-                    GlassBackdrop(backdrop = backdrop)
+                    GlassBackdrop()
 
                     GlassLayout(
                         state = layoutState,
                         modifier = Modifier.fillMaxSize(),
                         leftRail = {
-                            org.ide.lti.core.designsystem.component.navigation.GlassSidePanelRail(
+                            GlassSidePanelRail(
                                 tabs = leftTabs,
                                 selectedIndex = 0,
                                 onSelectedIndexChange = {},
-                                railPosition = org.ide.lti.core.designsystem.component.navigation.SidePanelRailPosition.Left,
+                                railPosition = SidePanelRailPosition.Left,
                             )
                         },
                         leftPanel = { MockExplorerPanel() },
@@ -464,11 +457,11 @@ class GlassChromeDiagnosticScreenshotTest {
                         bottomPanel = {},
                         rightPanel = { MockAIAssistantPanel() },
                         rightRail = {
-                            org.ide.lti.core.designsystem.component.navigation.GlassSidePanelRail(
+                            GlassSidePanelRail(
                                 tabs = rightTabs,
                                 selectedIndex = 0,
                                 onSelectedIndexChange = {},
-                                railPosition = org.ide.lti.core.designsystem.component.navigation.SidePanelRailPosition.Right,
+                                railPosition = SidePanelRailPosition.Right,
                             )
                         },
                     )
@@ -492,9 +485,7 @@ class GlassChromeDiagnosticScreenshotTest {
         height = TEST_HEIGHT,
     ) {
         setContent {
-            val backdrop = rememberGlassSceneState()
-
-            LtiTheme(sharedScene = backdrop, darkTheme = true) {
+            LtiTheme(appTheme = AppTheme.Dark) {
                 val layoutState = rememberLtiLayoutState(
                     initialLeftWeight = 0.22f,
                     initialRightWeight = 0.26f,
@@ -504,28 +495,28 @@ class GlassChromeDiagnosticScreenshotTest {
                 )
 
                 val leftTabs = listOf(
-                    org.ide.lti.core.designsystem.component.navigation.GlassSidePanelTab(
+                    GlassSidePanelTab(
                         icon = AppIcons.Folder,
                         label = "Files",
                     ) { MockExplorerPanel() },
                 )
 
                 val rightTabs = listOf(
-                    org.ide.lti.core.designsystem.component.navigation.GlassSidePanelTab(
+                    GlassSidePanelTab(
                         icon = AppIcons.Sparkles,
                         label = "AI Assistant",
                     ) { MockAIAssistantPanel() },
                 )
 
                 Box(modifier = Modifier.fillMaxSize()) {
-                    GlassBackdrop(backdrop = backdrop)
+                    GlassBackdrop()
 
                     GlassLayout(
                         state = layoutState,
                         modifier = Modifier.fillMaxSize(),
                         leftPanel = {
                             Column(modifier = Modifier.fillMaxSize()) {
-                                org.ide.lti.core.designsystem.component.navigation.GlassSidePanelTabStrip(
+                                GlassSidePanelTabStrip(
                                     tabs = leftTabs,
                                     selectedIndex = 0,
                                     onSelectedIndexChange = {},
@@ -543,11 +534,11 @@ class GlassChromeDiagnosticScreenshotTest {
                         bottomPanel = {},
                         rightPanel = { MockAIAssistantPanel() },
                         rightRail = {
-                            org.ide.lti.core.designsystem.component.navigation.GlassSidePanelRail(
+                            GlassSidePanelRail(
                                 tabs = rightTabs,
                                 selectedIndex = 0,
                                 onSelectedIndexChange = {},
-                                railPosition = org.ide.lti.core.designsystem.component.navigation.SidePanelRailPosition.Right,
+                                railPosition = SidePanelRailPosition.Right,
                             )
                         },
                     )

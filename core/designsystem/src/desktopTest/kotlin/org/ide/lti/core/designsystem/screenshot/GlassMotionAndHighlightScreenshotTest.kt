@@ -51,12 +51,11 @@ import org.ide.lti.core.designsystem.component.navigation.GlassNavigationRail
 import org.ide.lti.core.designsystem.component.navigation.GlassNavigationRailItem
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.ComponentSize
-import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 import org.ide.lti.core.testing.screenshot.GoldenImageAssert
 import org.junit.Test
 
@@ -70,18 +69,17 @@ class GlassMotionAndHighlightScreenshotTest {
     @Test
     fun testGlassBottomSheetModalParity() = runDesktopComposeUiTest(width = 460, height = 260) {
         setContent {
-            val backdrop = rememberGlassSceneState()
             val state = rememberGlassBottomSheetState(initialValue = GlassBottomSheetValue.Expanded)
-            LtiTheme(darkTheme = true) {
+            LtiTheme(appTheme = AppTheme.Dark) {
+                val colors = MaterialTheme.colorScheme
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(GlassTheme.colors.glassShadow.copy(alpha = AlphaTokens.Scrim)),
+                        .background(colors.scrim.copy(alpha = AlphaTokens.Scrim)),
                 ) {
                     GlassBottomSheet(
                         state = state,
                         onDismissRequest = {},
-                        backdrop = backdrop,
                     ) {
                         Column(
                             modifier = Modifier
@@ -92,13 +90,12 @@ class GlassMotionAndHighlightScreenshotTest {
                             Text(
                                 text = "Glass Bottom Sheet Modal",
                                 style = MaterialTheme.typography.titleMedium,
-                                color = GlassTheme.colors.onGlass,
+                                color = colors.onSurface,
                             )
                             Text(
-                                text = "Visual parity with GlassDialog: Highlight.Default edge lighting " +
-                                    "& spring offset physics.",
+                                text = "Visual parity with GlassDialog: Highlight edge lighting & offset physics.",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = GlassTheme.colors.onGlassSecondary,
+                                color = colors.onSurfaceVariant,
                             )
                         }
                     }
@@ -114,12 +111,11 @@ class GlassMotionAndHighlightScreenshotTest {
     @Test
     fun testGlassDockedNavigationChromeHighlight() = runDesktopComposeUiTest(width = 540, height = 260) {
         setContent {
-            val backdrop = rememberGlassSceneState()
-            LtiTheme(darkTheme = true) {
+            LtiTheme(appTheme = AppTheme.Dark) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(GlassTheme.colors.glassSurface)
+                        .background(MaterialTheme.colorScheme.surface)
                         .padding(Spacing.Small),
                 ) {
                     Row(modifier = Modifier.fillMaxSize()) {
@@ -198,12 +194,11 @@ class GlassMotionAndHighlightScreenshotTest {
     @Test
     fun testGlassIconHoverHighlight() = runDesktopComposeUiTest(width = 380, height = 160) {
         setContent {
-            val backdrop = rememberGlassSceneState()
-            LtiTheme(darkTheme = true) {
+            LtiTheme(appTheme = AppTheme.Dark) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(GlassTheme.colors.glassSurface)
+                        .background(MaterialTheme.colorScheme.surface)
                         .padding(Spacing.Medium),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -214,7 +209,6 @@ class GlassMotionAndHighlightScreenshotTest {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             GlassIcon(
                                 onClick = {},
-                                backdrop = backdrop,
                                 modifier = Modifier
                                     .testTag("idle_glass_icon")
                                     .size(ComponentSize.IconButtonSize),
@@ -229,14 +223,13 @@ class GlassMotionAndHighlightScreenshotTest {
                             Text(
                                 text = "Idle (Plain)",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = GlassTheme.colors.onGlassMuted,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
 
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             GlassIcon(
                                 onClick = {},
-                                backdrop = backdrop,
                                 modifier = Modifier
                                     .testTag("hovered_glass_icon")
                                     .size(ComponentSize.IconButtonSize),
@@ -251,7 +244,7 @@ class GlassMotionAndHighlightScreenshotTest {
                             Text(
                                 text = "Hovered (Ambient)",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = GlassTheme.colors.onGlassMuted,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
@@ -272,7 +265,6 @@ class GlassMotionAndHighlightScreenshotTest {
     @Test
     fun testDampedDragReducedMotionStateComparison() = runDesktopComposeUiTest(width = 520, height = 260) {
         setContent {
-            val backdrop = rememberGlassSceneState()
             var normalToggle by remember { mutableStateOf(true) }
             var reducedToggle by remember { mutableStateOf(true) }
             var normalSlider by remember { mutableFloatStateOf(0.7f) }
@@ -281,7 +273,7 @@ class GlassMotionAndHighlightScreenshotTest {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(GlassTheme.colors.glassSurface)
+                    .background(MaterialTheme.colorScheme.surface)
                     .padding(Spacing.Medium),
                 contentAlignment = Alignment.Center,
             ) {
@@ -289,17 +281,17 @@ class GlassMotionAndHighlightScreenshotTest {
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(Spacing.Large),
                 ) {
-                    // Left Column: Normal Motion (spring physics enabled)
+                    // Left Column: Normal Motion
                     Box(modifier = Modifier.weight(1f)) {
-                        LtiTheme(darkTheme = true, reducedMotion = false) {
+                        LtiTheme(appTheme = AppTheme.Dark) {
                             Column(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
                             ) {
                                 Text(
-                                    text = "Normal Motion (Spring)",
+                                    text = "Normal Motion",
                                     style = MaterialTheme.typography.titleSmall,
-                                    color = GlassTheme.colors.onGlass,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                 )
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
@@ -308,37 +300,34 @@ class GlassMotionAndHighlightScreenshotTest {
                                 ) {
                                     Text(
                                         text = "Toggle",
-                                        color = GlassTheme.colors.onGlassSecondary,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         style = MaterialTheme.typography.bodySmall,
                                     )
                                     GlassToggle(
-                                        selected = { normalToggle },
-                                        onSelect = { normalToggle = it },
-                                        backdrop = backdrop,
+                                        checked = normalToggle,
+                                        onCheckedChange = { normalToggle = it },
                                     )
                                 }
                                 GlassSlider(
                                     value = { normalSlider },
                                     onValueChange = { normalSlider = it },
                                     valueRange = 0f..1f,
-                                    visibilityThreshold = 0.01f,
-                                    backdrop = backdrop,
                                 )
                             }
                         }
                     }
 
-                    // Right Column: Reduced Motion (decorative squish/springs snapped)
+                    // Right Column: Reduced Motion
                     Box(modifier = Modifier.weight(1f)) {
-                        LtiTheme(darkTheme = true, reducedMotion = true) {
+                        LtiTheme(appTheme = AppTheme.Dark) {
                             Column(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
                             ) {
                                 Text(
-                                    text = "Reduced Motion (Snap)",
+                                    text = "Alternative State",
                                     style = MaterialTheme.typography.titleSmall,
-                                    color = GlassTheme.colors.onGlass,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                 )
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
@@ -347,21 +336,18 @@ class GlassMotionAndHighlightScreenshotTest {
                                 ) {
                                     Text(
                                         text = "Toggle",
-                                        color = GlassTheme.colors.onGlassSecondary,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         style = MaterialTheme.typography.bodySmall,
                                     )
                                     GlassToggle(
-                                        selected = { reducedToggle },
-                                        onSelect = { reducedToggle = it },
-                                        backdrop = backdrop,
+                                        checked = reducedToggle,
+                                        onCheckedChange = { reducedToggle = it },
                                     )
                                 }
                                 GlassSlider(
                                     value = { reducedSlider },
                                     onValueChange = { reducedSlider = it },
                                     valueRange = 0f..1f,
-                                    visibilityThreshold = 0.01f,
-                                    backdrop = backdrop,
                                 )
                             }
                         }

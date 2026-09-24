@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.designsystem.component.actions
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -28,7 +29,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import org.ide.lti.core.designsystem.theme.HazeShape
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
@@ -48,6 +48,7 @@ import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.HazeShape
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.LetterSpacing
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -125,31 +126,41 @@ fun GlassButton(
             .defaultMinSize(minWidth = minWidth, minHeight = minHeight)
             .then(
                 if (variant != GlassButtonVariant.Text) {
-                    Modifier.hazeGlass(
-                        input = HazeInput.Backdrop(GlassTheme.hazeState),
-                        style = remember(shape, variant, enabled, colors) {
-                            GlassStyle.regular then GlassStyle {
-                                this.shape(shape)
-                                backgroundColor(backgroundColor(variant, colors))
-                                tint(tint(variant, colors, enabled))
-                                hovered {
-                                    lightingIntensity(0.35f)
-                                    refractionMultiplier(1.02f)
+                    val theme = GlassTheme.appTheme
+                    val surfaceColor = backgroundColor(variant, colors)
+                    val buttonTint = tint(variant, colors, enabled)
+                    if (GlassTheme.effectsEnabled) {
+                        Modifier.hazeGlass(
+                            input = HazeInput.Sources(GlassTheme.hazeState),
+                            style = remember(theme, shape, variant, enabled, colors) {
+                                org.ide.lti.core.designsystem.theme.GlassMaterialStyles.baseStyle(
+                                    theme = theme,
+                                    opticalTint = buttonTint,
+                                    captureBacking = surfaceColor,
+                                ) then GlassStyle {
+                                    this.shape(shape)
+                                    hovered {
+                                        lightingIntensity(0.35f)
+                                        refractionMultiplier(1.02f)
+                                    }
+                                    focused {
+                                        lightingIntensity(0.5f)
+                                        whitePointDelta(0.03f)
+                                    }
+                                    pressed {
+                                        lightingIntensity(0.9f)
+                                        refractionMultiplier(1.08f)
+                                        scale(0.98f)
+                                    }
                                 }
-                                focused {
-                                    lightingIntensity(0.5f)
-                                    whitePointDelta(0.03f)
-                                }
-                                pressed {
-                                    lightingIntensity(0.9f)
-                                    refractionMultiplier(1.08f)
-                                    scale(0.98f)
-                                }
-                            }
-                        },
-                        interactionSource = interactionSource,
-                        interactionTransformTarget = GlassTransformTarget.MaterialAndContent,
-                    )
+                            },
+                            interactionSource = interactionSource,
+                            interactionTransformTarget = GlassTransformTarget.MaterialAndContent,
+                            interactionReducedMotionPolicy = GlassTheme.reducedMotionPolicy,
+                        )
+                    } else {
+                        Modifier.background(surfaceColor, shape = shape)
+                    }
                 } else {
                     Modifier
                 },

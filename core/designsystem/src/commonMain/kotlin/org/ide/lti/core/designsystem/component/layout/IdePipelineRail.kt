@@ -57,17 +57,12 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import dev.chrisbanes.haze.ExperimentalHazeApi
-import dev.chrisbanes.haze.HazeInput
-import dev.chrisbanes.haze.glass.GlassStyle
-import dev.chrisbanes.haze.glass.hazeGlass
 import org.ide.lti.core.designsystem.icon.AppIconsRomStages
 import org.ide.lti.core.designsystem.theme.AlphaTokens
-import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassShapes
-import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 
@@ -92,28 +87,11 @@ fun IdePipelineRail(
     modifier: Modifier = Modifier,
     header: (@Composable () -> Unit)? = null,
 ) {
-    // Real glass chrome only for the Blue theme - see IdeTopAppBar.
-    val isBlueGlass = GlassTheme.appTheme == AppTheme.Blue
-    val surfaceColor = MaterialTheme.colorScheme.surfaceContainer
-    val chromeModifier = if (isBlueGlass) {
-        Modifier.hazeGlass(
-            input = HazeInput.Backdrop(GlassTheme.hazeState),
-            style = remember(surfaceColor) {
-                GlassStyle.regular.then {
-                    shape(GlassShapes.HazeFlat)
-                    backgroundColor(surfaceColor)
-                }
-            },
-        )
-    } else {
-        Modifier.background(surfaceColor)
-    }
-
     Column(
         modifier = modifier
             .width(GlassDimens.PipelineRailWidth)
             .fillMaxHeight()
-            .then(chromeModifier),
+            .ideShellSurface(shape = GlassShapes.HazeFlat, drawBorder = false),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top,
     ) {
@@ -139,8 +117,7 @@ private fun PipelineRailItem(
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
     val isPressed by interactionSource.collectIsPressedAsState()
-    val isBlue = GlassTheme.appTheme == AppTheme.Blue
-    val visuals = resolveRailItemVisuals(stage, isSelected, isBlue, isPressed, isHovered)
+    val visuals = resolveRailItemVisuals(stage, isSelected, isPressed, isHovered)
 
     val borderModifier = if (visuals.borderColor != null) {
         Modifier.border(
@@ -203,13 +180,11 @@ private data class RailItemVisuals(val bg: Color, val contentColor: Color, val b
 private fun resolveRailItemVisuals(
     stage: IdePipelineStageItem,
     isSelected: Boolean,
-    isBlue: Boolean,
     isPressed: Boolean,
     isHovered: Boolean,
 ): RailItemVisuals {
     val bg = when {
         !stage.enabled -> Color.Transparent
-        isSelected && isBlue -> MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Faded)
         isSelected -> MaterialTheme.colorScheme.primary
         isPressed -> MaterialTheme.colorScheme.surfaceContainerHigh
         isHovered -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = AlphaTokens.Half)
@@ -217,11 +192,12 @@ private fun resolveRailItemVisuals(
     }
     val contentColor = when {
         !stage.enabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = AlphaTokens.Disabled)
-        isSelected || isHovered -> MaterialTheme.colorScheme.onSurface
+        isSelected -> MaterialTheme.colorScheme.onPrimary
+        isHovered -> MaterialTheme.colorScheme.onSurface
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
     val borderColor = if (isSelected) {
-        if (isBlue) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.primary
+        MaterialTheme.colorScheme.primary
     } else {
         null
     }

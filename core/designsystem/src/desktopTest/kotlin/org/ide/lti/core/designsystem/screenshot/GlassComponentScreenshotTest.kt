@@ -61,14 +61,11 @@ import org.ide.lti.core.designsystem.component.navigation.SidePanelRailPosition
 import org.ide.lti.core.designsystem.component.primitives.GlassSurface
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
-import org.ide.lti.core.designsystem.theme.BlueGlassColorScheme
+import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.ColorContrast
 import org.ide.lti.core.designsystem.theme.ComponentSize
-import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.designsystem.theme.glass.GlassSceneState
-import org.ide.lti.core.designsystem.theme.glass.rememberGlassSceneState
 import org.ide.lti.core.testing.screenshot.GoldenImageAssert
 import org.junit.Test
 
@@ -85,11 +82,11 @@ class GlassComponentScreenshotTest {
     @Test
     fun testGlassButtonVariants() = runDesktopComposeUiTest(width = 480, height = 180) {
         setContent {
-            LtiTheme(darkTheme = true) {
+            LtiTheme(appTheme = AppTheme.Dark) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(GlassTheme.colors.glassSurface)
+                        .background(MaterialTheme.colorScheme.surface)
                         .padding(Spacing.Medium),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -126,11 +123,11 @@ class GlassComponentScreenshotTest {
     @Test
     fun testGlassCard() = runDesktopComposeUiTest(width = 400, height = 240) {
         setContent {
-            LtiTheme(darkTheme = true) {
+            LtiTheme(appTheme = AppTheme.Dark) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(GlassTheme.colors.glassSurface)
+                        .background(MaterialTheme.colorScheme.surface)
                         .padding(Spacing.Large),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -142,13 +139,13 @@ class GlassComponentScreenshotTest {
                             Text(
                                 text = "Design System Card",
                                 style = MaterialTheme.typography.titleMedium,
-                                color = GlassTheme.colors.onGlass,
+                                color = MaterialTheme.colorScheme.onSurface,
                             )
                             Spacer(Modifier.height(Spacing.ExtraSmall))
                             Text(
                                 text = "GPU-accelerated backdrop blur and lens refraction container.",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = GlassTheme.colors.onGlassSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                             Spacer(Modifier.height(Spacing.SmallMedium))
                             Row(
@@ -173,11 +170,11 @@ class GlassComponentScreenshotTest {
     @Test
     fun testGlassPanelContainer() = runDesktopComposeUiTest(width = 320, height = 260) {
         setContent {
-            LtiTheme(darkTheme = true) {
+            LtiTheme(appTheme = AppTheme.Dark) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(GlassTheme.colors.glassSurface)
+                        .background(MaterialTheme.colorScheme.surface)
                         .padding(Spacing.Large),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -200,7 +197,7 @@ class GlassComponentScreenshotTest {
                             Text(
                                 text = "Panel content should stay translucent, not opaque.",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = GlassTheme.colors.onGlassSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(Spacing.SmallMedium),
                             )
                         }
@@ -217,11 +214,11 @@ class GlassComponentScreenshotTest {
     @Test
     fun testGlassPanelScrollEdgeFade() = runDesktopComposeUiTest(width = 320, height = 260) {
         setContent {
-            LtiTheme(darkTheme = true) {
+            LtiTheme(appTheme = AppTheme.Dark) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(GlassTheme.colors.glassSurface)
+                        .background(MaterialTheme.colorScheme.surface)
                         .padding(Spacing.Large),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -236,7 +233,6 @@ class GlassComponentScreenshotTest {
                                     title = "EXPLORER",
                                 )
                             },
-                            scrollEdgeFade = true,
                         ) {
                             Column(
                                 modifier = Modifier
@@ -247,7 +243,7 @@ class GlassComponentScreenshotTest {
                                     Text(
                                         text = "Item row $index - file_item_name_$index.kt",
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = GlassTheme.colors.onGlassSecondary,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.padding(vertical = Spacing.ExtraSmall),
                                     )
                                 }
@@ -266,11 +262,11 @@ class GlassComponentScreenshotTest {
     @Test
     fun testGlassTextField() = runDesktopComposeUiTest(width = 400, height = 220) {
         setContent {
-            LtiTheme(darkTheme = true) {
+            LtiTheme(appTheme = AppTheme.Dark) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(GlassTheme.colors.glassSurface)
+                        .background(MaterialTheme.colorScheme.surface)
                         .padding(Spacing.Large),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -284,7 +280,7 @@ class GlassComponentScreenshotTest {
                                 Icon(
                                     painter = AppIcons.SearchPainterResource(),
                                     contentDescription = null,
-                                    tint = GlassTheme.colors.onGlassSecondary,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             },
                         )
@@ -301,30 +297,30 @@ class GlassComponentScreenshotTest {
     @Test
     fun testGlassDialogSurface() = runDesktopComposeUiTest(width = 440, height = 260) {
         setContent {
-            LtiTheme(darkTheme = true) {
+            LtiTheme(appTheme = AppTheme.Dark) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(GlassTheme.colors.glassShadow.copy(alpha = AlphaTokens.Scrim))
+                        .background(MaterialTheme.colorScheme.scrim.copy(alpha = AlphaTokens.Scrim))
                         .padding(Spacing.Large),
                     contentAlignment = Alignment.Center,
                 ) {
                     GlassSurface(
                         modifier = Modifier.fillMaxWidth(),
-                        surfaceColor = GlassTheme.colors.glassSurfaceElevated,
-                        borderColor = GlassTheme.colors.glassBorderHighlight,
+                        surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        borderColor = MaterialTheme.colorScheme.outlineVariant,
                     ) {
                         Column(modifier = Modifier.padding(Spacing.DialogPadding)) {
                             Text(
                                 text = "Confirm Changes",
                                 style = MaterialTheme.typography.titleMedium,
-                                color = GlassTheme.colors.onGlass,
+                                color = MaterialTheme.colorScheme.onSurface,
                             )
                             Spacer(Modifier.height(Spacing.Small))
                             Text(
                                 text = "Are you sure you want to commit these workspace token updates?",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = GlassTheme.colors.onGlassSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                             Spacer(Modifier.height(Spacing.Medium))
                             Row(
@@ -354,15 +350,14 @@ class GlassComponentScreenshotTest {
     @Test
     fun testGlassToggleAndSlider() = runDesktopComposeUiTest(width = 420, height = 200) {
         setContent {
-            val backdrop = rememberGlassSceneState()
             var sliderValue by remember { mutableFloatStateOf(0.6f) }
             var toggleChecked by remember { mutableStateOf(true) }
 
-            LtiTheme(darkTheme = true) {
+            LtiTheme(appTheme = AppTheme.Dark) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(GlassTheme.colors.glassSurface)
+                        .background(MaterialTheme.colorScheme.surface)
                         .padding(Spacing.Large),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -376,11 +371,10 @@ class GlassComponentScreenshotTest {
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Text("Enable Fluid Lighting", color = GlassTheme.colors.onGlass)
+                            Text("Enable Fluid Lighting", color = MaterialTheme.colorScheme.onSurface)
                             GlassToggle(
-                                selected = { toggleChecked },
-                                onSelect = { toggleChecked = it },
-                                backdrop = backdrop,
+                                checked = toggleChecked,
+                                onCheckedChange = { toggleChecked = it },
                             )
                         }
 
@@ -388,8 +382,6 @@ class GlassComponentScreenshotTest {
                             value = { sliderValue },
                             onValueChange = { sliderValue = it },
                             valueRange = 0f..1f,
-                            visibilityThreshold = 0.01f,
-                            backdrop = backdrop,
                         )
                     }
                 }
@@ -404,12 +396,12 @@ class GlassComponentScreenshotTest {
     @Test
     fun testGlassColorSchemeSwatches() = runDesktopComposeUiTest(width = 480, height = 240) {
         setContent {
-            LtiTheme(darkTheme = true) {
-                val scheme = BlueGlassColorScheme
+            LtiTheme(appTheme = AppTheme.Blue) {
+                val scheme = MaterialTheme.colorScheme
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(scheme.glassSurface)
+                        .background(scheme.surface)
                         .padding(Spacing.Medium),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -417,14 +409,14 @@ class GlassComponentScreenshotTest {
                         Text(
                             text = "Color Tokens & Contrast Ratios",
                             style = MaterialTheme.typography.titleSmall,
-                            color = scheme.onGlass,
+                            color = scheme.onSurface,
                         )
                         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-                            SwatchCard("onGlass", scheme.onGlass, scheme.glassSurface)
-                            SwatchCard("onSecondary", scheme.onGlassSecondary, scheme.glassSurface)
-                            SwatchCard("onMuted", scheme.onGlassMuted, scheme.glassSurface)
-                            SwatchCard("accent", scheme.glassAccent, scheme.glassSurface)
-                            SwatchCard("focusRing", scheme.focusRing, scheme.glassSurface)
+                            SwatchCard("onSurface", scheme.onSurface, scheme.surface)
+                            SwatchCard("onSecondary", scheme.onSecondary, scheme.surface)
+                            SwatchCard("onSurfaceVariant", scheme.onSurfaceVariant, scheme.surface)
+                            SwatchCard("primary", scheme.primary, scheme.surface)
+                            SwatchCard("outline", scheme.outline, scheme.surface)
                         }
                     }
                 }
@@ -439,12 +431,11 @@ class GlassComponentScreenshotTest {
     @Test
     fun testGlassTopBar() = runDesktopComposeUiTest(width = 800, height = 100) {
         setContent {
-            val backdrop = rememberGlassSceneState()
-            LtiTheme(darkTheme = true) {
+            LtiTheme(appTheme = AppTheme.Dark) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(GlassTheme.colors.glassSurface)
+                        .background(MaterialTheme.colorScheme.surface)
                         .padding(Spacing.Small),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -458,7 +449,6 @@ class GlassComponentScreenshotTest {
                             isBottomVisible = true,
                             isRightVisible = false,
                         ),
-                        backdrop = backdrop,
                     )
                 }
             }
@@ -472,11 +462,11 @@ class GlassComponentScreenshotTest {
     @Test
     fun testGlassStatusBar() = runDesktopComposeUiTest(width = 640, height = 60) {
         setContent {
-            LtiTheme(darkTheme = true) {
+            LtiTheme(appTheme = AppTheme.Dark) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(GlassTheme.colors.glassSurface)
+                        .background(MaterialTheme.colorScheme.surface)
                         .padding(Spacing.Small),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -497,11 +487,11 @@ class GlassComponentScreenshotTest {
     @Test
     fun testGlassSidePanelTabs() = runDesktopComposeUiTest(width = 680, height = 300) {
         setContent {
-            LtiTheme(darkTheme = true) {
+            LtiTheme(appTheme = AppTheme.Dark) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(GlassTheme.colors.glassSurface)
+                        .background(MaterialTheme.colorScheme.surface)
                         .padding(Spacing.Medium),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -526,7 +516,7 @@ class GlassComponentScreenshotTest {
                                             Text(
                                                 text = "Explorer panel content",
                                                 style = MaterialTheme.typography.bodySmall,
-                                                color = GlassTheme.colors.onGlassSecondary,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 modifier = Modifier.padding(Spacing.SmallMedium),
                                             )
                                         }
@@ -541,7 +531,7 @@ class GlassComponentScreenshotTest {
                                             Text(
                                                 text = "Search workspace",
                                                 style = MaterialTheme.typography.bodySmall,
-                                                color = GlassTheme.colors.onGlassSecondary,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 modifier = Modifier.padding(Spacing.SmallMedium),
                                             )
                                         }
@@ -568,7 +558,7 @@ class GlassComponentScreenshotTest {
                                             Text(
                                                 text = "AI assistant ready",
                                                 style = MaterialTheme.typography.bodySmall,
-                                                color = GlassTheme.colors.onGlassSecondary,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 modifier = Modifier.padding(Spacing.SmallMedium),
                                             )
                                         }
@@ -583,7 +573,7 @@ class GlassComponentScreenshotTest {
                                             Text(
                                                 text = "Inspector settings",
                                                 style = MaterialTheme.typography.bodySmall,
-                                                color = GlassTheme.colors.onGlassSecondary,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 modifier = Modifier.padding(Spacing.SmallMedium),
                                             )
                                         }
@@ -605,11 +595,11 @@ class GlassComponentScreenshotTest {
     @Test
     fun testGlassSidePanelTabsLight() = runDesktopComposeUiTest(width = 680, height = 300) {
         setContent {
-            LtiTheme(darkTheme = false) {
+            LtiTheme(appTheme = AppTheme.Light) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(GlassTheme.colors.glassSurface)
+                        .background(MaterialTheme.colorScheme.surface)
                         .padding(Spacing.Medium),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -634,7 +624,7 @@ class GlassComponentScreenshotTest {
                                             Text(
                                                 text = "Explorer panel content",
                                                 style = MaterialTheme.typography.bodySmall,
-                                                color = GlassTheme.colors.onGlassSecondary,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 modifier = Modifier.padding(Spacing.SmallMedium),
                                             )
                                         }
@@ -649,7 +639,7 @@ class GlassComponentScreenshotTest {
                                             Text(
                                                 text = "Search workspace",
                                                 style = MaterialTheme.typography.bodySmall,
-                                                color = GlassTheme.colors.onGlassSecondary,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 modifier = Modifier.padding(Spacing.SmallMedium),
                                             )
                                         }
@@ -676,7 +666,7 @@ class GlassComponentScreenshotTest {
                                             Text(
                                                 text = "AI assistant ready",
                                                 style = MaterialTheme.typography.bodySmall,
-                                                color = GlassTheme.colors.onGlassSecondary,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 modifier = Modifier.padding(Spacing.SmallMedium),
                                             )
                                         }
@@ -691,7 +681,7 @@ class GlassComponentScreenshotTest {
                                             Text(
                                                 text = "Inspector settings",
                                                 style = MaterialTheme.typography.bodySmall,
-                                                color = GlassTheme.colors.onGlassSecondary,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 modifier = Modifier.padding(Spacing.SmallMedium),
                                             )
                                         }
@@ -713,7 +703,7 @@ class GlassComponentScreenshotTest {
     @Test
     fun testGlassLayoutFocusedPanel() = runDesktopComposeUiTest(width = 600, height = 360) {
         setContent {
-            LtiTheme(darkTheme = true) {
+            LtiTheme(appTheme = AppTheme.Dark) {
                 val layoutState = rememberLtiLayoutState().apply {
                     focusedPanel = LayoutPanel.Center
                 }
@@ -723,12 +713,12 @@ class GlassComponentScreenshotTest {
                         modifier = Modifier.fillMaxSize(),
                         leftPanel = {
                             Box(modifier = Modifier.fillMaxSize().padding(Spacing.Small)) {
-                                Text("Explorer Panel", color = GlassTheme.colors.onGlass)
+                                Text("Explorer Panel", color = MaterialTheme.colorScheme.onSurface)
                             }
                         },
                         mainContent = {
                             Box(modifier = Modifier.fillMaxSize().padding(Spacing.Small)) {
-                                Text("Focused Editor Panel", color = GlassTheme.colors.onGlass)
+                                Text("Focused Editor Panel", color = MaterialTheme.colorScheme.onSurface)
                             }
                         },
                     )
@@ -761,11 +751,11 @@ class GlassComponentScreenshotTest {
                     .background(color),
             )
             Spacer(Modifier.height(Spacing.ExtraExtraSmall))
-            Text(name, style = MaterialTheme.typography.labelSmall, color = GlassTheme.colors.onGlass)
+            Text(name, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface)
             Text(
                 text = "${"%.1f".format(contrast)}:1",
                 style = MaterialTheme.typography.labelSmall,
-                color = GlassTheme.colors.onGlassMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

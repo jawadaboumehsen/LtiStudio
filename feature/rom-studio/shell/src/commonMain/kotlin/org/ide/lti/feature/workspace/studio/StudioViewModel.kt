@@ -16,10 +16,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.ide.lti.core.domain.ports.StudioPresentationStorePort
 import org.ide.lti.core.domain.pipeline.configuration.Severity
 import org.ide.lti.core.domain.pipeline.configuration.ValidationError
 import org.ide.lti.core.domain.pipeline.configuration.ValidationReport
+import org.ide.lti.core.domain.ports.StudioPresentationStorePort
 import org.ide.lti.core.domain.workspace.WorkspaceManager
 import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.studio.StudioPresentation
@@ -28,7 +28,6 @@ import org.ide.lti.feature.rom.studio.api.CanonicalStageDescriptors
 import org.ide.lti.feature.rom.studio.api.StageDescriptor
 import org.ide.lti.feature.rom.studio.api.StageEditorRegistry
 import org.ide.lti.feature.rom.studio.api.allDescriptors
-import org.ide.lti.feature.rom.studio.api.descriptorFor
 import org.ide.lti.feature.rom.studio.shell.registry.DefaultStageEditorRegistry
 
 /**

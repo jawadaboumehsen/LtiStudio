@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.designsystem.component.display
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
@@ -25,7 +26,6 @@ import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.semantics.Role
 import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeInput
-import dev.chrisbanes.haze.glass.GlassStyle
 import dev.chrisbanes.haze.glass.hazeGlass
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.theme.GlassShapes
@@ -47,26 +47,34 @@ fun GlassIcon(
     icon: @Composable () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
+    val theme = GlassTheme.appTheme
     val finalContentColor = if (contentColor.isSpecified) contentColor else colors.onSurface
     val resolvedSurface = if (surfaceColor.isSpecified) surfaceColor else colors.surfaceContainer
-    val resolvedTint = if (tint.isSpecified) tint else Color.Transparent
     val interactionSource = remember { MutableInteractionSource() }
+
+    val surfaceModifier = if (GlassTheme.effectsEnabled) {
+        Modifier.hazeGlass(
+            input = HazeInput.Sources(GlassTheme.hazeState),
+            style = remember(theme, tint) {
+                org.ide.lti.core.designsystem.theme.GlassMaterialStyles.baseStyle(
+                    theme = theme,
+                    opticalTint = tint,
+                ).then {
+                    shape(GlassShapes.HazeCapsule)
+                    hovered { lightingIntensity(0.35f) }
+                    pressed { scale(0.94f) }
+                }
+            },
+            interactionSource = interactionSource,
+            interactionReducedMotionPolicy = GlassTheme.reducedMotionPolicy,
+        )
+    } else {
+        Modifier.background(resolvedSurface, GlassShapes.HazeCapsule)
+    }
 
     Box(
         modifier = modifier
-            .hazeGlass(
-                input = HazeInput.Backdrop(GlassTheme.hazeState),
-                style = remember(resolvedSurface, resolvedTint) {
-                    GlassStyle.regular then GlassStyle {
-                        shape(GlassShapes.HazeCapsule)
-                        backgroundColor(resolvedSurface)
-                        tint(resolvedTint)
-                        hovered { lightingIntensity(0.35f) }
-                        pressed { scale(0.94f) }
-                    }
-                },
-                interactionSource = interactionSource,
-            )
+            .then(surfaceModifier)
             .clip(GlassShapes.HazeCapsule)
             .glassOutlineBorder(
                 color = colors.outline,

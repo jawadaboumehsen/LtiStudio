@@ -47,7 +47,6 @@ import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
-import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
@@ -96,7 +95,6 @@ fun GlassEmptyState(
     onIconClick: (() -> Unit)? = null,
     action: (@Composable () -> Unit)? = null,
 ) {
-
     CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
         when (orientation) {
             GlassEmptyStateOrientation.Vertical -> {
@@ -228,7 +226,6 @@ fun GlassEmptyStateBadge(
     iconTint: Color = MaterialTheme.colorScheme.primary,
     onClick: (() -> Unit)? = null,
 ) {
-
     if (onClick != null) {
         GlassIconButton(
             onClick = onClick,

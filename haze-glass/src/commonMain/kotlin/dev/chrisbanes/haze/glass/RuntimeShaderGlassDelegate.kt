@@ -499,6 +499,11 @@ internal class RuntimeShaderGlassDelegate(
           lastSuccessfulSourceSnapshot?.backgroundColor != params.backgroundColor
         ) {
           clearRetainedOutput()
+          val fallback = FallbackGlassDelegate(effect)
+          with(fallback) {
+            prepareDraw(context)
+            draw(context, forceInput = true)
+          }
           return
         }
         val shouldRecordSource = sourceState.hasDrawableSource && (
@@ -514,7 +519,15 @@ internal class RuntimeShaderGlassDelegate(
             retainedSource()
           },
           ::clearRetainedOutput,
-        ) ?: return
+        )
+        if (source == null) {
+          val fallback = FallbackGlassDelegate(effect)
+          with(fallback) {
+            prepareDraw(context)
+            draw(context, forceInput = true)
+          }
+          return
+        }
         val invalidation = calculateRequiredStageInvalidation(
           previous = lastSuccessfulStageInputs,
           current = currentInputs,

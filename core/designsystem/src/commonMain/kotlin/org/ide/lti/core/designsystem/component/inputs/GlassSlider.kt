@@ -43,10 +43,8 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastCoerceIn
 import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeInput
-import dev.chrisbanes.haze.glass.GlassStyle
 import dev.chrisbanes.haze.glass.GlassTransformTarget
 import dev.chrisbanes.haze.glass.hazeGlass
-import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
@@ -144,18 +142,31 @@ fun GlassSlider(
                 .clip(GlassShapes.Capsule)
                 .background(colors.primary),
         )
+        val theme = GlassTheme.appTheme
+        val thumbModifier = if (GlassTheme.effectsEnabled) {
+            Modifier.hazeGlass(
+                input = HazeInput.Sources(GlassTheme.hazeState),
+                style = remember(theme) {
+                    org.ide.lti.core.designsystem.theme.GlassMaterialStyles.clearStyle(
+                        theme = theme,
+                    ).then {
+                        shape(GlassShapes.HazeCapsule)
+                    }
+                },
+                interactionSource = interactionSource,
+                interactionTransformTarget = GlassTransformTarget.MaterialAndContent,
+                interactionReducedMotionPolicy = GlassTheme.reducedMotionPolicy,
+            )
+        } else {
+            Modifier.background(colors.surfaceContainerHighest, GlassShapes.HazeCapsule)
+        }
+
         Box(
             modifier = Modifier
                 .offset { IntOffset((fraction * (width - thumbDiameter)).roundToInt(), 0) }
                 .size(ComponentSize.SliderThumbWidth)
-                .hazeGlass(
-                    input = HazeInput.Backdrop(GlassTheme.hazeState),
-                    style = remember { GlassStyle.clear then GlassStyle { shape(GlassShapes.HazeCapsule) } },
-                    interactionSource = interactionSource,
-                    interactionTransformTarget = GlassTransformTarget.MaterialAndContent,
-                )
-                .clip(GlassShapes.Circle)
-                .background(colors.onSurface.copy(alpha = AlphaTokens.Muted)),
+                .then(thumbModifier)
+                .clip(GlassShapes.HazeCapsule),
         )
     }
 }
