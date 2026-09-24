@@ -19,8 +19,20 @@ import androidx.compose.animation.core.tween
  * effects, and animations across the design system.
  */
 object MotionDuration {
+    /** Instant micro-transition for rapid gestures and quick-tap liquid reveals (80ms). */
+    const val Instant: Int = 80
+
+    /** Quick interaction transition for pointer reveals and micro-interactions (100ms). */
+    const val Quick: Int = 100
+
+    /** Responsive relaxation transition for gesture stretch (120ms). */
+    const val Responsive: Int = 120
+
     /** Fast transition for hover states, scale, and micro-interactions (150ms). */
     const val Fast: Int = 150
+
+    /** Liquid motion thumb translation and settling duration (180ms). */
+    const val LiquidMotion: Int = 180
 
     /** Moderate transition for panel resizes and layout adjustments (200ms). */
     const val Moderate: Int = 200
