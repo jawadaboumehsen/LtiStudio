@@ -140,9 +140,9 @@ internal object GlassShaders {
           }
           float fresnelBase =
             1.0 - max(dot(normal, vec3(0.0, 0.0, 1.0)), 0.0);
-          float fresnel = fresnelExponent == 3.0
-            ? fresnelBase * fresnelBase * fresnelBase
-            : pow(fresnelBase, fresnelExponent);
+          float fresnel = surfaceProfile == 4.0
+            ? pow(fresnelBase, 12.0)
+            : (fresnelExponent == 3.0 ? fresnelBase * fresnelBase * fresnelBase : pow(fresnelBase, fresnelExponent));
           ambient = mix(1.0, 1.0 + fresnel, clampedAmbientResponse);
         }
       }
@@ -359,9 +359,9 @@ internal object GlassShaders {
             normal = normalize(mix(shapeNormal, contentNormal, contentNormalBlend));
           }
           float fresnelBase = 1.0 - max(dot(normal, vec3(0.0, 0.0, 1.0)), 0.0);
-          float fresnel = fresnelExponent == 3.0
-            ? fresnelBase * fresnelBase * fresnelBase
-            : pow(fresnelBase, fresnelExponent);
+          float fresnel = surfaceProfile == 4.0
+            ? pow(fresnelBase, 12.0)
+            : (fresnelExponent == 3.0 ? fresnelBase * fresnelBase * fresnelBase : pow(fresnelBase, fresnelExponent));
           ambient = mix(1.0, 1.0 + fresnel, clampedAmbientResponse);
         }
       }
@@ -895,6 +895,18 @@ internal object GlassShaders {
       float refractionMultiplier,
       float fieldWeight
     ) {
+      if (surfaceProfile == 4.0) {
+        vec2 halfSize = materialSize * 0.5;
+        vec2 dir = localCoord - halfSize;
+        vec2 s = sign(dir);
+        vec2 n = abs(dir) / max(halfSize, vec2(0.0001));
+        vec2 g2 = 8.0 * pow(n, vec2(7.0)) * s / max(halfSize, vec2(0.0001));
+        vec3 normal = normalize(vec3(g2.x, -g2.y, 1.5));
+        vec3 I = vec3(0.0, 0.0, -1.0);
+        vec3 R = refract(I, normal, 0.65);
+        float effectiveRefraction = clamp(refractionStrength * refractionMultiplier, 0.0, 1.0);
+        return R.xy * (min(halfSize.x, halfSize.y) * 0.45 * effectiveRefraction);
+      }
       float effectiveRefractionStrength =
         clamp(refractionStrength * refractionMultiplier, 0.0, 1.0);
       if (edgeRefractionWidth >= 0.0) {
@@ -951,6 +963,13 @@ internal object GlassShaders {
     }
 
     vec2 surfaceLightingGradient(vec2 localCoord, float sd, float fieldWeight) {
+      if (surfaceProfile == 4.0) {
+        vec2 halfSize = materialSize * 0.5;
+        vec2 dir = localCoord - halfSize;
+        vec2 s = sign(dir);
+        vec2 n = abs(dir) / max(halfSize, vec2(0.0001));
+        return 8.0 * pow(n, vec2(7.0)) * s / max(halfSize, vec2(0.0001));
+      }
       if (surfaceProfile == 1) {
         float refractionZone = max(refractionHeight, 0.0001);
         float opticalDistance = opticalDistanceFromSignedDistance(localCoord, sd, fieldWeight);

@@ -32,6 +32,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asSkiaBitmap
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -57,7 +58,10 @@ import dev.chrisbanes.haze.glass.hazeGlass
 import dev.chrisbanes.haze.hazeSource
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.testing.optical.GlassOpticalVerifier
+import org.jetbrains.skia.EncodedImageFormat
+import org.jetbrains.skia.Image
 import org.junit.Test
+import java.io.File
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.test.assertEquals
@@ -145,6 +149,43 @@ class GlassToggleLiquidMotionTest {
 
         assertEquals(1, callbackCount, "Completed drag must invoke onCheckedChange exactly once (no trailing click)")
         assertTrue(isChecked, "Toggle state must be true after drag past midpoint")
+    }
+
+    @Test
+    fun testTapAfterConsumedDragStillToggles() = runDesktopComposeUiTest(
+        width = 200,
+        height = 150,
+    ) {
+        var callbackCount = 0
+        var isChecked by mutableStateOf(false)
+
+        setContent {
+            LtiTheme(appTheme = AppTheme.Blue, effectsEnabled = true) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    GlassToggle(
+                        checked = isChecked,
+                        onCheckedChange = {
+                            callbackCount++
+                            isChecked = it
+                        },
+                    )
+                }
+            }
+        }
+
+        onRoot().performTouchInput {
+            swipe(
+                start = center.copy(x = center.x - 14f),
+                end = center.copy(x = center.x + 24f),
+                durationMillis = 200,
+            )
+        }
+        assertEquals(1, callbackCount)
+        assertTrue(isChecked)
+
+        onRoot().performTouchInput { click(center) }
+        assertEquals(2, callbackCount, "A consumed drag must not suppress the next independent tap")
+        assertTrue(!isChecked)
     }
 
     @Test
@@ -248,6 +289,9 @@ class GlassToggleLiquidMotionTest {
                 }
             }
 
+            waitForIdle()
+            mainClock.autoAdvance = false
+
             // Perform a fast click (pointer down, instantaneous release)
             onRoot().performTouchInput {
                 down(center)
@@ -260,6 +304,7 @@ class GlassToggleLiquidMotionTest {
 
             val midTravelImage = onRoot().captureToImage()
             assertNotNull(midTravelImage)
+            writeMotionFrame(midTravelImage, "${theme.id}_mid_travel")
 
             // At mid-travel, the toggle is at center of 240x160 canvas:
             // Track is 56x32 centered at (120, 80) -> [92, 64, 148, 96].
@@ -276,6 +321,8 @@ class GlassToggleLiquidMotionTest {
                 edgeGradient > 0.03,
                 "Quick tap at mid-travel must reveal refractive glass (found flat interior gradient $edgeGradient in $theme)",
             )
+            mainClock.advanceTimeBy(500)
+            mainClock.autoAdvance = true
         }
     }
 
@@ -611,6 +658,14 @@ class GlassToggleLiquidMotionTest {
     // =============================================================================================
     // Helper Pattern Drawing
     // =============================================================================================
+
+    private fun writeMotionFrame(image: ImageBitmap, name: String) {
+        val directory = File("build/reports/screenshots/toggle_motion")
+        directory.mkdirs()
+        val bytes = Image.makeFromBitmap(image.asSkiaBitmap()).encodeToData(EncodedImageFormat.PNG)?.bytes
+        assertNotNull(bytes)
+        File(directory, "$name.png").writeBytes(bytes)
+    }
 
     private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawNonRepeatingPattern() {
         // Multi-step high-contrast gradient ramp with sharp step markers

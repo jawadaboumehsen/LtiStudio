@@ -73,6 +73,8 @@ internal class GlassToggleMotionController(
         get() = if (dragFraction != null) dragStretch else stretchAnimatable.value
 
     private var activeTransitionJob: Job? = null
+    /** The controlled parent has been notified, but may not have recomposed with this value yet. */
+    private var requestedChecked: Boolean? = null
 
     fun onPointerDown() {
         if (isReducedMotion) return
@@ -83,14 +85,21 @@ internal class GlassToggleMotionController(
     }
 
     fun onPointerReleaseWithoutCommit() {
-        if (isReducedMotion) return
+        if (isReducedMotion || dragFraction != null) return
         activeTransitionJob?.cancel()
         activeTransitionJob = coroutineScope.launch {
             revealAnimatable.animateTo(0f, tween(durationMillis = MotionDuration.Fast))
         }
     }
 
+    /** Drag consumes the press gesture, so it explicitly retains the optical reveal. */
+    fun onDragStart() {
+        dragFraction = positionProgress
+        onPointerDown()
+    }
+
     fun onDrag(dragDeltaPx: Float, travelPx: Float, direction: Float) {
+        if (dragFraction == null) onDragStart()
         val current = positionProgress
         val deltaFraction = if (travelPx > 0f) (dragDeltaPx * direction) / travelPx else 0f
         val newFraction = (current + deltaFraction).coerceIn(0f, 1f)
@@ -123,7 +132,8 @@ internal class GlassToggleMotionController(
         notifyCallback: Boolean = true,
     ) {
         val targetProgress = if (targetChecked) 1f else 0f
-        val shouldCallback = notifyCallback && (targetChecked != externalChecked)
+        val shouldCallback = notifyCallback && (targetChecked != externalChecked) && (requestedChecked != targetChecked)
+        if (shouldCallback) requestedChecked = targetChecked
 
         if (isReducedMotion) {
             activeTransitionJob?.cancel()
@@ -189,6 +199,13 @@ internal class GlassToggleMotionController(
     /** Reconciles animatable with external checked state when recomposition delivers new props. */
     fun reconcileExternalChecked(newChecked: Boolean) {
         externalChecked = newChecked
+        if (requestedChecked == newChecked) {
+            // This is the acknowledgement of our own transition, not a new external command.
+            // Cancelling here used to leave the moving thumb fully opaque for the entire stroke.
+            requestedChecked = null
+            return
+        }
+        requestedChecked = null
         val targetProgress = if (newChecked) 1f else 0f
         // If not actively dragging, ensure position aligns with external checked state
         if (dragFraction == null && positionAnimatable.targetValue != targetProgress) {

@@ -37,4 +37,11 @@ public enum class SurfaceProfile {
    * compound lens effects such as magnifying or recessed glass.
    */
   Lip,
+
+  /**
+   * Superquadric 3D liquid lens profile. Implements analytic superellipse gradient normals,
+   * 3D Snell's law refraction, and grazing 12th-power Fresnel glints across the entire dome.
+   * Strictly opt-in for fluid controls such as GlassToggle.
+   */
+  SuperquadricLiquid,
 }

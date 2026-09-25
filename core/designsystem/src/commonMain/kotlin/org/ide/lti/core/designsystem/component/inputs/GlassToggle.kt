@@ -34,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.isSpecified
@@ -47,6 +48,8 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.lerp
 import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeInput
+import dev.chrisbanes.haze.HazeSourceSelection
+import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.glass.GlassReducedMotionPolicy
 import dev.chrisbanes.haze.glass.GlassTransformTarget
 import dev.chrisbanes.haze.glass.hazeGlass
@@ -95,6 +98,7 @@ fun GlassToggle(
     val isReducedMotion = GlassTheme.reducedMotionPolicy == GlassReducedMotionPolicy.Reduced
     val theme = GlassTheme.appTheme
     val density = LocalDensity.current
+    var dragConsumedThisGesture by remember { mutableStateOf(false) }
 
     val controller = remember {
         GlassToggleMotionController(
@@ -114,7 +118,10 @@ fun GlassToggle(
     LaunchedEffect(interactionSource) {
         interactionSource.interactions.collect { interaction ->
             when (interaction) {
-                is PressInteraction.Press -> controller.onPointerDown()
+                is PressInteraction.Press -> {
+                    dragConsumedThisGesture = false
+                    controller.onPointerDown()
+                }
                 is PressInteraction.Release -> { /* handled by toggleable click or drag end */ }
                 is PressInteraction.Cancel -> controller.onPointerReleaseWithoutCommit()
             }
@@ -169,7 +176,7 @@ fun GlassToggle(
 
     // Thumb optics & material
     val thumbStyle = remember(theme) {
-        GlassMaterialStyles.clearStyle(
+        GlassMaterialStyles.liquidToggleStyle(
             theme = theme,
             opticalTint = Color.Transparent,
             captureBacking = Color.Transparent,
@@ -185,7 +192,8 @@ fun GlassToggle(
 
     val thumbGlassModifier = if (GlassTheme.effectsEnabled) {
         Modifier.hazeGlass(
-            input = HazeInput.Sources(GlassTheme.hazeState),
+            // Include the local track source and the global wallpaper in the same capture.
+            input = HazeInput.Sources(GlassTheme.hazeState, selection = HazeSourceSelection.All),
             style = thumbStyle,
             interactionSource = interactionSource,
             interactionTransformTarget = GlassTransformTarget.MaterialAndContent,
@@ -198,12 +206,13 @@ fun GlassToggle(
     val thumbShape = if (dimensions.thumbIsCircle) CircleShape else GlassShapes.Capsule
     val thumbSolidColor = if (enabled) colors.onSurface else colors.onSurface.copy(alpha = AlphaTokens.Ambient)
     val restingFillColor = if (GlassTheme.effectsEnabled) {
-        thumbSolidColor.copy(alpha = lerp(1.0f, 0.12f, controller.revealProgress))
+        val baseAlpha = if (enabled) lerp(0.12f, 0.02f, controller.revealProgress) else 0.06f
+        thumbSolidColor.copy(alpha = baseAlpha)
     } else {
         thumbSolidColor
     }
 
-    val trackColorOverlay = currentBacking.copy(alpha = lerp(0f, 0.12f, controller.revealProgress))
+    val trackColorOverlay = currentBacking.copy(alpha = lerp(0f, 0.08f, controller.revealProgress))
     val rimHighlightColor = if (theme == AppTheme.Light) {
         colors.onSurface.copy(alpha = lerp(0.08f, 0.20f, controller.revealProgress))
     } else {
@@ -213,7 +222,17 @@ fun GlassToggle(
     val travelPx = with(density) {
         (dimensions.trackWidth - dimensions.thumbWidth - dimensions.padding * 2).toPx()
     }
-    var dragConsumedThisGesture by remember { mutableStateOf(false) }
+    val trackSourceBrush = remember(currentBacking, colors.onSurface) {
+        Brush.horizontalGradient(
+            listOf(
+                currentBacking.copy(alpha = AlphaTokens.Prominent),
+                lerp(currentBacking, colors.onSurface, 0.18f).copy(alpha = AlphaTokens.Prominent),
+                currentBacking.copy(alpha = AlphaTokens.Prominent),
+                lerp(currentBacking, colors.onSurface, 0.12f).copy(alpha = AlphaTokens.Prominent),
+                currentBacking.copy(alpha = AlphaTokens.Prominent),
+            ),
+        )
+    }
 
     Box(
         modifier = modifier
@@ -221,7 +240,10 @@ fun GlassToggle(
             .pointerInput(enabled, direction, travelPx) {
                 if (enabled) {
                     detectDragGestures(
-                        onDragStart = { dragConsumedThisGesture = false },
+                        onDragStart = {
+                            dragConsumedThisGesture = false
+                            controller.onDragStart()
+                        },
                         onDrag = { change, dragAmount ->
                             dragConsumedThisGesture = true
                             controller.onDrag(dragAmount.x, travelPx, direction)
@@ -253,6 +275,19 @@ fun GlassToggle(
             ),
         contentAlignment = Alignment.Center,
     ) {
+        // The moving lens must sample the coloured track as well as the window backdrop.
+        // Register the translucent track underneath the glass layers in the shared Haze scene.
+        // Its local glints provide optical features even where the wallpaper is nearly uniform.
+        if (GlassTheme.effectsEnabled) {
+            Box(
+                modifier = Modifier
+                    .size(width = dimensions.trackWidth, height = dimensions.trackHeight)
+                    .hazeSource(GlassTheme.hazeState, zIndex = 1f)
+                    .background(trackSourceBrush, GlassShapes.HazeCapsule)
+                    .clip(GlassShapes.HazeCapsule),
+            )
+        }
+
         // Visual Layer 1: Visual Track (56 x 32 dp)
         Box(
             modifier = Modifier
@@ -279,7 +314,9 @@ fun GlassToggle(
                     .size(width = dimensions.thumbWidth, height = dimensions.thumbHeight)
                     // Visual-only bounded stretch deformation
                     .graphicsLayer {
-                        scaleX = controller.stretchFactor
+                        // Morph the 28 dp resting thumb into a wider, shallow lens while moving.
+                        scaleX = controller.stretchFactor + 0.35f * controller.revealProgress
+                        scaleY = 1f - 0.12f * controller.revealProgress
                     }
                     .then(thumbGlassModifier)
                     .clip(thumbShape),
