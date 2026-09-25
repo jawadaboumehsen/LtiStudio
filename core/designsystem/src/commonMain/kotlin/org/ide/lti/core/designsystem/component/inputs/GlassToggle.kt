@@ -127,7 +127,7 @@ fun GlassToggle(
     var totalDragDistance by remember { mutableFloatStateOf(0f) }
     var fraction by remember { mutableFloatStateOf(if (checked) 1f else 0f) }
 
-    val dampedDragAnimation = remember(animationScope, isReducedMotion, effectsEnabled) {
+    val dampedDragAnimation = remember(animationScope) {
         DampedDragAnimation(
             animationScope = animationScope,
             initialValue = fraction,
@@ -140,30 +140,18 @@ fun GlassToggle(
                 didDrag = false
             },
             onDragStopped = {
-                if (didDrag) {
-                    val targetChecked = fraction >= 0.5f
-                    val finalFraction = if (targetChecked) 1f else 0f
-                    fraction = finalFraction
-                    if (isReducedMotion) {
-                        updateValue(finalFraction)
-                    } else {
-                        animateToValue(finalFraction)
-                    }
-                    if (targetChecked != currentChecked) {
-                        currentOnCheckedChange(targetChecked)
-                    }
-                    didDrag = false
+                val targetChecked = if (didDrag) fraction >= 0.5f else !currentChecked
+                val finalFraction = if (targetChecked) 1f else 0f
+                fraction = finalFraction
+                if (isReducedMotion) {
+                    updateValue(finalFraction)
                 } else {
-                    val targetChecked = !currentChecked
-                    val finalFraction = if (targetChecked) 1f else 0f
-                    fraction = finalFraction
-                    if (isReducedMotion) {
-                        updateValue(finalFraction)
-                    } else {
-                        animateToValue(finalFraction)
-                    }
+                    animateToValue(finalFraction)
+                }
+                if (targetChecked != currentChecked) {
                     currentOnCheckedChange(targetChecked)
                 }
+                didDrag = false
             },
             onDrag = { _, dragAmount ->
                 totalDragDistance += abs(dragAmount.x)
@@ -176,6 +164,9 @@ fun GlassToggle(
             },
         )
     }
+
+    // Keep pressedScale dynamically updated without recreating the physics engine mid-flight
+    dampedDragAnimation.pressedScale = if (effectsEnabled && !isReducedMotion) 1.5f else 1f
 
     LaunchedEffect(dampedDragAnimation) {
         snapshotFlow { fraction }
@@ -291,7 +282,7 @@ fun GlassToggle(
                     } else {
                         dampedDragAnimation.animateToValue(fraction)
                     }
-                    onCheckedChange(next)
+                    currentOnCheckedChange(next)
                     true
                 } else {
                     false

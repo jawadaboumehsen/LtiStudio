@@ -52,7 +52,7 @@ class DampedDragAnimation(
     val valueRange: ClosedRange<Float> = 0f..1f,
     val visibilityThreshold: Float = 0.001f,
     val initialScale: Float = 1f,
-    val pressedScale: Float = 1.5f,
+    var pressedScale: Float = 1.5f,
     val onDragStarted: DampedDragAnimation.(position: Offset) -> Unit = {},
     val onDragStopped: DampedDragAnimation.() -> Unit = {},
     val onDrag: DampedDragAnimation.(size: IntSize, dragAmount: Offset) -> Unit = { _, _ -> },
@@ -225,13 +225,15 @@ private suspend inline fun AwaitPointerEventScope.drag(
     pointerId: PointerId,
     onDrag: (PointerInputChange) -> Unit,
 ): PointerInputChange? {
-    val isPointerUp = currentEvent.changes.fastFirstOrNull { it.id == pointerId }?.pressed != true
-    if (isPointerUp) return null
+    val initialChange = currentEvent.changes.fastFirstOrNull { it.id == pointerId }
+    if (initialChange?.pressed != true) {
+        return initialChange
+    }
     var pointer = pointerId
     while (true) {
         val change = awaitDragOrUp(pointer) ?: return null
-        if (change.isConsumed) return null
         if (change.changedToUpIgnoreConsumed()) return change
+        if (change.isConsumed) return null
         onDrag(change)
         pointer = change.id
     }
