@@ -12,7 +12,7 @@ package org.ide.lti.feature.settings
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavOptions
-import org.ide.lti.core.ui.composableWithPushTransitions
+import androidx.navigation.compose.composable
 
 const val SETTINGS_ROUTE = "settings_route"
 const val NOTIFICATION_ROUTE = "notification_route"
@@ -28,7 +28,7 @@ fun NavGraphBuilder.settingsScreen(
     onNavigateToSetup: () -> Unit,
     onNavigateToWorkspace: () -> Unit,
 ) {
-    composableWithPushTransitions(route = SETTINGS_ROUTE) {
+    composable(route = SETTINGS_ROUTE) {
         SettingsScreen(
             onBackClick = onBackClick,
             onNavigateToSetup = onNavigateToSetup,
@@ -42,7 +42,7 @@ fun NavGraphBuilder.notificationScreen(
     onNavigateToSetup: () -> Unit,
     onNavigateToWorkspace: () -> Unit,
 ) {
-    composableWithPushTransitions(route = NOTIFICATION_ROUTE) {
+    composable(route = NOTIFICATION_ROUTE) {
         NotificationScreen(
             onBackClick = onBackClick,
             onNavigateToSetup = onNavigateToSetup,

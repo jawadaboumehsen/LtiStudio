@@ -13,9 +13,9 @@ import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavOptions
 import androidx.navigation.NavType
+import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import androidx.savedstate.read
-import org.ide.lti.core.ui.composableWithPushTransitions
 
 enum class ConfigurationNavMode {
     EDIT,
@@ -54,7 +54,7 @@ fun NavController.navigateToCreateConfiguration(navOptions: NavOptions? = null) 
 fun NavGraphBuilder.configurationScreen(
     onBackClick: () -> Unit,
 ) {
-    composableWithPushTransitions(
+    composable(
         route = CONFIGURATION_ROUTE_PATTERN,
         arguments = listOf(
             navArgument(TARGET_ID_ARG) {
