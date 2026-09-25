@@ -180,7 +180,9 @@ fun GlassToggle(
     LaunchedEffect(dampedDragAnimation) {
         snapshotFlow { fraction }
             .collectLatest { frac ->
-                dampedDragAnimation.updateValue(frac)
+                if (didDrag) {
+                    dampedDragAnimation.updateValue(frac)
+                }
             }
     }
 

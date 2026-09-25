@@ -29,6 +29,7 @@ import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.util.fastFirstOrNull
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
@@ -92,6 +93,7 @@ class DampedDragAnimation(
     private val mutatorMutex = MutatorMutex()
     private val velocityTracker = VelocityTracker()
     private val timeMark = TimeSource.Monotonic.markNow()
+    private var pressStateJob: Job? = null
 
     val value: Float get() = valueAnimation.value
     val progress: Float get() = (value - valueRange.start) / (valueRange.endInclusive - valueRange.start)
@@ -131,8 +133,9 @@ class DampedDragAnimation(
 
     fun release() {
         animationScope.launch {
+            delay(16L)
             val threshold = (valueRange.endInclusive - valueRange.start) * 0.05f
-            if (valueAnimation.isRunning || abs(value - targetValue) > threshold) {
+            if (valueAnimation.isRunning || abs(value - valueAnimation.targetValue) > threshold) {
                 snapshotFlow { valueAnimation.value }
                     .filter { abs(it - valueAnimation.targetValue) < threshold }
                     .first()
@@ -153,17 +156,27 @@ class DampedDragAnimation(
     fun animateToValue(value: Float) {
         animationScope.launch {
             mutatorMutex.mutate {
-                press()
+                // 1. Immediately swell and dissolve white pill into 3D liquid glass lens
+                launch { pressProgressAnimation.animateTo(1f, pressProgressAnimationSpec) }
+                launch { scaleXAnimation.animateTo(pressedScale, scaleXAnimationSpec) }
+                launch { scaleYAnimation.animateTo(pressedScale, scaleYAnimationSpec) }
+
                 val target = value.coerceIn(valueRange)
                 val animJob = launch { valueAnimation.animateTo(target, valueAnimationSpec) }
                 if (velocity != 0f) {
                     launch { velocityAnimation.animateTo(0f, velocityAnimationSpec) }
                 }
+
+                // 2. Hold liquid glass state across the entire transit until reaching the destination
                 val threshold = (valueRange.endInclusive - valueRange.start) * 0.05f
                 snapshotFlow { valueAnimation.value }
                     .filter { abs(it - target) < threshold }
                     .first()
-                release()
+
+                // 3. Upon arrival: smoothly settle and solidify back into resting pill
+                launch { pressProgressAnimation.animateTo(0f, pressProgressAnimationSpec) }
+                launch { scaleXAnimation.animateTo(initialScale, scaleXAnimationSpec) }
+                launch { scaleYAnimation.animateTo(initialScale, scaleYAnimationSpec) }
                 animJob.join()
             }
         }
