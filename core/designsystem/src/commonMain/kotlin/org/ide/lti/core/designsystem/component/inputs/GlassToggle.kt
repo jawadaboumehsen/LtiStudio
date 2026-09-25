@@ -134,7 +134,7 @@ fun GlassToggle(
             valueRange = 0f..1f,
             visibilityThreshold = 0.001f,
             initialScale = 1f,
-            pressedScale = if (effectsEnabled && !isReducedMotion) 1.5f else 1f,
+            pressedScale = if (effectsEnabled) 1.5f else 1f,
             onDragStarted = {
                 totalDragDistance = 0f
                 didDrag = false
@@ -143,11 +143,7 @@ fun GlassToggle(
                 val targetChecked = if (didDrag) fraction >= 0.5f else !currentChecked
                 val finalFraction = if (targetChecked) 1f else 0f
                 fraction = finalFraction
-                if (isReducedMotion) {
-                    updateValue(finalFraction)
-                } else {
-                    animateToValue(finalFraction)
-                }
+                animateToValue(finalFraction)
                 if (targetChecked != currentChecked) {
                     currentOnCheckedChange(targetChecked)
                 }
@@ -166,7 +162,7 @@ fun GlassToggle(
     }
 
     // Keep pressedScale dynamically updated without recreating the physics engine mid-flight
-    dampedDragAnimation.pressedScale = if (effectsEnabled && !isReducedMotion) 1.5f else 1f
+    dampedDragAnimation.pressedScale = if (effectsEnabled) 1.5f else 1f
 
     LaunchedEffect(dampedDragAnimation) {
         snapshotFlow { fraction }
@@ -181,11 +177,7 @@ fun GlassToggle(
         val target = if (checked) 1f else 0f
         if (target != fraction) {
             fraction = target
-            if (isReducedMotion) {
-                dampedDragAnimation.updateValue(target)
-            } else {
-                dampedDragAnimation.animateToValue(target)
-            }
+            dampedDragAnimation.animateToValue(target)
         }
     }
 
@@ -243,7 +235,7 @@ fun GlassToggle(
         Modifier
     }
 
-    val innerShadowModifier = if (effectsEnabled && !isReducedMotion) {
+    val innerShadowModifier = if (effectsEnabled) {
         Modifier.innerShadow(thumbShape) {
             val progress = dampedDragAnimation.pressProgress
             if (progress > 0.001f) {
@@ -277,11 +269,7 @@ fun GlassToggle(
                 if (enabled && keyEvent.type == KeyEventType.KeyUp && (keyEvent.key == Key.Spacebar || keyEvent.key == Key.Enter)) {
                     val next = !checked
                     fraction = if (next) 1f else 0f
-                    if (isReducedMotion) {
-                        dampedDragAnimation.updateValue(fraction)
-                    } else {
-                        dampedDragAnimation.animateToValue(fraction)
-                    }
+                    dampedDragAnimation.animateToValue(fraction)
                     currentOnCheckedChange(next)
                     true
                 } else {
@@ -328,8 +316,12 @@ fun GlassToggle(
                         lerp(-paddingPx, -(paddingPx + travelPx), fractionVal)
                     }
 
-                    if (effectsEnabled && !isReducedMotion) {
-                        val velocityNorm = (dampedDragAnimation.velocity / 50f).fastCoerceIn(-0.2f, 0.2f)
+                    if (effectsEnabled) {
+                        val velocityNorm = if (!isReducedMotion) {
+                            (dampedDragAnimation.velocity / 50f).fastCoerceIn(-0.2f, 0.2f)
+                        } else {
+                            0f
+                        }
                         scaleX = dampedDragAnimation.scaleX / (1f - velocityNorm * 0.75f)
                         scaleY = dampedDragAnimation.scaleY * (1f - velocityNorm * 0.25f)
                     }
@@ -347,7 +339,7 @@ fun GlassToggle(
             )
 
             // Subtle ambient rim highlight during motion
-            if (effectsEnabled && !isReducedMotion) {
+            if (effectsEnabled) {
                 val rimHighlightAlpha = (dampedDragAnimation.pressProgress * 0.30f).coerceIn(0f, 1f)
                 if (rimHighlightAlpha > 0.001f) {
                     Box(
