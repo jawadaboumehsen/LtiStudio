@@ -116,10 +116,10 @@ object ComponentSize {
     val TabBarHeight: Dp = 36.dp
     val TabItemHeight: Dp = 32.dp
     val OtpBoxSize: Dp = 48.dp
-    val ToggleTrackWidth: Dp = 56.dp
-    val ToggleTrackHeight: Dp = 32.dp
-    val ToggleThumbWidth: Dp = 28.dp
-    val ToggleThumbHeight: Dp = 28.dp
+    val ToggleTrackWidth: Dp = 64.dp
+    val ToggleTrackHeight: Dp = 28.dp
+    val ToggleThumbWidth: Dp = 40.dp
+    val ToggleThumbHeight: Dp = 24.dp
     val ToggleMinTouchTarget: Dp = 48.dp
     val SliderTrackHeight: Dp = 6.dp
     val SliderThumbWidth: Dp = 40.dp

@@ -61,11 +61,26 @@ object MotionDuration {
  * interactive liquid-glass gestures and animations.
  */
 object MotionSpring {
+    /** Stiff instantaneous position tracking stiffness (1000f). */
+    const val StiffnessHigh: Float = 1000f
+
     /** Custom interactive stiffness for direct-manipulation gestures (300f). */
     const val StiffnessInteractive: Float = 300f
 
+    /** Fluid organic scale swelling stiffness (250f). */
+    const val StiffnessScale: Float = 250f
+
+    /** Critical damping ratio for non-oscillating snap (1.0f). */
+    const val DampingRatioNoBouncy: Float = 1.0f
+
     /** Medium bouncy damping ratio for interactive feedback (0.5f). */
     const val DampingRatioMediumBouncy: Float = 0.5f
+
+    /** Fluid scale-X swelling damping ratio (0.6f). */
+    const val DampingRatioScaleX: Float = 0.6f
+
+    /** Fluid scale-Y swelling damping ratio (0.7f). */
+    const val DampingRatioScaleY: Float = 0.7f
 }
 
 /**

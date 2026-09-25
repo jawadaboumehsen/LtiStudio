@@ -293,6 +293,21 @@ object GlassLayoutColors {
     val PanelShadow = Color(0x26000000)
 }
 
+/** Centralized token colors for fluid glass controls (toggles, sliders, inputs). */
+object GlassControlColors {
+    /** Bevel inner shadow for 3D fluid controls (15% black). */
+    val InnerShadow = Color(0x26000000)
+
+    /** Inactive track fill in dark theme (36% opacity neutral). */
+    val TrackInactiveDark = Color(0x5C787880)
+
+    /** Inactive track fill in light theme (20% opacity neutral). */
+    val TrackInactiveLight = Color(0x33787878)
+
+    /** Resting fill color for glass toggle thumb. */
+    val ThumbResting = Color.White
+}
+
 /** Centralized token colors for theme accent color selection. */
 object AccentPresetColors {
     val Blue = Color(0xFF2563EB)

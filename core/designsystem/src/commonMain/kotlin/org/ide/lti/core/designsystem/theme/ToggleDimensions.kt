@@ -23,24 +23,24 @@ data class ToggleDimensions(
     val trackHeight: Dp = ComponentSize.ToggleTrackHeight,
     val thumbWidth: Dp = ComponentSize.ToggleThumbWidth,
     val thumbHeight: Dp = ComponentSize.ToggleThumbHeight,
-    val thumbIsCircle: Boolean = true,
+    val thumbIsCircle: Boolean = false,
     val padding: Dp = Spacing.ExtraExtraSmall,
     val minTouchTarget: Dp = ComponentSize.ToggleMinTouchTarget,
 ) {
     companion object {
-        /** Pair A: Legacy baseline (64x28 dp track, 40x24 dp thumb, 20 dp exposed). */
-        val PairA = ToggleDimensions(
-            trackWidth = 64.dp,
-            trackHeight = 28.dp,
-            thumbWidth = 40.dp,
-            thumbHeight = 24.dp,
-            thumbIsCircle = false,
-            padding = 2.dp,
-            minTouchTarget = 28.dp,
-        )
+        /** Pair A: Canonical KMPLiquidGlass baseline (64x28 dp track, 40x24 dp elongated pill thumb, 20 dp travel). */
+        val PairA = ToggleDimensions()
 
-        /** Pair B: Standard production ergonomic (56x32 dp track, 28x28 dp circular thumb, 24 dp exposed). */
-        val PairB = ToggleDimensions()
+        /** Pair B: Compact ergonomic candidate (56x32 dp track, 28x28 dp circular thumb, 24 dp travel). */
+        val PairB = ToggleDimensions(
+            trackWidth = 56.dp,
+            trackHeight = 32.dp,
+            thumbWidth = 28.dp,
+            thumbHeight = 28.dp,
+            thumbIsCircle = true,
+            padding = 2.dp,
+            minTouchTarget = ComponentSize.ToggleMinTouchTarget,
+        )
 
         /** Pair C: Haze reference candidate (64x48 dp track, 40x40 dp circular thumb). */
         val PairC = ToggleDimensions(

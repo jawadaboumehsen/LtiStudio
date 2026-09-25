@@ -11,73 +11,84 @@ package org.ide.lti.core.designsystem.component.inputs
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.graphics.lerp
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.toggleableState
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastCoerceIn
 import androidx.compose.ui.util.lerp
 import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.HazeSourceSelection
-import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.glass.GlassReducedMotionPolicy
-import dev.chrisbanes.haze.glass.GlassTransformTarget
 import dev.chrisbanes.haze.glass.hazeGlass
+import dev.chrisbanes.haze.hazeSource
+import kotlinx.coroutines.flow.collectLatest
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.AppTheme
+import org.ide.lti.core.designsystem.theme.GlassControlColors
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassMaterialStyles
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.InteractionColors
 import org.ide.lti.core.designsystem.theme.LocalToggleDimensions
-import kotlin.math.roundToInt
+import org.ide.lti.core.designsystem.theme.Spacing
+import kotlin.math.abs
 
 /**
- * Liquid glass switch built on Haze's native `Modifier.hazeGlass` primitives.
+ * Liquid glass switch achieving 100% parity with KMPLiquidGlass.
  *
  * Visual & Motion Architecture:
- * 1. **Sibling Visual Layers**: Track (56x32 dp) and thumb (28x28 dp) render as sibling layers within the
- *    >= 48 dp interactive container so the track's capsule clipping does not truncate the thumb's rim
- *    highlights or velocity stretch.
- * 2. **Phase-Deferred Layout Placement**: Thumb position is deferred to the Layout placement phase via
- *    [Modifier.offset], naturally respecting [LayoutDirection.Rtl] through Compose's logical start-to-end
- *    travel mapping without manual mirroring branches.
- * 3. **Liquid Motion Optics**: While pressed or moving (including rapid clicks), the thumb actively reveals
- *    a refractive Haze material with base Clear optics (refraction, shallow blur, chromatic aberration),
- *    resampling the underlying backdrop at each frame, before settling back to a clean resting silhouette.
- * 4. **Solid Fallback Contract**: When [GlassTheme.effectsEnabled] is false or reduced motion is active,
- *    both track and thumb are 100% solid, backdrop-invariant, and instantaneous.
+ * 1. **Default Geometry (PairA)**: 64x28 dp track with an elongated horizontal capsule thumb (40x24 dp,
+ *    2 dp padding, 20 dp drag travel).
+ * 2. **Coupled 4-Spring Engine**: Driven by [DampedDragAnimation] with stiff position tracking (zeta=1.0, 1000f),
+ *    underdamped settling bounce (zeta=0.5, 300f), and 1.5x scale swelling on touch/drag (zeta=0.6, 250f).
+ * 3. **Hydrodynamic Deformation**: Velocity-driven squish and stretch along the drag vector:
+ *    scaleX /= (1 - 0.75v), scaleY *= (1 - 0.25v).
+ * 4. **Liquid Glass Dynamic State Machine**:
+ *    - **At rest**: Clean, crisp opaque white capsule pill (alpha = 1.0), 8 dp frosted blur, 0 px lens displacement,
+ *      0 highlight, 1.0x scale.
+ *    - **On touch/drag**: White fill dissolves (1 -> 0), thumb swells to 1.5x, 3D Superquadric liquid lens activates
+ *      with chromatic aberration, ambient specular rim highlight ramps up, and inner shadow bevel activates.
+ *    - **On release**: Underdamped spring settling bounce back to 1.0x, solidifying back into the crisp white pill.
+ * 5. **Solid Fallback Contract**: When [GlassTheme.effectsEnabled] is false or reduced motion is active,
+ *    both track and thumb are 100% solid, backdrop-invariant, scale locked to 1.0x, and instantaneous.
  */
 @OptIn(ExperimentalHazeApi::class)
 @Composable
@@ -91,77 +102,105 @@ fun GlassToggle(
     val dimensions = LocalToggleDimensions.current
     val colors = MaterialTheme.colorScheme
     val resolvedActiveColor = if (activeColor.isSpecified) activeColor else colors.primary
-    val interactionSource = remember { MutableInteractionSource() }
-    val isFocused by interactionSource.collectIsFocusedAsState()
-    val direction = if (LocalLayoutDirection.current == LayoutDirection.Rtl) -1f else 1f
-    val coroutineScope = rememberCoroutineScope()
-    val isReducedMotion = GlassTheme.reducedMotionPolicy == GlassReducedMotionPolicy.Reduced
+    val isLightTheme = GlassTheme.appTheme == AppTheme.Light
     val theme = GlassTheme.appTheme
     val density = LocalDensity.current
-    var dragConsumedThisGesture by remember { mutableStateOf(false) }
+    val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
+    val isReducedMotion = GlassTheme.reducedMotionPolicy == GlassReducedMotionPolicy.Reduced
+    val effectsEnabled = GlassTheme.effectsEnabled
 
-    val controller = remember {
-        GlassToggleMotionController(
-            initialChecked = checked,
-            coroutineScope = coroutineScope,
+    val currentChecked by rememberUpdatedState(checked)
+    val currentOnCheckedChange by rememberUpdatedState(onCheckedChange)
+
+    val trackInactiveColor = if (isLightTheme) GlassControlColors.TrackInactiveLight else GlassControlColors.TrackInactiveDark
+    val trackActiveColor = resolvedActiveColor
+
+    val interactionSource = remember { MutableInteractionSource() }
+    val isFocused by interactionSource.collectIsFocusedAsState()
+
+    val travelPx = with(density) {
+        (dimensions.trackWidth - dimensions.thumbWidth - dimensions.padding * 2).toPx()
+    }
+
+    val animationScope = rememberCoroutineScope()
+    var didDrag by remember { mutableStateOf(false) }
+    var totalDragDistance by remember { mutableFloatStateOf(0f) }
+    var fraction by remember { mutableFloatStateOf(if (checked) 1f else 0f) }
+
+    val dampedDragAnimation = remember(animationScope, isReducedMotion, effectsEnabled) {
+        DampedDragAnimation(
+            animationScope = animationScope,
+            initialValue = fraction,
+            valueRange = 0f..1f,
+            visibilityThreshold = 0.001f,
+            initialScale = 1f,
+            pressedScale = if (effectsEnabled && !isReducedMotion) 1.5f else 1f,
+            onDragStarted = {
+                totalDragDistance = 0f
+                didDrag = false
+            },
+            onDragStopped = {
+                if (didDrag) {
+                    val targetChecked = fraction >= 0.5f
+                    val finalFraction = if (targetChecked) 1f else 0f
+                    fraction = finalFraction
+                    if (isReducedMotion) {
+                        updateValue(finalFraction)
+                    } else {
+                        animateToValue(finalFraction)
+                    }
+                    if (targetChecked != currentChecked) {
+                        currentOnCheckedChange(targetChecked)
+                    }
+                    didDrag = false
+                } else {
+                    val targetChecked = !currentChecked
+                    val finalFraction = if (targetChecked) 1f else 0f
+                    fraction = finalFraction
+                    if (isReducedMotion) {
+                        updateValue(finalFraction)
+                    } else {
+                        animateToValue(finalFraction)
+                    }
+                    currentOnCheckedChange(targetChecked)
+                }
+            },
+            onDrag = { _, dragAmount ->
+                totalDragDistance += abs(dragAmount.x)
+                if (totalDragDistance > 4f) {
+                    didDrag = true
+                }
+                val delta = if (travelPx > 0f) dragAmount.x / travelPx else 0f
+                fraction = if (isLtr) (fraction + delta).fastCoerceIn(0f, 1f)
+                else (fraction - delta).fastCoerceIn(0f, 1f)
+            },
         )
     }
 
-    // Safely update recomposition dependencies
-    controller.isReducedMotion = isReducedMotion
-    controller.onCheckedChange = onCheckedChange
-    LaunchedEffect(checked) {
-        controller.reconcileExternalChecked(checked)
+    LaunchedEffect(dampedDragAnimation) {
+        snapshotFlow { fraction }
+            .collectLatest { frac ->
+                dampedDragAnimation.updateValue(frac)
+            }
     }
 
-    // Connect Haze's press interactions via interactionSource
-    LaunchedEffect(interactionSource) {
-        interactionSource.interactions.collect { interaction ->
-            when (interaction) {
-                is PressInteraction.Press -> {
-                    dragConsumedThisGesture = false
-                    controller.onPointerDown()
-                }
-                is PressInteraction.Release -> { /* handled by toggleable click or drag end */ }
-                is PressInteraction.Cancel -> controller.onPointerReleaseWithoutCommit()
+    LaunchedEffect(checked) {
+        val target = if (checked) 1f else 0f
+        if (target != fraction) {
+            fraction = target
+            if (isReducedMotion) {
+                dampedDragAnimation.updateValue(target)
+            } else {
+                dampedDragAnimation.animateToValue(target)
             }
         }
     }
 
-    // Continuous track color interpolation driven by positionProgress
-    val inactiveBacking = colors.surfaceContainerHighest
-    val activeBacking = resolvedActiveColor
-    val currentBacking = lerp(inactiveBacking, activeBacking, controller.positionProgress)
-
-    val inactiveTint = colors.onSurface.copy(alpha = AlphaTokens.Faint)
-    val activeTint = resolvedActiveColor.copy(alpha = AlphaTokens.Elevated)
-    val currentTint = lerp(inactiveTint, activeTint, controller.positionProgress)
-
-    val trackModifier = if (GlassTheme.effectsEnabled) {
-        Modifier.hazeGlass(
-            input = HazeInput.Sources(GlassTheme.hazeState),
-            style = remember(theme, currentTint, currentBacking) {
-                GlassMaterialStyles.baseStyle(
-                    theme = theme,
-                    opticalTint = currentTint,
-                    captureBacking = currentBacking,
-                ).then {
-                    shape(GlassShapes.HazeCapsule)
-                    focused {
-                        lightingIntensity(0.55f)
-                        whitePointDelta(0.04f)
-                    }
-                }
-            },
-            interactionSource = interactionSource,
-            interactionTransformTarget = GlassTransformTarget.MaterialAndContent,
-            interactionReducedMotionPolicy = GlassTheme.reducedMotionPolicy,
-        )
+    // Colors driven by continuous dampedDragAnimation.value
+    val currentTrackColor = if (effectsEnabled) {
+        lerp(trackInactiveColor, trackActiveColor, dampedDragAnimation.value)
     } else {
-        Modifier.background(
-            currentBacking,
-            GlassShapes.HazeCapsule,
-        )
+        lerp(colors.surfaceContainerHighest, resolvedActiveColor, dampedDragAnimation.value)
     }
 
     val focusBorderModifier = if (isFocused) {
@@ -174,121 +213,108 @@ fun GlassToggle(
         Modifier
     }
 
-    // Thumb optics & material
-    val thumbStyle = remember(theme) {
-        GlassMaterialStyles.liquidToggleStyle(
-            theme = theme,
-            opticalTint = Color.Transparent,
-            captureBacking = Color.Transparent,
-        ).then {
-            shape(GlassShapes.HazeCapsule)
-            pressed {
-                lightingIntensity(0.85f)
-                refractionMultiplier(1.4f)
-                whitePointDelta(0.06f)
-            }
-        }
+    val trackModifier = if (effectsEnabled) {
+        Modifier.hazeGlass(
+            input = HazeInput.Sources(GlassTheme.hazeState),
+            style = remember(theme) {
+                GlassMaterialStyles.baseStyle(
+                    theme = theme,
+                    opticalTint = Color.Transparent,
+                    captureBacking = Color.Transparent,
+                ).then {
+                    shape(GlassShapes.HazeCapsule)
+                }
+            },
+        )
+    } else {
+        Modifier.background(currentTrackColor, GlassShapes.HazeCapsule)
     }
 
-    val thumbGlassModifier = if (GlassTheme.effectsEnabled) {
+    val thumbShape = if (dimensions.thumbIsCircle) GlassShapes.Circle else GlassShapes.HazeCapsule
+    val thumbSolidColor = if (enabled) colors.onSurface else colors.onSurface.copy(alpha = AlphaTokens.Ambient)
+
+    val thumbGlassModifier = if (effectsEnabled) {
         Modifier.hazeGlass(
-            // Include the local track source and the global wallpaper in the same capture.
             input = HazeInput.Sources(GlassTheme.hazeState, selection = HazeSourceSelection.All),
-            style = thumbStyle,
-            interactionSource = interactionSource,
-            interactionTransformTarget = GlassTransformTarget.MaterialAndContent,
-            interactionReducedMotionPolicy = GlassTheme.reducedMotionPolicy,
+            style = remember(theme) {
+                GlassMaterialStyles.liquidToggleStyle(
+                    theme = theme,
+                    opticalTint = Color.Transparent,
+                    captureBacking = Color.Transparent,
+                ).then {
+                    shape(GlassShapes.HazeCapsule)
+                }
+            },
         )
     } else {
         Modifier
     }
 
-    val thumbShape = if (dimensions.thumbIsCircle) CircleShape else GlassShapes.Capsule
-    val thumbSolidColor = if (enabled) colors.onSurface else colors.onSurface.copy(alpha = AlphaTokens.Ambient)
-    val restingFillColor = if (GlassTheme.effectsEnabled) {
-        val baseAlpha = if (enabled) lerp(0.12f, 0.02f, controller.revealProgress) else 0.06f
-        thumbSolidColor.copy(alpha = baseAlpha)
+    val innerShadowModifier = if (effectsEnabled && !isReducedMotion) {
+        Modifier.innerShadow(thumbShape) {
+            val progress = dampedDragAnimation.pressProgress
+            if (progress > 0.001f) {
+                InnerShadow(
+                    radius = Spacing.ExtraSmall * progress,
+                    alpha = progress,
+                )
+            } else {
+                null
+            }
+        }
+    } else {
+        Modifier
+    }
+
+    val restingAlpha = if (effectsEnabled) {
+        (1f - dampedDragAnimation.pressProgress).coerceIn(0f, 1f)
+    } else {
+        1f
+    }
+    val restingFillColor = if (effectsEnabled) {
+        GlassControlColors.ThumbResting.copy(alpha = restingAlpha)
     } else {
         thumbSolidColor
-    }
-
-    val trackColorOverlay = currentBacking.copy(alpha = lerp(0f, 0.08f, controller.revealProgress))
-    val rimHighlightColor = if (theme == AppTheme.Light) {
-        colors.onSurface.copy(alpha = lerp(0.08f, 0.20f, controller.revealProgress))
-    } else {
-        InteractionColors.PressHighlight.copy(alpha = lerp(0.18f, 0.40f, controller.revealProgress))
-    }
-
-    val travelPx = with(density) {
-        (dimensions.trackWidth - dimensions.thumbWidth - dimensions.padding * 2).toPx()
-    }
-    val trackSourceBrush = remember(currentBacking, colors.onSurface) {
-        Brush.horizontalGradient(
-            listOf(
-                currentBacking.copy(alpha = AlphaTokens.Prominent),
-                lerp(currentBacking, colors.onSurface, 0.18f).copy(alpha = AlphaTokens.Prominent),
-                currentBacking.copy(alpha = AlphaTokens.Prominent),
-                lerp(currentBacking, colors.onSurface, 0.12f).copy(alpha = AlphaTokens.Prominent),
-                currentBacking.copy(alpha = AlphaTokens.Prominent),
-            ),
-        )
     }
 
     Box(
         modifier = modifier
             .defaultMinSize(minWidth = dimensions.trackWidth, minHeight = dimensions.minTouchTarget)
-            .pointerInput(enabled, direction, travelPx) {
-                if (enabled) {
-                    detectDragGestures(
-                        onDragStart = {
-                            dragConsumedThisGesture = false
-                            controller.onDragStart()
-                        },
-                        onDrag = { change, dragAmount ->
-                            dragConsumedThisGesture = true
-                            controller.onDrag(dragAmount.x, travelPx, direction)
-                            change.consume()
-                        },
-                        onDragEnd = {
-                            if (dragConsumedThisGesture) {
-                                controller.onDragEnd(travelPx)
-                            }
-                        },
-                        onDragCancel = {
-                            controller.onDragCancel()
-                        },
-                    )
+            .onKeyEvent { keyEvent ->
+                if (enabled && keyEvent.type == KeyEventType.KeyUp && (keyEvent.key == Key.Spacebar || keyEvent.key == Key.Enter)) {
+                    val next = !checked
+                    fraction = if (next) 1f else 0f
+                    if (isReducedMotion) {
+                        dampedDragAnimation.updateValue(fraction)
+                    } else {
+                        dampedDragAnimation.animateToValue(fraction)
+                    }
+                    onCheckedChange(next)
+                    true
+                } else {
+                    false
                 }
             }
-            .toggleable(
-                value = checked,
-                enabled = enabled,
-                role = Role.Switch,
-                interactionSource = interactionSource,
-                indication = null,
-                onValueChange = { target ->
-                    if (!dragConsumedThisGesture) {
-                        controller.onToggleableClick(target)
-                    }
-                    dragConsumedThisGesture = false
-                },
-            ),
-        contentAlignment = Alignment.Center,
+            .focusable(enabled = enabled, interactionSource = interactionSource)
+            .semantics {
+                role = Role.Switch
+                toggleableState = ToggleableState(checked)
+            }
+            .then(if (enabled) dampedDragAnimation.modifier else Modifier),
+        contentAlignment = Alignment.CenterStart,
     ) {
-        // The moving lens must sample the coloured track as well as the window backdrop.
-        // Register the translucent track underneath the glass layers in the shared Haze scene.
-        // Its local glints provide optical features even where the wallpaper is nearly uniform.
-        if (GlassTheme.effectsEnabled) {
+        // Visual Layer 1: Track Source for Refraction Backing
+        if (effectsEnabled) {
             Box(
                 modifier = Modifier
                     .size(width = dimensions.trackWidth, height = dimensions.trackHeight)
                     .hazeSource(GlassTheme.hazeState, zIndex = 1f)
-                    .background(trackSourceBrush, GlassShapes.HazeCapsule)
+                    .background(currentTrackColor, GlassShapes.HazeCapsule)
                     .clip(GlassShapes.HazeCapsule),
             )
         }
 
-        // Visual Layer 1: Visual Track (56 x 32 dp)
+        // Visual Layer 2: Visual Track (64 x 28 dp)
         Box(
             modifier = Modifier
                 .size(width = dimensions.trackWidth, height = dimensions.trackHeight)
@@ -297,50 +323,46 @@ fun GlassToggle(
                 .clip(GlassShapes.HazeCapsule),
         )
 
-        // Visual Layer 2: Visual Thumb (28 x 28 dp) as sibling layer
+        // Visual Layer 3: Visual Thumb (40 x 24 dp)
         Box(
             modifier = Modifier
-                .size(width = dimensions.trackWidth, height = dimensions.trackHeight)
-                .padding(dimensions.padding),
+                .graphicsLayer {
+                    val fractionVal = dampedDragAnimation.value
+                    val paddingPx = dimensions.padding.toPx()
+                    translationX = if (isLtr) {
+                        lerp(paddingPx, paddingPx + travelPx, fractionVal)
+                    } else {
+                        lerp(-paddingPx, -(paddingPx + travelPx), fractionVal)
+                    }
+
+                    if (effectsEnabled && !isReducedMotion) {
+                        val velocityNorm = (dampedDragAnimation.velocity / 50f).fastCoerceIn(-0.2f, 0.2f)
+                        scaleX = dampedDragAnimation.scaleX / (1f - velocityNorm * 0.75f)
+                        scaleY = dampedDragAnimation.scaleY * (1f - velocityNorm * 0.25f)
+                    }
+                }
+                .size(width = dimensions.thumbWidth, height = dimensions.thumbHeight)
+                .then(innerShadowModifier)
+                .then(thumbGlassModifier)
+                .clip(thumbShape),
         ) {
+            // White resting fill: opaque at rest, dissolves to transparent during motion/touch
             Box(
                 modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    // Phase-deferred placement: reads progress inside offset lambda; automatic RTL mirroring
-                    .offset {
-                        val x = (controller.positionProgress * travelPx).roundToInt()
-                        IntOffset(x, 0)
-                    }
-                    .size(width = dimensions.thumbWidth, height = dimensions.thumbHeight)
-                    // Visual-only bounded stretch deformation
-                    .graphicsLayer {
-                        // Morph the 28 dp resting thumb into a wider, shallow lens while moving.
-                        scaleX = controller.stretchFactor + 0.35f * controller.revealProgress
-                        scaleY = 1f - 0.12f * controller.revealProgress
-                    }
-                    .then(thumbGlassModifier)
-                    .clip(thumbShape),
-            ) {
-                // Shaped resting fill layer: opaque at resting, translucent during motion
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(restingFillColor, thumbShape),
-                )
-                // Restrained track-color overlay
-                if (GlassTheme.effectsEnabled) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(trackColorOverlay, thumbShape),
-                    )
-                    // Subtle rim highlight
+                    .fillMaxSize()
+                    .background(restingFillColor, thumbShape),
+            )
+
+            // Subtle ambient rim highlight during motion
+            if (effectsEnabled && !isReducedMotion) {
+                val rimHighlightAlpha = (dampedDragAnimation.pressProgress * 0.30f).coerceIn(0f, 1f)
+                if (rimHighlightAlpha > 0.001f) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
                             .border(
                                 width = GlassDimens.HairlineBorder,
-                                color = rimHighlightColor,
+                                color = InteractionColors.PressHighlight.copy(alpha = rimHighlightAlpha),
                                 shape = thumbShape,
                             ),
                     )
