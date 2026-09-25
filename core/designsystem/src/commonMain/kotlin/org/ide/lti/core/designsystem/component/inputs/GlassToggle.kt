@@ -57,7 +57,6 @@ import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.HazeSourceSelection
 import dev.chrisbanes.haze.glass.GlassReducedMotionPolicy
 import dev.chrisbanes.haze.glass.hazeGlass
-import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.flow.collectLatest
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.AppTheme
@@ -190,30 +189,16 @@ fun GlassToggle(
 
     val focusBorderModifier = if (isFocused) {
         Modifier.border(
-            width = GlassDimens.HairlineBorder * 2,
-            color = colors.primary,
+            width = GlassDimens.HairlineBorder,
+            color = colors.primary.copy(alpha = AlphaTokens.Border),
             shape = GlassShapes.HazeCapsule,
         )
     } else {
         Modifier
     }
 
-    val trackModifier = if (effectsEnabled) {
-        Modifier.hazeGlass(
-            input = HazeInput.Sources(GlassTheme.hazeState),
-            style = remember(theme) {
-                GlassMaterialStyles.baseStyle(
-                    theme = theme,
-                    opticalTint = Color.Transparent,
-                    captureBacking = Color.Transparent,
-                ).then {
-                    shape(GlassShapes.HazeCapsule)
-                }
-            },
-        )
-    } else {
-        Modifier.background(currentTrackColor, GlassShapes.HazeCapsule)
-    }
+    val trackModifier = Modifier
+        .background(currentTrackColor, GlassShapes.HazeCapsule)
 
     val thumbShape = if (dimensions.thumbIsCircle) GlassShapes.Circle else GlassShapes.HazeCapsule
     val thumbSolidColor = if (enabled) colors.onSurface else colors.onSurface.copy(alpha = AlphaTokens.Ambient)
@@ -284,18 +269,7 @@ fun GlassToggle(
             .then(if (enabled) dampedDragAnimation.modifier else Modifier),
         contentAlignment = Alignment.CenterStart,
     ) {
-        // Visual Layer 1: Track Source for Refraction Backing
-        if (effectsEnabled) {
-            Box(
-                modifier = Modifier
-                    .size(width = dimensions.trackWidth, height = dimensions.trackHeight)
-                    .hazeSource(GlassTheme.hazeState, zIndex = 1f)
-                    .background(currentTrackColor, GlassShapes.HazeCapsule)
-                    .clip(GlassShapes.HazeCapsule),
-            )
-        }
-
-        // Visual Layer 2: Visual Track (64 x 28 dp)
+        // Visual Track (64 x 28 dp): clean, non-blooming background capsule
         Box(
             modifier = Modifier
                 .size(width = dimensions.trackWidth, height = dimensions.trackHeight)
