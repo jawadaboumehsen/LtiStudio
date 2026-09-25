@@ -22,6 +22,7 @@ import org.ide.lti.feature.configuration.configurationScreen
 import org.ide.lti.feature.configuration.navigateToConfiguration
 import org.ide.lti.feature.configuration.navigateToEditConfiguration
 import org.ide.lti.feature.plugins.pluginsScreen
+import org.ide.lti.feature.settings.SETTINGS_ROUTE
 import org.ide.lti.feature.settings.navigateToSettings
 import org.ide.lti.feature.settings.notificationScreen
 import org.ide.lti.feature.settings.settingsScreen
@@ -57,6 +58,7 @@ internal fun RootNavGraph(
 
     val navigateToSetup: () -> Unit = {
         navHostController.navigate(SETUP_ROUTE) {
+            popUpTo(SETUP_ROUTE) { inclusive = false }
             launchSingleTop = true
         }
     }
@@ -66,8 +68,15 @@ internal fun RootNavGraph(
             navigateToSetup()
         } else {
             navHostController.navigate(buildStudioRoute(workspaceId = workspace.id)) {
+                popUpTo(SETUP_ROUTE) { inclusive = false }
                 launchSingleTop = true
             }
+        }
+    }
+    val navigateToSettings: () -> Unit = {
+        navHostController.navigate(SETTINGS_ROUTE) {
+            popUpTo(SETUP_ROUTE) { inclusive = false }
+            launchSingleTop = true
         }
     }
 
@@ -86,7 +95,7 @@ internal fun RootNavGraph(
                     }
                 }
             },
-            onOpenSettings = { navHostController.navigateToSettings() },
+            onOpenSettings = navigateToSettings,
             onCreateWorkspace = { navHostController.navigateToCreateWorkspace() },
             onOpenConfigurations = { navHostController.navigateToConfiguration() },
             onOpenManageTargets = { navHostController.navigateToConfiguration() },
@@ -132,7 +141,11 @@ internal fun RootNavGraph(
         )
 
         settingsScreen(
-            onBackClick = { navHostController.popBackStack() },
+            onBackClick = {
+                if (!navHostController.popBackStack()) {
+                    navigateToSetup()
+                }
+            },
             onNavigateToSetup = navigateToSetup,
             onNavigateToWorkspace = navigateToWorkspace,
         )
@@ -156,7 +169,7 @@ internal fun RootNavGraph(
                 )
             },
             onNavigateToSetup = navigateToSetup,
-            onOpenSettings = { navHostController.navigateToSettings() },
+            onOpenSettings = navigateToSettings,
             onOpenEditConfiguration = { targetId ->
                 navHostController.navigateToEditConfiguration(targetId)
             },
@@ -166,7 +179,7 @@ internal fun RootNavGraph(
         pluginsScreen(
             onNavigateBack = { navHostController.popBackStack() },
             onNavigateToSetup = navigateToSetup,
-            onOpenSettings = { navHostController.navigateToSettings() },
+            onOpenSettings = navigateToSettings,
         )
     }
 }
