@@ -59,6 +59,12 @@ class AppSettingsState(
             persist { setReducedMotion(value) }
         }
 
+    var fluidAnimations: Boolean
+        get() = !reducedMotionState.value
+        set(value) {
+            reducedMotion = !value
+        }
+
     private val editorSettingsState = mutableStateOf(initialEditorSettings)
     var editorSettings: EditorSettings
         get() = editorSettingsState.value

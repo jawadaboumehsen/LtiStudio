@@ -181,6 +181,6 @@ class SettingsScreenDiagnosticTest {
         // Verify scrolling reaches and displays the card.
         onNodeWithTag("GlassCard_glass_and_motion").performScrollTo().assertIsDisplayed()
         onNodeWithText("Glass & motion").assertIsDisplayed()
-        onNodeWithText("Reduce transparency").assertIsDisplayed()
+        onNodeWithText("Glass effects").assertIsDisplayed()
     }
 }

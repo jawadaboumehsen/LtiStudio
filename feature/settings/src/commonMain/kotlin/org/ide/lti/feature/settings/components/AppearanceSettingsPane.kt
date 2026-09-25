@@ -63,7 +63,7 @@ import org.ide.lti.core.ui.settings.AppSettingsState
  * - Accent color dropdown with live preview color dot
  * - Interface density segmented toggle (Comfortable vs Compact)
  * - Text size scaling dropdown (100%, 110%, 125%)
- * - Glass & motion switches (Reduce transparency, Reduce motion, Show focus indicators)
+ * - Glass & motion switches (Glass effects, Fluid animations, Focus indicators)
  * - Live interactive Studio Preview Card reacting dynamically to theme, density, and transparency
  * - Action footer bar (Restore defaults, Cancel, Apply changes)
  */
@@ -195,33 +195,35 @@ fun AppearanceSettingsPane(
                             )
                         }
 
-                        // Reduce Transparency Switch
+                        // Glass Effects Switch
                         SettingsSwitchRow(
-                            title = "Reduce transparency",
-                            description = "Use opaque surfaces without changing the layout.",
-                            checked = reduceTransparency,
-                            onCheckedChange = { appSettingsState.effectsEnabled = !it },
+                            title = "Glass effects",
+                            description = "Use translucent glass and optical refraction.",
+                            checked = appSettingsState.effectsEnabled,
+                            onCheckedChange = { appSettingsState.effectsEnabled = it },
                             toggleTestTag = "ReduceTransparencySwitch",
                         )
 
                         GlassHorizontalDivider()
 
-                        // Reduce Motion Switch
+                        // Fluid Animations Switch
                         SettingsSwitchRow(
-                            title = "Reduce motion",
-                            description = "Minimize animations and transitions.",
-                            checked = appSettingsState.reducedMotion,
-                            onCheckedChange = { appSettingsState.reducedMotion = it },
+                            title = "Fluid animations",
+                            description = "Enable spring physics, fluid stretching, and motion.",
+                            checked = appSettingsState.fluidAnimations,
+                            onCheckedChange = { appSettingsState.fluidAnimations = it },
+                            toggleTestTag = "FluidAnimationsSwitch",
                         )
 
                         GlassHorizontalDivider()
 
-                        // Show Focus Indicators Switch
+                        // Focus Indicators Switch
                         SettingsSwitchRow(
-                            title = "Show focus indicators",
-                            description = "Highlight focused elements for better visibility.",
+                            title = "Focus indicators",
+                            description = "Show keyboard focus ring for navigation visibility.",
                             checked = showFocusIndicators,
                             onCheckedChange = { showFocusIndicators = it },
+                            toggleTestTag = "FocusIndicatorsSwitch",
                         )
                     }
                 }
