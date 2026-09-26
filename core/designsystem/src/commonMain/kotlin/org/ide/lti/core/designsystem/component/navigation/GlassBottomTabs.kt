@@ -63,6 +63,7 @@ import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassMaterialStyles
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.sceneHazeInput
 import org.ide.lti.core.designsystem.theme.MotionThreshold
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
@@ -210,7 +211,7 @@ private fun GlassBottomTabBarBackground(
     val theme = GlassTheme.appTheme
     val surfaceModifier = if (GlassTheme.effectsEnabled) {
         Modifier.hazeGlass(
-            input = HazeInput.Sources(GlassTheme.hazeState),
+            input = sceneHazeInput(GlassTheme.hazeState),
             style = remember(theme) {
                 GlassMaterialStyles.baseStyle(theme = theme).then {
                     shape(GlassShapes.HazeCapsule)

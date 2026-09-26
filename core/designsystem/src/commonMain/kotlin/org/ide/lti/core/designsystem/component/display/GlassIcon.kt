@@ -31,6 +31,7 @@ import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.sceneHazeInput
 
 /**
  * Circular glass icon button - built on Haze's real `Modifier.hazeGlass`, same
@@ -54,7 +55,7 @@ fun GlassIcon(
 
     val surfaceModifier = if (GlassTheme.effectsEnabled) {
         Modifier.hazeGlass(
-            input = HazeInput.Sources(GlassTheme.hazeState),
+            input = sceneHazeInput(GlassTheme.hazeState),
             style = remember(theme, tint) {
                 org.ide.lti.core.designsystem.theme.GlassMaterialStyles.baseStyle(
                     theme = theme,

@@ -15,13 +15,18 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import dev.chrisbanes.haze.ExperimentalHazeApi
+import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
+import org.ide.lti.core.designsystem.theme.LineHeight
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.ideFontFamily
 
 /**
  * Bottom application status bar matching the 24 dp Stitch design specification.
@@ -33,27 +38,36 @@ fun IdeStatusBar(
     leadingContent: @Composable RowScope.() -> Unit = {},
     trailingContent: @Composable RowScope.() -> Unit = {},
 ) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(GlassDimens.StatusBarHeight)
-            .ideShellSurface(shape = GlassShapes.HazeFlat, drawBorder = false)
-            .padding(horizontal = Spacing.Small),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
+    ProvideTextStyle(
+        MaterialTheme.typography.labelSmall.copy(
+            fontSize = FontSize.Micro,
+            lineHeight = LineHeight.LabelSmall,
+            fontFamily = ideFontFamily(),
+        ),
     ) {
         Row(
+            modifier = modifier
+                .fillMaxWidth()
+                .height(GlassDimens.StatusBarHeight)
+                .ideShellSurface(shape = GlassShapes.HazeFlat, drawBorder = false)
+                .padding(horizontal = Spacing.Small),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            leadingContent()
-        }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
+            ) {
+                leadingContent()
+            }
 
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
-        ) {
-            trailingContent()
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
+            ) {
+                trailingContent()
+            }
         }
     }
 }
+

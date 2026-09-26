@@ -29,6 +29,7 @@ import org.ide.lti.core.designsystem.theme.GlassMaterialStyles
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.HazeShape
+import org.ide.lti.core.designsystem.theme.sceneHazeInput
 
 /**
  * Semantic role of a glass surface determining source input, optical material styling,
@@ -103,7 +104,7 @@ fun Modifier.glassSurface(
         }
 
         Modifier.hazeGlass(
-            input = HazeInput.Sources(hazeState),
+            input = sceneHazeInput(hazeState),
             style = remember(theme, shape, tint, captureBacking, role, styleOverride) {
                 baseStyle.then {
                     this.shape(shape)

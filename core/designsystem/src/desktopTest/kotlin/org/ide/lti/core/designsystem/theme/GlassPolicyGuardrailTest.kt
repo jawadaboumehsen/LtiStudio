@@ -65,8 +65,11 @@ class GlassPolicyGuardrailTest {
                     if (snippet.contains("HazeInput.Backdrop")) {
                         violations.add("${file.name}:${index + 1} uses HazeInput.Backdrop instead of HazeInput.Sources")
                     }
-                    if (!snippet.contains("HazeInput.Sources")) {
-                        violations.add("${file.name}:${index + 1} does not use HazeInput.Sources")
+                    if (snippet.contains("HazeInput.Sources") && !snippet.contains("selection =")) {
+                        violations.add("${file.name}:${index + 1} uses unfiltered HazeInput.Sources without scoped selection; must use sceneHazeInput")
+                    }
+                    if (!snippet.contains("HazeInput.Sources") && !snippet.contains("sceneHazeInput")) {
+                        violations.add("${file.name}:${index + 1} does not use HazeInput.Sources or sceneHazeInput")
                     }
                 }
             }

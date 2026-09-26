@@ -28,6 +28,7 @@ import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.HazeShape
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.sceneHazeInput
 
 /**
  * Base glass surface component - built on Haze's real `Modifier.hazeGlass`.
@@ -64,7 +65,7 @@ fun GlassSurface(
 
     val glassOrSolidModifier = if (GlassTheme.effectsEnabled) {
         Modifier.hazeGlass(
-            input = HazeInput.Sources(GlassTheme.hazeState),
+            input = sceneHazeInput(GlassTheme.hazeState),
             style = remember(theme, shape, tint, captureBacking) {
                 org.ide.lti.core.designsystem.theme.GlassMaterialStyles.baseStyle(
                     theme = theme,

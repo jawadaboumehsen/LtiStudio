@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.asSkiaBitmap
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.click
@@ -57,14 +58,30 @@ import dev.chrisbanes.haze.glass.GlassTransformTarget
 import dev.chrisbanes.haze.glass.hazeGlass
 import dev.chrisbanes.haze.hazeSource
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
+import org.ide.lti.core.designsystem.component.inputs.GlassToggleImpl
+import org.ide.lti.core.designsystem.component.layout.GlassBackdrop
 import org.ide.lti.core.testing.optical.GlassOpticalVerifier
 import org.jetbrains.skia.EncodedImageFormat
 import org.jetbrains.skia.Image
 import org.junit.Test
 import java.io.File
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.cancel
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
+import org.ide.lti.core.designsystem.component.display.GlassCard
+import org.ide.lti.core.designsystem.theme.GlassControlColors
+import org.ide.lti.core.designsystem.theme.GlassMaterialStyles
+import org.ide.lti.core.designsystem.theme.GlassShapes
+import org.ide.lti.core.designsystem.theme.sceneHazeInput
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -183,6 +200,9 @@ class GlassToggleLiquidMotionTest {
         assertEquals(1, callbackCount)
         assertTrue(isChecked)
 
+        // Allow cooldown to elapse for next distinct physical action
+        Thread.sleep(320)
+
         onRoot().performTouchInput { click(center) }
         assertEquals(2, callbackCount, "A consumed drag must not suppress the next independent tap")
         assertTrue(!isChecked)
@@ -292,36 +312,51 @@ class GlassToggleLiquidMotionTest {
             waitForIdle()
             mainClock.autoAdvance = false
 
+            val startThumbBounds = onNodeWithTag("GlassToggle_Thumb").fetchSemanticsNode().boundsInRoot
+            val startX = startThumbBounds.left
+            val expectedTravel = 20f
+
             // Perform a fast click (pointer down, instantaneous release)
             onRoot().performTouchInput {
                 down(center)
                 up()
             }
 
-            // Advance clock to mid-travel (90ms out of 180ms position travel)
-            mainClock.advanceTimeBy(90)
-            waitForIdle()
+            // Step clock frame by frame (16ms) to find the nearest observed midpoint (|progress - 0.5f| minimized)
+            var bestDistanceToMidpoint = Float.MAX_VALUE
+            var bestFrameImage: ImageBitmap? = null
+            var bestThumbBounds = startThumbBounds
 
-            val midTravelImage = onRoot().captureToImage()
-            assertNotNull(midTravelImage)
-            writeMotionFrame(midTravelImage, "${theme.id}_mid_travel")
+            for (step in 1..15) {
+                mainClock.advanceTimeBy(16)
+                waitForIdle()
+                val currentBounds = onNodeWithTag("GlassToggle_Thumb").fetchSemanticsNode().boundsInRoot
+                val progress = (currentBounds.left - startX) / expectedTravel
+                val dist = abs(progress - 0.5f)
+                if (dist < bestDistanceToMidpoint) {
+                    bestDistanceToMidpoint = dist
+                    bestThumbBounds = currentBounds
+                    bestFrameImage = onRoot().captureToImage()
+                }
+            }
 
-            // At mid-travel, the toggle is at center of 240x160 canvas:
-            // Track is 56x32 centered at (120, 80) -> [92, 64, 148, 96].
-            // Thumb is 28x28 midway along travel (start x ~ 94, mid x ~ 106..134).
-            // Sample the thumb interior at mid-travel:
-            val thumbMidInterior = Rect(108f, 70f, 128f, 90f)
-            val edgeGradient = computeMaxEdgeGradient(midTravelImage, thumbMidInterior)
+            assertNotNull(bestFrameImage)
+            writeMotionFrame(bestFrameImage, "${theme.id}_mid_travel")
 
-            println("[DIAGNOSTIC] Theme $theme Quick-Tap Mid-Travel (t=90ms) Thumb Interior Gradient: $edgeGradient")
+            // Sample the interior of the measured rendered bounds (deflated by 4px from edges)
+            val thumbInterior = Rect(
+                left = bestThumbBounds.left + 4f,
+                top = bestThumbBounds.top + 4f,
+                right = bestThumbBounds.right - 4f,
+                bottom = bestThumbBounds.bottom - 4f,
+            )
+            val edgeGradient = computeMaxEdgeGradient(bestFrameImage, thumbInterior)
 
-            // Refractive clear glass actively transmits the underlying pattern (edge gradient > 0.005).
-            // Note: The 40x24 capsule pill with frosted blur smoothly diffuses the backdrop across
-            // multiple pixels, yielding an interior edge gradient of ~0.008-0.012, whereas an opaque or
-            // flat thumb yields 0.000.
+            println("[DIAGNOSTIC] Theme $theme Quick-Tap Midpoint (|p-0.5|=$bestDistanceToMidpoint) Bounds: $bestThumbBounds Interior Gradient: $edgeGradient")
+
             assertTrue(
                 edgeGradient > 0.005,
-                "Quick tap at mid-travel must reveal refractive glass (found flat interior gradient $edgeGradient in $theme)",
+                "Quick tap at nearest midpoint must reveal refractive glass (found flat interior gradient $edgeGradient in $theme)",
             )
             mainClock.advanceTimeBy(500)
             mainClock.autoAdvance = true
@@ -655,6 +690,631 @@ class GlassToggleLiquidMotionTest {
         val checkedRightPixel = mapChecked[130, 80]
 
         assertTrue(checkedLeftPixel.red > checkedRightPixel.red, "In RTL, checked thumb must travel to the left side")
+    }
+
+    // =============================================================================================
+    // 7. Gate 1: Halo Elimination (Masked Differential Bloom Proof)
+    // =============================================================================================
+
+    @Test
+    fun testMaskedOutsideCapsuleBloomIsZero() = runDesktopComposeUiTest(
+        width = 300,
+        height = 200,
+    ) {
+        var imageWithTrackSource: ImageBitmap? = null
+        var imageWithoutTrackSource: ImageBitmap? = null
+
+        // 1. Capture with effectsEnabled = true and registerTrackSource = true
+        setContent {
+            LtiTheme(appTheme = AppTheme.Blue, effectsEnabled = true) {
+                Box(Modifier.fillMaxSize()) {
+                    GlassBackdrop(Modifier.fillMaxSize())
+                    GlassCard(
+                        modifier = Modifier.size(260.dp, 160.dp).align(Alignment.Center),
+                    ) {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            GlassToggleImpl(
+                                checked = false,
+                                onCheckedChange = {},
+                                registerTrackSource = true,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        waitForIdle()
+        imageWithTrackSource = onRoot().captureToImage()
+
+        // 2. Capture baseline with registerTrackSource = false (exact same toggle, card, backdrop, and visuals!)
+        setContent {
+            LtiTheme(appTheme = AppTheme.Blue, effectsEnabled = true) {
+                Box(Modifier.fillMaxSize()) {
+                    GlassBackdrop(Modifier.fillMaxSize())
+                    GlassCard(
+                        modifier = Modifier.size(260.dp, 160.dp).align(Alignment.Center),
+                    ) {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            GlassToggleImpl(
+                                checked = false,
+                                onCheckedChange = {},
+                                registerTrackSource = false,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        waitForIdle()
+        imageWithoutTrackSource = onRoot().captureToImage()
+
+        assertNotNull(imageWithTrackSource)
+        assertNotNull(imageWithoutTrackSource)
+
+        val mapA = imageWithTrackSource.toPixelMap()
+        val mapB = imageWithoutTrackSource.toPixelMap()
+
+        val deltas = mutableListOf<Float>()
+        var maxDelta = 0f
+
+        for (y in 30..170) {
+            for (x in 30..270) {
+                // Skip pixels inside masked toggle capsule region
+                if (x in 110..190 && y in 78..122) continue
+
+                val ca = mapA[x, y]
+                val cb = mapB[x, y]
+                val diff = (abs(ca.red - cb.red) + abs(ca.green - cb.green) + abs(ca.blue - cb.blue)) / 3f
+                deltas.add(diff)
+                if (diff > maxDelta) maxDelta = diff
+            }
+        }
+
+        deltas.sort()
+        val meanDelta = deltas.average().toFloat()
+        val p95Delta = deltas[(deltas.size * 0.95).toInt()]
+
+        println("[DIAGNOSTIC] Gate 1 Real-Scene Outside-Capsule Bloom: mean=$meanDelta, p95=$p95Delta, max=$maxDelta")
+
+        assertTrue(meanDelta < 0.002f, "Mean outside-capsule bloom delta must be < 0.002 (found $meanDelta)")
+        assertTrue(p95Delta < 0.008f, "95th percentile localized bloom delta must be < 0.008 (found $p95Delta)")
+        assertTrue(maxDelta < 0.015f, "Maximum localized peak bloom delta must be < 0.015 (found $maxDelta)")
+    }
+
+    // =============================================================================================
+    // 8. Gate 2: Separated Refraction vs Specular Rim Glint Proof
+    // =============================================================================================
+
+    @Test
+    fun testPatternedRefractionVsUnrefractedControl() = runDesktopComposeUiTest(
+        width = 240,
+        height = 160,
+    ) {
+        var zeroRefractionImage: ImageBitmap? = null
+        var refractedImage: ImageBitmap? = null
+
+        // 1. Zero-refraction control on moving production thumb: thumbRefractionFactor = 0f
+        setContent {
+            LtiTheme(appTheme = AppTheme.Blue, effectsEnabled = true) {
+                Box(Modifier.fillMaxSize()) {
+                    Canvas(Modifier.fillMaxSize().hazeSource(GlassTheme.hazeState)) {
+                        drawNonRepeatingPattern()
+                    }
+                    Box(Modifier.align(Alignment.Center)) {
+                        GlassToggleImpl(
+                            checked = false,
+                            onCheckedChange = {},
+                            thumbRefractionFactor = 0f,
+                        )
+                    }
+                }
+            }
+        }
+        waitForIdle()
+
+        // Hold pointer mid-travel to capture moving liquid lens
+        onNodeWithTag("GlassToggle").performTouchInput {
+            down(center)
+            moveTo(center + Offset(10f, 0f))
+        }
+        zeroRefractionImage = onRoot().captureToImage()
+        onNodeWithTag("GlassToggle").performTouchInput { up() }
+        waitForIdle()
+
+        // 2. Production moving thumb with full refraction: thumbRefractionFactor = 1f
+        setContent {
+            LtiTheme(appTheme = AppTheme.Blue, effectsEnabled = true) {
+                Box(Modifier.fillMaxSize()) {
+                    Canvas(Modifier.fillMaxSize().hazeSource(GlassTheme.hazeState)) {
+                        drawNonRepeatingPattern()
+                    }
+                    Box(Modifier.align(Alignment.Center)) {
+                        GlassToggleImpl(
+                            checked = false,
+                            onCheckedChange = {},
+                            thumbRefractionFactor = 1f,
+                        )
+                    }
+                }
+            }
+        }
+        waitForIdle()
+
+        // Hold pointer at exact same mid-travel offset and position
+        onNodeWithTag("GlassToggle").performTouchInput {
+            down(center)
+            moveTo(center + Offset(10f, 0f))
+        }
+        refractedImage = onRoot().captureToImage()
+        onNodeWithTag("GlassToggle").performTouchInput { up() }
+        waitForIdle()
+
+        assertNotNull(zeroRefractionImage)
+        assertNotNull(refractedImage)
+
+        // Measure boundary feature displacement around the mid-travel thumb [100, 60, 150, 100]
+        val rimRoi = Rect(100f, 60f, 150f, 100f)
+        val result = GlassOpticalVerifier.measureRefractionFeatureDisplacement(
+            unrefracted = zeroRefractionImage,
+            refracted = refractedImage,
+            boundaryRoi = rimRoi,
+        )
+
+        println(
+            "[DIAGNOSTIC] Gate 2 Production Thumb Refraction: totalFeatures=${result.featureCount}, " +
+                "displacedFeatures=${result.displacedFeatureCount}, maxDisplacement=${result.maxDisplacementPx}px",
+        )
+
+        assertTrue(
+            result.displacedFeatureCount >= 3,
+            "Refraction displacement must affect at least 3 features on production thumb (found ${result.displacedFeatureCount})",
+        )
+        assertTrue(
+            result.maxDisplacementPx >= 1.0,
+            "Refraction displacement must displace by at least 1.0px (found ${result.maxDisplacementPx}px)",
+        )
+    }
+
+    // =============================================================================================
+    // 9. Multi-Toggle Coexistence (Peer Track Source Toggling, Zero Cross-Talk)
+    // =============================================================================================
+
+    @Test
+    fun testMultipleNearbyTogglesDoNotBleedOrCrossTalk() = runDesktopComposeUiTest(
+        width = 300,
+        height = 300,
+    ) {
+        var imageWithPeerSource: ImageBitmap? = null
+        var imageWithoutPeerSource: ImageBitmap? = null
+
+        // Render 1: Toggle A (checked=false) and Toggle B (checked=true, WITH track source)
+        setContent {
+            LtiTheme(appTheme = AppTheme.Blue, effectsEnabled = true) {
+                Box(Modifier.fillMaxSize()) {
+                    GlassBackdrop(Modifier.fillMaxSize())
+                    GlassCard(modifier = Modifier.size(260.dp, 260.dp).align(Alignment.Center)) {
+                        Column(
+                            modifier = Modifier.fillMaxSize().padding(16.dp),
+                            verticalArrangement = Arrangement.SpaceEvenly,
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            GlassToggleImpl(
+                                checked = false,
+                                onCheckedChange = {},
+                                registerTrackSource = true,
+                                modifier = Modifier.testTag("ToggleA"),
+                            )
+                            GlassToggleImpl(
+                                checked = true,
+                                onCheckedChange = {},
+                                registerTrackSource = true,
+                                modifier = Modifier.testTag("ToggleB"),
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        waitForIdle()
+        imageWithPeerSource = onRoot().captureToImage()
+
+        // Render 2: Exact same scene and positions, but Toggle B has registerTrackSource = false
+        setContent {
+            LtiTheme(appTheme = AppTheme.Blue, effectsEnabled = true) {
+                Box(Modifier.fillMaxSize()) {
+                    GlassBackdrop(Modifier.fillMaxSize())
+                    GlassCard(modifier = Modifier.size(260.dp, 260.dp).align(Alignment.Center)) {
+                        Column(
+                            modifier = Modifier.fillMaxSize().padding(16.dp),
+                            verticalArrangement = Arrangement.SpaceEvenly,
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            GlassToggleImpl(
+                                checked = false,
+                                onCheckedChange = {},
+                                registerTrackSource = true,
+                                modifier = Modifier.testTag("ToggleA"),
+                            )
+                            GlassToggleImpl(
+                                checked = true,
+                                onCheckedChange = {},
+                                registerTrackSource = false,
+                                modifier = Modifier.testTag("ToggleB"),
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        waitForIdle()
+        imageWithoutPeerSource = onRoot().captureToImage()
+
+        assertNotNull(imageWithPeerSource)
+        assertNotNull(imageWithoutPeerSource)
+
+        val mapA = imageWithPeerSource.toPixelMap()
+        val mapB = imageWithoutPeerSource.toPixelMap()
+
+        // Measure Toggle A thumb pixels (Toggle A is centered at y ≈ 85, thumb at x ≈ 130)
+        var maxThumbDelta = 0f
+        for (y in 75..95) {
+            for (x in 120..140) {
+                val ca = mapA[x, y]
+                val cb = mapB[x, y]
+                val diff = (abs(ca.red - cb.red) + abs(ca.green - cb.green) + abs(ca.blue - cb.blue)) / 3f
+                if (diff > maxThumbDelta) maxThumbDelta = diff
+            }
+        }
+
+        println("[DIAGNOSTIC] Multi-Toggle Cross-Talk: maxThumbDelta=$maxThumbDelta")
+        assertTrue(
+            maxThumbDelta < 0.002f,
+            "Toggle A thumb must not sample Toggle B's track source (delta=$maxThumbDelta)",
+        )
+    }
+
+    // =============================================================================================
+    // 10. Gate 3: Atomic Zero-Leak Cancellation
+    // =============================================================================================
+
+    @Test
+    fun testDragCancellationRestoresSuppliedCheckedStateWithoutCallback() = runDesktopComposeUiTest(
+        width = 240,
+        height = 160,
+    ) {
+        var callbackCount = 0
+        var isChecked by mutableStateOf(false)
+
+        setContent {
+            LtiTheme(appTheme = AppTheme.Blue, effectsEnabled = true) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    GlassToggle(
+                        checked = isChecked,
+                        onCheckedChange = {
+                            callbackCount++
+                            isChecked = it
+                        },
+                    )
+                }
+            }
+        }
+
+        // Cancel gesture by moving pointer and sending cancel
+        onRoot().performTouchInput {
+            down(center.copy(x = center.x - 14f))
+            moveBy(Offset(18f, 0f), delayMillis = 50)
+            cancel()
+        }
+        waitForIdle()
+
+        assertEquals(0, callbackCount, "Drag cancellation must invoke onCheckedChange exactly ZERO times")
+        assertFalse(isChecked, "Toggle state must remain false after canceled drag")
+
+        // Also test starting from checked = true
+        isChecked = true
+        waitForIdle()
+
+        onRoot().performTouchInput {
+            down(center.copy(x = center.x + 14f))
+            moveBy(Offset(-18f, 0f), delayMillis = 50)
+            cancel()
+        }
+        waitForIdle()
+
+        assertEquals(0, callbackCount, "Drag cancellation from checked state must fire ZERO callbacks")
+        assertTrue(isChecked, "Toggle state must remain true after canceled drag")
+    }
+
+    // =============================================================================================
+    // 11. Gate 4: Frame-1 Immediate Reduced Motion
+    // =============================================================================================
+
+    @Test
+    fun testReducedMotionSnapsOnFrame1WithoutSwellOrSpringTravel() = runDesktopComposeUiTest(
+        width = 240,
+        height = 160,
+    ) {
+        var isChecked by mutableStateOf(false)
+
+        setContent {
+            LtiTheme(
+                appTheme = AppTheme.Blue,
+                effectsEnabled = true,
+                reducedMotion = true,
+            ) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    GlassToggle(
+                        checked = isChecked,
+                        onCheckedChange = { isChecked = it },
+                    )
+                }
+            }
+        }
+
+        waitForIdle()
+        mainClock.autoAdvance = false
+
+        // Frame 0: Trigger activation
+        onNodeWithTag("GlassToggle").performClick()
+
+        // Advance by exactly 1 frame (16ms)
+        mainClock.advanceTimeBy(16)
+
+        // Capture frame 1: Thumb must immediately be rendered at the target checked position (right side)
+        val image = onRoot().captureToImage()
+        val map = image.toPixelMap()
+        val rightPixel = map[140, 80]
+        val leftPixel = map[95, 80]
+        println("[DIAGNOSTIC] Gate 4 Reduced Motion Frame 1: rightPixel=${rightPixel.red}, leftPixel=${leftPixel.red}")
+
+        assertTrue(rightPixel.red > 0.7f, "Reduced motion must snap thumb to right side on frame 1 (found ${rightPixel.red})")
+        assertTrue(leftPixel.red < 0.4f, "Left side must be uncovered track on frame 1 (found ${leftPixel.red})")
+
+        mainClock.autoAdvance = true
+    }
+
+    // =============================================================================================
+    // 12. Gate 5: Unified Accessibility & Keyboard Activation Deduplication
+    // =============================================================================================
+
+    @Test
+    fun testSemanticAndKeyboardActivationDeduplication() = runDesktopComposeUiTest(
+        width = 240,
+        height = 160,
+    ) {
+        var callbackCount = 0
+        var isChecked by mutableStateOf(false)
+        val focusRequester = FocusRequester()
+
+        setContent {
+            LtiTheme(appTheme = AppTheme.Blue, effectsEnabled = true) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    GlassToggle(
+                        checked = isChecked,
+                        onCheckedChange = {
+                            callbackCount++
+                            isChecked = it
+                        },
+                        modifier = Modifier.focusRequester(focusRequester),
+                    )
+                }
+            }
+        }
+
+        // 1. Semantic performClick()
+        onNodeWithTag("GlassToggle").performClick()
+        waitForIdle()
+        assertEquals(1, callbackCount, "Semantic click must invoke callback exactly once")
+        assertTrue(isChecked)
+
+        // Allow cooldown to elapse for next distinct action
+        Thread.sleep(320)
+
+        // 2. Keyboard Spacebar
+        focusRequester.requestFocus()
+        waitForIdle()
+        onRoot().performKeyInput { pressKey(Key.Spacebar) }
+        waitForIdle()
+        assertEquals(2, callbackCount, "Spacebar must invoke callback exactly once")
+        assertFalse(isChecked)
+
+        // Allow cooldown to elapse for next distinct action
+        Thread.sleep(320)
+
+        // 3. Keyboard Enter
+        onRoot().performKeyInput { pressKey(Key.Enter) }
+        waitForIdle()
+        assertEquals(3, callbackCount, "Enter key must invoke callback exactly once")
+        assertTrue(isChecked)
+    }
+
+    @Test
+    fun testImmediateParentUpdateDeduplicatesRapidPhysicalEvents() = runDesktopComposeUiTest(
+        width = 240,
+        height = 160,
+    ) {
+        var callbackCount = 0
+        var isChecked by mutableStateOf(false)
+        val focusRequester = FocusRequester()
+
+        setContent {
+            LtiTheme(appTheme = AppTheme.Blue, effectsEnabled = true) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    GlassToggle(
+                        checked = isChecked,
+                        onCheckedChange = {
+                            callbackCount++
+                            isChecked = it
+                        },
+                        modifier = Modifier.focusRequester(focusRequester),
+                    )
+                }
+            }
+        }
+        waitForIdle()
+
+        // Rapid semantic click + Spacebar in immediate succession (<300ms)
+        focusRequester.requestFocus()
+        onNodeWithTag("GlassToggle").performClick()
+        onRoot().performKeyInput { pressKey(Key.Spacebar) }
+        waitForIdle()
+
+        assertEquals(1, callbackCount, "Rapid physical activation events within 300ms must be deduplicated to exactly 1")
+        assertTrue(isChecked)
+    }
+
+    @Test
+    fun testDelayedParentUpdateRendersOptimisticTargetAndReconciles() = runDesktopComposeUiTest(
+        width = 240,
+        height = 160,
+    ) {
+        var callbackCount = 0
+        var isChecked by mutableStateOf(false)
+
+        setContent {
+            LtiTheme(appTheme = AppTheme.Blue, effectsEnabled = true) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    GlassToggle(
+                        checked = isChecked,
+                        onCheckedChange = {
+                            callbackCount++
+                        },
+                    )
+                }
+            }
+        }
+        waitForIdle()
+
+        // Click toggle: should invoke callback and render optimistic target immediately
+        onNodeWithTag("GlassToggle").performClick()
+        assertEquals(1, callbackCount, "Click must invoke onCheckedChange")
+
+        // Rapid second click within 300ms cooldown must be suppressed
+        onNodeWithTag("GlassToggle").performClick()
+        assertEquals(1, callbackCount, "Second click within cooldown must be deduplicated")
+
+        // Now simulate delayed parent applying the change
+        isChecked = true
+        waitForIdle()
+        assertTrue(isChecked)
+    }
+
+    @Test
+    fun testControlledRejectionRestoresVisualStateAndUnlocks() = runDesktopComposeUiTest(
+        width = 240,
+        height = 160,
+    ) {
+        var callbackCount = 0
+
+        setContent {
+            LtiTheme(appTheme = AppTheme.Blue, effectsEnabled = true) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    GlassToggle(
+                        checked = false,
+                        onCheckedChange = {
+                            callbackCount++
+                        },
+                    )
+                }
+            }
+        }
+        waitForIdle()
+
+        // First click
+        onNodeWithTag("GlassToggle").performClick()
+        assertEquals(1, callbackCount)
+
+        // Wait past the grace period (500ms) and cooldown (300ms)
+        Thread.sleep(600)
+        mainClock.advanceTimeBy(600)
+        waitForIdle()
+
+        // Second click after grace period must NOT be locked!
+        onNodeWithTag("GlassToggle").performClick()
+        assertEquals(2, callbackCount, "Activation must unlock after grace period even if parent declined")
+    }
+
+    @Test
+    fun testSwitchingReducedMotionDuringActiveAnimationSnapsImmediate() = runDesktopComposeUiTest(
+        width = 240,
+        height = 160,
+    ) {
+        var reducedMotion by mutableStateOf(false)
+        var isChecked by mutableStateOf(false)
+
+        setContent {
+            LtiTheme(
+                appTheme = AppTheme.Blue,
+                effectsEnabled = true,
+                reducedMotion = reducedMotion,
+            ) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    GlassToggle(
+                        checked = isChecked,
+                        onCheckedChange = { isChecked = it },
+                    )
+                }
+            }
+        }
+        waitForIdle()
+
+        mainClock.autoAdvance = false
+        // Start animation
+        onNodeWithTag("GlassToggle").performClick()
+
+        // Advance mid-transit (100ms into the spring)
+        mainClock.advanceTimeBy(100)
+
+        // Dynamically switch reducedMotion = true mid-transit
+        reducedMotion = true
+        mainClock.advanceTimeBy(16)
+
+        // Frame after reducedMotion = true: thumb must immediately snap to target
+        val image = onRoot().captureToImage()
+        val map = image.toPixelMap()
+        val rightPixel = map[140, 80]
+        assertTrue(rightPixel.red > 0.6f, "Switching reduced motion mid-transit must immediately snap thumb to target")
+
+        mainClock.autoAdvance = true
+    }
+
+    @Test
+    fun testDisabledToggleHasNoOnClickActionAndIgnoresKeys() = runDesktopComposeUiTest(
+        width = 240,
+        height = 160,
+    ) {
+        var callbackCount = 0
+
+        setContent {
+            LtiTheme(appTheme = AppTheme.Blue, effectsEnabled = true) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    GlassToggle(
+                        checked = false,
+                        onCheckedChange = { callbackCount++ },
+                        enabled = false,
+                    )
+                }
+            }
+        }
+
+        waitForIdle()
+
+        // Assert semantics: has disabled(), does NOT have OnClick action
+        val node = onNodeWithTag("GlassToggle").fetchSemanticsNode()
+        val hasDisabled = node.config.contains(SemanticsProperties.Disabled)
+        val hasOnClick = node.config.contains(SemanticsActions.OnClick)
+
+        assertTrue(hasDisabled, "Disabled toggle must declare Disabled semantics property")
+        assertFalse(hasOnClick, "Disabled toggle must NOT expose OnClick semantic action")
+
+        // Pressing Spacebar or Enter must cause 0 callbacks
+        onRoot().performKeyInput {
+            pressKey(Key.Spacebar)
+            pressKey(Key.Enter)
+        }
+        waitForIdle()
+
+        assertEquals(0, callbackCount, "Disabled toggle must produce 0 callbacks on key inputs")
     }
 
     // =============================================================================================

@@ -30,6 +30,8 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.util.fastFirstOrNull
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
@@ -53,8 +55,11 @@ class DampedDragAnimation(
     val visibilityThreshold: Float = 0.001f,
     val initialScale: Float = 1f,
     var pressedScale: Float = 1.5f,
+    var isReducedMotion: Boolean = false,
+    var gestureStartFractionProvider: () -> Float = { initialValue },
     val onDragStarted: DampedDragAnimation.(position: Offset) -> Unit = {},
     val onDragStopped: DampedDragAnimation.() -> Unit = {},
+    val onDragCanceled: DampedDragAnimation.() -> Unit = {},
     val onDrag: DampedDragAnimation.(size: IntSize, dragAmount: Offset) -> Unit = { _, _ -> },
 ) {
 
@@ -93,7 +98,10 @@ class DampedDragAnimation(
     private val mutatorMutex = MutatorMutex()
     private val velocityTracker = VelocityTracker()
     private val timeMark = TimeSource.Monotonic.markNow()
-    private var pressStateJob: Job? = null
+    private var activeTransitionJob: Job? = null
+    private var dragPositionJob: Job? = null
+    private var gestureScaleJob: Job? = null
+    private var gestureStartFraction: Float = initialValue
 
     val value: Float get() = valueAnimation.value
     val progress: Float get() = (value - valueRange.start) / (valueRange.endInclusive - valueRange.start)
@@ -106,6 +114,7 @@ class DampedDragAnimation(
     val modifier: Modifier = Modifier.pointerInput(Unit) {
         inspectDragGestures(
             onDragStart = { down ->
+                gestureStartFraction = gestureStartFractionProvider()
                 onDragStarted(down.position)
                 press()
             },
@@ -114,25 +123,50 @@ class DampedDragAnimation(
                 release()
             },
             onDragCancel = {
-                onDragStopped()
-                release()
+                cancelAndRestore()
+                onDragCanceled()
             },
         ) { change, dragAmount ->
             onDrag(size, dragAmount)
         }
     }
 
+    private suspend fun cancelAndJoinPriorJobs(
+        cancelTransition: Boolean = true,
+        cancelDrag: Boolean = true,
+        cancelScale: Boolean = true,
+    ) {
+        val currentJob = kotlin.coroutines.coroutineContext[Job]
+        val t = if (cancelTransition && activeTransitionJob !== currentJob) activeTransitionJob else null
+        val d = if (cancelDrag && dragPositionJob !== currentJob) dragPositionJob else null
+        val s = if (cancelScale && gestureScaleJob !== currentJob) gestureScaleJob else null
+
+        if (t != null) activeTransitionJob = null
+        if (d != null) dragPositionJob = null
+        if (s != null) gestureScaleJob = null
+
+        t?.cancelAndJoin()
+        d?.cancelAndJoin()
+        s?.cancelAndJoin()
+    }
+
     fun press() {
+        if (isReducedMotion) return
         velocityTracker.resetTracking()
-        animationScope.launch {
-            launch { pressProgressAnimation.animateTo(1f, pressProgressAnimationSpec) }
-            launch { scaleXAnimation.animateTo(pressedScale, scaleXAnimationSpec) }
-            launch { scaleYAnimation.animateTo(pressedScale, scaleYAnimationSpec) }
+        gestureScaleJob = animationScope.launch {
+            cancelAndJoinPriorJobs(cancelTransition = false, cancelDrag = false, cancelScale = true)
+            coroutineScope {
+                launch { pressProgressAnimation.animateTo(1f, pressProgressAnimationSpec) }
+                launch { scaleXAnimation.animateTo(pressedScale, scaleXAnimationSpec) }
+                launch { scaleYAnimation.animateTo(pressedScale, scaleYAnimationSpec) }
+            }
         }
     }
 
     fun release() {
-        animationScope.launch {
+        if (isReducedMotion) return
+        gestureScaleJob = animationScope.launch {
+            cancelAndJoinPriorJobs(cancelTransition = false, cancelDrag = false, cancelScale = true)
             delay(16L)
             val threshold = (valueRange.endInclusive - valueRange.start) * 0.05f
             if (valueAnimation.isRunning || abs(value - valueAnimation.targetValue) > threshold) {
@@ -140,55 +174,97 @@ class DampedDragAnimation(
                     .filter { abs(it - valueAnimation.targetValue) < threshold }
                     .first()
             }
-            launch { pressProgressAnimation.animateTo(0f, pressProgressAnimationSpec) }
-            launch { scaleXAnimation.animateTo(initialScale, scaleXAnimationSpec) }
-            launch { scaleYAnimation.animateTo(initialScale, scaleYAnimationSpec) }
+            coroutineScope {
+                launch { pressProgressAnimation.animateTo(0f, pressProgressAnimationSpec) }
+                launch { scaleXAnimation.animateTo(initialScale, scaleXAnimationSpec) }
+                launch { scaleYAnimation.animateTo(initialScale, scaleYAnimationSpec) }
+            }
         }
     }
 
     fun updateValue(value: Float) {
         val target = value.coerceIn(valueRange)
-        animationScope.launch {
-            launch { valueAnimation.animateTo(target, valueAnimationSpec) { updateVelocity() } }
-        }
-    }
-
-    fun animateToValue(value: Float) {
-        animationScope.launch {
-            mutatorMutex.mutate {
-                // 1. Immediately swell and dissolve white pill into 3D liquid glass lens
-                launch { pressProgressAnimation.animateTo(1f, pressProgressAnimationSpec) }
-                launch { scaleXAnimation.animateTo(pressedScale, scaleXAnimationSpec) }
-                launch { scaleYAnimation.animateTo(pressedScale, scaleYAnimationSpec) }
-
-                val target = value.coerceIn(valueRange)
-                val animJob = launch { valueAnimation.animateTo(target, valueAnimationSpec) }
-                if (velocity != 0f) {
-                    launch { velocityAnimation.animateTo(0f, velocityAnimationSpec) }
-                }
-
-                // 2. Hold liquid glass state across the entire transit until reaching the destination
-                val threshold = (valueRange.endInclusive - valueRange.start) * 0.05f
-                snapshotFlow { valueAnimation.value }
-                    .filter { abs(it - target) < threshold }
-                    .first()
-
-                // 3. Upon arrival: smoothly settle and solidify back into resting pill
-                launch { pressProgressAnimation.animateTo(0f, pressProgressAnimationSpec) }
-                launch { scaleXAnimation.animateTo(initialScale, scaleXAnimationSpec) }
-                launch { scaleYAnimation.animateTo(initialScale, scaleYAnimationSpec) }
-                animJob.join()
+        dragPositionJob = animationScope.launch {
+            cancelAndJoinPriorJobs(cancelTransition = false, cancelDrag = true, cancelScale = false)
+            valueAnimation.animateTo(target, valueAnimationSpec) {
+                updateVelocity(this@launch)
             }
         }
     }
 
-    private fun updateVelocity() {
+    fun cancelAndRestore() {
+        activeTransitionJob = animationScope.launch {
+            cancelAndJoinPriorJobs()
+            mutatorMutex.mutate {
+                coroutineScope {
+                    val target = gestureStartFraction.coerceIn(valueRange)
+                    val animJob = launch { valueAnimation.animateTo(target, valueAnimationSpec) }
+                    if (velocity != 0f) {
+                        launch { velocityAnimation.animateTo(0f, velocityAnimationSpec) }
+                    }
+                    // Direct collapse to resting state without secondary 1.5x swell
+                    launch { pressProgressAnimation.animateTo(0f, pressProgressAnimationSpec) }
+                    launch { scaleXAnimation.animateTo(initialScale, scaleXAnimationSpec) }
+                    launch { scaleYAnimation.animateTo(initialScale, scaleYAnimationSpec) }
+                    animJob.join()
+                }
+            }
+        }
+    }
+
+    fun snapImmediate(target: Float) {
+        activeTransitionJob = animationScope.launch {
+            cancelAndJoinPriorJobs()
+            mutatorMutex.mutate {
+                val clamped = target.coerceIn(valueRange)
+                valueAnimation.snapTo(clamped)
+                velocityAnimation.snapTo(0f)
+                pressProgressAnimation.snapTo(0f)
+                scaleXAnimation.snapTo(initialScale)
+                scaleYAnimation.snapTo(initialScale)
+            }
+        }
+    }
+
+    fun animateToValue(value: Float) {
+        activeTransitionJob = animationScope.launch {
+            cancelAndJoinPriorJobs()
+            mutatorMutex.mutate {
+                coroutineScope {
+                    // 1. Immediately swell and dissolve white pill into 3D liquid glass lens
+                    launch { pressProgressAnimation.animateTo(1f, pressProgressAnimationSpec) }
+                    launch { scaleXAnimation.animateTo(pressedScale, scaleXAnimationSpec) }
+                    launch { scaleYAnimation.animateTo(pressedScale, scaleYAnimationSpec) }
+
+                    val target = value.coerceIn(valueRange)
+                    val animJob = launch { valueAnimation.animateTo(target, valueAnimationSpec) }
+                    if (velocity != 0f) {
+                        launch { velocityAnimation.animateTo(0f, velocityAnimationSpec) }
+                    }
+
+                    // 2. Hold liquid glass state across the entire transit until reaching the destination
+                    val threshold = (valueRange.endInclusive - valueRange.start) * 0.05f
+                    snapshotFlow { valueAnimation.value }
+                        .filter { abs(it - target) < threshold }
+                        .first()
+
+                    // 3. Upon arrival: smoothly settle and solidify back into resting pill
+                    launch { pressProgressAnimation.animateTo(0f, pressProgressAnimationSpec) }
+                    launch { scaleXAnimation.animateTo(initialScale, scaleXAnimationSpec) }
+                    launch { scaleYAnimation.animateTo(initialScale, scaleYAnimationSpec) }
+                    animJob.join()
+                }
+            }
+        }
+    }
+
+    private fun updateVelocity(scope: CoroutineScope) {
         velocityTracker.addPosition(
             timeMark.elapsedNow().inWholeMilliseconds,
             Offset(value, 0f),
         )
         val targetVelocity = velocityTracker.calculateVelocity().x / (valueRange.endInclusive - valueRange.start)
-        animationScope.launch { velocityAnimation.animateTo(targetVelocity, velocityAnimationSpec) }
+        scope.launch { velocityAnimation.animateTo(targetVelocity, velocityAnimationSpec) }
     }
 }
 

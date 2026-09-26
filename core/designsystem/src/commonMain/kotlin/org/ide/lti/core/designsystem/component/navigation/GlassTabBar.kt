@@ -57,6 +57,7 @@ import org.ide.lti.core.designsystem.theme.GlassMaterialStyles
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.HazeShape
+import org.ide.lti.core.designsystem.theme.sceneHazeInput
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
@@ -351,7 +352,7 @@ private fun Modifier.tabGlassSurface(
     val theme = GlassTheme.appTheme
     return if (GlassTheme.effectsEnabled) {
         this.hazeGlass(
-            input = HazeInput.Sources(GlassTheme.hazeState),
+            input = sceneHazeInput(GlassTheme.hazeState),
             style = remember(theme, shape, tintColor) {
                 GlassMaterialStyles.baseStyle(
                     theme = theme,

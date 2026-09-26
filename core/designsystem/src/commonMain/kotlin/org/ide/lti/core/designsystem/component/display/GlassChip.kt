@@ -43,6 +43,7 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.HazeShape
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.sceneHazeInput
 
 /**
  * Type-safe interaction mode for [GlassChip].
@@ -115,7 +116,7 @@ fun GlassChip(
     val theme = GlassTheme.appTheme
     val chipModifier = if (GlassTheme.effectsEnabled) {
         Modifier.hazeGlass(
-            input = HazeInput.Sources(GlassTheme.hazeState),
+            input = sceneHazeInput(GlassTheme.hazeState),
             style = remember(theme, shape) {
                 org.ide.lti.core.designsystem.theme.GlassMaterialStyles.baseStyle(
                     theme = theme,

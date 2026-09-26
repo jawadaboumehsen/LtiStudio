@@ -34,7 +34,6 @@ import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
 import org.ide.lti.feature.workspace.studio.ActivityUiState
 import org.ide.lti.feature.workspace.studio.ConnectionUiState
@@ -74,11 +73,13 @@ public fun StudioStatusBar(
                     text = "|",
                     color = MaterialTheme.colorScheme.outlineVariant,
                     fontFamily = ideFontFamily(),
+                    fontSize = FontSize.Micro,
                 )
                 Text(
                     text = "Design concept · Sample data",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontFamily = ideFontFamily(),
+                    fontSize = FontSize.Micro,
                 )
             }
         },
@@ -160,7 +161,8 @@ private fun StatusBarProblems(problemCount: Int, onOpenProblems: (() -> Unit)?) 
         Text(
             text = "Problems: $problemCount",
             color = if (problemCount > 0) GlassTheme.diagnosticColors.warning else MaterialTheme.colorScheme.onSurfaceVariant,
-            fontFamily = codeFontFamily(),
+            fontFamily = ideFontFamily(),
+            fontSize = FontSize.Micro,
             fontWeight = FontWeight.Medium,
         )
     }
@@ -196,7 +198,8 @@ private fun StatusBarActivity(activity: ActivityUiState, onOpenActivity: (() -> 
         Text(
             text = "Activity: $activityText",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontFamily = codeFontFamily(),
+            fontFamily = ideFontFamily(),
+            fontSize = FontSize.Micro,
         )
     }
 }
@@ -223,6 +226,7 @@ private fun StatusBarConnection(connection: ConnectionUiState) {
             text = connText,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontFamily = ideFontFamily(),
+            fontSize = FontSize.Micro,
         )
     }
 }

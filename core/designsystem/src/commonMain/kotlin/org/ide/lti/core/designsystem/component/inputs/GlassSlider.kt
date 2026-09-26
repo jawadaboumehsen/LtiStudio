@@ -49,6 +49,7 @@ import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.sceneHazeInput
 import kotlin.math.roundToInt
 
 /**
@@ -145,7 +146,7 @@ fun GlassSlider(
         val theme = GlassTheme.appTheme
         val thumbModifier = if (GlassTheme.effectsEnabled) {
             Modifier.hazeGlass(
-                input = HazeInput.Sources(GlassTheme.hazeState),
+                input = sceneHazeInput(GlassTheme.hazeState),
                 style = remember(theme) {
                     org.ide.lti.core.designsystem.theme.GlassMaterialStyles.clearStyle(
                         theme = theme,

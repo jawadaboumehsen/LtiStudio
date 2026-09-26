@@ -48,6 +48,7 @@ import org.ide.lti.core.designsystem.component.primitives.*
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.HazeShape
+import org.ide.lti.core.designsystem.theme.sceneHazeInput
 import org.ide.lti.core.designsystem.theme.Spacing
 
 /**
@@ -92,7 +93,7 @@ fun GlassDialog(
 
     val dialogSurfaceModifier = if (GlassTheme.effectsEnabled && PlatformDialogPolicy.supportsCrossWindowBlur) {
         Modifier.hazeGlass(
-            input = HazeInput.Sources(GlassTheme.hazeState),
+            input = sceneHazeInput(GlassTheme.hazeState),
             style = remember(theme, shape) {
                 org.ide.lti.core.designsystem.theme.GlassMaterialStyles.baseStyle(
                     theme = theme,
@@ -183,7 +184,7 @@ fun GlassLoadingDialog(
             val theme = GlassTheme.appTheme
             val loadingSurfaceModifier = if (GlassTheme.effectsEnabled && PlatformDialogPolicy.supportsCrossWindowBlur) {
                 Modifier.hazeGlass(
-                    input = HazeInput.Sources(GlassTheme.hazeState),
+                    input = sceneHazeInput(GlassTheme.hazeState),
                     style = remember(theme) {
                         org.ide.lti.core.designsystem.theme.GlassMaterialStyles.baseStyle(
                             theme = theme,
