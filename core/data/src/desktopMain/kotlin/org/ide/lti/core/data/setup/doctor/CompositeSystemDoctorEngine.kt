@@ -41,7 +41,6 @@ public class CompositeSystemDoctorEngine(
             SelinuxAttrInspector(cli),
             ArchiveToolsInspector(cli),
             TransferToolsInspector(cli),
-            SudoNoninteractiveInspector(cli),
             KernelFuseInspector(cli),
             LoopMountInspector(cli),
             StorageHeadroomInspector(cli),
@@ -64,26 +63,49 @@ public class CompositeSystemDoctorEngine(
     ): List<DiagnosticCheckItem> {
         val home = resolveHome(distro)
         val binDir = "$home/LtiRomTools/bin"
-        val findRes = cli.execute(
+        val sysRes = cli.execute(
             distro,
             listOf(
                 "find", "-L",
-                "/usr/bin", "/usr/local/bin", "/bin", binDir, "/usr/lib/jvm", "/dev",
+                "/usr/bin", "/usr/local/bin", "/bin", "/usr/lib/jvm",
                 "-maxdepth", "1",
                 "-printf", "%f\n"
             )
         )
-        val available = findRes.output.lineSequence()
+        val sysCommands = sysRes.output.lineSequence()
             .map { it.trim() }
             .filter { it.isNotEmpty() }
             .toSet()
+
+        val binRes = cli.execute(
+            distro,
+            listOf("find", "-L", binDir, "-maxdepth", "1", "-printf", "%f\n")
+        )
+        val projectBinaries = if (binRes.exitCode == 0) {
+            binRes.output.lineSequence().map { it.trim() }.filter { it.isNotEmpty() }.toSet()
+        } else {
+            emptySet()
+        }
+
+        val devRes = cli.execute(
+            distro,
+            listOf("find", "-L", "/dev", "-maxdepth", "1", "-printf", "%f\n")
+        )
+        val devNodes = if (devRes.exitCode == 0) {
+            devRes.output.lineSequence().map { it.trim() }.filter { it.isNotEmpty() }.toSet()
+        } else {
+            emptySet()
+        }
 
         val context = DiagnosticContext(
             distro = distro,
             home = home,
             binDir = binDir,
             binariesPresent = binariesPresent,
-            availableCommands = available,
+            systemCommands = sysCommands,
+            projectBinaries = projectBinaries,
+            deviceNodes = devNodes,
+            availableCommands = sysCommands,
         )
 
         val semaphore = Semaphore(4)

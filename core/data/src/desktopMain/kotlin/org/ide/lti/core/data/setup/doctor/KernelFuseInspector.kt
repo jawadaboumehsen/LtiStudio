@@ -17,13 +17,13 @@ public class KernelFuseInspector(
 
     override suspend fun inspect(context: DiagnosticContext): DiagnosticCheckItem {
         val distro = context.distro
-        val fuseDevOk = if (context.availableCommands.isNotEmpty()) {
-            "fuse" in context.availableCommands
+        val fuseDevOk = if (context.deviceNodes.isNotEmpty()) {
+            "fuse" in context.deviceNodes
         } else {
             cli.execute(distro, listOf("test", "-r", "/dev/fuse")).exitCode == 0
         }
-        val hasFuseCli = if (context.availableCommands.isNotEmpty()) {
-            "fusermount3" in context.availableCommands || "fusermount" in context.availableCommands
+        val hasFuseCli = if (context.systemCommands.isNotEmpty()) {
+            "fusermount3" in context.systemCommands || "fusermount" in context.systemCommands
         } else {
             cli.execute(distro, listOf("which", "fusermount3")).exitCode == 0 ||
                 cli.execute(distro, listOf("which", "fusermount")).exitCode == 0

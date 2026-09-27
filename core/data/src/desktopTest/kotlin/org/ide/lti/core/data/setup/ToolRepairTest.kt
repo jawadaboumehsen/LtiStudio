@@ -67,7 +67,7 @@ class ToolRepairTest {
         val startedRuns = mutableListOf<StartRunRequest>()
 
         override suspend fun checkHealth(): WslServerInfo = WslServerInfo(
-            status = "HEALTHY",
+            status = "UP",
             distro = "Ubuntu",
             kernelRelease = "5.15.0",
             architecture = "x86_64",

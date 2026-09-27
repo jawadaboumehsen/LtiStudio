@@ -7,8 +7,10 @@ import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.model.setup.AttemptStatus
 import org.ide.lti.core.model.setup.ChildIntentRecord
 import org.ide.lti.core.model.setup.ChildTerminalProof
+import org.ide.lti.core.model.setup.PersistedSetupPlan
 import org.ide.lti.core.model.setup.PersistedSubmoduleState
 import org.ide.lti.core.model.setup.PersistedToolState
+import org.ide.lti.core.model.setup.PersistedUserHandoff
 import org.ide.lti.core.model.setup.SetupAttemptRecord
 import org.ide.lti.core.model.setup.ToolchainPersistenceState
 
@@ -100,6 +102,12 @@ public class ToolchainSetupRepositoryImpl(
             else -> null
         }
     )
+
+    override suspend fun recordAttemptAwaitingUserAction(
+        attemptId: String,
+        handoff: PersistedUserHandoff,
+        plan: PersistedSetupPlan,
+    ): Result<Unit> = preferencesDataSource.recordAttemptAwaitingUserAction(attemptId, handoff, plan)
 
     override suspend fun setRecoveryBlocked(blocked: Boolean, reason: String?): Result<Unit> =
         preferencesDataSource.setRecoveryBlocked(blocked, reason)

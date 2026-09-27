@@ -36,6 +36,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.math.abs
 import kotlin.time.TimeSource
 
@@ -170,9 +171,11 @@ class DampedDragAnimation(
             delay(16L)
             val threshold = (valueRange.endInclusive - valueRange.start) * 0.05f
             if (valueAnimation.isRunning || abs(value - valueAnimation.targetValue) > threshold) {
-                snapshotFlow { valueAnimation.value }
-                    .filter { abs(it - valueAnimation.targetValue) < threshold }
-                    .first()
+                withTimeoutOrNull(500L) {
+                    snapshotFlow { valueAnimation.value }
+                        .filter { abs(it - valueAnimation.targetValue) < threshold }
+                        .first()
+                }
             }
             coroutineScope {
                 launch { pressProgressAnimation.animateTo(0f, pressProgressAnimationSpec) }

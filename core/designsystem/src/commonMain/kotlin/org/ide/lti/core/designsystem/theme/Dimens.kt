@@ -155,9 +155,6 @@ object ComponentSize {
     val CommandPaletteMinWidth: Dp = 200.dp
     val CommandPaletteMaxWidth: Dp = 320.dp
     val CommandPaletteHeight: Dp = 28.dp
-    val SplashCardWidth: Dp = 640.dp
-    val SplashCardHeight: Dp = 400.dp
-    val SplashLogoSize: Dp = 96.dp
     val PluginSidebarWidth: Dp = 208.dp
     val PluginInspectorWidth: Dp = 380.dp
     val PluginTableRowHeight: Dp = 54.dp

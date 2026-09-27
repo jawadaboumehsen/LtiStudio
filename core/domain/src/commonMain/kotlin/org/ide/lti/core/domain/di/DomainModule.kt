@@ -72,7 +72,6 @@ import org.ide.lti.core.domain.usecase.workspace.OpenWorkspaceByPathUseCase
 import org.ide.lti.core.domain.usecase.workspace.OpenWorkspaceUseCase
 import org.ide.lti.core.domain.usecase.workspace.RemoveRecentWorkspaceUseCase
 import org.ide.lti.core.domain.usecase.workspace.SaveConfigurationSnapshotUseCase
-import org.ide.lti.core.domain.usecase.workspace.SelectAndOpenDirectoryUseCase
 import org.ide.lti.core.domain.workspace.WorkspaceManager
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf
@@ -94,7 +93,6 @@ val DomainModule = module {
     singleOf(::DiscoverWorkdirWorkspacesUseCase)
     singleOf(::OpenWorkspaceUseCase)
     singleOf(::OpenWorkspaceByPathUseCase)
-    singleOf(::SelectAndOpenDirectoryUseCase)
     // Explicit: `singleOf` would try to resolve the defaulted `appVersion: String` from Koin.
     single {
         CreateWorkspaceUseCase(

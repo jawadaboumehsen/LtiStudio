@@ -22,7 +22,6 @@ fun NavController.navigateToSetup(navOptions: NavOptions? = null) {
 enum class SetupTab(val id: String) {
     PROJECTS("projects"),
     ENVIRONMENT("environment"),
-    LAUNCHPAD("launchpad"),
     TOOLS("tools"),
     RECOVERY("recovery");
 

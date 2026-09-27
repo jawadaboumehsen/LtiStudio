@@ -38,6 +38,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import dev.chrisbanes.haze.glass.GlassReducedMotionPolicy
 import org.ide.lti.core.designsystem.component.actions.GlassSecondaryButton
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.GlassChip
@@ -323,11 +324,20 @@ private fun ToolStatusIndicator(
         contentAlignment = Alignment.Center,
     ) {
         if (status == StepStatus.RUNNING) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(IconSize.Small),
-                strokeWidth = StrokeWidth.Hairline,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
+            val isReducedMotion = GlassTheme.reducedMotionPolicy == GlassReducedMotionPolicy.Reduced
+            if (isReducedMotion) {
+                Text(
+                    text = "Checking…",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            } else {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(IconSize.Small),
+                    strokeWidth = StrokeWidth.Hairline,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
         } else {
             Box(
                 modifier = Modifier
@@ -408,7 +418,7 @@ private fun ToolItemDetails(
                 text = tool.path ?: "~/LtiRomTools/bin/${tool.binaryName}",
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = codeFontFamily(),
-                color = if (tool.status == StepStatus.SUCCESS) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 softWrap = false,
                 overflow = TextOverflow.Ellipsis,

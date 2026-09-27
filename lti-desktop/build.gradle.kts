@@ -31,6 +31,7 @@ kotlin {
             implementation(projects.core.designsystem)
 
             implementation(projects.ltiShared)
+            implementation(projects.feature.setup)
 
             implementation(compose.material3)
             implementation(compose.foundation)

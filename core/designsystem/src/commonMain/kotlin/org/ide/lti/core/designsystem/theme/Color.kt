@@ -35,7 +35,7 @@ private val md_theme_light_surfaceVariant = Color(0xFFE8F0FD)
 private val md_theme_light_onSurfaceVariant = Color(0xFF4A5568)
 private val md_theme_light_outline = Color(0xFFD0D7DE)
 private val md_theme_light_outlineVariant = Color(0xFFAFBFD0)
-private val md_theme_light_error = Color(0xFFCF222E)
+private val md_theme_light_error = Color(0xFFA6101D)
 private val md_theme_light_onError = Color(0xFFFFFFFF)
 private val md_theme_light_scrim = Color(0xFF000000)
 private val md_theme_light_surfaceContainerLowest = Color(0xFFFFFFFF)
@@ -57,7 +57,7 @@ private val md_theme_dark_surfaceVariant = Color(0xFF21262D)
 private val md_theme_dark_onSurfaceVariant = Color(0xFF969DAA)
 private val md_theme_dark_outline = Color(0xFF30363D)
 private val md_theme_dark_outlineVariant = Color(0xFF21262D)
-private val md_theme_dark_error = Color(0xFFF85149)
+private val md_theme_dark_error = Color(0xFFFFA49E)
 private val md_theme_dark_onError = Color(0xFF0D1117)
 private val md_theme_dark_scrim = Color(0xFF000000)
 private val md_theme_dark_surfaceContainerLowest = Color(0xFF0D1117)
@@ -79,7 +79,7 @@ private val md_theme_blue_surfaceVariant = Color(0xFF121B2C)
 private val md_theme_blue_onSurfaceVariant = Color(0xFF94A9C9)
 private val md_theme_blue_outline = Color(0xFF223554)
 private val md_theme_blue_outlineVariant = Color(0xFF2C436B)
-private val md_theme_blue_error = Color(0xFFF85149)
+private val md_theme_blue_error = Color(0xFFFFA49E)
 private val md_theme_blue_onError = Color(0xFF060B14)
 private val md_theme_blue_scrim = Color(0xFF000000)
 private val md_theme_blue_surfaceContainerLowest = Color(0xFF060B14)
@@ -257,11 +257,6 @@ internal val BlueDiagnosticColors = DiagnosticColors(
 /** Brand seed - logo badge gradient end color, matches the Blue theme's primary. */
 val BrandLogoGradientEnd = Color(0xFF38BDF8)
 
-/** Fleet-inspired decorative accent colors for the splash screen's ambient glow and progress bar. */
-object FleetAccentColors {
-    val Blue = Color(0xFF3574F0)
-    val Cyan = Color(0xFF38BDF8)
-}
 
 /** Centralized token colors for brand assets and logos. */
 object BrandColors {

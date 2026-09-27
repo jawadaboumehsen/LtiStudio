@@ -1,39 +1,36 @@
 package org.ide.lti.core.data.remote
 
-import io.ltirom.tooling.core.ports.DaemonSupervisorPort
 import io.ltirom.tooling.core.ports.RemoteTransportPort
 import io.ltirom.tooling.core.remote.ToolExecutionRequest
-import io.ltirom.tooling.core.remote.ToolExecutionResponse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.ide.lti.core.data.setup.ToolchainReadinessPolicy
-import org.ide.lti.core.domain.ports.DaemonProbeStatus
-import org.ide.lti.core.domain.ports.EnvironmentProbePort
+import org.ide.lti.core.domain.ports.DaemonFailureCategory
+import org.ide.lti.core.domain.ports.ToolchainFailureCategory
 import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
-import org.ide.lti.core.domain.ports.WslPresencePort
-import org.ide.lti.core.domain.setup.ToolCapabilities
+import org.ide.lti.core.domain.setup.SetupStepStage
+import org.ide.lti.core.domain.setup.StepStatus
+import org.ide.lti.core.domain.setup.ToolchainProvisioningService
+import org.ide.lti.core.domain.setup.ToolchainSetupState
 import org.ide.lti.core.model.setup.EnvironmentReadiness
 import org.ide.lti.core.model.setup.EnvironmentReadinessState
 import org.ide.lti.core.model.workspace.Workspace
 
 /**
- * Adapter implementing [EnvironmentReadinessPort] by querying WSL status, the daemon, and remote tool availability.
+ * Adapter implementing [EnvironmentReadinessPort] by delegating host readiness checks to [ToolchainProvisioningService]
+ * and performing workspace-specific structure, manifest, and cryptographic key validation.
  */
 public class EnvironmentReadinessAdapter(
-    private val wslPresence: WslPresencePort,
-    private val supervisor: DaemonSupervisorPort,
+    private val toolchainService: ToolchainProvisioningService,
     private val transport: RemoteTransportPort,
-    private val probePort: EnvironmentProbePort? = null,
     private val requiredProductTools: Set<String> = DEFAULT_REQUIRED_PRODUCT_TOOLS,
-    private val requiredHostPackages: Set<String> = DEFAULT_REQUIRED_HOST_PACKAGES
 ) : EnvironmentReadinessPort {
 
     public companion object {
         public const val WORK_DIR_NAME: String = "LtiRomWorkDir"
         public val DEFAULT_REQUIRED_PRODUCT_TOOLS: Set<String> = ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS
         public val DEFAULT_REQUIRED_HOST_PACKAGES: Set<String> = ToolchainReadinessPolicy.REQUIRED_HOST_PACKAGES
-        private const val EROFS_TOOL_ID: String = "mkfs.erofs"
     }
 
     private val _readiness = MutableStateFlow(
@@ -43,7 +40,8 @@ public class EnvironmentReadinessAdapter(
     override fun observe(): Flow<EnvironmentReadiness> = _readiness.asStateFlow()
 
     override suspend fun refresh(): EnvironmentReadiness {
-        val result = evaluateEnvironment()
+        val toolchainState = toolchainService.checkStatus()
+        val result = mapToolchainStateToReadiness(toolchainState)
         _readiness.value = result
         return result
     }
@@ -55,6 +53,96 @@ public class EnvironmentReadinessAdapter(
         }
 
         return validateWorkspace(workspace)
+    }
+
+    private fun mapToolchainStateToReadiness(state: ToolchainSetupState): EnvironmentReadiness {
+        if (requiredProductTools.isEmpty()) {
+            return EnvironmentReadiness(
+                state = EnvironmentReadinessState.TOOLS_MISSING,
+                failingCheck = "Required product tools inventory is empty",
+                remediation = "Configure required product tools inventory"
+            )
+        }
+
+        val wslStep = state.steps.firstOrNull { it.stage == SetupStepStage.WSL_DETECTION }
+        if (wslStep?.status == StepStatus.FAILED) {
+            return EnvironmentReadiness(
+                state = EnvironmentReadinessState.ENV_ABSENT,
+                failingCheck = wslStep.description,
+                remediation = wslStep.error ?: "Install WSL 2 and register an Ubuntu distribution",
+            )
+        }
+
+        val serverStep = state.steps.firstOrNull { it.stage == SetupStepStage.SERVER_CONNECTIVITY }
+        if (serverStep?.status == StepStatus.FAILED) {
+            val failureCategory = serverStep.failureCategory ?: DaemonFailureCategory.UNREACHABLE
+            return when (failureCategory) {
+                DaemonFailureCategory.UNSUPPORTED_JAVA -> EnvironmentReadiness(
+                    state = EnvironmentReadinessState.TOOLS_INCOMPATIBLE,
+                    failingCheck = serverStep.description,
+                    remediation = "Install Java ${ToolchainReadinessPolicy.MIN_JAVA_VERSION}+ in WSL distribution",
+                )
+                DaemonFailureCategory.UNHEALTHY_STATUS, DaemonFailureCategory.UNRECOGNIZED_STATUS -> EnvironmentReadiness(
+                    state = EnvironmentReadinessState.SERVICE_UNHEALTHY,
+                    failingCheck = serverStep.description,
+                    remediation = "Check daemon logs and restart the daemon",
+                )
+                DaemonFailureCategory.UNREACHABLE -> EnvironmentReadiness(
+                    state = EnvironmentReadinessState.SERVICE_UNREACHABLE,
+                    failingCheck = serverStep.description,
+                    remediation = "Start the LtiRomServer daemon or verify WSL connectivity",
+                )
+                DaemonFailureCategory.COMPATIBILITY_MODE -> EnvironmentReadiness(
+                    state = EnvironmentReadinessState.SERVICE_UNHEALTHY,
+                    failingCheck = serverStep.description,
+                    remediation = "Verify daemon version and check daemon logs",
+                )
+            }
+        }
+
+        val toolchainStep = state.steps.firstOrNull { it.stage == SetupStepStage.TOOLCHAIN_COMPILATION }
+        if (toolchainStep?.status == StepStatus.FAILED) {
+            val isErofs = toolchainStep.toolchainFailureCategory == ToolchainFailureCategory.EROFS_INCOMPATIBLE
+            val missing = (requiredProductTools - state.publishedToolIds)
+            return if (isErofs) {
+                EnvironmentReadiness(
+                    state = EnvironmentReadinessState.TOOLS_INCOMPATIBLE,
+                    failingCheck = toolchainStep.description,
+                    remediation = "Rebuild toolchain with vendored erofs-utils",
+                )
+            } else {
+                EnvironmentReadiness(
+                    state = EnvironmentReadinessState.TOOLS_MISSING,
+                    failingCheck = toolchainStep.description,
+                    remediation = "Run toolchain setup to compile and install missing tools",
+                    missingToolIds = missing,
+                )
+            }
+        }
+
+        val doctorStep = state.steps.firstOrNull { it.stage == SetupStepStage.SYSTEM_DIAGNOSTICS }
+        if (doctorStep?.status == StepStatus.FAILED) {
+            return EnvironmentReadiness(
+                state = EnvironmentReadinessState.TOOLS_INCOMPATIBLE,
+                failingCheck = doctorStep.description,
+                remediation = "Run pre-flight doctor checks and apply repairs",
+            )
+        }
+
+        if (state.canLaunchWorkspace) {
+            val workDir = state.workDirLinuxPath
+                ?: state.userHome?.let { "$it/$WORK_DIR_NAME" }
+            return EnvironmentReadiness(
+                state = EnvironmentReadinessState.READY,
+                workDirLinuxPath = workDir,
+            )
+        }
+
+        return EnvironmentReadiness(
+            state = EnvironmentReadinessState.TOOLS_MISSING,
+            failingCheck = "Environment verification incomplete",
+            remediation = "Run environment check to verify readiness",
+        )
     }
 
     private suspend fun validateWorkspace(workspace: Workspace): EnvironmentReadiness {
@@ -134,179 +222,5 @@ public class EnvironmentReadinessAdapter(
             )
         )
         return check.exitCode == 0
-    }
-
-    private suspend fun evaluateEnvironment(): EnvironmentReadiness {
-        if (requiredProductTools.isEmpty()) {
-            return EnvironmentReadiness(
-                state = EnvironmentReadinessState.TOOLS_MISSING,
-                failingCheck = "Required product tools inventory is empty",
-                remediation = "Configure required product tools inventory"
-            )
-        }
-
-        if (probePort != null) {
-            val probeResult = probePort.probe()
-            if (probeResult.distro == null) {
-                return EnvironmentReadiness(
-                    state = EnvironmentReadinessState.ENV_ABSENT,
-                    failingCheck = "WSL 2 distribution not found",
-                    remediation = "Install WSL 2 and register an Ubuntu distribution"
-                )
-            }
-            if (probeResult.daemon is DaemonProbeStatus.Failed) {
-                val reason = (probeResult.daemon as DaemonProbeStatus.Failed).reason
-                return EnvironmentReadiness(
-                    state = EnvironmentReadinessState.SERVICE_UNREACHABLE,
-                    failingCheck = "LtiRomServer daemon unreachable: $reason",
-                    remediation = "Start the LtiRomServer daemon or verify WSL connectivity"
-                )
-            }
-            val missing = requiredProductTools - probeResult.publishedTools
-            if (missing.isNotEmpty()) {
-                return EnvironmentReadiness(
-                    state = EnvironmentReadinessState.TOOLS_MISSING,
-                    failingCheck = "Required tools missing: ${missing.sorted().joinToString(", ")}",
-                    remediation = "Run toolchain setup to compile and install missing tools",
-                    missingToolIds = missing
-                )
-            }
-            val erofsCheck = probeErofs()
-            if (!isErofsCompatible(erofsCheck)) {
-                return EnvironmentReadiness(
-                    state = EnvironmentReadinessState.TOOLS_INCOMPATIBLE,
-                    failingCheck = "mkfs.erofs lacks required ${ToolchainReadinessPolicy.EROFS_REQUIRED_FLAG} support",
-                    remediation = "Rebuild toolchain with vendored erofs-utils"
-                )
-            }
-            val workDir = probeResult.home?.let { "$it/$WORK_DIR_NAME" }
-            return EnvironmentReadiness(
-                state = EnvironmentReadinessState.READY,
-                workDirLinuxPath = workDir,
-            )
-        }
-        val failure = checkDistroAndDaemon() ?: checkToolsAndCompatibility()
-        return failure ?: EnvironmentReadiness(
-            state = EnvironmentReadinessState.READY,
-            workDirLinuxPath = resolveWorkDir(),
-        )
-    }
-
-    /** Resolves `$HOME/LtiRomWorkDir` on the service host via coreutils; null when HOME is unknown. */
-    private suspend fun resolveWorkDir(): String? {
-        val res = transport.execute(
-            ToolExecutionRequest(
-                toolId = "printenv",
-                arguments = listOf("HOME"),
-                workingDirectory = "/"
-            )
-        )
-        val home = res.stdout.trim()
-        return if (res.exitCode == 0 && home.startsWith("/")) "$home/$WORK_DIR_NAME" else null
-    }
-
-    private suspend fun checkDistroAndDaemon(): EnvironmentReadiness? {
-        if (!wslPresence.hasDistro()) {
-            return EnvironmentReadiness(
-                state = EnvironmentReadinessState.ENV_ABSENT,
-                failingCheck = "WSL 2 distribution not found",
-                remediation = "Install WSL 2 and register an Ubuntu distribution"
-            )
-        }
-        return evaluateDaemonHealth()
-    }
-
-    private suspend fun evaluateDaemonHealth(): EnvironmentReadiness? {
-        val started = runCatching { supervisor.ensureStarted() }
-        if (started.isFailure) {
-            return EnvironmentReadiness(
-                state = EnvironmentReadinessState.SERVICE_UNREACHABLE,
-                failingCheck = "LtiRomServer daemon unreachable: ${started.exceptionOrNull()?.message}",
-                remediation = "Start the LtiRomServer daemon or verify WSL connectivity"
-            )
-        }
-
-        val health = transport.checkHealth()
-        return when {
-            health == null -> EnvironmentReadiness(
-                state = EnvironmentReadinessState.SERVICE_UNREACHABLE,
-                failingCheck = "Daemon health check failed: response was null",
-                remediation = "Start the LtiRomServer daemon or verify WSL connectivity"
-            )
-            health.status != "HEALTHY" -> EnvironmentReadiness(
-                state = EnvironmentReadinessState.SERVICE_UNREACHABLE,
-                failingCheck = "Daemon reported unhealthy status: ${health.status}",
-                remediation = "Check daemon logs and restart the daemon"
-            )
-            !ToolchainReadinessPolicy.isJavaVersionSupported(health.javaVersion) -> EnvironmentReadiness(
-                state = EnvironmentReadinessState.TOOLS_INCOMPATIBLE,
-                failingCheck = "Unsupported daemon Java runtime version: ${health.javaVersion}. " +
-                    "Requires Java >= ${ToolchainReadinessPolicy.MIN_JAVA_VERSION}",
-                remediation = "Install Java ${ToolchainReadinessPolicy.MIN_JAVA_VERSION}+ in WSL distribution"
-            )
-            else -> null
-        }
-    }
-
-    private suspend fun checkToolsAndCompatibility(): EnvironmentReadiness? {
-        val missing = checkMissingTools()
-        if (missing.isNotEmpty()) {
-            return EnvironmentReadiness(
-                state = EnvironmentReadinessState.TOOLS_MISSING,
-                failingCheck = "Required tools missing: ${missing.sorted().joinToString(", ")}",
-                remediation = "Run toolchain setup to compile and install missing tools",
-                missingToolIds = missing
-            )
-        }
-
-        val erofsCheck = probeErofs()
-        return if (!isErofsCompatible(erofsCheck)) {
-            EnvironmentReadiness(
-                state = EnvironmentReadinessState.TOOLS_INCOMPATIBLE,
-                failingCheck = "mkfs.erofs probe failed or lacks required " +
-                    "${ToolchainReadinessPolicy.EROFS_REQUIRED_FLAG} support",
-                remediation = "Rebuild toolchain with vendored erofs-utils"
-            )
-        } else {
-            null
-        }
-    }
-
-    /** Executes the domain-defined `mkfs.erofs` probe over the daemon transport. */
-    private suspend fun probeErofs() = transport.execute(
-        ToolExecutionRequest(
-            toolId = EROFS_TOOL_ID,
-            arguments = ToolCapabilities.probeArgumentsFor(EROFS_TOOL_ID),
-            workingDirectory = "/"
-        )
-    )
-
-    /** Accepted exit code from the capability inventory plus the vendored-flag policy. */
-    private fun isErofsCompatible(result: ToolExecutionResponse): Boolean =
-        ToolCapabilities.isAcceptedExitCode(EROFS_TOOL_ID, result.exitCode) &&
-            result.stdout.contains(ToolchainReadinessPolicy.EROFS_REQUIRED_FLAG)
-
-    private suspend fun checkMissingTools(): Set<String> {
-        val availableServerTools = transport.listTools()
-            .filter { it.installed }
-            .map { it.tool }
-            .toSet()
-
-        val missing = mutableSetOf<String>()
-        missing.addAll(requiredProductTools - availableServerTools)
-
-        for (pkg in requiredHostPackages) {
-            val checkRes = transport.execute(
-                ToolExecutionRequest(
-                    toolId = "which",
-                    arguments = listOf(pkg),
-                    workingDirectory = "/"
-                )
-            )
-            if (checkRes.exitCode != 0) {
-                missing.add(pkg)
-            }
-        }
-        return missing
     }
 }

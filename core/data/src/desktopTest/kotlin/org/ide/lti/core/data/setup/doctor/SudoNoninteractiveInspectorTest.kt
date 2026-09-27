@@ -10,7 +10,6 @@ import java.nio.charset.Charset
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -57,7 +56,7 @@ class SudoNoninteractiveInspectorTest {
     )
 
     @Test
-    fun `sudo -n true success produces SUCCESS status`() = runTest {
+    fun `sudo -n true success produces SUCCESS status without copyable sudoers command`() = runTest {
         val cli = MockCliExecutor(sudoSuccess = true)
         val inspector = SudoNoninteractiveInspector(cli)
 
@@ -66,14 +65,14 @@ class SudoNoninteractiveInspectorTest {
         assertEquals("sudo_noninteractive", result.id)
         assertEquals(DiagnosticCategory.OS_UTILITIES, result.category)
         assertEquals(StepStatus.SUCCESS, result.status)
-        assertTrue(result.detail.contains("Passwordless sudo configured"))
+        assertTrue(result.detail.contains("Headless non-interactive elevation active"))
         assertNull(result.copyableCommand)
         assertNull(result.remediation)
         assertTrue(cli.executedCommands.contains(listOf("sudo", "-n", "true")))
     }
 
     @Test
-    fun `sudo -n true failure produces WARNING status with one-time sudoers instruction`() = runTest {
+    fun `sudo -n true failure produces SUCCESS status informing interactive elevation without sudoers command`() = runTest {
         val cli = MockCliExecutor(sudoSuccess = false)
         val inspector = SudoNoninteractiveInspector(cli)
 
@@ -81,16 +80,15 @@ class SudoNoninteractiveInspectorTest {
 
         assertEquals("sudo_noninteractive", result.id)
         assertEquals(DiagnosticCategory.OS_UTILITIES, result.category)
-        assertEquals(StepStatus.WARNING, result.status)
-        assertTrue(result.detail.contains("Non-interactive sudo is not configured"))
-        assertNotNull(result.remediation)
-        assertNotNull(result.copyableCommand)
-        assertTrue(result.copyableCommand!!.contains("/etc/sudoers.d/ltirom"))
+        assertEquals(StepStatus.SUCCESS, result.status)
+        assertTrue(result.detail.contains("Interactive terminal elevation required"))
+        assertNull(result.remediation)
+        assertNull(result.copyableCommand)
         assertTrue(result.isOptionalForRuntime)
     }
 
     @Test
-    fun `WslPackageRemediator refuses to run when passwordless sudo fails and never falls back to wsl -u root`() = runTest {
+    fun `WslPackageRemediator requires terminal authorization for apt packages and never executes wsl -u root`() = runTest {
         val cli = MockCliExecutor(sudoSuccess = false)
         val remediator = WslPackageRemediator(cli)
 
@@ -105,50 +103,25 @@ class SudoNoninteractiveInspectorTest {
         val progressMessages = mutableListOf<String>()
         val success = remediator.remediate(createContext(), failedItems) { progressMessages.add(it) }
 
-        assertFalse(success, "Remediator must return false when sudo -n true fails")
+        assertFalse(success, "Remediator must return false for privileged actions requiring terminal authorization")
         assertTrue(
-            progressMessages.any { it.contains("/etc/sudoers.d/ltirom") || it.contains("Passwordless non-interactive sudo") },
-            "Must surface the one-time sudoers instruction: $progressMessages"
+            progressMessages.any { it.contains("requires administrator authorization in your WSL terminal") },
+            "Must surface terminal authorization requirement: $progressMessages"
+        )
+        // Verify zero sudoers suggestions
+        assertFalse(
+            progressMessages.any { it.contains("sudoers") || it.contains("NOPASSWD") },
+            "Must NEVER suggest sudoers modification in messages: $progressMessages"
         )
         // Verify it NEVER used user="root"
         assertFalse(
             cli.usersUsed.any { it == "root" },
             "WslPackageRemediator must NEVER use user='root' fallback: ${cli.usersUsed}"
         )
-        // Verify no apt-get command was actually executed
+        // Verify no apt-get command was executed silently in background
         assertFalse(
             cli.executedCommands.any { cmd -> cmd.contains("apt-get") },
-            "No apt-get command must run without passwordless sudo"
+            "No apt-get command must run headlessly in background"
         )
-    }
-
-    @Test
-    fun `WslPackageRemediator executes apt-get using sudo -n without user root when passwordless sudo passes`() = runTest {
-        val cli = MockCliExecutor(sudoSuccess = true)
-        val remediator = WslPackageRemediator(cli)
-
-        val failedItems = listOf(
-            DiagnosticCheckItem(
-                id = "host_compilers",
-                title = "Host Compilers",
-                status = StepStatus.FAILED
-            )
-        )
-
-        val progressMessages = mutableListOf<String>()
-        val success = remediator.remediate(createContext(), failedItems) { progressMessages.add(it) }
-
-        assertTrue(success, "Remediator must succeed when sudo -n true passes")
-        // Verify all apt-get commands used sudo -n and never user="root"
-        assertFalse(
-            cli.usersUsed.any { it == "root" },
-            "WslPackageRemediator must not specify user='root': ${cli.usersUsed}"
-        )
-        val aptCommands = cli.executedCommands.filter { cmd -> cmd.contains("apt-get") }
-        assertTrue(aptCommands.isNotEmpty(), "apt-get commands must be executed")
-        for (cmd in aptCommands) {
-            assertEquals("sudo", cmd[0], "apt-get command must start with sudo")
-            assertEquals("-n", cmd[1], "sudo command must specify -n for non-interactive execution")
-        }
     }
 }

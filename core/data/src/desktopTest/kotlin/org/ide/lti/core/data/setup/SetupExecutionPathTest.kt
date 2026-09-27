@@ -114,7 +114,7 @@ class SetupExecutionPathTest {
         private var sourcesSynced = false
 
         override suspend fun checkHealth(): WslServerInfo = WslServerInfo(
-            status = "HEALTHY",
+            status = "UP",
             distro = "Ubuntu",
             kernelRelease = "5.15.0",
             architecture = "x86_64",
@@ -166,6 +166,7 @@ class SetupExecutionPathTest {
                 request.toolId == "test" -> ToolExecutionResponse(0, "", "", 1L)
                 request.toolId == "which" -> ToolExecutionResponse(0, "/usr/bin/${request.arguments.firstOrNull()}", "", 1L)
                 request.toolId == "sudo" && request.arguments.contains("true") -> ToolExecutionResponse(0, "", "", 1L)
+                request.toolId == "mkfs.erofs" -> ToolExecutionResponse(0, "mkfs.erofs 1.7.1 --fs-config-file", "", 1L)
                 else -> ToolExecutionResponse(0, "success", "", 5L)
             }
         }
@@ -189,9 +190,12 @@ class SetupExecutionPathTest {
             endedAtEpochMs = 1100L
         )
 
+        var tools: List<ToolStatusInfo> = ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS.map {
+            ToolStatusInfo(tool = it, installed = true)
+        }
         override fun stream(request: ToolExecutionRequest): Flow<StreamEvent> = emptyFlow()
-        override suspend fun listTools(): List<ToolStatusInfo> = emptyList()
-        override suspend fun refreshTools(): List<ToolStatusInfo> = emptyList()
+        override suspend fun listTools(): List<ToolStatusInfo> = tools
+        override suspend fun refreshTools(): List<ToolStatusInfo> = tools
         override suspend fun uploadFile(remotePath: String, content: ByteArray): Boolean = true
         override suspend fun downloadFile(remotePath: String): ByteArray? = null
         override suspend fun shutdown(): Boolean = true
@@ -199,9 +203,9 @@ class SetupExecutionPathTest {
 
     private class FakePublicationPort : ToolPublicationPort {
         override suspend fun publish(toolsBinDir: String): PublishedTools =
-            PublishedTools(published = setOf("adb", "fastboot", "mkfs.erofs"), skipped = emptySet())
+            PublishedTools(published = ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS, skipped = emptySet())
 
-        override suspend fun resolvedTools(): Set<String> = setOf("adb", "fastboot", "mkfs.erofs")
+        override suspend fun resolvedTools(): Set<String> = ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS
     }
 
     @Test

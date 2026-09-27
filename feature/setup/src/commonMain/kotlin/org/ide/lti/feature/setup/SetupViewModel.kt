@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.produceIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
+import org.ide.lti.core.domain.ports.TerminalLauncherPort
 import org.ide.lti.core.domain.setup.SetupLogEvent
 import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.domain.setup.SetupStepStage
@@ -38,7 +39,6 @@ import org.ide.lti.core.domain.usecase.workspace.GetRecentWorkspacesUseCase
 import org.ide.lti.core.domain.usecase.workspace.OpenWorkspaceByPathUseCase
 import org.ide.lti.core.domain.usecase.workspace.OpenWorkspaceUseCase
 import org.ide.lti.core.domain.usecase.workspace.RemoveRecentWorkspaceUseCase
-import org.ide.lti.core.domain.usecase.workspace.SelectAndOpenDirectoryUseCase
 import org.ide.lti.core.domain.workspace.WorkspaceManager
 import org.ide.lti.core.model.setup.EnvironmentReadiness
 import org.ide.lti.core.model.target.DefaultTargetCatalog
@@ -58,7 +58,6 @@ class SetupViewModel(
     private val getRecentWorkspacesUseCase: GetRecentWorkspacesUseCase,
     private val openWorkspaceUseCase: OpenWorkspaceUseCase,
     private val openWorkspaceByPathUseCase: OpenWorkspaceByPathUseCase,
-    private val selectAndOpenDirectoryUseCase: SelectAndOpenDirectoryUseCase,
     private val removeRecentWorkspaceUseCase: RemoveRecentWorkspaceUseCase,
     private val discoverWorkdirWorkspacesUseCase: DiscoverWorkdirWorkspacesUseCase? = null,
     private val toolchainService: ToolchainProvisioningService? = null,
@@ -67,6 +66,7 @@ class SetupViewModel(
     private val getSelectedTargetUseCase: GetSelectedTargetUseCase? = null,
     private val selectTargetUseCase: SelectTargetUseCase? = null,
     private val environmentReadinessPort: EnvironmentReadinessPort? = null,
+    private val terminalLauncher: TerminalLauncherPort? = null,
 ) : ViewModel() {
 
     /**
@@ -92,7 +92,6 @@ class SetupViewModel(
         openWorkspaceUseCase = openWorkspaceUseCase
             ?: OpenWorkspaceUseCase(workspaceManager.repository, workspaceManager),
         openWorkspaceByPathUseCase = openWorkspaceByPathUseCase,
-        selectAndOpenDirectoryUseCase = SelectAndOpenDirectoryUseCase(openWorkspaceByPathUseCase),
         removeRecentWorkspaceUseCase = removeRecentWorkspaceUseCase
             ?: RemoveRecentWorkspaceUseCase(workspaceManager.repository),
         discoverWorkdirWorkspacesUseCase = discoverWorkdirWorkspacesUseCase,
@@ -197,9 +196,10 @@ class SetupViewModel(
         openWorkspaceUseCase = openWorkspaceUseCase,
         removeRecentWorkspaceUseCase = removeRecentWorkspaceUseCase,
         openWorkspaceByPathUseCase = openWorkspaceByPathUseCase,
-        selectAndOpenDirectoryUseCase = selectAndOpenDirectoryUseCase,
         discoverWorkdirWorkspacesUseCase = discoverWorkdirWorkspacesUseCase,
         environmentReadinessPort = environmentReadinessPort,
+        toolchainSetupState = toolchainSetupState,
+        onFailingCheckFocus = { selectTab(SetupTab.ENVIRONMENT) },
     )
 
     val recentProjects: StateFlow<List<RecentProject>> = workspaceBrowserState.recentProjects
@@ -207,6 +207,7 @@ class SetupViewModel(
     val filteredRecentProjects: StateFlow<List<RecentProject>> = workspaceBrowserState.filteredProjects
     val selectedWorkspaceId: StateFlow<String?> = workspaceBrowserState.selectedWorkspaceId
     val workspaceError: StateFlow<WorkspaceError?> = workspaceBrowserState.workspaceError
+    val pendingWorkspaceRequest: StateFlow<PendingWorkspaceRequest?> = workspaceBrowserState.pendingWorkspaceRequest
 
     fun onSearchQueryChange(query: String) {
         workspaceBrowserState.onSearchQueryChange(query)
@@ -220,6 +221,10 @@ class SetupViewModel(
         workspaceBrowserState.clearWorkspaceError()
     }
 
+    fun cancelPendingWorkspaceRequest() {
+        workspaceBrowserState.cancelPendingWorkspaceRequest()
+    }
+
     private val _selectedTab = MutableStateFlow(SetupTab.PROJECTS)
     val selectedTab: StateFlow<SetupTab> = _selectedTab.asStateFlow()
 
@@ -229,15 +234,16 @@ class SetupViewModel(
 
     val environmentNotice: StateFlow<String?> = environmentSetupState.environmentNotice
 
+    fun showEnvironmentNotice(message: String) {
+        environmentSetupState.setEnvironmentNotice(message)
+    }
+
     fun dismissEnvironmentNotice() {
         environmentSetupState.dismissEnvironmentNotice()
     }
 
     fun navigateToEnvironment() {
         _selectedTab.value = SetupTab.ENVIRONMENT
-        if (!toolchainSetupState.value.canLaunchWorkspace) {
-            checkEnvironmentStatus()
-        }
     }
 
     internal val _selectedCockpitTab = MutableStateFlow("doctor")
@@ -298,6 +304,10 @@ class SetupViewModel(
         workspaceBrowserState.openFolder(onWorkspaceOpened)
     }
 
+    fun openPath(path: String, onWorkspaceOpened: (Workspace) -> Unit) {
+        workspaceBrowserState.openPath(path, onWorkspaceOpened)
+    }
+
     fun openRecentProject(project: RecentProject, onWorkspaceOpened: (Workspace) -> Unit) {
         workspaceBrowserState.openRecentProject(project, onWorkspaceOpened)
     }
@@ -336,6 +346,40 @@ class SetupViewModel(
 
     fun confirmOperation() {
         confirmSetupOperation()
+    }
+
+    fun resumeAwaitingOperation() {
+        environmentSetupState.resumeAwaitingOperation()
+    }
+
+    fun openTerminal(distro: String) {
+        val launcher = terminalLauncher
+        if (launcher != null) {
+            launcher.launchTerminal(distro).onFailure {
+                environmentSetupState.setEnvironmentNotice(
+                    "Could not open terminal: ${it.message}. Please run the command manually.",
+                )
+            }
+        } else {
+            environmentSetupState.setEnvironmentNotice(
+                "No terminal launcher available on this platform. " +
+                    "Please copy the command and run it in your WSL terminal.",
+            )
+        }
+    }
+
+    val isHandoffSheetVisible: StateFlow<Boolean> = environmentSetupState.isHandoffSheetVisible
+
+    fun showHandoffSheet() {
+        environmentSetupState.showHandoffSheet()
+    }
+
+    fun abandonAwaitingOperation() {
+        environmentSetupState.abandonAwaitingOperation()
+    }
+
+    fun dismissHandoff() {
+        environmentSetupState.dismissHandoff()
     }
 
     fun dismissPreview() {

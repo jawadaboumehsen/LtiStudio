@@ -84,7 +84,7 @@ class SetupConsentTest {
         var toolsList: MutableList<ToolStatusInfo> = mutableListOf()
 
         override suspend fun checkHealth(): WslServerInfo? = WslServerInfo(
-            status = "HEALTHY",
+            status = "UP",
             distro = "Ubuntu",
             kernelRelease = "5.15.0",
             architecture = "x86_64",
@@ -119,6 +119,9 @@ class SetupConsentTest {
                     ) + ToolchainIntegrityInspector.DEFAULT_CORE_TOOLS
                     ToolExecutionResponse(0, systemTools.joinToString("\n"), "", 2L)
                 }
+                request.toolId == "find" && request.arguments.any { it.contains("/dev") } -> {
+                    ToolExecutionResponse(0, "fuse\nloop-control\nnull\nzero", "", 2L)
+                }
                 request.toolId == "find" && request.arguments.contains("-L") -> {
                     ToolExecutionResponse(0, "payload-dumper-go\nlpunpack\nlpmake\nsimg2img\nerofsfuse\nmkfs.erofs\navbtool\nunpack_bootimg\nimg2sdat\nsignapk\nadb\nfastboot", "", 2L)
                 }
@@ -136,6 +139,7 @@ class SetupConsentTest {
                     ToolExecutionResponse(1, "", "", 1L)
                 request.toolId == "test" -> ToolExecutionResponse(0, "", "", 1L)
                 request.toolId == "printenv" -> ToolExecutionResponse(0, "/home/lti\n", "", 1L)
+                request.toolId == "mkfs.erofs" -> ToolExecutionResponse(0, "mkfs.erofs 1.7.1 --fs-config-file", "", 1L)
                 else -> ToolExecutionResponse(0, "ok", "", 1L)
             }
         }
@@ -578,29 +582,19 @@ class SetupConsentTest {
             "Plan package preview must list concrete packages to install"
         )
 
-        // Confirm and execute the plan
+        // Confirm and execute the plan: pauses in AwaitingUserAction for terminal authorization
         val outcome = provisioner.confirm(plan.planId, plan.revisionHash)
-        assertTrue(outcome.isSuccess, "Confirmed plan must execute and succeed: $outcome")
+        assertTrue(outcome is SetupOutcome.AwaitingUserAction, "Confirmed plan requiring packages must pause with AwaitingUserAction: $outcome")
 
-        // Execution parity: apt-get ran through the daemon service transport (never the raw host wsl.exe
-        // executor) with exactly the previewed apt package set.
-        val aptCalls = transport.commandLines().filter { it.contains("apt-get") && it.contains("install") }
-        assertTrue(aptCalls.isNotEmpty(), "apt-get install must be executed through the service transport")
+        // Execution parity: the terminal handoff contains exactly the previewed apt packages
+        val terminalCommand = outcome.handoff.terminalCommand
+        assertTrue(
+            previewedPackages.all { terminalCommand.contains(it) },
+            "Terminal handoff command must contain all previewed packages: preview=$previewedPackages, cmd=$terminalCommand"
+        )
         assertTrue(
             cli.executedCommands.none { it.contains("apt-get") },
-            "Remediation must not bypass the daemon transport via the host wsl.exe executor: ${cli.executedCommands}"
-        )
-        val installedArgs = transport.executedRequests
-            .first { it.toolId == "sudo" && it.arguments.contains("install") }
-            .arguments
-            .dropWhile { it != "-y" }
-            .drop(1)
-        assertEquals(previewedPackages, installedArgs, "Execution must install exactly the previewed apt packages")
-        val pipCalls = transport.executedRequests.filter { it.toolId == "pip3" }
-        assertEquals(
-            installAction.pipPackages.isNotEmpty(),
-            pipCalls.isNotEmpty(),
-            "pip packages run only when the preview listed them: preview=${installAction.pipPackages}, calls=$pipCalls"
+            "Remediation must not bypass terminal authorization or execute apt-get in background: ${cli.executedCommands}"
         )
     }
 

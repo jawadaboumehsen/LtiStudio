@@ -78,6 +78,24 @@ public class SetupRunRecovery(
             return block(active, reason)
         }
 
+        val handoff = active.awaitingHandoff
+        if (active.status == AttemptStatus.AWAITING_USER_ACTION && handoff != null) {
+            val domainHandoff = org.ide.lti.core.domain.setup.UserRepairHandoff(
+                actionId = handoff.actionId,
+                description = "External terminal authorization required to install packages",
+                terminalCommand = handoff.command,
+                packages = handoff.packages,
+                distro = handoff.distro,
+            )
+            log("[Recovery] Restoring active attempt ${active.attemptId} in AWAITING_USER_ACTION state.")
+            return SetupOutcome.AwaitingUserAction(
+                pendingPlanId = active.planId,
+                stage = org.ide.lti.core.domain.setup.SetupStepStage.SYSTEM_DIAGNOSTICS,
+                reason = "Awaiting user terminal authorization to install packages: ${handoff.packages.joinToString()}",
+                handoff = domainHandoff,
+            )
+        }
+
         repository.updateAttemptStatus(active.attemptId, AttemptStatus.RECONNECTING).onFailure {
             return SetupOutcome.Interrupted("Journal write failed while marking reconnection: ${it.message}")
         }

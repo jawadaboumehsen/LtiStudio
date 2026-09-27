@@ -240,10 +240,10 @@ private fun resolveRailPainter(stageId: String): Painter? = when (stageId.lowerc
 
 private fun resolveRailIcon(stageId: String): ImageVector = when (stageId.lowercase()) {
     "machine_setup" -> Icons.Default.Construction
-    "environment_overview" -> Icons.Default.ViewInAr
-    "wsl_runtime" -> Icons.Default.Folder
+    "environment_overview", "environment" -> Icons.Default.ViewInAr
+    "wsl_runtime", "projects" -> Icons.Default.Folder
     "build_service" -> Icons.Default.Download
-    "tool_packages" -> Icons.AutoMirrored.Filled.ListAlt
-    "diagnostics_recovery" -> Icons.Default.Healing
+    "tool_packages", "tools" -> Icons.AutoMirrored.Filled.ListAlt
+    "diagnostics_recovery", "recovery" -> Icons.Default.Healing
     else -> Icons.Default.Folder
 }

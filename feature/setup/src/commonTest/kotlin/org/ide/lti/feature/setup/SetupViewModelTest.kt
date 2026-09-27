@@ -243,6 +243,21 @@ class SetupViewModelTest {
         override suspend fun cancel(): SetupOutcome =
             SetupOutcome.Failed(stage = null, reason = "fake service has nothing to cancel")
 
+        var resumeCount = 0
+            private set
+        var lastResumedPlanId: String? = null
+            private set
+        var resumeOutcome: SetupOutcome = SetupOutcome.Failed(
+            stage = null,
+            reason = "fake service does not resume plans",
+        )
+
+        override suspend fun resume(planId: String): SetupOutcome {
+            resumeCount++
+            lastResumedPlanId = planId
+            return resumeOutcome
+        }
+
         override suspend fun testTool(toolId: String): SetupOutcome {
             testToolCount++
             lastTestedToolId = toolId
@@ -747,7 +762,7 @@ class SetupViewModelTest {
     }
 
     @Test
-    fun testOpenRecentProjectAllowedOffline() = runTest {
+    fun testOpenRecentProjectGatedWhenUnready() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         Dispatchers.setMain(testDispatcher)
         try {
@@ -781,9 +796,14 @@ class SetupViewModelTest {
             }
             testScheduler.advanceUntilIdle()
 
-            assertTrue(workspaceOpened, "Opening a recent project should be allowed even when environment is offline/unverified")
-            assertEquals(SetupTab.PROJECTS, viewModel.selectedTab.value)
-            kotlin.test.assertNull(viewModel.environmentNotice.value)
+            kotlin.test.assertFalse(
+                workspaceOpened,
+                "Opening a recent project must be blocked when environment verification has not passed",
+            )
+            kotlin.test.assertNotNull(
+                viewModel.workspaceError.value,
+                "Workspace error must be reported when opening fails gate",
+            )
         } finally {
             Dispatchers.resetMain()
         }
@@ -937,12 +957,12 @@ class SetupViewModelTest {
                     steps = ToolchainSetupState.defaultSteps(),
                     diagnostics = listOf(
                         DiagnosticCheckItem(
-                            id = "sudo_noninteractive",
-                            title = "Non-Interactive Sudo Elevation",
-                            category = org.ide.lti.core.domain.setup.DiagnosticCategory.OS_UTILITIES,
+                            id = "host_compilers",
+                            title = "Host Compilers",
+                            category = org.ide.lti.core.domain.setup.DiagnosticCategory.COMPILERS,
                             status = StepStatus.WARNING,
-                            detail = "Non-interactive sudo is not configured.",
-                            copyableCommand = "echo \"\$USER ALL=(ALL) NOPASSWD: ALL\" | sudo tee /etc/sudoers.d/ltirom",
+                            detail = "Missing cmake.",
+                            copyableCommand = "sudo apt-get install -y cmake",
                         ),
                     ),
                     stepRunIds = mapOf(
@@ -960,9 +980,9 @@ class SetupViewModelTest {
             testScheduler.advanceUntilIdle()
 
             val state = viewModel.toolchainSetupState.value
-            val sudoItem = state.diagnostics.find { it.id == "sudo_noninteractive" }
-            assertEquals(StepStatus.WARNING, sudoItem?.status)
-            assertTrue(sudoItem?.copyableCommand?.contains("sudo tee /etc/sudoers.d/ltirom") == true)
+            val compilerItem = state.diagnostics.find { it.id == "host_compilers" }
+            assertEquals(StepStatus.WARNING, compilerItem?.status)
+            assertTrue(compilerItem?.copyableCommand?.contains("apt-get install -y cmake") == true)
             assertEquals("setup:submodule:apktool", state.stepRunIds[SetupStepStage.REPO_SYNCHRONIZATION])
             assertEquals("setup:build:erofs-utils:cmake", state.stepRunIds[SetupStepStage.TOOLCHAIN_COMPILATION])
         } finally {

@@ -18,7 +18,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -30,7 +29,6 @@ import kotlinx.datetime.Clock
 import org.ide.lti.core.designsystem.component.navigation.GlassSidebarItem
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
-import org.ide.lti.core.designsystem.icon.ideToolwindowsServices
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StudioBackdropColors
@@ -49,13 +47,11 @@ private const val MILLIS_PER_MINUTE = SECONDS_PER_MINUTE * MILLIS_PER_SECOND
 /**
  * Clean Setup Navigation Sidebar matching the Machine Environment specification.
  *
- * Renders the 6 canonical machine environment steps:
- * 1. Environment overview
- * 2. WSL runtime
- * 3. Build service
- * 4. Tool packages
- * 5. Diagnostics
- * 6. Recovery
+ * Renders the 4 canonical machine environment tabs:
+ * 1. Projects
+ * 2. Environment
+ * 3. Tools
+ * 4. Recovery
  */
 @Suppress("UnusedParameter")
 @Composable
@@ -79,8 +75,9 @@ fun SetupJourneySidebar(
 ) {
     val isBlue = GlassTheme.appTheme == org.ide.lti.core.designsystem.theme.AppTheme.Blue
 
-    val isWorkspacesActive = currentStep == SetupTab.LAUNCHPAD
-    val isEnvironmentActive = selectedDestination == SetupDestination.ENVIRONMENT || currentStep == SetupTab.ENVIRONMENT
+    val isWorkspacesActive = currentStep == SetupTab.PROJECTS || selectedDestination == SetupDestination.WORKSPACES
+    val isSelectedEnv = selectedDestination == SetupDestination.ENVIRONMENT || currentStep == SetupTab.ENVIRONMENT
+    val isEnvironmentActive = isSelectedEnv && !isWorkspacesActive
     val isToolsActive = selectedDestination == SetupDestination.TOOLS || currentStep == SetupTab.TOOLS
     val isRecoveryActive = selectedDestination == SetupDestination.RECOVERY || currentStep == SetupTab.RECOVERY
 
@@ -109,23 +106,24 @@ fun SetupJourneySidebar(
         Text(
             text = "Machine environment",
             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-            color = if (isBlue) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),
         )
 
         GlassSidebarItem(
-            label = "Environment overview",
+            label = "Projects",
             icon = AppIcons.Home,
             selected = isWorkspacesActive,
             onClick = {
-                onStepSelected(SetupTab.LAUNCHPAD)
+                onDestinationSelected(SetupDestination.WORKSPACES)
+                onStepSelected(SetupTab.PROJECTS)
             },
         )
 
         GlassSidebarItem(
-            label = "WSL runtime",
+            label = "Environment",
             icon = AppIcon.Vector(Icons.Default.Terminal),
-            selected = isEnvironmentActive && currentStep != SetupTab.RECOVERY && !isToolsActive && !isWorkspacesActive,
+            selected = isEnvironmentActive && !isToolsActive && !isRecoveryActive,
             onClick = {
                 onDestinationSelected(SetupDestination.ENVIRONMENT)
                 onStepSelected(SetupTab.ENVIRONMENT)
@@ -133,32 +131,12 @@ fun SetupJourneySidebar(
         )
 
         GlassSidebarItem(
-            label = "Build service",
-            icon = AppIcon.Painted(AppIcons.ideToolwindowsServices),
-            selected = false,
-            onClick = {
-                onDestinationSelected(SetupDestination.ENVIRONMENT)
-                onStepSelected(SetupTab.ENVIRONMENT)
-            },
-        )
-
-        GlassSidebarItem(
-            label = "Tool packages",
+            label = "Tools",
             icon = AppIcon.Vector(Icons.Default.GridView),
             selected = isToolsActive,
             onClick = {
                 onDestinationSelected(SetupDestination.TOOLS)
                 onStepSelected(SetupTab.TOOLS)
-            },
-        )
-
-        GlassSidebarItem(
-            label = "Diagnostics",
-            icon = AppIcon.Vector(Icons.Default.ShowChart),
-            selected = false,
-            onClick = {
-                onDestinationSelected(SetupDestination.ENVIRONMENT)
-                onStepSelected(SetupTab.ENVIRONMENT)
             },
         )
 

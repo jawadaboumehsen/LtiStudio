@@ -13,10 +13,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import org.ide.lti.feature.setup.api.SetupTab
 import org.ide.lti.core.domain.workspace.WorkspaceManager
 import org.ide.lti.feature.configuration.configurationScreen
 import org.ide.lti.feature.configuration.navigateToConfiguration
@@ -31,22 +36,34 @@ import org.ide.lti.feature.setup.setupScreen
 import org.ide.lti.feature.workspace.creation.createWorkspaceScreen
 import org.ide.lti.feature.workspace.creation.navigateToCreateWorkspace
 import org.ide.lti.feature.workspace.studio.studioScreen
+import kotlinx.coroutines.flow.MutableStateFlow
+import org.ide.lti.core.domain.setup.ToolchainProvisioningService
+import org.ide.lti.core.domain.setup.ToolchainSetupState
 import org.koin.compose.koinInject
+import org.koin.core.context.GlobalContext
 
 @Composable
 internal fun RootNavGraph(
     navHostController: NavHostController,
     startDestination: String,
     modifier: Modifier = Modifier,
+    initialSetupTab: SetupTab? = null,
     workspaceManager: WorkspaceManager = koinInject(),
+    toolchainService: ToolchainProvisioningService? = remember {
+        GlobalContext.getOrNull()?.getOrNull<ToolchainProvisioningService>()
+    },
 ) {
     val currentWorkspace by workspaceManager.currentWorkspace.collectAsState()
+    val toolchainState by (toolchainService?.state ?: remember { MutableStateFlow(ToolchainSetupState()) }).collectAsState()
+    val canLaunchWorkspace = toolchainState.canLaunchWorkspace
 
-    LaunchedEffect(currentWorkspace) {
+    LaunchedEffect(currentWorkspace, canLaunchWorkspace) {
         val workspace = currentWorkspace
         if (workspace != null && navHostController.currentDestination?.route == SETUP_ROUTE) {
-            navHostController.navigate(buildStudioRoute(workspaceId = workspace.id)) {
-                launchSingleTop = true
+            if (canLaunchWorkspace) {
+                navHostController.navigate(buildStudioRoute(workspaceId = workspace.id)) {
+                    launchSingleTop = true
+                }
             }
         } else if (currentWorkspace == null && navHostController.currentDestination?.route == "workspace") {
             navHostController.navigate(SETUP_ROUTE) {
@@ -56,27 +73,38 @@ internal fun RootNavGraph(
         }
     }
 
+    val coroutineScope = rememberCoroutineScope()
+
     val navigateToSetup: () -> Unit = {
-        navHostController.navigate(SETUP_ROUTE) {
-            popUpTo(SETUP_ROUTE) { inclusive = false }
-            launchSingleTop = true
-        }
-    }
-    val navigateToWorkspace: () -> Unit = {
-        val workspace = currentWorkspace
-        if (workspace == null) {
-            navigateToSetup()
-        } else {
-            navHostController.navigate(buildStudioRoute(workspaceId = workspace.id)) {
-                popUpTo(SETUP_ROUTE) { inclusive = false }
+        coroutineScope.launch(Dispatchers.Main.immediate) {
+            navHostController.navigate(SETUP_ROUTE) {
+                popUpTo(navHostController.graph.startDestinationId) { inclusive = false }
                 launchSingleTop = true
             }
         }
     }
+    val navigateToWorkspace: () -> Unit = {
+        coroutineScope.launch(Dispatchers.Main.immediate) {
+            val workspace = currentWorkspace
+            if (workspace == null || !canLaunchWorkspace) {
+                navHostController.navigate(SETUP_ROUTE) {
+                    popUpTo(navHostController.graph.startDestinationId) { inclusive = false }
+                    launchSingleTop = true
+                }
+            } else {
+                navHostController.navigate(buildStudioRoute(workspaceId = workspace.id)) {
+                    popUpTo(SETUP_ROUTE) { inclusive = false }
+                    launchSingleTop = true
+                }
+            }
+        }
+    }
     val navigateToSettings: () -> Unit = {
-        navHostController.navigate(SETTINGS_ROUTE) {
-            popUpTo(SETUP_ROUTE) { inclusive = false }
-            launchSingleTop = true
+        coroutineScope.launch(Dispatchers.Main.immediate) {
+            navHostController.navigate(SETTINGS_ROUTE) {
+                popUpTo(SETUP_ROUTE) { inclusive = false }
+                launchSingleTop = true
+            }
         }
     }
 
@@ -89,9 +117,19 @@ internal fun RootNavGraph(
         // Setup Screen (Entry point)
         setupScreen(
             onOpenWorkspace = { workspace ->
-                if (navHostController.currentDestination?.route != StudioRoutes.STUDIO_PATTERN) {
-                    navHostController.navigate(buildStudioRoute(workspaceId = workspace.id)) {
-                        launchSingleTop = true
+                coroutineScope.launch(Dispatchers.Main.immediate) {
+                    if (!canLaunchWorkspace) {
+                        navHostController.navigate(SETUP_ROUTE) {
+                            popUpTo(SETUP_ROUTE) { inclusive = false }
+                            launchSingleTop = true
+                        }
+                        return@launch
+                    }
+                    if (navHostController.currentDestination?.route != StudioRoutes.STUDIO_PATTERN) {
+                        navHostController.navigate(buildStudioRoute(workspaceId = workspace.id)) {
+                            popUpTo(SETUP_ROUTE) { inclusive = false }
+                            launchSingleTop = true
+                        }
                     }
                 }
             },
@@ -99,15 +137,25 @@ internal fun RootNavGraph(
             onCreateWorkspace = { navHostController.navigateToCreateWorkspace() },
             onOpenConfigurations = { navHostController.navigateToConfiguration() },
             onOpenManageTargets = { navHostController.navigateToConfiguration() },
+            initialTab = initialSetupTab,
         )
 
         // Create Workspace Screen
         createWorkspaceScreen(
             onBackClick = { navHostController.popBackStack() },
             onWorkspaceCreated = { workspace ->
-                navHostController.navigate(buildStudioRoute(workspaceId = workspace.id)) {
-                    popUpTo(SETUP_ROUTE) { inclusive = false }
-                    launchSingleTop = true
+                coroutineScope.launch(Dispatchers.Main.immediate) {
+                    if (!canLaunchWorkspace) {
+                        navHostController.navigate(SETUP_ROUTE) {
+                            popUpTo(SETUP_ROUTE) { inclusive = false }
+                            launchSingleTop = true
+                        }
+                        return@launch
+                    }
+                    navHostController.navigate(buildStudioRoute(workspaceId = workspace.id)) {
+                        popUpTo(SETUP_ROUTE) { inclusive = false }
+                        launchSingleTop = true
+                    }
                 }
             },
             onNavigateToSetup = navigateToSetup,
@@ -116,7 +164,7 @@ internal fun RootNavGraph(
         // Workspace Route (redirects cleanly to StudioScreen)
         composable(route = "workspace") {
             val workspace = currentWorkspace
-            if (workspace != null) {
+            if (workspace != null && canLaunchWorkspace) {
                 LaunchedEffect(workspace.id) {
                     navHostController.navigate(buildStudioRoute(workspaceId = workspace.id)) {
                         popUpTo("workspace") { inclusive = true }

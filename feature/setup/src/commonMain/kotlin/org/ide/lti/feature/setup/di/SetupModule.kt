@@ -20,13 +20,13 @@ val setupModule = module {
             discoverWorkdirWorkspacesUseCase = get(),
             openWorkspaceUseCase = get(),
             openWorkspaceByPathUseCase = get(),
-            selectAndOpenDirectoryUseCase = get(),
             removeRecentWorkspaceUseCase = get(),
             toolchainService = getOrNull(),
             provisionAvbKeyUseCase = getOrNull(),
             getAvailableTargetsUseCase = getOrNull(),
             getSelectedTargetUseCase = getOrNull(),
             selectTargetUseCase = getOrNull(),
+            terminalLauncher = getOrNull(),
         )
     }
 }

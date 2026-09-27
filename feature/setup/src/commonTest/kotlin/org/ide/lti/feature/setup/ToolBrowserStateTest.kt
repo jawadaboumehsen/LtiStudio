@@ -122,6 +122,8 @@ class ToolBrowserStateTest {
             SetupOutcome.Failed(stage = null, reason = "fake service has no journal")
         override suspend fun cancel(): SetupOutcome =
             SetupOutcome.Failed(stage = null, reason = "fake service has nothing to cancel")
+        override suspend fun resume(planId: String): SetupOutcome =
+            SetupOutcome.Failed(stage = null, reason = "fake service does not resume plans")
 
         var testToolOutcome: SetupOutcome = SetupOutcome.Succeeded()
         var testToolException: Throwable? = null

@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import dev.chrisbanes.haze.glass.GlassReducedMotionPolicy
 import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.GlassChip
@@ -98,8 +99,8 @@ fun ToolchainPipelineTracker(
                     modifier = Modifier.weight(1f, fill = false),
                 ) {
                     Text(
-                        text = "Toolchain Provisioning Pipeline",
-                        style = MaterialTheme.typography.titleSmall,
+                        text = "This machine",
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
@@ -108,7 +109,7 @@ fun ToolchainPipelineTracker(
                     )
                 }
                 GlassChip(
-                    label = "$completedCount/${orderedStages.size} Stages Verified",
+                    label = "$completedCount of ${orderedStages.size} verified",
                     selected = completedCount == orderedStages.size,
                 )
             }
@@ -146,13 +147,7 @@ private fun VerticalStageRow(
 ) {
     val diagnostics = GlassTheme.diagnosticColors
 
-    val stageDisplayName = when (stage) {
-        SetupStepStage.WSL_DETECTION -> "WSL 2 Runtime"
-        SetupStepStage.SERVER_CONNECTIVITY -> "Daemon Bridge"
-        SetupStepStage.SYSTEM_DIAGNOSTICS -> "System Doctor"
-        SetupStepStage.REPO_SYNCHRONIZATION -> "Submodules Sync"
-        SetupStepStage.TOOLCHAIN_COMPILATION -> "Toolchain Build"
-    }
+    val stageDisplayName = stage.displayName
 
     val isFailed = step.status == StepStatus.FAILED
     val isWarning = step.status == StepStatus.WARNING
@@ -299,11 +294,20 @@ private fun VerticalStageRow(
                 ) {
                     when {
                         isRunning -> {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(IconSize.Small),
-                                strokeWidth = StrokeWidth.Hairline,
-                                color = MaterialTheme.colorScheme.primary,
-                            )
+                            val isReducedMotion = GlassTheme.reducedMotionPolicy == GlassReducedMotionPolicy.Reduced
+                            if (isReducedMotion) {
+                                Text(
+                                    text = "Checking…",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                            } else {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(IconSize.Small),
+                                    strokeWidth = StrokeWidth.Focused,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                            }
                         }
                         isSuccess -> {
                             Icon(
@@ -314,12 +318,19 @@ private fun VerticalStageRow(
                             )
                         }
                         else -> {
-                            Icon(
-                                painter = AppIcons.ideStatusWarning(),
-                                contentDescription = "Pending",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(IconSize.Small),
-                            )
+                            // Pending is neutral, not a warning: a muted dot.
+                            Box(
+                                modifier = Modifier
+                                    .size(IconSize.Small),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(IconSize.Indicator)
+                                        .clip(GlassShapes.Capsule)
+                                        .background(MaterialTheme.colorScheme.outline),
+                                )
+                            }
                         }
                     }
 
@@ -336,7 +347,7 @@ private fun VerticalStageRow(
                     Spacer(Modifier.size(Spacing.ExtraSmall))
 
                     Text(
-                        text = if (isRestored) "Re-checking…" else step.description,
+                        text = step.description,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -349,7 +360,7 @@ private fun VerticalStageRow(
                     label = when {
                         isRestored -> "Historical"
                         isSuccess -> "Ready"
-                        isRunning -> "Working…"
+                        isRunning -> "Checking…"
                         else -> "Pending"
                     },
                     selected = isSuccess && !isRestored,

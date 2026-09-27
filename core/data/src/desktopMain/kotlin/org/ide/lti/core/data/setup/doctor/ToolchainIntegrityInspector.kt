@@ -27,8 +27,8 @@ public class ToolchainIntegrityInspector(
     override suspend fun inspect(context: DiagnosticContext): DiagnosticCheckItem {
         val distro = context.distro
         val binDir = context.binDir
-        val missingCoreTools = if (context.availableCommands.isNotEmpty()) {
-            coreTools.filter { it !in context.availableCommands }
+        val missingCoreTools = if (context.projectBinaries.isNotEmpty()) {
+            coreTools.filter { it !in context.projectBinaries }
         } else {
             coreTools.filter {
                 cli.execute(distro, listOf("test", "-e", "$binDir/$it")).exitCode != 0

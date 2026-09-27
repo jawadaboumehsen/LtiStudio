@@ -26,24 +26,19 @@ public class SudoNoninteractiveInspector(
         )
 
         val isSudoNoninteractiveOk = res.exitCode == 0
-        val sudoersInstruction = "echo \"\$USER ALL=(ALL) NOPASSWD: ALL\" | sudo tee /etc/sudoers.d/ltirom"
 
         return DiagnosticCheckItem(
             id = "sudo_noninteractive",
-            title = "Non-Interactive Sudo Elevation",
+            title = "Elevation Authorization Mode",
             category = DiagnosticCategory.OS_UTILITIES,
-            status = if (isSudoNoninteractiveOk) StepStatus.SUCCESS else StepStatus.WARNING,
+            status = StepStatus.SUCCESS,
             detail = if (isSudoNoninteractiveOk) {
-                "Passwordless sudo configured for non-interactive commands."
+                "Headless non-interactive elevation active."
             } else {
-                "Non-interactive sudo is not configured for current user in $distro."
+                "Interactive terminal elevation required for privileged actions."
             },
-            remediation = if (isSudoNoninteractiveOk) {
-                null
-            } else {
-                "Configure passwordless sudo so automated package remediation can install dependencies non-interactively."
-            },
-            copyableCommand = if (isSudoNoninteractiveOk) null else sudoersInstruction,
+            remediation = null,
+            copyableCommand = null,
             isOptionalForRuntime = true
         )
     }

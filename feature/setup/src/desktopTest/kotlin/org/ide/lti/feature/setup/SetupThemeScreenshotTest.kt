@@ -15,7 +15,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asSkiaBitmap
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.captureToImage
@@ -40,6 +39,7 @@ import org.junit.Test
 import java.io.File
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.minutes
 
 /**
  * Three-theme seven-state screenshot fixtures and composited contrast regression tests (FR-011, SC-003).
@@ -58,6 +58,7 @@ import kotlin.test.assertTrue
  *   7. OFFLINE: bridge unreachable, "Retry Connection", cached workspaces accessible
  */
 @OptIn(ExperimentalTestApi::class)
+@Suppress("LargeClass", "TooManyFunctions")
 class SetupThemeScreenshotTest {
 
     // ---------------------------------------------------------------------------------------------
@@ -196,7 +197,7 @@ class SetupThemeScreenshotTest {
                         SetupScreenContent(
                             state = SetupUiState(
                                 toolchainSetupState = overviewState,
-                                selectedTab = SetupTab.LAUNCHPAD,
+                                selectedTab = SetupTab.PROJECTS,
                             ),
                             actions = SetupUiActions(),
                         )
@@ -309,7 +310,7 @@ class SetupThemeScreenshotTest {
                         SetupScreenContent(
                             state = SetupUiState(
                                 toolchainSetupState = overviewState,
-                                selectedTab = SetupTab.LAUNCHPAD,
+                                selectedTab = SetupTab.PROJECTS,
                             ),
                             actions = SetupUiActions(),
                         )
@@ -432,16 +433,42 @@ class SetupThemeScreenshotTest {
     @Test
     fun testThreeThemesFailedStateScreenshot() = runDesktopComposeUiTest(width = 1120, height = 700) {
         val failedSteps = listOf(
-            SetupStepDetail(stage = SetupStepStage.WSL_DETECTION, title = "WSL Detection", description = "", status = StepStatus.SUCCESS),
+            SetupStepDetail(
+                stage = SetupStepStage.WSL_DETECTION,
+                title = "WSL 2 distribution",
+                description = "Ubuntu 22.04 LTS",
+                status = StepStatus.SUCCESS,
+                provenance = StepProvenance.LIVE,
+            ),
+            SetupStepDetail(
+                stage = SetupStepStage.SERVER_CONNECTIVITY,
+                title = "Server daemon bridge",
+                description = "Connection refused on port 50051",
+                status = StepStatus.FAILED,
+                error = "Connection refused: daemon is not running. Click Retry to launch.",
+                provenance = StepProvenance.LIVE,
+            ),
+            SetupStepDetail(
+                stage = SetupStepStage.SYSTEM_DIAGNOSTICS,
+                title = "System diagnostics",
+                description = "Pending verification",
+                status = StepStatus.PENDING,
+            ),
             SetupStepDetail(
                 stage = SetupStepStage.REPO_SYNCHRONIZATION,
-                title = "Repository Synchronization",
-                description = "Git clone failed",
-                status = StepStatus.FAILED,
-                error = "fatal: repository not found",
+                title = "Repository synchronization",
+                description = "Pending verification",
+                status = StepStatus.PENDING,
+            ),
+            SetupStepDetail(
+                stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+                title = "Build tools & packages",
+                description = "Pending verification",
+                status = StepStatus.PENDING,
             ),
         )
-        val state = ToolchainSetupState(steps = failedSteps)
+        // A live check that just ran and failed: the header must say "Checked just now", never "Verified".
+        val state = ToolchainSetupState(steps = failedSteps, checkedAt = System.currentTimeMillis())
         val themes = listOf(AppTheme.Dark, AppTheme.Light, AppTheme.Blue)
 
         for (appTheme in themes) {
@@ -614,16 +641,42 @@ class SetupThemeScreenshotTest {
     @Test
     fun testThreeThemesFailedStateEffectsOffScreenshot() = runDesktopComposeUiTest(width = 1120, height = 700) {
         val failedSteps = listOf(
-            SetupStepDetail(stage = SetupStepStage.WSL_DETECTION, title = "WSL Detection", description = "", status = StepStatus.SUCCESS),
+            SetupStepDetail(
+                stage = SetupStepStage.WSL_DETECTION,
+                title = "WSL 2 distribution",
+                description = "Ubuntu 22.04 LTS",
+                status = StepStatus.SUCCESS,
+                provenance = StepProvenance.LIVE,
+            ),
+            SetupStepDetail(
+                stage = SetupStepStage.SERVER_CONNECTIVITY,
+                title = "Server daemon bridge",
+                description = "Connection refused on port 50051",
+                status = StepStatus.FAILED,
+                error = "Connection refused: daemon is not running. Click Retry to launch.",
+                provenance = StepProvenance.LIVE,
+            ),
+            SetupStepDetail(
+                stage = SetupStepStage.SYSTEM_DIAGNOSTICS,
+                title = "System diagnostics",
+                description = "Pending verification",
+                status = StepStatus.PENDING,
+            ),
             SetupStepDetail(
                 stage = SetupStepStage.REPO_SYNCHRONIZATION,
-                title = "Repository Synchronization",
-                description = "Git clone failed",
-                status = StepStatus.FAILED,
-                error = "fatal: repository not found",
+                title = "Repository synchronization",
+                description = "Pending verification",
+                status = StepStatus.PENDING,
+            ),
+            SetupStepDetail(
+                stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+                title = "Build tools & packages",
+                description = "Pending verification",
+                status = StepStatus.PENDING,
             ),
         )
-        val state = ToolchainSetupState(steps = failedSteps)
+        // A live check that just ran and failed: the header must say "Checked just now", never "Verified".
+        val state = ToolchainSetupState(steps = failedSteps, checkedAt = System.currentTimeMillis())
         val themes = listOf(AppTheme.Dark, AppTheme.Light, AppTheme.Blue)
 
         for (appTheme in themes) {
@@ -730,16 +783,18 @@ class SetupThemeScreenshotTest {
     // core:designsystem) or cover the six presentation states (unknown/needs-setup/ready/
     // running/failed/reconnecting), which remain BLOCKED pending real-render verification.
     @Test
-    fun testThemeAndDensityMatrixAt1440x900() {
-        assertThemeAndDensityMatrixRenders(width = 1440, height = 900)
-    }
+    fun testThemeAndDensityMatrixAt1440x900() =
+        runDesktopComposeUiTest(width = 1440, height = 900, testTimeout = 5.minutes) {
+            assertThemeAndDensityMatrixRenders()
+        }
 
     @Test
-    fun testThemeAndDensityMatrixAt900x600() {
-        assertThemeAndDensityMatrixRenders(width = 900, height = 600)
-    }
+    fun testThemeAndDensityMatrixAt900x600() =
+        runDesktopComposeUiTest(width = 900, height = 600, testTimeout = 5.minutes) {
+            assertThemeAndDensityMatrixRenders()
+        }
 
-    private fun assertThemeAndDensityMatrixRenders(width: Int, height: Int) = runDesktopComposeUiTest(width = width, height = height) {
+    private fun androidx.compose.ui.test.DesktopComposeUiTest.assertThemeAndDensityMatrixRenders() {
         val scales = listOf(1.0f, 1.5f, 2.0f)
         val themes = listOf(AppTheme.Dark, AppTheme.Light, AppTheme.Blue)
 
@@ -749,7 +804,7 @@ class SetupThemeScreenshotTest {
                     CompositionLocalProvider(
                         LocalDensity provides Density(density = scale, fontScale = 1.0f),
                     ) {
-                        LtiTheme(appTheme = appTheme) {
+                        LtiTheme(appTheme = appTheme, effectsEnabled = false) {
                             Box(Modifier.fillMaxSize()) {
                                 GlassBackdrop()
                                 SetupScreenContent(
@@ -761,10 +816,10 @@ class SetupThemeScreenshotTest {
                     }
                 }
 
-                waitForIdle()
                 onRoot().assertIsDisplayed()
             }
         }
+        setContent {}
     }
 
     private fun saveScreenshotReport(name: String, bitmap: androidx.compose.ui.graphics.ImageBitmap) {

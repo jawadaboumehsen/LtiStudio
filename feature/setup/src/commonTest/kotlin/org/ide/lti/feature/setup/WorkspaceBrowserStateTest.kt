@@ -9,14 +9,17 @@
  */
 package org.ide.lti.feature.setup
 
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -24,7 +27,13 @@ import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.Clock
 import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
+import org.ide.lti.core.domain.setup.SetupStepDetail
+import org.ide.lti.core.domain.setup.SetupStepStage
+import org.ide.lti.core.domain.setup.StepProvenance
+import org.ide.lti.core.domain.setup.StepStatus
+import org.ide.lti.core.domain.setup.ToolchainSetupState
 import org.ide.lti.core.domain.usecase.workspace.GetRecentWorkspacesUseCase
+import org.ide.lti.core.domain.usecase.workspace.OpenWorkspaceByPathUseCase
 import org.ide.lti.core.domain.usecase.workspace.OpenWorkspaceUseCase
 import org.ide.lti.core.domain.usecase.workspace.RemoveRecentWorkspaceUseCase
 import org.ide.lti.core.model.setup.EnvironmentReadiness
@@ -33,15 +42,18 @@ import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.core.model.workspace.Workspace
 import org.ide.lti.core.model.workspace.WorkspaceSession
 import org.ide.lti.core.model.workspace.WorkspaceType
+import org.ide.lti.feature.setup.PendingWorkspaceRequest
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
+@Suppress("LargeClass")
 class WorkspaceBrowserStateTest {
 
     private val testDispatcher = UnconfinedTestDispatcher()
@@ -56,7 +68,7 @@ class WorkspaceBrowserStateTest {
         Dispatchers.resetMain()
     }
 
-    private class FakeWorkspaceRepository : WorkspaceRepository {
+    private open class FakeWorkspaceRepository : WorkspaceRepository {
         val recents = MutableStateFlow<List<RecentProject>>(emptyList())
         val workspaces = mutableMapOf<String, Workspace>()
         var deleteWorkspaceCallCount = 0
@@ -64,7 +76,7 @@ class WorkspaceBrowserStateTest {
 
         override fun getWorkspaces(): Flow<List<Workspace>> = flowOf(workspaces.values.toList())
         override suspend fun getWorkspace(id: String): Workspace? = workspaces[id]
-        override suspend fun saveWorkspace(workspace: Workspace) {
+        open override suspend fun saveWorkspace(workspace: Workspace) {
             workspaces[workspace.id] = workspace
         }
         override suspend fun deleteWorkspace(id: String) {
@@ -100,6 +112,24 @@ class WorkspaceBrowserStateTest {
         override suspend fun forWorkspace(workspace: Workspace): EnvironmentReadiness = readiness
     }
 
+    private fun defaultToolchainFlow(
+        steps: List<SetupStepDetail> = SetupStepStage.entries.map {
+            SetupStepDetail(
+                stage = it,
+                title = it.displayName,
+                description = "OK",
+                status = StepStatus.SUCCESS,
+                provenance = StepProvenance.LIVE,
+            )
+        },
+        isChecking: Boolean = false,
+    ): StateFlow<ToolchainSetupState> = MutableStateFlow(
+        ToolchainSetupState(
+            isChecking = isChecking,
+            steps = steps,
+        ),
+    )
+
     @Test
     fun testCachedOpenWorksWithoutExecutionReadiness() = runTest(testDispatcher) {
         val repo = FakeWorkspaceRepository()
@@ -127,11 +157,26 @@ class WorkspaceBrowserStateTest {
             ),
         )
 
+        val offlineToolchain = MutableStateFlow(
+            ToolchainSetupState(
+                isChecking = false,
+                steps = listOf(
+                    SetupStepDetail(
+                        stage = SetupStepStage.WSL_DETECTION,
+                        title = "WSL",
+                        description = "Offline",
+                        status = StepStatus.FAILED,
+                        error = "WSL2 execution environment absent",
+                    ),
+                ),
+            ),
+        )
         val state = WorkspaceBrowserState(
             scope = backgroundScope,
             getRecentWorkspacesUseCase = GetRecentWorkspacesUseCase(repo),
             openWorkspaceUseCase = OpenWorkspaceUseCase(repo),
             removeRecentWorkspaceUseCase = RemoveRecentWorkspaceUseCase(repo),
+            toolchainSetupState = offlineToolchain,
             environmentReadinessPort = offlinePort,
         )
 
@@ -145,8 +190,9 @@ class WorkspaceBrowserStateTest {
             openedWorkspace = opened
         }
 
-        assertNotNull(openedWorkspace, "Cached workspace must open even without live execution readiness (FR-002, FR-003)")
-        assertEquals("ws_offline_1", openedWorkspace.id)
+        assertNull(openedWorkspace, "Workspace must fail closed when environment is offline")
+        assertNotNull(state.workspaceError.value, "WorkspaceError must be reported when environment is offline")
+        assertTrue(state.workspaceError.value?.reason?.contains("WSL2") == true)
         collectJob.cancel()
     }
 
@@ -164,6 +210,7 @@ class WorkspaceBrowserStateTest {
             getRecentWorkspacesUseCase = GetRecentWorkspacesUseCase(repo),
             openWorkspaceUseCase = OpenWorkspaceUseCase(repo),
             removeRecentWorkspaceUseCase = RemoveRecentWorkspaceUseCase(repo),
+            toolchainSetupState = defaultToolchainFlow(),
             environmentReadinessPort = offlinePort,
         )
 
@@ -194,6 +241,7 @@ class WorkspaceBrowserStateTest {
             getRecentWorkspacesUseCase = GetRecentWorkspacesUseCase(repo),
             openWorkspaceUseCase = OpenWorkspaceUseCase(repo),
             removeRecentWorkspaceUseCase = RemoveRecentWorkspaceUseCase(repo),
+            toolchainSetupState = defaultToolchainFlow(),
         )
 
         val collectJob = backgroundScope.launch(testDispatcher) {
@@ -237,6 +285,7 @@ class WorkspaceBrowserStateTest {
             getRecentWorkspacesUseCase = GetRecentWorkspacesUseCase(repo),
             openWorkspaceUseCase = OpenWorkspaceUseCase(repo),
             removeRecentWorkspaceUseCase = RemoveRecentWorkspaceUseCase(repo),
+            toolchainSetupState = defaultToolchainFlow(),
         )
 
         val collectJob = backgroundScope.launch(testDispatcher) {
@@ -267,6 +316,7 @@ class WorkspaceBrowserStateTest {
             getRecentWorkspacesUseCase = GetRecentWorkspacesUseCase(repo),
             openWorkspaceUseCase = OpenWorkspaceUseCase(repo),
             removeRecentWorkspaceUseCase = RemoveRecentWorkspaceUseCase(repo),
+            toolchainSetupState = defaultToolchainFlow(),
         )
 
         val collectJob = backgroundScope.launch(testDispatcher) {
@@ -303,6 +353,7 @@ class WorkspaceBrowserStateTest {
             getRecentWorkspacesUseCase = GetRecentWorkspacesUseCase(repo),
             openWorkspaceUseCase = OpenWorkspaceUseCase(repo),
             removeRecentWorkspaceUseCase = RemoveRecentWorkspaceUseCase(repo),
+            toolchainSetupState = defaultToolchainFlow(),
         )
 
         state.onSearchQueryChange("ROM1")
@@ -333,6 +384,7 @@ class WorkspaceBrowserStateTest {
             getRecentWorkspacesUseCase = GetRecentWorkspacesUseCase(repo),
             openWorkspaceUseCase = OpenWorkspaceUseCase(repo),
             removeRecentWorkspaceUseCase = RemoveRecentWorkspaceUseCase(repo),
+            toolchainSetupState = defaultToolchainFlow(),
         )
 
         val collectJob = backgroundScope.launch(testDispatcher) {
@@ -350,5 +402,512 @@ class WorkspaceBrowserStateTest {
         assertTrue(elapsed < 1000, "100 recents search must complete in well under 1s (SC-001)")
 
         collectJob.cancel()
+    }
+
+    @Test
+    fun testOpenRecentQueuesWhileCheckingAndResolvesWhenPassing() = runTest(testDispatcher) {
+        val repo = FakeWorkspaceRepository()
+        val now = Clock.System.now()
+        val ws = Workspace(id = "ws_test", name = "Test", path = "C:/ws", type = WorkspaceType.LOCAL, lastOpened = now)
+        repo.saveWorkspace(ws)
+        val project = RecentProject("ws_test", "Test", "C:/ws", now)
+
+        val toolchainFlow = MutableStateFlow(
+            ToolchainSetupState(
+                isChecking = true,
+                steps = listOf(
+                    SetupStepDetail(
+                        stage = SetupStepStage.WSL_DETECTION,
+                        title = "WSL",
+                        description = "Checking",
+                        status = StepStatus.RUNNING,
+                    ),
+                ),
+            ),
+        )
+
+        val state = WorkspaceBrowserState(
+            scope = backgroundScope,
+            getRecentWorkspacesUseCase = GetRecentWorkspacesUseCase(repo),
+            openWorkspaceUseCase = OpenWorkspaceUseCase(repo),
+            removeRecentWorkspaceUseCase = RemoveRecentWorkspaceUseCase(repo),
+            toolchainSetupState = toolchainFlow,
+        )
+
+        var openedWorkspace: Workspace? = null
+        state.openRecentProject(project) { opened ->
+            openedWorkspace = opened
+        }
+
+        // Must be queued, not opened yet
+        assertEquals(PendingWorkspaceRequest.OpenRecent(project), state.pendingWorkspaceRequest.value)
+        assertNull(openedWorkspace)
+
+        // Now checks complete and pass
+        toolchainFlow.value = ToolchainSetupState(
+            isChecking = false,
+            steps = SetupStepStage.entries.map {
+                SetupStepDetail(
+                    stage = it,
+                    title = it.displayName,
+                    description = "OK",
+                    status = StepStatus.SUCCESS,
+                    provenance = StepProvenance.LIVE,
+                )
+            },
+        )
+
+        // Queue resolved
+        assertNull(state.pendingWorkspaceRequest.value)
+        assertNotNull(openedWorkspace)
+        assertEquals("ws_test", openedWorkspace?.id)
+    }
+
+    @Test
+    fun testOpenRecentBlockedWhenChecksFail() = runTest(testDispatcher) {
+        val repo = FakeWorkspaceRepository()
+        val now = Clock.System.now()
+        val ws = Workspace(id = "ws_test", name = "Test", path = "C:/ws", type = WorkspaceType.LOCAL, lastOpened = now)
+        repo.saveWorkspace(ws)
+        val project = RecentProject("ws_test", "Test", "C:/ws", now)
+
+        val toolchainFlow = MutableStateFlow(
+            ToolchainSetupState(
+                isChecking = false,
+                steps = listOf(
+                    SetupStepDetail(
+                        stage = SetupStepStage.WSL_DETECTION,
+                        title = "WSL",
+                        description = "WSL 2 not found",
+                        status = StepStatus.FAILED,
+                        error = "WSL 2 is not installed",
+                    ),
+                ),
+            ),
+        )
+
+        val state = WorkspaceBrowserState(
+            scope = backgroundScope,
+            getRecentWorkspacesUseCase = GetRecentWorkspacesUseCase(repo),
+            openWorkspaceUseCase = OpenWorkspaceUseCase(repo),
+            removeRecentWorkspaceUseCase = RemoveRecentWorkspaceUseCase(repo),
+            toolchainSetupState = toolchainFlow,
+        )
+
+        var openedWorkspace: Workspace? = null
+        state.openRecentProject(project) { opened ->
+            openedWorkspace = opened
+        }
+
+        assertNull(state.pendingWorkspaceRequest.value, "Must not queue when checks have failed")
+        assertNull(openedWorkspace, "Workspace must not be opened")
+        assertNotNull(state.workspaceError.value)
+        assertTrue(state.workspaceError.value?.reason?.contains("WSL 2") == true)
+    }
+
+    @Test
+    fun testFolderOpenInterceptionWhileChecking() = runTest(testDispatcher) {
+        val repo = FakeWorkspaceRepository()
+        val now = Clock.System.now()
+        val ws = Workspace(
+            id = "ws_folder",
+            name = "folder",
+            path = "C:/my_folder",
+            type = WorkspaceType.LOCAL,
+            lastOpened = now,
+        )
+        repo.saveWorkspace(ws)
+
+        val toolchainFlow = MutableStateFlow(
+            ToolchainSetupState(
+                isChecking = true,
+                steps = listOf(
+                    SetupStepDetail(
+                        stage = SetupStepStage.WSL_DETECTION,
+                        title = "WSL",
+                        description = "Checking",
+                        status = StepStatus.RUNNING,
+                    ),
+                ),
+            ),
+        )
+
+        val openByPathUseCase = OpenWorkspaceByPathUseCase(repo)
+        val state = WorkspaceBrowserState(
+            scope = backgroundScope,
+            getRecentWorkspacesUseCase = GetRecentWorkspacesUseCase(repo),
+            openWorkspaceUseCase = OpenWorkspaceUseCase(repo),
+            removeRecentWorkspaceUseCase = RemoveRecentWorkspaceUseCase(repo),
+            openWorkspaceByPathUseCase = openByPathUseCase,
+            toolchainSetupState = toolchainFlow,
+            selectDirectory = { "C:/my_folder" },
+        )
+
+        var openedWorkspace: Workspace? = null
+        state.openFolder { opened ->
+            openedWorkspace = opened
+        }
+
+        // While checking, must queue OpenPath without invoking open use case
+        assertEquals(PendingWorkspaceRequest.OpenPath("C:/my_folder"), state.pendingWorkspaceRequest.value)
+        assertNull(openedWorkspace)
+
+        // Now checks complete successfully
+        toolchainFlow.value = ToolchainSetupState(
+            isChecking = false,
+            steps = SetupStepStage.entries.map {
+                SetupStepDetail(
+                    stage = it,
+                    title = it.displayName,
+                    description = "OK",
+                    status = StepStatus.SUCCESS,
+                    provenance = StepProvenance.LIVE,
+                )
+            },
+        )
+
+        // Queue resolved and folder opened
+        assertNull(state.pendingWorkspaceRequest.value)
+        assertNotNull(openedWorkspace)
+        assertEquals("C:/my_folder", openedWorkspace?.path)
+    }
+
+    @Test
+    fun testCancelPendingWorkspaceRequest() = runTest(testDispatcher) {
+        val repo = FakeWorkspaceRepository()
+        val now = Clock.System.now()
+        val ws = Workspace(id = "ws_test", name = "Test", path = "C:/ws", type = WorkspaceType.LOCAL, lastOpened = now)
+        repo.saveWorkspace(ws)
+        val project = RecentProject("ws_test", "Test", "C:/ws", now)
+
+        val toolchainFlow = MutableStateFlow(
+            ToolchainSetupState(
+                isChecking = true,
+                steps = listOf(
+                    SetupStepDetail(
+                        stage = SetupStepStage.WSL_DETECTION,
+                        title = "WSL",
+                        description = "Checking",
+                        status = StepStatus.RUNNING,
+                    ),
+                ),
+            ),
+        )
+
+        val state = WorkspaceBrowserState(
+            scope = backgroundScope,
+            getRecentWorkspacesUseCase = GetRecentWorkspacesUseCase(repo),
+            openWorkspaceUseCase = OpenWorkspaceUseCase(repo),
+            removeRecentWorkspaceUseCase = RemoveRecentWorkspaceUseCase(repo),
+            toolchainSetupState = toolchainFlow,
+        )
+
+        var openedWorkspace: Workspace? = null
+        state.openRecentProject(project) { opened ->
+            openedWorkspace = opened
+        }
+
+        assertEquals(PendingWorkspaceRequest.OpenRecent(project), state.pendingWorkspaceRequest.value)
+
+        state.cancelPendingWorkspaceRequest()
+        assertNull(state.pendingWorkspaceRequest.value, "Pending workspace request must be cleared on cancel")
+
+        // Now checks complete, but canceled request should NOT open
+        toolchainFlow.value = ToolchainSetupState(
+            isChecking = false,
+            steps = SetupStepStage.entries.map {
+                SetupStepDetail(
+                    stage = it,
+                    title = it.displayName,
+                    description = "OK",
+                    status = StepStatus.SUCCESS,
+                    provenance = StepProvenance.LIVE,
+                )
+            },
+        )
+
+        assertNull(openedWorkspace, "Workspace must not be opened after being canceled")
+    }
+
+    @Test
+    fun testRetryQueuedOpenPathWhenReadinessBlockedDoesNotBypassGate() = runTest {
+        val repo = object : FakeWorkspaceRepository() {
+            var saveCount = 0
+            override suspend fun saveWorkspace(workspace: Workspace) {
+                saveCount++
+                super.saveWorkspace(workspace)
+            }
+        }
+
+        val toolchainFlow = MutableStateFlow(
+            ToolchainSetupState(
+                isChecking = true,
+                steps = listOf(
+                    SetupStepDetail(
+                        stage = SetupStepStage.WSL_DETECTION,
+                        title = "WSL",
+                        description = "Checking",
+                        status = StepStatus.RUNNING,
+                    ),
+                ),
+            ),
+        )
+
+        val state = WorkspaceBrowserState(
+            scope = backgroundScope,
+            getRecentWorkspacesUseCase = GetRecentWorkspacesUseCase(repo),
+            openWorkspaceUseCase = OpenWorkspaceUseCase(repo),
+            openWorkspaceByPathUseCase = OpenWorkspaceByPathUseCase(repo),
+            removeRecentWorkspaceUseCase = RemoveRecentWorkspaceUseCase(repo),
+            toolchainSetupState = toolchainFlow,
+        )
+
+        var openedWorkspace: Workspace? = null
+        state.openPath("/home/user/project") { opened ->
+            openedWorkspace = opened
+        }
+
+        assertEquals(PendingWorkspaceRequest.OpenPath("/home/user/project"), state.pendingWorkspaceRequest.value)
+        assertEquals(0, repo.saveCount, "Open by path must not save/open workspace while checking")
+
+        // Check finishes with failure
+        toolchainFlow.value = ToolchainSetupState(
+            isChecking = false,
+            steps = listOf(
+                SetupStepDetail(
+                    stage = SetupStepStage.WSL_DETECTION,
+                    title = "WSL 2 Runtime",
+                    description = "WSL not found",
+                    status = StepStatus.FAILED,
+                    error = "WSL 2 is not installed",
+                ),
+            ),
+        )
+        testScheduler.runCurrent()
+
+        assertNull(state.pendingWorkspaceRequest.value, "Pending request must be cleared")
+        assertNull(openedWorkspace, "Workspace must not open on failure")
+        val error = state.workspaceError.value
+        assertNotNull(error, "Workspace error must be set on failure")
+
+        // User clicks "Retry" action from error card while environment is still failing
+        val retry = error.retryAction
+        assertNotNull(retry, "Retry action must be present")
+        retry.invoke()
+        testScheduler.runCurrent()
+
+        // Verify it checked canLaunchWorkspace and did NOT execute use-case
+        assertEquals(0, repo.saveCount, "Retry action must not execute openPath while environment gate is closed")
+        assertNull(openedWorkspace, "Workspace must not be opened while gate is closed")
+        assertNotNull(state.workspaceError.value, "Workspace error must remain set")
+    }
+
+    @Test
+    fun testRetryPathOpenErrorWhenReadinessBecomesBlockedDoesNotBypassGate() = runTest {
+        var callCount = 0
+        var shouldFail = true
+        val repo = object : FakeWorkspaceRepository() {
+            override suspend fun saveWorkspace(workspace: Workspace) {
+                callCount++
+                if (shouldFail) {
+                    error("Simulated disk error")
+                }
+                super.saveWorkspace(workspace)
+            }
+        }
+
+        val toolchainFlow = MutableStateFlow(
+            ToolchainSetupState(
+                isChecking = false,
+                steps = SetupStepStage.entries.map {
+                    SetupStepDetail(
+                        stage = it,
+                        title = it.displayName,
+                        description = "OK",
+                        status = StepStatus.SUCCESS,
+                        provenance = StepProvenance.LIVE,
+                    )
+                },
+            ),
+        )
+
+        val state = WorkspaceBrowserState(
+            scope = backgroundScope,
+            getRecentWorkspacesUseCase = GetRecentWorkspacesUseCase(repo),
+            openWorkspaceUseCase = OpenWorkspaceUseCase(repo),
+            openWorkspaceByPathUseCase = OpenWorkspaceByPathUseCase(repo),
+            removeRecentWorkspaceUseCase = RemoveRecentWorkspaceUseCase(repo),
+            toolchainSetupState = toolchainFlow,
+        )
+
+        // Open path initially while ready, which fails with simulated disk error
+        state.openPath("/home/user/project")
+        testScheduler.runCurrent()
+        assertEquals(1, callCount)
+        val initialError = state.workspaceError.value
+        assertNotNull(initialError)
+        assertEquals("Simulated disk error", initialError.reason)
+
+        // Now environment becomes blocked (e.g. server bridge lost)
+        toolchainFlow.value = ToolchainSetupState(
+            isChecking = false,
+            steps = listOf(
+                SetupStepDetail(
+                    stage = SetupStepStage.SERVER_CONNECTIVITY,
+                    title = "Server Bridge",
+                    description = "Connection refused",
+                    status = StepStatus.FAILED,
+                    error = "Daemon crashed",
+                ),
+            ),
+        )
+        testScheduler.runCurrent()
+
+        // User retries
+        initialError.retryAction?.invoke()
+        testScheduler.runCurrent()
+
+        // Call count must NOT increase because gate is now closed
+        assertEquals(1, callCount, "Retry must not bypass the closed environment readiness gate")
+        assertEquals("Daemon crashed", state.workspaceError.value?.reason)
+    }
+
+    @Test
+    fun testOpenRecentProjectReadinessClosesBetweenDispatchAndExecutionBlocksWorkspaceMutation() = runTest {
+        var openCallCount = 0
+        val repo = object : FakeWorkspaceRepository() {
+            override suspend fun getWorkspace(id: String): Workspace? {
+                openCallCount++
+                return super.getWorkspace(id)
+            }
+        }
+        val now = Clock.System.now()
+        val ws = Workspace(
+            id = "ws_race",
+            name = "Race Project",
+            path = "C:/ws_race",
+            type = WorkspaceType.LOCAL,
+            lastOpened = now,
+        )
+        repo.saveWorkspace(ws)
+        val project = RecentProject("ws_race", "Race Project", "C:/ws_race", now)
+
+        val toolchainFlow = MutableStateFlow(
+            ToolchainSetupState(
+                isChecking = false,
+                steps = SetupStepStage.entries.map {
+                    SetupStepDetail(
+                        stage = it,
+                        title = it.displayName,
+                        description = "OK",
+                        status = StepStatus.SUCCESS,
+                        provenance = StepProvenance.LIVE,
+                    )
+                },
+            ),
+        )
+
+        val standardDispatcher = StandardTestDispatcher(testScheduler)
+        val testScope = CoroutineScope(standardDispatcher)
+
+        val state = WorkspaceBrowserState(
+            scope = testScope,
+            getRecentWorkspacesUseCase = GetRecentWorkspacesUseCase(repo),
+            openWorkspaceUseCase = OpenWorkspaceUseCase(repo),
+            removeRecentWorkspaceUseCase = RemoveRecentWorkspaceUseCase(repo),
+            toolchainSetupState = toolchainFlow,
+        )
+
+        var openedWorkspace: Workspace? = null
+        state.openRecentProject(project) { opened ->
+            openedWorkspace = opened
+        }
+
+        // Before coroutine executes, readiness closes
+        toolchainFlow.value = ToolchainSetupState(
+            isChecking = false,
+            steps = listOf(
+                SetupStepDetail(
+                    stage = SetupStepStage.SERVER_CONNECTIVITY,
+                    title = "Server Bridge",
+                    description = "Connection dropped",
+                    status = StepStatus.FAILED,
+                    error = "Daemon crashed during launch",
+                ),
+            ),
+        )
+
+        // Execute scheduled coroutine
+        testScheduler.runCurrent()
+
+        assertEquals(0, openCallCount, "Use case must NOT be invoked when readiness closes before execution")
+        assertNull(openedWorkspace, "Workspace must not be emitted to callback")
+        assertNotNull(state.workspaceError.value, "Workspace error must be reported")
+        assertEquals("Daemon crashed during launch", state.workspaceError.value?.reason)
+    }
+
+    @Test
+    fun testOpenPathReadinessClosesBetweenDispatchAndExecutionBlocksWorkspaceMutation() = runTest {
+        var openCallCount = 0
+        val repo = object : FakeWorkspaceRepository() {
+            override suspend fun saveWorkspace(workspace: Workspace) {
+                openCallCount++
+                super.saveWorkspace(workspace)
+            }
+        }
+
+        val toolchainFlow = MutableStateFlow(
+            ToolchainSetupState(
+                isChecking = false,
+                steps = SetupStepStage.entries.map {
+                    SetupStepDetail(
+                        stage = it,
+                        title = it.displayName,
+                        description = "OK",
+                        status = StepStatus.SUCCESS,
+                        provenance = StepProvenance.LIVE,
+                    )
+                },
+            ),
+        )
+
+        val standardDispatcher = StandardTestDispatcher(testScheduler)
+        val testScope = CoroutineScope(standardDispatcher)
+
+        val state = WorkspaceBrowserState(
+            scope = testScope,
+            getRecentWorkspacesUseCase = GetRecentWorkspacesUseCase(repo),
+            openWorkspaceUseCase = OpenWorkspaceUseCase(repo),
+            openWorkspaceByPathUseCase = OpenWorkspaceByPathUseCase(repo),
+            removeRecentWorkspaceUseCase = RemoveRecentWorkspaceUseCase(repo),
+            toolchainSetupState = toolchainFlow,
+        )
+
+        var openedWorkspace: Workspace? = null
+        state.openPath("/home/dev/race_folder") { opened ->
+            openedWorkspace = opened
+        }
+
+        // Before coroutine executes, readiness closes
+        toolchainFlow.value = ToolchainSetupState(
+            isChecking = false,
+            steps = listOf(
+                SetupStepDetail(
+                    stage = SetupStepStage.WSL_DETECTION,
+                    title = "WSL 2 Runtime",
+                    description = "WSL service stopped",
+                    status = StepStatus.FAILED,
+                    error = "WSL 2 service stopped unexpectedly",
+                ),
+            ),
+        )
+
+        // Execute scheduled coroutine
+        testScheduler.runCurrent()
+
+        assertEquals(0, openCallCount, "OpenPath use case must NOT be invoked when readiness closes before execution")
+        assertNull(openedWorkspace, "Workspace must not be emitted to callback")
+        assertNotNull(state.workspaceError.value, "Workspace error must be reported")
+        assertEquals("WSL 2 service stopped unexpectedly", state.workspaceError.value?.reason)
     }
 }

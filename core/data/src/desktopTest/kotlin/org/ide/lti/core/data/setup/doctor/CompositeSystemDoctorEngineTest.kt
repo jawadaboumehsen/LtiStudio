@@ -11,6 +11,7 @@ import org.ide.lti.core.domain.setup.doctor.RunSystemDiagnosticsUseCase
 import java.nio.charset.Charset
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -158,11 +159,11 @@ class CompositeSystemDoctorEngineTest {
 
         val results = engine.runDiagnostics("Ubuntu", binariesPresent = true)
 
-        assertEquals(14, results.size, "Expected 14 diagnostic check items")
+        assertEquals(13, results.size, "Expected 13 diagnostic check items")
         val ids = results.map { it.id }.toSet()
         val expectedIds = setOf(
             "host_compilers", "host_libraries", "python_crypto", "jdk_dual",
-            "selinux_attr", "archive_tools", "transfer_tools", "sudo_noninteractive",
+            "selinux_attr", "archive_tools", "transfer_tools",
             "dev_fuse", "loop_mount", "disk_headroom", "openssl_tools", "toolchain_binaries",
             "build_cache"
         )
@@ -246,11 +247,11 @@ class CompositeSystemDoctorEngineTest {
         val useCase = RunSystemDiagnosticsUseCase(engine)
 
         val results = useCase("Ubuntu", binariesPresent = true)
-        assertEquals(14, results.size)
+        assertEquals(13, results.size)
     }
 
     @Test
-    fun `autoRemediate batches missing packages and runs apt-get as root`() = runTest {
+    fun `autoRemediate requires user authorization when system packages are missing`() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val mockCli = MockWslCliExecutor().apply {
             simulateMissingCompilers = true
@@ -266,16 +267,13 @@ class CompositeSystemDoctorEngineTest {
         val progressLogs = mutableListOf<String>()
         val success = engine.autoRemediate("Ubuntu") { progressLogs.add(it) }
 
-        assertTrue(success)
-        assertTrue(mockCli.executedCommands.any { it.contains("apt-get update") })
-        assertTrue(mockCli.executedCommands.any { it.contains("apt-get install -y") && it.contains("cmake") })
-        assertTrue(mockCli.executedCommands.any { it.startsWith("sudo -n apt-get") }, "Must execute via non-interactive sudo")
-        assertTrue(mockCli.executedUsers.none { it == "root" }, "Must never fall back to direct wsl -u root")
-        assertTrue(progressLogs.isNotEmpty())
+        assertFalse(success)
+        assertTrue(progressLogs.any { it.contains("authorization in your WSL terminal") || it.contains("Remediation finished with remaining issues") })
+        assertTrue(mockCli.executedCommands.none { it.contains("sudo") })
     }
 
     @Test
-    fun `LoopMountInspector succeeds when sudo mount -V is permitted without password even if sudo true fails`() = runTest {
+    fun `LoopMountInspector succeeds when loop device control is present`() = runTest {
         val testCli = object : WslCliExecutor() {
             override fun execute(
                 distro: String,
@@ -287,16 +285,14 @@ class CompositeSystemDoctorEngineTest {
                 val cmd = command.joinToString(" ")
                 return when {
                     cmd.contains("test -e /dev/loop-control") -> CliExecutionResult(0, "", "")
-                    cmd.contains("sudo -n /bin/mount -V") -> CliExecutionResult(0, "mount from util-linux", "")
-                    cmd.contains("sudo -n true") -> CliExecutionResult(1, "", "sudo: a password is required")
-                    else -> CliExecutionResult(0, "", "")
+                    else -> CliExecutionResult(1, "", "")
                 }
             }
         }
         val inspector = LoopMountInspector(cli = testCli)
         val result = inspector.inspect(DiagnosticContext("Ubuntu", "/home/lti", "/home/lti/LtiRomTools/bin", true))
         assertEquals(StepStatus.SUCCESS, result.status)
-        assertTrue(result.detail.contains("non-interactive elevation active"))
+        assertTrue(result.detail.contains("/dev/loop-control"))
     }
 
     @Test
@@ -389,7 +385,6 @@ class CompositeSystemDoctorEngineTest {
                 return CliExecutionResult(0, "ok", "")
             }
         }
-        val remediator = WslPackageRemediator(cli = testCli)
         val failedItems = listOf(
             org.ide.lti.core.domain.setup.DiagnosticCheckItem(
                 id = "archive_tools",
@@ -407,18 +402,13 @@ class CompositeSystemDoctorEngineTest {
                 status = StepStatus.FAILED
             )
         )
-        val ok = remediator.remediate(
-            DiagnosticContext("Ubuntu", "/home/lti", "/home/lti/LtiRomTools/bin", true),
-            failedItems
-        )
-        assertTrue(ok)
-        val aptCmd = installedAptCommands.firstOrNull()
-        assertNotNull(aptCmd)
-        assertTrue(aptCmd.contains("brotli"))
-        assertTrue(aptCmd.contains("attr"))
-        assertTrue(aptCmd.contains("rsync"))
-        assertTrue(aptCmd.contains("file"))
-        assertTrue(aptCmd.contains("xxd"))
+        val plan = WslPackageRemediator.resolve(failedItems)
+        assertTrue(plan.requiresElevation)
+        assertTrue(plan.aptPackages.contains("brotli"))
+        assertTrue(plan.aptPackages.contains("attr"))
+        assertTrue(plan.aptPackages.contains("rsync"))
+        assertTrue(plan.aptPackages.contains("file"))
+        assertTrue(plan.aptPackages.contains("xxd"))
     }
 
     @Test
@@ -433,7 +423,7 @@ class CompositeSystemDoctorEngineTest {
         )
 
         val results = engine.runDiagnostics("Ubuntu", binariesPresent = true)
-        assertEquals(14, results.size)
+        assertEquals(13, results.size)
         assertTrue(
             mockCli.executedCommands.size <= 10,
             "Expected <= 10 commands, but was ${mockCli.executedCommands.size}: ${mockCli.executedCommands}"

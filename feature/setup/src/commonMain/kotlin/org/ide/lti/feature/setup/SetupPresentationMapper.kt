@@ -132,7 +132,7 @@ object SetupPresentationMapper {
         is EnvironmentState.Unavailable -> PrimaryAction.RETRY_CONNECTION
         is EnvironmentState.Restored -> PrimaryAction.CHECK
         is EnvironmentState.MutationRunning -> PrimaryAction.STAGE_PROGRESS
-        is EnvironmentState.Reconnecting -> PrimaryAction.STAGE_PROGRESS
+        is EnvironmentState.Reconnecting -> PrimaryAction.RECONNECT
         is EnvironmentState.Interrupted -> PrimaryAction.RECONNECT
     }
 

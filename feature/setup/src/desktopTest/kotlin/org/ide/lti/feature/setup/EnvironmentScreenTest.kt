@@ -70,7 +70,6 @@ class EnvironmentScreenTest {
                     actions = SetupUiActions(
                         onRetryStage = { retriedStage = it },
                     ),
-                    autoRunOnLaunch = false,
                 )
             }
         }
@@ -110,7 +109,6 @@ class EnvironmentScreenTest {
                         onRetryStage = { retriedStage = it },
                     ),
                     onNavigateToProjects = { navigatedToProjects = true },
-                    autoRunOnLaunch = false,
                 )
             }
         }
@@ -143,7 +141,6 @@ class EnvironmentScreenTest {
                 EnvironmentStepContent(
                     state = SetupUiState(toolchainSetupState = state),
                     actions = SetupUiActions(),
-                    autoRunOnLaunch = false,
                 )
             }
         }
@@ -247,7 +244,6 @@ class EnvironmentScreenTest {
                     state = SetupUiState(toolchainSetupState = state),
                     actions = SetupUiActions(),
                     onNavigateToProjects = { navigatedToProjects = true },
-                    autoRunOnLaunch = false,
                 )
             }
         }

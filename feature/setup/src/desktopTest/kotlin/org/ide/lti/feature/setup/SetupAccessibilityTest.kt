@@ -21,6 +21,7 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
@@ -233,7 +234,7 @@ class SetupAccessibilityTest {
         // Brand and navigation elements must be displayed in compact mode
         onNodeWithText("Machine environment").assertIsDisplayed()
         onNodeWithText("Recent Workspaces").assertIsDisplayed()
-        onNodeWithText("Build service").assertIsDisplayed()
+        onNodeWithText("Environment").assertIsDisplayed()
 
         // Content items displayed without clipping
         onNodeWithText("Kernel_AOSP").assertIsDisplayed()
@@ -331,7 +332,7 @@ class SetupAccessibilityTest {
         onNodeWithText("CustomQuery").assertIsDisplayed()
 
         // Click a unique reference-aligned Environment destination.
-        onNodeWithText("WSL runtime").performClick()
+        onNodeWithText("Environment").performClick()
         assertEquals(SetupTab.ENVIRONMENT, activeTab)
     }
 
@@ -357,9 +358,9 @@ class SetupAccessibilityTest {
         }
 
         // Environment header and navigation visible in compact mode (SC-005)
-        onNodeWithText("Environment & Toolchains Cockpit").assertIsDisplayed()
-        onNodeWithText("Environment overview").assertIsDisplayed()
-        onNodeWithText("Build service").assertIsDisplayed()
+        onAllNodesWithText("Machine setup").onFirst().assertIsDisplayed()
+        onNodeWithText("Environment").assertIsDisplayed()
+        onNodeWithText("Tools").assertIsDisplayed()
     }
 
     @Test

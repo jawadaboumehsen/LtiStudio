@@ -38,6 +38,7 @@ import org.ide.lti.core.domain.setup.StepProvenance
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolchainProvisioningService
 import org.ide.lti.core.domain.setup.ToolchainSetupState
+import org.ide.lti.core.domain.setup.UserRepairHandoff
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -46,6 +47,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
+@Suppress("LargeClass")
 class EnvironmentSetupStateTest {
 
     private fun runEnvironmentTest(
@@ -178,8 +180,29 @@ class EnvironmentSetupStateTest {
             lastRecoverAttemptId = attemptId
             return recoverOutcome ?: recoverDeferred.await()
         }
-        override suspend fun cancel(): SetupOutcome =
-            SetupOutcome.Failed(stage = null, reason = "fake service has nothing to cancel")
+        var cancelCount = 0
+            private set
+        var cancelOutcome: SetupOutcome = SetupOutcome.Cancelled
+
+        override suspend fun cancel(): SetupOutcome {
+            cancelCount++
+            return cancelOutcome
+        }
+
+        var resumeCount = 0
+            private set
+        var lastResumedPlanId: String? = null
+            private set
+        var resumeOutcome: SetupOutcome = SetupOutcome.Failed(
+            stage = null,
+            reason = "fake service does not resume plans",
+        )
+
+        override suspend fun resume(planId: String): SetupOutcome {
+            resumeCount++
+            lastResumedPlanId = planId
+            return resumeOutcome
+        }
 
         override suspend fun testTool(toolId: String): SetupOutcome {
             testToolCount++
@@ -659,6 +682,9 @@ class EnvironmentSetupStateTest {
                     assertEquals(SetupOperationState.INTERRUPTED, op.executionState)
                     assertTrue(op.failure?.contains("Bridge communication lost") == true)
                 }
+                is SetupOutcome.AwaitingUserAction -> {
+                    assertEquals(SetupOperationState.AWAITING_USER_ACTION, op.executionState)
+                }
                 is SetupOutcome.Succeeded -> {}
             }
         }
@@ -679,7 +705,7 @@ class EnvironmentSetupStateTest {
             activeOperation = stateHolder.activeOperation.value,
         )
         assertTrue(before.environmentState is EnvironmentState.Reconnecting, "$before")
-        assertEquals(PrimaryAction.STAGE_PROGRESS, before.primaryAction)
+        assertEquals(PrimaryAction.RECONNECT, before.primaryAction)
 
         testScheduler.advanceUntilIdle()
 
@@ -761,5 +787,284 @@ class EnvironmentSetupStateTest {
         assertEquals(1, spyService.prepareCount)
         assertEquals(SetupOperationState.PREVIEW, stateHolder.activeOperation.value?.executionState)
         assertEquals(0, spyService.confirmCount, "Preview alone never executes")
+    }
+
+    @Test
+    fun testReconciledAwaitingUserActionRestoresPendingPlanIdAndResumesWithPlanId() = runEnvironmentTest { envScope ->
+        val spyService = SpyToolchainProvisioningService(
+            initialState = ToolchainSetupState(pendingAttemptId = "attempt-recovery-99"),
+        )
+        val expectedPlanId = "plan-original-42"
+        val handoff = UserRepairHandoff(
+            actionId = "packages",
+            description = "Install dev packages",
+            terminalCommand = "sudo apt-get install pkg-config",
+            packages = listOf("pkg-config"),
+            distro = "Ubuntu",
+        )
+        spyService.recoverOutcome = SetupOutcome.AwaitingUserAction(
+            pendingPlanId = expectedPlanId,
+            stage = SetupStepStage.SYSTEM_DIAGNOSTICS,
+            reason = "Awaiting user terminal authorization",
+            handoff = handoff,
+        )
+        spyService.resumeOutcome = SetupOutcome.Succeeded()
+
+        val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)
+        testScheduler.advanceUntilIdle()
+
+        // 1. Initial startup reconciliation should have recovered the attempt and transitioned to AWAITING_USER_ACTION
+        val activeOp = stateHolder.activeOperation.value
+        assertNotNull(activeOp)
+        assertEquals(SetupOperationState.AWAITING_USER_ACTION, activeOp.executionState)
+        // OperationId must be updated with the pendingPlanId, NOT left as the attemptId!
+        assertEquals(expectedPlanId, activeOp.operationId)
+        assertEquals(handoff, activeOp.awaitingHandoff)
+
+        // 2. User clicks "Verify & Resume"
+        stateHolder.resumeAwaitingOperation()
+        testScheduler.advanceUntilIdle()
+
+        // 3. Service resume must have been called with expectedPlanId!
+        assertEquals(1, spyService.resumeCount)
+        assertEquals(expectedPlanId, spyService.lastResumedPlanId)
+        assertNull(stateHolder.activeOperation.value, "Succeeded resume clears active operation")
+    }
+
+    @Test
+    fun testResumeKeepsHandoffRetryableWhenUnrelatedDiagnosticFailsAndSucceedsOnFix() = runEnvironmentTest { envScope ->
+        val spyService = SpyToolchainProvisioningService(
+            initialState = ToolchainSetupState(pendingAttemptId = "attempt-recovery-101"),
+        )
+        val expectedPlanId = "plan-package-handoff-1"
+        val handoff = UserRepairHandoff(
+            actionId = "packages",
+            description = "Install dev packages",
+            terminalCommand = "sudo apt-get install -y libusb-1.0-0-dev",
+            packages = listOf("libusb-1.0-0-dev"),
+            distro = "Ubuntu",
+        )
+        spyService.recoverOutcome = SetupOutcome.AwaitingUserAction(
+            pendingPlanId = expectedPlanId,
+            stage = SetupStepStage.SYSTEM_DIAGNOSTICS,
+            reason = "Awaiting user terminal authorization",
+            handoff = handoff,
+        )
+
+        val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)
+        testScheduler.advanceUntilIdle()
+
+        // 1. Initial state is paused in AWAITING_USER_ACTION with handoff details
+        val initialOp = stateHolder.activeOperation.value
+        assertNotNull(initialOp)
+        assertEquals(SetupOperationState.AWAITING_USER_ACTION, initialOp.executionState)
+        assertEquals(handoff, initialOp.awaitingHandoff)
+
+        // 2. An unrelated check fails during the pause (e.g. Python runtime breaks in WSL)
+        val failureReason = "Environment check failed before resumption: Python 3 Runtime: python3 not found"
+        spyService.resumeOutcome = SetupOutcome.Failed(
+            stage = SetupStepStage.SYSTEM_DIAGNOSTICS.name,
+            reason = failureReason,
+        )
+
+        // User clicks "Verify & Resume"
+        stateHolder.resumeAwaitingOperation()
+        testScheduler.advanceUntilIdle()
+
+        // 3. The handoff MUST NOT be discarded and MUST remain retryable in AWAITING_USER_ACTION!
+        val failedResumeOp = stateHolder.activeOperation.value
+        assertNotNull(failedResumeOp, "Active operation must not be cleared on pre-flight recheck failure")
+        assertEquals(
+            SetupOperationState.AWAITING_USER_ACTION,
+            failedResumeOp.executionState,
+            "State must remain AWAITING_USER_ACTION so the handoff sheet and Verify & Resume action stay available",
+        )
+        assertEquals(handoff, failedResumeOp.awaitingHandoff, "Handoff details must be retained for retry")
+        assertEquals(failureReason, failedResumeOp.failure, "Failure reason must be captured to display on the sheet")
+        assertTrue(
+            stateHolder.environmentNotice.value?.contains("Python 3 Runtime") == true,
+            "Environment notice must communicate why resumption failed",
+        )
+
+        // 4. User fixes the issue in WSL (e.g. reinstalls Python)
+        spyService.resumeOutcome = SetupOutcome.Succeeded()
+
+        // 5. User clicks "Verify & Resume" again
+        stateHolder.resumeAwaitingOperation()
+        testScheduler.advanceUntilIdle()
+
+        // 6. Resume called twice and now succeeds
+        assertEquals(2, spyService.resumeCount)
+        assertEquals(expectedPlanId, spyService.lastResumedPlanId)
+        assertNull(stateHolder.activeOperation.value, "Succeeded resume clears active operation")
+    }
+
+    @Test
+    fun testDismissHandoffPreservesAwaitingOperationAndAllowsReopening() = runEnvironmentTest { envScope ->
+        val spyService = SpyToolchainProvisioningService(
+            initialState = ToolchainSetupState(pendingAttemptId = "attempt-recovery-201"),
+        )
+        val handoff = UserRepairHandoff(
+            actionId = "packages",
+            description = "Install packages",
+            terminalCommand = "sudo apt-get install -y git",
+            packages = listOf("git"),
+            distro = "Ubuntu",
+        )
+        spyService.recoverOutcome = SetupOutcome.AwaitingUserAction(
+            pendingPlanId = "plan-201",
+            stage = SetupStepStage.SYSTEM_DIAGNOSTICS,
+            reason = "Awaiting user terminal authorization",
+            handoff = handoff,
+        )
+
+        val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)
+        testScheduler.advanceUntilIdle()
+
+        // 1. Initial state has sheet visible and operation awaiting user action
+        assertTrue(stateHolder.isHandoffSheetVisible.value, "Sheet should be visible on initial handoff")
+        val activeOp = stateHolder.activeOperation.value
+        assertNotNull(activeOp)
+        assertEquals(SetupOperationState.AWAITING_USER_ACTION, activeOp.executionState)
+        assertEquals(handoff, activeOp.awaitingHandoff)
+
+        // 2. User clicks "Close for now" (dismiss)
+        stateHolder.dismissHandoff()
+
+        // 3. Sheet is dismissed, but operation is NOT cancelled and handoff is preserved!
+        assertFalse(stateHolder.isHandoffSheetVisible.value, "Sheet should be hidden after dismiss")
+        val preservedOp = stateHolder.activeOperation.value
+        assertNotNull(preservedOp)
+        assertEquals(
+            SetupOperationState.AWAITING_USER_ACTION,
+            preservedOp.executionState,
+            "Operation must remain AWAITING_USER_ACTION so resume controls are not lost",
+        )
+        assertEquals(handoff, preservedOp.awaitingHandoff, "Handoff details must be retained")
+        assertTrue(
+            stateHolder.environmentNotice.value?.contains("Terminal authorization pending") == true,
+            "Notice should communicate that authorization is pending",
+        )
+
+        // 4. User can re-open the sheet
+        stateHolder.showHandoffSheet()
+        assertTrue(stateHolder.isHandoffSheetVisible.value, "Sheet should become visible again via showHandoffSheet")
+    }
+
+    @Test
+    fun testAbandonAwaitingOperationCancelsServiceAttemptAndClearsSheet() = runEnvironmentTest { envScope ->
+        val spyService = SpyToolchainProvisioningService(
+            initialState = ToolchainSetupState(pendingAttemptId = "attempt-recovery-202"),
+        )
+        val handoff = UserRepairHandoff(
+            actionId = "packages",
+            description = "Install packages",
+            terminalCommand = "sudo apt-get install -y git",
+            packages = listOf("git"),
+            distro = "Ubuntu",
+        )
+        spyService.recoverOutcome = SetupOutcome.AwaitingUserAction(
+            pendingPlanId = "plan-202",
+            stage = SetupStepStage.SYSTEM_DIAGNOSTICS,
+            reason = "Awaiting user terminal authorization",
+            handoff = handoff,
+        )
+
+        val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)
+        testScheduler.advanceUntilIdle()
+
+        assertEquals(0, spyService.cancelCount)
+        assertTrue(stateHolder.isHandoffSheetVisible.value)
+
+        // User explicitly abandons the operation
+        stateHolder.abandonAwaitingOperation()
+        testScheduler.advanceUntilIdle()
+
+        // Service cancel was invoked
+        assertEquals(1, spyService.cancelCount, "Service cancel must be invoked to durably abandon journal attempt")
+        assertFalse(stateHolder.isHandoffSheetVisible.value, "Sheet must be dismissed")
+        val finalOp = stateHolder.activeOperation.value
+        assertNotNull(finalOp)
+        assertEquals(SetupOperationState.CANCELLED, finalOp.executionState, "Operation must transition to CANCELLED")
+        assertNull(finalOp.awaitingHandoff, "Awaiting handoff must be cleared")
+    }
+
+    @Test
+    fun testAbandonWhenToolchainServiceUnavailableDoesNotClearHandoff() = runEnvironmentTest { envScope ->
+        val handoff = UserRepairHandoff(
+            actionId = "packages",
+            description = "Install packages",
+            terminalCommand = "sudo apt-get install -y git",
+            packages = listOf("git"),
+            distro = "Ubuntu",
+        )
+
+        val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = null)
+        val initialOp = SetupOperation(
+            operationId = "op-no-service",
+            executionState = SetupOperationState.AWAITING_USER_ACTION,
+            awaitingHandoff = handoff,
+        )
+        stateHolder.setActiveOperationForTesting(initialOp)
+        stateHolder.showHandoffSheet()
+        assertTrue(stateHolder.isHandoffSheetVisible.value)
+
+        // Attempt abandon when service is unavailable
+        stateHolder.abandonAwaitingOperation()
+        testScheduler.advanceUntilIdle()
+
+        // Handoff must NOT be cleared and executionState must NOT become CANCELLED
+        val op = stateHolder.activeOperation.value
+        assertNotNull(op)
+        assertEquals(SetupOperationState.AWAITING_USER_ACTION, op.executionState)
+        assertEquals(handoff, op.awaitingHandoff)
+        assertEquals("Toolchain service is not available in this session.", stateHolder.environmentNotice.value)
+    }
+
+    @Test
+    fun testAbandonWhenJournalWriteFailsKeepsHandoffAndReportsInterrupted() = runEnvironmentTest { envScope ->
+        val spyService = SpyToolchainProvisioningService(
+            initialState = ToolchainSetupState(pendingAttemptId = "attempt-recovery-205"),
+        )
+        val handoff = UserRepairHandoff(
+            actionId = "packages",
+            description = "Install packages",
+            terminalCommand = "sudo apt-get install -y git",
+            packages = listOf("git"),
+            distro = "Ubuntu",
+        )
+        spyService.recoverOutcome = SetupOutcome.AwaitingUserAction(
+            pendingPlanId = "plan-205",
+            stage = SetupStepStage.SYSTEM_DIAGNOSTICS,
+            reason = "Awaiting user terminal authorization",
+            handoff = handoff,
+        )
+
+        val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)
+        testScheduler.advanceUntilIdle()
+
+        // Configure cancel to report Interrupted (simulated journal write failure)
+        val journalError = "Attempt attempt-recovery-205 finished but could not be archived: disk full"
+        spyService.cancelOutcome = SetupOutcome.Interrupted(journalError)
+
+        // Attempt abandon
+        stateHolder.abandonAwaitingOperation()
+        testScheduler.advanceUntilIdle()
+
+        assertEquals(1, spyService.cancelCount)
+        val op = stateHolder.activeOperation.value
+        assertNotNull(op)
+        // Must stay in AWAITING_USER_ACTION and keep handoff!
+        assertEquals(
+            SetupOperationState.AWAITING_USER_ACTION,
+            op.executionState,
+            "Operation must not transition to CANCELLED when journal archive fails",
+        )
+        assertEquals(handoff, op.awaitingHandoff, "Handoff must be kept when abandon fails")
+        assertEquals(journalError, op.failure)
+        assertTrue(
+            stateHolder.environmentNotice.value?.contains("Could not abandon operation") == true,
+            "Environment notice must report abandon failure",
+        )
     }
 }

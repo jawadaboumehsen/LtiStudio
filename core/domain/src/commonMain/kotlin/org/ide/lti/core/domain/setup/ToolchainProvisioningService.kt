@@ -113,6 +113,8 @@ public data class SetupStepDetail(
     val provenance: StepProvenance = StepProvenance.LIVE,
     val verifiedAtEpochMs: Long? = null,
     val runId: String? = null,
+    val failureCategory: org.ide.lti.core.domain.ports.DaemonFailureCategory? = null,
+    val toolchainFailureCategory: org.ide.lti.core.domain.ports.ToolchainFailureCategory? = null,
 )
 
 /**
@@ -158,6 +160,8 @@ public data class ToolchainSetupState(
     val pendingAttemptId: String? = null,
     /** Durable recovery block reason: the journal is ambiguous and needs user-directed recovery. */
     val recoveryBlockReason: String? = null,
+    val userHome: String? = null,
+    val workDirLinuxPath: String? = null,
 ) {
     val isBusy: Boolean get() = isRunning || isChecking || activeOperationId != null
 
@@ -665,6 +669,12 @@ public interface ToolchainProvisioningService {
         planId: String,
         revisionHash: String,
     ): SetupOutcome
+
+    /**
+     * Resumes an operation paused in [SetupOutcome.AwaitingUserAction] after external authorization.
+     * Re-probes required packages and continues the remaining plan actions upon live verification.
+     */
+    public suspend fun resume(planId: String): SetupOutcome
 
     /** Observes the most recent typed outcome of the operation owner; null while nothing has run. */
     public fun observe(): Flow<SetupOutcome?>

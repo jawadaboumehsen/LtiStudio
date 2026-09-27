@@ -35,6 +35,7 @@ import org.ide.lti.desktop.menu.model.StudioMenuState
 import org.ide.lti.desktop.menu.ui.StudioMenuBar
 import org.ide.lti.desktop.tray.AppTray
 import org.ide.lti.desktop.window.restoreWindow
+import org.ide.lti.core.common.timing.StartupTiming
 import org.ide.lti.shared.LtiSharedApp
 import org.ide.lti.shared.di.initKoin
 
@@ -95,10 +96,14 @@ private fun buildWindowControlActions(
     )
 }
 
-fun main(args: Array<String>) = nucleusApplication(args) {
-    remember {
-        initKoin()
-    }
+fun main(args: Array<String>) {
+    StartupTiming.log("Process started")
+    nucleusApplication(args) {
+        remember {
+            StartupTiming.log("Koin init started")
+            initKoin()
+            StartupTiming.log("Koin init finished")
+        }
     var mainWinRef by remember { mutableStateOf<NucleusWindow?>(null) }
     var openSettingsRequest by remember { mutableLongStateOf(0L) }
     val windowState = rememberWindowState(
@@ -126,6 +131,9 @@ fun main(args: Array<String>) = nucleusApplication(args) {
         minimumSize = DpSize(ComponentSize.MainWindowMinWidth, ComponentSize.MainWindowMinHeight),
         onPreviewKeyEvent = { event -> WindowKeyShortcutHandler.handleKeyEvent(event, actionDispatcher) },
     ) {
+        remember {
+            StartupTiming.log("DecoratedWindow composition entered")
+        }
         val nucleusWin = LocalNucleusWindow.current
         val windowControlActions = buildWindowControlActions(
             windowState = windowState,
@@ -166,7 +174,9 @@ fun main(args: Array<String>) = nucleusApplication(args) {
             LtiSharedApp(
                 openSettingsRequest = openSettingsRequest,
                 lowMemory = windowState.isMinimized,
+                onExit = ::exitApplication,
             )
         }
     }
+}
 }

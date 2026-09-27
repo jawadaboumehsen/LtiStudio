@@ -15,6 +15,7 @@ import kotlinx.serialization.Serializable
 enum class EnvironmentReadinessState {
     ENV_ABSENT,
     SERVICE_UNREACHABLE,
+    SERVICE_UNHEALTHY,
     TOOLS_MISSING,
     TOOLS_INCOMPATIBLE,
     WORKSPACE_INVALID,

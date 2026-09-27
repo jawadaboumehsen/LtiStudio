@@ -401,6 +401,6 @@ class SetupPresentationMapperTest {
             "An unreconciled attempt is reconnecting, not ready: $pendingState",
         )
         assertEquals("attempt-9", pendingState.operationId)
-        assertEquals(PrimaryAction.STAGE_PROGRESS, pending.primaryAction)
+        assertEquals(PrimaryAction.RECONNECT, pending.primaryAction)
     }
 }

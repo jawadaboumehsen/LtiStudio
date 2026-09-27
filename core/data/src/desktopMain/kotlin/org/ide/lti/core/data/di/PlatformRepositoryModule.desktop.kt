@@ -51,10 +51,8 @@ internal actual val platformRepositoryModule = module {
     single<ToolPublicationPort> { ToolPublicationAdapter(transport = get()) }
     single<EnvironmentReadinessPort> {
         EnvironmentReadinessAdapter(
-            wslPresence = get(),
-            supervisor = get(),
+            toolchainService = get(),
             transport = get(),
-            probePort = getOrNull(),
         )
     }
     single { WorkspaceKeyProvisioner(transport = get()) }

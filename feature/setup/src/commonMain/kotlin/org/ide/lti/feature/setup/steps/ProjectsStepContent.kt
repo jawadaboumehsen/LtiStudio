@@ -54,6 +54,7 @@ import kotlinx.datetime.Instant
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
 import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
 import org.ide.lti.core.designsystem.component.actions.GlassSecondaryButton
+import org.ide.lti.core.designsystem.component.actions.GlassTextButton
 import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.display.GlassEmptyState
 import org.ide.lti.core.designsystem.component.display.GlassEmptyStateOrientation
@@ -76,7 +77,9 @@ import org.ide.lti.core.designsystem.theme.SetupTokens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
+import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.model.workspace.RecentProject
+import org.ide.lti.feature.setup.PendingWorkspaceRequest
 import org.ide.lti.feature.setup.SetupUiActions
 import org.ide.lti.feature.setup.SetupUiState
 import org.ide.lti.feature.setup.WorkspaceAction
@@ -92,6 +95,7 @@ import org.ide.lti.feature.setup.WorkspaceAction
  * - Strict design-system token discipline using SetupTokens (zero raw dp/Color/alpha literals).
  * - No global target switch, fake clone, or staging actions (FR-001, FR-002, FR-003, FR-011).
  */
+@Suppress("CyclomaticComplexMethod")
 @Composable
 fun ProjectsStepContent(
     state: SetupUiState,
@@ -153,10 +157,23 @@ fun ProjectsStepContent(
             ),
         verticalArrangement = Arrangement.spacedBy(Spacing.SectionGap),
     ) {
-        // 1. Title + New/Open Toolbar Row
+        // 1. Title + New/Open Toolbar Row, with the live environment check summarized in one line so
+        // browsing projects never hides that verification is still running or needs attention.
+        val toolchain = state.toolchainSetupState
+        val failedCount = toolchain.steps.count { it.status == StepStatus.FAILED }
+        val environmentStatus = when {
+            toolchain.isChecking -> "Checking environment…"
+            failedCount == 1 -> "1 environment item needs attention · Review"
+            failedCount > 1 -> "$failedCount environment items need attention · Review"
+            toolchain.canLaunchWorkspace -> null
+            else -> "Environment not verified yet · Review"
+        }
         WorkspaceHeaderSection(
             onCreateWorkspace = actions.onCreateWorkspace,
             onOpenFolder = actions.onOpenFolder,
+            environmentStatus = environmentStatus,
+            isEnvironmentAttention = failedCount > 0,
+            onEnvironmentStatusClick = onNavigateToEnvironment,
         )
 
         GlassHorizontalDivider()
@@ -177,6 +194,22 @@ fun ProjectsStepContent(
             )
         }
 
+        // Pending folder open banner while verification is in progress
+        val pendingPath = (state.pendingWorkspaceRequest as? PendingWorkspaceRequest.OpenPath)?.path
+        if (pendingPath != null) {
+            GlassBanner(
+                severity = GlassBannerSeverity.INFO,
+                title = "Opening Directory",
+                description = "Opening $pendingPath once environment verification completes.",
+                primaryAction = GlassBannerAction(
+                    label = "Cancel",
+                    onClick = actions.onCancelPendingWorkspaceRequest,
+                ),
+                onDismiss = actions.onCancelPendingWorkspaceRequest,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+
         // 2. Recent Workspaces Header & Labeled Search
         WorkspaceSearchSection(
             searchQuery = state.searchQuery,
@@ -189,6 +222,8 @@ fun ProjectsStepContent(
         if (state.filteredProjects.isEmpty()) {
             WorkspaceEmptyStateSection(searchQuery = state.searchQuery)
         } else {
+            val pendingRecentId = (state.pendingWorkspaceRequest as? PendingWorkspaceRequest.OpenRecent)
+                ?.project?.workspaceId
             LazyColumn(
                 state = lazyListState,
                 modifier = Modifier
@@ -204,12 +239,14 @@ fun ProjectsStepContent(
                     WorkspaceRowItem(
                         project = project,
                         isSelected = state.selectedWorkspaceId == project.workspaceId,
+                        isPendingOpen = pendingRecentId == project.workspaceId,
                         onSelect = { actions.onSelectWorkspace(project.workspaceId) },
                         onOpen = { actions.onRecentProjectClick(project) },
                         onRemove = { actions.onRemoveRecentProject(project.workspaceId) },
                         onCopyPath = {
                             clipboardManager.setText(AnnotatedString(project.path))
                         },
+                        onCancelPendingOpen = actions.onCancelPendingWorkspaceRequest,
                     )
                 }
             }
@@ -221,10 +258,12 @@ fun ProjectsStepContent(
 private fun WorkspaceRowItem(
     project: RecentProject,
     isSelected: Boolean,
+    isPendingOpen: Boolean = false,
     onSelect: () -> Unit,
     onOpen: () -> Unit,
     onRemove: () -> Unit,
     onCopyPath: () -> Unit,
+    onCancelPendingOpen: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var isMenuExpanded by remember { mutableStateOf(false) }
@@ -320,6 +359,26 @@ private fun WorkspaceRowItem(
                         label = "Needs target",
                         selected = false,
                     )
+                }
+                if (isPendingOpen) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                    ) {
+                        GlassChip(
+                            label = "Opening after checks…",
+                            selected = true,
+                        )
+                        GlassTextButton(
+                            onClick = onCancelPendingOpen,
+                        ) {
+                            Text(
+                                text = "Cancel",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                        }
+                    }
                 }
                 GlassChip(
                     label = formatRelativeTime(project.lastOpened),
@@ -420,6 +479,9 @@ private fun WorkspaceHeaderSection(
     onCreateWorkspace: () -> Unit,
     onOpenFolder: () -> Unit,
     modifier: Modifier = Modifier,
+    environmentStatus: String? = null,
+    isEnvironmentAttention: Boolean = false,
+    onEnvironmentStatusClick: () -> Unit = {},
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -439,12 +501,26 @@ private fun WorkspaceHeaderSection(
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text = "Open an existing workspace or create an independent target environment",
+                text = "Open a workspace or create a new one",
                 fontSize = SetupTokens.TextBody,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+            if (environmentStatus != null) {
+                Text(
+                    text = environmentStatus,
+                    fontSize = SetupTokens.TextMetadata,
+                    color = if (isEnvironmentAttention) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.primary
+                    },
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.clickable(onClick = onEnvironmentStatusClick),
+                )
+            }
         }
 
         Row(

@@ -74,10 +74,12 @@ class SetupScreenDiagnosticTest {
     )
 
     @Test
-    fun testRealScreenContrastAcrossThreeThemesEffectsOn() = assertRealScreenContrastAcrossThreeThemes(effectsEnabled = true)
+    fun testRealScreenContrastAcrossThreeThemesEffectsOn() =
+        assertRealScreenContrastAcrossThreeThemes(effectsEnabled = true)
 
     @Test
-    fun testRealScreenContrastAcrossThreeThemesEffectsOff() = assertRealScreenContrastAcrossThreeThemes(effectsEnabled = false)
+    fun testRealScreenContrastAcrossThreeThemesEffectsOff() =
+        assertRealScreenContrastAcrossThreeThemes(effectsEnabled = false)
 
     private fun assertRealScreenContrastAcrossThreeThemes(effectsEnabled: Boolean) = runDesktopComposeUiTest(
         width = SCREEN_WIDTH,
@@ -93,7 +95,7 @@ class SetupScreenDiagnosticTest {
                         SetupScreenContent(
                             state = SetupUiState(
                                 toolchainSetupState = sampleToolchainState,
-                                selectedTab = SetupTab.LAUNCHPAD,
+                                selectedTab = SetupTab.PROJECTS,
                             ),
                             actions = SetupUiActions(),
                         )
@@ -175,15 +177,18 @@ class SetupScreenDiagnosticTest {
             )
             assertTrue(
                 worstCardRatioOnSurfaceVariant >= 4.5,
-                "Card interior onSurfaceVariant contrast ($worstCardRatioOnSurfaceVariant:1) failed WCAG AA 4.5:1 in ${theme.id}",
+                "Card interior onSurfaceVariant contrast ($worstCardRatioOnSurfaceVariant:1) " +
+                    "failed WCAG AA 4.5:1 in ${theme.id}",
             )
             assertTrue(
                 worstUnboxedRatioHeadline >= 3.0,
-                "IdeAppFrame central panel headline contrast ($worstUnboxedRatioHeadline:1) failed WCAG AA 3.0:1 in ${theme.id}",
+                "IdeAppFrame central panel headline contrast ($worstUnboxedRatioHeadline:1) " +
+                    "failed WCAG AA 3.0:1 in ${theme.id}",
             )
             assertTrue(
                 worstUnboxedRatioSubtitle >= 4.5,
-                "IdeAppFrame central panel subtitle contrast ($worstUnboxedRatioSubtitle:1) failed WCAG AA 4.5:1 in ${theme.id}",
+                "IdeAppFrame central panel subtitle contrast ($worstUnboxedRatioSubtitle:1) " +
+                    "failed WCAG AA 4.5:1 in ${theme.id}",
             )
         }
         println("[DIAGNOSTIC] All 3 themes (Dark, Blue, Light) passed strict WCAG AA contrast gates!")

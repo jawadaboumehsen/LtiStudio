@@ -5,8 +5,10 @@ import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.model.setup.AttemptStatus
 import org.ide.lti.core.model.setup.ChildIntentRecord
 import org.ide.lti.core.model.setup.ChildTerminalProof
+import org.ide.lti.core.model.setup.PersistedSetupPlan
 import org.ide.lti.core.model.setup.PersistedSubmoduleState
 import org.ide.lti.core.model.setup.PersistedToolState
+import org.ide.lti.core.model.setup.PersistedUserHandoff
 import org.ide.lti.core.model.setup.SetupAttemptRecord
 import org.ide.lti.core.model.setup.ToolchainPersistenceState
 
@@ -97,6 +99,13 @@ public interface ToolchainSetupRepository {
         attemptId: String,
         status: AttemptStatus,
         outcome: SetupOutcome,
+    ): Result<Unit>
+
+    /** Records that the attempt is paused awaiting external user authorization. */
+    public suspend fun recordAttemptAwaitingUserAction(
+        attemptId: String,
+        handoff: PersistedUserHandoff,
+        plan: PersistedSetupPlan,
     ): Result<Unit>
 
     public suspend fun setRecoveryBlocked(blocked: Boolean, reason: String?): Result<Unit>

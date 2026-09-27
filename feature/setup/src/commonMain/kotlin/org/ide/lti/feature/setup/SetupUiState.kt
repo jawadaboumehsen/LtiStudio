@@ -43,6 +43,8 @@ data class SetupUiState(
     val activeOperation: SetupOperation? = null,
     val environmentPresentation: EnvironmentPresentation = SetupPresentationMapper.mapEnvironment(toolchainSetupState),
     val workspaceError: WorkspaceError? = null,
+    val pendingWorkspaceRequest: PendingWorkspaceRequest? = null,
+    val isHandoffSheetVisible: Boolean = false,
 )
 
 /**
@@ -84,4 +86,11 @@ data class SetupUiActions(
     val onDismissPreview: () -> Unit = {},
     val onRetryStage: (org.ide.lti.core.domain.setup.SetupStepStage) -> Unit = {},
     val onDismissWorkspaceError: () -> Unit = {},
+    val onLaunchStudio: () -> Unit = {},
+    val onCancelPendingWorkspaceRequest: () -> Unit = {},
+    val onResumeAwaitingOperation: () -> Unit = {},
+    val onDismissHandoff: () -> Unit = {},
+    val onAbandonAwaitingOperation: () -> Unit = {},
+    val onShowHandoffSheet: () -> Unit = {},
+    val onOpenTerminal: (String) -> Unit = {},
 )

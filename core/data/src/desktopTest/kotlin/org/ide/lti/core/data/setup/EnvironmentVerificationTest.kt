@@ -82,7 +82,7 @@ class EnvironmentVerificationTest {
 
     private class RecordingRemoteTransport(
         var healthInfo: WslServerInfo? = WslServerInfo(
-            status = "HEALTHY",
+            status = "UP",
             distro = "Ubuntu",
             kernelRelease = "5.15.0",
             architecture = "x86_64",
@@ -107,6 +107,10 @@ class EnvironmentVerificationTest {
                     ) + ToolchainIntegrityInspector.DEFAULT_CORE_TOOLS
                     ToolExecutionResponse(0, systemTools.joinToString("\n"), "", 5L)
                 }
+                request.toolId == "find" && request.arguments.any { it.contains("/dev") } -> {
+                    val devNodes = listOf("fuse", "loop-control", "null", "zero", "random", "urandom")
+                    ToolExecutionResponse(0, devNodes.joinToString("\n"), "", 2L)
+                }
                 request.toolId == "find" && request.arguments.contains("-L") -> {
                     // binDir executables
                     val tools = listOf(
@@ -128,6 +132,7 @@ class EnvironmentVerificationTest {
                     ToolExecutionResponse(0, pkgs, "", 2L)
                 }
                 request.toolId == "df" -> ToolExecutionResponse(0, "Filesystem 1K-blocks Used Available Use% Mounted on\n/dev/sdb 100G 50G 50G 50% /home/lti\n", "", 2L)
+                request.toolId == "mkfs.erofs" -> ToolExecutionResponse(0, "mkfs.erofs 1.7.1 --fs-config-file", "", 2L)
                 else -> ToolExecutionResponse(0, "tool output", "", 5L)
             }
         }
@@ -178,6 +183,7 @@ class EnvironmentVerificationTest {
                     CliExecutionResult(0, "Default Distribution: Ubuntu", "")
                 }
                 cmdStr.contains("echo -n \$HOME") -> CliExecutionResult(0, "/home/lti", "")
+                cmdStr.contains("mkfs.erofs") -> CliExecutionResult(0, "mkfs.erofs 1.7.1 --fs-config-file", "")
                 else -> CliExecutionResult(0, "ok", "")
             }
         }
@@ -249,6 +255,11 @@ class EnvironmentVerificationTest {
             state = state.copy(activeAttempt = null)
             return ok()
         }
+        override suspend fun recordAttemptAwaitingUserAction(
+            attemptId: String,
+            handoff: org.ide.lti.core.model.setup.PersistedUserHandoff,
+            plan: org.ide.lti.core.model.setup.PersistedSetupPlan,
+        ): Result<Unit> = ok()
         override suspend fun setRecoveryBlocked(blocked: Boolean, reason: String?): Result<Unit> {
             state = state.copy(recoveryBlocked = blocked, recoveryBlockReason = reason)
             return ok()
@@ -414,6 +425,7 @@ class EnvironmentVerificationTest {
         val provisioner = WslToolchainProvisioner(
             supervisor = supervisor,
             transport = transport,
+            repository = FakeToolchainRepo(),
             detector = detector,
             cli = cli,
             toolPublicationPort = publicationPort,
@@ -570,6 +582,7 @@ class EnvironmentVerificationTest {
         val provisioner = WslToolchainProvisioner(
             supervisor = supervisor,
             transport = transport,
+            repository = FakeToolchainRepo(),
             detector = detector,
             cli = cli,
             dispatcher = UnconfinedTestDispatcher(testScheduler)

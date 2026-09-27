@@ -29,11 +29,11 @@ import io.ltirom.tooling.core.events.DefaultToolEventBus
 import io.ltirom.tooling.core.events.ToolEventBus
 import io.ltirom.tooling.core.ports.DaemonSupervisorPort
 import io.ltirom.tooling.core.ports.RemoteTransportPort
-import org.ide.lti.core.data.setup.EnvironmentProbe
+import org.ide.lti.core.data.setup.DesktopTerminalLauncher
 import org.ide.lti.core.data.setup.WslToolchainProvisioner
 import org.ide.lti.core.data.setup.doctor.CompositeSystemDoctorEngine
-import org.ide.lti.core.domain.ports.EnvironmentProbePort
 import org.ide.lti.core.domain.ports.RemoteFileUploaderPort
+import org.ide.lti.core.domain.ports.TerminalLauncherPort
 import org.ide.lti.core.domain.ports.ToolPublicationPort
 import org.ide.lti.core.domain.ports.WslPresencePort
 import org.ide.lti.core.domain.setup.ToolchainProvisioningService
@@ -66,14 +66,6 @@ public val toolingModule = module {
         }
     }
     single { TransportCliExecutor(transport = get()) }
-    single<EnvironmentProbePort> {
-        EnvironmentProbe(
-            detector = WslEnvironmentDetector(),
-            supervisor = get<DaemonSupervisorPort>(),
-            transport = get<RemoteTransportPort>(),
-            toolPublicationPort = getOrNull<ToolPublicationPort>(),
-        )
-    }
     single<SystemDoctorPort> {
         CompositeSystemDoctorEngine()
     }
@@ -81,10 +73,11 @@ public val toolingModule = module {
         WslToolchainProvisioner(
             supervisor = get<DaemonSupervisorPort>(),
             transport = get<RemoteTransportPort>(),
-            repository = getOrNull(),
+            repository = get<org.ide.lti.core.domain.repository.setup.ToolchainSetupRepository>(),
             toolPublicationPort = getOrNull<ToolPublicationPort>(),
         )
     }
+    single<TerminalLauncherPort> { DesktopTerminalLauncher() }
 
     single { ConnectionStateHolder() }
     single<ToolEventBus> { DefaultToolEventBus() }

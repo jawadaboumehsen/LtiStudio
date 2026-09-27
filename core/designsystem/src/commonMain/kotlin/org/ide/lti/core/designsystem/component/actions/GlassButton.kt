@@ -215,6 +215,9 @@ fun GlassPrimaryButton(
     modifier: Modifier = Modifier,
     shape: HazeShape = GlassShapes.HazeCapsule,
     enabled: Boolean = true,
+    minWidth: Dp = GlassButtonDefaults.MinWidth,
+    minHeight: Dp = GlassButtonDefaults.MinHeight,
+    contentPadding: PaddingValues = GlassButtonDefaults.ContentPadding,
     content: @Composable RowScope.() -> Unit,
 ) {
     GlassButton(
@@ -223,6 +226,9 @@ fun GlassPrimaryButton(
         shape = shape,
         enabled = enabled,
         variant = GlassButtonVariant.Primary,
+        minWidth = minWidth,
+        minHeight = minHeight,
+        contentPadding = contentPadding,
         content = content,
     )
 }
@@ -236,6 +242,9 @@ fun GlassSecondaryButton(
     modifier: Modifier = Modifier,
     shape: HazeShape = GlassShapes.HazeCapsule,
     enabled: Boolean = true,
+    minWidth: Dp = GlassButtonDefaults.MinWidth,
+    minHeight: Dp = GlassButtonDefaults.MinHeight,
+    contentPadding: PaddingValues = GlassButtonDefaults.ContentPadding,
     content: @Composable RowScope.() -> Unit,
 ) {
     GlassButton(
@@ -244,6 +253,9 @@ fun GlassSecondaryButton(
         shape = shape,
         enabled = enabled,
         variant = GlassButtonVariant.Secondary,
+        minWidth = minWidth,
+        minHeight = minHeight,
+        contentPadding = contentPadding,
         content = content,
     )
 }

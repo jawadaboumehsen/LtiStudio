@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.ide.lti.core.domain.repository.setup.ToolchainSetupRepository
 import org.ide.lti.core.domain.setup.SetupOutcome
+import org.ide.lti.core.model.setup.AttemptStatus
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -30,6 +31,7 @@ public class SetupOperationCoordinator(
         public const val KIND_CHECK: String = "CHECK"
         public const val KIND_RECOVERY: String = "RECOVERY"
         public const val KIND_CACHE_RESET: String = "CACHE_RESET"
+        public const val KIND_RESUME: String = "RESUME"
     }
 
     public data class OperationOwner(
@@ -115,6 +117,9 @@ public class SetupOperationCoordinator(
         }
         val active = state.activeAttempt ?: return null
         val unproven = active.unprovenIntents
+        if (kind == KIND_RESUME && active.status == AttemptStatus.AWAITING_USER_ACTION && unproven.isEmpty()) {
+            return null
+        }
         return when {
             unproven.isNotEmpty() -> SetupOutcome.Interrupted(
                 "Unresolved prior execution: '${unproven.first().actionId}' of attempt ${active.attemptId} " +

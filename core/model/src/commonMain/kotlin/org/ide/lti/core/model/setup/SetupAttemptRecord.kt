@@ -10,6 +10,7 @@ public enum class AttemptStatus {
     AUTHORIZED,
     RUNNING,
     RECONNECTING,
+    AWAITING_USER_ACTION,
     SUCCEEDED,
     FAILED,
     CANCELLED,
@@ -95,12 +96,15 @@ public data class SetupAttemptRecord(
     val terminalProofs: List<ChildTerminalProof> = emptyList(),
     val createdAtEpochMs: Long = 0L,
     val updatedAtEpochMs: Long = 0L,
+    val persistedPlan: PersistedSetupPlan? = null,
+    val awaitingHandoff: PersistedUserHandoff? = null,
 ) {
     /** Attempt statuses that still own the environment and block a second attempt. */
     val isActive: Boolean
         get() = status == AttemptStatus.AUTHORIZED ||
             status == AttemptStatus.RUNNING ||
-            status == AttemptStatus.RECONNECTING
+            status == AttemptStatus.RECONNECTING ||
+            status == AttemptStatus.AWAITING_USER_ACTION
 
     /** A child is proven when its own terminal status or a persisted proof for its runId exists. */
     public fun isChildProven(intent: ChildIntentRecord): Boolean =
@@ -110,3 +114,39 @@ public data class SetupAttemptRecord(
     val unprovenIntents: List<ChildIntentRecord>
         get() = orderedIntents.filterNot { isChildProven(it) }
 }
+
+/**
+ * Persisted handoff details for an action awaiting user terminal authorization.
+ */
+@Serializable
+public data class PersistedUserHandoff(
+    val actionId: String,
+    val distro: String,
+    val command: String,
+    val packages: List<String> = emptyList(),
+    val timestampEpochMs: Long = 0L,
+)
+
+/**
+ * Persisted plan action representation for durable storage across restarts.
+ */
+@Serializable
+public data class PersistedPlanAction(
+    val actionId: String,
+    val type: String,
+    val payload: List<String> = emptyList(),
+)
+
+/**
+ * Persisted setup plan enabling durable recovery and continuation across sessions.
+ */
+@Serializable
+public data class PersistedSetupPlan(
+    val planId: String,
+    val revisionHash: String,
+    val environmentKey: String,
+    val kind: String,
+    val targetStageOrToolId: String? = null,
+    val autoDoctorEnabled: Boolean = true,
+    val actions: List<PersistedPlanAction> = emptyList(),
+)

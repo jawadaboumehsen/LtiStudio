@@ -23,8 +23,10 @@ import kotlinx.serialization.json.Json
 import org.ide.lti.core.model.setup.AttemptStatus
 import org.ide.lti.core.model.setup.ChildIntentRecord
 import org.ide.lti.core.model.setup.ChildTerminalProof
+import org.ide.lti.core.model.setup.PersistedSetupPlan
 import org.ide.lti.core.model.setup.PersistedSubmoduleState
 import org.ide.lti.core.model.setup.PersistedToolState
+import org.ide.lti.core.model.setup.PersistedUserHandoff
 import org.ide.lti.core.model.setup.SetupAttemptRecord
 import org.ide.lti.core.model.setup.SetupLogBounds
 import org.ide.lti.core.model.setup.ToolchainPersistenceState
@@ -357,6 +359,21 @@ public class ToolchainPreferencesDataSource(
         mutateActiveAttempt(attemptId) { active ->
             Result.success(active.copy(completedActionIds = (active.completedActionIds + actionId).distinct()))
         }
+
+    public suspend fun recordAttemptAwaitingUserAction(
+        attemptId: String,
+        handoff: PersistedUserHandoff,
+        plan: PersistedSetupPlan,
+    ): Result<Unit> = mutateActiveAttempt(attemptId) { active ->
+        Result.success(
+            active.copy(
+                status = AttemptStatus.AWAITING_USER_ACTION,
+                awaitingHandoff = handoff,
+                persistedPlan = plan,
+                updatedAtEpochMs = System.currentTimeMillis(),
+            )
+        )
+    }
 
     /**
      * Archives the active attempt into [ToolchainPersistenceState.attemptHistory] with its terminal result.

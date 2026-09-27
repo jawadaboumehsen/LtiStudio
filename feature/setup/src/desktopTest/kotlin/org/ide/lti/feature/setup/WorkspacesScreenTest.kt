@@ -185,17 +185,18 @@ class WorkspacesScreenTest {
         assertEquals(SetupDestination.WORKSPACES, SetupDestination.fromId("projects"))
         assertEquals(SetupDestination.WORKSPACES, SetupDestination.fromId("unknown_route"))
 
-        // The legacy route remains accepted, but now renders the reference-aligned Setup overview.
+        // The legacy "launchpad" route remains accepted and lands on the Workspaces list;
+        // the old overview page it used to show was removed.
         setContent {
             LtiTheme {
                 SetupScreenContent(
                     state = SetupUiState(),
                     actions = SetupUiActions(),
-                    initialTab = SetupTab.LAUNCHPAD,
+                    initialTab = SetupTab.PROJECTS,
                 )
             }
         }
 
-        onNodeWithText("Set up your build environment").assertIsDisplayed()
+        onNodeWithText("Workspaces").assertIsDisplayed()
     }
 }

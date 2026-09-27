@@ -16,22 +16,31 @@ import io.ltirom.tooling.core.remote.ToolExecutionRequest
 import io.ltirom.tooling.core.remote.ToolExecutionResponse
 import io.ltirom.tooling.core.remote.ToolStatusInfo
 import io.ltirom.tooling.core.remote.WslServerInfo
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import com.russhwolf.settings.MapSettings
 import org.ide.lti.core.domain.ports.PublishedTools
 import org.ide.lti.core.domain.ports.ToolPublicationPort
+import org.ide.lti.core.domain.repository.setup.ToolchainSetupRepository
 import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.domain.setup.SetupPlanKind
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepStatus
+import org.ide.lti.core.model.setup.AttemptStatus
+import org.ide.lti.core.model.setup.PersistedSetupPlan
+import org.ide.lti.core.model.setup.PersistedUserHandoff
 import java.nio.charset.Charset
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -40,7 +49,8 @@ class WslToolchainProvisionerTest {
     private class FakeDaemonSupervisor(
         var descriptor: ServerConnectionDescriptor? = ServerConnectionDescriptor("127.0.0.1", 9090, "token", 1234L, "Ubuntu"),
         var isHealthyResult: Boolean = true,
-        var shouldFailEnsureStarted: Boolean = false
+        var shouldFailEnsureStarted: Boolean = false,
+        var onEnsureStarted: (suspend () -> Unit)? = null
     ) : DaemonSupervisorPort {
         var getConnectionInfoCount = 0
         var isHealthyCount = 0
@@ -58,6 +68,7 @@ class WslToolchainProvisionerTest {
 
         override suspend fun ensureStarted(): ServerConnectionDescriptor {
             ensureStartedCount++
+            onEnsureStarted?.invoke()
             if (shouldFailEnsureStarted) {
                 throw IllegalStateException("Failed to launch daemon")
             }
@@ -71,7 +82,7 @@ class WslToolchainProvisionerTest {
     private class FakeRemoteTransport(
         val fakeCli: FakeWslCliExecutor? = null,
         var healthInfo: WslServerInfo? = WslServerInfo(
-            status = "HEALTHY",
+            status = "UP",
             distro = "Ubuntu",
             kernelRelease = "5.15.0",
             architecture = "x86_64",
@@ -106,6 +117,10 @@ class WslToolchainProvisionerTest {
                 return ToolExecutionResponse(res.exitCode, res.output, res.error, 10L)
             }
             return when {
+                request.toolId == "find" && request.arguments.any { it.contains("/dev") } -> {
+                    val devNodes = listOf("fuse", "loop-control", "null", "zero", "random", "urandom")
+                    ToolExecutionResponse(0, devNodes.joinToString("\n"), "", 10L)
+                }
                 request.toolId == "find" && request.arguments.contains("-L") -> {
                     val output = listOf(
                         "payload-dumper-go", "lpunpack", "lpmake", "simg2img",
@@ -121,6 +136,7 @@ class WslToolchainProvisionerTest {
                 request.toolId == "test" -> ToolExecutionResponse(0, "", "", 10L)
                 request.toolId == "dpkg-query" -> ToolExecutionResponse(0, "all ok installed", "", 2L)
                 request.toolId == "df" -> ToolExecutionResponse(0, "Filesystem 100G 50G 50G 50% /home/lti\n", "", 2L)
+                request.toolId == "mkfs.erofs" -> ToolExecutionResponse(0, "mkfs.erofs 1.7.1 --fs-config-file", "", 10L)
                 else -> ToolExecutionResponse(0, "ok", "", 10L)
             }
         }
@@ -161,7 +177,7 @@ class WslToolchainProvisionerTest {
 
     private class FakeToolPublicationPort(
         var publishedResult: PublishedTools = PublishedTools(
-            published = setOf("lpmake", "img2sdat", "unpack_bootimg", "erofsfuse", "signapk"),
+            published = ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS,
             skipped = emptySet()
         )
     ) : ToolPublicationPort {
@@ -180,6 +196,8 @@ class WslToolchainProvisionerTest {
     private class FakeWslCliExecutor : WslCliExecutor() {
         var hostDistros: List<String> = listOf("Ubuntu")
         var userHome: String = "/home/lti"
+        var missingDevPackages: Boolean = false
+        var pythonMissing: Boolean = false
         val existingPaths: MutableSet<String> = mutableSetOf()
         val commandLog = mutableListOf<String>()
 
@@ -206,8 +224,14 @@ class WslToolchainProvisionerTest {
                 return CliExecutionResult(0, userHome, "")
             }
             if (cmdStr.contains("dpkg-query")) {
+                if (missingDevPackages) {
+                    return CliExecutionResult(0, "", "no packages installed")
+                }
                 val pkgLines = WslToolchainProvisioner.REQUIRED_DEV_PACKAGES.joinToString("\n") { "$it install ok installed" }
                 return CliExecutionResult(0, pkgLines, "")
+            }
+            if (pythonMissing && (cmdStr.contains("python") || cmdStr.contains("pip"))) {
+                return CliExecutionResult(1, "", "python3: command not found")
             }
             if (cmdStr.contains("python3 --version") || cmdStr.contains("python3 -V")) {
                 return CliExecutionResult(0, "Python 3.12.3", "")
@@ -271,6 +295,9 @@ class WslToolchainProvisionerTest {
                 } else {
                     CliExecutionResult(1, "", "Path does not exist: $targetPath")
                 }
+            }
+            if (cmdStr.contains("mkfs.erofs")) {
+                return CliExecutionResult(0, "mkfs.erofs 1.7.1\noptions: --fs-config-file -C -T", "")
             }
             return CliExecutionResult(0, "ok", "")
         }
@@ -515,9 +542,359 @@ class WslToolchainProvisionerTest {
         assertEquals(1, fakePublication.publishCallCount)
         assertEquals("/home/lti/LtiRomTools/bin", fakePublication.lastBinDir)
         assertEquals(
-            setOf("lpmake", "img2sdat", "unpack_bootimg", "erofsfuse", "signapk"),
+            ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS,
             finalState.publishedToolIds
         )
         assertTrue(finalState.unpublishedToolIds.isEmpty())
+    }
+
+    private class FailingJournalRepository(
+        private val delegate: ToolchainSetupRepository
+    ) : ToolchainSetupRepository by delegate {
+        override suspend fun recordAttemptAwaitingUserAction(
+            attemptId: String,
+            handoff: PersistedUserHandoff,
+            plan: PersistedSetupPlan
+        ): Result<Unit> = Result.failure(IllegalStateException("Simulated journal write failure"))
+    }
+
+    @Test
+    fun `confirmed plan requiring packages pauses with AwaitingUserAction, survives restart and recovery, and resumes successfully`() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val fakeCli = FakeWslCliExecutor()
+        val detector = WslEnvironmentDetector(cli = fakeCli)
+        val supervisor = FakeDaemonSupervisor()
+        val transport = FakeRemoteTransport(fakeCli = fakeCli)
+        val sharedSettings = MapSettings()
+        val repo1 = inMemoryToolchainRepository(sharedSettings)
+
+        // 1. Initial check finds dev packages missing
+        fakeCli.missingDevPackages = true
+        val provisioner1 = WslToolchainProvisioner(
+            supervisor = supervisor,
+            transport = transport,
+            repository = repo1,
+            detector = detector,
+            cli = fakeCli,
+            dispatcher = testDispatcher
+        )
+
+        provisioner1.verifyEnvironment()
+        assertFalse(provisioner1.state.value.isAllReady)
+
+        // 2. Prepare FULL_SETUP plan: derives InstallPackages because host_libraries is FAILED
+        val plan = provisioner1.prepare(SetupPlanKind.FULL_SETUP)
+        val outcome = provisioner1.confirm(plan.planId, plan.revisionHash)
+
+        // 3. Must pause with AwaitingUserAction
+        assertTrue(outcome is SetupOutcome.AwaitingUserAction, "Expected AwaitingUserAction but got $outcome")
+        assertEquals(plan.planId, outcome.pendingPlanId)
+        assertTrue(outcome.handoff.terminalCommand.contains("apt-get install"))
+        assertEquals(AttemptStatus.AWAITING_USER_ACTION, repo1.currentState.activeAttempt?.status)
+
+        // 4. Simulate App Restart: create new provisioner over shared persistence
+        val repo2 = inMemoryToolchainRepository(sharedSettings)
+        val provisioner2 = WslToolchainProvisioner(
+            supervisor = supervisor,
+            transport = transport,
+            repository = repo2,
+            detector = detector,
+            cli = fakeCli,
+            dispatcher = testDispatcher
+        )
+
+        // Initial restored state detects pending attempt in AWAITING_USER_ACTION
+        assertEquals(repo1.currentState.activeAttempt?.attemptId, provisioner2.state.value.pendingAttemptId)
+
+        // 5. Recovery restores the pending attempt and returns AwaitingUserAction
+        val recoveryOutcome = provisioner2.recover()
+        assertTrue(recoveryOutcome is SetupOutcome.AwaitingUserAction, "Recovery must yield AwaitingUserAction: $recoveryOutcome")
+        assertEquals(plan.planId, recoveryOutcome.pendingPlanId)
+
+        // 6. User installs packages in WSL: now dpkg-query succeeds
+        fakeCli.missingDevPackages = false
+
+        // 7. Resume using planId
+        val resumeOutcome = provisioner2.resume(recoveryOutcome.pendingPlanId)
+        assertTrue(resumeOutcome is SetupOutcome.Succeeded, "Resume must succeed: $resumeOutcome")
+
+        // 8. Attempt is now marked SUCCEEDED
+        val finalAttempt = repo2.currentState.activeAttempt
+        assertEquals(null, finalAttempt, "Active attempt must be cleared after archiving terminal success")
+        assertTrue(provisioner2.state.value.isAllReady)
+    }
+
+    @Test
+    fun `executePlan fails closed with Interrupted when repository fails to record AwaitingUserAction`() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val fakeCli = FakeWslCliExecutor()
+        val detector = WslEnvironmentDetector(cli = fakeCli)
+        val supervisor = FakeDaemonSupervisor()
+        val transport = FakeRemoteTransport(fakeCli = fakeCli)
+        val underlyingRepo = inMemoryToolchainRepository()
+        val failingRepo = FailingJournalRepository(underlyingRepo)
+
+        fakeCli.missingDevPackages = true
+        val provisioner = WslToolchainProvisioner(
+            supervisor = supervisor,
+            transport = transport,
+            repository = failingRepo,
+            detector = detector,
+            cli = fakeCli,
+            dispatcher = testDispatcher
+        )
+
+        provisioner.verifyEnvironment()
+        val plan = provisioner.prepare(SetupPlanKind.FULL_SETUP)
+        val outcome = provisioner.confirm(plan.planId, plan.revisionHash)
+
+        assertTrue(outcome is SetupOutcome.Interrupted, "Must fail closed with Interrupted on journal failure: $outcome")
+        assertTrue(outcome.reason.contains("Journal write failed"))
+    }
+
+    @Test
+    fun `resume fails closed when a different prerequisite becomes unhealthy during pause`() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val fakeCli = FakeWslCliExecutor()
+        val detector = WslEnvironmentDetector(cli = fakeCli)
+        val supervisor = FakeDaemonSupervisor()
+        val transport = FakeRemoteTransport(fakeCli = fakeCli)
+        val repo = inMemoryToolchainRepository()
+
+        // 1. Initial check finds dev packages missing
+        fakeCli.missingDevPackages = true
+        val provisioner = WslToolchainProvisioner(
+            supervisor = supervisor,
+            transport = transport,
+            repository = repo,
+            detector = detector,
+            cli = fakeCli,
+            dispatcher = testDispatcher
+        )
+
+        provisioner.verifyEnvironment()
+        val plan = provisioner.prepare(SetupPlanKind.FULL_SETUP)
+        val pauseOutcome = provisioner.confirm(plan.planId, plan.revisionHash)
+        assertTrue(pauseOutcome is SetupOutcome.AwaitingUserAction)
+
+        // 2. Dev packages are installed during the pause...
+        fakeCli.missingDevPackages = false
+        // ...BUT Python runtime is accidentally broken/uninstalled during pause!
+        fakeCli.pythonMissing = true
+
+        // 3. Resume must NOT succeed or mark diagnostics as successful!
+        val resumeOutcome = provisioner.resume(pauseOutcome.pendingPlanId)
+        assertTrue(
+            resumeOutcome is SetupOutcome.Failed,
+            "Resume must fail closed when another prerequisite fails: $resumeOutcome"
+        )
+        assertEquals(SetupStepStage.SYSTEM_DIAGNOSTICS.name, resumeOutcome.stage)
+        assertTrue(resumeOutcome.reason.contains("Environment check failed before resumption"))
+        assertTrue(resumeOutcome.reason.contains("Python"))
+
+        val activeAttempt = repo.currentState.activeAttempt
+        kotlin.test.assertNotNull(activeAttempt, "Attempt must not be cleared or archived as succeeded")
+        assertEquals(AttemptStatus.AWAITING_USER_ACTION, activeAttempt.status)
+
+        // 4. Fixing Python allows resumption to pass and complete
+        fakeCli.pythonMissing = false
+        val fixedResumeOutcome = provisioner.resume(pauseOutcome.pendingPlanId)
+        assertTrue(fixedResumeOutcome is SetupOutcome.Succeeded, "Resume must succeed once all prerequisites pass: $fixedResumeOutcome")
+        assertTrue(provisioner.state.value.isAllReady)
+    }
+
+    @Test
+    fun `executePlan fails closed with Failed when constructed without repository and handoff is required`() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val fakeCli = FakeWslCliExecutor()
+        val detector = WslEnvironmentDetector(cli = fakeCli)
+        val supervisor = FakeDaemonSupervisor()
+        val transport = FakeRemoteTransport(fakeCli = fakeCli)
+
+        fakeCli.missingDevPackages = true
+        val provisioner = WslToolchainProvisioner(
+            supervisor = supervisor,
+            transport = transport,
+            repository = null, // Constructed without repository
+            detector = detector,
+            cli = fakeCli,
+            dispatcher = testDispatcher
+        )
+
+        provisioner.verifyEnvironment()
+        val plan = provisioner.prepare(SetupPlanKind.FULL_SETUP)
+        val outcome = provisioner.confirm(plan.planId, plan.revisionHash)
+
+        assertTrue(
+            outcome is SetupOutcome.Failed,
+            "Must fail closed with Failed when no repository is present to persist handoff: $outcome"
+        )
+        assertEquals(SetupStepStage.SYSTEM_DIAGNOSTICS.name, outcome.stage)
+        assertTrue(outcome.reason.contains("requires a configured repository"))
+    }
+
+    @Test
+    fun `concurrent verifyEnvironment calls share single verification run and single daemon start`() = runTest {
+        val testDispatcher = Dispatchers.Default
+        val fakeCli = FakeWslCliExecutor().apply {
+            existingPaths.add("/home/lti/LtiRomWorkDir")
+            existingPaths.add("/home/lti/LtiRomTools/external")
+            WslToolchainProvisioner.SUBMODULES.forEach {
+                existingPaths.add("/home/lti/LtiRomTools/external/${it.name}")
+            }
+            WslToolchainProvisioner.CORE_BINARIES.forEach {
+                existingPaths.add("/home/lti/LtiRomTools/bin/$it")
+            }
+            WslToolchainProvisioner.ALL_CORE_TOOLS.forEach {
+                existingPaths.add("/home/lti/LtiRomTools/bin/$it")
+            }
+        }
+        val detector = WslEnvironmentDetector(cli = fakeCli)
+        val inFlightGate = kotlinx.coroutines.CompletableDeferred<Unit>()
+        val supervisor = FakeDaemonSupervisor(isHealthyResult = false).apply {
+            onEnsureStarted = {
+                inFlightGate.await()
+            }
+        }
+        val transport = FakeRemoteTransport(fakeCli = fakeCli)
+        val repo = inMemoryToolchainRepository()
+
+        val provisioner = WslToolchainProvisioner(
+            supervisor = supervisor,
+            transport = transport,
+            repository = repo,
+            detector = detector,
+            cli = fakeCli,
+            dispatcher = testDispatcher
+        )
+
+        val deferred1 = async(testDispatcher) { provisioner.verifyEnvironment() }
+        while (supervisor.ensureStartedCount == 0) {
+            kotlinx.coroutines.delay(10)
+        }
+        val deferred2 = async(testDispatcher) { provisioner.verifyEnvironment() }
+
+        inFlightGate.complete(Unit)
+
+        val result1 = deferred1.await()
+        val result2 = deferred2.await()
+
+        assertEquals(result1, result2, "Concurrent callers must receive identical completed results")
+        assertEquals(1, supervisor.ensureStartedCount, "ensureStarted() must be called exactly once")
+        assertTrue(result1.isAllReady)
+    }
+
+    @Test
+    fun `caller cancellation does not abort shared verification for other callers`() = runTest {
+        val testDispatcher = Dispatchers.Default
+        val fakeCli = FakeWslCliExecutor().apply {
+            existingPaths.add("/home/lti/LtiRomWorkDir")
+            existingPaths.add("/home/lti/LtiRomTools/external")
+            WslToolchainProvisioner.SUBMODULES.forEach {
+                existingPaths.add("/home/lti/LtiRomTools/external/${it.name}")
+            }
+            WslToolchainProvisioner.CORE_BINARIES.forEach {
+                existingPaths.add("/home/lti/LtiRomTools/bin/$it")
+            }
+            WslToolchainProvisioner.ALL_CORE_TOOLS.forEach {
+                existingPaths.add("/home/lti/LtiRomTools/bin/$it")
+            }
+        }
+        val detector = WslEnvironmentDetector(cli = fakeCli)
+        val inFlightGate = kotlinx.coroutines.CompletableDeferred<Unit>()
+        val supervisor = FakeDaemonSupervisor(isHealthyResult = false).apply {
+            onEnsureStarted = {
+                inFlightGate.await()
+            }
+        }
+        val transport = FakeRemoteTransport(fakeCli = fakeCli)
+        val repo = inMemoryToolchainRepository()
+
+        val provisioner = WslToolchainProvisioner(
+            supervisor = supervisor,
+            transport = transport,
+            repository = repo,
+            detector = detector,
+            cli = fakeCli,
+            dispatcher = testDispatcher
+        )
+
+        val caller1Job = launch(testDispatcher) {
+            provisioner.verifyEnvironment()
+        }
+        while (supervisor.ensureStartedCount == 0) {
+            kotlinx.coroutines.delay(10)
+        }
+        val caller2Deferred = async(testDispatcher) {
+            provisioner.verifyEnvironment()
+        }
+
+        // Cancel caller 1 while verification is in flight
+        caller1Job.cancel()
+
+        // Release the barrier so the shared verification completes
+        inFlightGate.complete(Unit)
+
+        // Caller 2 should complete normally
+        val result2 = caller2Deferred.await()
+        assertTrue(result2.isAllReady, "Caller 2 must successfully complete verification")
+        assertEquals(1, supervisor.ensureStartedCount)
+    }
+
+    private class FailingTerminalArchiveRepository(
+        private val delegate: ToolchainSetupRepository,
+        var shouldFailRecordAttemptTerminal: Boolean = true,
+    ) : ToolchainSetupRepository by delegate {
+        override suspend fun recordAttemptTerminal(
+            attemptId: String,
+            status: AttemptStatus,
+            outcome: SetupOutcome,
+        ): Result<Unit> {
+            if (shouldFailRecordAttemptTerminal) {
+                return Result.failure(IllegalStateException("Simulated terminal write failure"))
+            }
+            return delegate.recordAttemptTerminal(attemptId, status, outcome)
+        }
+    }
+
+    @Test
+    fun `cancel awaiting user action returns Interrupted when journal write fails and leaves attempt active`() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val fakeCli = FakeWslCliExecutor().apply { missingDevPackages = true }
+        val detector = WslEnvironmentDetector(cli = fakeCli)
+        val supervisor = FakeDaemonSupervisor()
+        val transport = FakeRemoteTransport(fakeCli = fakeCli)
+        val baseRepo = inMemoryToolchainRepository()
+        val failingRepo = FailingTerminalArchiveRepository(baseRepo)
+
+        val provisioner = WslToolchainProvisioner(
+            supervisor = supervisor,
+            transport = transport,
+            repository = failingRepo,
+            detector = detector,
+            cli = fakeCli,
+            dispatcher = testDispatcher,
+        )
+
+        provisioner.verifyEnvironment()
+        val plan = provisioner.prepare(SetupPlanKind.FULL_SETUP)
+        val pauseOutcome = provisioner.confirm(plan.planId, plan.revisionHash)
+        assertTrue(pauseOutcome is SetupOutcome.AwaitingUserAction)
+        assertEquals(AttemptStatus.AWAITING_USER_ACTION, baseRepo.currentState.activeAttempt?.status)
+
+        // Cancel while terminal archive fails
+        val cancelOutcome = provisioner.cancel()
+
+        // Must report Interrupted, NOT falsely claim Cancelled!
+        assertTrue(cancelOutcome is SetupOutcome.Interrupted, "Expected Interrupted but got $cancelOutcome")
+        assertTrue(cancelOutcome.reason.contains("could not be archived"))
+        assertEquals(AttemptStatus.AWAITING_USER_ACTION, baseRepo.currentState.activeAttempt?.status)
+
+        // Now fix the journal write failure and cancel again
+        failingRepo.shouldFailRecordAttemptTerminal = false
+        val secondCancelOutcome = provisioner.cancel()
+        assertTrue(secondCancelOutcome is SetupOutcome.Cancelled, "Expected Cancelled once journal write succeeds")
+        assertNull(baseRepo.currentState.activeAttempt)
+        assertEquals(AttemptStatus.CANCELLED, baseRepo.currentState.attemptHistory.lastOrNull()?.status)
     }
 }

@@ -31,7 +31,7 @@ kotlin {
             implementation(projects.core.ui)
 
             implementation(projects.feature.settings)
-            implementation(projects.feature.setup)
+            api(projects.feature.setup)
             api(projects.feature.workspaceApi)
             implementation(projects.feature.workspaceCreate)
             implementation(projects.feature.workspaceTarget)

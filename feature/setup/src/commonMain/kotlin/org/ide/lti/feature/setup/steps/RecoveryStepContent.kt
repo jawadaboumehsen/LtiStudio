@@ -207,12 +207,9 @@ private fun RecoveryHeader(onOpenHelp: () -> Unit, modifier: Modifier = Modifier
 }
 
 @Composable
-private fun SetupInProgressCard(
-    state: SetupUiState,
-    modifier: Modifier = Modifier,
-) {
+private fun SetupInProgressCard(state: SetupUiState, modifier: Modifier = Modifier) {
     val activeOp = state.activeOperation
-    val receiptId = activeOp?.operationId ?: state.toolchainSetupState.pendingAttemptId ?: "setup-042"
+    val receiptId = activeOp?.operationId ?: state.toolchainSetupState.pendingAttemptId ?: "—"
 
     GlassCard(
         modifier = modifier.testTag("SetupInProgressCard"),
@@ -286,10 +283,7 @@ private fun RecoveryPropertyRow(label: String, value: String, isCode: Boolean = 
 }
 
 @Composable
-private fun ServiceStateCard(
-    onReconnect: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
+private fun ServiceStateCard(onReconnect: () -> Unit, modifier: Modifier = Modifier) {
     GlassCard(
         modifier = modifier.testTag("ServiceStateCard"),
         surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -363,10 +357,20 @@ private fun ServiceStateCard(
                     .clip(GlassShapes.Small)
                     .border(
                         width = GlassDimens.HairlineBorder,
-                        color = if (isBlue) PluginThemeColors.ActiveTabBorder else MaterialTheme.colorScheme.primary,
+                        color = if (isBlue) {
+                            PluginThemeColors.ActiveTabBorder
+                        } else {
+                            MaterialTheme.colorScheme.primary
+                        },
                         shape = GlassShapes.Small,
                     )
-                    .background(if (isBlue) PluginThemeColors.ActiveTabBackground else MaterialTheme.colorScheme.primary)
+                    .background(
+                        if (isBlue) {
+                            PluginThemeColors.ActiveTabBackground
+                        } else {
+                            MaterialTheme.colorScheme.primary
+                        },
+                    )
                     .clickable(onClick = onReconnect)
                     .padding(vertical = Spacing.SmallMedium, horizontal = Spacing.Medium),
                 horizontalArrangement = Arrangement.Center,
@@ -463,11 +467,9 @@ private fun RecoveryBlockedBanner(modifier: Modifier = Modifier) {
     }
 }
 
+@Suppress("LongMethod")
 @Composable
-private fun RecoveryConsoleDrawer(
-    activityState: SetupActivityState?,
-    modifier: Modifier = Modifier,
-) {
+private fun RecoveryConsoleDrawer(activityState: SetupActivityState?, modifier: Modifier = Modifier) {
     var selectedTab by remember { mutableStateOf("logs") }
     var autoScroll by remember { mutableStateOf(true) }
 
@@ -554,7 +556,11 @@ private fun RecoveryConsoleDrawer(
                             .clip(GlassShapes.Capsule)
                             .background(
                                 if (autoScroll) {
-                                    if (isBlue) PluginThemeColors.ActiveTabBackground else MaterialTheme.colorScheme.primary
+                                    if (isBlue) {
+                                        PluginThemeColors.ActiveTabBackground
+                                    } else {
+                                        MaterialTheme.colorScheme.primary
+                                    }
                                 } else {
                                     MaterialTheme.colorScheme.surfaceContainer
                                 },
@@ -562,7 +568,11 @@ private fun RecoveryConsoleDrawer(
                             .border(
                                 width = GlassDimens.HairlineBorder,
                                 color = if (autoScroll) {
-                                    if (isBlue) PluginThemeColors.ActiveTabBorder else MaterialTheme.colorScheme.primary
+                                    if (isBlue) {
+                                        PluginThemeColors.ActiveTabBorder
+                                    } else {
+                                        MaterialTheme.colorScheme.primary
+                                    }
                                 } else {
                                     MaterialTheme.colorScheme.outlineVariant
                                 },
@@ -606,7 +616,11 @@ private fun RecoveryConsoleDrawer(
                             )
                             Text(
                                 text = "[$time] $log",
-                                color = if (index >= 5) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                                color = if (index >= 5) {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                },
                                 fontSize = FontSize.BodySmall,
                                 fontFamily = codeFontFamily(),
                             )
@@ -649,7 +663,13 @@ private fun ConsoleTabItem(
             .then(
                 if (isSelected) {
                     Modifier
-                        .background(if (isBlue) PluginThemeColors.SelectedRowBackground else MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Faded))
+                        .background(
+                            if (isBlue) {
+                                PluginThemeColors.SelectedRowBackground
+                            } else {
+                                MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Faded)
+                            },
+                        )
                         .border(
                             width = GlassDimens.HairlineBorder,
                             color = activeBorder,

@@ -262,5 +262,27 @@ public sealed interface SetupOutcome {
     public data object Cancelled : SetupOutcome
     public data class Busy(val ownerId: String) : SetupOutcome
     public data class Interrupted(val reason: String) : SetupOutcome
+
+    /**
+     * The confirmed plan paused because an action requires interactive user authorization.
+     * Subsequent build and sync actions are paused. Recheck via resume() continues the plan.
+     */
+    public data class AwaitingUserAction(
+        val pendingPlanId: String,
+        val stage: SetupStepStage,
+        val reason: String,
+        val handoff: UserRepairHandoff,
+    ) : SetupOutcome
 }
+
+/**
+ * Diagnostic repair handoff details for actions requiring user terminal authorization.
+ */
+public data class UserRepairHandoff(
+    val actionId: String,
+    val description: String,
+    val terminalCommand: String,
+    val packages: List<String>,
+    val distro: String,
+)
 

@@ -54,6 +54,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import dev.chrisbanes.haze.glass.GlassReducedMotionPolicy
 import kotlinx.coroutines.delay
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
 import org.ide.lti.core.designsystem.component.actions.GlassSecondaryButton
@@ -356,11 +357,20 @@ private fun ActivityHeaderLeftBadges(
         }
 
         if (isRunning) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(IconSize.Small),
-                strokeWidth = StrokeWidth.Hairline,
-                color = MaterialTheme.colorScheme.primary,
-            )
+            val isReducedMotion = GlassTheme.reducedMotionPolicy == GlassReducedMotionPolicy.Reduced
+            if (isReducedMotion) {
+                Text(
+                    text = "Checking…",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            } else {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(IconSize.Small),
+                    strokeWidth = StrokeWidth.Hairline,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
         }
     }
 }

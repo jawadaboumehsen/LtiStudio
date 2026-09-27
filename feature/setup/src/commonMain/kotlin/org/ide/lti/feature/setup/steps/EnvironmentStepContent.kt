@@ -10,13 +10,11 @@
 package org.ide.lti.feature.setup.steps
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -29,31 +27,33 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import dev.chrisbanes.haze.glass.GlassReducedMotionPolicy
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
 import org.ide.lti.core.designsystem.component.actions.GlassSecondaryButton
 import org.ide.lti.core.designsystem.component.display.GlassCard
+import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.feedback.GlassBanner
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.component.progress.GlassConsoleDrawer
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.ComponentSize
-import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
-import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.domain.setup.SetupStepStage
+import org.ide.lti.core.domain.setup.StepProvenance
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolchainSetupState
+import org.ide.lti.core.model.setup.EnvironmentReadiness
 import org.ide.lti.feature.setup.EnvironmentPresentation
 import org.ide.lti.feature.setup.EnvironmentState
 import org.ide.lti.feature.setup.PrimaryAction
@@ -63,7 +63,6 @@ import org.ide.lti.feature.setup.SetupPresentationMapper
 import org.ide.lti.feature.setup.SetupUiActions
 import org.ide.lti.feature.setup.SetupUiState
 import org.ide.lti.feature.setup.components.DoctorDiagnosticsDrawer
-import org.ide.lti.feature.setup.components.EnvironmentSubsystemHeader
 import org.ide.lti.feature.setup.components.SetupActivityPanel
 import org.ide.lti.feature.setup.components.ToolchainPipelineTracker
 
@@ -79,7 +78,6 @@ fun EnvironmentStepContent(
     modifier: Modifier = Modifier,
     onProceedToLaunchpad: () -> Unit = {},
     onNavigateToProjects: (() -> Unit)? = null,
-    autoRunOnLaunch: Boolean = true,
     activityState: SetupActivityState? = null,
     activityListState: androidx.compose.foundation.lazy.LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
     previewInvokerFocusRequester: FocusRequester? = null,
@@ -97,12 +95,9 @@ fun EnvironmentStepContent(
         onProceedToLaunchpad = onProceedToLaunchpad,
         modifier = modifier,
         onAutoRemediateDoctor = actions.onAutoRemediateDoctor,
-        autoRunOnLaunch = autoRunOnLaunch,
         selectedCockpitTab = state.selectedCockpitTab,
         onSelectCockpitTab = actions.onSelectCockpitTab,
-        isAutoDoctorEnabled = state.isAutoDoctorEnabled,
-        onSetAutoDoctorEnabled = actions.onSetAutoDoctorEnabled,
-        onResetToolchainCache = actions.onResetToolchainCache,
+        readiness = state.environmentReadiness,
         activityState = activityState,
         activityListState = activityListState,
         previewInvokerFocusRequester = previewInvokerFocusRequester,
@@ -126,7 +121,11 @@ fun EnvironmentStepContent(
  * - Single Responsibility: Coordinates environment setup and toolchain provisioning cockpit.
  * - Design System Guardrails: 100% token usage (zero raw dp or alpha float literals).
  */
-@Suppress("LongParameterList")
+@Suppress(
+    "LongParameterList",
+    "CyclomaticComplexMethod",
+    "LongMethod",
+)
 @Composable
 fun EnvironmentStepContent(
     toolchainSetupState: ToolchainSetupState,
@@ -141,28 +140,17 @@ fun EnvironmentStepContent(
     onPreviewSetup: (SetupStepStage?) -> Unit = {},
     onNavigateToProjects: (() -> Unit)? = null,
     onAutoRemediateDoctor: (() -> Unit)? = null,
-    autoRunOnLaunch: Boolean = true,
     selectedCockpitTab: String = "doctor",
     onSelectCockpitTab: (String) -> Unit = {},
-    isAutoDoctorEnabled: Boolean = true,
-    onSetAutoDoctorEnabled: (Boolean) -> Unit = {},
-    onResetToolchainCache: () -> Unit = {},
+    readiness: EnvironmentReadiness? = null,
     activityState: SetupActivityState? = null,
     activityListState: androidx.compose.foundation.lazy.LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
     previewInvokerFocusRequester: FocusRequester? = null,
 ) {
-    val diagnostics = GlassTheme.diagnosticColors
-
     val presentation = environmentPresentation ?: SetupPresentationMapper.mapEnvironment(
         state = toolchainSetupState,
         activeOperation = activeOperation,
     )
-
-    LaunchedEffect(autoRunOnLaunch) {
-        if (autoRunOnLaunch && !toolchainSetupState.isBusy && presentation.primaryAction == PrimaryAction.CHECK) {
-            onCheckEnvironment()
-        }
-    }
 
     Box(
         modifier = modifier
@@ -183,44 +171,127 @@ fun EnvironmentStepContent(
                 ),
             verticalArrangement = Arrangement.spacedBy(Spacing.SectionGap),
         ) {
-            // Header Row (FrameLayout / Box Anchored Layout)
-            Column(
+            // Phase 4 Header: Title, Subtitle, Last Verified, and Live Status Pills
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top,
             ) {
-                Text(
-                    text = "Environment & Toolchains Cockpit",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    softWrap = false,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    text = "Professional diagnostics, WSL 2 subsystem bridge, 35-tool matrix, and build pipeline",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
+                    modifier = Modifier.weight(1f, fill = false),
+                ) {
+                    Text(
+                        text = "Machine setup",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    val subtitle = when {
+                        toolchainSetupState.isChecking -> "Checking WSL and build tools…"
+                        toolchainSetupState.steps.any { it.status == StepStatus.FAILED } -> {
+                            val count = toolchainSetupState.steps.count { it.status == StepStatus.FAILED }
+                            if (count == 1) "1 item needs attention" else "$count items need attention"
+                        }
+                        toolchainSetupState.isAllReady -> "Ready to build"
+                        else -> "Verification pending"
+                    }
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    // "Verified" only ever means a fully passing check; a live check that found problems
+                    // reports when it ran ("Checked"), never a success it did not have.
+                    val isRestored = toolchainSetupState.steps.any { it.provenance == StepProvenance.RESTORED }
+                    val lastVerified = toolchainSetupState.lastVerifiedTimestamp?.takeIf { it > 0 }?.let { millis ->
+                        val relative = formatRelativeTime(Instant.fromEpochMilliseconds(millis))
+                        if (isRestored) "Last verified $relative (historical)" else "Last verified $relative"
+                    }
+                    val checkedAt = toolchainSetupState.checkedAt?.takeIf { !toolchainSetupState.isAllReady }
+                    val lastVerifiedLabel = when {
+                        checkedAt != null -> {
+                            val checked = "Checked ${formatRelativeTime(Instant.fromEpochMilliseconds(checkedAt))}"
+                            if (lastVerified != null) {
+                                "$checked · ${lastVerified.replaceFirstChar { it.lowercase() }}"
+                            } else {
+                                checked
+                            }
+                        }
+                        lastVerified != null -> lastVerified
+                        else -> "Not checked yet"
+                    }
+                    Text(
+                        text = lastVerifiedLabel,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+
+                // Top-right live status pills and verify action
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                ) {
+                    val wslStep = toolchainSetupState.steps.firstOrNull { it.stage == SetupStepStage.WSL_DETECTION }
+                    val isWslOk = wslStep?.status == StepStatus.SUCCESS
+                    val bridgeStep = toolchainSetupState.steps
+                        .firstOrNull { it.stage == SetupStepStage.SERVER_CONNECTIVITY }
+                    val isBridgeOk = bridgeStep?.status == StepStatus.SUCCESS
+
+                    val wslStatus = when (wslStep?.status) {
+                        StepStatus.SUCCESS -> "Active"
+                        StepStatus.RUNNING -> "Checking"
+                        StepStatus.FAILED -> "Offline"
+                        else -> "Pending"
+                    }
+                    val bridgeStatus = when (bridgeStep?.status) {
+                        StepStatus.SUCCESS -> {
+                            val ping = toolchainSetupState.daemonPingMs
+                            if (ping != null && ping > 0) "${ping}ms" else "Connected"
+                        }
+                        StepStatus.RUNNING -> "Checking"
+                        StepStatus.FAILED -> "Disconnected"
+                        else -> "Pending"
+                    }
+
+                    GlassChip(
+                        label = "WSL: $wslStatus",
+                        selected = isWslOk,
+                    )
+                    GlassChip(
+                        label = "Bridge: $bridgeStatus",
+                        selected = isBridgeOk,
+                    )
+                    GlassSecondaryButton(
+                        onClick = onCheckEnvironment,
+                        enabled = !toolchainSetupState.isBusy,
+                    ) {
+                        Text(if (toolchainSetupState.isChecking) "Checking…" else "Verify")
+                    }
+                }
+            }
+
+            val activeRunIds = toolchainSetupState.stepRunIds.filterValues { it.isNotBlank() }
+            if (activeRunIds.isNotEmpty()) {
+                val runSummary = activeRunIds.entries.joinToString(", ") { "${it.key.displayName}: ${it.value}" }
+                GlassBanner(
+                    severity = GlassBannerSeverity.INFO,
+                    title = "Active Durable Run",
+                    description = "Executing durable background run ($runSummary). Reattaches automatically across session restarts.",
                 )
             }
 
-            // 1. Interactive Subsystem & Runtime Header
-            EnvironmentSubsystemHeader(
-                state = toolchainSetupState,
-                onCheckEnvironment = onCheckEnvironment,
-                isAutoDoctorEnabled = isAutoDoctorEnabled,
-                onSetAutoDoctorEnabled = onSetAutoDoctorEnabled,
-                onResetToolchainCache = onResetToolchainCache,
-            )
-
-            EnvironmentStatusBanners(
-                toolchainSetupState = toolchainSetupState,
-                onCheckEnvironment = onCheckEnvironment,
-                diagnostics = diagnostics,
-            )
-
+            // Grouped Inset List ("This machine") with 5 canonical rows - MAIN CONTENT FIRST
             ToolchainPipelineTracker(
                 steps = toolchainSetupState.steps,
                 onRetryStep = onRetrySetupStep,
@@ -249,6 +320,7 @@ fun EnvironmentStepContent(
             EnvironmentCockpitTabContent(
                 selectedCockpitTab = selectedCockpitTab,
                 toolchainSetupState = toolchainSetupState,
+                readiness = readiness,
                 onAutoRemediateDoctor = onAutoRemediateDoctor,
                 activityState = activityState,
                 activityListState = activityListState,
@@ -270,48 +342,10 @@ fun EnvironmentStepContent(
 }
 
 @Composable
-private fun EnvironmentStatusBanners(
-    toolchainSetupState: ToolchainSetupState,
-    onCheckEnvironment: () -> Unit,
-    diagnostics: org.ide.lti.core.designsystem.theme.DiagnosticColors,
-) {
-    val bridgeStep = toolchainSetupState.steps.firstOrNull { it.stage == SetupStepStage.SERVER_CONNECTIVITY }
-    if (bridgeStep?.status == StepStatus.FAILED) {
-        val launcherLogTail = toolchainSetupState.logs.takeLast(10)
-        BridgeFailureBanner(
-            bridgeStep = bridgeStep,
-            launcherLogTail = launcherLogTail,
-            onCheckEnvironment = onCheckEnvironment,
-            isBusy = toolchainSetupState.isBusy,
-            diagnostics = diagnostics,
-        )
-    }
-
-    val sudoDiag = toolchainSetupState.diagnostics.firstOrNull { it.id == "sudo_noninteractive" }
-    if (sudoDiag != null && sudoDiag.status != StepStatus.SUCCESS) {
-        val cmd = sudoDiag.copyableCommand ?: "echo \"\$USER ALL=(ALL) NOPASSWD: ALL\" | sudo tee /etc/sudoers.d/ltirom"
-        GlassBanner(
-            severity = GlassBannerSeverity.WARNING,
-            title = "Non-Interactive Sudo Configuration Required",
-            description = "Automated package remediation requires passwordless sudo without interactive TTY prompts. Run in WSL terminal:\n$cmd",
-        )
-    }
-
-    val activeRunIds = toolchainSetupState.stepRunIds.filterValues { it.isNotBlank() }
-    if (activeRunIds.isNotEmpty()) {
-        val runSummary = activeRunIds.entries.joinToString(", ") { "${it.key.displayName}: ${it.value}" }
-        GlassBanner(
-            severity = GlassBannerSeverity.INFO,
-            title = "Active Durable Run",
-            description = "Executing durable background run ($runSummary). Reattaches automatically across session restarts.",
-        )
-    }
-}
-
-@Composable
 private fun EnvironmentCockpitTabContent(
     selectedCockpitTab: String,
     toolchainSetupState: ToolchainSetupState,
+    readiness: EnvironmentReadiness? = null,
     onAutoRemediateDoctor: (() -> Unit)?,
     activityState: SetupActivityState?,
     activityListState: androidx.compose.foundation.lazy.LazyListState,
@@ -320,6 +354,7 @@ private fun EnvironmentCockpitTabContent(
         "doctor" -> {
             DoctorDiagnosticsDrawer(
                 diagnosticsList = toolchainSetupState.diagnostics,
+                readiness = readiness,
                 onAutoRemediateDoctor = onAutoRemediateDoctor,
             )
         }
@@ -464,35 +499,41 @@ private fun EnvironmentPrimaryActionButton(
 
 @Composable
 private fun CheckingActionButton() {
+    val isReducedMotion = GlassTheme.reducedMotionPolicy == GlassReducedMotionPolicy.Reduced
     GlassPrimaryButton(onClick = {}, enabled = false) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
         ) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(IconSize.Small),
-                strokeWidth = StrokeWidth.Hairline,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Text(text = "Checking...", maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
+            if (!isReducedMotion) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(IconSize.Small),
+                    strokeWidth = StrokeWidth.Hairline,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+            Text(text = "Checking…", maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
         }
     }
 }
 
 @Composable
 private fun StageProgressActionButton() {
+    val isReducedMotion = GlassTheme.reducedMotionPolicy == GlassReducedMotionPolicy.Reduced
     GlassPrimaryButton(onClick = {}, enabled = false) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
         ) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(IconSize.Small),
-                strokeWidth = StrokeWidth.Hairline,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
+            if (!isReducedMotion) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(IconSize.Small),
+                    strokeWidth = StrokeWidth.Hairline,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
             Text(
-                text = "Running Setup...",
+                text = "Running Setup…",
                 maxLines = 1,
                 softWrap = false,
                 overflow = TextOverflow.Ellipsis,
@@ -665,87 +706,13 @@ private fun SetUpActionButton(
     }
 }
 
-@Composable
-private fun BridgeFailureBanner(
-    bridgeStep: org.ide.lti.core.domain.setup.SetupStepDetail,
-    launcherLogTail: List<String>,
-    onCheckEnvironment: () -> Unit,
-    isBusy: Boolean,
-    diagnostics: org.ide.lti.core.designsystem.theme.DiagnosticColors,
-) {
-    val failureReason = bridgeStep.description
-    GlassCard(
-        modifier = Modifier.fillMaxWidth(),
-        surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-        contentPadding = Spacing.CardPadding,
-    ) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(Spacing.Small),
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-            ) {
-                Icon(
-                    painter = AppIcons.InfoPainterResource(),
-                    contentDescription = null,
-                    modifier = Modifier.size(IconSize.Medium),
-                    tint = diagnostics.error,
-                )
-                Text(
-                    text = "Server Daemon Bridge Failure",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Spacer(Modifier.weight(1f))
-                GlassPrimaryButton(
-                    onClick = onCheckEnvironment,
-                    enabled = !isBusy,
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                    ) {
-                        Icon(
-                            painter = AppIcons.RefreshPainterResource(),
-                            contentDescription = null,
-                            modifier = Modifier.size(IconSize.Small),
-                        )
-                        Text("Retry Bridge", maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
-                    }
-                }
-            }
-
-            Text(
-                text = failureReason,
-                style = MaterialTheme.typography.bodyMedium,
-                color = diagnostics.error,
-            )
-
-            if (launcherLogTail.isNotEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(GlassShapes.Small)
-                        .background(MaterialTheme.colorScheme.surfaceContainer)
-                        .border(
-                            width = StrokeWidth.Standard,
-                            color = MaterialTheme.colorScheme.outline,
-                            shape = GlassShapes.Small,
-                        )
-                        .padding(Spacing.Small),
-                ) {
-                    Text(
-                        text = launcherLogTail.joinToString("\n"),
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            fontFamily = codeFontFamily(),
-                        ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-        }
+private fun formatRelativeTime(instant: Instant): String {
+    val duration = Clock.System.now() - instant
+    return when {
+        duration.isNegative() || duration.inWholeMinutes < 1 -> "just now"
+        duration.inWholeMinutes < 60 -> "${duration.inWholeMinutes}m ago"
+        duration.inWholeHours < 24 -> "${duration.inWholeHours}h ago"
+        duration.inWholeDays < 7 -> "${duration.inWholeDays}d ago"
+        else -> "${duration.inWholeDays / 7}w ago"
     }
 }

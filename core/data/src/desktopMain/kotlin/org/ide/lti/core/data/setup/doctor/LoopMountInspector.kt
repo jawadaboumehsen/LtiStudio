@@ -17,34 +17,24 @@ public class LoopMountInspector(
 
     override suspend fun inspect(context: DiagnosticContext): DiagnosticCheckItem {
         val distro = context.distro
-        val hasLoopControl = if (context.availableCommands.isNotEmpty()) {
-            "loop-control" in context.availableCommands
+        val hasLoopControl = if (context.deviceNodes.isNotEmpty()) {
+            "loop-control" in context.deviceNodes
         } else {
             cli.execute(distro, listOf("test", "-e", "/dev/loop-control")).exitCode == 0
         }
-        val hasPasswordlessSudo = cli.execute(distro, listOf("sudo", "-n", "true")).exitCode == 0 ||
-            cli.execute(distro, listOf("sudo", "-n", "/bin/mount", "-V")).exitCode == 0 ||
-            cli.execute(distro, listOf("sudo", "-n", "mount", "-V")).exitCode == 0
-        val sudoMountCmd = "echo \"\$USER ALL=(ALL) NOPASSWD: /bin/mount, /bin/umount\" | sudo tee /etc/sudoers.d/ltirom-mount"
 
         return DiagnosticCheckItem(
             id = "loop_mount",
-            title = "Linux Loop Devices & Mount Elevation",
+            title = "Linux Loop Device Control",
             category = DiagnosticCategory.KERNEL_AND_MOUNT,
-            status = when {
-                !hasLoopControl -> StepStatus.WARNING
-                !hasPasswordlessSudo -> StepStatus.WARNING
-                else -> StepStatus.SUCCESS
+            status = if (hasLoopControl) StepStatus.SUCCESS else StepStatus.WARNING,
+            detail = if (hasLoopControl) {
+                "/dev/loop-control character device node available for loop partition workflows."
+            } else {
+                "/dev/loop-control not found; kernel loop device support may be restricted in this WSL instance."
             },
-            detail = when {
-                !hasLoopControl -> "/dev/loop-control not found; kernel loop device support may be restricted."
-                !hasPasswordlessSudo -> "Loop control available; sudo requires password for ext4/f2fs loop mounts."
-                else -> "Loop control ready; non-interactive elevation active for partition loop mounts."
-            },
-            remediation = if (!hasPasswordlessSudo) {
-                "Notice: For automated loop mounts, configure passwordless mount: $sudoMountCmd"
-            } else null,
-            copyableCommand = if (!hasPasswordlessSudo) sudoMountCmd else null,
+            remediation = if (hasLoopControl) null else "Kernel loop device support is optional. Verify WSL kernel configuration if raw partition mounting is needed.",
+            copyableCommand = null,
             isOptionalForRuntime = true
         )
     }

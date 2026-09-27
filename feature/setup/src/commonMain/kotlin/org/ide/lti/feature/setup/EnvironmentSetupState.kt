@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import org.ide.lti.core.common.timing.StartupTiming
 import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
 import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.domain.setup.SetupPlan
@@ -30,6 +31,7 @@ import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolchainProvisioningService
 import org.ide.lti.core.domain.setup.ToolchainSetupState
+import org.ide.lti.core.domain.setup.UserRepairHandoff
 
 /**
  * Kind of setup mutation operation.
@@ -52,6 +54,7 @@ enum class SetupOperationState {
     FAILED,
     CANCELLED,
     INTERRUPTED,
+    AWAITING_USER_ACTION,
 }
 
 /**
@@ -86,6 +89,7 @@ data class SetupOperation(
     val autoDoctorEnabled: Boolean = true,
     val failure: String? = null,
     val plan: SetupPlan? = null,
+    val awaitingHandoff: UserRepairHandoff? = null,
 )
 
 /**
@@ -99,8 +103,12 @@ data class SetupOperation(
  * - Attaches to existing durable operation IDs on reconnection (FR-007).
  * - Cleans up busy/mutation state in finally blocks on error/cancellation (FR-007).
  * - Preserves execution state across Setup destination navigation during a session (FR-004, FR-007).
+ * - One state holder for check/preview/confirm/observe/recover of the environment.
  */
-@Suppress("TooManyFunctions") // one state holder for check/preview/confirm/observe/recover of the environment
+@Suppress(
+    "TooManyFunctions",
+    "LargeClass",
+)
 class EnvironmentSetupState(
     private val scope: CoroutineScope,
     private val toolchainService: ToolchainProvisioningService? = null,
@@ -126,6 +134,10 @@ class EnvironmentSetupState(
 
     private val _activeOperation = MutableStateFlow<SetupOperation?>(null)
     val activeOperation: StateFlow<SetupOperation?> = _activeOperation.asStateFlow()
+
+    internal fun setActiveOperationForTesting(operation: SetupOperation?) {
+        _activeOperation.value = operation
+    }
 
     val environmentPresentation: StateFlow<EnvironmentPresentation> =
         combine(toolchainSetupState, _activeOperation) { state, op ->
@@ -156,6 +168,9 @@ class EnvironmentSetupState(
 
     private val _selectedStage = MutableStateFlow<SetupStepStage?>(null)
     val selectedStage: StateFlow<SetupStepStage?> = _selectedStage.asStateFlow()
+
+    private val _isHandoffSheetVisible = MutableStateFlow(false)
+    val isHandoffSheetVisible: StateFlow<Boolean> = _isHandoffSheetVisible.asStateFlow()
 
     private var currentExecutionJob: Job? = null
 
@@ -227,7 +242,9 @@ class EnvironmentSetupState(
         if (toolchainSetupState.value.isBusy || currentExecutionJob?.isActive == true) return
         currentExecutionJob = scope.launch {
             try {
+                StartupTiming.log("Environment check started")
                 toolchainService.checkStatus()
+                StartupTiming.log("Environment check finished")
             } catch (e: Exception) {
                 _environmentNotice.value = "Environment verification notice: ${e.message}"
             } finally {
@@ -301,13 +318,8 @@ class EnvironmentSetupState(
         val loopMountElevation = installs.any { it.configureLoopMountElevation }
         val requiresElevation = installs.any { it.requiresElevation }
         val elevationReason = when {
-            aptPackages.isNotEmpty() && loopMountElevation ->
-                "Automated package installation and loop-mount sudoers rule via passwordless " +
-                    "non-interactive sudo (sudo -n)"
             aptPackages.isNotEmpty() ->
-                "Automated package installation via passwordless non-interactive sudo (sudo -n apt-get)"
-            loopMountElevation ->
-                "Loop-mount sudoers rule via passwordless non-interactive sudo (sudo -n)"
+                "Package installation requires administrator approval in your WSL terminal (sudo apt-get install)."
             else -> null
         }
         return PlannedSetupChanges(
@@ -408,6 +420,13 @@ class EnvironmentSetupState(
                             failure = outcome.reason,
                         )
                         _environmentNotice.value = "Operation interrupted: ${outcome.reason}"
+                    }
+                    is SetupOutcome.AwaitingUserAction -> {
+                        _activeOperation.value = _activeOperation.value?.copy(
+                            executionState = SetupOperationState.AWAITING_USER_ACTION,
+                            awaitingHandoff = outcome.handoff,
+                        )
+                        _environmentNotice.value = "Awaiting user action: terminal authorization required."
                     }
                 }
             } catch (e: CancellationException) {
@@ -545,6 +564,15 @@ class EnvironmentSetupState(
                 )
                 _environmentNotice.value = "$subject interrupted: ${outcome.reason}"
             }
+            is SetupOutcome.AwaitingUserAction -> {
+                _activeOperation.value = _activeOperation.value?.copy(
+                    operationId = outcome.pendingPlanId ?: _activeOperation.value?.operationId,
+                    executionState = SetupOperationState.AWAITING_USER_ACTION,
+                    awaitingHandoff = outcome.handoff,
+                )
+                _isHandoffSheetVisible.value = true
+                _environmentNotice.value = "Action required: external authorization needed in WSL terminal."
+            }
         }
     }
 
@@ -567,6 +595,204 @@ class EnvironmentSetupState(
 
     fun dismissEnvironmentNotice() {
         _environmentNotice.value = null
+    }
+
+    /**
+     * Dismisses the active terminal handoff sheet without cancelling the underlying pending attempt ("Close for now").
+     * The attempt remains in AWAITING_USER_ACTION with handoff details intact so resume controls stay available.
+     */
+    fun dismissHandoff() {
+        _isHandoffSheetVisible.value = false
+        _environmentNotice.value = "Terminal authorization pending. You can resume verification at any time."
+    }
+
+    /**
+     * Re-opens the terminal handoff sheet if an operation is currently awaiting user action.
+     */
+    fun showHandoffSheet() {
+        if (_activeOperation.value?.executionState == SetupOperationState.AWAITING_USER_ACTION) {
+            _isHandoffSheetVisible.value = true
+        }
+    }
+
+    /**
+     * Explicitly abandons the awaiting operation, cancelling both the UI operation and the durable journal attempt.
+     */
+    @Suppress("ReturnCount")
+    fun abandonAwaitingOperation() {
+        val current = _activeOperation.value ?: return
+        if (current.executionState != SetupOperationState.AWAITING_USER_ACTION) return
+
+        val service = toolchainService
+        if (service == null) {
+            _environmentNotice.value = "Toolchain service is not available in this session."
+            return
+        }
+
+        _isHandoffSheetVisible.value = false
+        scope.launch {
+            try {
+                when (val outcome = service.cancel()) {
+                    is SetupOutcome.Cancelled -> {
+                        _activeOperation.value = current.copy(
+                            executionState = SetupOperationState.CANCELLED,
+                            failure = "Operation abandoned by user",
+                            awaitingHandoff = null,
+                        )
+                        _environmentNotice.value = "Operation was cancelled"
+                    }
+                    is SetupOutcome.Interrupted -> {
+                        _activeOperation.value = current.copy(
+                            executionState = SetupOperationState.AWAITING_USER_ACTION,
+                            failure = outcome.reason,
+                        )
+                        _environmentNotice.value = "Could not abandon operation: ${outcome.reason}"
+                    }
+                    is SetupOutcome.Failed -> {
+                        _activeOperation.value = current.copy(
+                            executionState = SetupOperationState.AWAITING_USER_ACTION,
+                            failure = outcome.reason,
+                        )
+                        _environmentNotice.value = "Could not abandon operation: ${outcome.reason}"
+                    }
+                    else -> {
+                        _activeOperation.value = current.copy(
+                            executionState = SetupOperationState.AWAITING_USER_ACTION,
+                            failure = "Unexpected outcome when abandoning operation",
+                        )
+                        _environmentNotice.value = "Could not abandon operation"
+                    }
+                }
+            } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
+                _activeOperation.value = current.copy(
+                    executionState = SetupOperationState.AWAITING_USER_ACTION,
+                    failure = e.message ?: "Failed to abandon operation",
+                )
+                _environmentNotice.value = "Could not abandon operation: ${e.message}"
+            }
+        }
+    }
+
+    /**
+     * Resumes an operation currently paused in AWAITING_USER_ACTION after user terminal authorization.
+     */
+    @Suppress("CyclomaticComplexMethod", "ReturnCount")
+    fun resumeAwaitingOperation() {
+        if (toolchainService == null) {
+            _environmentNotice.value = "Toolchain service is not available in this session."
+            return
+        }
+        val currentOp = _activeOperation.value
+        val plan = currentOp?.plan
+        val planId = plan?.planId ?: currentOp?.operationId
+        if (
+            currentOp == null ||
+            planId == null ||
+            currentOp.executionState != SetupOperationState.AWAITING_USER_ACTION
+        ) {
+            _environmentNotice.value = "No operation awaiting user action to resume."
+            return
+        }
+        if (toolchainSetupState.value.isBusy || currentExecutionJob?.isActive == true) {
+            return
+        }
+        val currentHandoff = currentOp.awaitingHandoff
+        _activeOperation.value = currentOp.copy(
+            executionState = SetupOperationState.RUNNING,
+            failure = null,
+        )
+        currentExecutionJob = scope.launch {
+            try {
+                val outcome = toolchainService.resume(planId)
+                when (outcome) {
+                    is SetupOutcome.Succeeded -> {
+                        _activeOperation.value = _activeOperation.value?.copy(
+                            executionState = SetupOperationState.SUCCEEDED,
+                            awaitingHandoff = null,
+                            failure = null,
+                        )
+                    }
+                    is SetupOutcome.AwaitingUserAction -> {
+                        _activeOperation.value = _activeOperation.value?.copy(
+                            executionState = SetupOperationState.AWAITING_USER_ACTION,
+                            awaitingHandoff = outcome.handoff,
+                            failure = outcome.reason,
+                        )
+                        _environmentNotice.value = "Action still pending: requirements not yet satisfied."
+                    }
+                    is SetupOutcome.Cancelled -> {
+                        _activeOperation.value = _activeOperation.value?.copy(
+                            executionState = SetupOperationState.CANCELLED,
+                            failure = "Operation cancelled",
+                            awaitingHandoff = null,
+                        )
+                        _environmentNotice.value = "Operation was cancelled"
+                    }
+                    is SetupOutcome.Failed -> {
+                        val handoffToKeep = currentHandoff ?: _activeOperation.value?.awaitingHandoff
+                        if (handoffToKeep != null) {
+                            _activeOperation.value = _activeOperation.value?.copy(
+                                executionState = SetupOperationState.AWAITING_USER_ACTION,
+                                awaitingHandoff = handoffToKeep,
+                                failure = outcome.reason,
+                            )
+                            _environmentNotice.value = "Pre-flight check failed before resumption: ${outcome.reason}"
+                        } else {
+                            _activeOperation.value = _activeOperation.value?.copy(
+                                executionState = SetupOperationState.FAILED,
+                                failure = outcome.reason,
+                                awaitingHandoff = null,
+                            )
+                            _environmentNotice.value = "Operation failed: ${outcome.reason}"
+                        }
+                    }
+                    is SetupOutcome.Busy -> {
+                        _activeOperation.value = _activeOperation.value?.copy(
+                            executionState = SetupOperationState.FAILED,
+                            failure = "Environment is busy with owner: ${outcome.ownerId}",
+                        )
+                        _environmentNotice.value = "Operation rejected: environment is busy (${outcome.ownerId})"
+                    }
+                    is SetupOutcome.Interrupted -> {
+                        _activeOperation.value = _activeOperation.value?.copy(
+                            executionState = SetupOperationState.INTERRUPTED,
+                            failure = outcome.reason,
+                            awaitingHandoff = null,
+                        )
+                        _environmentNotice.value = "Operation interrupted: ${outcome.reason}"
+                    }
+                }
+            } catch (e: CancellationException) {
+                _activeOperation.value = _activeOperation.value?.copy(
+                    executionState = SetupOperationState.CANCELLED,
+                    failure = "Operation cancelled",
+                    awaitingHandoff = null,
+                )
+                _environmentNotice.value = "Operation was cancelled"
+                throw e
+            } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
+                val handoffToKeep = currentHandoff ?: _activeOperation.value?.awaitingHandoff
+                if (handoffToKeep != null) {
+                    _activeOperation.value = _activeOperation.value?.copy(
+                        executionState = SetupOperationState.AWAITING_USER_ACTION,
+                        failure = e.message ?: "Failed to verify requirements",
+                        awaitingHandoff = handoffToKeep,
+                    )
+                } else {
+                    _activeOperation.value = _activeOperation.value?.copy(
+                        executionState = SetupOperationState.FAILED,
+                        failure = e.message,
+                        awaitingHandoff = null,
+                    )
+                }
+                _environmentNotice.value = "Operation failed: ${e.message}"
+            } finally {
+                currentExecutionJob = null
+                if (_activeOperation.value?.executionState == SetupOperationState.SUCCEEDED) {
+                    _activeOperation.value = null
+                }
+            }
+        }
     }
 
     /**

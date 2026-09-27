@@ -7,11 +7,18 @@ package org.ide.lti.core.data.setup.doctor
  * @property home User home directory in the target environment (e.g., "/home/lti").
  * @property binDir Tools binary directory (e.g., "$home/LtiRomTools/bin").
  * @property binariesPresent Indicates whether compiled project binaries already exist.
+ * @property systemCommands Commands found in standard system PATH directories (/usr/bin, /bin, etc.).
+ * @property projectBinaries Binaries found specifically in [binDir].
+ * @property deviceNodes Device nodes found in /dev.
+ * @property availableCommands Union of all discovered commands, retained for backward compatibility.
  */
 public data class DiagnosticContext(
     val distro: String,
     val home: String,
     val binDir: String,
     val binariesPresent: Boolean,
-    val availableCommands: Set<String> = emptySet(),
+    val systemCommands: Set<String> = emptySet(),
+    val projectBinaries: Set<String> = emptySet(),
+    val deviceNodes: Set<String> = emptySet(),
+    val availableCommands: Set<String> = systemCommands,
 )

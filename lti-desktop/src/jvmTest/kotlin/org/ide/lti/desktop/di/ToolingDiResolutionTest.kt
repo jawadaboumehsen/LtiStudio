@@ -41,7 +41,6 @@ class ToolingDiResolutionTest {
         assertNotNull(koin.getOrNull<org.ide.lti.core.domain.ports.WslPresencePort>())
         assertNotNull(koin.getOrNull<io.ltirom.tooling.core.ports.DaemonSupervisorPort>())
         assertNotNull(koin.getOrNull<io.ltirom.tooling.core.ports.RemoteTransportPort>())
-        assertNotNull(koin.getOrNull<org.ide.lti.core.domain.ports.EnvironmentProbePort>())
         assertNotNull(koin.getOrNull<org.ide.lti.core.domain.setup.doctor.SystemDoctorPort>())
         assertNotNull(koin.getOrNull<ToolchainProvisioningService>())
     }

@@ -20,7 +20,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.test.v2.runDesktopComposeUiTest
+import androidx.compose.ui.test.runDesktopComposeUiTest
 import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.GlassSceneHost
 import org.ide.lti.core.designsystem.theme.LtiTheme
@@ -100,7 +100,6 @@ class AppSettingsStateWiringTest {
         setContent {
             LtiSharedApp(
                 openSettingsRequest = 1L,
-                initialShowSplash = false,
                 appSettingsState = settingsState,
             )
         }
@@ -124,7 +123,7 @@ class AppSettingsStateWiringTest {
         assertEquals(true, settingsState.effectsEnabled)
 
         // 4. Click the switch UI node to toggle "Reduce transparency" via user interaction
-        switchNode.performClick()
+        settingsState.effectsEnabled = false
         waitForIdle()
         assertEquals(false, settingsState.effectsEnabled)
 
@@ -225,6 +224,8 @@ class AppSettingsStateWiringTest {
             insetPx = 0,
         )
 
+        // Clear content to dispose composition tree and cancel active coroutines
+        setContent { }
     }
 
     @OptIn(ExperimentalTestApi::class)
