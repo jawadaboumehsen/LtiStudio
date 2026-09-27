@@ -462,4 +462,77 @@ class ToolBrowserStateTest {
         val signingSelection = ToolSelection(navPackage = ToolNavPackage.SIGNING)
         assertFalse(signingSelection.shouldShowCategoryChips)
     }
+
+    @Test
+    fun testSidebarChipCombinationsAcrossAllSixCategories() {
+        val tools = ToolCategory.entries.map { cat ->
+            ToolComponentItem(
+                id = cat.name.lowercase(),
+                name = cat.displayName,
+                binaryName = cat.name.lowercase(),
+                category = cat,
+                status = StepStatus.SUCCESS,
+            )
+        }
+
+        // 1. ALL package: exposes all 6 categories, chip row visible
+        val allSelection = ToolSelection(navPackage = ToolNavPackage.ALL)
+        assertEquals(ToolCategory.entries, allSelection.availableCategories)
+        assertTrue(allSelection.shouldShowCategoryChips)
+        assertTrue(tools.all { allSelection.matches(it) }, "ALL without category must match all 6 categories")
+
+        ToolCategory.entries.forEach { cat ->
+            val withCategory = allSelection.selectCategory(cat)
+            assertEquals(ToolNavPackage.ALL, withCategory.navPackage)
+            assertEquals(cat, withCategory.category)
+            assertTrue(tools.single { withCategory.matches(it) }.category == cat)
+        }
+
+        // 2. FIRMWARE package: exposes Boot & Kernel and Dynamic Partitions
+        val firmwareSelection = ToolSelection(navPackage = ToolNavPackage.FIRMWARE)
+        assertEquals(
+            listOf(ToolCategory.BOOT_AND_KERNEL, ToolCategory.DYNAMIC_PARTITIONS),
+            firmwareSelection.availableCategories,
+        )
+        assertTrue(firmwareSelection.shouldShowCategoryChips)
+        assertEquals(
+            setOf(ToolCategory.BOOT_AND_KERNEL, ToolCategory.DYNAMIC_PARTITIONS),
+            tools.filter { firmwareSelection.matches(it) }.map { it.category }.toSet(),
+        )
+
+        // Selecting category within FIRMWARE keeps FIRMWARE
+        val fwBoot = firmwareSelection.selectCategory(ToolCategory.BOOT_AND_KERNEL)
+        assertEquals(ToolNavPackage.FIRMWARE, fwBoot.navPackage)
+        assertEquals(ToolCategory.BOOT_AND_KERNEL, fwBoot.category)
+
+        val fwDyn = firmwareSelection.selectCategory(ToolCategory.DYNAMIC_PARTITIONS)
+        assertEquals(ToolNavPackage.FIRMWARE, fwDyn.navPackage)
+        assertEquals(ToolCategory.DYNAMIC_PARTITIONS, fwDyn.category)
+
+        // Selecting category outside FIRMWARE switches to matching package or ALL
+        val fwToFs = firmwareSelection.selectCategory(ToolCategory.FILESYSTEM_AND_IMAGES)
+        assertEquals(ToolNavPackage.FILESYSTEMS, fwToFs.navPackage)
+        assertEquals(ToolCategory.FILESYSTEM_AND_IMAGES, fwToFs.category)
+
+        val fwToSign = firmwareSelection.selectCategory(ToolCategory.SIGNING_AND_SECURITY)
+        assertEquals(ToolNavPackage.SIGNING, fwToSign.navPackage)
+        assertEquals(ToolCategory.SIGNING_AND_SECURITY, fwToSign.category)
+
+        val fwToBridge = firmwareSelection.selectCategory(ToolCategory.BRIDGE_AND_FLASHING)
+        assertEquals(ToolNavPackage.ALL, fwToBridge.navPackage)
+        assertEquals(ToolCategory.BRIDGE_AND_FLASHING, fwToBridge.category)
+
+        val fwToPkg = firmwareSelection.selectCategory(ToolCategory.PACKAGING_AND_TOOLS)
+        assertEquals(ToolNavPackage.ALL, fwToPkg.navPackage)
+        assertEquals(ToolCategory.PACKAGING_AND_TOOLS, fwToPkg.category)
+
+        // 3. Single-category packages hide redundant chip row
+        val fsSelection = ToolSelection(navPackage = ToolNavPackage.FILESYSTEMS)
+        assertFalse(fsSelection.shouldShowCategoryChips)
+        assertEquals(listOf(ToolCategory.FILESYSTEM_AND_IMAGES), fsSelection.availableCategories)
+
+        val signingSelection = ToolSelection(navPackage = ToolNavPackage.SIGNING)
+        assertFalse(signingSelection.shouldShowCategoryChips)
+        assertEquals(listOf(ToolCategory.SIGNING_AND_SECURITY), signingSelection.availableCategories)
+    }
 }
