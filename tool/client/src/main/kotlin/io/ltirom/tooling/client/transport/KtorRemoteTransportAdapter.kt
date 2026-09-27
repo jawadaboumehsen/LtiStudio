@@ -51,6 +51,8 @@ public class KtorRemoteTransportAdapter(
                     contentType(ContentType.Application.Json)
                     setBody(request)
                 }.body()
+            } catch (ce: CancellationException) {
+                throw ce
             } catch (e: Exception) {
                 throw ToolingException(
                     "Failed to execute command on remote daemon at ${conn.httpBaseUrl} [trace=${trace.traceId}]: ${e.message}",
@@ -140,12 +142,14 @@ public class KtorRemoteTransportAdapter(
             if (response.status.isSuccess()) {
                 response.body<WslServerInfo>()
             } else null
+        } catch (ce: CancellationException) {
+            throw ce
         } catch (_: Exception) {
             null
         }
     }
 
-    override suspend fun listTools(): List<ToolStatusInfo> {
+    override suspend fun listTools(): ToolListResult {
         val conn = supervisor.ensureStarted()
         val trace = TraceContext.create()
         return try {
@@ -154,14 +158,18 @@ public class KtorRemoteTransportAdapter(
                 header(TraceContext.HEADER_TRACE_ID, trace.traceId)
             }
             if (response.status.isSuccess()) {
-                response.body<List<ToolStatusInfo>>()
-            } else emptyList()
-        } catch (_: Exception) {
-            emptyList()
+                ToolListResult.Tools(response.body<List<ToolStatusInfo>>())
+            } else {
+                ToolListResult.ServiceError("Server responded with HTTP ${response.status.value}")
+            }
+        } catch (ce: CancellationException) {
+            throw ce
+        } catch (e: Exception) {
+            ToolListResult.ServiceError(e.message ?: "Failed to list tools")
         }
     }
 
-    override suspend fun refreshTools(): List<ToolStatusInfo> {
+    override suspend fun refreshTools(): ToolListResult {
         val conn = supervisor.ensureStarted()
         val trace = TraceContext.create()
         return try {
@@ -170,12 +178,14 @@ public class KtorRemoteTransportAdapter(
                 header(TraceContext.HEADER_TRACE_ID, trace.traceId)
             }
             if (response.status.isSuccess()) {
-                response.body<List<ToolStatusInfo>>()
+                ToolListResult.Tools(response.body<List<ToolStatusInfo>>())
             } else {
-                emptyList()
+                ToolListResult.ServiceError("Server responded with HTTP ${response.status.value}")
             }
-        } catch (_: Exception) {
-            emptyList()
+        } catch (ce: CancellationException) {
+            throw ce
+        } catch (e: Exception) {
+            ToolListResult.ServiceError(e.message ?: "Failed to refresh tools")
         }
     }
 
@@ -190,6 +200,8 @@ public class KtorRemoteTransportAdapter(
                 setBody(content)
             }
             response.status.isSuccess()
+        } catch (ce: CancellationException) {
+            throw ce
         } catch (_: Exception) {
             false
         }
@@ -209,6 +221,8 @@ public class KtorRemoteTransportAdapter(
             } else {
                 null
             }
+        } catch (ce: CancellationException) {
+            throw ce
         } catch (_: Exception) {
             null
         }
@@ -225,6 +239,8 @@ public class KtorRemoteTransportAdapter(
                 header(HttpHeaders.Authorization, "Bearer ${conn.token}")
             }
             response.status.isSuccess()
+        } catch (ce: CancellationException) {
+            throw ce
         } catch (_: Exception) {
             false
         }
@@ -241,6 +257,8 @@ public class KtorRemoteTransportAdapter(
             if (response.status.isSuccess()) {
                 response.body<List<SessionSummary>>()
             } else emptyList()
+        } catch (ce: CancellationException) {
+            throw ce
         } catch (_: Exception) {
             emptyList()
         }
@@ -257,6 +275,8 @@ public class KtorRemoteTransportAdapter(
             if (response.status.isSuccess()) {
                 response.body<SessionSummary>()
             } else null
+        } catch (ce: CancellationException) {
+            throw ce
         } catch (_: Exception) {
             null
         }
@@ -273,6 +293,8 @@ public class KtorRemoteTransportAdapter(
             if (response.status.isSuccess()) {
                 response.body<List<SequencedStreamEvent>>()
             } else emptyList()
+        } catch (ce: CancellationException) {
+            throw ce
         } catch (_: Exception) {
             emptyList()
         }

@@ -23,6 +23,7 @@ import io.ltirom.tooling.core.remote.StartRunRequest
 import io.ltirom.tooling.core.remote.StreamEvent
 import io.ltirom.tooling.core.remote.ToolExecutionRequest
 import io.ltirom.tooling.core.remote.ToolExecutionResponse
+import io.ltirom.tooling.core.remote.ToolListResult
 import io.ltirom.tooling.core.remote.ToolStatusInfo
 import io.ltirom.tooling.core.remote.WslServerInfo
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -35,8 +36,9 @@ import org.ide.lti.core.data.setup.doctor.DiagnosticContext
 import org.ide.lti.core.data.setup.doctor.NativeLibrariesInspector
 import org.ide.lti.core.data.setup.doctor.StorageHeadroomInspector
 import org.ide.lti.core.data.setup.doctor.ToolchainIntegrityInspector
-import org.ide.lti.core.domain.ports.PublishedTools
+import org.ide.lti.core.domain.ports.PublicationReport
 import org.ide.lti.core.domain.ports.ToolPublicationPort
+import org.ide.lti.core.domain.ports.ToolRegistryResult
 import org.ide.lti.core.domain.setup.DiagnosticCheckItem
 import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.domain.setup.SetupPlan
@@ -144,8 +146,8 @@ class SetupConsentTest {
             }
         }
 
-        override suspend fun listTools(): List<ToolStatusInfo> = toolsList
-        override suspend fun refreshTools(): List<ToolStatusInfo> = toolsList
+        override suspend fun listTools(): ToolListResult = ToolListResult.Tools(toolsList)
+        override suspend fun refreshTools(): ToolListResult = ToolListResult.Tools(toolsList)
         override fun stream(request: ToolExecutionRequest): Flow<StreamEvent> = emptyFlow()
         override suspend fun uploadFile(remotePath: String, content: ByteArray): Boolean = true
         override suspend fun downloadFile(remotePath: String): ByteArray? = null
@@ -178,16 +180,19 @@ class SetupConsentTest {
         var publishCount = 0
         var publishedBinDir: String? = null
 
-        override suspend fun publish(toolsBinDir: String): PublishedTools {
+        override suspend fun publish(binDir: String, toolIds: Set<String>): PublicationReport {
             publishCount++
-            publishedBinDir = toolsBinDir
-            return PublishedTools(
-                published = setOf("payload-dumper-go", "lpunpack", "lpmake", "simg2img", "erofsfuse", "mkfs.erofs"),
-                skipped = emptySet()
+            publishedBinDir = binDir
+            val registered = setOf("payload-dumper-go", "lpunpack", "lpmake", "simg2img", "erofsfuse", "mkfs.erofs")
+            return PublicationReport(
+                requested = toolIds,
+                registered = registered,
+                failed = (toolIds - registered).associateWith { "Not published" },
+                pruned = emptySet()
             )
         }
 
-        override suspend fun resolvedTools(): Set<String> = emptySet()
+        override suspend fun resolvedTools(): ToolRegistryResult = ToolRegistryResult.Tools(emptyList())
     }
 
     private class SpyCliExecutor(

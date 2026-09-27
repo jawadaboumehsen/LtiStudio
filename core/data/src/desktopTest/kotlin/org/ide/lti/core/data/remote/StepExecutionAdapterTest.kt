@@ -50,8 +50,8 @@ class StepExecutionAdapterTest {
 
         override fun stream(request: ToolExecutionRequest): Flow<CoreStreamEvent> = emptyFlow()
         override suspend fun checkHealth(): WslServerInfo? = null
-        override suspend fun listTools(): List<ToolStatusInfo> = emptyList()
-        override suspend fun refreshTools(): List<ToolStatusInfo> = emptyList()
+        override suspend fun listTools(): ToolListResult = ToolListResult.Tools(emptyList())
+        override suspend fun refreshTools(): ToolListResult = ToolListResult.Tools(emptyList())
 
         override suspend fun uploadFile(remotePath: String, content: ByteArray): Boolean {
             uploadedFiles[remotePath] = content

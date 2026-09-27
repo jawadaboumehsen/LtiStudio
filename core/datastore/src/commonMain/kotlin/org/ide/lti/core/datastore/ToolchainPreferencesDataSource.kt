@@ -23,6 +23,7 @@ import kotlinx.serialization.json.Json
 import org.ide.lti.core.model.setup.AttemptStatus
 import org.ide.lti.core.model.setup.ChildIntentRecord
 import org.ide.lti.core.model.setup.ChildTerminalProof
+import org.ide.lti.core.model.setup.PersistedEnvironment
 import org.ide.lti.core.model.setup.PersistedSetupPlan
 import org.ide.lti.core.model.setup.PersistedSubmoduleState
 import org.ide.lti.core.model.setup.PersistedToolState
@@ -373,6 +374,107 @@ public class ToolchainPreferencesDataSource(
                 updatedAtEpochMs = System.currentTimeMillis(),
             )
         )
+    }
+
+    public suspend fun recordBootstrapAwaiting(
+        attemptId: String,
+        environment: PersistedEnvironment,
+        requirementIds: List<String>,
+        command: String,
+    ): Result<Unit> = mutate { current ->
+        if (current.recoveryBlocked) {
+            return@mutate Result.failure(
+                IllegalStateException("Recovery blocked: ${current.recoveryBlockReason ?: "unresolved prior attempt"}")
+            )
+        }
+        val active = current.activeAttempt
+        val now = System.currentTimeMillis()
+        val handoff = PersistedUserHandoff(
+            actionId = "bootstrap-packages",
+            distro = environment.distro,
+            command = command,
+            packages = requirementIds,
+            timestampEpochMs = now,
+        )
+        val updatedAttempt = if (active != null && active.attemptId == attemptId) {
+            active.copy(
+                status = AttemptStatus.AWAITING_USER_ACTION,
+                environment = environment,
+                environmentKey = environment.distro,
+                bootstrapRequirementIds = requirementIds,
+                awaitingHandoff = handoff,
+                updatedAtEpochMs = now,
+            )
+        } else if (active == null || !active.isActive) {
+            SetupAttemptRecord(
+                attemptId = attemptId,
+                environmentKey = environment.distro,
+                planId = attemptId,
+                planRevisionHash = "",
+                planKind = "BOOTSTRAP_PACKAGES",
+                status = AttemptStatus.AWAITING_USER_ACTION,
+                environment = environment,
+                bootstrapRequirementIds = requirementIds,
+                awaitingHandoff = handoff,
+                createdAtEpochMs = now,
+                updatedAtEpochMs = now,
+            )
+        } else {
+            return@mutate Result.failure(
+                IllegalStateException("Another attempt '${active.attemptId}' is already active.")
+            )
+        }
+        val history = if (active != null && active.attemptId != attemptId) current.attemptHistory + active else current.attemptHistory
+        Result.success(
+            current.copy(
+                activeAttempt = updatedAttempt,
+                attemptHistory = history,
+            )
+        )
+    }
+
+    public suspend fun recordAttemptAbandoned(attemptId: String): Result<Unit> = mutate { current ->
+        val active = current.activeAttempt
+        if (active != null && active.attemptId == attemptId) {
+            val terminal = active.copy(
+                status = AttemptStatus.ABANDONED,
+                terminalOutcome = "Abandoned",
+                terminalReason = "User abandoned setup attempt",
+                activeChildIndex = null,
+                updatedAtEpochMs = System.currentTimeMillis(),
+            )
+            Result.success(
+                current.copy(
+                    activeAttempt = null,
+                    attemptHistory = current.attemptHistory + terminal,
+                    recoveryBlocked = false,
+                    recoveryBlockReason = null,
+                )
+            )
+        } else {
+            val inHistory = current.attemptHistory.find { it.attemptId == attemptId }
+            if (inHistory != null) {
+                val updatedHistory = current.attemptHistory.map {
+                    if (it.attemptId == attemptId) {
+                        it.copy(
+                            status = AttemptStatus.ABANDONED,
+                            terminalOutcome = "Abandoned",
+                            terminalReason = "User abandoned setup attempt",
+                            updatedAtEpochMs = System.currentTimeMillis(),
+                        )
+                    } else it
+                }
+                Result.success(
+                    current.copy(
+                        attemptHistory = updatedHistory,
+                        recoveryBlocked = false,
+                        recoveryBlockReason = null,
+                    )
+                )
+            } else {
+                Result.failure(IllegalStateException("No attempt matching $attemptId"))
+            }
+        }
     }
 
     /**

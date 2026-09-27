@@ -165,6 +165,7 @@ public enum class SetupPlanKind {
     STAGE_RETRY,
     REPAIR_TOOL,
     CACHE_RESET,
+    BOOTSTRAP_PACKAGES,
 }
 
 /**

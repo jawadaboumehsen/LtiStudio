@@ -4,6 +4,7 @@ import io.ltirom.tooling.core.ports.RemoteTransportPort
 import io.ltirom.tooling.core.remote.StreamEvent
 import io.ltirom.tooling.core.remote.ToolExecutionRequest
 import io.ltirom.tooling.core.remote.ToolExecutionResponse
+import io.ltirom.tooling.core.remote.ToolListResult
 import io.ltirom.tooling.core.remote.ToolStatusInfo
 import io.ltirom.tooling.core.remote.WslServerInfo
 import kotlinx.coroutines.flow.Flow
@@ -36,8 +37,8 @@ class TransportCliExecutorTest {
 
         override fun stream(request: ToolExecutionRequest): Flow<StreamEvent> = emptyFlow()
         override suspend fun checkHealth(): WslServerInfo? = null
-        override suspend fun listTools(): List<ToolStatusInfo> = emptyList()
-        override suspend fun refreshTools(): List<ToolStatusInfo> = emptyList()
+        override suspend fun listTools(): ToolListResult = ToolListResult.Tools(emptyList())
+        override suspend fun refreshTools(): ToolListResult = ToolListResult.Tools(emptyList())
         override suspend fun uploadFile(remotePath: String, content: ByteArray): Boolean = true
         override suspend fun downloadFile(remotePath: String): ByteArray? = null
         override suspend fun shutdown(): Boolean = true

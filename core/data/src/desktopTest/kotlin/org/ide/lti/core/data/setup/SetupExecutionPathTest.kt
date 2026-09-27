@@ -14,6 +14,7 @@ import io.ltirom.tooling.core.remote.StartRunRequest
 import io.ltirom.tooling.core.remote.StreamEvent
 import io.ltirom.tooling.core.remote.ToolExecutionRequest
 import io.ltirom.tooling.core.remote.ToolExecutionResponse
+import io.ltirom.tooling.core.remote.ToolListResult
 import io.ltirom.tooling.core.remote.ToolStatusInfo
 import io.ltirom.tooling.core.remote.WslServerInfo
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -22,8 +23,11 @@ import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
-import org.ide.lti.core.domain.ports.PublishedTools
+import org.ide.lti.core.domain.ports.PublicationReport
 import org.ide.lti.core.domain.ports.ToolPublicationPort
+import org.ide.lti.core.domain.ports.ToolRegistryResult
+import org.ide.lti.core.domain.ports.ToolSource
+import org.ide.lti.core.domain.ports.ToolStatus
 import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.domain.setup.SetupPlanKind
 import org.ide.lti.core.domain.setup.SetupStepStage
@@ -194,18 +198,27 @@ class SetupExecutionPathTest {
             ToolStatusInfo(tool = it, installed = true)
         }
         override fun stream(request: ToolExecutionRequest): Flow<StreamEvent> = emptyFlow()
-        override suspend fun listTools(): List<ToolStatusInfo> = tools
-        override suspend fun refreshTools(): List<ToolStatusInfo> = tools
+        override suspend fun listTools(): ToolListResult = ToolListResult.Tools(tools)
+        override suspend fun refreshTools(): ToolListResult = ToolListResult.Tools(tools)
         override suspend fun uploadFile(remotePath: String, content: ByteArray): Boolean = true
         override suspend fun downloadFile(remotePath: String): ByteArray? = null
         override suspend fun shutdown(): Boolean = true
     }
 
     private class FakePublicationPort : ToolPublicationPort {
-        override suspend fun publish(toolsBinDir: String): PublishedTools =
-            PublishedTools(published = ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS, skipped = emptySet())
+        override suspend fun publish(binDir: String, toolIds: Set<String>): PublicationReport =
+            PublicationReport(
+                requested = toolIds,
+                registered = ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS,
+                failed = (toolIds - ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS).associateWith { "Not published" },
+                pruned = emptySet()
+            )
 
-        override suspend fun resolvedTools(): Set<String> = ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS
+        override suspend fun resolvedTools(): ToolRegistryResult = ToolRegistryResult.Tools(
+            ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS.map {
+                ToolStatus(tool = it, installed = true, path = "/bin/$it", source = ToolSource.DYNAMIC, reason = null)
+            }
+        )
     }
 
     @Test

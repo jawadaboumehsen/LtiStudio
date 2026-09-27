@@ -26,8 +26,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import com.russhwolf.settings.MapSettings
-import org.ide.lti.core.domain.ports.PublishedTools
+import io.ltirom.tooling.core.remote.ToolListResult
+import org.ide.lti.core.domain.ports.PublicationReport
 import org.ide.lti.core.domain.ports.ToolPublicationPort
+import org.ide.lti.core.domain.ports.ToolRegistryResult
+import org.ide.lti.core.domain.ports.ToolSource
+import org.ide.lti.core.domain.ports.ToolStatus
 import org.ide.lti.core.domain.repository.setup.ToolchainSetupRepository
 import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.domain.setup.SetupPlanKind
@@ -168,29 +172,35 @@ class WslToolchainProvisionerTest {
             endedAtEpochMs = 1100L
         )
 
-        override suspend fun listTools(): List<ToolStatusInfo> = publishedTools
-        override suspend fun refreshTools(): List<ToolStatusInfo> = publishedTools
+        override suspend fun listTools(): ToolListResult = ToolListResult.Tools(publishedTools)
+        override suspend fun refreshTools(): ToolListResult = ToolListResult.Tools(publishedTools)
         override suspend fun uploadFile(remotePath: String, content: ByteArray): Boolean = true
         override suspend fun downloadFile(remotePath: String): ByteArray? = null
         override suspend fun shutdown(): Boolean = true
     }
 
     private class FakeToolPublicationPort(
-        var publishedResult: PublishedTools = PublishedTools(
-            published = ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS,
-            skipped = emptySet()
+        var publishedResult: PublicationReport = PublicationReport(
+            requested = ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS,
+            registered = ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS,
+            failed = emptyMap(),
+            pruned = emptySet()
         )
     ) : ToolPublicationPort {
         var publishCallCount = 0
         var lastBinDir: String? = null
 
-        override suspend fun publish(binDir: String): PublishedTools {
+        override suspend fun publish(binDir: String, toolIds: Set<String>): PublicationReport {
             publishCallCount++
             lastBinDir = binDir
             return publishedResult
         }
 
-        override suspend fun resolvedTools(): Set<String> = publishedResult.published
+        override suspend fun resolvedTools(): ToolRegistryResult = ToolRegistryResult.Tools(
+            publishedResult.registered.map {
+                ToolStatus(tool = it, installed = true, path = "/bin/$it", source = ToolSource.DYNAMIC, reason = null)
+            }
+        )
     }
 
     private class FakeWslCliExecutor : WslCliExecutor() {
@@ -519,7 +529,7 @@ class WslToolchainProvisionerTest {
         val fakePublication = FakeToolPublicationPort()
         // The daemon's live listing is the publication fact surfaced in state, so the fake daemon
         // must report exactly what the publication port published.
-        transport.publishedTools = fakePublication.publishedResult.published
+        transport.publishedTools = fakePublication.publishedResult.registered
             .map { ToolStatusInfo(tool = it, installed = true) }
             .toMutableList()
 

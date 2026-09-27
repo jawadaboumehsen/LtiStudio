@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
  */
 public enum class SetupStepStage(public val displayName: String) {
     WSL_DETECTION("WSL 2 Runtime"),
+    SYSTEM_PACKAGES("System Packages"),
     SERVER_CONNECTIVITY("Server Bridge"),
     SYSTEM_DIAGNOSTICS("Pre-Flight Doctor"),
     REPO_SYNCHRONIZATION("Source Repositories"),

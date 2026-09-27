@@ -84,6 +84,7 @@ public object SetupPlanFactory {
         }
         // A cache reset clears persisted evidence; it installs, syncs, builds and publishes nothing.
         SetupPlanKind.CACHE_RESET -> emptyList()
+        SetupPlanKind.BOOTSTRAP_PACKAGES -> emptyList()
     }
 
     private fun ToolchainSetupState.stageNeedsWork(stage: SetupStepStage): Boolean =
@@ -153,7 +154,9 @@ public object SetupPlanFactory {
                 val unpublished = snapshot.toolsMatrix.map { it.id }.filter { it !in snapshot.publishedToolIds }
                 if (unpublished.isNotEmpty()) add(SetupPlanAction.PublishTools(unpublished))
             }
-            SetupStepStage.WSL_DETECTION, SetupStepStage.SERVER_CONNECTIVITY -> emptyList()
+            SetupStepStage.WSL_DETECTION,
+            SetupStepStage.SYSTEM_PACKAGES,
+            SetupStepStage.SERVER_CONNECTIVITY -> emptyList()
         }
     }
 }

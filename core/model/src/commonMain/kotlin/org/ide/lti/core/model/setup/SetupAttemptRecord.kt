@@ -15,6 +15,7 @@ public enum class AttemptStatus {
     FAILED,
     CANCELLED,
     INTERRUPTED,
+    ABANDONED,
 }
 
 /**
@@ -98,6 +99,8 @@ public data class SetupAttemptRecord(
     val updatedAtEpochMs: Long = 0L,
     val persistedPlan: PersistedSetupPlan? = null,
     val awaitingHandoff: PersistedUserHandoff? = null,
+    val environment: PersistedEnvironment? = null,
+    val bootstrapRequirementIds: List<String> = emptyList(),
 ) {
     /** Attempt statuses that still own the environment and block a second attempt. */
     val isActive: Boolean
@@ -150,3 +153,35 @@ public data class PersistedSetupPlan(
     val autoDoctorEnabled: Boolean = true,
     val actions: List<PersistedPlanAction> = emptyList(),
 )
+
+/**
+  * Persisted snapshot of the target WSL environment.
+  */
+@Serializable
+public data class PersistedEnvironment(
+    val distro: String,
+    val wslVersion: Int,
+    val osId: String,
+    val osVersionId: String,
+    val user: String,
+    val home: String,
+)
+
+public fun SetupEnvironment.toPersisted(): PersistedEnvironment = PersistedEnvironment(
+    distro = distro,
+    wslVersion = wslVersion,
+    osId = osId,
+    osVersionId = osVersionId,
+    user = user,
+    home = home,
+)
+
+public fun PersistedEnvironment.toDomain(): SetupEnvironment = SetupEnvironment(
+    distro = distro,
+    wslVersion = wslVersion,
+    osId = osId,
+    osVersionId = osVersionId,
+    user = user,
+    home = home,
+)
+

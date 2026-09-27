@@ -14,6 +14,7 @@ import io.ltirom.tooling.core.remote.StartRunRequest
 import io.ltirom.tooling.core.remote.StreamEvent
 import io.ltirom.tooling.core.remote.ToolExecutionRequest
 import io.ltirom.tooling.core.remote.ToolExecutionResponse
+import io.ltirom.tooling.core.remote.ToolListResult
 import io.ltirom.tooling.core.remote.ToolStatusInfo
 import io.ltirom.tooling.core.remote.WslServerInfo
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -26,8 +27,11 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.ide.lti.core.data.setup.doctor.NativeLibrariesInspector
 import org.ide.lti.core.data.setup.doctor.ToolchainIntegrityInspector
-import org.ide.lti.core.domain.ports.PublishedTools
+import org.ide.lti.core.domain.ports.PublicationReport
 import org.ide.lti.core.domain.ports.ToolPublicationPort
+import org.ide.lti.core.domain.ports.ToolRegistryResult
+import org.ide.lti.core.domain.ports.ToolSource
+import org.ide.lti.core.domain.ports.ToolStatus
 import org.ide.lti.core.domain.repository.setup.ToolchainSetupRepository
 import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.domain.setup.SetupPlanKind
@@ -137,8 +141,8 @@ class EnvironmentVerificationTest {
             }
         }
 
-        override suspend fun listTools(): List<ToolStatusInfo> = toolsList
-        override suspend fun refreshTools(): List<ToolStatusInfo> = toolsList
+        override suspend fun listTools(): ToolListResult = ToolListResult.Tools(toolsList)
+        override suspend fun refreshTools(): ToolListResult = ToolListResult.Tools(toolsList)
         override suspend fun checkHealth(): WslServerInfo? = healthInfo
         override fun stream(request: ToolExecutionRequest): Flow<StreamEvent> = emptyFlow()
         override suspend fun uploadFile(remotePath: String, content: ByteArray): Boolean = true
@@ -193,13 +197,20 @@ class EnvironmentVerificationTest {
         var publishCount = 0
         var publishedIds = setOf<String>()
 
-        override suspend fun publish(toolsBinDir: String): PublishedTools {
+        override suspend fun publish(binDir: String, toolIds: Set<String>): PublicationReport {
             publishCount++
             publishedIds = setOf("payload-dumper-go", "lpunpack", "lpmake", "simg2img", "erofsfuse", "mkfs.erofs")
-            return PublishedTools(published = publishedIds, skipped = emptySet())
+            return PublicationReport(
+                requested = toolIds,
+                registered = publishedIds,
+                failed = (toolIds - publishedIds).associateWith { "Not published" },
+                pruned = emptySet()
+            )
         }
 
-        override suspend fun resolvedTools(): Set<String> = publishedIds
+        override suspend fun resolvedTools(): ToolRegistryResult = ToolRegistryResult.Tools(
+            publishedIds.map { ToolStatus(tool = it, installed = true, path = "/bin/$it", source = ToolSource.DYNAMIC, reason = null) }
+        )
     }
 
     private class FakeToolchainRepo(
@@ -260,6 +271,13 @@ class EnvironmentVerificationTest {
             handoff: org.ide.lti.core.model.setup.PersistedUserHandoff,
             plan: org.ide.lti.core.model.setup.PersistedSetupPlan,
         ): Result<Unit> = ok()
+        override suspend fun recordBootstrapAwaiting(
+            attemptId: String,
+            environment: org.ide.lti.core.model.setup.SetupEnvironment,
+            requirementIds: List<String>,
+            command: String,
+        ): Result<Unit> = ok()
+        override suspend fun recordAttemptAbandoned(attemptId: String): Result<Unit> = ok()
         override suspend fun setRecoveryBlocked(blocked: Boolean, reason: String?): Result<Unit> {
             state = state.copy(recoveryBlocked = blocked, recoveryBlockReason = reason)
             return ok()

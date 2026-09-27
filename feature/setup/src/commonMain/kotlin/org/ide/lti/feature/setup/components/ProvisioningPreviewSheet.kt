@@ -485,4 +485,5 @@ private fun previewSubtitle(plan: SetupPlan?): String = when (plan?.kind) {
         "Review the mutations for retrying ${plan.targetStageOrToolId ?: "the selected stage"}"
     SetupPlanKind.REPAIR_TOOL -> "Review the rebuild for ${plan.targetStageOrToolId ?: "the selected tool"}"
     SetupPlanKind.CACHE_RESET -> "Review the cache reset before clearing persisted setup evidence"
+    SetupPlanKind.BOOTSTRAP_PACKAGES -> "Review required bootstrap packages before terminal handoff"
 }

@@ -4,6 +4,7 @@ import io.ltirom.tooling.core.ports.RemoteTransportPort
 import io.ltirom.tooling.core.remote.StreamEvent
 import io.ltirom.tooling.core.remote.ToolExecutionRequest
 import io.ltirom.tooling.core.remote.ToolExecutionResponse
+import io.ltirom.tooling.core.remote.ToolListResult
 import io.ltirom.tooling.core.remote.ToolStatusInfo
 import io.ltirom.tooling.core.remote.WslServerInfo
 import kotlinx.coroutines.flow.Flow
@@ -12,8 +13,10 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import org.ide.lti.core.domain.ports.ToolRegistryResult
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 class ToolPublicationAdapterTest {
@@ -44,11 +47,11 @@ class ToolPublicationAdapterTest {
 
         override suspend fun checkHealth(): WslServerInfo? = null
 
-        override suspend fun listTools(): List<ToolStatusInfo> = availableToolsList
+        override suspend fun listTools(): ToolListResult = ToolListResult.Tools(availableToolsList)
 
-        override suspend fun refreshTools(): List<ToolStatusInfo> {
+        override suspend fun refreshTools(): ToolListResult {
             refreshToolsCallCount++
-            return availableToolsList
+            return ToolListResult.Tools(availableToolsList)
         }
 
         override suspend fun uploadFile(remotePath: String, content: ByteArray): Boolean {
@@ -74,11 +77,11 @@ class ToolPublicationAdapterTest {
         val expectedTools = setOf("lpmake", "unpack_bootimg", "signapk", "img2sdat")
         val adapter = ToolPublicationAdapter(fakeTransport, expectedTools)
 
-        val result = adapter.publish(binDir)
+        val result = adapter.publish(binDir, expectedTools)
 
         assertEquals(1, fakeTransport.refreshToolsCallCount, "refreshTools must be called exactly once")
-        assertEquals(setOf("lpmake", "unpack_bootimg", "signapk"), result.published)
-        assertEquals(setOf("img2sdat"), result.skipped)
+        assertEquals(setOf("lpmake", "unpack_bootimg", "signapk"), result.registered)
+        assertEquals(setOf("img2sdat"), result.failed.keys)
 
         // Verify manifests written to ~/.ltirom/tools.d/<id>.json
         assertEquals(3, fakeTransport.uploadedFiles.size)
@@ -108,11 +111,11 @@ class ToolPublicationAdapterTest {
         val expectedTools = setOf("lpmake", "signapk")
         val adapter = ToolPublicationAdapter(fakeTransport, expectedTools)
 
-        val result = adapter.publish(binDir)
+        val result = adapter.publish(binDir, expectedTools)
 
         assertEquals(1, fakeTransport.refreshToolsCallCount)
-        assertTrue(result.published.isEmpty())
-        assertEquals(expectedTools, result.skipped)
+        assertTrue(result.registered.isEmpty())
+        assertEquals(expectedTools, result.failed.keys)
         assertTrue(fakeTransport.uploadedFiles.isEmpty())
     }
 
@@ -128,6 +131,7 @@ class ToolPublicationAdapterTest {
         val adapter = ToolPublicationAdapter(fakeTransport)
         val resolved = adapter.resolvedTools()
 
-        assertEquals(setOf("lpmake", "signapk"), resolved)
+        assertIs<ToolRegistryResult.Tools>(resolved)
+        assertEquals(setOf("lpmake", "signapk"), resolved.list.filter { it.installed }.map { it.tool }.toSet())
     }
 }

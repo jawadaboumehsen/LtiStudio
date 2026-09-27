@@ -29,6 +29,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import io.ltirom.tooling.client.wsl.TransportCliExecutor
 import io.ltirom.tooling.core.remote.ToolExecutionRequest
+import io.ltirom.tooling.core.remote.ToolListResult
 import org.ide.lti.core.domain.ports.DaemonFailureCategory
 import org.ide.lti.core.domain.ports.ToolchainFailureCategory
 import org.ide.lti.core.domain.ports.ToolPublicationPort
@@ -423,10 +424,11 @@ public class WslToolchainProvisioner(
 
             // 5. TOOLCHAIN_COMPILATION
             setStepRunning(SetupStepStage.TOOLCHAIN_COMPILATION)
-            val publishedTools = transport.listTools()
-                .filter { it.installed }
-                .map { it.tool }
-                .toSet()
+            val toolsResult = transport.listTools()
+            val publishedTools = when (toolsResult) {
+                is ToolListResult.Tools -> toolsResult.list.filter { it.installed }.map { it.tool }.toSet()
+                is ToolListResult.ServiceError -> emptySet()
+            }
 
             val missingPublished = ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS - publishedTools
 
@@ -885,6 +887,7 @@ public class WslToolchainProvisioner(
             try {
                 val planOutcome = when (currentPlan.kind) {
                     SetupPlanKind.CACHE_RESET -> executeCacheReset()
+                    SetupPlanKind.BOOTSTRAP_PACKAGES -> executePlan(currentPlan, distro, journal)
                     SetupPlanKind.FULL_SETUP,
                     SetupPlanKind.STAGE_RETRY,
                     SetupPlanKind.REPAIR_TOOL -> {
@@ -1476,9 +1479,9 @@ public class WslToolchainProvisioner(
                     setStepStatus(SetupStepStage.TOOLCHAIN_COMPILATION, StepStatus.SUCCESS, "Core tools ready in $binDir.")
                 }
                 is SetupPlanAction.PublishTools -> {
-                    val pubRes = toolPublicationPort?.publish(binDir)
-                    val publishedIds = pubRes?.published ?: emptySet()
-                    val unpublishedIds = pubRes?.skipped ?: emptySet()
+                    val pubRes = toolPublicationPort?.publish(binDir, action.toolIds.toSet())
+                    val publishedIds = pubRes?.registered ?: emptySet()
+                    val unpublishedIds = pubRes?.failed?.keys ?: emptySet()
                     _state.update {
                         it.copy(
                             publishedToolIds = publishedIds,

@@ -226,6 +226,7 @@ class SetupViewModelTest {
                 SetupPlanKind.FULL_SETUP,
                 SetupPlanKind.STAGE_RETRY,
                 SetupPlanKind.REPAIR_TOOL,
+                SetupPlanKind.BOOTSTRAP_PACKAGES,
                 -> if (shouldMarkReadyOnFullSetup) markAllReady()
             }
             return SetupOutcome.Succeeded()

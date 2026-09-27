@@ -12,7 +12,9 @@ import org.ide.lti.core.model.setup.PersistedSubmoduleState
 import org.ide.lti.core.model.setup.PersistedToolState
 import org.ide.lti.core.model.setup.PersistedUserHandoff
 import org.ide.lti.core.model.setup.SetupAttemptRecord
+import org.ide.lti.core.model.setup.SetupEnvironment
 import org.ide.lti.core.model.setup.ToolchainPersistenceState
+import org.ide.lti.core.model.setup.toPersisted
 
 /**
  * Thin [ToolchainSetupRepository] wrapper over [ToolchainPreferencesDataSource].
@@ -108,6 +110,21 @@ public class ToolchainSetupRepositoryImpl(
         handoff: PersistedUserHandoff,
         plan: PersistedSetupPlan,
     ): Result<Unit> = preferencesDataSource.recordAttemptAwaitingUserAction(attemptId, handoff, plan)
+
+    override suspend fun recordBootstrapAwaiting(
+        attemptId: String,
+        environment: SetupEnvironment,
+        requirementIds: List<String>,
+        command: String,
+    ): Result<Unit> = preferencesDataSource.recordBootstrapAwaiting(
+        attemptId = attemptId,
+        environment = environment.toPersisted(),
+        requirementIds = requirementIds,
+        command = command,
+    )
+
+    override suspend fun recordAttemptAbandoned(attemptId: String): Result<Unit> =
+        preferencesDataSource.recordAttemptAbandoned(attemptId)
 
     override suspend fun setRecoveryBlocked(blocked: Boolean, reason: String?): Result<Unit> =
         preferencesDataSource.setRecoveryBlocked(blocked, reason)

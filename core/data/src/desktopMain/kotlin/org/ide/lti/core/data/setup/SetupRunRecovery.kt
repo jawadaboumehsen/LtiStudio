@@ -79,7 +79,10 @@ public class SetupRunRecovery(
         }
 
         val handoff = active.awaitingHandoff
-        if (active.status == AttemptStatus.AWAITING_USER_ACTION && handoff != null) {
+        if (handoff != null && (active.status == AttemptStatus.AWAITING_USER_ACTION || (active.status == AttemptStatus.RUNNING && active.orderedIntents.isEmpty()))) {
+            if (active.status != AttemptStatus.AWAITING_USER_ACTION) {
+                repository.updateAttemptStatus(active.attemptId, AttemptStatus.AWAITING_USER_ACTION)
+            }
             val domainHandoff = org.ide.lti.core.domain.setup.UserRepairHandoff(
                 actionId = handoff.actionId,
                 description = "External terminal authorization required to install packages",
@@ -87,10 +90,15 @@ public class SetupRunRecovery(
                 packages = handoff.packages,
                 distro = handoff.distro,
             )
+            val recoveryStage = if (active.planKind == "BOOTSTRAP_PACKAGES" || active.bootstrapRequirementIds.isNotEmpty()) {
+                org.ide.lti.core.domain.setup.SetupStepStage.SYSTEM_PACKAGES
+            } else {
+                org.ide.lti.core.domain.setup.SetupStepStage.SYSTEM_DIAGNOSTICS
+            }
             log("[Recovery] Restoring active attempt ${active.attemptId} in AWAITING_USER_ACTION state.")
             return SetupOutcome.AwaitingUserAction(
                 pendingPlanId = active.planId,
-                stage = org.ide.lti.core.domain.setup.SetupStepStage.SYSTEM_DIAGNOSTICS,
+                stage = recoveryStage,
                 reason = "Awaiting user terminal authorization to install packages: ${handoff.packages.joinToString()}",
                 handoff = domainHandoff,
             )

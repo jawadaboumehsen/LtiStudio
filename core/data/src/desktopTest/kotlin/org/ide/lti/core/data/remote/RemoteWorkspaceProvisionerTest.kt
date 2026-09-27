@@ -123,8 +123,8 @@ class RemoteWorkspaceProvisionerTest {
 
         override fun stream(request: ToolExecutionRequest) = flowOf<io.ltirom.tooling.core.remote.StreamEvent>()
         override suspend fun checkHealth() = null
-        override suspend fun listTools() = emptyList<io.ltirom.tooling.core.remote.ToolStatusInfo>()
-        override suspend fun refreshTools() = emptyList<io.ltirom.tooling.core.remote.ToolStatusInfo>()
+        override suspend fun listTools() = io.ltirom.tooling.core.remote.ToolListResult.Tools(emptyList())
+        override suspend fun refreshTools() = io.ltirom.tooling.core.remote.ToolListResult.Tools(emptyList())
 
         override suspend fun uploadFile(remotePath: String, content: ByteArray): Boolean {
             uploadedFiles[remotePath] = content

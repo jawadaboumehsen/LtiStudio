@@ -10,6 +10,7 @@ import org.ide.lti.core.model.setup.PersistedSubmoduleState
 import org.ide.lti.core.model.setup.PersistedToolState
 import org.ide.lti.core.model.setup.PersistedUserHandoff
 import org.ide.lti.core.model.setup.SetupAttemptRecord
+import org.ide.lti.core.model.setup.SetupEnvironment
 import org.ide.lti.core.model.setup.ToolchainPersistenceState
 
 /**
@@ -107,6 +108,17 @@ public interface ToolchainSetupRepository {
         handoff: PersistedUserHandoff,
         plan: PersistedSetupPlan,
     ): Result<Unit>
+
+    /** Records that the attempt is awaiting user terminal action for bootstrap system packages. */
+    public suspend fun recordBootstrapAwaiting(
+        attemptId: String,
+        environment: SetupEnvironment,
+        requirementIds: List<String>,
+        command: String,
+    ): Result<Unit>
+
+    /** Archives the active attempt as abandoned, lifting any recovery block. */
+    public suspend fun recordAttemptAbandoned(attemptId: String): Result<Unit>
 
     public suspend fun setRecoveryBlocked(blocked: Boolean, reason: String?): Result<Unit>
 }

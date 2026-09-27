@@ -5,8 +5,9 @@ import io.ltirom.tooling.core.remote.ToolExecutionRequest
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import org.ide.lti.core.domain.ports.PublishedTools
+import org.ide.lti.core.domain.ports.PublicationReport
 import org.ide.lti.core.domain.ports.ToolPublicationPort
+import org.ide.lti.core.domain.ports.ToolRegistryResult
 
 @Serializable
 private data class ToolManifestDto(
@@ -36,7 +37,7 @@ public class ToolPublicationAdapter(
         )
     }
 
-    override suspend fun publish(binDir: String): PublishedTools {
+    override suspend fun publish(binDir: String, toolIds: Set<String>): PublicationReport {
         val normalizedBin = binDir.trimEnd('/')
         val findRes = transport.execute(
             ToolExecutionRequest(
@@ -59,6 +60,8 @@ public class ToolPublicationAdapter(
                     fileName
                 }
 
+                if (toolIds.isNotEmpty() && toolName !in toolIds) continue
+
                 val manifest = ToolManifestDto(
                     name = toolName,
                     executable = line,
@@ -75,14 +78,17 @@ public class ToolPublicationAdapter(
 
         transport.refreshTools()
 
-        val skipped = expectedTools - published
-        return PublishedTools(published = published, skipped = skipped)
+        val failed = (toolIds - published).associateWith { "Not published" }
+        return PublicationReport(
+            requested = toolIds,
+            registered = published,
+            failed = failed,
+            pruned = emptySet()
+        )
     }
 
-    override suspend fun resolvedTools(): Set<String> {
-        return transport.listTools()
-            .filter { it.installed }
-            .map { it.tool }
-            .toSet()
+    override suspend fun resolvedTools(): ToolRegistryResult {
+        val toolsRes = transport.listTools()
+        return ToolStatusMapper.toDomain(toolsRes)
     }
 }

@@ -50,10 +50,10 @@ public interface RemoteTransportPort {
     public suspend fun checkHealth(): WslServerInfo?
 
     /** Retrieves the list of available tools on the remote server. */
-    public suspend fun listTools(): List<ToolStatusInfo>
+    public suspend fun listTools(): ToolListResult
 
     /** Re-scans dynamic tool definitions on the remote server and returns the updated tool list. */
-    public suspend fun refreshTools(): List<ToolStatusInfo>
+    public suspend fun refreshTools(): ToolListResult
 
     /** Uploads binary content to a remote path under allowed directories. */
     public suspend fun uploadFile(remotePath: String, content: ByteArray): Boolean

@@ -38,6 +38,7 @@ enum class SetupOperationKind {
     RETRY_STAGE,
     REPAIR_TOOL,
     CACHE_RESET,
+    BOOTSTRAP_PACKAGES,
 }
 
 /**
@@ -322,6 +323,7 @@ class EnvironmentSetupState(
         SetupPlanKind.STAGE_RETRY -> SetupOperationKind.RETRY_STAGE
         SetupPlanKind.REPAIR_TOOL -> SetupOperationKind.REPAIR_TOOL
         SetupPlanKind.CACHE_RESET -> SetupOperationKind.CACHE_RESET
+        SetupPlanKind.BOOTSTRAP_PACKAGES -> SetupOperationKind.BOOTSTRAP_PACKAGES
     }
 
     /**

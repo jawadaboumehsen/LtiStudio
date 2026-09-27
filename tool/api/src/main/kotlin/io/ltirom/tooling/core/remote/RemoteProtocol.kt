@@ -83,6 +83,11 @@ public data class ToolStatusInfo(
     val reason: String? = null
 )
 
+public sealed interface ToolListResult {
+    public data class Tools(val list: List<ToolStatusInfo>) : ToolListResult
+    public data class ServiceError(val reason: String) : ToolListResult
+}
+
 @Serializable
 public data class ShutdownResponse(
     val status: String
