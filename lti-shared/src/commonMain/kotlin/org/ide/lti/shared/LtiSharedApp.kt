@@ -20,6 +20,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.navigation.compose.rememberNavController
 import org.ide.lti.core.common.timing.StartupTiming
 import org.ide.lti.core.designsystem.component.actions.LocalWindowControlActions
@@ -76,6 +77,7 @@ private fun SharedApp(
     modifier: Modifier = Modifier,
 ) {
     val navController = rememberNavController()
+    var firstLayoutDone by remember { mutableStateOf(false) }
     var firstFrameDrawn by remember { mutableStateOf(false) }
 
     LaunchedEffect(openSettingsRequest) {
@@ -85,13 +87,20 @@ private fun SharedApp(
     }
 
     Box(
-        modifier = modifier.drawWithContent {
-            drawContent()
-            if (!firstFrameDrawn) {
-                firstFrameDrawn = true
-                StartupTiming.log("Destination first frame drawn")
+        modifier = modifier
+            .onGloballyPositioned {
+                if (!firstLayoutDone) {
+                    firstLayoutDone = true
+                    StartupTiming.log("Destination first layout complete (onGloballyPositioned)")
+                }
             }
-        },
+            .drawWithContent {
+                drawContent()
+                if (!firstFrameDrawn) {
+                    firstFrameDrawn = true
+                    StartupTiming.log("Destination first frame drawn (drawWithContent)")
+                }
+            },
     ) {
         RootNavGraph(
             navHostController = navController,

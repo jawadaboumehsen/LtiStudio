@@ -26,6 +26,7 @@ import io.github.takahirom.roborazzi.captureRoboImage
 import org.ide.lti.core.designsystem.component.layout.GlassBackdrop
 import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.ColorContrast
+import org.ide.lti.core.designsystem.theme.GlassSceneHost
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.colorSchemeFor
 import org.ide.lti.core.domain.setup.SetupStepDetail
@@ -33,6 +34,7 @@ import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepProvenance
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolchainSetupState
+import org.ide.lti.core.testing.screenshot.GoldenImageAssert
 import org.jetbrains.skia.EncodedImageFormat
 import org.jetbrains.skia.Image
 import org.junit.Test
@@ -774,6 +776,52 @@ class SetupThemeScreenshotTest {
             assertEquals(700, image.height)
             saveScreenshotReport("offline_state_${appTheme.id}_effects_off", image)
         }
+    }
+
+    @Test
+    fun testSetupScreenBlueEffectsOnMatchesBaseline() = runDesktopComposeUiTest(width = 1120, height = 700) {
+        val readySteps = listOf(
+            SetupStepDetail(stage = SetupStepStage.WSL_DETECTION, title = "WSL Detection", description = "Ubuntu 22.04 LTS", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
+            SetupStepDetail(stage = SetupStepStage.SERVER_CONNECTIVITY, title = "Server Daemon Bridge", description = "HTTP/SSE connected", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
+            SetupStepDetail(stage = SetupStepStage.SYSTEM_DIAGNOSTICS, title = "System Diagnostics", description = "All checks passed", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
+            SetupStepDetail(stage = SetupStepStage.REPO_SYNCHRONIZATION, title = "Repository Synchronization", description = "Git submodules up to date", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
+            SetupStepDetail(stage = SetupStepStage.TOOLCHAIN_COMPILATION, title = "Toolchain Compilation", description = "Native tools verified", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
+        )
+        val state = ToolchainSetupState(steps = readySteps, lastVerifiedTimestamp = 1700000000000L)
+
+        setContent {
+            GlassSceneHost(effectsEnabled = true) {
+                LtiTheme(appTheme = AppTheme.Blue, effectsEnabled = true) {
+                    Box(Modifier.fillMaxSize()) {
+                        GlassBackdrop()
+                        SetupScreenContent(
+                            state = SetupUiState(
+                                toolchainSetupState = state,
+                                selectedTab = SetupTab.ENVIRONMENT,
+                            ),
+                            actions = SetupUiActions(),
+                        )
+                    }
+                }
+            }
+        }
+
+        val image = onRoot().captureToImage()
+        assertEquals(1120, image.width)
+        assertEquals(700, image.height)
+
+        val baselineDir = File(System.getProperty("user.dir")).let { dir ->
+            if (dir.name == "setup") {
+                File(dir, "src/desktopTest/resources/screenshots")
+            } else {
+                File(dir, "feature/setup/src/desktopTest/resources/screenshots")
+            }
+        }
+        GoldenImageAssert.assertMatchesBaseline(
+            screenshotName = "setup_screen_blue_effects_on",
+            actualImage = image,
+            baselineDir = baselineDir,
+        )
     }
 
     // Renders at every (scale x theme) combination at each of the two SC-005 logical window

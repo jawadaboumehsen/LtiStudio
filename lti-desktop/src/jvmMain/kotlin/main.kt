@@ -142,6 +142,7 @@ fun main(args: Array<String>) {
         )
 
         DisposableEffect(nucleusWin) {
+            StartupTiming.log("DecoratedWindow native window attached")
             mainWinRef = nucleusWin
             onDispose { mainWinRef = null }
         }

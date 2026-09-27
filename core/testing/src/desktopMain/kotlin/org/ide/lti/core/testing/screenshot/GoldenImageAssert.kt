@@ -1,4 +1,4 @@
-﻿package org.ide.lti.core.testing.screenshot
+package org.ide.lti.core.testing.screenshot
 
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.ImageBitmap
@@ -37,6 +37,7 @@ object GoldenImageAssert {
             userDir.name == "designsystem" -> File(userDir, "src/desktopTest/resources/screenshots")
             userDir.name == "workspace" -> File(userDir, "src/desktopTest/resources/screenshots")
             userDir.name == "testing" -> File(userDir, "src/desktopTest/resources/screenshots")
+            userDir.name == "setup" -> File(userDir, "src/desktopTest/resources/screenshots")
             else -> File(userDir, "core/designsystem/src/desktopTest/resources/screenshots")
         }
     }
@@ -50,6 +51,7 @@ object GoldenImageAssert {
             userDir.name == "designsystem" -> File(userDir, "build/reports/screenshots")
             userDir.name == "workspace" -> File(userDir, "build/reports/screenshots")
             userDir.name == "testing" -> File(userDir, "build/reports/screenshots")
+            userDir.name == "setup" -> File(userDir, "build/reports/screenshots")
             else -> File(userDir, "build/reports/screenshots")
         }
         if (!dir.exists()) dir.mkdirs()
