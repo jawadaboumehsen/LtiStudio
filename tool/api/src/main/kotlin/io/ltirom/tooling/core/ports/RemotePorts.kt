@@ -143,6 +143,9 @@ public interface DaemonSupervisorPort : AutoCloseable {
     /** Ensures the daemon is running and returns its active connection descriptor. */
     public suspend fun ensureStarted(): ServerConnectionDescriptor
 
+    /** Ensures the daemon is running and returns its active connection descriptor for the specified distro. */
+    public suspend fun ensureStarted(distro: String): ServerConnectionDescriptor = ensureStarted()
+
     /** Returns current connection info if already started, without launching a new instance. */
     public suspend fun getConnectionInfo(): ServerConnectionDescriptor?
 

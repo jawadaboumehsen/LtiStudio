@@ -2,6 +2,7 @@ package io.ltirom.tooling.client.workspace
 
 import io.ltirom.tooling.client.wsl.WslCliExecutor
 import io.ltirom.tooling.client.wsl.WslEnvironmentDetector
+import org.ide.lti.core.model.setup.SetupEnvironment
 import java.io.File
 
 public data class VirtualWorkspaceDescriptor(
@@ -23,7 +24,7 @@ public data class VirtualWorkspaceDescriptor(
  * for multi-gigabyte Android partition images (super.img, payload.bin, system.img).
  */
 public class WorkspaceVirtualizer(
-    private val distroName: String = "Ubuntu",
+    private val distroName: String? = null,
     private val cli: WslCliExecutor = WslCliExecutor(),
     private val detector: WslEnvironmentDetector = WslEnvironmentDetector(cli)
 ) {
@@ -36,23 +37,58 @@ public class WorkspaceVirtualizer(
         return workspaceId
     }
 
+    public fun getWslWorkspaceRoot(environment: SetupEnvironment): String {
+        return "${environment.home}/.ltirom/workspaces"
+    }
+
+    public fun getWindowsUncRoot(environment: SetupEnvironment): String {
+        val home = environment.home.removePrefix("/").replace('/', '\\')
+        return "\\\\wsl.localhost\\${environment.distro}\\$home\\.ltirom\\workspaces"
+    }
+
+    public fun allocateWorkspace(workspaceId: String, environment: SetupEnvironment): VirtualWorkspaceDescriptor {
+        requireSafeWorkspaceId(workspaceId)
+        val linuxPath = "${getWslWorkspaceRoot(environment)}/$workspaceId"
+        val uncPath = "${getWindowsUncRoot(environment)}\\$workspaceId"
+
+        // Ensure directory exists on native ext4
+        cli.execute(environment.distro, listOf("mkdir", "-p", linuxPath), timeoutSeconds = 5)
+
+        return VirtualWorkspaceDescriptor(
+            workspaceId = workspaceId,
+            linuxExt4Path = linuxPath,
+            windowsUncPath = uncPath,
+            isNativeExt4 = true
+        )
+    }
+
+    public fun deleteWorkspace(workspaceId: String, environment: SetupEnvironment): Boolean {
+        requireSafeWorkspaceId(workspaceId)
+        val linuxPath = "${getWslWorkspaceRoot(environment)}/$workspaceId"
+        val res = cli.execute(environment.distro, listOf("rm", "-rf", linuxPath), timeoutSeconds = 10)
+        return res.exitCode == 0
+    }
+
     public fun getWslWorkspaceRoot(): String {
-        val home = detector.resolveWslUserHome(distroName)
+        val distro = distroName ?: error("distroName not configured and no SetupEnvironment provided")
+        val home = detector.resolveWslUserHome(distro)
         return "$home/.ltirom/workspaces"
     }
 
     public fun getWindowsUncRoot(): String {
-        val home = detector.resolveWslUserHome(distroName).removePrefix("/").replace('/', '\\')
-        return "\\\\wsl.localhost\\$distroName\\$home\\.ltirom\\workspaces"
+        val distro = distroName ?: error("distroName not configured and no SetupEnvironment provided")
+        val home = detector.resolveWslUserHome(distro).removePrefix("/").replace('/', '\\')
+        return "\\\\wsl.localhost\\$distro\\$home\\.ltirom\\workspaces"
     }
 
     public fun allocateWorkspace(workspaceId: String): VirtualWorkspaceDescriptor {
+        val distro = distroName ?: error("distroName not configured and no SetupEnvironment provided")
         requireSafeWorkspaceId(workspaceId)
         val linuxPath = "${getWslWorkspaceRoot()}/$workspaceId"
         val uncPath = "${getWindowsUncRoot()}\\$workspaceId"
 
         // Ensure directory exists on native ext4
-        cli.execute(distroName, listOf("mkdir", "-p", linuxPath), timeoutSeconds = 5)
+        cli.execute(distro, listOf("mkdir", "-p", linuxPath), timeoutSeconds = 5)
 
         return VirtualWorkspaceDescriptor(
             workspaceId = workspaceId,
@@ -63,9 +99,10 @@ public class WorkspaceVirtualizer(
     }
 
     public fun deleteWorkspace(workspaceId: String): Boolean {
+        val distro = distroName ?: error("distroName not configured and no SetupEnvironment provided")
         requireSafeWorkspaceId(workspaceId)
         val linuxPath = "${getWslWorkspaceRoot()}/$workspaceId"
-        val res = cli.execute(distroName, listOf("rm", "-rf", linuxPath), timeoutSeconds = 10)
+        val res = cli.execute(distro, listOf("rm", "-rf", linuxPath), timeoutSeconds = 10)
         return res.exitCode == 0
     }
 }

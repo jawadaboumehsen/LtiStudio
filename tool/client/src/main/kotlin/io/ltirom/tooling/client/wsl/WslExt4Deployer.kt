@@ -1,6 +1,7 @@
 package io.ltirom.tooling.client.wsl
 
 import io.ltirom.tooling.client.WslPathTranslator
+import org.ide.lti.core.model.setup.SetupEnvironment
 import java.io.File
 
 /**
@@ -10,7 +11,11 @@ import java.io.File
 public class WslExt4Deployer(
     private val cli: WslCliExecutor = WslCliExecutor()
 ) {
-    public fun ensureInstalled(distro: String, userHome: String, overrideBinaryPath: String?): String {
+    public fun ensureInstalled(environment: SetupEnvironment, overrideBinaryPath: String? = null): String {
+        return ensureInstalled(environment.distro, environment.home, overrideBinaryPath)
+    }
+
+    public fun ensureInstalled(distro: String, userHome: String, overrideBinaryPath: String? = null): String {
         if (overrideBinaryPath != null) return overrideBinaryPath
 
         val ext4Binary = "$userHome/.ltirom/server/bin/ltirom-server"

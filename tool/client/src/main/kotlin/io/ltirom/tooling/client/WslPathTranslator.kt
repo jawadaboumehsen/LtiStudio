@@ -8,12 +8,13 @@ import io.ltirom.tooling.core.ports.PathTranslatorPort
 import io.ltirom.tooling.core.remote.PathTranslationDirection
 import io.ltirom.tooling.core.remote.PathTranslationRequest
 import io.ltirom.tooling.core.remote.PathTranslationResponse
+import org.ide.lti.core.model.setup.SetupEnvironment
 
 import java.util.Collections
 import java.util.LinkedHashMap
 
 public class WslPathTranslator(
-    private val distroName: String = "Ubuntu",
+    private val distroName: String? = null,
     private val httpClient: HttpClient? = null,
     private val serverBaseUrl: String? = null,
     private val authToken: String? = null
@@ -69,12 +70,21 @@ public class WslPathTranslator(
         return normalized.replace('\\', '/')
     }
 
-    public fun toWindowsPath(wslPath: String): String {
+    public fun toWindowsPath(environment: SetupEnvironment, wslPath: String): String =
+        toWindowsPath(wslPath, environment.distro)
+
+    public fun toWindowsPath(wslPath: String, distro: String): String {
         if (wslPath.isBlank()) return wslPath
-        return toWinCache.computeIfAbsent(wslPath) { computeToWindowsPath(it) }
+        val key = "$distro:$wslPath"
+        return toWinCache.computeIfAbsent(key) { computeToWindowsPath(wslPath, distro) }
     }
 
-    private fun computeToWindowsPath(wslPath: String): String {
+    public fun toWindowsPath(wslPath: String): String {
+        val distro = distroName ?: error("distroName not configured in WslPathTranslator and no distro specified")
+        return toWindowsPath(wslPath, distro)
+    }
+
+    private fun computeToWindowsPath(wslPath: String, distro: String): String {
         val normalized = wslPath.trim()
 
         // Handle /mnt/<drive>/...
@@ -88,7 +98,7 @@ public class WslPathTranslator(
         // Handle Linux internal paths /home/..., /tmp/..., etc.
         if (normalized.startsWith("/")) {
             val linuxRel = normalized.removePrefix("/").replace('/', '\\')
-            return "\\\\wsl.localhost\\$distroName\\$linuxRel"
+            return "\\\\wsl.localhost\\$distro\\$linuxRel"
         }
 
         // Relative path

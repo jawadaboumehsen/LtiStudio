@@ -31,9 +31,13 @@ import io.ltirom.tooling.client.wsl.TransportCliExecutor
 import io.ltirom.tooling.core.remote.ToolExecutionRequest
 import io.ltirom.tooling.core.remote.ToolListResult
 import org.ide.lti.core.domain.ports.DaemonFailureCategory
+import org.ide.lti.core.domain.ports.HostPrerequisitePort
 import org.ide.lti.core.domain.ports.ToolchainFailureCategory
 import org.ide.lti.core.domain.ports.ToolPublicationPort
 import org.ide.lti.core.domain.repository.setup.ToolchainSetupRepository
+import org.ide.lti.core.model.setup.DistroStatus
+import org.ide.lti.core.model.setup.PersistedEnvironment
+import org.ide.lti.core.model.setup.SetupEnvironment
 import org.ide.lti.core.domain.setup.DiagnosticCategory
 import org.ide.lti.core.domain.setup.DiagnosticCheckItem
 import org.ide.lti.core.domain.setup.SetupLogEvent
@@ -86,8 +90,10 @@ public class WslToolchainProvisioner(
     private val toolPublicationPort: ToolPublicationPort? = null,
     private val coordinator: SetupOperationCoordinator = SetupOperationCoordinator(repository),
     private val scope: CoroutineScope = CoroutineScope(dispatcher + SupervisorJob()),
+    private val hostPrerequisitePort: HostPrerequisitePort = WslHostPrerequisiteProbe(detector),
 ) : ToolchainProvisioningService {
 
+    private var currentEnvironment: SetupEnvironment? = null
     private var activeVerificationDeferred: Deferred<ToolchainSetupState>? = null
     private val verificationMutex = Mutex()
 
@@ -192,7 +198,6 @@ public class WslToolchainProvisioner(
 
 
     public companion object {
-        private const val DEFAULT_DISTRO: String = "Ubuntu"
         private const val STATE_LOG_TAIL_LINES: Int = 100
         private const val LOCAL_ATTEMPT_ID: String = "local"
         private const val PROVISIONER_CHILD_ID: String = "provisioner"
@@ -260,42 +265,68 @@ public class WslToolchainProvisioner(
                 ?.let { it.status == StepStatus.SUCCESS && it.provenance == StepProvenance.LIVE } == true
             val alreadyVerifiedWsl = isBridgeConnected || (wslStep?.status == StepStatus.SUCCESS && wslStep.provenance == StepProvenance.LIVE)
             setStepRunning(SetupStepStage.WSL_DETECTION)
-            val isWslOk = if (alreadyVerifiedWsl) true else runInterruptible(dispatcher) { detector.isWslInstalled() }
-            val distro = if (alreadyVerifiedWsl) {
-                _state.value.activeDistro ?: "Ubuntu"
-            } else if (isWslOk) {
-                runInterruptible(dispatcher) { detector.getDefaultDistro() } ?: "Ubuntu"
+            val (selectedEnv, detectionStatuses) = if (alreadyVerifiedWsl && currentEnvironment != null) {
+                currentEnvironment to emptyList()
             } else {
-                "Ubuntu"
+                val statuses = hostPrerequisitePort.detect()
+                val probe = hostPrerequisitePort as? WslHostPrerequisiteProbe
+                val chosen = probe?.selectEnvironment(statuses)
+                    ?: statuses.filterIsInstance<DistroStatus.Usable>().firstOrNull()?.environment
+                chosen to statuses
             }
 
-            if (!isWslOk) {
+            if (selectedEnv == null) {
+                val nonUsable = detectionStatuses.firstOrNull()
+                val (desc, error) = when (nonUsable) {
+                    is DistroStatus.WslUnavailable -> "WSL isn't installed" to nonUsable.detail
+                    is DistroStatus.NoDistro, null -> "No Linux distribution" to "Install a supported Ubuntu LTS distribution (e.g. wsl --install -d Ubuntu-24.04)"
+                    is DistroStatus.StartupFailed -> "${nonUsable.distro} didn't start" to nonUsable.detail
+                    is DistroStatus.Unsupported -> "${nonUsable.distro} isn't a supported Ubuntu LTS" to nonUsable.reason
+                    is DistroStatus.NoUsableUser -> "${nonUsable.distro} needs a user" to nonUsable.reason
+                    is DistroStatus.Usable -> "Multiple distributions available" to "Please select a distribution"
+                }
                 setStepStatus(
                     SetupStepStage.WSL_DETECTION,
                     StepStatus.FAILED,
-                    desc = "WSL 2 not detected or no distribution found.",
-                    error = "WSL 2 is not installed. Run 'wsl --install -d Ubuntu' in PowerShell."
+                    desc = desc,
+                    error = error
                 )
                 shortCircuitRemaining(SetupStepStage.WSL_DETECTION, "Pending WSL.")
                 return _state.value
             }
 
-            // Host-side WSL facts (installed distributions) belong to the detection step; nothing
-            // after the bridge is established goes through the host wsl.exe executor.
-            val distros = if (alreadyVerifiedWsl) {
-                _state.value.installedDistros.ifEmpty { listOf(distro) }
+            currentEnvironment = selectedEnv
+            val distro = selectedEnv.distro
+            val distros = if (detectionStatuses.isNotEmpty()) {
+                detectionStatuses.mapNotNull {
+                    when (it) {
+                        is DistroStatus.Usable -> it.environment.distro
+                        is DistroStatus.Unsupported -> it.distro
+                        is DistroStatus.StartupFailed -> it.distro
+                        is DistroStatus.NoUsableUser -> it.distro
+                        is DistroStatus.NoDistro, is DistroStatus.WslUnavailable -> null
+                    }
+                }.ifEmpty { listOf(distro) }
             } else {
-                runInterruptible(dispatcher) { detector.listDistros() }.ifEmpty { listOf(distro) }
+                _state.value.installedDistros.ifEmpty { listOf(distro) }
             }
+
+            _state.update {
+                it.copy(
+                    activeDistro = distro,
+                    installedDistros = distros,
+                )
+            }
+
             setStepStatus(
                 SetupStepStage.WSL_DETECTION,
                 StepStatus.SUCCESS,
-                desc = "WSL 2 active with default distribution '$distro'."
+                desc = "WSL 2 active with distribution '$distro'."
             )
 
             // 2. SERVER_CONNECTIVITY
             setStepRunning(SetupStepStage.SERVER_CONNECTIVITY)
-            val desc = runCatching { supervisor.ensureStarted() }
+            val desc = runCatching { supervisor.ensureStarted(distro) }
                 .onFailure { if (it is CancellationException) throw it }
             if (desc.isFailure) {
                 val err = desc.exceptionOrNull()
@@ -339,7 +370,7 @@ public class WslToolchainProvisioner(
             _state.update { it.copy(daemonPingMs = pingMs) }
 
             // Post-bridge: All remote calls use transport
-            val home = resolveHome(distro)
+            val home = currentEnvironment?.home ?: resolveHome(distro)
             val binDir = "$home/LtiRomTools/bin"
             val extDir = "$home/LtiRomTools/external"
             val workDir = "$home/LtiRomWorkDir"
@@ -367,10 +398,11 @@ public class WslToolchainProvisioner(
             setStepRunning(SetupStepStage.SYSTEM_DIAGNOSTICS)
             val doctorEngine = CompositeSystemDoctorEngine(
                 cli = transportCli,
-                detector = WslEnvironmentDetector(transportCli),
+                detector = detector,
                 dispatcher = dispatcher,
                 inspectors = CompositeSystemDoctorEngine.defaultInspectors(transportCli),
                 remediator = WslPackageRemediator(transportCli),
+                userHome = home,
             )
             val diagnosticsList = doctorEngine.runDiagnostics(distro, binariesPresent)
             val anyDiagFailed = diagnosticsList.any { it.status == StepStatus.FAILED }
@@ -596,9 +628,9 @@ public class WslToolchainProvisioner(
                 it.status == StepStatus.SUCCESS && it.provenance == StepProvenance.LIVE
         }
         return if (liveVerified) {
-            snapshot.activeDistro ?: DEFAULT_DISTRO
+            currentEnvironment?.distro ?: snapshot.activeDistro ?: error("No verified distribution in state")
         } else {
-            detector.getDefaultDistro() ?: snapshot.activeDistro ?: DEFAULT_DISTRO
+            currentEnvironment?.distro ?: snapshot.activeDistro ?: detector.getDefaultDistro() ?: error("No WSL distribution detected")
         }
     }
 
@@ -656,7 +688,7 @@ public class WslToolchainProvisioner(
         distroName: String? = null
     ): Boolean = withContext(dispatcher) {
         if (_state.value.isBusy && serviceCli == null) return@withContext false
-        val distro = distroName ?: _state.value.activeDistro ?: (if (serviceCli == null) detector.getDefaultDistro() else null) ?: "Ubuntu"
+        val distro = distroName ?: currentEnvironment?.distro ?: _state.value.activeDistro ?: (if (serviceCli == null) detector.getDefaultDistro() else null) ?: error("No active distribution detected or specified")
         val userHome = home ?: resolveHome(distro)
         val effectiveCli = serviceCli ?: TransportCliExecutor(transport, defaultWorkingDirectory = userHome)
         val workDir = "$userHome/LtiRomWorkDir"
@@ -986,10 +1018,11 @@ public class WslToolchainProvisioner(
             // Re-run diagnostics to verify package installation facts
             val doctor = CompositeSystemDoctorEngine(
                 cli = serviceCli,
-                detector = WslEnvironmentDetector(serviceCli),
+                detector = detector,
                 dispatcher = dispatcher,
                 inspectors = CompositeSystemDoctorEngine.defaultInspectors(serviceCli),
                 remediator = WslPackageRemediator(serviceCli),
+                userHome = home,
             )
             val diagnostics = doctor.runDiagnostics(distro, binariesPresent = false)
             _state.update { it.copy(diagnostics = diagnostics) }
@@ -1179,6 +1212,16 @@ public class WslToolchainProvisioner(
             planKind = kind.name,
             status = AttemptStatus.AUTHORIZED,
             plannedActionIds = plannedActionIds,
+            environment = currentEnvironment?.let {
+                PersistedEnvironment(
+                    distro = it.distro,
+                    wslVersion = it.wslVersion,
+                    osId = it.osId,
+                    osVersionId = it.osVersionId,
+                    user = it.user,
+                    home = it.home
+                )
+            },
         )
         return repo.recordAttemptAuthorized(record).fold(
             onSuccess = {
@@ -1577,10 +1620,11 @@ public class WslToolchainProvisioner(
         // Verify the fact, do not trust the install command's return.
         val doctor = CompositeSystemDoctorEngine(
             cli = serviceCli,
-            detector = WslEnvironmentDetector(serviceCli),
+            detector = detector,
             dispatcher = dispatcher,
             inspectors = CompositeSystemDoctorEngine.defaultInspectors(serviceCli),
             remediator = WslPackageRemediator(serviceCli),
+            userHome = home,
         )
         val diagnostics = doctor.runDiagnostics(distro, binariesPresent = false)
         _state.update { it.copy(diagnostics = diagnostics) }

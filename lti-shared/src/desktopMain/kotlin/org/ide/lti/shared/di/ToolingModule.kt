@@ -30,8 +30,10 @@ import io.ltirom.tooling.core.events.ToolEventBus
 import io.ltirom.tooling.core.ports.DaemonSupervisorPort
 import io.ltirom.tooling.core.ports.RemoteTransportPort
 import org.ide.lti.core.data.setup.DesktopTerminalLauncher
+import org.ide.lti.core.data.setup.WslHostPrerequisiteProbe
 import org.ide.lti.core.data.setup.WslToolchainProvisioner
 import org.ide.lti.core.data.setup.doctor.CompositeSystemDoctorEngine
+import org.ide.lti.core.domain.ports.HostPrerequisitePort
 import org.ide.lti.core.domain.ports.RemoteFileUploaderPort
 import org.ide.lti.core.domain.ports.TerminalLauncherPort
 import org.ide.lti.core.domain.ports.ToolPublicationPort
@@ -54,6 +56,7 @@ import java.io.File
  */
 public val toolingModule = module {
     single<WslPresencePort> { WslPresenceAdapter() }
+    single<HostPrerequisitePort> { WslHostPrerequisiteProbe() }
     single { WslDaemonManager() } bind DaemonSupervisorPort::class
     single<RemoteTransportPort> {
         val dm = get<WslDaemonManager>()
@@ -75,6 +78,7 @@ public val toolingModule = module {
             transport = get<RemoteTransportPort>(),
             repository = get<org.ide.lti.core.domain.repository.setup.ToolchainSetupRepository>(),
             toolPublicationPort = getOrNull<ToolPublicationPort>(),
+            hostPrerequisitePort = get<HostPrerequisitePort>(),
         )
     }
     single<TerminalLauncherPort> { DesktopTerminalLauncher() }

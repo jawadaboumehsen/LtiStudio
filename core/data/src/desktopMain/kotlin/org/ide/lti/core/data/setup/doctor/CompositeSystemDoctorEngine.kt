@@ -29,7 +29,8 @@ public class CompositeSystemDoctorEngine(
     private val detector: WslEnvironmentDetector = WslEnvironmentDetector(),
     private val inspectors: List<SystemDiagnosticInspector> = defaultInspectors(cli),
     private val remediator: WslPackageRemediator = WslPackageRemediator(cli),
-    private val dispatcher: CoroutineDispatcher = Dispatchers.IO
+    private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val userHome: String? = null,
 ) : SystemDoctorPort {
 
     public companion object {
@@ -51,6 +52,7 @@ public class CompositeSystemDoctorEngine(
     }
 
     private fun resolveHome(distro: String): String {
+        if (!userHome.isNullOrBlank() && userHome.startsWith("/")) return userHome
         val res = cli.execute(distro, listOf("printenv", "HOME"))
         val path = res.output.trim()
         if (res.exitCode == 0 && path.startsWith("/")) return path

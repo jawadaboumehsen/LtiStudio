@@ -201,6 +201,21 @@ class SetupConsentTest {
     ) : WslCliExecutor() {
         val executedCommands = mutableListOf<String>()
 
+        override fun executeHost(
+            command: List<String>,
+            timeoutSeconds: Long,
+            charset: Charset
+        ): CliExecutionResult {
+            val cmdStr = command.joinToString(" ")
+            executedCommands.add("HOST: $cmdStr")
+            return when {
+                command.contains("-l") && command.contains("-q") -> CliExecutionResult(0, "Ubuntu\n", "")
+                command.contains("-l") && command.contains("-v") -> CliExecutionResult(0, "  NAME  STATE  VERSION\n  Ubuntu  Running  2\n", "")
+                command.contains("--status") -> CliExecutionResult(0, "Default Version: 2", "")
+                else -> CliExecutionResult(0, "", "")
+            }
+        }
+
         override fun execute(
             distro: String,
             command: List<String>,
@@ -211,6 +226,12 @@ class SetupConsentTest {
             val cmdStr = command.joinToString(" ")
             executedCommands.add(cmdStr)
             return when {
+                cmdStr.contains("/etc/os-release") -> {
+                    CliExecutionResult(0, "NAME=\"Ubuntu\"\nVERSION=\"24.04 LTS (Noble Numbat)\"\nID=ubuntu\nVERSION_ID=\"24.04\"\nVERSION_CODENAME=noble\n", "")
+                }
+                cmdStr.contains("id -un; printf '%s' \"\$HOME\"") || cmdStr.contains("id -un") -> {
+                    CliExecutionResult(0, "lti\n/home/lti", "")
+                }
                 cmdStr.contains("wsl.exe --status") || cmdStr.contains("--status") -> CliExecutionResult(0, "Default Distribution: Ubuntu", "")
                 cmdStr.contains("echo -n \$HOME") -> CliExecutionResult(0, "/home/lti", "")
                 command.firstOrNull() == "df" -> CliExecutionResult(dfExitCode, if (dfExitCode == 0) dfOutput else "", if (dfExitCode != 0) "df failed" else "")

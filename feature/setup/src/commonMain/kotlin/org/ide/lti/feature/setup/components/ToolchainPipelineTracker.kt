@@ -68,15 +68,26 @@ fun ToolchainPipelineTracker(
     onRetryStage: (SetupStepStage) -> Unit = { onRetryStep() },
     isBusy: Boolean = false,
 ) {
-    val orderedStages = listOf(
-        SetupStepStage.WSL_DETECTION,
-        SetupStepStage.SERVER_CONNECTIVITY,
-        SetupStepStage.SYSTEM_DIAGNOSTICS,
-        SetupStepStage.REPO_SYNCHRONIZATION,
-        SetupStepStage.TOOLCHAIN_COMPILATION,
-    )
-
     val stepMap = steps.associateBy { it.stage }
+    val orderedStages = if (stepMap.containsKey(SetupStepStage.SYSTEM_PACKAGES)) {
+        listOf(
+            SetupStepStage.WSL_DETECTION,
+            SetupStepStage.SYSTEM_PACKAGES,
+            SetupStepStage.SERVER_CONNECTIVITY,
+            SetupStepStage.SYSTEM_DIAGNOSTICS,
+            SetupStepStage.REPO_SYNCHRONIZATION,
+            SetupStepStage.TOOLCHAIN_COMPILATION,
+        )
+    } else {
+        listOf(
+            SetupStepStage.WSL_DETECTION,
+            SetupStepStage.SERVER_CONNECTIVITY,
+            SetupStepStage.SYSTEM_DIAGNOSTICS,
+            SetupStepStage.REPO_SYNCHRONIZATION,
+            SetupStepStage.TOOLCHAIN_COMPILATION,
+        )
+    }
+
     val completedCount = orderedStages.count { stage ->
         stepMap[stage]?.status == StepStatus.SUCCESS
     }

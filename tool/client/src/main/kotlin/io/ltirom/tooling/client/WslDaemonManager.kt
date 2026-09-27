@@ -23,6 +23,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
+import org.ide.lti.core.model.setup.SetupEnvironment
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.util.UUID
@@ -31,7 +32,7 @@ import java.util.concurrent.TimeUnit
 public typealias ServerConnectionInfo = ServerConnectionDescriptor
 
 public data class WslDaemonConfig(
-    val distroName: String = "Ubuntu",
+    val distroName: String? = null,
     val serverBinaryWslPath: String? = null,
     val autoStart: Boolean = true,
     val startupTimeoutMs: Long = 20_000L
@@ -83,15 +84,21 @@ public class WslDaemonManager(
 
     public fun isRunning(): Boolean = connectionInfo != null && process?.isAlive == true
 
-    override suspend fun ensureStarted(): ServerConnectionDescriptor = mutex.withLock {
+    public suspend fun ensureStarted(environment: SetupEnvironment): ServerConnectionDescriptor =
+        ensureStarted(distro = environment.distro, home = environment.home)
+
+    override suspend fun ensureStarted(distro: String): ServerConnectionDescriptor =
+        ensureStarted(distro = distro, home = null)
+
+    public suspend fun ensureStarted(distro: String, home: String? = null): ServerConnectionDescriptor = mutex.withLock {
         val current = connectionInfo
-        if (current != null && isHealthy(current)) {
+        if (current != null && current.distro == distro && isHealthy(current)) {
             lastStartAdopted = true
             return@withLock current
         }
 
         // 1. Check existing daemon lockfile in WSL (VS Code pattern for instant zero-latency reconnection)
-        val existing = checkExistingDaemon(config.distroName)
+        val existing = checkExistingDaemon(distro)
         if (existing != null && isHealthy(existing)) {
             connectionInfo = existing
             lastStartAdopted = true
@@ -100,7 +107,28 @@ public class WslDaemonManager(
 
         // 2. Launch daemon
         lastStartAdopted = false
-        val info = launchDaemon()
+        val info = launchDaemon(distro, home)
+        connectionInfo = info
+        info
+    }
+
+    override suspend fun ensureStarted(): ServerConnectionDescriptor = mutex.withLock {
+        val current = connectionInfo
+        if (current != null && isHealthy(current)) {
+            lastStartAdopted = true
+            return@withLock current
+        }
+
+        val distro = config.distroName ?: error("No WSL distro specified. Call ensureStarted(environment) with an admitted SetupEnvironment.")
+        val existing = checkExistingDaemon(distro)
+        if (existing != null && isHealthy(existing)) {
+            connectionInfo = existing
+            lastStartAdopted = true
+            return@withLock existing
+        }
+
+        lastStartAdopted = false
+        val info = launchDaemon(distro)
         connectionInfo = info
         info
     }
@@ -118,14 +146,13 @@ public class WslDaemonManager(
 
     public fun resolveWslUserHome(distro: String): String = detector.resolveWslUserHome(distro)
 
-    public fun findServerBinary(distro: String): String {
-        val home = detector.resolveWslUserHome(distro)
-        return deployer.ensureInstalled(distro, home, config.serverBinaryWslPath)
+    public fun findServerBinary(distro: String, home: String? = null): String {
+        val userHome = home ?: detector.resolveWslUserHome(distro)
+        return deployer.ensureInstalled(distro, userHome, config.serverBinaryWslPath)
     }
 
-    private suspend fun launchDaemon(): ServerConnectionDescriptor = withContext(Dispatchers.IO) {
-        val distro = config.distroName
-        val binary = findServerBinary(distro)
+    private suspend fun launchDaemon(distro: String, home: String? = null): ServerConnectionDescriptor = withContext(Dispatchers.IO) {
+        val binary = findServerBinary(distro, home)
         val wslIp = detector.resolveWslIp(distro)
 
         val launchResult = launcher.launch(distro, binary)
@@ -174,8 +201,18 @@ public class WslDaemonManager(
         return prober.getServerInfo(info)
     }
 
+    public suspend fun getServerInfo(environment: SetupEnvironment): WslServerInfo? {
+        val info = ensureStarted(environment)
+        return prober.getServerInfo(info)
+    }
+
     public suspend fun getAvailableTools(): List<ToolStatusInfo> {
         val info = ensureStarted()
+        return prober.getAvailableTools(info)
+    }
+
+    public suspend fun getAvailableTools(environment: SetupEnvironment): List<ToolStatusInfo> {
+        val info = ensureStarted(environment)
         return prober.getAvailableTools(info)
     }
 

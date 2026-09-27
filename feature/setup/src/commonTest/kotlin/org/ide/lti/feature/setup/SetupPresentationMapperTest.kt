@@ -17,6 +17,8 @@ import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolCategory
 import org.ide.lti.core.domain.setup.ToolComponentItem
 import org.ide.lti.core.domain.setup.ToolchainSetupState
+import org.ide.lti.core.model.setup.DistroStatus
+import org.ide.lti.core.model.setup.SetupEnvironment
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -552,5 +554,49 @@ class SetupPresentationMapperTest {
         val buildServiceItem = summary.items.first { it.label == "Build service" }
         assertEquals("Checking…", buildServiceItem.value)
         assertEquals(IdeStatusSeverity.Running, buildServiceItem.severity)
+    }
+
+    @Test
+    fun testMapDistroStatus() {
+        val wslUnavail = DistroStatus.WslUnavailable("wsl.exe not found")
+        val wslUnavailPres = SetupPresentationMapper.mapDistroStatus(wslUnavail)
+        assertTrue(wslUnavailPres.detailText.contains("WSL isn't installed"))
+        assertEquals(IdeStatusSeverity.Failed, wslUnavailPres.severity)
+        assertFalse(wslUnavailPres.isReady)
+
+        val noDistro = DistroStatus.NoDistro
+        val noDistroPres = SetupPresentationMapper.mapDistroStatus(noDistro)
+        assertTrue(noDistroPres.detailText.contains("No Linux distribution"))
+        assertEquals(IdeStatusSeverity.Failed, noDistroPres.severity)
+        assertFalse(noDistroPres.isReady)
+
+        val startupFailed = DistroStatus.StartupFailed("Ubuntu-24.04", "timeout after 5s")
+        val startupFailedPres = SetupPresentationMapper.mapDistroStatus(startupFailed)
+        assertTrue(startupFailedPres.detailText.contains("Ubuntu-24.04 didn't start"))
+        assertEquals("Retry", startupFailedPres.primaryActionLabel)
+        assertEquals("Show diagnostics", startupFailedPres.secondaryActionLabel)
+        assertEquals(IdeStatusSeverity.Failed, startupFailedPres.severity)
+        assertFalse(startupFailedPres.isReady)
+
+        val unsupported = DistroStatus.Unsupported("Debian", "found debian 12")
+        val unsupportedPres = SetupPresentationMapper.mapDistroStatus(unsupported)
+        assertTrue(unsupportedPres.detailText.contains("Debian isn't a supported Ubuntu LTS"))
+        assertEquals(IdeStatusSeverity.Failed, unsupportedPres.severity)
+        assertFalse(unsupportedPres.isReady)
+
+        val noUser = DistroStatus.NoUsableUser("Ubuntu-24.04", "default user is root")
+        val noUserPres = SetupPresentationMapper.mapDistroStatus(noUser)
+        assertTrue(noUserPres.detailText.contains("Ubuntu-24.04 needs a user"))
+        assertEquals("Open Ubuntu-24.04", noUserPres.primaryActionLabel)
+        assertEquals(IdeStatusSeverity.Failed, noUserPres.severity)
+        assertFalse(noUserPres.isReady)
+
+        val usable = DistroStatus.Usable(
+            SetupEnvironment("Ubuntu-24.04", 2, "ubuntu", "24.04", "testuser", "/home/testuser")
+        )
+        val usablePres = SetupPresentationMapper.mapDistroStatus(usable)
+        assertEquals("Ubuntu-24.04 · testuser", usablePres.detailText)
+        assertEquals(IdeStatusSeverity.Ready, usablePres.severity)
+        assertTrue(usablePres.isReady)
     }
 }

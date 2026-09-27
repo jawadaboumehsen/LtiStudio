@@ -16,6 +16,18 @@ import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepProvenance
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolchainSetupState
+import org.ide.lti.core.model.setup.DistroStatus
+
+@Immutable
+data class WslRowPresentation(
+    val title: String = "WSL 2 Runtime",
+    val detailText: String,
+    val severity: IdeStatusSeverity,
+    val primaryActionLabel: String? = null,
+    val secondaryActionLabel: String? = null,
+    val isReady: Boolean = false,
+    val instruction: String? = null,
+)
 
 @Immutable
 data class EnvironmentSummaryItem(
@@ -433,6 +445,39 @@ object SetupPresentationMapper {
         return SetupStatusBarPresentation(
             leadingStatusText = leadingText,
             failureText = activeOperation?.failure,
+        )
+    }
+
+    fun mapDistroStatus(status: DistroStatus): WslRowPresentation = when (status) {
+        is DistroStatus.WslUnavailable -> WslRowPresentation(
+            detailText = "WSL isn't installed. Run 'wsl --install' in PowerShell.",
+            severity = IdeStatusSeverity.Failed,
+            instruction = "Run 'wsl --install' in PowerShell."
+        )
+        is DistroStatus.NoDistro -> WslRowPresentation(
+            detailText = "No Linux distribution. Run 'wsl --install -d Ubuntu-24.04' in PowerShell.",
+            severity = IdeStatusSeverity.Failed,
+            instruction = "Run 'wsl --install -d Ubuntu-24.04' in PowerShell."
+        )
+        is DistroStatus.StartupFailed -> WslRowPresentation(
+            detailText = "${status.distro} didn't start: ${status.detail}",
+            severity = IdeStatusSeverity.Failed,
+            primaryActionLabel = "Retry",
+            secondaryActionLabel = "Show diagnostics"
+        )
+        is DistroStatus.Unsupported -> WslRowPresentation(
+            detailText = "${status.distro} isn't a supported Ubuntu LTS (found ${status.reason})",
+            severity = IdeStatusSeverity.Failed
+        )
+        is DistroStatus.NoUsableUser -> WslRowPresentation(
+            detailText = "${status.distro} needs a user",
+            severity = IdeStatusSeverity.Failed,
+            primaryActionLabel = "Open ${status.distro}"
+        )
+        is DistroStatus.Usable -> WslRowPresentation(
+            detailText = "${status.environment.distro} · ${status.environment.user}",
+            severity = IdeStatusSeverity.Ready,
+            isReady = true
         )
     }
 }

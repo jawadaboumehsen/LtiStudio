@@ -57,7 +57,14 @@ class SetupExecutionPathTest {
             } else {
                 bootstrapCommands.add(command)
             }
+            val cmdStr = command.joinToString(" ")
             return when {
+                cmdStr.contains("/etc/os-release") -> {
+                    CliExecutionResult(0, "NAME=\"Ubuntu\"\nVERSION=\"24.04 LTS (Noble Numbat)\"\nID=ubuntu\nVERSION_ID=\"24.04\"\nVERSION_CODENAME=noble\n", "")
+                }
+                cmdStr.contains("id -un; printf '%s' \"\$HOME\"") || cmdStr.contains("id -un") -> {
+                    CliExecutionResult(0, "lti\n/home/lti", "")
+                }
                 command.contains("wsl.exe") || command.contains("--status") -> {
                     CliExecutionResult(0, "Default Distribution: Ubuntu", "")
                 }
@@ -75,6 +82,9 @@ class SetupExecutionPathTest {
                 postBridgeCommands.add(command)
             } else {
                 bootstrapCommands.add(command)
+            }
+            if (command.contains("-l") && command.contains("-v")) {
+                return CliExecutionResult(0, "  NAME  STATE  VERSION\n  Ubuntu  Running  2\n", "")
             }
             return if (command.contains("-l")) {
                 CliExecutionResult(0, "Ubuntu\n", "")

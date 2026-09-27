@@ -9,6 +9,7 @@ import org.ide.lti.core.domain.plugin.PluginCatalogPort
 import org.ide.lti.core.domain.plugin.PluginInstallPort
 import org.ide.lti.core.domain.plugin.PluginLifecycleUseCase
 import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
+import org.ide.lti.core.domain.ports.HostPrerequisitePort
 import org.ide.lti.core.domain.ports.PipelineExecutionPort
 import org.ide.lti.core.domain.ports.ToolPublicationPort
 import org.ide.lti.core.domain.ports.VendoredFilePort
@@ -55,6 +56,7 @@ class KoinGraphResolutionTest {
 
     @Test
     fun portsAndRepositoriesResolve() {
+        assertNotNull(koin.get<HostPrerequisitePort>())
         assertNotNull(koin.get<ToolPublicationPort>())
         assertNotNull(koin.get<EnvironmentReadinessPort>())
         assertNotNull(koin.get<io.ltirom.tooling.client.wsl.TransportCliExecutor>())

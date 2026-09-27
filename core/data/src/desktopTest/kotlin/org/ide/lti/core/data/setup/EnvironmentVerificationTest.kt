@@ -136,6 +136,7 @@ class EnvironmentVerificationTest {
                     ToolExecutionResponse(0, pkgs, "", 2L)
                 }
                 request.toolId == "df" -> ToolExecutionResponse(0, "Filesystem 1K-blocks Used Available Use% Mounted on\n/dev/sdb 100G 50G 50G 50% /home/lti\n", "", 2L)
+                request.toolId == "printenv" -> ToolExecutionResponse(0, "/home/lti\n", "", 1L)
                 request.toolId == "mkfs.erofs" -> ToolExecutionResponse(0, "mkfs.erofs 1.7.1 --fs-config-file", "", 2L)
                 else -> ToolExecutionResponse(0, "tool output", "", 5L)
             }
@@ -173,6 +174,21 @@ class EnvironmentVerificationTest {
     private class RecordingCliExecutor : WslCliExecutor() {
         val executedCommands = mutableListOf<String>()
 
+        override fun executeHost(
+            command: List<String>,
+            timeoutSeconds: Long,
+            charset: Charset
+        ): CliExecutionResult {
+            val cmdStr = command.joinToString(" ")
+            executedCommands.add("HOST: $cmdStr")
+            return when {
+                command.contains("-l") && command.contains("-q") -> CliExecutionResult(0, "Ubuntu\n", "")
+                command.contains("-l") && command.contains("-v") -> CliExecutionResult(0, "  NAME  STATE  VERSION\n  Ubuntu  Running  2\n", "")
+                command.contains("--status") -> CliExecutionResult(0, "Default Version: 2", "")
+                else -> CliExecutionResult(0, "", "")
+            }
+        }
+
         override fun execute(
             distro: String,
             command: List<String>,
@@ -183,6 +199,12 @@ class EnvironmentVerificationTest {
             val cmdStr = command.joinToString(" ")
             executedCommands.add(cmdStr)
             return when {
+                cmdStr.contains("/etc/os-release") -> {
+                    CliExecutionResult(0, "NAME=\"Ubuntu\"\nVERSION=\"24.04 LTS (Noble Numbat)\"\nID=ubuntu\nVERSION_ID=\"24.04\"\nVERSION_CODENAME=noble\n", "")
+                }
+                cmdStr.contains("id -un; printf '%s' \"\$HOME\"") || cmdStr.contains("id -un") -> {
+                    CliExecutionResult(0, "lti\n/home/lti", "")
+                }
                 cmdStr.contains("wsl.exe --status") || cmdStr.contains("--status") -> {
                     CliExecutionResult(0, "Default Distribution: Ubuntu", "")
                 }
@@ -491,7 +513,10 @@ class EnvironmentVerificationTest {
                 it.contains("printenv HOME") ||
                 it.contains("printenv") ||
                 it.contains("wsl.exe -l") ||
-                it.contains("-l -q")
+                it.contains("-l -q") ||
+                it.contains("-l -v") ||
+                it.contains("/etc/os-release") ||
+                it.contains("id -un")
         }
         assertEquals(
             emptyList(),

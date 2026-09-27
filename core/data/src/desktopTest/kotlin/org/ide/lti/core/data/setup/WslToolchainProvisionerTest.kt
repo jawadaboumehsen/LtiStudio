@@ -208,14 +208,22 @@ class WslToolchainProvisionerTest {
         var userHome: String = "/home/lti"
         var missingDevPackages: Boolean = false
         var pythonMissing: Boolean = false
+        var wslInstalled: Boolean = true
         val existingPaths: MutableSet<String> = mutableSetOf()
         val commandLog = mutableListOf<String>()
 
         override fun executeHost(command: List<String>, timeoutSeconds: Long, charset: Charset): CliExecutionResult {
             val cmdStr = command.joinToString(" ")
             commandLog.add("HOST: $cmdStr")
+            if (!wslInstalled) {
+                return CliExecutionResult(1, "", "WSL 2 is not installed")
+            }
             if (command.contains("-l") && command.contains("-q")) {
                 return CliExecutionResult(0, hostDistros.joinToString("\n"), "")
+            }
+            if (command.contains("-l") && command.contains("-v")) {
+                val lines = listOf("  NAME      STATE           VERSION") + hostDistros.map { "  $it   Running         2" }
+                return CliExecutionResult(0, lines.joinToString("\n"), "")
             }
             if (command.contains("--status")) {
                 return if (hostDistros.isNotEmpty()) {
@@ -230,6 +238,13 @@ class WslToolchainProvisionerTest {
         override fun execute(distro: String, command: List<String>, timeoutSeconds: Long, charset: Charset, user: String?): CliExecutionResult {
             val cmdStr = command.joinToString(" ")
             commandLog.add("WSL: $cmdStr")
+            if (cmdStr.contains("/etc/os-release")) {
+                return CliExecutionResult(0, "NAME=\"Ubuntu\"\nVERSION=\"24.04 LTS (Noble Numbat)\"\nID=ubuntu\nVERSION_ID=\"24.04\"\nVERSION_CODENAME=noble\n", "")
+            }
+            if (cmdStr.contains("id -un; printf '%s' \"\$HOME\"") || cmdStr.contains("id -un")) {
+                val u = userHome.substringAfterLast('/').ifBlank { "lti" }
+                return CliExecutionResult(0, "$u\n$userHome", "")
+            }
             if (cmdStr.contains("echo -n \$HOME") || cmdStr.contains("printenv HOME") || cmdStr.contains("printenv")) {
                 return CliExecutionResult(0, userHome, "")
             }
@@ -316,7 +331,7 @@ class WslToolchainProvisionerTest {
     @Test
     fun `checkStatus reports failure when WSL is not installed`() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-        val fakeCli = FakeWslCliExecutor().apply { hostDistros = emptyList() }
+        val fakeCli = FakeWslCliExecutor().apply { wslInstalled = false }
         val detector = WslEnvironmentDetector(cli = fakeCli)
         val supervisor = FakeDaemonSupervisor()
         val transport = FakeRemoteTransport()
@@ -339,6 +354,31 @@ class WslToolchainProvisionerTest {
         val serverStep = state.steps.first { it.stage == SetupStepStage.SERVER_CONNECTIVITY }
         assertEquals(StepStatus.PENDING, serverStep.status)
         // Not ready because the toolchain is absent in this fixture, not because the daemon is idle.
+        assertFalse(state.isAllReady)
+    }
+
+    @Test
+    fun `checkStatus reports failure when no distro is installed`() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val fakeCli = FakeWslCliExecutor().apply { hostDistros = emptyList() }
+        val detector = WslEnvironmentDetector(cli = fakeCli)
+        val supervisor = FakeDaemonSupervisor()
+        val transport = FakeRemoteTransport()
+
+        val provisioner = WslToolchainProvisioner(
+            supervisor = supervisor,
+            transport = transport,
+            repository = inMemoryToolchainRepository(),
+            detector = detector,
+            cli = fakeCli,
+            dispatcher = testDispatcher
+        )
+
+        val state = provisioner.checkStatus()
+
+        val wslStep = state.steps.first { it.stage == SetupStepStage.WSL_DETECTION }
+        assertEquals(StepStatus.FAILED, wslStep.status)
+        assertEquals("No Linux distribution", wslStep.description)
         assertFalse(state.isAllReady)
     }
 
