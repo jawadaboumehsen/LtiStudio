@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.designsystem.screenshot
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -27,6 +28,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onRoot
@@ -37,11 +42,17 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.sp
+import dev.chrisbanes.haze.hazeSource
 import org.ide.lti.core.designsystem.component.display.GlassPanelContainer
 import org.ide.lti.core.designsystem.component.display.GlassPanelHeader
 import org.ide.lti.core.designsystem.component.display.GlassPanelHeaderAction
 import org.ide.lti.core.designsystem.component.layout.GlassBackdrop
 import org.ide.lti.core.designsystem.component.layout.GlassLayout
+import org.ide.lti.core.designsystem.component.layout.IdeAppFrame
+import org.ide.lti.core.designsystem.component.layout.IdeNavigatorItem
+import org.ide.lti.core.designsystem.component.layout.IdeNavigatorPanel
+import org.ide.lti.core.designsystem.component.layout.IdeStatusBar
+import org.ide.lti.core.designsystem.component.layout.IdeTopAppBar
 import org.ide.lti.core.designsystem.component.layout.rememberLtiLayoutState
 import org.ide.lti.core.designsystem.component.navigation.GlassSidePanelRail
 import org.ide.lti.core.designsystem.component.navigation.GlassSidePanelTab
@@ -51,13 +62,17 @@ import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.CornerRadius
+import org.ide.lti.core.designsystem.theme.GlassSceneHost
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.LtiTheme
+import org.ide.lti.core.designsystem.theme.PreviewSampleColors
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.testing.screenshot.GoldenImageAssert
 import org.junit.Test
+import kotlin.math.abs
+import kotlin.test.assertTrue
 
 class GlassChromeDiagnosticScreenshotTest {
 
@@ -474,6 +489,75 @@ class GlassChromeDiagnosticScreenshotTest {
     }
 
     /**
+     * Diagnostic Integration Offscreen Render & Screenshot Regression Test for Blue Mode.
+     * Composes real sapphire aura Canvas + LtiTheme + GlassLayout with default topBar & statusBar in blue theme.
+     */
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun testDiagnosticRealAppChromeAndBackdropBlue() = runDesktopComposeUiTest(
+        width = TEST_WIDTH,
+        height = TEST_HEIGHT,
+    ) {
+        setContent {
+            LtiTheme(appTheme = AppTheme.Blue) {
+                val layoutState = rememberLtiLayoutState(
+                    initialLeftWeight = 0.22f,
+                    initialRightWeight = 0.26f,
+                    initialShowLeft = true,
+                    initialShowRight = true,
+                    initialShowBottom = false,
+                )
+
+                val leftTabs = listOf(
+                    GlassSidePanelTab(
+                        icon = AppIcons.Folder,
+                        label = "Explorer",
+                    ) { MockExplorerPanel() },
+                )
+
+                val rightTabs = listOf(
+                    GlassSidePanelTab(
+                        icon = AppIcons.Sparkles,
+                        label = "AI Assistant",
+                    ) { MockAIAssistantPanel() },
+                )
+
+                Box(modifier = Modifier.fillMaxSize()) {
+                    GlassBackdrop()
+
+                    GlassLayout(
+                        state = layoutState,
+                        modifier = Modifier.fillMaxSize(),
+                        leftRail = {
+                            GlassSidePanelRail(
+                                tabs = leftTabs,
+                                selectedIndex = 0,
+                                onSelectedIndexChange = {},
+                                railPosition = SidePanelRailPosition.Left,
+                            )
+                        },
+                        leftPanel = { MockExplorerPanel() },
+                        mainContent = { MockEditorPanel() },
+                        bottomPanel = {},
+                        rightPanel = { MockAIAssistantPanel() },
+                        rightRail = {
+                            GlassSidePanelRail(
+                                tabs = rightTabs,
+                                selectedIndex = 0,
+                                onSelectedIndexChange = {},
+                                railPosition = SidePanelRailPosition.Right,
+                            )
+                        },
+                    )
+                }
+            }
+        }
+
+        val image = onRoot().captureToImage()
+        GoldenImageAssert.assertMatchesBaseline("glass_app_chrome_full_composition_blue", image)
+    }
+
+    /**
      * Diagnostic Integration Offscreen Render & Screenshot Regression Test for the continuous
      * frame combined with [org.ide.lti.core.designsystem.component.navigation.GlassSidePanelTabStrip], matching
      * exactly how `WorkspaceScreen` wires the left/right panels in production.
@@ -548,5 +632,140 @@ class GlassChromeDiagnosticScreenshotTest {
 
         val image = onRoot().captureToImage()
         GoldenImageAssert.assertMatchesBaseline("glass_app_chrome_with_side_panel_tabs", image)
+    }
+
+    /**
+     * Verifies that IdeNavigatorPanel inside IdeAppFrame in Blue theme over a patterned backdrop:
+     * 1. Lets light pass through (translucency delta > 0.02 vs flat backdrop).
+     * 2. Blurs high-frequency backdrop pattern (smoothed adjacent pixel differences).
+     */
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun testNavigatorPanelOnBlueInIdeAppFrameShowsGlassOptics() {
+        fun captureFrame(drawBackdrop: DrawScope.() -> Unit): ImageBitmap {
+            lateinit var captured: ImageBitmap
+            runDesktopComposeUiTest(width = TEST_WIDTH, height = TEST_HEIGHT) {
+                setContent {
+                    GlassSceneHost(effectsEnabled = true) {
+                        LtiTheme(appTheme = AppTheme.Blue, effectsEnabled = true) {
+                            Box(modifier = Modifier.fillMaxSize()) {
+                                Canvas(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .hazeSource(GlassTheme.hazeState),
+                                ) {
+                                    drawBackdrop()
+                                }
+                                IdeAppFrame(
+                                    topBar = { IdeTopAppBar() },
+                                    navigator = {
+                                        IdeNavigatorPanel(
+                                            headerTitle = "EXPLORER",
+                                            headerSubtitle = null,
+                                            items = listOf(
+                                                IdeNavigatorItem(id = "1", label = "Source"),
+                                                IdeNavigatorItem(id = "2", label = "Build"),
+                                            ),
+                                            selectedItemId = "1",
+                                            onSelectItem = {},
+                                        )
+                                    },
+                                    statusBar = { IdeStatusBar() },
+                                    content = { Box(Modifier.fillMaxSize()) },
+                                )
+                            }
+                        }
+                    }
+                }
+                captured = onRoot().captureToImage()
+            }
+            return captured
+        }
+
+        fun captureBareBackdrop(drawBackdrop: DrawScope.() -> Unit): ImageBitmap {
+            lateinit var captured: ImageBitmap
+            runDesktopComposeUiTest(width = TEST_WIDTH, height = TEST_HEIGHT) {
+                setContent {
+                    GlassSceneHost(effectsEnabled = true) {
+                        LtiTheme(appTheme = AppTheme.Blue, effectsEnabled = true) {
+                            Box(modifier = Modifier.fillMaxSize()) {
+                                Canvas(modifier = Modifier.fillMaxSize()) {
+                                    drawBackdrop()
+                                }
+                            }
+                        }
+                    }
+                }
+                captured = onRoot().captureToImage()
+            }
+            return captured
+        }
+
+        val stripePattern: DrawScope.() -> Unit = {
+            val stripeWidth = size.width / 20f
+            for (i in 0 until 20) {
+                val color = if (i % 2 == 0) PreviewSampleColors.Orange else PreviewSampleColors.Blue
+                drawRect(
+                    color = color,
+                    topLeft = Offset(i * stripeWidth, 0f),
+                    size = size.copy(width = stripeWidth),
+                )
+            }
+        }
+
+        val flatPattern: DrawScope.() -> Unit = {
+            drawRect(PreviewSampleColors.Blue)
+        }
+
+        val patternedImage = captureFrame(stripePattern)
+        val flatImage = captureFrame(flatPattern)
+        val barePatternImage = captureBareBackdrop(stripePattern)
+
+        val patternPixels = patternedImage.toPixelMap()
+        val flatPixels = flatImage.toPixelMap()
+        val barePixels = barePatternImage.toPixelMap()
+
+        // 1. Light passes through: difference between patterned and flat backdrop under panel
+        var diffSum = 0.0
+        var pixelCount = 0
+        for (y in 250 until 450 step 2) {
+            for (x in 40 until 200 step 2) {
+                val p = patternPixels[x, y]
+                val f = flatPixels[x, y]
+                val delta = (abs(p.red - f.red) + abs(p.green - f.green) + abs(p.blue - f.blue)) / 3.0
+                diffSum += delta
+                pixelCount++
+            }
+        }
+        val avgTranslucencyDelta = diffSum / pixelCount
+
+        // 2. Blur happens: compare adjacent horizontal pixel differences across stripe edges
+        var maxBareAdjacentDiff = 0.0
+        var maxPanelAdjacentDiff = 0.0
+        val sampleY = 350
+        for (x in 40 until 199) {
+            val b1 = barePixels[x, sampleY]
+            val b2 = barePixels[x + 1, sampleY]
+            val bareDelta = abs(b1.red - b2.red).toDouble()
+            if (bareDelta > maxBareAdjacentDiff) maxBareAdjacentDiff = bareDelta
+
+            val p1 = patternPixels[x, sampleY]
+            val p2 = patternPixels[x + 1, sampleY]
+            val panelDelta = abs(p1.red - p2.red).toDouble()
+            if (panelDelta > maxPanelAdjacentDiff) maxPanelAdjacentDiff = panelDelta
+        }
+
+        println("DIAGNOSTIC: avgTranslucencyDelta = $avgTranslucencyDelta")
+        println("DIAGNOSTIC: maxBareAdjacentDiff = $maxBareAdjacentDiff, maxPanelAdjacentDiff = $maxPanelAdjacentDiff")
+
+        assertTrue(
+            avgTranslucencyDelta > 0.02,
+            "Navigator panel on Blue is opaque slab: avgTranslucencyDelta=$avgTranslucencyDelta <= 0.02",
+        )
+        assertTrue(
+            maxPanelAdjacentDiff < maxBareAdjacentDiff * 0.7,
+            "Navigator panel on Blue does not blur backdrop: panelDelta=$maxPanelAdjacentDiff " +
+                ">= 0.7 * bareDelta=$maxBareAdjacentDiff",
+        )
     }
 }
