@@ -1362,9 +1362,9 @@
     "semantic_hash": ""
   },
   "lti-desktop/src/jvmMain/kotlin/main.kt": {
-    "mtime": 1790490475.9078708,
-    "seen": 1790490761.633834,
-    "ast_hash": "631f47005ede85b9807bb82d72165776",
+    "mtime": 1790506263.5485995,
+    "seen": 1790507095.424326,
+    "ast_hash": "20b48d35afc247e85aad39898cb7e318",
     "semantic_hash": ""
   },
   "lti-shared/build.gradle.kts": {
@@ -1374,9 +1374,9 @@
     "semantic_hash": ""
   },
   "lti-shared/src/commonMain/kotlin/org/ide/lti/shared/LtiSharedApp.kt": {
-    "mtime": 1790459495.3239515,
-    "seen": 1790484605.9815845,
-    "ast_hash": "543f19e5bdb3149e4e908b352bc7ca87",
+    "mtime": 1790506251.828071,
+    "seen": 1790507095.424326,
+    "ast_hash": "96659f1c23c2ac35aefb8b3fae4704d3",
     "semantic_hash": ""
   },
   "lti-shared/src/commonMain/kotlin/org/ide/lti/shared/di/KoinModules.kt": {
@@ -8580,9 +8580,9 @@
     "semantic_hash": ""
   },
   "feature/setup/src/desktopTest/kotlin/org/ide/lti/feature/setup/SetupThemeScreenshotTest.kt": {
-    "mtime": 1790494006.4126298,
-    "seen": 1790496251.612243,
-    "ast_hash": "68e619a09965a53e5ff20f98bf43c696",
+    "mtime": 1790506745.3350458,
+    "seen": 1790507095.424326,
+    "ast_hash": "619ad98179b6f9c97d459f32f1be2f9b",
     "semantic_hash": ""
   },
   "feature/setup/src/desktopTest/kotlin/org/ide/lti/feature/setup/ToolsScreenTest.kt": {
@@ -12342,10 +12342,10 @@
     "semantic_hash": "8073a1b448c0f3446ca548322d1d132c"
   },
   "core/testing/src/desktopMain/kotlin/org/ide/lti/core/testing/screenshot/GoldenImageAssert.kt": {
-    "mtime": 1789666879.664215,
-    "seen": 1790165435.587203,
-    "ast_hash": "36c15cf4e919448ce0eb8d6e6ce30288",
-    "semantic_hash": "36c15cf4e919448ce0eb8d6e6ce30288"
+    "mtime": 1790506383.5512843,
+    "seen": 1790507095.4233253,
+    "ast_hash": "4658264d882dcbb0b3abd94a13baf829",
+    "semantic_hash": ""
   },
   "core/testing/src/desktopTest/kotlin/org/ide/lti/core/testing/screenshot/GoldenImageAssertTest.kt": {
     "mtime": 1789666771.1034653,
@@ -20829,6 +20829,12 @@
     "mtime": 1790504666.075683,
     "seen": 1790504993.8025737,
     "ast_hash": "f9d20858bdbfaceb22637efef9d9a06d",
+    "semantic_hash": ""
+  },
+  "feature/setup/src/desktopTest/resources/screenshots/setup_screen_blue_effects_on.png": {
+    "mtime": 1790506529.7210767,
+    "seen": 1790507095.4263167,
+    "ast_hash": "222167ec2fe2bdfc949a73c514cae96f",
     "semantic_hash": ""
   }
 }
