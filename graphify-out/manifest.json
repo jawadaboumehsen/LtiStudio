@@ -210,9 +210,9 @@
     "semantic_hash": "26065aeb10745880bc4e65e5f208a893"
   },
   "build.gradle.kts": {
-    "mtime": 1790266749.0876708,
-    "seen": 1790288069.4116268,
-    "ast_hash": "ebb58aafd4f776a47d9e336d9c2692c8",
+    "mtime": 1790524801.3833134,
+    "seen": 1790525821.9503002,
+    "ast_hash": "d79d267681a34232eb329fd41f2bf46a",
     "semantic_hash": ""
   },
   "ci-prepush.sh": {
@@ -1266,40 +1266,34 @@
     "semantic_hash": "1742d904607eb19fe31396fdb64ae64f"
   },
   "detekt-rules/src/main/kotlin/org/ide/lti/detekt/LtiDesignSystemRuleSetProvider.kt": {
-    "mtime": 1790079420.7585604,
-    "seen": 1790165435.587203,
-    "ast_hash": "627357dca4519a53fa60b0929c42e905",
-    "semantic_hash": "627357dca4519a53fa60b0929c42e905"
-  },
-  "detekt-rules/src/main/kotlin/org/ide/lti/detekt/NoBackdropEffectImport.kt": {
-    "mtime": 1789955030.3241982,
-    "seen": 1790165435.587203,
-    "ast_hash": "25d798d3a1f857e17e5f1dc69c4745b0",
-    "semantic_hash": "25d798d3a1f857e17e5f1dc69c4745b0"
+    "mtime": 1790524719.6238067,
+    "seen": 1790525821.9503002,
+    "ast_hash": "7ef2f05a1af9c36f264f68222e599dfa",
+    "semantic_hash": ""
   },
   "detekt-rules/src/main/kotlin/org/ide/lti/detekt/NoRawAlphaLiteral.kt": {
-    "mtime": 1790080805.0471444,
-    "seen": 1790165435.587203,
-    "ast_hash": "33cdda94eb0cf8491b3c3733f5bba5ce",
-    "semantic_hash": "33cdda94eb0cf8491b3c3733f5bba5ce"
+    "mtime": 1790524719.4672904,
+    "seen": 1790525821.9503002,
+    "ast_hash": "efc9e0e8b274158ffba1ca5546a93b2d",
+    "semantic_hash": ""
   },
   "detekt-rules/src/main/kotlin/org/ide/lti/detekt/NoRawColorLiteral.kt": {
-    "mtime": 1790080793.076571,
-    "seen": 1790165435.587203,
-    "ast_hash": "a7e203c0bd641b54fbab1c987c42b6e3",
-    "semantic_hash": "a7e203c0bd641b54fbab1c987c42b6e3"
+    "mtime": 1790524719.4998062,
+    "seen": 1790525821.9503002,
+    "ast_hash": "a6f44137923e69a35b2a466fcd71921a",
+    "semantic_hash": ""
   },
   "detekt-rules/src/main/kotlin/org/ide/lti/detekt/NoRawDimensionLiteral.kt": {
-    "mtime": 1790080818.7432714,
-    "seen": 1790165435.587203,
-    "ast_hash": "c36a6fc3aba0fc3fec2dbe6f94ecdc23",
-    "semantic_hash": "c36a6fc3aba0fc3fec2dbe6f94ecdc23"
+    "mtime": 1790524719.515418,
+    "seen": 1790525821.9503002,
+    "ast_hash": "643be9d4114da1141f933fde5477c28a",
+    "semantic_hash": ""
   },
   "detekt-rules/src/main/kotlin/org/ide/lti/detekt/NoRawMotionLiteral.kt": {
-    "mtime": 1790080833.9514227,
-    "seen": 1790165435.587203,
-    "ast_hash": "c41cfb07586eba00615934715da9b058",
-    "semantic_hash": "c41cfb07586eba00615934715da9b058"
+    "mtime": 1790524719.5294335,
+    "seen": 1790525821.9503002,
+    "ast_hash": "8e28c3419a77180e3b0e42a26c403a8c",
+    "semantic_hash": ""
   },
   "feature/settings/build.gradle.kts": {
     "mtime": 1790267628.2718427,
@@ -1356,9 +1350,9 @@
     "semantic_hash": "ab3b64d197bb9227a0da6e4cbe1ffd8a"
   },
   "lti-desktop/build.gradle.kts": {
-    "mtime": 1790415655.66357,
-    "seen": 1790416228.6891098,
-    "ast_hash": "082f0c556eace79d6c4d69d8fc088943",
+    "mtime": 1790536469.9879327,
+    "seen": 1790537921.8647645,
+    "ast_hash": "2205f2daa095aee4cfb15255d98420bd",
     "semantic_hash": ""
   },
   "lti-desktop/src/jvmMain/kotlin/main.kt": {
@@ -1422,10 +1416,10 @@
     "semantic_hash": "041a26b059ddb06dcdfc22e4a126276f"
   },
   "settings.gradle.kts": {
-    "mtime": 1790127389.7848225,
-    "seen": 1790165435.5881438,
-    "ast_hash": "f91631412dee5051fdcfd8d31dd3f473",
-    "semantic_hash": "f91631412dee5051fdcfd8d31dd3f473"
+    "mtime": 1790535726.1044872,
+    "seen": 1790537921.8647645,
+    "ast_hash": "935c282fc7f5be29bacaa3cc330a33a9",
+    "semantic_hash": ""
   },
   "spotless/copyright.kt": {
     "mtime": 1788460274.010694,
@@ -2028,10 +2022,10 @@
     "semantic_hash": "cd2d67165245edc9c50dbd17140bc803"
   },
   "CLAUDE.md": {
-    "mtime": 1790107287.110072,
-    "seen": 1790165435.5901225,
-    "ast_hash": "54420d2e5b0cbd877e84dbeef84831cb",
-    "semantic_hash": "54420d2e5b0cbd877e84dbeef84831cb"
+    "mtime": 1790525216.0974977,
+    "seen": 1790525821.952299,
+    "ast_hash": "a4c970de81a0f865740d57e02bcee06a",
+    "semantic_hash": ""
   },
   "CODE_OF_CONDUCT.md": {
     "mtime": 1760318285.0,
@@ -2070,9 +2064,9 @@
     "semantic_hash": "799f4fa9f9a15f59462637a418e371bd"
   },
   "config/detekt/detekt.yml": {
-    "mtime": 1790080774.905552,
-    "seen": 1790081458.9503396,
-    "ast_hash": "c02339ce33733f16e6ec9791e6501ed6",
+    "mtime": 1790524719.671273,
+    "seen": 1790525821.952299,
+    "ast_hash": "06e8bccef10dfed2881f35bdf44c560a",
     "semantic_hash": ""
   },
   "core/analytics/README.md": {
@@ -19074,10 +19068,10 @@
     "semantic_hash": "360303086baaaee6d2c9f683c45bbe31"
   },
   "tool/api/src/main/kotlin/io/ltirom/tooling/core/remote/RemoteProtocol.kt": {
-    "mtime": 1789165690.2828155,
-    "seen": 1790165435.5901225,
-    "ast_hash": "27387b493cfc5898d37d8e756750d529",
-    "semantic_hash": "27387b493cfc5898d37d8e756750d529"
+    "mtime": 1790537302.9773557,
+    "seen": 1790537921.8657832,
+    "ast_hash": "6bf21ea195c36b02014160a0038bca25",
+    "semantic_hash": ""
   },
   "tool/api/src/main/kotlin/io/ltirom/tooling/core/remote/RunProtocol.kt": {
     "mtime": 1789126663.4350212,
@@ -19378,18 +19372,6 @@
     "seen": 1790181914.3481631,
     "ast_hash": "872ffdf4461289c8d5717f6bb8b18649",
     "semantic_hash": ""
-  },
-  "detekt-rules/src/main/kotlin/org/ide/lti/detekt/NoLeakedBackdropEngineType.kt": {
-    "mtime": 1789958711.9309776,
-    "seen": 1790165435.587203,
-    "ast_hash": "aa7139c0ae296984e21c3b7c0738c604",
-    "semantic_hash": "aa7139c0ae296984e21c3b7c0738c604"
-  },
-  "detekt-rules/src/main/kotlin/org/ide/lti/detekt/NoBooleanChromaticAberration.kt": {
-    "mtime": 1790079652.4472528,
-    "seen": 1790165435.587203,
-    "ast_hash": "48b4cae7aef2a376ac00a7340892e9e6",
-    "semantic_hash": "48b4cae7aef2a376ac00a7340892e9e6"
   },
   "haze-blur-material3/build.gradle.kts": {
     "mtime": 1790125213.8275971,
