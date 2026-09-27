@@ -578,21 +578,23 @@ class SetupAccessibilityTest {
         // the preview (Escape) must move keyboard focus back onto that exact button (T039).
         setContent {
             var activeOperation by remember { mutableStateOf<SetupOperation?>(null) }
-            val presentation = EnvironmentPresentation(
-                environmentState = EnvironmentState.CheckedNeedsSetup(),
-                stages = emptyList(),
-                activeOperationId = null,
-                lastVerifiedAt = null,
-                checkedAt = null,
-                storageAvailableBytes = null,
-                storageMeasuredAt = null,
-                primaryAction = PrimaryAction.SET_UP,
+            val toolchain = ToolchainSetupState(
+                checkedAt = 1000L,
+                steps = listOf(
+                    SetupStepDetail(
+                        stage = SetupStepStage.WSL_DETECTION,
+                        title = "WSL 2 Detection",
+                        description = "",
+                        status = StepStatus.PENDING,
+                        provenance = StepProvenance.LIVE,
+                    ),
+                ),
             )
             LtiTheme {
                 SetupScreenContent(
                     state = SetupUiState(
                         selectedTab = SetupTab.ENVIRONMENT,
-                        environmentPresentation = presentation,
+                        toolchainSetupState = toolchain,
                         activeOperation = activeOperation,
                     ),
                     actions = SetupUiActions(

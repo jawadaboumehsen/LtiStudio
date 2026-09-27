@@ -327,7 +327,7 @@ fun SetupPerformanceScenarioDriver(
         selectedWorkspaceId = selectedWorkspaceId,
         selectedCockpitTab = selectedCockpitTab,
         toolSearchQuery = "",
-        selectedToolCategory = "All",
+        toolSelection = ToolSelection(),
         filteredToolsMatrix = benchmarkTools,
         isAutoDoctorEnabled = true,
         selectedTab = currentTab,
@@ -416,7 +416,6 @@ fun SetupPerformanceScenarioDriver(
         SetupScreenContent(
             state = syntheticUiState,
             actions = syntheticUiActions,
-            toolBrowserState = null,
             activityState = activityState,
             workspacesListState = workspacesListState,
             toolsScrollState = toolsScrollState,

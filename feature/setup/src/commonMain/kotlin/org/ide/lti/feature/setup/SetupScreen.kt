@@ -45,7 +45,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.isCtrlPressed
@@ -61,6 +60,7 @@ import dev.chrisbanes.haze.glass.GlassReducedMotionPolicy
 import org.ide.lti.core.designsystem.component.actions.LocalWindowControlActions
 import org.ide.lti.core.designsystem.component.actions.WindowControlActions
 import org.ide.lti.core.designsystem.component.display.GlassVerticalDivider
+import org.ide.lti.core.designsystem.component.display.IdeStatusSeverity
 import org.ide.lti.core.designsystem.component.feedback.GlassBanner
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerAction
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
@@ -83,7 +83,6 @@ import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.MotionEasing
 import org.ide.lti.core.designsystem.theme.SetupTokens
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.model.workspace.Workspace
 import org.ide.lti.feature.setup.components.ProvisioningPreviewSheet
 import org.ide.lti.feature.setup.components.TerminalHandoffSheet
@@ -118,7 +117,7 @@ fun SetupScreen(
     val selectedWorkspaceId by viewModel.selectedWorkspaceId.collectAsState()
     val selectedCockpitTab by viewModel.selectedCockpitTab.collectAsState()
     val toolSearchQuery by viewModel.toolSearchQuery.collectAsState()
-    val selectedToolCategory by viewModel.selectedToolCategory.collectAsState()
+    val toolSelection by viewModel.toolSelection.collectAsState()
     val filteredToolsMatrix by viewModel.filteredToolsMatrix.collectAsState()
     val isAutoDoctorEnabled by viewModel.isAutoDoctorEnabled.collectAsState()
     val selectedTab by viewModel.selectedTab.collectAsState()
@@ -127,7 +126,6 @@ fun SetupScreen(
     val availableTargets by viewModel.availableTargets.collectAsState()
     val environmentReadiness by viewModel.environmentReadiness.collectAsState()
     val activeOperation by viewModel.activeOperation.collectAsState()
-    val environmentPresentation by viewModel.environmentPresentation.collectAsState()
     val workspaceError by viewModel.workspaceError.collectAsState()
     val pendingWorkspaceRequest by viewModel.pendingWorkspaceRequest.collectAsState()
     val isHandoffSheetVisible by viewModel.isHandoffSheetVisible.collectAsState()
@@ -151,7 +149,7 @@ fun SetupScreen(
         selectedWorkspaceId = selectedWorkspaceId,
         selectedCockpitTab = selectedCockpitTab,
         toolSearchQuery = toolSearchQuery,
-        selectedToolCategory = selectedToolCategory,
+        toolSelection = toolSelection,
         filteredToolsMatrix = filteredToolsMatrix,
         isAutoDoctorEnabled = isAutoDoctorEnabled,
         selectedTab = activeTab,
@@ -159,10 +157,10 @@ fun SetupScreen(
         environmentNotice = environmentNotice,
         environmentReadiness = environmentReadiness,
         activeOperation = activeOperation,
-        environmentPresentation = environmentPresentation,
         workspaceError = workspaceError,
         pendingWorkspaceRequest = pendingWorkspaceRequest,
         isHandoffSheetVisible = isHandoffSheetVisible,
+        isToolchainBound = viewModel.isToolchainBound,
     )
 
     val uiActions = SetupUiActions(
@@ -180,6 +178,7 @@ fun SetupScreen(
         onSelectCockpitTab = viewModel::selectCockpitTab,
         onToolSearchQueryChange = viewModel::onToolSearchQueryChange,
         onSelectToolCategory = viewModel::selectToolCategory,
+        onSelectToolPackage = viewModel::selectToolPackage,
         onTestTool = viewModel::testTool,
         onRecompileTool = viewModel::recompileTool,
         onNavigateToEnvironment = {
@@ -248,7 +247,6 @@ fun SetupScreen(
             modifier = Modifier,
             isHelpSheetOpen = isHelpSheetOpen,
             onDismissHelpSheet = { isHelpSheetOpen = false },
-            toolBrowserState = viewModel.toolBrowserState,
             activityState = viewModel.setupActivityState,
         )
     }
@@ -270,7 +268,6 @@ fun SetupScreenContent(
     initialTab: SetupTab? = null,
     isHelpSheetOpen: Boolean = false,
     onDismissHelpSheet: () -> Unit = {},
-    toolBrowserState: ToolBrowserState? = null,
     activityState: SetupActivityState? = null,
     workspacesListState: androidx.compose.foundation.lazy.LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
     toolsScrollState: androidx.compose.foundation.ScrollState = androidx.compose.foundation.rememberScrollState(),
@@ -318,32 +315,27 @@ fun SetupScreenContent(
         actions.onSelectTab(newTab)
     }
 
-    val currentRailId = when (effectiveTab) {
-        SetupTab.PROJECTS -> "projects"
-        SetupTab.ENVIRONMENT -> "environment"
-        SetupTab.TOOLS -> "tools"
-        SetupTab.RECOVERY -> "recovery"
-    }
+    val currentRailId = effectiveTab.id
 
     val setupRailStages = remember {
         listOf(
             IdePipelineStageItem(
-                id = "projects",
+                id = SetupTab.PROJECTS.id,
                 label = "Projects",
                 icon = "projects",
             ),
             IdePipelineStageItem(
-                id = "environment",
+                id = SetupTab.ENVIRONMENT.id,
                 label = "Environment",
                 icon = "environment",
             ),
             IdePipelineStageItem(
-                id = "tools",
+                id = SetupTab.TOOLS.id,
                 label = "Tools",
                 icon = "tools",
             ),
             IdePipelineStageItem(
-                id = "recovery",
+                id = SetupTab.RECOVERY.id,
                 label = "Recovery",
                 icon = "recovery",
             ),
@@ -355,21 +347,12 @@ fun SetupScreenContent(
     var isCompact by remember { mutableStateOf(false) }
 
     val toolPackagesNavItems = remember {
-        listOf(
-            IdeNavigatorItem(id = "all_tools", label = "All tools", icon = "all_tools"),
-            IdeNavigatorItem(id = "firmware", label = "Firmware", icon = "firmware"),
-            IdeNavigatorItem(id = "filesystems", label = "Filesystems", icon = "filesystems"),
-            IdeNavigatorItem(id = "signing", label = "Signing", icon = "signing"),
-        )
+        ToolNavPackage.entries.map { pkg ->
+            IdeNavigatorItem(id = pkg.id, label = pkg.label, icon = pkg.icon)
+        }
     }
 
-    val selectedNavToolId = when (state.selectedToolCategory.lowercase()) {
-        "all" -> "all_tools"
-        "boot & kernel", "dynamic partitions", "firmware" -> "firmware"
-        "filesystem & images", "filesystems" -> "filesystems"
-        "signing & security", "signing" -> "signing"
-        else -> "all_tools"
-    }
+    val selectedNavToolId = state.toolSelection.navPackage.id
 
     IdeAppFrame(
         modifier = modifier
@@ -460,12 +443,7 @@ fun SetupScreenContent(
                 stages = setupRailStages,
                 selectedStageId = currentRailId,
                 onSelectStage = { railId ->
-                    when (railId) {
-                        "projects" -> onTabChange(SetupTab.PROJECTS)
-                        "environment" -> onTabChange(SetupTab.ENVIRONMENT)
-                        "tools" -> onTabChange(SetupTab.TOOLS)
-                        "recovery" -> onTabChange(SetupTab.RECOVERY)
-                    }
+                    SetupTab.find(railId)?.let(onTabChange)
                 },
                 header = {
                     Text(
@@ -485,14 +463,7 @@ fun SetupScreenContent(
                     items = toolPackagesNavItems,
                     selectedItemId = selectedNavToolId,
                     onSelectItem = { navId ->
-                        val cat = when (navId) {
-                            "all_tools" -> "All"
-                            "firmware" -> "Boot & Kernel"
-                            "filesystems" -> "Filesystem & Images"
-                            "signing" -> "Signing & Security"
-                            else -> "All"
-                        }
-                        actions.onSelectToolCategory(cat)
+                        ToolNavPackage.find(navId)?.let(actions.onSelectToolPackage)
                     },
                 )
             }
@@ -500,13 +471,12 @@ fun SetupScreenContent(
             null
         },
         statusBar = {
-            val activeOp = state.activeOperation
-            val pendingAttempt = state.toolchainSetupState.pendingAttemptId
-            val isChecking = state.toolchainSetupState.isChecking
+            val statusBarPresentation = state.statusBarPresentation
             IdeStatusBar(
                 modifier = Modifier.fillMaxWidth(),
                 leadingContent = {
-                    if (activeOp != null || pendingAttempt != null || isChecking) {
+                    val leadingText = statusBarPresentation.leadingStatusText
+                    if (leadingText != null) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
@@ -517,14 +487,8 @@ fun SetupScreenContent(
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(IconSize.Small),
                             )
-                            val statusText = when {
-                                activeOp != null -> "Operation: ${activeOp.operationId} • ${activeOp.executionState}"
-                                isChecking -> "Verifying machine environment…"
-                                pendingAttempt != null -> "Machine environment setup • Receipt: $pendingAttempt"
-                                else -> ""
-                            }
                             Text(
-                                text = statusText,
+                                text = leadingText,
                                 fontSize = FontSize.Micro,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontFamily = GlassFontFamily.ide(),
@@ -533,7 +497,8 @@ fun SetupScreenContent(
                     }
                 },
                 trailingContent = {
-                    if (activeOp?.failure != null) {
+                    val failure = statusBarPresentation.failureText
+                    if (failure != null) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
@@ -545,7 +510,7 @@ fun SetupScreenContent(
                                     .background(GlassTheme.diagnosticColors.error),
                             )
                             Text(
-                                text = activeOp.failure,
+                                text = failure,
                                 fontSize = FontSize.Micro,
                                 color = MaterialTheme.colorScheme.error,
                                 fontFamily = GlassFontFamily.ide(),
@@ -659,7 +624,6 @@ fun SetupScreenContent(
                                 ToolsStepContent(
                                     state = state,
                                     actions = actions,
-                                    toolBrowserState = toolBrowserState,
                                     activityState = activityState,
                                     searchFocusRequester = toolSearchFocusRequester,
                                     focusSearchOnMount = pendingSearchFocus,
@@ -750,7 +714,15 @@ fun SetupScreenContent(
 }
 
 @Composable
-private fun SummaryRow(label: String, value: String, valueColor: Color = MaterialTheme.colorScheme.onSurface) {
+private fun SummaryRow(label: String, value: String, severity: IdeStatusSeverity = IdeStatusSeverity.Neutral) {
+    val valueColor = when (severity) {
+        IdeStatusSeverity.Ready -> GlassTheme.diagnosticColors.success
+        IdeStatusSeverity.Running -> GlassTheme.diagnosticColors.warning
+        IdeStatusSeverity.Warning -> GlassTheme.diagnosticColors.warning
+        IdeStatusSeverity.Blocking -> GlassTheme.diagnosticColors.error
+        IdeStatusSeverity.Failed -> GlassTheme.diagnosticColors.error
+        IdeStatusSeverity.Neutral -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -774,17 +746,7 @@ private fun SummaryRow(label: String, value: String, valueColor: Color = Materia
 /** Persistent right-hand context panel matching the Setup dashboard reference. */
 @Composable
 private fun SetupEnvironmentSummary(state: SetupUiState, modifier: Modifier = Modifier) {
-    val toolchain = state.toolchainSetupState
-    val serviceStatus = when {
-        toolchain.isBusy -> "Checking"
-        toolchain.steps.any { it.status == StepStatus.FAILED } -> "Needs attention"
-        toolchain.isAllReady -> "Ready"
-        else -> "Not checked"
-    }
-    val readiness = if (toolchain.isAllReady) "Ready" else "Not ready"
-    val storageHeadroom = toolchain.storageAvailableBytes?.let { bytes ->
-        "${bytes / (1024L * 1024L * 1024L)} GB"
-    } ?: if (toolchain.isChecking) "Checking…" else "—"
+    val summary = state.environmentSummary
 
     Column(modifier = modifier) {
         GlassSurface(modifier = Modifier.fillMaxWidth(), shape = GlassShapes.HazeMedium) {
@@ -800,28 +762,13 @@ private fun SetupEnvironmentSummary(state: SetupUiState, modifier: Modifier = Mo
                     thickness = GlassDimens.HairlineBorder,
                     color = MaterialTheme.colorScheme.outlineVariant,
                 )
-                SummaryRow(label = "Platform", value = "Windows")
-                SummaryRow(label = "Runtime", value = "WSL 2")
-                SummaryRow(
-                    label = "Build service",
-                    value = serviceStatus,
-                    valueColor = when (serviceStatus) {
-                        "Ready" -> GlassTheme.diagnosticColors.success
-                        "Needs attention" -> GlassTheme.diagnosticColors.error
-                        "Checking" -> GlassTheme.diagnosticColors.warning
-                        else -> MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                )
-                SummaryRow(
-                    label = "Tool readiness",
-                    value = readiness,
-                    valueColor = if (toolchain.isAllReady) {
-                        GlassTheme.diagnosticColors.success
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                )
-                SummaryRow(label = "Storage headroom", value = storageHeadroom)
+                summary.items.forEach { item ->
+                    SummaryRow(
+                        label = item.label,
+                        value = item.value,
+                        severity = item.severity,
+                    )
+                }
             }
         }
         GlassSurface(

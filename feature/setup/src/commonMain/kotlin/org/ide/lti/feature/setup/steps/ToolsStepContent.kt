@@ -21,8 +21,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -33,7 +31,6 @@ import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.feature.setup.SetupActivityState
 import org.ide.lti.feature.setup.SetupUiActions
 import org.ide.lti.feature.setup.SetupUiState
-import org.ide.lti.feature.setup.ToolBrowserState
 import org.ide.lti.feature.setup.components.SetupActivityPanel
 import org.ide.lti.feature.setup.components.ToolMatrixTable
 
@@ -43,10 +40,7 @@ import org.ide.lti.feature.setup.components.ToolMatrixTable
  * Capabilities:
  * - Full available width toolchain matrix with debounced search and category filtering.
  * - Virtualized tool rows displaying binary paths, capability tags, core badges, and status indicators.
- * - Per-tool verification (`[ Test ]`) and real recipe rebuild (`[ Rebuild ]`) actions.
- * - Unsupported repair explanations with disabled rebuild button and accessible reasons.
- * - Bounded live execution terminal logs (at most 10,000 lines) with visible dropped-line count,
- *   pause-follow, and Jump to latest transitions.
+ * - Activity stream drawer anchored to bottom of tools list.
  * - Keyboard navigation and Ctrl+F search focus integration.
  * - Strict design-system token discipline (zero raw dp, color, or alpha literals).
  */
@@ -55,7 +49,6 @@ fun ToolsStepContent(
     state: SetupUiState,
     actions: SetupUiActions,
     modifier: Modifier = Modifier,
-    toolBrowserState: ToolBrowserState? = null,
     activityState: SetupActivityState? = null,
     searchFocusRequester: FocusRequester = remember { FocusRequester() },
     focusSearchOnMount: Boolean = false,
@@ -67,27 +60,6 @@ fun ToolsStepContent(
         if (focusSearchOnMount) {
             searchFocusRequester.requestFocus()
         }
-    }
-
-    val toolsList = if (toolBrowserState != null) {
-        val presentations by toolBrowserState.filteredTools.collectAsState()
-        presentations.map { it.tool }
-    } else {
-        state.filteredToolsMatrix.ifEmpty { state.toolchainSetupState.toolsMatrix }
-    }
-
-    val currentSearch = if (toolBrowserState != null) {
-        val query by toolBrowserState.searchQuery.collectAsState()
-        query
-    } else {
-        state.toolSearchQuery
-    }
-
-    val currentCategory = if (toolBrowserState != null) {
-        val category by toolBrowserState.selectedCategory.collectAsState()
-        category
-    } else {
-        state.selectedToolCategory
     }
 
     val fallbackActivityState = remember { SetupActivityState(scope = coroutineScope) }
@@ -136,31 +108,13 @@ fun ToolsStepContent(
 
             // 35-Tool Interactive Matrix Table
             ToolMatrixTable(
-                tools = toolsList,
-                searchQuery = currentSearch,
-                onSearchQueryChange = { query ->
-                    toolBrowserState?.onSearchQueryChange(query)
-                    actions.onToolSearchQueryChange(query)
-                },
-                selectedCategory = currentCategory,
-                onSelectCategory = { category ->
-                    toolBrowserState?.selectCategory(category)
-                    actions.onSelectToolCategory(category)
-                },
-                onTestTool = { toolId ->
-                    if (toolBrowserState != null) {
-                        toolBrowserState.launchTestTool(toolId)
-                    } else {
-                        actions.onTestTool(toolId)
-                    }
-                },
-                onRecompileTool = { toolId ->
-                    if (toolBrowserState != null) {
-                        toolBrowserState.launchRepairTool(toolId)
-                    } else {
-                        actions.onRecompileTool(toolId)
-                    }
-                },
+                tools = state.filteredToolsMatrix,
+                searchQuery = state.toolSearchQuery,
+                onSearchQueryChange = actions.onToolSearchQueryChange,
+                toolSelection = state.toolSelection,
+                onSelectToolCategory = actions.onSelectToolCategory,
+                onTestTool = actions.onTestTool,
+                onRecompileTool = actions.onRecompileTool,
                 isBusy = state.toolchainSetupState.isBusy,
                 searchFocusRequester = searchFocusRequester,
                 publishedToolIds = state.toolchainSetupState.publishedToolIds,

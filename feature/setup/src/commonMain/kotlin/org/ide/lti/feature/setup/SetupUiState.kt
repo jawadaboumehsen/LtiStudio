@@ -10,6 +10,8 @@
 package org.ide.lti.feature.setup
 
 import androidx.compose.runtime.Immutable
+import org.ide.lti.core.domain.setup.SetupStepStage
+import org.ide.lti.core.domain.setup.ToolCategory
 import org.ide.lti.core.domain.setup.ToolComponentItem
 import org.ide.lti.core.domain.setup.ToolchainSetupState
 import org.ide.lti.core.model.setup.EnvironmentReadiness
@@ -19,12 +21,14 @@ import org.ide.lti.core.model.workspace.RecentProject
 /**
  * Immutable presentation UI state for the Setup / Welcome Screen.
  *
- * Bundles related presentation state properties into a cohesive parameter object
- * to keep composable signatures short and maintainable.
+ * Presentation properties (environmentPresentation, environmentSummary, statusBarPresentation)
+ * are calculated getters derived directly from raw facts to guarantee that state copies never
+ * desynchronize or retain stale presentation copies.
  */
 @Immutable
 data class SetupUiState(
     val toolchainSetupState: ToolchainSetupState = ToolchainSetupState(),
+    val isToolchainBound: Boolean = true,
     val selectedTarget: TargetDevice? = null,
     val availableTargets: List<TargetDevice> = emptyList(),
     val recentProjects: List<RecentProject> = emptyList(),
@@ -33,7 +37,7 @@ data class SetupUiState(
     val selectedWorkspaceId: String? = null,
     val selectedCockpitTab: String = "doctor",
     val toolSearchQuery: String = "",
-    val selectedToolCategory: String = "All",
+    val toolSelection: ToolSelection = ToolSelection(),
     val filteredToolsMatrix: List<ToolComponentItem> = emptyList(),
     val isAutoDoctorEnabled: Boolean = true,
     val selectedTab: SetupTab = SetupTab.PROJECTS,
@@ -41,17 +45,32 @@ data class SetupUiState(
     val environmentNotice: String? = null,
     val environmentReadiness: EnvironmentReadiness? = null,
     val activeOperation: SetupOperation? = null,
-    val environmentPresentation: EnvironmentPresentation = SetupPresentationMapper.mapEnvironment(toolchainSetupState),
     val workspaceError: WorkspaceError? = null,
     val pendingWorkspaceRequest: PendingWorkspaceRequest? = null,
     val isHandoffSheetVisible: Boolean = false,
-)
+) {
+    val environmentPresentation: EnvironmentPresentation
+        get() = SetupPresentationMapper.mapEnvironment(
+            state = toolchainSetupState,
+            isToolchainBound = isToolchainBound,
+            activeOperation = activeOperation,
+        )
+
+    val environmentSummary: EnvironmentSummaryPresentation
+        get() = SetupPresentationMapper.mapEnvironmentSummary(toolchainSetupState)
+
+    val statusBarPresentation: SetupStatusBarPresentation
+        get() = SetupPresentationMapper.mapStatusBar(
+            activeOperation = activeOperation,
+            toolchainSetupState = toolchainSetupState,
+        )
+}
 
 /**
  * Cohesive bundle of user actions and navigation events dispatched from the Setup Screen.
  *
- * Bundles related user actions into a cohesive parameter object to keep composable signatures
- * short and maintain clean separation between presentation state and events.
+ * Defaults to no-ops to allow test harnesses to instantiate SetupUiActions without boilerplate,
+ * while maintaining a single typed callback per action.
  */
 @Immutable
 data class SetupUiActions(
@@ -70,7 +89,8 @@ data class SetupUiActions(
     val onSelectWorkspace: (String?) -> Unit = {},
     val onSelectCockpitTab: (String) -> Unit = {},
     val onToolSearchQueryChange: (String) -> Unit = {},
-    val onSelectToolCategory: (String) -> Unit = {},
+    val onSelectToolCategory: (ToolCategory?) -> Unit = {},
+    val onSelectToolPackage: (ToolNavPackage) -> Unit = {},
     val onTestTool: (String) -> Unit = {},
     val onRecompileTool: (String) -> Unit = {},
     val onSelectTab: (SetupTab) -> Unit = {},
@@ -81,10 +101,10 @@ data class SetupUiActions(
     val onCreateWorkspace: () -> Unit = {},
     val onOpenManageTargets: () -> Unit = {},
     val onOpenHelp: () -> Unit = {},
-    val onPreviewSetup: (org.ide.lti.core.domain.setup.SetupStepStage?) -> Unit = {},
+    val onPreviewSetup: (SetupStepStage?) -> Unit = {},
     val onConfirmOperation: () -> Unit = {},
     val onDismissPreview: () -> Unit = {},
-    val onRetryStage: (org.ide.lti.core.domain.setup.SetupStepStage) -> Unit = {},
+    val onRetryStage: (SetupStepStage) -> Unit = {},
     val onDismissWorkspaceError: () -> Unit = {},
     val onLaunchStudio: () -> Unit = {},
     val onCancelPendingWorkspaceRequest: () -> Unit = {},

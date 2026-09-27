@@ -166,7 +166,7 @@ class ToolBrowserStateTest {
         assertTrue(initialCount > 0, "Initial tools matrix should not be empty")
 
         // Filter by category: Dynamic Partitions
-        browserState.selectCategory(ToolCategory.DYNAMIC_PARTITIONS.displayName)
+        browserState.selectCategory(ToolCategory.DYNAMIC_PARTITIONS)
         val dynamicTools = browserState.filteredTools.value
         assertTrue(dynamicTools.isNotEmpty())
         assertTrue(dynamicTools.all { it.tool.category == ToolCategory.DYNAMIC_PARTITIONS })
@@ -178,7 +178,7 @@ class ToolBrowserStateTest {
         assertEquals("lpunpack", filtered.first().tool.id)
 
         // Reset category to "All" and search by capability
-        browserState.selectCategory("All")
+        browserState.selectCategory(null)
         browserState.onSearchQueryChange("lz4_compression")
         val lz4Tools = browserState.filteredTools.value
         assertTrue(lz4Tools.any { it.tool.id == "mkfs.erofs" })
@@ -263,13 +263,13 @@ class ToolBrowserStateTest {
         )
 
         browserState.onSearchQueryChange("erofs")
-        browserState.selectCategory(ToolCategory.FILESYSTEM_AND_IMAGES.displayName)
+        browserState.selectCategory(ToolCategory.FILESYSTEM_AND_IMAGES)
         browserState.selectTool("mkfs.erofs")
         browserState.setListPosition(3, 120)
 
         // Session state must retain all filter and navigation values
         assertEquals("erofs", browserState.searchQuery.value)
-        assertEquals(ToolCategory.FILESYSTEM_AND_IMAGES.displayName, browserState.selectedCategory.value)
+        assertEquals(ToolCategory.FILESYSTEM_AND_IMAGES, browserState.toolSelection.value.category)
         assertEquals("mkfs.erofs", browserState.selectedToolId.value)
         assertEquals(Pair(3, 120), browserState.getListPosition())
     }
@@ -422,5 +422,44 @@ class ToolBrowserStateTest {
         assertEquals(StepStatus.FAILED, after.tool.status, "Failed execution verification is preserved (FR-010)")
         assertFalse(after.isTested, "A path alone never counts as tested")
         assertNull(after.tool.lastTested, "Discovery must never label a failed probe as tested")
+    }
+
+    @Test
+    fun testEmptySearchResultsReturnEmptyList() = runToolBrowserTest { scope ->
+        val service = SpyToolchainService()
+        val browserState = ToolBrowserState(scope = scope, toolchainService = service)
+
+        browserState.onSearchQueryChange("nonexistent_tool_xyz_123")
+        assertTrue(browserState.filteredTools.value.isEmpty(), "Empty search query match must return empty list")
+    }
+
+    @Test
+    fun testAllCategoriesFilterCorrectly() = runToolBrowserTest { scope ->
+        val service = SpyToolchainService()
+        val browserState = ToolBrowserState(scope = scope, toolchainService = service)
+
+        ToolCategory.entries.forEach { category ->
+            browserState.selectCategory(category)
+            val filtered = browserState.filteredTools.value
+            assertTrue(
+                filtered.all { it.tool.category == category },
+                "Filtering by category $category must only return tools in that category",
+            )
+        }
+    }
+
+    @Test
+    fun testToolSelectionChipRowVisibility() {
+        val allSelection = ToolSelection(navPackage = ToolNavPackage.ALL)
+        assertTrue(allSelection.shouldShowCategoryChips)
+
+        val firmwareSelection = ToolSelection(navPackage = ToolNavPackage.FIRMWARE)
+        assertTrue(firmwareSelection.shouldShowCategoryChips)
+
+        val filesystemsSelection = ToolSelection(navPackage = ToolNavPackage.FILESYSTEMS)
+        assertFalse(filesystemsSelection.shouldShowCategoryChips)
+
+        val signingSelection = ToolSelection(navPackage = ToolNavPackage.SIGNING)
+        assertFalse(signingSelection.shouldShowCategoryChips)
     }
 }

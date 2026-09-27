@@ -9,11 +9,38 @@
  */
 package org.ide.lti.feature.setup
 
+import androidx.compose.runtime.Immutable
+import org.ide.lti.core.designsystem.component.display.IdeStatusSeverity
 import org.ide.lti.core.domain.setup.SetupStepDetail
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepProvenance
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolchainSetupState
+
+@Immutable
+data class EnvironmentSummaryItem(
+    val label: String,
+    val value: String,
+    val severity: IdeStatusSeverity = IdeStatusSeverity.Neutral,
+)
+
+@Immutable
+data class EnvironmentSummaryPresentation(
+    val platform: EnvironmentSummaryItem,
+    val runtime: EnvironmentSummaryItem,
+    val buildService: EnvironmentSummaryItem,
+    val toolReadiness: EnvironmentSummaryItem,
+    val storageHeadroom: EnvironmentSummaryItem,
+) {
+    val items: List<EnvironmentSummaryItem>
+        get() = listOf(platform, runtime, buildService, toolReadiness, storageHeadroom)
+}
+
+@Immutable
+data class SetupStatusBarPresentation(val leadingStatusText: String? = null, val failureText: String? = null) {
+    val isVisible: Boolean
+        get() = leadingStatusText != null || failureText != null
+}
 
 enum class StagePresentationState {
     UNKNOWN,
@@ -308,6 +335,104 @@ object SetupPresentationMapper {
             storageAvailableBytes = state.storageAvailableBytes,
             storageMeasuredAt = state.storageMeasuredAt,
             primaryAction = action,
+        )
+    }
+
+    private fun mapRuntimeItem(toolchain: ToolchainSetupState): EnvironmentSummaryItem {
+        val wslStep = toolchain.steps.firstOrNull { it.stage == SetupStepStage.WSL_DETECTION }
+        return when (wslStep?.status) {
+            StepStatus.SUCCESS -> {
+                val distroLabel = toolchain.activeDistro?.let { "WSL 2 ($it)" } ?: "WSL 2"
+                EnvironmentSummaryItem("Runtime", distroLabel, IdeStatusSeverity.Ready)
+            }
+            StepStatus.RUNNING -> EnvironmentSummaryItem("Runtime", "Detecting…", IdeStatusSeverity.Running)
+            StepStatus.FAILED -> EnvironmentSummaryItem("Runtime", "Unavailable", IdeStatusSeverity.Failed)
+            StepStatus.WARNING -> EnvironmentSummaryItem("Runtime", "Warning", IdeStatusSeverity.Warning)
+            StepStatus.PENDING, null -> if (toolchain.isChecking) {
+                EnvironmentSummaryItem("Runtime", "Detecting…", IdeStatusSeverity.Running)
+            } else {
+                EnvironmentSummaryItem("Runtime", "Not detected", IdeStatusSeverity.Neutral)
+            }
+        }
+    }
+
+    private fun mapBuildServiceItem(toolchain: ToolchainSetupState): EnvironmentSummaryItem {
+        val serverStep = toolchain.steps.firstOrNull { it.stage == SetupStepStage.SERVER_CONNECTIVITY }
+        return when (serverStep?.status) {
+            StepStatus.SUCCESS -> EnvironmentSummaryItem("Build service", "Ready", IdeStatusSeverity.Ready)
+            StepStatus.RUNNING -> EnvironmentSummaryItem("Build service", "Checking…", IdeStatusSeverity.Running)
+            StepStatus.FAILED -> EnvironmentSummaryItem("Build service", "Needs attention", IdeStatusSeverity.Failed)
+            StepStatus.WARNING -> EnvironmentSummaryItem("Build service", "Degraded", IdeStatusSeverity.Warning)
+            StepStatus.PENDING, null -> if (toolchain.isChecking) {
+                EnvironmentSummaryItem("Build service", "Checking…", IdeStatusSeverity.Running)
+            } else {
+                EnvironmentSummaryItem("Build service", "Not checked", IdeStatusSeverity.Neutral)
+            }
+        }
+    }
+
+    private fun mapToolReadinessItem(toolchain: ToolchainSetupState): EnvironmentSummaryItem {
+        val toolsStep = toolchain.steps.firstOrNull { it.stage == SetupStepStage.TOOLCHAIN_COMPILATION }
+        return when {
+            toolchain.isRunning -> EnvironmentSummaryItem("Tool readiness", "Compiling…", IdeStatusSeverity.Running)
+            toolsStep?.status == StepStatus.RUNNING || toolchain.isChecking -> {
+                EnvironmentSummaryItem("Tool readiness", "Checking…", IdeStatusSeverity.Running)
+            }
+            toolsStep?.status == StepStatus.SUCCESS -> {
+                EnvironmentSummaryItem("Tool readiness", "Ready", IdeStatusSeverity.Ready)
+            }
+            toolsStep?.status == StepStatus.FAILED -> {
+                EnvironmentSummaryItem("Tool readiness", "Needs attention", IdeStatusSeverity.Failed)
+            }
+            toolsStep?.status == StepStatus.WARNING -> {
+                EnvironmentSummaryItem("Tool readiness", "Partial", IdeStatusSeverity.Warning)
+            }
+            else -> EnvironmentSummaryItem("Tool readiness", "Not ready", IdeStatusSeverity.Neutral)
+        }
+    }
+
+    private fun mapStorageHeadroomItem(toolchain: ToolchainSetupState): EnvironmentSummaryItem {
+        val storageHeadroom = toolchain.storageAvailableBytes?.let { bytes ->
+            "${bytes / (1024L * 1024L * 1024L)} GB"
+        } ?: if (toolchain.isChecking) "Checking…" else "—"
+        return EnvironmentSummaryItem("Storage headroom", storageHeadroom, IdeStatusSeverity.Neutral)
+    }
+
+    fun mapEnvironmentSummary(toolchain: ToolchainSetupState): EnvironmentSummaryPresentation =
+        EnvironmentSummaryPresentation(
+            platform = EnvironmentSummaryItem("Platform", "Windows", IdeStatusSeverity.Neutral),
+            runtime = mapRuntimeItem(toolchain),
+            buildService = mapBuildServiceItem(toolchain),
+            toolReadiness = mapToolReadinessItem(toolchain),
+            storageHeadroom = mapStorageHeadroomItem(toolchain),
+        )
+
+    fun mapStatusBar(
+        activeOperation: SetupOperation?,
+        toolchainSetupState: ToolchainSetupState,
+    ): SetupStatusBarPresentation {
+        val pendingAttempt = toolchainSetupState.pendingAttemptId
+        val isChecking = toolchainSetupState.isChecking
+
+        val leadingText = when {
+            activeOperation != null -> when (activeOperation.executionState) {
+                SetupOperationState.PREVIEW -> "Previewing environment setup…"
+                SetupOperationState.RUNNING -> "Running environment setup…"
+                SetupOperationState.RECONNECTING -> "Reconnecting to background setup…"
+                SetupOperationState.SUCCEEDED -> "Environment setup completed"
+                SetupOperationState.FAILED -> "Environment setup failed"
+                SetupOperationState.CANCELLED -> "Environment setup cancelled"
+                SetupOperationState.INTERRUPTED -> "Environment setup was interrupted"
+                SetupOperationState.AWAITING_USER_ACTION -> "Terminal authorization required"
+            }
+            isChecking -> "Verifying machine environment…"
+            pendingAttempt != null -> "A previous setup didn't finish • Review in Recovery"
+            else -> null
+        }
+
+        return SetupStatusBarPresentation(
+            leadingStatusText = leadingText,
+            failureText = activeOperation?.failure,
         )
     }
 }

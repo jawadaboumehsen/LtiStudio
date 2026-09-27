@@ -26,7 +26,8 @@ enum class SetupTab(val id: String) {
     RECOVERY("recovery");
 
     companion object {
-        fun fromId(id: String): SetupTab = entries.firstOrNull { it.id == id } ?: PROJECTS
+        fun find(id: String): SetupTab? = entries.firstOrNull { it.id == id }
+        fun fromId(id: String): SetupTab = find(id) ?: PROJECTS
     }
 }
 

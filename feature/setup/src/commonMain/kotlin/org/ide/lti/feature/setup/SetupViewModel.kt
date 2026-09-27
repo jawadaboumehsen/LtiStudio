@@ -27,6 +27,7 @@ import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolCapabilities
+import org.ide.lti.core.domain.setup.ToolCategory
 import org.ide.lti.core.domain.setup.ToolComponentItem
 import org.ide.lti.core.domain.setup.ToolchainProvisioningService
 import org.ide.lti.core.domain.setup.ToolchainSetupState
@@ -172,7 +173,7 @@ class SetupViewModel(
 
     val isAutoDoctorEnabled: StateFlow<Boolean> = environmentSetupState.isAutoDoctorEnabled
     val activeOperation: StateFlow<SetupOperation?> = environmentSetupState.activeOperation
-    val environmentPresentation: StateFlow<EnvironmentPresentation> = environmentSetupState.environmentPresentation
+    val isToolchainBound: Boolean get() = environmentSetupState.isToolchainBound
 
     init {
         environmentSetupState.checkEnvironmentStatus()
@@ -259,10 +260,14 @@ class SetupViewModel(
         toolBrowserState.onSearchQueryChange(query)
     }
 
-    val selectedToolCategory: StateFlow<String> = toolBrowserState.selectedCategory
+    val toolSelection: StateFlow<ToolSelection> = toolBrowserState.toolSelection
 
-    fun selectToolCategory(category: String) {
+    fun selectToolCategory(category: ToolCategory?) {
         toolBrowserState.selectCategory(category)
+    }
+
+    fun selectToolPackage(pkg: ToolNavPackage) {
+        toolBrowserState.selectPackage(pkg)
     }
 
     val filteredToolsMatrix: StateFlow<List<ToolComponentItem>> = toolBrowserState.filteredTools

@@ -64,6 +64,12 @@ class EnvironmentSetupStateTest {
         }
     }
 
+    private fun EnvironmentSetupState.presentation(): EnvironmentPresentation = SetupPresentationMapper.mapEnvironment(
+        state = toolchainSetupState.value,
+        isToolchainBound = isToolchainBound,
+        activeOperation = activeOperation.value,
+    )
+
     private class SpyToolchainProvisioningService(
         initialState: ToolchainSetupState = ToolchainSetupState(
             steps = ToolchainSetupState.defaultSteps().map {
@@ -395,7 +401,7 @@ class EnvironmentSetupStateTest {
         assertFalse(stateHolder.isAutoDoctorEnabled.value)
 
         // Simulate reading mapped presentation
-        val presentation = stateHolder.environmentPresentation.value
+        val presentation = stateHolder.presentation()
         assertEquals(5, presentation.stages.size)
     }
 
@@ -415,7 +421,7 @@ class EnvironmentSetupStateTest {
         val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)
 
         // Before check: state is Unknown, action is CHECK
-        val initialPresentation = stateHolder.environmentPresentation.value
+        val initialPresentation = stateHolder.presentation()
         assertEquals(EnvironmentState.Unknown, initialPresentation.environmentState)
         assertEquals(PrimaryAction.CHECK, initialPresentation.primaryAction)
 
@@ -467,7 +473,7 @@ class EnvironmentSetupStateTest {
         testScheduler.advanceUntilIdle()
 
         // After ONE check: Set Up is offered immediately (SC-001)
-        val postCheckPresentation = stateHolder.environmentPresentation.value
+        val postCheckPresentation = stateHolder.presentation()
         assertTrue(postCheckPresentation.environmentState is EnvironmentState.CheckedNeedsSetup)
         assertEquals(PrimaryAction.SET_UP, postCheckPresentation.primaryAction)
         assertEquals(checkTime, postCheckPresentation.checkedAt)
@@ -481,7 +487,7 @@ class EnvironmentSetupStateTest {
         testScheduler.advanceUntilIdle()
 
         assertFalse(stateHolder.toolchainSetupState.value.isAllReady, "Missing service must NEVER be ready")
-        val presentation = stateHolder.environmentPresentation.value
+        val presentation = stateHolder.presentation()
         assertTrue(
             presentation.environmentState is EnvironmentState.Unavailable,
             "Missing service must be Unavailable, never ready-warning fallback",
@@ -512,7 +518,7 @@ class EnvironmentSetupStateTest {
         testScheduler.advanceUntilIdle()
 
         assertFalse(stateHolder.toolchainSetupState.value.isAllReady, "Restored state must not be isAllReady")
-        val presentation = stateHolder.environmentPresentation.value
+        val presentation = stateHolder.presentation()
         assertTrue(presentation.environmentState is EnvironmentState.Restored, "State must be Restored")
         assertNull(presentation.checkedAt, "Restored state has null checkedAt")
         assertEquals(
@@ -557,7 +563,7 @@ class EnvironmentSetupStateTest {
         val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)
         testScheduler.advanceUntilIdle()
 
-        val p = stateHolder.environmentPresentation.value
+        val p = stateHolder.presentation()
         assertEquals(liveCheckTime, p.checkedAt)
         assertNull(p.lastVerifiedAt)
         assertEquals(PrimaryAction.SET_UP, p.primaryAction)
@@ -733,7 +739,7 @@ class EnvironmentSetupStateTest {
         val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)
         testScheduler.advanceUntilIdle()
 
-        val presentation = stateHolder.environmentPresentation.value
+        val presentation = stateHolder.presentation()
         assertTrue(presentation.environmentState is EnvironmentState.Interrupted, "$presentation")
         assertEquals(PrimaryAction.RECONNECT, presentation.primaryAction)
         val op = stateHolder.activeOperation.value

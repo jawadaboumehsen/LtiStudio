@@ -13,13 +13,10 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.ide.lti.core.common.timing.StartupTiming
 import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
@@ -114,7 +111,7 @@ class EnvironmentSetupState(
     private val toolchainService: ToolchainProvisioningService? = null,
     private val environmentReadinessPort: EnvironmentReadinessPort? = null,
 ) {
-    private val isToolchainBound: Boolean = toolchainService != null
+    val isToolchainBound: Boolean = toolchainService != null
 
     private val fallbackToolchainState = MutableStateFlow(
         ToolchainSetupState(
@@ -138,23 +135,6 @@ class EnvironmentSetupState(
     internal fun setActiveOperationForTesting(operation: SetupOperation?) {
         _activeOperation.value = operation
     }
-
-    val environmentPresentation: StateFlow<EnvironmentPresentation> =
-        combine(toolchainSetupState, _activeOperation) { state, op ->
-            SetupPresentationMapper.mapEnvironment(
-                state = state,
-                isToolchainBound = isToolchainBound,
-                activeOperation = op,
-            )
-        }.stateIn(
-            scope = scope,
-            started = SharingStarted.Eagerly,
-            initialValue = SetupPresentationMapper.mapEnvironment(
-                state = toolchainSetupState.value,
-                isToolchainBound = isToolchainBound,
-                activeOperation = _activeOperation.value,
-            ),
-        )
 
     private val _isAutoDoctorEnabled = MutableStateFlow(true)
     val isAutoDoctorEnabled: StateFlow<Boolean> = _isAutoDoctorEnabled.asStateFlow()

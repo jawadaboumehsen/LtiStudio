@@ -22,6 +22,7 @@ import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.domain.setup.SetupPlanKind
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolCapabilities
+import org.ide.lti.core.domain.setup.ToolCategory
 import org.ide.lti.core.domain.setup.ToolComponentItem
 import org.ide.lti.core.domain.setup.ToolchainProvisioningService
 import org.ide.lti.core.domain.setup.ToolchainSetupState
@@ -77,8 +78,8 @@ class ToolBrowserState(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
-    private val _selectedCategory = MutableStateFlow("All")
-    val selectedCategory: StateFlow<String> = _selectedCategory.asStateFlow()
+    private val _toolSelection = MutableStateFlow(ToolSelection())
+    val toolSelection: StateFlow<ToolSelection> = _toolSelection.asStateFlow()
 
     private val _selectedToolId = MutableStateFlow<String?>(null)
     val selectedToolId: StateFlow<String?> = _selectedToolId.asStateFlow()
@@ -94,13 +95,11 @@ class ToolBrowserState(
     val filteredTools: StateFlow<List<ToolPresentation>> = combine(
         toolchainStateFlow,
         searchQuery,
-        selectedCategory,
-    ) { state, query, category ->
+        toolSelection,
+    ) { state, query, selection ->
         var list = state.toolsMatrix.ifEmpty { ToolchainSetupState.defaultToolsMatrix() }
 
-        if (category != "All") {
-            list = list.filter { it.category.displayName.equals(category, ignoreCase = true) }
-        }
+        list = list.filter { selection.matches(it) }
 
         val trimmed = query.trim()
         if (trimmed.isNotBlank()) {
@@ -148,8 +147,16 @@ class ToolBrowserState(
         _searchQuery.value = query
     }
 
-    fun selectCategory(category: String) {
-        _selectedCategory.value = category
+    fun selectCategory(category: ToolCategory?) {
+        _toolSelection.value = _toolSelection.value.selectCategory(category)
+    }
+
+    fun selectPackage(pkg: ToolNavPackage) {
+        _toolSelection.value = _toolSelection.value.selectPackage(pkg)
+    }
+
+    fun selectToolSelection(selection: ToolSelection) {
+        _toolSelection.value = selection
     }
 
     fun selectTool(toolId: String?) {

@@ -34,6 +34,7 @@ import org.ide.lti.core.domain.setup.SetupPlanKind
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepProvenance
 import org.ide.lti.core.domain.setup.StepStatus
+import org.ide.lti.core.domain.setup.ToolCategory
 import org.ide.lti.core.domain.setup.ToolchainProvisioningService
 import org.ide.lti.core.domain.setup.ToolchainSetupState
 import org.ide.lti.core.domain.usecase.target.ProvisionAvbKeyUseCase
@@ -710,9 +711,9 @@ class SetupViewModelTest {
             assertEquals(35, viewModel.filteredToolsMatrix.value.size)
 
             // Filter by Dynamic Partitions category (5 tools)
-            viewModel.selectToolCategory("Dynamic Partitions")
+            viewModel.selectToolCategory(ToolCategory.DYNAMIC_PARTITIONS)
             assertEquals(5, viewModel.filteredToolsMatrix.value.size)
-            assertTrue(viewModel.filteredToolsMatrix.value.all { it.category.displayName == "Dynamic Partitions" })
+            assertTrue(viewModel.filteredToolsMatrix.value.all { it.category == ToolCategory.DYNAMIC_PARTITIONS })
 
             // Filter by query "lpmake"
             viewModel.onToolSearchQueryChange("lpmake")
@@ -720,7 +721,7 @@ class SetupViewModelTest {
             assertEquals("lpmake", viewModel.filteredToolsMatrix.value.first().id)
 
             // Reset category to All, query "erofs" (4 tools: mkfs.erofs, dump.erofs, fsck.erofs, erofsfuse)
-            viewModel.selectToolCategory("All")
+            viewModel.selectToolCategory(null)
             viewModel.onToolSearchQueryChange("erofs")
             assertEquals(4, viewModel.filteredToolsMatrix.value.size)
 
@@ -756,6 +757,28 @@ class SetupViewModelTest {
 
             assertEquals(1, toolchainService.recompileToolCount)
             assertEquals("adb", toolchainService.lastRecompiledToolId)
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun testRecompileUnsupportedToolSetsNotice() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        Dispatchers.setMain(testDispatcher)
+        try {
+            val repo = FakeWorkspaceRepository()
+            val manager = WorkspaceManager(repo, this)
+            val toolchainService = FakeToolchainProvisioningService()
+            val viewModel = SetupViewModel(manager, toolchainService)
+
+            viewModel.recompileTool("unsupported_custom_tool")
+            testScheduler.advanceUntilIdle()
+
+            assertTrue(
+                viewModel.environmentNotice.value?.contains("Repair") == true ||
+                    viewModel.environmentNotice.value != null,
+            )
         } finally {
             Dispatchers.resetMain()
         }

@@ -60,6 +60,7 @@ import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolCategory
 import org.ide.lti.core.domain.setup.ToolComponentItem
 import org.ide.lti.feature.setup.ToolBrowserState
+import org.ide.lti.feature.setup.ToolSelection
 
 /**
  * 35-Tool Interactive Matrix Table modeled after Android Studio SDK Tools & JetBrains Toolchains.
@@ -81,8 +82,8 @@ fun ToolMatrixTable(
     tools: List<ToolComponentItem>,
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
-    selectedCategory: String,
-    onSelectCategory: (String) -> Unit,
+    toolSelection: ToolSelection,
+    onSelectToolCategory: (ToolCategory?) -> Unit,
     onTestTool: (String) -> Unit,
     onRecompileTool: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -92,13 +93,13 @@ fun ToolMatrixTable(
 ) {
     val diagnostics = GlassTheme.diagnosticColors
 
-    val categoryChipItems = remember {
-        listOf(GlassFilterChipItem(label = "All", count = -1, value = "All")) +
-            ToolCategory.entries.map { cat ->
+    val categoryChipItems = remember(toolSelection.navPackage) {
+        listOf(GlassFilterChipItem(label = "All", count = -1, value = "ALL")) +
+            toolSelection.availableCategories.map { cat ->
                 GlassFilterChipItem(
                     label = cat.displayName,
                     count = -1,
-                    value = cat.displayName,
+                    value = cat.name,
                 )
             }
     }
@@ -184,12 +185,17 @@ fun ToolMatrixTable(
             }
 
             // Category Filter Strip
-            GlassFilterChipRow(
-                items = categoryChipItems,
-                selectedValue = selectedCategory,
-                onSelect = onSelectCategory,
-                modifier = Modifier.fillMaxWidth(),
-            )
+            if (toolSelection.shouldShowCategoryChips) {
+                GlassFilterChipRow(
+                    items = categoryChipItems,
+                    selectedValue = toolSelection.category?.name ?: "ALL",
+                    onSelect = { stringVal ->
+                        val cat = ToolCategory.entries.firstOrNull { it.name == stringVal }
+                        onSelectToolCategory(cat)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
 
             // Tools Item List / Grid
             if (tools.isEmpty()) {
