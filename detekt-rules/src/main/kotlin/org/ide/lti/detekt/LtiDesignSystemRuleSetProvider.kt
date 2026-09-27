@@ -14,11 +14,8 @@ class LtiDesignSystemRuleSetProvider : RuleSetProvider {
             ::NoRawAlphaLiteral,
             ::NoRawDimensionLiteral,
             ::NoRawMotionLiteral,
-            ::NoBackdropEffectImport,
-            ::NoLeakedBackdropEngineType,
             ::NoUnprotectedTextClip,
             ::NoWeightInScrollableContainer,
-            ::NoBooleanChromaticAberration,
         ),
     )
 }

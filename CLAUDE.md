@@ -10,7 +10,7 @@ Add to `core:designsystem` when:
 - Something every feature might need
 
 Examples:
-- Glass color scheme and design tokens (`Color.kt`, `Alpha.kt`, `Dimens.kt`, `Motion.kt`, `Type.kt`, `Backdrop.kt`)
+- Glass color scheme and design tokens (`Color.kt`, `Alpha.kt`, `Dimens.kt`, `Motion.kt`, `Type.kt`, `GlassMaterialStyles.kt`)
 - Base glass surfaces and containers (`GlassSurface.kt`, `GlassCard.kt`, `GlassPanel.kt`)
 - Interactive glass controls (`GlassButton.kt`, `GlassTextField.kt`, `GlassSlider.kt`, `GlassToggle.kt`)
 - Layout scaffolding (`GlassLayout.kt`, `GlassTopBar.kt`, `GlassStatusBar.kt`, `GlassBottomSheet.kt`)
@@ -123,48 +123,35 @@ All animation durations, physics, and easing curves are centralized in `Motion.k
 - `MotionEasing`: `Standard` (`CubicBezierEasing(0.4f, 0.0f, 0.2f, 1.0f)`), `EmphasizedDecelerate` (`CubicBezierEasing(0.4f, 0.4f, 0.17f, 0.9f)`).
 - `MotionThreshold`: `Fine` (0.001f), `Offset` (0.5f).
 
-### 5. Backdrop Tokens (`Backdrop.kt`)
-
-All blur radii, lens refraction profiles, saturation, and brightness tokens are centralized in `Backdrop.kt`:
-- `BackdropBlur`: `Subtle` (2dp), `Standard` (4dp), `Panel` (6dp), plus semantic aliases: `Button` (2dp), `TextField` (2dp), `SearchCapsule` (2dp), `TopBar` (4dp), `Minimap` (4dp), `ScrollEdge` (4dp), `Card` (8dp), `BottomTabs` (8dp), `Slider` (8dp), `Toggle` (8dp), `DialogDark` (8dp), `DialogLight` (16dp), `BottomSheet` (16dp), `Scrim` (16dp).
-- `LensRefraction`: `Minimap` (2dp, 4dp), `TopBar` (4dp, 8dp), `Toggle` (5dp, 10dp), `TextField` (8dp, 16dp), `Slider` / `TabSpotlight` (10dp, 14dp), `Button` / `Panel` (12dp, 24dp), `Card` (16dp, 24dp), `Surface` (16dp, 32dp), `BottomTabs` (24dp, 24dp), `BottomSheet` (24dp, 40dp), `Dialog` (24dp, 48dp).
-- `BackdropSaturation`: `Vibrant` (1.5f).
-- `BackdropBrightness`: `DialogLight` (0.2f), `DialogDark` (0.0f).
-- `BackdropTint`: `ScrollEdgeIntensity` (0.8f).
-
-### 6. Typography (`Type.kt`)
+### 5. Typography (`Type.kt`)
 
 - `appTypography()`: Material 3 `Typography` configured with the unified Outfit font family across multiple weights (Black, Bold, SemiBold, Medium, Normal, Light, Thin, ExtraLight, ExtraBold).
 
-### 7. Theme Setup (`Theme.kt`)
+### 6. Theme Setup (`Theme.kt`)
 
 The unified entry point for styling is `LtiTheme`:
 ```kotlin
 @Composable
 fun LtiTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    glassColors: GlassColorScheme? = null,
-    effectsEnabled: Boolean = true,
-    reducedMotion: Boolean = false,
-    materialColorScheme: ColorScheme? = null,
-    sharedBackdrop: Backdrop? = null,
+    modifier: Modifier = Modifier,
+    appTheme: AppTheme = AppTheme.Blue,      // Light, Dark, Blue
+    effectsEnabled: Boolean? = null,         // null = inherit from GlassSceneHost
+    reducedMotion: Boolean? = null,          // null = inherit
     content: @Composable () -> Unit,
 )
 ```
 
-**Composition Locals and Theme Accessor:**
-- `LocalGlassColors`: provides the active `GlassColorScheme` (default: `DarkGlassColorScheme`).
-- `LocalGlassBackdrop`: provides the ambient shared `Backdrop?` (default: `null`).
-- `LocalGlassEffectsEnabled`: controls whether GPU glass effects are rendered (default: `true`).
-- `LocalReducedMotion`: in-memory flag for requesting reduced motion (default: `false`).
-- `GlassTheme` object:
-  - `GlassTheme.colors`: active `GlassColorScheme`
-  - `GlassTheme.effectsEnabled`: active boolean flag
-  - `GlassTheme.reducedMotion`: active reduced motion boolean flag
-  - `GlassTheme.backdrop`: active shared `Backdrop?`
-- `ProvideGlassColors(colors)`: helper to override glass color scheme for a composable subtree.
+- `LtiTheme` reuses the Haze state from an enclosing `GlassSceneHost` (`LocalHazeState`) and only
+  creates its own when there is none, so nested themes (e.g. a screen re-wrapping `LtiTheme`) keep
+  sampling the same scene.
+- Effects and reduced motion are monotonic: an enclosing "off" can never be switched back on by a
+  nested theme or host.
+- `GlassTheme` accessors: `appTheme`, `isDark`, `hazeState`, `localContentHazeState`,
+  `effectsEnabled`, `reducedMotionPolicy` (`GlassReducedMotionPolicy.System` / `Reduced`),
+  `syntaxColors`, `diagnosticColors`, `shapes`, `typography`. Colors come from
+  `MaterialTheme.colorScheme` (`colorSchemeFor(appTheme)`).
 
-### 8. Design System Guardrails & Detekt Enforcement
+### 7. Design System Guardrails & Detekt Enforcement
 
 To prevent design system drift and ensure strict token adherence, two automated enforcement layers are active:
 
@@ -172,7 +159,6 @@ To prevent design system drift and ensure strict token adherence, two automated 
    - Run via: `./gradlew verifyDesignSystemGuardrails`
    - Scans UI code outside `theme/` for raw `Color(0x...)` and `alpha = 0.x` literals.
    - Scans UI code outside `theme/` for raw `.dp` / `Dp(...)` dimension literals.
-   - Verifies that raw `com.kashif_e.backdrop.effects.*` imports are not used outside `core:designsystem`.
    - Verifies that `feature/*`, `lti-shared`, `lti-desktop`, and `catalog` do not import a raw Material3
      component that has a Glass equivalent (e.g. `material3.Button`, `TextField`, `Switch`, `Slider`,
      `Card`, `IconButton`, `AlertDialog`, `NavigationBar`/`NavigationRail`, `Tab`/`TabRow`,
@@ -182,144 +168,82 @@ To prevent design system drift and ensure strict token adherence, two automated 
 
 2. **Custom Detekt Rule Set (`:detekt-rules`):**
    - Configured in `config/detekt/detekt.yml` under `lti-design-system:`.
-   - Rules: `NoRawColorLiteral`, `NoRawAlphaLiteral`, `NoRawDimensionLiteral`, `NoRawMotionLiteral`, `NoBackdropEffectImport`.
+   - Rules: `NoRawColorLiteral`, `NoRawAlphaLiteral`, `NoRawDimensionLiteral`, `NoRawMotionLiteral`,
+     `NoUnprotectedTextClip`, `NoWeightInScrollableContainer`.
 
-## Backdrop System (Glass Morphism Effects)
+## Haze Glass System
 
-The backdrop system provides GPU-accelerated glass morphism effects (blur, lens refraction, vibrancy) for UI components using Compose Skia APIs on desktop JVM.
+All glass (blur, refraction, tint) is rendered by the vendored **Haze** library
+(`:haze`, `:haze-utils`, `:haze-blur`, `:haze-glass`, `:haze-materials`, plus the `-material3`
+variants). The old `:backdrop` module (`drawBackdrop`, `LayerBackdrop`, `BackdropEffectScope`) is
+gone - do not reintroduce it.
 
-### Core Architecture Components (`backdrop/` module)
+### How a frame is wired
 
-**Core Files:**
-- `DrawBackdropModifier.kt` - Modifier (`Modifier.drawBackdrop()`) that applies backdrop effects and draws custom surfaces
-- `BackdropEffectScope.kt` - DSL scope for chaining Skia image filters and shader effects
-- `LayerBackdrop.kt` - Captures GraphicsLayer content as a reusable backdrop via `Modifier.layerBackdrop()`
-- `RuntimeShaderCache.kt` - Caches compiled SKSL RuntimeShaderBuilder instances
-
-**Effect Files (`backdrop/effects/`):**
-- `Blur.kt` - Gaussian blur using Skia `ImageFilter.makeBlur()`
-- `ColorFilter.kt` - Color adjustments (vibrancy, opacity, brightness, contrast, saturation)
-- `Lens.kt` - Glass refraction and chromatic aberration shaders
-- `RenderEffect.kt` - Skia ImageFilter to Compose RenderEffect chaining utility
-
-**Shader Files (`backdrop/`):**
-- `Shaders.kt` - SKSL shader implementations for lens distortion and highlight effects
-
-### Basic Usage Pattern
-
-```kotlin
-@Composable
-fun MyGlassComponent() {
-    val backdrop = rememberLayerBackdrop()
-
-    Box(Modifier.fillMaxSize()) {
-        // 1. Capture background content
-        WallpaperImage(
-            modifier = Modifier
-                .fillMaxSize()
-                .layerBackdrop(backdrop)
-        )
-
-        // 2. Apply backdrop with glass effect stack
-        Box(
-            Modifier.drawBackdrop(
-                backdrop = backdrop,
-                shape = { ContinuousRoundedRectangle(16.dp) },
-                effects = {
-                    vibrancy()
-                    blur(4f.dp.toPx())
-                    lens(16f.dp.toPx(), 32f.dp.toPx())
-                },
-                onDrawSurface = {
-                    drawRect(GlassTheme.colors.glassSurface)
-                }
-            )
-        )
-    }
-}
+```
+GlassSceneHost(effectsEnabled)          // owns the scene HazeState + effects policy (per window)
+└─ LtiTheme(appTheme, ...)              // reuses that HazeState; provides GlassTheme.*
+   ├─ GlassBackdrop()                   // Canvas + Modifier.hazeSource(GlassTheme.hazeState)
+   └─ screens                           // chrome/cards use Modifier.glassSurface(...)
 ```
 
-### Available Effects (`BackdropEffectScope`)
+Real root: `lti-shared/.../LtiSharedApp.kt`.
 
-- `blur(radiusPx)` - Gaussian blur
-- `vibrancy()` - Increases color saturation (1.5x)
-- `lens(refractionHeightPx, refractionAmountPx, chromaticAberration, depthEffect)` - Glass refraction distortion
-- `colorControls(brightness, contrast, saturation)` - Color balance adjustments
-- `opacity(alpha)` - Transparency level
-- `exposureAdjustment(ev)` - Exposure adjustment in EV stops
-- `gammaAdjustment(power)` - Gamma correction
-- `colorFilter(filter)` - Custom color filter application
+1. **Source - `GlassBackdrop()`** (`component/layout/GlassBackdrop.kt`): the per-theme aura canvas,
+   registered with `Modifier.hazeSource(GlassTheme.hazeState)`. Place it **once**, behind all
+   content, at the app root.
+2. **Scene - `GlassSceneHost`** (`theme/GlassSceneHost.kt`): provides the wallpaper `HazeState`
+   (`LocalHazeState`), a separate `LocalContentHazeState` for floating controls over scrolling
+   content, and the resolved `effectsEnabled`.
+3. **Consumers - `Modifier.glassSurface(role, shape, ...)`** (`component/layout/IdeShellSurface.kt`):
+   the one modifier every glass surface goes through.
+   - Effects on: `Modifier.hazeGlass(input = sceneHazeInput(hazeState), style = ...)` with the style
+     from `GlassMaterialStyles.baseStyle(theme, ...)` (`clearStyle` for `FloatingControl`). The glass
+     colours come from `GlassMaterialStyles` for the current `AppTheme`; the `surfaceColor` argument
+     is **not** used on this path.
+   - Effects off: a plain opaque `Modifier.background(surfaceColor)` fallback.
+   - `GlassRole`: `Shell` (top bar, navigator, rail, status bar), `TextCard` (cards/panels with
+     text), `FloatingControl` (chips, sliders, toggles - Clear optics).
+   - `Modifier.ideShellSurface(...)` is `glassSurface(role = GlassRole.Shell, ...)`.
+4. **Source selection - `sceneHazeInput()`** (`theme/ControlSourceKey.kt`): consumers sample
+   `HazeSourceSelection.Behind`, excluding sources tagged with a `ControlSourceKey` (e.g. a toggle's
+   own thumb). `toggleThumbSelection(key)` lets one control see its own source.
 
-### Highlight & Shadow Styles
+### Rules
 
-- `Highlight.Default` - Directional gradient highlight (angle, falloff, intensity)
-- `Highlight.Ambient` - 3D ambient occlusion style edge highlight
-- `Highlight.Plain` - Solid color highlight with blend mode
-- `Shadow(radius, color, offset)` - Drop shadow
-- `InnerShadow(radius, alpha, offset)` - Inner shadow
+- Never call `hazeGlass`/`hazeSource` from feature code - use `glassSurface` / `ideShellSurface` or
+  a `Glass*` component.
+- Glass applies to every `AppTheme`; optics are not branched per theme (only the style colours).
+- Keep long-form content on readable surfaces; glass belongs on chrome and controls.
+- Chromatic aberration, if ever used, stays modest (Haze guidance 0.1-0.25).
 
-### Nested Backdrops
+### Verification
 
-```kotlin
-val parentBackdrop = rememberLayerBackdrop()
-val childBackdrop = rememberLayerBackdrop()
-
-Box {
-    Image(Modifier.layerBackdrop(parentBackdrop))
-
-    // Parent surface exports backdrop for nested children
-    Box(
-        Modifier.drawBackdrop(
-            backdrop = parentBackdrop,
-            exportedBackdrop = childBackdrop
-        )
-    ) {
-        // Child samples exported backdrop
-        GlassCard(backdrop = childBackdrop) { ... }
-    }
-}
-```
-
-### Best Practices
-
-✅ **DO:**
-- Use `rememberLayerBackdrop()` to cache backdrop instances
-- Apply `.layerBackdrop(backdrop)` to background content before sampling
-- Use `CornerBasedShape` (ContinuousCapsule, ContinuousRoundedRectangle) for lens effects
-- Chain effects in logical order: `vibrancy()` → `blur()` → `lens()`
-- Share the ambient backdrop via `LtiTheme(sharedBackdrop = ...)` or `GlassTheme.backdrop`
-
-❌ **DON'T:**
-- Don't apply lens to non-CornerBasedShape
-- Don't allocate backdrops inside recomposed blocks without `remember`
-- Don't use heavy blur radii (> 16dp) on frequently animating or scrolling items
+- `GlassChromeDiagnosticScreenshotTest` (`core/designsystem/src/desktopTest`):
+  `testNavigatorPanelOnBlueInIdeAppFrameShowsGlassOptics` asserts real optics (light passes through
+  vs a flat background; blur reduces stripe-edge contrast), plus compared golden images.
+- `feature/setup` `SetupThemeScreenshotTest`: compared golden `setup_screen_blue_effects_on.png`.
 
 ## Core Glass Components (`core:designsystem/component`)
 
-All glass components are built on top of `Modifier.drawBackdrop()` and integrate with `GlassTheme`. Each component defines a tuned default effect stack tailored to its visual role.
+All glass components render through `Modifier.glassSurface` (Haze, see above) and integrate with `GlassTheme`. Shapes are Haze shapes from `GlassShapes` (`HazePanel`, `HazeCard`, `HazeFlat`, ...).
 
 ### 1. `GlassSurface.kt`
 
-Base glass surface component. Thin wrapper over `drawBackdrop()`.
-- Default effect stack: `StandardGlassEffects` (`vibrancy()`, `blur(4.dp)`, `lens(16.dp, 32.dp)`).
-- Parameters: `shape`, `backdrop`, `surfaceColor`, `tint`, `borderColor`, `effects`, `highlight`, `content`.
+Base glass surface component: a container drawn with `Modifier.glassSurface`.
+- Parameters: `modifier`, `shape` (default `GlassShapes.HazePanel`), `surfaceColor`, `tint`, `captureBacking`, `borderColor`, `borderWidth`, `content`.
 
 ```kotlin
-GlassSurface(
-    modifier = Modifier.size(200.dp),
-    shape = ContinuousRoundedRectangle(CornerRadius.Medium),
-    effects = StandardGlassEffects,
-) {
-    Text("Base surface", color = GlassTheme.colors.onGlass)
+GlassSurface(modifier = Modifier.size(ComponentSize.ActionCardHeight)) {
+    Text("Base surface", color = MaterialTheme.colorScheme.onSurface)
 }
 ```
 
 ### 2. `GlassCard.kt`
 
 Container card with rounded corners and content padding.
-- Default effect stack: `GlassCardEffects` (`vibrancy()`, `blur(8.dp)`, `lens(16.dp, 24.dp)`).
-- Default shape: `ContinuousRoundedRectangle(CornerRadius.Card)`.
-- Parameters: `shape`, `effects`, `backdrop`, `surfaceColor`, `tint`, `borderColor`, `contentPadding`, `content`.
+- Default shape: `GlassShapes.HazeCard`.
+- Parameters: `modifier`, `shape`, `surfaceColor`, `tint`, `captureBacking`, `contentPadding`, `content`.
 
 ```kotlin
 GlassCard(
@@ -336,13 +260,11 @@ GlassCard(
 ### 3. `GlassPanel.kt`
 
 Panel component optimized for IDE tool windows, explorer trees, and sidebars.
-- Default effect stack: `GlassPanelEffects` (`vibrancy()`, `blur(6.dp)`, `lens(12.dp, 24.dp)`).
-- Default shape: `ContinuousRoundedRectangle(CornerRadius.Panel)`.
+- Default shape: `GlassShapes.HazePanel`.
 - Companion composables:
   - `GlassPanelHeader(title, modifier, icon, actions)`: Standardized header row with title and action buttons.
   - `GlassPanelHeaderAction(icon, contentDescription, onClick)`: Compact header action button.
-  - `GlassPanelContainer(modifier, header, scrollEdgeFade, content)`: Vertical container layout combining header and panel body with opt-in `scrollEdgeFade` (defaults to `false`).
-  - `GlassScrollEdgeFade(backdrop, edge, modifier, height)`: Progressive-blur scroll-edge fade strip (`GlassScrollEdge.Top` / `Bottom`).
+  - `GlassPanelContainer(modifier, header, content)`: Vertical container layout combining header and panel body.
 
 ```kotlin
 GlassPanel(
@@ -386,7 +308,7 @@ Two-glass-surface IDE architecture (chrome "picture frame" surface wrapping an i
 └────────────────────────────────────────────────────────┘
 ```
 
-- **Surface 1 (Chrome):** Outer `GlassSurface` containing `topBar`, `leftRail`, `rightRail`, and `statusBar` with a single backdrop sample for uniform chrome luma.
+- **Surface 1 (Chrome):** Outer `GlassSurface` containing `topBar`, `leftRail`, `rightRail`, and `statusBar` as one glass surface for uniform chrome luma.
 - **Surface 2 (Content):** Inner `GlassSurface` with `surfaceColor = glassColors.canvasSurface` and `tint = Color.Transparent`, containing `leftPanel`, `mainContent`, `bottomPanel`, and `rightPanel`.
 - **`GlassSidePanelRail`**: Standalone vertical icon strip for side panel tool windows with inner hairline divider.
 - **`GlassSidePanelTabs`**: Convenience wrapper delegating to `GlassSidePanelRail` and hosting the active tab content.
@@ -411,15 +333,14 @@ Two-glass-surface IDE architecture (chrome "picture frame" surface wrapping an i
 
 ### 1. `GlassButton.kt`
 
-Interactive buttons with fluid press lighting (`InteractiveHighlight`), GPU backdrop sampling, and disabled state handling.
-- Default effect stack: `GlassButtonEffects` (`vibrancy()`, `blur(2.dp)`, `lens(12.dp, 24.dp)`).
+Interactive buttons with fluid press lighting (`InteractiveHighlight`), Haze glass surfaces, and disabled state handling.
 - Variants (`GlassButtonVariant`):
   - `GlassButtonVariant.Primary`: Accent tint fill, elevated surface.
   - `GlassButtonVariant.Secondary`: Secondary surface tint fill.
   - `GlassButtonVariant.Standard`: Standard glass surface with subtle tint.
   - `GlassButtonVariant.Text`: Transparent background without glass overhead.
 - Composables:
-  - `GlassButton(onClick, modifier, enabled, shape, variant, effects, backdrop, ...)`
+  - `GlassButton(onClick, modifier, enabled, shape, variant, ...)`
   - `GlassPrimaryButton(onClick, modifier, enabled, content)`
   - `GlassTextButton(onClick, modifier, enabled, content)`
   - `GlassIconButton(onClick, modifier, size, shape, checked, selected, enabled, content)`
@@ -445,10 +366,9 @@ GlassIconToggleButton(
 
 ### 2. `GlassDialog.kt`
 
-Modal dialogs and loading indicators with backdrop blur and scrim.
-- Effects helper: `glassDialogEffects(isLightTheme: Boolean)` (brightens and blurs heavier in light mode to maintain contrast).
+Modal dialogs and loading indicators with Haze blur and scrim.
 - Composables:
-  - `GlassDialog(onDismissRequest, confirmButton, modifier, title, dismissButton, shape, effects, backdrop, properties, content)`
+  - `GlassDialog(onDismissRequest, confirmButton, modifier, title, dismissButton, shape, properties, content)`
   - `GlassLoadingDialog(visibilityState: LoadingDialogState, modifier)` (`LoadingDialogState.Hidden` / `LoadingDialogState.Shown`)
 
 ```kotlin
@@ -477,34 +397,18 @@ if (showDialog) {
 ### 3. `GlassIcon.kt`
 
 Standalone interactive glass icon container:
-- `GlassIcon(onClick, backdrop, modifier, isInteractive, tint, surfaceColor, icon)`
+- `GlassIcon(onClick, modifier, isInteractive, tint, surfaceColor, icon)`
 
-### 4. `GlassModifiers.kt`
+### 4. Glass modifiers
 
-Utility extension modifiers on `Modifier`:
-- `Modifier.glassEffect(backdrop, shape, surfaceColor, tint, effects)`: applies full backdrop effect chain.
-- `Modifier.glassBackground(color)`: lightweight glass surface color draw behind (skips shader compilation).
-- `Modifier.glassBorder(color, width, shape)`: applies theme-aware glass border.
-- `Modifier.glassInteractive(onClick, enabled, role)`: applies clickable semantics with glass styling.
-- `Modifier.glassScrim(backdrop, blurRadius, surfaceColor)`: creates frosted modal scrim overlays.
-
-```kotlin
-Box(
-    modifier = Modifier
-        .size(240.dp)
-        .glassEffect()
-        .glassBorder(width = StrokeWidth.Standard)
-) {
-    Text("Custom Styled Glass Box", color = GlassTheme.colors.onGlass)
-}
-```
+- `Modifier.glassSurface(role, shape, ...)` / `Modifier.ideShellSurface(...)` (`component/layout/IdeShellSurface.kt`): the only way to draw a glass surface - see **Haze Glass System**.
+- `Modifier.glassOutlineBorder(color, width, shape)` (`component/primitives/GlassModifiers.kt`): hairline border drawn inset so it never spills outside capsules or rounded rectangles.
 
 ## Input & Navigation Components (`core:designsystem/component`)
 
 ### 1. `GlassTextField.kt`
 
 Inputs with subtle glass blur, animated focus border transitions, and password/OTP specializations.
-- Default effect stack: `GlassTextFieldEffects` (`vibrancy()`, `blur(2.dp)`, `lens(8.dp, 16.dp)`).
 - Composables:
   - `GlassTextField(value, onValueChange, modifier, enabled, readOnly, textStyle, label, placeholder, helperText, errorText, leadingIcon, trailingIcon, ...)`
   - `GlassPasswordField(label, value, showPassword, showPasswordChange, onValueChange, modifier, readOnly, singleLine, hint, showPasswordTestTag, autoFocus, ...)`
@@ -526,7 +430,7 @@ GlassTextField(
 
 ### 2. `GlassSlider.kt`
 
-- `GlassSlider(value, onValueChange, valueRange, visibilityThreshold, backdrop, modifier)`: Drag-interpolated slider with velocity-squish thumb effect and track backdrop sampling.
+- `GlassSlider(value, onValueChange, valueRange, visibilityThreshold, modifier)`: Drag-interpolated slider with velocity-squish thumb effect on a glass track.
 
 ### 3. `GlassToggle.kt`
 
@@ -559,20 +463,19 @@ Liquid glass step-progress visualizer for multi-stage pipelines (Setup Doctor, R
 - Model: `GlassStepInfo(id, shortTitle, status, statusLabel)`.
 - Helpers: `GlassStepperDefaults.defaultStatusLabel(status)`.
 - Composables:
-  - `GlassStepper(steps, modifier, orientation, isBusy, onRetryStep, onStepClick, backdrop)`
+  - `GlassStepper(steps, modifier, orientation, isBusy, onRetryStep, onStepClick)`
 
 ## Modal & Developer Utilities
 
 ### 1. `GlassBottomSheet.kt`
 
 Bottom sheet modal with drag-to-dismiss gesture handling and spring physics.
-- Effect stack: `GlassBottomSheetEffects` (`colorControls(saturation = 1.5f)`, `blur(16.dp)`, `lens(24.dp, 40.dp, depthEffect = true)`).
 - State controller: `GlassBottomSheetState` (`rememberGlassBottomSheetState()`)
   - State values (`GlassBottomSheetValue`): `Collapsed`, `Expanded`.
   - Methods: `expand()`, `collapse()`, `toggle()`.
 - Composables:
-  - `GlassBottomSheet(state, onDismissRequest, modifier, backdrop, effects, shape, scrimColor, dismissThreshold, content)`
-  - `GlassBottomSheetScaffold(visible, onDismissRequest, modifier, title, headerContent, backdrop, effects, content)`
+  - `GlassBottomSheet(state, onDismissRequest, modifier, shape, scrimColor, dismissThreshold, content)`
+  - `GlassBottomSheetScaffold(visible, onDismissRequest, modifier, title, headerContent, content)`
   - `GlassBottomSheetExample()`
 
 ```kotlin
@@ -601,7 +504,7 @@ Real-time developer overlay tracking glass rendering metrics and frame timing.
   - `avgFrameTimeMs`, `minFrameTimeMs`, `maxFrameTimeMs`: Frame render duration statistics
   - `droppedFrames`: Count of frames taking > 16.67ms (target: 60 FPS)
   - `shaderCacheSize`: Active compiled shader count
-  - `activeBackdrops`: Number of active `Backdrop` instances
+  - `activeBackdrops`: Number of active glass sources (field name predates the Haze migration)
   - `memoryUsageKB`: Estimated glass memory usage
   - `componentsRendered`: Number of glass elements
   - `performanceRating`: 3 (Excellent: 55+ FPS, <= 18ms), 2 (Good: 45+ FPS, <= 25ms), 1 (Fair: 30+ FPS, <= 35ms), 0 (Poor: < 30 FPS or > 35ms)
@@ -634,12 +537,11 @@ Box(Modifier.fillMaxSize()) {
 - Derived from `colorScheme.primary` at full 1.0f opacity.
 - Meets WCAG 2.x AA non-text contrast requirements (>= 3.0:1) against `glassSurface` in both dark and light modes.
 
-### Reduced Motion Support (`LocalReducedMotion`)
+### Reduced Motion Support (`GlassTheme.reducedMotionPolicy`)
 
-- In-memory composition local: `LocalReducedMotion = staticCompositionLocalOf { false }`.
-- Accessor: `GlassTheme.reducedMotion` (`Theme.kt`).
-- Theme configuration: pass `reducedMotion = true` to `LtiTheme(...)`.
-- **Scope Notice**: `LocalReducedMotion` is an in-memory boolean flag. It does **NOT** perform OS-level preference auto-detection and has **NO** persistence layer. If OS auto-detection or persistent settings are needed in the future, they should be implemented as a dedicated platform bridge in `lti-desktop`.
+- Read `GlassTheme.reducedMotionPolicy == GlassReducedMotionPolicy.Reduced` (Haze's policy enum).
+- Set it with `LtiTheme(reducedMotion = true)` (the app passes the persisted `AppSettingsState.reducedMotion`).
+- When reduced: snap transitions (`snap()`), replace spinners with static text, and stop decorative infinite animations.
 
 ## Testing & Verification Infrastructure
 
@@ -692,26 +594,18 @@ fun WorkspaceScreen(
 }
 ```
 
-And initialized at the app root in `lti-shared/src/commonMain/kotlin/org/ide/lti/shared/LtiSharedApp.kt`:
+And initialized at the app root in `lti-shared/src/commonMain/kotlin/org/ide/lti/shared/LtiSharedApp.kt` (simplified):
 
 ```kotlin
-@Composable
-fun LtiSharedApp(...) {
-    val navController = rememberNavController()
-    val backdrop = rememberLayerBackdrop()
-
-    LtiTheme(sharedBackdrop = backdrop) {
+GlassSceneHost(effectsEnabled = appSettingsState.effectsEnabled) {
+    LtiTheme(
+        appTheme = AppTheme.fromId(appSettingsState.theme),
+        effectsEnabled = appSettingsState.effectsEnabled,
+        reducedMotion = appSettingsState.reducedMotion,
+    ) {
         Box(Modifier.fillMaxSize()) {
-            // Ambient aurora canvas captured by shared backdrop
-            Canvas(Modifier.layerBackdrop(backdrop).fillMaxSize()) {
-                // Background radial gradients...
-            }
-
-            RootNavGraph(
-                navHostController = navController,
-                startDestination = WORKSPACE_ROUTE,
-                modifier = Modifier.fillMaxSize()
-            )
+            GlassBackdrop()                     // the single Haze source for the whole window
+            RootNavGraph(navHostController = navController, startDestination = SETUP_ROUTE)
         }
     }
 }
@@ -721,10 +615,9 @@ fun LtiSharedApp(...) {
 
 | Component | File | Location | Interactive | Key Feature |
 |-----------|------|----------|-------------|-------------|
-| `GlassSurface` | `GlassSurface.kt` | `core:designsystem` | No | Base backdrop renderer with custom effect lambdas |
+| `GlassSurface` | `GlassSurface.kt` | `core:designsystem` | No | Base Haze glass surface container |
 | `GlassCard` | `GlassCard.kt` | `core:designsystem` | No | Rounded container with standard card padding |
 | `GlassPanel` | `GlassPanel.kt` | `core:designsystem` | No | Tool window / sidebar panel container & header |
-| `GlassScrollEdgeFade` | `GlassScrollEdge.kt` | `core:designsystem` | No | Progressive-blur scroll-edge fade strip for panel containers |
 | `GlassLayout` | `GlassLayout.kt` | `core:designsystem` | Yes | 4-panel resizable IDE workspace with drag dividers |
 | `GlassTopBar` | `GlassTopBar.kt` | `core:designsystem` | Yes | Top bar (40dp) with window controls & actions |
 | `GlassStatusBar` | `GlassStatusBar.kt` | `core:designsystem` | No | Status bar (22dp) with cursor and branch metrics |
@@ -762,23 +655,22 @@ Before merging UI changes or releasing new features:
 - [ ] **Detekt Static Analysis**: Run `./gradlew detekt` to verify all custom `:detekt-rules` (`lti-design-system`) pass with 0 violations.
 - [ ] **WCAG Contrast Ratios**: Run `./gradlew :core:designsystem:test` to ensure `GlassContrastTest` passes all AA contrast thresholds (>= 4.5:1 text, >= 3.0:1 UI/muted/focus ring).
 - [ ] **Focus Ring Visibility**: Verify that focused interactive elements use `GlassTheme.colors.focusRing` or `glassBorderHighlight` for clear keyboard focus indication.
-- [ ] **Reduced Motion Support**: Verify that components check `GlassTheme.reducedMotion` or `LocalReducedMotion` to disable or simplify intensive animations when requested.
-- [ ] **Backdrop Sharing**: Ensure UI panels share the ambient backdrop from `LtiTheme` or `LocalGlassBackdrop` rather than creating redundant `LayerBackdrop` instances.
+- [ ] **Reduced Motion Support**: Verify that components check `GlassTheme.reducedMotionPolicy` to snap or simplify animations when reduced.
+- [ ] **Single Haze Source**: `GlassBackdrop()` appears once at the app root; surfaces use `glassSurface`, never their own `hazeSource`/`hazeGlass`.
 - [ ] **Performance Validation**: Enable `GlassPerformanceMonitor` in debug mode to verify target framerate (>= 55 FPS) and average frame time (< 18ms) during panel resizing and scrolling.
 - [ ] **Manual Keyboard Navigation**: Verify Tab, Shift+Tab, Enter, and Space keys correctly navigate and activate interactive glass controls.
 
 ## Troubleshooting
 
 **Problem: Low FPS or dropped frames during glass rendering**
-- **Cause**: Too many independent `LayerBackdrop` instances or excessive blur radii.
-- **Solution**: Share a single `Backdrop` instance across screens via `LtiTheme(sharedBackdrop = ...)`.
-- **Solution**: Reduce blur radius on frequently recomposed items (e.g. use `blur(2.dp)` instead of `blur(16.dp)`).
-- **Solution**: Use `Modifier.glassBackground()` instead of full `Modifier.glassEffect()` for secondary or non-critical panels.
+- **Cause**: Too many glass surfaces stacked over frequently redrawn content.
+- **Solution**: Keep glass on chrome and controls; give long scrolling content a solid surface.
+- **Solution**: Profile with `GlassPerformanceMonitor` and check the Haze performance mode.
 
 **Problem: Glass effects are not rendering (flat colors only)**
-- **Cause**: `effectsEnabled` is set to `false` or backdrop is not capturing background content.
-- **Solution**: Ensure `LtiTheme(effectsEnabled = true)` is active.
-- **Solution**: Ensure the background content has `.layerBackdrop(backdrop)` applied before glass components sample it.
+- **Cause**: Effects are off - check the persisted `AppSettingsState.effectsEnabled` and any enclosing `GlassSceneHost(effectsEnabled = false)`, which nothing below it can override.
+- **Cause**: No Haze source behind the surface - `GlassBackdrop()` must be at the app root, drawn before the surfaces, on the same `GlassTheme.hazeState`.
+- **Check**: run `GlassChromeDiagnosticScreenshotTest` (optics assertions) to separate a rendering bug from app configuration.
 
 **Problem: Text is hard to read on translucent glass surfaces**
 - **Cause**: Direct hardcoded text colors or insufficiently opaque surface tint.
@@ -793,6 +685,7 @@ Before merging UI changes or releasing new features:
 
 LtiRom Studio Glass Theme System is built on:
 - Compose Multiplatform (JetBrains)
+- Haze (Chris Banes) - vendored glass/blur engine
 - Skia Graphics Engine (Google)
 - Material 3 Design Tokens (Google)
 - WCAG 2.1 Accessibility Guidelines (W3C)

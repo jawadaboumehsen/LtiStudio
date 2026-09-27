@@ -613,15 +613,9 @@ lti-design-system:
   NoRawMotionLiteral:
     active: true
     excludes: *themeDefinitionExcludes
-  NoBackdropEffectImport:
-    active: true
-  NoLeakedBackdropEngineType:
-    active: true
   NoUnprotectedTextClip:
     active: true
   NoWeightInScrollableContainer:
-    active: true
-  NoBooleanChromaticAberration:
     active: true
 
 naming:

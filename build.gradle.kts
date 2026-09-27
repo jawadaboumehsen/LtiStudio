@@ -63,9 +63,8 @@ allprojects {
 /**
  * Fails the build when UI code hardcodes colors/dimensions/alpha/motion values that bypass the
  * centralized design-system tokens (core/designsystem theme/Color.kt, Dimens.kt, Alpha.kt, Motion.kt),
- * when a feature/app module hand-rolls a glass component directly from backdrop effect
- * primitives instead of composing an existing core:designsystem/core:ui component, or when a
- * token constant is defined but never referenced anywhere.
+ * when a feature/app module imports a raw Material3 component that has a Glass equivalent, or
+ * when a token constant is defined but never referenced anywhere.
  */
 tasks.register("verifyDesignSystemGuardrails") {
     group = "verification"
@@ -317,38 +316,14 @@ tasks.register("verifyDesignSystemGuardrails") {
             }
         }
 
-        // ---- 2. Component-boundary scan: feature/*, lti-shared, lti-desktop must not hand-roll ----
-        // ---- glass components directly from backdrop effect primitives.                        ----
+        // ---- 2. Component-boundary roots: feature/*, lti-shared, lti-desktop and catalog consume ----
+        // ---- design-system components; they are scanned by the Material3 check below.          ----
         val boundaryScanRoots = listOf(
             File(root, "feature"),
             File(root, "lti-shared/src"),
             File(root, "lti-desktop/src"),
             File(root, "catalog/src"),
         )
-        val forbiddenImportPrefixes = listOf(
-            "import com.kashif_e.backdrop.effects.",
-            "import com.kashif_e.backdrop.highlight.",
-            "import com.kashif_e.backdrop.shadow.",
-        )
-        val forbiddenImportExact = setOf(
-            "import com.kashif_e.backdrop.drawBackdrop",
-            "import com.kashif_e.backdrop.BackdropEffectScope",
-        )
-
-        boundaryScanRoots.forEach { scanRoot ->
-            ktFiles(scanRoot).forEach { file ->
-                file.readLines().forEachIndexed { idx, rawLine ->
-                    val line = rawLine.trim()
-                    val isForbidden = forbiddenImportPrefixes.any { line.startsWith(it) } ||
-                        forbiddenImportExact.contains(line)
-                    if (isForbidden) {
-                        violations += "${file.relativeTo(root).path}:${idx + 1}: this module may not build " +
-                            "glass components directly from backdrop effect primitives - compose an " +
-                            "existing core:designsystem/core:ui component instead. [$line]"
-                    }
-                }
-            }
-        }
 
         // ---- 2b. Material3-substitution scan: feature/*, lti-shared, lti-desktop, catalog must use the ----
         // ---- Glass equivalent instead of importing a raw Material3 component that has one.           ----
@@ -397,10 +372,10 @@ tasks.register("verifyDesignSystemGuardrails") {
             }
         }
 
-        // ---- 3. Unused-token scan: every named constant in Color.kt/Dimens.kt/Alpha.kt/Motion.kt/Backdrop.kt must be ----
+        // ---- 3. Unused-token scan: every named constant in Color.kt/Dimens.kt/Alpha.kt/Motion.kt must be ----
         // ---- referenced somewhere outside its own declaring file.                               ----
         val themeDir = File(root, "core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme")
-        val tokenFiles = listOf("Color.kt", "Dimens.kt", "Alpha.kt", "Motion.kt", "Backdrop.kt").map { File(themeDir, it) }
+        val tokenFiles = listOf("Color.kt", "Dimens.kt", "Alpha.kt", "Motion.kt").map { File(themeDir, it) }
 
         val allSearchRoots = listOf(
             File(root, "core"),

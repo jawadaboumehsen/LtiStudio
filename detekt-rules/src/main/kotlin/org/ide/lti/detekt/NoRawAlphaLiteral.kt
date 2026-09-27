@@ -22,7 +22,7 @@ class NoRawAlphaLiteral(config: Config = Config.empty) : Rule(
 
     override fun visitKtFile(file: KtFile) {
         super.visitKtFile(file)
-        // Fixed offset 0 - see NoBooleanChromaticAberration's comment: a computed per-line
+        // Fixed offset 0: a computed per-line
         // character offset crashed detekt 2.0.0-alpha.6's Entity.from() with "Wrong offset" during
         // finding reporting, even for a genuinely in-range offset. The line content in the message
         // is enough to locate the violation.
