@@ -33,6 +33,14 @@ extensions.configure<org.ajoberstar.reckon.gradle.ReckonExtension> {
 
 rootProject.name = "LtiRomGui"
 
+val serverSettings = file("../LtiRomServer/settings.gradle.kts")
+if (!serverSettings.exists()) {
+    throw GradleException("LtiRomGui must be checked out next to LtiRomServer (expected ../LtiRomServer). See LtiRomGui/CLAUDE.md → Build layout.")
+}
+includeBuild("../LtiRomServer") {
+    name = "ltirom-server"
+}
+
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 include(":detekt-rules")

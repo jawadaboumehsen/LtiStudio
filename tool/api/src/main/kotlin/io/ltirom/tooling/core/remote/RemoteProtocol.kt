@@ -49,7 +49,10 @@ public data class WslServerInfo(
     val architecture: String,
     val javaVersion: String,
     val serverUptimeMs: Long,
-    val availableTools: List<String> = emptyList()
+    val availableTools: List<String> = emptyList(),
+    val activeRuns: Int = 0,
+    val protocolVersion: String = "1.2.0",
+    val serverVersion: String? = null
 )
 
 @Serializable
@@ -75,7 +78,9 @@ public data class ToolStatusInfo(
     val tool: String,
     val installed: Boolean,
     val path: String = "",
-    val capabilities: List<String> = emptyList()
+    val capabilities: List<String> = emptyList(),
+    val source: String? = null,
+    val reason: String? = null
 )
 
 @Serializable
@@ -114,4 +119,3 @@ public data class SequencedStreamEvent(
     val seq: Long,
     val event: StreamEvent
 )
-
