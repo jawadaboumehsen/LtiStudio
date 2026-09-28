@@ -72,10 +72,5 @@ gradlePlugin {
             implementationClass = "KtlintConventionPlugin"
             description = "Configures kotlinter for the project"
         }
-        register("gitHooks") {
-            id = "org.ide.lti.git.hooks"
-            implementationClass = "GitHooksConventionPlugin"
-            description = "Installs git hooks for the project"
-        }
     }
 }

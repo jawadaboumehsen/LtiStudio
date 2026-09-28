@@ -651,6 +651,7 @@ GlassSceneHost(effectsEnabled = appSettingsState.effectsEnabled) {
 
 Before merging UI changes or releasing new features:
 
+- [ ] **Pre-push rule gate**: `scripts/git-hooks/pre-push` runs `detekt`, `verifyDesignSystemGuardrails` and `checkArchitecture` and blocks the push on any failure. Any `run`/`build`/`clean` installs it (`./gradlew installGitHooks` sets `core.hooksPath`). Existing debt lives in `config/detekt/baseline/`; never regenerate a baseline to hide new findings.
 - [ ] **Design-System Guardrails**: Run `./gradlew verifyDesignSystemGuardrails` to verify no raw color (`Color(0x...)`), alpha, dimension (`.dp`), or motion literals bypass `theme/`.
 - [ ] **Detekt Static Analysis**: Run `./gradlew detekt` to verify all custom `:detekt-rules` (`lti-design-system`) pass with 0 violations.
 - [ ] **WCAG Contrast Ratios**: Run `./gradlew :core:designsystem:test` to ensure `GlassContrastTest` passes all AA contrast thresholds (>= 4.5:1 text, >= 3.0:1 UI/muted/focus ring).

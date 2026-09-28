@@ -2,78 +2,95 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>ArgumentListWrapping:AboutSettingsPane.kt:(alpha = AlphaTokens.Half)</ID>
-    <ID>ArgumentListWrapping:AboutSettingsPane.kt:(alpha = AlphaTokens.High)</ID>
-    <ID>ArgumentListWrapping:AboutSettingsPane.kt:(alpha = AlphaTokens.IconTint)</ID>
-    <ID>ArgumentListWrapping:AboutSettingsPane.kt:(alpha = AlphaTokens.Medium)</ID>
-    <ID>ArgumentListWrapping:AboutSettingsPane.kt:(alpha = AlphaTokens.Prominent)</ID>
-    <ID>ArgumentListWrapping:AboutSettingsPane.kt:(alpha = AlphaTokens.TextMuted)</ID>
-    <ID>ArgumentListWrapping:AboutSettingsPane.kt:(alpha = AlphaTokens.Vibrant)</ID>
-    <ID>ArgumentListWrapping:AppearanceSettingsPane.kt:(alpha = AlphaTokens.High)</ID>
-    <ID>ArgumentListWrapping:AppearanceSettingsPane.kt:(alpha = AlphaTokens.Medium)</ID>
-    <ID>ArgumentListWrapping:LiveStudioPreviewCard.kt:(CircleShape)</ID>
-    <ID>ArgumentListWrapping:LiveStudioPreviewCard.kt:(Spacing.Small)</ID>
-    <ID>ArgumentListWrapping:LiveStudioPreviewCard.kt:(ThemeColors.WindowControlClose)</ID>
-    <ID>ArgumentListWrapping:LiveStudioPreviewCard.kt:(ThemeColors.WindowControlMaximize)</ID>
-    <ID>ArgumentListWrapping:LiveStudioPreviewCard.kt:(ThemeColors.WindowControlMinimize)</ID>
-    <ID>ArgumentListWrapping:LiveStudioPreviewCard.kt:(modifier = Modifier.size(Spacing.Small).clip(CircleShape).background(ThemeColors.WindowControlClose))</ID>
-    <ID>ArgumentListWrapping:LiveStudioPreviewCard.kt:(modifier = Modifier.size(Spacing.Small).clip(CircleShape).background(ThemeColors.WindowControlMaximize))</ID>
-    <ID>ArgumentListWrapping:LiveStudioPreviewCard.kt:(modifier = Modifier.size(Spacing.Small).clip(CircleShape).background(ThemeColors.WindowControlMinimize))</ID>
-    <ID>ArgumentListWrapping:SettingsScreen.kt:(alpha = AlphaTokens.Half)</ID>
-    <ID>ArgumentListWrapping:SettingsScreen.kt:(alpha = AlphaTokens.High)</ID>
-    <ID>ArgumentListWrapping:SettingsScreen.kt:(if (isBlueGlass) PluginThemeColors.CardBackground else colors.controlSelected)</ID>
+    <ID>ArgumentListWrapping:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$("[SETTINGS SCREENSHOT COMPARISON] Wrote $screenFileName (${screenFile.length()} bytes) and $cardFileName (${cardFile.length()} bytes)")</ID>
+    <ID>ArgumentListWrapping:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$(AppTheme.Blue, effectsOn = false, ToggleDimensions.PairA, "settings_appearance_blue_effects_off_pairA.png", "settings_card_blue_effects_off_pairA.png")</ID>
+    <ID>ArgumentListWrapping:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$(AppTheme.Blue, effectsOn = false, ToggleDimensions.PairB, "settings_appearance_blue_effects_off_pairB.png", "settings_card_blue_effects_off_pairB.png")</ID>
+    <ID>ArgumentListWrapping:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$(AppTheme.Blue, effectsOn = true, ToggleDimensions.PairA, "settings_appearance_blue_effects_on_pairA.png", "settings_card_blue_effects_on_pairA.png")</ID>
+    <ID>ArgumentListWrapping:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$(AppTheme.Blue, effectsOn = true, ToggleDimensions.PairB, "settings_appearance_blue_effects_on_pairB.png", "settings_card_blue_effects_on_pairB.png")</ID>
+    <ID>ArgumentListWrapping:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$(AppTheme.Dark, effectsOn = false, ToggleDimensions.PairA, "settings_appearance_dark_effects_off_pairA.png", "settings_card_dark_effects_off_pairA.png")</ID>
+    <ID>ArgumentListWrapping:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$(AppTheme.Dark, effectsOn = false, ToggleDimensions.PairB, "settings_appearance_dark_effects_off_pairB.png", "settings_card_dark_effects_off_pairB.png")</ID>
+    <ID>ArgumentListWrapping:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$(AppTheme.Dark, effectsOn = true, ToggleDimensions.PairA, "settings_appearance_dark_effects_on_pairA.png", "settings_card_dark_effects_on_pairA.png")</ID>
+    <ID>ArgumentListWrapping:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$(AppTheme.Dark, effectsOn = true, ToggleDimensions.PairB, "settings_appearance_dark_effects_on_pairB.png", "settings_card_dark_effects_on_pairB.png")</ID>
+    <ID>ArgumentListWrapping:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$(AppTheme.Light, effectsOn = false, ToggleDimensions.PairA, "settings_appearance_light_effects_off_pairA.png", "settings_card_light_effects_off_pairA.png")</ID>
+    <ID>ArgumentListWrapping:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$(AppTheme.Light, effectsOn = false, ToggleDimensions.PairB, "settings_appearance_light_effects_off_pairB.png", "settings_card_light_effects_off_pairB.png")</ID>
+    <ID>ArgumentListWrapping:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$(AppTheme.Light, effectsOn = true, ToggleDimensions.PairA, "settings_appearance_light_effects_on_pairA.png", "settings_card_light_effects_on_pairA.png")</ID>
+    <ID>ArgumentListWrapping:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$(AppTheme.Light, effectsOn = true, ToggleDimensions.PairB, "settings_appearance_light_effects_on_pairB.png", "settings_card_light_effects_on_pairB.png")</ID>
+    <ID>ArgumentListWrapping:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$(screenFile.exists() &amp;&amp; screenFile.length() &gt; 0, "Expected screen capture $screenFileName to be written")</ID>
+    <ID>ArgumentListWrapping:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$(width = WIDTH_COMPACT, height = HEIGHT_COMPACT)</ID>
+    <ID>ArgumentListWrapping:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$(width = WIDTH_STANDARD, height = HEIGHT_STANDARD)</ID>
+    <ID>ArgumentListWrapping:SettingsScreenDiagnosticTest.kt:SettingsScreenDiagnosticTest$(AppTheme.Blue, effectsEnabled = false)</ID>
+    <ID>ArgumentListWrapping:SettingsScreenDiagnosticTest.kt:SettingsScreenDiagnosticTest$(AppTheme.Blue, effectsEnabled = true)</ID>
+    <ID>ArgumentListWrapping:SettingsScreenDiagnosticTest.kt:SettingsScreenDiagnosticTest$(AppTheme.Dark, effectsEnabled = false)</ID>
+    <ID>ArgumentListWrapping:SettingsScreenDiagnosticTest.kt:SettingsScreenDiagnosticTest$(AppTheme.Dark, effectsEnabled = true)</ID>
+    <ID>ArgumentListWrapping:SettingsScreenDiagnosticTest.kt:SettingsScreenDiagnosticTest$(AppTheme.Light, effectsEnabled = false)</ID>
+    <ID>ArgumentListWrapping:SettingsScreenDiagnosticTest.kt:SettingsScreenDiagnosticTest$(AppTheme.Light, effectsEnabled = true)</ID>
+    <ID>BinaryExpressionWrapping:SettingsScreenDiagnosticTest.kt:SettingsScreenDiagnosticTest$(appearanceHeaderBounds.bottom.value - appearanceHeaderBounds.top.value) / 2f</ID>
+    <ID>BinaryExpressionWrapping:SettingsScreenDiagnosticTest.kt:SettingsScreenDiagnosticTest$appearanceHeaderBounds.bottom.value - appearanceHeaderBounds.top.value</ID>
+    <ID>BinaryExpressionWrapping:SettingsScreenDiagnosticTest.kt:SettingsScreenDiagnosticTest$appearanceHeaderBounds.top.value + (appearanceHeaderBounds.bottom.value - appearanceHeaderBounds.top.value) / 2f</ID>
     <ID>ClassSignature:SettingsCategory.kt:SettingsCategory</ID>
-    <ID>CyclomaticComplexMethod:AboutSettingsPane.kt:@Composable fun AboutSettingsPane</ID>
-    <ID>CyclomaticComplexMethod:AppearanceSettingsPane.kt:@Composable fun AppearanceSettingsPane</ID>
-    <ID>CyclomaticComplexMethod:LiveStudioPreviewCard.kt:@Composable fun LiveStudioPreviewCard</ID>
-    <ID>CyclomaticComplexMethod:SettingsScreen.kt:@Composable fun SettingsScreenContent</ID>
-    <ID>CyclomaticComplexMethod:SettingsSidebar.kt:@OptIn(ExperimentalComposeUiApi::class) @Composable private fun SettingsCategoryRow</ID>
+    <ID>FunctionSignature:AboutSettingsPane.kt:@Composable fun AboutSettingsPane</ID>
     <ID>FunctionSignature:AboutSettingsPane.kt:@Composable private fun TechInfoRow</ID>
+    <ID>FunctionSignature:AppearanceSettingsPane.kt:@Composable private fun InterfaceDensityRow</ID>
     <ID>FunctionSignature:EditorSettingsPane.kt:@Composable fun EditorSettingsPane</ID>
+    <ID>FunctionSignature:EditorSettingsPane.kt:@Composable private fun KeyboardShortcutsCard</ID>
+    <ID>FunctionSignature:GenericCategoryPane.kt:@Composable fun GenericCategoryPane</ID>
     <ID>FunctionSignature:LiveStudioPreviewCard.kt:@Composable private fun MiniNavItem</ID>
     <ID>FunctionSignature:LiveStudioPreviewCard.kt:@Composable private fun ScenicBackdropCanvas</ID>
     <ID>FunctionSignature:NotificationsSettingsPane.kt:@Composable fun NotificationsSettingsPane</ID>
+    <ID>FunctionSignature:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$@Test fun testNavigatorClickSelectsAppearance</ID>
+    <ID>FunctionSignature:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$@Test fun testSettingsAppearance_Blue_EffectsOff_PairA</ID>
+    <ID>FunctionSignature:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$@Test fun testSettingsAppearance_Blue_EffectsOff_PairB</ID>
+    <ID>FunctionSignature:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$@Test fun testSettingsAppearance_Blue_EffectsOn_PairA</ID>
+    <ID>FunctionSignature:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$@Test fun testSettingsAppearance_Blue_EffectsOn_PairB</ID>
+    <ID>FunctionSignature:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$@Test fun testSettingsAppearance_Dark_EffectsOff_PairA</ID>
+    <ID>FunctionSignature:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$@Test fun testSettingsAppearance_Dark_EffectsOff_PairB</ID>
+    <ID>FunctionSignature:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$@Test fun testSettingsAppearance_Dark_EffectsOn_PairA</ID>
+    <ID>FunctionSignature:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$@Test fun testSettingsAppearance_Dark_EffectsOn_PairB</ID>
+    <ID>FunctionSignature:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$@Test fun testSettingsAppearance_Light_EffectsOff_PairA</ID>
+    <ID>FunctionSignature:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$@Test fun testSettingsAppearance_Light_EffectsOff_PairB</ID>
+    <ID>FunctionSignature:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$@Test fun testSettingsAppearance_Light_EffectsOn_PairA</ID>
+    <ID>FunctionSignature:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$@Test fun testSettingsAppearance_Light_EffectsOn_PairB</ID>
+    <ID>FunctionSignature:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$@Test fun testSettings_Compact_Blue_EffectsOn</ID>
+    <ID>FunctionSignature:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$@Test fun testSettings_Compact_Dark_EffectsOn</ID>
+    <ID>FunctionSignature:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$@Test fun testSettings_Compact_Light_EffectsOn</ID>
     <ID>FunctionSignature:SettingsNavigation.kt:fun NavController.navigateToNotification</ID>
     <ID>FunctionSignature:SettingsNavigation.kt:fun NavController.navigateToSettings</ID>
-    <ID>ImportOrdering:AppearanceSettingsPane.kt:import androidx.compose.foundation.background import androidx.compose.foundation.border import androidx.compose.foundation.clickable import androidx.compose.foundation.interaction.MutableInteractionSource import androidx.compose.foundation.layout.Arrangement import androidx.compose.foundation.layout.Box import androidx.compose.foundation.layout.Column import androidx.compose.foundation.layout.Row import androidx.compose.foundation.layout.Spacer import androidx.compose.foundation.layout.fillMaxWidth import androidx.compose.foundation.layout.height import androidx.compose.foundation.layout.padding import androidx.compose.foundation.layout.size import androidx.compose.foundation.layout.width import androidx.compose.foundation.shape.CircleShape import androidx.compose.material.icons.Icons import androidx.compose.material.icons.filled.ArrowDropDown import androidx.compose.material.icons.filled.Check import androidx.compose.material3.DropdownMenu import androidx.compose.material3.DropdownMenuItem import androidx.compose.material3.Icon import androidx.compose.material3.Text import androidx.compose.runtime.Composable import androidx.compose.runtime.getValue import androidx.compose.runtime.mutableStateOf import androidx.compose.runtime.remember import androidx.compose.runtime.setValue import androidx.compose.ui.Alignment import androidx.compose.ui.Modifier import androidx.compose.ui.draw.clip import androidx.compose.ui.graphics.Color import androidx.compose.ui.platform.testTag import androidx.compose.ui.text.font.FontWeight import org.ide.lti.core.ui.settings.AppSettingsState import org.ide.lti.core.designsystem.component.display.GlassCard import org.ide.lti.core.designsystem.component.display.GlassHorizontalDivider import org.ide.lti.core.designsystem.component.display.ThemePreviewCard import org.ide.lti.core.designsystem.component.inputs.GlassToggle import org.ide.lti.core.designsystem.theme.AccentPresetColors import org.ide.lti.core.designsystem.theme.AlphaTokens import org.ide.lti.core.designsystem.theme.BrandColors import org.ide.lti.core.designsystem.theme.ComponentSize import org.ide.lti.core.designsystem.theme.FontSize import org.ide.lti.core.designsystem.theme.GlassShapes import org.ide.lti.core.designsystem.theme.GlassTheme import org.ide.lti.core.designsystem.theme.IconSize import org.ide.lti.core.designsystem.theme.IdeShellColorScheme import org.ide.lti.core.designsystem.theme.IdeShellDimens import org.ide.lti.core.designsystem.theme.PluginThemeColors import org.ide.lti.core.designsystem.theme.SettingsThemeColors import org.ide.lti.core.designsystem.theme.Spacing import org.ide.lti.core.designsystem.theme.ThemeColors import org.ide.lti.core.designsystem.theme.config.AppTheme</ID>
-    <ID>ImportOrdering:SettingsScreen.kt:import androidx.compose.foundation.background import androidx.compose.foundation.border import androidx.compose.foundation.clickable import androidx.compose.foundation.interaction.MutableInteractionSource import androidx.compose.foundation.layout.Arrangement import androidx.compose.foundation.layout.Box import androidx.compose.foundation.layout.BoxWithConstraints import androidx.compose.foundation.layout.Column import androidx.compose.foundation.layout.Row import androidx.compose.foundation.layout.Spacer import androidx.compose.foundation.layout.fillMaxHeight import androidx.compose.foundation.layout.fillMaxSize import androidx.compose.foundation.layout.fillMaxWidth import androidx.compose.foundation.layout.height import androidx.compose.foundation.layout.padding import androidx.compose.foundation.layout.size import androidx.compose.foundation.layout.width import androidx.compose.foundation.rememberScrollState import androidx.compose.foundation.shape.CircleShape import androidx.compose.foundation.verticalScroll import androidx.compose.material.icons.Icons import androidx.compose.material.icons.filled.HelpOutline import androidx.compose.material.icons.filled.Search import androidx.compose.material.icons.filled.Settings import androidx.compose.material3.HorizontalDivider import androidx.compose.material3.Icon import androidx.compose.material3.Text import androidx.compose.material3.VerticalDivider import androidx.compose.runtime.Composable import androidx.compose.runtime.CompositionLocalProvider import androidx.compose.runtime.getValue import androidx.compose.runtime.mutableStateOf import androidx.compose.runtime.remember import androidx.compose.runtime.setValue import androidx.compose.ui.Alignment import androidx.compose.ui.Modifier import androidx.compose.ui.draw.clip import androidx.compose.ui.graphics.Color import androidx.compose.ui.platform.testTag import androidx.compose.ui.text.font.FontWeight import com.kashif_e.backdrop.Backdrop import com.kashif_e.backdrop.backdrops.LayerBackdrop import com.kashif_e.backdrop.backdrops.rememberLayerBackdrop import org.ide.lti.core.ui.settings.AppSettingsState import org.ide.lti.core.designsystem.component.layout.GlobalAppDestination import org.ide.lti.core.designsystem.component.layout.GlobalAppTopBar import org.ide.lti.core.designsystem.component.layout.IdePipelineRail import org.ide.lti.core.designsystem.component.layout.IdePipelineStageItem import org.ide.lti.core.designsystem.component.layout.StudioGlassBackdrop import org.ide.lti.core.designsystem.theme.AlphaTokens import org.ide.lti.core.designsystem.theme.BrandColors import org.ide.lti.core.designsystem.theme.ComponentSize import org.ide.lti.core.designsystem.theme.FontSize import org.ide.lti.core.designsystem.theme.GlassShapes import org.ide.lti.core.designsystem.theme.GlassTheme import org.ide.lti.core.designsystem.theme.IconSize import org.ide.lti.core.designsystem.theme.IdeShellDimens import org.ide.lti.core.designsystem.theme.LtiTheme import org.ide.lti.core.designsystem.theme.PluginThemeColors import org.ide.lti.core.designsystem.theme.Spacing import org.ide.lti.core.designsystem.theme.codeFontFamily import org.ide.lti.core.designsystem.theme.config.AppTheme import org.ide.lti.feature.settings.components.AboutSettingsPane import org.ide.lti.feature.settings.components.AppearanceSettingsPane import org.ide.lti.feature.settings.components.EditorSettingsPane import org.ide.lti.feature.settings.components.GenericCategoryPane import org.ide.lti.feature.settings.components.NotificationsSettingsPane import org.ide.lti.feature.settings.components.SettingsSidebar import org.ide.lti.feature.settings.model.SettingsCategory import org.koin.compose.koinInject</ID>
-    <ID>Indentation:SettingsScreen.kt: </ID>
+    <ID>FunctionSignature:SettingsScreen.kt:@Composable private fun SettingsHelpColumn</ID>
+    <ID>FunctionSignature:SettingsScreenDiagnosticTest.kt:SettingsScreenDiagnosticTest$@Test fun testSettingsAppearanceRenderedPixelContrastMeetsWcagBlueEffectsOff</ID>
+    <ID>FunctionSignature:SettingsScreenDiagnosticTest.kt:SettingsScreenDiagnosticTest$@Test fun testSettingsAppearanceRenderedPixelContrastMeetsWcagBlueEffectsOn</ID>
+    <ID>FunctionSignature:SettingsScreenDiagnosticTest.kt:SettingsScreenDiagnosticTest$@Test fun testSettingsAppearanceRenderedPixelContrastMeetsWcagDarkEffectsOff</ID>
+    <ID>FunctionSignature:SettingsScreenDiagnosticTest.kt:SettingsScreenDiagnosticTest$@Test fun testSettingsAppearanceRenderedPixelContrastMeetsWcagDarkEffectsOn</ID>
+    <ID>FunctionSignature:SettingsScreenDiagnosticTest.kt:SettingsScreenDiagnosticTest$@Test fun testSettingsAppearanceRenderedPixelContrastMeetsWcagLightEffectsOff</ID>
+    <ID>FunctionSignature:SettingsScreenDiagnosticTest.kt:SettingsScreenDiagnosticTest$@Test fun testSettingsAppearanceRenderedPixelContrastMeetsWcagLightEffectsOn</ID>
+    <ID>FunctionSignature:SettingsSidebar.kt:@Composable private fun SettingsSearchBar</ID>
     <ID>LongMethod:AboutSettingsPane.kt:@Composable fun AboutSettingsPane</ID>
     <ID>LongMethod:AppearanceSettingsPane.kt:@Composable fun AppearanceSettingsPane</ID>
     <ID>LongMethod:LiveStudioPreviewCard.kt:@Composable fun LiveStudioPreviewCard</ID>
-    <ID>LongMethod:SettingsScreen.kt:@Composable fun SettingsScreenContent</ID>
-    <ID>MaxLineLength:AboutSettingsPane.kt:color = if (isBlueGlass) BrandColors.OnLogoBadge.copy(alpha = AlphaTokens.Half) else colors.textDim</ID>
-    <ID>MaxLineLength:AboutSettingsPane.kt:color = if (isBlueGlass) BrandColors.OnLogoBadge.copy(alpha = AlphaTokens.High) else colors.textMuted</ID>
-    <ID>MaxLineLength:AboutSettingsPane.kt:color = if (isBlueGlass) BrandColors.OnLogoBadge.copy(alpha = AlphaTokens.IconTint) else colors.textDim</ID>
-    <ID>MaxLineLength:AboutSettingsPane.kt:color = if (isBlueGlass) BrandColors.OnLogoBadge.copy(alpha = AlphaTokens.Medium) else colors.textDim</ID>
-    <ID>MaxLineLength:AboutSettingsPane.kt:color = if (isBlueGlass) BrandColors.OnLogoBadge.copy(alpha = AlphaTokens.Prominent) else colors.textDim</ID>
-    <ID>MaxLineLength:AboutSettingsPane.kt:color = if (isBlueGlass) BrandColors.OnLogoBadge.copy(alpha = AlphaTokens.Prominent) else colors.textMuted</ID>
-    <ID>MaxLineLength:AboutSettingsPane.kt:color = if (isBlueGlass) BrandColors.OnLogoBadge.copy(alpha = AlphaTokens.TextMuted) else colors.textMuted</ID>
-    <ID>MaxLineLength:AboutSettingsPane.kt:color = if (isBlueGlass) BrandColors.OnLogoBadge.copy(alpha = AlphaTokens.Vibrant) else colors.textMuted</ID>
-    <ID>MaxLineLength:AboutSettingsPane.kt:imageVector = if (reportGenerated) Icons.Default.CheckCircle else Icons.Default.Description</ID>
-    <ID>MaxLineLength:AboutSettingsPane.kt:text = if (reportGenerated) "Diagnostic report generated" else "Generate diagnostic report"</ID>
-    <ID>MaxLineLength:AboutSettingsPane.kt:tint = if (isBlueGlass) BrandColors.OnLogoBadge.copy(alpha = AlphaTokens.Prominent) else colors.textDim</ID>
-    <ID>MaxLineLength:AppearanceSettingsPane.kt:color = if (isBlueGlass) BrandColors.OnLogoBadge.copy(alpha = AlphaTokens.High) else colors.textMuted</ID>
-    <ID>MaxLineLength:AppearanceSettingsPane.kt:color = if (isBlueGlass) BrandColors.OnLogoBadge.copy(alpha = AlphaTokens.Medium) else colors.textDim</ID>
-    <ID>MaxLineLength:LiveStudioPreviewCard.kt:Box(modifier = Modifier.size(Spacing.Small).clip(CircleShape).background(ThemeColors.WindowControlClose))</ID>
-    <ID>MaxLineLength:LiveStudioPreviewCard.kt:Box(modifier = Modifier.size(Spacing.Small).clip(CircleShape).background(ThemeColors.WindowControlMaximize))</ID>
-    <ID>MaxLineLength:LiveStudioPreviewCard.kt:Box(modifier = Modifier.size(Spacing.Small).clip(CircleShape).background(ThemeColors.WindowControlMinimize))</ID>
-    <ID>MaxLineLength:SettingsScreen.kt:.</ID>
-    <ID>MaxLineLength:SettingsScreen.kt:color = if (isBlueGlass) BrandColors.OnLogoBadge.copy(alpha = AlphaTokens.Half) else colors.textMuted</ID>
-    <ID>MaxLineLength:SettingsScreen.kt:color = if (isBlueGlass) BrandColors.OnLogoBadge.copy(alpha = AlphaTokens.High) else colors.textDim</ID>
-    <ID>MaxLineLength:SettingsScreen.kt:color = if (isBlueGlass) PluginThemeColors.ActiveTabBorder else colors.accentBlue</ID>
-    <ID>MaxLineLength:SettingsScreen.kt:tint = if (isBlueGlass) BrandColors.OnLogoBadge.copy(alpha = AlphaTokens.Half) else colors.textMuted</ID>
-    <ID>MaximumLineLength:AboutSettingsPane.kt:,</ID>
-    <ID>MaximumLineLength:AppearanceSettingsPane.kt:,</ID>
-    <ID>MaximumLineLength:LiveStudioPreviewCard.kt:)</ID>
-    <ID>MaximumLineLength:SettingsScreen.kt:)</ID>
-    <ID>MaximumLineLength:SettingsScreen.kt:,</ID>
-    <ID>NoConsecutiveBlankLines:NotificationScreen.kt: </ID>
-    <ID>NoUnusedImports:AboutSettingsPane.kt:org.ide.lti.feature.settings.components.AboutSettingsPane.kt</ID>
-    <ID>NoUnusedImports:AppearanceSettingsPane.kt:org.ide.lti.feature.settings.components.AppearanceSettingsPane.kt</ID>
-    <ID>NoUnusedImports:LiveStudioPreviewCard.kt:org.ide.lti.feature.settings.components.LiveStudioPreviewCard.kt</ID>
-    <ID>NoUnusedImports:NotificationScreen.kt:org.ide.lti.feature.settings.NotificationScreen.kt</ID>
-    <ID>NoUnusedImports:SettingsScreen.kt:org.ide.lti.feature.settings.SettingsScreen.kt</ID>
-    <ID>NoUnusedImports:SettingsSidebar.kt:org.ide.lti.feature.settings.components.SettingsSidebar.kt</ID>
+    <ID>MaxLineLength:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$assertTrue(screenFile.exists() &amp;&amp; screenFile.length() &gt; 0, "Expected screen capture $screenFileName to be written")</ID>
+    <ID>MaxLineLength:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$fun</ID>
+    <ID>MaxLineLength:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$println("[SETTINGS SCREENSHOT COMPARISON] Wrote $screenFileName (${screenFile.length()} bytes) and $cardFileName (${cardFile.length()} bytes)")</ID>
+    <ID>MaxLineLength:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$renderAndSaveSettings(AppTheme.Blue, effectsOn = false, ToggleDimensions.PairA, "settings_appearance_blue_effects_off_pairA.png", "settings_card_blue_effects_off_pairA.png")</ID>
+    <ID>MaxLineLength:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$renderAndSaveSettings(AppTheme.Blue, effectsOn = false, ToggleDimensions.PairB, "settings_appearance_blue_effects_off_pairB.png", "settings_card_blue_effects_off_pairB.png")</ID>
+    <ID>MaxLineLength:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$renderAndSaveSettings(AppTheme.Blue, effectsOn = true, ToggleDimensions.PairA, "settings_appearance_blue_effects_on_pairA.png", "settings_card_blue_effects_on_pairA.png")</ID>
+    <ID>MaxLineLength:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$renderAndSaveSettings(AppTheme.Blue, effectsOn = true, ToggleDimensions.PairB, "settings_appearance_blue_effects_on_pairB.png", "settings_card_blue_effects_on_pairB.png")</ID>
+    <ID>MaxLineLength:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$renderAndSaveSettings(AppTheme.Dark, effectsOn = false, ToggleDimensions.PairA, "settings_appearance_dark_effects_off_pairA.png", "settings_card_dark_effects_off_pairA.png")</ID>
+    <ID>MaxLineLength:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$renderAndSaveSettings(AppTheme.Dark, effectsOn = false, ToggleDimensions.PairB, "settings_appearance_dark_effects_off_pairB.png", "settings_card_dark_effects_off_pairB.png")</ID>
+    <ID>MaxLineLength:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$renderAndSaveSettings(AppTheme.Dark, effectsOn = true, ToggleDimensions.PairA, "settings_appearance_dark_effects_on_pairA.png", "settings_card_dark_effects_on_pairA.png")</ID>
+    <ID>MaxLineLength:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$renderAndSaveSettings(AppTheme.Dark, effectsOn = true, ToggleDimensions.PairB, "settings_appearance_dark_effects_on_pairB.png", "settings_card_dark_effects_on_pairB.png")</ID>
+    <ID>MaxLineLength:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$renderAndSaveSettings(AppTheme.Light, effectsOn = false, ToggleDimensions.PairA, "settings_appearance_light_effects_off_pairA.png", "settings_card_light_effects_off_pairA.png")</ID>
+    <ID>MaxLineLength:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$renderAndSaveSettings(AppTheme.Light, effectsOn = false, ToggleDimensions.PairB, "settings_appearance_light_effects_off_pairB.png", "settings_card_light_effects_off_pairB.png")</ID>
+    <ID>MaxLineLength:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$renderAndSaveSettings(AppTheme.Light, effectsOn = true, ToggleDimensions.PairA, "settings_appearance_light_effects_on_pairA.png", "settings_card_light_effects_on_pairA.png")</ID>
+    <ID>MaxLineLength:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$renderAndSaveSettings(AppTheme.Light, effectsOn = true, ToggleDimensions.PairB, "settings_appearance_light_effects_on_pairB.png", "settings_card_light_effects_on_pairB.png")</ID>
+    <ID>MaxLineLength:SettingsScreenDiagnosticTest.kt:SettingsScreenDiagnosticTest$"Theme ${theme.id} card onSurfaceVariant contrast must meet WCAG AA &gt;= 4.5:1 (found: $onSurfaceVariantCardRatio:1)"</ID>
+    <ID>MaxLineLength:SettingsScreenDiagnosticTest.kt:SettingsScreenDiagnosticTest$fun</ID>
+    <ID>MaxLineLength:SettingsScreenDiagnosticTest.kt:SettingsScreenDiagnosticTest$val headerY = (appearanceHeaderBounds.top.value + (appearanceHeaderBounds.bottom.value - appearanceHeaderBounds.top.value) / 2f).toInt()</ID>
+    <ID>MaximumLineLength:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$)</ID>
+    <ID>MaximumLineLength:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest${</ID>
+    <ID>MaximumLineLength:SettingsScreenDiagnosticTest.kt:SettingsScreenDiagnosticTest$)</ID>
+    <ID>NoUnprotectedTextClip:AppearanceSettingsPane.kt:Text( text = label, fontSize = FontSize.BodySmall, fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, softWrap = false, )</ID>
+    <ID>NoUnusedImports:SettingsAppearanceScreenshotTest.kt:org.ide.lti.feature.settings.screenshot.SettingsAppearanceScreenshotTest.kt</ID>
+    <ID>StringTemplate:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest$${height}</ID>
+    <ID>TooManyFunctions:SettingsAppearanceScreenshotTest.kt:SettingsAppearanceScreenshotTest</ID>
+    <ID>UnusedParameter:EditorSettingsPane.kt:cardBorder: Color</ID>
   </CurrentIssues>
 </SmellBaseline>

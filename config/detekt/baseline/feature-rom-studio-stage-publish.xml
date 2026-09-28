@@ -2,25 +2,16 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>ArgumentListWrapping:PublishEditor.kt:("Distribution Provider", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)</ID>
-    <ID>ArgumentListWrapping:PublishEditor.kt:("Publish Review &amp; Recovery", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)</ID>
-    <ID>ArgumentListWrapping:PublishEditor.kt:("Repository &amp; Release Tag", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)</ID>
-    <ID>ArgumentListWrapping:PublishEditor.kt:("Split Assets Configuration", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)</ID>
-    <ID>ArgumentListWrapping:PublishEditor.kt:("Verification &amp; Integrity", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)</ID>
-    <ID>ArgumentListWrapping:PublishEditor.kt:(settings, dirtyPaths, onChange)</ID>
     <ID>ClassSignature:PublishViewModel.kt:PublishViewModel : ViewModel</ID>
-    <ID>FunctionLiteral:PublishEditor.kt:&lt;anonymous&gt;</ID>
-    <ID>MaxLineLength:PublishEditor.kt:"release-repository-and-tag", "release_repository_and_tag" -&gt; item { RepositoryCard(settings, dirtyPaths, onChange) }</ID>
-    <ID>MaxLineLength:PublishEditor.kt:Text("Distribution Provider", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)</ID>
-    <ID>MaxLineLength:PublishEditor.kt:Text("Publish Review &amp; Recovery", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)</ID>
-    <ID>MaxLineLength:PublishEditor.kt:Text("Repository &amp; Release Tag", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)</ID>
-    <ID>MaxLineLength:PublishEditor.kt:Text("Split Assets Configuration", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)</ID>
-    <ID>MaxLineLength:PublishEditor.kt:Text("Verification &amp; Integrity", style = MaterialTheme.typography.titleSmall, color = GlassTheme.colors.onGlass)</ID>
-    <ID>MaximumLineLength:PublishEditor.kt:)</ID>
-    <ID>MaximumLineLength:PublishEditor.kt:}</ID>
+    <ID>FunctionSignature:PublishEditor.kt:@Composable private fun CredentialsCard</ID>
+    <ID>FunctionSignature:PublishEditor.kt:@Composable private fun OtaManifestCard</ID>
+    <ID>FunctionSignature:PublishEditor.kt:@Composable private fun ProviderCard</ID>
+    <ID>FunctionSignature:PublishEditor.kt:@Composable private fun RepositoryCard</ID>
+    <ID>FunctionSignature:PublishEditor.kt:@Composable private fun RetentionCard</ID>
+    <ID>FunctionSignature:PublishEditor.kt:@Composable private fun SplitAssetsCard</ID>
+    <ID>ImportOrdering:PublishEditor.kt:import androidx.compose.material3.MaterialTheme import androidx.compose.foundation.layout.Arrangement import androidx.compose.foundation.layout.Box import androidx.compose.foundation.layout.Column import androidx.compose.foundation.layout.Row import androidx.compose.foundation.layout.fillMaxSize import androidx.compose.foundation.layout.fillMaxWidth import androidx.compose.foundation.layout.padding import androidx.compose.foundation.layout.widthIn import androidx.compose.foundation.lazy.LazyColumn import androidx.compose.material3.Text import androidx.compose.runtime.Composable import androidx.compose.ui.Alignment import androidx.compose.ui.Modifier import androidx.compose.ui.draw.clip import androidx.compose.ui.platform.testTag import androidx.compose.ui.text.font.FontWeight import org.ide.lti.core.designsystem.component.display.GlassChip import org.ide.lti.core.designsystem.component.display.ideCardSurface import org.ide.lti.core.designsystem.component.inputs.GlassTextField import org.ide.lti.core.designsystem.component.inputs.TextFieldState import org.ide.lti.core.designsystem.theme.FontSize import org.ide.lti.core.designsystem.theme.GlassDimens import org.ide.lti.core.designsystem.theme.GlassShapes import org.ide.lti.core.designsystem.theme.GlassTheme import org.ide.lti.core.designsystem.theme.Spacing import org.ide.lti.core.designsystem.theme.codeFontFamily import org.ide.lti.core.designsystem.theme.ideFontFamily import org.ide.lti.core.domain.pipeline.configuration.Severity import org.ide.lti.core.domain.pipeline.configuration.ValidationError import org.ide.lti.core.model.target.TargetDevice import org.ide.lti.core.model.workspace.CollisionPolicy import org.ide.lti.core.model.workspace.PublishProvider import org.ide.lti.core.model.workspace.PublishSettings</ID>
     <ID>StatementWrapping:PublishEditor.kt:;</ID>
     <ID>StatementWrapping:PublishEditor.kt:val count = it.toIntOrNull() ?: 3; onChange(settings.copy(retentionPerDevice = count))</ID>
     <ID>StatementWrapping:PublishEditor.kt:val mb = it.toLongOrNull() ?: 1900L; onChange(settings.copy(partSizeBytes = mb * 1024 * 1024))</ID>
-    <ID>UnusedParameter:PublishEditor.kt:settings: PublishSettings</ID>
   </CurrentIssues>
 </SmellBaseline>

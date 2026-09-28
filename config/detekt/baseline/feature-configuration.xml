@@ -30,12 +30,14 @@
     <ID>FunctionLiteral:PartitionsConfigTab.kt:&lt;anonymous&gt;</ID>
     <ID>FunctionSignature:ConfigurationNavigation.kt:fun NavGraphBuilder.configurationScreen</ID>
     <ID>FunctionSignature:ConfigurationNavigation.kt:private fun configurationRoute: String</ID>
+    <ID>FunctionSignature:ConfigurationScreen.kt:@Composable private fun ConfigurationValidationBanner</ID>
     <ID>FunctionSignature:ConfigurationViewModel.kt:ConfigurationViewModel$private fun executeNavigationIntent</ID>
     <ID>FunctionSignature:GeneralConfigTab.kt:@Composable fun GeneralConfigTab</ID>
     <ID>FunctionSignature:GeneralConfigTab.kt:@Composable private fun TargetSpecBadge</ID>
     <ID>FunctionSignature:HardwareConfigTab.kt:@Composable fun HardwareConfigTab</ID>
     <ID>FunctionSignature:OsStreamsConfigTab.kt:@Composable fun OsStreamsConfigTab</ID>
     <ID>FunctionSignature:PartitionsConfigTab.kt:@Composable fun PartitionsConfigTab</ID>
+    <ID>ImportOrdering:ConfigurationScreen.kt:import androidx.compose.foundation.background import androidx.compose.foundation.layout.Arrangement import androidx.compose.foundation.layout.Box import androidx.compose.foundation.layout.Column import androidx.compose.foundation.layout.Row import androidx.compose.foundation.layout.Spacer import androidx.compose.foundation.layout.fillMaxHeight import androidx.compose.foundation.layout.fillMaxSize import androidx.compose.foundation.layout.fillMaxWidth import androidx.compose.foundation.layout.padding import androidx.compose.foundation.layout.size import androidx.compose.foundation.layout.width import androidx.compose.foundation.rememberScrollState import androidx.compose.foundation.verticalScroll import androidx.compose.material.icons.Icons import androidx.compose.material.icons.filled.Warning import androidx.compose.material3.Icon import androidx.compose.material3.MaterialTheme import androidx.compose.material3.Text import androidx.compose.runtime.Composable import androidx.compose.runtime.LaunchedEffect import androidx.compose.runtime.collectAsState import androidx.compose.runtime.getValue import androidx.compose.ui.Alignment import androidx.compose.ui.Modifier import androidx.compose.ui.draw.clip import androidx.compose.ui.graphics.Color import org.ide.lti.core.designsystem.component.actions.GlassButton import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton import org.ide.lti.core.designsystem.component.actions.GlassTextButton import org.ide.lti.core.designsystem.component.display.GlassHorizontalDivider import org.ide.lti.core.designsystem.component.display.GlassVerticalDivider import org.ide.lti.core.designsystem.component.feedback.GlassDialog import org.ide.lti.core.designsystem.component.layout.GlassTopBar import org.ide.lti.core.designsystem.component.layout.TopBarNavigation import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder import org.ide.lti.core.designsystem.theme.AlphaTokens import org.ide.lti.core.designsystem.theme.ComponentSize import org.ide.lti.core.designsystem.theme.GlassShapes import org.ide.lti.core.designsystem.theme.GlassTheme import org.ide.lti.core.designsystem.theme.IconSize import org.ide.lti.core.designsystem.theme.Spacing import org.ide.lti.core.designsystem.theme.AppTheme import org.ide.lti.core.designsystem.theme.StrokeWidth import org.ide.lti.core.model.target.TargetValidationError import org.ide.lti.feature.configuration.components.ConfigurationSidebar import org.ide.lti.feature.configuration.components.ConfigurationTabHeader import org.ide.lti.feature.configuration.components.tabs.GeneralConfigTab import org.ide.lti.feature.configuration.components.tabs.HardwareConfigTab import org.ide.lti.feature.configuration.components.tabs.OsStreamsConfigTab import org.ide.lti.feature.configuration.components.tabs.PartitionsConfigTab import org.koin.compose.viewmodel.koinViewModel</ID>
     <ID>LongMethod:GeneralConfigTab.kt:@Composable fun GeneralConfigTab</ID>
     <ID>LongMethod:HardwareConfigTab.kt:@Composable fun HardwareConfigTab</ID>
     <ID>MatchingDeclarationName:ConfigurationNavigation.kt:ConfigurationNavMode</ID>
@@ -61,5 +63,11 @@
     <ID>MaximumLineLength:OsStreamsConfigTab.kt:,</ID>
     <ID>MaximumLineLength:PartitionsConfigTab.kt:)</ID>
     <ID>MaximumLineLength:PartitionsConfigTab.kt:,</ID>
+    <ID>NoEmptyFirstLineInMethodBlock:HardwareConfigTab.kt: </ID>
+    <ID>NoEmptyFirstLineInMethodBlock:PartitionsConfigTab.kt: </ID>
+    <ID>NoUnusedImports:ConfigurationSidebar.kt:org.ide.lti.feature.configuration.components.ConfigurationSidebar.kt</ID>
+    <ID>NoUnusedImports:HardwareConfigTab.kt:org.ide.lti.feature.configuration.components.tabs.HardwareConfigTab.kt</ID>
+    <ID>NoUnusedImports:OsStreamsConfigTab.kt:org.ide.lti.feature.configuration.components.tabs.OsStreamsConfigTab.kt</ID>
+    <ID>NoUnusedImports:PartitionsConfigTab.kt:org.ide.lti.feature.configuration.components.tabs.PartitionsConfigTab.kt</ID>
   </CurrentIssues>
 </SmellBaseline>

@@ -536,3 +536,17 @@ allprojects {
     }
 }
 
+// Points git at the versioned hooks in scripts/git-hooks (the pre-push rule gate). Nothing is copied into
+// .git/hooks, so hook edits apply immediately. Running, building or cleaning any module installs them, so a
+// fresh clone is covered without a manual step (the app is usually started with :lti-desktop:run).
+val installGitHooks by tasks.registering(Exec::class) {
+    description = "Points core.hooksPath at scripts/git-hooks."
+    group = "git hooks"
+    workingDir = rootDir
+    commandLine("git", "config", "core.hooksPath", "scripts/git-hooks")
+}
+allprojects {
+    tasks.matching { it.name in setOf("run", "build", "assemble", "clean") }.configureEach {
+        dependsOn(installGitHooks)
+    }
+}

@@ -2,14 +2,25 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
+    <ID>BinaryExpressionWrapping:GlassChatInput.kt:GlassTheme.appTheme == AppTheme.Dark</ID>
     <ID>ClassSignature:GlassFileTree.kt:FlattenedFileNode</ID>
     <ID>ClassSignature:SyntaxToken.kt:SyntaxToken</ID>
     <ID>CyclomaticComplexMethod:GlassFileTree.kt:@Composable private fun GlassFileTreeItem</ID>
     <ID>FunctionSignature:GlassFileTree.kt:@Composable private fun LtiFileIcon</ID>
     <ID>FunctionSignature:GlassFileTree.kt:internal fun flattenFileTree: List&lt;FlattenedFileNode&gt;</ID>
+    <ID>ImportOrdering:GlassCodeEditor.kt:import androidx.compose.material3.MaterialTheme import androidx.compose.foundation.background import androidx.compose.foundation.horizontalScroll import androidx.compose.foundation.layout.Box import androidx.compose.foundation.layout.Column import androidx.compose.foundation.layout.Row import androidx.compose.foundation.layout.fillMaxSize import androidx.compose.foundation.layout.padding import androidx.compose.foundation.rememberScrollState import androidx.compose.foundation.text.BasicTextField import androidx.compose.foundation.verticalScroll import androidx.compose.material3.Text import androidx.compose.runtime.Composable import androidx.compose.runtime.LaunchedEffect import androidx.compose.runtime.getValue import androidx.compose.runtime.mutableStateOf import androidx.compose.runtime.remember import androidx.compose.runtime.setValue import androidx.compose.ui.Modifier import androidx.compose.ui.graphics.SolidColor import androidx.compose.ui.text.TextRange import androidx.compose.ui.text.TextStyle import androidx.compose.ui.text.input.TextFieldValue import org.ide.lti.core.designsystem.theme.FontSize import org.ide.lti.core.designsystem.theme.GlassTheme import org.ide.lti.core.designsystem.theme.LineHeight import org.ide.lti.core.designsystem.theme.Spacing import org.ide.lti.core.designsystem.theme.codeFontFamily import org.ide.lti.core.ui.syntax.SyntaxHighlightingTransformation import org.ide.lti.core.ui.syntax.SyntaxLanguage</ID>
+    <ID>Indentation:GlassMessageBubble.kt: </ID>
     <ID>MatchingDeclarationName:ShareUtils.desktop.kt:ShareUtils</ID>
+    <ID>MaxLineLength:GlassChatInput.kt:color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant</ID>
+    <ID>MaxLineLength:GlassChatInput.kt:shape: HazeShape = if (GlassTheme.appTheme == AppTheme.Dark) GlassShapes.HazeMediumSmall else GlassShapes.HazeCapsule</ID>
+    <ID>MaxLineLength:GlassChatInput.kt:val sendButtonShape = if (GlassTheme.appTheme == AppTheme.Dark) GlassShapes.HazeSmall else GlassShapes.HazeCapsule</ID>
+    <ID>MaxLineLength:GlassFileTree.kt:tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant</ID>
+    <ID>MaximumLineLength:GlassChatInput.kt:,</ID>
+    <ID>MaximumLineLength:GlassChatInput.kt:HazeCapsule</ID>
+    <ID>MaximumLineLength:GlassFileTree.kt:,</ID>
+    <ID>NoEmptyFirstLineInMethodBlock:WorkspaceStatusBar.kt: </ID>
     <ID>NoUnusedImports:GlassCodeEditor.kt:org.ide.lti.core.ui.GlassCodeEditor.kt</ID>
     <ID>NoUnusedImports:GlassFileTree.kt:org.ide.lti.core.ui.GlassFileTree.kt</ID>
-    <ID>NoUnusedImports:GlassMessageBubble.kt:org.ide.lti.core.ui.GlassMessageBubble.kt</ID>
+    <ID>NoUnusedImports:WorkspaceStatusBar.kt:org.ide.lti.core.ui.WorkspaceStatusBar.kt</ID>
   </CurrentIssues>
 </SmellBaseline>

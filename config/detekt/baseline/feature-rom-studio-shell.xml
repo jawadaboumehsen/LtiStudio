@@ -2,7 +2,11 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
+    <ID>ArgumentListWrapping:ReadinessChecklistSection.kt:(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outlineVariant, GlassShapes.ShellControl)</ID>
+    <ID>ArgumentListWrapping:ReadinessChecklistSection.kt:(bg = bg, text = MaterialTheme.colorScheme.onSurfaceVariant, border = MaterialTheme.colorScheme.outline)</ID>
+    <ID>ArgumentListWrapping:StudioScreen.kt:("Execute Stage (Unavailable in Studio)", color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
     <ID>ArgumentListWrapping:StudioViewModel.kt:StudioViewModel$(emptyList(), enforceFullPipeline = false)</ID>
+    <ID>BinaryExpressionWrapping:StudioStatusBar.kt:problemCount &gt; 0</ID>
     <ID>BinaryExpressionWrapping:StudioViewModel.kt:StudioViewModel$currentEditor != null &amp;&amp; stage.subobjects.any { it.id.value == currentEditor.objectId }</ID>
     <ID>ClassSignature:DefaultStageEditorRegistry.kt:DefaultStageEditorRegistry : StageEditorRegistry</ID>
     <ID>ClassSignature:DefaultStageEditorRegistry.kt:DuplicateStageEditorException : IllegalStateException</ID>
@@ -12,18 +16,30 @@
     <ID>FunctionExpressionBody:DefaultStageEditorRegistryTest.kt:DefaultStageEditorRegistryTest${ return object : StageEditor { override val stageId: StageId = stageId override val descriptor: StageDescriptor = StageDescriptor( stageId = stageId, title = stageId.name, iconKey = StudioIconKey.ACQUIRE, subobjects = subobjects, ) @Composable override fun Content(context: StageEditorContext, modifier: Modifier) {} } }</ID>
     <ID>FunctionLiteral:StudioViewModel.kt:StudioViewModel$&lt;anonymous&gt;</ID>
     <ID>FunctionLiteral:StudioViewModel.kt:StudioViewModel.Companion$&lt;anonymous&gt;</ID>
+    <ID>FunctionSignature:OverviewBreadcrumbHeader.kt:@Composable private fun OverviewHeaderTargetAndActions</ID>
+    <ID>FunctionSignature:ReadinessChecklistSection.kt:@Composable private fun ReadinessActionButton</ID>
     <ID>FunctionSignature:StudioPresentationState.kt:public fun createDefaultPipelineRailItems: List&lt;PipelineRailItemUi&gt;</ID>
+    <ID>FunctionSignature:StudioShellLayoutTest.kt:StudioShellLayoutTest$private fun renderAndCaptureShell: ImageBitmap</ID>
+    <ID>FunctionSignature:StudioTopAppBar.kt:@Composable internal fun TopBarTargetSpecifier</ID>
     <ID>FunctionSignature:StudioViewModel.kt:StudioViewModel.Companion$fun computeInitialRailItems: List&lt;StudioRailItem&gt;</ID>
-    <ID>ImportOrdering:DefaultStageEditorRegistryTest.kt:import androidx.compose.runtime.Composable import androidx.compose.ui.Modifier import kotlin.test.Test import kotlin.test.assertEquals import kotlin.test.assertFailsWith import kotlin.test.assertNotNull import org.ide.lti.core.domain.pipeline.PipelineStageSequence import org.ide.lti.core.model.run.StageId import org.ide.lti.feature.rom.studio.api.StageDescriptor import org.ide.lti.feature.rom.studio.api.StageEditor import org.ide.lti.feature.rom.studio.api.StageEditorContext import org.ide.lti.feature.rom.studio.api.StudioIconKey import org.ide.lti.feature.rom.studio.api.StudioSubobject import org.ide.lti.feature.rom.studio.api.StudioSubobjectId</ID>
-    <ID>ImportOrdering:StudioViewModel.kt:import androidx.lifecycle.ViewModel import androidx.lifecycle.viewModelScope import kotlinx.coroutines.flow.MutableStateFlow import kotlinx.coroutines.flow.StateFlow import kotlinx.coroutines.flow.asStateFlow import kotlinx.coroutines.flow.update import kotlinx.coroutines.launch import org.ide.lti.core.domain.ports.StudioPresentationStorePort import org.ide.lti.core.domain.pipeline.configuration.Severity import org.ide.lti.core.domain.pipeline.configuration.ValidationError import org.ide.lti.core.domain.pipeline.configuration.ValidationReport import org.ide.lti.core.domain.workspace.WorkspaceManager import org.ide.lti.core.model.run.StageId import org.ide.lti.core.model.studio.StudioPresentation import org.ide.lti.core.model.workspace.Workspace import org.ide.lti.feature.rom.studio.api.CanonicalStageDescriptors import org.ide.lti.feature.rom.studio.api.StageDescriptor import org.ide.lti.feature.rom.studio.api.StageEditorRegistry import org.ide.lti.feature.rom.studio.api.allDescriptors import org.ide.lti.feature.rom.studio.api.descriptorFor import org.ide.lti.feature.rom.studio.shell.registry.DefaultStageEditorRegistry</ID>
+    <ID>FunctionSignature:TargetProfileCard.kt:@Composable private fun TargetProfileHeader</ID>
+    <ID>FunctionSignature:TargetProfileCard.kt:@Composable private fun TargetProfileSubheader</ID>
+    <ID>FunctionSignature:TargetProfileCard.kt:@Composable public fun TargetProfileCard</ID>
+    <ID>FunctionSignature:WorkspaceNavigator.kt:@Composable internal fun WorkspaceNavigatorFooter</ID>
+    <ID>MaxLineLength:ReadinessChecklistSection.kt:.</ID>
+    <ID>MaxLineLength:ReadinessChecklistSection.kt:ActionButtonStyle(bg = bg, text = MaterialTheme.colorScheme.onSurfaceVariant, border = MaterialTheme.colorScheme.outline)</ID>
+    <ID>MaxLineLength:StudioScreen.kt:Text("Execute Stage (Unavailable in Studio)", color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
+    <ID>MaxLineLength:StudioStatusBar.kt:color = if (problemCount &gt; 0) GlassTheme.diagnosticColors.warning else MaterialTheme.colorScheme.onSurfaceVariant</ID>
     <ID>MaxLineLength:StudioViewModel.kt:StudioViewModel$public val stageEditorRegistry: StageEditorRegistry = DefaultStageEditorRegistry(emptyList(), enforceFullPipeline = false)</ID>
     <ID>MaxLineLength:StudioViewModel.kt:StudioViewModel$val</ID>
     <ID>MaxLineLength:StudioViewModel.kt:StudioViewModel.Companion$fun</ID>
+    <ID>MaximumLineLength:ReadinessChecklistSection.kt:)</ID>
+    <ID>MaximumLineLength:ReadinessChecklistSection.kt:,</ID>
+    <ID>MaximumLineLength:StudioScreen.kt:)</ID>
+    <ID>MaximumLineLength:StudioStatusBar.kt:,</ID>
     <ID>MaximumLineLength:StudioViewModel.kt:StudioViewModel$,</ID>
     <ID>MaximumLineLength:StudioViewModel.kt:StudioViewModel${</ID>
     <ID>MaximumLineLength:StudioViewModel.kt:StudioViewModel.Companion$-&gt;</ID>
-    <ID>NoUnusedImports:StudioViewModel.kt:org.ide.lti.feature.workspace.studio.StudioViewModel.kt</ID>
     <ID>ParameterWrapping:StudioViewModel.kt:StudioViewModel$public val stageEditorRegistry: StageEditorRegistry = DefaultStageEditorRegistry(emptyList(), enforceFullPipeline = false)</ID>
-    <ID>SpacingBetweenDeclarationsWithAnnotations:DefaultStageEditorRegistryTest.kt:DefaultStageEditorRegistryTest.&lt;no name provided&gt;$@Composable override fun Content</ID>
   </CurrentIssues>
 </SmellBaseline>

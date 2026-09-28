@@ -294,7 +294,6 @@ kmp-library-convention = { id = "org.ide.lti.kmp.library", version = "unspecifie
 
 # Utility Plugins
 detekt-convention = { id = "org.ide.lti.detekt.plugin", version = "unspecified" }
-git-hooks-convention = { id = "org.ide.lti.git.hooks", version = "unspecified" }
 ktlint-convention = { id = "org.ide.lti.ktlint.plugin", version = "unspecified" }
 spotless-convention = { id = "org.ide.lti.spotless.plugin", version = "unspecified" }
 
