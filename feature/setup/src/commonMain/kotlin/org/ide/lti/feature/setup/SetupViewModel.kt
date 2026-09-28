@@ -87,6 +87,7 @@ class SetupViewModel(
         openWorkspaceByPathUseCase: OpenWorkspaceByPathUseCase =
             OpenWorkspaceByPathUseCase(workspaceManager.repository, workspaceManager),
         environmentReadinessPort: EnvironmentReadinessPort? = null,
+        terminalLauncher: TerminalLauncherPort? = null,
     ) : this(
         getRecentWorkspacesUseCase = getRecentWorkspacesUseCase
             ?: GetRecentWorkspacesUseCase(workspaceManager.repository),
@@ -102,6 +103,7 @@ class SetupViewModel(
         getSelectedTargetUseCase = getSelectedTargetUseCase,
         selectTargetUseCase = selectTargetUseCase,
         environmentReadinessPort = environmentReadinessPort,
+        terminalLauncher = terminalLauncher,
     )
 
     companion object {
@@ -361,22 +363,26 @@ class SetupViewModel(
         val launcher = terminalLauncher
         if (launcher != null) {
             launcher.launchTerminal(distro).onFailure {
-                environmentSetupState.setEnvironmentNotice(
-                    "Could not open terminal: ${it.message}. Please run the command manually.",
+                environmentSetupState.setTerminalLaunchFailure(
+                    it.message ?: "Unknown error"
                 )
             }
         } else {
-            environmentSetupState.setEnvironmentNotice(
-                "No terminal launcher available on this platform. " +
-                    "Please copy the command and run it in your WSL terminal.",
+            environmentSetupState.setTerminalLaunchFailure(
+                "No terminal launcher available on this platform"
             )
         }
     }
 
     val isHandoffSheetVisible: StateFlow<Boolean> = environmentSetupState.isHandoffSheetVisible
+    val handoffSheetState: StateFlow<TerminalHandoffState> = environmentSetupState.handoffSheetState
 
     fun showHandoffSheet() {
         environmentSetupState.showHandoffSheet()
+    }
+
+    fun installPackages() {
+        environmentSetupState.installPackages()
     }
 
     fun abandonAwaitingOperation() {

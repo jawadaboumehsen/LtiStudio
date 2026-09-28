@@ -217,6 +217,18 @@ class SetupAccessibilityTest {
             path = "C:/RomDev/Kernel_AOSP",
             lastOpened = Clock.System.now(),
         )
+        // Supply a ready environment state so the header shows the compact "Machine ready"
+        // status line instead of the taller "Set up this machine" action row, which would
+        // push "Recent Workspaces" below the 600 px viewport boundary (SC-005).
+        val readySteps = listOf(
+            SetupStepDetail(stage = SetupStepStage.WSL_DETECTION, title = "WSL Detection", description = "Ubuntu-24.04", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
+            SetupStepDetail(stage = SetupStepStage.SYSTEM_PACKAGES, title = "System Packages", description = "All packages present", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
+            SetupStepDetail(stage = SetupStepStage.SERVER_CONNECTIVITY, title = "Server", description = "Connected", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
+            SetupStepDetail(stage = SetupStepStage.SYSTEM_DIAGNOSTICS, title = "Diagnostics", description = "All checks passed", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
+            SetupStepDetail(stage = SetupStepStage.REPO_SYNCHRONIZATION, title = "Repos", description = "Synced", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
+            SetupStepDetail(stage = SetupStepStage.TOOLCHAIN_COMPILATION, title = "Toolchain", description = "Ready", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
+        )
+        val readyState = ToolchainSetupState(steps = readySteps, lastVerifiedTimestamp = 1_700_000_000_000L)
 
         setContent {
             LtiTheme {
@@ -225,6 +237,7 @@ class SetupAccessibilityTest {
                         recentProjects = listOf(testProject),
                         filteredProjects = listOf(testProject),
                         selectedTab = SetupTab.PROJECTS,
+                        toolchainSetupState = readyState,
                     ),
                     actions = SetupUiActions(),
                 )
@@ -289,6 +302,19 @@ class SetupAccessibilityTest {
             labelLarge = TextStyle(fontSize = 16.sp),
         )
 
+        // Supply a ready environment state so the header shows the compact "Machine ready"
+        // status line instead of the taller "Set up this machine" action row. The action row
+        // with enlarged text would clip "New Workspace" / "Open Workspace" past 600 px (SC-005).
+        val readySteps = listOf(
+            SetupStepDetail(stage = SetupStepStage.WSL_DETECTION, title = "WSL Detection", description = "Ubuntu-24.04", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
+            SetupStepDetail(stage = SetupStepStage.SYSTEM_PACKAGES, title = "System Packages", description = "All packages present", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
+            SetupStepDetail(stage = SetupStepStage.SERVER_CONNECTIVITY, title = "Server", description = "Connected", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
+            SetupStepDetail(stage = SetupStepStage.SYSTEM_DIAGNOSTICS, title = "Diagnostics", description = "All checks passed", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
+            SetupStepDetail(stage = SetupStepStage.REPO_SYNCHRONIZATION, title = "Repos", description = "Synced", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
+            SetupStepDetail(stage = SetupStepStage.TOOLCHAIN_COMPILATION, title = "Toolchain", description = "Ready", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
+        )
+        val readyState = ToolchainSetupState(steps = readySteps, lastVerifiedTimestamp = 1_700_000_000_000L)
+
         setContent {
             LtiTheme {
                 MaterialTheme(typography = largeTypography) {
@@ -297,6 +323,7 @@ class SetupAccessibilityTest {
                             recentProjects = listOf(testProject),
                             filteredProjects = listOf(testProject),
                             selectedTab = SetupTab.PROJECTS,
+                            toolchainSetupState = readyState,
                         ),
                         actions = SetupUiActions(),
                     )

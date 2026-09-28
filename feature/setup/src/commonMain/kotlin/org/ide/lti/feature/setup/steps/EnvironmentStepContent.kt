@@ -44,6 +44,7 @@ import org.ide.lti.core.designsystem.component.feedback.GlassBanner
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.component.progress.GlassConsoleDrawer
 import org.ide.lti.core.designsystem.icon.AppIcons
+import org.ide.lti.core.designsystem.icon.ideStatusSuccess
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
@@ -62,6 +63,7 @@ import org.ide.lti.feature.setup.SetupOperation
 import org.ide.lti.feature.setup.SetupPresentationMapper
 import org.ide.lti.feature.setup.SetupUiActions
 import org.ide.lti.feature.setup.SetupUiState
+import org.ide.lti.feature.setup.TerminalHandoffState
 import org.ide.lti.feature.setup.components.DoctorDiagnosticsDrawer
 import org.ide.lti.feature.setup.components.SetupActivityPanel
 import org.ide.lti.feature.setup.components.ToolchainPipelineTracker
@@ -101,6 +103,11 @@ fun EnvironmentStepContent(
         activityState = activityState,
         activityListState = activityListState,
         previewInvokerFocusRequester = previewInvokerFocusRequester,
+        handoffSheetState = state.handoffSheetState,
+        onInstallPackages = actions.onInstallPackages,
+        onShowHandoffSheet = actions.onShowHandoffSheet,
+        onOpenProject = actions.onOpenFolder,
+        onCreateProject = actions.onCreateWorkspace,
     )
 }
 
@@ -146,6 +153,11 @@ fun EnvironmentStepContent(
     activityState: SetupActivityState? = null,
     activityListState: androidx.compose.foundation.lazy.LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
     previewInvokerFocusRequester: FocusRequester? = null,
+    handoffSheetState: TerminalHandoffState = TerminalHandoffState.Idle,
+    onInstallPackages: () -> Unit = {},
+    onShowHandoffSheet: () -> Unit = {},
+    onOpenProject: () -> Unit = {},
+    onCreateProject: () -> Unit = {},
 ) {
     val presentation = environmentPresentation ?: SetupPresentationMapper.mapEnvironment(
         state = toolchainSetupState,
@@ -291,13 +303,102 @@ fun EnvironmentStepContent(
                 )
             }
 
-            // Grouped Inset List ("This machine") with 5 canonical rows - MAIN CONTENT FIRST
+            // Grouped Inset List ("This machine") with 6 canonical rows - MAIN CONTENT FIRST
             ToolchainPipelineTracker(
                 steps = toolchainSetupState.steps,
                 onRetryStep = onRetrySetupStep,
                 isBusy = toolchainSetupState.isBusy,
                 onRetryStage = onRetryStage,
+                activeOperation = activeOperation,
+                handoffSheetState = handoffSheetState,
+                onInstallPackages = onInstallPackages,
+                onShowHandoffSheet = onShowHandoffSheet,
             )
+
+            val isMachineReady = presentation.environmentState is EnvironmentState.Ready ||
+                (toolchainSetupState.canLaunchWorkspace && (toolchainSetupState.lastReadyAt != null || toolchainSetupState.isAllReady))
+
+            if (isMachineReady) {
+                GlassCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    contentPadding = Spacing.CardPadding,
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
+                            modifier = Modifier.weight(1f, fill = false),
+                        ) {
+                            Icon(
+                                painter = AppIcons.ideStatusSuccess(),
+                                contentDescription = "Ready",
+                                tint = GlassTheme.diagnosticColors.success,
+                                modifier = Modifier.size(IconSize.Medium),
+                            )
+                            Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
+                                Text(
+                                    text = "This machine is ready to build ROMs",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                                Text(
+                                    text = "All toolchain dependencies, compilers, and repositories are verified.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                        }
+
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            GlassSecondaryButton(
+                                onClick = onOpenProject,
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                                ) {
+                                    Icon(
+                                        painter = AppIcons.FolderOpenPainterResource(),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(IconSize.Small),
+                                    )
+                                    Text("Open project")
+                                }
+                            }
+                            GlassPrimaryButton(
+                                onClick = onCreateProject,
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                                ) {
+                                    Icon(
+                                        painter = AppIcons.AddPainterResource(),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(IconSize.Small),
+                                    )
+                                    Text("Create project")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
             val cockpitTabs = listOf(
                 org.ide.lti.core.designsystem.component.navigation.GlassTab(

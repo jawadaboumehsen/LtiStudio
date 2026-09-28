@@ -54,6 +54,23 @@ data class SetupStatusBarPresentation(val leadingStatusText: String? = null, val
         get() = leadingStatusText != null || failureText != null
 }
 
+@Immutable
+data class ProjectsHeaderStatusPresentation(
+    val statusText: String?,
+    val actionLabel: String? = null,
+    val isNeedsSetup: Boolean = false,
+)
+
+@Immutable
+data class SystemPackagesRowPresentation(
+    val title: String = "System packages",
+    val detailText: String,
+    val severity: IdeStatusSeverity,
+    val primaryActionLabel: String? = null,
+    val isReady: Boolean = false,
+    val isChecking: Boolean = false,
+)
+
 enum class StagePresentationState {
     UNKNOWN,
     CHECKING,
@@ -479,5 +496,123 @@ object SetupPresentationMapper {
             severity = IdeStatusSeverity.Ready,
             isReady = true
         )
+    }
+
+    fun mapProjectsHeaderStatus(toolchain: ToolchainSetupState): ProjectsHeaderStatusPresentation {
+        return when {
+            toolchain.isChecking -> ProjectsHeaderStatusPresentation(
+                statusText = "Checking this machine…",
+            )
+            toolchain.canLaunchWorkspace && (toolchain.lastReadyAt != null || toolchain.isAllReady) -> ProjectsHeaderStatusPresentation(
+                statusText = "Machine ready",
+            )
+            else -> ProjectsHeaderStatusPresentation(
+                statusText = "This machine needs setup",
+                actionLabel = "Set up this machine",
+                isNeedsSetup = true,
+            )
+        }
+    }
+
+    fun mapSystemPackages(
+        step: SetupStepDetail?,
+        isChecking: Boolean = false,
+        activeOperation: SetupOperation? = null,
+        handoffSheetState: TerminalHandoffState = TerminalHandoffState.Idle,
+    ): SystemPackagesRowPresentation {
+        if (handoffSheetState is TerminalHandoffState.Verifying) {
+            return SystemPackagesRowPresentation(
+                detailText = "Checking installation…",
+                severity = IdeStatusSeverity.Running,
+                isChecking = true,
+            )
+        }
+
+        if (handoffSheetState is TerminalHandoffState.StillMissing) {
+            val pkgList = handoffSheetState.packages.joinToString(", ")
+            return SystemPackagesRowPresentation(
+                detailText = "Still missing: $pkgList",
+                severity = IdeStatusSeverity.Failed,
+                primaryActionLabel = "Install packages",
+            )
+        }
+
+        val isAwaiting = activeOperation?.executionState == SetupOperationState.AWAITING_USER_ACTION ||
+            activeOperation?.awaitingHandoff != null
+        if (isAwaiting) {
+            return SystemPackagesRowPresentation(
+                detailText = "Waiting for you in the terminal",
+                severity = IdeStatusSeverity.Warning,
+                primaryActionLabel = "Continue setup",
+            )
+        }
+
+        if (isChecking && (step == null || step.status == StepStatus.RUNNING)) {
+            return SystemPackagesRowPresentation(
+                detailText = "Checking…",
+                severity = IdeStatusSeverity.Running,
+                isChecking = true,
+            )
+        }
+
+        if (step == null) {
+            return SystemPackagesRowPresentation(
+                detailText = "Pending verification.",
+                severity = IdeStatusSeverity.Neutral,
+            )
+        }
+
+        return when (step.status) {
+            StepStatus.SUCCESS -> SystemPackagesRowPresentation(
+                detailText = "All present",
+                severity = IdeStatusSeverity.Ready,
+                isReady = true,
+            )
+            StepStatus.RUNNING -> SystemPackagesRowPresentation(
+                detailText = "Checking…",
+                severity = IdeStatusSeverity.Running,
+                isChecking = true,
+            )
+            StepStatus.WARNING -> SystemPackagesRowPresentation(
+                detailText = step.description.ifBlank { "All present" },
+                severity = IdeStatusSeverity.Warning,
+                isReady = true,
+            )
+            StepStatus.FAILED -> {
+                val desc = step.description
+                val err = step.error.orEmpty()
+                val isUnavailable = desc.contains("isn't available on Ubuntu") || err.contains("isn't available on Ubuntu")
+                val isProbeFailed = desc.startsWith("Couldn't check packages:") || err.startsWith("Couldn't check packages:")
+                val isPartial = desc.startsWith("Still missing:")
+
+                when {
+                    isUnavailable -> SystemPackagesRowPresentation(
+                        detailText = desc,
+                        severity = IdeStatusSeverity.Failed,
+                        primaryActionLabel = null,
+                    )
+                    isProbeFailed -> SystemPackagesRowPresentation(
+                        detailText = if (desc.startsWith("Couldn't check packages:")) desc else "Couldn't check packages: $err",
+                        severity = IdeStatusSeverity.Failed,
+                        primaryActionLabel = "Retry",
+                    )
+                    isPartial -> SystemPackagesRowPresentation(
+                        detailText = desc,
+                        severity = IdeStatusSeverity.Failed,
+                        primaryActionLabel = "Install packages",
+                    )
+                    else -> SystemPackagesRowPresentation(
+                        detailText = desc.ifBlank { "Packages missing" },
+                        severity = IdeStatusSeverity.Failed,
+                        primaryActionLabel = "Install packages",
+                    )
+                }
+            }
+            StepStatus.PENDING -> SystemPackagesRowPresentation(
+                detailText = if (isChecking) "Checking…" else step.description.ifBlank { "Pending verification." },
+                severity = if (isChecking) IdeStatusSeverity.Running else IdeStatusSeverity.Neutral,
+                isChecking = isChecking,
+            )
+        }
     }
 }

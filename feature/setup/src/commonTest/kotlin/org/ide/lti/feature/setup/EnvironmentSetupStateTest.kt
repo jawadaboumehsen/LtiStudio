@@ -204,10 +204,12 @@ class EnvironmentSetupStateTest {
             reason = "fake service does not resume plans",
         )
 
+        var onResume: (suspend () -> SetupOutcome)? = null
+
         override suspend fun resume(planId: String): SetupOutcome {
             resumeCount++
             lastResumedPlanId = planId
-            return resumeOutcome
+            return onResume?.invoke() ?: resumeOutcome
         }
 
         override suspend fun testTool(toolId: String): SetupOutcome {
@@ -402,7 +404,7 @@ class EnvironmentSetupStateTest {
 
         // Simulate reading mapped presentation
         val presentation = stateHolder.presentation()
-        assertEquals(5, presentation.stages.size)
+        assertEquals(6, presentation.stages.size)
     }
 
     @Test
@@ -927,17 +929,21 @@ class EnvironmentSetupStateTest {
         val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)
         testScheduler.advanceUntilIdle()
 
-        // 1. Initial state has sheet visible and operation awaiting user action
-        assertTrue(stateHolder.isHandoffSheetVisible.value, "Sheet should be visible on initial handoff")
+        // 1. Initial reconciled state does not automatically pop up sheet (contracts/ui-states.md §1)
+        assertFalse(stateHolder.isHandoffSheetVisible.value, "Sheet should NOT automatically open on reconciliation")
         val activeOp = stateHolder.activeOperation.value
         assertNotNull(activeOp)
         assertEquals(SetupOperationState.AWAITING_USER_ACTION, activeOp.executionState)
         assertEquals(handoff, activeOp.awaitingHandoff)
 
-        // 2. User clicks "Close for now" (dismiss)
+        // 2. User clicks "Continue setup" (showHandoffSheet)
+        stateHolder.showHandoffSheet()
+        assertTrue(stateHolder.isHandoffSheetVisible.value, "Sheet should be visible after user opens it")
+
+        // 3. User clicks "Close for now" (dismiss)
         stateHolder.dismissHandoff()
 
-        // 3. Sheet is dismissed, but operation is NOT cancelled and handoff is preserved!
+        // 4. Sheet is dismissed, but operation is NOT cancelled and handoff is preserved!
         assertFalse(stateHolder.isHandoffSheetVisible.value, "Sheet should be hidden after dismiss")
         val preservedOp = stateHolder.activeOperation.value
         assertNotNull(preservedOp)
@@ -980,7 +986,10 @@ class EnvironmentSetupStateTest {
         testScheduler.advanceUntilIdle()
 
         assertEquals(0, spyService.cancelCount)
-        assertTrue(stateHolder.isHandoffSheetVisible.value)
+        assertFalse(stateHolder.isHandoffSheetVisible.value, "Sheet should NOT automatically open on reconciliation")
+
+        stateHolder.showHandoffSheet()
+        assertTrue(stateHolder.isHandoffSheetVisible.value, "Sheet should be visible after user opens it")
 
         // User explicitly abandons the operation
         stateHolder.abandonAwaitingOperation()
@@ -1072,5 +1081,137 @@ class EnvironmentSetupStateTest {
             stateHolder.environmentNotice.value?.contains("Could not abandon operation") == true,
             "Environment notice must report abandon failure",
         )
+    }
+
+    @Test
+    fun `terminal launch failure is exposed as sheet state`() = runEnvironmentTest { envScope ->
+        val stateHolder = EnvironmentSetupState(scope = envScope)
+        stateHolder.setTerminalLaunchFailure("Process fork failed")
+        assertEquals(
+            TerminalHandoffState.TerminalLaunchFailed("Process fork failed"),
+            stateHolder.handoffSheetState.value
+        )
+    }
+
+    @Test
+    fun `while verifying sheet stays visible and second verify is ignored`() = runEnvironmentTest { envScope ->
+        val handoff = UserRepairHandoff(
+            actionId = "bootstrap:apt",
+            description = "Install packages",
+            terminalCommand = "sudo apt-get update",
+            packages = listOf("git"),
+            distro = "Ubuntu",
+        )
+        val spyService = SpyToolchainProvisioningService()
+        val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)
+        stateHolder.setActiveOperationForTesting(
+            SetupOperation(
+                operationId = "plan-verify-test",
+                executionState = SetupOperationState.AWAITING_USER_ACTION,
+                awaitingHandoff = handoff,
+            )
+        )
+        stateHolder.showHandoffSheet()
+        assertTrue(stateHolder.isHandoffSheetVisible.value)
+
+        val resumeGate = CompletableDeferred<SetupOutcome>()
+        spyService.onResume = { resumeGate.await() }
+
+        stateHolder.resumeAwaitingOperation()
+        assertEquals(TerminalHandoffState.Verifying, stateHolder.handoffSheetState.value)
+        assertTrue(stateHolder.isHandoffSheetVisible.value)
+
+        // Second verify attempt must be ignored
+        stateHolder.resumeAwaitingOperation()
+        assertEquals(1, spyService.resumeCount)
+
+        resumeGate.complete(SetupOutcome.Succeeded())
+        testScheduler.advanceUntilIdle()
+    }
+
+    @Test
+    fun `Busy keeps AWAITING_USER_ACTION and handoff with another operation running state`() = runEnvironmentTest { envScope ->
+        val handoff = UserRepairHandoff(
+            actionId = "bootstrap:apt",
+            description = "Install packages",
+            terminalCommand = "sudo apt-get update",
+            packages = listOf("git"),
+            distro = "Ubuntu",
+        )
+        val spyService = SpyToolchainProvisioningService()
+        spyService.resumeOutcome = SetupOutcome.Busy("other-operation")
+        val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)
+        stateHolder.setActiveOperationForTesting(
+            SetupOperation(
+                operationId = "plan-busy-test",
+                executionState = SetupOperationState.AWAITING_USER_ACTION,
+                awaitingHandoff = handoff,
+            )
+        )
+        stateHolder.showHandoffSheet()
+
+        stateHolder.resumeAwaitingOperation()
+        testScheduler.advanceUntilIdle()
+
+        val op = stateHolder.activeOperation.value
+        assertNotNull(op)
+        assertEquals(SetupOperationState.AWAITING_USER_ACTION, op.executionState)
+        assertEquals(handoff, op.awaitingHandoff)
+        assertEquals(TerminalHandoffState.AnotherOperationRunning, stateHolder.handoffSheetState.value)
+    }
+
+    @Test
+    fun `Interrupted keeps handoff in AWAITING_USER_ACTION`() = runEnvironmentTest { envScope ->
+        val handoff = UserRepairHandoff(
+            actionId = "bootstrap:apt",
+            description = "Install packages",
+            terminalCommand = "sudo apt-get update",
+            packages = listOf("git"),
+            distro = "Ubuntu",
+        )
+        val spyService = SpyToolchainProvisioningService()
+        spyService.resumeOutcome = SetupOutcome.Interrupted("I/O error")
+        val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)
+        stateHolder.setActiveOperationForTesting(
+            SetupOperation(
+                operationId = "plan-interrupted-test",
+                executionState = SetupOperationState.AWAITING_USER_ACTION,
+                awaitingHandoff = handoff,
+            )
+        )
+
+        stateHolder.resumeAwaitingOperation()
+        testScheduler.advanceUntilIdle()
+
+        val op = stateHolder.activeOperation.value
+        assertNotNull(op)
+        assertEquals(handoff, op.awaitingHandoff)
+    }
+
+    @Test
+    fun `after a restart reconciled pending step does not set isHandoffSheetVisible`() = runEnvironmentTest { envScope ->
+        val handoff = UserRepairHandoff(
+            actionId = "bootstrap:apt",
+            description = "Install packages",
+            terminalCommand = "sudo apt-get update",
+            packages = listOf("git"),
+            distro = "Ubuntu",
+        )
+        val spyService = SpyToolchainProvisioningService(
+            initialState = ToolchainSetupState(
+                pendingAttemptId = "attempt-reconcile-test",
+            )
+        )
+        spyService.recoverOutcome = SetupOutcome.AwaitingUserAction(
+            pendingPlanId = "plan-reconcile-test",
+            stage = SetupStepStage.SYSTEM_PACKAGES,
+            reason = "Awaiting packages",
+            handoff = handoff,
+        )
+
+        val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)
+        testScheduler.advanceUntilIdle()
+
+        assertFalse(stateHolder.isHandoffSheetVisible.value, "Handoff sheet must NOT automatically open after restart reconciliation")
     }
 }

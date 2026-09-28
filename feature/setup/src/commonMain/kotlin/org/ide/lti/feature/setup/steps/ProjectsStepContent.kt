@@ -80,6 +80,8 @@ import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.feature.setup.PendingWorkspaceRequest
+import org.ide.lti.feature.setup.ProjectsHeaderStatusPresentation
+import org.ide.lti.feature.setup.SetupPresentationMapper
 import org.ide.lti.feature.setup.SetupUiActions
 import org.ide.lti.feature.setup.SetupUiState
 import org.ide.lti.feature.setup.WorkspaceAction
@@ -159,21 +161,12 @@ fun ProjectsStepContent(
     ) {
         // 1. Title + New/Open Toolbar Row, with the live environment check summarized in one line so
         // browsing projects never hides that verification is still running or needs attention.
-        val toolchain = state.toolchainSetupState
-        val failedCount = toolchain.steps.count { it.status == StepStatus.FAILED }
-        val environmentStatus = when {
-            toolchain.isChecking -> "Checking environment…"
-            failedCount == 1 -> "1 environment item needs attention · Review"
-            failedCount > 1 -> "$failedCount environment items need attention · Review"
-            toolchain.canLaunchWorkspace -> null
-            else -> "Environment not verified yet · Review"
-        }
+        val headerStatus = SetupPresentationMapper.mapProjectsHeaderStatus(state.toolchainSetupState)
         WorkspaceHeaderSection(
             onCreateWorkspace = actions.onCreateWorkspace,
             onOpenFolder = actions.onOpenFolder,
-            environmentStatus = environmentStatus,
-            isEnvironmentAttention = failedCount > 0,
-            onEnvironmentStatusClick = onNavigateToEnvironment,
+            headerStatus = headerStatus,
+            onNavigateToEnvironment = onNavigateToEnvironment,
         )
 
         GlassHorizontalDivider()
@@ -479,9 +472,8 @@ private fun WorkspaceHeaderSection(
     onCreateWorkspace: () -> Unit,
     onOpenFolder: () -> Unit,
     modifier: Modifier = Modifier,
-    environmentStatus: String? = null,
-    isEnvironmentAttention: Boolean = false,
-    onEnvironmentStatusClick: () -> Unit = {},
+    headerStatus: ProjectsHeaderStatusPresentation? = null,
+    onNavigateToEnvironment: () -> Unit = {},
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -507,19 +499,33 @@ private fun WorkspaceHeaderSection(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            if (environmentStatus != null) {
-                Text(
-                    text = environmentStatus,
-                    fontSize = SetupTokens.TextMetadata,
-                    color = if (isEnvironmentAttention) {
-                        MaterialTheme.colorScheme.error
-                    } else {
-                        MaterialTheme.colorScheme.primary
-                    },
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.clickable(onClick = onEnvironmentStatusClick),
-                )
+            if (headerStatus?.statusText != null) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                ) {
+                    Text(
+                        text = headerStatus.statusText,
+                        fontSize = SetupTokens.TextMetadata,
+                        color = if (headerStatus.isNeedsSetup) {
+                            MaterialTheme.colorScheme.error
+                        } else {
+                            MaterialTheme.colorScheme.primary
+                        },
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    if (headerStatus.actionLabel != null) {
+                        GlassPrimaryButton(
+                            onClick = onNavigateToEnvironment,
+                        ) {
+                            Text(
+                                text = headerStatus.actionLabel,
+                                fontSize = SetupTokens.TextMetadata,
+                            )
+                        }
+                    }
+                }
             }
         }
 

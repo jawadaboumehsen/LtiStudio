@@ -599,4 +599,111 @@ class SetupPresentationMapperTest {
         assertEquals(IdeStatusSeverity.Ready, usablePres.severity)
         assertTrue(usablePres.isReady)
     }
+
+    @Test
+    fun testMapProjectsHeaderStatus() {
+        val checking = ToolchainSetupState(isChecking = true)
+        val checkingPres = SetupPresentationMapper.mapProjectsHeaderStatus(checking)
+        assertEquals("Checking this machine…", checkingPres.statusText)
+        assertNull(checkingPres.actionLabel)
+        assertFalse(checkingPres.isNeedsSetup)
+
+        val ready = ToolchainSetupState(
+            steps = listOf(
+                SetupStepDetail(stage = SetupStepStage.WSL_DETECTION, title = "WSL", description = "", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
+                SetupStepDetail(stage = SetupStepStage.SYSTEM_PACKAGES, title = "Packages", description = "", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
+                SetupStepDetail(stage = SetupStepStage.SERVER_CONNECTIVITY, title = "Server", description = "", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
+                SetupStepDetail(stage = SetupStepStage.SYSTEM_DIAGNOSTICS, title = "Doctor", description = "", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
+                SetupStepDetail(stage = SetupStepStage.REPO_SYNCHRONIZATION, title = "Repos", description = "", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
+                SetupStepDetail(stage = SetupStepStage.TOOLCHAIN_COMPILATION, title = "Tools", description = "", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
+            ),
+            lastReadyAt = 1700000000000L,
+            checkedAt = 1700000000000L,
+        )
+        val readyPres = SetupPresentationMapper.mapProjectsHeaderStatus(ready)
+        assertEquals("Machine ready", readyPres.statusText)
+        assertNull(readyPres.actionLabel)
+        assertFalse(readyPres.isNeedsSetup)
+
+        val needsSetup = ToolchainSetupState(
+            steps = listOf(
+                SetupStepDetail(stage = SetupStepStage.WSL_DETECTION, title = "WSL", description = "", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
+                SetupStepDetail(stage = SetupStepStage.SYSTEM_PACKAGES, title = "Packages", description = "3 packages missing", status = StepStatus.FAILED, provenance = StepProvenance.LIVE),
+            ),
+        )
+        val needsSetupPres = SetupPresentationMapper.mapProjectsHeaderStatus(needsSetup)
+        assertEquals("This machine needs setup", needsSetupPres.statusText)
+        assertEquals("Set up this machine", needsSetupPres.actionLabel)
+        assertTrue(needsSetupPres.isNeedsSetup)
+    }
+
+    @Test
+    fun testMapSystemPackagesAllStates() {
+        // 1. Checking
+        val checking = SetupPresentationMapper.mapSystemPackages(
+            step = SetupStepDetail(stage = SetupStepStage.SYSTEM_PACKAGES, title = "", description = "", status = StepStatus.RUNNING),
+            isChecking = true,
+        )
+        assertEquals("Checking…", checking.detailText)
+        assertNull(checking.primaryActionLabel)
+        assertTrue(checking.isChecking)
+
+        // 2. Probe failed
+        val probeFailed = SetupPresentationMapper.mapSystemPackages(
+            step = SetupStepDetail(stage = SetupStepStage.SYSTEM_PACKAGES, title = "", description = "Couldn't check packages: WSL timed out", status = StepStatus.FAILED),
+        )
+        assertEquals("Couldn't check packages: WSL timed out", probeFailed.detailText)
+        assertEquals("Retry", probeFailed.primaryActionLabel)
+
+        // 3. Missing packages
+        val missing = SetupPresentationMapper.mapSystemPackages(
+            step = SetupStepDetail(stage = SetupStepStage.SYSTEM_PACKAGES, title = "", description = "3 packages missing: git, cmake, ninja-build", status = StepStatus.FAILED),
+        )
+        assertEquals("3 packages missing: git, cmake, ninja-build", missing.detailText)
+        assertEquals("Install packages", missing.primaryActionLabel)
+
+        // 4. Unavailable
+        val unavailable = SetupPresentationMapper.mapSystemPackages(
+            step = SetupStepDetail(stage = SetupStepStage.SYSTEM_PACKAGES, title = "", description = "foo isn't available on Ubuntu 24.04", status = StepStatus.FAILED),
+        )
+        assertEquals("foo isn't available on Ubuntu 24.04", unavailable.detailText)
+        assertNull(unavailable.primaryActionLabel)
+
+        // 5. Awaiting user action
+        val awaitingOp = SetupOperation(
+            operationId = "test_op",
+            executionState = SetupOperationState.AWAITING_USER_ACTION,
+        )
+        val awaiting = SetupPresentationMapper.mapSystemPackages(
+            step = SetupStepDetail(stage = SetupStepStage.SYSTEM_PACKAGES, title = "", description = "", status = StepStatus.FAILED),
+            activeOperation = awaitingOp,
+        )
+        assertEquals("Waiting for you in the terminal", awaiting.detailText)
+        assertEquals("Continue setup", awaiting.primaryActionLabel)
+
+        // 6. Verifying in handoff sheet
+        val verifying = SetupPresentationMapper.mapSystemPackages(
+            step = SetupStepDetail(stage = SetupStepStage.SYSTEM_PACKAGES, title = "", description = "", status = StepStatus.FAILED),
+            handoffSheetState = TerminalHandoffState.Verifying,
+        )
+        assertEquals("Checking installation…", verifying.detailText)
+        assertNull(verifying.primaryActionLabel)
+        assertTrue(verifying.isChecking)
+
+        // 7. Partial still missing
+        val partial = SetupPresentationMapper.mapSystemPackages(
+            step = SetupStepDetail(stage = SetupStepStage.SYSTEM_PACKAGES, title = "", description = "Still missing: cmake", status = StepStatus.FAILED),
+            handoffSheetState = TerminalHandoffState.StillMissing(listOf("cmake"), "sudo apt-get install cmake"),
+        )
+        assertEquals("Still missing: cmake", partial.detailText)
+        assertEquals("Install packages", partial.primaryActionLabel)
+
+        // 8. OK (All present)
+        val ok = SetupPresentationMapper.mapSystemPackages(
+            step = SetupStepDetail(stage = SetupStepStage.SYSTEM_PACKAGES, title = "", description = "All prerequisite packages installed", status = StepStatus.SUCCESS),
+        )
+        assertEquals("All present", ok.detailText)
+        assertNull(ok.primaryActionLabel)
+        assertTrue(ok.isReady)
+    }
 }

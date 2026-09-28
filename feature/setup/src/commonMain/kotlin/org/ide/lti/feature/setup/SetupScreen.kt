@@ -129,6 +129,7 @@ fun SetupScreen(
     val workspaceError by viewModel.workspaceError.collectAsState()
     val pendingWorkspaceRequest by viewModel.pendingWorkspaceRequest.collectAsState()
     val isHandoffSheetVisible by viewModel.isHandoffSheetVisible.collectAsState()
+    val handoffSheetState by viewModel.handoffSheetState.collectAsState()
 
     var activeTab by remember(initialTab) {
         mutableStateOf(initialTab ?: SetupTab.PROJECTS)
@@ -160,6 +161,7 @@ fun SetupScreen(
         workspaceError = workspaceError,
         pendingWorkspaceRequest = pendingWorkspaceRequest,
         isHandoffSheetVisible = isHandoffSheetVisible,
+        handoffSheetState = handoffSheetState,
         isToolchainBound = viewModel.isToolchainBound,
     )
 
@@ -228,6 +230,7 @@ fun SetupScreen(
         onAbandonAwaitingOperation = viewModel::abandonAwaitingOperation,
         onShowHandoffSheet = viewModel::showHandoffSheet,
         onOpenTerminal = viewModel::openTerminal,
+        onInstallPackages = viewModel::installPackages,
     )
 
     SetupPerformanceScenarioHook(
@@ -692,9 +695,11 @@ fun SetupScreenContent(
     val activeOperationForHandoff = state.activeOperation
     val handoff = activeOperationForHandoff?.awaitingHandoff
     val isAwaiting = activeOperationForHandoff?.executionState == SetupOperationState.AWAITING_USER_ACTION
-    if (state.isHandoffSheetVisible && isAwaiting && handoff != null) {
+    val isVerifying = state.handoffSheetState == TerminalHandoffState.Verifying
+    if (state.isHandoffSheetVisible && (isAwaiting || isVerifying) && handoff != null) {
         TerminalHandoffSheet(
             handoff = handoff,
+            sheetState = state.handoffSheetState,
             onOpenTerminal = actions.onOpenTerminal,
             onResume = {
                 actions.onResumeAwaitingOperation()

@@ -44,10 +44,14 @@ import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
+import org.ide.lti.core.designsystem.component.display.IdeStatusSeverity
 import org.ide.lti.core.domain.setup.SetupStepDetail
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepProvenance
 import org.ide.lti.core.domain.setup.StepStatus
+import org.ide.lti.feature.setup.SetupOperation
+import org.ide.lti.feature.setup.SetupPresentationMapper
+import org.ide.lti.feature.setup.TerminalHandoffState
 
 /**
  * 5-stage vertical Toolchain Provisioning Pipeline Tracker (US2).
@@ -67,6 +71,10 @@ fun ToolchainPipelineTracker(
     modifier: Modifier = Modifier,
     onRetryStage: (SetupStepStage) -> Unit = { onRetryStep() },
     isBusy: Boolean = false,
+    activeOperation: SetupOperation? = null,
+    handoffSheetState: TerminalHandoffState = TerminalHandoffState.Idle,
+    onInstallPackages: () -> Unit = {},
+    onShowHandoffSheet: () -> Unit = {},
 ) {
     val stepMap = steps.associateBy { it.stage }
     val orderedStages = if (stepMap.containsKey(SetupStepStage.SYSTEM_PACKAGES)) {
@@ -125,7 +133,7 @@ fun ToolchainPipelineTracker(
                 )
             }
 
-            // 5 Vertical Stages
+            // Vertical Stages
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(Spacing.Small),
@@ -142,6 +150,10 @@ fun ToolchainPipelineTracker(
                         stage = stage,
                         isBusy = isBusy,
                         onRetryStage = onRetryStage,
+                        activeOperation = activeOperation,
+                        handoffSheetState = handoffSheetState,
+                        onInstallPackages = onInstallPackages,
+                        onShowHandoffSheet = onShowHandoffSheet,
                     )
                 }
             }
@@ -155,18 +167,39 @@ private fun VerticalStageRow(
     stage: SetupStepStage,
     isBusy: Boolean,
     onRetryStage: (SetupStepStage) -> Unit,
+    activeOperation: SetupOperation? = null,
+    handoffSheetState: TerminalHandoffState = TerminalHandoffState.Idle,
+    onInstallPackages: () -> Unit = {},
+    onShowHandoffSheet: () -> Unit = {},
 ) {
     val diagnostics = GlassTheme.diagnosticColors
 
     val stageDisplayName = stage.displayName
 
-    val isFailed = step.status == StepStatus.FAILED
-    val isWarning = step.status == StepStatus.WARNING
-    val isRunning = step.status == StepStatus.RUNNING
-    val isSuccess = step.status == StepStatus.SUCCESS
-    val isRestored = step.provenance == StepProvenance.RESTORED
+    val systemPackagesPres = if (stage == SetupStepStage.SYSTEM_PACKAGES) {
+        SetupPresentationMapper.mapSystemPackages(
+            step = step,
+            isChecking = isBusy || step.status == StepStatus.RUNNING,
+            activeOperation = activeOperation,
+            handoffSheetState = handoffSheetState,
+        )
+    } else null
 
-    if (isFailed || isWarning) {
+    val isRunning = step.status == StepStatus.RUNNING || systemPackagesPres?.isChecking == true
+    val isSuccess = (step.status == StepStatus.SUCCESS || systemPackagesPres?.isReady == true) && !isRunning
+    val isRestored = step.provenance == StepProvenance.RESTORED
+    val isActionRequired = (step.status == StepStatus.FAILED || step.status == StepStatus.WARNING ||
+        systemPackagesPres?.primaryActionLabel != null) && !isSuccess
+
+    val isFailed = step.status == StepStatus.FAILED ||
+        (systemPackagesPres != null && systemPackagesPres.severity == IdeStatusSeverity.Failed)
+    val isWarning = !isFailed && (step.status == StepStatus.WARNING ||
+        (systemPackagesPres != null && systemPackagesPres.severity == IdeStatusSeverity.Warning))
+
+    val displayDescription = systemPackagesPres?.detailText ?: step.description
+    val actionLabel = systemPackagesPres?.primaryActionLabel ?: "Retry Stage"
+
+    if (isActionRequired) {
         // Expanded Failed / Warning Stage Row
         Box(
             modifier = Modifier
@@ -228,12 +261,12 @@ private fun VerticalStageRow(
                 }
 
                 Text(
-                    text = step.description,
+                    text = displayDescription,
                     style = MaterialTheme.typography.bodySmall,
                     color = if (isFailed) diagnostics.error else diagnostics.warning,
                 )
 
-                if (!step.error.isNullOrBlank()) {
+                if (!step.error.isNullOrBlank() && systemPackagesPres == null) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -256,24 +289,34 @@ private fun VerticalStageRow(
                     }
                 }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                ) {
-                    GlassPrimaryButton(
-                        onClick = { onRetryStage(stage) },
-                        enabled = !isBusy,
+                if (systemPackagesPres?.primaryActionLabel != null || systemPackagesPres == null) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                        GlassPrimaryButton(
+                            onClick = {
+                                when (actionLabel) {
+                                    "Install packages" -> onInstallPackages()
+                                    "Continue setup" -> onShowHandoffSheet()
+                                    else -> onRetryStage(stage)
+                                }
+                            },
+                            enabled = !isBusy,
                         ) {
-                            Icon(
-                                painter = AppIcons.RefreshPainterResource(),
-                                contentDescription = null,
-                                modifier = Modifier.size(IconSize.Small),
-                            )
-                            Text("Retry Stage", maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                            ) {
+                                if (actionLabel == "Retry" || actionLabel == "Retry Stage") {
+                                    Icon(
+                                        painter = AppIcons.RefreshPainterResource(),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(IconSize.Small),
+                                    )
+                                }
+                                Text(actionLabel, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
+                            }
                         }
                     }
                 }
@@ -358,7 +401,7 @@ private fun VerticalStageRow(
                     Spacer(Modifier.size(Spacing.ExtraSmall))
 
                     Text(
-                        text = step.description,
+                        text = displayDescription,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,

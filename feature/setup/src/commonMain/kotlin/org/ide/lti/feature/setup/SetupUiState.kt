@@ -48,6 +48,7 @@ data class SetupUiState(
     val workspaceError: WorkspaceError? = null,
     val pendingWorkspaceRequest: PendingWorkspaceRequest? = null,
     val isHandoffSheetVisible: Boolean = false,
+    val handoffSheetState: TerminalHandoffState = TerminalHandoffState.Idle,
 ) {
     val environmentPresentation: EnvironmentPresentation
         get() = SetupPresentationMapper.mapEnvironment(
@@ -113,4 +114,5 @@ data class SetupUiActions(
     val onAbandonAwaitingOperation: () -> Unit = {},
     val onShowHandoffSheet: () -> Unit = {},
     val onOpenTerminal: (String) -> Unit = {},
+    val onInstallPackages: () -> Unit = {},
 )
