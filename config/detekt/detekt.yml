@@ -674,6 +674,16 @@ naming:
   MatchingDeclarationName:
     active: true
     mustBeFirst: true
+    # Platform `actual` files are named <Name>.<target>.kt; this project's JVM desktop target is `desktop`.
+    multiplatformTargets:
+      - 'desktop'
+      - 'jvm'
+      - 'js'
+      - 'wasmJs'
+      - 'ios'
+      - 'android'
+      - 'native'
+      - 'common'
   MemberNameEqualsClassName:
     active: true
     ignoreOverridden: true

@@ -36,7 +36,7 @@ import kotlin.test.assertTrue
 class LiquidLensShaderPrototypeTest {
 
     companion object {
-        const val LiquidLensSkSL = """
+        private const val LIQUID_LENS_SK_SL = """
         uniform shader content;
         uniform float2 resolution;
         uniform float2 thumbCenter;
@@ -99,7 +99,7 @@ class LiquidLensShaderPrototypeTest {
 
     @Test
     fun testSkSLCompilesCleanlyOnSkia() {
-        val effect = RuntimeEffect.makeForShader(LiquidLensSkSL)
+        val effect = RuntimeEffect.makeForShader(LIQUID_LENS_SK_SL)
         assertNotNull(effect, "SkSL shader must compile successfully on Skia runtime")
     }
 
@@ -123,7 +123,7 @@ class LiquidLensShaderPrototypeTest {
         val backdropShader = backdropImage.makeShader()
 
         // 2. Configure RuntimeShader with 4eckme liquid lens optics
-        val effect = RuntimeEffect.makeForShader(LiquidLensSkSL)
+        val effect = RuntimeEffect.makeForShader(LIQUID_LENS_SK_SL)
         val builder = RuntimeShaderBuilder(effect)
         val thumbCenter = floatArrayOf(100f, 50f)
         val thumbHalfSize = floatArrayOf(28f, 28f)
@@ -168,10 +168,14 @@ class LiquidLensShaderPrototypeTest {
             }
         }
         val meanInteriorDiff = totalInteriorDivergence / sampledPixels
-        println("[PROTOTYPE VERIFICATION] Mean Interior Lens Delta: $meanInteriorDiff (over $sampledPixels interior pixels)")
+        println(
+            "[PROTOTYPE VERIFICATION] Mean Interior Lens Delta: $meanInteriorDiff " +
+                "(over $sampledPixels interior pixels)",
+        )
         assertTrue(
             meanInteriorDiff > 0.05,
-            "Interior of the 3D liquid lens must visibly refract and displace underlying stripes (found $meanInteriorDiff)",
+            "Interior of the 3D liquid lens must visibly refract and displace underlying stripes " +
+                "(found $meanInteriorDiff)",
         )
 
         // 5. Verify grazing Fresnel specular highlight:
@@ -183,7 +187,9 @@ class LiquidLensShaderPrototypeTest {
         val rimB = (rimColor and 0xFF) / 255.0f
         val rimLuminance = 0.2126f * rimR + 0.7152f * rimG + 0.0722f * rimB
 
-        println("[PROTOTYPE VERIFICATION] Grazing Rim Luminance (Fresnel Glint): $rimLuminance (R=$rimR, G=$rimG, B=$rimB)")
+        println(
+            "[PROTOTYPE VERIFICATION] Grazing Rim Luminance (Fresnel Glint): $rimLuminance (R=$rimR, G=$rimG, B=$rimB)",
+        )
         assertTrue(
             rimLuminance > 0.30f,
             "Grazing rim must exhibit specular Fresnel highlight peak > 0.30 (found $rimLuminance)",

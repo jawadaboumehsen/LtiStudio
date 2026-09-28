@@ -47,12 +47,12 @@ import org.ide.lti.core.designsystem.component.layout.GlassTopBar
 import org.ide.lti.core.designsystem.component.layout.TopBarNavigation
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.model.target.TargetValidationError
 import org.ide.lti.feature.configuration.components.ConfigurationSidebar
@@ -190,9 +190,7 @@ fun ConfigurationScreen(
 }
 
 @Composable
-private fun ConfigurationValidationBanner(
-    validationErrors: List<TargetValidationError>,
-) {
+private fun ConfigurationValidationBanner(validationErrors: List<TargetValidationError>) {
     Row(
         modifier = Modifier
             .fillMaxWidth()

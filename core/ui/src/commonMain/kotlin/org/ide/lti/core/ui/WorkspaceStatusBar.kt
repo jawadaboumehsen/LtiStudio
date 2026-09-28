@@ -26,7 +26,6 @@ import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
-import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
@@ -50,7 +49,6 @@ fun WorkspaceStatusBar(
     fileType: String? = null,
     drawOwnChrome: Boolean = true,
 ) {
-
     GlassStatusBar(
         modifier = modifier,
         drawOwnChrome = drawOwnChrome,

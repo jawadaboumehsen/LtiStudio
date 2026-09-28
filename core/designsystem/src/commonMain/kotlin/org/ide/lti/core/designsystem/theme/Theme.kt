@@ -18,7 +18,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.ui.Modifier
 import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.glass.GlassReducedMotionPolicy
@@ -200,7 +199,6 @@ object GlassTheme {
 @OptIn(ExperimentalHazeApi::class)
 @Composable
 fun LtiTheme(
-    modifier: Modifier = Modifier,
     appTheme: AppTheme = AppTheme.Blue,
     effectsEnabled: Boolean? = null,
     reducedMotion: Boolean? = null,
@@ -221,7 +219,11 @@ fun LtiTheme(
 
     val parentMotionPolicy = LocalGlassReducedMotionPolicy.current
     val resolvedMotionPolicy = when {
-        reducedMotion != null -> if (reducedMotion) GlassReducedMotionPolicy.Reduced else GlassReducedMotionPolicy.System
+        reducedMotion != null -> if (reducedMotion) {
+            GlassReducedMotionPolicy.Reduced
+        } else {
+            GlassReducedMotionPolicy.System
+        }
         else -> parentMotionPolicy
     }
 

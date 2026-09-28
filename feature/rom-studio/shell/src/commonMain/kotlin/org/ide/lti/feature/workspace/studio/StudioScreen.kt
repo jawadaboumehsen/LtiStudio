@@ -568,7 +568,10 @@ private fun StageObjectEditor(
                             variant = GlassButtonVariant.Standard,
                             shape = GlassShapes.HazeCompact,
                         ) {
-                            Text("Execute Stage (Unavailable in Studio)", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(
+                                "Execute Stage (Unavailable in Studio)",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
                         }
 
                         GlassButton(

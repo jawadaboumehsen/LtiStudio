@@ -66,7 +66,10 @@ class GlassPolicyGuardrailTest {
                         violations.add("${file.name}:${index + 1} uses HazeInput.Backdrop instead of HazeInput.Sources")
                     }
                     if (snippet.contains("HazeInput.Sources") && !snippet.contains("selection =")) {
-                        violations.add("${file.name}:${index + 1} uses unfiltered HazeInput.Sources without scoped selection; must use sceneHazeInput")
+                        violations.add(
+                            "${file.name}:${index + 1} uses unfiltered HazeInput.Sources without scoped selection; " +
+                                "must use sceneHazeInput",
+                        )
                     }
                     if (!snippet.contains("HazeInput.Sources") && !snippet.contains("sceneHazeInput")) {
                         violations.add("${file.name}:${index + 1} does not use HazeInput.Sources or sceneHazeInput")
@@ -114,136 +117,147 @@ class GlassPolicyGuardrailTest {
         assertTrue(observedEffectsEnabled, "Child theme requested effectsEnabled = true")
         assertTrue(
             observedReduceTransparency,
-            "Child theme with effectsEnabled = true MUST NOT clear parent reduceTransparency = true request (monotonic)",
+            "Child theme with effectsEnabled = true MUST NOT clear parent reduceTransparency = true request " +
+                "(monotonic)",
         )
     }
 
     @OptIn(ExperimentalTestApi::class)
     @Test
-    fun ideTopAppBarInteriorMatchesSurfaceContainerWhenEffectsDisabled() = runDesktopComposeUiTest(width = 300, height = 80) {
-        var expectedColor: Color? = null
-        setContent {
-            LtiTheme(appTheme = AppTheme.Blue, effectsEnabled = false) {
-                expectedColor = MaterialTheme.colorScheme.surfaceContainer
-                IdeTopAppBar()
-            }
-        }
-
-        val pixelMap = onRoot().captureToImage().toPixelMap()
-        val sampledColor = pixelMap[150, 20]
-        assertColorClose(expectedColor!!, sampledColor, "IdeTopAppBar")
-    }
-
-    @OptIn(ExperimentalTestApi::class)
-    @Test
-    fun ideCardSurfaceMatchesSurfaceContainerHighWhenEffectsDisabled() = runDesktopComposeUiTest(width = 120, height = 120) {
-        var expectedColor: Color? = null
-        setContent {
-            LtiTheme(appTheme = AppTheme.Blue, effectsEnabled = false) {
-                expectedColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                Box(Modifier.fillMaxSize()) {
-                    Box(
-                        Modifier
-                            .size(100.dp)
-                            .ideCardSurface(),
-                    )
+    fun ideTopAppBarInteriorMatchesSurfaceContainerWhenEffectsDisabled() =
+        runDesktopComposeUiTest(width = 300, height = 80) {
+            var expectedColor: Color? = null
+            setContent {
+                LtiTheme(appTheme = AppTheme.Blue, effectsEnabled = false) {
+                    expectedColor = MaterialTheme.colorScheme.surfaceContainer
+                    IdeTopAppBar()
                 }
             }
-        }
 
-        val pixelMap = onRoot().captureToImage().toPixelMap()
-        val sampledColor = pixelMap[50, 50]
-        assertColorClose(expectedColor!!, sampledColor, "ideCardSurface")
-    }
+            val pixelMap = onRoot().captureToImage().toPixelMap()
+            val sampledColor = pixelMap[150, 20]
+            assertColorClose(expectedColor!!, sampledColor, "IdeTopAppBar")
+        }
 
     @OptIn(ExperimentalTestApi::class)
     @Test
-    fun mutedIdeCardSurfaceMatchesSurfaceContainerWhenEffectsDisabled() = runDesktopComposeUiTest(width = 120, height = 120) {
-        var expectedColor: Color? = null
-        setContent {
-            LtiTheme(appTheme = AppTheme.Blue, effectsEnabled = false) {
-                expectedColor = MaterialTheme.colorScheme.surfaceContainer
-                Box(Modifier.fillMaxSize()) {
-                    Box(
-                        Modifier
-                            .size(100.dp)
-                            .ideCardSurface(isMuted = true),
-                    )
-                }
-            }
-        }
-
-        val pixelMap = onRoot().captureToImage().toPixelMap()
-        val sampledColor = pixelMap[50, 50]
-        assertColorClose(expectedColor!!, sampledColor, "muted ideCardSurface")
-    }
-
-    @OptIn(ExperimentalTestApi::class)
-    @Test
-    fun glassButtonPrimaryMatchesSurfaceContainerHighWhenEffectsDisabled() = runDesktopComposeUiTest(width = 120, height = 60) {
-        var expectedColor: Color? = null
-        setContent {
-            LtiTheme(appTheme = AppTheme.Blue, effectsEnabled = false) {
-                expectedColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                Box(Modifier.fillMaxSize()) {
-                    GlassButton(
-                        onClick = {},
-                        variant = GlassButtonVariant.Primary,
-                    ) {
-                        Text("Action")
+    fun ideCardSurfaceMatchesSurfaceContainerHighWhenEffectsDisabled() =
+        runDesktopComposeUiTest(width = 120, height = 120) {
+            var expectedColor: Color? = null
+            setContent {
+                LtiTheme(appTheme = AppTheme.Blue, effectsEnabled = false) {
+                    expectedColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                    Box(Modifier.fillMaxSize()) {
+                        Box(
+                            Modifier
+                                .size(100.dp)
+                                .ideCardSurface(),
+                        )
                     }
                 }
             }
-        }
 
-        val pixelMap = onRoot().captureToImage().toPixelMap()
-        val sampledColor = pixelMap[60, 20]
-        assertColorClose(expectedColor!!, sampledColor, "GlassButton.Primary")
-    }
+            val pixelMap = onRoot().captureToImage().toPixelMap()
+            val sampledColor = pixelMap[50, 50]
+            assertColorClose(expectedColor!!, sampledColor, "ideCardSurface")
+        }
 
     @OptIn(ExperimentalTestApi::class)
     @Test
-    fun glassButtonTextVariantRemainsTransparentWhenEffectsDisabled() = runDesktopComposeUiTest(width = 120, height = 60) {
-        setContent {
-            LtiTheme(appTheme = AppTheme.Blue, effectsEnabled = false) {
-                Box(Modifier.fillMaxSize()) {
-                    GlassButton(
-                        onClick = {},
-                        variant = GlassButtonVariant.Text,
-                    ) {
-                        // Empty content so we sample background directly
+    fun mutedIdeCardSurfaceMatchesSurfaceContainerWhenEffectsDisabled() =
+        runDesktopComposeUiTest(width = 120, height = 120) {
+            var expectedColor: Color? = null
+            setContent {
+                LtiTheme(appTheme = AppTheme.Blue, effectsEnabled = false) {
+                    expectedColor = MaterialTheme.colorScheme.surfaceContainer
+                    Box(Modifier.fillMaxSize()) {
+                        Box(
+                            Modifier
+                                .size(100.dp)
+                                .ideCardSurface(isMuted = true),
+                        )
                     }
                 }
             }
-        }
 
-        val pixelMap = onRoot().captureToImage().toPixelMap()
-        val sampledColor = pixelMap[60, 20]
-        assertEquals(0f, sampledColor.alpha, "GlassButton.Text background must remain transparent even when effects are disabled")
-    }
+            val pixelMap = onRoot().captureToImage().toPixelMap()
+            val sampledColor = pixelMap[50, 50]
+            assertColorClose(expectedColor!!, sampledColor, "muted ideCardSurface")
+        }
 
     @OptIn(ExperimentalTestApi::class)
     @Test
-    fun glassDialogMatchesSurfaceContainerHighestWhenEffectsDisabled() = runDesktopComposeUiTest(width = 200, height = 150) {
-        var expectedColor: Color? = null
-        setContent {
-            LtiTheme(appTheme = AppTheme.Blue, effectsEnabled = false) {
-                expectedColor = MaterialTheme.colorScheme.surfaceContainerHighest
-                GlassDialog(
-                    onDismissRequest = {},
-                    confirmButton = { Text("OK") },
-                    title = "Dialog Title",
-                    modifier = Modifier.testTag("test_glass_dialog"),
-                ) {
-                    Text("Dialog Content")
+    fun glassButtonPrimaryMatchesSurfaceContainerHighWhenEffectsDisabled() =
+        runDesktopComposeUiTest(width = 120, height = 60) {
+            var expectedColor: Color? = null
+            setContent {
+                LtiTheme(appTheme = AppTheme.Blue, effectsEnabled = false) {
+                    expectedColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                    Box(Modifier.fillMaxSize()) {
+                        GlassButton(
+                            onClick = {},
+                            variant = GlassButtonVariant.Primary,
+                        ) {
+                            Text("Action")
+                        }
+                    }
                 }
             }
+
+            val pixelMap = onRoot().captureToImage().toPixelMap()
+            val sampledColor = pixelMap[60, 20]
+            assertColorClose(expectedColor!!, sampledColor, "GlassButton.Primary")
         }
 
-        val pixelMap = onNodeWithTag("test_glass_dialog").captureToImage().toPixelMap()
-        val sampledColor = pixelMap[100, 30]
-        assertColorClose(expectedColor!!, sampledColor, "GlassDialog")
-    }
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun glassButtonTextVariantRemainsTransparentWhenEffectsDisabled() =
+        runDesktopComposeUiTest(width = 120, height = 60) {
+            setContent {
+                LtiTheme(appTheme = AppTheme.Blue, effectsEnabled = false) {
+                    Box(Modifier.fillMaxSize()) {
+                        GlassButton(
+                            onClick = {},
+                            variant = GlassButtonVariant.Text,
+                        ) {
+                            // Empty content so we sample background directly
+                        }
+                    }
+                }
+            }
+
+            val pixelMap = onRoot().captureToImage().toPixelMap()
+            val sampledColor = pixelMap[60, 20]
+            assertEquals(
+                0f,
+                sampledColor.alpha,
+                "GlassButton.Text background must remain transparent even when effects are disabled",
+            )
+        }
+
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun glassDialogMatchesSurfaceContainerHighestWhenEffectsDisabled() =
+        runDesktopComposeUiTest(width = 200, height = 150) {
+            var expectedColor: Color? = null
+            setContent {
+                LtiTheme(appTheme = AppTheme.Blue, effectsEnabled = false) {
+                    expectedColor = MaterialTheme.colorScheme.surfaceContainerHighest
+                    GlassDialog(
+                        onDismissRequest = {},
+                        confirmButton = { Text("OK") },
+                        title = "Dialog Title",
+                        modifier = Modifier.testTag("test_glass_dialog"),
+                    ) {
+                        Text("Dialog Content")
+                    }
+                }
+            }
+
+            val pixelMap = onNodeWithTag("test_glass_dialog").captureToImage().toPixelMap()
+            val sampledColor = pixelMap[100, 30]
+            assertColorClose(expectedColor!!, sampledColor, "GlassDialog")
+        }
 
     private fun assertColorClose(expected: Color, actual: Color, component: String) {
         val deltaRed = Math.abs(expected.red - actual.red)
@@ -253,7 +267,8 @@ class GlassPolicyGuardrailTest {
 
         assertTrue(
             deltaRed < 0.05f && deltaGreen < 0.05f && deltaBlue < 0.05f && deltaAlpha < 0.05f,
-            "$component: expected color $expected but sampled $actual (delta R=$deltaRed, G=$deltaGreen, B=$deltaBlue, A=$deltaAlpha)",
+            "$component: expected color $expected but sampled $actual " +
+                "(delta R=$deltaRed, G=$deltaGreen, B=$deltaBlue, A=$deltaAlpha)",
         )
     }
 }

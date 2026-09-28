@@ -9,10 +9,18 @@
  */
 package org.ide.lti.feature.workspace.panels.run
 
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -87,6 +95,153 @@ public fun RunPanel(
     }
 }
 
+/** Top action bar for the active build run panel. */
+@Composable
+private fun RunTopActionBar(uiState: BuildRunUiState, onCancel: () -> Unit, onStart: () -> Unit) {
+    val typography = GlassTheme.typography
+
+    // Top action bar.
+    // Below PanelHeaderStackBreakpoint even a truncated title and the (never-wrapped)
+    // action buttons don't both fit on one line — GlassLayout's split-panel divider can
+    // legitimately drag this panel down to MinPanelWidth (180dp), well under that. Read
+    // the available width once, at this single root, to pick Row (side-by-side) vs.
+    // Column (stacked) — a stable breakpoint boolean, not a continuous/animated read, so
+    // it stays cheap (see avoiding-subcomposition-pitfalls: nested or per-frame reads are
+    // the expensive case, a single top-level breakpoint check is not).
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+        val isNarrow = maxWidth < ComponentSize.PanelHeaderStackBreakpoint
+
+        val titleBlock: @Composable () -> Unit = {
+            Column {
+                Text(
+                    text = "ROM Build Pipeline",
+                    style = typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = if (uiState.currentWorkspace != null) {
+                        "Workspace: ${uiState.currentWorkspace?.name}"
+                    } else {
+                        "No workspace opened"
+                    },
+                    style = typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+
+        val actionsBlock: @Composable () -> Unit = {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (uiState.canCancelRun) {
+                    GlassButton(
+                        onClick = onCancel,
+                        enabled = !uiState.isCancelling,
+                        variant = GlassButtonVariant.Secondary,
+                    ) {
+                        Text(
+                            text = if (uiState.isCancelling) "Cancelling..." else "Cancel",
+                            style = typography.labelMedium,
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+
+                GlassButton(
+                    onClick = onStart,
+                    enabled = !uiState.isRunDisabled,
+                    variant = GlassButtonVariant.Primary,
+                ) {
+                    Text(
+                        text = if (uiState.isRunning) "Building..." else "Start Pipeline",
+                        style = typography.labelMedium,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+        }
+
+        if (isNarrow) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+            ) {
+                titleBlock()
+                actionsBlock()
+            }
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(modifier = Modifier.weight(1f, fill = false)) { titleBlock() }
+                actionsBlock()
+            }
+        }
+    }
+}
+
+/** Status and state banner alerts for the active build run. */
+@Composable
+private fun RunStateBanners(uiState: BuildRunUiState, onNavigateToSetup: (() -> Unit)?, onReattach: () -> Unit) {
+    if (uiState.environmentReadiness != null &&
+        uiState.environmentReadiness?.state != EnvironmentReadinessState.READY
+    ) {
+        GlassBanner(
+            severity = GlassBannerSeverity.WARNING,
+            title = uiState.failingCheck ?: "Build Environment Unavailable",
+            description = uiState.remediation
+                ?: "The build environment or service daemon is currently unavailable.",
+            primaryAction = if (onNavigateToSetup != null) {
+                GlassBannerAction("Go to Setup") { onNavigateToSetup() }
+            } else {
+                null
+            },
+            modifier = Modifier.fillMaxWidth(),
+        )
+    } else if (uiState.isPaused) {
+        GlassBanner(
+            severity = GlassBannerSeverity.WARNING,
+            title = "Build paused waiting for application",
+            description = "Reattach to resume execution from the current stage boundary.",
+            primaryAction = GlassBannerAction("Resume") { onReattach() },
+            modifier = Modifier.fillMaxWidth(),
+        )
+    } else if (uiState.isInterrupted) {
+        GlassBanner(
+            severity = GlassBannerSeverity.WARNING,
+            title = "Build interrupted (outcome unknown)",
+            description = "Execution service or process terminated unexpectedly.",
+            modifier = Modifier.fillMaxWidth(),
+        )
+    } else if (uiState.isCancelling || uiState.latestRun?.state == RunState.CANCELLING) {
+        GlassBanner(
+            severity = GlassBannerSeverity.INFO,
+            title = "Cancelling build run...",
+            description = "Waiting for stage processes to terminate cleanly.",
+            modifier = Modifier.fillMaxWidth(),
+        )
+    } else if (uiState.latestRun?.state == RunState.CANCELLED) {
+        GlassBanner(
+            severity = GlassBannerSeverity.INFO,
+            title = "Build run cancelled",
+            description = "Run was cancelled by user. Partial artifacts are unverified.",
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
 @Composable
 private fun ActiveRunContent(
     viewModel: BuildRunViewModel,
@@ -100,136 +255,17 @@ private fun ActiveRunContent(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
-        // Top action bar.
-        // Below PanelHeaderStackBreakpoint even a truncated title and the (never-wrapped)
-        // action buttons don't both fit on one line — GlassLayout's split-panel divider can
-        // legitimately drag this panel down to MinPanelWidth (180dp), well under that. Read
-        // the available width once, at this single root, to pick Row (side-by-side) vs.
-        // Column (stacked) — a stable breakpoint boolean, not a continuous/animated read, so
-        // it stays cheap (see avoiding-subcomposition-pitfalls: nested or per-frame reads are
-        // the expensive case, a single top-level breakpoint check is not).
-        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-            val isNarrow = maxWidth < ComponentSize.PanelHeaderStackBreakpoint
+        RunTopActionBar(
+            uiState = uiState,
+            onCancel = { viewModel.cancelBuild() },
+            onStart = { viewModel.startBuild() },
+        )
 
-            val titleBlock: @Composable () -> Unit = {
-                Column {
-                    Text(
-                        text = "ROM Build Pipeline",
-                        style = typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Text(
-                        text = if (uiState.currentWorkspace != null) {
-                            "Workspace: ${uiState.currentWorkspace?.name}"
-                        } else {
-                            "No workspace opened"
-                        },
-                        style = typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-            }
-
-            val actionsBlock: @Composable () -> Unit = {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    if (uiState.canCancelRun) {
-                        GlassButton(
-                            onClick = { viewModel.cancelBuild() },
-                            enabled = !uiState.isCancelling,
-                            variant = GlassButtonVariant.Secondary,
-                        ) {
-                            Text(
-                                text = if (uiState.isCancelling) "Cancelling..." else "Cancel",
-                                style = typography.labelMedium,
-                                maxLines = 1,
-                                softWrap = false,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
-                    }
-
-                    GlassButton(
-                        onClick = { viewModel.startBuild() },
-                        enabled = !uiState.isRunDisabled,
-                        variant = GlassButtonVariant.Primary,
-                    ) {
-                        Text(
-                            text = if (uiState.isRunning) "Building..." else "Start Pipeline",
-                            style = typography.labelMedium,
-                            maxLines = 1,
-                            softWrap = false,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                }
-            }
-
-            if (isNarrow) {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(Spacing.Small),
-                ) {
-                    titleBlock()
-                    actionsBlock()
-                }
-            } else {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Box(modifier = Modifier.weight(1f, fill = false)) { titleBlock() }
-                    actionsBlock()
-                }
-            }
-        }
-
-        // State Banners
-        if (uiState.environmentReadiness != null && uiState.environmentReadiness?.state != EnvironmentReadinessState.READY) {
-            GlassBanner(
-                severity = GlassBannerSeverity.WARNING,
-                title = uiState.failingCheck ?: "Build Environment Unavailable",
-                description = uiState.remediation ?: "The build environment or service daemon is currently unavailable.",
-                primaryAction = if (onNavigateToSetup != null) GlassBannerAction("Go to Setup") { onNavigateToSetup() } else null,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        } else if (uiState.isPaused) {
-            GlassBanner(
-                severity = GlassBannerSeverity.WARNING,
-                title = "Build paused waiting for application",
-                description = "Reattach to resume execution from the current stage boundary.",
-                primaryAction = GlassBannerAction("Resume") { viewModel.reattachBuild() },
-                modifier = Modifier.fillMaxWidth(),
-            )
-        } else if (uiState.isInterrupted) {
-            GlassBanner(
-                severity = GlassBannerSeverity.WARNING,
-                title = "Build interrupted (outcome unknown)",
-                description = "Execution service or process terminated unexpectedly.",
-                modifier = Modifier.fillMaxWidth(),
-            )
-        } else if (uiState.isCancelling || uiState.latestRun?.state == RunState.CANCELLING) {
-            GlassBanner(
-                severity = GlassBannerSeverity.INFO,
-                title = "Cancelling build run...",
-                description = "Waiting for stage processes to terminate cleanly.",
-                modifier = Modifier.fillMaxWidth(),
-            )
-        } else if (uiState.latestRun?.state == RunState.CANCELLED) {
-            GlassBanner(
-                severity = GlassBannerSeverity.INFO,
-                title = "Build run cancelled",
-                description = "Run was cancelled by user. Partial artifacts are unverified.",
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
+        RunStateBanners(
+            uiState = uiState,
+            onNavigateToSetup = onNavigateToSetup,
+            onReattach = { viewModel.reattachBuild() },
+        )
 
         // Error message banner
         if (uiState.errorMessage != null) {
@@ -273,7 +309,11 @@ private fun ActiveRunContent(
         val artifacts = uiState.latestRun?.artifacts ?: emptyList()
         if (artifacts.isEmpty()) {
             Text(
-                text = if (uiState.isRunning) "Artifacts will appear after build completes." else "No build artifacts produced yet.",
+                text = if (uiState.isRunning) {
+                    "Artifacts will appear after build completes."
+                } else {
+                    "No build artifacts produced yet."
+                },
                 style = typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -339,7 +379,7 @@ private fun ArtifactItem(artifact: Artifact) {
                 val size = artifact.sizeBytes
                 if (size != null) {
                     val sizeMb = size / (1024 * 1024)
-                    GlassChip(label = "${sizeMb} MB")
+                    GlassChip(label = "$sizeMb MB")
                 }
                 val sha = artifact.sha256
                 if (sha != null) {

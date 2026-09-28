@@ -9,7 +9,6 @@
  */
 package org.ide.lti.feature.rom.studio.stage.build.panes
 
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -28,6 +27,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -43,7 +43,6 @@ import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
-import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
@@ -91,10 +90,7 @@ public fun CompressionPane(
 
 @Suppress("UnusedParameter")
 @Composable
-private fun ErofsSettingsCard(
-    settings: BuildSettings,
-    onChange: (BuildSettings) -> Unit,
-) {
+private fun ErofsSettingsCard(settings: BuildSettings, onChange: (BuildSettings) -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -154,12 +150,7 @@ private fun ErofsSettingsCard(
 }
 
 @Composable
-private fun CompressionParameterRow(
-    label: String,
-    value: String,
-    source: String,
-    explanation: String,
-) {
+private fun CompressionParameterRow(label: String, value: String, source: String, explanation: String) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -327,7 +318,12 @@ private fun AboutErofsCard() {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
         ) {
-            Icon(Icons.Default.Info, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(IconSize.Small))
+            Icon(
+                Icons.Default.Info,
+                null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(IconSize.Small),
+            )
             Text(
                 text = "About EROFS",
                 color = MaterialTheme.colorScheme.onSurface,
@@ -367,7 +363,12 @@ private fun CompressionFootnoteCard() {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
-        Icon(Icons.Default.Info, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(IconSize.Small))
+        Icon(
+            Icons.Default.Info,
+            null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(IconSize.Small),
+        )
         Text(
             text = "Run validation to verify settings against your current configuration.",
             color = MaterialTheme.colorScheme.onSurfaceVariant,

@@ -9,7 +9,6 @@
  */
 package org.ide.lti.feature.rom.studio.stage.debloat
 
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -76,7 +76,7 @@ public fun DebloatEditor(
                 "remove-selections", "remove_selections" -> item {
                     RemoveSelectionsCard(settings, dirtyPaths, onChange)
                 }
-                "keep-rules", "keep_rules" -> item { KeepRulesCard(settings, dirtyPaths, onChange) }
+                "keep-rules", "keep_rules" -> item { KeepRulesCard(settings, dirtyPaths) }
                 "risk-review", "risk_review" -> item { RiskReviewCard(settings) }
                 "results" -> item { ResultsCard(settings) }
                 else -> item { InventoryCard(settings, onChange) }
@@ -108,7 +108,9 @@ private fun InventoryCard(settings: DebloatSettings, onChange: (DebloatSettings)
             horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            GlassToggle(settings.enabled, { onChange(settings.copy(enabled = it)) }, activeColor = MaterialTheme.colorScheme.primary)
+            GlassToggle(settings.enabled, {
+                onChange(settings.copy(enabled = it))
+            }, activeColor = MaterialTheme.colorScheme.primary)
             Text(
                 text = "Enable debloat processing for this ROM build",
                 fontSize = FontSize.Micro,
@@ -127,11 +129,7 @@ private fun InventoryCard(settings: DebloatSettings, onChange: (DebloatSettings)
 }
 
 @Composable
-private fun PresetsCard(
-    settings: DebloatSettings,
-    dirtyPaths: Set<String>,
-    onChange: (DebloatSettings) -> Unit,
-) {
+private fun PresetsCard(settings: DebloatSettings, dirtyPaths: Set<String>, onChange: (DebloatSettings) -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -221,11 +219,7 @@ private fun RemoveSelectionsCard(
 }
 
 @Composable
-private fun KeepRulesCard(
-    settings: DebloatSettings,
-    dirtyPaths: Set<String>,
-    onChange: (DebloatSettings) -> Unit,
-) {
+private fun KeepRulesCard(settings: DebloatSettings, dirtyPaths: Set<String>) {
     Column(
         modifier = Modifier
             .fillMaxWidth()

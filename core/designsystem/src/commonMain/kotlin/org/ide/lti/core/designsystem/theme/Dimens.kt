@@ -121,6 +121,11 @@ object ComponentSize {
     val ToggleThumbWidth: Dp = 40.dp
     val ToggleThumbHeight: Dp = 24.dp
     val ToggleMinTouchTarget: Dp = 48.dp
+    val ToggleTrackWidthCompact: Dp = 56.dp
+    val ToggleTrackHeightCompact: Dp = 32.dp
+    val ToggleThumbSizeCompact: Dp = 28.dp
+    val ToggleTrackHeightLarge: Dp = 48.dp
+    val ToggleThumbSizeLarge: Dp = 40.dp
     val SliderTrackHeight: Dp = 6.dp
     val SliderThumbWidth: Dp = 40.dp
     val SliderThumbHeight: Dp = 24.dp

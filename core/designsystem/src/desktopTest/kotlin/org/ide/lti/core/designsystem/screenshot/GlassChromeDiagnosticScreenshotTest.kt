@@ -74,6 +74,7 @@ import org.junit.Test
 import kotlin.math.abs
 import kotlin.test.assertTrue
 
+@Suppress("LargeClass") // Diagnostic screenshot test suite covering multiple chrome configurations
 class GlassChromeDiagnosticScreenshotTest {
 
     companion object {

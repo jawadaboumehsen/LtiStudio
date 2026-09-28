@@ -49,10 +49,7 @@ import org.ide.lti.core.designsystem.theme.Spacing
  * Encapsulates the normative Blue Glass surface, header, and row styling.
  */
 @Composable
-public fun IdeTable(
-    modifier: Modifier = Modifier,
-    content: @Composable ColumnScope.() -> Unit,
-) {
+public fun IdeTable(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -66,10 +63,7 @@ public fun IdeTable(
  * Header row for [IdeTable] with fixed 36 dp height and muted title-case labels.
  */
 @Composable
-public fun IdeTableHeader(
-    modifier: Modifier = Modifier,
-    content: @Composable RowScope.() -> Unit,
-) {
+public fun IdeTableHeader(modifier: Modifier = Modifier, content: @Composable RowScope.() -> Unit) {
     Column(modifier = modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
@@ -149,10 +143,7 @@ public fun IdeTableRow(
  * Header cell text utility for [IdeTableHeader].
  */
 @Composable
-public fun IdeTableHeaderCell(
-    text: String,
-    modifier: Modifier = Modifier,
-) {
+public fun IdeTableHeaderCell(text: String, modifier: Modifier = Modifier) {
     Text(
         text = text,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -167,10 +158,7 @@ public fun IdeTableHeaderCell(
  * Circular 18 dp outline radio selection indicator for table rows.
  */
 @Composable
-public fun IdeTableRadioIndicator(
-    isSelected: Boolean,
-    modifier: Modifier = Modifier,
-) {
+public fun IdeTableRadioIndicator(isSelected: Boolean, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .size(GlassDimens.TableSelectionIndicatorSize)

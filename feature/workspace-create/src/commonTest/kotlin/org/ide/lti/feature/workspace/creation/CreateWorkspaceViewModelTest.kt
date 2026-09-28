@@ -111,12 +111,12 @@ class CreateWorkspaceViewModelTest {
 
     private class FakeWorkspaceRepo : WorkspaceRepository {
         val workspaces = mutableMapOf<String, Workspace>()
-        private val _flow = MutableStateFlow<List<Workspace>>(emptyList())
-        override fun getWorkspaces(): Flow<List<Workspace>> = _flow.asStateFlow()
+        private val workspacesFlow = MutableStateFlow<List<Workspace>>(emptyList())
+        override fun getWorkspaces(): Flow<List<Workspace>> = workspacesFlow.asStateFlow()
         override suspend fun getWorkspace(id: String): Workspace? = workspaces[id]
         override suspend fun saveWorkspace(workspace: Workspace) {
             workspaces[workspace.id] = workspace
-            _flow.value = workspaces.values.toList()
+            workspacesFlow.value = workspaces.values.toList()
         }
         override suspend fun deleteWorkspace(id: String) {}
         override suspend fun getWorkspaceSession(workspaceId: String): WorkspaceSession? = null
@@ -132,14 +132,14 @@ class CreateWorkspaceViewModelTest {
 
     private class FakeSnapshotRepository : SnapshotRepository {
         val snapshotsMap = mutableMapOf<String, ConfigurationSnapshot>()
-        private val _flow = MutableStateFlow<List<ConfigurationSnapshot>>(emptyList())
-        override val snapshots: Flow<List<ConfigurationSnapshot>> = _flow.asStateFlow()
+        private val _snapshots = MutableStateFlow<List<ConfigurationSnapshot>>(emptyList())
+        override val snapshots: Flow<List<ConfigurationSnapshot>> = _snapshots.asStateFlow()
         override fun snapshotsForWorkspace(workspaceId: String): Flow<List<ConfigurationSnapshot>> =
-            _flow.map { list -> list.filter { it.workspaceId == workspaceId } }
+            _snapshots.map { list -> list.filter { it.workspaceId == workspaceId } }
         override suspend fun getSnapshot(id: String): ConfigurationSnapshot? = snapshotsMap[id]
         override suspend fun saveSnapshot(snapshot: ConfigurationSnapshot) {
             snapshotsMap[snapshot.id] = snapshot
-            _flow.value = snapshotsMap.values.toList()
+            _snapshots.value = snapshotsMap.values.toList()
         }
     }
 
@@ -161,10 +161,8 @@ class CreateWorkspaceViewModelTest {
     }
 
     private class FakeReadinessPort(var ready: Boolean = true) : EnvironmentReadinessPort {
-        override fun observe(): Flow<EnvironmentReadiness> =
-            flowOf(readiness())
-        override suspend fun refresh(): EnvironmentReadiness =
-            readiness()
+        override fun observe(): Flow<EnvironmentReadiness> = flowOf(readiness())
+        override suspend fun refresh(): EnvironmentReadiness = readiness()
         override suspend fun forWorkspace(workspace: Workspace): EnvironmentReadiness = refresh()
 
         private fun readiness(): EnvironmentReadiness = if (ready) {

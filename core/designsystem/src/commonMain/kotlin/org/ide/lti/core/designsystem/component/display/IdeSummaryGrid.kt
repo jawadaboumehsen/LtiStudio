@@ -45,10 +45,7 @@ data class IdeSummaryItem(
  * Layout columns remain fixed even when contents update.
  */
 @Composable
-fun IdeSummaryGrid(
-    items: List<IdeSummaryItem>,
-    modifier: Modifier = Modifier,
-) {
+fun IdeSummaryGrid(items: List<IdeSummaryItem>, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -73,7 +70,11 @@ fun IdeSummaryGrid(
                 )
                 Text(
                     text = item.value,
-                    color = if (item.isUnavailable) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                    color = if (item.isUnavailable) {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    },
                     fontSize = FontSize.CodeMedium,
                     fontWeight = FontWeight.Medium,
                     fontFamily = GlassFontFamily.code(),

@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -34,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
@@ -76,18 +78,9 @@ fun GlassActionCard(
 ) {
     var isHovered by remember { mutableStateOf(false) }
 
-    val targetBorder = when {
-        isPrimary && isHovered -> MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Prominent)
-        isPrimary -> MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Border)
-        isHovered -> MaterialTheme.colorScheme.primary
-        else -> MaterialTheme.colorScheme.outline
-    }
-
-    val targetSurface = when {
-        isHovered -> MaterialTheme.colorScheme.surfaceContainerHigh
-        isPrimary -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = AlphaTokens.Subtle)
-        else -> MaterialTheme.colorScheme.surfaceContainer
-    }
+    val colors = MaterialTheme.colorScheme
+    val targetBorder = actionCardBorderColor(isPrimary, isHovered, colors)
+    val targetSurface = actionCardSurfaceColor(isPrimary, isHovered, colors)
 
     val borderColor by animateColorAsState(targetBorder)
     val surfaceColor by animateColorAsState(targetSurface)
@@ -109,33 +102,11 @@ fun GlassActionCard(
         contentPadding = Spacing.Medium,
     ) {
         Column(verticalArrangement = Arrangement.Center) {
-            Box(
-                modifier = Modifier
-                    .size(IconSize.ActionCard)
-                    .clip(GlassShapes.Capsule)
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = AlphaTokens.Faint))
-                    .glassOutlineBorder(
-                        color = if (isPrimary || isHovered) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
-                        width = StrokeWidth.Hairline,
-                        shape = GlassShapes.Capsule,
-                    ),
-                contentAlignment = Alignment.Center,
-            ) {
-                when (icon) {
-                    is AppIcon.Vector -> Icon(
-                        imageVector = icon.imageVector,
-                        contentDescription = title,
-                        modifier = Modifier.size(IconSize.Medium),
-                        tint = if (isPrimary || isHovered) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    is AppIcon.Painted -> Icon(
-                        painter = icon.painter(),
-                        contentDescription = title,
-                        modifier = Modifier.size(IconSize.Medium),
-                        tint = if (isPrimary || isHovered) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
+            ActionCardIcon(
+                icon = icon,
+                title = title,
+                isActive = isPrimary || isHovered,
+            )
             Spacer(modifier = Modifier.height(Spacing.Small))
             Text(
                 text = title,
@@ -216,17 +187,12 @@ fun GlassItemCard(
 ) {
     var isHovered by remember { mutableStateOf(false) }
 
-    val targetBorder = when {
-        isHighlighted && isHovered -> MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Prominent)
-        isHighlighted -> MaterialTheme.colorScheme.primary
-        isHovered -> MaterialTheme.colorScheme.primary
-        else -> MaterialTheme.colorScheme.outline
-    }
+    val colors = MaterialTheme.colorScheme
+    val targetBorder = itemCardBorderColor(isHighlighted, isHovered, colors)
+    val targetSurface = if (isHovered) colors.surfaceContainerHigh else colors.surfaceContainer
 
     val borderColor by animateColorAsState(targetBorder)
-    val surfaceColor by animateColorAsState(
-        if (isHovered) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.surfaceContainer,
-    )
+    val surfaceColor by animateColorAsState(targetSurface)
 
     val clickableModifier = if (onClick != null) {
         Modifier.clickable(
@@ -255,33 +221,10 @@ fun GlassItemCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (icon != null) {
-                Box(
-                    modifier = Modifier
-                        .size(ComponentSize.TopBarButtonSize)
-                        .clip(GlassShapes.Capsule)
-                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                        .glassOutlineBorder(
-                            color = if (isHighlighted || isHovered) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
-                            width = StrokeWidth.Hairline,
-                            shape = GlassShapes.Capsule,
-                        ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    when (icon) {
-                        is AppIcon.Vector -> Icon(
-                            imageVector = icon.imageVector,
-                            contentDescription = null,
-                            modifier = Modifier.size(IconSize.Medium),
-                            tint = if (isHighlighted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        is AppIcon.Painted -> Icon(
-                            painter = icon.painter(),
-                            contentDescription = null,
-                            modifier = Modifier.size(IconSize.Medium),
-                            tint = if (isHighlighted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
+                ItemCardIcon(
+                    icon = icon,
+                    isHighlighted = isHighlighted,
+                )
                 Spacer(modifier = Modifier.width(Spacing.SmallMedium))
             }
 
@@ -313,10 +256,116 @@ fun GlassItemCard(
                 Icon(
                     painter = AppIcons.ChevronRightPainterResource(),
                     contentDescription = null,
-                    tint = if (isHovered) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = if (isHovered) {
+                        MaterialTheme.colorScheme.onSurface
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
                     modifier = Modifier.size(IconSize.Medium),
                 )
             }
+        }
+    }
+}
+
+/**
+ * Resolves the target border color for an action card.
+ */
+private fun actionCardBorderColor(isPrimary: Boolean, isHovered: Boolean, colors: ColorScheme): Color = when {
+    isPrimary && isHovered -> colors.primary.copy(alpha = AlphaTokens.Prominent)
+    isPrimary -> colors.primary.copy(alpha = AlphaTokens.Border)
+    isHovered -> colors.primary
+    else -> colors.outline
+}
+
+/**
+ * Resolves the target surface color for an action card.
+ */
+private fun actionCardSurfaceColor(isPrimary: Boolean, isHovered: Boolean, colors: ColorScheme): Color = when {
+    isHovered -> colors.surfaceContainerHigh
+    isPrimary -> colors.surfaceContainerHigh.copy(alpha = AlphaTokens.Subtle)
+    else -> colors.surfaceContainer
+}
+
+/**
+ * Action card icon container with adaptive glass border and styling.
+ */
+@Composable
+private fun ActionCardIcon(icon: AppIcon, title: String, isActive: Boolean, modifier: Modifier = Modifier) {
+    val colors = MaterialTheme.colorScheme
+    val borderColor = if (isActive) colors.primary else colors.outline
+    val tintColor = if (isActive) colors.primary else colors.onSurfaceVariant
+
+    Box(
+        modifier = modifier
+            .size(IconSize.ActionCard)
+            .clip(GlassShapes.Capsule)
+            .background(colors.surfaceContainerHigh.copy(alpha = AlphaTokens.Faint))
+            .glassOutlineBorder(
+                color = borderColor,
+                width = StrokeWidth.Hairline,
+                shape = GlassShapes.Capsule,
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        when (icon) {
+            is AppIcon.Vector -> Icon(
+                imageVector = icon.imageVector,
+                contentDescription = title,
+                modifier = Modifier.size(IconSize.Medium),
+                tint = tintColor,
+            )
+            is AppIcon.Painted -> Icon(
+                painter = icon.painter(),
+                contentDescription = title,
+                modifier = Modifier.size(IconSize.Medium),
+                tint = tintColor,
+            )
+        }
+    }
+}
+
+/**
+ * Resolves the target border color for an item card.
+ */
+private fun itemCardBorderColor(isHighlighted: Boolean, isHovered: Boolean, colors: ColorScheme): Color = when {
+    isHighlighted && isHovered -> colors.primary.copy(alpha = AlphaTokens.Prominent)
+    isHighlighted || isHovered -> colors.primary
+    else -> colors.outline
+}
+
+/**
+ * Item card icon container with adaptive glass border.
+ */
+@Composable
+private fun ItemCardIcon(icon: AppIcon, isHighlighted: Boolean, modifier: Modifier = Modifier) {
+    val colors = MaterialTheme.colorScheme
+    val tint = if (isHighlighted) colors.primary else colors.onSurfaceVariant
+    Box(
+        modifier = modifier
+            .size(ComponentSize.TopBarButtonSize)
+            .clip(GlassShapes.Capsule)
+            .background(colors.surfaceContainerHigh)
+            .glassOutlineBorder(
+                color = if (isHighlighted) colors.primary else colors.outline,
+                width = StrokeWidth.Hairline,
+                shape = GlassShapes.Capsule,
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        when (icon) {
+            is AppIcon.Vector -> Icon(
+                imageVector = icon.imageVector,
+                contentDescription = null,
+                modifier = Modifier.size(IconSize.Medium),
+                tint = tint,
+            )
+            is AppIcon.Painted -> Icon(
+                painter = icon.painter(),
+                contentDescription = null,
+                modifier = Modifier.size(IconSize.Medium),
+                tint = tint,
+            )
         }
     }
 }

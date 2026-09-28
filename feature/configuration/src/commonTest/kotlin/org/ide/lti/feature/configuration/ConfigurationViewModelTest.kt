@@ -44,10 +44,8 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalCoroutinesApi::class)
 class ConfigurationViewModelTest {
 
-    private class FakeTargetRepository(
-        val targets: List<TargetDevice>,
-        initialSelected: TargetDevice,
-    ) : TargetRepository {
+    private class FakeTargetRepository(val targets: List<TargetDevice>, initialSelected: TargetDevice) :
+        TargetRepository {
         val targetsFlow = MutableStateFlow(targets)
         val selectedTargetFlow = MutableStateFlow(initialSelected)
 
@@ -234,8 +232,16 @@ class ConfigurationViewModelTest {
             assertTrue(viewModel.uiState.value.validationErrors.isNotEmpty())
             assertTrue(viewModel.uiState.value.validationErrors.any { it is TargetValidationError.EmptyName })
             assertTrue(viewModel.uiState.value.validationErrors.any { it is TargetValidationError.EmptyCodename })
-            assertTrue(viewModel.uiState.value.validationErrors.any { it is TargetValidationError.InvalidSuperPartitionSize })
-            assertTrue(viewModel.uiState.value.validationErrors.any { it is TargetValidationError.EmptyDynamicPartitions })
+            assertTrue(
+                viewModel.uiState.value.validationErrors.any {
+                    it is TargetValidationError.InvalidSuperPartitionSize
+                },
+            )
+            assertTrue(
+                viewModel.uiState.value.validationErrors.any {
+                    it is TargetValidationError.EmptyDynamicPartitions
+                },
+            )
         } finally {
             Dispatchers.resetMain()
         }

@@ -37,10 +37,7 @@ import org.ide.lti.feature.settings.model.SettingsCategory
  * General & Generic settings pane rendering category options and environment parameters.
  */
 @Composable
-fun GenericCategoryPane(
-    category: SettingsCategory,
-    modifier: Modifier = Modifier,
-) {
+fun GenericCategoryPane(category: SettingsCategory, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier.fillMaxWidth().testTag("GenericCategoryPane_${category.name}"),
         verticalArrangement = Arrangement.spacedBy(Spacing.Large),

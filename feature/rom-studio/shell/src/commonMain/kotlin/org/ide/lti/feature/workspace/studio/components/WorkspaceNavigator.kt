@@ -107,10 +107,7 @@ public fun WorkspaceNavigator(
 }
 
 @Composable
-internal fun WorkspaceNavigatorFooter(
-    targetContext: TargetContextUi?,
-    modifier: Modifier = Modifier,
-) {
+internal fun WorkspaceNavigatorFooter(targetContext: TargetContextUi?, modifier: Modifier = Modifier) {
     val profileText = when (val p = targetContext?.profile) {
         is DisplayValue.Available -> p.text
         is DisplayValue.Unavailable -> p.reason

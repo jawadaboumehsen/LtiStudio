@@ -18,10 +18,8 @@ import org.ide.lti.core.model.target.DefaultTargetCatalog
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.ExtractionSettings
 
-public class ExtractViewModel(
-    public val workspaceId: String,
-    initialSettings: ExtractionSettings? = null,
-) : ViewModel() {
+public class ExtractViewModel(public val workspaceId: String, initialSettings: ExtractionSettings? = null) :
+    ViewModel() {
 
     public val targetDevice: TargetDevice = DefaultTargetCatalog.PQ84P01_DEFAULT
 

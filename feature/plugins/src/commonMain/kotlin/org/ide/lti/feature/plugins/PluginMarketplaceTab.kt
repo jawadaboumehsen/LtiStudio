@@ -62,7 +62,6 @@ import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BrandColors
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
-import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.PluginThemeColors
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -244,7 +243,6 @@ private fun MarketplaceHeader(
     onSearchChange: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
@@ -345,7 +343,6 @@ private fun MarketplaceMasterTable(
     onNavigateToImport: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-
     Box(
         modifier = modifier
             .fillMaxHeight()
@@ -409,7 +406,6 @@ private fun MarketplaceMasterTable(
 
 @Composable
 private fun MarketplaceTableHeader(modifier: Modifier = Modifier) {
-
     Row(
         modifier = modifier
             .fillMaxWidth()

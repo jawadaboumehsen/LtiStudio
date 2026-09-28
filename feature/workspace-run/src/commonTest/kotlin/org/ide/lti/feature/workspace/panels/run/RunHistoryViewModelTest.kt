@@ -93,8 +93,7 @@ class RunHistoryViewModelTest {
             this.events.getOrPut(runId) { mutableListOf() }.addAll(events)
         }
 
-        override suspend fun cachedEvents(runId: String, fromSeq: Long): List<String> =
-            events[runId] ?: emptyList()
+        override suspend fun cachedEvents(runId: String, fromSeq: Long): List<String> = events[runId] ?: emptyList()
 
         override suspend fun latestActive(workspaceId: String): BuildRun? =
             runs.value.values.find { it.workspaceId == workspaceId && it.state.isActive }
@@ -116,28 +115,26 @@ class RunHistoryViewModelTest {
         startedEpochSec: Long,
         stages: List<StageOutcome> = emptyList(),
         artifacts: List<Artifact> = emptyList(),
-    ): BuildRun {
-        return BuildRun(
-            id = id,
-            workspaceId = workspaceId,
-            snapshotId = "snap-1",
-            state = RunState.SUCCEEDED,
-            startedAt = Instant.fromEpochSeconds(startedEpochSec),
-            endedAt = Instant.fromEpochSeconds(startedEpochSec + 100),
-            stages = stages,
-            steps = listOf(
-                StageStep(
-                    stageId = StageId.BUILD_FLASHABLE_ZIP,
-                    index = 0,
-                    idempotencyKey = "key-$id-0",
-                    command = StepCommand(toolId = "build", args = listOf("all")),
-                    state = StepState.COMPLETED,
-                    exitCode = 0,
-                ),
+    ): BuildRun = BuildRun(
+        id = id,
+        workspaceId = workspaceId,
+        snapshotId = "snap-1",
+        state = RunState.SUCCEEDED,
+        startedAt = Instant.fromEpochSeconds(startedEpochSec),
+        endedAt = Instant.fromEpochSeconds(startedEpochSec + 100),
+        stages = stages,
+        steps = listOf(
+            StageStep(
+                stageId = StageId.BUILD_FLASHABLE_ZIP,
+                index = 0,
+                idempotencyKey = "key-$id-0",
+                command = StepCommand(toolId = "build", args = listOf("all")),
+                state = StepState.COMPLETED,
+                exitCode = 0,
             ),
-            artifacts = artifacts,
-        )
-    }
+        ),
+        artifacts = artifacts,
+    )
 
     @BeforeTest
     fun setUp() {

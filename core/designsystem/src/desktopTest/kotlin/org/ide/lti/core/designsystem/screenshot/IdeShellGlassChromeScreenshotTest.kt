@@ -91,7 +91,8 @@ class IdeShellGlassChromeScreenshotTest {
 
         val blueVariance = stripeVariance(captureOverStripes(AppTheme.Blue) { IdeTopAppBar() }, sampleY = BAR_SAMPLE_Y)
         val darkVariance = stripeVariance(captureOverStripes(AppTheme.Dark) { IdeTopAppBar() }, sampleY = BAR_SAMPLE_Y)
-        val lightVariance = stripeVariance(captureOverStripes(AppTheme.Light) { IdeTopAppBar() }, sampleY = BAR_SAMPLE_Y)
+        val lightVariance =
+            stripeVariance(captureOverStripes(AppTheme.Light) { IdeTopAppBar() }, sampleY = BAR_SAMPLE_Y)
 
         assertTrue(
             blueVariance < flatReference * VARIANCE_REDUCTION_CEILING,
@@ -158,7 +159,8 @@ class IdeShellGlassChromeScreenshotTest {
         val flatReference = stripeVariance(captureOverStripes(AppTheme.Blue) {})
         val blueVariance = stripeVariance(captureOverStripes(AppTheme.Blue, content = cardBox))
         val darkVariance = stripeVariance(captureOverStripes(AppTheme.Dark, content = cardBox))
-        val disabledVariance = stripeVariance(captureOverStripes(AppTheme.Blue, effectsEnabled = false, content = cardBox))
+        val disabledVariance =
+            stripeVariance(captureOverStripes(AppTheme.Blue, effectsEnabled = false, content = cardBox))
 
         assertTrue(
             blueVariance < flatReference * VARIANCE_REDUCTION_CEILING,

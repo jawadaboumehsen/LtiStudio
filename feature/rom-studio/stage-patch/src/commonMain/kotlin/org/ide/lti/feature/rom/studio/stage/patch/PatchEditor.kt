@@ -9,7 +9,6 @@
  */
 package org.ide.lti.feature.rom.studio.stage.patch
 
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -82,7 +82,7 @@ public fun PatchEditor(
                     TextPatchesCard(settings)
                 }
                 "property-patches", "property_patches" -> item {
-                    PropertyPatchesCard(settings, dirtyPaths, onChange)
+                    PropertyPatchesCard(settings, dirtyPaths)
                 }
                 "conflicts" -> item {
                     ConflictsCard(settings)
@@ -306,11 +306,7 @@ private fun TextPatchesCard(settings: CustomizationSettings) {
 }
 
 @Composable
-private fun PropertyPatchesCard(
-    settings: CustomizationSettings,
-    dirtyPaths: Set<String>,
-    onChange: (CustomizationSettings) -> Unit,
-) {
+private fun PropertyPatchesCard(settings: CustomizationSettings, dirtyPaths: Set<String>) {
     Column(
         modifier = Modifier
             .fillMaxWidth()

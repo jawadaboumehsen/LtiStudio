@@ -84,4 +84,3 @@ tasks.withType<Test>().configureEach {
 tasks.register("test") {
     dependsOn("desktopTest")
 }
-

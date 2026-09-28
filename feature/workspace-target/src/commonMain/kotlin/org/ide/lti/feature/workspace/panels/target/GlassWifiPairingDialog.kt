@@ -27,6 +27,7 @@ fun GlassWifiPairingDialog(
     onDismissRequest: () -> Unit,
     onPairAndConnect: (host: String, port: Int, code: String) -> Unit,
     errorMessage: String?,
+    modifier: Modifier = Modifier,
 ) {
     if (!isOpen) return
 
@@ -36,6 +37,7 @@ fun GlassWifiPairingDialog(
 
     GlassDialog(
         onDismissRequest = onDismissRequest,
+        modifier = modifier,
         title = "Pair Wireless Device",
         confirmButton = {
             GlassPrimaryButton(

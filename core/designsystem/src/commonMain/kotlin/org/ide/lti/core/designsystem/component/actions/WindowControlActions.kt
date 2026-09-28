@@ -37,13 +37,7 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.Role
-import org.ide.lti.core.designsystem.component.devtools.*
-import org.ide.lti.core.designsystem.component.display.*
-import org.ide.lti.core.designsystem.component.feedback.*
-import org.ide.lti.core.designsystem.component.inputs.*
-import org.ide.lti.core.designsystem.component.layout.*
-import org.ide.lti.core.designsystem.component.navigation.*
-import org.ide.lti.core.designsystem.component.primitives.*
+import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.icon.ideWindowsCloseSmall
@@ -205,42 +199,41 @@ fun WindowControlButton(
 fun Modifier.windowDragGesture(
     onDrag: () -> Unit,
     onDragDelta: (dx: Float, dy: Float) -> Unit = { _, _ -> },
-): Modifier =
-    pointerInput(onDrag, onDragDelta) {
-        awaitPointerEventScope {
-            var pendingDrag = false
-            var isDragging = false
-            while (true) {
-                val event = awaitPointerEvent(PointerEventPass.Main)
-                event.changes.forEach { change ->
-                    if (!change.isConsumed) {
-                        when (event.type) {
-                            PointerEventType.Press -> {
-                                if (event.button == PointerButton.Primary) {
-                                    pendingDrag = true
-                                    isDragging = false
-                                }
-                            }
-                            PointerEventType.Move -> {
-                                if (pendingDrag) {
-                                    onDrag()
-                                    pendingDrag = false
-                                    isDragging = true
-                                }
-                                if (isDragging) {
-                                    val delta = change.position - change.previousPosition
-                                    if (delta.x != 0f || delta.y != 0f) {
-                                        onDragDelta(delta.x, delta.y)
-                                    }
-                                }
-                            }
-                            PointerEventType.Release -> {
-                                pendingDrag = false
+): Modifier = pointerInput(onDrag, onDragDelta) {
+    awaitPointerEventScope {
+        var pendingDrag = false
+        var isDragging = false
+        while (true) {
+            val event = awaitPointerEvent(PointerEventPass.Main)
+            event.changes.forEach { change ->
+                if (!change.isConsumed) {
+                    when (event.type) {
+                        PointerEventType.Press -> {
+                            if (event.button == PointerButton.Primary) {
+                                pendingDrag = true
                                 isDragging = false
                             }
+                        }
+                        PointerEventType.Move -> {
+                            if (pendingDrag) {
+                                onDrag()
+                                pendingDrag = false
+                                isDragging = true
+                            }
+                            if (isDragging) {
+                                val delta = change.position - change.previousPosition
+                                if (delta.x != 0f || delta.y != 0f) {
+                                    onDragDelta(delta.x, delta.y)
+                                }
+                            }
+                        }
+                        PointerEventType.Release -> {
+                            pendingDrag = false
+                            isDragging = false
                         }
                     }
                 }
             }
         }
     }
+}

@@ -81,9 +81,7 @@ import org.ide.lti.core.designsystem.theme.codeFontFamily
  * - Status bar footer: Recovery status indicator, connection dot, environment concept label
  */
 @Composable
-fun EditorSettingsPane(
-    modifier: Modifier = Modifier,
-) {
+fun EditorSettingsPane(modifier: Modifier = Modifier) {
     var selectedEncoding by remember { mutableStateOf("UTF-8") }
     var selectedEol by remember { mutableStateOf("LF (Unix)") }
     var trimTrailingWhitespace by remember { mutableStateOf(true) }
@@ -130,7 +128,6 @@ fun EditorSettingsPane(
             ensureFinalNewline = ensureFinalNewline,
             onToggleEnsureNewline = { ensureFinalNewline = it },
             cardBg = cardBg,
-            cardBorder = cardBorder,
             textPrimary = textPrimary,
             textMuted = textMuted,
         )
@@ -147,14 +144,12 @@ fun EditorSettingsPane(
             showIndentGuides = showIndentGuides,
             onToggleIndentGuides = { showIndentGuides = it },
             cardBg = cardBg,
-            cardBorder = cardBorder,
             textPrimary = textPrimary,
             textMuted = textMuted,
         )
 
         KeyboardShortcutsCard(
             cardBg = cardBg,
-            cardBorder = cardBorder,
             textPrimary = textPrimary,
             textMuted = textMuted,
         )
@@ -163,7 +158,6 @@ fun EditorSettingsPane(
             draftRecoveryEnabled = draftRecoveryEnabled,
             onToggleDraftRecovery = { draftRecoveryEnabled = it },
             cardBg = cardBg,
-            cardBorder = cardBorder,
             textPrimary = textPrimary,
             textMuted = textMuted,
         )
@@ -281,7 +275,6 @@ private fun GeneralSettingsCard(
     ensureFinalNewline: Boolean,
     onToggleEnsureNewline: (Boolean) -> Unit,
     cardBg: Color,
-    cardBorder: Color,
     textPrimary: Color,
     textMuted: Color,
 ) {
@@ -357,7 +350,6 @@ private fun EditorAppearanceCard(
     showIndentGuides: Boolean,
     onToggleIndentGuides: (Boolean) -> Unit,
     cardBg: Color,
-    cardBorder: Color,
     textPrimary: Color,
     textMuted: Color,
 ) {
@@ -539,12 +531,7 @@ private fun TextScaleStepperRow(
 }
 
 @Composable
-private fun KeyboardShortcutsCard(
-    cardBg: Color,
-    cardBorder: Color,
-    textPrimary: Color,
-    textMuted: Color,
-) {
+private fun KeyboardShortcutsCard(cardBg: Color, textPrimary: Color, textMuted: Color) {
     GlassCard(
         modifier = Modifier.fillMaxWidth(),
         surfaceColor = cardBg,
@@ -650,7 +637,6 @@ private fun DraftRecoveryCard(
     draftRecoveryEnabled: Boolean,
     onToggleDraftRecovery: (Boolean) -> Unit,
     cardBg: Color,
-    cardBorder: Color,
     textPrimary: Color,
     textMuted: Color,
 ) {

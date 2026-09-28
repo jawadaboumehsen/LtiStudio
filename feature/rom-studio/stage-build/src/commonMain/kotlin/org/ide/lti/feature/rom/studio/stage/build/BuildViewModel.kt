@@ -18,10 +18,7 @@ import org.ide.lti.core.model.target.DefaultTargetCatalog
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.BuildSettings
 
-public class BuildViewModel(
-    public val workspaceId: String,
-    initialSettings: BuildSettings? = null,
-) : ViewModel() {
+public class BuildViewModel(public val workspaceId: String, initialSettings: BuildSettings? = null) : ViewModel() {
 
     public val targetDevice: TargetDevice = DefaultTargetCatalog.PQ84P01_DEFAULT
 

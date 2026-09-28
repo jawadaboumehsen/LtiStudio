@@ -37,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.semantics.Role
@@ -191,10 +192,7 @@ private fun themeDisplayName(theme: AppTheme): String = when (theme) {
  * Miniature IDE preview window mockup demonstrating the theme's colors, sidebar, and syntax.
  */
 @Composable
-private fun MiniIdePreview(
-    theme: AppTheme,
-    modifier: Modifier = Modifier,
-) {
+private fun MiniIdePreview(theme: AppTheme, modifier: Modifier = Modifier) {
     val previewScheme = colorSchemeFor(theme)
     val windowCanvasColor = previewScheme.surface
     val windowBorderColor = previewScheme.outline
@@ -217,146 +215,187 @@ private fun MiniIdePreview(
             ),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            // Window Title Bar with macOS Mini Dots
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(Spacing.Fourteen)
-                    .background(sidebarColor)
-                    .padding(horizontal = Spacing.Compact),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(IconSize.MiniDot)
-                        .clip(GlassShapes.Capsule)
-                        .background(GlassTheme.diagnosticColors.error),
-                )
-                Box(
-                    modifier = Modifier
-                        .size(IconSize.MiniDot)
-                        .clip(GlassShapes.Capsule)
-                        .background(GlassTheme.diagnosticColors.warning),
-                )
-                Box(
-                    modifier = Modifier
-                        .size(IconSize.MiniDot)
-                        .clip(GlassShapes.Capsule)
-                        .background(GlassTheme.diagnosticColors.success),
-                )
-            }
-
-            // IDE Panes (Sidebar + Editor)
+            MiniIdeTitleBar(sidebarColor = sidebarColor)
             Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                // Mini Project Tree Sidebar
-                Column(
-                    modifier = Modifier
-                        .width(ComponentSize.PanelHeaderAction)
-                        .fillMaxHeight()
-                        .background(sidebarColor)
-                        .padding(horizontal = Spacing.ExtraExtraSmall, vertical = Spacing.ExtraSmall),
-                    verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth(AlphaTokens.Prominent)
-                            .height(Spacing.ExtraExtraSmall)
-                            .clip(GlassShapes.Capsule)
-                            .background(tokenKeywordColor),
-                    )
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth(AlphaTokens.TextMuted)
-                            .height(Spacing.ExtraExtraSmall)
-                            .clip(GlassShapes.Capsule)
-                            .background(tokenFadedColor),
-                    )
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth(AlphaTokens.Hover)
-                            .height(Spacing.ExtraExtraSmall)
-                            .clip(GlassShapes.Capsule)
-                            .background(tokenFadedColor),
-                    )
-                }
-
-                // Mini Code Editor
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .background(editorColor)
-                        .padding(Spacing.Small),
-                    verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-                ) {
-                    // Line 1: Keyword + Identifier
-                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
-                        Box(
-                            modifier = Modifier
-                                .width(Spacing.CardPadding)
-                                .height(Spacing.ExtraSmall)
-                                .clip(GlassShapes.Capsule)
-                                .background(tokenKeywordColor),
-                        )
-                        Box(
-                            modifier = Modifier
-                                .width(Spacing.ExtraLarge)
-                                .height(Spacing.ExtraSmall)
-                                .clip(GlassShapes.Capsule)
-                                .background(tokenIdentifierColor),
-                        )
-                    }
-
-                    // Line 2: Indented line
-                    Row(
-                        modifier = Modifier.padding(start = Spacing.Small),
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .width(Spacing.Medium)
-                                .height(Spacing.ExtraSmall)
-                                .clip(GlassShapes.Capsule)
-                                .background(tokenIdentifierColor),
-                        )
-                        Box(
-                            modifier = Modifier
-                                .width(Spacing.SectionGap)
-                                .height(Spacing.ExtraSmall)
-                                .clip(GlassShapes.Capsule)
-                                .background(tokenFadedColor),
-                        )
-                    }
-
-                    // Line 3: Indented closing token
-                    Box(
-                        modifier = Modifier
-                            .padding(start = Spacing.Small)
-                            .width(Spacing.Medium)
-                            .height(Spacing.ExtraSmall)
-                            .clip(GlassShapes.Capsule)
-                            .background(tokenKeywordColor),
-                    )
-                }
+                MiniIdeSidebar(
+                    sidebarColor = sidebarColor,
+                    tokenKeywordColor = tokenKeywordColor,
+                    tokenFadedColor = tokenFadedColor,
+                )
+                MiniIdeEditor(
+                    editorColor = editorColor,
+                    tokenKeywordColor = tokenKeywordColor,
+                    tokenIdentifierColor = tokenIdentifierColor,
+                    tokenFadedColor = tokenFadedColor,
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                )
             }
+            MiniIdeStatusBar(
+                sidebarColor = sidebarColor,
+                tokenKeywordColor = tokenKeywordColor,
+            )
+        }
+    }
+}
 
-            // Mini Status Bar
+/**
+ * Window title bar with mock macOS mini indicator dots.
+ */
+@Composable
+private fun MiniIdeTitleBar(sidebarColor: Color, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(Spacing.Fourteen)
+            .background(sidebarColor)
+            .padding(horizontal = Spacing.Compact),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(IconSize.MiniDot)
+                .clip(GlassShapes.Capsule)
+                .background(GlassTheme.diagnosticColors.error),
+        )
+        Box(
+            modifier = Modifier
+                .size(IconSize.MiniDot)
+                .clip(GlassShapes.Capsule)
+                .background(GlassTheme.diagnosticColors.warning),
+        )
+        Box(
+            modifier = Modifier
+                .size(IconSize.MiniDot)
+                .clip(GlassShapes.Capsule)
+                .background(GlassTheme.diagnosticColors.success),
+        )
+    }
+}
+
+/**
+ * Miniature project tree sidebar with placeholder item bars.
+ */
+@Composable
+private fun MiniIdeSidebar(
+    sidebarColor: Color,
+    tokenKeywordColor: Color,
+    tokenFadedColor: Color,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .width(ComponentSize.PanelHeaderAction)
+            .fillMaxHeight()
+            .background(sidebarColor)
+            .padding(horizontal = Spacing.ExtraExtraSmall, vertical = Spacing.ExtraSmall),
+        verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(AlphaTokens.Prominent)
+                .height(Spacing.ExtraExtraSmall)
+                .clip(GlassShapes.Capsule)
+                .background(tokenKeywordColor),
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(AlphaTokens.TextMuted)
+                .height(Spacing.ExtraExtraSmall)
+                .clip(GlassShapes.Capsule)
+                .background(tokenFadedColor),
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(AlphaTokens.Hover)
+                .height(Spacing.ExtraExtraSmall)
+                .clip(GlassShapes.Capsule)
+                .background(tokenFadedColor),
+        )
+    }
+}
+
+/**
+ * Miniature code editor pane with colored syntax bars.
+ */
+@Composable
+private fun MiniIdeEditor(
+    editorColor: Color,
+    tokenKeywordColor: Color,
+    tokenIdentifierColor: Color,
+    tokenFadedColor: Color,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .background(editorColor)
+            .padding(Spacing.Small),
+        verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
             Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(Spacing.Compact)
-                    .background(sidebarColor)
-                    .padding(horizontal = Spacing.Compact),
-                contentAlignment = Alignment.CenterStart,
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(Spacing.ExtraExtraSmall)
-                        .clip(GlassShapes.Capsule)
-                        .background(tokenKeywordColor),
-                )
-            }
+                    .width(Spacing.CardPadding)
+                    .height(Spacing.ExtraSmall)
+                    .clip(GlassShapes.Capsule)
+                    .background(tokenKeywordColor),
+            )
+            Box(
+                modifier = Modifier
+                    .width(Spacing.ExtraLarge)
+                    .height(Spacing.ExtraSmall)
+                    .clip(GlassShapes.Capsule)
+                    .background(tokenIdentifierColor),
+            )
         }
+        Row(
+            modifier = Modifier.padding(start = Spacing.Small),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+        ) {
+            Box(
+                modifier = Modifier
+                    .width(Spacing.Medium)
+                    .height(Spacing.ExtraSmall)
+                    .clip(GlassShapes.Capsule)
+                    .background(tokenIdentifierColor),
+            )
+            Box(
+                modifier = Modifier
+                    .width(Spacing.SectionGap)
+                    .height(Spacing.ExtraSmall)
+                    .clip(GlassShapes.Capsule)
+                    .background(tokenFadedColor),
+            )
+        }
+        Box(
+            modifier = Modifier
+                .padding(start = Spacing.Small)
+                .width(Spacing.Medium)
+                .height(Spacing.ExtraSmall)
+                .clip(GlassShapes.Capsule)
+                .background(tokenKeywordColor),
+        )
+    }
+}
+
+/**
+ * Miniature status bar at bottom of the preview window.
+ */
+@Composable
+private fun MiniIdeStatusBar(sidebarColor: Color, tokenKeywordColor: Color, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(Spacing.Compact)
+            .background(sidebarColor)
+            .padding(horizontal = Spacing.Compact),
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(Spacing.ExtraExtraSmall)
+                .clip(GlassShapes.Capsule)
+                .background(tokenKeywordColor),
+        )
     }
 }

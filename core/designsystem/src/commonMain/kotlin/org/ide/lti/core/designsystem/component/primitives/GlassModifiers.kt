@@ -49,11 +49,7 @@ import androidx.compose.ui.unit.Dp
  * by size is exact for capsules and leaves at most a halfStroke corner-fullness residue
  * (erring inward, never outward) for fixed-radius rounded rectangles.
  */
-fun Modifier.glassOutlineBorder(
-    color: Color,
-    width: Dp,
-    shape: Shape,
-): Modifier = this.drawWithCache {
+fun Modifier.glassOutlineBorder(color: Color, width: Dp, shape: Shape): Modifier = this.drawWithCache {
     val strokePx = (if (width == Dp.Hairline) 1f else width.toPx())
         .coerceAtMost(size.minDimension / 2f)
     val innerWidth = size.width - strokePx

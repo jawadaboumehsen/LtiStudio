@@ -256,7 +256,6 @@ private fun ImportPackageHeader(
 
 @Composable
 private fun ImportInspectFirstEmptyState(modifier: Modifier = Modifier) {
-
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -386,14 +385,22 @@ private fun ImportSdkCompatibilityCard(hasBlockingErrors: Boolean) {
                         AppIcons.CheckPainterResource()
                     },
                     contentDescription = if (hasBlockingErrors) "Blocked" else "Inspection passed",
-                    tint = if (hasBlockingErrors) GlassTheme.diagnosticColors.error else GlassTheme.diagnosticColors.success,
+                    tint = if (hasBlockingErrors) {
+                        GlassTheme.diagnosticColors.error
+                    } else {
+                        GlassTheme.diagnosticColors.success
+                    },
                     modifier = Modifier.size(IconSize.Small),
                 )
                 Text(
                     text = if (hasBlockingErrors) "Blocked" else "Inspection passed",
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
-                    color = if (hasBlockingErrors) GlassTheme.diagnosticColors.error else GlassTheme.diagnosticColors.success,
+                    color = if (hasBlockingErrors) {
+                        GlassTheme.diagnosticColors.error
+                    } else {
+                        GlassTheme.diagnosticColors.success
+                    },
                 )
             }
             Text(
@@ -443,14 +450,22 @@ private fun ImportContentIntegrityCard(hasBlockingErrors: Boolean) {
                         AppIcons.CheckPainterResource()
                     },
                     contentDescription = if (hasBlockingErrors) "Failed" else "Inspection passed",
-                    tint = if (hasBlockingErrors) GlassTheme.diagnosticColors.error else GlassTheme.diagnosticColors.success,
+                    tint = if (hasBlockingErrors) {
+                        GlassTheme.diagnosticColors.error
+                    } else {
+                        GlassTheme.diagnosticColors.success
+                    },
                     modifier = Modifier.size(IconSize.Small),
                 )
                 Text(
                     text = if (hasBlockingErrors) "Failed" else "Inspection passed",
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
-                    color = if (hasBlockingErrors) GlassTheme.diagnosticColors.error else GlassTheme.diagnosticColors.success,
+                    color = if (hasBlockingErrors) {
+                        GlassTheme.diagnosticColors.error
+                    } else {
+                        GlassTheme.diagnosticColors.success
+                    },
                 )
             }
             Text(
@@ -885,7 +900,6 @@ private fun ImportDetailRow(label: String, value: String, modifier: Modifier = M
 
 @Composable
 private fun UnsupportedLegacyFormatPanel(formatName: String, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
-
     Box(
         modifier = modifier
             .fillMaxWidth()

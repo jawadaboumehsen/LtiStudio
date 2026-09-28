@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /** Layout and motion tokens specific to the first-run setup wizard's wide, document-style screens. */
+@Suppress("PropertyName") // Setup layout tokens use PascalCase per CLAUDE.md token catalog
 object SetupTokens {
     val SidebarWidthWide = 240.dp
     val SidebarWidthCompact = 192.dp

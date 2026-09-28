@@ -32,7 +32,4 @@ enum class SyntaxTokenKind {
  * @property kind The semantic token kind.
  */
 @Immutable
-data class SyntaxToken(
-    val range: IntRange,
-    val kind: SyntaxTokenKind,
-)
+data class SyntaxToken(val range: IntRange, val kind: SyntaxTokenKind)

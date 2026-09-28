@@ -16,24 +16,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.IntSize
-import org.ide.lti.core.designsystem.component.actions.*
-import org.ide.lti.core.designsystem.component.devtools.*
-import org.ide.lti.core.designsystem.component.display.*
-import org.ide.lti.core.designsystem.component.feedback.*
-import org.ide.lti.core.designsystem.component.inputs.*
-import org.ide.lti.core.designsystem.component.navigation.*
-import org.ide.lti.core.designsystem.component.primitives.*
 
 /**
  * Cohesive panel visibility snapshot adhering to Single Responsibility.
  */
 sealed interface PanelVisibilityState {
     data object AllCollapsed : PanelVisibilityState
-    data class Active(
-        val isLeftVisible: Boolean,
-        val isRightVisible: Boolean,
-        val isBottomVisible: Boolean,
-    ) : PanelVisibilityState
+    data class Active(val isLeftVisible: Boolean, val isRightVisible: Boolean, val isBottomVisible: Boolean) :
+        PanelVisibilityState
 }
 
 /**

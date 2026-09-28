@@ -120,7 +120,8 @@ class GlassCardOpticalBehaviorTest {
                 minSpreadFraction = 0.20,
             )
 
-            // Verify 10-90% edge transition width expansion (proves authentic spatial optical blur with >= 1.8x expansion)
+            // Verify 10-90% edge transition width expansion (proves authentic spatial optical blur
+            // with >= 1.8x expansion)
             GlassOpticalVerifier.assertEdgeTransitionExpansion(
                 rawPattern = rawPattern!!,
                 glassRender = glassRender!!,
@@ -170,7 +171,8 @@ class GlassCardOpticalBehaviorTest {
         }
         assertTrue(
             error.message!!.contains("Optical blur failure: edge spreading is insufficient"),
-            "Expected failure to identify insufficient edge spreading on flat translucent fill, but got: ${error.message}",
+            "Expected failure to identify insufficient edge spreading on flat translucent fill, " +
+                "but got: ${error.message}",
         )
     }
 

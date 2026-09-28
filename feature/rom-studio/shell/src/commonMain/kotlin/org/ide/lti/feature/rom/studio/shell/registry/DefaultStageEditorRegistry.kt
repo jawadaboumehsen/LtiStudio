@@ -15,32 +15,26 @@ import org.ide.lti.feature.rom.studio.api.StageEditor
 import org.ide.lti.feature.rom.studio.api.StageEditorRegistry
 import org.ide.lti.feature.rom.studio.api.StudioSubobjectId
 
-public class MissingStageEditorException(
-    public val missingStageIds: Set<StageId>,
-) : IllegalStateException(
-    "Missing stage editor registration for canonical stage(s): ${missingStageIds.joinToString()}",
-)
+public class MissingStageEditorException(public val missingStageIds: Set<StageId>) :
+    IllegalStateException(
+        "Missing stage editor registration for canonical stage(s): ${missingStageIds.joinToString()}",
+    )
 
-public class DuplicateStageEditorException(
-    public val duplicateStageIds: Set<StageId>,
-) : IllegalStateException(
-    "Duplicate stage editor registration detected for stage(s): ${duplicateStageIds.joinToString()}",
-)
+public class DuplicateStageEditorException(public val duplicateStageIds: Set<StageId>) :
+    IllegalStateException(
+        "Duplicate stage editor registration detected for stage(s): ${duplicateStageIds.joinToString()}",
+    )
 
-public class UnknownSubobjectException(
-    public val stageId: StageId,
-    public val subobjectId: StudioSubobjectId,
-) : IllegalArgumentException(
-    "Subobject '$subobjectId' is not defined in descriptor for stage $stageId",
-)
+public class UnknownSubobjectException(public val stageId: StageId, public val subobjectId: StudioSubobjectId) :
+    IllegalArgumentException(
+        "Subobject '$subobjectId' is not defined in descriptor for stage $stageId",
+    )
 
 /**
  * Concrete implementation of [StageEditorRegistry] with fail-fast validation against [PipelineStageSequence.ORDER].
  */
-public class DefaultStageEditorRegistry(
-    editors: List<StageEditor>,
-    enforceFullPipeline: Boolean = true,
-) : StageEditorRegistry {
+public class DefaultStageEditorRegistry(editors: List<StageEditor>, enforceFullPipeline: Boolean = true) :
+    StageEditorRegistry {
 
     private val editorMap: Map<StageId, StageEditor>
 

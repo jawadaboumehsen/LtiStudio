@@ -9,7 +9,6 @@
  */
 package org.ide.lti.feature.rom.studio.stage.build.panes
 
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,6 +27,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -334,7 +334,12 @@ private fun FlashableItemRow(item: FlashableItem) {
                 ),
             )
             if (item.isLocked) {
-                Icon(Icons.Default.Lock, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(IconSize.ExtraSmall))
+                Icon(
+                    Icons.Default.Lock,
+                    null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(IconSize.ExtraSmall),
+                )
             } else {
                 Text("-", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro)
             }
@@ -424,9 +429,24 @@ private fun PackagePreviewCard() {
             modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.Small),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("File name", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.weight(1.3f))
-            Text("Size", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.weight(0.9f))
-            Text("Partition", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.weight(1.0f))
+            Text(
+                "File name",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = FontSize.Micro,
+                modifier = Modifier.weight(1.3f),
+            )
+            Text(
+                "Size",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = FontSize.Micro,
+                modifier = Modifier.weight(0.9f),
+            )
+            Text(
+                "Partition",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = FontSize.Micro,
+                modifier = Modifier.weight(1.0f),
+            )
         }
         HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
 
@@ -592,7 +612,12 @@ private fun FlashableFootnoteCard() {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
         ) {
-            Icon(Icons.Default.Info, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(IconSize.Small))
+            Icon(
+                Icons.Default.Info,
+                null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(IconSize.Small),
+            )
             Text(
                 text = "Only include images that are supported by your target device. " +
                     "Including unnecessary images may increase package size.",

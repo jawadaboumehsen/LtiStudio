@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -75,17 +76,9 @@ fun GlassSidebarItem(
     var isHovered by remember { mutableStateOf(false) }
     var isFocused by remember { mutableStateOf(false) }
 
-    val targetBackground = when {
-        selected -> MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Glow)
-        isHovered -> MaterialTheme.colorScheme.onSurface.copy(alpha = AlphaTokens.UltraFaint)
-        else -> Color.Transparent
-    }
-    val targetBorderColor = when {
-        selected -> MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Faded)
-        isFocused -> MaterialTheme.colorScheme.primary
-        isHovered -> MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Glow)
-        else -> Color.Transparent
-    }
+    val colors = MaterialTheme.colorScheme
+    val targetBackground = sidebarBackground(selected, isHovered, colors)
+    val targetBorderColor = sidebarBorderColor(selected, isFocused, isHovered, colors)
 
     val backgroundColor by animateColorAsState(
         targetValue = targetBackground,
@@ -121,11 +114,7 @@ fun GlassSidebarItem(
             horizontalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
         ) {
             val iconTint by animateColorAsState(
-                targetValue = when {
-                    selected -> MaterialTheme.colorScheme.primary
-                    isHovered -> MaterialTheme.colorScheme.onSurface
-                    else -> MaterialTheme.colorScheme.onSurfaceVariant
-                },
+                targetValue = sidebarIconTint(selected, isHovered, colors),
             )
             when (icon) {
                 is AppIcon.Vector -> Icon(
@@ -146,8 +135,8 @@ fun GlassSidebarItem(
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
                 color = when {
-                    selected || isHovered -> MaterialTheme.colorScheme.onSurface
-                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                    selected || isHovered -> colors.onSurface
+                    else -> colors.onSurfaceVariant
                 },
                 modifier = Modifier.weight(1f),
                 maxLines = 1,
@@ -158,7 +147,11 @@ fun GlassSidebarItem(
                 Text(
                     text = badge,
                     style = MaterialTheme.typography.labelSmall,
-                    color = if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (selected) {
+                        colors.onSurface
+                    } else {
+                        colors.onSurfaceVariant
+                    },
                     maxLines = 1,
                     softWrap = false,
                     overflow = TextOverflow.Ellipsis,
@@ -166,6 +159,35 @@ fun GlassSidebarItem(
             }
         }
     }
+}
+
+/**
+ * Resolves the background color for a sidebar item.
+ */
+private fun sidebarBackground(selected: Boolean, isHovered: Boolean, colors: ColorScheme): Color = when {
+    selected -> colors.primary.copy(alpha = AlphaTokens.Glow)
+    isHovered -> colors.onSurface.copy(alpha = AlphaTokens.UltraFaint)
+    else -> Color.Transparent
+}
+
+/**
+ * Resolves the outline border color for a sidebar item.
+ */
+private fun sidebarBorderColor(selected: Boolean, isFocused: Boolean, isHovered: Boolean, colors: ColorScheme): Color =
+    when {
+        selected -> colors.primary.copy(alpha = AlphaTokens.Faded)
+        isFocused -> colors.primary
+        isHovered -> colors.outline.copy(alpha = AlphaTokens.Glow)
+        else -> Color.Transparent
+    }
+
+/**
+ * Resolves the icon tint color for a sidebar item.
+ */
+private fun sidebarIconTint(selected: Boolean, isHovered: Boolean, colors: ColorScheme): Color = when {
+    selected -> colors.primary
+    isHovered -> colors.onSurface
+    else -> colors.onSurfaceVariant
 }
 
 /**

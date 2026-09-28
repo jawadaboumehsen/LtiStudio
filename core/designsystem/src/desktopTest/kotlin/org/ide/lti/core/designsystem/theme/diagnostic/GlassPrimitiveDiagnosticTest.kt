@@ -131,7 +131,8 @@ class GlassPrimitiveDiagnosticTest {
         // Refracted and blurred glass softens the transition boundary, reducing max gradient
         assertTrue(
             blurredMaxGradient < rawMaxGradient * 0.75,
-            "Haze glass must visibly diffuse the sharp stripe boundary (raw=$rawMaxGradient, blurred=$blurredMaxGradient)",
+            "Haze glass must visibly diffuse the sharp stripe boundary " +
+                "(raw=$rawMaxGradient, blurred=$blurredMaxGradient)",
         )
     }
 
@@ -257,7 +258,10 @@ class GlassPrimitiveDiagnosticTest {
 
         val dialogImage = roots[1].captureToImage()
         assertNotNull(dialogImage, "Dialog root window must render successfully on desktop")
-        println("[DIAGNOSTIC] Desktop GlassDialog rendered in separate root at size: ${dialogImage.width}x${dialogImage.height}")
+        println(
+            "[DIAGNOSTIC] Desktop GlassDialog rendered in separate root at size: " +
+                "${dialogImage.width}x${dialogImage.height}",
+        )
     }
 
     // =============================================================================================
@@ -353,7 +357,8 @@ class GlassPrimitiveDiagnosticTest {
             boundaryRoi = interiorRoi,
         )
         println(
-            "[DIAGNOSTIC] Interior Refraction (Zero Displacement Check): totalFeatures=${interiorResult.featureCount}, " +
+            "[DIAGNOSTIC] Interior Refraction (Zero Displacement Check): " +
+                "totalFeatures=${interiorResult.featureCount}, " +
                 "displacedFeatures=${interiorResult.displacedFeatureCount}, " +
                 "meanDisplacement=${interiorResult.meanDisplacementPx}px, " +
                 "maxDisplacement=${interiorResult.maxDisplacementPx}px",
@@ -361,12 +366,14 @@ class GlassPrimitiveDiagnosticTest {
         assertEquals(
             0,
             interiorResult.displacedFeatureCount,
-            "Interior features away from the curved rim must have 0px refraction displacement (found ${interiorResult.displacedFeatureCount} displaced features)",
+            "Interior features away from the curved rim must have 0px refraction displacement " +
+                "(found ${interiorResult.displacedFeatureCount} displaced features)",
         )
         assertEquals(
             0.0,
             interiorResult.maxDisplacementPx,
-            "Interior features away from the curved rim must exhibit zero displacement (found max=${interiorResult.maxDisplacementPx}px)",
+            "Interior features away from the curved rim must exhibit zero displacement " +
+                "(found max=${interiorResult.maxDisplacementPx}px)",
         )
     }
 
@@ -463,7 +470,8 @@ class GlassPrimitiveDiagnosticTest {
             // Gradient must be non-zero (proving transmission of underlying pattern, NOT an opaque flat fallback)
             assertTrue(
                 glassGrad > 0.02,
-                "Optical glass must transmit underlying high-frequency pattern (found flat gradient $glassGrad in $theme)",
+                "Optical glass must transmit underlying high-frequency pattern " +
+                    "(found flat gradient $glassGrad in $theme)",
             )
             // Gradient must be significantly diffused compared to raw pattern
             assertTrue(
@@ -484,7 +492,8 @@ class GlassPrimitiveDiagnosticTest {
                 minSpreadFraction = 0.20,
             )
 
-            // 10-90% edge transition width expansion verification: proves authentic spatial optical blur with >= 1.8x expansion
+            // 10-90% edge transition width expansion verification: proves authentic spatial optical blur
+            // with >= 1.8x expansion
             // (Rejects any unblurred translucent overlay, which maintains ~1.0x expansion)
             GlassOpticalVerifier.assertEdgeTransitionExpansion(
                 rawPattern = rawImage!!,

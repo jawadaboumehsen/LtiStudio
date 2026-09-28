@@ -18,10 +18,7 @@ import org.ide.lti.core.model.target.DefaultTargetCatalog
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.PublishSettings
 
-public class PublishViewModel(
-    public val workspaceId: String,
-    initialSettings: PublishSettings? = null,
-) : ViewModel() {
+public class PublishViewModel(public val workspaceId: String, initialSettings: PublishSettings? = null) : ViewModel() {
 
     public val targetDevice: TargetDevice = DefaultTargetCatalog.PQ84P01_DEFAULT
 

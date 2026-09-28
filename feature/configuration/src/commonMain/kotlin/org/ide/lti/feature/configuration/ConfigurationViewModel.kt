@@ -56,7 +56,9 @@ class ConfigurationViewModel(
         viewModelScope.launch {
             getAvailableTargetsUseCase().collectLatest { targets ->
                 _uiState.update { current ->
-                    val selectedId = if (current.selectedTargetId.isNotEmpty() && targets.any { it.id == current.selectedTargetId }) {
+                    val selectedId = if (current.selectedTargetId.isNotEmpty() &&
+                        targets.any { it.id == current.selectedTargetId }
+                    ) {
                         current.selectedTargetId
                     } else {
                         targets.firstOrNull()?.id.orEmpty()
@@ -97,11 +99,7 @@ class ConfigurationViewModel(
         }
     }
 
-    private fun executeNavigationIntent(
-        targetId: String?,
-        mode: ConfigurationNavMode,
-        tab: ConfigurationTab?,
-    ) {
+    private fun executeNavigationIntent(targetId: String?, mode: ConfigurationNavMode, tab: ConfigurationTab?) {
         if (tab != null) {
             onSelectTab(tab)
         }

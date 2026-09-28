@@ -82,7 +82,6 @@ internal fun PluginAuthorToolsTab(
     onRunTask: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-
     Column(modifier = modifier.fillMaxSize()) {
         Column(
             modifier = Modifier

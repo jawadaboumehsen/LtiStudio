@@ -36,29 +36,18 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import dev.chrisbanes.haze.ExperimentalHazeApi
-import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.glass.hazeGlass
-import org.ide.lti.core.designsystem.component.actions.*
-import org.ide.lti.core.designsystem.component.devtools.*
-import org.ide.lti.core.designsystem.component.display.*
-import org.ide.lti.core.designsystem.component.inputs.*
-import org.ide.lti.core.designsystem.component.layout.*
-import org.ide.lti.core.designsystem.component.navigation.*
-import org.ide.lti.core.designsystem.component.primitives.*
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.HazeShape
-import org.ide.lti.core.designsystem.theme.sceneHazeInput
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.sceneHazeInput
 
 /**
  * Type-safe action buttons configuration for [GlassDialog].
  */
 sealed interface DialogActions {
-    data class Single(
-        val confirmText: String,
-        val onConfirm: () -> Unit,
-    ) : DialogActions
+    data class Single(val confirmText: String, val onConfirm: () -> Unit) : DialogActions
 
     data class ConfirmDismiss(
         val confirmText: String,
@@ -67,9 +56,7 @@ sealed interface DialogActions {
         val onDismiss: () -> Unit,
     ) : DialogActions
 
-    data class Custom(
-        val content: @Composable RowScope.() -> Unit,
-    ) : DialogActions
+    data class Custom(val content: @Composable RowScope.() -> Unit) : DialogActions
 }
 
 /**
@@ -172,17 +159,16 @@ sealed class LoadingDialogState {
  */
 @OptIn(ExperimentalHazeApi::class)
 @Composable
-fun GlassLoadingDialog(
-    visibilityState: LoadingDialogState,
-    modifier: Modifier = Modifier,
-) {
+fun GlassLoadingDialog(visibilityState: LoadingDialogState, modifier: Modifier = Modifier) {
     val colors = MaterialTheme.colorScheme
 
     when (visibilityState) {
         is LoadingDialogState.Hidden -> Unit
         is LoadingDialogState.Shown -> {
             val theme = GlassTheme.appTheme
-            val loadingSurfaceModifier = if (GlassTheme.effectsEnabled && PlatformDialogPolicy.supportsCrossWindowBlur) {
+            val loadingSurfaceModifier = if (GlassTheme.effectsEnabled &&
+                PlatformDialogPolicy.supportsCrossWindowBlur
+            ) {
                 Modifier.hazeGlass(
                     input = sceneHazeInput(GlassTheme.hazeState),
                     style = remember(theme) {

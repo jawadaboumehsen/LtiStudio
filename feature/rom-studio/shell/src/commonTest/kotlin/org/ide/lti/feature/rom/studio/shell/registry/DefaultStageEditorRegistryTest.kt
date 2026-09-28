@@ -26,8 +26,8 @@ import kotlin.test.assertNotNull
 
 class DefaultStageEditorRegistryTest {
 
-    private fun mockEditor(stageId: StageId, subobjects: List<StudioSubobject> = emptyList()): StageEditor {
-        return object : StageEditor {
+    private fun mockEditor(stageId: StageId, subobjects: List<StudioSubobject> = emptyList()): StageEditor =
+        object : StageEditor {
             override val stageId: StageId = stageId
             override val descriptor: StageDescriptor = StageDescriptor(
                 stageId = stageId,
@@ -39,12 +39,9 @@ class DefaultStageEditorRegistryTest {
             @Composable
             override fun Content(context: StageEditorContext, modifier: Modifier) {}
         }
-    }
 
-    private fun allCanonicalEditors(): List<StageEditor> {
-        return PipelineStageSequence.ORDER.map { id ->
-            mockEditor(id, listOf(StudioSubobject(StudioSubobjectId("overview"), "Overview")))
-        }
+    private fun allCanonicalEditors(): List<StageEditor> = PipelineStageSequence.ORDER.map { id ->
+        mockEditor(id, listOf(StudioSubobject(StudioSubobjectId("overview"), "Overview")))
     }
 
     @Test

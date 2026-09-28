@@ -160,7 +160,13 @@ private fun StatusBarProblems(problemCount: Int, onOpenProblems: (() -> Unit)?) 
         }
         Text(
             text = "Problems: $problemCount",
-            color = if (problemCount > 0) GlassTheme.diagnosticColors.warning else MaterialTheme.colorScheme.onSurfaceVariant,
+            color = if (problemCount >
+                0
+            ) {
+                GlassTheme.diagnosticColors.warning
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            },
             fontFamily = ideFontFamily(),
             fontSize = FontSize.Micro,
             fontWeight = FontWeight.Medium,

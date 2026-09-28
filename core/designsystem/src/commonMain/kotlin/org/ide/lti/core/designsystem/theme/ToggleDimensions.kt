@@ -12,7 +12,6 @@ package org.ide.lti.core.designsystem.theme
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 
 /**
  * Configurable dimensions for `GlassToggle`, allowing candidate geometry testing and overrides.
@@ -33,24 +32,24 @@ data class ToggleDimensions(
 
         /** Pair B: Compact ergonomic candidate (56x32 dp track, 28x28 dp circular thumb, 24 dp travel). */
         val PairB = ToggleDimensions(
-            trackWidth = 56.dp,
-            trackHeight = 32.dp,
-            thumbWidth = 28.dp,
-            thumbHeight = 28.dp,
+            trackWidth = ComponentSize.ToggleTrackWidthCompact,
+            trackHeight = ComponentSize.ToggleTrackHeightCompact,
+            thumbWidth = ComponentSize.ToggleThumbSizeCompact,
+            thumbHeight = ComponentSize.ToggleThumbSizeCompact,
             thumbIsCircle = true,
-            padding = 2.dp,
+            padding = Spacing.ExtraExtraSmall,
             minTouchTarget = ComponentSize.ToggleMinTouchTarget,
         )
 
         /** Pair C: Haze reference candidate (64x48 dp track, 40x40 dp circular thumb). */
         val PairC = ToggleDimensions(
-            trackWidth = 64.dp,
-            trackHeight = 48.dp,
-            thumbWidth = 40.dp,
-            thumbHeight = 40.dp,
+            trackWidth = ComponentSize.ToggleTrackWidth,
+            trackHeight = ComponentSize.ToggleTrackHeightLarge,
+            thumbWidth = ComponentSize.ToggleThumbSizeLarge,
+            thumbHeight = ComponentSize.ToggleThumbSizeLarge,
             thumbIsCircle = true,
-            padding = 4.dp,
-            minTouchTarget = 48.dp,
+            padding = Spacing.ExtraSmall,
+            minTouchTarget = ComponentSize.ToggleMinTouchTarget,
         )
     }
 }

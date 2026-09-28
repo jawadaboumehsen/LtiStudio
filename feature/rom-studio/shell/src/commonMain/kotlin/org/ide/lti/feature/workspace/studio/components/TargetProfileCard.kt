@@ -55,11 +55,7 @@ import org.ide.lti.feature.workspace.studio.TargetSummaryUi
  * Matches Mockup 09 (two-column layout right card).
  */
 @Composable
-public fun TargetProfileCard(
-    summary: TargetSummaryUi,
-    onEditProfile: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
+public fun TargetProfileCard(summary: TargetSummaryUi, onEditProfile: () -> Unit, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .testTag("TargetProfileCard")
@@ -82,10 +78,7 @@ public fun TargetProfileCard(
 }
 
 @Composable
-private fun TargetProfileHeader(
-    onEditProfile: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
+private fun TargetProfileHeader(onEditProfile: () -> Unit, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -146,10 +139,7 @@ private fun TargetProfileHeader(
 }
 
 @Composable
-private fun TargetProfileSubheader(
-    summary: TargetSummaryUi,
-    modifier: Modifier = Modifier,
-) {
+private fun TargetProfileSubheader(summary: TargetSummaryUi, modifier: Modifier = Modifier) {
     val revText = when (val rev = summary.revision) {
         is DisplayValue.Available -> rev.text.replace("rev ", "").replace("rev-", "")
         is DisplayValue.Unavailable -> "4"

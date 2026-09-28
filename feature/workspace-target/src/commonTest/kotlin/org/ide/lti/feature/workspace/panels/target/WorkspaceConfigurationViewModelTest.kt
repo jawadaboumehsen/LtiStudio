@@ -10,7 +10,6 @@
 package org.ide.lti.feature.workspace.panels.target
 
 import io.github.vinceglb.filekit.core.PlatformFile
-import org.ide.lti.core.domain.ports.RemoteFileUploaderPort
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -33,6 +32,7 @@ import org.ide.lti.core.domain.ports.LeaseReconciliation
 import org.ide.lti.core.domain.ports.MutationKind
 import org.ide.lti.core.domain.ports.ProvisioningEvent
 import org.ide.lti.core.domain.ports.ProvisioningSpec
+import org.ide.lti.core.domain.ports.RemoteFileUploaderPort
 import org.ide.lti.core.domain.ports.SnapshotMaterializationIntent
 import org.ide.lti.core.domain.ports.SnapshotMaterializerPort
 import org.ide.lti.core.domain.ports.WorkspaceAdmissionPort
@@ -138,17 +138,17 @@ class WorkspaceConfigurationViewModelTest {
 
     private class FakeSnapshotRepository : SnapshotRepository {
         val snapshotsMap = mutableMapOf<String, ConfigurationSnapshot>()
-        private val _flow = MutableStateFlow<List<ConfigurationSnapshot>>(emptyList())
-        override val snapshots: Flow<List<ConfigurationSnapshot>> = _flow.asStateFlow()
+        private val snapshotsFlow = MutableStateFlow<List<ConfigurationSnapshot>>(emptyList())
+        override val snapshots: Flow<List<ConfigurationSnapshot>> = snapshotsFlow.asStateFlow()
 
         override fun snapshotsForWorkspace(workspaceId: String): Flow<List<ConfigurationSnapshot>> =
-            _flow.map { list -> list.filter { it.workspaceId == workspaceId } }
+            snapshotsFlow.map { list -> list.filter { it.workspaceId == workspaceId } }
 
         override suspend fun getSnapshot(id: String): ConfigurationSnapshot? = snapshotsMap[id]
 
         override suspend fun saveSnapshot(snapshot: ConfigurationSnapshot) {
             snapshotsMap[snapshot.id] = snapshot
-            _flow.value = snapshotsMap.values.toList()
+            snapshotsFlow.value = snapshotsMap.values.toList()
         }
     }
 
@@ -171,12 +171,12 @@ class WorkspaceConfigurationViewModelTest {
 
     private class FakeWorkspaceRepo : WorkspaceRepository {
         val workspaces = mutableMapOf<String, Workspace>()
-        private val _flow = MutableStateFlow<List<Workspace>>(emptyList())
-        override fun getWorkspaces(): Flow<List<Workspace>> = _flow.asStateFlow()
+        private val workspacesFlow = MutableStateFlow<List<Workspace>>(emptyList())
+        override fun getWorkspaces(): Flow<List<Workspace>> = workspacesFlow.asStateFlow()
         override suspend fun getWorkspace(id: String): Workspace? = workspaces[id]
         override suspend fun saveWorkspace(workspace: Workspace) {
             workspaces[workspace.id] = workspace
-            _flow.value = workspaces.values.toList()
+            workspacesFlow.value = workspaces.values.toList()
         }
         override suspend fun deleteWorkspace(id: String) {}
         override suspend fun getWorkspaceSession(workspaceId: String): WorkspaceSession? = null

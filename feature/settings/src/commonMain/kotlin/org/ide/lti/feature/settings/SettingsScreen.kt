@@ -208,10 +208,7 @@ fun SettingsScreenContent(
 }
 
 @Composable
-private fun SettingsHelpColumn(
-    category: SettingsCategory,
-    modifier: Modifier = Modifier,
-) {
+private fun SettingsHelpColumn(category: SettingsCategory, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .fillMaxHeight()

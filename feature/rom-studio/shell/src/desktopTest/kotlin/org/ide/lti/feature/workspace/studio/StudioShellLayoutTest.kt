@@ -84,11 +84,7 @@ class StudioShellLayoutTest {
         assertTrue(pixelDifferencePercent(darkImage, lightImage) > MIN_THEME_DIFF_PERCENT)
     }
 
-    private fun renderAndCaptureShell(
-        theme: AppTheme,
-        name: String,
-        effectsEnabled: Boolean = true,
-    ): ImageBitmap {
+    private fun renderAndCaptureShell(theme: AppTheme, name: String, effectsEnabled: Boolean = true): ImageBitmap {
         var observedTheme: AppTheme? = null
         composeTestRule.setContent {
             LtiTheme(appTheme = theme, effectsEnabled = effectsEnabled) {

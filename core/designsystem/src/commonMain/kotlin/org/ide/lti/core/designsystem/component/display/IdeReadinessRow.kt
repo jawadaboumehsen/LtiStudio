@@ -158,7 +158,11 @@ fun IdeReadinessRow(
                     )
                     .border(
                         width = GlassDimens.HairlineBorder,
-                        color = if (actionEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                        color = if (actionEnabled) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.outline
+                        },
                         shape = GlassShapes.ShellControl,
                     )
                     .clickable(
@@ -172,7 +176,11 @@ fun IdeReadinessRow(
             ) {
                 Text(
                     text = actionLabel,
-                    color = if (actionEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (actionEnabled) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
                     fontSize = FontSize.Micro,
                     fontWeight = FontWeight.Medium,
                     fontFamily = GlassFontFamily.ide(),

@@ -168,7 +168,11 @@ private fun ReadinessRowItem(
                 modifier = Modifier
                     .size(GlassDimens.OverviewStageIconBoxSize)
                     .background(MaterialTheme.colorScheme.surfaceContainer, GlassShapes.ShellControl)
-                    .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outlineVariant, GlassShapes.ShellControl),
+                    .border(
+                        GlassDimens.HairlineBorder,
+                        MaterialTheme.colorScheme.outlineVariant,
+                        GlassShapes.ShellControl,
+                    ),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -230,10 +234,7 @@ private fun ReadinessRowItem(
 }
 
 @Composable
-private fun ReadinessActionButton(
-    item: ReadinessItemUi,
-    onAction: (WorkspaceActionUi) -> Unit,
-) {
+private fun ReadinessActionButton(item: ReadinessItemUi, onAction: (WorkspaceActionUi) -> Unit) {
     val action = item.action ?: return
     val btnInteraction = remember { MutableInteractionSource() }
     val isBtnHovered by btnInteraction.collectIsHoveredAsState()
@@ -296,7 +297,11 @@ private fun resolveActionButtonStyle(
             isHovered -> MaterialTheme.colorScheme.surfaceContainerHigh
             else -> MaterialTheme.colorScheme.surfaceContainer
         }
-        ActionButtonStyle(bg = bg, text = MaterialTheme.colorScheme.onSurfaceVariant, border = MaterialTheme.colorScheme.outline)
+        ActionButtonStyle(
+            bg = bg,
+            text = MaterialTheme.colorScheme.onSurfaceVariant,
+            border = MaterialTheme.colorScheme.outline,
+        )
     }
 }
 

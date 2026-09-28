@@ -9,8 +9,6 @@
  */
 package org.ide.lti.feature.rom.studio.stage.acquire.panes
 
-import org.ide.lti.core.designsystem.theme.AlphaTokens
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -31,6 +29,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.RemoveCircleOutline
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -50,6 +49,7 @@ import org.ide.lti.core.designsystem.component.display.IdeTableHeaderCell
 import org.ide.lti.core.designsystem.component.display.IdeTableRadioIndicator
 import org.ide.lti.core.designsystem.component.display.IdeTableRow
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
+import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
@@ -288,7 +288,7 @@ private fun FirmwareVersionsTable(
     IdeTable(
         modifier = Modifier.fillMaxWidth(),
     ) {
-        IdeTableHeader() {
+        IdeTableHeader {
             IdeTableHeaderCell(
                 text = "Select",
                 modifier = Modifier.width(GlassDimens.AcquireTableSelectColWidth),
@@ -331,7 +331,11 @@ private fun FirmwareVersionRowItem(
     isSelected: Boolean,
     onSelect: (FirmwareVersionRowUi) -> Unit,
 ) {
-    val textColor = if (fw.isCompatible) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+    val textColor = if (fw.isCompatible) {
+        MaterialTheme.colorScheme.onSurface
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
     IdeTableRow(
         isSelected = isSelected,
         isEnabled = fw.isCompatible,
@@ -406,7 +410,11 @@ private fun FirmwareVersionRowItem(
 
         Text(
             text = fw.notes,
-            color = if (fw.isCompatible) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant,
+            color = if (fw.isCompatible) {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            },
             fontSize = FontSize.Micro,
             fontFamily = ideFontFamily(),
             modifier = Modifier.weight(2f),
@@ -496,13 +504,25 @@ private fun ChecksumAndProvenanceCard(firmware: FirmwareVersionRowUi) {
                     Box(
                         modifier = Modifier
                             .clip(GlassShapes.ShellControl)
-                            .background(if (isTabSelected) MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Faded) else MaterialTheme.colorScheme.surfaceContainer)
+                            .background(
+                                if (isTabSelected) {
+                                    MaterialTheme.colorScheme.primary.copy(
+                                        alpha = AlphaTokens.Faded,
+                                    )
+                                } else {
+                                    MaterialTheme.colorScheme.surfaceContainer
+                                },
+                            )
                             .clickable { selectedTab = index }
                             .padding(horizontal = Spacing.Small, vertical = Spacing.Hairline),
                     ) {
                         Text(
                             text = tabTitle,
-                            color = if (isTabSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = if (isTabSelected) {
+                                MaterialTheme.colorScheme.onSurface
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
                             fontSize = FontSize.Micro,
                             fontFamily = ideFontFamily(),
                         )
@@ -570,7 +590,11 @@ private fun FirmwareInfoBanner() {
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
             .background(MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Subtle), GlassShapes.ShellCard)
-            .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Ambient), GlassShapes.ShellCard)
+            .border(
+                GlassDimens.HairlineBorder,
+                MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Ambient),
+                GlassShapes.ShellCard,
+            )
             .padding(Spacing.SmallMedium),
     ) {
         Row(

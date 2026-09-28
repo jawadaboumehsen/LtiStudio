@@ -18,10 +18,7 @@ import org.ide.lti.core.model.target.TargetDevice
  * Silicon, partition geometry, and active firmware telemetry summary for [target].
  */
 @Composable
-fun TargetTelemetryCard(
-    target: TargetDevice,
-    modifier: Modifier = Modifier,
-) {
+fun TargetTelemetryCard(target: TargetDevice, modifier: Modifier = Modifier) {
     GlassCard(
         modifier = modifier.fillMaxWidth(),
         contentPadding = Spacing.CardPadding,

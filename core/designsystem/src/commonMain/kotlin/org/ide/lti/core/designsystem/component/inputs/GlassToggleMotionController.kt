@@ -35,10 +35,7 @@ import kotlin.math.abs
  * - Reconciles external checked updates safely even while animation is in flight.
  */
 @Stable
-internal class GlassToggleMotionController(
-    initialChecked: Boolean,
-    private val coroutineScope: CoroutineScope,
-) {
+internal class GlassToggleMotionController(initialChecked: Boolean, private val coroutineScope: CoroutineScope) {
     var externalChecked: Boolean by mutableStateOf(initialChecked)
     var isReducedMotion: Boolean by mutableStateOf(false)
     var onCheckedChange: (Boolean) -> Unit = {}
@@ -73,6 +70,7 @@ internal class GlassToggleMotionController(
         get() = if (dragFraction != null) dragStretch else stretchAnimatable.value
 
     private var activeTransitionJob: Job? = null
+
     /** The controlled parent has been notified, but may not have recomposed with this value yet. */
     private var requestedChecked: Boolean? = null
 
@@ -110,7 +108,7 @@ internal class GlassToggleMotionController(
         dragStretch = 1f + velocityFactor
     }
 
-    fun onDragEnd(travelPx: Float) {
+    fun onDragEnd() {
         val finalFraction = dragFraction ?: positionProgress
         val targetChecked = finalFraction >= 0.5f
         commitTransition(targetChecked, startProgress = finalFraction, notifyCallback = true)
@@ -126,11 +124,7 @@ internal class GlassToggleMotionController(
         commitTransition(targetChecked, startProgress = positionProgress, notifyCallback = true)
     }
 
-    private fun commitTransition(
-        targetChecked: Boolean,
-        startProgress: Float,
-        notifyCallback: Boolean = true,
-    ) {
+    private fun commitTransition(targetChecked: Boolean, startProgress: Float, notifyCallback: Boolean = true) {
         val targetProgress = if (targetChecked) 1f else 0f
         val shouldCallback = notifyCallback && (targetChecked != externalChecked) && (requestedChecked != targetChecked)
         if (shouldCallback) requestedChecked = targetChecked

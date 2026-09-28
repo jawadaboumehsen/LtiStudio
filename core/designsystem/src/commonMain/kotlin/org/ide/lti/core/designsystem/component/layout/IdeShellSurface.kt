@@ -19,7 +19,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.unit.Dp
 import dev.chrisbanes.haze.ExperimentalHazeApi
-import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.glass.GlassStyleScope
 import dev.chrisbanes.haze.glass.hazeGlass
@@ -30,21 +29,6 @@ import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.HazeShape
 import org.ide.lti.core.designsystem.theme.sceneHazeInput
-
-/**
- * Semantic role of a glass surface determining source input, optical material styling,
- * and solid effects-off fallback.
- */
-enum class GlassRole {
-    /** Shell chrome: TopBar, Navigator, PipelineRail, Breadcrumb, StatusBar. Samples wallpaper source. */
-    Shell,
-
-    /** Text-bearing cards and panels: GlassCard, Setup cards, Settings cards. Uses Haze Regular with subtle tint. */
-    TextCard,
-
-    /** Small floating controls: floating action buttons, sliders, segmented toggles, pill tabs, chips. Uses Clear optics. */
-    FloatingControl,
-}
 
 /**
  * Unified design system modifier governing all glass and solid fallback surfaces.

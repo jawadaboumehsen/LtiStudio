@@ -11,6 +11,7 @@ import org.ide.lti.core.designsystem.component.progress.GlassStepperOrientation
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.model.run.BuildRun
 import org.ide.lti.core.model.run.StageId
+import org.ide.lti.core.model.run.StageOutcome
 import org.ide.lti.core.model.run.StageState
 
 @Composable
@@ -26,36 +27,16 @@ public fun StagePipelineView(
         StageId.WORK_TREE_ASSEMBLY to "Assemble",
         StageId.MODULE_APPLICATION to "Modules",
         StageId.BUILD_FLASHABLE_ZIP to "Package",
-        StageId.GENERATE_OTA_MANIFEST to "Manifest"
+        StageId.GENERATE_OTA_MANIFEST to "Manifest",
     )
 
     val stepInfos = stageDefs.map { (stageId, title) ->
         val outcome = latestRun?.stages?.find { it.stageId == stageId }
-        val status = when (outcome?.state) {
-            StageState.RUNNING -> GlassStepStatus.RUNNING
-            StageState.EXECUTED -> GlassStepStatus.SUCCESS
-            StageState.SKIPPED -> GlassStepStatus.SKIPPED
-            StageState.FAILED -> GlassStepStatus.FAILED
-            StageState.CANCELLED -> GlassStepStatus.CANCELLED
-            StageState.INTERRUPTED -> GlassStepStatus.INTERRUPTED
-            StageState.PENDING, StageState.NOT_RUN, null -> GlassStepStatus.PENDING
-        }
-
-        val label = when (outcome?.state) {
-            StageState.SKIPPED -> "Skipped"
-            StageState.EXECUTED -> outcome.durationMs?.let { "${it / 1000}s" } ?: "Complete"
-            StageState.FAILED -> outcome.message ?: "Failed"
-            StageState.RUNNING -> "Running..."
-            StageState.CANCELLED -> "Cancelled"
-            StageState.INTERRUPTED -> "Interrupted"
-            else -> "Pending"
-        }
-
         GlassStepInfo(
             id = stageId.name,
             shortTitle = title,
-            status = status,
-            statusLabel = label
+            status = resolveStepStatus(outcome?.state),
+            statusLabel = resolveStepLabel(outcome),
         )
     }
 
@@ -65,6 +46,28 @@ public fun StagePipelineView(
         isBusy = isBusy,
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = Spacing.Small)
+            .padding(vertical = Spacing.Small),
     )
+}
+
+/** Resolves the glass stepper status for a given stage state. */
+private fun resolveStepStatus(state: StageState?): GlassStepStatus = when (state) {
+    StageState.RUNNING -> GlassStepStatus.RUNNING
+    StageState.EXECUTED -> GlassStepStatus.SUCCESS
+    StageState.SKIPPED -> GlassStepStatus.SKIPPED
+    StageState.FAILED -> GlassStepStatus.FAILED
+    StageState.CANCELLED -> GlassStepStatus.CANCELLED
+    StageState.INTERRUPTED -> GlassStepStatus.INTERRUPTED
+    StageState.PENDING, StageState.NOT_RUN, null -> GlassStepStatus.PENDING
+}
+
+/** Resolves the human-readable display label for a stage outcome. */
+private fun resolveStepLabel(outcome: StageOutcome?): String = when (outcome?.state) {
+    StageState.SKIPPED -> "Skipped"
+    StageState.EXECUTED -> outcome.durationMs?.let { "${it / 1000}s" } ?: "Complete"
+    StageState.FAILED -> outcome.message ?: "Failed"
+    StageState.RUNNING -> "Running..."
+    StageState.CANCELLED -> "Cancelled"
+    StageState.INTERRUPTED -> "Interrupted"
+    else -> "Pending"
 }

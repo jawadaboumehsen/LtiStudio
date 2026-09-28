@@ -20,13 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import kotlinx.coroutines.launch
-import org.ide.lti.core.designsystem.component.actions.*
-import org.ide.lti.core.designsystem.component.devtools.*
-import org.ide.lti.core.designsystem.component.display.*
-import org.ide.lti.core.designsystem.component.feedback.*
-import org.ide.lti.core.designsystem.component.inputs.*
-import org.ide.lti.core.designsystem.component.layout.*
-import org.ide.lti.core.designsystem.component.primitives.*
 import org.ide.lti.core.designsystem.theme.Spacing
 
 /**
@@ -82,7 +75,4 @@ fun GlassScrollableTabRow(
  * Model representing a tab item and its corresponding content composable.
  */
 @Immutable
-data class TabContent(
-    val tabName: String,
-    val content: @Composable () -> Unit,
-)
+data class TabContent(val tabName: String, val content: @Composable () -> Unit)

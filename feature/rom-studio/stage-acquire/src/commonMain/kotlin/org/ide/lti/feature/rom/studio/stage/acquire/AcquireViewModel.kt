@@ -19,10 +19,8 @@ import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.AcquisitionMode
 import org.ide.lti.core.model.workspace.AcquisitionSettings
 
-public class AcquireViewModel(
-    public val workspaceId: String,
-    initialSettings: AcquisitionSettings? = null,
-) : ViewModel() {
+public class AcquireViewModel(public val workspaceId: String, initialSettings: AcquisitionSettings? = null) :
+    ViewModel() {
 
     public val targetDevice: TargetDevice = DefaultTargetCatalog.PQ84P01_DEFAULT
 

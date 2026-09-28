@@ -61,12 +61,12 @@ public fun GlassDropdownMenu(
  * Section header row inside a [GlassDropdownMenu].
  */
 @Composable
-public fun GlassDropdownMenuHeader(title: String) {
+public fun GlassDropdownMenuHeader(title: String, modifier: Modifier = Modifier) {
     Text(
         text = title,
         style = MaterialTheme.typography.labelSmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(horizontal = Spacing.Medium, vertical = Spacing.ExtraSmall),
+        modifier = modifier.padding(horizontal = Spacing.Medium, vertical = Spacing.ExtraSmall),
     )
 }
 
@@ -115,9 +115,9 @@ public fun GlassDropdownMenuItem(
  * A thin separator between item groups inside a [GlassDropdownMenu].
  */
 @Composable
-public fun GlassDropdownMenuDivider() {
+public fun GlassDropdownMenuDivider(modifier: Modifier = Modifier) {
     HorizontalDivider(
-        modifier = Modifier.padding(vertical = Spacing.ExtraSmall),
+        modifier = modifier.padding(vertical = Spacing.ExtraSmall),
         color = MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Subtle),
     )
 }

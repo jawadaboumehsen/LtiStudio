@@ -224,11 +224,7 @@ fun IdeAppFrame(
 }
 
 @Composable
-private fun IdeCompactDrawer(
-    isOpen: Boolean,
-    onDismiss: () -> Unit,
-    content: @Composable () -> Unit,
-) {
+private fun IdeCompactDrawer(isOpen: Boolean, onDismiss: () -> Unit, content: @Composable () -> Unit) {
     val interactionSource = remember { MutableInteractionSource() }
     AnimatedVisibility(
         visible = isOpen,

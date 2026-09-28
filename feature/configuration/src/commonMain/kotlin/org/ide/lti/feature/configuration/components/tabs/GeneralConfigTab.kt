@@ -39,12 +39,10 @@ import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.target.TargetStatus
 
+// LongMethod suppressed on @Composable screen tab assembling multiple target identity cards.
+@Suppress("LongMethod")
 @Composable
-fun GeneralConfigTab(
-    target: TargetDevice,
-    onTargetChange: (TargetDevice) -> Unit,
-    modifier: Modifier = Modifier,
-) {
+fun GeneralConfigTab(target: TargetDevice, onTargetChange: (TargetDevice) -> Unit, modifier: Modifier = Modifier) {
     val superGb = target.superPartitionBytes.toDouble() / (1024.0 * 1024.0 * 1024.0)
 
     Column(
@@ -301,11 +299,7 @@ fun GeneralConfigTab(
 }
 
 @Composable
-private fun TargetSpecBadge(
-    label: String,
-    value: String,
-    modifier: Modifier = Modifier,
-) {
+private fun TargetSpecBadge(label: String, value: String, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .clip(GlassShapes.Card)

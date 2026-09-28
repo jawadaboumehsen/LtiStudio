@@ -54,7 +54,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.toggleableState
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastCoerceIn
 import androidx.compose.ui.util.lerp
 import dev.chrisbanes.haze.ExperimentalHazeApi
@@ -119,6 +118,9 @@ fun GlassToggle(
     )
 }
 
+// One gesture/animation state machine plus its drawing; splitting it would scatter the shared drag,
+// debounce and optimistic-toggle state across helpers.
+@Suppress("LongMethod", "CyclomaticComplexMethod")
 @OptIn(ExperimentalHazeApi::class)
 @Composable
 internal fun GlassToggleImpl(
@@ -155,7 +157,8 @@ internal fun GlassToggleImpl(
 
     val effectiveVisualChecked = optimisticTarget ?: checked
 
-    val trackInactiveColor = if (isLightTheme) GlassControlColors.TrackInactiveLight else GlassControlColors.TrackInactiveDark
+    val trackInactiveColor =
+        if (isLightTheme) GlassControlColors.TrackInactiveLight else GlassControlColors.TrackInactiveDark
     val trackActiveColor = resolvedActiveColor
 
     val interactionSource = remember { MutableInteractionSource() }
@@ -216,8 +219,11 @@ internal fun GlassToggleImpl(
                     didDrag = true
                 }
                 val delta = if (travelPx > 0f) dragAmount.x / travelPx else 0f
-                fraction = if (isLtr) (fraction + delta).fastCoerceIn(0f, 1f)
-                else (fraction - delta).fastCoerceIn(0f, 1f)
+                fraction = if (isLtr) {
+                    (fraction + delta).fastCoerceIn(0f, 1f)
+                } else {
+                    (fraction - delta).fastCoerceIn(0f, 1f)
+                }
             },
         )
     }
@@ -394,7 +400,10 @@ internal fun GlassToggleImpl(
             .testTag("GlassToggle")
             .defaultMinSize(minWidth = dimensions.trackWidth, minHeight = dimensions.minTouchTarget)
             .onKeyEvent { keyEvent ->
-                if (enabled && keyEvent.type == KeyEventType.KeyUp && (keyEvent.key == Key.Spacebar || keyEvent.key == Key.Enter)) {
+                if (enabled &&
+                    keyEvent.type == KeyEventType.KeyUp &&
+                    (keyEvent.key == Key.Spacebar || keyEvent.key == Key.Enter)
+                ) {
                     performActivation()
                 } else {
                     false

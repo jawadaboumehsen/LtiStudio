@@ -28,6 +28,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -41,6 +42,7 @@ import org.ide.lti.core.designsystem.icon.ideStatusSuccess
 import org.ide.lti.core.designsystem.icon.ideStatusWarning
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.DiagnosticColors
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
@@ -63,10 +65,7 @@ enum class GlassBannerSeverity {
  * @property label The text displayed on the action button.
  * @property onClick Callback invoked when the button is clicked.
  */
-data class GlassBannerAction(
-    val label: String,
-    val onClick: () -> Unit,
-)
+data class GlassBannerAction(val label: String, val onClick: () -> Unit)
 
 /**
  * Reusable Liquid Glass contextual banner displaying diagnostic, validation, or informational notices.
@@ -84,7 +83,6 @@ data class GlassBannerAction(
  * @param onDismiss Optional callback invoked when the dismiss icon button is clicked.
  * @param backdrop Optional backdrop instance for glass sampling.
  */
-@Suppress("UnusedParameter")
 @Composable
 fun GlassBanner(
     severity: GlassBannerSeverity,
@@ -97,20 +95,8 @@ fun GlassBanner(
     onDismiss: (() -> Unit)? = null,
 ) {
     val diagnostics = GlassTheme.diagnosticColors
-
-    val severityColor = when (severity) {
-        GlassBannerSeverity.INFO -> MaterialTheme.colorScheme.primary
-        GlassBannerSeverity.WARNING -> diagnostics.warning
-        GlassBannerSeverity.ERROR -> diagnostics.error
-        GlassBannerSeverity.SUCCESS -> diagnostics.success
-    }
-
-    val defaultIconPainter: @Composable () -> Painter = when (severity) {
-        GlassBannerSeverity.INFO -> AppIcons.ideStatusInfo
-        GlassBannerSeverity.WARNING -> AppIcons.ideStatusWarning
-        GlassBannerSeverity.ERROR -> AppIcons.ideStatusError
-        GlassBannerSeverity.SUCCESS -> AppIcons.ideStatusSuccess
-    }
+    val severityColor = bannerSeverityColor(severity, diagnostics, MaterialTheme.colorScheme.primary)
+    val hasActions = secondaryAction != null || primaryAction != null || onDismiss != null
 
     CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
         Box(
@@ -125,103 +111,6 @@ fun GlassBanner(
                 )
                 .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
         ) {
-            val iconBlock: @Composable () -> Unit = {
-                if (icon != null) {
-                    icon()
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .size(IconSize.Large)
-                            .clip(GlassShapes.Capsule)
-                            .background(severityColor.copy(alpha = AlphaTokens.GlassSecondaryTint)),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            painter = defaultIconPainter(),
-                            contentDescription = null,
-                            tint = severityColor,
-                            modifier = Modifier.size(IconSize.Medium),
-                        )
-                    }
-                }
-            }
-
-            val textBlock: @Composable () -> Unit = {
-                Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        softWrap = false,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    if (description != null) {
-                        Text(
-                            text = description,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                }
-            }
-
-            val hasActions = secondaryAction != null || primaryAction != null || onDismiss != null
-            val actionsBlock: @Composable () -> Unit = {
-                if (hasActions) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                    ) {
-                        if (secondaryAction != null) {
-                            GlassSecondaryButton(onClick = secondaryAction.onClick) {
-                                Text(
-                                    text = secondaryAction.label,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    maxLines = 1,
-                                    softWrap = false,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
-                            }
-                        }
-                        if (primaryAction != null) {
-                            GlassPrimaryButton(onClick = primaryAction.onClick) {
-                                Text(
-                                    text = primaryAction.label,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    maxLines = 1,
-                                    softWrap = false,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
-                            }
-                        }
-                        if (onDismiss != null) {
-                            GlassIconButton(
-                                onClick = onDismiss,
-                                size = ComponentSize.PanelHeaderAction,
-                            ) {
-                                Icon(
-                                    painter = AppIcons.ClosePainterResource(),
-                                    contentDescription = "Dismiss",
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(IconSize.Small),
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Below PanelHeaderStackBreakpoint, icon + title/description (weight(1f), fill
-            // = true) + a fixed-content actions row don't all fit: the weighted text column
-            // gets squeezed toward zero while actions still demands its own natural width,
-            // clipping the title/description away entirely rather than truncating gracefully.
-            // Read the available width once, at this single root, to pick the side-by-side
-            // Row vs. a stacked Column — same cheap, non-nested breakpoint pattern as
-            // RunPanel's header and SetupScreen's root.
             BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
                 val isNarrow = maxWidth < ComponentSize.PanelHeaderStackBreakpoint
 
@@ -231,11 +120,19 @@ fun GlassBanner(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
                         ) {
-                            iconBlock()
-                            Box(modifier = Modifier.weight(1f)) { textBlock() }
+                            BannerIcon(icon = icon, severity = severity, severityColor = severityColor)
+                            Box(modifier = Modifier.weight(1f)) {
+                                BannerText(title = title, description = description)
+                            }
                         }
                         if (hasActions) {
-                            Box(modifier = Modifier.fillMaxWidth()) { actionsBlock() }
+                            Box(modifier = Modifier.fillMaxWidth()) {
+                                BannerActions(
+                                    primaryAction = primaryAction,
+                                    secondaryAction = secondaryAction,
+                                    onDismiss = onDismiss,
+                                )
+                            }
                         }
                     }
                 } else {
@@ -244,11 +141,154 @@ fun GlassBanner(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
                     ) {
-                        iconBlock()
-                        Box(modifier = Modifier.weight(1f)) { textBlock() }
-                        actionsBlock()
+                        BannerIcon(icon = icon, severity = severity, severityColor = severityColor)
+                        Box(modifier = Modifier.weight(1f)) {
+                            BannerText(title = title, description = description)
+                        }
+                        if (hasActions) {
+                            BannerActions(
+                                primaryAction = primaryAction,
+                                secondaryAction = secondaryAction,
+                                onDismiss = onDismiss,
+                            )
+                        }
                     }
                 }
+            }
+        }
+    }
+}
+
+/**
+ * Resolves the primary accent/border color for a banner severity.
+ */
+private fun bannerSeverityColor(severity: GlassBannerSeverity, diagnostics: DiagnosticColors, primary: Color): Color =
+    when (severity) {
+        GlassBannerSeverity.INFO -> primary
+        GlassBannerSeverity.WARNING -> diagnostics.warning
+        GlassBannerSeverity.ERROR -> diagnostics.error
+        GlassBannerSeverity.SUCCESS -> diagnostics.success
+    }
+
+/**
+ * Resolves the default status icon painter for a banner severity.
+ */
+private fun bannerDefaultPainter(severity: GlassBannerSeverity): @Composable () -> Painter = when (severity) {
+    GlassBannerSeverity.INFO -> AppIcons.ideStatusInfo
+    GlassBannerSeverity.WARNING -> AppIcons.ideStatusWarning
+    GlassBannerSeverity.ERROR -> AppIcons.ideStatusError
+    GlassBannerSeverity.SUCCESS -> AppIcons.ideStatusSuccess
+}
+
+/**
+ * Renders the leading icon or default status badge for a banner.
+ */
+@Composable
+private fun BannerIcon(
+    icon: (@Composable () -> Unit)?,
+    severity: GlassBannerSeverity,
+    severityColor: Color,
+    modifier: Modifier = Modifier,
+) {
+    if (icon != null) {
+        icon()
+    } else {
+        val painter = bannerDefaultPainter(severity)
+        Box(
+            modifier = modifier
+                .size(IconSize.Large)
+                .clip(GlassShapes.Capsule)
+                .background(severityColor.copy(alpha = AlphaTokens.GlassSecondaryTint)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                painter = painter(),
+                contentDescription = null,
+                tint = severityColor,
+                modifier = Modifier.size(IconSize.Medium),
+            )
+        }
+    }
+}
+
+/**
+ * Renders the title and optional description text for a banner.
+ */
+@Composable
+private fun BannerText(title: String, description: String?, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Ellipsis,
+        )
+        if (description != null) {
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+/**
+ * Renders the actions row (secondary, primary, dismiss) for a banner.
+ */
+@Composable
+private fun BannerActions(
+    primaryAction: GlassBannerAction?,
+    secondaryAction: GlassBannerAction?,
+    onDismiss: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+    ) {
+        if (secondaryAction != null) {
+            GlassSecondaryButton(onClick = secondaryAction.onClick) {
+                Text(
+                    text = secondaryAction.label,
+                    style = MaterialTheme.typography.labelMedium,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+        if (primaryAction != null) {
+            GlassPrimaryButton(onClick = primaryAction.onClick) {
+                Text(
+                    text = primaryAction.label,
+                    style = MaterialTheme.typography.labelMedium,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+        if (onDismiss != null) {
+            GlassIconButton(
+                onClick = onDismiss,
+                size = ComponentSize.PanelHeaderAction,
+            ) {
+                Icon(
+                    painter = AppIcons.ClosePainterResource(),
+                    contentDescription = "Dismiss",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(IconSize.Small),
+                )
             }
         }
     }

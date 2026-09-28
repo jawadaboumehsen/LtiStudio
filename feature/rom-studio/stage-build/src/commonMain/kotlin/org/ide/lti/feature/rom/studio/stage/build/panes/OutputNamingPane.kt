@@ -9,7 +9,6 @@
  */
 package org.ide.lti.feature.rom.studio.stage.build.panes
 
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -26,6 +25,7 @@ import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -77,10 +77,7 @@ public fun OutputNamingPane(
 }
 
 @Composable
-private fun OutputNamingUnifiedCard(
-    settings: BuildSettings,
-    onChange: (BuildSettings) -> Unit,
-) {
+private fun OutputNamingUnifiedCard(settings: BuildSettings, onChange: (BuildSettings) -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -100,10 +97,7 @@ private fun OutputNamingUnifiedCard(
 }
 
 @Composable
-private fun FilenameTemplateSection(
-    settings: BuildSettings,
-    onChange: (BuildSettings) -> Unit,
-) {
+private fun FilenameTemplateSection(settings: BuildSettings, onChange: (BuildSettings) -> Unit) {
     var templateText by remember { mutableStateOf("{device}-{version}-{date}.zip") }
     val variables = listOf("{device}", "{version}", "{date}", "{variant}", "{buildtype}", "{revision}")
 
@@ -168,7 +162,11 @@ private fun FilenameTemplateSection(
                     modifier = Modifier
                         .clip(GlassShapes.ShellControl)
                         .background(MaterialTheme.colorScheme.surfaceContainer)
-                        .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outlineVariant, GlassShapes.ShellControl)
+                        .border(
+                            GlassDimens.HairlineBorder,
+                            MaterialTheme.colorScheme.outlineVariant,
+                            GlassShapes.ShellControl,
+                        )
                         .clickable {
                             templateText = templateText.replace(".zip", "$variable.zip")
                             onChange(settings.copy(filenameTemplate = templateText))
@@ -189,7 +187,12 @@ private fun FilenameTemplateSection(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
         ) {
-            Icon(Icons.Default.Info, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(IconSize.ExtraSmall))
+            Icon(
+                Icons.Default.Info,
+                null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(IconSize.ExtraSmall),
+            )
             Text(
                 text = "Click a variable to insert it at the cursor position.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -347,7 +350,11 @@ private fun OutputFolderSection() {
                     .weight(1f)
                     .clip(GlassShapes.ShellControl)
                     .background(MaterialTheme.colorScheme.surfaceContainer)
-                    .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outlineVariant, GlassShapes.ShellControl)
+                    .border(
+                        GlassDimens.HairlineBorder,
+                        MaterialTheme.colorScheme.outlineVariant,
+                        GlassShapes.ShellControl,
+                    )
                     .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
             ) {
                 Text(
@@ -382,7 +389,12 @@ private fun OutputFolderSection() {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
         ) {
-            Icon(Icons.Default.Info, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(IconSize.ExtraSmall))
+            Icon(
+                Icons.Default.Info,
+                null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(IconSize.ExtraSmall),
+            )
             Text(
                 text = "The output folder is derived from your workspace and device name.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -404,7 +416,12 @@ private fun OutputNamingFootnoteCard() {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
-        Icon(Icons.Default.Info, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(IconSize.Small))
+        Icon(
+            Icons.Default.Info,
+            null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(IconSize.Small),
+        )
         Text(
             text = "These settings apply to the next build only. They do not rename existing files.",
             color = MaterialTheme.colorScheme.onSurfaceVariant,

@@ -9,11 +9,19 @@
  */
 package org.ide.lti.feature.workspace.panels.run
 
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -33,10 +41,7 @@ import org.ide.lti.core.model.run.BuildRun
 import org.ide.lti.core.model.run.Presence
 
 @Composable
-public fun RunHistoryPanel(
-    viewModel: RunHistoryViewModel,
-    modifier: Modifier = Modifier,
-) {
+public fun RunHistoryPanel(viewModel: RunHistoryViewModel, modifier: Modifier = Modifier) {
     val uiState by viewModel.uiState.collectAsState()
     val typography = GlassTheme.typography
 
@@ -187,12 +192,7 @@ public fun RunHistoryPanel(
 }
 
 @Composable
-private fun RunListItemCard(
-    run: BuildRun,
-    isSelected: Boolean,
-    onSelect: () -> Unit,
-    onDelete: () -> Unit,
-) {
+private fun RunListItemCard(run: BuildRun, isSelected: Boolean, onSelect: () -> Unit, onDelete: () -> Unit) {
     val typography = GlassTheme.typography
 
     GlassCard(

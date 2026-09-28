@@ -41,11 +41,11 @@ enum class CreationStage(val stepId: String, val label: String) {
     CONFIG("config", "Writing workspace configuration"),
     KEY("key", "Provisioning signing keys"),
     VALIDATE("validate", "Validating environment"),
-    PROMOTE("promote", "Promoting to active workspace");
+    PROMOTE("promote", "Promoting to active workspace"),
+    ;
 
     companion object {
-        fun fromStepId(id: String): CreationStage? =
-            entries.find { it.stepId.equals(id, ignoreCase = true) }
+        fun fromStepId(id: String): CreationStage? = entries.find { it.stepId.equals(id, ignoreCase = true) }
     }
 }
 
@@ -127,25 +127,26 @@ class CreateWorkspaceViewModel(
         _uiState.update { it.copy(keySource = keySource) }
     }
 
-    fun startCreation() {
-        val state = _uiState.value
-        if (!state.canCreate) {
-            _uiState.update {
+    /**
+     * Returns the target to create the workspace for, or null after recording why creation cannot start.
+     * Checks run in a fixed order: environment readiness, then the name, then the target.
+     */
+    private fun validateCreationState(state: CreateWorkspaceUiState): TargetDevice? {
+        val target = state.selectedTarget
+        when {
+            !state.canCreate -> _uiState.update {
                 it.copy(errorMessage = state.remediation ?: state.failingCheck ?: "Environment is not ready")
             }
-            return
+            state.name.isBlank() -> _uiState.update { it.copy(nameError = "Workspace name cannot be blank") }
+            target == null -> _uiState.update { it.copy(errorMessage = "Target device is required") }
+            else -> return target
         }
+        return null
+    }
 
-        if (state.name.isBlank()) {
-            _uiState.update { it.copy(nameError = "Workspace name cannot be blank") }
-            return
-        }
-
-        val target = state.selectedTarget
-        if (target == null) {
-            _uiState.update { it.copy(errorMessage = "Target device is required") }
-            return
-        }
+    fun startCreation() {
+        val state = _uiState.value
+        val target = validateCreationState(state) ?: return
 
         _uiState.update {
             it.copy(

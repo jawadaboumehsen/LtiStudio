@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -44,7 +43,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.ide.lti.core.designsystem.component.actions.GlassButton
-import org.ide.lti.core.designsystem.component.actions.GlassButtonStyle
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
 import org.ide.lti.core.designsystem.component.display.GlassCard
@@ -63,13 +61,12 @@ import org.ide.lti.core.designsystem.component.progress.GlassStepStatus
 import org.ide.lti.core.designsystem.component.progress.GlassStepper
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
-import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
-import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.domain.ports.KeySource
 import org.ide.lti.core.model.setup.EnvironmentReadinessState
 import org.ide.lti.core.model.target.TargetDevice
@@ -114,11 +111,16 @@ fun CreateWorkspaceScreen(
     ) {
         CreateWorkspaceHeader(onBackClick = onBackClick, enabled = !uiState.isProvisioning)
         GlassHorizontalDivider()
-        AnimatedVisibility(visible = uiState.environmentReadiness != null && uiState.environmentReadiness?.state != EnvironmentReadinessState.READY) {
+        AnimatedVisibility(
+            visible =
+            uiState.environmentReadiness != null &&
+                uiState.environmentReadiness?.state != EnvironmentReadinessState.READY,
+        ) {
             GlassBanner(
                 severity = GlassBannerSeverity.WARNING,
                 title = uiState.failingCheck ?: "Environment Unavailable",
-                description = uiState.remediation ?: "The build environment or service daemon is currently unreachable.",
+                description = uiState.remediation
+                    ?: "The build environment or service daemon is currently unreachable.",
                 primaryAction = GlassBannerAction("Go to Setup") {
                     if (onNavigateToSetup != null) onNavigateToSetup() else onBackClick()
                 },
@@ -238,7 +240,13 @@ private fun TargetPickerSection(uiState: CreateWorkspaceUiState, onSelectTarget:
                     Text(
                         text = targetText,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = if (currentTarget != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = if (currentTarget !=
+                            null
+                        ) {
+                            MaterialTheme.colorScheme.onSurface
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
                     )
                     Icon(
                         painter = AppIcons.ChevronDownPainterResource(),
@@ -319,7 +327,10 @@ private fun KeySourceSection(uiState: CreateWorkspaceUiState, onKeySourceChange:
 @Composable
 private fun ProvisioningProgressCard(uiState: CreateWorkspaceUiState) {
     val stepperSteps = remember(
-        uiState.currentStage, uiState.isProvisioning, uiState.errorMessage, uiState.createdWorkspace,
+        uiState.currentStage,
+        uiState.isProvisioning,
+        uiState.errorMessage,
+        uiState.createdWorkspace,
     ) {
         CreationStage.entries.map { stage ->
             GlassStepInfo(id = stage.stepId, shortTitle = stage.shortTitle, status = stage.status(uiState))
@@ -387,7 +398,11 @@ private fun CreateWorkspaceActions(
         GlassButton(
             onClick = { viewModel.startCreation() },
             variant = GlassButtonVariant.Primary,
-            enabled = !uiState.isProvisioning && uiState.name.isNotBlank() && uiState.selectedTarget != null && uiState.canCreate,
+            enabled =
+            !uiState.isProvisioning &&
+                uiState.name.isNotBlank() &&
+                uiState.selectedTarget != null &&
+                uiState.canCreate,
         ) {
             if (uiState.isProvisioning) {
                 CircularProgressIndicator(

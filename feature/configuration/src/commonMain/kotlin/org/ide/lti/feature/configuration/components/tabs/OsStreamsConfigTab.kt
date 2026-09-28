@@ -27,18 +27,13 @@ import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
-import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.target.TargetFirmware
 import org.ide.lti.core.model.target.TargetRegion
 
 @Composable
-fun OsStreamsConfigTab(
-    target: TargetDevice,
-    onTargetChange: (TargetDevice) -> Unit,
-    modifier: Modifier = Modifier,
-) {
+fun OsStreamsConfigTab(target: TargetDevice, onTargetChange: (TargetDevice) -> Unit, modifier: Modifier = Modifier) {
     var activeRegion by remember(target.id) {
         mutableStateOf(target.availableRegions.firstOrNull() ?: TargetRegion.GLOBAL)
     }
@@ -185,7 +180,9 @@ fun OsStreamsConfigTab(
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    text = "Baseline firmware acquisition mode (official OTA download or raw archive import) is bound per-workspace inside Configuration Snapshots.",
+                    text =
+                    "Baseline firmware acquisition mode (official OTA download or raw archive import) is bound " +
+                        "per-workspace inside Configuration Snapshots.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

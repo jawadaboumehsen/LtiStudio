@@ -49,7 +49,6 @@ import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.GlassShapes
-import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
@@ -208,11 +207,7 @@ private fun SectionTitle(text: String) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun RegionSection(
-    regions: List<TargetRegion>,
-    selected: TargetRegion,
-    onSelect: (TargetRegion) -> Unit,
-) {
+private fun RegionSection(regions: List<TargetRegion>, selected: TargetRegion, onSelect: (TargetRegion) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
         SectionTitle("Target Region")
         FlowRow(
@@ -284,11 +279,7 @@ private fun AcquisitionSection(
 }
 
 @Composable
-private fun ArchiveImportCard(
-    importedArchiveName: String?,
-    isUploading: Boolean,
-    onPickArchive: () -> Unit,
-) {
+private fun ArchiveImportCard(importedArchiveName: String?, isUploading: Boolean, onPickArchive: () -> Unit) {
     GlassCard(
         modifier = Modifier.fillMaxWidth(),
         contentPadding = Spacing.CardPadding,
@@ -298,7 +289,13 @@ private fun ArchiveImportCard(
                 text = "Archive File: ${importedArchiveName ?: "None selected"}",
                 style = MaterialTheme.typography.bodySmall,
                 fontFamily = codeFontFamily(),
-                color = if (importedArchiveName != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                color = if (importedArchiveName !=
+                    null
+                ) {
+                    MaterialTheme.colorScheme.onSurface
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
             )
             Row(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
@@ -343,12 +340,7 @@ private fun BuildTypeSection(selected: String, onSelect: (String) -> Unit) {
 }
 
 @Composable
-private fun TextSection(
-    title: String,
-    value: String,
-    placeholder: String,
-    onValueChange: (String) -> Unit,
-) {
+private fun TextSection(title: String, value: String, placeholder: String, onValueChange: (String) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
         SectionTitle(title)
         GlassTextField(
@@ -361,10 +353,7 @@ private fun TextSection(
 }
 
 @Composable
-private fun ConfigurationActions(
-    uiState: WorkspaceConfigurationUiState,
-    viewModel: WorkspaceConfigurationViewModel,
-) {
+private fun ConfigurationActions(uiState: WorkspaceConfigurationUiState, viewModel: WorkspaceConfigurationViewModel) {
     val canAct = uiState.isDirty && !uiState.isSaving
     Row(
         modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.Large),
@@ -397,7 +386,6 @@ private fun FirmwareItemCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -438,7 +426,11 @@ private fun FirmwareItemCard(
                         text = firmware.version,
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                        color = if (isSelected) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        },
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )

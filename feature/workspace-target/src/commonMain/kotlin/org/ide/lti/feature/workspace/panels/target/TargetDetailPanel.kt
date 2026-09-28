@@ -26,7 +26,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import org.ide.lti.core.designsystem.component.display.GlassPanelContainer
-import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.model.target.TargetDevice
@@ -42,10 +41,7 @@ import org.ide.lti.core.model.target.TargetDevice
  * - 100% token conformance (zero raw dp or alpha float literals).
  */
 @Composable
-fun TargetDetailPanel(
-    selectedTarget: TargetDevice?,
-    modifier: Modifier = Modifier,
-) {
+fun TargetDetailPanel(selectedTarget: TargetDevice?, modifier: Modifier = Modifier) {
     GlassPanelContainer(
         modifier = modifier.fillMaxSize(),
         header = {
@@ -76,9 +72,7 @@ fun TargetDetailPanel(
 }
 
 @Composable
-private fun TargetDetailHeader(
-    selectedTarget: TargetDevice?,
-) {
+private fun TargetDetailHeader(selectedTarget: TargetDevice?) {
     if (selectedTarget != null) {
         Box(
             modifier = Modifier
@@ -94,10 +88,7 @@ private fun TargetDetailHeader(
 }
 
 @Composable
-private fun BreadcrumbTrail(
-    selectedTarget: TargetDevice,
-    modifier: Modifier = Modifier,
-) {
+private fun BreadcrumbTrail(selectedTarget: TargetDevice, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,

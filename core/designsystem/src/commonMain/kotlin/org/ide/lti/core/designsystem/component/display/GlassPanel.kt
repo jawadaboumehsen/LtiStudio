@@ -32,13 +32,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
-import org.ide.lti.core.designsystem.component.actions.*
-import org.ide.lti.core.designsystem.component.devtools.*
-import org.ide.lti.core.designsystem.component.feedback.*
-import org.ide.lti.core.designsystem.component.inputs.*
-import org.ide.lti.core.designsystem.component.layout.*
-import org.ide.lti.core.designsystem.component.navigation.*
-import org.ide.lti.core.designsystem.component.primitives.*
+import org.ide.lti.core.designsystem.component.actions.GlassIconButton
+import org.ide.lti.core.designsystem.component.actions.GlassIconToggleButton
+import org.ide.lti.core.designsystem.component.primitives.GlassSurface
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
@@ -82,11 +78,8 @@ fun GlassPanel(
  * Action item inside a panel header adhering to Open/Closed Principle.
  */
 sealed interface PanelHeaderAction {
-    data class IconAction(
-        val icon: AppIcon,
-        val contentDescription: String? = null,
-        val onClick: () -> Unit,
-    ) : PanelHeaderAction
+    data class IconAction(val icon: AppIcon, val contentDescription: String? = null, val onClick: () -> Unit) :
+        PanelHeaderAction
 
     data class ToggleAction(
         val icon: AppIcon,

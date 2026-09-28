@@ -18,10 +18,8 @@ import org.ide.lti.core.model.target.DefaultTargetCatalog
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.CustomizationSettings
 
-public class PatchViewModel(
-    public val workspaceId: String,
-    initialSettings: CustomizationSettings? = null,
-) : ViewModel() {
+public class PatchViewModel(public val workspaceId: String, initialSettings: CustomizationSettings? = null) :
+    ViewModel() {
 
     public val targetDevice: TargetDevice = DefaultTargetCatalog.PQ84P01_DEFAULT
 

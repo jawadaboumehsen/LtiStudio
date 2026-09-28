@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -34,35 +33,13 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import org.ide.lti.core.designsystem.component.actions.*
-import org.ide.lti.core.designsystem.component.devtools.*
-import org.ide.lti.core.designsystem.component.display.*
-import org.ide.lti.core.designsystem.component.feedback.*
-import org.ide.lti.core.designsystem.component.inputs.*
-import org.ide.lti.core.designsystem.component.navigation.*
-import org.ide.lti.core.designsystem.component.primitives.*
+import org.ide.lti.core.designsystem.component.primitives.GlassSurface
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.PreviewSampleColors
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.jetbrains.compose.ui.tooling.preview.Preview
-
-/**
- * Cohesive configuration of composable slots for [GlassLayout].
- * Adheres to the Interface Segregation Principle (ISP).
- */
-@Immutable
-data class GlassLayoutSlots(
-    val mainContent: @Composable () -> Unit,
-    val leftPanel: (@Composable () -> Unit)? = null,
-    val rightPanel: (@Composable () -> Unit)? = null,
-    val bottomPanel: (@Composable () -> Unit)? = null,
-    val leftRail: (@Composable () -> Unit)? = null,
-    val rightRail: (@Composable () -> Unit)? = null,
-    val topBar: (@Composable () -> Unit)? = null,
-    val statusBar: (@Composable () -> Unit)? = null,
-)
 
 /**
  * Professional resizable panel layout for LtiRomGui IDE with Liquid Glass theme.
@@ -286,11 +263,7 @@ private fun GlassLayoutPreview() {
 }
 
 @Composable
-fun SamplePanel(
-    title: String,
-    color: Color,
-    modifier: Modifier = Modifier,
-) {
+fun SamplePanel(title: String, color: Color, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .fillMaxSize()

@@ -33,9 +33,7 @@ import org.ide.lti.core.designsystem.theme.Spacing
  * Notifications & Alert Settings Pane.
  */
 @Composable
-fun NotificationsSettingsPane(
-    modifier: Modifier = Modifier,
-) {
+fun NotificationsSettingsPane(modifier: Modifier = Modifier) {
     var pushEnabled by remember { mutableStateOf(true) }
     var soundEnabled by remember { mutableStateOf(false) }
     var autoSaveEnabled by remember { mutableStateOf(true) }

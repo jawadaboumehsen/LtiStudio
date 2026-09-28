@@ -38,22 +38,28 @@ import kotlin.test.assertTrue
 class SettingsScreenDiagnosticTest {
 
     @Test
-    fun testSettingsAppearanceRenderedPixelContrastMeetsWcagDarkEffectsOn() = assertThemeContrastMeetsWcag(AppTheme.Dark, effectsEnabled = true)
+    fun testSettingsAppearanceRenderedPixelContrastMeetsWcagDarkEffectsOn() =
+        assertThemeContrastMeetsWcag(AppTheme.Dark, effectsEnabled = true)
 
     @Test
-    fun testSettingsAppearanceRenderedPixelContrastMeetsWcagDarkEffectsOff() = assertThemeContrastMeetsWcag(AppTheme.Dark, effectsEnabled = false)
+    fun testSettingsAppearanceRenderedPixelContrastMeetsWcagDarkEffectsOff() =
+        assertThemeContrastMeetsWcag(AppTheme.Dark, effectsEnabled = false)
 
     @Test
-    fun testSettingsAppearanceRenderedPixelContrastMeetsWcagBlueEffectsOn() = assertThemeContrastMeetsWcag(AppTheme.Blue, effectsEnabled = true)
+    fun testSettingsAppearanceRenderedPixelContrastMeetsWcagBlueEffectsOn() =
+        assertThemeContrastMeetsWcag(AppTheme.Blue, effectsEnabled = true)
 
     @Test
-    fun testSettingsAppearanceRenderedPixelContrastMeetsWcagBlueEffectsOff() = assertThemeContrastMeetsWcag(AppTheme.Blue, effectsEnabled = false)
+    fun testSettingsAppearanceRenderedPixelContrastMeetsWcagBlueEffectsOff() =
+        assertThemeContrastMeetsWcag(AppTheme.Blue, effectsEnabled = false)
 
     @Test
-    fun testSettingsAppearanceRenderedPixelContrastMeetsWcagLightEffectsOn() = assertThemeContrastMeetsWcag(AppTheme.Light, effectsEnabled = true)
+    fun testSettingsAppearanceRenderedPixelContrastMeetsWcagLightEffectsOn() =
+        assertThemeContrastMeetsWcag(AppTheme.Light, effectsEnabled = true)
 
     @Test
-    fun testSettingsAppearanceRenderedPixelContrastMeetsWcagLightEffectsOff() = assertThemeContrastMeetsWcag(AppTheme.Light, effectsEnabled = false)
+    fun testSettingsAppearanceRenderedPixelContrastMeetsWcagLightEffectsOff() =
+        assertThemeContrastMeetsWcag(AppTheme.Light, effectsEnabled = false)
 
     private fun assertThemeContrastMeetsWcag(theme: AppTheme, effectsEnabled: Boolean = true) = runDesktopComposeUiTest(
         width = 1120,
@@ -88,7 +94,10 @@ class SettingsScreenDiagnosticTest {
         // 1. Measure unboxed header text at the top of the appearance panel
         val appearanceHeaderBounds = onNodeWithText("Make the studio comfortable for long sessions.").getBoundsInRoot()
         val headerX = (appearanceHeaderBounds.left.value + 5f).toInt()
-        val headerY = (appearanceHeaderBounds.top.value + (appearanceHeaderBounds.bottom.value - appearanceHeaderBounds.top.value) / 2f).toInt()
+        val headerY = (
+            appearanceHeaderBounds.top.value +
+                (appearanceHeaderBounds.bottom.value - appearanceHeaderBounds.top.value) / 2f
+            ).toInt()
 
         // 2. Scroll to "Glass & motion" card and the switch inside it
         onNodeWithTag("GlassCard_glass_and_motion").performScrollTo().assertIsDisplayed()
@@ -141,7 +150,8 @@ class SettingsScreenDiagnosticTest {
         )
         assertTrue(
             onSurfaceVariantCardRatio >= 4.5,
-            "Theme ${theme.id} card onSurfaceVariant contrast must meet WCAG AA >= 4.5:1 (found: $onSurfaceVariantCardRatio:1)",
+            "Theme ${theme.id} card onSurfaceVariant contrast must meet WCAG AA >= 4.5:1 " +
+                "(found: $onSurfaceVariantCardRatio:1)",
         )
         assertTrue(
             unboxedHeadlineRatio >= 4.5,

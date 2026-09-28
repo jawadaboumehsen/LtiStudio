@@ -43,8 +43,19 @@ class GlassOpticalVerifierTest {
             val blackPaint = Paint().apply { color = 0xFF000000.toInt() }
             val whitePaint = Paint().apply { color = 0xFFFFFFFF.toInt() }
             for (x in 0 until width step (stripeWidth * 2)) {
-                canvas.drawRect(org.jetbrains.skia.Rect.makeXYWH(x.toFloat(), 0f, stripeWidth.toFloat(), height.toFloat()), blackPaint)
-                canvas.drawRect(org.jetbrains.skia.Rect.makeXYWH((x + stripeWidth).toFloat(), 0f, stripeWidth.toFloat(), height.toFloat()), whitePaint)
+                canvas.drawRect(
+                    org.jetbrains.skia.Rect.makeXYWH(x.toFloat(), 0f, stripeWidth.toFloat(), height.toFloat()),
+                    blackPaint,
+                )
+                canvas.drawRect(
+                    org.jetbrains.skia.Rect.makeXYWH(
+                        (x + stripeWidth).toFloat(),
+                        0f,
+                        stripeWidth.toFloat(),
+                        height.toFloat(),
+                    ),
+                    whitePaint,
+                )
             }
         } else {
             // Smoothly diffused gradient transitioning over 16 pixels (simulating blur)
@@ -162,7 +173,8 @@ class GlassOpticalVerifierTest {
     @Test
     fun testSolidFallbackColorPassesMatchingColor() {
         val color = Color(0.2f, 0.3f, 0.4f, 1f)
-        val argb = (0xFF shl 24) or ((0.2f * 255).toInt() shl 16) or ((0.3f * 255).toInt() shl 8) or (0.4f * 255).toInt()
+        val argb =
+            (0xFF shl 24) or ((0.2f * 255).toInt() shl 16) or ((0.3f * 255).toInt() shl 8) or (0.4f * 255).toInt()
         val image = createSolidBitmap(60, 60, argb)
         val bounds = Rect(0f, 0f, 60f, 60f)
 
@@ -217,7 +229,8 @@ class GlassOpticalVerifierTest {
         )
 
         // 2. Unblurred translucent overlay: sharp stripes tinted with flat 50% white
-        val unblurredTranslucent = createTranslucentStripeBitmap(100, 100, stripeWidth = 16, alpha = 0.6f, tintArgb = 0xFF888888.toInt())
+        val unblurredTranslucent =
+            createTranslucentStripeBitmap(100, 100, stripeWidth = 16, alpha = 0.6f, tintArgb = 0xFF888888.toInt())
         val error = assertFailsWith<AssertionError> {
             GlassOpticalVerifier.assertOpticalBlurSpread(
                 glassRender = unblurredTranslucent,
@@ -297,7 +310,8 @@ class GlassOpticalVerifierTest {
         )
 
         // 2. Unblurred translucent overlay retains 1px sharp transition and must fail
-        val unblurredTranslucent = createTranslucentStripeBitmap(100, 100, stripeWidth = 16, alpha = 0.6f, tintArgb = 0xFF888888.toInt())
+        val unblurredTranslucent =
+            createTranslucentStripeBitmap(100, 100, stripeWidth = 16, alpha = 0.6f, tintArgb = 0xFF888888.toInt())
         val error = assertFailsWith<AssertionError> {
             GlassOpticalVerifier.assertEdgeTransitionExpansion(
                 rawPattern = raw,
@@ -322,7 +336,13 @@ class GlassOpticalVerifierTest {
         val bitmap = Bitmap()
         bitmap.allocPixels(ImageInfo.makeN32(width, height, ColorAlphaType.PREMUL))
         val canvas = Canvas(bitmap)
-        canvas.drawRect(org.jetbrains.skia.Rect.makeXYWH(0f, 0f, width.toFloat(), height.toFloat()), Paint().apply { color = 0xFF000000.toInt() })
+        canvas.drawRect(
+            org.jetbrains.skia.Rect.makeXYWH(0f, 0f, width.toFloat(), height.toFloat()),
+            Paint().apply {
+                color =
+                    0xFF000000.toInt()
+            },
+        )
         val effectiveX = if (isShifted) featureX + shiftPx else featureX
         val colorAlpha = (tintAlpha * 255).toInt().coerceIn(0, 255)
         val paint = Paint().apply {
@@ -332,7 +352,13 @@ class GlassOpticalVerifierTest {
         return Image.makeFromBitmap(bitmap).toComposeImageBitmap()
     }
 
-    private fun createTranslucentStripeBitmap(width: Int, height: Int, stripeWidth: Int, alpha: Float, tintArgb: Int): ImageBitmap {
+    private fun createTranslucentStripeBitmap(
+        width: Int,
+        height: Int,
+        stripeWidth: Int,
+        alpha: Float,
+        tintArgb: Int,
+    ): ImageBitmap {
         val bitmap = Bitmap()
         bitmap.allocPixels(ImageInfo.makeN32(width, height, ColorAlphaType.PREMUL))
         val canvas = Canvas(bitmap)
@@ -340,8 +366,19 @@ class GlassOpticalVerifierTest {
         val blackPaint = Paint().apply { color = 0xFF000000.toInt() }
         val whitePaint = Paint().apply { color = 0xFFFFFFFF.toInt() }
         for (x in 0 until width step (stripeWidth * 2)) {
-            canvas.drawRect(org.jetbrains.skia.Rect.makeXYWH(x.toFloat(), 0f, stripeWidth.toFloat(), height.toFloat()), blackPaint)
-            canvas.drawRect(org.jetbrains.skia.Rect.makeXYWH((x + stripeWidth).toFloat(), 0f, stripeWidth.toFloat(), height.toFloat()), whitePaint)
+            canvas.drawRect(
+                org.jetbrains.skia.Rect.makeXYWH(x.toFloat(), 0f, stripeWidth.toFloat(), height.toFloat()),
+                blackPaint,
+            )
+            canvas.drawRect(
+                org.jetbrains.skia.Rect.makeXYWH(
+                    (x + stripeWidth).toFloat(),
+                    0f,
+                    stripeWidth.toFloat(),
+                    height.toFloat(),
+                ),
+                whitePaint,
+            )
         }
 
         val tintPaint = Paint().apply {

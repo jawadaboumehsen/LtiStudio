@@ -9,7 +9,6 @@
  */
 package org.ide.lti.feature.rom.studio.stage.assemble.panes
 
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -40,6 +39,7 @@ import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -285,7 +285,11 @@ public fun BuildPropertiesPane(
                                         tint = MaterialTheme.colorScheme.onSurface,
                                         modifier = Modifier.size(IconSize.ExtraSmall),
                                     )
-                                    Text("+ Add property", color = MaterialTheme.colorScheme.onSurface, fontSize = FontSize.Micro)
+                                    Text(
+                                        "+ Add property",
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        fontSize = FontSize.Micro,
+                                    )
                                 }
                             }
 
@@ -312,7 +316,11 @@ public fun BuildPropertiesPane(
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.size(IconSize.ExtraSmall),
                                     )
-                                    Text("Remove selected", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro)
+                                    Text(
+                                        "Remove selected",
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontSize = FontSize.Micro,
+                                    )
                                 }
                             }
                         }
@@ -374,7 +382,10 @@ public fun BuildPropertiesPane(
                         Spacer(Modifier.width(Spacing.Large))
                     }
 
-                    HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
+                    HorizontalDivider(
+                        thickness = GlassDimens.HairlineBorder,
+                        color = MaterialTheme.colorScheme.outlineVariant,
+                    )
 
                     // Properties Table Rows
                     properties.forEachIndexed { index, prop ->
@@ -535,7 +546,11 @@ public fun BuildPropertiesPane(
                             ) {
                                 Text(
                                     text = tabName,
-                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = if (isSelected) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    },
                                     fontSize = FontSize.Micro,
                                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                                     fontFamily = ideFontFamily(),
@@ -552,7 +567,10 @@ public fun BuildPropertiesPane(
                         }
                     }
 
-                    HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
+                    HorizontalDivider(
+                        thickness = GlassDimens.HairlineBorder,
+                        color = MaterialTheme.colorScheme.outlineVariant,
+                    )
 
                     val helpText = "Build properties allow you to override system properties that will " +
                         "be included in the generated system image.\n\n" +
@@ -593,11 +611,7 @@ public fun BuildPropertiesPane(
 }
 
 @Composable
-private fun BuildTypeDropdown(
-    selected: String,
-    onSelect: (String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
+private fun BuildTypeDropdown(selected: String, onSelect: (String) -> Unit, modifier: Modifier = Modifier) {
     var expanded by remember { mutableStateOf(false) }
     val options = listOf("userdebug", "user", "eng")
 
@@ -629,7 +643,11 @@ private fun BuildTypeDropdown(
                     .fillMaxWidth()
                     .clip(GlassShapes.ShellControl)
                     .background(MaterialTheme.colorScheme.surfaceContainer)
-                    .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outlineVariant, GlassShapes.ShellControl)
+                    .border(
+                        GlassDimens.HairlineBorder,
+                        MaterialTheme.colorScheme.outlineVariant,
+                        GlassShapes.ShellControl,
+                    )
                     .clickable { expanded = true }
                     .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Small),
                 verticalAlignment = Alignment.CenterVertically,
@@ -658,7 +676,13 @@ private fun BuildTypeDropdown(
                         text = {
                             Text(
                                 text = option,
-                                color = if (option == selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                color = if (option ==
+                                    selected
+                                ) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                },
                                 fontSize = FontSize.Micro,
                                 fontFamily = codeFontFamily(),
                             )
@@ -675,12 +699,7 @@ private fun BuildTypeDropdown(
 }
 
 @Composable
-private fun PropertyRowItem(
-    index: Int,
-    isChecked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    entry: PropertyEntry,
-) {
+private fun PropertyRowItem(index: Int, isChecked: Boolean, onCheckedChange: (Boolean) -> Unit, entry: PropertyEntry) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -718,7 +737,11 @@ private fun PropertyRowItem(
                     .background(MaterialTheme.colorScheme.surfaceContainer, GlassShapes.ShellControl)
                     .border(
                         GlassDimens.HairlineBorder,
-                        if (entry.hasError) GlassTheme.diagnosticColors.error else MaterialTheme.colorScheme.outlineVariant,
+                        if (entry.hasError) {
+                            GlassTheme.diagnosticColors.error
+                        } else {
+                            MaterialTheme.colorScheme.outlineVariant
+                        },
                         GlassShapes.ShellControl,
                     )
                     .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),
@@ -739,7 +762,11 @@ private fun PropertyRowItem(
                     .background(MaterialTheme.colorScheme.surfaceContainer, GlassShapes.ShellControl)
                     .border(
                         GlassDimens.HairlineBorder,
-                        if (entry.hasError) GlassTheme.diagnosticColors.error else MaterialTheme.colorScheme.outlineVariant,
+                        if (entry.hasError) {
+                            GlassTheme.diagnosticColors.error
+                        } else {
+                            MaterialTheme.colorScheme.outlineVariant
+                        },
                         GlassShapes.ShellControl,
                     )
                     .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),

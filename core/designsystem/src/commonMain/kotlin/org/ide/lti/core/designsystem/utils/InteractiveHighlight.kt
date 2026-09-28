@@ -97,9 +97,7 @@ class InteractiveHighlight(
 /**
  * Applies physical squash-and-stretch and drag damping to a graphics layer during press/drag interactions.
  */
-fun GraphicsLayerScope.applyInteractiveHighlightTransform(
-    interactiveHighlight: InteractiveHighlight,
-) {
+fun GraphicsLayerScope.applyInteractiveHighlightTransform(interactiveHighlight: InteractiveHighlight) {
     val width = size.width
     val height = size.height
 

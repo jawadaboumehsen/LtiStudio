@@ -30,17 +30,11 @@ import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.icon.AppIcons
-import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.model.target.TargetDevice
 
 @Composable
-fun PartitionsConfigTab(
-    target: TargetDevice,
-    onTargetChange: (TargetDevice) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-
+fun PartitionsConfigTab(target: TargetDevice, onTargetChange: (TargetDevice) -> Unit, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
@@ -86,13 +80,17 @@ fun PartitionsConfigTab(
                 ) {
                     GlassTextField(
                         value = target.bootPartitionBytes.toString(),
-                        onValueChange = { raw -> raw.toLongOrNull()?.let { onTargetChange(target.copy(bootPartitionBytes = it)) } },
+                        onValueChange = { raw ->
+                            raw.toLongOrNull()?.let { onTargetChange(target.copy(bootPartitionBytes = it)) }
+                        },
                         label = "boot",
                         modifier = Modifier.weight(1f),
                     )
                     GlassTextField(
                         value = target.vendorBootPartitionBytes.toString(),
-                        onValueChange = { raw -> raw.toLongOrNull()?.let { onTargetChange(target.copy(vendorBootPartitionBytes = it)) } },
+                        onValueChange = { raw ->
+                            raw.toLongOrNull()?.let { onTargetChange(target.copy(vendorBootPartitionBytes = it)) }
+                        },
                         label = "vendor_boot",
                         modifier = Modifier.weight(1f),
                     )
@@ -104,13 +102,17 @@ fun PartitionsConfigTab(
                 ) {
                     GlassTextField(
                         value = target.initBootPartitionBytes.toString(),
-                        onValueChange = { raw -> raw.toLongOrNull()?.let { onTargetChange(target.copy(initBootPartitionBytes = it)) } },
+                        onValueChange = { raw ->
+                            raw.toLongOrNull()?.let { onTargetChange(target.copy(initBootPartitionBytes = it)) }
+                        },
                         label = "init_boot",
                         modifier = Modifier.weight(1f),
                     )
                     GlassTextField(
                         value = target.dtboPartitionBytes.toString(),
-                        onValueChange = { raw -> raw.toLongOrNull()?.let { onTargetChange(target.copy(dtboPartitionBytes = it)) } },
+                        onValueChange = { raw ->
+                            raw.toLongOrNull()?.let { onTargetChange(target.copy(dtboPartitionBytes = it)) }
+                        },
                         label = "dtbo",
                         modifier = Modifier.weight(1f),
                     )
@@ -140,7 +142,9 @@ fun PartitionsConfigTab(
                 GlassTextField(
                     value = target.packagePolicy.recoverySystemMountPoint,
                     onValueChange = {
-                        onTargetChange(target.copy(packagePolicy = target.packagePolicy.copy(recoverySystemMountPoint = it)))
+                        onTargetChange(
+                            target.copy(packagePolicy = target.packagePolicy.copy(recoverySystemMountPoint = it)),
+                        )
                     },
                     label = "Recovery System Mount Point",
                     placeholder = "/system_root",

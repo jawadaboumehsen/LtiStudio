@@ -22,17 +22,13 @@ import androidx.compose.ui.Modifier
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
-import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.model.target.TargetDevice
 
+// LongMethod suppressed on @Composable screen tab assembling hardware configuration sections.
+@Suppress("LongMethod")
 @Composable
-fun HardwareConfigTab(
-    target: TargetDevice,
-    onTargetChange: (TargetDevice) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-
+fun HardwareConfigTab(target: TargetDevice, onTargetChange: (TargetDevice) -> Unit, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
@@ -105,14 +101,18 @@ fun HardwareConfigTab(
                 ) {
                     GlassTextField(
                         value = target.superPartitionBytes.toString(),
-                        onValueChange = { raw -> raw.toLongOrNull()?.let { onTargetChange(target.copy(superPartitionBytes = it)) } },
+                        onValueChange = { raw ->
+                            raw.toLongOrNull()?.let { onTargetChange(target.copy(superPartitionBytes = it)) }
+                        },
                         label = "Super Partition Bytes",
                         placeholder = "17179869184",
                         modifier = Modifier.weight(1f),
                     )
                     GlassTextField(
                         value = target.superGroupBytes.toString(),
-                        onValueChange = { raw -> raw.toLongOrNull()?.let { onTargetChange(target.copy(superGroupBytes = it)) } },
+                        onValueChange = { raw ->
+                            raw.toLongOrNull()?.let { onTargetChange(target.copy(superGroupBytes = it)) }
+                        },
                         label = "Super Group Bytes",
                         placeholder = "17175674880",
                         modifier = Modifier.weight(1f),
@@ -132,7 +132,9 @@ fun HardwareConfigTab(
                     )
                     GlassTextField(
                         value = target.superMetadataSlots.toString(),
-                        onValueChange = { raw -> raw.toIntOrNull()?.let { onTargetChange(target.copy(superMetadataSlots = it)) } },
+                        onValueChange = { raw ->
+                            raw.toIntOrNull()?.let { onTargetChange(target.copy(superMetadataSlots = it)) }
+                        },
                         label = "Metadata Slots",
                         placeholder = "3",
                         modifier = Modifier.weight(1f),

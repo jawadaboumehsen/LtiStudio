@@ -44,13 +44,6 @@ import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import org.ide.lti.core.designsystem.component.actions.*
-import org.ide.lti.core.designsystem.component.devtools.*
-import org.ide.lti.core.designsystem.component.display.*
-import org.ide.lti.core.designsystem.component.feedback.*
-import org.ide.lti.core.designsystem.component.inputs.*
-import org.ide.lti.core.designsystem.component.navigation.*
-import org.ide.lti.core.designsystem.component.primitives.*
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -130,7 +123,13 @@ internal fun GlassDragDivider(
                 }
             }
             .semantics {
-                val stateDesc = if (isDragging) "dragging" else if (isHovered) "hovered" else "idle"
+                val stateDesc = if (isDragging) {
+                    "dragging"
+                } else if (isHovered) {
+                    "hovered"
+                } else {
+                    "idle"
+                }
                 contentDescription = "Resize divider: $stateDesc"
             },
         contentAlignment = Alignment.Center,

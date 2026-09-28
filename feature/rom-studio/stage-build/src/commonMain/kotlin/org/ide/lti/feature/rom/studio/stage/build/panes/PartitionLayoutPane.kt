@@ -9,8 +9,6 @@
  */
 package org.ide.lti.feature.rom.studio.stage.build.panes
 
-import org.ide.lti.core.designsystem.theme.AlphaTokens
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -26,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -34,10 +33,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
+import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
-import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
@@ -78,14 +77,23 @@ private fun PartitionLayoutNoticeCard() {
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
             .background(MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Subtle))
-            .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Ambient), GlassShapes.ShellCard)
+            .border(
+                GlassDimens.HairlineBorder,
+                MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Ambient),
+                GlassShapes.ShellCard,
+            )
             .padding(Spacing.Medium),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
         ) {
-            Icon(Icons.Default.Info, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(IconSize.Small))
+            Icon(
+                Icons.Default.Info,
+                null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(IconSize.Small),
+            )
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.Hairline)) {
                 Text(
                     text = "Partition layout is read from the source images and cannot be modified here.",
@@ -185,7 +193,11 @@ private fun SuperPartitionStorageCard() {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
             ) {
-                Box(modifier = Modifier.size(Spacing.Small).clip(GlassShapes.Circle).background(MaterialTheme.colorScheme.primary))
+                Box(
+                    modifier = Modifier.size(
+                        Spacing.Small,
+                    ).clip(GlassShapes.Circle).background(MaterialTheme.colorScheme.primary),
+                )
                 Text(
                     text = "Used 11.43 GB (83.9%)",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -197,7 +209,11 @@ private fun SuperPartitionStorageCard() {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
             ) {
-                Box(modifier = Modifier.size(Spacing.Small).clip(GlassShapes.Circle).background(MaterialTheme.colorScheme.outline))
+                Box(
+                    modifier = Modifier.size(
+                        Spacing.Small,
+                    ).clip(GlassShapes.Circle).background(MaterialTheme.colorScheme.outline),
+                )
                 Text(
                     text = "Free 2.19 GB (16.1%)",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -258,14 +274,54 @@ private fun PartitionTableHeader() {
         modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.Small),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text("#", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.width(Spacing.Large))
-        Text("Partition", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.weight(1.3f))
-        Text("Mount point", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.weight(1.3f))
-        Text("Type", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.weight(1.0f))
-        Text("Size", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.weight(1.0f))
-        Text("Used", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.weight(1.0f))
-        Text("Free", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.weight(1.0f))
-        Text("Image source", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.weight(1.2f))
+        Text(
+            "#",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = FontSize.Micro,
+            modifier = Modifier.width(Spacing.Large),
+        )
+        Text(
+            "Partition",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = FontSize.Micro,
+            modifier = Modifier.weight(1.3f),
+        )
+        Text(
+            "Mount point",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = FontSize.Micro,
+            modifier = Modifier.weight(1.3f),
+        )
+        Text(
+            "Type",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = FontSize.Micro,
+            modifier = Modifier.weight(1.0f),
+        )
+        Text(
+            "Size",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = FontSize.Micro,
+            modifier = Modifier.weight(1.0f),
+        )
+        Text(
+            "Used",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = FontSize.Micro,
+            modifier = Modifier.weight(1.0f),
+        )
+        Text(
+            "Free",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = FontSize.Micro,
+            modifier = Modifier.weight(1.0f),
+        )
+        Text(
+            "Image source",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = FontSize.Micro,
+            modifier = Modifier.weight(1.2f),
+        )
     }
 }
 
@@ -275,7 +331,12 @@ private fun PartitionTableRow(item: PartitionDetail) {
         modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.Small, vertical = Spacing.ExtraExtraSmall),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(item.index, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.width(Spacing.Large))
+        Text(
+            item.index,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = FontSize.Micro,
+            modifier = Modifier.width(Spacing.Large),
+        )
         Text(
             text = item.name,
             color = MaterialTheme.colorScheme.onSurface,
@@ -283,13 +344,22 @@ private fun PartitionTableRow(item: PartitionDetail) {
             fontSize = FontSize.Micro,
             modifier = Modifier.weight(1.3f),
         )
-        Text(item.mountPoint, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.weight(1.3f))
+        Text(
+            item.mountPoint,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = FontSize.Micro,
+            modifier = Modifier.weight(1.3f),
+        )
         Box(modifier = Modifier.weight(1.0f)) {
             Box(
                 modifier = Modifier
                     .clip(GlassShapes.ShellBadge)
                     .background(MaterialTheme.colorScheme.surfaceContainer)
-                    .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outlineVariant, GlassShapes.ShellBadge)
+                    .border(
+                        GlassDimens.HairlineBorder,
+                        MaterialTheme.colorScheme.outlineVariant,
+                        GlassShapes.ShellBadge,
+                    )
                     .padding(horizontal = Spacing.ExtraSmall, vertical = Spacing.Hairline),
             ) {
                 Text(
@@ -343,7 +413,12 @@ private fun AboutPartitionLayoutCard() {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
         ) {
-            Icon(Icons.Default.Info, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(IconSize.Small))
+            Icon(
+                Icons.Default.Info,
+                null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(IconSize.Small),
+            )
             Text(
                 text = "About partition layout",
                 color = MaterialTheme.colorScheme.onSurface,

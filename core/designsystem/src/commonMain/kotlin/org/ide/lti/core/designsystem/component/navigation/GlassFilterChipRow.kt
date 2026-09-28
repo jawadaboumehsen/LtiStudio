@@ -33,19 +33,6 @@ import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 
 /**
- * Data item representing an individual filter capsule in [GlassFilterChipRow].
- *
- * @property label The human-readable category title displayed on the chip.
- * @property count The number of elements belonging to this category. If negative, count is omitted.
- * @property value The unique string key matching the selected category.
- */
-data class GlassFilterChipItem(
-    val label: String,
-    val count: Int,
-    val value: String,
-)
-
-/**
  * Reusable Liquid Glass horizontal wrap-flow of category filter capsules.
  *
  * Generalizes the category filter rows in ToolMatrixTable and DoctorDiagnosticsDrawer:
@@ -88,7 +75,11 @@ fun GlassFilterChipRow(
                         )
                         .border(
                             width = StrokeWidth.Hairline,
-                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                            color = if (isSelected) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.outline
+                            },
                             shape = GlassShapes.Capsule,
                         )
                         .clickable { onSelect(item.value) }
@@ -99,7 +90,11 @@ fun GlassFilterChipRow(
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                         ),
-                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = if (isSelected) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
                         maxLines = 1,
                         softWrap = false,
                         overflow = TextOverflow.Ellipsis,

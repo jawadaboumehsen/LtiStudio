@@ -21,10 +21,7 @@ import dev.chrisbanes.haze.HazeState
  * Identifies control-local optical sources (such as toggle tracks) to allow selective inclusion or exclusion.
  */
 @Immutable
-data class ControlSourceKey(
-    val type: String,
-    val id: String,
-)
+data class ControlSourceKey(val type: String, val id: String)
 
 /**
  * Central policy for scene consumers: excludes all control-local sources to eliminate bloom halos.

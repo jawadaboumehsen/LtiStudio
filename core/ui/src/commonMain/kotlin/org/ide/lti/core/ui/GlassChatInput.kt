@@ -59,7 +59,13 @@ fun GlassChatInput(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     placeholder: String = "Type a message...",
-    shape: HazeShape = if (GlassTheme.appTheme == AppTheme.Dark) GlassShapes.HazeMediumSmall else GlassShapes.HazeCapsule,
+    shape: HazeShape = if (GlassTheme.appTheme ==
+        AppTheme.Dark
+    ) {
+        GlassShapes.HazeMediumSmall
+    } else {
+        GlassShapes.HazeCapsule
+    },
 ) {
     var inputText by remember { mutableStateOf("") }
     var isFocused by remember { mutableStateOf(false) }
@@ -87,7 +93,11 @@ fun GlassChatInput(
                 onValueChange = { inputText = it },
                 textStyle = TextStyle(
                     fontSize = FontSize.BodyMedium,
-                    color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (enabled) {
+                        MaterialTheme.colorScheme.onSurface
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
                 ),
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                 enabled = enabled,
@@ -117,7 +127,13 @@ fun GlassChatInput(
 
             Spacer(modifier = Modifier.width(Spacing.Small))
 
-            val sendButtonShape = if (GlassTheme.appTheme == AppTheme.Dark) GlassShapes.HazeSmall else GlassShapes.HazeCapsule
+            val sendButtonShape = if (GlassTheme.appTheme ==
+                AppTheme.Dark
+            ) {
+                GlassShapes.HazeSmall
+            } else {
+                GlassShapes.HazeCapsule
+            }
             GlassIconButton(
                 onClick = {
                     if (inputText.isNotBlank()) {

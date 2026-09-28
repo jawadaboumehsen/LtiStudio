@@ -44,31 +44,27 @@ fun ideFontFamily(): FontFamily = FontFamily(
 )
 
 @Composable
-private fun fontFamily(): FontFamily {
-    return FontFamily(
-        Font(Res.font.outfit_black, FontWeight.Black),
-        Font(Res.font.outfit_bold, FontWeight.Bold),
-        Font(Res.font.outfit_semi_bold, FontWeight.SemiBold),
-        Font(Res.font.outfit_medium, FontWeight.Medium),
-        Font(Res.font.outfit_regular, FontWeight.Normal),
-        Font(Res.font.outfit_light, FontWeight.Light),
-        Font(Res.font.outfit_thin, FontWeight.Thin),
-        Font(Res.font.outfit_extra_light, FontWeight.ExtraLight),
-        Font(Res.font.outfit_extra_bold, FontWeight.ExtraBold),
-    )
-}
+private fun fontFamily(): FontFamily = FontFamily(
+    Font(Res.font.outfit_black, FontWeight.Black),
+    Font(Res.font.outfit_bold, FontWeight.Bold),
+    Font(Res.font.outfit_semi_bold, FontWeight.SemiBold),
+    Font(Res.font.outfit_medium, FontWeight.Medium),
+    Font(Res.font.outfit_regular, FontWeight.Normal),
+    Font(Res.font.outfit_light, FontWeight.Light),
+    Font(Res.font.outfit_thin, FontWeight.Thin),
+    Font(Res.font.outfit_extra_light, FontWeight.ExtraLight),
+    Font(Res.font.outfit_extra_bold, FontWeight.ExtraBold),
+)
 
 /**
  * Returns the bundled JetBrains Mono [FontFamily] configured with Regular, Medium, and Bold weights.
  */
 @Composable
-fun codeFontFamily(): FontFamily {
-    return FontFamily(
-        Font(Res.font.jetbrains_mono_regular, FontWeight.Normal),
-        Font(Res.font.jetbrains_mono_medium, FontWeight.Medium),
-        Font(Res.font.jetbrains_mono_bold, FontWeight.Bold),
-    )
-}
+fun codeFontFamily(): FontFamily = FontFamily(
+    Font(Res.font.jetbrains_mono_regular, FontWeight.Normal),
+    Font(Res.font.jetbrains_mono_medium, FontWeight.Medium),
+    Font(Res.font.jetbrains_mono_bold, FontWeight.Bold),
+)
 
 // Set of Material typography styles to start with
 @Composable

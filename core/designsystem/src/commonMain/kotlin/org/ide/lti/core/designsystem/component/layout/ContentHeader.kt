@@ -61,7 +61,11 @@ fun ContentHeader(
                     val isLast = index == breadcrumbs.lastIndex
                     Text(
                         text = segment,
-                        color = if (isLast) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = if (isLast) {
+                            MaterialTheme.colorScheme.onSurface
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
                         fontFamily = ideFontFamily(),
                         fontSize = FontSize.CodeMedium,
                         fontWeight = if (isLast) FontWeight.Medium else FontWeight.Normal,

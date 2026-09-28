@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,12 +29,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import dev.chrisbanes.haze.ExperimentalHazeApi
-import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.glass.hazeGlass
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.theme.AlphaTokens
@@ -44,15 +45,6 @@ import org.ide.lti.core.designsystem.theme.HazeShape
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.sceneHazeInput
-
-/**
- * Type-safe interaction mode for [GlassChip].
- */
-sealed interface ChipMode {
-    data class Toggle(val selected: Boolean, val onToggle: (Boolean) -> Unit) : ChipMode
-    data class Action(val onClick: () -> Unit) : ChipMode
-    data object ReadOnly : ChipMode
-}
 
 /**
  * Standardized Liquid Glass Chip component - built on Haze's real `Modifier.hazeGlass`, same
@@ -83,35 +75,15 @@ fun GlassChip(
     var isHovered by remember { mutableStateOf(false) }
     val colors = MaterialTheme.colorScheme
 
-    val targetBackground = when {
-        selected && isHovered -> colors.primary.copy(alpha = AlphaTokens.Elevated)
-        selected -> colors.primary.copy(alpha = AlphaTokens.Hover)
-        isHovered -> colors.surfaceContainerHigh.copy(alpha = AlphaTokens.Elevated)
-        else -> colors.surfaceContainer.copy(alpha = AlphaTokens.Elevated)
-    }
-    val targetBorder = if (selected || isHovered) {
-        colors.primary.copy(alpha = AlphaTokens.Prominent)
-    } else {
-        colors.primary.copy(alpha = AlphaTokens.Hover)
-    }
-    val targetText = when {
-        selected -> colors.primary
-        isHovered -> colors.onSurface
-        else -> colors.onSurfaceVariant
-    }
+    val targetBackground = chipBackgroundColor(selected, isHovered, colors)
+    val targetBorder = chipBorderColor(selected, isHovered, colors)
+    val targetText = chipTextColor(selected, isHovered, colors)
 
     val backgroundColor by animateColorAsState(targetBackground)
     val borderColor by animateColorAsState(targetBorder)
     val textColor by animateColorAsState(targetText)
 
-    val effectiveClick: (() -> Unit)? = when {
-        !enabled -> null
-        onSelectedChange != null -> {
-            { onSelectedChange(!selected) }
-        }
-        onClick != null -> onClick
-        else -> null
-    }
+    val effectiveClick = resolveChipClick(enabled, selected, onClick, onSelectedChange)
 
     val theme = GlassTheme.appTheme
     val chipModifier = if (GlassTheme.effectsEnabled) {
@@ -169,4 +141,47 @@ fun GlassChip(
             trailingIcon?.invoke()
         }
     }
+}
+
+/**
+ * Resolves the background color for a glass chip.
+ */
+private fun chipBackgroundColor(selected: Boolean, isHovered: Boolean, colors: ColorScheme): Color = when {
+    selected && isHovered -> colors.primary.copy(alpha = AlphaTokens.Elevated)
+    selected -> colors.primary.copy(alpha = AlphaTokens.Hover)
+    isHovered -> colors.surfaceContainerHigh.copy(alpha = AlphaTokens.Elevated)
+    else -> colors.surfaceContainer.copy(alpha = AlphaTokens.Elevated)
+}
+
+/**
+ * Resolves the border outline color for a glass chip.
+ */
+private fun chipBorderColor(selected: Boolean, isHovered: Boolean, colors: ColorScheme): Color =
+    if (selected || isHovered) {
+        colors.primary.copy(alpha = AlphaTokens.Prominent)
+    } else {
+        colors.primary.copy(alpha = AlphaTokens.Hover)
+    }
+
+/**
+ * Resolves the label text color for a glass chip.
+ */
+private fun chipTextColor(selected: Boolean, isHovered: Boolean, colors: ColorScheme): Color = when {
+    selected -> colors.primary
+    isHovered -> colors.onSurface
+    else -> colors.onSurfaceVariant
+}
+
+/**
+ * Resolves the effective click callback for a glass chip.
+ */
+private fun resolveChipClick(
+    enabled: Boolean,
+    selected: Boolean,
+    onClick: (() -> Unit)?,
+    onSelectedChange: ((Boolean) -> Unit)?,
+): (() -> Unit)? = when {
+    !enabled -> null
+    onSelectedChange != null -> ({ onSelectedChange(!selected) })
+    else -> onClick
 }

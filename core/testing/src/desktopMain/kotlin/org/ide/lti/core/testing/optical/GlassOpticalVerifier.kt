@@ -127,11 +127,7 @@ object GlassOpticalVerifier {
         }
     }
 
-    data class EdgeSpreadResult(
-        val transitionWidthPx: Int,
-        val spreadFraction: Double,
-        val peakGradient: Double,
-    )
+    data class EdgeSpreadResult(val transitionWidthPx: Int, val spreadFraction: Double, val peakGradient: Double)
 
     /**
      * Measures the spatial edge spreading of vertical stripe boundaries in [image] within [roi].
@@ -173,47 +169,11 @@ object GlassOpticalVerifier {
             var sampleRows = 0
 
             for (y in startY until endY step 4) {
-                val grads = DoubleArray(2 * windowPx + 1)
-                var maxG = 0.0
-                var maxIdx = windowPx
-                var sumG = 0.0
-
-                for (offset in -windowPx..windowPx) {
-                    val px = bx + offset
-                    if (px + 1 >= image.width) continue
-                    val l1 = relativeLuminance(pixelMap[px, y])
-                    val l2 = relativeLuminance(pixelMap[px + 1, y])
-                    val g = abs(l2 - l1)
-                    val idx = offset + windowPx
-                    grads[idx] = g
-                    sumG += g
-                    if (g > maxG) {
-                        maxG = g
-                        maxIdx = idx
-                    }
-                }
-
-                if (maxG > 0.008 && sumG > 0.0) {
-                    var width = 1
-                    var left = maxIdx - 1
-                    while (left >= 0 && grads[left] >= 0.15 * maxG) {
-                        width++
-                        left--
-                    }
-                    var right = maxIdx + 1
-                    while (right < grads.size && grads[right] >= 0.15 * maxG) {
-                        width++
-                        right++
-                    }
-
-                    val energyOutsidePeak = (sumG - maxG).coerceAtLeast(0.0)
-                    val spreadFrac = energyOutsidePeak / sumG
-
-                    sumWidthForBoundary += width
-                    sumSpreadForBoundary += spreadFrac
-                    sumPeakForBoundary += maxG
-                    sampleRows++
-                }
+                val rowSpread = measureRowSpread(pixelMap, y, bx, windowPx, image.width) ?: continue
+                sumWidthForBoundary += rowSpread.width
+                sumSpreadForBoundary += rowSpread.spreadFrac
+                sumPeakForBoundary += rowSpread.peak
+                sampleRows++
             }
 
             if (sampleRows > 0) {
@@ -250,7 +210,9 @@ object GlassOpticalVerifier {
         if (result.transitionWidthPx < minTransitionWidthPx || result.spreadFraction < minSpreadFraction) {
             throw AssertionError(
                 "Optical blur failure: edge spreading is insufficient (transitionWidth=${result.transitionWidthPx}px " +
-                    "(min required: ${minTransitionWidthPx}px), spreadFraction=${"%.4f".format(result.spreadFraction)} " +
+                    "(min required: ${minTransitionWidthPx}px), spreadFraction=${"%.4f".format(
+                        result.spreadFraction,
+                    )} " +
                     "(min required: $minSpreadFraction), peakGrad=${"%.4f".format(result.peakGradient)}). " +
                     "Component exhibits sharp unblurred transitions (such as an unblurred translucent fill), " +
                     "not authentic spatial optical blur.",
@@ -320,17 +282,78 @@ object GlassOpticalVerifier {
         )
     }
 
-    private fun measureSingle10to90Width(map: PixelMap, bx: Int, y: Int, windowPx: Int): Double {
+    private data class RowSpread(val width: Int, val spreadFrac: Double, val peak: Double)
+
+    /** Measures edge transition width and spread fraction for a single horizontal row across the boundary. */
+    private fun measureRowSpread(pixelMap: PixelMap, y: Int, bx: Int, windowPx: Int, imageWidth: Int): RowSpread? {
+        val grads = DoubleArray(2 * windowPx + 1)
+        var maxG = 0.0
+        var maxIdx = windowPx
+        var sumG = 0.0
+
+        for (offset in -windowPx..windowPx) {
+            val px = bx + offset
+            if (px + 1 >= imageWidth) continue
+            val l1 = relativeLuminance(pixelMap[px, y])
+            val l2 = relativeLuminance(pixelMap[px + 1, y])
+            val g = abs(l2 - l1)
+            val idx = offset + windowPx
+            grads[idx] = g
+            sumG += g
+            if (g > maxG) {
+                maxG = g
+                maxIdx = idx
+            }
+        }
+
+        if (maxG <= 0.008 || sumG <= 0.0) return null
+
+        var width = 1
+        var left = maxIdx - 1
+        while (left >= 0 && grads[left] >= 0.15 * maxG) {
+            width++
+            left--
+        }
+        var right = maxIdx + 1
+        while (right < grads.size && grads[right] >= 0.15 * maxG) {
+            width++
+            right++
+        }
+
+        val energyOutsidePeak = (sumG - maxG).coerceAtLeast(0.0)
+        val spreadFrac = energyOutsidePeak / sumG
+
+        return RowSpread(width, spreadFrac, maxG)
+    }
+
+    /** Finds the minimum and maximum luminance within the specified window. */
+    private fun findLuminanceRange(map: PixelMap, bx: Int, y: Int, windowPx: Int): Pair<Double, Double> {
         var minL = 1.0
         var maxL = 0.0
         for (offset in -windowPx..windowPx) {
             val px = bx + offset
-            if (px < 0 || px >= map.width) continue
-            val l = relativeLuminance(map[px, y])
-            if (l < minL) minL = l
-            if (l > maxL) maxL = l
+            if (px in 0 until map.width) {
+                val l = relativeLuminance(map[px, y])
+                if (l < minL) minL = l
+                if (l > maxL) maxL = l
+            }
         }
+        return Pair(minL, maxL)
+    }
 
+    /** Checks whether the transition between two luminance values crosses the target. */
+    private fun crosses(lum1: Double, lum2: Double, target: Double): Boolean =
+        (lum1 <= target && lum2 >= target) || (lum1 >= target && lum2 <= target)
+
+    /** Computes the linearly interpolated coordinate where the luminance curve crosses the target. */
+    private fun interpolateCrossing(px1: Int, lum1: Double, lum2: Double, target: Double): Double {
+        val diff = abs(lum2 - lum1)
+        val frac = if (diff > 1e-5) abs(target - lum1) / diff else 0.5
+        return px1 + frac
+    }
+
+    private fun measureSingle10to90Width(map: PixelMap, bx: Int, y: Int, windowPx: Int): Double {
+        val (minL, maxL) = findLuminanceRange(map, bx, y, windowPx)
         val deltaL = maxL - minL
         if (deltaL < 0.05) return 0.0
 
@@ -352,15 +375,11 @@ object GlassOpticalVerifier {
 
             val (targetA, targetB) = if (isRising) Pair(l10, l90) else Pair(l90, l10)
 
-            if (x10 < 0.0 && ((lum1 <= targetA && lum2 >= targetA) || (lum1 >= targetA && lum2 <= targetA))) {
-                val diff = abs(lum2 - lum1)
-                val frac = if (diff > 1e-5) abs(targetA - lum1) / diff else 0.5
-                x10 = px1 + frac
+            if (x10 < 0.0 && crosses(lum1, lum2, targetA)) {
+                x10 = interpolateCrossing(px1, lum1, lum2, targetA)
             }
-            if (x90 < 0.0 && ((lum1 <= targetB && lum2 >= targetB) || (lum1 >= targetB && lum2 <= targetB))) {
-                val diff = abs(lum2 - lum1)
-                val frac = if (diff > 1e-5) abs(targetB - lum1) / diff else 0.5
-                x90 = px1 + frac
+            if (x90 < 0.0 && crosses(lum1, lum2, targetB)) {
+                x90 = interpolateCrossing(px1, lum1, lum2, targetB)
             }
         }
 
@@ -435,26 +454,7 @@ object GlassOpticalVerifier {
 
                 if (gCenter >= minFeatureGradient && gCenter >= gLeft && gCenter >= gRight) {
                     totalFeatures++
-
-                    var bestRefractedX = x
-                    var bestGrad = 0.0
-                    var minDistance = Int.MAX_VALUE
-
-                    for (offset in -searchRadiusPx..searchRadiusPx) {
-                        val rx = x + offset
-                        if (rx < 0 || rx >= map2.width - 1) continue
-                        val srg = relativeLuminance(map2[rx + 1, y]) - relativeLuminance(map2[rx, y])
-                        if (srg * signedG > 0) {
-                            val rg = abs(srg)
-                            val dist = abs(offset)
-                            if (rg > bestGrad * 1.05 || (abs(rg - bestGrad) <= 0.05 * bestGrad && dist < minDistance)) {
-                                bestGrad = rg
-                                bestRefractedX = rx
-                                minDistance = dist
-                            }
-                        }
-                    }
-
+                    val bestRefractedX = findBestRefractedX(map2, x, y, signedG, searchRadiusPx)
                     val shift = abs(bestRefractedX - x).toDouble()
                     sumDisplacement += shift
                     if (shift > maxDisplacement) maxDisplacement = shift
@@ -472,6 +472,29 @@ object GlassOpticalVerifier {
             meanDisplacementPx = meanDisplacement,
             maxDisplacementPx = maxDisplacement,
         )
+    }
+
+    /** Finds the x-coordinate of the best matching feature gradient in the refracted map. */
+    private fun findBestRefractedX(map2: PixelMap, x: Int, y: Int, signedG: Double, searchRadiusPx: Int): Int {
+        var bestRefractedX = x
+        var bestGrad = 0.0
+        var minDistance = Int.MAX_VALUE
+
+        for (offset in -searchRadiusPx..searchRadiusPx) {
+            val rx = x + offset
+            if (rx < 0 || rx >= map2.width - 1) continue
+            val srg = relativeLuminance(map2[rx + 1, y]) - relativeLuminance(map2[rx, y])
+            if (srg * signedG > 0) {
+                val rg = abs(srg)
+                val dist = abs(offset)
+                if (rg > bestGrad * 1.05 || (abs(rg - bestGrad) <= 0.05 * bestGrad && dist < minDistance)) {
+                    bestGrad = rg
+                    bestRefractedX = rx
+                    minDistance = dist
+                }
+            }
+        }
+        return bestRefractedX
     }
 
     /**
@@ -504,7 +527,9 @@ object GlassOpticalVerifier {
             throw AssertionError(
                 "Refraction displacement failure: displaced feature count (${result.displacedFeatureCount}) " +
                     "is below required minimum ($minDisplacedFeatures) out of ${result.featureCount} total features " +
-                    "(mean displacement: ${"%.3f".format(result.meanDisplacementPx)}px, max: ${result.maxDisplacementPx}px). " +
+                    "(mean displacement: ${"%.3f".format(
+                        result.meanDisplacementPx,
+                    )}px, max: ${result.maxDisplacementPx}px). " +
                     "Image does not exhibit authentic spatial optical feature refraction.",
             )
         }
@@ -567,7 +592,9 @@ object GlassOpticalVerifier {
         } else {
             if (deltaM > 0.005) {
                 throw AssertionError(
-                    "Backdrop modulation failure (effects OFF): mean luminance modulation ΔM=${"%.5f".format(deltaM)} " +
+                    "Backdrop modulation failure (effects OFF): mean luminance modulation ΔM=${"%.5f".format(
+                        deltaM,
+                    )} " +
                         "exceeds solid invariance tolerance 0.005. " +
                         "Fallback component is leaking backdrop changes instead of rendering solid.",
                 )

@@ -158,7 +158,9 @@ class GlassSyntaxScreenshotTest {
                                     style = MaterialTheme.typography.labelSmall.copy(
                                         fontFamily = FontFamily.Monospace,
                                         fontSize = 11.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = AlphaTokens.Half),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                            alpha = AlphaTokens.Half,
+                                        ),
                                     ),
                                 )
                                 Text(

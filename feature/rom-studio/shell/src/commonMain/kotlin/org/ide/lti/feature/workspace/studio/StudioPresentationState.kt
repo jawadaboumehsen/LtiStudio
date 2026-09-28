@@ -270,27 +270,26 @@ public data class WorkspaceShellUiState(
 public fun createDefaultPipelineRailItems(
     selectedStageId: StageId? = null,
     descriptors: List<StageDescriptor> = CanonicalStageDescriptors.ALL,
-): List<PipelineRailItemUi> =
-    descriptors.mapIndexed { index, stage ->
-        val railLabel = when (stage.stageId) {
-            StageId.FIRMWARE_ACQUISITION -> "Acquire"
-            StageId.FIRMWARE_EXTRACTION -> "Extract"
-            StageId.WORK_TREE_ASSEMBLY -> "Assemble"
-            StageId.DEBLOAT -> "Debloat"
-            StageId.MODULE_APPLICATION -> "Patches"
-            StageId.BUILD_FLASHABLE_ZIP -> "Build"
-            StageId.GENERATE_OTA_MANIFEST -> "Metadata"
-            StageId.PUBLISH_RELEASE -> "Publish"
-        }
-        PipelineRailItemUi(
-            stageId = stage.stageId,
-            position = index + 1,
-            label = railLabel,
-            iconKey = stage.stageId.name,
-            isSelected = stage.stageId == selectedStageId,
-            isEnabled = true,
-            disabledReason = null,
-            hasError = false,
-            accessibleDescription = stage.accessibleLabel,
-        )
+): List<PipelineRailItemUi> = descriptors.mapIndexed { index, stage ->
+    val railLabel = when (stage.stageId) {
+        StageId.FIRMWARE_ACQUISITION -> "Acquire"
+        StageId.FIRMWARE_EXTRACTION -> "Extract"
+        StageId.WORK_TREE_ASSEMBLY -> "Assemble"
+        StageId.DEBLOAT -> "Debloat"
+        StageId.MODULE_APPLICATION -> "Patches"
+        StageId.BUILD_FLASHABLE_ZIP -> "Build"
+        StageId.GENERATE_OTA_MANIFEST -> "Metadata"
+        StageId.PUBLISH_RELEASE -> "Publish"
     }
+    PipelineRailItemUi(
+        stageId = stage.stageId,
+        position = index + 1,
+        label = railLabel,
+        iconKey = stage.stageId.name,
+        isSelected = stage.stageId == selectedStageId,
+        isEnabled = true,
+        disabledReason = null,
+        hasError = false,
+        accessibleDescription = stage.accessibleLabel,
+    )
+}

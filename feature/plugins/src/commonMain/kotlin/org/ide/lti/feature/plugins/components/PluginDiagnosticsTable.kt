@@ -49,7 +49,6 @@ import org.ide.lti.core.domain.plugin.AuthorDiagnostic
  */
 @Composable
 public fun PluginDiagnosticsTable(diagnostics: List<AuthorDiagnostic>, modifier: Modifier = Modifier) {
-
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -81,7 +80,6 @@ public fun PluginDiagnosticsTable(diagnostics: List<AuthorDiagnostic>, modifier:
 
 @Composable
 private fun DiagnosticTableHeader(modifier: Modifier = Modifier) {
-
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -129,7 +127,6 @@ private fun DiagnosticTableHeader(modifier: Modifier = Modifier) {
 
 @Composable
 private fun DiagnosticEmptyState(modifier: Modifier = Modifier) {
-
     Row(
         modifier = modifier
             .fillMaxWidth()

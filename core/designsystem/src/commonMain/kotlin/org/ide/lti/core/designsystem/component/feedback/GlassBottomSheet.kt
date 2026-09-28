@@ -48,13 +48,9 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.input.pointer.pointerInput
 import kotlinx.coroutines.launch
-import org.ide.lti.core.designsystem.component.actions.*
-import org.ide.lti.core.designsystem.component.devtools.*
-import org.ide.lti.core.designsystem.component.display.*
-import org.ide.lti.core.designsystem.component.inputs.*
-import org.ide.lti.core.designsystem.component.layout.*
-import org.ide.lti.core.designsystem.component.navigation.*
-import org.ide.lti.core.designsystem.component.primitives.*
+import org.ide.lti.core.designsystem.component.actions.GlassButton
+import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
+import org.ide.lti.core.designsystem.component.primitives.GlassSurface
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
@@ -68,9 +64,7 @@ import org.ide.lti.core.designsystem.theme.Spacing
  * @param initialValue The initial state of the bottom sheet
  */
 @Stable
-class GlassBottomSheetState(
-    initialValue: GlassBottomSheetValue = GlassBottomSheetValue.Collapsed,
-) {
+class GlassBottomSheetState(initialValue: GlassBottomSheetValue = GlassBottomSheetValue.Collapsed) {
     /**
      * The current value of the bottom sheet.
      */
@@ -150,9 +144,7 @@ sealed interface SheetDragHandle {
 @Composable
 fun rememberGlassBottomSheetState(
     initialValue: GlassBottomSheetValue = GlassBottomSheetValue.Collapsed,
-): GlassBottomSheetState {
-    return remember { GlassBottomSheetState(initialValue) }
-}
+): GlassBottomSheetState = remember { GlassBottomSheetState(initialValue) }
 
 /**
  * A bottom sheet with glass morphism effects and drag-to-dismiss functionality.
@@ -387,9 +379,7 @@ fun GlassBottomSheetScaffold(
  * Example usage of GlassBottomSheet with common patterns.
  */
 @Composable
-fun GlassBottomSheetExample(
-    modifier: Modifier = Modifier,
-) {
+fun GlassBottomSheetExample(modifier: Modifier = Modifier) {
     var showSheet by remember { mutableStateOf(false) }
 
     Box(modifier = modifier.fillMaxSize()) {

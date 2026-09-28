@@ -9,8 +9,6 @@
  */
 package org.ide.lti.feature.rom.studio.stage.build.panes
 
-import org.ide.lti.core.designsystem.theme.AlphaTokens
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -30,6 +28,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -40,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.display.IdeStatusBadge
 import org.ide.lti.core.designsystem.component.display.IdeStatusSeverity
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
+import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
@@ -96,7 +96,11 @@ private fun AvbNoticeCard() {
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
             .background(MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Subtle))
-            .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Ambient), GlassShapes.ShellCard)
+            .border(
+                GlassDimens.HairlineBorder,
+                MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Ambient),
+                GlassShapes.ShellCard,
+            )
             .padding(Spacing.Medium),
     ) {
         Row(
@@ -182,16 +186,36 @@ private fun AvbTableHeader() {
         modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.Small),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text("Partition", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.weight(1.2f))
-        Text("Key to use", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.weight(1.5f))
+        Text(
+            "Partition",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = FontSize.Micro,
+            modifier = Modifier.weight(1.2f),
+        )
+        Text(
+            "Key to use",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = FontSize.Micro,
+            modifier = Modifier.weight(1.5f),
+        )
         Text(
             text = "Public key fingerprint",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.Micro,
             modifier = Modifier.weight(1.8f),
         )
-        Text("Availability", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.weight(1.2f))
-        Text("Target policy", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.weight(1.0f))
+        Text(
+            "Availability",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = FontSize.Micro,
+            modifier = Modifier.weight(1.2f),
+        )
+        Text(
+            "Target policy",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = FontSize.Micro,
+            modifier = Modifier.weight(1.0f),
+        )
     }
 }
 
@@ -216,7 +240,11 @@ private fun AvbTableRow(row: AvbKeyRow) {
                 .background(MaterialTheme.colorScheme.surfaceContainer)
                 .border(
                     width = StrokeWidth.Standard,
-                    color = if (row.isMissing) GlassTheme.diagnosticColors.error else MaterialTheme.colorScheme.outlineVariant,
+                    color = if (row.isMissing) {
+                        GlassTheme.diagnosticColors.error
+                    } else {
+                        MaterialTheme.colorScheme.outlineVariant
+                    },
                     shape = GlassShapes.ShellControl,
                 )
                 .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraExtraSmall),
@@ -228,14 +256,22 @@ private fun AvbTableRow(row: AvbKeyRow) {
             ) {
                 Text(
                     text = row.keyToUse,
-                    color = if (row.isMissing) GlassTheme.diagnosticColors.error else MaterialTheme.colorScheme.onSurface,
+                    color = if (row.isMissing) {
+                        GlassTheme.diagnosticColors.error
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    },
                     fontFamily = codeFontFamily(),
                     fontSize = FontSize.Micro,
                 )
                 Icon(
                     imageVector = Icons.Default.KeyboardArrowDown,
                     contentDescription = null,
-                    tint = if (row.isMissing) GlassTheme.diagnosticColors.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = if (row.isMissing) {
+                        GlassTheme.diagnosticColors.error
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
                     modifier = Modifier.size(IconSize.ExtraSmall),
                 )
             }
@@ -324,7 +360,12 @@ private fun AvbMissingKeyErrorBanner() {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
         ) {
-            Icon(Icons.Default.Close, null, tint = GlassTheme.diagnosticColors.error, modifier = Modifier.size(IconSize.Small))
+            Icon(
+                Icons.Default.Close,
+                null,
+                tint = GlassTheme.diagnosticColors.error,
+                modifier = Modifier.size(IconSize.Small),
+            )
             Text(
                 text = "Select a key for vbmeta_vendor to continue.",
                 color = GlassTheme.diagnosticColors.error,
@@ -410,7 +451,12 @@ private fun KeyManagementCard() {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
         ) {
-            Icon(Icons.Default.Info, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(IconSize.Small))
+            Icon(
+                Icons.Default.Info,
+                null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(IconSize.Small),
+            )
             Text(
                 text = "Key management",
                 color = MaterialTheme.colorScheme.onSurface,

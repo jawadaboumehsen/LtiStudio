@@ -193,9 +193,17 @@ class HazeStateScopeTest {
         }
 
         assertFalse(reduceTransparencyDefault, "effectsEnabled = true must not reduce transparency")
-        assertEquals(GlassReducedMotionPolicy.System, motionPolicyDefault, "reducedMotion = false must use System policy")
+        assertEquals(
+            GlassReducedMotionPolicy.System,
+            motionPolicyDefault,
+            "reducedMotion = false must use System policy",
+        )
         assertTrue(reduceTransparencyCustom, "effectsEnabled = false must set reduceTransparency = true")
-        assertEquals(GlassReducedMotionPolicy.Reduced, motionPolicyCustom, "reducedMotion = true must use Reduced policy")
+        assertEquals(
+            GlassReducedMotionPolicy.Reduced,
+            motionPolicyCustom,
+            "reducedMotion = true must use Reduced policy",
+        )
     }
 
     @OptIn(ExperimentalTestApi::class, ExperimentalHazeApi::class)
@@ -233,14 +241,32 @@ class HazeStateScopeTest {
         }
 
         assertTrue(rootTransparency, "Root with effectsEnabled = false must reduce transparency")
-        assertEquals(GlassReducedMotionPolicy.Reduced, rootMotionPolicy, "Root with reducedMotion = true must use Reduced policy")
+        assertEquals(
+            GlassReducedMotionPolicy.Reduced,
+            rootMotionPolicy,
+            "Root with reducedMotion = true must use Reduced policy",
+        )
 
         // Crucial contract: omitted parameters in nested theme MUST inherit from enclosing parent
-        assertTrue(nestedTransparency, "Nested LtiTheme with omitted parameters must inherit reduceTransparency = true from parent")
-        assertEquals(GlassReducedMotionPolicy.Reduced, nestedMotionPolicy, "Nested LtiTheme with omitted parameters must inherit Reduced motion policy from parent")
+        assertTrue(
+            nestedTransparency,
+            "Nested LtiTheme with omitted parameters must inherit reduceTransparency = true from parent",
+        )
+        assertEquals(
+            GlassReducedMotionPolicy.Reduced,
+            nestedMotionPolicy,
+            "Nested LtiTheme with omitted parameters must inherit Reduced motion policy from parent",
+        )
 
         // Standalone defaults
-        assertFalse(standaloneTransparency, "Standalone LtiTheme with omitted parameters must default to reduceTransparency = false")
-        assertEquals(GlassReducedMotionPolicy.System, standaloneMotionPolicy, "Standalone LtiTheme with omitted parameters must default to System motion policy")
+        assertFalse(
+            standaloneTransparency,
+            "Standalone LtiTheme with omitted parameters must default to reduceTransparency = false",
+        )
+        assertEquals(
+            GlassReducedMotionPolicy.System,
+            standaloneMotionPolicy,
+            "Standalone LtiTheme with omitted parameters must default to System motion policy",
+        )
     }
 }

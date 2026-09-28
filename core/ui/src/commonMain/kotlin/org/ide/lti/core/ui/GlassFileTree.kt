@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -44,9 +45,7 @@ import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
-import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassShapes
-import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
@@ -57,18 +56,12 @@ import org.ide.lti.core.model.filesystem.FileType
  * Represents a flattened file tree node with its nesting depth.
  */
 @Immutable
-internal data class FlattenedFileNode(
-    val node: FileNode,
-    val level: Int,
-)
+internal data class FlattenedFileNode(val node: FileNode, val level: Int)
 
 /**
  * Flattens the visible tree nodes based on current expanded directory state.
  */
-internal fun flattenFileTree(
-    rootNode: FileNode,
-    expandedNodes: Set<String>,
-): List<FlattenedFileNode> {
+internal fun flattenFileTree(rootNode: FileNode, expandedNodes: Set<String>): List<FlattenedFileNode> {
     val result = mutableListOf<FlattenedFileNode>()
     fun traverse(children: List<FileNode>?, level: Int) {
         if (children == null) return
@@ -142,20 +135,9 @@ private fun GlassFileTreeItem(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
-
     val itemShape = GlassShapes.Compact
-
-    val itemBackground = when {
-        isSelected -> MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Hover)
-        isHovered -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = AlphaTokens.Subtle)
-        else -> Color.Transparent
-    }
-
-    val itemBorderColor = when {
-        isSelected -> MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Half)
-        isHovered -> MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Faint)
-        else -> Color.Transparent
-    }
+    val colorScheme = MaterialTheme.colorScheme
+    val (itemBackground, itemBorderColor) = resolveItemColors(isSelected, isHovered, colorScheme)
 
     Row(
         modifier = modifier
@@ -192,17 +174,7 @@ private fun GlassFileTreeItem(
     ) {
         // Expansion indicator for directories
         if (node.type == FileType.DIRECTORY) {
-            Icon(
-                painter = if (isExpanded) {
-                    AppIcons.ChevronDownPainterResource()
-                } else {
-                    AppIcons.ChevronRightPainterResource()
-                },
-                contentDescription = null,
-                modifier = Modifier.size(IconSize.Medium),
-                tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(modifier = Modifier.width(Spacing.ExtraSmall))
+            DirectoryExpansionIndicator(isExpanded = isExpanded, isSelected = isSelected)
         } else {
             Spacer(modifier = Modifier.width(Spacing.TabHorizontal))
         }
@@ -216,31 +188,84 @@ private fun GlassFileTreeItem(
         Spacer(modifier = Modifier.width(Spacing.Small))
 
         // File/folder name
+        val (textColor, textWeight) = resolveTextAttributes(
+            isSelected = isSelected,
+            isDir = node.type == FileType.DIRECTORY,
+            colorScheme = colorScheme,
+        )
         Text(
             text = node.name,
             style = MaterialTheme.typography.bodyMedium,
-            color = when {
-                isSelected -> MaterialTheme.colorScheme.onSurface
-                node.type == FileType.DIRECTORY -> MaterialTheme.colorScheme.onSurface
-                else -> MaterialTheme.colorScheme.onSurfaceVariant
-            },
-            fontWeight = when {
-                isSelected -> FontWeight.SemiBold
-                node.type == FileType.DIRECTORY -> FontWeight.Medium
-                else -> FontWeight.Normal
-            },
+            color = textColor,
+            fontWeight = textWeight,
         )
     }
+}
+
+/**
+ * Resolves the background and border color for a file tree item.
+ */
+private fun resolveItemColors(isSelected: Boolean, isHovered: Boolean, colorScheme: ColorScheme): Pair<Color, Color> {
+    val background = when {
+        isSelected -> colorScheme.primary.copy(alpha = AlphaTokens.Hover)
+        isHovered -> colorScheme.surfaceContainerHigh.copy(alpha = AlphaTokens.Subtle)
+        else -> Color.Transparent
+    }
+    val border = when {
+        isSelected -> colorScheme.primary.copy(alpha = AlphaTokens.Half)
+        isHovered -> colorScheme.outline.copy(alpha = AlphaTokens.Faint)
+        else -> Color.Transparent
+    }
+    return background to border
+}
+
+/**
+ * Expansion indicator icon for directory nodes.
+ */
+@Composable
+private fun DirectoryExpansionIndicator(isExpanded: Boolean, isSelected: Boolean) {
+    Icon(
+        painter = if (isExpanded) {
+            AppIcons.ChevronDownPainterResource()
+        } else {
+            AppIcons.ChevronRightPainterResource()
+        },
+        contentDescription = null,
+        modifier = Modifier.size(IconSize.Medium),
+        tint = if (isSelected) {
+            MaterialTheme.colorScheme.primary
+        } else {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        },
+    )
+    Spacer(modifier = Modifier.width(Spacing.ExtraSmall))
+}
+
+/**
+ * Resolves text color and font weight for a file tree item.
+ */
+private fun resolveTextAttributes(
+    isSelected: Boolean,
+    isDir: Boolean,
+    colorScheme: ColorScheme,
+): Pair<Color, FontWeight> {
+    val color = when {
+        isSelected || isDir -> colorScheme.onSurface
+        else -> colorScheme.onSurfaceVariant
+    }
+    val weight = when {
+        isSelected -> FontWeight.SemiBold
+        isDir -> FontWeight.Medium
+        else -> FontWeight.Normal
+    }
+    return color to weight
 }
 
 /**
  * File icon component that displays the appropriate icon for the file type.
  */
 @Composable
-private fun LtiFileIcon(
-    fileType: FileType,
-    isExpanded: Boolean = false,
-) {
+private fun LtiFileIcon(fileType: FileType, isExpanded: Boolean = false) {
     val icon: AppIcon = when (fileType) {
         FileType.DIRECTORY -> if (isExpanded) {
             AppIcon.Painted(AppIcons.FolderOpenPainterResource)

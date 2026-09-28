@@ -12,7 +12,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -41,7 +40,6 @@ import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
-import java.awt.Cursor
 import org.ide.lti.core.designsystem.component.display.GlassVerticalDivider
 import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenu
 import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenuDivider
@@ -54,37 +52,32 @@ import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
-import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.model.target.AdbDeviceState
 import org.ide.lti.core.model.target.ConnectedTargetDevice
-import org.ide.lti.core.model.target.DeviceConnectionType
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.target.TargetRegion
+import java.awt.Cursor
 
 /**
  * Resolves the official OS stream codename for a target device (e.g. NP05J_GB, NP05J_CN).
  */
-fun TargetDevice.getStreamCode(region: TargetRegion = TargetRegion.GLOBAL): String {
-    return when {
-        codename == "PQ84P01" -> if (region == TargetRegion.GLOBAL) "NP05J_GB" else "NP05J_CN"
-        else -> "${codename}_${region.code}"
-    }
+fun TargetDevice.getStreamCode(region: TargetRegion = TargetRegion.GLOBAL): String = when {
+    codename == "PQ84P01" -> if (region == TargetRegion.GLOBAL) "NP05J_GB" else "NP05J_CN"
+    else -> "${codename}_${region.code}"
 }
 
 /**
  * Resolves a clean IDE display label for a hardware target device.
  */
-fun TargetDevice.getShortDisplayName(): String {
-    return when (codename) {
-        "PQ84P01" -> "REDMAGIC Astra"
-        "NX789J" -> "REDMAGIC 10 Pro"
-        "NX769J" -> "REDMAGIC 9 Pro"
-        else -> name
-    }
+fun TargetDevice.getShortDisplayName(): String = when (codename) {
+    "PQ84P01" -> "REDMAGIC Astra"
+    "NX789J" -> "REDMAGIC 10 Pro"
+    "NX769J" -> "REDMAGIC 9 Pro"
+    else -> name
 }
 
 /**
@@ -132,122 +125,20 @@ fun TargetRunConfigurationBar(
         horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
     ) {
         CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
-            // =========================================================================
-            // SEGMENT 1: Target ROM / Build Configuration Pill
-            // e.g. [ 📱 REDMAGIC Astra • Global OS (NP05J_GB) ▾ ]
-            // =========================================================================
-            Box {
-                val streamCode = selectedTarget.getStreamCode(region)
-                val targetLabel = "${selectedTarget.getShortDisplayName()} • ${region.displayName} ($streamCode)"
-
-                TargetPillButton(
-                    emoji = "📱",
-                    label = targetLabel,
-                    isMenuOpen = isTargetMenuOpen,
-                    tooltipText = "Workspace target: ${selectedTarget.name} - ${region.displayName} ($streamCode)",
-                    onClick = {
-                        isTargetMenuOpen = !isTargetMenuOpen
-                        isDeviceMenuOpen = false
-                    },
-                    modifier = Modifier.widthIn(max = ComponentSize.DropdownMenuMinWidth),
-                )
-
-                GlassDropdownMenu(
-                    expanded = isTargetMenuOpen,
-                    onDismissRequest = { isTargetMenuOpen = false },
-                    offset = IntOffset(x = 0, y = 32),
-                ) {
-                    GlassDropdownMenuHeader(title = "Workspace Target")
-
-                    // A workspace is bound to exactly one profile; region/firmware live in its
-                    // configuration snapshot, so the bound target is shown, not switched, here.
-                    GlassDropdownMenuItem(
-                        text = "${selectedTarget.name} ($streamCode)",
-                        subtitle = "${selectedTarget.codename} • ${region.displayName} • " +
-                            selectedTarget.socPlatform,
-                        leadingIcon = {
-                            Text(
-                                text = if (region == TargetRegion.GLOBAL) "🌐" else "🇨🇳",
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                        },
-                        isSelected = true,
-                        onClick = { isTargetMenuOpen = false },
-                    )
-
-                    GlassDropdownMenuItem(
-                        text = "Configure Workspace...",
-                        subtitle = "Region, firmware, acquisition, signing and OTA settings",
-                        leadingIcon = {
-                            Icon(
-                                painter = AppIcons.SettingsPainterResource(),
-                                contentDescription = null,
-                                modifier = Modifier.size(IconSize.Small),
-                                tint = MaterialTheme.colorScheme.primary,
-                            )
-                        },
-                        onClick = {
-                            isTargetMenuOpen = false
-                            onOpenWorkspaceConfiguration()
-                        },
-                    )
-
-                    GlassDropdownMenuDivider()
-
-                    GlassDropdownMenuItem(
-                        text = "Edit Configurations...",
-                        subtitle = "Open Target & Run Configurations Studio",
-                        leadingIcon = {
-                            Icon(
-                                painter = AppIcons.EditPainterResource(),
-                                contentDescription = null,
-                                modifier = Modifier.size(IconSize.Small),
-                                tint = MaterialTheme.colorScheme.primary,
-                            )
-                        },
-                        onClick = {
-                            isTargetMenuOpen = false
-                            onOpenEditConfiguration()
-                        },
-                    )
-
-                    GlassDropdownMenuItem(
-                        text = "Add Configuration...",
-                        subtitle = "Scaffold a new target device & partition spec",
-                        leadingIcon = {
-                            Icon(
-                                painter = AppIcons.AddPainterResource(),
-                                contentDescription = null,
-                                modifier = Modifier.size(IconSize.Small),
-                                tint = MaterialTheme.colorScheme.primary,
-                            )
-                        },
-                        onClick = {
-                            isTargetMenuOpen = false
-                            onOpenAddConfiguration()
-                        },
-                    )
-
-                    GlassDropdownMenuDivider()
-
-                    GlassDropdownMenuItem(
-                        text = "Switch Target / Close Workspace...",
-                        subtitle = "Return to Setup to pick a different target hardware device",
-                        leadingIcon = {
-                            Icon(
-                                painter = AppIcons.ClosePainterResource(),
-                                contentDescription = null,
-                                modifier = Modifier.size(IconSize.Small),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        },
-                        onClick = {
-                            isTargetMenuOpen = false
-                            onCloseWorkspace()
-                        },
-                    )
-                }
-            }
+            TargetRomSegment(
+                selectedTarget = selectedTarget,
+                region = region,
+                isOpen = isTargetMenuOpen,
+                onToggleMenu = {
+                    isTargetMenuOpen = !isTargetMenuOpen
+                    isDeviceMenuOpen = false
+                },
+                onDismissMenu = { isTargetMenuOpen = false },
+                onOpenWorkspaceConfiguration = onOpenWorkspaceConfiguration,
+                onOpenEditConfiguration = onOpenEditConfiguration,
+                onOpenAddConfiguration = onOpenAddConfiguration,
+                onCloseWorkspace = onCloseWorkspace,
+            )
 
             // Specular vertical hairline divider between segments
             GlassVerticalDivider(
@@ -255,211 +146,373 @@ fun TargetRunConfigurationBar(
                 specular = true,
             )
 
-            // =========================================================================
-            // SEGMENT 2: Connected Device / ADB & Fastboot Target Pill
-            // e.g. [ 🔌 REDMAGIC Astra (USB) [online] ▾ ] or [ 🔌 No Devices Connected ▾ ]
-            // =========================================================================
-            Box {
-                val deviceEmoji = selectedConnectedDevice?.connectionType?.iconEmoji ?: "🔌"
-                val deviceLabel = selectedConnectedDevice?.let { dev ->
-                    "${dev.shortDisplayName} [${dev.stateBadge}]"
-                } ?: "No Devices Connected"
+            ConnectedDeviceSegment(
+                selectedConnectedDevice = selectedConnectedDevice,
+                connectedDevices = connectedDevices,
+                isRefreshingDevices = isRefreshingDevices,
+                isOpen = isDeviceMenuOpen,
+                onToggleMenu = {
+                    isDeviceMenuOpen = !isDeviceMenuOpen
+                    isTargetMenuOpen = false
+                },
+                onDismissMenu = { isDeviceMenuOpen = false },
+                onSelectConnectedDevice = onSelectConnectedDevice,
+                onRefreshConnectedDevices = onRefreshConnectedDevices,
+                onRebootConnectedDevice = onRebootConnectedDevice,
+                onOpenWifiPairing = onOpenWifiPairing,
+            )
+        }
+    }
+}
 
-                val tooltipText = selectedConnectedDevice?.let { dev ->
-                    "Active Deployment Target: ${dev.modelName} (${dev.serial}) via ${dev.connectionType.displayName} • Status: ${dev.state.displayName}"
-                } ?: "No physical or emulated devices connected over USB/Wi-Fi"
+/** Segment 1: Target ROM / Build Configuration Pill and dropdown. */
+@Composable
+private fun TargetRomSegment(
+    selectedTarget: TargetDevice,
+    region: TargetRegion,
+    isOpen: Boolean,
+    onToggleMenu: () -> Unit,
+    onDismissMenu: () -> Unit,
+    onOpenWorkspaceConfiguration: () -> Unit,
+    onOpenEditConfiguration: () -> Unit,
+    onOpenAddConfiguration: () -> Unit,
+    onCloseWorkspace: () -> Unit,
+) {
+    Box {
+        val streamCode = selectedTarget.getStreamCode(region)
+        val targetLabel = "${selectedTarget.getShortDisplayName()} • ${region.displayName} ($streamCode)"
 
-                TargetPillButton(
-                    emoji = deviceEmoji,
-                    label = deviceLabel,
-                    isMenuOpen = isDeviceMenuOpen,
-                    tooltipText = tooltipText,
-                    onClick = {
-                        isDeviceMenuOpen = !isDeviceMenuOpen
-                        isTargetMenuOpen = false
-                    },
-                    modifier = Modifier.widthIn(max = ComponentSize.DropdownMenuMinWidth),
-                )
+        TargetPillButton(
+            emoji = "📱",
+            label = targetLabel,
+            isMenuOpen = isOpen,
+            tooltipText = "Workspace target: ${selectedTarget.name} - ${region.displayName} ($streamCode)",
+            onClick = onToggleMenu,
+            modifier = Modifier.widthIn(max = ComponentSize.DropdownMenuMinWidth),
+        )
 
-                GlassDropdownMenu(
-                    expanded = isDeviceMenuOpen,
-                    onDismissRequest = { isDeviceMenuOpen = false },
-                    offset = IntOffset(x = 0, y = 32),
-                ) {
-                    GlassDropdownMenuHeader(title = "Connected ADB & Fastboot Devices")
+        GlassDropdownMenu(
+            expanded = isOpen,
+            onDismissRequest = onDismissMenu,
+            offset = IntOffset(x = 0, y = 32),
+        ) {
+            GlassDropdownMenuHeader(title = "Workspace Target")
 
-                    if (connectedDevices.isEmpty()) {
-                        GlassDropdownMenuItem(
-                            text = "No Devices Detected",
-                            subtitle = "Connect an Android device via USB cable or Wireless ADB",
-                            leadingIcon = {
-                                Text(text = "⚠️", style = MaterialTheme.typography.bodySmall)
-                            },
-                            isSelected = false,
-                            onClick = {},
-                        )
-                    } else {
-                        connectedDevices.forEach { dev ->
-                            val isSelected = dev.serial == selectedConnectedDevice?.serial
-                            val statusNote = "${dev.serial} • ${dev.connectionType.displayName} • Android ${dev.androidVersion ?: "15"}"
-
-                            GlassDropdownMenuItem(
-                                text = "${dev.modelName} [${dev.stateBadge}]",
-                                subtitle = statusNote,
-                                leadingIcon = {
-                                    Text(
-                                        text = dev.connectionType.iconEmoji,
-                                        style = MaterialTheme.typography.bodySmall,
-                                    )
-                                },
-                                isSelected = isSelected,
-                                onClick = {
-                                    onSelectConnectedDevice(dev.serial)
-                                    isDeviceMenuOpen = false
-                                },
-                            )
-                        }
-                    }
-
-                    GlassDropdownMenuDivider()
-
-                    // Action 1: Refresh Devices
-                    GlassDropdownMenuItem(
-                        text = if (isRefreshingDevices) "Scanning Devices..." else "Refresh Devices (adb devices)",
-                        subtitle = "Probe USB bus and WSL ADB daemon",
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Refresh,
-                                contentDescription = null,
-                                modifier = Modifier.size(IconSize.Small),
-                                tint = MaterialTheme.colorScheme.primary,
-                            )
-                        },
-                        onClick = {
-                            onRefreshConnectedDevices()
-                        },
+            // A workspace is bound to exactly one profile; region/firmware live in its
+            // configuration snapshot, so the bound target is shown, not switched, here.
+            GlassDropdownMenuItem(
+                text = "${selectedTarget.name} ($streamCode)",
+                subtitle = "${selectedTarget.codename} • ${region.displayName} • " +
+                    selectedTarget.socPlatform,
+                leadingIcon = {
+                    Text(
+                        text = if (region == TargetRegion.GLOBAL) "🌐" else "🇨🇳",
+                        style = MaterialTheme.typography.bodySmall,
                     )
+                },
+                isSelected = true,
+                onClick = onDismissMenu,
+            )
 
-                    // Actions when a device is selected
-                    selectedConnectedDevice?.let { dev ->
-                        val isFastboot = dev.state == AdbDeviceState.FASTBOOT || dev.state == AdbDeviceState.FASTBOOTD
+            GlassDropdownMenuItem(
+                text = "Configure Workspace...",
+                subtitle = "Region, firmware, acquisition, signing and OTA settings",
+                leadingIcon = {
+                    Icon(
+                        painter = AppIcons.SettingsPainterResource(),
+                        contentDescription = null,
+                        modifier = Modifier.size(IconSize.Small),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                },
+                onClick = {
+                    onDismissMenu()
+                    onOpenWorkspaceConfiguration()
+                },
+            )
 
-                        if (isFastboot) {
-                            GlassDropdownMenuItem(
-                                text = "Reboot to System",
-                                subtitle = "fastboot reboot",
-                                leadingIcon = {
-                                    Text(text = "📱", style = MaterialTheme.typography.bodySmall)
-                                },
-                                onClick = {
-                                    isDeviceMenuOpen = false
-                                    onRebootConnectedDevice(dev.serial, "system")
-                                },
-                            )
+            GlassDropdownMenuDivider()
 
-                            GlassDropdownMenuItem(
-                                text = "Reboot to Bootloader",
-                                subtitle = "fastboot reboot-bootloader",
-                                leadingIcon = {
-                                    Text(text = "⚡", style = MaterialTheme.typography.bodySmall)
-                                },
-                                onClick = {
-                                    isDeviceMenuOpen = false
-                                    onRebootConnectedDevice(dev.serial, "bootloader")
-                                },
-                            )
+            GlassDropdownMenuItem(
+                text = "Edit Configurations...",
+                subtitle = "Open Target & Run Configurations Studio",
+                leadingIcon = {
+                    Icon(
+                        painter = AppIcons.EditPainterResource(),
+                        contentDescription = null,
+                        modifier = Modifier.size(IconSize.Small),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                },
+                onClick = {
+                    onDismissMenu()
+                    onOpenEditConfiguration()
+                },
+            )
 
-                            GlassDropdownMenuItem(
-                                text = "Reboot to Userspace Fastbootd",
-                                subtitle = "fastboot reboot fastboot",
-                                leadingIcon = {
-                                    Text(text = "🔧", style = MaterialTheme.typography.bodySmall)
-                                },
-                                onClick = {
-                                    isDeviceMenuOpen = false
-                                    onRebootConnectedDevice(dev.serial, "fastbootd")
-                                },
-                            )
+            GlassDropdownMenuItem(
+                text = "Add Configuration...",
+                subtitle = "Scaffold a new target device & partition spec",
+                leadingIcon = {
+                    Icon(
+                        painter = AppIcons.AddPainterResource(),
+                        contentDescription = null,
+                        modifier = Modifier.size(IconSize.Small),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                },
+                onClick = {
+                    onDismissMenu()
+                    onOpenAddConfiguration()
+                },
+            )
 
-                            GlassDropdownMenuItem(
-                                text = "Reboot to Recovery",
-                                subtitle = "fastboot reboot recovery",
-                                leadingIcon = {
-                                    Text(text = "🔄", style = MaterialTheme.typography.bodySmall)
-                                },
-                                onClick = {
-                                    isDeviceMenuOpen = false
-                                    onRebootConnectedDevice(dev.serial, "recovery")
-                                },
-                            )
-                        } else {
-                            GlassDropdownMenuItem(
-                                text = "Reboot to Bootloader (Fastboot)",
-                                subtitle = "adb reboot bootloader",
-                                leadingIcon = {
-                                    Text(text = "⚡", style = MaterialTheme.typography.bodySmall)
-                                },
-                                onClick = {
-                                    isDeviceMenuOpen = false
-                                    onRebootConnectedDevice(dev.serial, "bootloader")
-                                },
-                            )
+            GlassDropdownMenuDivider()
 
-                            GlassDropdownMenuItem(
-                                text = "Reboot to Userspace Fastbootd",
-                                subtitle = "adb reboot fastboot",
-                                leadingIcon = {
-                                    Text(text = "🔧", style = MaterialTheme.typography.bodySmall)
-                                },
-                                onClick = {
-                                    isDeviceMenuOpen = false
-                                    onRebootConnectedDevice(dev.serial, "fastbootd")
-                                },
-                            )
+            GlassDropdownMenuItem(
+                text = "Switch Target / Close Workspace...",
+                subtitle = "Return to Setup to pick a different target hardware device",
+                leadingIcon = {
+                    Icon(
+                        painter = AppIcons.ClosePainterResource(),
+                        contentDescription = null,
+                        modifier = Modifier.size(IconSize.Small),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                },
+                onClick = {
+                    onDismissMenu()
+                    onCloseWorkspace()
+                },
+            )
+        }
+    }
+}
 
-                            GlassDropdownMenuItem(
-                                text = "Reboot to Recovery (Sideload)",
-                                subtitle = "adb reboot recovery",
-                                leadingIcon = {
-                                    Text(text = "🔄", style = MaterialTheme.typography.bodySmall)
-                                },
-                                onClick = {
-                                    isDeviceMenuOpen = false
-                                    onRebootConnectedDevice(dev.serial, "recovery")
-                                },
-                            )
+/** Segment 2: Connected Device / ADB & Fastboot Target Pill and dropdown. */
+@Composable
+private fun ConnectedDeviceSegment(
+    selectedConnectedDevice: ConnectedTargetDevice?,
+    connectedDevices: List<ConnectedTargetDevice>,
+    isRefreshingDevices: Boolean,
+    isOpen: Boolean,
+    onToggleMenu: () -> Unit,
+    onDismissMenu: () -> Unit,
+    onSelectConnectedDevice: (String?) -> Unit,
+    onRefreshConnectedDevices: () -> Unit,
+    onRebootConnectedDevice: (String, String) -> Unit,
+    onOpenWifiPairing: () -> Unit,
+) {
+    Box {
+        val deviceEmoji = selectedConnectedDevice?.connectionType?.iconEmoji ?: "🔌"
+        val deviceLabel = selectedConnectedDevice?.let { dev ->
+            "${dev.shortDisplayName} [${dev.stateBadge}]"
+        } ?: "No Devices Connected"
 
-                            GlassDropdownMenuItem(
-                                text = "Reboot System",
-                                subtitle = "adb reboot",
-                                leadingIcon = {
-                                    Text(text = "📱", style = MaterialTheme.typography.bodySmall)
-                                },
-                                onClick = {
-                                    isDeviceMenuOpen = false
-                                    onRebootConnectedDevice(dev.serial, "system")
-                                },
-                            )
-                        }
-                    }
+        val tooltipText = selectedConnectedDevice?.let { dev ->
+            "Active Deployment Target: ${dev.modelName} (${dev.serial}) via " +
+                "${dev.connectionType.displayName} • Status: ${dev.state.displayName}"
+        } ?: "No physical or emulated devices connected over USB/Wi-Fi"
 
-                    GlassDropdownMenuDivider()
+        TargetPillButton(
+            emoji = deviceEmoji,
+            label = deviceLabel,
+            isMenuOpen = isOpen,
+            tooltipText = tooltipText,
+            onClick = onToggleMenu,
+            modifier = Modifier.widthIn(max = ComponentSize.DropdownMenuMinWidth),
+        )
 
-                    // Action: Wireless ADB Pairing
+        GlassDropdownMenu(
+            expanded = isOpen,
+            onDismissRequest = onDismissMenu,
+            offset = IntOffset(x = 0, y = 32),
+        ) {
+            GlassDropdownMenuHeader(title = "Connected ADB & Fastboot Devices")
+
+            if (connectedDevices.isEmpty()) {
+                GlassDropdownMenuItem(
+                    text = "No Devices Detected",
+                    subtitle = "Connect an Android device via USB cable or Wireless ADB",
+                    leadingIcon = {
+                        Text(text = "⚠️", style = MaterialTheme.typography.bodySmall)
+                    },
+                    isSelected = false,
+                    onClick = {},
+                )
+            } else {
+                connectedDevices.forEach { dev ->
+                    val isSelected = dev.serial == selectedConnectedDevice?.serial
+                    val statusNote = "${dev.serial} • ${dev.connectionType.displayName} • " +
+                        "Android ${dev.androidVersion ?: "15"}"
+
                     GlassDropdownMenuItem(
-                        text = "Pair Device via Wi-Fi...",
-                        subtitle = "adb pair ip:port with 6-digit code",
+                        text = "${dev.modelName} [${dev.stateBadge}]",
+                        subtitle = statusNote,
                         leadingIcon = {
-                            Text(text = "📶", style = MaterialTheme.typography.bodySmall)
+                            Text(
+                                text = dev.connectionType.iconEmoji,
+                                style = MaterialTheme.typography.bodySmall,
+                            )
                         },
+                        isSelected = isSelected,
                         onClick = {
-                            isDeviceMenuOpen = false
-                            onOpenWifiPairing()
+                            onSelectConnectedDevice(dev.serial)
+                            onDismissMenu()
                         },
                     )
                 }
             }
+
+            GlassDropdownMenuDivider()
+
+            // Action 1: Refresh Devices
+            GlassDropdownMenuItem(
+                text = if (isRefreshingDevices) "Scanning Devices..." else "Refresh Devices (adb devices)",
+                subtitle = "Probe USB bus and WSL ADB daemon",
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = null,
+                        modifier = Modifier.size(IconSize.Small),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                },
+                onClick = onRefreshConnectedDevices,
+            )
+
+            // Actions when a device is selected
+            selectedConnectedDevice?.let { dev ->
+                DeviceRebootMenuItems(
+                    dev = dev,
+                    onDismissMenu = onDismissMenu,
+                    onRebootConnectedDevice = onRebootConnectedDevice,
+                )
+            }
+
+            GlassDropdownMenuDivider()
+
+            // Action: Wireless ADB Pairing
+            GlassDropdownMenuItem(
+                text = "Pair Device via Wi-Fi...",
+                subtitle = "adb pair ip:port with 6-digit code",
+                leadingIcon = {
+                    Text(text = "📶", style = MaterialTheme.typography.bodySmall)
+                },
+                onClick = {
+                    onDismissMenu()
+                    onOpenWifiPairing()
+                },
+            )
         }
+    }
+}
+
+/** Dropdown menu items for rebooting a connected Android device. */
+@Composable
+private fun DeviceRebootMenuItems(
+    dev: ConnectedTargetDevice,
+    onDismissMenu: () -> Unit,
+    onRebootConnectedDevice: (String, String) -> Unit,
+) {
+    val isFastboot = dev.state == AdbDeviceState.FASTBOOT || dev.state == AdbDeviceState.FASTBOOTD
+
+    if (isFastboot) {
+        GlassDropdownMenuItem(
+            text = "Reboot to System",
+            subtitle = "fastboot reboot",
+            leadingIcon = {
+                Text(text = "📱", style = MaterialTheme.typography.bodySmall)
+            },
+            onClick = {
+                onDismissMenu()
+                onRebootConnectedDevice(dev.serial, "system")
+            },
+        )
+
+        GlassDropdownMenuItem(
+            text = "Reboot to Bootloader",
+            subtitle = "fastboot reboot-bootloader",
+            leadingIcon = {
+                Text(text = "⚡", style = MaterialTheme.typography.bodySmall)
+            },
+            onClick = {
+                onDismissMenu()
+                onRebootConnectedDevice(dev.serial, "bootloader")
+            },
+        )
+
+        GlassDropdownMenuItem(
+            text = "Reboot to Userspace Fastbootd",
+            subtitle = "fastboot reboot fastboot",
+            leadingIcon = {
+                Text(text = "🔧", style = MaterialTheme.typography.bodySmall)
+            },
+            onClick = {
+                onDismissMenu()
+                onRebootConnectedDevice(dev.serial, "fastbootd")
+            },
+        )
+
+        GlassDropdownMenuItem(
+            text = "Reboot to Recovery",
+            subtitle = "fastboot reboot recovery",
+            leadingIcon = {
+                Text(text = "🔄", style = MaterialTheme.typography.bodySmall)
+            },
+            onClick = {
+                onDismissMenu()
+                onRebootConnectedDevice(dev.serial, "recovery")
+            },
+        )
+    } else {
+        GlassDropdownMenuItem(
+            text = "Reboot to Bootloader (Fastboot)",
+            subtitle = "adb reboot bootloader",
+            leadingIcon = {
+                Text(text = "⚡", style = MaterialTheme.typography.bodySmall)
+            },
+            onClick = {
+                onDismissMenu()
+                onRebootConnectedDevice(dev.serial, "bootloader")
+            },
+        )
+
+        GlassDropdownMenuItem(
+            text = "Reboot to Userspace Fastbootd",
+            subtitle = "adb reboot fastboot",
+            leadingIcon = {
+                Text(text = "🔧", style = MaterialTheme.typography.bodySmall)
+            },
+            onClick = {
+                onDismissMenu()
+                onRebootConnectedDevice(dev.serial, "fastbootd")
+            },
+        )
+
+        GlassDropdownMenuItem(
+            text = "Reboot to Recovery (Sideload)",
+            subtitle = "adb reboot recovery",
+            leadingIcon = {
+                Text(text = "🔄", style = MaterialTheme.typography.bodySmall)
+            },
+            onClick = {
+                onDismissMenu()
+                onRebootConnectedDevice(dev.serial, "recovery")
+            },
+        )
+
+        GlassDropdownMenuItem(
+            text = "Reboot System",
+            subtitle = "adb reboot",
+            leadingIcon = {
+                Text(text = "📱", style = MaterialTheme.typography.bodySmall)
+            },
+            onClick = {
+                onDismissMenu()
+                onRebootConnectedDevice(dev.serial, "system")
+            },
+        )
     }
 }
 
@@ -515,7 +568,13 @@ private fun TargetPillButton(
                     fontWeight = FontWeight.Medium,
                     fontFamily = codeFontFamily(),
                 ),
-                color = if (isMenuOpen || isHovered) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                color = if (isMenuOpen ||
+                    isHovered
+                ) {
+                    MaterialTheme.colorScheme.onSurface
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
                 maxLines = 1,
                 softWrap = false,
                 overflow = TextOverflow.Ellipsis,
@@ -526,7 +585,13 @@ private fun TargetPillButton(
                 painter = AppIcons.ChevronDownPainterResource(),
                 contentDescription = "Dropdown",
                 modifier = Modifier.size(IconSize.Small),
-                tint = if (isMenuOpen || isHovered) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = if (isMenuOpen ||
+                    isHovered
+                ) {
+                    MaterialTheme.colorScheme.onSurface
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
             )
         }
     }

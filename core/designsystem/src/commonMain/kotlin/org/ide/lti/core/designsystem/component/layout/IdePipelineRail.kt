@@ -109,11 +109,7 @@ fun IdePipelineRail(
 }
 
 @Composable
-private fun PipelineRailItem(
-    stage: IdePipelineStageItem,
-    isSelected: Boolean,
-    onSelectStage: (String) -> Unit,
-) {
+private fun PipelineRailItem(stage: IdePipelineStageItem, isSelected: Boolean, onSelectStage: (String) -> Unit) {
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
     val isPressed by interactionSource.collectIsPressedAsState()

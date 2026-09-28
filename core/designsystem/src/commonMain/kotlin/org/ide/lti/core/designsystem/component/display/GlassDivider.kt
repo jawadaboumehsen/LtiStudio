@@ -21,13 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
-import org.ide.lti.core.designsystem.component.actions.*
-import org.ide.lti.core.designsystem.component.devtools.*
-import org.ide.lti.core.designsystem.component.feedback.*
-import org.ide.lti.core.designsystem.component.inputs.*
-import org.ide.lti.core.designsystem.component.layout.*
-import org.ide.lti.core.designsystem.component.navigation.*
-import org.ide.lti.core.designsystem.component.primitives.*
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 
@@ -60,7 +53,13 @@ fun GlassHorizontalDivider(
                 ),
             )
     } else {
-        val finalColor = if (color != Color.Unspecified) color else MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Faint)
+        val finalColor = if (color !=
+            Color.Unspecified
+        ) {
+            color
+        } else {
+            MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Faint)
+        }
         modifier
             .fillMaxWidth()
             .height(thickness)
@@ -99,7 +98,13 @@ fun GlassVerticalDivider(
                 ),
             )
     } else {
-        val finalColor = if (color != Color.Unspecified) color else MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Faint)
+        val finalColor = if (color !=
+            Color.Unspecified
+        ) {
+            color
+        } else {
+            MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Faint)
+        }
         modifier
             .fillMaxHeight()
             .width(thickness)

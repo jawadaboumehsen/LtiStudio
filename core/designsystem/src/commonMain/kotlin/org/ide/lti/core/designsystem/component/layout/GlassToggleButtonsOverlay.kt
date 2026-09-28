@@ -28,13 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
-import org.ide.lti.core.designsystem.component.actions.*
-import org.ide.lti.core.designsystem.component.devtools.*
-import org.ide.lti.core.designsystem.component.display.*
-import org.ide.lti.core.designsystem.component.feedback.*
-import org.ide.lti.core.designsystem.component.inputs.*
-import org.ide.lti.core.designsystem.component.navigation.*
-import org.ide.lti.core.designsystem.component.primitives.*
+import org.ide.lti.core.designsystem.component.actions.GlassIconButton
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.icon.ideGeneralChevronUp
 import org.ide.lti.core.designsystem.theme.IconSize
@@ -43,9 +37,7 @@ import org.ide.lti.core.designsystem.theme.IconSize
  * Floating panel toggle buttons overlay for [GlassLayout].
  */
 @Composable
-internal fun GlassToggleButtonsOverlay(
-    state: LtiLayoutState,
-) {
+internal fun GlassToggleButtonsOverlay(state: LtiLayoutState) {
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.TopEnd,
@@ -122,11 +114,7 @@ internal fun GlassToggleButtonsOverlay(
  */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-private fun AnimatedToggleButton(
-    onClick: () -> Unit,
-    selected: Boolean,
-    content: @Composable () -> Unit,
-) {
+private fun AnimatedToggleButton(onClick: () -> Unit, selected: Boolean, content: @Composable () -> Unit) {
     var isHovered by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(
         targetValue = if (isHovered) 1.08f else 1f,

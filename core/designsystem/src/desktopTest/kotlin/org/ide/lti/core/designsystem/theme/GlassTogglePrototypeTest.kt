@@ -34,7 +34,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -88,6 +87,8 @@ import kotlin.test.assertTrue
  * Measurement-first prototype test harness evaluating candidate track/thumb geometry pairs,
  * theme-specific tint variants, controlled blur-spread physics, and keyboard focus accessibility.
  */
+// One prototype suite: every test drives the same PrototypeGlassToggle and pixel helpers below.
+@Suppress("LargeClass")
 @OptIn(ExperimentalTestApi::class, ExperimentalHazeApi::class)
 class GlassTogglePrototypeTest {
 
@@ -102,7 +103,7 @@ class GlassTogglePrototypeTest {
         val padding: Dp,
         val minTouchTarget: Dp = 48.dp, // Decoupled interactive hit area
     ) {
-        PairA_Current(
+        PairACurrent(
             label = "PairA_64x28_Thumb40x24",
             visualTrackWidth = 64.dp,
             visualTrackHeight = 28.dp,
@@ -112,7 +113,7 @@ class GlassTogglePrototypeTest {
             thumbIsCircle = false,
             padding = 2.dp,
         ),
-        PairB_Ergonomic(
+        PairBErgonomic(
             label = "PairB_56x32_Thumb28x28Circ",
             visualTrackWidth = 56.dp,
             visualTrackHeight = 32.dp,
@@ -122,7 +123,7 @@ class GlassTogglePrototypeTest {
             thumbIsCircle = true,
             padding = 2.dp,
         ),
-        PairC_HazeReference(
+        PairCHazeReference(
             label = "PairC_64x48_Thumb40x40Circ",
             visualTrackWidth = 64.dp,
             visualTrackHeight = 48.dp,
@@ -134,11 +135,7 @@ class GlassTogglePrototypeTest {
         ),
     }
 
-    data class ThemeTintConfig(
-        val theme: AppTheme,
-        val inactiveAlpha: Float,
-        val activeAlpha: Float,
-    )
+    data class ThemeTintConfig(val theme: AppTheme, val inactiveAlpha: Float, val activeAlpha: Float)
 
     private val themeConfigs = listOf(
         ThemeTintConfig(AppTheme.Dark, inactiveAlpha = 0.14f, activeAlpha = 0.32f),
@@ -185,36 +182,18 @@ class GlassTogglePrototypeTest {
 
         val trackShape = RoundedCornerShape(geometry.trackCornerRadius)
 
-        val trackModifier = when {
-            isNegativeControlUnblurred -> {
-                // Negative control: flat unblurred alpha overlay
-                Modifier.background(animatedTint, trackShape)
-            }
-            effectsEnabled -> {
-                Modifier.hazeGlass(
-                    input = HazeInput.Sources(hazeState),
-                    style = remember(theme, animatedTint, animatedBacking, transparentBacking) {
-                        GlassMaterialStyles.baseStyle(
-                            theme = theme,
-                            opticalTint = animatedTint,
-                            captureBacking = if (transparentBacking) Color.Transparent else animatedBacking,
-                        ) then GlassStyle {
-                            this.shape(trackShape)
-                            focused {
-                                lightingIntensity(0.55f)
-                                whitePointDelta(0.04f)
-                            }
-                        }
-                    },
-                    interactionSource = interactionSource,
-                    interactionTransformTarget = GlassTransformTarget.MaterialAndContent,
-                    interactionReducedMotionPolicy = if (reducedMotion) GlassReducedMotionPolicy.Reduced else GlassReducedMotionPolicy.System,
-                )
-            }
-            else -> {
-                Modifier.background(animatedBacking, trackShape)
-            }
-        }
+        val trackModifier = resolvePrototypeTrackModifier(
+            isNegativeControlUnblurred = isNegativeControlUnblurred,
+            effectsEnabled = effectsEnabled,
+            animatedTint = animatedTint,
+            animatedBacking = animatedBacking,
+            transparentBacking = transparentBacking,
+            trackShape = trackShape,
+            hazeState = hazeState,
+            theme = theme,
+            interactionSource = interactionSource,
+            reducedMotion = reducedMotion,
+        )
 
         // Keyboard focus indicator: visible in BOTH effects-on and effects-off modes
         val focusBorderModifier = if (isFocused) {
@@ -258,7 +237,13 @@ class GlassTogglePrototypeTest {
                     label = "ToggleThumbOffset",
                 )
                 val thumbColor = if (enabled) colors.onSurface else colors.onSurface.copy(alpha = 0.4f)
-                val thumbShape = if (geometry.thumbIsCircle) CircleShape else RoundedCornerShape(geometry.thumbHeight / 2)
+                val thumbShape = if (geometry.thumbIsCircle) {
+                    CircleShape
+                } else {
+                    RoundedCornerShape(
+                        geometry.thumbHeight / 2,
+                    )
+                }
 
                 Box(
                     modifier = Modifier
@@ -269,6 +254,54 @@ class GlassTogglePrototypeTest {
                         .background(thumbColor),
                 )
             }
+        }
+    }
+
+    @Composable
+    private fun resolvePrototypeTrackModifier(
+        isNegativeControlUnblurred: Boolean,
+        effectsEnabled: Boolean,
+        animatedTint: Color,
+        animatedBacking: Color,
+        transparentBacking: Boolean,
+        trackShape: RoundedCornerShape,
+        hazeState: HazeState,
+        theme: AppTheme,
+        interactionSource: MutableInteractionSource,
+        reducedMotion: Boolean,
+    ): Modifier = when {
+        isNegativeControlUnblurred -> {
+            Modifier.background(animatedTint, trackShape)
+        }
+        effectsEnabled -> {
+            val backing = if (transparentBacking) Color.Transparent else animatedBacking
+            val motionPolicy = if (reducedMotion) {
+                GlassReducedMotionPolicy.Reduced
+            } else {
+                GlassReducedMotionPolicy.System
+            }
+            Modifier.hazeGlass(
+                input = HazeInput.Sources(hazeState),
+                style = remember(theme, animatedTint, animatedBacking, transparentBacking) {
+                    GlassMaterialStyles.baseStyle(
+                        theme = theme,
+                        opticalTint = animatedTint,
+                        captureBacking = backing,
+                    ) then GlassStyle {
+                        this.shape(trackShape)
+                        focused {
+                            lightingIntensity(0.55f)
+                            whitePointDelta(0.04f)
+                        }
+                    }
+                },
+                interactionSource = interactionSource,
+                interactionTransformTarget = GlassTransformTarget.MaterialAndContent,
+                interactionReducedMotionPolicy = motionPolicy,
+            )
+        }
+        else -> {
+            Modifier.background(animatedBacking, trackShape)
         }
     }
 
@@ -334,10 +367,12 @@ class GlassTogglePrototypeTest {
                 bottom = (centerY + 6).toFloat(),
             )
 
-            val spreadResult = GlassOpticalVerifier.measureEdgeSpread(glassImage, exposedTrackRoi, stripePeriodPx = 16)
+            val spreadResult =
+                GlassOpticalVerifier.measureEdgeSpread(glassImage, exposedTrackRoi, stripePeriodPx = 16)
             println(
                 "[OPTICAL EDGE SPREAD] Geometry: ${geometry.label} " +
-                    "transitionWidth=${spreadResult.transitionWidthPx}px, spreadFraction=${spreadResult.spreadFraction}, peakGrad=${spreadResult.peakGradient}",
+                    "transitionWidth=${spreadResult.transitionWidthPx}px, " +
+                    "spreadFraction=${spreadResult.spreadFraction}, peakGrad=${spreadResult.peakGradient}",
             )
 
             // Verify spatial diffusion is active (transition spread >= 3px, spread fraction >= 0.20)
@@ -347,7 +382,8 @@ class GlassTogglePrototypeTest {
             )
             assertTrue(
                 spreadResult.spreadFraction >= 0.20,
-                "${geometry.label} gradient spread fraction (${spreadResult.spreadFraction}) must be >= 0.20 under Haze",
+                "${geometry.label} gradient spread fraction (${spreadResult.spreadFraction}) " +
+                    "must be >= 0.20 under Haze",
             )
 
             // B. Negative Control: Unblurred translucent overlay MUST FAIL blur verification
@@ -420,7 +456,7 @@ class GlassTogglePrototypeTest {
                     GlassBackdrop() // Smooth backdrop with opaque base
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         PrototypeGlassToggle(
-                            geometry = ToggleGeometryPair.PairB_Ergonomic,
+                            geometry = ToggleGeometryPair.PairBErgonomic,
                             checked = false,
                             onCheckedChange = {},
                             transparentBacking = false,
@@ -439,7 +475,7 @@ class GlassTogglePrototypeTest {
                     GlassBackdrop() // Smooth backdrop with opaque base
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         PrototypeGlassToggle(
-                            geometry = ToggleGeometryPair.PairB_Ergonomic,
+                            geometry = ToggleGeometryPair.PairBErgonomic,
                             checked = false,
                             onCheckedChange = {},
                             transparentBacking = true,
@@ -480,7 +516,8 @@ class GlassTogglePrototypeTest {
         assertEquals(
             0,
             diffPixelCount,
-            "Every pixel across the entire 400x300 canvas must be identical regardless of captureBacking transparency over opaque GlassBackdrop",
+            "Every pixel across the entire 400x300 canvas must be identical regardless of " +
+                "captureBacking transparency over opaque GlassBackdrop",
         )
         assertTrue(
             maxDelta < 0.005f,
@@ -502,9 +539,12 @@ class GlassTogglePrototypeTest {
 
             setContent {
                 LtiTheme(appTheme = AppTheme.Blue, effectsEnabled = effectsEnabled) {
-                    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface), contentAlignment = Alignment.Center) {
+                    Box(
+                        Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface),
+                        contentAlignment = Alignment.Center,
+                    ) {
                         PrototypeGlassToggle(
-                            geometry = ToggleGeometryPair.PairB_Ergonomic,
+                            geometry = ToggleGeometryPair.PairBErgonomic,
                             checked = false,
                             onCheckedChange = {},
                             modifier = Modifier.focusRequester(focusRequester),
@@ -525,7 +565,8 @@ class GlassTogglePrototypeTest {
             println("[KEYBOARD FOCUS - TAB KEY NAVIGATION] effectsEnabled=$effectsEnabled | Focus diff: $diffTab%")
             assertTrue(
                 diffTab > 1.0,
-                "Keyboard focus acquired via Tab key press must render a visible focus ring when effectsEnabled=$effectsEnabled (found $diffTab%, expected > 1.0%)",
+                "Keyboard focus acquired via Tab key press must render a visible focus ring when " +
+                    "effectsEnabled=$effectsEnabled (found $diffTab%, expected > 1.0%)",
             )
 
             // 2. Verify Focus via FocusRequester
@@ -536,7 +577,8 @@ class GlassTogglePrototypeTest {
             println("[KEYBOARD FOCUS - FOCUS REQUESTER] effectsEnabled=$effectsEnabled | Focus diff: $diffRequester%")
             assertTrue(
                 diffRequester > 1.0,
-                "Keyboard focus acquired via FocusRequester must render a visible focus ring when effectsEnabled=$effectsEnabled (found $diffRequester%, expected > 1.0%)",
+                "Keyboard focus acquired via FocusRequester must render a visible focus ring when " +
+                    "effectsEnabled=$effectsEnabled (found $diffRequester%, expected > 1.0%)",
             )
         }
     }
@@ -550,7 +592,10 @@ class GlassTogglePrototypeTest {
             for (x in 0 until img1.width) {
                 val c1 = map1[x, y]
                 val c2 = map2[x, y]
-                if (abs(c1.red - c2.red) > 0.05f || abs(c1.green - c2.green) > 0.05f || abs(c1.blue - c2.blue) > 0.05f) {
+                if (abs(c1.red - c2.red) > 0.05f ||
+                    abs(c1.green - c2.green) > 0.05f ||
+                    abs(c1.blue - c2.blue) > 0.05f
+                ) {
                     diffPixels++
                 }
             }
@@ -572,9 +617,12 @@ class GlassTogglePrototypeTest {
         var normalChecked by mutableStateOf(false)
         setContent {
             LtiTheme(appTheme = AppTheme.Blue, effectsEnabled = true, reducedMotion = false) {
-                Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface), contentAlignment = Alignment.Center) {
+                Box(
+                    Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface),
+                    contentAlignment = Alignment.Center,
+                ) {
                     PrototypeGlassToggle(
-                        geometry = ToggleGeometryPair.PairB_Ergonomic,
+                        geometry = ToggleGeometryPair.PairBErgonomic,
                         checked = normalChecked,
                         onCheckedChange = { normalChecked = it },
                         reducedMotion = false,
@@ -605,7 +653,7 @@ class GlassTogglePrototypeTest {
         val thumbMidCenterColor = normalMidImg[100, 60]
         println("[NORMAL MOTION TRACK TINT] At t=90ms: mid exposed track (x=120) = $trackExposedMid")
 
-        // At mid-flight (90ms), thumb is at x=100 (spans [86, 114]). So x=120 is NOT yet reached and still exposed track!
+        // At mid-flight (90ms), thumb is at x=100 (spans [86, 114]). So x=120 is not yet reached and still exposed.
         assertTrue(
             trackExposedMid.red < 0.6f,
             "At 90ms mid-flight, thumb (spans 86..114) must NOT yet have reached end position x=120",
@@ -635,7 +683,10 @@ class GlassTogglePrototypeTest {
         val deltaMidFromInitial = abs(trackExposedMid.blue - trackExposedInitial.blue)
         val deltaFinalFromInitial = abs(trackExposedFinal.blue - trackExposedInitial.blue)
         val deltaFinalFromMid = abs(trackExposedFinal.blue - trackExposedMid.blue)
-        println("[TINT INTERPOLATION CHECK] deltaInitialToMid=$deltaMidFromInitial, deltaInitialToFinal=$deltaFinalFromInitial, deltaMidToFinal=$deltaFinalFromMid")
+        println(
+            "[TINT INTERPOLATION CHECK] deltaInitialToMid=$deltaMidFromInitial, " +
+                "deltaInitialToFinal=$deltaFinalFromInitial, deltaMidToFinal=$deltaFinalFromMid",
+        )
 
         assertTrue(
             deltaMidFromInitial > 0.05f,
@@ -647,7 +698,8 @@ class GlassTogglePrototypeTest {
         )
         assertTrue(
             deltaFinalFromInitial > deltaMidFromInitial,
-            "Final exposed track color delta ($deltaFinalFromInitial) must exceed mid-flight delta ($deltaMidFromInitial)",
+            "Final exposed track color delta ($deltaFinalFromInitial) must exceed " +
+                "mid-flight delta ($deltaMidFromInitial)",
         )
     }
 
@@ -661,9 +713,12 @@ class GlassTogglePrototypeTest {
         var reducedChecked by mutableStateOf(false)
         setContent {
             LtiTheme(appTheme = AppTheme.Blue, effectsEnabled = true, reducedMotion = true) {
-                Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface), contentAlignment = Alignment.Center) {
+                Box(
+                    Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface),
+                    contentAlignment = Alignment.Center,
+                ) {
                     PrototypeGlassToggle(
-                        geometry = ToggleGeometryPair.PairB_Ergonomic,
+                        geometry = ToggleGeometryPair.PairBErgonomic,
                         checked = reducedChecked,
                         onCheckedChange = { reducedChecked = it },
                         reducedMotion = true,
@@ -685,7 +740,10 @@ class GlassTogglePrototypeTest {
         val reducedEndColor = reducedImg[120, 60]
         val reducedSnappedTrack = reducedImg[80, 60]
 
-        println("[REDUCED MOTION SNAP] End color immediately after flip: $reducedEndColor, Snapped track color (x=80): $reducedSnappedTrack, Initial track: $initialTrackColor")
+        println(
+            "[REDUCED MOTION SNAP] End color immediately after flip: $reducedEndColor, " +
+                "Snapped track color (x=80): $reducedSnappedTrack, Initial track: $initialTrackColor",
+        )
         assertTrue(
             reducedEndColor.red > 0.8f,
             "Reduced motion must snap thumb to end position (x=120) immediately without delay",
@@ -697,10 +755,14 @@ class GlassTogglePrototypeTest {
 
         // VERIFY REDUCED MOTION COLOR SNAP ON FRAME 1:
         val snapColorShift = abs(reducedSnappedTrack.blue - initialTrackColor.blue)
-        println("[REDUCED MOTION TINT SNAP] Shift on frame 1: $snapColorShift (blue: ${initialTrackColor.blue} -> ${reducedSnappedTrack.blue})")
+        println(
+            "[REDUCED MOTION TINT SNAP] Shift on frame 1: $snapColorShift " +
+                "(blue: ${initialTrackColor.blue} -> ${reducedSnappedTrack.blue})",
+        )
         assertTrue(
             snapColorShift > 0.20f,
-            "Reduced motion must snap exposed track tint to active color on frame 1 (shift=$snapColorShift, expected > 0.20f)",
+            "Reduced motion must snap exposed track tint to active color on frame 1 " +
+                "(shift=$snapColorShift, expected > 0.20f)",
         )
     }
 

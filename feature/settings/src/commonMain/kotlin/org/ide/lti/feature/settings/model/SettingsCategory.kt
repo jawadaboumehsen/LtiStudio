@@ -12,10 +12,7 @@ package org.ide.lti.feature.settings.model
 /**
  * Categorical destinations available within the LtiRom Studio Settings workspace.
  */
-enum class SettingsCategory(
-    val title: String,
-    val subtitle: String,
-) {
+enum class SettingsCategory(val title: String, val subtitle: String) {
     EditorPreferences(
         title = "Editor preferences",
         subtitle = "Customize the editing experience",

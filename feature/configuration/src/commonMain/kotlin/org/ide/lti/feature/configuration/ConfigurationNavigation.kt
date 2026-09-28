@@ -17,18 +17,16 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import androidx.savedstate.read
 
-enum class ConfigurationNavMode {
-    EDIT,
-    CREATE,
-    CLONE,
-}
-
 const val CONFIGURATION_ROUTE = "configuration_route"
 private const val TARGET_ID_ARG = "targetId"
 private const val MODE_ARG = "mode"
-private const val CONFIGURATION_ROUTE_PATTERN = "$CONFIGURATION_ROUTE?$TARGET_ID_ARG={$TARGET_ID_ARG}&$MODE_ARG={$MODE_ARG}"
+private const val CONFIGURATION_ROUTE_PATTERN =
+    "$CONFIGURATION_ROUTE?$TARGET_ID_ARG={$TARGET_ID_ARG}&$MODE_ARG={$MODE_ARG}"
 
-private fun configurationRoute(targetId: String? = null, mode: ConfigurationNavMode = ConfigurationNavMode.EDIT): String {
+private fun configurationRoute(
+    targetId: String? = null,
+    mode: ConfigurationNavMode = ConfigurationNavMode.EDIT,
+): String {
     val query = buildString {
         append(CONFIGURATION_ROUTE)
         append("?$MODE_ARG=${mode.name}")
@@ -51,9 +49,7 @@ fun NavController.navigateToCreateConfiguration(navOptions: NavOptions? = null) 
     navigate(configurationRoute(mode = ConfigurationNavMode.CREATE), navOptions)
 }
 
-fun NavGraphBuilder.configurationScreen(
-    onBackClick: () -> Unit,
-) {
+fun NavGraphBuilder.configurationScreen(onBackClick: () -> Unit) {
     composable(
         route = CONFIGURATION_ROUTE_PATTERN,
         arguments = listOf(

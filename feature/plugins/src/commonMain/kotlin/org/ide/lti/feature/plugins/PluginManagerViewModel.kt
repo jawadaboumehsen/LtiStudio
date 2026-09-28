@@ -296,8 +296,11 @@ public class PluginManagerViewModel(
         if (trimmed.isBlank()) return
 
         val lower = trimmed.lowercase()
-        val isLegacy = lower.endsWith(".sh") || lower.endsWith(".bash") || lower.endsWith(".patch") ||
-            lower.contains("customize.sh") || (!lower.endsWith(".zip") && !lower.endsWith(".lti-mod.zip"))
+        val isLegacy = lower.endsWith(".sh") ||
+            lower.endsWith(".bash") ||
+            lower.endsWith(".patch") ||
+            lower.contains("customize.sh") ||
+            (!lower.endsWith(".zip") && !lower.endsWith(".lti-mod.zip"))
 
         if (isLegacy) {
             val fileName = trimmed.substringAfterLast('/').substringAfterLast('\\')

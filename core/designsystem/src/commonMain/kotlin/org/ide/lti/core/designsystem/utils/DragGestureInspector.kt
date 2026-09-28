@@ -72,9 +72,7 @@ private suspend inline fun AwaitPointerEventScope.drag(
     return result
 }
 
-private suspend inline fun AwaitPointerEventScope.awaitDragOrUp(
-    pointerId: PointerId,
-): PointerInputChange? {
+private suspend inline fun AwaitPointerEventScope.awaitDragOrUp(pointerId: PointerId): PointerInputChange? {
     var pointer = pointerId
     var result: PointerInputChange? = null
     while (result == null) {

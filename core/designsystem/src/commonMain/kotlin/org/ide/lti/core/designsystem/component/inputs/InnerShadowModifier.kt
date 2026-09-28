@@ -32,7 +32,6 @@ import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
-import androidx.compose.ui.unit.dp
 import org.jetbrains.skia.FilterTileMode
 import org.jetbrains.skia.ImageFilter
 
@@ -42,16 +41,18 @@ import org.jetbrains.skia.ImageFilter
 @Immutable
 data class InnerShadow(
     val radius: Dp = org.ide.lti.core.designsystem.theme.Spacing.ExtraSmall,
-    val offset: DpOffset = DpOffset(org.ide.lti.core.designsystem.theme.Spacing.None, org.ide.lti.core.designsystem.theme.Spacing.ExtraSmall),
+    val offset: DpOffset =
+        DpOffset(
+            org.ide.lti.core.designsystem.theme.Spacing.None,
+            org.ide.lti.core.designsystem.theme.Spacing.ExtraSmall,
+        ),
     val color: Color = org.ide.lti.core.designsystem.theme.GlassControlColors.InnerShadow,
     val alpha: Float = 1f,
     val blendMode: BlendMode = DrawScope.DefaultBlendMode,
 )
 
-internal class InnerShadowElement(
-    val shape: Shape,
-    val shadow: () -> InnerShadow?,
-) : ModifierNodeElement<InnerShadowNode>() {
+internal class InnerShadowElement(val shape: Shape, val shadow: () -> InnerShadow?) :
+    ModifierNodeElement<InnerShadowNode>() {
     override fun create(): InnerShadowNode = InnerShadowNode(shape, shadow)
 
     override fun update(node: InnerShadowNode) {
@@ -75,10 +76,9 @@ internal class InnerShadowElement(
     override fun hashCode(): Int = 31 * shape.hashCode() + shadow.hashCode()
 }
 
-internal class InnerShadowNode(
-    var shape: Shape,
-    var shadow: () -> InnerShadow?,
-) : DrawModifierNode, Modifier.Node() {
+internal class InnerShadowNode(var shape: Shape, var shadow: () -> InnerShadow?) :
+    Modifier.Node(),
+    DrawModifierNode {
     override val shouldAutoInvalidate: Boolean = false
 
     private var shadowLayer: GraphicsLayer? = null
@@ -93,10 +93,15 @@ internal class InnerShadowNode(
     override fun ContentDrawScope.draw() {
         drawContent()
 
-        val shadowValue = shadow() ?: return
-        if (shadowValue.alpha <= 0.001f || shadowValue.radius <= org.ide.lti.core.designsystem.theme.Spacing.None) return
-
-        val layer = shadowLayer ?: return
+        val shadowValue = shadow()
+        val layer = shadowLayer
+        if (shadowValue == null ||
+            layer == null ||
+            shadowValue.alpha <= 0.001f ||
+            shadowValue.radius <= org.ide.lti.core.designsystem.theme.Spacing.None
+        ) {
+            return
+        }
         val density: Density = this
         val layoutDir = layoutDirection
 
@@ -194,7 +199,5 @@ internal class InnerShadowNode(
 /**
  * Modifier that renders an inner shadow clipped to [shape].
  */
-fun Modifier.innerShadow(
-    shape: Shape,
-    shadow: () -> InnerShadow?,
-): Modifier = this.then(InnerShadowElement(shape, shadow))
+fun Modifier.innerShadow(shape: Shape, shadow: () -> InnerShadow?): Modifier =
+    this.then(InnerShadowElement(shape, shadow))

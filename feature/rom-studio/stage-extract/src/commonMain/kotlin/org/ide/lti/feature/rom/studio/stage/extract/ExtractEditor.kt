@@ -9,7 +9,6 @@
  */
 package org.ide.lti.feature.rom.studio.stage.extract
 
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,6 +21,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -312,7 +312,7 @@ private fun PartitionChoices(
     IdeTable(
         modifier = Modifier.fillMaxWidth(),
     ) {
-        IdeTableHeader() {
+        IdeTableHeader {
             IdeTableHeaderCell(
                 text = "Select",
                 modifier = Modifier.width(GlassDimens.AcquireTableIconColWidth),
@@ -392,7 +392,13 @@ private fun Diagnostics(errors: List<ValidationError>) {
         errors.forEach {
             Text(
                 text = "${it.severity}: ${it.message}",
-                color = if (it.severity == Severity.ERROR) GlassTheme.diagnosticColors.error else GlassTheme.diagnosticColors.warning,
+                color = if (it.severity ==
+                    Severity.ERROR
+                ) {
+                    GlassTheme.diagnosticColors.error
+                } else {
+                    GlassTheme.diagnosticColors.warning
+                },
                 fontSize = FontSize.BodySmall,
                 fontFamily = ideFontFamily(),
             )

@@ -10,18 +10,17 @@
 package org.ide.lti.core.designsystem.theme
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,10 +36,15 @@ import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.cancel
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.click
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.pressKey
@@ -52,32 +56,21 @@ import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.glass.GlassReducedMotionPolicy
-import dev.chrisbanes.haze.glass.GlassStyle
-import dev.chrisbanes.haze.glass.GlassTransformTarget
 import dev.chrisbanes.haze.glass.hazeGlass
 import dev.chrisbanes.haze.hazeSource
+import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.component.inputs.GlassToggleImpl
 import org.ide.lti.core.designsystem.component.layout.GlassBackdrop
+import org.ide.lti.core.designsystem.theme.GlassControlColors
+import org.ide.lti.core.designsystem.theme.GlassMaterialStyles
+import org.ide.lti.core.designsystem.theme.GlassShapes
+import org.ide.lti.core.designsystem.theme.sceneHazeInput
 import org.ide.lti.core.testing.optical.GlassOpticalVerifier
 import org.jetbrains.skia.EncodedImageFormat
 import org.jetbrains.skia.Image
 import org.junit.Test
 import java.io.File
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.SemanticsActions
-import androidx.compose.ui.semantics.SemanticsProperties
-import androidx.compose.ui.test.cancel
-import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performClick
-import org.ide.lti.core.designsystem.component.display.GlassCard
-import org.ide.lti.core.designsystem.theme.GlassControlColors
-import org.ide.lti.core.designsystem.theme.GlassMaterialStyles
-import org.ide.lti.core.designsystem.theme.GlassShapes
-import org.ide.lti.core.designsystem.theme.sceneHazeInput
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.test.assertEquals
@@ -89,14 +82,22 @@ import kotlin.test.assertTrue
  * Optical and interaction verification suite for [GlassToggle] liquid motion.
  *
  * Verifies:
- * 1. **Baseline Callback Deduplication**: Exact single invocation across tap, completed drag, and keyboard.
- * 2. **Quick-Tap Mid-Travel Acceptance**: Thumb is visibly refractive at mid-travel during a fast click in Dark, Blue, and Light.
- * 3. **Isolated Backdrop Resampling**: Proves Haze actively resamples backdrop across distinct layout positions vs frozen control.
- * 4. **Boundary Refraction on Moving Thumb**: Measured feature displacement along the thumb boundary vs unrefracted baseline.
- * 5. **Effects-Off Inset Invariance**: Exact solid token color and backdrop invariance on inset regions of track and thumb.
- * 6. **Directional & Motion Integrity**: Proper RTL layout-aware translation and instantaneous snap under reduced motion.
+ * 1. **Baseline Callback Deduplication**: Exact single invocation across tap, completed drag,
+ *    and keyboard.
+ * 2. **Quick-Tap Mid-Travel Acceptance**: Thumb is visibly refractive at mid-travel during a
+ *    fast click in Dark, Blue, and Light.
+ * 3. **Isolated Backdrop Resampling**: Proves Haze actively resamples backdrop across distinct
+ *    layout positions vs frozen control.
+ * 4. **Boundary Refraction on Moving Thumb**: Measured feature displacement along the thumb boundary
+ *    vs unrefracted baseline.
+ * 5. **Effects-Off Inset Invariance**: Exact solid token color and backdrop invariance on inset
+ *    regions of track and thumb.
+ * 6. **Directional & Motion Integrity**: Proper RTL layout-aware translation and instantaneous snap
+ *    under reduced motion.
  */
 @OptIn(ExperimentalTestApi::class, ExperimentalHazeApi::class)
+// Comprehensive liquid motion verification suite with 24 optical and interaction tests.
+@Suppress("LargeClass", "TooManyFunctions")
 class GlassToggleLiquidMotionTest {
 
     // =============================================================================================
@@ -352,11 +353,15 @@ class GlassToggleLiquidMotionTest {
             )
             val edgeGradient = computeMaxEdgeGradient(bestFrameImage, thumbInterior)
 
-            println("[DIAGNOSTIC] Theme $theme Quick-Tap Midpoint (|p-0.5|=$bestDistanceToMidpoint) Bounds: $bestThumbBounds Interior Gradient: $edgeGradient")
+            println(
+                "[DIAGNOSTIC] Theme $theme Quick-Tap Midpoint (|p-0.5|=$bestDistanceToMidpoint) " +
+                    "Bounds: $bestThumbBounds Interior Gradient: $edgeGradient",
+            )
 
             assertTrue(
                 edgeGradient > 0.005,
-                "Quick tap at nearest midpoint must reveal refractive glass (found flat interior gradient $edgeGradient in $theme)",
+                "Quick tap at nearest midpoint must reveal refractive glass " +
+                    "(found flat interior gradient $edgeGradient in $theme)",
             )
             mainClock.advanceTimeBy(500)
             mainClock.autoAdvance = true
@@ -464,10 +469,12 @@ class GlassToggleLiquidMotionTest {
         val meanLocalDiff = localDiffSum / sampleCount
         println("[DIAGNOSTIC] Resampling Proof (Thumb Pos 0.25 vs Pos 0.75 Mean Local Diff): $meanLocalDiff")
 
-        // Active layout-aware Haze resampling must yield distinct local samples reflecting the different backdrop at x1 vs x2
+        // Active layout-aware Haze resampling must yield distinct local samples reflecting
+        // the different backdrop at x1 vs x2
         assertTrue(
             meanLocalDiff > 0.10,
-            "Haze thumb must resample distinct backdrop at different layout positions (found meanLocalDiff = $meanLocalDiff)",
+            "Haze thumb must resample distinct backdrop at different layout positions " +
+                "(found meanLocalDiff = $meanLocalDiff)",
         )
     }
 
@@ -867,7 +874,8 @@ class GlassToggleLiquidMotionTest {
 
         assertTrue(
             result.displacedFeatureCount >= 3,
-            "Refraction displacement must affect at least 3 features on production thumb (found ${result.displacedFeatureCount})",
+            "Refraction displacement must affect at least 3 features on production thumb " +
+                "(found ${result.displacedFeatureCount})",
         )
         assertTrue(
             result.maxDisplacementPx >= 1.0,
@@ -1067,7 +1075,10 @@ class GlassToggleLiquidMotionTest {
         val leftPixel = map[95, 80]
         println("[DIAGNOSTIC] Gate 4 Reduced Motion Frame 1: rightPixel=${rightPixel.red}, leftPixel=${leftPixel.red}")
 
-        assertTrue(rightPixel.red > 0.7f, "Reduced motion must snap thumb to right side on frame 1 (found ${rightPixel.red})")
+        assertTrue(
+            rightPixel.red > 0.7f,
+            "Reduced motion must snap thumb to right side on frame 1 (found ${rightPixel.red})",
+        )
         assertTrue(leftPixel.red < 0.4f, "Left side must be uncovered track on frame 1 (found ${leftPixel.red})")
 
         mainClock.autoAdvance = true
@@ -1159,7 +1170,11 @@ class GlassToggleLiquidMotionTest {
         onRoot().performKeyInput { pressKey(Key.Spacebar) }
         waitForIdle()
 
-        assertEquals(1, callbackCount, "Rapid physical activation events within 300ms must be deduplicated to exactly 1")
+        assertEquals(
+            1,
+            callbackCount,
+            "Rapid physical activation events within 300ms must be deduplicated to exactly 1",
+        )
         assertTrue(isChecked)
     }
 

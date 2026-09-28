@@ -110,10 +110,7 @@ public fun OverviewBreadcrumbHeader(
 }
 
 @Composable
-private fun OverviewHeaderTargetAndActions(
-    onReload: () -> Unit,
-    onAction: (WorkspaceActionUi) -> Unit,
-) {
+private fun OverviewHeaderTargetAndActions(onReload: () -> Unit, onAction: (WorkspaceActionUi) -> Unit) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),

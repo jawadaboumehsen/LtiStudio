@@ -40,15 +40,9 @@ import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import dev.chrisbanes.haze.ExperimentalHazeApi
-import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.glass.hazeGlass
-import org.ide.lti.core.designsystem.component.actions.*
-import org.ide.lti.core.designsystem.component.devtools.*
-import org.ide.lti.core.designsystem.component.display.*
-import org.ide.lti.core.designsystem.component.feedback.*
-import org.ide.lti.core.designsystem.component.inputs.*
-import org.ide.lti.core.designsystem.component.layout.*
-import org.ide.lti.core.designsystem.component.primitives.*
+import org.ide.lti.core.designsystem.component.actions.GlassIconButton
+import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
@@ -57,10 +51,10 @@ import org.ide.lti.core.designsystem.theme.GlassMaterialStyles
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.HazeShape
-import org.ide.lti.core.designsystem.theme.sceneHazeInput
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.sceneHazeInput
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalHazeApi::class)
 @Composable
@@ -222,12 +216,15 @@ private class TabItemColors(
 )
 
 @Composable
-private fun resolveTabItemColors(
-    selected: Boolean,
-    isHovered: Boolean,
-): TabItemColors {
+private fun resolveTabItemColors(selected: Boolean, isHovered: Boolean): TabItemColors {
     val surfaceColor = if (selected || isHovered) MaterialTheme.colorScheme.surfaceContainerHigh else Color.Transparent
-    val tintColor = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Hover) else Color.Transparent
+    val tintColor = if (selected) {
+        MaterialTheme.colorScheme.primary.copy(
+            alpha = AlphaTokens.Hover,
+        )
+    } else {
+        Color.Transparent
+    }
     val textColor = when {
         selected -> MaterialTheme.colorScheme.onSurface
         isHovered -> MaterialTheme.colorScheme.onSurfaceVariant
@@ -247,10 +244,7 @@ private fun resolveTabItemColors(
  */
 sealed interface TabCloseBehavior {
     data object Unclosable : TabCloseBehavior
-    data class Closable(
-        val isDirty: Boolean = false,
-        val onClose: () -> Unit,
-    ) : TabCloseBehavior
+    data class Closable(val isDirty: Boolean = false, val onClose: () -> Unit) : TabCloseBehavior
 }
 
 /**
@@ -344,11 +338,7 @@ fun GlassTabBar(
 
 @OptIn(ExperimentalHazeApi::class)
 @Composable
-private fun Modifier.tabGlassSurface(
-    shape: HazeShape,
-    surfaceColor: Color,
-    tintColor: Color,
-): Modifier {
+private fun Modifier.tabGlassSurface(shape: HazeShape, surfaceColor: Color, tintColor: Color): Modifier {
     val theme = GlassTheme.appTheme
     return if (GlassTheme.effectsEnabled) {
         this.hazeGlass(

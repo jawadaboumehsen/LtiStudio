@@ -18,10 +18,7 @@ import org.ide.lti.core.model.target.DefaultTargetCatalog
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.DebloatSettings
 
-public class DebloatViewModel(
-    public val workspaceId: String,
-    initialSettings: DebloatSettings? = null,
-) : ViewModel() {
+public class DebloatViewModel(public val workspaceId: String, initialSettings: DebloatSettings? = null) : ViewModel() {
 
     public val targetDevice: TargetDevice = DefaultTargetCatalog.PQ84P01_DEFAULT
 

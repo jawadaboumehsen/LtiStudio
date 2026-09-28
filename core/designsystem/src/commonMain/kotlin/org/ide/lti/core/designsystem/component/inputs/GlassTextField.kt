@@ -49,6 +49,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
@@ -57,15 +58,10 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import dev.chrisbanes.haze.ExperimentalHazeApi
-import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.glass.hazeGlass
-import org.ide.lti.core.designsystem.component.actions.*
-import org.ide.lti.core.designsystem.component.devtools.*
-import org.ide.lti.core.designsystem.component.display.*
-import org.ide.lti.core.designsystem.component.feedback.*
-import org.ide.lti.core.designsystem.component.layout.*
-import org.ide.lti.core.designsystem.component.navigation.*
-import org.ide.lti.core.designsystem.component.primitives.*
+import org.ide.lti.core.designsystem.component.actions.GlassIconButton
+import org.ide.lti.core.designsystem.component.primitives.GlassSurface
+import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.icon.GlassIcon
@@ -73,11 +69,11 @@ import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassMaterialStyles
 import org.ide.lti.core.designsystem.theme.GlassShapes
-import org.ide.lti.core.designsystem.theme.sceneHazeInput
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.sceneHazeInput
 import org.ide.lti.core.designsystem.utils.nonLetterColorVisualTransformation
 import org.ide.lti.core.designsystem.utils.tabNavigation
 
@@ -108,7 +104,8 @@ sealed interface TextFieldTrailingSlot {
     data object None : TextFieldTrailingSlot
     data class Icon(val icon: AppIcon, val onClick: (() -> Unit)? = null) : TextFieldTrailingSlot
     data class Clear(val onClear: () -> Unit) : TextFieldTrailingSlot
-    data class PasswordToggle(val isVisible: Boolean, val onToggle: () -> Unit) : TextFieldTrailingSlot
+    data class PasswordToggle(val isVisible: Boolean, val onToggle: () -> Unit, val testTag: String? = null) :
+        TextFieldTrailingSlot
     data class Custom(val content: @Composable () -> Unit) : TextFieldTrailingSlot
 }
 
@@ -213,31 +210,7 @@ fun GlassTextField(
                     .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                when (leading) {
-                    is TextFieldLeadingSlot.None -> {}
-                    is TextFieldLeadingSlot.Icon -> {
-                        Box(modifier = Modifier.padding(end = Spacing.SmallMedium)) {
-                            if (leading.onClick != null) {
-                                GlassIconButton(
-                                    icon = leading.icon,
-                                    onClick = leading.onClick,
-                                    size = ComponentSize.TopBarButtonSize,
-                                )
-                            } else {
-                                GlassIcon(
-                                    icon = leading.icon,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(IconSize.Medium),
-                                )
-                            }
-                        }
-                    }
-                    is TextFieldLeadingSlot.Custom -> {
-                        Box(modifier = Modifier.padding(end = Spacing.SmallMedium)) {
-                            leading.content()
-                        }
-                    }
-                }
+                TextFieldLeadingContent(leading = leading)
 
                 Box(modifier = Modifier.weight(1f)) {
                     BasicTextField(
@@ -249,7 +222,11 @@ fun GlassTextField(
                         enabled = enabled,
                         readOnly = readOnly,
                         textStyle = textStyle.copy(
-                            color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = if (enabled) {
+                                MaterialTheme.colorScheme.onSurface
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
                         ),
                         visualTransformation = config.visualTransformation,
                         keyboardOptions = config.keyboardOptions,
@@ -273,86 +250,144 @@ fun GlassTextField(
                     )
                 }
 
-                when (trailing) {
-                    is TextFieldTrailingSlot.None -> {}
-                    is TextFieldTrailingSlot.Icon -> {
-                        Box(modifier = Modifier.padding(start = Spacing.SmallMedium)) {
-                            if (trailing.onClick != null) {
-                                GlassIconButton(
-                                    icon = trailing.icon,
-                                    onClick = trailing.onClick,
-                                    size = ComponentSize.TopBarButtonSize,
-                                )
-                            } else {
-                                GlassIcon(
-                                    icon = trailing.icon,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(IconSize.Medium),
-                                )
-                            }
-                        }
-                    }
-                    is TextFieldTrailingSlot.Clear -> {
-                        if (value.isNotEmpty()) {
-                            Box(modifier = Modifier.padding(start = Spacing.SmallMedium)) {
-                                GlassIconButton(
-                                    icon = AppIcons.Close,
-                                    onClick = trailing.onClear,
-                                    size = ComponentSize.TopBarButtonSize,
-                                )
-                            }
-                        }
-                    }
-                    is TextFieldTrailingSlot.PasswordToggle -> {
-                        Box(modifier = Modifier.padding(start = Spacing.SmallMedium)) {
-                            IconButton(
-                                onClick = trailing.onToggle,
-                                modifier = Modifier.size(ComponentSize.TopBarButtonSize),
-                            ) {
-                                val painter = if (trailing.isVisible) {
-                                    AppIcons.HidePainterResource()
-                                } else {
-                                    AppIcons.ShowPainterResource()
-                                }
-                                Icon(
-                                    painter = painter,
-                                    contentDescription = if (trailing.isVisible) "Hide password" else "Show password",
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(IconSize.Medium),
-                                )
-                            }
-                        }
-                    }
-                    is TextFieldTrailingSlot.Custom -> {
-                        Box(modifier = Modifier.padding(start = Spacing.SmallMedium)) {
-                            trailing.content()
-                        }
-                    }
-                }
+                TextFieldTrailingContent(
+                    trailing = trailing,
+                    valueNotEmpty = value.isNotEmpty(),
+                )
             }
         }
 
-        val message = when (state) {
-            is TextFieldState.Error -> state.message
-            is TextFieldState.Warning -> state.message
-            is TextFieldState.Helper -> state.message
-            is TextFieldState.Success -> state.message
-            TextFieldState.Default -> null
+        TextFieldHelperMessage(state = state)
+    }
+}
+
+/**
+ * Renders the leading accessory slot content for a [GlassTextField].
+ */
+@Composable
+private fun TextFieldLeadingContent(leading: TextFieldLeadingSlot, modifier: Modifier = Modifier) {
+    when (leading) {
+        is TextFieldLeadingSlot.None -> {}
+        is TextFieldLeadingSlot.Icon -> {
+            Box(modifier = modifier.padding(end = Spacing.SmallMedium)) {
+                if (leading.onClick != null) {
+                    GlassIconButton(
+                        icon = leading.icon,
+                        onClick = leading.onClick,
+                        size = ComponentSize.TopBarButtonSize,
+                    )
+                } else {
+                    GlassIcon(
+                        icon = leading.icon,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(IconSize.Medium),
+                    )
+                }
+            }
         }
-        val messageColor = when (state) {
-            is TextFieldState.Error -> MaterialTheme.colorScheme.error
-            is TextFieldState.Warning -> GlassTheme.diagnosticColors.warning
-            is TextFieldState.Success -> GlassTheme.diagnosticColors.success
-            else -> MaterialTheme.colorScheme.onSurfaceVariant
+        is TextFieldLeadingSlot.Custom -> {
+            Box(modifier = modifier.padding(end = Spacing.SmallMedium)) {
+                leading.content()
+            }
         }
-        if (message != null) {
-            Text(
-                text = message,
-                style = MaterialTheme.typography.bodySmall,
-                color = messageColor,
-                modifier = Modifier.padding(top = Spacing.ExtraSmall, start = Spacing.ExtraSmall),
-            )
+    }
+}
+
+/**
+ * Renders the trailing accessory slot content for a [GlassTextField].
+ */
+@Composable
+private fun TextFieldTrailingContent(
+    trailing: TextFieldTrailingSlot,
+    valueNotEmpty: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    when (trailing) {
+        is TextFieldTrailingSlot.None -> {}
+        is TextFieldTrailingSlot.Icon -> {
+            Box(modifier = modifier.padding(start = Spacing.SmallMedium)) {
+                if (trailing.onClick != null) {
+                    GlassIconButton(
+                        icon = trailing.icon,
+                        onClick = trailing.onClick,
+                        size = ComponentSize.TopBarButtonSize,
+                    )
+                } else {
+                    GlassIcon(
+                        icon = trailing.icon,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(IconSize.Medium),
+                    )
+                }
+            }
         }
+        is TextFieldTrailingSlot.Clear -> {
+            if (valueNotEmpty) {
+                Box(modifier = modifier.padding(start = Spacing.SmallMedium)) {
+                    GlassIconButton(
+                        icon = AppIcons.Close,
+                        onClick = trailing.onClear,
+                        size = ComponentSize.TopBarButtonSize,
+                    )
+                }
+            }
+        }
+        is TextFieldTrailingSlot.PasswordToggle -> {
+            val iconModifier = Modifier
+                .size(ComponentSize.TopBarButtonSize)
+                .then(if (trailing.testTag != null) Modifier.testTag(trailing.testTag) else Modifier)
+            Box(modifier = modifier.padding(start = Spacing.SmallMedium)) {
+                IconButton(
+                    onClick = trailing.onToggle,
+                    modifier = iconModifier,
+                ) {
+                    val painter = if (trailing.isVisible) {
+                        AppIcons.HidePainterResource()
+                    } else {
+                        AppIcons.ShowPainterResource()
+                    }
+                    Icon(
+                        painter = painter,
+                        contentDescription = if (trailing.isVisible) "Hide password" else "Show password",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(IconSize.Medium),
+                    )
+                }
+            }
+        }
+        is TextFieldTrailingSlot.Custom -> {
+            Box(modifier = modifier.padding(start = Spacing.SmallMedium)) {
+                trailing.content()
+            }
+        }
+    }
+}
+
+/**
+ * Displays validation error, warning, success, or helper text beneath a [GlassTextField].
+ */
+@Composable
+private fun TextFieldHelperMessage(state: TextFieldState, modifier: Modifier = Modifier) {
+    val message = when (state) {
+        is TextFieldState.Error -> state.message
+        is TextFieldState.Warning -> state.message
+        is TextFieldState.Helper -> state.message
+        is TextFieldState.Success -> state.message
+        TextFieldState.Default -> null
+    }
+    val messageColor = when (state) {
+        is TextFieldState.Error -> MaterialTheme.colorScheme.error
+        is TextFieldState.Warning -> GlassTheme.diagnosticColors.warning
+        is TextFieldState.Success -> GlassTheme.diagnosticColors.success
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    if (message != null) {
+        Text(
+            text = message,
+            style = MaterialTheme.typography.bodySmall,
+            color = messageColor,
+            modifier = modifier.padding(top = Spacing.ExtraSmall, start = Spacing.ExtraSmall),
+        )
     }
 }
 
@@ -373,7 +408,13 @@ fun GlassSearchField(
         modifier = modifier,
         placeholder = placeholder,
         leading = TextFieldLeadingSlot.Icon(AppIcons.Search),
-        trailing = if (value.isNotEmpty()) TextFieldTrailingSlot.Clear { onValueChange("") } else TextFieldTrailingSlot.None,
+        trailing = if (value.isNotEmpty()) {
+            TextFieldTrailingSlot.Clear {
+                onValueChange("")
+            }
+        } else {
+            TextFieldTrailingSlot.None
+        },
         config = TextFieldConfig(
             singleLine = true,
             keyboardActions = KeyboardActions(onSearch = { onSearch?.invoke() }),
@@ -418,6 +459,7 @@ fun GlassPasswordField(
         trailing = TextFieldTrailingSlot.PasswordToggle(
             isVisible = showPassword,
             onToggle = { showPasswordChange(!showPassword) },
+            testTag = showPasswordTestTag,
         ),
         config = TextFieldConfig(
             singleLine = singleLine,

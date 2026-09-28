@@ -9,7 +9,6 @@
  */
 package org.ide.lti.feature.rom.studio.stage.publish
 
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -104,11 +104,7 @@ public fun PublishEditor(
 }
 
 @Composable
-private fun ProviderCard(
-    settings: PublishSettings,
-    dirtyPaths: Set<String>,
-    onChange: (PublishSettings) -> Unit,
-) {
+private fun ProviderCard(settings: PublishSettings, dirtyPaths: Set<String>, onChange: (PublishSettings) -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -145,11 +141,7 @@ private fun ProviderCard(
 }
 
 @Composable
-private fun RepositoryCard(
-    settings: PublishSettings,
-    dirtyPaths: Set<String>,
-    onChange: (PublishSettings) -> Unit,
-) {
+private fun RepositoryCard(settings: PublishSettings, dirtyPaths: Set<String>, onChange: (PublishSettings) -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -198,11 +190,7 @@ private fun RepositoryCard(
 }
 
 @Composable
-private fun SplitAssetsCard(
-    settings: PublishSettings,
-    dirtyPaths: Set<String>,
-    onChange: (PublishSettings) -> Unit,
-) {
+private fun SplitAssetsCard(settings: PublishSettings, dirtyPaths: Set<String>, onChange: (PublishSettings) -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -226,7 +214,10 @@ private fun SplitAssetsCard(
         )
         GlassTextField(
             (settings.partSizeBytes / (1024 * 1024)).toString(),
-            { val mb = it.toLongOrNull() ?: 1900L; onChange(settings.copy(partSizeBytes = mb * 1024 * 1024)) },
+            {
+                val mb = it.toLongOrNull() ?: 1900L
+                onChange(settings.copy(partSizeBytes = mb * 1024 * 1024))
+            },
             label = "Max asset part size (MB)",
             state = TextFieldState.Helper("Default 1900 MB fits within 2 GB release asset limits."),
         )
@@ -235,11 +226,7 @@ private fun SplitAssetsCard(
 }
 
 @Composable
-private fun CredentialsCard(
-    settings: PublishSettings,
-    dirtyPaths: Set<String>,
-    onChange: (PublishSettings) -> Unit,
-) {
+private fun CredentialsCard(settings: PublishSettings, dirtyPaths: Set<String>, onChange: (PublishSettings) -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -272,11 +259,7 @@ private fun CredentialsCard(
 }
 
 @Composable
-private fun OtaManifestCard(
-    settings: PublishSettings,
-    dirtyPaths: Set<String>,
-    onChange: (PublishSettings) -> Unit,
-) {
+private fun OtaManifestCard(settings: PublishSettings, dirtyPaths: Set<String>, onChange: (PublishSettings) -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -309,11 +292,7 @@ private fun OtaManifestCard(
 }
 
 @Composable
-private fun RetentionCard(
-    settings: PublishSettings,
-    dirtyPaths: Set<String>,
-    onChange: (PublishSettings) -> Unit,
-) {
+private fun RetentionCard(settings: PublishSettings, dirtyPaths: Set<String>, onChange: (PublishSettings) -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -337,7 +316,10 @@ private fun RetentionCard(
         )
         GlassTextField(
             settings.retentionPerDevice.toString(),
-            { val count = it.toIntOrNull() ?: 3; onChange(settings.copy(retentionPerDevice = count)) },
+            {
+                val count = it.toIntOrNull() ?: 3
+                onChange(settings.copy(retentionPerDevice = count))
+            },
             label = "Retained manifest entries per device",
             state = TextFieldState.Helper("Older manifest entries pruned after newer stable publish."),
         )

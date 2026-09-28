@@ -21,13 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import org.ide.lti.core.designsystem.component.actions.*
-import org.ide.lti.core.designsystem.component.devtools.*
-import org.ide.lti.core.designsystem.component.display.*
-import org.ide.lti.core.designsystem.component.feedback.*
-import org.ide.lti.core.designsystem.component.inputs.*
-import org.ide.lti.core.designsystem.component.layout.*
-import org.ide.lti.core.designsystem.component.primitives.*
+import org.ide.lti.core.designsystem.component.layout.ideShellSurface
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.Elevation
 import org.ide.lti.core.designsystem.theme.GlassShapes
@@ -79,10 +73,7 @@ fun RowScope.GlassNavigationBarItem(
  * [NavigationBarItem]s.
  */
 @Composable
-fun GlassNavigationBar(
-    modifier: Modifier = Modifier,
-    content: @Composable RowScope.() -> Unit,
-) {
+fun GlassNavigationBar(modifier: Modifier = Modifier, content: @Composable RowScope.() -> Unit) {
     NavigationBar(
         // Docked flush to the bottom screen edge — flat (0dp) shape, not the module-wide capsule
         // (rounding here would leave gaps against the window's real edge).

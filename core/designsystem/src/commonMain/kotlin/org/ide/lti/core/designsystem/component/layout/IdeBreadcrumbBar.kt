@@ -31,11 +31,7 @@ import org.ide.lti.core.designsystem.theme.Spacing
  * Breadcrumb bar matching the 32 dp Stitch design specification.
  */
 @Composable
-fun IdeBreadcrumbBar(
-    segments: List<String>,
-    modifier: Modifier = Modifier,
-    onSegmentClick: ((Int) -> Unit)? = null,
-) {
+fun IdeBreadcrumbBar(segments: List<String>, modifier: Modifier = Modifier, onSegmentClick: ((Int) -> Unit)? = null) {
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -47,7 +43,11 @@ fun IdeBreadcrumbBar(
     ) {
         segments.forEachIndexed { index, segment ->
             val isLast = index == segments.size - 1
-            val textColor = if (isLast) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+            val textColor = if (isLast) {
+                MaterialTheme.colorScheme.onSurface
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            }
             val fontWeight = if (isLast) FontWeight.Medium else FontWeight.Normal
 
             Text(

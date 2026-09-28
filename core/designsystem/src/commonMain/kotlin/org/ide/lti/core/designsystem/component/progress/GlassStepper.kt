@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -32,6 +33,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
@@ -40,6 +42,7 @@ import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.icon.ideStatusWarning
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.DiagnosticColors
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
@@ -221,62 +224,18 @@ private fun GlassStepNode(
     onClick: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
+    val colors = MaterialTheme.colorScheme
     val diagnostics = GlassTheme.diagnosticColors
-
-    val isSuccess = step.status == GlassStepStatus.SUCCESS
-    val isRunning = step.status == GlassStepStatus.RUNNING
-    val isFailed = step.status == GlassStepStatus.FAILED
-    val isWarning = step.status == GlassStepStatus.WARNING
-
-    val statusColor = when (step.status) {
-        GlassStepStatus.RUNNING -> MaterialTheme.colorScheme.primary
-        GlassStepStatus.SUCCESS -> diagnostics.success
-        GlassStepStatus.WARNING -> diagnostics.warning
-        GlassStepStatus.FAILED -> diagnostics.error
-        GlassStepStatus.PENDING -> MaterialTheme.colorScheme.onSurfaceVariant
-        GlassStepStatus.SKIPPED -> MaterialTheme.colorScheme.onSurfaceVariant
-        GlassStepStatus.CANCELLED -> MaterialTheme.colorScheme.onSurfaceVariant
-        GlassStepStatus.INTERRUPTED -> MaterialTheme.colorScheme.onSurfaceVariant
-        GlassStepStatus.RESTORED -> MaterialTheme.colorScheme.onSurfaceVariant
-    }
-
-    val backgroundColor = when {
-        isRunning -> MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.GlassSecondaryTint)
-        isSuccess -> diagnostics.success.copy(alpha = AlphaTokens.Faint)
-        isFailed -> diagnostics.error.copy(alpha = AlphaTokens.Faint)
-        isWarning -> diagnostics.warning.copy(alpha = AlphaTokens.Faint)
-        else -> MaterialTheme.colorScheme.surfaceContainer
-    }
-
-    val borderColor = when {
-        isRunning -> MaterialTheme.colorScheme.primary
-        isSuccess -> diagnostics.success.copy(alpha = AlphaTokens.Border)
-        isFailed -> diagnostics.error.copy(alpha = AlphaTokens.Border)
-        isWarning -> diagnostics.warning.copy(alpha = AlphaTokens.Border)
-        else -> MaterialTheme.colorScheme.outline
-    }
-
-    val iconBgColor = when {
-        isRunning -> MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.GlassSecondaryTint)
-        isSuccess -> diagnostics.success.copy(alpha = AlphaTokens.GlassSecondaryTint)
-        isFailed -> diagnostics.error.copy(alpha = AlphaTokens.GlassSecondaryTint)
-        isWarning -> diagnostics.warning.copy(alpha = AlphaTokens.GlassSecondaryTint)
-        else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = AlphaTokens.Faint)
-    }
-
-    val clickModifier = if (onClick != null) {
-        Modifier.clickable(onClick = onClick)
-    } else {
-        Modifier
-    }
+    val isRunningOrSuccess = step.status == GlassStepStatus.RUNNING || step.status == GlassStepStatus.SUCCESS
+    val clickModifier = if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier
 
     Box(
         modifier = modifier
             .clip(GlassShapes.Small)
-            .background(backgroundColor)
+            .background(stepBackgroundColor(step.status, diagnostics, colors))
             .border(
                 width = StrokeWidth.Hairline,
-                color = borderColor,
+                color = stepBorderColor(step.status, diagnostics, colors),
                 shape = GlassShapes.Small,
             )
             .then(clickModifier)
@@ -287,116 +246,226 @@ private fun GlassStepNode(
             horizontalAlignment = Alignment.Start,
         ) {
             Box(modifier = Modifier.fillMaxWidth()) {
-                // Status Icon or Index Indicator
                 Box(
                     modifier = Modifier
                         .align(Alignment.CenterStart)
                         .size(IconSize.Medium)
                         .clip(GlassShapes.Capsule)
-                        .background(iconBgColor),
+                        .background(stepIconBgColor(step.status, diagnostics, colors)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    when (step.status) {
-                        GlassStepStatus.RUNNING -> CircularProgressIndicator(
-                            modifier = Modifier.size(IconSize.Small),
-                            strokeWidth = StrokeWidth.Hairline,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-                        GlassStepStatus.SUCCESS -> Icon(
-                            painter = AppIcons.CheckPainterResource(),
-                            contentDescription = null,
-                            tint = diagnostics.success,
-                            modifier = Modifier.size(IconSize.Small),
-                        )
-                        GlassStepStatus.FAILED -> Icon(
-                            painter = AppIcons.ClearPainterResource(),
-                            contentDescription = null,
-                            tint = diagnostics.error,
-                            modifier = Modifier.size(IconSize.Small),
-                        )
-                        GlassStepStatus.WARNING -> Icon(
-                            painter = AppIcons.ideStatusWarning(),
-                            contentDescription = null,
-                            tint = diagnostics.warning,
-                            modifier = Modifier.size(IconSize.Small),
-                        )
-                        GlassStepStatus.PENDING -> Text(
-                            text = "$index",
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        GlassStepStatus.SKIPPED -> Icon(
-                            painter = AppIcons.ChevronRightPainterResource(),
-                            contentDescription = "Skipped",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(IconSize.Small),
-                        )
-                        GlassStepStatus.CANCELLED -> Icon(
-                            painter = AppIcons.ClearPainterResource(),
-                            contentDescription = "Cancelled",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(IconSize.Small),
-                        )
-                        GlassStepStatus.INTERRUPTED -> Icon(
-                            painter = AppIcons.ideStatusWarning(),
-                            contentDescription = "Interrupted",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(IconSize.Small),
-                        )
-                        GlassStepStatus.RESTORED -> Box(contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(IconSize.Small),
-                                strokeWidth = StrokeWidth.Hairline,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            Icon(
-                                painter = AppIcons.CheckPainterResource(),
-                                contentDescription = "Restored",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = AlphaTokens.Muted),
-                                modifier = Modifier.size(IconSize.Indicator),
-                            )
-                        }
-                    }
+                    StepStatusIndicator(
+                        status = step.status,
+                        index = index,
+                        diagnostics = diagnostics,
+                    )
                 }
 
-                if (isFailed && onRetry != null) {
-                    GlassTooltipArea(
-                        tooltipText = if (isBusy) "Pipeline operation in progress..." else "Retry this stage",
+                if (step.status == GlassStepStatus.FAILED && onRetry != null) {
+                    StepRetryButton(
+                        onRetry = onRetry,
+                        isBusy = isBusy,
+                        diagnostics = diagnostics,
                         modifier = Modifier.align(Alignment.CenterEnd),
-                    ) {
-                        GlassIconButton(
-                            onClick = onRetry,
-                            enabled = !isBusy,
-                            size = ComponentSize.PanelHeaderAction,
-                        ) {
-                            Icon(
-                                painter = AppIcons.RefreshPainterResource(),
-                                contentDescription = "Retry",
-                                tint = if (!isBusy) diagnostics.error else MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(IconSize.Small),
-                            )
-                        }
-                    }
+                    )
                 }
             }
 
-            Text(
-                text = step.shortTitle,
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                color = if (isRunning || isSuccess) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                softWrap = false,
-                overflow = TextOverflow.Ellipsis,
-            )
-
-            Text(
-                text = step.statusLabel ?: GlassStepperDefaults.defaultStatusLabel(step.status),
-                style = MaterialTheme.typography.labelSmall,
-                color = statusColor,
-                maxLines = 1,
-                softWrap = false,
-                overflow = TextOverflow.Ellipsis,
+            StepTextDetails(
+                title = step.shortTitle,
+                statusText = step.statusLabel ?: GlassStepperDefaults.defaultStatusLabel(step.status),
+                statusColor = stepStatusColor(step.status, diagnostics, colors),
+                isHighEmphasis = isRunningOrSuccess,
             )
         }
     }
+}
+
+/**
+ * Resolves the background surface color for a step node based on its status.
+ */
+private fun stepBackgroundColor(status: GlassStepStatus, diagnostics: DiagnosticColors, colors: ColorScheme): Color =
+    when (status) {
+        GlassStepStatus.RUNNING -> colors.primary.copy(alpha = AlphaTokens.GlassSecondaryTint)
+        GlassStepStatus.SUCCESS -> diagnostics.success.copy(alpha = AlphaTokens.Faint)
+        GlassStepStatus.FAILED -> diagnostics.error.copy(alpha = AlphaTokens.Faint)
+        GlassStepStatus.WARNING -> diagnostics.warning.copy(alpha = AlphaTokens.Faint)
+        else -> colors.surfaceContainer
+    }
+
+/**
+ * Resolves the border color for a step node based on its status.
+ */
+private fun stepBorderColor(status: GlassStepStatus, diagnostics: DiagnosticColors, colors: ColorScheme): Color =
+    when (status) {
+        GlassStepStatus.RUNNING -> colors.primary
+        GlassStepStatus.SUCCESS -> diagnostics.success.copy(alpha = AlphaTokens.Border)
+        GlassStepStatus.FAILED -> diagnostics.error.copy(alpha = AlphaTokens.Border)
+        GlassStepStatus.WARNING -> diagnostics.warning.copy(alpha = AlphaTokens.Border)
+        else -> colors.outline
+    }
+
+/**
+ * Resolves the icon background color for a step node based on its status.
+ */
+private fun stepIconBgColor(status: GlassStepStatus, diagnostics: DiagnosticColors, colors: ColorScheme): Color =
+    when (status) {
+        GlassStepStatus.RUNNING -> colors.primary.copy(alpha = AlphaTokens.GlassSecondaryTint)
+        GlassStepStatus.SUCCESS -> diagnostics.success.copy(alpha = AlphaTokens.GlassSecondaryTint)
+        GlassStepStatus.FAILED -> diagnostics.error.copy(alpha = AlphaTokens.GlassSecondaryTint)
+        GlassStepStatus.WARNING -> diagnostics.warning.copy(alpha = AlphaTokens.GlassSecondaryTint)
+        else -> colors.onSurfaceVariant.copy(alpha = AlphaTokens.Faint)
+    }
+
+/**
+ * Resolves the primary semantic color for a step status.
+ */
+private fun stepStatusColor(status: GlassStepStatus, diagnostics: DiagnosticColors, colors: ColorScheme): Color =
+    when (status) {
+        GlassStepStatus.RUNNING -> colors.primary
+        GlassStepStatus.SUCCESS -> diagnostics.success
+        GlassStepStatus.WARNING -> diagnostics.warning
+        GlassStepStatus.FAILED -> diagnostics.error
+        else -> colors.onSurfaceVariant
+    }
+
+/**
+ * Icon or step number indicator for a step node.
+ */
+@Composable
+private fun StepStatusIndicator(
+    status: GlassStepStatus,
+    index: Int,
+    diagnostics: DiagnosticColors,
+    modifier: Modifier = Modifier,
+) {
+    when (status) {
+        GlassStepStatus.RUNNING -> CircularProgressIndicator(
+            modifier = modifier.size(IconSize.Small),
+            strokeWidth = StrokeWidth.Hairline,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        GlassStepStatus.SUCCESS -> Icon(
+            painter = AppIcons.CheckPainterResource(),
+            contentDescription = null,
+            tint = diagnostics.success,
+            modifier = modifier.size(IconSize.Small),
+        )
+        GlassStepStatus.FAILED -> Icon(
+            painter = AppIcons.ClearPainterResource(),
+            contentDescription = null,
+            tint = diagnostics.error,
+            modifier = modifier.size(IconSize.Small),
+        )
+        GlassStepStatus.WARNING -> Icon(
+            painter = AppIcons.ideStatusWarning(),
+            contentDescription = null,
+            tint = diagnostics.warning,
+            modifier = modifier.size(IconSize.Small),
+        )
+        GlassStepStatus.PENDING -> Text(
+            text = "$index",
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = modifier,
+        )
+        GlassStepStatus.SKIPPED -> Icon(
+            painter = AppIcons.ChevronRightPainterResource(),
+            contentDescription = "Skipped",
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = modifier.size(IconSize.Small),
+        )
+        GlassStepStatus.CANCELLED -> Icon(
+            painter = AppIcons.ClearPainterResource(),
+            contentDescription = "Cancelled",
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = modifier.size(IconSize.Small),
+        )
+        GlassStepStatus.INTERRUPTED -> Icon(
+            painter = AppIcons.ideStatusWarning(),
+            contentDescription = "Interrupted",
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = modifier.size(IconSize.Small),
+        )
+        GlassStepStatus.RESTORED -> Box(
+            modifier = modifier,
+            contentAlignment = Alignment.Center,
+        ) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(IconSize.Small),
+                strokeWidth = StrokeWidth.Hairline,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Icon(
+                painter = AppIcons.CheckPainterResource(),
+                contentDescription = "Restored",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = AlphaTokens.Muted),
+                modifier = Modifier.size(IconSize.Indicator),
+            )
+        }
+    }
+}
+
+/**
+ * Optional retry button displayed on a failed step node.
+ */
+@Composable
+private fun StepRetryButton(
+    onRetry: () -> Unit,
+    isBusy: Boolean,
+    diagnostics: DiagnosticColors,
+    modifier: Modifier = Modifier,
+) {
+    GlassTooltipArea(
+        tooltipText = if (isBusy) "Pipeline operation in progress..." else "Retry this stage",
+        modifier = modifier,
+    ) {
+        GlassIconButton(
+            onClick = onRetry,
+            enabled = !isBusy,
+            size = ComponentSize.PanelHeaderAction,
+        ) {
+            Icon(
+                painter = AppIcons.RefreshPainterResource(),
+                contentDescription = "Retry",
+                tint = if (!isBusy) diagnostics.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(IconSize.Small),
+            )
+        }
+    }
+}
+
+/**
+ * Title and status label text for a step node.
+ */
+@Composable
+private fun StepTextDetails(
+    title: String,
+    statusText: String,
+    statusColor: Color,
+    isHighEmphasis: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+        color = if (isHighEmphasis) {
+            MaterialTheme.colorScheme.onSurface
+        } else {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        },
+        maxLines = 1,
+        softWrap = false,
+        overflow = TextOverflow.Ellipsis,
+        modifier = modifier,
+    )
+
+    Text(
+        text = statusText,
+        style = MaterialTheme.typography.labelSmall,
+        color = statusColor,
+        maxLines = 1,
+        softWrap = false,
+        overflow = TextOverflow.Ellipsis,
+    )
 }

@@ -257,7 +257,6 @@ internal val BlueDiagnosticColors = DiagnosticColors(
 /** Brand seed - logo badge gradient end color, matches the Blue theme's primary. */
 val BrandLogoGradientEnd = Color(0xFF38BDF8)
 
-
 /** Centralized token colors for brand assets and logos. */
 object BrandColors {
     /** Foreground color for glyphs/icons drawn directly on the brand badge fill. */

@@ -100,10 +100,7 @@ public fun StudioTopAppBar(
 }
 
 @Composable
-internal fun TopBarTargetSpecifier(
-    targetContext: TargetContextUi,
-    modifier: Modifier = Modifier,
-) {
+internal fun TopBarTargetSpecifier(targetContext: TargetContextUi, modifier: Modifier = Modifier) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.Small),

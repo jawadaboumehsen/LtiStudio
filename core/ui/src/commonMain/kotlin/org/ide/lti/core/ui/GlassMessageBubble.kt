@@ -92,37 +92,37 @@ fun GlassMessageBubble(
                 tint = if (isUser) MaterialTheme.colorScheme.primary else Color.Unspecified,
             ) {
                 Box(modifier = Modifier.padding(Spacing.SmallMedium)) {
-                Column {
-                    // Message content with selection support
-                    SelectionContainer {
-                        Text(
-                            text = content,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                    }
+                    Column {
+                        // Message content with selection support
+                        SelectionContainer {
+                            Text(
+                                text = content,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
 
-                    // Copy button (visible on hover)
-                    if (showCopyButton && showCopy) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(top = Spacing.Small),
-                            horizontalArrangement = Arrangement.End,
-                        ) {
-                            GlassIconButton(
-                                onClick = {
-                                    clipboardManager.setText(AnnotatedString(content))
-                                },
-                                size = ComponentSize.PanelHeaderAction,
+                        // Copy button (visible on hover)
+                        if (showCopyButton && showCopy) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(top = Spacing.Small),
+                                horizontalArrangement = Arrangement.End,
                             ) {
-                                Icon(
-                                    painter = AppIcons.CopyPainterResource(),
-                                    contentDescription = "Copy",
-                                    modifier = Modifier.size(IconSize.Medium),
-                                )
+                                GlassIconButton(
+                                    onClick = {
+                                        clipboardManager.setText(AnnotatedString(content))
+                                    },
+                                    size = ComponentSize.PanelHeaderAction,
+                                ) {
+                                    Icon(
+                                        painter = AppIcons.CopyPainterResource(),
+                                        contentDescription = "Copy",
+                                        modifier = Modifier.size(IconSize.Medium),
+                                    )
+                                }
                             }
                         }
                     }
-                }
                 }
             }
 

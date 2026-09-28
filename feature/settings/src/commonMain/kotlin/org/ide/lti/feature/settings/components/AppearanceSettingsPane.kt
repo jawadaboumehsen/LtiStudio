@@ -40,6 +40,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.GlassHorizontalDivider
 import org.ide.lti.core.designsystem.component.display.ThemePreviewCard
@@ -67,6 +68,8 @@ import org.ide.lti.core.ui.settings.AppSettingsState
  * - Live interactive Studio Preview Card reacting dynamically to theme, density, and transparency
  * - Action footer bar (Restore defaults, Cancel, Apply changes)
  */
+// LongMethod suppressed on @Composable screen pane for appearance settings.
+@Suppress("LongMethod")
 @Composable
 fun AppearanceSettingsPane(
     appSettingsState: AppSettingsState,
@@ -460,10 +463,7 @@ private fun AccentColorRow(selectedAccent: String, onSelectAccent: (String) -> U
 }
 
 @Composable
-private fun InterfaceDensityRow(
-    isComfortable: Boolean,
-    onDensityChange: (Boolean) -> Unit,
-) {
+private fun InterfaceDensityRow(isComfortable: Boolean, onDensityChange: (Boolean) -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -542,6 +542,7 @@ private fun DensitySegmentItem(label: String, isSelected: Boolean, onClick: () -
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
             softWrap = false,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }

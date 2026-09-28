@@ -9,7 +9,6 @@
  */
 package org.ide.lti.feature.rom.studio.stage.acquire.panes
 
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -33,6 +32,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -247,12 +247,7 @@ private fun PolicySettingsCard(
 }
 
 @Composable
-private fun PolicyFieldRow(
-    label: String,
-    helperText: String?,
-    isOverride: Boolean,
-    control: @Composable () -> Unit,
-) {
+private fun PolicyFieldRow(label: String, helperText: String?, isOverride: Boolean, control: @Composable () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.Top,
@@ -288,8 +283,20 @@ private fun PolicyFieldRow(
 
 @Composable
 private fun StatusPillBadge(isOverride: Boolean) {
-    val bg = if (isOverride) GlassTheme.diagnosticColors.success.copy(alpha = AlphaTokens.Glow) else MaterialTheme.colorScheme.surfaceContainer
-    val borderColor = if (isOverride) GlassTheme.diagnosticColors.success.copy(alpha = AlphaTokens.Muted) else MaterialTheme.colorScheme.outlineVariant
+    val bg = if (isOverride) {
+        GlassTheme.diagnosticColors.success.copy(
+            alpha = AlphaTokens.Glow,
+        )
+    } else {
+        MaterialTheme.colorScheme.surfaceContainer
+    }
+    val borderColor = if (isOverride) {
+        GlassTheme.diagnosticColors.success.copy(
+            alpha = AlphaTokens.Muted,
+        )
+    } else {
+        MaterialTheme.colorScheme.outlineVariant
+    }
     val textColor = if (isOverride) GlassTheme.diagnosticColors.success else MaterialTheme.colorScheme.onSurfaceVariant
 
     Box(
@@ -328,7 +335,13 @@ private fun NumberStepper(value: Int, onValueChange: (Int) -> Unit, min: Int, ma
             Icon(
                 imageVector = Icons.Default.Remove,
                 contentDescription = "Decrease",
-                tint = if (value > min) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = if (value >
+                    min
+                ) {
+                    MaterialTheme.colorScheme.onSurface
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
                 modifier = Modifier.size(IconSize.Small),
             )
         }
@@ -351,7 +364,13 @@ private fun NumberStepper(value: Int, onValueChange: (Int) -> Unit, min: Int, ma
             Icon(
                 imageVector = Icons.Default.Add,
                 contentDescription = "Increase",
-                tint = if (value < max) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = if (value <
+                    max
+                ) {
+                    MaterialTheme.colorScheme.onSurface
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
                 modifier = Modifier.size(IconSize.Small),
             )
         }
@@ -473,7 +492,11 @@ private fun NeedHelpBanner() {
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
             .background(MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Subtle), GlassShapes.ShellCard)
-            .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Ambient), GlassShapes.ShellCard)
+            .border(
+                GlassDimens.HairlineBorder,
+                MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Ambient),
+                GlassShapes.ShellCard,
+            )
             .padding(Spacing.Medium),
     ) {
         Row(

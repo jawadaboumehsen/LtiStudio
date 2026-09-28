@@ -214,11 +214,7 @@ fun SettingsSidebar(
 }
 
 @Composable
-private fun SettingsSearchBar(
-    query: String,
-    onQueryChange: (String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
+private fun SettingsSearchBar(query: String, onQueryChange: (String) -> Unit, modifier: Modifier = Modifier) {
     val searchBg = MaterialTheme.colorScheme.surface
     val searchBorder = MaterialTheme.colorScheme.outline
     val textColor = MaterialTheme.colorScheme.onSurface

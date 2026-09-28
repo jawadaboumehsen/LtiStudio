@@ -52,7 +52,6 @@ public fun PluginPipelineFlow(
     selectedTask: String = "",
     modifier: Modifier = Modifier,
 ) {
-
     val (dexStatus, dexColor) = resolveStageStatus(
         targetTasks = setOf("compileModPayload"),
         selectedTask = selectedTask,
@@ -165,7 +164,6 @@ private fun PipelineStageCard(
     icon: @Composable () -> Painter,
     modifier: Modifier = Modifier,
 ) {
-
     Box(
         modifier = modifier
             .widthIn(min = ComponentSize.PluginPipelineBoxWidth)

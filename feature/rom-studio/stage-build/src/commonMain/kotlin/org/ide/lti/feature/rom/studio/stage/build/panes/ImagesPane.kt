@@ -9,8 +9,6 @@
  */
 package org.ide.lti.feature.rom.studio.stage.build.panes
 
-import org.ide.lti.core.designsystem.theme.AlphaTokens
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -33,6 +31,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -50,6 +49,7 @@ import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.IdeStatusBadge
 import org.ide.lti.core.designsystem.component.display.IdeStatusSeverity
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
+import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
@@ -96,7 +96,11 @@ private fun ImagesNoticeCard() {
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
             .background(MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Subtle))
-            .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Ambient), GlassShapes.ShellCard)
+            .border(
+                GlassDimens.HairlineBorder,
+                MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Ambient),
+                GlassShapes.ShellCard,
+            )
             .padding(Spacing.Medium),
     ) {
         Row(
@@ -229,18 +233,48 @@ private fun ImagesTableHeader() {
         modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.Small),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text("#", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.width(Spacing.Large))
-        Text("Partition", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.weight(1.0f))
+        Text(
+            "#",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = FontSize.Micro,
+            modifier = Modifier.width(Spacing.Large),
+        )
+        Text(
+            "Partition",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = FontSize.Micro,
+            modifier = Modifier.weight(1.0f),
+        )
         Text(
             text = "Source (patched checkpoint)",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.Micro,
             modifier = Modifier.weight(2.0f),
         )
-        Text("Image builder", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.weight(1.5f))
-        Text("Output path", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.weight(1.5f))
-        Text("Status", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.weight(1.0f))
-        Text("Size (est.)", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.weight(1.0f))
+        Text(
+            "Image builder",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = FontSize.Micro,
+            modifier = Modifier.weight(1.5f),
+        )
+        Text(
+            "Output path",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = FontSize.Micro,
+            modifier = Modifier.weight(1.5f),
+        )
+        Text(
+            "Status",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = FontSize.Micro,
+            modifier = Modifier.weight(1.0f),
+        )
+        Text(
+            "Size (est.)",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = FontSize.Micro,
+            modifier = Modifier.weight(1.0f),
+        )
     }
 }
 
@@ -250,7 +284,12 @@ private fun ImagesTableRow(row: ImageRowData) {
         modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(row.index, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, modifier = Modifier.width(Spacing.Large))
+        Text(
+            row.index,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = FontSize.Micro,
+            modifier = Modifier.width(Spacing.Large),
+        )
         Text(
             text = row.partition,
             color = MaterialTheme.colorScheme.onSurface,
@@ -290,7 +329,11 @@ private fun ImagesTableRow(row: ImageRowData) {
             ) {
                 Text(
                     text = row.builder,
-                    color = if (row.isReady) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (row.isReady) {
+                        MaterialTheme.colorScheme.onSurface
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
                     fontSize = FontSize.Micro,
                 )
                 Icon(
@@ -481,7 +524,11 @@ private fun ImagesValidationCard(onRunValidation: () -> Unit) {
                                 tint = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.size(IconSize.ExtraSmall),
                             )
-                            Text("Run validation", color = MaterialTheme.colorScheme.onSurface, fontSize = FontSize.Micro)
+                            Text(
+                                "Run validation",
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontSize = FontSize.Micro,
+                            )
                         }
                     }
                     Text(
@@ -502,8 +549,18 @@ private fun ImagesValidationCheckItem(text: String) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
-        Icon(Icons.Default.Check, null, tint = GlassTheme.diagnosticColors.success, modifier = Modifier.size(IconSize.ExtraSmall))
-        Text(text = text, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro, fontFamily = ideFontFamily())
+        Icon(
+            Icons.Default.Check,
+            null,
+            tint = GlassTheme.diagnosticColors.success,
+            modifier = Modifier.size(IconSize.ExtraSmall),
+        )
+        Text(
+            text = text,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = FontSize.Micro,
+            fontFamily = ideFontFamily(),
+        )
     }
 }
 
@@ -518,7 +575,12 @@ private fun ImagesFootnoteCard() {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
-        Icon(Icons.Default.Info, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(IconSize.Small))
+        Icon(
+            Icons.Default.Info,
+            null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(IconSize.Small),
+        )
         Text(
             text = "These images will be included in the flashable package after signing. " +
                 "Continue to the next step when validation passes.",

@@ -81,7 +81,8 @@ public data class StudioUiState(
 @Suppress("TooManyFunctions")
 public class StudioViewModel(
     private val studioPresentationStore: StudioPresentationStorePort,
-    public val stageEditorRegistry: StageEditorRegistry = DefaultStageEditorRegistry(emptyList(), enforceFullPipeline = false),
+    public val stageEditorRegistry: StageEditorRegistry =
+        DefaultStageEditorRegistry(emptyList(), enforceFullPipeline = false),
     initialWorkspaceId: String = "",
     private val workspaceManager: WorkspaceManager? = null,
 ) : ViewModel() {
@@ -177,7 +178,9 @@ public class StudioViewModel(
         val descriptors = activeDescriptors()
         val stage = descriptors.firstOrNull { it.stageId == stageId } ?: return
         val currentEditor = _uiState.value.entry as? StudioEntry.Editor
-        val targetObjectId = if (currentEditor != null && stage.subobjects.any { it.id.value == currentEditor.objectId }) {
+        val targetObjectId = if (currentEditor != null &&
+            stage.subobjects.any { it.id.value == currentEditor.objectId }
+        ) {
             currentEditor.objectId
         } else {
             stage.subobjects.first().id.value
@@ -562,15 +565,16 @@ public class StudioViewModel(
             )
         }
 
-        fun computeInitialRailItems(descriptors: List<StageDescriptor>): List<StudioRailItem> = descriptors.map { stage ->
-            StudioRailItem(
-                stage = stage,
-                isSelected = false,
-                errorCount = 0,
-                warningCount = 0,
-                statusLabel = "Valid",
-            )
-        }
+        fun computeInitialRailItems(descriptors: List<StageDescriptor>): List<StudioRailItem> =
+            descriptors.map { stage ->
+                StudioRailItem(
+                    stage = stage,
+                    isSelected = false,
+                    errorCount = 0,
+                    warningCount = 0,
+                    statusLabel = "Valid",
+                )
+            }
 
         fun createDefaultValidationReport(): ValidationReport = ValidationReport(
             errors = listOf(

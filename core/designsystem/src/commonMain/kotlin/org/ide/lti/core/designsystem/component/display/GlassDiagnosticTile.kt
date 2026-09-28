@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -32,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -43,6 +45,7 @@ import org.ide.lti.core.designsystem.component.tooltip.GlassTooltipArea
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.DiagnosticColors
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
@@ -72,6 +75,7 @@ data class GlassDiagnosticItem(
 /**
  * Default constants and helpers for diagnostic components.
  */
+@Suppress("PropertyName") // Design token uses PascalCase per CLAUDE.md token catalog
 object GlassDiagnosticDefaults {
     /** Duration in milliseconds that the "Copied!" feedback indicator persists. */
     const val CopiedFeedbackDurationMs: Long = 2000L
@@ -102,10 +106,7 @@ object GlassDiagnosticDefaults {
  * @param modifier Optional layout modifier.
  */
 @Composable
-fun GlassDiagnosticTile(
-    item: GlassDiagnosticItem,
-    modifier: Modifier = Modifier,
-) {
+fun GlassDiagnosticTile(item: GlassDiagnosticItem, modifier: Modifier = Modifier) {
     val diagnostics = GlassTheme.diagnosticColors
 
     @Suppress("DEPRECATION")
@@ -119,17 +120,7 @@ fun GlassDiagnosticTile(
         }
     }
 
-    val statusColor = when (item.status) {
-        GlassStepStatus.SUCCESS -> diagnostics.success
-        GlassStepStatus.WARNING -> diagnostics.warning
-        GlassStepStatus.FAILED -> diagnostics.error
-        GlassStepStatus.RUNNING -> MaterialTheme.colorScheme.primary
-        GlassStepStatus.PENDING -> MaterialTheme.colorScheme.onSurfaceVariant
-        GlassStepStatus.SKIPPED -> MaterialTheme.colorScheme.onSurfaceVariant
-        GlassStepStatus.CANCELLED -> MaterialTheme.colorScheme.onSurfaceVariant
-        GlassStepStatus.INTERRUPTED -> MaterialTheme.colorScheme.onSurfaceVariant
-        GlassStepStatus.RESTORED -> MaterialTheme.colorScheme.onSurfaceVariant
-    }
+    val statusColor = resolveStatusColor(item.status, diagnostics, MaterialTheme.colorScheme)
 
     CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
         Box(
@@ -238,7 +229,11 @@ fun GlassDiagnosticTile(
                                         AppIcons.CopyPainterResource()
                                     },
                                     contentDescription = "Copy",
-                                    tint = if (isCopied) diagnostics.success else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    tint = if (isCopied) {
+                                        diagnostics.success
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    },
                                     modifier = Modifier.size(IconSize.Small),
                                 )
                             }
@@ -249,3 +244,15 @@ fun GlassDiagnosticTile(
         }
     }
 }
+
+/**
+ * Resolves the status color for a diagnostic step status.
+ */
+private fun resolveStatusColor(status: GlassStepStatus, diagnostics: DiagnosticColors, colors: ColorScheme): Color =
+    when (status) {
+        GlassStepStatus.SUCCESS -> diagnostics.success
+        GlassStepStatus.WARNING -> diagnostics.warning
+        GlassStepStatus.FAILED -> diagnostics.error
+        GlassStepStatus.RUNNING -> colors.primary
+        else -> colors.onSurfaceVariant
+    }

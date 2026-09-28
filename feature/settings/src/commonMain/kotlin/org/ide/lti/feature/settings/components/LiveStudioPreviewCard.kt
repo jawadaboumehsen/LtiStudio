@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -30,6 +31,7 @@ import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.StarOutline
 import androidx.compose.material.icons.filled.Widgets
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -42,6 +44,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import org.ide.lti.core.designsystem.component.display.LtiRomStudioMark
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.AppTheme
@@ -132,143 +135,166 @@ fun LiveStudioPreviewCard(
                     ),
             ) {
                 // Window Chrome Titlebar
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(ComponentSize.TopBarButtonSize)
-                        .padding(horizontal = Spacing.SmallMedium),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(Spacing.Small)
-                            .clip(GlassShapes.Circle)
-                            .background(GlassTheme.diagnosticColors.error),
-                    )
-                    Box(
-                        modifier = Modifier
-                            .size(Spacing.Small)
-                            .clip(GlassShapes.Circle)
-                            .background(GlassTheme.diagnosticColors.warning),
-                    )
-                    Box(
-                        modifier = Modifier
-                            .size(Spacing.Small)
-                            .clip(GlassShapes.Circle)
-                            .background(GlassTheme.diagnosticColors.success),
-                    )
-
-                    Spacer(modifier = Modifier.width(Spacing.Small))
-
-                    LtiRomStudioMark(
-                        modifier = Modifier.size(IconSize.Small),
-                        tint = activeAccent,
-                    )
-                    Text(
-                        text = "LtiRom Studio",
-                        fontSize = FontSize.LabelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = textColor,
-                    )
-                }
+                StudioPreviewTitleBar(activeAccent = activeAccent, textColor = textColor)
 
                 // Window Body Split: Left Mini-Nav & Right Form
                 Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                    // Mini Left Sidebar
-                    Column(
-                        modifier = Modifier
-                            .width(ComponentSize.PluginTableStatusColWidth)
-                            .fillMaxHeight()
-                            .background(previewScheme.surfaceContainerHigh.copy(alpha = AlphaTokens.Half))
-                            .padding(horizontal = Spacing.Small, vertical = Spacing.SmallMedium),
-                        verticalArrangement = Arrangement.spacedBy(contentSpacing),
-                    ) {
-                        // Projects (Active)
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(GlassShapes.Small)
-                                .background(previewScheme.primary.copy(alpha = AlphaTokens.Faded))
-                                .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Folder,
-                                contentDescription = null,
-                                tint = activeAccent,
-                                modifier = Modifier.size(IconSize.Small),
-                            )
-                            Text(
-                                text = "Projects",
-                                fontSize = FontSize.LabelSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = textColor,
-                            )
-                        }
-
-                        MiniNavItem(icon = Icons.Default.Schedule, label = "Recent", textColor = textMutedColor)
-                        MiniNavItem(icon = Icons.Default.StarOutline, label = "Starred", textColor = textMutedColor)
-                        MiniNavItem(icon = Icons.Default.Widgets, label = "Templates", textColor = textMutedColor)
-                    }
-
-                    // Mini Right Form Cockpit
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                            .padding(Spacing.SmallMedium),
-                        verticalArrangement = Arrangement.spacedBy(contentSpacing),
-                    ) {
-                        Text(
-                            text = "Project",
-                            fontSize = FontSize.BodySmall,
-                            fontWeight = FontWeight.Bold,
-                            color = textColor,
-                        )
-
-                        // Name Field
-                        MiniFormInput(
-                            label = "Name",
-                            value = "Aurora",
-                            textColor = textColor,
-                            labelColor = textMutedColor,
-                            bgColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        )
-
-                        // Location Field
-                        MiniFormInput(
-                            label = "Location",
-                            value = "/Users/jordan/Projects/Aurora",
-                            trailingIcon = Icons.Default.FolderOpen,
-                            textColor = textColor,
-                            labelColor = textMutedColor,
-                            bgColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        )
-
-                        // Description Field
-                        MiniFormInput(
-                            label = "Description",
-                            value = "A modern ROM toolkit for creators.",
-                            multiline = true,
-                            textColor = textColor,
-                            labelColor = textMutedColor,
-                            bgColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        )
-                    }
+                    StudioPreviewSidebar(
+                        previewScheme = previewScheme,
+                        activeAccent = activeAccent,
+                        textColor = textColor,
+                        textMutedColor = textMutedColor,
+                        contentSpacing = contentSpacing,
+                    )
+                    StudioPreviewForm(
+                        textColor = textColor,
+                        textMutedColor = textMutedColor,
+                        contentSpacing = contentSpacing,
+                    )
                 }
             }
         }
     }
 }
 
+/** Miniature window titlebar with traffic light buttons and studio logo. */
 @Composable
-private fun MiniNavItem(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    label: String,
+private fun StudioPreviewTitleBar(activeAccent: Color, textColor: Color) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(ComponentSize.TopBarButtonSize)
+            .padding(horizontal = Spacing.SmallMedium),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(Spacing.Small)
+                .clip(GlassShapes.Circle)
+                .background(GlassTheme.diagnosticColors.error),
+        )
+        Box(
+            modifier = Modifier
+                .size(Spacing.Small)
+                .clip(GlassShapes.Circle)
+                .background(GlassTheme.diagnosticColors.warning),
+        )
+        Box(
+            modifier = Modifier
+                .size(Spacing.Small)
+                .clip(GlassShapes.Circle)
+                .background(GlassTheme.diagnosticColors.success),
+        )
+
+        Spacer(modifier = Modifier.width(Spacing.Small))
+
+        LtiRomStudioMark(
+            modifier = Modifier.size(IconSize.Small),
+            tint = activeAccent,
+        )
+        Text(
+            text = "LtiRom Studio",
+            fontSize = FontSize.LabelSmall,
+            fontWeight = FontWeight.Bold,
+            color = textColor,
+        )
+    }
+}
+
+/** Miniature navigation sidebar inside the studio preview window. */
+@Composable
+private fun StudioPreviewSidebar(
+    previewScheme: ColorScheme,
+    activeAccent: Color,
     textColor: Color,
+    textMutedColor: Color,
+    contentSpacing: Dp,
 ) {
+    Column(
+        modifier = Modifier
+            .width(ComponentSize.PluginTableStatusColWidth)
+            .fillMaxHeight()
+            .background(previewScheme.surfaceContainerHigh.copy(alpha = AlphaTokens.Half))
+            .padding(horizontal = Spacing.Small, vertical = Spacing.SmallMedium),
+        verticalArrangement = Arrangement.spacedBy(contentSpacing),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(GlassShapes.Small)
+                .background(previewScheme.primary.copy(alpha = AlphaTokens.Faded))
+                .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+        ) {
+            Icon(
+                imageVector = Icons.Default.Folder,
+                contentDescription = null,
+                tint = activeAccent,
+                modifier = Modifier.size(IconSize.Small),
+            )
+            Text(
+                text = "Projects",
+                fontSize = FontSize.LabelSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = textColor,
+            )
+        }
+
+        MiniNavItem(icon = Icons.Default.Schedule, label = "Recent", textColor = textMutedColor)
+        MiniNavItem(icon = Icons.Default.StarOutline, label = "Starred", textColor = textMutedColor)
+        MiniNavItem(icon = Icons.Default.Widgets, label = "Templates", textColor = textMutedColor)
+    }
+}
+
+/** Miniature form inputs inside the studio preview cockpit. */
+@Composable
+private fun RowScope.StudioPreviewForm(textColor: Color, textMutedColor: Color, contentSpacing: Dp) {
+    Column(
+        modifier = Modifier
+            .weight(1f)
+            .fillMaxHeight()
+            .padding(Spacing.SmallMedium),
+        verticalArrangement = Arrangement.spacedBy(contentSpacing),
+    ) {
+        Text(
+            text = "Project",
+            fontSize = FontSize.BodySmall,
+            fontWeight = FontWeight.Bold,
+            color = textColor,
+        )
+
+        MiniFormInput(
+            label = "Name",
+            value = "Aurora",
+            textColor = textColor,
+            labelColor = textMutedColor,
+            bgColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        )
+
+        MiniFormInput(
+            label = "Location",
+            value = "/Users/jordan/Projects/Aurora",
+            trailingIcon = Icons.Default.FolderOpen,
+            textColor = textColor,
+            labelColor = textMutedColor,
+            bgColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        )
+
+        MiniFormInput(
+            label = "Description",
+            value = "A modern ROM toolkit for creators.",
+            multiline = true,
+            textColor = textColor,
+            labelColor = textMutedColor,
+            bgColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        )
+    }
+}
+
+@Composable
+private fun MiniNavItem(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, textColor: Color) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -343,11 +369,7 @@ private fun MiniFormInput(
 }
 
 @Composable
-private fun ScenicBackdropCanvas(
-    isBlueGlass: Boolean,
-    isDark: Boolean,
-    modifier: Modifier = Modifier,
-) {
+private fun ScenicBackdropCanvas(isBlueGlass: Boolean, isDark: Boolean, modifier: Modifier = Modifier) {
     Canvas(modifier = modifier) {
         val skyGradient = when {
             isBlueGlass -> Brush.verticalGradient(

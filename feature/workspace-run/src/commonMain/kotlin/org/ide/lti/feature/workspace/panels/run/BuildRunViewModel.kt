@@ -11,7 +11,11 @@ package org.ide.lti.feature.workspace.panels.run
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
 import org.ide.lti.core.domain.repository.run.RunRepository
@@ -95,10 +99,15 @@ public class BuildRunViewModel(
             workspaceManager.currentWorkspace.collectLatest { ws ->
                 val wsReadiness = if (ws != null && readinessPort != null) {
                     runCatching { readinessPort.forWorkspace(ws) }.getOrNull()
-                } else null
+                } else {
+                    null
+                }
 
                 val isReady = wsReadiness?.state?.let { it == EnvironmentReadinessState.READY }
-                    ?: (_uiState.value.environmentReadiness?.state?.let { it == EnvironmentReadinessState.READY } ?: true)
+                    ?: (
+                        _uiState.value.environmentReadiness?.state?.let { it == EnvironmentReadinessState.READY }
+                            ?: true
+                        )
 
                 _uiState.update {
                     it.copy(
@@ -116,10 +125,13 @@ public class BuildRunViewModel(
                         val latest = runs.maxByOrNull { it.startedAt }
                         val cachedLogs = if (latest != null && runRepository != null) {
                             runCatching { runRepository.cachedEvents(latest.id) }.getOrDefault(emptyList())
-                        } else emptyList()
+                        } else {
+                            emptyList()
+                        }
 
                         _uiState.update { state ->
-                            val currentIsReady = state.environmentReadiness?.state?.let { it == EnvironmentReadinessState.READY } ?: true
+                            val currentIsReady =
+                                state.environmentReadiness?.state?.let { it == EnvironmentReadinessState.READY } ?: true
                             state.copy(
                                 latestRun = latest,
                                 isCancelling = latest?.state == RunState.CANCELLING,
@@ -155,18 +167,18 @@ public class BuildRunViewModel(
                     _uiState.update {
                         it.copy(
                             isStartingRun = false,
-                            errorMessage = error.message ?: "Failed to start pipeline run"
+                            errorMessage = error.message ?: "Failed to start pipeline run",
                         )
                     }
-                }
+                },
             )
         }
     }
 
     public fun cancelBuild() {
-        val ws = _uiState.value.currentWorkspace ?: return
-        val run = _uiState.value.latestRun ?: return
-        if (!run.state.isActive || cancelRunUseCase == null) return
+        val ws = _uiState.value.currentWorkspace
+        val run = _uiState.value.latestRun
+        if (ws == null || run == null || !run.state.isActive || cancelRunUseCase == null) return
 
         viewModelScope.launch {
             _uiState.update { it.copy(isCancelling = true, errorMessage = null) }
@@ -179,18 +191,18 @@ public class BuildRunViewModel(
                     _uiState.update {
                         it.copy(
                             isCancelling = false,
-                            errorMessage = error.message ?: "Failed to cancel pipeline run"
+                            errorMessage = error.message ?: "Failed to cancel pipeline run",
                         )
                     }
-                }
+                },
             )
         }
     }
 
     public fun reattachBuild() {
-        val ws = _uiState.value.currentWorkspace ?: return
-        val run = _uiState.value.latestRun ?: return
-        if (!run.state.isActive || reattachRunUseCase == null) return
+        val ws = _uiState.value.currentWorkspace
+        val run = _uiState.value.latestRun
+        if (ws == null || run == null || !run.state.isActive || reattachRunUseCase == null) return
 
         viewModelScope.launch {
             reattachRunUseCase.invoke(ws.id, run.id)

@@ -35,7 +35,6 @@ fun IdeTopAppBar(
     centerContent: @Composable RowScope.() -> Unit = {},
     trailingContent: @Composable RowScope.() -> Unit = {},
     windowControls: @Composable (() -> Unit)? = null,
-    onDragWindow: (() -> Unit)? = null,
 ) {
     Row(
         modifier = modifier

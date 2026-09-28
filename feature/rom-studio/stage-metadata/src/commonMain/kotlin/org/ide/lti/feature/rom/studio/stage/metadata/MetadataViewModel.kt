@@ -18,10 +18,8 @@ import org.ide.lti.core.model.target.DefaultTargetCatalog
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.ReleaseSettings
 
-public class MetadataViewModel(
-    public val workspaceId: String,
-    initialSettings: ReleaseSettings? = null,
-) : ViewModel() {
+public class MetadataViewModel(public val workspaceId: String, initialSettings: ReleaseSettings? = null) :
+    ViewModel() {
 
     public val targetDevice: TargetDevice = DefaultTargetCatalog.PQ84P01_DEFAULT
 

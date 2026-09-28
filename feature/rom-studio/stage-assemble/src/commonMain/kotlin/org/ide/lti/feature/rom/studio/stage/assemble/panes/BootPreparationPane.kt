@@ -9,7 +9,6 @@
  */
 package org.ide.lti.feature.rom.studio.stage.assemble.panes
 
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -31,6 +30,7 @@ import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -377,7 +377,10 @@ public fun BootPreparationPane(
                         )
                     }
 
-                    HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
+                    HorizontalDivider(
+                        thickness = GlassDimens.HairlineBorder,
+                        color = MaterialTheme.colorScheme.outlineVariant,
+                    )
 
                     // Rows
                     AffectedFileRow("boot.img", "Rebuild", IdeStatusSeverity.Warning)
@@ -386,7 +389,10 @@ public fun BootPreparationPane(
                     AffectedFileRow("kernel_modules/*", "Included", IdeStatusSeverity.Ready)
                     AffectedFileRow("init_boot.img", "Unchanged", IdeStatusSeverity.Running)
 
-                    HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
+                    HorizontalDivider(
+                        thickness = GlassDimens.HairlineBorder,
+                        color = MaterialTheme.colorScheme.outlineVariant,
+                    )
 
                     // Footnote Info
                     Row(
@@ -453,7 +459,11 @@ private fun BootSelectField(
                     .fillMaxWidth()
                     .clip(GlassShapes.ShellControl)
                     .background(MaterialTheme.colorScheme.surfaceContainer)
-                    .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outlineVariant, GlassShapes.ShellControl)
+                    .border(
+                        GlassDimens.HairlineBorder,
+                        MaterialTheme.colorScheme.outlineVariant,
+                        GlassShapes.ShellControl,
+                    )
                     .clickable { expanded = true }
                     .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Small),
                 verticalAlignment = Alignment.CenterVertically,
@@ -482,7 +492,13 @@ private fun BootSelectField(
                         text = {
                             Text(
                                 text = option,
-                                color = if (option == value) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                color = if (option ==
+                                    value
+                                ) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                },
                                 fontSize = FontSize.Micro,
                                 fontFamily = ideFontFamily(),
                             )

@@ -26,7 +26,14 @@ import kotlinx.datetime.Instant
 import org.ide.lti.core.domain.pipeline.PipelineEvent
 import org.ide.lti.core.domain.pipeline.PipelineOrchestrator
 import org.ide.lti.core.domain.pipeline.ToolResult
-import org.ide.lti.core.domain.ports.*
+import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
+import org.ide.lti.core.domain.ports.FileStat
+import org.ide.lti.core.domain.ports.PipelineExecutionPort
+import org.ide.lti.core.domain.ports.RunHandle
+import org.ide.lti.core.domain.ports.StepEvent
+import org.ide.lti.core.domain.ports.StepStatus
+import org.ide.lti.core.domain.ports.VendoredFile
+import org.ide.lti.core.domain.ports.VendoredFilePort
 import org.ide.lti.core.domain.repository.run.RunRepository
 import org.ide.lti.core.domain.repository.snapshot.SnapshotRepository
 import org.ide.lti.core.domain.repository.target.TargetRepository
@@ -36,12 +43,36 @@ import org.ide.lti.core.domain.usecase.build.ObserveRunUseCase
 import org.ide.lti.core.domain.usecase.build.ReattachRunUseCase
 import org.ide.lti.core.domain.usecase.build.StartPipelineRunUseCase
 import org.ide.lti.core.domain.workspace.WorkspaceManager
-import org.ide.lti.core.model.run.*
+import org.ide.lti.core.model.run.Artifact
+import org.ide.lti.core.model.run.ArtifactKind
+import org.ide.lti.core.model.run.BuildRun
+import org.ide.lti.core.model.run.RunState
+import org.ide.lti.core.model.run.StageId
+import org.ide.lti.core.model.run.StageStep
+import org.ide.lti.core.model.run.StepCommand
+import org.ide.lti.core.model.run.StepState
+import org.ide.lti.core.model.run.VerificationState
 import org.ide.lti.core.model.setup.EnvironmentReadiness
 import org.ide.lti.core.model.setup.EnvironmentReadinessState
-import org.ide.lti.core.model.target.*
-import org.ide.lti.core.model.workspace.*
-import kotlin.test.*
+import org.ide.lti.core.model.target.PackagePolicy
+import org.ide.lti.core.model.target.TargetBinding
+import org.ide.lti.core.model.target.TargetDevice
+import org.ide.lti.core.model.target.TargetFirmware
+import org.ide.lti.core.model.target.TargetRegion
+import org.ide.lti.core.model.target.TargetStatus
+import org.ide.lti.core.model.workspace.AcquisitionMode
+import org.ide.lti.core.model.workspace.ConfigurationSnapshot
+import org.ide.lti.core.model.workspace.RecentProject
+import org.ide.lti.core.model.workspace.SigningPolicy
+import org.ide.lti.core.model.workspace.Workspace
+import org.ide.lti.core.model.workspace.WorkspaceSession
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class BuildRunReattachTest {
@@ -97,13 +128,14 @@ class BuildRunReattachTest {
 
     private class FakeSnapshotRepository : SnapshotRepository {
         val snapshotsMap = mutableMapOf<String, ConfigurationSnapshot>()
-        private val _flow = MutableStateFlow<List<ConfigurationSnapshot>>(emptyList())
-        override val snapshots: Flow<List<ConfigurationSnapshot>> = _flow.asStateFlow()
-        override fun snapshotsForWorkspace(workspaceId: String): Flow<List<ConfigurationSnapshot>> = _flow.asStateFlow()
+        private val snapshotsFlow = MutableStateFlow<List<ConfigurationSnapshot>>(emptyList())
+        override val snapshots: Flow<List<ConfigurationSnapshot>> = snapshotsFlow.asStateFlow()
+        override fun snapshotsForWorkspace(workspaceId: String): Flow<List<ConfigurationSnapshot>> =
+            snapshotsFlow.asStateFlow()
         override suspend fun getSnapshot(id: String): ConfigurationSnapshot? = snapshotsMap[id]
         override suspend fun saveSnapshot(snapshot: ConfigurationSnapshot) {
             snapshotsMap[snapshot.id] = snapshot
-            _flow.value = snapshotsMap.values.toList()
+            snapshotsFlow.value = snapshotsMap.values.toList()
         }
     }
 

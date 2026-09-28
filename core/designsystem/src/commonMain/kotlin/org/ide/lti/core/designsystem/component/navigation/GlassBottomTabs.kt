@@ -47,26 +47,19 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastCoerceIn
 import androidx.compose.ui.util.fastRoundToInt
 import dev.chrisbanes.haze.ExperimentalHazeApi
-import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.glass.hazeGlass
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.drop
-import org.ide.lti.core.designsystem.component.actions.*
-import org.ide.lti.core.designsystem.component.devtools.*
-import org.ide.lti.core.designsystem.component.display.*
-import org.ide.lti.core.designsystem.component.feedback.*
-import org.ide.lti.core.designsystem.component.inputs.*
-import org.ide.lti.core.designsystem.component.layout.*
-import org.ide.lti.core.designsystem.component.primitives.*
+import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassMaterialStyles
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
-import org.ide.lti.core.designsystem.theme.sceneHazeInput
 import org.ide.lti.core.designsystem.theme.MotionThreshold
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.designsystem.theme.sceneHazeInput
 import org.ide.lti.core.designsystem.utils.DampedDragAnimation
 import org.ide.lti.core.designsystem.utils.InteractiveHighlight
 
@@ -204,10 +197,7 @@ fun GlassBottomTabs(
 
 @OptIn(ExperimentalHazeApi::class)
 @Composable
-private fun GlassBottomTabBarBackground(
-    containerColor: Color,
-    interactiveHighlight: InteractiveHighlight,
-) {
+private fun GlassBottomTabBarBackground(containerColor: Color, interactiveHighlight: InteractiveHighlight) {
     val theme = GlassTheme.appTheme
     val surfaceModifier = if (GlassTheme.effectsEnabled) {
         Modifier.hazeGlass(

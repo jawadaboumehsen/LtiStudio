@@ -29,10 +29,7 @@ import org.ide.lti.core.designsystem.theme.Spacing
  * @param modifier Optional layout modifier.
  */
 @Composable
-fun GlassDiagnosticList(
-    items: List<GlassDiagnosticItem>,
-    modifier: Modifier = Modifier,
-) {
+fun GlassDiagnosticList(items: List<GlassDiagnosticItem>, modifier: Modifier = Modifier) {
     CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
         Column(
             modifier = modifier.fillMaxWidth(),

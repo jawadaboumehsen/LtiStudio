@@ -18,6 +18,7 @@ import androidx.compose.animation.core.tween
  * Centralized duration tokens (in milliseconds) for transitions, fades, hover
  * effects, and animations across the design system.
  */
+@Suppress("PropertyName") // Design-system tokens use PascalCase per CLAUDE.md token catalog
 object MotionDuration {
     /** Instant micro-transition for rapid gestures and quick-tap liquid reveals (80ms). */
     const val Instant: Int = 80
@@ -51,6 +52,7 @@ object MotionDuration {
  * Centralized spring physics tokens (damping ratio, stiffness) for fluid,
  * interactive liquid-glass gestures and animations.
  */
+@Suppress("PropertyName") // Design-system tokens use PascalCase per CLAUDE.md token catalog
 object MotionSpring {
     /** Stiff instantaneous position tracking stiffness (1000f). */
     const val StiffnessHigh: Float = 1000f
@@ -85,6 +87,7 @@ object MotionEasing {
 /**
  * Centralized visibility threshold tokens for animatable property convergence.
  */
+@Suppress("PropertyName") // Design-system tokens use PascalCase per CLAUDE.md token catalog
 object MotionThreshold {
     /** Fine precision threshold for sub-pixel and normalized progress animations (0.001f). */
     const val Fine: Float = 0.001f
@@ -94,10 +97,8 @@ object MotionThreshold {
  * Resolves an [AnimationSpec] that falls back to [snap] when [reducedMotion] is enabled.
  * Defaults to a standard fast tween ([MotionDuration.Fast]) for regular motion.
  */
-fun <T> resolveAnimationSpec(
-    reducedMotion: Boolean,
-    durationMillis: Int = MotionDuration.Fast,
-): AnimationSpec<T> = if (reducedMotion) snap() else tween(durationMillis)
+fun <T> resolveAnimationSpec(reducedMotion: Boolean, durationMillis: Int = MotionDuration.Fast): AnimationSpec<T> =
+    if (reducedMotion) snap() else tween(durationMillis)
 
 /**
  * IDE shell micro-interaction and transition motion tokens.

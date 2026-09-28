@@ -48,11 +48,7 @@ import org.ide.lti.core.designsystem.theme.Spacing
  * dismisses the palette.
  */
 @Composable
-public fun GlassCommandPalette(
-    isOpen: Boolean,
-    onDismissRequest: () -> Unit,
-    commands: List<CommandItem>,
-) {
+public fun GlassCommandPalette(isOpen: Boolean, onDismissRequest: () -> Unit, commands: List<CommandItem>) {
     if (!isOpen) return
 
     var query by remember { mutableStateOf("") }

@@ -58,15 +58,40 @@ class IdeShellTokensTest {
         val scheme = DarkColorScheme
         assertContrast(scheme.onSurface, scheme.background, minRatio = 4.5, "Dark onSurface on background")
         assertContrast(scheme.onSurface, scheme.surfaceContainer, minRatio = 4.5, "Dark onSurface on surfaceContainer")
-        assertContrast(scheme.onSurface, scheme.surfaceContainerHigh, minRatio = 4.5, "Dark onSurface on surfaceContainerHigh")
+        assertContrast(
+            scheme.onSurface,
+            scheme.surfaceContainerHigh,
+            minRatio = 4.5,
+            "Dark onSurface on surfaceContainerHigh",
+        )
 
-        assertContrast(scheme.onSurfaceVariant, scheme.background, minRatio = 4.5, "Dark onSurfaceVariant on background")
-        assertContrast(scheme.onSurfaceVariant, scheme.surfaceContainer, minRatio = 4.5, "Dark onSurfaceVariant on surfaceContainer")
-        assertContrast(scheme.onSurfaceVariant, scheme.surfaceContainerHigh, minRatio = 4.0, "Dark onSurfaceVariant on surfaceContainerHigh")
+        assertContrast(
+            scheme.onSurfaceVariant,
+            scheme.background,
+            minRatio = 4.5,
+            "Dark onSurfaceVariant on background",
+        )
+        assertContrast(
+            scheme.onSurfaceVariant,
+            scheme.surfaceContainer,
+            minRatio = 4.5,
+            "Dark onSurfaceVariant on surfaceContainer",
+        )
+        assertContrast(
+            scheme.onSurfaceVariant,
+            scheme.surfaceContainerHigh,
+            minRatio = 4.0,
+            "Dark onSurfaceVariant on surfaceContainerHigh",
+        )
 
         assertContrast(scheme.outline, scheme.background, minRatio = 1.3, "Dark outline on background")
         assertContrast(scheme.primary, scheme.surfaceContainer, minRatio = 3.0, "Dark primary on surfaceContainer")
-        assertContrast(scheme.primary, scheme.surfaceContainerHigh, minRatio = 2.9, "Dark primary on surfaceContainerHigh")
+        assertContrast(
+            scheme.primary,
+            scheme.surfaceContainerHigh,
+            minRatio = 2.9,
+            "Dark primary on surfaceContainerHigh",
+        )
     }
 
     @Test
@@ -74,10 +99,25 @@ class IdeShellTokensTest {
         val scheme = LightColorScheme
         assertContrast(scheme.onSurface, scheme.surfaceContainer, minRatio = 4.5, "Light onSurface on surfaceContainer")
         assertContrast(scheme.onSurface, scheme.background, minRatio = 4.5, "Light onSurface on background")
-        assertContrast(scheme.onSurface, scheme.surfaceContainerHigh, minRatio = 4.5, "Light onSurface on surfaceContainerHigh")
+        assertContrast(
+            scheme.onSurface,
+            scheme.surfaceContainerHigh,
+            minRatio = 4.5,
+            "Light onSurface on surfaceContainerHigh",
+        )
 
-        assertContrast(scheme.onSurfaceVariant, scheme.surfaceContainer, minRatio = 4.5, "Light onSurfaceVariant on surfaceContainer")
-        assertContrast(scheme.onSurfaceVariant, scheme.background, minRatio = 4.5, "Light onSurfaceVariant on background")
+        assertContrast(
+            scheme.onSurfaceVariant,
+            scheme.surfaceContainer,
+            minRatio = 4.5,
+            "Light onSurfaceVariant on surfaceContainer",
+        )
+        assertContrast(
+            scheme.onSurfaceVariant,
+            scheme.background,
+            minRatio = 4.5,
+            "Light onSurfaceVariant on background",
+        )
 
         assertContrast(scheme.outline, scheme.background, minRatio = 1.3, "Light outline on background")
         assertContrast(scheme.primary, scheme.surfaceContainer, minRatio = 3.0, "Light primary on surfaceContainer")
@@ -88,22 +128,32 @@ class IdeShellTokensTest {
     fun testBlueThemeWcagContrast() {
         val scheme = BlueColorScheme
         assertContrast(scheme.onSurface, scheme.background, minRatio = 4.5, "Blue onSurface on background")
-        assertContrast(scheme.onSurface, scheme.surfaceContainerHigh, minRatio = 4.5, "Blue onSurface on surfaceContainerHigh")
+        assertContrast(
+            scheme.onSurface,
+            scheme.surfaceContainerHigh,
+            minRatio = 4.5,
+            "Blue onSurface on surfaceContainerHigh",
+        )
         assertContrast(scheme.onSurface, scheme.surfaceContainer, minRatio = 4.5, "Blue onSurface on surfaceContainer")
 
-        assertContrast(scheme.onSurfaceVariant, scheme.background, minRatio = 4.5, "Blue onSurfaceVariant on background")
-        assertContrast(scheme.onSurfaceVariant, scheme.surfaceContainerHigh, minRatio = 4.5, "Blue onSurfaceVariant on surfaceContainerHigh")
+        assertContrast(
+            scheme.onSurfaceVariant,
+            scheme.background,
+            minRatio = 4.5,
+            "Blue onSurfaceVariant on background",
+        )
+        assertContrast(
+            scheme.onSurfaceVariant,
+            scheme.surfaceContainerHigh,
+            minRatio = 4.5,
+            "Blue onSurfaceVariant on surfaceContainerHigh",
+        )
 
         assertContrast(scheme.outline, scheme.background, minRatio = 1.3, "Blue outline on background")
         assertContrast(scheme.primary, scheme.surfaceContainer, minRatio = 3.0, "Blue primary on surfaceContainer")
     }
 
-    private fun assertContrast(
-        fg: Color,
-        bg: Color,
-        minRatio: Double,
-        label: String,
-    ) {
+    private fun assertContrast(fg: Color, bg: Color, minRatio: Double, label: String) {
         val ratio = ColorContrast.contrastRatio(fg, bg)
         assertTrue(
             ratio >= minRatio,

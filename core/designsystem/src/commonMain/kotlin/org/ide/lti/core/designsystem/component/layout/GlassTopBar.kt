@@ -212,9 +212,7 @@ fun GlassTopBar(
 }
 
 @Composable
-private fun GlassTopBarLeftSection(
-    navigation: TopBarNavigation,
-) {
+private fun GlassTopBarLeftSection(navigation: TopBarNavigation) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.Compact),
@@ -300,7 +298,9 @@ private fun GlassTopBarLeftSection(
                         Box(
                             modifier = Modifier
                                 .clip(GlassShapes.ExtraSmall)
-                                .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = AlphaTokens.Elevated))
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = AlphaTokens.Elevated),
+                                )
                                 .glassOutlineBorder(
                                     width = StrokeWidth.Hairline,
                                     color = MaterialTheme.colorScheme.outline,
@@ -335,10 +335,7 @@ private fun GlassTopBarLeftSection(
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-private fun GlassCommandPalettePill(
-    search: TopBarSearch,
-    modifier: Modifier = Modifier,
-) {
+private fun GlassCommandPalettePill(search: TopBarSearch, modifier: Modifier = Modifier) {
     var isHovered by remember { mutableStateOf(false) }
 
     val borderColor = if (isHovered) {
@@ -384,7 +381,11 @@ private fun GlassCommandPalettePill(
         Text(
             text = search.placeholder,
             style = MaterialTheme.typography.bodySmall.copy(fontSize = FontSize.Chip),
-            color = if (isHovered) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant,
+            color = if (isHovered) {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            },
             maxLines = 1,
             modifier = Modifier.weight(1f),
         )
@@ -416,15 +417,16 @@ private fun GlassCommandPalettePill(
                     fontWeight = FontWeight.SemiBold,
                     letterSpacing = LetterSpacing.Loose,
                 ),
-                color = if (isHovered) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                color = if (isHovered) {
+                    MaterialTheme.colorScheme.onSurface
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
             )
         }
     }
 }
 
-/**
- * Segmented layout mode toggle buttons for IDE panels.
- */
 /**
  * Segmented layout mode toggle buttons for IDE panels.
  */
@@ -457,7 +459,11 @@ private fun SegmentedPanelLayoutToggle(toggles: TopBarPanelToggles, modifier: Mo
                 painter = AppIcons.leftPanelPainterResource(),
                 contentDescription = "Toggle Left Panel (Files)",
                 modifier = Modifier.size(IconSize.Segmented),
-                tint = if (toggles.isLeftVisible) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = if (toggles.isLeftVisible) {
+                    MaterialTheme.colorScheme.onSurface
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
             )
         }
 
@@ -472,7 +478,11 @@ private fun SegmentedPanelLayoutToggle(toggles: TopBarPanelToggles, modifier: Mo
                 painter = AppIcons.bottomPanelPainterResource(),
                 contentDescription = "Toggle Bottom Panel (Terminal)",
                 modifier = Modifier.size(IconSize.Segmented),
-                tint = if (toggles.isBottomVisible) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = if (toggles.isBottomVisible) {
+                    MaterialTheme.colorScheme.onSurface
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
             )
         }
 
@@ -487,7 +497,11 @@ private fun SegmentedPanelLayoutToggle(toggles: TopBarPanelToggles, modifier: Mo
                 painter = AppIcons.rightPanelPainterResource(),
                 contentDescription = "Toggle Right Panel (AI Assistant)",
                 modifier = Modifier.size(IconSize.Segmented),
-                tint = if (toggles.isRightVisible) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = if (toggles.isRightVisible) {
+                    MaterialTheme.colorScheme.onSurface
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
             )
         }
     }

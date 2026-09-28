@@ -182,11 +182,7 @@ fun IdeNavigatorPanel(
 }
 
 @Composable
-private fun NavigatorItemRow(
-    item: IdeNavigatorItem,
-    isSelected: Boolean,
-    onSelectItem: (String) -> Unit,
-) {
+private fun NavigatorItemRow(item: IdeNavigatorItem, isSelected: Boolean, onSelectItem: (String) -> Unit) {
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -253,7 +249,11 @@ private fun NavigatorItemRow(
         if (item.badge != null) {
             Text(
                 text = item.badge,
-                color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                color = if (isSelected) {
+                    MaterialTheme.colorScheme.onSurface
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
                 fontSize = FontSize.Micro,
                 fontFamily = GlassFontFamily.code(),
             )

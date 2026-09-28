@@ -37,13 +37,11 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import dev.chrisbanes.haze.ExperimentalHazeApi
-import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.glass.GlassStyle
 import dev.chrisbanes.haze.glass.GlassTransformTarget
 import dev.chrisbanes.haze.glass.hazeGlass
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.GlassIcon
-import org.ide.lti.core.designsystem.theme.sceneHazeInput
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.FontSize
@@ -53,6 +51,7 @@ import org.ide.lti.core.designsystem.theme.HazeShape
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.LetterSpacing
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.sceneHazeInput
 
 /**
  * Type-safe button style hierarchy representing visual variants.
@@ -62,11 +61,8 @@ sealed interface GlassButtonStyle {
     data object Secondary : GlassButtonStyle
     data object Standard : GlassButtonStyle
     data object Text : GlassButtonStyle
-    data class Custom(
-        val surfaceColor: Color,
-        val contentColor: Color,
-        val borderColor: Color = Color.Transparent,
-    ) : GlassButtonStyle
+    data class Custom(val surfaceColor: Color, val contentColor: Color, val borderColor: Color = Color.Transparent) :
+        GlassButtonStyle
 }
 
 /**
@@ -179,7 +175,7 @@ fun GlassButton(
         horizontalArrangement = Arrangement.spacedBy(Spacing.Small, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        val contentColor = if (enabled) contentColor(variant, colors) else colors.onSurfaceVariant
+        val contentColor = if (enabled) contentColor(colors) else colors.onSurfaceVariant
         CompositionLocalProvider(LocalContentColor provides contentColor) {
             ProvideTextStyle(GlassButtonDefaults.TextStyle) {
                 content()
@@ -204,7 +200,7 @@ private fun tint(variant: GlassButtonVariant, colors: ColorScheme, enabled: Bool
     }
 }
 
-private fun contentColor(variant: GlassButtonVariant, colors: ColorScheme): Color = colors.onSurface
+private fun contentColor(colors: ColorScheme): Color = colors.onSurface
 
 /**
  * Convenience composable for a primary glass button.

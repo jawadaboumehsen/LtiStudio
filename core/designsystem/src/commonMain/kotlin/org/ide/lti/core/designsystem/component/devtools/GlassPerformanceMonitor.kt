@@ -32,13 +32,9 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import org.ide.lti.core.designsystem.component.actions.*
-import org.ide.lti.core.designsystem.component.display.*
-import org.ide.lti.core.designsystem.component.feedback.*
-import org.ide.lti.core.designsystem.component.inputs.*
-import org.ide.lti.core.designsystem.component.layout.*
-import org.ide.lti.core.designsystem.component.navigation.*
-import org.ide.lti.core.designsystem.component.primitives.*
+import org.ide.lti.core.designsystem.component.actions.GlassButton
+import org.ide.lti.core.designsystem.component.display.GlassCard
+import org.ide.lti.core.designsystem.component.primitives.GlassSurface
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
@@ -150,11 +146,7 @@ class GlassPerformanceCollector {
     /**
      * Computes current metrics from collected data.
      */
-    fun computeMetrics(
-        shaderCacheSize: Int,
-        activeBackdrops: Int,
-        componentsRendered: Int,
-    ): GlassPerformanceMetrics {
+    fun computeMetrics(shaderCacheSize: Int, activeBackdrops: Int, componentsRendered: Int): GlassPerformanceMetrics {
         if (frameTimes.isEmpty()) {
             return GlassPerformanceMetrics(
                 shaderCacheSize = shaderCacheSize,
@@ -261,10 +253,7 @@ fun GlassPerformanceMonitor(
  * The actual performance overlay UI.
  */
 @Composable
-private fun PerformanceOverlay(
-    metrics: GlassPerformanceMetrics,
-    modifier: Modifier = Modifier,
-) {
+private fun PerformanceOverlay(metrics: GlassPerformanceMetrics, modifier: Modifier = Modifier) {
     GlassSurface(
         modifier = modifier.width(ComponentSize.PerformanceMonitorWidth),
         shape = GlassShapes.HazeCard,
@@ -358,11 +347,7 @@ private fun PerformanceOverlay(
 }
 
 @Composable
-private fun MetricRow(
-    label: String,
-    value: String,
-    valueColor: Color = MaterialTheme.colorScheme.onSurface,
-) {
+private fun MetricRow(label: String, value: String, valueColor: Color = MaterialTheme.colorScheme.onSurface) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -396,9 +381,7 @@ enum class MonitorPosition(val alignment: Alignment) {
  * Example usage of GlassPerformanceMonitor.
  */
 @Composable
-fun GlassPerformanceMonitorExample(
-    modifier: Modifier = Modifier,
-) {
+fun GlassPerformanceMonitorExample(modifier: Modifier = Modifier) {
     var showMonitor by remember { mutableStateOf(true) }
 
     Box(modifier = modifier.fillMaxSize()) {

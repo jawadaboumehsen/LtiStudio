@@ -309,32 +309,41 @@ private suspend inline fun AwaitPointerEventScope.drag(
         return initialChange
     }
     var pointer = pointerId
-    while (true) {
-        val change = awaitDragOrUp(pointer) ?: return null
-        if (change.changedToUpIgnoreConsumed()) return change
-        if (change.isConsumed) return null
-        onDrag(change)
-        pointer = change.id
+    var result: PointerInputChange? = null
+    var active = true
+    while (active) {
+        val change = awaitDragOrUp(pointer)
+        when {
+            change == null || change.isConsumed -> active = false
+            change.changedToUpIgnoreConsumed() -> {
+                result = change
+                active = false
+            }
+            else -> {
+                onDrag(change)
+                pointer = change.id
+            }
+        }
     }
+    return result
 }
 
-private suspend inline fun AwaitPointerEventScope.awaitDragOrUp(
-    pointerId: PointerId,
-): PointerInputChange? {
+private suspend inline fun AwaitPointerEventScope.awaitDragOrUp(pointerId: PointerId): PointerInputChange? {
     var pointer = pointerId
-    while (true) {
+    var result: PointerInputChange? = null
+    while (result == null) {
         val event = awaitPointerEvent()
-        val dragEvent = event.changes.fastFirstOrNull { it.id == pointer } ?: return null
+        val dragEvent = event.changes.fastFirstOrNull { it.id == pointer } ?: break
         if (dragEvent.changedToUpIgnoreConsumed()) {
             val otherDown = event.changes.fastFirstOrNull { it.pressed }
             if (otherDown == null) {
-                return dragEvent
+                result = dragEvent
             } else {
                 pointer = otherDown.id
             }
-        } else {
-            val hasDragged = dragEvent.previousPosition != dragEvent.position
-            if (hasDragged) return dragEvent
+        } else if (dragEvent.previousPosition != dragEvent.position) {
+            result = dragEvent
         }
     }
+    return result
 }

@@ -9,7 +9,6 @@
  */
 package org.ide.lti.feature.rom.studio.stage.assemble.panes
 
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -30,6 +29,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.outlined.Layers
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Text
@@ -99,7 +99,11 @@ private fun SystemExtTopInfoCard() {
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
             .background(MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Subtle))
-            .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Ambient), GlassShapes.ShellCard)
+            .border(
+                GlassDimens.HairlineBorder,
+                MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Ambient),
+                GlassShapes.ShellCard,
+            )
             .padding(Spacing.Medium),
     ) {
         Row(
@@ -289,7 +293,11 @@ private fun SystemExtFlowDiagram() {
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(MaterialTheme.colorScheme.surfaceContainer, GlassShapes.ShellControl)
-                    .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outlineVariant, GlassShapes.ShellControl)
+                    .border(
+                        GlassDimens.HairlineBorder,
+                        MaterialTheme.colorScheme.outlineVariant,
+                        GlassShapes.ShellControl,
+                    )
                     .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Small),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -356,7 +364,11 @@ private fun SystemExtFlowDiagram() {
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(MaterialTheme.colorScheme.surfaceContainer, GlassShapes.ShellControl)
-                    .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outlineVariant, GlassShapes.ShellControl)
+                    .border(
+                        GlassDimens.HairlineBorder,
+                        MaterialTheme.colorScheme.outlineVariant,
+                        GlassShapes.ShellControl,
+                    )
                     .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Medium),
             ) {
                 Text(
@@ -434,7 +446,9 @@ private fun HandlingModeCard(
                     selectedColor = MaterialTheme.colorScheme.primary,
                     unselectedColor = MaterialTheme.colorScheme.onSurfaceVariant,
                     disabledSelectedColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    disabledUnselectedColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = AlphaTokens.Disabled),
+                    disabledUnselectedColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                        alpha = AlphaTokens.Disabled,
+                    ),
                 ),
             )
 
@@ -454,14 +468,22 @@ private fun HandlingModeCard(
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
                 Text(
                     text = title,
-                    color = if (isEnabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (isEnabled) {
+                        MaterialTheme.colorScheme.onSurface
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
                     fontSize = FontSize.BodyMedium,
                     fontWeight = FontWeight.SemiBold,
                     fontFamily = ideFontFamily(),
                 )
                 Text(
                     text = subtitle,
-                    color = if (isEnabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (isEnabled) {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
                     fontSize = FontSize.Micro,
                     fontFamily = ideFontFamily(),
                 )

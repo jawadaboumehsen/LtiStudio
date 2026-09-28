@@ -59,7 +59,6 @@ import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BrandColors
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
-import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.PluginThemeColors
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -241,7 +240,6 @@ private fun InstalledMasterTable(
     onSelectKey: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-
     Box(
         modifier = modifier
             .fillMaxHeight()
@@ -287,7 +285,6 @@ private fun InstalledMasterTable(
 
 @Composable
 private fun InstalledTableHeader(modifier: Modifier = Modifier) {
-
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -477,7 +474,6 @@ private fun InstalledInspectorPanel(
     onUninstall: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-
     Box(
         modifier = modifier
             .fillMaxHeight()
@@ -539,7 +535,6 @@ private fun InstalledInspectorHeader(
     onOpenDetails: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-
     Row(
         modifier = modifier.clickable { onOpenDetails() },
         verticalAlignment = Alignment.CenterVertically,
@@ -618,7 +613,6 @@ private fun InstalledInspectorActions(
     onUninstall: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
@@ -746,7 +740,6 @@ private fun InstalledInspectorActions(
 
 @Composable
 private fun InspectorRow(label: String, value: String, explanation: String? = null, modifier: Modifier = Modifier) {
-
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
