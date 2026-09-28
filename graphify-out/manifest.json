@@ -1356,9 +1356,9 @@
     "semantic_hash": ""
   },
   "lti-desktop/src/jvmMain/kotlin/main.kt": {
-    "mtime": 1790506263.5485995,
-    "seen": 1790507095.424326,
-    "ast_hash": "20b48d35afc247e85aad39898cb7e318",
+    "mtime": 1790568330.675984,
+    "seen": 1790568415.1108031,
+    "ast_hash": "072f27dc59e7dd87b1f2c3516d9dff2e",
     "semantic_hash": ""
   },
   "lti-shared/build.gradle.kts": {
@@ -1368,9 +1368,9 @@
     "semantic_hash": ""
   },
   "lti-shared/src/commonMain/kotlin/org/ide/lti/shared/LtiSharedApp.kt": {
-    "mtime": 1790506251.828071,
-    "seen": 1790507095.424326,
-    "ast_hash": "96659f1c23c2ac35aefb8b3fae4704d3",
+    "mtime": 1790568091.3371155,
+    "seen": 1790568415.1108031,
+    "ast_hash": "f73bfaaa66c3625cdc224af0bfa27da6",
     "semantic_hash": ""
   },
   "lti-shared/src/commonMain/kotlin/org/ide/lti/shared/di/KoinModules.kt": {
@@ -1386,9 +1386,9 @@
     "semantic_hash": "55466b42a7603aff2d41ba2fd09b4898"
   },
   "lti-shared/src/commonMain/kotlin/org/ide/lti/shared/navigation/RootNavGraph.kt": {
-    "mtime": 1790494294.6038404,
-    "seen": 1790496251.612243,
-    "ast_hash": "0a99c7201504d43eef49c15c8eac2b67",
+    "mtime": 1790568114.963215,
+    "seen": 1790568415.1108031,
+    "ast_hash": "50c336a30219a5b495efb27bc68ace0d",
     "semantic_hash": ""
   },
   "lti-shared/src/commonMain/kotlin/org/ide/lti/shared/utils/TopLevelDestination.kt": {
@@ -1398,9 +1398,9 @@
     "semantic_hash": "c9aa39c971d3a1d5e3c5fb70b2b53e8e"
   },
   "lti-shared/src/desktopTest/kotlin/org/ide/lti/shared/AppSettingsStateWiringTest.kt": {
-    "mtime": 1790498736.9790897,
-    "seen": 1790504993.8005757,
-    "ast_hash": "c12f096255c90717aece1000cf222fc2",
+    "mtime": 1790568115.011991,
+    "seen": 1790568415.1108031,
+    "ast_hash": "92a1fafcdc572be6d5f505598a02d0f3",
     "semantic_hash": ""
   },
   "scripts/pre-commit.sh": {
@@ -13266,9 +13266,9 @@
     "semantic_hash": "719b88fa3de4e2c6b0aaf3c6d9aa621f"
   },
   "lti-shared/src/desktopMain/kotlin/org/ide/lti/shared/di/ToolingModule.kt": {
-    "mtime": 1790557502.8095903,
-    "seen": 1790567721.1846092,
-    "ast_hash": "157c83743a95f00076897ee81c9022c1",
+    "mtime": 1790568057.2662454,
+    "seen": 1790568415.1108031,
+    "ast_hash": "0b25a6cf980e72189bdf1eaee0e0b306",
     "semantic_hash": ""
   },
   "tool/adapter/android-device/build.gradle.kts": {
@@ -20706,9 +20706,9 @@
     "semantic_hash": ""
   },
   "lti-shared/src/desktopTest/kotlin/org/ide/lti/shared/StartupHandoffFlashTest.kt": {
-    "mtime": 1790494374.5086532,
-    "seen": 1790496251.612243,
-    "ast_hash": "134ef191933571a08e93ec9614ce326b",
+    "mtime": 1790568057.1606977,
+    "seen": 1790568415.1108031,
+    "ast_hash": "893445697baee4047e134ee8acf58998",
     "semantic_hash": ""
   },
   "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/setup/DesktopTerminalLauncher.kt": {
@@ -20772,9 +20772,9 @@
     "semantic_hash": ""
   },
   "lti-shared/src/desktopTest/kotlin/org/ide/lti/shared/navigation/RootNavGraphAdmissionGateTest.kt": {
-    "mtime": 1790494527.537392,
-    "seen": 1790496251.612243,
-    "ast_hash": "89c1ec503e683bf0ae5f4590bc0e2043",
+    "mtime": 1790568115.012698,
+    "seen": 1790568415.1108031,
+    "ast_hash": "34652650810b46901f9098a2112fb4b0",
     "semantic_hash": ""
   },
   "feature/setup/src/commonMain/kotlin/org/ide/lti/feature/setup/ToolSelection.kt": {
