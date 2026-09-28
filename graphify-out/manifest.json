@@ -180,10 +180,10 @@
     "semantic_hash": "78afa4850c9fe507474466f8ebca59fd"
   },
   "build-logic/convention/src/main/kotlin/org/ide/lti/Detekt.kt": {
-    "mtime": 1789351024.4492092,
-    "seen": 1790165435.587203,
-    "ast_hash": "a392c31222c719d2a6c8df492f3dfc80",
-    "semantic_hash": "a392c31222c719d2a6c8df492f3dfc80"
+    "mtime": 1790563806.6128912,
+    "seen": 1790567721.1836102,
+    "ast_hash": "30579428cffd3cf4651fa08d71860185",
+    "semantic_hash": ""
   },
   "build-logic/convention/src/main/kotlin/org/ide/lti/KotlinMultiplatform.kt": {
     "mtime": 1789352050.1660068,
@@ -1332,15 +1332,15 @@
     "semantic_hash": ""
   },
   "feature/setup/src/commonMain/kotlin/org/ide/lti/feature/setup/SetupScreen.kt": {
-    "mtime": 1790503934.0739944,
-    "seen": 1790504993.7995884,
-    "ast_hash": "1eca3e443fc64c1b88343db8230d0035",
+    "mtime": 1790563437.3442235,
+    "seen": 1790567721.1836102,
+    "ast_hash": "a5deacd93b5708459ebb336f8166f892",
     "semantic_hash": ""
   },
   "feature/setup/src/commonMain/kotlin/org/ide/lti/feature/setup/SetupViewModel.kt": {
-    "mtime": 1790503934.0755882,
-    "seen": 1790504993.7995884,
-    "ast_hash": "367c843573f272d59bf00ba8e7ceb6ae",
+    "mtime": 1790563438.1849134,
+    "seen": 1790567721.1836102,
+    "ast_hash": "560faab2ea05f06c03b129bcb02612d5",
     "semantic_hash": ""
   },
   "gradlew": {
@@ -1350,9 +1350,9 @@
     "semantic_hash": "ab3b64d197bb9227a0da6e4cbe1ffd8a"
   },
   "lti-desktop/build.gradle.kts": {
-    "mtime": 1790536469.9879327,
-    "seen": 1790537921.8647645,
-    "ast_hash": "2205f2daa095aee4cfb15255d98420bd",
+    "mtime": 1790561214.188881,
+    "seen": 1790567721.1846092,
+    "ast_hash": "1052f65aa48f50d725dfe8303dc457cc",
     "semantic_hash": ""
   },
   "lti-desktop/src/jvmMain/kotlin/main.kt": {
@@ -7398,9 +7398,9 @@
     "semantic_hash": "0f9fe7144a2d43a47ae1419674d9e047"
   },
   "core/data/src/commonMain/kotlin/org/ide/lti/core/data/repository/setup/ToolchainSetupRepositoryImpl.kt": {
-    "mtime": 1790442482.3567524,
-    "seen": 1790447826.4718504,
-    "ast_hash": "6baa0435df13fc14fdaeb64713285dbd",
+    "mtime": 1790566654.4693873,
+    "seen": 1790567721.1836102,
+    "ast_hash": "4ff22d59f0e86232ab812bf601f27af3",
     "semantic_hash": ""
   },
   "core/data/src/commonMain/kotlin/org/ide/lti/core/data/repository/snapshot/SnapshotRepositoryImpl.kt": {
@@ -7440,9 +7440,9 @@
     "semantic_hash": "8886740f125aa3c3523cca5f7996f6e1"
   },
   "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/remote/EnvironmentReadinessAdapter.kt": {
-    "mtime": 1790483392.3158715,
-    "seen": 1790484605.9799302,
-    "ast_hash": "ee8b9a7cc582103b349e4939ed3b3f8b",
+    "mtime": 1790566459.219246,
+    "seen": 1790567721.1836102,
+    "ast_hash": "de4cc20a6b9c4fc5305a75d7bc1ba1a3",
     "semantic_hash": ""
   },
   "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/remote/RemoteWorkspaceProvisioner.kt": {
@@ -7464,10 +7464,10 @@
     "semantic_hash": "9fd19232cec7d9a2270279fe25ff6c2c"
   },
   "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/remote/ToolPublicationAdapter.kt": {
-    "mtime": 1789129473.4387684,
-    "seen": 1790165435.587203,
-    "ast_hash": "203726876abbc325753804d3321a4e9a",
-    "semantic_hash": "203726876abbc325753804d3321a4e9a"
+    "mtime": 1790566301.6406007,
+    "seen": 1790567721.1836102,
+    "ast_hash": "20aeafaf06ebb072a3d222a48a1fa99d",
+    "semantic_hash": ""
   },
   "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/remote/WorkspaceKeyProvisioner.kt": {
     "mtime": 1789143204.3346903,
@@ -7494,33 +7494,33 @@
     "semantic_hash": "a29e22014fe442687c55a113511f078f"
   },
   "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/setup/WslToolchainProvisioner.kt": {
-    "mtime": 1790496736.9616766,
-    "seen": 1790504993.7995884,
-    "ast_hash": "beeed821e72f39573c1592bc712a92e9",
+    "mtime": 1790566889.1236942,
+    "seen": 1790567721.1836102,
+    "ast_hash": "5ee1a94ad292e213e9ef1e6c4d131f4b",
     "semantic_hash": ""
   },
   "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/setup/doctor/ArchiveToolsInspector.kt": {
-    "mtime": 1789234417.3616495,
-    "seen": 1790165435.587203,
-    "ast_hash": "a34fff627a3e10f2f35552aab5b7ec3d",
-    "semantic_hash": "a34fff627a3e10f2f35552aab5b7ec3d"
+    "mtime": 1790552804.2301657,
+    "seen": 1790567721.1836102,
+    "ast_hash": "e2460ff6678db8a8a99a2a9b88076588",
+    "semantic_hash": ""
   },
   "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/setup/doctor/BuildCacheInspector.kt": {
-    "mtime": 1789234417.365227,
-    "seen": 1790165435.587203,
-    "ast_hash": "b06398cee8eb1a9d68b4d6fcc83a846d",
-    "semantic_hash": "b06398cee8eb1a9d68b4d6fcc83a846d"
+    "mtime": 1790552815.9397237,
+    "seen": 1790567721.1836102,
+    "ast_hash": "dc707a10b7b34b49a4bf479cce574f16",
+    "semantic_hash": ""
   },
   "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/setup/doctor/CompilersInspector.kt": {
-    "mtime": 1789234417.3682442,
-    "seen": 1790165435.587203,
-    "ast_hash": "ec2ac3900df6bff606fb748cd2273990",
-    "semantic_hash": "ec2ac3900df6bff606fb748cd2273990"
+    "mtime": 1790566349.9365723,
+    "seen": 1790567721.1836102,
+    "ast_hash": "1f6a3653159c8d8ace7de8bf8e502750",
+    "semantic_hash": ""
   },
   "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/setup/doctor/CompositeSystemDoctorEngine.kt": {
-    "mtime": 1790444601.3488362,
-    "seen": 1790447826.4718504,
-    "ast_hash": "9d568b66c1ca16316103aeeacca6d47c",
+    "mtime": 1790566349.9365723,
+    "seen": 1790567721.1836102,
+    "ast_hash": "dc5a74c11d363388d18bc43d94d6c69a",
     "semantic_hash": ""
   },
   "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/setup/doctor/DiagnosticContext.kt": {
@@ -7530,46 +7530,46 @@
     "semantic_hash": ""
   },
   "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/setup/doctor/DualJdkInspector.kt": {
-    "mtime": 1789234417.3802302,
-    "seen": 1790165435.587203,
-    "ast_hash": "290a2543cdd278e20b2c86b92be33d48",
-    "semantic_hash": "290a2543cdd278e20b2c86b92be33d48"
+    "mtime": 1790564930.2203977,
+    "seen": 1790567721.1836102,
+    "ast_hash": "7038c03325d54a39627baf62f3b37a33",
+    "semantic_hash": ""
   },
   "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/setup/doctor/KernelFuseInspector.kt": {
-    "mtime": 1790444616.4976566,
-    "seen": 1790447826.4718504,
-    "ast_hash": "e70d6d39e97833a70da9a4cc372338b9",
+    "mtime": 1790552838.72133,
+    "seen": 1790567721.1836102,
+    "ast_hash": "79bbb1d2b79e30352bea9941b1d7782c",
     "semantic_hash": ""
   },
   "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/setup/doctor/LoopMountInspector.kt": {
-    "mtime": 1790444625.807515,
-    "seen": 1790447826.4718504,
-    "ast_hash": "21d82cfb1f451b18f3d2918a73443d87",
+    "mtime": 1790566349.9365723,
+    "seen": 1790567721.1836102,
+    "ast_hash": "d7624c12261fe7fa0cad237b435d39ec",
     "semantic_hash": ""
   },
   "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/setup/doctor/NativeLibrariesInspector.kt": {
-    "mtime": 1789234417.390776,
-    "seen": 1790165435.587203,
-    "ast_hash": "60a699bc0facb8f24550e24e42c9d54f",
-    "semantic_hash": "60a699bc0facb8f24550e24e42c9d54f"
+    "mtime": 1790564930.2033885,
+    "seen": 1790567721.1836102,
+    "ast_hash": "2d980d5827e3480ba00e09a57887acf5",
+    "semantic_hash": ""
   },
   "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/setup/doctor/PythonRuntimeInspector.kt": {
-    "mtime": 1789234417.3947923,
-    "seen": 1790165435.587203,
-    "ast_hash": "8d44becd1dc102c4ae02cfc02bca5115",
-    "semantic_hash": "8d44becd1dc102c4ae02cfc02bca5115"
+    "mtime": 1790552772.3158002,
+    "seen": 1790567721.1836102,
+    "ast_hash": "60d1c8b52146fd7ebb8200ea243d886f",
+    "semantic_hash": ""
   },
   "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/setup/doctor/SecurityToolingInspector.kt": {
-    "mtime": 1789234417.3977766,
-    "seen": 1790165435.587203,
-    "ast_hash": "46ec90eaf3fef47b61137d946c96662c",
-    "semantic_hash": "46ec90eaf3fef47b61137d946c96662c"
+    "mtime": 1790552865.1700113,
+    "seen": 1790567721.1836102,
+    "ast_hash": "3d735a80ad81029daf3493173b48deca",
+    "semantic_hash": ""
   },
   "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/setup/doctor/SelinuxAttrInspector.kt": {
-    "mtime": 1789234417.4012995,
-    "seen": 1790165435.587203,
-    "ast_hash": "b98162a8c24c1c74920ce08fc9f6b7a0",
-    "semantic_hash": "b98162a8c24c1c74920ce08fc9f6b7a0"
+    "mtime": 1790552879.1495185,
+    "seen": 1790567721.1836102,
+    "ast_hash": "d1612528b37dbb81346d1ee4bd9a0386",
+    "semantic_hash": ""
   },
   "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/setup/doctor/StorageHeadroomInspector.kt": {
     "mtime": 1789238751.0511792,
@@ -7578,9 +7578,9 @@
     "semantic_hash": "d52057d367c67d3d7539d5e1aa72b479"
   },
   "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/setup/doctor/SudoNoninteractiveInspector.kt": {
-    "mtime": 1790436616.2937884,
-    "seen": 1790447826.4718504,
-    "ast_hash": "06804ebe45fd0771e31b282586b5e04c",
+    "mtime": 1790564930.1476142,
+    "seen": 1790567721.1836102,
+    "ast_hash": "265d12b2224e429116ede9a68a076100",
     "semantic_hash": ""
   },
   "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/setup/doctor/SystemDiagnosticInspector.kt": {
@@ -7596,15 +7596,15 @@
     "semantic_hash": ""
   },
   "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/setup/doctor/TransferToolsInspector.kt": {
-    "mtime": 1789234417.4153857,
-    "seen": 1790165435.587203,
-    "ast_hash": "a1f30108d8794e0e4c925e56502b266b",
-    "semantic_hash": "a1f30108d8794e0e4c925e56502b266b"
+    "mtime": 1790552893.0322802,
+    "seen": 1790567721.1836102,
+    "ast_hash": "3c2994dfdb913bcb5241be3fbd19c33c",
+    "semantic_hash": ""
   },
   "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/setup/doctor/WslPackageRemediator.kt": {
-    "mtime": 1790436677.3023012,
-    "seen": 1790447826.4718504,
-    "ast_hash": "7506fb66c3741939cc094c12f1240eaf",
+    "mtime": 1790552739.5980096,
+    "seen": 1790567721.1836102,
+    "ast_hash": "4a6b282167d1f0e8532a7148bbb6ae15",
     "semantic_hash": ""
   },
   "core/data/src/desktopMain/resources/updater/update-binary": {
@@ -7614,45 +7614,45 @@
     "semantic_hash": "4a5e578b995a193ba3d4dc8fcfabdf87"
   },
   "core/data/src/desktopTest/kotlin/org/ide/lti/core/data/remote/EnvironmentReadinessAdapterTest.kt": {
-    "mtime": 1790483413.0985236,
-    "seen": 1790484605.9799302,
-    "ast_hash": "d417feacb85c953ae37abb4842845a52",
+    "mtime": 1790564930.4696374,
+    "seen": 1790567721.1836102,
+    "ast_hash": "477dc64a81d1465354ef26d4436b869e",
     "semantic_hash": ""
   },
   "core/data/src/desktopTest/kotlin/org/ide/lti/core/data/remote/RemoteWorkspaceProvisionerTest.kt": {
-    "mtime": 1789386203.0671904,
-    "seen": 1790165435.587203,
-    "ast_hash": "06607457e5c9cde3dc23029ca1a71280",
-    "semantic_hash": "06607457e5c9cde3dc23029ca1a71280"
+    "mtime": 1790539282.0203502,
+    "seen": 1790567721.1836102,
+    "ast_hash": "3799168fa4091ec984309e712f2336bb",
+    "semantic_hash": ""
   },
   "core/data/src/desktopTest/kotlin/org/ide/lti/core/data/remote/StepExecutionAdapterTest.kt": {
-    "mtime": 1789148943.046128,
-    "seen": 1790165435.587203,
-    "ast_hash": "4843a1958827ec258e0db8f61853a69c",
-    "semantic_hash": "4843a1958827ec258e0db8f61853a69c"
+    "mtime": 1790539303.3694263,
+    "seen": 1790567721.1836102,
+    "ast_hash": "122f5d53a34084f73adff601b9648e6d",
+    "semantic_hash": ""
   },
   "core/data/src/desktopTest/kotlin/org/ide/lti/core/data/remote/ToolPublicationAdapterTest.kt": {
-    "mtime": 1789130470.116013,
-    "seen": 1790165435.587203,
-    "ast_hash": "44fb714f6879f94dc3cbb8365ba2cf0d",
-    "semantic_hash": "44fb714f6879f94dc3cbb8365ba2cf0d"
+    "mtime": 1790539326.725492,
+    "seen": 1790567721.1836102,
+    "ast_hash": "f8a0daa59755e228e7ed1b79ff9ca648",
+    "semantic_hash": ""
   },
   "core/data/src/desktopTest/kotlin/org/ide/lti/core/data/setup/EnvironmentVerificationTest.kt": {
-    "mtime": 1790462774.57823,
-    "seen": 1790484605.9799302,
-    "ast_hash": "27552b030d8250da9af182c4633a4b15",
+    "mtime": 1790566653.0262334,
+    "seen": 1790567721.1836102,
+    "ast_hash": "199c506dbc405a6e739f49caa3888749",
     "semantic_hash": ""
   },
   "core/data/src/desktopTest/kotlin/org/ide/lti/core/data/setup/SetupConsentTest.kt": {
-    "mtime": 1790462779.9347742,
-    "seen": 1790484605.9799302,
-    "ast_hash": "b6f553ca6b574a1c04a3cf9a6f3b4cd3",
+    "mtime": 1790566762.1747444,
+    "seen": 1790567721.1836102,
+    "ast_hash": "cf2cf7ed00583f47de9f37ea59af11a1",
     "semantic_hash": ""
   },
   "core/data/src/desktopTest/kotlin/org/ide/lti/core/data/setup/SetupExecutionPathTest.kt": {
-    "mtime": 1790463062.1865335,
-    "seen": 1790484605.9799302,
-    "ast_hash": "7a026649ab7706a391393190895b065f",
+    "mtime": 1790565717.1552682,
+    "seen": 1790567721.1836102,
+    "ast_hash": "7bd59d2dd6de51434235370fc093c911",
     "semantic_hash": ""
   },
   "core/data/src/desktopTest/kotlin/org/ide/lti/core/data/setup/SetupOperationsTest.kt": {
@@ -7662,39 +7662,39 @@
     "semantic_hash": "3e7ce1249a300e423b43f15c482823be"
   },
   "core/data/src/desktopTest/kotlin/org/ide/lti/core/data/setup/SubmoduleSyncEngineTest.kt": {
-    "mtime": 1789293302.2835867,
-    "seen": 1790165435.587203,
-    "ast_hash": "0206c1d61d863460d2b010c0fc128a5a",
-    "semantic_hash": "0206c1d61d863460d2b010c0fc128a5a"
+    "mtime": 1790564930.7019744,
+    "seen": 1790567721.1836102,
+    "ast_hash": "d794b40a1af9fd706936886b59d8c3aa",
+    "semantic_hash": ""
   },
   "core/data/src/desktopTest/kotlin/org/ide/lti/core/data/setup/ToolRepairTest.kt": {
-    "mtime": 1790425086.8422601,
-    "seen": 1790447826.4718504,
-    "ast_hash": "c7cfd9de4b0e7eb7855177d871ed3851",
+    "mtime": 1790564931.6634667,
+    "seen": 1790567721.1836102,
+    "ast_hash": "450d0a0fcb4acb60b6a2c0572f212fa0",
     "semantic_hash": ""
   },
   "core/data/src/desktopTest/kotlin/org/ide/lti/core/data/setup/ToolchainBuildEngineTest.kt": {
-    "mtime": 1789296237.9565744,
-    "seen": 1790165435.587203,
-    "ast_hash": "5ca4cd46ff5ee1578b82fceb6254e146",
-    "semantic_hash": "5ca4cd46ff5ee1578b82fceb6254e146"
+    "mtime": 1790564931.6394043,
+    "seen": 1790567721.1836102,
+    "ast_hash": "796847b6e8a5cd0f57ddb76e05f0f99b",
+    "semantic_hash": ""
   },
   "core/data/src/desktopTest/kotlin/org/ide/lti/core/data/setup/WslToolchainProvisionerTest.kt": {
-    "mtime": 1790497281.524171,
-    "seen": 1790504993.7995884,
-    "ast_hash": "1eb9481791da35b50f3f4824c9f23f4d",
+    "mtime": 1790566460.59607,
+    "seen": 1790567721.1836102,
+    "ast_hash": "7ca738d16ddffd9bbcc222e6c900f29c",
     "semantic_hash": ""
   },
   "core/data/src/desktopTest/kotlin/org/ide/lti/core/data/setup/doctor/CompositeSystemDoctorEngineTest.kt": {
-    "mtime": 1790462030.6565115,
-    "seen": 1790484605.9799302,
-    "ast_hash": "a84e4a63e76fb9b6253e11294a97cbbe",
+    "mtime": 1790564931.6905212,
+    "seen": 1790567721.1836102,
+    "ast_hash": "9f4339208ed4272d41e4f27daee3dfdf",
     "semantic_hash": ""
   },
   "core/data/src/desktopTest/kotlin/org/ide/lti/core/data/setup/doctor/SudoNoninteractiveInspectorTest.kt": {
-    "mtime": 1790436698.2836974,
-    "seen": 1790447826.4718504,
-    "ast_hash": "6155b503a451cedf1dcb48de93cb279b",
+    "mtime": 1790564931.5095968,
+    "seen": 1790567721.1836102,
+    "ast_hash": "94a12bda2d3600451d1ca7a6d52fde6e",
     "semantic_hash": ""
   },
   "core/datastore/src/commonMain/kotlin/org/ide/lti/core/datastore/LtiPreferencesDataSource.kt": {
@@ -7728,9 +7728,9 @@
     "semantic_hash": "deaf62790ebc81526ec93465dcd36367"
   },
   "core/datastore/src/commonMain/kotlin/org/ide/lti/core/datastore/ToolchainPreferencesDataSource.kt": {
-    "mtime": 1790442456.606204,
-    "seen": 1790447826.4718504,
-    "ast_hash": "9a7e7b2a7ff6eed35274b9542a304dab",
+    "mtime": 1790566888.7181654,
+    "seen": 1790567721.1836102,
+    "ast_hash": "d8623d9a2a4c62a034ca359bce1bd9c0",
     "semantic_hash": ""
   },
   "core/datastore/src/commonMain/kotlin/org/ide/lti/core/datastore/WorkspacePreferencesDataSource.kt": {
@@ -7992,10 +7992,10 @@
     "semantic_hash": "37a33bab8f79f429877dbfbcadc53f59"
   },
   "core/domain/src/commonMain/kotlin/org/ide/lti/core/domain/ports/ToolPublicationPort.kt": {
-    "mtime": 1789383858.7906313,
-    "seen": 1790165435.587203,
-    "ast_hash": "7bf0191b75aeab206349082d05d7c4a6",
-    "semantic_hash": "7bf0191b75aeab206349082d05d7c4a6"
+    "mtime": 1790539029.58179,
+    "seen": 1790567721.1836102,
+    "ast_hash": "be4190d5dc2cf86d989fea7984ba4cb4",
+    "semantic_hash": ""
   },
   "core/domain/src/commonMain/kotlin/org/ide/lti/core/domain/ports/VendoredFilePort.kt": {
     "mtime": 1789383858.7921815,
@@ -8028,9 +8028,9 @@
     "semantic_hash": "7c849bced9b56dd2f30fc3e7e4730dd9"
   },
   "core/domain/src/commonMain/kotlin/org/ide/lti/core/domain/repository/setup/ToolchainSetupRepository.kt": {
-    "mtime": 1790442424.7972019,
-    "seen": 1790447826.4718504,
-    "ast_hash": "421f10116b399fbb18301bca7fa1f63f",
+    "mtime": 1790566654.950091,
+    "seen": 1790567721.1836102,
+    "ast_hash": "77367cb14d8ccb4a78b026f0df4c0edb",
     "semantic_hash": ""
   },
   "core/domain/src/commonMain/kotlin/org/ide/lti/core/domain/repository/snapshot/SnapshotRepository.kt": {
@@ -8046,9 +8046,9 @@
     "semantic_hash": "9176db60e28673d2a50f90ec002ecd50"
   },
   "core/domain/src/commonMain/kotlin/org/ide/lti/core/domain/setup/ToolchainProvisioningService.kt": {
-    "mtime": 1790483328.6447053,
-    "seen": 1790484605.9805799,
-    "ast_hash": "90c4f80bd799f164a09e6d82b57f64f3",
+    "mtime": 1790566762.1747444,
+    "seen": 1790567721.1836102,
+    "ast_hash": "254fc68c307e250292d576d911a9536f",
     "semantic_hash": ""
   },
   "core/domain/src/commonMain/kotlin/org/ide/lti/core/domain/setup/doctor/RunSystemDiagnosticsUseCase.kt": {
@@ -8400,9 +8400,9 @@
     "semantic_hash": "52897e2410be32187ea3362dbff8c261"
   },
   "feature/setup/src/commonMain/kotlin/org/ide/lti/feature/setup/EnvironmentSetupState.kt": {
-    "mtime": 1790503934.0718465,
-    "seen": 1790504993.7995884,
-    "ast_hash": "387accf6edb8d97f779c8d15b098465f",
+    "mtime": 1790564518.5538979,
+    "seen": 1790567721.1836102,
+    "ast_hash": "8d5fff35d22f31d9187befa67ea318f7",
     "semantic_hash": ""
   },
   "feature/setup/src/commonMain/kotlin/org/ide/lti/feature/setup/SetupActivityState.kt": {
@@ -8418,15 +8418,15 @@
     "semantic_hash": "cb914b5574a027eea0c72b685acc8b6a"
   },
   "feature/setup/src/commonMain/kotlin/org/ide/lti/feature/setup/SetupPresentationMapper.kt": {
-    "mtime": 1790503934.072942,
-    "seen": 1790504993.7995884,
-    "ast_hash": "054c33a884cd5c5e3d3d591a7ae70264",
+    "mtime": 1790564294.6883898,
+    "seen": 1790567721.1836102,
+    "ast_hash": "1a27144cc63c0ec7cbf58f2efa41a4c5",
     "semantic_hash": ""
   },
   "feature/setup/src/commonMain/kotlin/org/ide/lti/feature/setup/SetupUiState.kt": {
-    "mtime": 1790503934.0745182,
-    "seen": 1790504993.7995884,
-    "ast_hash": "67837b3dd51c5774fcc56ca14464de24",
+    "mtime": 1790563437.4990008,
+    "seen": 1790567721.1836102,
+    "ast_hash": "c108f7960a58e50e67b63339cb59a5f8",
     "semantic_hash": ""
   },
   "feature/setup/src/commonMain/kotlin/org/ide/lti/feature/setup/ToolBrowserState.kt": {
@@ -8436,9 +8436,9 @@
     "semantic_hash": ""
   },
   "feature/setup/src/commonMain/kotlin/org/ide/lti/feature/setup/WorkspaceBrowserState.kt": {
-    "mtime": 1790496776.0582626,
-    "seen": 1790504993.7995884,
-    "ast_hash": "39381d216c8fd39afafbc62534c3c651",
+    "mtime": 1790563443.3344307,
+    "seen": 1790567721.1836102,
+    "ast_hash": "f195f5916180fd40a4b5872c7ddaddfa",
     "semantic_hash": ""
   },
   "feature/setup/src/commonMain/kotlin/org/ide/lti/feature/setup/components/DocFeatureCard.kt": {
@@ -8448,15 +8448,15 @@
     "semantic_hash": ""
   },
   "feature/setup/src/commonMain/kotlin/org/ide/lti/feature/setup/components/DoctorDiagnosticsDrawer.kt": {
-    "mtime": 1790489275.4472725,
-    "seen": 1790490064.026373,
-    "ast_hash": "42278fb8d8932c70e3255445a3b43d2e",
+    "mtime": 1790563427.0058086,
+    "seen": 1790567721.1836102,
+    "ast_hash": "81b3c603eba8ace8d5095a315a4bc05c",
     "semantic_hash": ""
   },
   "feature/setup/src/commonMain/kotlin/org/ide/lti/feature/setup/components/ProvisioningPreviewSheet.kt": {
-    "mtime": 1790197302.0440564,
-    "seen": 1790288069.412691,
-    "ast_hash": "ea8f13ab628a4e251ce7231a5566f06b",
+    "mtime": 1790538532.507995,
+    "seen": 1790567721.1836102,
+    "ast_hash": "aea126bf8ea954bed19587b9c078f098",
     "semantic_hash": ""
   },
   "feature/setup/src/commonMain/kotlin/org/ide/lti/feature/setup/components/SetupActivityPanel.kt": {
@@ -8466,9 +8466,9 @@
     "semantic_hash": ""
   },
   "feature/setup/src/commonMain/kotlin/org/ide/lti/feature/setup/components/SetupJourneySidebar.kt": {
-    "mtime": 1790489071.6496546,
-    "seen": 1790490064.026373,
-    "ast_hash": "b3652da3508dc5faa100e9e20014aa39",
+    "mtime": 1790563429.6544049,
+    "seen": 1790567721.1836102,
+    "ast_hash": "ca027a757a9c092b37dbb06b37e92642",
     "semantic_hash": ""
   },
   "feature/setup/src/commonMain/kotlin/org/ide/lti/feature/setup/components/ToolMatrixTable.kt": {
@@ -8478,9 +8478,9 @@
     "semantic_hash": ""
   },
   "feature/setup/src/commonMain/kotlin/org/ide/lti/feature/setup/components/ToolchainPipelineTracker.kt": {
-    "mtime": 1790488600.5492227,
-    "seen": 1790490064.026373,
-    "ast_hash": "d1ad52b104456f0c0a5738dda89fa3ce",
+    "mtime": 1790564332.3910878,
+    "seen": 1790567721.1836102,
+    "ast_hash": "5af7f1edf6da089360d46b09ba3a91c0",
     "semantic_hash": ""
   },
   "feature/setup/src/commonMain/kotlin/org/ide/lti/feature/setup/steps/DocumentationStepContent.kt": {
@@ -8490,15 +8490,15 @@
     "semantic_hash": ""
   },
   "feature/setup/src/commonMain/kotlin/org/ide/lti/feature/setup/steps/EnvironmentStepContent.kt": {
-    "mtime": 1790490437.8729253,
-    "seen": 1790490761.6328316,
-    "ast_hash": "14e8afb7384fc8e137df7c9934d8b1d4",
+    "mtime": 1790564177.8482409,
+    "seen": 1790567721.1836102,
+    "ast_hash": "7cdbfaed96ac46f0e8d2016eb107db30",
     "semantic_hash": ""
   },
   "feature/setup/src/commonMain/kotlin/org/ide/lti/feature/setup/steps/ProjectsStepContent.kt": {
-    "mtime": 1790488841.7493298,
-    "seen": 1790490064.026373,
-    "ast_hash": "41e10220548c6092536fa3459a35146c",
+    "mtime": 1790563441.6863055,
+    "seen": 1790567721.1836102,
+    "ast_hash": "c630deaad910b6c3239eb370b3f96c5b",
     "semantic_hash": ""
   },
   "feature/setup/src/commonMain/kotlin/org/ide/lti/feature/setup/steps/ToolsStepContent.kt": {
@@ -8508,9 +8508,9 @@
     "semantic_hash": ""
   },
   "feature/setup/src/commonTest/kotlin/org/ide/lti/feature/setup/EnvironmentSetupStateTest.kt": {
-    "mtime": 1790503934.0799806,
-    "seen": 1790504993.7995884,
-    "ast_hash": "2e2ae7a8e6910b5f41868a52e5ee47db",
+    "mtime": 1790564178.5911686,
+    "seen": 1790567721.1836102,
+    "ast_hash": "e0b86b74e97fb1ff340cf635d14f3963",
     "semantic_hash": ""
   },
   "feature/setup/src/commonTest/kotlin/org/ide/lti/feature/setup/SetupActivityStateTest.kt": {
@@ -8520,15 +8520,15 @@
     "semantic_hash": "821f35b83ace078e3d5a89f7c473ca6d"
   },
   "feature/setup/src/commonTest/kotlin/org/ide/lti/feature/setup/SetupPresentationMapperTest.kt": {
-    "mtime": 1790503934.0816777,
-    "seen": 1790504993.7995884,
-    "ast_hash": "e2e638222c4023f0e5a4770ff03edbf4",
+    "mtime": 1790564561.674046,
+    "seen": 1790567721.1836102,
+    "ast_hash": "889a8436dfb248cce1aca6b75c23d6eb",
     "semantic_hash": ""
   },
   "feature/setup/src/commonTest/kotlin/org/ide/lti/feature/setup/SetupViewModelTest.kt": {
-    "mtime": 1790503934.0838957,
-    "seen": 1790504993.7995884,
-    "ast_hash": "46f639096ad4dea5f93aa8add4b270d4",
+    "mtime": 1790538539.8264246,
+    "seen": 1790567721.1836102,
+    "ast_hash": "c3b1a4a0817d079e661052a315330559",
     "semantic_hash": ""
   },
   "feature/setup/src/commonTest/kotlin/org/ide/lti/feature/setup/SetupViewModelWorkspaceTest.kt": {
@@ -8544,9 +8544,9 @@
     "semantic_hash": ""
   },
   "feature/setup/src/commonTest/kotlin/org/ide/lti/feature/setup/WorkspaceBrowserStateTest.kt": {
-    "mtime": 1790499148.36703,
-    "seen": 1790504993.7995884,
-    "ast_hash": "488b3cadd2fa4614a7913c355de564f7",
+    "mtime": 1790563452.4299045,
+    "seen": 1790567721.1836102,
+    "ast_hash": "5940042d5dc12c75175f5aa545863622",
     "semantic_hash": ""
   },
   "feature/setup/src/desktopMain/kotlin/org/ide/lti/feature/setup/SetupPerformanceScenario.kt": {
@@ -8556,15 +8556,15 @@
     "semantic_hash": ""
   },
   "feature/setup/src/desktopTest/kotlin/org/ide/lti/feature/setup/EnvironmentScreenTest.kt": {
-    "mtime": 1790460110.8662875,
-    "seen": 1790484605.9805799,
-    "ast_hash": "4997174802656628fb931d7bdda868e2",
+    "mtime": 1790564561.6670413,
+    "seen": 1790567721.1836102,
+    "ast_hash": "c5d617065b15067f525d9a7fc06cab59",
     "semantic_hash": ""
   },
   "feature/setup/src/desktopTest/kotlin/org/ide/lti/feature/setup/SetupAccessibilityTest.kt": {
-    "mtime": 1790503934.0872278,
-    "seen": 1790504993.7995884,
-    "ast_hash": "6457814ed9b4792198f122177f8d9b46",
+    "mtime": 1790564561.682051,
+    "seen": 1790567721.1836102,
+    "ast_hash": "7131aeb0efc3726b811009a72523c2fa",
     "semantic_hash": ""
   },
   "feature/setup/src/desktopTest/kotlin/org/ide/lti/feature/setup/SetupPerformanceScenarioTest.kt": {
@@ -8574,21 +8574,21 @@
     "semantic_hash": ""
   },
   "feature/setup/src/desktopTest/kotlin/org/ide/lti/feature/setup/SetupThemeScreenshotTest.kt": {
-    "mtime": 1790506745.3350458,
-    "seen": 1790507095.424326,
-    "ast_hash": "619ad98179b6f9c97d459f32f1be2f9b",
+    "mtime": 1790564561.796826,
+    "seen": 1790567721.1836102,
+    "ast_hash": "bc160e12b26dc349c450785f3280d47f",
     "semantic_hash": ""
   },
   "feature/setup/src/desktopTest/kotlin/org/ide/lti/feature/setup/ToolsScreenTest.kt": {
-    "mtime": 1790182877.4589522,
-    "seen": 1790190547.454408,
-    "ast_hash": "4e7e46854b2635e18eb56fa347c68775",
+    "mtime": 1790564561.6427455,
+    "seen": 1790567721.1846092,
+    "ast_hash": "82c3eed162cf25cdaf2e7bae79fb6849",
     "semantic_hash": ""
   },
   "feature/setup/src/desktopTest/kotlin/org/ide/lti/feature/setup/WorkspacesScreenTest.kt": {
-    "mtime": 1790485593.2448385,
-    "seen": 1790486000.1537254,
-    "ast_hash": "8f1e97e2440686ca5cfd184b7fca17fb",
+    "mtime": 1790563460.3341079,
+    "seen": 1790567721.1846092,
+    "ast_hash": "d688a47a17b251274eb57bca86202dc4",
     "semantic_hash": ""
   },
   "lti-desktop/src/jvmMain/kotlin/org/ide/lti/desktop/key/WindowKeyShortcutHandler.kt": {
@@ -8652,9 +8652,9 @@
     "semantic_hash": "f32102bcca113e46743020a7e9758697"
   },
   "lti-desktop/src/jvmTest/kotlin/org/ide/lti/desktop/di/KoinGraphResolutionTest.kt": {
-    "mtime": 1790461247.897746,
-    "seen": 1790484605.9815845,
-    "ast_hash": "7999b10acb777230b4cbe18579bc06c6",
+    "mtime": 1790557519.6529346,
+    "seen": 1790567721.1846092,
+    "ast_hash": "0486cd118107c353151b94a88a9b10fb",
     "semantic_hash": ""
   },
   "lti-desktop/src/jvmTest/kotlin/org/ide/lti/desktop/di/ToolingDiResolutionTest.kt": {
@@ -9126,16 +9126,16 @@
     "semantic_hash": "ef4e75b771d98f050dda031667a9d231"
   },
   "tool/client/src/main/kotlin/io/ltirom/tooling/client/WslDaemonManager.kt": {
-    "mtime": 1789230462.0798955,
-    "seen": 1790165435.5901225,
-    "ast_hash": "86240f5eb8eb7be63d3a5ee25411d855",
-    "semantic_hash": "86240f5eb8eb7be63d3a5ee25411d855"
+    "mtime": 1790566460.510182,
+    "seen": 1790567721.1846092,
+    "ast_hash": "ff9e2b93fb388de6623836c5a64932c1",
+    "semantic_hash": ""
   },
   "tool/client/src/main/kotlin/io/ltirom/tooling/client/WslPathTranslator.kt": {
-    "mtime": 1789204452.2846048,
-    "seen": 1790165435.5901225,
-    "ast_hash": "97546912f2abaa2b71b71d103837515d",
-    "semantic_hash": "97546912f2abaa2b71b71d103837515d"
+    "mtime": 1790541421.305197,
+    "seen": 1790567721.1846092,
+    "ast_hash": "2e6bda77720070810ed95d0d191f4928",
+    "semantic_hash": ""
   },
   "tool/client/src/main/kotlin/io/ltirom/tooling/client/resilience/CircuitBreaker.kt": {
     "mtime": 1789207384.0815947,
@@ -9162,22 +9162,22 @@
     "semantic_hash": "4dc05bf9f70e86e7466a9e2bcad730fa"
   },
   "tool/client/src/main/kotlin/io/ltirom/tooling/client/transport/KtorRemoteTransportAdapter.kt": {
-    "mtime": 1789229930.5837598,
-    "seen": 1790165435.5901225,
-    "ast_hash": "2af0225e88e60fac39ad3eccc0a42708",
-    "semantic_hash": "2af0225e88e60fac39ad3eccc0a42708"
+    "mtime": 1790538847.7081182,
+    "seen": 1790567721.1846092,
+    "ast_hash": "c5d5bcce2a996064c41509edc140027e",
+    "semantic_hash": ""
   },
   "tool/client/src/main/kotlin/io/ltirom/tooling/client/workspace/WorkspaceVirtualizer.kt": {
-    "mtime": 1789230451.403818,
-    "seen": 1790165435.5901225,
-    "ast_hash": "2a40e51231a44a700de310fb5d98f40e",
-    "semantic_hash": "2a40e51231a44a700de310fb5d98f40e"
+    "mtime": 1790541434.6600661,
+    "seen": 1790567721.1846092,
+    "ast_hash": "e6fa1bcc82ab58dde34da2d503fb9783",
+    "semantic_hash": ""
   },
   "tool/client/src/main/kotlin/io/ltirom/tooling/client/wsl/DaemonHealthProber.kt": {
-    "mtime": 1789165690.2788792,
-    "seen": 1790165435.5901225,
-    "ast_hash": "30e6b0fcea3841df7eeaf00ae59b0f38",
-    "semantic_hash": "30e6b0fcea3841df7eeaf00ae59b0f38"
+    "mtime": 1790552467.3902414,
+    "seen": 1790567721.1846092,
+    "ast_hash": "b901789dd1557929f96275ddd290a753",
+    "semantic_hash": ""
   },
   "tool/client/src/main/kotlin/io/ltirom/tooling/client/wsl/TransportCliExecutor.kt": {
     "mtime": 1789164466.106355,
@@ -9192,16 +9192,10 @@
     "semantic_hash": ""
   },
   "tool/client/src/main/kotlin/io/ltirom/tooling/client/wsl/WslEnvironmentDetector.kt": {
-    "mtime": 1789232533.543814,
-    "seen": 1790165435.5901225,
-    "ast_hash": "6c8b445eb737d97737b59c8d43524a14",
-    "semantic_hash": "6c8b445eb737d97737b59c8d43524a14"
-  },
-  "tool/client/src/main/kotlin/io/ltirom/tooling/client/wsl/WslExt4Deployer.kt": {
-    "mtime": 1789232571.6947236,
-    "seen": 1790165435.5901225,
-    "ast_hash": "11505d36dad22c6889e4e6ecafce1a27",
-    "semantic_hash": "11505d36dad22c6889e4e6ecafce1a27"
+    "mtime": 1790566460.6902688,
+    "seen": 1790567721.1846092,
+    "ast_hash": "9afb014dc96a98fb893399b33d3765d4",
+    "semantic_hash": ""
   },
   "tool/client/src/main/kotlin/io/ltirom/tooling/client/wsl/WslPresenceAdapter.kt": {
     "mtime": 1789165690.2798789,
@@ -9210,16 +9204,16 @@
     "semantic_hash": "4e902e05582ffa5478a8dee428d73d18"
   },
   "tool/client/src/main/kotlin/io/ltirom/tooling/client/wsl/WslProcessLauncher.kt": {
-    "mtime": 1789232830.2189746,
-    "seen": 1790165435.5901225,
-    "ast_hash": "73511d638955a607130eab9e988ed5b7",
-    "semantic_hash": "73511d638955a607130eab9e988ed5b7"
+    "mtime": 1790553821.756298,
+    "seen": 1790567721.1846092,
+    "ast_hash": "1ad53f05e7444205c9e027804e977b31",
+    "semantic_hash": ""
   },
   "tool/client/src/main/kotlin/io/ltirom/tooling/client/wsl/WslStateStore.kt": {
-    "mtime": 1789207074.1748354,
-    "seen": 1790165435.5901225,
-    "ast_hash": "58ec12ce1531d10883714604d56045da",
-    "semantic_hash": "58ec12ce1531d10883714604d56045da"
+    "mtime": 1790553814.5145574,
+    "seen": 1790567721.1846092,
+    "ast_hash": "925edd2e7a669f0c3f46bc38f8ceaeaa",
+    "semantic_hash": ""
   },
   "tool/client/src/test/kotlin/io/ltirom/tooling/client/SmartToolRepositoryTest.kt": {
     "mtime": 1789207074.160234,
@@ -9258,16 +9252,16 @@
     "semantic_hash": "0829e7723dcf29f0b02221d0bf15978e"
   },
   "tool/client/src/test/kotlin/io/ltirom/tooling/client/workspace/WorkspaceVirtualizerTest.kt": {
-    "mtime": 1789207074.163276,
-    "seen": 1790165435.5901225,
-    "ast_hash": "76f4294991b9ad351d1a886cbeb1967d",
-    "semantic_hash": "76f4294991b9ad351d1a886cbeb1967d"
+    "mtime": 1790542561.5771732,
+    "seen": 1790567721.1846092,
+    "ast_hash": "ded2a5fecf9cb885801ad2c0422a835b",
+    "semantic_hash": ""
   },
   "tool/client/src/test/kotlin/io/ltirom/tooling/client/wsl/TransportCliExecutorTest.kt": {
-    "mtime": 1789164466.106355,
-    "seen": 1790165435.5901225,
-    "ast_hash": "5238045ea2773034977521147dc0e44a",
-    "semantic_hash": "5238045ea2773034977521147dc0e44a"
+    "mtime": 1790538989.1764994,
+    "seen": 1790567721.1846092,
+    "ast_hash": "a9ed627a30909ba7203344c40416a6ef",
+    "semantic_hash": ""
   },
   "tool/client/src/test/kotlin/io/ltirom/tooling/client/wsl/WslDaemonDecompositionTest.kt": {
     "mtime": 1789232848.9208467,
@@ -11358,21 +11352,21 @@
     "semantic_hash": ""
   },
   "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/setup/SetupPlanFactory.kt": {
-    "mtime": 1789295372.978266,
-    "seen": 1790165435.587203,
-    "ast_hash": "227fd908fc4002f862a1746e1aa3e8cd",
-    "semantic_hash": "227fd908fc4002f862a1746e1aa3e8cd"
+    "mtime": 1790564930.3475366,
+    "seen": 1790567721.1836102,
+    "ast_hash": "5ec66d0c490ed1de113b9e1a1e37ee2d",
+    "semantic_hash": ""
   },
   "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/setup/SetupRunRecovery.kt": {
-    "mtime": 1790443780.3397973,
-    "seen": 1790447826.4718504,
-    "ast_hash": "f8d7ad9c660b274d3ad5bbcfbc001ee2",
+    "mtime": 1790564930.4131021,
+    "seen": 1790567721.1836102,
+    "ast_hash": "521c333357fabb014a6b052e5ea09901",
     "semantic_hash": ""
   },
   "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/setup/ToolchainReadinessPolicy.kt": {
-    "mtime": 1790461312.7388332,
-    "seen": 1790484605.9799302,
-    "ast_hash": "772a49980077b0fc5bd0fdd728b9be9c",
+    "mtime": 1790566335.0883708,
+    "seen": 1790567721.1836102,
+    "ast_hash": "cce36c6f5ec03e6269e4e259f1550cb4",
     "semantic_hash": ""
   },
   "core/data/src/desktopTest/kotlin/org/ide/lti/core/data/setup/InMemoryToolchainRepository.kt": {
@@ -11388,10 +11382,10 @@
     "semantic_hash": "eae6776c35906d24978c801445f614cd"
   },
   "core/data/src/desktopTest/kotlin/org/ide/lti/core/data/setup/SetupRecoveryTest.kt": {
-    "mtime": 1789299341.94062,
-    "seen": 1790165435.587203,
-    "ast_hash": "4279ba38ca4ee799750dae4b6a239b25",
-    "semantic_hash": "4279ba38ca4ee799750dae4b6a239b25"
+    "mtime": 1790564930.7491798,
+    "seen": 1790567721.1836102,
+    "ast_hash": "d0e9329bd0fac00c81f5e0cee6954987",
+    "semantic_hash": ""
   },
   "core/datastore/src/commonMain/kotlin/org/ide/lti/core/datastore/ToolchainJournalStorage.kt": {
     "mtime": 1789293066.204614,
@@ -11412,9 +11406,9 @@
     "semantic_hash": "aef1d2c0bf209a2d1f9b2465bcf249cf"
   },
   "core/domain/src/commonMain/kotlin/org/ide/lti/core/domain/setup/SetupContracts.kt": {
-    "mtime": 1790436753.511093,
-    "seen": 1790447826.4718504,
-    "ast_hash": "650aa3e6490a7a47923aa3901c56fd4d",
+    "mtime": 1790538112.530417,
+    "seen": 1790567721.1836102,
+    "ast_hash": "a008471a7d60d34e9a04c0d046c56b3c",
     "semantic_hash": ""
   },
   "core/domain/src/commonMain/kotlin/org/ide/lti/core/domain/setup/SetupLogEvent.kt": {
@@ -11442,9 +11436,9 @@
     "semantic_hash": "5e564d84395b93b119088f69bb6b5324"
   },
   "core/model/src/commonMain/kotlin/org/ide/lti/core/model/setup/SetupAttemptRecord.kt": {
-    "mtime": 1790436860.3212698,
-    "seen": 1790447826.4718504,
-    "ast_hash": "d4946e5636be5363ffd2337c3f7e1da1",
+    "mtime": 1790564931.5342827,
+    "seen": 1790567721.1836102,
+    "ast_hash": "09a1870dac6df4b2711d758fa7809f31",
     "semantic_hash": ""
   },
   "core/model/src/commonMain/kotlin/org/ide/lti/core/model/setup/SetupLogBounds.kt": {
@@ -13272,9 +13266,9 @@
     "semantic_hash": "719b88fa3de4e2c6b0aaf3c6d9aa621f"
   },
   "lti-shared/src/desktopMain/kotlin/org/ide/lti/shared/di/ToolingModule.kt": {
-    "mtime": 1790461233.9803917,
-    "seen": 1790484605.9815845,
-    "ast_hash": "e8b20a24f450a8673d4b40ad521a9bef",
+    "mtime": 1790557502.8095903,
+    "seen": 1790567721.1846092,
+    "ast_hash": "157c83743a95f00076897ee81c9022c1",
     "semantic_hash": ""
   },
   "tool/adapter/android-device/build.gradle.kts": {
@@ -19062,15 +19056,15 @@
     "semantic_hash": "0fc2fed98788ad522cd32f4b9e4c1241"
   },
   "tool/api/src/main/kotlin/io/ltirom/tooling/core/ports/RemotePorts.kt": {
-    "mtime": 1789230228.4726863,
-    "seen": 1790165435.5901225,
-    "ast_hash": "360303086baaaee6d2c9f683c45bbe31",
-    "semantic_hash": "360303086baaaee6d2c9f683c45bbe31"
+    "mtime": 1790541410.391164,
+    "seen": 1790567721.1846092,
+    "ast_hash": "bf826fa2fbc97b56167168397d05b84e",
+    "semantic_hash": ""
   },
   "tool/api/src/main/kotlin/io/ltirom/tooling/core/remote/RemoteProtocol.kt": {
-    "mtime": 1790537302.9773557,
-    "seen": 1790537921.8657832,
-    "ast_hash": "6bf21ea195c36b02014160a0038bca25",
+    "mtime": 1790538768.5890532,
+    "seen": 1790567721.1846092,
+    "ast_hash": "38bb685ffe5494972bdb94a38dc67f3a",
     "semantic_hash": ""
   },
   "tool/api/src/main/kotlin/io/ltirom/tooling/core/remote/RunProtocol.kt": {
@@ -20142,9 +20136,9 @@
     "semantic_hash": ""
   },
   "feature/setup/src/desktopTest/kotlin/org/ide/lti/feature/setup/diagnostic/SetupScreenDiagnosticTest.kt": {
-    "mtime": 1790488521.0949416,
-    "seen": 1790490064.026373,
-    "ast_hash": "d7d59c449906b0f0030f40328ae15e0c",
+    "mtime": 1790563453.987893,
+    "seen": 1790567721.1846092,
+    "ast_hash": "b3893c40710da995e1e0b35dbacc3ca6",
     "semantic_hash": ""
   },
   "glass_switch_prototype_findings_and_proposal.md": {
@@ -20718,15 +20712,9 @@
     "semantic_hash": ""
   },
   "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/setup/DesktopTerminalLauncher.kt": {
-    "mtime": 1790442736.9274242,
-    "seen": 1790447826.4718504,
-    "ast_hash": "060a2565452b52a2bf84f91f9b3068a9",
-    "semantic_hash": ""
-  },
-  "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/setup/PackageCatalog.kt": {
-    "mtime": 1790445767.7093115,
-    "seen": 1790447826.4718504,
-    "ast_hash": "c0982c4cb7c984492a14af0a20362695",
+    "mtime": 1790564930.1651323,
+    "seen": 1790567721.1836102,
+    "ast_hash": "ee20dd10156283a313bb6d5684c620f0",
     "semantic_hash": ""
   },
   "core/data/src/desktopTest/kotlin/org/ide/lti/core/data/setup/DesktopTerminalLauncherTest.kt": {
@@ -20736,15 +20724,15 @@
     "semantic_hash": ""
   },
   "core/data/src/desktopTest/kotlin/org/ide/lti/core/data/setup/doctor/SecuritySudoersGuardTest.kt": {
-    "mtime": 1790443999.2434766,
-    "seen": 1790447826.4718504,
-    "ast_hash": "d2f10672e1083a08c97107c7aa190fd1",
+    "mtime": 1790565717.1562605,
+    "seen": 1790567721.1836102,
+    "ast_hash": "caeb60423ec51aa3762e323f35d42ee8",
     "semantic_hash": ""
   },
   "core/data/src/desktopTest/kotlin/org/ide/lti/core/data/setup/doctor/ToolchainIntegrityInspectorTest.kt": {
-    "mtime": 1790446231.9680047,
-    "seen": 1790447826.4718504,
-    "ast_hash": "01775abeceb0afda0878f517a7b3e9b4",
+    "mtime": 1790564931.5227554,
+    "seen": 1790567721.1836102,
+    "ast_hash": "63931730eb769fdedbd1ddaa6a6f5904",
     "semantic_hash": ""
   },
   "core/domain/src/commonMain/kotlin/org/ide/lti/core/domain/ports/TerminalLauncherPort.kt": {
@@ -20754,9 +20742,9 @@
     "semantic_hash": ""
   },
   "feature/setup/src/commonMain/kotlin/org/ide/lti/feature/setup/components/TerminalHandoffSheet.kt": {
-    "mtime": 1790494859.427253,
-    "seen": 1790496251.612243,
-    "ast_hash": "f92dd35d7a67a1bd48e1c42d4b6fcd2e",
+    "mtime": 1790564649.0376956,
+    "seen": 1790567721.1836102,
+    "ast_hash": "5989ff2709e3f206f91456a662bbd1db",
     "semantic_hash": ""
   },
   "tool/client/src/test/kotlin/io/ltirom/tooling/client/wsl/WslCliExecutorTest.kt": {
@@ -20772,9 +20760,9 @@
     "semantic_hash": ""
   },
   "core/domain/src/commonMain/kotlin/org/ide/lti/core/domain/ports/DaemonFailureCategory.kt": {
-    "mtime": 1790461394.0481887,
-    "seen": 1790484605.9805799,
-    "ast_hash": "6e3aa8e87c30729b2a3269a014cd748f",
+    "mtime": 1790564931.4288013,
+    "seen": 1790567721.1836102,
+    "ast_hash": "4dd7dad682bbab05244a7597efe4a432",
     "semantic_hash": ""
   },
   "core/domain/src/commonMain/kotlin/org/ide/lti/core/domain/ports/ToolchainFailureCategory.kt": {
@@ -20814,9 +20802,207 @@
     "semantic_hash": ""
   },
   "feature/setup/src/desktopTest/resources/screenshots/setup_screen_blue_effects_on.png": {
-    "mtime": 1790506529.7210767,
-    "seen": 1790507095.4263167,
-    "ast_hash": "222167ec2fe2bdfc949a73c514cae96f",
+    "mtime": 1790559929.2351532,
+    "seen": 1790567721.1861305,
+    "ast_hash": "df85e28a63e3218fbc54b0b14f943402",
+    "semantic_hash": ""
+  },
+  "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/remote/ToolStatusMapper.kt": {
+    "mtime": 1790538789.7738771,
+    "seen": 1790567721.1836102,
+    "ast_hash": "2435e094089efeac641967ab9035dd86",
+    "semantic_hash": ""
+  },
+  "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/setup/AptCommandBuilder.kt": {
+    "mtime": 1790552686.653973,
+    "seen": 1790567721.1836102,
+    "ast_hash": "8eb003648ccdeee888d5a910f1e10285",
+    "semantic_hash": ""
+  },
+  "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/setup/RequirementCatalog.kt": {
+    "mtime": 1790564930.3405278,
+    "seen": 1790567721.1836102,
+    "ast_hash": "d9ef8666c59c665e90b8e6b9c3400bc4",
+    "semantic_hash": ""
+  },
+  "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/setup/ServerArtifactAdapter.kt": {
+    "mtime": 1790565801.2001147,
+    "seen": 1790567721.1836102,
+    "ast_hash": "904f7bff562b7c008520bf96977eae8e",
+    "semantic_hash": ""
+  },
+  "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/setup/WslHostPrerequisiteProbe.kt": {
+    "mtime": 1790565858.3109584,
+    "seen": 1790567721.1836102,
+    "ast_hash": "32872d3ecb08967fe667970a7427f6d5",
+    "semantic_hash": ""
+  },
+  "core/data/src/desktopTest/kotlin/org/ide/lti/core/data/remote/ToolStatusMapperTest.kt": {
+    "mtime": 1790564930.362043,
+    "seen": 1790567721.1836102,
+    "ast_hash": "3a3edd26fa2961dd2c20ea74d3786fe1",
+    "semantic_hash": ""
+  },
+  "core/data/src/desktopTest/kotlin/org/ide/lti/core/data/setup/BootstrapHandoffTest.kt": {
+    "mtime": 1790564930.7039764,
+    "seen": 1790567721.1836102,
+    "ast_hash": "b010c488e0d19ca06f081f10f302a73e",
+    "semantic_hash": ""
+  },
+  "core/data/src/desktopTest/kotlin/org/ide/lti/core/data/setup/BootstrapJournalTest.kt": {
+    "mtime": 1790566654.7428586,
+    "seen": 1790567721.1836102,
+    "ast_hash": "86e21aa50108ada5e14b1201db7f79d7",
+    "semantic_hash": ""
+  },
+  "core/data/src/desktopTest/kotlin/org/ide/lti/core/data/setup/RequirementCatalogCoverageTest.kt": {
+    "mtime": 1790565717.1542697,
+    "seen": 1790567721.1836102,
+    "ast_hash": "46ac438eba68c6e42082bb92710e36f9",
+    "semantic_hash": ""
+  },
+  "core/data/src/desktopTest/kotlin/org/ide/lti/core/data/setup/ServerArtifactAdapterTest.kt": {
+    "mtime": 1790564930.5331585,
+    "seen": 1790567721.1836102,
+    "ast_hash": "3fb4a8102b93cc212a9bc2359ea1df17",
+    "semantic_hash": ""
+  },
+  "core/data/src/desktopTest/kotlin/org/ide/lti/core/data/setup/WslHostPrerequisiteProbeTest.kt": {
+    "mtime": 1790564931.5942159,
+    "seen": 1790567721.1836102,
+    "ast_hash": "1b630557a804e1a2c151da4d7d10cf70",
+    "semantic_hash": ""
+  },
+  "core/data/src/desktopTest/kotlin/org/ide/lti/core/data/setup/doctor/InspectorCommandsTest.kt": {
+    "mtime": 1790564931.5065968,
+    "seen": 1790567721.1836102,
+    "ast_hash": "284b5aca4f0ffc803ba50616ce139ce5",
+    "semantic_hash": ""
+  },
+  "core/domain/src/commonMain/kotlin/org/ide/lti/core/domain/ports/HostPrerequisitePort.kt": {
+    "mtime": 1790561651.0478337,
+    "seen": 1790567721.1836102,
+    "ast_hash": "6aff6c0ce8e0abfb31e4b8e1d97006cd",
+    "semantic_hash": ""
+  },
+  "core/domain/src/commonMain/kotlin/org/ide/lti/core/domain/ports/PublicationReport.kt": {
+    "mtime": 1790564931.4328017,
+    "seen": 1790567721.1836102,
+    "ast_hash": "32f8c9683f9bfe657340a786e61787f2",
+    "semantic_hash": ""
+  },
+  "core/domain/src/commonMain/kotlin/org/ide/lti/core/domain/ports/ServerArtifactPort.kt": {
+    "mtime": 1790538600.3928237,
+    "seen": 1790567721.1836102,
+    "ast_hash": "f914e9405817f224050dc79b14a30b51",
+    "semantic_hash": ""
+  },
+  "core/domain/src/commonMain/kotlin/org/ide/lti/core/domain/ports/ToolRegistryResult.kt": {
+    "mtime": 1790538016.9983451,
+    "seen": 1790567721.1836102,
+    "ast_hash": "46462f23cd5abc64712529c6deeff44a",
+    "semantic_hash": ""
+  },
+  "core/domain/src/commonMain/kotlin/org/ide/lti/core/domain/ports/ToolStatus.kt": {
+    "mtime": 1790564931.4458117,
+    "seen": 1790567721.1836102,
+    "ast_hash": "9a30a776bf9708027cba632fcdc527de",
+    "semantic_hash": ""
+  },
+  "core/model/src/commonMain/kotlin/org/ide/lti/core/model/setup/DistroStatus.kt": {
+    "mtime": 1790566373.4291196,
+    "seen": 1790567721.1836102,
+    "ast_hash": "ada8b34b006d968a1512b520cda18c55",
+    "semantic_hash": ""
+  },
+  "core/model/src/commonMain/kotlin/org/ide/lti/core/model/setup/ServerArtifact.kt": {
+    "mtime": 1790564931.4784963,
+    "seen": 1790567721.1836102,
+    "ast_hash": "0caa0bb7afd10994d4388daa2af440fa",
+    "semantic_hash": ""
+  },
+  "core/model/src/commonMain/kotlin/org/ide/lti/core/model/setup/SetupEnvironment.kt": {
+    "mtime": 1790564931.4248018,
+    "seen": 1790567721.1836102,
+    "ast_hash": "0e5b4010d7dc961e24e705ce3561bd5b",
+    "semantic_hash": ""
+  },
+  "core/model/src/commonMain/kotlin/org/ide/lti/core/model/setup/SystemRequirement.kt": {
+    "mtime": 1790564931.441812,
+    "seen": 1790567721.1836102,
+    "ast_hash": "c42c6b88e5ba823369a0b32aaaf26cdd",
+    "semantic_hash": ""
+  },
+  "feature/setup/src/commonMain/kotlin/org/ide/lti/feature/setup/MachineRowMapper.kt": {
+    "mtime": 1790564285.6431563,
+    "seen": 1790567721.1836102,
+    "ast_hash": "cffa166cf8aa8dedc452fe4b54879c25",
+    "semantic_hash": ""
+  },
+  "feature/setup/src/commonTest/kotlin/org/ide/lti/feature/setup/MachineRowMapperTest.kt": {
+    "mtime": 1790564333.6732814,
+    "seen": 1790567721.1836102,
+    "ast_hash": "3c5e071f6cb00f1c71d26c5e264c4b43",
+    "semantic_hash": ""
+  },
+  "feature/setup/src/commonTest/kotlin/org/ide/lti/feature/setup/SetupStatusPresentationTest.kt": {
+    "mtime": 1790564561.6137347,
+    "seen": 1790567721.1836102,
+    "ast_hash": "74425519ddf6e46e9959d679c8da5c55",
+    "semantic_hash": ""
+  },
+  "feature/setup/src/desktopTest/kotlin/org/ide/lti/feature/setup/CleanMachineJourneyTest.kt": {
+    "mtime": 1790564560.2070208,
+    "seen": 1790567721.1836102,
+    "ast_hash": "3d204f270d966cefeee15b6ad4df0b64",
+    "semantic_hash": ""
+  },
+  "feature/setup/src/desktopTest/kotlin/org/ide/lti/feature/setup/SetupAdaptiveLayoutTest.kt": {
+    "mtime": 1790564561.6117363,
+    "seen": 1790567721.1836102,
+    "ast_hash": "0d71788afcc41993da0dc315167c8255",
+    "semantic_hash": ""
+  },
+  "feature/setup/src/desktopTest/kotlin/org/ide/lti/feature/setup/TerminalHandoffSheetTest.kt": {
+    "mtime": 1790564537.8760922,
+    "seen": 1790567721.1836102,
+    "ast_hash": "af1a03844745dbc75288a7b60bde082e",
+    "semantic_hash": ""
+  },
+  "tool/client/src/main/kotlin/io/ltirom/tooling/client/wsl/ServerArtifactInstaller.kt": {
+    "mtime": 1790562080.1467628,
+    "seen": 1790567721.1846092,
+    "ast_hash": "da29d7982643e9bd7d524fa1575b8877",
+    "semantic_hash": ""
+  },
+  "tool/client/src/test/kotlin/io/ltirom/tooling/client/transport/KtorRemoteTransportAdapterTest.kt": {
+    "mtime": 1790538812.4633653,
+    "seen": 1790567721.1846092,
+    "ast_hash": "8965f03da6b165b91b3dbc3df11a04dc",
+    "semantic_hash": ""
+  },
+  "tool/client/src/test/kotlin/io/ltirom/tooling/client/wsl/EnvironmentTargetingTest.kt": {
+    "mtime": 1790566460.6703463,
+    "seen": 1790567721.1846092,
+    "ast_hash": "042c81fb4c4212673ef0ba9d0baf1f54",
+    "semantic_hash": ""
+  },
+  "tool/client/src/test/kotlin/io/ltirom/tooling/client/wsl/ServerArtifactInstallerTest.kt": {
+    "mtime": 1790566460.6792076,
+    "seen": 1790567721.1846092,
+    "ast_hash": "2bff08490595ba7a1bb8447f3f376d79",
+    "semantic_hash": ""
+  },
+  "tool/client/src/test/kotlin/io/ltirom/tooling/client/wsl/WslDaemonUpdateTest.kt": {
+    "mtime": 1790553972.831766,
+    "seen": 1790567721.1846092,
+    "ast_hash": "e82b68b8ad3373f63a48d0fc726446f4",
+    "semantic_hash": ""
+  },
+  "tool/client/src/test/kotlin/io/ltirom/tooling/client/wsl/WslEnvironmentDetectorTest.kt": {
+    "mtime": 1790541093.4858775,
+    "seen": 1790567721.1846092,
+    "ast_hash": "87f58ebcdf0dcdc4394d53bd693ff0e6",
     "semantic_hash": ""
   }
 }
