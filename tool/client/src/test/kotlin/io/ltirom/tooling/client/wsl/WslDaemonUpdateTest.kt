@@ -1,5 +1,6 @@
 package io.ltirom.tooling.client.wsl
 
+import org.ide.lti.core.model.setup.SetupEnvironment
 import io.ltirom.tooling.client.WslDaemonConfig
 import io.ltirom.tooling.client.WslDaemonManager
 import io.ltirom.tooling.core.ports.ServerConnectionDescriptor
@@ -162,5 +163,50 @@ class WslDaemonUpdateTest {
         assertFalse(manager.isUpdateWaiting)
         assertTrue(manager.lastStartAdopted)
         assertEquals(existing.port, result.port)
+    }
+
+    @Test
+    fun `a deferred update survives status reads and is applied once active runs finish`() = runTest {
+        val existing = ServerConnectionDescriptor("127.0.0.1", 8080, "oldtoken", 100L, "Ubuntu-24.04")
+        val oldBusy = WslServerInfo(
+            status = "UP",
+            distro = "Ubuntu-24.04",
+            kernelRelease = "6.6.0",
+            architecture = "x86_64",
+            javaVersion = "21",
+            serverUptimeMs = 1000L,
+            serverVersion = "1.0.0",
+            activeRuns = 2,
+        )
+        val prober = FakeProber(healthy = true, serverInfo = oldBusy)
+        val launcher = FakeProcessLauncher()
+        val manager = WslDaemonManager(
+            config = WslDaemonConfig(
+                distroName = "Ubuntu-24.04",
+                serverBinaryWslPath = "/home/testuser/.ltirom/server/current/bin/ltirom-server",
+            ),
+            stateStore = FakeStateStore(existing),
+            launcher = launcher,
+            customProber = prober,
+        )
+        val env = SetupEnvironment("Ubuntu-24.04", 2, "ubuntu", "24.04", "testuser", "/home/testuser")
+
+        manager.ensureRunningVersion(distro = "Ubuntu-24.04", activeVersion = "2.0.0")
+        assertTrue(manager.isUpdateWaiting)
+
+        // A status read (what ServerArtifactAdapter does right after starting) must not clear the flag.
+        assertEquals("1.0.0", manager.getServerInfo(env)?.serverVersion)
+        assertTrue(manager.isUpdateWaiting, "Reading service info must not hide the pending update")
+
+        // The transport's per-request start keeps honouring the desired version while runs are active.
+        manager.ensureStarted()
+        assertTrue(manager.isUpdateWaiting)
+        assertEquals(0, launcher.launchCount)
+
+        // Once the old service is idle, the next start applies the update.
+        prober.serverInfo = oldBusy.copy(activeRuns = 0)
+        manager.ensureStarted()
+        assertEquals(1, launcher.launchCount, "The deferred update must be applied when runs finish")
+        assertFalse(manager.isUpdateWaiting)
     }
 }

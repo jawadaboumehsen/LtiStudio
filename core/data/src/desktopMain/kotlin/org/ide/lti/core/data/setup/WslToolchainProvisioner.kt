@@ -7,7 +7,6 @@ import io.ltirom.tooling.client.wsl.WslEnvironmentDetector
 import io.ltirom.tooling.core.ports.DaemonSupervisorPort
 import io.ltirom.tooling.core.ports.RemoteTransportPort
 import io.ltirom.tooling.core.remote.ToolExecutionRequest
-import io.ltirom.tooling.core.remote.ToolListResult
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -29,7 +28,6 @@ import org.ide.lti.core.data.remote.ToolStatusMapper
 import org.ide.lti.core.data.setup.doctor.CompositeSystemDoctorEngine
 import org.ide.lti.core.data.setup.doctor.DiagnosticContext
 import org.ide.lti.core.data.setup.doctor.NativeLibrariesInspector
-import org.ide.lti.core.data.setup.doctor.ToolchainIntegrityInspector
 import org.ide.lti.core.data.setup.doctor.WslPackageRemediator
 import org.ide.lti.core.domain.ports.DaemonFailureCategory
 import org.ide.lti.core.domain.ports.HostPrerequisitePort
@@ -1326,46 +1324,73 @@ public class WslToolchainProvisioner(
         val probeReport = hostPrerequisitePort.probe(env)
         lastPrerequisiteReport = probeReport
         val checkFailure = probeReport.results.values.filterIsInstance<RequirementStatus.CheckFailed>().firstOrNull()
-        val stillMissing = probeReport.missingPackages.filter { it in handoff.packages }
+        val unavailable = probeReport.results.filterValues { it is RequirementStatus.Unavailable }.keys
+        // Judged against every requirement, not the shrinking handoff list: a package that was present
+        // before but is gone now blocks success too, and joins the command.
+        val missing = probeReport.missingPackages
         return when {
             // An unreadable probe proves nothing: keep the handoff pending instead of archiving it.
             checkFailure != null -> SetupOutcome.Interrupted("Couldn't check packages: ${checkFailure.reason}")
-            stillMissing.isNotEmpty() -> {
-                val newCommand = AptCommandBuilder.install(stillMissing)
-                val persistedPlan = active.persistedPlan ?: PersistedSetupPlan(
-                    planId = active.planId,
-                    revisionHash = active.planRevisionHash,
-                    environmentKey = active.environmentKey,
-                    kind = active.planKind,
-                )
-                repo.recordAttemptAwaitingUserAction(
-                    active.attemptId,
-                    handoff.copy(packages = stillMissing, command = newCommand),
-                    persistedPlan,
-                )
-                SetupOutcome.AwaitingUserAction(
-                    pendingPlanId = planId,
-                    stage = SetupStepStage.SYSTEM_PACKAGES,
-                    reason = "Required packages are still not installed in WSL: ${stillMissing.joinToString()}",
-                    handoff = UserRepairHandoff(
-                        actionId = handoff.actionId,
-                        description = "Required packages are still missing",
-                        terminalCommand = newCommand,
-                        packages = stillMissing,
-                        distro = distro,
-                    ),
-                )
-            }
-            else -> {
+            unavailable.isNotEmpty() -> {
+                // apt has no candidate, so no terminal command can fix it; the attempt stays pending.
+                val reason = "${unavailable.joinToString(", ")} isn't available on Ubuntu ${env.osVersionId}"
                 setStepStatus(
                     SetupStepStage.SYSTEM_PACKAGES,
-                    StepStatus.SUCCESS,
-                    desc = "Prerequisite packages installed",
+                    StepStatus.FAILED,
+                    desc = reason,
+                    error = "Enable the Ubuntu 'universe' repository or use a supported Ubuntu LTS release.",
                 )
-                archiveAttempt(active.attemptId, SetupOutcome.Succeeded())
-                SetupOutcome.Succeeded()
+                SetupOutcome.Failed(stage = SetupStepStage.SYSTEM_PACKAGES.name, reason = reason)
+            }
+            missing.isNotEmpty() -> keepHandoffOpen(repo, active, handoff, planId, distro, missing)
+            else -> archiveAttempt(active.attemptId, SetupOutcome.Succeeded()).also { archived ->
+                // Only a durably archived attempt may show the step as done.
+                if (archived is SetupOutcome.Succeeded) {
+                    setStepStatus(
+                        SetupStepStage.SYSTEM_PACKAGES,
+                        StepStatus.SUCCESS,
+                        desc = "Prerequisite packages installed",
+                    )
+                }
             }
         }
+    }
+
+    /** Re-journals the handoff with [missing] as its new command; a failed journal write is not a pending step. */
+    private suspend fun keepHandoffOpen(
+        repo: ToolchainSetupRepository,
+        active: SetupAttemptRecord,
+        handoff: PersistedUserHandoff,
+        planId: String,
+        distro: String,
+        missing: List<String>,
+    ): SetupOutcome {
+        val newCommand = AptCommandBuilder.install(missing)
+        val persistedPlan = active.persistedPlan ?: PersistedSetupPlan(
+            planId = active.planId,
+            revisionHash = active.planRevisionHash,
+            environmentKey = active.environmentKey,
+            kind = active.planKind,
+        )
+        repo.recordAttemptAwaitingUserAction(
+            active.attemptId,
+            handoff.copy(packages = missing, command = newCommand),
+            persistedPlan,
+        ).onFailure { failure ->
+            return SetupOutcome.Interrupted("The updated package list could not be journaled: ${failure.message}")
+        }
+        return SetupOutcome.AwaitingUserAction(
+            pendingPlanId = planId,
+            stage = SetupStepStage.SYSTEM_PACKAGES,
+            reason = "Required packages are still not installed in WSL: ${missing.joinToString()}",
+            handoff = UserRepairHandoff(
+                actionId = handoff.actionId,
+                description = "Required packages are still missing",
+                terminalCommand = newCommand,
+                packages = missing,
+                distro = distro,
+            ),
+        )
     }
 
     /** A doctor whose checks run through the build service, rooted at the user's home. */

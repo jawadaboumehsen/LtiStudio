@@ -31,6 +31,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -118,6 +119,12 @@ fun GlassToggle(
     )
 }
 
+/**
+ * Clock for the toggle's 300 ms activation debounce. Tests provide a `TestTimeSource` so "two presses
+ * within 300 ms" does not depend on how busy the machine is; the app always uses the real clock.
+ */
+internal val LocalToggleTimeSource = staticCompositionLocalOf<TimeSource> { TimeSource.Monotonic }
+
 // One gesture/animation state machine plus its drawing; splitting it would scatter the shared drag,
 // debounce and optimistic-toggle state across helpers.
 @Suppress("LongMethod", "CyclomaticComplexMethod")
@@ -151,7 +158,8 @@ internal fun GlassToggleImpl(
     val toggleTrackKey = remember(toggleId) { ControlSourceKey(type = "ToggleTrack", id = toggleId) }
     val thumbSelection = remember(toggleTrackKey) { toggleThumbSelection(toggleTrackKey) }
 
-    val timeMark = remember { TimeSource.Monotonic.markNow() }
+    val timeSource = LocalToggleTimeSource.current
+    val timeMark = remember(timeSource) { timeSource.markNow() }
     var lastActivationTime by remember { mutableLongStateOf(-1000L) }
     var optimisticTarget by remember { mutableStateOf<Boolean?>(null) }
 

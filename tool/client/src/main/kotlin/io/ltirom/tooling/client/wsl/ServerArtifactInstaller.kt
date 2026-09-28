@@ -68,8 +68,7 @@ public class ServerArtifactInstaller(
         }
 
         val serverBase = "${environment.home}/.ltirom/server"
-        val currentBinary = "${currentLink(environment)}/bin/ltirom-server"
-        if (activeBefore == bundled && ok(environment, listOf("test", "-x", currentBinary))) {
+        if (activeBefore == bundled && isIntact(environment, currentLink(environment))) {
             return artifact(bundled, bundled, InstallState.Current)
         }
 
@@ -86,8 +85,9 @@ public class ServerArtifactInstaller(
             "chmod" to listOf("sh", "-c", "chmod +x '$partialDir'/bin/*"),
             "verify" to listOf("sh", "-c", "cd '$partialDir' && sha256sum --quiet -c $CHECKSUMS_FILE"),
             "verify" to listOf("test", "-x", "$partialDir/bin/ltirom-server"),
-            // finalDir can only be the active target when that target is broken (checked above).
-            "stage" to listOf("rm", "-rf", finalDir),
+            // finalDir is the active target only when that install is damaged (checked above). It is moved
+            // aside, never deleted, until the verified copy has replaced it.
+            "stage" to listOf("sh", "-c", "rm -rf '$finalDir.old' && if [ -e '$finalDir' ]; then mv '$finalDir' '$finalDir.old'; fi"),
             "stage" to listOf("mv", partialDir, finalDir),
             "activate" to listOf("ln", "-sfn", finalDir, tmpLink),
             "activate" to listOf("mv", "-T", tmpLink, currentLink(environment)),
@@ -96,10 +96,16 @@ public class ServerArtifactInstaller(
             // Copying and hashing the bundle across the 9P mount takes far longer than the 10 s default.
             val result = cli.execute(environment.distro, command, timeoutSeconds = STEP_TIMEOUT_SECONDS)
             if (result.exitCode != 0) {
+                // Put a set-aside install back so `current` keeps pointing at something (best effort).
+                cli.execute(
+                    environment.distro,
+                    listOf("sh", "-c", "if [ ! -e '$finalDir' ] && [ -e '$finalDir.old' ]; then mv '$finalDir.old' '$finalDir'; fi"),
+                )
                 val detail = result.error.ifBlank { result.output }.ifBlank { "exit code ${result.exitCode}" }
                 return artifact(bundled, activeBefore, InstallState.Failed(step, detail))
             }
         }
+        cli.execute(environment.distro, listOf("rm", "-rf", "$finalDir.old"))
 
         // Keep the new version and the one it replaced; older versions are removed (best effort).
         val keep = listOfNotNull(bundled, activeBefore).joinToString(" ") { "! -name '$it'" }
@@ -111,7 +117,12 @@ public class ServerArtifactInstaller(
     }
 
     private fun ok(environment: SetupEnvironment, command: List<String>): Boolean =
-        cli.execute(environment.distro, command).exitCode == 0
+        cli.execute(environment.distro, command, timeoutSeconds = STEP_TIMEOUT_SECONDS).exitCode == 0
+
+    /** The launcher is executable and every bundled file (JARs included) still matches its checksum. */
+    private fun isIntact(environment: SetupEnvironment, dir: String): Boolean =
+        ok(environment, listOf("test", "-x", "$dir/bin/ltirom-server")) &&
+            ok(environment, listOf("sh", "-c", "cd '$dir' && sha256sum --quiet -c $CHECKSUMS_FILE"))
 
     private fun currentLink(environment: SetupEnvironment): String = "${environment.home}/.ltirom/server/current"
 

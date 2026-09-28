@@ -127,29 +127,65 @@ public class SetupLogBuffer(
         synchronized(fileLock) { writeEventLine(dir, event) }
     }
 
+    /** Open writer for the file currently being appended; reopening per line is slow on Windows. */
+    private var openFile: File? = null
+    private var openWriter: java.io.Writer? = null
+    private var openFileBytes: Long = 0L
+
     private fun writeEventLine(dir: File, event: SetupLogEvent) {
         try {
-            if (!dir.exists()) dir.mkdirs()
-            val rawId = event.attemptId.trim()
-            val fileAttemptId = if (rawId.isEmpty() || rawId == "local" || rawId == "session") "local" else rawId
+            val fileAttemptId = fileIdFor(event.attemptId)
             val logFile = File(dir, "$fileAttemptId.log")
             val line = "[${event.kind.name}] ${event.text}\n"
-            val header = "# Setup Attempt Log: $fileAttemptId\n" +
-                "# Max Size: $maxLogFileSizeBytes bytes | Rotation: 1 backup\n"
-
-            if (!logFile.exists() || logFile.length() == 0L) {
-                logFile.writeText(header)
-            } else if (logFile.length() + line.toByteArray().size > maxLogFileSizeBytes) {
-                val backupFile = File(dir, "$fileAttemptId.log.1")
-                if (backupFile.exists()) backupFile.delete()
-                logFile.renameTo(backupFile)
-                logFile.writeText(header)
-            }
-
-            logFile.appendText(line)
+            val lineBytes = line.toByteArray().size
+            if (openFile != logFile) openWriterFor(dir, logFile, fileAttemptId)
+            if (openFileBytes + lineBytes > maxLogFileSizeBytes) rotate(dir, logFile, fileAttemptId)
+            val writer = openWriter ?: return
+            writer.write(line)
+            writer.flush()
+            openFileBytes += lineBytes
         } catch (@Suppress("TooGenericExceptionCaught") _: Exception) {
             // Persisted log file failures must never fail in-memory buffer operations.
+            closeWriter()
         }
+    }
+
+    private fun openWriterFor(dir: File, logFile: File, fileAttemptId: String) {
+        closeWriter()
+        if (!dir.exists()) dir.mkdirs()
+        val isNew = !logFile.exists() || logFile.length() == 0L
+        openWriter = java.io.BufferedWriter(java.io.FileWriter(logFile, Charsets.UTF_8, true))
+        openFile = logFile
+        openFileBytes = if (isNew) 0L else logFile.length()
+        if (isNew) writeHeader(fileAttemptId)
+    }
+
+    private fun rotate(dir: File, logFile: File, fileAttemptId: String) {
+        closeWriter()
+        val backupFile = File(dir, "$fileAttemptId.log.1")
+        if (backupFile.exists()) backupFile.delete()
+        logFile.renameTo(backupFile)
+        openWriterFor(dir, logFile, fileAttemptId)
+    }
+
+    private fun writeHeader(fileAttemptId: String) {
+        val header = "# Setup Attempt Log: $fileAttemptId\n" +
+            "# Max Size: $maxLogFileSizeBytes bytes | Rotation: 1 backup\n"
+        openWriter?.write(header)
+        openWriter?.flush()
+        openFileBytes += header.toByteArray().size
+    }
+
+    private fun closeWriter() {
+        runCatching { openWriter?.close() }
+        openWriter = null
+        openFile = null
+        openFileBytes = 0L
+    }
+
+    private fun fileIdFor(attemptId: String?): String {
+        val rawId = attemptId?.trim().orEmpty()
+        return if (rawId.isEmpty() || rawId == "local" || rawId == "session") "local" else rawId
     }
 
     /** The most recently written log file (any attempt, or the `local` checks log); null when none exists. */
@@ -159,9 +195,7 @@ public class SetupLogBuffer(
 
     public fun getLogFile(attemptId: String?): File? {
         val dir = logDirectory ?: return null
-        val rawId = attemptId?.trim().orEmpty()
-        val fileAttemptId = if (rawId.isEmpty() || rawId == "local" || rawId == "session") "local" else rawId
-        val file = File(dir, "$fileAttemptId.log")
+        val file = File(dir, "${fileIdFor(attemptId)}.log")
         return if (file.exists()) file else null
     }
 

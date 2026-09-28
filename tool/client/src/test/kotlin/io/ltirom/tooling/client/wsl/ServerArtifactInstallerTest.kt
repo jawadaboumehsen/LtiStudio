@@ -231,4 +231,56 @@ class ServerArtifactInstallerTest {
         assertNull(result.bundledVersion, "bundledVersion must be null when bundle is missing")
         assertTrue(result.installState is InstallState.Failed)
     }
+
+    @Test
+    fun `a same-version install with a corrupted jar is repaired, not accepted`() {
+        val tempDir = bundle("1.7.0")
+        try {
+            // The active copy is 1.7.0 and its launcher runs, but a JAR no longer matches its checksum.
+            val cli = object : WslCliExecutor() {
+                val commands = mutableListOf<String>()
+                override fun execute(
+                    distro: String,
+                    command: List<String>,
+                    timeoutSeconds: Long,
+                    charset: Charset,
+                    user: String?,
+                ): CliExecutionResult {
+                    val cmd = command.joinToString(" ")
+                    commands += cmd
+                    return when {
+                        cmd.startsWith("readlink") -> CliExecutionResult(0, "/home/testuser/.ltirom/server/versions/1.7.0", "")
+                        cmd.contains("/current") && cmd.contains("sha256sum") ->
+                            CliExecutionResult(1, "", "lib/ltirom-server.jar: FAILED")
+                        else -> CliExecutionResult(0, "", "")
+                    }
+                }
+            }
+            val result = ServerArtifactInstaller(cli = cli, bundleDirProvider = { tempDir }).ensureInstalled(testEnv)
+
+            assertEquals(InstallState.Current, result.installState)
+            assertTrue(cli.commands.any { it.startsWith("cp -r") }, "A damaged install must be re-copied: ${cli.commands}")
+            // The damaged copy is moved aside (not deleted) before the verified one replaces it.
+            assertTrue(cli.commands.any { it.contains("mv '/home/testuser/.ltirom/server/versions/1.7.0' ") })
+        } finally {
+            tempDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `a failed swap puts the set-aside install back`() {
+        val tempDir = bundle("1.8.0")
+        try {
+            val cli = RecordingFakeCli(
+                failOnCommandSubstring = "mv /home/testuser/.ltirom/server/versions/1.8.0.partial",
+                activeVersionSymlinkTarget = "/home/testuser/.ltirom/server/versions/1.0.0",
+            )
+            ServerArtifactInstaller(cli = cli, bundleDirProvider = { tempDir }).ensureInstalled(testEnv)
+
+            val commands = cli.executedCommands.map { it.joinToString(" ") }
+            assertTrue(commands.any { it.contains("mv '/home/testuser/.ltirom/server/versions/1.8.0.old'") }, "$commands")
+        } finally {
+            tempDir.deleteRecursively()
+        }
+    }
 }

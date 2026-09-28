@@ -15,9 +15,7 @@ public class ServerArtifactAdapter(
 
     override suspend fun status(environment: SetupEnvironment): ServerArtifact {
         val artifact = installer.status(environment)
-        val serverInfo = daemonManager.checkExistingDaemon(environment.distro)?.let {
-            daemonManager.getServerInfo(environment)
-        }
+        val serverInfo = daemonManager.getServerInfo(environment)
         return artifact.copy(
             runningVersion = serverInfo?.serverVersion,
             runningActiveRuns = serverInfo?.activeRuns ?: 0,

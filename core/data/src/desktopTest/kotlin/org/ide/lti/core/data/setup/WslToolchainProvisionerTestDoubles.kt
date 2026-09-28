@@ -258,7 +258,8 @@ internal class FakeWslCliExecutor : WslCliExecutor() {
             return CliExecutionResult(0, userHome, "")
         }
         if (cmdStr.contains("JAVA_HOMES_BEGIN")) {
-            val javaSection = "JAVA_HOMES_BEGIN\n/usr/lib/jvm/java-21-openjdk-amd64\nJAVA_HOMES_END\n"
+            val javaSection = "JAVA_HOMES_BEGIN\n" +
+                "/usr/lib/jvm/java-21-openjdk-amd64|openjdk version \"21.0.4\" 2024-07-16\nJAVA_HOMES_END\n"
             val reqSection = RequirementCatalog.REQUIREMENTS.joinToString("\n") {
                 "${it.id}=present"
             }

@@ -79,7 +79,10 @@ public class WslHostPrerequisiteProbe(
             .dropWhile { it != JAVA_BEGIN }.drop(1)
             .takeWhile { it != JAVA_END }
             .filter { it.isNotBlank() }
-            .mapNotNull { path -> javaMajor(path)?.let { path to it } }
+            .mapNotNull { line ->
+                val home = line.substringBefore("|")
+                javaMajor(line.substringAfter("|", missingDelimiterValue = ""))?.let { home to it }
+            }
             .filter { (_, major) -> major >= SERVER_JAVA_MAJOR }
             .maxByOrNull { it.second }?.first
         private val aptCandidates: Map<String, String> = lines
@@ -118,7 +121,11 @@ public class WslHostPrerequisiteProbe(
                 "echo \"$APT_POLICY\$p:\${c:-none}\"; done; }",
         )
         appendLine("echo $JAVA_BEGIN")
-        appendLine("for d in /usr/lib/jvm/*; do [ -x \"\$d/bin/java\" ] && echo \"\$d\"; done")
+        // Each candidate reports what it really is: `java -version` of its own binary, not its folder name.
+        appendLine(
+            "for d in /usr/lib/jvm/*; do [ -x \"\$d/bin/java\" ] && " +
+                "echo \"\$d|\$(\"\$d/bin/java\" -version 2>&1 | head -n 1)\"; done",
+        )
         appendLine("echo $JAVA_END")
         for (req in requirements) {
             val test = when (val check = req.check) {
@@ -140,9 +147,16 @@ public class WslHostPrerequisiteProbe(
     }
 
     private companion object {
-        fun javaMajor(path: String): Int? =
-            (Regex("""(?:java-|jdk-?)(\d+)""").find(path) ?: Regex("""\b(\d+)\b""").find(path))
-                ?.groupValues?.get(1)?.toIntOrNull()
+        /**
+         * Major version from the first `java -version` line (`openjdk version "21.0.4"`, `java version
+         * "1.8.0_392"`); null when the binary printed no version, i.e. it is broken.
+         */
+        fun javaMajor(versionLine: String): Int? {
+            val groups = Regex("""version "(\d+)(?:\.(\d+))?""").find(versionLine)?.groupValues
+            val first = groups?.get(1)?.toIntOrNull()
+            // Legacy scheme: "1.8.0" is Java 8.
+            return if (first == 1) groups[2].toIntOrNull() else first
+        }
 
         const val PROBE_TIMEOUT_SECONDS = 90L
         const val SERVER_JAVA_MAJOR = 21

@@ -61,6 +61,7 @@ import dev.chrisbanes.haze.hazeSource
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.component.inputs.GlassToggleImpl
+import org.ide.lti.core.designsystem.component.inputs.LocalToggleTimeSource
 import org.ide.lti.core.designsystem.component.layout.GlassBackdrop
 import org.ide.lti.core.designsystem.theme.GlassControlColors
 import org.ide.lti.core.designsystem.theme.GlassMaterialStyles
@@ -77,6 +78,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TestTimeSource
 
 /**
  * Optical and interaction verification suite for [GlassToggle] liquid motion.
@@ -1148,21 +1151,28 @@ class GlassToggleLiquidMotionTest {
         var isChecked by mutableStateOf(false)
         val focusRequester = FocusRequester()
 
+        // A clock that only moves when told to: the two presses below are 0 ms apart however busy the
+        // machine is, so the debounce is tested rather than the scheduler.
+        val clock = TestTimeSource()
         setContent {
-            LtiTheme(appTheme = AppTheme.Blue, effectsEnabled = true) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    GlassToggle(
-                        checked = isChecked,
-                        onCheckedChange = {
-                            callbackCount++
-                            isChecked = it
-                        },
-                        modifier = Modifier.focusRequester(focusRequester),
-                    )
+            CompositionLocalProvider(LocalToggleTimeSource provides clock) {
+                LtiTheme(appTheme = AppTheme.Blue, effectsEnabled = true) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        GlassToggle(
+                            checked = isChecked,
+                            onCheckedChange = {
+                                callbackCount++
+                                isChecked = it
+                            },
+                            modifier = Modifier.focusRequester(focusRequester),
+                        )
+                    }
                 }
             }
         }
         waitForIdle()
+        // Past the start-up window, so the first press is accepted.
+        clock += 1.seconds
 
         // Rapid semantic click + Spacebar in immediate succession (<300ms)
         focusRequester.requestFocus()

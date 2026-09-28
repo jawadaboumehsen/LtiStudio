@@ -61,6 +61,13 @@ public class WslDaemonManager(
     private var boundDistro: String? = null
     private var boundHome: String? = null
     private var boundJavaHome: String? = null
+
+    /**
+     * Version the last admitted start asked for. A start without a version (the transport's per-request
+     * `ensureStarted()`) is still judged against it, so a deferred update stays visible and is applied
+     * once the old service has no active runs, instead of being forgotten by the next status read.
+     */
+    private var desiredVersion: String? = null
     private val prober: DaemonHealthProber by lazy { customProber ?: DaemonHealthProber(httpClient) }
 
     override var lastStartAdopted: Boolean = false
@@ -122,14 +129,17 @@ public class WslDaemonManager(
         if (distro != boundDistro) {
             boundHome = null
             boundJavaHome = null
+            desiredVersion = null
         }
         boundDistro = distro
+        activeVersion?.let { desiredVersion = it }
+        val wanted = desiredVersion
         home?.let { boundHome = it }
         javaHome?.let { boundJavaHome = it }
         val current = connectionInfo
         if (current != null && current.distro == distro && isHealthy(current)) {
             val sInfo = prober.getServerInfo(current)
-            if (sInfo != null && (activeVersion == null || sInfo.serverVersion == activeVersion)) {
+            if (sInfo != null && (wanted == null || sInfo.serverVersion == wanted)) {
                 lastStartAdopted = true
                 isUpdateWaiting = false
                 return@withLock current
@@ -140,7 +150,7 @@ public class WslDaemonManager(
         if (existing != null && isHealthy(existing)) {
             val sInfo = prober.getServerInfo(existing)
             if (sInfo != null) {
-                if (activeVersion == null || sInfo.serverVersion == activeVersion) {
+                if (wanted == null || sInfo.serverVersion == wanted) {
                     connectionInfo = existing
                     lastStartAdopted = true
                     isUpdateWaiting = false
@@ -250,8 +260,14 @@ public class WslDaemonManager(
         return prober.getServerInfo(info)
     }
 
+    /**
+     * Reads the running service's info for [environment] without starting, adopting or restarting
+     * anything, so a status read never changes [isUpdateWaiting] or the connection.
+     */
     public suspend fun getServerInfo(environment: SetupEnvironment): WslServerInfo? {
-        val info = ensureStarted(environment)
+        val info = mutex.withLock { connectionInfo }?.takeIf { it.distro == environment.distro }
+            ?: checkExistingDaemon(environment.distro)
+            ?: return null
         return prober.getServerInfo(info)
     }
 

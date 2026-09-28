@@ -19,9 +19,13 @@ import org.ide.lti.core.domain.ports.ServerArtifactPort
 import org.ide.lti.core.domain.repository.setup.ToolchainSetupRepository
 import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.domain.setup.SetupPlanKind
+import org.ide.lti.core.domain.setup.SetupStepStage
+import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.model.setup.AttemptStatus
 import org.ide.lti.core.model.setup.DistroStatus
 import org.ide.lti.core.model.setup.InstallState
+import org.ide.lti.core.model.setup.PersistedSetupPlan
+import org.ide.lti.core.model.setup.PersistedUserHandoff
 import org.ide.lti.core.model.setup.PrerequisiteReport
 import org.ide.lti.core.model.setup.RequirementStatus
 import org.ide.lti.core.model.setup.ServerArtifact
@@ -304,6 +308,134 @@ class BootstrapHandoffTest {
         assertTrue(
             archived?.status == AttemptStatus.ABANDONED || active?.status == AttemptStatus.ABANDONED,
             "Attempt must be marked ABANDONED in repository",
+        )
+    }
+
+    /** Repository whose writes can be made to fail, to prove journal failures are never reported as success. */
+    private class FailingWritesRepository(private val delegate: ToolchainSetupRepository) :
+        ToolchainSetupRepository by delegate {
+        var failAwaiting = false
+        var failTerminal = false
+
+        override suspend fun recordAttemptAwaitingUserAction(
+            attemptId: String,
+            handoff: PersistedUserHandoff,
+            plan: PersistedSetupPlan,
+        ): Result<Unit> = if (failAwaiting) {
+            Result.failure(java.io.IOException("disk full"))
+        } else {
+            delegate.recordAttemptAwaitingUserAction(attemptId, handoff, plan)
+        }
+
+        override suspend fun recordAttemptTerminal(
+            attemptId: String,
+            status: AttemptStatus,
+            outcome: SetupOutcome,
+        ): Result<Unit> = if (failTerminal) {
+            Result.failure(java.io.IOException("disk full"))
+        } else {
+            delegate.recordAttemptTerminal(attemptId, status, outcome)
+        }
+    }
+
+    private suspend fun startHandoff(
+        repository: ToolchainSetupRepository,
+        probe: FakeHostPrerequisiteProbe,
+        dispatcher: CoroutineDispatcher,
+    ): Pair<WslToolchainProvisioner, String> {
+        val provisioner = WslToolchainProvisioner(
+            repository = repository,
+            transport = CountingTransport(),
+            supervisor = FakeDaemonSupervisor(),
+            dispatcher = dispatcher,
+            hostPrerequisitePort = probe,
+            serverArtifactPort = FakeServerArtifactAdapter(),
+        )
+        provisioner.verifyEnvironment()
+        val plan = provisioner.prepare(SetupPlanKind.BOOTSTRAP_PACKAGES)
+        provisioner.confirm(plan.planId, plan.revisionHash)
+        return provisioner to plan.planId
+    }
+
+    private val allPresentReport = missingReport.copy(
+        results = mapOf(
+            "git" to RequirementStatus.Present,
+            "cmake" to RequirementStatus.Present,
+            "java-server" to RequirementStatus.Present,
+        ),
+        missingPackages = emptyList(),
+        installCommand = null,
+        javaHome = "/usr/lib/jvm/java-21-openjdk-amd64",
+    )
+
+    @Test
+    fun `an unavailable package never completes the handoff`() = runTest {
+        val dispatcher = UnconfinedTestDispatcher(testScheduler)
+        val repository = createRepository(dispatcher)
+        val probe = FakeHostPrerequisiteProbe(missingReport)
+        val (provisioner, planId) = startHandoff(repository, probe, dispatcher)
+
+        // Everything installable is present, but one requirement has no apt candidate.
+        probe.probeReport = allPresentReport.copy(
+            results = allPresentReport.results + ("legacy" to RequirementStatus.Unavailable("24.04")),
+        )
+        val outcome = provisioner.resume(planId)
+
+        assertTrue(outcome is SetupOutcome.Failed, "Unavailable must not be reported as success: $outcome")
+        assertEquals(AttemptStatus.AWAITING_USER_ACTION, repository.currentState.activeAttempt?.status)
+    }
+
+    @Test
+    fun `a package that regressed since the first probe blocks success and joins the command`() = runTest {
+        val dispatcher = UnconfinedTestDispatcher(testScheduler)
+        val repository = createRepository(dispatcher)
+        val probe = FakeHostPrerequisiteProbe(missingReport)
+        val (provisioner, planId) = startHandoff(repository, probe, dispatcher)
+
+        // The handoff's packages are installed now, but rsync (present at the first probe) is gone.
+        probe.probeReport = allPresentReport.copy(
+            results = allPresentReport.results + ("rsync" to RequirementStatus.Missing),
+            missingPackages = listOf("rsync"),
+            installCommand = "sudo apt-get update && sudo apt-get install -y rsync",
+        )
+        val outcome = provisioner.resume(planId)
+
+        assertTrue(outcome is SetupOutcome.AwaitingUserAction, "A regressed package must keep the handoff: $outcome")
+        assertEquals(listOf("rsync"), outcome.handoff.packages)
+    }
+
+    @Test
+    fun `a journal write failure on a partial resume is not reported as a pending step`() = runTest {
+        val dispatcher = UnconfinedTestDispatcher(testScheduler)
+        val repository = FailingWritesRepository(createRepository(dispatcher))
+        val probe = FakeHostPrerequisiteProbe(missingReport)
+        val (provisioner, planId) = startHandoff(repository, probe, dispatcher)
+
+        probe.probeReport = missingReport.copy(
+            results = missingReport.results + ("git" to RequirementStatus.Present),
+            missingPackages = listOf("cmake", "openjdk-21-jdk"),
+        )
+        repository.failAwaiting = true
+        val outcome = provisioner.resume(planId)
+
+        assertTrue(outcome is SetupOutcome.Interrupted, "A lost journal write must surface: $outcome")
+    }
+
+    @Test
+    fun `an archive failure on a complete resume is not reported as success`() = runTest {
+        val dispatcher = UnconfinedTestDispatcher(testScheduler)
+        val repository = FailingWritesRepository(createRepository(dispatcher))
+        val probe = FakeHostPrerequisiteProbe(missingReport)
+        val (provisioner, planId) = startHandoff(repository, probe, dispatcher)
+
+        probe.probeReport = allPresentReport
+        repository.failTerminal = true
+        val outcome = provisioner.resume(planId)
+
+        assertTrue(outcome is SetupOutcome.Interrupted, "An unarchived attempt must not claim success: $outcome")
+        val packagesStep = provisioner.state.value.steps.first { it.stage == SetupStepStage.SYSTEM_PACKAGES }
+        assertFalse(
+            packagesStep.status == StepStatus.SUCCESS && packagesStep.description == "Prerequisite packages installed",
         )
     }
 }

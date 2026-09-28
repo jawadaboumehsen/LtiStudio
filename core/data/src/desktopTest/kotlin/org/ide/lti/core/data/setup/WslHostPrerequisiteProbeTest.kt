@@ -21,7 +21,8 @@ class WslHostPrerequisiteProbeTest {
         var packageListsFresh: Boolean = true,
         var lines: List<String> = emptyList(),
         var aptCachePolicyLines: Map<String, String> = emptyMap(),
-        var javaListingOutput: String = "/usr/lib/jvm/java-21-openjdk-amd64\n/usr/lib/jvm/java-17-openjdk-amd64",
+        var javaListingOutput: String = "/usr/lib/jvm/java-21-openjdk-amd64|openjdk version \"21.0.4\" " +
+            "2024-07-16\n/usr/lib/jvm/java-17-openjdk-amd64|openjdk version \"17.0.12\" 2024-07-16",
     ) : WslCliExecutor() {
         var lastExecutedCommand: List<String>? = null
 
@@ -115,7 +116,8 @@ class WslHostPrerequisiteProbeTest {
     fun `java discovery selects java 21 path when both 17 and 21 are installed`() = runTest {
         val fakeCli = FakeProbeCli(
             packageListsFresh = true,
-            javaListingOutput = "/usr/lib/jvm/java-17-openjdk-amd64\n/usr/lib/jvm/java-21-openjdk-amd64",
+            javaListingOutput = "/usr/lib/jvm/java-17-openjdk-amd64|openjdk version \"17.0.12\" " +
+                "2024-07-16\n/usr/lib/jvm/java-21-openjdk-amd64|openjdk version \"21.0.4\" 2024-07-16",
             lines = listOf(
                 "java-server=present",
             ),
@@ -131,7 +133,7 @@ class WslHostPrerequisiteProbeTest {
     fun `java discovery reports Missing and null javaHome when only java 17 is installed`() = runTest {
         val fakeCli = FakeProbeCli(
             packageListsFresh = true,
-            javaListingOutput = "/usr/lib/jvm/java-17-openjdk-amd64",
+            javaListingOutput = "/usr/lib/jvm/java-17-openjdk-amd64|openjdk version \"17.0.12\" 2024-07-16",
             lines = listOf(
                 "java-server=missing",
             ),
@@ -216,7 +218,10 @@ class WslHostPrerequisiteProbeTest {
 
     @Test
     fun `missing java 21 adds its package even though the script prints no java line`() = runTest {
-        val fakeCli = FakeProbeCli(javaListingOutput = "/usr/lib/jvm/java-17-openjdk-amd64")
+        val fakeCli = FakeProbeCli(
+            javaListingOutput = "/usr/lib/jvm/java-17-openjdk-amd64|openjdk version " +
+                "\"17.0.12\" 2024-07-16",
+        )
         val report = WslHostPrerequisiteProbe(cli = fakeCli).probe(testEnv)
 
         assertEquals(RequirementStatus.Missing, report.results["java-server"])
@@ -232,5 +237,39 @@ class WslHostPrerequisiteProbeTest {
         assertTrue("ls /var/lib/apt/lists/*_Packages" in script)
         assertTrue("apt-cache policy" in script)
         assertTrue("'git=missing'" in script)
+    }
+
+    @Test
+    fun `java is judged by its own version output, not its folder name`() = runTest {
+        val fakeCli = FakeProbeCli(
+            javaListingOutput = listOf(
+                // Custom folder name, real JDK 21: accepted.
+                "/usr/lib/jvm/corretto|openjdk version \"21.0.4\" 2024-07-16",
+                // Named like 21 but actually 17: rejected.
+                "/usr/lib/jvm/java-21-fake|openjdk version \"17.0.12\" 2024-07-16",
+                // Broken binary prints no version: rejected.
+                "/usr/lib/jvm/java-22-broken|Error: could not find libjava.so",
+            ).joinToString("\n"),
+        )
+        val report = WslHostPrerequisiteProbe(cli = fakeCli).probe(testEnv)
+
+        assertEquals("/usr/lib/jvm/corretto", report.javaHome)
+        assertEquals(RequirementStatus.Present, report.results["java-server"])
+    }
+
+    @Test
+    fun `a misleadingly named or broken java is not accepted`() = runTest {
+        val fakeCli = FakeProbeCli(
+            javaListingOutput = listOf(
+                "/usr/lib/jvm/java-21-fake|openjdk version \"17.0.12\" 2024-07-16",
+                "/usr/lib/jvm/java-21-broken|",
+                "/usr/lib/jvm/legacy|java version \"1.8.0_392\"",
+            ).joinToString("\n"),
+        )
+        val report = WslHostPrerequisiteProbe(cli = fakeCli).probe(testEnv)
+
+        assertNull(report.javaHome)
+        assertEquals(RequirementStatus.Missing, report.results["java-server"])
+        assertTrue("openjdk-21-jdk" in report.missingPackages)
     }
 }

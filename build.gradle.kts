@@ -550,3 +550,11 @@ allprojects {
         dependsOn(installGitHooks)
     }
 }
+
+// Tests must never write into the developer's real app data (setup logs, journals, run files):
+// point LOCALAPPDATA, the Windows root used by resolveAppDataDir(), at each module's build folder.
+allprojects {
+    tasks.withType<Test>().configureEach {
+        environment("LOCALAPPDATA", layout.buildDirectory.dir("test-appdata").get().asFile.absolutePath)
+    }
+}
