@@ -13,10 +13,11 @@ import kotlinx.coroutines.withTimeout
  * Single Responsibility: Performs HTTP health probing and system telemetry checks
  * against an active daemon server instance.
  */
-public class DaemonHealthProber(
-    private val httpClient: HttpClient
+public open class DaemonHealthProber(
+    private val httpClient: HttpClient? = null
 ) {
-    public suspend fun isHealthy(info: ServerConnectionDescriptor, timeoutMs: Long = 5000L): Boolean {
+    public open suspend fun isHealthy(info: ServerConnectionDescriptor, timeoutMs: Long = 5000L): Boolean {
+        val client = httpClient ?: return false
         return try {
             withTimeout(timeoutMs) {
                 val response = httpClient.get("${info.httpBaseUrl}/api/v1/health")
@@ -27,9 +28,10 @@ public class DaemonHealthProber(
         }
     }
 
-    public suspend fun getServerInfo(info: ServerConnectionDescriptor): WslServerInfo? {
+    public open suspend fun getServerInfo(info: ServerConnectionDescriptor): WslServerInfo? {
+        val client = httpClient ?: return null
         return try {
-            val response = httpClient.get("${info.httpBaseUrl}/api/v1/health")
+            val response = client.get("${info.httpBaseUrl}/api/v1/health")
             if (response.status.isSuccess()) {
                 response.body<WslServerInfo>()
             } else null
@@ -38,9 +40,10 @@ public class DaemonHealthProber(
         }
     }
 
-    public suspend fun getAvailableTools(info: ServerConnectionDescriptor): List<ToolStatusInfo> {
+    public open suspend fun getAvailableTools(info: ServerConnectionDescriptor): List<ToolStatusInfo> {
+        val client = httpClient ?: return emptyList()
         return try {
-            val response = httpClient.get("${info.httpBaseUrl}/api/v1/tools") {
+            val response = client.get("${info.httpBaseUrl}/api/v1/tools") {
                 header(HttpHeaders.Authorization, "Bearer ${info.token}")
             }
             if (response.status.isSuccess()) {

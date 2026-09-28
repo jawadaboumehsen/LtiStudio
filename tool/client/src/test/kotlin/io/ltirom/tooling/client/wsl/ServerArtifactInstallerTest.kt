@@ -1,0 +1,149 @@
+package io.ltirom.tooling.client.wsl
+
+import org.ide.lti.core.model.setup.InstallState
+import org.ide.lti.core.model.setup.SetupEnvironment
+import java.io.File
+import java.nio.charset.Charset
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+
+class ServerArtifactInstallerTest {
+
+    private class RecordingFakeCli(
+        var failOnCommandSubstring: String? = null,
+        var stderrToEmit: String = "simulated error",
+        var activeVersionSymlinkTarget: String? = null
+    ) : WslCliExecutor() {
+        val executedCommands = mutableListOf<List<String>>()
+
+        override fun execute(
+            distro: String,
+            command: List<String>,
+            timeoutSeconds: Long,
+            charset: Charset,
+            user: String?
+        ): CliExecutionResult {
+            executedCommands.add(command)
+            val cmdStr = command.joinToString(" ")
+
+            if (failOnCommandSubstring != null && cmdStr.contains(failOnCommandSubstring!!)) {
+                return CliExecutionResult(1, "", stderrToEmit)
+            }
+
+            if (cmdStr.contains("readlink")) {
+                return if (activeVersionSymlinkTarget != null) {
+                    CliExecutionResult(0, activeVersionSymlinkTarget!!, "")
+                } else {
+                    CliExecutionResult(1, "", "No such file")
+                }
+            }
+
+            if (cmdStr.contains("test -x")) {
+                return CliExecutionResult(0, "", "")
+            }
+
+            if (cmdStr.contains("test -d")) {
+                return CliExecutionResult(0, "", "")
+            }
+
+            return CliExecutionResult(0, "", "")
+        }
+    }
+
+    private val testEnv = SetupEnvironment(
+        distro = "Ubuntu-24.04",
+        wslVersion = 2,
+        osId = "ubuntu",
+        osVersionId = "24.04",
+        user = "testuser",
+        home = "/home/testuser"
+    )
+
+    @Test
+    fun `fresh install performs staged install through partial, verify, rename, and atomic swap`() {
+        val tempDir = File.createTempFile("server_bundle_", "").apply { delete(); mkdirs() }
+        try {
+            File(tempDir, "server-version.txt").writeText("1.2.0\n")
+            val binDir = File(tempDir, "bin").apply { mkdirs() }
+            File(binDir, "ltirom-server").writeText("#!/bin/sh\n")
+
+            val cli = RecordingFakeCli()
+            val installer = ServerArtifactInstaller(cli = cli, bundleDirProvider = { tempDir })
+
+            val result = installer.ensureInstalled(testEnv)
+
+            assertEquals("1.2.0", result.bundledVersion)
+            assertEquals("1.2.0", result.activeVersion)
+            assertEquals(InstallState.Current, result.installState)
+
+            // Verify execution sequence contains:
+            // 1. cleanup of partial
+            // 2. copy to versions/1.2.0.partial
+            // 3. rename to versions/1.2.0
+            // 4. atomic symlink swap to current
+            val allCommands = cli.executedCommands.map { it.joinToString(" ") }
+            assertTrue(allCommands.any { it.contains("rm -rf") && it.contains("1.2.0.partial") }, "Should clean up partial directory")
+            assertTrue(allCommands.any { it.contains("1.2.0.partial") && (it.contains("cp") || it.contains("mkdir")) }, "Should stage into partial directory")
+            assertTrue(allCommands.any { it.contains("mv") && it.contains("1.2.0.partial") && it.contains("1.2.0") }, "Should rename partial to final")
+            assertTrue(allCommands.any { it.contains("current") && (it.contains("ln") || it.contains("mv")) }, "Should atomically update current symlink")
+        } finally {
+            tempDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `failure at staging leaves previous current untouched and returns Failed state`() {
+        val tempDir = File.createTempFile("server_bundle_", "").apply { delete(); mkdirs() }
+        try {
+            File(tempDir, "server-version.txt").writeText("2.0.0\n")
+
+            val cli = RecordingFakeCli(
+                failOnCommandSubstring = "mv",
+                stderrToEmit = "Permission denied",
+                activeVersionSymlinkTarget = "/home/testuser/.ltirom/server/versions/1.0.0"
+            )
+            val installer = ServerArtifactInstaller(cli = cli, bundleDirProvider = { tempDir })
+
+            val result = installer.ensureInstalled(testEnv)
+
+            assertTrue(result.installState is InstallState.Failed, "Expected Failed installState, was ${result.installState}")
+            val failed = result.installState as InstallState.Failed
+            assertTrue(failed.stderr.contains("Permission denied"))
+            assertEquals("1.0.0", result.activeVersion, "Previous active version must be retained")
+        } finally {
+            tempDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `subsequent attempt deletes existing partial directory`() {
+        val tempDir = File.createTempFile("server_bundle_", "").apply { delete(); mkdirs() }
+        try {
+            File(tempDir, "server-version.txt").writeText("1.3.0\n")
+
+            val cli = RecordingFakeCli()
+            val installer = ServerArtifactInstaller(cli = cli, bundleDirProvider = { tempDir })
+
+            installer.ensureInstalled(testEnv)
+
+            val firstCommand = cli.executedCommands.firstOrNull()?.joinToString(" ") ?: ""
+            assertTrue(firstCommand.contains("rm") && firstCommand.contains(".partial"), "First command should clean up stale .partial")
+        } finally {
+            tempDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `missing bundle returns bundledVersion null and no guessed path`() {
+        val cli = RecordingFakeCli()
+        val installer = ServerArtifactInstaller(cli = cli, bundleDirProvider = { null })
+
+        val result = installer.ensureInstalled(testEnv)
+
+        assertNull(result.bundledVersion, "bundledVersion must be null when bundle is missing")
+        assertTrue(result.installState is InstallState.Failed)
+    }
+}

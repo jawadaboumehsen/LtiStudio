@@ -7,11 +7,11 @@ import kotlinx.serialization.json.*
  * Single Responsibility: Reading and parsing ~/.ltirom/server.state lockfile from WSL
  * for zero-latency warm client re-attachment.
  */
-public class WslStateStore(
+public open class WslStateStore(
     private val cli: WslCliExecutor = WslCliExecutor(),
     private val json: Json = Json { ignoreUnknownKeys = true }
 ) {
-    public fun readState(distro: String, wslIp: String): ServerConnectionDescriptor? {
+    public open fun readState(distro: String, wslIp: String): ServerConnectionDescriptor? {
         val res = cli.execute(distro, listOf("bash", "-c", "cat ~/.ltirom/server.state 2>/dev/null"), timeoutSeconds = 3)
         val text = res.output.trim()
         if (text.isBlank() || !text.startsWith("{")) return null

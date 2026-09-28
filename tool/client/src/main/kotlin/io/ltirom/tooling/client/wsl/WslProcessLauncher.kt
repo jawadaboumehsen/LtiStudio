@@ -27,16 +27,28 @@ public open class WslProcessLauncher(
     public open suspend fun launch(
         distro: String,
         binaryPath: String,
+    ): WslProcessLaunchResult = launch(distro, binaryPath, null)
+
+    public open suspend fun launch(
+        distro: String,
+        binaryPath: String,
+        javaHome: String?
     ): WslProcessLaunchResult = withContext(Dispatchers.IO) {
         val token = UUID.randomUUID().toString().replace("-", "")
 
-        val cmd = listOf(
-            "wsl.exe", "-d", distro, "-e",
-            binaryPath,
-            "--port", "0",
-            "--token", token,
-            "--host", "0.0.0.0",
-            "--distro", distro,
+        val cmd = mutableListOf("wsl.exe", "-d", distro, "-e")
+        if (!javaHome.isNullOrBlank()) {
+            cmd.add("env")
+            cmd.add("JAVA_HOME=$javaHome")
+        }
+        cmd.addAll(
+            listOf(
+                binaryPath,
+                "--port", "0",
+                "--token", token,
+                "--host", "0.0.0.0",
+                "--distro", distro,
+            )
         )
 
         val pb = ProcessBuilder(cmd)
