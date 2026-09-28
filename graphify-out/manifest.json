@@ -7476,9 +7476,9 @@
     "semantic_hash": ""
   },
   "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/setup/WslToolchainProvisioner.kt": {
-    "mtime": 1790622499.576847,
-    "seen": 1790623092.887858,
-    "ast_hash": "97d39e9c900342142c344099eefb38ca",
+    "mtime": 1790623958.9230125,
+    "seen": 1790627252.160374,
+    "ast_hash": "5f61a3610ab0e88cd8fc7e8fb6b3a77c",
     "semantic_hash": ""
   },
   "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/setup/doctor/ArchiveToolsInspector.kt": {
@@ -9108,9 +9108,9 @@
     "semantic_hash": ""
   },
   "tool/client/src/main/kotlin/io/ltirom/tooling/client/WslDaemonManager.kt": {
-    "mtime": 1790620810.9051273,
-    "seen": 1790623092.8903768,
-    "ast_hash": "f5752dc3a2fd6f8b49bf49077af00559",
+    "mtime": 1790623820.1390493,
+    "seen": 1790627252.161979,
+    "ast_hash": "f6b7f81d0bf26b1dc9672a3d07eccd6b",
     "semantic_hash": ""
   },
   "tool/client/src/main/kotlin/io/ltirom/tooling/client/WslPathTranslator.kt": {
@@ -9156,9 +9156,9 @@
     "semantic_hash": ""
   },
   "tool/client/src/main/kotlin/io/ltirom/tooling/client/wsl/DaemonHealthProber.kt": {
-    "mtime": 1790572116.7348363,
-    "seen": 1790603956.633759,
-    "ast_hash": "b901789dd1557929f96275ddd290a753",
+    "mtime": 1790623820.1390493,
+    "seen": 1790627252.161979,
+    "ast_hash": "b9715e11a99159ca620c02afad7191bf",
     "semantic_hash": ""
   },
   "tool/client/src/main/kotlin/io/ltirom/tooling/client/wsl/TransportCliExecutor.kt": {
@@ -9186,9 +9186,9 @@
     "semantic_hash": "4e902e05582ffa5478a8dee428d73d18"
   },
   "tool/client/src/main/kotlin/io/ltirom/tooling/client/wsl/WslProcessLauncher.kt": {
-    "mtime": 1790572116.7369926,
-    "seen": 1790603956.633759,
-    "ast_hash": "582abf0a5bc3382d1e6c7de1b7f6693d",
+    "mtime": 1790624213.5462549,
+    "seen": 1790627252.161979,
+    "ast_hash": "faa876d54213951f58c795a90723202f",
     "semantic_hash": ""
   },
   "tool/client/src/main/kotlin/io/ltirom/tooling/client/wsl/WslStateStore.kt": {
@@ -20808,9 +20808,9 @@
     "semantic_hash": ""
   },
   "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/setup/ServerArtifactAdapter.kt": {
-    "mtime": 1790620810.9051273,
-    "seen": 1790623092.887858,
-    "ast_hash": "8c84e32f6bc00aeff9a33d57c3c2a1e7",
+    "mtime": 1790624112.589943,
+    "seen": 1790627252.160374,
+    "ast_hash": "74416c44635687a50c34d3fad4674474",
     "semantic_hash": ""
   },
   "core/data/src/desktopMain/kotlin/org/ide/lti/core/data/setup/WslHostPrerequisiteProbe.kt": {
@@ -20952,9 +20952,9 @@
     "semantic_hash": ""
   },
   "tool/client/src/main/kotlin/io/ltirom/tooling/client/wsl/ServerArtifactInstaller.kt": {
-    "mtime": 1790621663.457701,
-    "seen": 1790623092.8903768,
-    "ast_hash": "038c7f7a589cfe976690d41aaab46a2e",
+    "mtime": 1790624112.589943,
+    "seen": 1790627252.161979,
+    "ast_hash": "42a25bbb31233e7db367f48e5c031793",
     "semantic_hash": ""
   },
   "tool/client/src/test/kotlin/io/ltirom/tooling/client/transport/KtorRemoteTransportAdapterTest.kt": {
@@ -20970,15 +20970,15 @@
     "semantic_hash": ""
   },
   "tool/client/src/test/kotlin/io/ltirom/tooling/client/wsl/ServerArtifactInstallerTest.kt": {
-    "mtime": 1790621663.459327,
-    "seen": 1790623092.8903768,
-    "ast_hash": "3aa347c2924c24e76bc559b57b6c5fa6",
+    "mtime": 1790624112.5909574,
+    "seen": 1790627252.161979,
+    "ast_hash": "5e791e260a89ba2bce0e00b551536f99",
     "semantic_hash": ""
   },
   "tool/client/src/test/kotlin/io/ltirom/tooling/client/wsl/WslDaemonUpdateTest.kt": {
-    "mtime": 1790620835.543591,
-    "seen": 1790623092.8903768,
-    "ast_hash": "27879e0529d5bf3403f7ea504ecf0ee3",
+    "mtime": 1790623889.8632803,
+    "seen": 1790627252.161979,
+    "ast_hash": "b51b5dc71d00e63cf13194da2ecc0945",
     "semantic_hash": ""
   },
   "tool/client/src/test/kotlin/io/ltirom/tooling/client/wsl/WslEnvironmentDetectorTest.kt": {
@@ -21090,9 +21090,9 @@
     "semantic_hash": ""
   },
   "feature/setup/src/commonTest/kotlin/org/ide/lti/feature/setup/SetupBuildServicePresentationTest.kt": {
-    "mtime": 1790614309.8259022,
-    "seen": 1790620124.4780784,
-    "ast_hash": "94c23f63c9440dd60a9b8e38be79afe4",
+    "mtime": 1790624011.7839918,
+    "seen": 1790627252.160374,
+    "ast_hash": "0d5201a690b56fed4893b987b46d8972",
     "semantic_hash": ""
   },
   "feature/setup/src/desktopTest/kotlin/org/ide/lti/feature/setup/RecoveryScreenTest.kt": {
@@ -21285,6 +21285,18 @@
     "mtime": 1790619584.3030236,
     "seen": 1790620124.4810789,
     "ast_hash": "51af22680820870da6199a8d00dfe21a",
+    "semantic_hash": ""
+  },
+  "core/data/src/desktopTest/kotlin/org/ide/lti/core/data/setup/ServerUpdateWaitingTest.kt": {
+    "mtime": 1790623996.6834176,
+    "seen": 1790627252.160374,
+    "ast_hash": "02a388226225f26ba13a8a1d53a804f6",
+    "semantic_hash": ""
+  },
+  "tool/client/src/test/kotlin/io/ltirom/tooling/client/wsl/WslProcessLauncherHandshakeTest.kt": {
+    "mtime": 1790624222.793567,
+    "seen": 1790627252.161979,
+    "ast_hash": "46b66c812bdab6b75f4127af4730fe56",
     "semantic_hash": ""
   }
 }
