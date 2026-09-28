@@ -174,8 +174,6 @@ fun main(args: Array<String>) {
             }
             LtiSharedApp(
                 openSettingsRequest = openSettingsRequest,
-                lowMemory = windowState.isMinimized,
-                onExit = ::exitApplication,
             )
         }
     }

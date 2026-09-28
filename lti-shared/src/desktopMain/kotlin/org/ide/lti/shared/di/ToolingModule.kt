@@ -15,7 +15,6 @@ import io.ltirom.tooling.client.WslDaemonManager
 import io.ltirom.tooling.client.resilience.ConnectionStateHolder
 import io.ltirom.tooling.client.transport.KtorRemoteTransportAdapter
 import io.ltirom.tooling.client.wsl.TransportCliExecutor
-import io.ltirom.tooling.client.wsl.WslEnvironmentDetector
 import io.ltirom.tooling.client.wsl.WslPresenceAdapter
 import io.ltirom.tooling.core.DefaultToolResolver
 import io.ltirom.tooling.core.ProcessEnvironment

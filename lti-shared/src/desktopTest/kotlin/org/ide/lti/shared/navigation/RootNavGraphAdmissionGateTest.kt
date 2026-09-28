@@ -44,15 +44,18 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalTestApi::class)
 class RootNavGraphAdmissionGateTest {
 
-    private class TestToolchainService(
-        initialReady: Boolean = false,
-    ) : ToolchainProvisioningService {
+    private class TestToolchainService(initialReady: Boolean = false) : ToolchainProvisioningService {
         val stateFlow = MutableStateFlow(
             ToolchainSetupState(
                 isChecking = false,
                 steps = if (initialReady) {
                     SetupStepStage.entries.map {
-                        SetupStepDetail(stage = it, title = it.displayName, description = "OK", status = StepStatus.SUCCESS)
+                        SetupStepDetail(
+                            stage = it,
+                            title = it.displayName,
+                            description = "OK",
+                            status = StepStatus.SUCCESS,
+                        )
                     }
                 } else {
                     listOf(
@@ -70,7 +73,8 @@ class RootNavGraphAdmissionGateTest {
         override val state: StateFlow<ToolchainSetupState> = stateFlow.asStateFlow()
         override suspend fun verifyEnvironment(): ToolchainSetupState = state.value
         override suspend fun provisionAvbKey(): Boolean = false
-        override suspend fun prepare(kind: SetupPlanKind, targetId: String?, autoDoctorEnabled: Boolean): SetupPlan = error("Unused")
+        override suspend fun prepare(kind: SetupPlanKind, targetId: String?, autoDoctorEnabled: Boolean): SetupPlan =
+            error("Unused")
         override suspend fun confirm(planId: String, revisionHash: String): SetupOutcome = error("Unused")
         override suspend fun resume(planId: String): SetupOutcome = error("Unused")
         override fun observe(): Flow<SetupOutcome?> = emptyFlow()
@@ -143,7 +147,8 @@ class RootNavGraphAdmissionGateTest {
         // Gate opened: RootNavGraph navigates to Studio
         assertTrue(
             navController.currentDestination?.route?.startsWith("studio/") == true,
-            "RootNavGraph must navigate to Studio once canLaunchWorkspace becomes true, but was ${navController.currentDestination?.route}",
+            "RootNavGraph must navigate to Studio once canLaunchWorkspace becomes true, but was " +
+                "${navController.currentDestination?.route}",
         )
     }
 }

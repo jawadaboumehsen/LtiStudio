@@ -23,7 +23,6 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.navigation.compose.rememberNavController
 import org.ide.lti.core.common.timing.StartupTiming
-import org.ide.lti.core.designsystem.component.actions.LocalWindowControlActions
 import org.ide.lti.core.designsystem.component.layout.GlassBackdrop
 import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.GlassSceneHost
@@ -38,8 +37,6 @@ import org.koin.compose.koinInject
 fun LtiSharedApp(
     modifier: Modifier = Modifier,
     openSettingsRequest: Long = 0,
-    lowMemory: Boolean = false,
-    onExit: () -> Unit = LocalWindowControlActions.current.onClose,
     appSettingsState: AppSettingsState = koinInject(),
 ) {
     val appTheme = AppTheme.fromId(appSettingsState.theme)
@@ -62,7 +59,6 @@ fun LtiSharedApp(
                 // Render main destination directly on Frame 1 without splash delay
                 SharedApp(
                     openSettingsRequest = openSettingsRequest,
-                    lowMemory = lowMemory,
                     modifier = Modifier.fillMaxSize(),
                 )
             }
@@ -71,11 +67,7 @@ fun LtiSharedApp(
 }
 
 @Composable
-private fun SharedApp(
-    openSettingsRequest: Long,
-    lowMemory: Boolean,
-    modifier: Modifier = Modifier,
-) {
+private fun SharedApp(openSettingsRequest: Long, modifier: Modifier = Modifier) {
     val navController = rememberNavController()
     var firstLayoutDone by remember { mutableStateOf(false) }
     var firstFrameDrawn by remember { mutableStateOf(false) }

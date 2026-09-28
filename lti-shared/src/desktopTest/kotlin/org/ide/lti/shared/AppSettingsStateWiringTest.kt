@@ -22,20 +22,10 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import org.ide.lti.core.designsystem.theme.AppTheme
-import org.ide.lti.core.designsystem.theme.GlassSceneHost
-import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.colorSchemeFor
 import org.ide.lti.core.testing.optical.GlassOpticalVerifier
 import org.ide.lti.core.ui.settings.AppSettingsState
 import org.ide.lti.feature.settings.SettingsScreenContent
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performClick
-import org.ide.lti.core.designsystem.component.layout.GlassBackdrop
-import org.ide.lti.feature.settings.model.SettingsCategory
 import org.ide.lti.shared.di.initKoin
 import org.junit.After
 import org.junit.Before
@@ -174,7 +164,8 @@ class AppSettingsStateWiringTest {
         println("[VERIFICATION] Fluid-to-solid card transition delta: $cardTransitionDelta")
         assertTrue(
             cardTransitionDelta > 0.002,
-            "Toggling effects off must produce a measurable visual delta transitioning from fluid glass to solid fallback (found $cardTransitionDelta, expected > 0.002)",
+            "Toggling effects off must produce a measurable visual delta transitioning from fluid glass to solid " +
+                "fallback (found $cardTransitionDelta, expected > 0.002)",
         )
 
         GlassOpticalVerifier.assertSolidFallbackColor(
@@ -213,7 +204,8 @@ class AppSettingsStateWiringTest {
         println("[VERIFICATION] Fluid-to-solid top bar transition delta: $topBarTransitionDelta")
         assertTrue(
             topBarTransitionDelta > 0.01,
-            "Toggling effects off must produce a measurable visual delta transitioning top bar from fluid glass to solid fallback (found $topBarTransitionDelta, expected > 0.01)",
+            "Toggling effects off must produce a measurable visual delta transitioning top bar from fluid glass to " +
+                "solid fallback (found $topBarTransitionDelta, expected > 0.01)",
         )
 
         GlassOpticalVerifier.assertSolidFallbackColor(
