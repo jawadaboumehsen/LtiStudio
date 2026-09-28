@@ -239,11 +239,11 @@ class EnvironmentVerificationTest {
 
         override suspend fun publish(binDir: String, toolIds: Set<String>): PublicationReport {
             publishCount++
-            publishedIds = setOf("payload-dumper-go", "lpunpack", "lpmake", "simg2img", "erofsfuse", "mkfs.erofs")
+            publishedIds = toolIds
             return PublicationReport(
                 requested = toolIds,
                 registered = publishedIds,
-                failed = (toolIds - publishedIds).associateWith { "Not published" },
+                failed = emptyMap(),
                 pruned = emptySet(),
             )
         }

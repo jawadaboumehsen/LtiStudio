@@ -40,19 +40,9 @@ public object ToolchainReadinessPolicy {
 
     /**
      * The 10 core native toolchain binaries required for Android dynamic partition and ROM operations.
+     * Derived from authoritative [ToolCatalog.REQUIRED_PRODUCT_TOOLS] (FR-028).
      */
-    public val REQUIRED_PRODUCT_TOOLS: Set<String> = setOf(
-        "payload-dumper-go",
-        "lpunpack",
-        "lpmake",
-        "simg2img",
-        "erofsfuse",
-        "mkfs.erofs",
-        "avbtool",
-        "unpack_bootimg",
-        "img2sdat",
-        "signapk",
-    )
+    public val REQUIRED_PRODUCT_TOOLS: Set<String> get() = ToolCatalog.REQUIRED_PRODUCT_TOOLS
 
     /**
      * Host environment utilities and runtime dependencies required for tool execution and packaging.

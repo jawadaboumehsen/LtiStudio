@@ -223,28 +223,54 @@ private fun VerticalStageRow(
             null
         }
 
-    val rowSeverity = systemPackagesPres?.severity ?: wslPres?.severity
-    val isRunning = step.status == StepStatus.RUNNING || systemPackagesPres?.isChecking == true
-    val isSuccess = (step.status == StepStatus.SUCCESS || systemPackagesPres?.isReady == true) && !isRunning
+    val toolchainPres =
+        if (stage == SetupStepStage.TOOLCHAIN_COMPILATION) {
+            MachineRowMapper.mapToolchainRow(step)
+        } else {
+            null
+        }
+
+    val rowSeverity =
+        systemPackagesPres?.severity
+            ?: toolchainPres?.severity
+            ?: wslPres?.severity
+    val isToolchainRunning = toolchainPres?.isRunning == true
+    val isPackagesChecking = systemPackagesPres?.isChecking == true
+    val isRunning = step.status == StepStatus.RUNNING || isPackagesChecking || isToolchainRunning
+
+    val isToolchainReady = toolchainPres?.isReady == true
+    val isPackagesReady = systemPackagesPres?.isReady == true
+    val isSuccess = (step.status == StepStatus.SUCCESS || isPackagesReady || isToolchainReady) && !isRunning
     val isRestored = step.provenance == StepProvenance.RESTORED
     val isActionRequired =
         (
             step.status == StepStatus.FAILED ||
                 step.status == StepStatus.WARNING ||
-                systemPackagesPres?.primaryAction != null
+                systemPackagesPres?.primaryAction != null ||
+                toolchainPres?.primaryAction != null
             ) &&
             !isSuccess
 
     val isFailed = step.status == StepStatus.FAILED || rowSeverity == IdeStatusSeverity.Failed
     val isWarning = !isFailed && (step.status == StepStatus.WARNING || rowSeverity == IdeStatusSeverity.Warning)
 
-    val displayDescription = systemPackagesPres?.detailText ?: wslPres?.detailText ?: step.description
+    val displayDescription =
+        systemPackagesPres?.detailText
+            ?: toolchainPres?.detailText
+            ?: wslPres?.detailText
+            ?: step.description
     // A plain step row always offers a stage retry; a mapped row offers exactly what its state allows.
-    val hasMappedRow = systemPackagesPres != null || wslPres != null
+    val hasMappedRow = systemPackagesPres != null || toolchainPres != null || wslPres != null
     val primaryAction =
-        systemPackagesPres?.primaryAction ?: wslPres?.primaryAction
+        systemPackagesPres?.primaryAction
+            ?: toolchainPres?.primaryAction
+            ?: wslPres?.primaryAction
             ?: SetupRowAction.RETRY.takeIf { !hasMappedRow }
-    val primaryLabel = systemPackagesPres?.primaryActionLabel ?: wslPres?.primaryActionLabel ?: "Retry Stage"
+    val primaryLabel =
+        systemPackagesPres?.primaryActionLabel
+            ?: toolchainPres?.primaryActionLabel
+            ?: wslPres?.primaryActionLabel
+            ?: "Retry Stage"
     val secondaryAction = wslPres?.secondaryAction
 
     if (isActionRequired) {
@@ -314,7 +340,8 @@ private fun VerticalStageRow(
                     color = if (isFailed) diagnostics.error else diagnostics.warning,
                 )
 
-                if (!step.error.isNullOrBlank() && !hasMappedRow) {
+                val errorText = toolchainPres?.errorText ?: if (!hasMappedRow) step.error else null
+                if (!errorText.isNullOrBlank()) {
                     Box(
                         modifier =
                         Modifier
@@ -328,7 +355,7 @@ private fun VerticalStageRow(
                             ).padding(Spacing.Small),
                     ) {
                         Text(
-                            text = step.error.orEmpty(),
+                            text = errorText,
                             style =
                             MaterialTheme.typography.bodySmall.copy(
                                 fontFamily = codeFontFamily(),

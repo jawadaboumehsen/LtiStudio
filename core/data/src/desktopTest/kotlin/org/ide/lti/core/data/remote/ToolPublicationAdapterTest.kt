@@ -24,22 +24,37 @@ class ToolPublicationAdapterTest {
     private class FakeRemoteTransport : RemoteTransportPort {
         val executedRequests = mutableListOf<ToolExecutionRequest>()
         val uploadedFiles = mutableMapOf<String, ByteArray>()
+        val deletedFiles = mutableListOf<String>()
         var refreshToolsCallCount = 0
         var availableToolsList = listOf<ToolStatusInfo>()
-        var findOutput: String = ""
-        var findExitCode: Int = 0
+        var existingTestPaths = mutableSetOf<String>()
+        var toolsDManifestFiles = mutableMapOf<String, String>()
 
         override suspend fun execute(request: ToolExecutionRequest): ToolExecutionResponse {
             executedRequests.add(request)
-            return if (request.toolId == "find") {
-                ToolExecutionResponse(
-                    exitCode = findExitCode,
-                    stdout = findOutput,
-                    stderr = "",
-                    durationMs = 5L
-                )
-            } else {
-                ToolExecutionResponse(exitCode = 0, stdout = "", stderr = "", durationMs = 5L)
+            return when (request.toolId) {
+                "test" -> {
+                    // e.g. test -x <path> or test -r <path>
+                    val path = request.arguments.lastOrNull() ?: ""
+                    val exists = path in existingTestPaths
+                    ToolExecutionResponse(
+                        exitCode = if (exists) 0 else 1,
+                        stdout = "",
+                        stderr = if (exists) "" else "File not found or permission denied",
+                        durationMs = 1L,
+                    )
+                }
+                "rm" -> {
+                    val path = request.arguments.lastOrNull() ?: ""
+                    deletedFiles.add(path)
+                    toolsDManifestFiles.remove(path)
+                    ToolExecutionResponse(exitCode = 0, stdout = "", stderr = "", durationMs = 1L)
+                }
+                "find" -> {
+                    val paths = toolsDManifestFiles.keys.joinToString("\n")
+                    ToolExecutionResponse(exitCode = 0, stdout = paths, stderr = "", durationMs = 1L)
+                }
+                else -> ToolExecutionResponse(exitCode = 0, stdout = "", stderr = "", durationMs = 1L)
             }
         }
 
@@ -56,82 +71,189 @@ class ToolPublicationAdapterTest {
 
         override suspend fun uploadFile(remotePath: String, content: ByteArray): Boolean {
             uploadedFiles[remotePath] = content
+            toolsDManifestFiles[remotePath] = content.decodeToString()
             return true
         }
 
-        override suspend fun downloadFile(remotePath: String): ByteArray? = uploadedFiles[remotePath]
+        override suspend fun downloadFile(remotePath: String): ByteArray? =
+            toolsDManifestFiles[remotePath]?.encodeToByteArray() ?: uploadedFiles[remotePath]
 
         override suspend fun shutdown(): Boolean = true
     }
 
     @Test
-    fun testPublishDiscoversBinariesAndUploadsManifestsAndCallsRefreshOnce() = runTest {
+    fun testErofsfuseSymlinkIsRegistered() = runTest {
         val fakeTransport = FakeRemoteTransport()
         val binDir = "/home/testuser/LtiRomTools/bin"
-        fakeTransport.findOutput = listOf(
-            "$binDir/lpmake",
-            "$binDir/unpack_bootimg",
-            "$binDir/signapk.jar"
-        ).joinToString("\n")
+        // test -x on symlink resolves target and succeeds
+        fakeTransport.existingTestPaths.add("$binDir/erofsfuse")
+        fakeTransport.availableToolsList = listOf(
+            ToolStatusInfo(
+                tool = "erofsfuse",
+                installed = true,
+                path = "$binDir/erofsfuse",
+                source = "DYNAMIC",
+            ),
+        )
 
-        val expectedTools = setOf("lpmake", "unpack_bootimg", "signapk", "img2sdat")
-        val adapter = ToolPublicationAdapter(fakeTransport, expectedTools)
-
-        val result = adapter.publish(binDir, expectedTools)
-
-        assertEquals(1, fakeTransport.refreshToolsCallCount, "refreshTools must be called exactly once")
-        assertEquals(setOf("lpmake", "unpack_bootimg", "signapk"), result.registered)
-        assertEquals(setOf("img2sdat"), result.failed.keys)
-
-        // Verify manifests written to ~/.ltirom/tools.d/<id>.json
-        assertEquals(3, fakeTransport.uploadedFiles.size)
-        assertTrue(fakeTransport.uploadedFiles.containsKey("~/.ltirom/tools.d/lpmake.json"))
-        assertTrue(fakeTransport.uploadedFiles.containsKey("~/.ltirom/tools.d/unpack_bootimg.json"))
-        assertTrue(fakeTransport.uploadedFiles.containsKey("~/.ltirom/tools.d/signapk.json"))
-
-        // Verify signapk manifest points to signapk.jar
-        val signapkContent = fakeTransport.uploadedFiles["~/.ltirom/tools.d/signapk.json"]!!.decodeToString()
-        val signapkJson = Json.parseToJsonElement(signapkContent).jsonObject
-        assertEquals("signapk", signapkJson["name"]?.jsonPrimitive?.content)
-        assertEquals("$binDir/signapk.jar", signapkJson["executable"]?.jsonPrimitive?.content)
-
-        // Verify lpmake manifest
-        val lpmakeContent = fakeTransport.uploadedFiles["~/.ltirom/tools.d/lpmake.json"]!!.decodeToString()
-        val lpmakeJson = Json.parseToJsonElement(lpmakeContent).jsonObject
-        assertEquals("lpmake", lpmakeJson["name"]?.jsonPrimitive?.content)
-        assertEquals("$binDir/lpmake", lpmakeJson["executable"]?.jsonPrimitive?.content)
-    }
-
-    @Test
-    fun testPublishWithMissingBinariesProducesNoManifests() = runTest {
-        val fakeTransport = FakeRemoteTransport()
-        val binDir = "/home/testuser/LtiRomTools/bin"
-        fakeTransport.findOutput = ""
-
-        val expectedTools = setOf("lpmake", "signapk")
-        val adapter = ToolPublicationAdapter(fakeTransport, expectedTools)
-
-        val result = adapter.publish(binDir, expectedTools)
+        val adapter = ToolPublicationAdapter(fakeTransport)
+        val report = adapter.publish(binDir, setOf("erofsfuse"))
 
         assertEquals(1, fakeTransport.refreshToolsCallCount)
-        assertTrue(result.registered.isEmpty())
-        assertEquals(expectedTools, result.failed.keys)
-        assertTrue(fakeTransport.uploadedFiles.isEmpty())
+        assertEquals(setOf("erofsfuse"), report.registered)
+        assertTrue(report.failed.isEmpty(), "erofsfuse should succeed: ${report.failed}")
+        assertTrue(fakeTransport.uploadedFiles.containsKey("~/.ltirom/tools.d/erofsfuse.json"))
+
+        val content = fakeTransport.uploadedFiles["~/.ltirom/tools.d/erofsfuse.json"]!!.decodeToString()
+        val json = Json.parseToJsonElement(content).jsonObject
+        assertEquals("erofsfuse", json["name"]?.jsonPrimitive?.content)
+        assertEquals("$binDir/erofsfuse", json["executable"]?.jsonPrimitive?.content)
+        assertEquals("Published binary for erofsfuse", json["description"]?.jsonPrimitive?.content)
     }
 
     @Test
-    fun testResolvedToolsFiltersInstalled() = runTest {
+    fun testSignapkJarReadableNotExecutableIsRegistered() = runTest {
+        val fakeTransport = FakeRemoteTransport()
+        val binDir = "/home/testuser/LtiRomTools/bin"
+        // signapk.jar is readable via test -r (not executable)
+        fakeTransport.existingTestPaths.add("$binDir/signapk.jar")
+        fakeTransport.availableToolsList = listOf(
+            ToolStatusInfo(
+                tool = "signapk",
+                installed = true,
+                path = "$binDir/signapk.jar",
+                source = "DYNAMIC",
+            ),
+        )
+
+        val adapter = ToolPublicationAdapter(fakeTransport)
+        val report = adapter.publish(binDir, setOf("signapk"))
+
+        assertEquals(setOf("signapk"), report.registered)
+        assertTrue(report.failed.isEmpty())
+        assertTrue(fakeTransport.uploadedFiles.containsKey("~/.ltirom/tools.d/signapk.json"))
+
+        val content = fakeTransport.uploadedFiles["~/.ltirom/tools.d/signapk.json"]!!.decodeToString()
+        val json = Json.parseToJsonElement(content).jsonObject
+        assertEquals("signapk", json["name"]?.jsonPrimitive?.content)
+        assertEquals("$binDir/signapk.jar", json["executable"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun testNonCatalogFilesAreNeverRegisteredAndOnlyRequestedIdsAreWritten() = runTest {
+        val fakeTransport = FakeRemoteTransport()
+        val binDir = "/home/testuser/LtiRomTools/bin"
+        // binDir contains junk files and lpmake
+        fakeTransport.existingTestPaths.addAll(
+            listOf(
+                "$binDir/LICENSE",
+                "$binDir/Makefile",
+                "$binDir/liblibbase.a",
+                "$binDir/message.pb.h",
+                "$binDir/lpmake",
+            ),
+        )
+        fakeTransport.availableToolsList = listOf(
+            ToolStatusInfo(tool = "lpmake", installed = true, path = "$binDir/lpmake", source = "DYNAMIC"),
+        )
+
+        val adapter = ToolPublicationAdapter(fakeTransport)
+        // Request only lpmake
+        val report = adapter.publish(binDir, setOf("lpmake"))
+
+        assertEquals(setOf("lpmake"), report.registered)
+        // Only lpmake.json was written
+        assertEquals(setOf("~/.ltirom/tools.d/lpmake.json"), fakeTransport.uploadedFiles.keys)
+    }
+
+    @Test
+    fun testResolvedToolsWithSourceSystemPathGivesFailedResolvedElsewhere() = runTest {
+        val fakeTransport = FakeRemoteTransport()
+        val binDir = "/home/testuser/LtiRomTools/bin"
+        fakeTransport.existingTestPaths.add("$binDir/adb")
+        // Server reports adb was resolved from system PATH instead of our dynamic manifest
+        fakeTransport.availableToolsList = listOf(
+            ToolStatusInfo(
+                tool = "adb",
+                installed = true,
+                path = "/usr/bin/adb",
+                source = "SYSTEM_PATH",
+            ),
+        )
+
+        val adapter = ToolPublicationAdapter(fakeTransport)
+        val report = adapter.publish(binDir, setOf("adb"))
+
+        assertTrue("adb" !in report.registered, "adb resolved from system PATH must not count as registered")
+        assertEquals(
+            "resolved elsewhere: /usr/bin/adb",
+            report.failed["adb"],
+            "failed reason must indicate tool was resolved elsewhere",
+        )
+    }
+
+    @Test
+    fun testPruningRemovesOnlyPublishedBinaryManifestsForNonCatalogToolsUnderBinDir() = runTest {
+        val fakeTransport = FakeRemoteTransport()
+        val binDir = "/home/testuser/LtiRomTools/bin"
+        fakeTransport.existingTestPaths.add("$binDir/lpmake")
+        fakeTransport.availableToolsList = listOf(
+            ToolStatusInfo(tool = "lpmake", installed = true, path = "$binDir/lpmake", source = "DYNAMIC"),
+        )
+
+        // Seed existing manifests in ~/.ltirom/tools.d/
+        // 1. App-published non-catalog tool under binDir -> MUST BE PRUNED
+        fakeTransport.toolsDManifestFiles["~/.ltirom/tools.d/old_junk.json"] = """
+            {"name":"old_junk","executable":"$binDir/old_junk","description":"Published binary for old_junk"}
+        """.trimIndent()
+
+        // 2. User manifest (different description) -> MUST BE KEPT
+        fakeTransport.toolsDManifestFiles["~/.ltirom/tools.d/custom_user.json"] = """
+            {"name":"custom_user","executable":"$binDir/custom_user","description":"My custom manifest"}
+        """.trimIndent()
+
+        // 3. App-published tool under different directory -> MUST BE KEPT
+        fakeTransport.toolsDManifestFiles["~/.ltirom/tools.d/other_dir.json"] = """
+            {"name":"other_dir","executable":"/usr/local/bin/other","description":"Published binary for other_dir"}
+        """.trimIndent()
+
+        // 4. Catalog tool -> MUST BE KEPT
+        fakeTransport.toolsDManifestFiles["~/.ltirom/tools.d/lpmake.json"] = """
+            {"name":"lpmake","executable":"$binDir/lpmake","description":"Published binary for lpmake"}
+        """.trimIndent()
+
+        val adapter = ToolPublicationAdapter(fakeTransport)
+        val report = adapter.publish(binDir, setOf("lpmake"))
+
+        assertEquals(setOf("old_junk"), report.pruned, "Only old_junk should be pruned")
+        assertTrue(
+            fakeTransport.deletedFiles.any { it.contains("old_junk.json") },
+            "old_junk.json must have been deleted",
+        )
+        assertTrue(
+            fakeTransport.deletedFiles.none { it.contains("custom_user.json") },
+            "custom_user.json must NOT be deleted",
+        )
+        assertTrue(
+            fakeTransport.deletedFiles.none { it.contains("other_dir.json") },
+            "other_dir.json must NOT be deleted",
+        )
+    }
+
+    @Test
+    fun testResolvedToolsMapsToDomainResult() = runTest {
         val fakeTransport = FakeRemoteTransport()
         fakeTransport.availableToolsList = listOf(
-            ToolStatusInfo(tool = "lpmake", installed = true, path = "/bin/lpmake"),
-            ToolStatusInfo(tool = "signapk", installed = true, path = "/bin/signapk.jar"),
-            ToolStatusInfo(tool = "missing_tool", installed = false, path = "")
+            ToolStatusInfo(tool = "lpmake", installed = true, path = "/bin/lpmake", source = "DYNAMIC"),
+            ToolStatusInfo(tool = "adb", installed = true, path = "/usr/bin/adb", source = "SYSTEM_PATH"),
         )
 
         val adapter = ToolPublicationAdapter(fakeTransport)
         val resolved = adapter.resolvedTools()
 
         assertIs<ToolRegistryResult.Tools>(resolved)
-        assertEquals(setOf("lpmake", "signapk"), resolved.list.filter { it.installed }.map { it.tool }.toSet())
+        assertEquals(2, resolved.list.size)
+        val lpmake = resolved.list.first { it.tool == "lpmake" }
+        assertEquals(true, lpmake.installed)
     }
 }

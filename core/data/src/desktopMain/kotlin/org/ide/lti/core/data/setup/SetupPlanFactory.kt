@@ -142,10 +142,7 @@ public object SetupPlanFactory {
                 add(SetupPlanAction.BuildRecipes(unbuilt))
             }
         }
-        val unpublished = snapshot.toolsMatrix.map { it.id }.filter { it !in snapshot.publishedToolIds }
-        if (unpublished.isNotEmpty()) {
-            add(SetupPlanAction.PublishTools(unpublished))
-        }
+        add(SetupPlanAction.PublishTools(ToolCatalog.ALL_TOOL_IDS.toList()))
     }
 
     private fun deriveStageRetryActions(
@@ -163,7 +160,7 @@ public object SetupPlanFactory {
             SetupStepStage.TOOLCHAIN_COMPILATION -> buildList {
                 val unbuilt = snapshot.toolsMatrix.filter { it.status != StepStatus.SUCCESS }.map { it.id }
                 if (unbuilt.isNotEmpty()) add(SetupPlanAction.BuildRecipes(unbuilt))
-                val unpublished = snapshot.toolsMatrix.map { it.id }.filter { it !in snapshot.publishedToolIds }
+                val unpublished = ToolCatalog.ALL_TOOL_IDS.filter { it !in snapshot.publishedToolIds }
                 if (unpublished.isNotEmpty()) add(SetupPlanAction.PublishTools(unpublished))
             }
             SetupStepStage.SERVER_CONNECTIVITY -> listOf(

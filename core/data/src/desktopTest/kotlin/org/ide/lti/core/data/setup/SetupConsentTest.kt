@@ -197,11 +197,11 @@ class SetupConsentTest {
         override suspend fun publish(binDir: String, toolIds: Set<String>): PublicationReport {
             publishCount++
             publishedBinDir = binDir
-            val registered = setOf("payload-dumper-go", "lpunpack", "lpmake", "simg2img", "erofsfuse", "mkfs.erofs")
+            val registered = toolIds
             return PublicationReport(
                 requested = toolIds,
                 registered = registered,
-                failed = (toolIds - registered).associateWith { "Not published" },
+                failed = emptyMap(),
                 pruned = emptySet(),
             )
         }

@@ -192,8 +192,8 @@ class WslToolchainProvisionerTest {
 
     private class FakeToolPublicationPort(
         var publishedResult: PublicationReport = PublicationReport(
-            requested = ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS,
-            registered = ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS,
+            requested = ToolCatalog.ALL_TOOL_IDS,
+            registered = ToolCatalog.ALL_TOOL_IDS,
             failed = emptyMap(),
             pruned = emptySet(),
         ),
@@ -318,10 +318,11 @@ class WslToolchainProvisionerTest {
                     existingPaths.addAll(paths)
                 }
                 if (cmdStr.contains("/bin")) {
-                    WslToolchainProvisioner.CORE_BINARIES.forEach {
-                        existingPaths.add("$userHome/LtiRomTools/bin/$it")
+                    ToolCatalog.entries.forEach {
+                        existingPaths.add("$userHome/LtiRomTools/bin/${it.binaryName}")
+                        existingPaths.add("$userHome/LtiRomTools/bin/${it.id}")
                     }
-                    WslToolchainProvisioner.ALL_CORE_TOOLS.forEach {
+                    org.ide.lti.core.data.setup.doctor.ToolchainIntegrityInspector.DEFAULT_CORE_TOOLS.forEach {
                         existingPaths.add("$userHome/LtiRomTools/bin/$it")
                     }
                 }
@@ -489,10 +490,11 @@ class WslToolchainProvisionerTest {
             WslToolchainProvisioner.SUBMODULES.forEach {
                 existingPaths.add("/home/lti/LtiRomTools/external/${it.name}")
             }
-            WslToolchainProvisioner.CORE_BINARIES.forEach {
-                existingPaths.add("/home/lti/LtiRomTools/bin/$it")
+            ToolCatalog.entries.forEach {
+                existingPaths.add("/home/lti/LtiRomTools/bin/${it.binaryName}")
+                existingPaths.add("/home/lti/LtiRomTools/bin/${it.id}")
             }
-            WslToolchainProvisioner.ALL_CORE_TOOLS.forEach {
+            org.ide.lti.core.data.setup.doctor.ToolchainIntegrityInspector.DEFAULT_CORE_TOOLS.forEach {
                 existingPaths.add("/home/lti/LtiRomTools/bin/$it")
             }
         }
@@ -638,7 +640,7 @@ class WslToolchainProvisionerTest {
         assertEquals(1, fakePublication.publishCallCount)
         assertEquals("/home/lti/LtiRomTools/bin", fakePublication.lastBinDir)
         assertEquals(
-            ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS,
+            ToolCatalog.ALL_TOOL_IDS,
             finalState.publishedToolIds,
         )
         assertTrue(finalState.unpublishedToolIds.isEmpty())

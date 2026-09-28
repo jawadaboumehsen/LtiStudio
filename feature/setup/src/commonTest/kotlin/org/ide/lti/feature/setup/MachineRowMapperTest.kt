@@ -246,4 +246,71 @@ class MachineRowMapperTest {
         assertNull(ok.primaryActionLabel)
         assertTrue(ok.isReady)
     }
+
+    @Test
+    fun mapToolchainRow_covers_all_statuses() {
+        assertNull(MachineRowMapper.mapToolchainRow(null))
+
+        val successStep = SetupStepDetail(
+            stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+            title = "Toolchain",
+            description = "10 tools ready",
+            status = StepStatus.SUCCESS,
+        )
+        val successRow = MachineRowMapper.mapToolchainRow(successStep)
+        assertEquals("10 tools ready", successRow?.detailText)
+        assertEquals(IdeStatusSeverity.Ready, successRow?.severity)
+        assertTrue(successRow?.isReady == true)
+        assertFalse(successRow?.isRunning == true)
+        assertNull(successRow?.primaryAction)
+
+        val runningStep = SetupStepDetail(
+            stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+            title = "Toolchain",
+            description = "Building lz4 (2 of 10)",
+            status = StepStatus.RUNNING,
+        )
+        val runningRow = MachineRowMapper.mapToolchainRow(runningStep)
+        assertEquals("Building lz4 (2 of 10)", runningRow?.detailText)
+        assertEquals(IdeStatusSeverity.Running, runningRow?.severity)
+        assertTrue(runningRow?.isRunning == true)
+        assertFalse(runningRow?.isReady == true)
+
+        val failedStep = SetupStepDetail(
+            stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+            title = "Toolchain",
+            description = "Tool registration failed",
+            error = "erofsfuse: not executable, adb: resolved elsewhere",
+            status = StepStatus.FAILED,
+        )
+        val failedRow = MachineRowMapper.mapToolchainRow(failedStep)
+        assertEquals("Tool registration failed", failedRow?.detailText)
+        assertEquals(IdeStatusSeverity.Failed, failedRow?.severity)
+        assertEquals(SetupRowAction.RETRY, failedRow?.primaryAction)
+        assertEquals("Retry", failedRow?.primaryActionLabel)
+        assertEquals("erofsfuse: not executable, adb: resolved elsewhere", failedRow?.errorText)
+
+        val warningStep = SetupStepDetail(
+            stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+            title = "Toolchain",
+            description = "Some tools optional",
+            error = "optional tool missing",
+            status = StepStatus.WARNING,
+        )
+        val warningRow = MachineRowMapper.mapToolchainRow(warningStep)
+        assertEquals("Some tools optional", warningRow?.detailText)
+        assertEquals(IdeStatusSeverity.Warning, warningRow?.severity)
+        assertEquals(SetupRowAction.RETRY, warningRow?.primaryAction)
+        assertEquals("Retry", warningRow?.primaryActionLabel)
+
+        val pendingStep = SetupStepDetail(
+            stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+            title = "Toolchain",
+            description = "",
+            status = StepStatus.PENDING,
+        )
+        val pendingRow = MachineRowMapper.mapToolchainRow(pendingStep)
+        assertEquals("Waiting for prerequisites", pendingRow?.detailText)
+        assertEquals(IdeStatusSeverity.Neutral, pendingRow?.severity)
+    }
 }

@@ -57,6 +57,18 @@ data class SystemPackagesRowPresentation(
     val primaryActionLabel: String? get() = primaryAction?.let { actionLabel(it) }
 }
 
+@Immutable
+data class ToolchainRowPresentation(
+    val title: String = "Toolchain Binaries",
+    val detailText: String,
+    val severity: IdeStatusSeverity,
+    val primaryAction: SetupRowAction? = null,
+    val primaryActionLabel: String = "Retry",
+    val errorText: String? = null,
+    val isRunning: Boolean = false,
+    val isReady: Boolean = false,
+)
+
 /**
  * Maps the "This machine" rows that carry their own actions (WSL 2 Runtime, System packages).
  * Row texts follow `contracts/ui-states.md` §2.
@@ -194,4 +206,38 @@ object MachineRowMapper {
         severity = IdeStatusSeverity.Running,
         isChecking = true,
     )
+
+    fun mapToolchainRow(step: SetupStepDetail?): ToolchainRowPresentation? {
+        if (step == null) return null
+        return when (step.status) {
+            StepStatus.SUCCESS -> ToolchainRowPresentation(
+                detailText = step.description.ifBlank { "All tools ready" },
+                severity = IdeStatusSeverity.Ready,
+                isReady = true,
+            )
+            StepStatus.RUNNING -> ToolchainRowPresentation(
+                detailText = step.description.ifBlank { "Compiling…" },
+                severity = IdeStatusSeverity.Running,
+                isRunning = true,
+            )
+            StepStatus.FAILED -> ToolchainRowPresentation(
+                detailText = step.description.ifBlank { "Tool compilation failed" },
+                severity = IdeStatusSeverity.Failed,
+                primaryAction = SetupRowAction.RETRY,
+                primaryActionLabel = "Retry",
+                errorText = step.error,
+            )
+            StepStatus.WARNING -> ToolchainRowPresentation(
+                detailText = step.description.ifBlank { "Some tools require attention" },
+                severity = IdeStatusSeverity.Warning,
+                primaryAction = SetupRowAction.RETRY,
+                primaryActionLabel = "Retry",
+                errorText = step.error,
+            )
+            StepStatus.PENDING -> ToolchainRowPresentation(
+                detailText = step.description.ifBlank { "Waiting for prerequisites" },
+                severity = IdeStatusSeverity.Neutral,
+            )
+        }
+    }
 }

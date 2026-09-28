@@ -25,6 +25,7 @@ import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import org.ide.lti.core.data.remote.ToolStatusMapper
 import org.ide.lti.core.data.setup.doctor.CompositeSystemDoctorEngine
 import org.ide.lti.core.data.setup.doctor.DiagnosticContext
 import org.ide.lti.core.data.setup.doctor.NativeLibrariesInspector
@@ -34,6 +35,7 @@ import org.ide.lti.core.domain.ports.DaemonFailureCategory
 import org.ide.lti.core.domain.ports.HostPrerequisitePort
 import org.ide.lti.core.domain.ports.ServerArtifactPort
 import org.ide.lti.core.domain.ports.ToolPublicationPort
+import org.ide.lti.core.domain.ports.ToolRegistryResult
 import org.ide.lti.core.domain.ports.ToolchainFailureCategory
 import org.ide.lti.core.domain.repository.setup.ToolchainSetupRepository
 import org.ide.lti.core.domain.setup.DiagnosticCheckItem
@@ -241,16 +243,9 @@ public class WslToolchainProvisioner(
             ),
         )
 
-        public val CORE_BINARIES: List<String> = listOf(
-            "adb",
-            "fastboot",
-            "mke2fs",
-            "dump.erofs",
-            "mkfs.erofs",
-            "img2sdat",
-        )
+        public val CORE_BINARIES: List<String> get() = ToolCatalog.CORE_BINARIES
 
-        public val ALL_CORE_TOOLS: List<String> = ToolchainIntegrityInspector.DEFAULT_CORE_TOOLS
+        public val ALL_CORE_TOOLS: List<String> get() = ToolCatalog.ALL_CORE_TOOLS
 
         public val REQUIRED_DEV_PACKAGES: List<String> = NativeLibrariesInspector.DEFAULT_REQUIRED_DEV_PACKAGES
 
@@ -717,16 +712,32 @@ public class WslToolchainProvisioner(
     /** TOOLCHAIN_COMPILATION: binaries, published tools and mkfs.erofs; returns the published tool IDs. */
     private suspend fun verifyToolchainStage(missingBins: List<String>, executables: Set<String>): Set<String> {
         setStepRunning(SetupStepStage.TOOLCHAIN_COMPILATION)
-        val toolsResult = transport.listTools()
-        val publishedTools = when (toolsResult) {
-            is ToolListResult.Tools -> toolsResult.list.filter { it.installed }.map { it.tool }.toSet()
-            is ToolListResult.ServiceError -> emptySet()
+        val registryResult = toolPublicationPort?.resolvedTools()
+            ?: ToolStatusMapper.toDomain(transport.listTools())
+        val isServiceError = registryResult is ToolRegistryResult.ServiceError
+        val publishedTools = when (registryResult) {
+            is ToolRegistryResult.Tools -> registryResult.list.filter { it.installed }.map { it.tool }.toSet()
+            is ToolRegistryResult.ServiceError -> {
+                setStepStatus(
+                    SetupStepStage.SERVER_CONNECTIVITY,
+                    StepStatus.FAILED,
+                    desc = "Can't reach the build service",
+                    error = "Build service unreachable: ${registryResult.reason}",
+                    failureCategory = DaemonFailureCategory.UNREACHABLE,
+                )
+                emptySet()
+            }
         }
 
-        val missingPublished = ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS - publishedTools
+        val missingPublished =
+            if (isServiceError) {
+                emptySet()
+            } else {
+                ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS - publishedTools
+            }
 
         // Check EROFS compatibility only when binaries and published tools are present
-        val erofsCompatible = if (missingBins.isEmpty() && missingPublished.isEmpty()) {
+        val erofsCompatible = if (!isServiceError && missingBins.isEmpty() && missingPublished.isEmpty()) {
             val erofsCheck = transport.execute(
                 ToolExecutionRequest(
                     toolId = "mkfs.erofs",
@@ -746,6 +757,12 @@ public class WslToolchainProvisioner(
             val category: ToolchainFailureCategory?,
         )
         val outcome = when {
+            isServiceError -> ToolchainOutcome(
+                StepStatus.PENDING,
+                "Waiting for build service",
+                null,
+                null,
+            )
             missingBins.isNotEmpty() -> ToolchainOutcome(
                 StepStatus.FAILED,
                 "${missingBins.first()} not built",
@@ -1883,9 +1900,23 @@ public class WslToolchainProvisioner(
                             unpublishedToolIds = unpublishedIds,
                         )
                     }
+                    if (pubRes != null && !pubRes.isComplete) {
+                        val failureReasons = pubRes.failed.entries.joinToString(", ") { "${it.key}: ${it.value}" }
+                        setStepStatus(
+                            SetupStepStage.TOOLCHAIN_COMPILATION,
+                            StepStatus.FAILED,
+                            desc = "Tool publication incomplete: $failureReasons",
+                            error = "Failed to register tools: $failureReasons",
+                            toolchainFailureCategory = ToolchainFailureCategory.MISSING_PUBLISHED_TOOLS,
+                        )
+                        appendLog("[Step 5/5] ERROR: Failed to publish tools: $failureReasons")
+                        return SetupOutcome.Failed(
+                            stage = SetupStepStage.TOOLCHAIN_COMPILATION.name,
+                            reason = "Tool publication incomplete: $failureReasons",
+                        )
+                    }
                     appendLog(
-                        "[Step 5/5] Published ${publishedIds.size} tools to daemon " +
-                            "(${unpublishedIds.size} skipped).",
+                        "[Step 5/5] Published ${publishedIds.size} tools to daemon.",
                     )
                 }
             }

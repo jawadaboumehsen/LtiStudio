@@ -237,13 +237,13 @@ class SetupExecutionPathTest {
     private class FakePublicationPort : ToolPublicationPort {
         override suspend fun publish(binDir: String, toolIds: Set<String>): PublicationReport = PublicationReport(
             requested = toolIds,
-            registered = ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS,
-            failed = (toolIds - ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS).associateWith { "Not published" },
+            registered = toolIds,
+            failed = emptyMap(),
             pruned = emptySet(),
         )
 
         override suspend fun resolvedTools(): ToolRegistryResult = ToolRegistryResult.Tools(
-            ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS.map {
+            ToolCatalog.ALL_TOOL_IDS.map {
                 ToolStatus(tool = it, installed = true, path = "/bin/$it", source = ToolSource.DYNAMIC, reason = null)
             },
         )
