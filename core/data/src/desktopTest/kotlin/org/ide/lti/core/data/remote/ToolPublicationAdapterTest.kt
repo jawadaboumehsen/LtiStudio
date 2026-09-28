@@ -50,7 +50,7 @@ class ToolPublicationAdapterTest {
                     toolsDManifestFiles.remove(path)
                     ToolExecutionResponse(exitCode = 0, stdout = "", stderr = "", durationMs = 1L)
                 }
-                "find" -> {
+                "sh" -> {
                     val paths = toolsDManifestFiles.keys.joinToString("\n")
                     ToolExecutionResponse(exitCode = 0, stdout = paths, stderr = "", durationMs = 1L)
                 }
@@ -255,5 +255,15 @@ class ToolPublicationAdapterTest {
         assertEquals(2, resolved.list.size)
         val lpmake = resolved.list.first { it.tool == "lpmake" }
         assertEquals(true, lpmake.installed)
+    }
+
+    @Test
+    fun testNoLiteralTildeReachesShellLessCommands() = runTest {
+        val fakeTransport = FakeRemoteTransport()
+        ToolPublicationAdapter(fakeTransport).publish("/home/dev/LtiRomTools/bin", setOf("lpmake"))
+
+        // The service runs tools without a shell: only an `sh -c` script may rely on home expansion.
+        val shellLess = fakeTransport.executedRequests.filter { it.toolId != "sh" }
+        assertTrue(shellLess.none { req -> req.arguments.any { it.startsWith("~") } }, "$shellLess")
     }
 }

@@ -126,12 +126,14 @@ class SetupConsentTest {
                     ToolExecutionResponse(0, "fuse\nloop-control\nnull\nzero", "", 2L)
                 }
                 request.toolId == "find" && request.arguments.contains("-L") -> {
+                    val baseBins = listOf(
+                        "payload-dumper-go", "lpunpack", "lpmake", "simg2img", "erofsfuse", "mkfs.erofs",
+                        "avbtool", "unpack_bootimg", "img2sdat", "signapk", "adb", "fastboot",
+                    )
+                    val allBins = (baseBins + ToolCatalog.CORE_BINARIES).distinct()
                     ToolExecutionResponse(
                         0,
-                        listOf(
-                            "payload-dumper-go", "lpunpack", "lpmake", "simg2img", "erofsfuse", "mkfs.erofs",
-                            "avbtool", "unpack_bootimg", "img2sdat", "signapk", "adb", "fastboot",
-                        ).joinToString("\n"),
+                        allBins.joinToString("\n"),
                         "",
                         2L,
                     )
@@ -206,7 +208,17 @@ class SetupConsentTest {
             )
         }
 
-        override suspend fun resolvedTools(): ToolRegistryResult = ToolRegistryResult.Tools(emptyList())
+        override suspend fun resolvedTools(): ToolRegistryResult = ToolRegistryResult.Tools(
+            ToolCatalog.REQUIRED_PRODUCT_TOOLS.map {
+                org.ide.lti.core.domain.ports.ToolStatus(
+                    tool = it,
+                    installed = true,
+                    path = "/home/lti/LtiRomTools/bin/$it",
+                    source = org.ide.lti.core.domain.ports.ToolSource.DYNAMIC,
+                    reason = null,
+                )
+            },
+        )
     }
 
     private class SpyCliExecutor(

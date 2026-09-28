@@ -682,6 +682,67 @@ Before merging UI changes or releasing new features:
 - **Cause**: Direct instantiation of `Color(0x...)`, `alpha = 0.5f`, or raw `.dp` inside UI files outside `theme/`.
 - **Solution**: Import the corresponding centralized token from `org.ide.lti.core.designsystem.theme.*` (`GlassTheme.colors`, `AlphaTokens`, `Spacing`, `CornerRadius`, `ComponentSize`, `MotionDuration`, etc.).
 
+## Setup Flow & Clean Machine Architecture
+
+Setup takes a Windows machine with an empty WSL Ubuntu to a working toolchain (spec
+`specs/007-clean-machine-setup/`). The check runs in `WslToolchainProvisioner` (`core:data`), one function
+per stage; a failed stage marks every later stage pending and stops.
+
+### 1. Stages (in order)
+1. **WSL 2 Runtime** (`WSL_DETECTION`): classifies every distro (`DistroStatus`: WSL unavailable, no
+   distro, didn't start, unsupported, needs a user, usable). Picks the single usable Ubuntu LTS, else the
+   WSL default (`wsl -l -v`), else asks the user to pick. Nothing is guessed: no hard-coded "Ubuntu".
+2. **System packages** (`SYSTEM_PACKAGES`): `WslHostPrerequisiteProbe` checks every `RequirementCatalog`
+   entry in one `wsl.exe` round trip, **without the build service**, and finds a Java >= 21 home.
+3. **Build service** (`SERVER_CONNECTIVITY`): installs the bundled server if missing or outdated, starts
+   it with that Java, and checks health.
+4. **Pre-Flight Doctor** (`SYSTEM_DIAGNOSTICS`): inspectors that run through the build service.
+5. **Source Repositories** (`REPO_SYNCHRONIZATION`): pinned tool sources.
+6. **Toolchain Binaries** (`TOOLCHAIN_COMPILATION`): builds the `ToolCatalog` tools and registers exactly
+   those IDs with the service (`ToolPublicationAdapter`), then confirms each resolves as `DYNAMIC`.
+
+### 2. Package handoff (no stored passwords)
+- Missing packages produce one command from `AptCommandBuilder`: `sudo apt-get update && sudo apt-get
+  install -y <exact missing list>`.
+- The attempt is journaled as `BOOTSTRAP_PACKAGES` / `AWAITING_USER_ACTION` and `TerminalHandoffSheet`
+  opens. The user runs the command in their own terminal and types their password there.
+- "I've run it — check again" re-probes (the terminal's exit code is never trusted). When everything is
+  present the attempt is archived and the check continues to the build service.
+- Never: `sudo -S`, `NOPASSWD`, sudoers edits, or a password field (`SecuritySudoersGuardTest`).
+
+### 3. Bundled build service
+- `lti-desktop:stageBundledServer` depends on the included build's `:installDist` and copies it into the
+  app resources as `ltirom-server/`, adding `server-version.txt` and `checksums.txt` (sha256).
+- `ServerArtifactInstaller` copies it to `~/.ltirom/server/versions/<v>.partial`, runs
+  `sha256sum -c checksums.txt`, renames it to `versions/<v>` and swaps the `current` link atomically.
+  A failure keeps the previous version active; the active version is never deleted.
+
+### 4. SetupEnvironment snapshot rule
+- An operation captures one `SetupEnvironment` (distro, user, home) when it starts; every command, the
+  journal and the daemon start use that snapshot. Changing the selection mid-operation never retargets it.
+- A resumed handoff uses the environment journaled with its attempt, never the current selection.
+
+### 5. Logs and Recovery
+- Every check step writes `[check]` start/result lines; the activity buffer is bounded in memory and
+  each attempt is also persisted to `<LOCALAPPDATA>/LtiRomGui/logs/setup/<attemptId>.log` (size-capped,
+  one rotation). Export saves that file, never the truncated in-memory tail.
+- The Recovery tab shows only journal data (`ToolchainSetupState.pendingAttempt`) and real step state;
+  with nothing to recover it says so.
+
+## Build Layout & Multi-Repo Requirements
+
+```text
+LtiRomProject/
+├── LtiRomGui/      (Compose Multiplatform desktop client, this repo)
+└── LtiRomServer/   (Ktor build service that runs inside WSL)
+```
+
+- `LtiRomGui` and `LtiRomServer` must be siblings: `settings.gradle.kts` includes `../LtiRomServer` as
+  a composite build (`rootProject.name = "ltirom-server"`).
+- CI must check out both, side by side.
+- You never build the server by hand: `stageBundledServer` (a dependency of `run`, `createDistributable`
+  and `package*`) builds it through the included build.
+
 ## Credits
 
 LtiRom Studio Glass Theme System is built on:

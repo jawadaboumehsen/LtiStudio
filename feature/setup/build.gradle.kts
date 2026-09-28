@@ -25,6 +25,7 @@ kotlin {
             implementation(compose.components.uiToolingPreview)
             implementation(libs.kotlinx.serialization.json)
             implementation(compose.materialIconsExtended)
+            implementation(libs.filekit.core)
         }
 
         commonTest.dependencies {

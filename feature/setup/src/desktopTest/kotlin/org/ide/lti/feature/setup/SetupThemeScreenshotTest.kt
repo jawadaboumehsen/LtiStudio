@@ -34,6 +34,10 @@ import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepProvenance
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolchainSetupState
+import org.ide.lti.core.domain.setup.UserRepairHandoff
+import org.ide.lti.core.model.setup.ChildIntentRecord
+import org.ide.lti.core.model.setup.PersistedExecutionRequest
+import org.ide.lti.core.model.setup.SetupAttemptRecord
 import org.ide.lti.core.testing.screenshot.GoldenImageAssert
 import org.jetbrains.skia.EncodedImageFormat
 import org.jetbrains.skia.Image
@@ -1000,6 +1004,259 @@ class SetupThemeScreenshotTest {
         setContent {}
     }
 
+    @Test
+    fun testEnvironmentTabAtMinWindowAnd2xFontScaleScreenshots() =
+        runDesktopComposeUiTest(width = 900, height = 600, testTimeout = 5.minutes) {
+            val themes = listOf(AppTheme.Dark, AppTheme.Light, AppTheme.Blue)
+            for (appTheme in themes) {
+                setContent {
+                    CompositionLocalProvider(
+                        LocalDensity provides Density(density = 1.0f, fontScale = 2.0f),
+                    ) {
+                        LtiTheme(appTheme = appTheme, effectsEnabled = false) {
+                            Box(Modifier.fillMaxSize()) {
+                                GlassBackdrop()
+                                SetupScreenContent(
+                                    state = SetupUiState(selectedTab = SetupTab.ENVIRONMENT),
+                                    actions = SetupUiActions(),
+                                )
+                            }
+                        }
+                    }
+                }
+                onRoot().assertIsDisplayed()
+                val image = onRoot().captureToImage()
+                assertEquals(900, image.width)
+                assertEquals(600, image.height)
+                saveScreenshotReport("environment_tab_min_2x_${appTheme.id}", image)
+            }
+            setContent {}
+        }
+
+    @Test
+    fun testTerminalHandoffSheetStatesAtMinWindowAnd2xFontScaleScreenshots() =
+        runDesktopComposeUiTest(width = 900, height = 600, testTimeout = 5.minutes) {
+            val handoff = UserRepairHandoff(
+                actionId = "bootstrap:apt",
+                description = "Install packages",
+                terminalCommand = "sudo apt-get update && sudo apt-get install -y cmake build-essential",
+                packages = listOf("cmake", "build-essential"),
+                distro = "Ubuntu-24.04",
+            )
+            val states = listOf(
+                "idle" to TerminalHandoffState.Idle,
+                "launch_failed" to TerminalHandoffState.TerminalLaunchFailed("wt.exe not found in PATH"),
+                "verifying" to TerminalHandoffState.Verifying,
+                "still_missing" to TerminalHandoffState.StillMissing(
+                    packages = listOf("cmake"),
+                    command = "sudo apt-get update && sudo apt-get install -y cmake",
+                ),
+                "busy" to TerminalHandoffState.AnotherOperationRunning,
+                "done" to TerminalHandoffState.Done,
+            )
+            val themes = listOf(AppTheme.Dark, AppTheme.Light, AppTheme.Blue)
+
+            for ((stateName, sheetState) in states) {
+                for (appTheme in themes) {
+                    setContent {
+                        CompositionLocalProvider(
+                            LocalDensity provides Density(density = 1.0f, fontScale = 2.0f),
+                        ) {
+                            LtiTheme(appTheme = appTheme, effectsEnabled = false) {
+                                Box(Modifier.fillMaxSize()) {
+                                    GlassBackdrop()
+                                    SetupScreenContent(
+                                        state = SetupUiState(
+                                            selectedTab = SetupTab.ENVIRONMENT,
+                                            isHandoffSheetVisible = true,
+                                            handoffSheetState = sheetState,
+                                            activeOperation = SetupOperation(
+                                                kind = SetupOperationKind.BOOTSTRAP_PACKAGES,
+                                                executionState = SetupOperationState.AWAITING_USER_ACTION,
+                                                awaitingHandoff = handoff,
+                                            ),
+                                        ),
+                                        actions = SetupUiActions(),
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    onRoot().assertIsDisplayed()
+                    val image = onRoot().captureToImage()
+                    assertEquals(900, image.width)
+                    assertEquals(600, image.height)
+                    saveScreenshotReport("handoff_sheet_${stateName}_min_2x_${appTheme.id}", image)
+                }
+            }
+            setContent {}
+        }
+
+    @Test
+    fun testMachineReadyCardAtMinWindowAnd2xFontScaleScreenshots() =
+        runDesktopComposeUiTest(width = 900, height = 600, testTimeout = 5.minutes) {
+            val readySteps = listOf(
+                SetupStepDetail(
+                    stage = SetupStepStage.WSL_DETECTION,
+                    title = "WSL Detection",
+                    description = "Ubuntu 24.04 LTS",
+                    status = StepStatus.SUCCESS,
+                    provenance = StepProvenance.LIVE,
+                ),
+                SetupStepDetail(
+                    stage = SetupStepStage.SERVER_CONNECTIVITY,
+                    title = "Build Service",
+                    description = "Server connected",
+                    status = StepStatus.SUCCESS,
+                    provenance = StepProvenance.LIVE,
+                ),
+                SetupStepDetail(
+                    stage = SetupStepStage.SYSTEM_DIAGNOSTICS,
+                    title = "System Diagnostics",
+                    description = "All checks passed",
+                    status = StepStatus.SUCCESS,
+                    provenance = StepProvenance.LIVE,
+                ),
+                SetupStepDetail(
+                    stage = SetupStepStage.REPO_SYNCHRONIZATION,
+                    title = "Repository Synchronization",
+                    description = "Submodules synced",
+                    status = StepStatus.SUCCESS,
+                    provenance = StepProvenance.LIVE,
+                ),
+                SetupStepDetail(
+                    stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+                    title = "Toolchain Binaries",
+                    description = "12 tools ready",
+                    status = StepStatus.SUCCESS,
+                    provenance = StepProvenance.LIVE,
+                ),
+            )
+            val state = ToolchainSetupState(steps = readySteps, lastReadyAt = 1700000000000L)
+            val themes = listOf(AppTheme.Dark, AppTheme.Light, AppTheme.Blue)
+
+            for (appTheme in themes) {
+                setContent {
+                    CompositionLocalProvider(
+                        LocalDensity provides Density(density = 1.0f, fontScale = 2.0f),
+                    ) {
+                        LtiTheme(appTheme = appTheme, effectsEnabled = false) {
+                            Box(Modifier.fillMaxSize()) {
+                                GlassBackdrop()
+                                SetupScreenContent(
+                                    state = SetupUiState(
+                                        toolchainSetupState = state,
+                                        selectedTab = SetupTab.ENVIRONMENT,
+                                    ),
+                                    actions = SetupUiActions(),
+                                )
+                            }
+                        }
+                    }
+                }
+                onRoot().assertIsDisplayed()
+                val image = onRoot().captureToImage()
+                assertEquals(900, image.width)
+                assertEquals(600, image.height)
+                saveScreenshotReport("machine_ready_card_min_2x_${appTheme.id}", image)
+            }
+            setContent {}
+        }
+
+    @Test
+    fun testRecoveryIdleAndInterruptedAtMinWindowAnd2xFontScaleScreenshots() =
+        runDesktopComposeUiTest(width = 900, height = 600, testTimeout = 5.minutes) {
+            val themes = listOf(AppTheme.Dark, AppTheme.Light, AppTheme.Blue)
+
+            // 1. Recovery Idle
+            for (appTheme in themes) {
+                setContent {
+                    CompositionLocalProvider(
+                        LocalDensity provides Density(density = 1.0f, fontScale = 2.0f),
+                    ) {
+                        LtiTheme(appTheme = appTheme, effectsEnabled = false) {
+                            Box(Modifier.fillMaxSize()) {
+                                GlassBackdrop()
+                                SetupScreenContent(
+                                    state = SetupUiState(selectedTab = SetupTab.RECOVERY),
+                                    actions = SetupUiActions(),
+                                )
+                            }
+                        }
+                    }
+                }
+                onRoot().assertIsDisplayed()
+                val image = onRoot().captureToImage()
+                assertEquals(900, image.width)
+                assertEquals(600, image.height)
+                saveScreenshotReport("recovery_idle_min_2x_${appTheme.id}", image)
+            }
+
+            // 2. Recovery Interrupted
+            val interruptedState = SetupUiState(
+                selectedTab = SetupTab.RECOVERY,
+                activeOperation = SetupOperation(
+                    operationId = "op-recovery-rec",
+                    kind = SetupOperationKind.FULL_SETUP,
+                    executionState = SetupOperationState.INTERRUPTED,
+                    failure = "Interrupted by system restart",
+                ),
+                toolchainSetupState = ToolchainSetupState(
+                    steps = listOf(
+                        SetupStepDetail(
+                            stage = SetupStepStage.SERVER_CONNECTIVITY,
+                            title = "Build Service",
+                            description = "Service stopped",
+                            status = StepStatus.FAILED,
+                            error = "Connection reset",
+                        ),
+                    ),
+                    recoveryBlockReason = "Previous setup attempt was interrupted",
+                ),
+                attemptRecord = SetupAttemptRecord(
+                    attemptId = "attempt-rec-screenshot",
+                    environmentKey = "Ubuntu",
+                    planId = "plan-screenshot",
+                    planRevisionHash = "rev-screenshot",
+                    planKind = "FULL_SETUP",
+                    orderedIntents = listOf(
+                        ChildIntentRecord(
+                            childIndex = 0,
+                            stage = "TOOLCHAIN_COMPILATION",
+                            actionId = "build-llvm",
+                            request = PersistedExecutionRequest(toolId = "llvm"),
+                            idempotencyKey = "key-screenshot",
+                            workspaceLock = "lock-screenshot",
+                        ),
+                    ),
+                ),
+            )
+
+            for (appTheme in themes) {
+                setContent {
+                    CompositionLocalProvider(
+                        LocalDensity provides Density(density = 1.0f, fontScale = 2.0f),
+                    ) {
+                        LtiTheme(appTheme = appTheme, effectsEnabled = false) {
+                            Box(Modifier.fillMaxSize()) {
+                                GlassBackdrop()
+                                SetupScreenContent(
+                                    state = interruptedState,
+                                    actions = SetupUiActions(),
+                                )
+                            }
+                        }
+                    }
+                }
+                onRoot().assertIsDisplayed()
+                val image = onRoot().captureToImage()
+                assertEquals(900, image.width)
+                assertEquals(600, image.height)
+                saveScreenshotReport("recovery_interrupted_min_2x_${appTheme.id}", image)
+            }
+            setContent {}
+        }
+
     private fun saveScreenshotReport(name: String, bitmap: androidx.compose.ui.graphics.ImageBitmap) {
         val reportsDir = File("build/reports/screenshots/setup")
         if (!reportsDir.exists()) reportsDir.mkdirs()
@@ -1009,6 +1266,8 @@ class SetupThemeScreenshotTest {
         if (bytes != null) {
             file.writeBytes(bytes)
         }
+        // Baselines are only written by `recordRoborazziDesktop`; writing them here would make every
+        // `verifyRoborazziDesktop` comparison pass against the image it just captured.
 
         val targetPath = "src/desktopTest/resources/screenshots/$name.png"
         bitmap.captureRoboImage(

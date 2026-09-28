@@ -15,6 +15,7 @@ import org.ide.lti.core.domain.setup.ToolCategory
 import org.ide.lti.core.domain.setup.ToolComponentItem
 import org.ide.lti.core.domain.setup.ToolchainSetupState
 import org.ide.lti.core.model.setup.EnvironmentReadiness
+import org.ide.lti.core.model.setup.SetupAttemptRecord
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.RecentProject
 
@@ -49,6 +50,7 @@ data class SetupUiState(
     val pendingWorkspaceRequest: PendingWorkspaceRequest? = null,
     val isHandoffSheetVisible: Boolean = false,
     val handoffSheetState: TerminalHandoffState = TerminalHandoffState.Idle,
+    val attemptRecord: SetupAttemptRecord? = null,
 ) {
     val environmentPresentation: EnvironmentPresentation
         get() = SetupPresentationMapper.mapEnvironment(
@@ -64,6 +66,13 @@ data class SetupUiState(
         get() = SetupPresentationMapper.mapStatusBar(
             activeOperation = activeOperation,
             toolchainSetupState = toolchainSetupState,
+        )
+
+    val recoveryPresentation: RecoveryPresentation
+        get() = SetupPresentationMapper.mapRecovery(
+            toolchainSetupState = toolchainSetupState,
+            activeOperation = activeOperation,
+            attemptRecord = attemptRecord,
         )
 }
 
@@ -116,4 +125,6 @@ data class SetupUiActions(
     val onOpenTerminal: (String) -> Unit = {},
     val onSelectDistro: (String) -> Unit = {},
     val onInstallPackages: () -> Unit = {},
+    val onCancelOperation: () -> Unit = {},
+    val onExportLogs: () -> Unit = {},
 )

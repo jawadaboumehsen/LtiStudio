@@ -30,6 +30,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import dev.chrisbanes.haze.glass.GlassReducedMotionPolicy
@@ -111,6 +114,8 @@ fun EnvironmentStepContent(
         onSelectDistro = actions.onSelectDistro,
         onOpenProject = actions.onOpenFolder,
         onCreateProject = actions.onCreateWorkspace,
+        onCancelOperation = actions.onCancelOperation,
+        onExportLogs = actions.onExportLogs,
     )
 }
 
@@ -165,6 +170,8 @@ fun EnvironmentStepContent(
     onSelectDistro: (String) -> Unit = {},
     onOpenProject: () -> Unit = {},
     onCreateProject: () -> Unit = {},
+    onCancelOperation: () -> Unit = {},
+    onExportLogs: (() -> Unit)? = null,
 ) {
     val presentation =
         environmentPresentation ?: SetupPresentationMapper.mapEnvironment(
@@ -201,7 +208,9 @@ fun EnvironmentStepContent(
             ) {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
-                    modifier = Modifier.weight(1f, fill = false),
+                    modifier = Modifier
+                        .weight(1f, fill = false)
+                        .semantics { liveRegion = LiveRegionMode.Polite },
                 ) {
                     Text(
                         text = "Machine setup",
@@ -272,7 +281,15 @@ fun EnvironmentStepContent(
                     val bridgeStep =
                         toolchainSetupState.steps
                             .firstOrNull { it.stage == SetupStepStage.SERVER_CONNECTIVITY }
-                    val isBridgeOk = bridgeStep?.status == StepStatus.SUCCESS
+                    val sysStep =
+                        toolchainSetupState.steps
+                            .firstOrNull { it.stage == SetupStepStage.SYSTEM_PACKAGES }
+                    val bridgePres = SetupPresentationMapper.mapBuildService(
+                        step = bridgeStep,
+                        daemonPingMs = toolchainSetupState.daemonPingMs,
+                        isChecking = toolchainSetupState.isChecking,
+                        systemPackagesStep = sysStep,
+                    )
 
                     val wslStatus =
                         when (wslStep?.status) {
@@ -281,30 +298,20 @@ fun EnvironmentStepContent(
                             StepStatus.FAILED -> "Offline"
                             else -> "Pending"
                         }
-                    val bridgeStatus =
-                        when (bridgeStep?.status) {
-                            StepStatus.SUCCESS -> {
-                                val ping = toolchainSetupState.daemonPingMs
-                                if (ping != null && ping > 0) "${ping}ms" else "Connected"
-                            }
-                            StepStatus.RUNNING -> "Checking"
-                            StepStatus.FAILED -> "Disconnected"
-                            else -> "Pending"
-                        }
 
                     GlassChip(
                         label = "WSL: $wslStatus",
                         selected = isWslOk,
                     )
                     GlassChip(
-                        label = "Bridge: $bridgeStatus",
-                        selected = isBridgeOk,
+                        label = "Bridge: ${bridgePres.chipText}",
+                        selected = bridgePres.isReady,
                     )
                     GlassSecondaryButton(
                         onClick = onCheckEnvironment,
                         enabled = !toolchainSetupState.isBusy,
                     ) {
-                        Text(if (toolchainSetupState.isChecking) "Checking…" else "Verify")
+                        Text(if (toolchainSetupState.isChecking) "Checking…" else "Check again")
                     }
                 }
             }
@@ -335,6 +342,8 @@ fun EnvironmentStepContent(
                 onOpenDistro = onOpenDistro,
                 onSelectDistro = onSelectDistro,
                 onShowDiagnostics = { onSelectCockpitTab("console") },
+                onCancel = onCancelOperation,
+                daemonPingMs = toolchainSetupState.daemonPingMs,
             )
 
             val isMachineReady =
@@ -346,7 +355,9 @@ fun EnvironmentStepContent(
 
             if (isMachineReady) {
                 GlassCard(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .semantics { liveRegion = LiveRegionMode.Polite },
                     surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                     contentPadding = Spacing.CardPadding,
                 ) {
@@ -452,6 +463,7 @@ fun EnvironmentStepContent(
                 onAutoRemediateDoctor = onAutoRemediateDoctor,
                 activityState = activityState,
                 activityListState = activityListState,
+                onExportLogs = onExportLogs,
             )
 
             EnvironmentStepActionBar(
@@ -477,6 +489,7 @@ private fun EnvironmentCockpitTabContent(
     onAutoRemediateDoctor: (() -> Unit)?,
     activityState: SetupActivityState?,
     activityListState: androidx.compose.foundation.lazy.LazyListState,
+    onExportLogs: (() -> Unit)? = null,
 ) {
     when (selectedCockpitTab) {
         "doctor" -> {
@@ -493,6 +506,7 @@ private fun EnvironmentCockpitTabContent(
                     title = "Execution Terminal Logs",
                     isRunning = toolchainSetupState.isBusy,
                     listState = activityListState,
+                    onExport = onExportLogs,
                 )
             } else {
                 GlassConsoleDrawer(
@@ -803,7 +817,7 @@ private fun CheckActionButton(enabled: Boolean, onCheckEnvironment: () -> Unit) 
                 contentDescription = null,
                 modifier = Modifier.size(IconSize.Small),
             )
-            Text(text = "Check Environment", maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
+            Text(text = "Check again", maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
         }
     }
 }

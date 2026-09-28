@@ -25,17 +25,27 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import dev.chrisbanes.haze.glass.GlassReducedMotionPolicy
+import kotlinx.coroutines.delay
 import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
 import org.ide.lti.core.designsystem.component.actions.GlassSecondaryButton
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.display.IdeStatusSeverity
+import org.ide.lti.core.designsystem.component.feedback.GlassDialog
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.icon.ideStatusError
 import org.ide.lti.core.designsystem.icon.ideStatusSuccess
@@ -86,7 +96,12 @@ fun ToolchainPipelineTracker(
     onOpenDistro: (String) -> Unit = {},
     onSelectDistro: (String) -> Unit = {},
     onShowDiagnostics: () -> Unit = {},
+    onCancel: () -> Unit = {},
+    daemonPingMs: Long? = null,
 ) {
+    var showCancelDialog by remember { mutableStateOf(false) }
+    var cancelTargetTool by remember { mutableStateOf<String?>(null) }
+
     val stepMap = steps.associateBy { it.stage }
     val orderedStages =
         if (stepMap.containsKey(SetupStepStage.SYSTEM_PACKAGES)) {
@@ -112,6 +127,17 @@ fun ToolchainPipelineTracker(
         orderedStages.count { stage ->
             stepMap[stage]?.status == StepStatus.SUCCESS
         }
+
+    if (showCancelDialog) {
+        SetupCancelDialog(
+            toolText = cancelTargetTool ?: "the active tool",
+            onConfirm = {
+                showCancelDialog = false
+                onCancel()
+            },
+            onDismiss = { showCancelDialog = false },
+        )
+    }
 
     GlassCard(
         modifier = modifier.fillMaxWidth(),
@@ -151,6 +177,7 @@ fun ToolchainPipelineTracker(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(Spacing.Small),
             ) {
+                val systemPackagesStep = stepMap[SetupStepStage.SYSTEM_PACKAGES]
                 orderedStages.forEach { stage ->
                     val step =
                         stepMap[stage] ?: SetupStepDetail(
@@ -165,6 +192,8 @@ fun ToolchainPipelineTracker(
                         isBusy = isBusy,
                         activeOperation = activeOperation,
                         handoffSheetState = handoffSheetState,
+                        daemonPingMs = daemonPingMs,
+                        systemPackagesStep = systemPackagesStep,
                         wslPres =
                         if (stage == SetupStepStage.WSL_DETECTION) {
                             MachineRowMapper.mapWslRow(step, distroStatuses, activeDistro)
@@ -172,21 +201,22 @@ fun ToolchainPipelineTracker(
                             null
                         },
                         onAction = { action, distro ->
-                            when (action) {
-                                // Re-detecting and re-probing is a check, not a mutation: no preview.
-                                SetupRowAction.RETRY ->
-                                    if (stage == SetupStepStage.WSL_DETECTION ||
-                                        stage == SetupStepStage.SYSTEM_PACKAGES
-                                    ) {
-                                        onVerify()
-                                    } else {
-                                        onRetryStage(stage)
-                                    }
-                                SetupRowAction.INSTALL_PACKAGES -> onInstallPackages()
-                                SetupRowAction.CONTINUE_SETUP -> onShowHandoffSheet()
-                                SetupRowAction.OPEN_DISTRO -> distro?.let(onOpenDistro)
-                                SetupRowAction.SHOW_DIAGNOSTICS -> onShowDiagnostics()
-                            }
+                            handleTrackerAction(
+                                action = action,
+                                distro = distro,
+                                stage = stage,
+                                stepDescription = step.description,
+                                onVerify = onVerify,
+                                onRetryStage = onRetryStage,
+                                onInstallPackages = onInstallPackages,
+                                onShowHandoffSheet = onShowHandoffSheet,
+                                onOpenDistro = onOpenDistro,
+                                onShowDiagnostics = onShowDiagnostics,
+                                onShowCancelDialog = { tool ->
+                                    cancelTargetTool = tool
+                                    showCancelDialog = true
+                                },
+                            )
                         },
                         onSelectDistro = onSelectDistro,
                     )
@@ -194,6 +224,65 @@ fun ToolchainPipelineTracker(
             }
         }
     }
+}
+
+@Composable
+private fun SetupCancelDialog(toolText: String, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    GlassDialog(
+        onDismissRequest = onDismiss,
+        title = "Cancel setup operation?",
+        confirmButton = {
+            GlassPrimaryButton(onClick = onConfirm) {
+                Text("Cancel operation")
+            }
+        },
+        dismissButton = {
+            GlassSecondaryButton(onClick = onDismiss) {
+                Text("Keep running")
+            }
+        },
+    ) {
+        Text(
+            text = "The current build of $toolText stops; tools already built are kept. " +
+                "You can resume setup at any time.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+private fun handleTrackerAction(
+    action: SetupRowAction,
+    distro: String?,
+    stage: SetupStepStage,
+    stepDescription: String,
+    onVerify: () -> Unit,
+    onRetryStage: (SetupStepStage) -> Unit,
+    onInstallPackages: () -> Unit,
+    onShowHandoffSheet: () -> Unit,
+    onOpenDistro: (String) -> Unit,
+    onShowDiagnostics: () -> Unit,
+    onShowCancelDialog: (String?) -> Unit,
+) {
+    when (action) {
+        SetupRowAction.RETRY ->
+            if (stage == SetupStepStage.WSL_DETECTION || stage == SetupStepStage.SYSTEM_PACKAGES) {
+                onVerify()
+            } else {
+                onRetryStage(stage)
+            }
+        SetupRowAction.INSTALL_PACKAGES -> onInstallPackages()
+        SetupRowAction.CONTINUE_SETUP -> onShowHandoffSheet()
+        SetupRowAction.OPEN_DISTRO -> distro?.let(onOpenDistro)
+        SetupRowAction.SHOW_DIAGNOSTICS, SetupRowAction.SHOW_LOG -> onShowDiagnostics()
+        SetupRowAction.CANCEL -> onShowCancelDialog(extractToolName(stepDescription))
+    }
+}
+
+private fun extractToolName(description: String): String? {
+    val regex = Regex("""(?:Building|Syncing)\s+([^\s(]+)""")
+    val match = regex.find(description)
+    return match?.groupValues?.get(1)
 }
 
 @Composable
@@ -205,11 +294,41 @@ private fun VerticalStageRow(
     activeOperation: SetupOperation? = null,
     handoffSheetState: TerminalHandoffState = TerminalHandoffState.Idle,
     wslPres: WslRowPresentation? = null,
+    daemonPingMs: Long? = null,
+    systemPackagesStep: SetupStepDetail? = null,
     onSelectDistro: (String) -> Unit = {},
 ) {
     val diagnostics = GlassTheme.diagnosticColors
 
     val stageDisplayName = stage.displayName
+
+    val isReducedMotion = GlassTheme.reducedMotionPolicy == GlassReducedMotionPolicy.Reduced
+    val currentEpochMs by produceState<Long?>(
+        initialValue = if (isReducedMotion) null else System.currentTimeMillis(),
+        key1 = step.status == StepStatus.RUNNING,
+        key2 = isReducedMotion,
+    ) {
+        if (step.status != StepStatus.RUNNING || isReducedMotion) {
+            value = null
+            return@produceState
+        }
+        while (true) {
+            value = System.currentTimeMillis()
+            delay(1000L)
+        }
+    }
+
+    val buildServicePres =
+        if (stage == SetupStepStage.SERVER_CONNECTIVITY) {
+            MachineRowMapper.mapBuildService(
+                step = step,
+                daemonPingMs = daemonPingMs,
+                isChecking = isBusy || step.status == StepStatus.RUNNING,
+                systemPackagesStep = systemPackagesStep,
+            )
+        } else {
+            null
+        }
 
     val systemPackagesPres =
         if (stage == SetupStepStage.SYSTEM_PACKAGES) {
@@ -225,7 +344,7 @@ private fun VerticalStageRow(
 
     val toolchainPres =
         if (stage == SetupStepStage.TOOLCHAIN_COMPILATION) {
-            MachineRowMapper.mapToolchainRow(step)
+            MachineRowMapper.mapToolchainRow(step, currentEpochMs)
         } else {
             null
         }
@@ -233,23 +352,33 @@ private fun VerticalStageRow(
     val rowSeverity =
         systemPackagesPres?.severity
             ?: toolchainPres?.severity
+            ?: buildServicePres?.severity
             ?: wslPres?.severity
+    val isBuildServiceRunning = buildServicePres?.isRunning == true
     val isToolchainRunning = toolchainPres?.isRunning == true
     val isPackagesChecking = systemPackagesPres?.isChecking == true
-    val isRunning = step.status == StepStatus.RUNNING || isPackagesChecking || isToolchainRunning
+    val isRunning =
+        step.status == StepStatus.RUNNING ||
+            isPackagesChecking ||
+            isToolchainRunning ||
+            isBuildServiceRunning
 
+    val isBuildServiceReady = buildServicePres?.isReady == true
     val isToolchainReady = toolchainPres?.isReady == true
     val isPackagesReady = systemPackagesPres?.isReady == true
-    val isSuccess = (step.status == StepStatus.SUCCESS || isPackagesReady || isToolchainReady) && !isRunning
+    val isAnyReady = isPackagesReady || isToolchainReady || isBuildServiceReady
+    val isSuccess = (step.status == StepStatus.SUCCESS || isAnyReady) && !isRunning
     val isRestored = step.provenance == StepProvenance.RESTORED
     val isActionRequired =
         (
             step.status == StepStatus.FAILED ||
                 step.status == StepStatus.WARNING ||
                 systemPackagesPres?.primaryAction != null ||
-                toolchainPres?.primaryAction != null
+                (toolchainPres?.primaryAction != null && toolchainPres.primaryAction != SetupRowAction.CANCEL) ||
+                buildServicePres?.primaryAction != null
             ) &&
-            !isSuccess
+            !isSuccess &&
+            !isRunning
 
     val isFailed = step.status == StepStatus.FAILED || rowSeverity == IdeStatusSeverity.Failed
     val isWarning = !isFailed && (step.status == StepStatus.WARNING || rowSeverity == IdeStatusSeverity.Warning)
@@ -257,21 +386,28 @@ private fun VerticalStageRow(
     val displayDescription =
         systemPackagesPres?.detailText
             ?: toolchainPres?.detailText
+            ?: buildServicePres?.detailText
             ?: wslPres?.detailText
             ?: step.description
     // A plain step row always offers a stage retry; a mapped row offers exactly what its state allows.
-    val hasMappedRow = systemPackagesPres != null || toolchainPres != null || wslPres != null
+    val hasMappedRow =
+        systemPackagesPres != null ||
+            toolchainPres != null ||
+            buildServicePres != null ||
+            wslPres != null
     val primaryAction =
         systemPackagesPres?.primaryAction
             ?: toolchainPres?.primaryAction
+            ?: buildServicePres?.primaryAction
             ?: wslPres?.primaryAction
             ?: SetupRowAction.RETRY.takeIf { !hasMappedRow }
     val primaryLabel =
         systemPackagesPres?.primaryActionLabel
             ?: toolchainPres?.primaryActionLabel
+            ?: buildServicePres?.primaryActionLabel
             ?: wslPres?.primaryActionLabel
             ?: "Retry Stage"
-    val secondaryAction = wslPres?.secondaryAction
+    val secondaryAction = wslPres?.secondaryAction ?: buildServicePres?.secondaryAction
 
     if (isActionRequired) {
         // Expanded Failed / Warning Stage Row
@@ -295,7 +431,9 @@ private fun VerticalStageRow(
                         diagnostics.warning.copy(alpha = AlphaTokens.Border)
                     },
                     shape = GlassShapes.Small,
-                ).padding(Spacing.MediumSmall),
+                ).semantics {
+                    liveRegion = if (isFailed) LiveRegionMode.Assertive else LiveRegionMode.Polite
+                }.padding(Spacing.MediumSmall),
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -442,7 +580,9 @@ private fun VerticalStageRow(
                     width = StrokeWidth.Hairline,
                     color = MaterialTheme.colorScheme.outline,
                     shape = GlassShapes.Small,
-                ).padding(horizontal = Spacing.MediumSmall, vertical = Spacing.Small),
+                ).semantics {
+                    liveRegion = LiveRegionMode.Polite
+                }.padding(horizontal = Spacing.MediumSmall, vertical = Spacing.Small),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -520,16 +660,29 @@ private fun VerticalStageRow(
                     )
                 }
 
-                GlassChip(
-                    label =
-                    when {
-                        isRestored -> "Historical"
-                        isSuccess -> "Ready"
-                        isRunning -> "Checking…"
-                        else -> "Pending"
-                    },
-                    selected = isSuccess && !isRestored,
-                )
+                if (isRunning && primaryAction == SetupRowAction.CANCEL) {
+                    GlassSecondaryButton(
+                        onClick = { onAction(SetupRowAction.CANCEL, null) },
+                    ) {
+                        Text(
+                            text = "Cancel",
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                } else {
+                    GlassChip(
+                        label =
+                        when {
+                            isRestored -> "Historical"
+                            isSuccess -> "Ready"
+                            isRunning -> "Checking…"
+                            else -> "Pending"
+                        },
+                        selected = isSuccess && !isRestored,
+                    )
+                }
             }
         }
     }

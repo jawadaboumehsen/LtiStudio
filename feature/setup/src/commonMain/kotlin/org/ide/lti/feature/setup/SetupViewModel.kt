@@ -11,6 +11,8 @@ package org.ide.lti.feature.setup
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import io.github.vinceglb.filekit.core.FileKit
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -457,5 +459,37 @@ class SetupViewModel(
      */
     fun previewResetToolchainCache() {
         environmentSetupState.previewResetToolchainCache()
+    }
+
+    /**
+     * Cancels the currently running setup operation (FR-023, T064).
+     */
+    fun cancelOperation() {
+        environmentSetupState.cancelOperation()
+    }
+
+    /**
+     * Exports the persisted attempt log to a file via native save dialog (T067, T068).
+     */
+    fun exportLogs() {
+        viewModelScope.launch {
+            // Only the persisted log is exported: the in-memory tail is truncated by design (T068).
+            val content = environmentSetupState.getPersistedAttemptLog()
+            if (content == null) {
+                environmentSetupState.setEnvironmentNotice("There is no setup log to export yet.")
+                return@launch
+            }
+            try {
+                FileKit.saveFile(
+                    bytes = content.encodeToByteArray(),
+                    baseName = "setup-${System.currentTimeMillis()}",
+                    extension = "log",
+                )
+            } catch (e: CancellationException) {
+                throw e
+            } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
+                environmentSetupState.setEnvironmentNotice("Couldn't export the setup log: ${e.message}")
+            }
+        }
     }
 }

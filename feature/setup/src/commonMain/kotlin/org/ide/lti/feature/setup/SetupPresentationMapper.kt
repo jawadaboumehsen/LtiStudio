@@ -10,12 +10,15 @@
 package org.ide.lti.feature.setup
 
 import androidx.compose.runtime.Immutable
+import kotlinx.datetime.Instant
 import org.ide.lti.core.designsystem.component.display.IdeStatusSeverity
 import org.ide.lti.core.domain.setup.SetupStepDetail
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepProvenance
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolchainSetupState
+import org.ide.lti.core.model.setup.AttemptStatus
+import org.ide.lti.core.model.setup.SetupAttemptRecord
 
 @Immutable
 data class EnvironmentSummaryItem(
@@ -48,6 +51,22 @@ data class ProjectsHeaderStatusPresentation(
     val actionLabel: String? = null,
     val isNeedsSetup: Boolean = false,
 )
+
+@Immutable
+data class BuildServicePresentation(
+    val title: String = "Build service",
+    val detailText: String,
+    val chipText: String,
+    val severity: IdeStatusSeverity,
+    val primaryAction: SetupRowAction? = null,
+    val secondaryAction: SetupRowAction? = null,
+    val isReady: Boolean = false,
+    val isRunning: Boolean = false,
+    val errorText: String? = null,
+) {
+    val primaryActionLabel: String? get() = primaryAction?.let { actionLabel(it) }
+    val secondaryActionLabel: String? get() = secondaryAction?.let { actionLabel(it) }
+}
 
 enum class StagePresentationState {
     UNKNOWN,
@@ -127,6 +146,165 @@ data class EnvironmentPresentation(
     val primaryAction: PrimaryAction,
 )
 
+private fun isMutating(state: ToolchainSetupState, activeOperation: SetupOperation?): Boolean {
+    val opRunning = activeOperation?.executionState == SetupOperationState.RUNNING
+    return state.activeOperationId != null || opRunning || state.isRunning
+}
+
+private fun isCheckingState(state: ToolchainSetupState): Boolean {
+    val nonMutationBusy = state.isBusy && !state.isRunning
+    return state.isChecking || nonMutationBusy
+}
+
+private fun checkJournal(state: ToolchainSetupState, activeOperation: SetupOperation?): EnvironmentState? {
+    val blockReason = state.recoveryBlockReason
+    val pendingAttempt = state.pendingAttemptId
+    return when {
+        blockReason != null -> EnvironmentState.Interrupted(blockReason)
+        activeOperation?.executionState == SetupOperationState.INTERRUPTED -> {
+            EnvironmentState.Interrupted(activeOperation.failure ?: "Operation was interrupted.")
+        }
+        activeOperation?.executionState == SetupOperationState.RECONNECTING -> {
+            EnvironmentState.Reconnecting(activeOperation.operationId ?: pendingAttempt ?: "reconnecting")
+        }
+        pendingAttempt != null && !state.isRunning -> EnvironmentState.Reconnecting(pendingAttempt)
+        else -> null
+    }
+}
+
+private fun checkActiveTransitions(
+    state: ToolchainSetupState,
+    isToolchainBound: Boolean,
+    activeOperation: SetupOperation?,
+): EnvironmentState? {
+    if (!isToolchainBound) {
+        return EnvironmentState.Unavailable("Toolchain service is not available in this session.")
+    }
+    return checkJournal(state, activeOperation) ?: when {
+        isMutating(state, activeOperation) -> {
+            val opId = state.activeOperationId ?: activeOperation?.operationId ?: "running"
+            EnvironmentState.MutationRunning(
+                operationId = opId,
+                stage = state.currentStage ?: activeOperation?.stageId,
+            )
+        }
+        isCheckingState(state) -> EnvironmentState.Checking
+        else -> null
+    }
+}
+
+private fun checkFailures(state: ToolchainSetupState): EnvironmentState? {
+    val connectionFailed =
+        state.steps.firstOrNull {
+            val isConn = it.stage == SetupStepStage.WSL_DETECTION || it.stage == SetupStepStage.SERVER_CONNECTIVITY
+            isConn && it.status == StepStatus.FAILED
+        }
+    if (connectionFailed != null) {
+        return EnvironmentState.Unavailable(
+            reason = connectionFailed.error ?: connectionFailed.description,
+        )
+    }
+
+    val failedStep = state.steps.firstOrNull { it.status == StepStatus.FAILED }
+    return if (failedStep != null) {
+        EnvironmentState.Failed(
+            stage = failedStep.stage,
+            error = failedStep.error ?: failedStep.description,
+            checkedAt = state.checkedAt,
+        )
+    } else {
+        null
+    }
+}
+
+private fun isLiveReady(state: ToolchainSetupState): Boolean {
+    if (!state.isAllReady || state.toolsMatrix.isEmpty() || state.checkedAt == null) {
+        return false
+    }
+    val coreTools = state.toolsMatrix.filter { it.isCore }
+    val allVerified =
+        coreTools.isNotEmpty() &&
+            coreTools.all {
+                it.status == StepStatus.SUCCESS && it.lastTested != null
+            }
+    val allPublished = state.publishedToolIds.containsAll(coreTools.map { it.id })
+    return allVerified && allPublished
+}
+
+private fun checkRestored(state: ToolchainSetupState): EnvironmentState? {
+    val hasRestoredStep = state.steps.any { it.provenance == StepProvenance.RESTORED }
+    val hasHistory = hasRestoredStep || state.lastVerifiedTimestamp != null
+    return if (state.checkedAt == null && hasHistory) {
+        EnvironmentState.Restored(
+            lastReadyAt = state.lastReadyAt ?: state.lastVerifiedTimestamp,
+            checkedAt = null,
+        )
+    } else {
+        null
+    }
+}
+
+private fun checkReady(state: ToolchainSetupState): EnvironmentState? {
+    val checkedAt = state.checkedAt
+    return if (isLiveReady(state) && checkedAt != null) {
+        val readyTs = state.lastReadyAt ?: checkedAt
+        EnvironmentState.Ready(
+            lastReadyAt = readyTs,
+            checkedAt = checkedAt,
+        )
+    } else {
+        null
+    }
+}
+
+private fun checkNeedsSetup(state: ToolchainSetupState): EnvironmentState? {
+    val anyProbedLive =
+        state.checkedAt != null ||
+            state.steps.any {
+                it.provenance == StepProvenance.LIVE && it.status != StepStatus.PENDING
+            }
+    return if (anyProbedLive) {
+        val missing =
+            state.steps
+                .filter { it.status != StepStatus.SUCCESS && it.status != StepStatus.WARNING }
+                .map { it.title }
+        EnvironmentState.CheckedNeedsSetup(
+            missingPrerequisites = missing,
+            checkedAt = state.checkedAt,
+        )
+    } else {
+        null
+    }
+}
+
+private fun isJavaIssue(desc: String, err: String, systemPackagesStep: SetupStepDetail?): Boolean {
+    val matchesText = desc.contains("Needs Java", ignoreCase = true) ||
+        desc.contains("Java 21", ignoreCase = true) ||
+        err.contains("Needs Java", ignoreCase = true) ||
+        err.contains("Java 21", ignoreCase = true)
+    val isPkgFailed = systemPackagesStep?.status == StepStatus.FAILED
+    val pkgDesc = systemPackagesStep?.description.orEmpty()
+    val pkgErr = systemPackagesStep?.error.orEmpty()
+    val hasJavaPackageIssue = pkgDesc.contains("Java", ignoreCase = true) ||
+        pkgDesc.contains("jdk", ignoreCase = true) ||
+        pkgErr.contains("Java", ignoreCase = true) ||
+        pkgErr.contains("jdk", ignoreCase = true)
+    val matchesPkg = isPkgFailed && hasJavaPackageIssue
+    return matchesText || matchesPkg
+}
+
+private fun isStartupFailure(desc: String, err: String): Boolean {
+    val startupPhrases = listOf(
+        "didn't start",
+        "failed to start",
+        "start server",
+        "won't start",
+        "port collision",
+        "timeout",
+    )
+    return startupPhrases.any { desc.contains(it, ignoreCase = true) || err.contains(it, ignoreCase = true) }
+}
+
 object SetupPresentationMapper {
     fun mapStageState(detail: SetupStepDetail, isChecking: Boolean): StagePresentationState {
         if (isChecking && detail.status == StepStatus.RUNNING) return StagePresentationState.CHECKING
@@ -156,142 +334,6 @@ object SetupPresentationMapper {
         is EnvironmentState.MutationRunning -> PrimaryAction.STAGE_PROGRESS
         is EnvironmentState.Reconnecting -> PrimaryAction.RECONNECT
         is EnvironmentState.Interrupted -> PrimaryAction.RECONNECT
-    }
-
-    private fun isMutating(state: ToolchainSetupState, activeOperation: SetupOperation?): Boolean {
-        val opRunning = activeOperation?.executionState == SetupOperationState.RUNNING
-        return state.activeOperationId != null || opRunning || state.isRunning
-    }
-
-    private fun isCheckingState(state: ToolchainSetupState): Boolean {
-        val nonMutationBusy = state.isBusy && !state.isRunning
-        return state.isChecking || nonMutationBusy
-    }
-
-    /**
-     * Journal truth outranks evidence (US3): a durable recovery block needs user-directed recovery and an
-     * unreconciled attempt is reconnecting - neither is ever presented as ready or needs-setup.
-     */
-    private fun checkJournal(state: ToolchainSetupState, activeOperation: SetupOperation?): EnvironmentState? {
-        val blockReason = state.recoveryBlockReason
-        val pendingAttempt = state.pendingAttemptId
-        return when {
-            blockReason != null -> EnvironmentState.Interrupted(blockReason)
-            activeOperation?.executionState == SetupOperationState.INTERRUPTED -> {
-                EnvironmentState.Interrupted(activeOperation.failure ?: "Operation was interrupted.")
-            }
-            activeOperation?.executionState == SetupOperationState.RECONNECTING -> {
-                EnvironmentState.Reconnecting(activeOperation.operationId ?: pendingAttempt ?: "reconnecting")
-            }
-            pendingAttempt != null && !state.isRunning -> EnvironmentState.Reconnecting(pendingAttempt)
-            else -> null
-        }
-    }
-
-    private fun checkActiveTransitions(
-        state: ToolchainSetupState,
-        isToolchainBound: Boolean,
-        activeOperation: SetupOperation?,
-    ): EnvironmentState? {
-        if (!isToolchainBound) {
-            return EnvironmentState.Unavailable("Toolchain service is not available in this session.")
-        }
-        return checkJournal(state, activeOperation) ?: when {
-            isMutating(state, activeOperation) -> {
-                val opId = state.activeOperationId ?: activeOperation?.operationId ?: "running"
-                EnvironmentState.MutationRunning(
-                    operationId = opId,
-                    stage = state.currentStage ?: activeOperation?.stageId,
-                )
-            }
-            isCheckingState(state) -> EnvironmentState.Checking
-            else -> null
-        }
-    }
-
-    private fun checkFailures(state: ToolchainSetupState): EnvironmentState? {
-        val connectionFailed =
-            state.steps.firstOrNull {
-                val isConn = it.stage == SetupStepStage.WSL_DETECTION || it.stage == SetupStepStage.SERVER_CONNECTIVITY
-                isConn && it.status == StepStatus.FAILED
-            }
-        if (connectionFailed != null) {
-            return EnvironmentState.Unavailable(
-                reason = connectionFailed.error ?: connectionFailed.description,
-            )
-        }
-
-        val failedStep = state.steps.firstOrNull { it.status == StepStatus.FAILED }
-        return if (failedStep != null) {
-            EnvironmentState.Failed(
-                stage = failedStep.stage,
-                error = failedStep.error ?: failedStep.description,
-                checkedAt = state.checkedAt,
-            )
-        } else {
-            null
-        }
-    }
-
-    private fun isLiveReady(state: ToolchainSetupState): Boolean {
-        if (!state.isAllReady || state.toolsMatrix.isEmpty() || state.checkedAt == null) {
-            return false
-        }
-        val coreTools = state.toolsMatrix.filter { it.isCore }
-        val allVerified =
-            coreTools.isNotEmpty() &&
-                coreTools.all {
-                    it.status == StepStatus.SUCCESS && it.lastTested != null
-                }
-        val allPublished = state.publishedToolIds.containsAll(coreTools.map { it.id })
-        return allVerified && allPublished
-    }
-
-    private fun checkRestored(state: ToolchainSetupState): EnvironmentState? {
-        val hasRestoredStep = state.steps.any { it.provenance == StepProvenance.RESTORED }
-        val hasHistory = hasRestoredStep || state.lastVerifiedTimestamp != null
-        return if (state.checkedAt == null && hasHistory) {
-            EnvironmentState.Restored(
-                lastReadyAt = state.lastReadyAt ?: state.lastVerifiedTimestamp,
-                checkedAt = null,
-            )
-        } else {
-            null
-        }
-    }
-
-    private fun checkReady(state: ToolchainSetupState): EnvironmentState? {
-        val checkedAt = state.checkedAt
-        return if (isLiveReady(state) && checkedAt != null) {
-            // Ready is live-only: never borrow a persisted lastVerifiedTimestamp as the ready moment.
-            val readyTs = state.lastReadyAt ?: checkedAt
-            EnvironmentState.Ready(
-                lastReadyAt = readyTs,
-                checkedAt = checkedAt,
-            )
-        } else {
-            null
-        }
-    }
-
-    private fun checkNeedsSetup(state: ToolchainSetupState): EnvironmentState? {
-        val anyProbedLive =
-            state.checkedAt != null ||
-                state.steps.any {
-                    it.provenance == StepProvenance.LIVE && it.status != StepStatus.PENDING
-                }
-        return if (anyProbedLive) {
-            val missing =
-                state.steps
-                    .filter { it.status != StepStatus.SUCCESS && it.status != StepStatus.WARNING }
-                    .map { it.title }
-            EnvironmentState.CheckedNeedsSetup(
-                missingPrerequisites = missing,
-                checkedAt = state.checkedAt,
-            )
-        } else {
-            null
-        }
     }
 
     /**
@@ -355,6 +397,159 @@ object SetupPresentationMapper {
                     EnvironmentSummaryItem("Runtime", "Not detected", IdeStatusSeverity.Neutral)
                 }
         }
+    }
+
+    fun formatElapsedTime(elapsedMs: Long): String {
+        val totalSeconds = (elapsedMs / 1000L).coerceAtLeast(0L)
+        val minutes = totalSeconds / 60
+        val seconds = totalSeconds % 60
+        val mStr = if (minutes < 10) "0$minutes" else minutes.toString()
+        val sStr = if (seconds < 10) "0$seconds" else seconds.toString()
+        return "$mStr:$sStr"
+    }
+
+    fun formatProgressDetail(description: String, startedAt: Long?, nowEpochMs: Long?): String {
+        if (startedAt == null || nowEpochMs == null || nowEpochMs < startedAt) return description
+        val elapsed = formatElapsedTime(nowEpochMs - startedAt)
+        return "$description · $elapsed"
+    }
+
+    @Suppress("CyclomaticComplexMethod", "ReturnCount")
+    fun mapBuildService(
+        step: SetupStepDetail?,
+        daemonPingMs: Long? = null,
+        isChecking: Boolean = false,
+        systemPackagesStep: SetupStepDetail? = null,
+    ): BuildServicePresentation {
+        if (step == null) {
+            return BuildServicePresentation(
+                detailText = if (isChecking) "Checking…" else "Pending verification.",
+                chipText = if (isChecking) "Checking" else "Pending",
+                severity = if (isChecking) IdeStatusSeverity.Running else IdeStatusSeverity.Neutral,
+                isRunning = isChecking,
+            )
+        }
+
+        val desc = step.description
+        val err = step.error.orEmpty()
+
+        if (desc.contains("missing from this app", ignoreCase = true) ||
+            desc.contains("not bundled", ignoreCase = true) ||
+            desc.contains("bundle missing", ignoreCase = true) ||
+            err.contains("missing from this app", ignoreCase = true)
+        ) {
+            return BuildServicePresentation(
+                detailText = "Build service missing from this app — reinstall LtiRom Studio",
+                chipText = "Not bundled",
+                severity = IdeStatusSeverity.Failed,
+                errorText = step.error,
+            )
+        }
+
+        val isJava = isJavaIssue(desc, err, systemPackagesStep)
+        if (isJava && (step.status == StepStatus.FAILED || step.status == StepStatus.PENDING)) {
+            return BuildServicePresentation(
+                detailText = "Needs Java 21 (install via System packages)",
+                chipText = "Needs Java",
+                severity = IdeStatusSeverity.Failed,
+                errorText = step.error,
+            )
+        }
+
+        if (desc.contains("update", ignoreCase = true) && desc.contains("wait", ignoreCase = true)) {
+            return BuildServicePresentation(
+                detailText = desc,
+                chipText = "Update waiting",
+                severity = IdeStatusSeverity.Warning,
+            )
+        }
+
+        if (step.status == StepStatus.RUNNING &&
+            (desc.contains("install", ignoreCase = true) || desc.startsWith("Installing", ignoreCase = true))
+        ) {
+            return BuildServicePresentation(
+                detailText = desc.ifBlank { "Installing build service…" },
+                chipText = "Installing",
+                severity = IdeStatusSeverity.Running,
+                isRunning = true,
+            )
+        }
+
+        if (step.status == StepStatus.RUNNING || isChecking) {
+            return BuildServicePresentation(
+                detailText = if (desc.isNotBlank() && desc != "Pending verification.") desc else "Checking…",
+                chipText = if (desc.contains("install", ignoreCase = true)) "Installing" else "Checking",
+                severity = IdeStatusSeverity.Running,
+                isRunning = true,
+            )
+        }
+
+        if (step.status == StepStatus.SUCCESS) {
+            val ping = daemonPingMs ?: 0L
+            val chip = if (ping > 0L) "${ping}ms" else "Connected"
+            return BuildServicePresentation(
+                detailText = desc.ifBlank { "Connected" },
+                chipText = chip,
+                severity = IdeStatusSeverity.Ready,
+                isReady = true,
+            )
+        }
+
+        if (step.status == StepStatus.FAILED &&
+            (desc.contains("install", ignoreCase = true) || err.contains("install", ignoreCase = true))
+        ) {
+            return BuildServicePresentation(
+                detailText = desc.ifBlank { "Build service installation failed" },
+                chipText = "Install failed",
+                severity = IdeStatusSeverity.Failed,
+                primaryAction = SetupRowAction.RETRY,
+                errorText = step.error,
+            )
+        }
+
+        if (step.status == StepStatus.FAILED && isStartupFailure(desc, err)) {
+            val suffix = step.error?.let { ": $it" } ?: ""
+            val detail = if (desc.contains("didn't start")) desc else "Build service didn't start$suffix"
+            return BuildServicePresentation(
+                detailText = detail,
+                chipText = "Won't start",
+                severity = IdeStatusSeverity.Failed,
+                primaryAction = SetupRowAction.RETRY,
+                secondaryAction = SetupRowAction.SHOW_LOG,
+                errorText = step.error,
+            )
+        }
+
+        if (step.status == StepStatus.FAILED) {
+            val detail = if (desc.contains("Can't reach", ignoreCase = true)) {
+                desc
+            } else {
+                "Can't reach the build service"
+            }
+            return BuildServicePresentation(
+                detailText = detail,
+                chipText = "Unreachable",
+                severity = IdeStatusSeverity.Failed,
+                primaryAction = SetupRowAction.RETRY,
+                errorText = step.error,
+            )
+        }
+
+        if (step.status == StepStatus.WARNING) {
+            return BuildServicePresentation(
+                detailText = desc.ifBlank { "Build service degraded" },
+                chipText = "Degraded",
+                severity = IdeStatusSeverity.Warning,
+                primaryAction = SetupRowAction.RETRY,
+                errorText = step.error,
+            )
+        }
+
+        return BuildServicePresentation(
+            detailText = desc.ifBlank { "Pending verification." },
+            chipText = "Pending",
+            severity = IdeStatusSeverity.Neutral,
+        )
     }
 
     private fun mapBuildServiceItem(toolchain: ToolchainSetupState): EnvironmentSummaryItem {
@@ -456,5 +651,174 @@ object SetupPresentationMapper {
                 actionLabel = "Set up this machine",
                 isNeedsSetup = true,
             )
+    }
+
+    fun mapRecovery(
+        toolchainSetupState: ToolchainSetupState,
+        activeOperation: SetupOperation? = null,
+        attemptRecord: SetupAttemptRecord? = null,
+        hasLogs: Boolean = false,
+    ): RecoveryPresentation {
+        val operation = mapRecoveryOperation(
+            attemptRecord = attemptRecord,
+            activeOperation = activeOperation,
+            pendingAttemptId = toolchainSetupState.pendingAttemptId,
+            recoveryBlockReason = toolchainSetupState.recoveryBlockReason,
+        )
+        val service = resolveRecoveryService(toolchainSetupState, activeOperation)
+        val blockedReason = resolveRecoveryBlockedReason(toolchainSetupState, attemptRecord)
+        val problems = resolveRecoveryProblems(toolchainSetupState)
+        val evidence = resolveRecoveryEvidence(attemptRecord)
+
+        val isEmpty = operation == null &&
+            service == null &&
+            blockedReason == null &&
+            problems.isEmpty() &&
+            !evidence.hasEvidence &&
+            !hasLogs
+
+        return RecoveryPresentation(
+            isEmpty = isEmpty,
+            operation = operation,
+            service = service,
+            blockedReason = blockedReason,
+            problems = problems,
+            evidence = evidence,
+        )
+    }
+}
+
+private fun mapRecoveryOperation(
+    attemptRecord: SetupAttemptRecord?,
+    activeOperation: SetupOperation?,
+    pendingAttemptId: String?,
+    recoveryBlockReason: String?,
+): RecoveryOperationPresentation? = when {
+    attemptRecord != null -> RecoveryOperationPresentation(
+        kind = formatPlanKind(attemptRecord.planKind),
+        attemptId = attemptRecord.attemptId,
+        state = formatAttemptStatus(attemptRecord.status),
+        failure = attemptRecord.terminalReason,
+        issuedAt = if (attemptRecord.createdAtEpochMs > 0) formatTimestamp(attemptRecord.createdAtEpochMs) else null,
+    )
+    activeOperation != null -> RecoveryOperationPresentation(
+        kind = formatPlanKind(activeOperation.kind.name),
+        attemptId = activeOperation.operationId ?: pendingAttemptId ?: "—",
+        state = formatOperationState(activeOperation.executionState),
+        failure = activeOperation.failure,
+        issuedAt = null,
+    )
+    pendingAttemptId != null -> RecoveryOperationPresentation(
+        kind = "Setup",
+        attemptId = pendingAttemptId,
+        state = "Interrupted",
+        failure = recoveryBlockReason,
+        issuedAt = null,
+    )
+    else -> null
+}
+
+private fun resolveRecoveryService(
+    toolchainSetupState: ToolchainSetupState,
+    activeOperation: SetupOperation?,
+): BuildServicePresentation? {
+    val serverStep = toolchainSetupState.steps.firstOrNull { it.stage == SetupStepStage.SERVER_CONNECTIVITY }
+    val hasErrorOrWarning = serverStep?.status == StepStatus.FAILED ||
+        serverStep?.status == StepStatus.WARNING ||
+        serverStep?.error != null
+    val isServiceIssue = serverStep != null && hasErrorOrWarning
+    val isInterrupted = activeOperation?.executionState == SetupOperationState.INTERRUPTED ||
+        activeOperation?.executionState == SetupOperationState.RECONNECTING ||
+        toolchainSetupState.pendingAttemptId != null
+
+    return if ((isServiceIssue || isInterrupted) && serverStep != null) {
+        SetupPresentationMapper.mapBuildService(
+            step = serverStep,
+            daemonPingMs = toolchainSetupState.daemonPingMs,
+            isChecking = toolchainSetupState.isChecking,
+        )
+    } else {
+        null
+    }
+}
+
+private fun resolveRecoveryBlockedReason(
+    toolchainSetupState: ToolchainSetupState,
+    attemptRecord: SetupAttemptRecord?,
+): String? = toolchainSetupState.recoveryBlockReason
+    ?: if (attemptRecord?.recoveryBlocked == true) attemptRecord.terminalReason else null
+
+private fun resolveRecoveryProblems(toolchainSetupState: ToolchainSetupState): List<RecoveryProblemItem> {
+    val failedSteps = toolchainSetupState.steps
+        .filter { it.status == StepStatus.FAILED }
+        .map {
+            RecoveryProblemItem(
+                title = it.title.ifBlank { it.stage.displayName },
+                detail = it.error ?: it.description,
+                isStep = true,
+            )
+        }
+    val failedDiagnostics = toolchainSetupState.diagnostics
+        .filter { it.status == StepStatus.FAILED }
+        .map {
+            RecoveryProblemItem(
+                title = it.title,
+                detail = it.detail,
+                isStep = false,
+            )
+        }
+    return failedSteps + failedDiagnostics
+}
+
+private fun resolveRecoveryEvidence(attemptRecord: SetupAttemptRecord?): RecoveryEvidencePresentation =
+    if (attemptRecord != null) {
+        RecoveryEvidencePresentation(
+            intents = attemptRecord.orderedIntents,
+            terminalProofs = attemptRecord.terminalProofs,
+            completedActionIds = attemptRecord.completedActionIds,
+        )
+    } else {
+        RecoveryEvidencePresentation()
+    }
+
+private fun formatPlanKind(kind: String): String = when (kind.uppercase()) {
+    "FULL_SETUP" -> "Full setup"
+    "RETRY_STAGE" -> "Stage retry"
+    "REPAIR_TOOL" -> "Tool repair"
+    "CACHE_RESET" -> "Cache reset"
+    "BOOTSTRAP_PACKAGES" -> "Bootstrap packages"
+    else -> kind.lowercase().replaceFirstChar { it.uppercase() }
+}
+
+private fun formatAttemptStatus(status: AttemptStatus): String = when (status) {
+    AttemptStatus.AUTHORIZED -> "Authorized"
+    AttemptStatus.RUNNING -> "Running"
+    AttemptStatus.RECONNECTING -> "Reconnecting"
+    AttemptStatus.AWAITING_USER_ACTION -> "Waiting for user action"
+    AttemptStatus.SUCCEEDED -> "Succeeded"
+    AttemptStatus.FAILED -> "Failed"
+    AttemptStatus.CANCELLED -> "Cancelled"
+    AttemptStatus.INTERRUPTED -> "Interrupted"
+    AttemptStatus.ABANDONED -> "Abandoned"
+}
+
+private fun formatOperationState(state: SetupOperationState): String = when (state) {
+    SetupOperationState.PREVIEW -> "Preview"
+    SetupOperationState.RUNNING -> "Running"
+    SetupOperationState.RECONNECTING -> "Reconnecting"
+    SetupOperationState.SUCCEEDED -> "Succeeded"
+    SetupOperationState.FAILED -> "Failed"
+    SetupOperationState.CANCELLED -> "Cancelled"
+    SetupOperationState.INTERRUPTED -> "Interrupted"
+    SetupOperationState.AWAITING_USER_ACTION -> "Waiting for user action"
+}
+
+private fun formatTimestamp(epochMs: Long): String {
+    if (epochMs <= 0L) return "—"
+    return try {
+        val instant = Instant.fromEpochMilliseconds(epochMs)
+        instant.toString().replace("T", " ").replace("Z", " UTC")
+    } catch (_: Exception) {
+        epochMs.toString()
     }
 }

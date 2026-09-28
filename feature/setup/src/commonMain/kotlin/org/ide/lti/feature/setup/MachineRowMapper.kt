@@ -17,7 +17,15 @@ import org.ide.lti.core.model.setup.DistroStatus
 import org.ide.lti.core.model.setup.closestToUsable
 
 /** What a row button does; the tracker dispatches on this, never on the button text. */
-enum class SetupRowAction { RETRY, INSTALL_PACKAGES, CONTINUE_SETUP, OPEN_DISTRO, SHOW_DIAGNOSTICS }
+enum class SetupRowAction {
+    RETRY,
+    INSTALL_PACKAGES,
+    CONTINUE_SETUP,
+    OPEN_DISTRO,
+    SHOW_DIAGNOSTICS,
+    SHOW_LOG,
+    CANCEL,
+}
 
 fun actionLabel(action: SetupRowAction, distro: String? = null): String = when (action) {
     SetupRowAction.RETRY -> "Retry"
@@ -25,6 +33,8 @@ fun actionLabel(action: SetupRowAction, distro: String? = null): String = when (
     SetupRowAction.CONTINUE_SETUP -> "Continue setup"
     SetupRowAction.OPEN_DISTRO -> "Open ${distro ?: "distribution"}"
     SetupRowAction.SHOW_DIAGNOSTICS -> "Show diagnostics"
+    SetupRowAction.SHOW_LOG -> "Show log"
+    SetupRowAction.CANCEL -> "Cancel"
 }
 
 @Immutable
@@ -207,7 +217,19 @@ object MachineRowMapper {
         isChecking = true,
     )
 
-    fun mapToolchainRow(step: SetupStepDetail?): ToolchainRowPresentation? {
+    fun mapBuildService(
+        step: SetupStepDetail?,
+        daemonPingMs: Long? = null,
+        isChecking: Boolean = false,
+        systemPackagesStep: SetupStepDetail? = null,
+    ): BuildServicePresentation = SetupPresentationMapper.mapBuildService(
+        step = step,
+        daemonPingMs = daemonPingMs,
+        isChecking = isChecking,
+        systemPackagesStep = systemPackagesStep,
+    )
+
+    fun mapToolchainRow(step: SetupStepDetail?, nowEpochMs: Long? = null): ToolchainRowPresentation? {
         if (step == null) return null
         return when (step.status) {
             StepStatus.SUCCESS -> ToolchainRowPresentation(
@@ -215,11 +237,21 @@ object MachineRowMapper {
                 severity = IdeStatusSeverity.Ready,
                 isReady = true,
             )
-            StepStatus.RUNNING -> ToolchainRowPresentation(
-                detailText = step.description.ifBlank { "Compiling…" },
-                severity = IdeStatusSeverity.Running,
-                isRunning = true,
-            )
+            StepStatus.RUNNING -> {
+                val desc = step.description.ifBlank { "Compiling…" }
+                val detail = if (nowEpochMs != null && step.startedAt != null) {
+                    SetupPresentationMapper.formatProgressDetail(desc, step.startedAt, nowEpochMs)
+                } else {
+                    desc
+                }
+                ToolchainRowPresentation(
+                    detailText = detail,
+                    severity = IdeStatusSeverity.Running,
+                    primaryAction = SetupRowAction.CANCEL,
+                    primaryActionLabel = "Cancel",
+                    isRunning = true,
+                )
+            }
             StepStatus.FAILED -> ToolchainRowPresentation(
                 detailText = step.description.ifBlank { "Tool compilation failed" },
                 severity = IdeStatusSeverity.Failed,

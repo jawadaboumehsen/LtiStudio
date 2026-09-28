@@ -37,6 +37,15 @@ public object SetupLogConstants {
 }
 
 /**
+ * Semantic kind of a setup activity line (data-model.md § Activity event kinds).
+ */
+public enum class SetupLogKind {
+    CHECK,
+    RUN,
+    ERROR,
+}
+
+/**
  * Immutable activity line with stable identity (FR-011, FR-012, data-model.md).
  *
  * Invariant: "Log identity is childRunId plus sequence within an attempt."
@@ -46,6 +55,7 @@ public data class SetupLogEvent(
     val childRunId: String,
     val sequence: Long,
     val text: String,
+    val kind: SetupLogKind = SetupLogKind.RUN,
 ) {
     /** Stable identity: attempt, child run and server sequence. */
     val id: String get() = "$attemptId:$childRunId:$sequence"
@@ -57,11 +67,13 @@ public data class SetupLogEvent(
             childRunId: String,
             sequence: Long,
             text: String,
+            kind: SetupLogKind = SetupLogKind.RUN,
         ): SetupLogEvent = SetupLogEvent(
             attemptId = attemptId,
             childRunId = childRunId,
             sequence = sequence,
             text = SetupLogConstants.truncateToUtf8Bytes(text),
+            kind = kind,
         )
     }
 }

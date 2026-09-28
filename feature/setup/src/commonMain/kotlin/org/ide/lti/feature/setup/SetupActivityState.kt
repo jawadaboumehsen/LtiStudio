@@ -27,6 +27,13 @@ data class ActivityDestinationState(
     val searchQuery: String = "",
 )
 
+enum class LogFilter {
+    ALL,
+    CHECKS,
+    COMMANDS,
+    ERRORS,
+}
+
 /**
  * Presentation buffer for the activity panel shared by the Environment and Tools destinations (US5).
  *
@@ -53,6 +60,9 @@ class SetupActivityState(
     private val retainedIds = HashSet<String>()
     private var currentPayloadBytes: Long = 0L
     private var localSequence: Long = 1L
+
+    private val _filter = MutableStateFlow(LogFilter.ALL)
+    val filter: StateFlow<LogFilter> = _filter.asStateFlow()
 
     private val _visibleEvents = MutableStateFlow<List<SetupLogEvent>>(emptyList())
     val visibleEvents: StateFlow<List<SetupLogEvent>> = _visibleEvents.asStateFlow()
@@ -81,12 +91,33 @@ class SetupActivityState(
         _operationId.value = opId
     }
 
+    fun setFilter(newFilter: LogFilter) {
+        if (_filter.value == newFilter) return
+        _filter.value = newFilter
+        rebuildVisibleEvents()
+    }
+
+    private fun rebuildVisibleEvents() {
+        _visibleEvents.value = when (_filter.value) {
+            LogFilter.ALL -> deque.toList()
+            LogFilter.CHECKS -> deque.filter { it.kind == org.ide.lti.core.domain.setup.SetupLogKind.CHECK }
+            LogFilter.COMMANDS -> deque.filter { it.kind == org.ide.lti.core.domain.setup.SetupLogKind.RUN }
+            LogFilter.ERRORS -> deque.filter { it.kind == org.ide.lti.core.domain.setup.SetupLogKind.ERROR }
+        }
+    }
+
     /** Appends a batch, enforcing bounds and identity deduplication; publishes one snapshot for the batch. */
     fun appendEvents(events: List<SetupLogEvent>) {
         if (events.isEmpty()) return
         var dropped = 0
         for (event in events) {
-            val safeEvent = SetupLogEvent.create(event.attemptId, event.childRunId, event.sequence, event.text)
+            val safeEvent = SetupLogEvent.create(
+                attemptId = event.attemptId,
+                childRunId = event.childRunId,
+                sequence = event.sequence,
+                text = event.text,
+                kind = event.kind,
+            )
             if (!retainedIds.add(safeEvent.id)) continue
             deque.addLast(safeEvent)
             currentPayloadBytes += safeEvent.text.encodeToByteArray().size.toLong()
@@ -102,7 +133,7 @@ class SetupActivityState(
             _droppedLineCount.update { it + dropped }
             _selectedEventIds.update { selected -> selected.filterTo(HashSet()) { it in retainedIds } }
         }
-        _visibleEvents.value = deque.toList()
+        rebuildVisibleEvents()
     }
 
     fun appendEvent(event: SetupLogEvent) = appendEvents(listOf(event))

@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.Schedule
@@ -34,7 +35,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,34 +44,41 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
 import org.ide.lti.core.designsystem.component.display.GlassCard
+import org.ide.lti.core.designsystem.component.display.IdeStatusSeverity
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.icon.ideStatusErrorOutline
 import org.ide.lti.core.designsystem.theme.AlphaTokens
-import org.ide.lti.core.designsystem.theme.AppTheme
-import org.ide.lti.core.designsystem.theme.BrandColors
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassShapes
-import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.PluginThemeColors
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
+import org.ide.lti.feature.setup.BuildServicePresentation
+import org.ide.lti.feature.setup.RecoveryEvidencePresentation
+import org.ide.lti.feature.setup.RecoveryOperationPresentation
+import org.ide.lti.feature.setup.RecoveryPresentation
+import org.ide.lti.feature.setup.RecoveryProblemItem
 import org.ide.lti.feature.setup.SetupActivityState
 import org.ide.lti.feature.setup.SetupUiActions
 import org.ide.lti.feature.setup.SetupUiState
+import org.ide.lti.feature.setup.components.SetupActivityPanel
 
 /**
- * Machine Environment Recovery destination screen.
+ * Machine Environment Recovery destination screen (US5, contracts/ui-states.md §8).
  *
- * Faithfully renders the "Recover interrupted setup" interface (US3, FR-007, FR-008):
- * - Breadcrumbs and recovery title with troubleshooting link
- * - "Setup in progress" status card with receipt & timestamp metadata
- * - "Service state" card with reconnect & reconcile action
- * - Installation and reset block notification banner
- * - Tabbed activity and logs viewer with auto-scroll toggle
+ * Responsibilities:
+ * - Idle state shows ONLY "Nothing to recover".
+ * - Shows operation card only when activeOperation or pendingAttemptId is present.
+ * - Shows service card only when SERVER_CONNECTIVITY step is known.
+ * - Shows blocked banner only when recoveryBlockReason is non-null.
+ * - Evidence & Problems tabs are hidden when empty and show real data otherwise.
+ * - No mock strings, no "View operation evidence".
+ * - 100% design system tokens.
  */
 @Composable
 fun RecoveryStepContent(
@@ -82,6 +89,7 @@ fun RecoveryStepContent(
     onOpenHelp: () -> Unit = actions.onOpenHelp,
 ) {
     val scrollState = rememberScrollState()
+    val recovery = state.recoveryPresentation
 
     Column(
         modifier = modifier
@@ -99,27 +107,27 @@ fun RecoveryStepContent(
         // 1. Breadcrumb and Screen Header
         RecoveryHeader(onOpenHelp = onOpenHelp)
 
-        // 2. Side-by-Side Status & Action Cards
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
-        ) {
-            SetupInProgressCard(
-                state = state,
-                modifier = Modifier.weight(0.65f),
+        if (recovery.isEmpty) {
+            RecoveryEmptyState()
+        } else {
+            // 2. Side-by-Side Status & Action Cards
+            RecoveryCardsSection(
+                recovery = recovery,
+                onReconnect = actions.onReconnect,
             )
 
-            ServiceStateCard(
-                onReconnect = actions.onReconnect,
-                modifier = Modifier.weight(0.35f),
+            // 3. Blocked Banner
+            if (recovery.blockedReason != null) {
+                RecoveryBlockedBanner(reason = recovery.blockedReason)
+            }
+
+            // 4. Activity & Console Drawer
+            RecoveryDrawerSection(
+                recovery = recovery,
+                activityState = activityState,
+                onExportLogs = actions.onExportLogs,
             )
         }
-
-        // 3. Blocked Reset & Installation Callout Banner
-        RecoveryBlockedBanner()
-
-        // 4. Tabbed Terminal & Log Drawer
-        RecoveryConsoleDrawer(activityState = activityState)
     }
 }
 
@@ -129,7 +137,6 @@ private fun RecoveryHeader(onOpenHelp: () -> Unit, modifier: Modifier = Modifier
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
     ) {
-        // Breadcrumb
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
@@ -154,7 +161,6 @@ private fun RecoveryHeader(onOpenHelp: () -> Unit, modifier: Modifier = Modifier
             )
         }
 
-        // Title and Help Link
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -207,17 +213,85 @@ private fun RecoveryHeader(onOpenHelp: () -> Unit, modifier: Modifier = Modifier
 }
 
 @Composable
-private fun SetupInProgressCard(state: SetupUiState, modifier: Modifier = Modifier) {
-    val activeOp = state.activeOperation
-    val receiptId = activeOp?.operationId ?: state.toolchainSetupState.pendingAttemptId ?: "—"
+private fun RecoveryEmptyState(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .testTag("NothingToRecover")
+            .padding(Spacing.ExtraExtraLarge),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+        ) {
+            Icon(
+                imageVector = Icons.Default.CheckCircle,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(IconSize.Large),
+            )
+            Text(
+                text = "Nothing to recover",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = "No interrupted setup or service failure was found on this machine.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
 
+@Composable
+private fun RecoveryCardsSection(
+    recovery: RecoveryPresentation,
+    onReconnect: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val operation = recovery.operation
+    val service = recovery.service
+
+    if (operation != null && service != null) {
+        Row(
+            modifier = modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
+        ) {
+            RecoveryOperationCard(
+                operation = operation,
+                modifier = Modifier.weight(0.65f),
+            )
+            RecoveryServiceCard(
+                service = service,
+                onReconnect = onReconnect,
+                modifier = Modifier.weight(0.35f),
+            )
+        }
+    } else if (operation != null) {
+        RecoveryOperationCard(
+            operation = operation,
+            modifier = modifier.fillMaxWidth(),
+        )
+    } else if (service != null) {
+        RecoveryServiceCard(
+            service = service,
+            onReconnect = onReconnect,
+            modifier = modifier.fillMaxWidth(),
+        )
+    }
+}
+
+@Composable
+private fun RecoveryOperationCard(operation: RecoveryOperationPresentation, modifier: Modifier = Modifier) {
     GlassCard(
         modifier = modifier.testTag("SetupInProgressCard"),
         surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         contentPadding = Spacing.CardPadding,
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
-            // Card Title Row
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.MediumSmall),
@@ -243,17 +317,112 @@ private fun SetupInProgressCard(state: SetupUiState, modifier: Modifier = Modifi
                 }
             }
 
-            // Key-Value Properties Table
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-                RecoveryPropertyRow("Operation", "Install pinned tool packages")
-                RecoveryPropertyRow("Receipt ID", receiptId, isCode = true)
-                RecoveryPropertyRow("Last confirmed step", "Verifying mkfs.erofs")
-                RecoveryPropertyRow("Environment", "Development environment")
-                RecoveryPropertyRow("Submitted", "2025-03-12 10:14:32", isCode = true)
-                RecoveryPropertyRow(
-                    label = "Last update",
-                    value = "2025-03-12 10:18:05\nWaiting to reconnect to service...",
-                    isCode = true,
+                RecoveryPropertyRow("Operation", operation.kind)
+                RecoveryPropertyRow("Receipt ID", operation.attemptId, isCode = true)
+                RecoveryPropertyRow("State", operation.state)
+                if (operation.failure != null) {
+                    RecoveryPropertyRow("Failure", operation.failure, isCode = true)
+                }
+                if (operation.issuedAt != null) {
+                    RecoveryPropertyRow("Submitted", operation.issuedAt, isCode = true)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RecoveryServiceCard(
+    service: BuildServicePresentation,
+    onReconnect: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    GlassCard(
+        modifier = modifier.testTag("ServiceStateCard"),
+        surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        contentPadding = Spacing.CardPadding,
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.MediumSmall)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "Service state",
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = FontSize.BodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Icon(
+                    imageVector = Icons.Default.HelpOutline,
+                    contentDescription = "Service status info",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(IconSize.Small),
+                )
+            }
+
+            val badgeColor = when (service.severity) {
+                IdeStatusSeverity.Failed, IdeStatusSeverity.Blocking -> MaterialTheme.colorScheme.error
+                IdeStatusSeverity.Warning -> PluginThemeColors.WarningText
+                IdeStatusSeverity.Ready -> MaterialTheme.colorScheme.primary
+                IdeStatusSeverity.Running -> MaterialTheme.colorScheme.primary
+                IdeStatusSeverity.Neutral -> MaterialTheme.colorScheme.onSurfaceVariant
+            }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(GlassShapes.Small)
+                    .background(MaterialTheme.colorScheme.surfaceContainer)
+                    .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outlineVariant, GlassShapes.Small)
+                    .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
+                contentAlignment = Alignment.CenterStart,
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.HelpOutline,
+                        contentDescription = null,
+                        tint = badgeColor,
+                        modifier = Modifier.size(IconSize.Medium),
+                    )
+                    Text(
+                        text = service.chipText,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontSize = FontSize.BodyMedium,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
+
+            Text(
+                text = service.detailText,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = FontSize.BodySmall,
+            )
+
+            Spacer(modifier = Modifier.height(Spacing.ExtraSmall))
+
+            GlassPrimaryButton(
+                onClick = onReconnect,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("ReconnectButton"),
+            ) {
+                Icon(
+                    painter = AppIcons.RefreshPainterResource(),
+                    contentDescription = null,
+                    modifier = Modifier.size(IconSize.Small),
+                )
+                Spacer(modifier = Modifier.width(Spacing.Small))
+                Text(
+                    text = "Reconnect and reconcile",
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = FontSize.BodyMedium,
                 )
             }
         }
@@ -283,153 +452,11 @@ private fun RecoveryPropertyRow(label: String, value: String, isCode: Boolean = 
 }
 
 @Composable
-private fun ServiceStateCard(onReconnect: () -> Unit, modifier: Modifier = Modifier) {
-    GlassCard(
-        modifier = modifier.testTag("ServiceStateCard"),
-        surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-        contentPadding = Spacing.CardPadding,
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.MediumSmall)) {
-            // Header
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = "Service state",
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = FontSize.BodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Icon(
-                    imageVector = Icons.Default.HelpOutline,
-                    contentDescription = "Service status info",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(IconSize.Small),
-                )
-            }
-
-            // Unknown Badge Box
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(GlassShapes.Small)
-                    .background(MaterialTheme.colorScheme.surfaceContainer)
-                    .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outlineVariant, GlassShapes.Small)
-                    .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
-                contentAlignment = Alignment.CenterStart,
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.HelpOutline,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(IconSize.Medium),
-                    )
-                    Text(
-                        text = "Unknown",
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = FontSize.BodyMedium,
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
-            }
-
-            // Explanatory Caption
-            Text(
-                text = "Service connection is lost.\nThis may take a few minutes.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = FontSize.BodySmall,
-            )
-
-            Spacer(modifier = Modifier.height(Spacing.ExtraSmall))
-
-            val isBlue = GlassTheme.appTheme == AppTheme.Blue
-            // Primary Reconnect Button
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("ReconnectButton")
-                    .clip(GlassShapes.Small)
-                    .border(
-                        width = GlassDimens.HairlineBorder,
-                        color = if (isBlue) {
-                            PluginThemeColors.ActiveTabBorder
-                        } else {
-                            MaterialTheme.colorScheme.primary
-                        },
-                        shape = GlassShapes.Small,
-                    )
-                    .background(
-                        if (isBlue) {
-                            PluginThemeColors.ActiveTabBackground
-                        } else {
-                            MaterialTheme.colorScheme.primary
-                        },
-                    )
-                    .clickable(onClick = onReconnect)
-                    .padding(vertical = Spacing.SmallMedium, horizontal = Spacing.Medium),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    painter = AppIcons.RefreshPainterResource(),
-                    contentDescription = null,
-                    tint = BrandColors.OnLogoBadge,
-                    modifier = Modifier.size(IconSize.Small),
-                )
-                Spacer(modifier = Modifier.width(Spacing.Small))
-                Text(
-                    text = "Reconnect and reconcile",
-                    color = BrandColors.OnLogoBadge,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = FontSize.BodyMedium,
-                )
-            }
-
-            // Secondary View Evidence Button
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("ViewEvidenceButton")
-                    .clip(GlassShapes.Small)
-                    .border(
-                        width = GlassDimens.HairlineBorder,
-                        color = MaterialTheme.colorScheme.outlineVariant,
-                        shape = GlassShapes.Small,
-                    )
-                    .background(MaterialTheme.colorScheme.surfaceContainer)
-                    .clickable(onClick = {})
-                    .padding(vertical = Spacing.SmallMedium, horizontal = Spacing.Medium),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Description,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.size(IconSize.Small),
-                )
-                Spacer(modifier = Modifier.width(Spacing.Small))
-                Text(
-                    text = "View operation evidence",
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = FontSize.BodyMedium,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun RecoveryBlockedBanner(modifier: Modifier = Modifier) {
+private fun RecoveryBlockedBanner(reason: String, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .fillMaxWidth()
+            .testTag("RecoveryBlockedBanner")
             .clip(GlassShapes.Card)
             .background(MaterialTheme.colorScheme.surfaceContainerHigh)
             .border(
@@ -457,8 +484,7 @@ private fun RecoveryBlockedBanner(modifier: Modifier = Modifier) {
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    text = "Installation and reset stay blocked until terminal status is confirmed. " +
-                        "This prevents partial installation and keeps the environment consistent.",
+                    text = reason,
                     fontSize = FontSize.BodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -467,165 +493,202 @@ private fun RecoveryBlockedBanner(modifier: Modifier = Modifier) {
     }
 }
 
-@Suppress("LongMethod")
 @Composable
-private fun RecoveryConsoleDrawer(activityState: SetupActivityState?, modifier: Modifier = Modifier) {
-    var selectedTab by remember { mutableStateOf("logs") }
-    var autoScroll by remember { mutableStateOf(true) }
+private fun RecoveryDrawerSection(
+    recovery: RecoveryPresentation,
+    activityState: SetupActivityState?,
+    onExportLogs: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val hasEvidence = recovery.hasEvidence
+    val hasProblems = recovery.hasProblems
 
-    val sampleLogs = listOf(
-        "Starting installation of pinned tool packages...",
-        "Resolving package dependencies...",
-        "Downloading tool archives...",
-        "Extracting packages...",
-        "Verifying mkfs.erofs...",
-        "Service connection lost during tool verification.",
-        "Waiting for service to reconnect...",
-    )
-    val timestamps = listOf(
-        "10:14:32",
-        "10:16:11",
-        "10:17:03",
-        "10:17:26",
-        "10:18:04",
-        "10:18:05",
-        "10:18:05",
-    )
+    if (activityState == null && !hasEvidence && !hasProblems) return
 
-    val liveEvents = activityState?.visibleEvents?.collectAsState()?.value.orEmpty()
-    val displayLogs = if (liveEvents.isNotEmpty()) {
-        liveEvents.map { it.text }
-    } else {
-        sampleLogs
+    // If only logs, render directly
+    if (!hasEvidence && !hasProblems && activityState != null) {
+        SetupActivityPanel(
+            activityState = activityState,
+            defaultExpanded = true,
+            onExport = onExportLogs,
+            modifier = modifier,
+        )
+        return
     }
+
+    var selectedTab by remember { mutableStateOf("logs") }
 
     GlassCard(
         modifier = modifier.fillMaxWidth().testTag("RecoveryConsoleDrawer"),
         surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         contentPadding = Spacing.CardPadding,
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium)) {
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
             // Tab Header Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                // Navigation Tabs
-                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
+                if (activityState != null) {
                     ConsoleTabItem(
                         title = "Logs",
                         icon = Icons.Default.Terminal,
                         isSelected = selectedTab == "logs",
                         onClick = { selectedTab = "logs" },
                     )
+                }
+                if (hasEvidence) {
                     ConsoleTabItem(
                         title = "Evidence",
                         icon = Icons.Default.Description,
                         isSelected = selectedTab == "evidence",
                         onClick = { selectedTab = "evidence" },
+                        modifier = Modifier.testTag("EvidenceTab"),
                     )
+                }
+                if (hasProblems) {
                     ConsoleTabItem(
                         title = "Problems",
                         icon = Icons.Default.Warning,
                         isSelected = selectedTab == "problems",
                         onClick = { selectedTab = "problems" },
                         accentTint = PluginThemeColors.WarningText,
+                        modifier = Modifier.testTag("ProblemsTab"),
                     )
-                }
-
-                // Auto-scroll Toggle
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                    modifier = Modifier
-                        .clip(GlassShapes.Capsule)
-                        .clickable { autoScroll = !autoScroll }
-                        .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),
-                ) {
-                    Text(
-                        text = "Auto-scroll",
-                        fontSize = FontSize.BodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    val isBlue = GlassTheme.appTheme == AppTheme.Blue
-                    Box(
-                        modifier = Modifier
-                            .width(Spacing.ExtraExtraLarge)
-                            .height(Spacing.Medium)
-                            .clip(GlassShapes.Capsule)
-                            .background(
-                                if (autoScroll) {
-                                    if (isBlue) {
-                                        PluginThemeColors.ActiveTabBackground
-                                    } else {
-                                        MaterialTheme.colorScheme.primary
-                                    }
-                                } else {
-                                    MaterialTheme.colorScheme.surfaceContainer
-                                },
-                            )
-                            .border(
-                                width = GlassDimens.HairlineBorder,
-                                color = if (autoScroll) {
-                                    if (isBlue) {
-                                        PluginThemeColors.ActiveTabBorder
-                                    } else {
-                                        MaterialTheme.colorScheme.primary
-                                    }
-                                } else {
-                                    MaterialTheme.colorScheme.outlineVariant
-                                },
-                                shape = GlassShapes.Capsule,
-                            )
-                            .padding(Spacing.Hairline),
-                        contentAlignment = if (autoScroll) Alignment.CenterEnd else Alignment.CenterStart,
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(Spacing.Fourteen)
-                                .clip(GlassShapes.Capsule)
-                                .background(BrandColors.OnLogoBadge),
-                        )
-                    }
                 }
             }
 
-            // Console Log Lines Container
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(GlassShapes.Small)
-                    .background(MaterialTheme.colorScheme.surface.copy(alpha = AlphaTokens.Elevated))
-                    .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outlineVariant, GlassShapes.Small)
-                    .padding(Spacing.Medium),
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
-                    displayLogs.forEachIndexed { index, log ->
-                        val time = timestamps.getOrElse(index) { "10:18:05" }
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
-                            verticalAlignment = Alignment.Top,
-                        ) {
+            // Tab Content
+            when (selectedTab) {
+                "logs" -> {
+                    if (activityState != null) {
+                        SetupActivityPanel(
+                            activityState = activityState,
+                            defaultExpanded = true,
+                            onExport = onExportLogs,
+                        )
+                    }
+                }
+                "evidence" -> {
+                    RecoveryEvidenceTab(evidence = recovery.evidence)
+                }
+                "problems" -> {
+                    RecoveryProblemsTab(problems = recovery.problems)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RecoveryEvidenceTab(evidence: RecoveryEvidencePresentation, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+    ) {
+        if (evidence.intents.isNotEmpty()) {
+            Text(
+                text = "Child intents (${evidence.intents.size})",
+                fontWeight = FontWeight.SemiBold,
+                fontSize = FontSize.BodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            evidence.intents.forEach { intent ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(GlassShapes.Small)
+                        .background(MaterialTheme.colorScheme.surfaceContainer)
+                        .padding(Spacing.SmallMedium),
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
+                        Text(
+                            text = "${intent.stage} · ${intent.actionId}",
+                            fontWeight = FontWeight.Medium,
+                            fontSize = FontSize.BodySmall,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Text(
+                            text = "Idempotency: ${intent.idempotencyKey}",
+                            fontSize = FontSize.Micro,
+                            fontFamily = codeFontFamily(),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        if (intent.runId != null) {
                             Text(
-                                text = "${index + 1}",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = AlphaTokens.Half),
-                                fontSize = FontSize.BodySmall,
+                                text = "Run ID: ${intent.runId} · Status: ${intent.terminalStatus ?: "running"}",
+                                fontSize = FontSize.Micro,
                                 fontFamily = codeFontFamily(),
-                                modifier = Modifier.width(Spacing.Large),
-                            )
-                            Text(
-                                text = "[$time] $log",
-                                color = if (index >= 5) {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                } else {
-                                    MaterialTheme.colorScheme.onSurface
-                                },
-                                fontSize = FontSize.BodySmall,
-                                fontFamily = codeFontFamily(),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
+                }
+            }
+        }
+
+        if (evidence.terminalProofs.isNotEmpty()) {
+            Text(
+                text = "Terminal proofs (${evidence.terminalProofs.size})",
+                fontWeight = FontWeight.SemiBold,
+                fontSize = FontSize.BodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            evidence.terminalProofs.forEach { proof ->
+                Text(
+                    text = "${proof.runId}: ${proof.authoritativeTerminalStatus}",
+                    fontSize = FontSize.BodySmall,
+                    fontFamily = codeFontFamily(),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+
+        if (evidence.completedActionIds.isNotEmpty()) {
+            Text(
+                text = "Completed actions: ${evidence.completedActionIds.joinToString(", ")}",
+                fontSize = FontSize.BodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun RecoveryProblemsTab(problems: List<RecoveryProblemItem>, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+    ) {
+        problems.forEach { item ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(GlassShapes.Small)
+                    .background(MaterialTheme.colorScheme.surfaceContainer)
+                    .padding(Spacing.SmallMedium),
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Warning,
+                    contentDescription = null,
+                    tint = PluginThemeColors.WarningText,
+                    modifier = Modifier.size(IconSize.Small),
+                )
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
+                    Text(
+                        text = item.title,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = FontSize.BodySmall,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Text(
+                        text = item.detail,
+                        fontSize = FontSize.Micro,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
         }
@@ -638,18 +701,16 @@ private fun ConsoleTabItem(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     isSelected: Boolean,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
     accentTint: androidx.compose.ui.graphics.Color? = null,
 ) {
-    val isBlue = GlassTheme.appTheme == AppTheme.Blue
-    val activeBorder = if (isBlue) PluginThemeColors.SelectedRowBorder else MaterialTheme.colorScheme.primary
+    val activeBorder = MaterialTheme.colorScheme.primary
     val contentTint = when {
-        isSelected && isBlue -> BrandColors.OnLogoBadge
         isSelected -> MaterialTheme.colorScheme.primary
         accentTint != null -> accentTint
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
     val textContentColor = when {
-        isSelected && isBlue -> BrandColors.OnLogoBadge
         isSelected -> MaterialTheme.colorScheme.onSurface
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
@@ -657,19 +718,13 @@ private fun ConsoleTabItem(
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-        modifier = Modifier
+        modifier = modifier
             .clip(GlassShapes.Small)
             .clickable(onClick = onClick)
             .then(
                 if (isSelected) {
                     Modifier
-                        .background(
-                            if (isBlue) {
-                                PluginThemeColors.SelectedRowBackground
-                            } else {
-                                MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Faded)
-                            },
-                        )
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Faded))
                         .border(
                             width = GlassDimens.HairlineBorder,
                             color = activeBorder,

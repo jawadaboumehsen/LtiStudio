@@ -26,11 +26,16 @@ import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import org.ide.lti.core.designsystem.theme.LtiTheme
+import org.ide.lti.core.domain.setup.SetupPlan
+import org.ide.lti.core.domain.setup.SetupPlanKind
 import org.ide.lti.core.domain.setup.SetupStepDetail
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepProvenance
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolchainSetupState
+import org.ide.lti.core.model.setup.ChildIntentRecord
+import org.ide.lti.core.model.setup.PersistedExecutionRequest
+import org.ide.lti.core.model.setup.SetupAttemptRecord
 import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -491,42 +496,148 @@ class SetupAccessibilityTest {
         }
 
     @Test
-    fun testNavigateToRecoveryRendersInterruptedSetupUI() = runDesktopComposeUiTest(width = 1440, height = 900) {
-        var activeTab = SetupTab.ENVIRONMENT
-
-        setContent {
-            LtiTheme {
-                SetupScreenContent(
-                    state = SetupUiState(selectedTab = activeTab),
-                    actions = SetupUiActions(onSelectTab = { activeTab = it }),
+    fun testEscapeDismissesTerminalHandoffSheetAndRestoresFocusToInvokingButton() =
+        runDesktopComposeUiTest(width = 1120, height = 2200) {
+            val handoff = org.ide.lti.core.domain.setup.UserRepairHandoff(
+                actionId = "bootstrap:apt",
+                description = "Install packages",
+                terminalCommand = "sudo apt-get update && sudo apt-get install -y git",
+                packages = listOf("git"),
+                distro = "Ubuntu-24.04",
+            )
+            val toolchain = ToolchainSetupState(
+                checkedAt = 1000L,
+                steps = listOf(
+                    SetupStepDetail(
+                        stage = SetupStepStage.WSL_DETECTION,
+                        title = "WSL 2 Detection",
+                        description = "",
+                        status = StepStatus.PENDING,
+                        provenance = StepProvenance.LIVE,
+                    ),
+                ),
+            )
+            setContent {
+                var isSheetVisible by remember { mutableStateOf(false) }
+                val activeOp = SetupOperation(
+                    kind = SetupOperationKind.BOOTSTRAP_PACKAGES,
+                    executionState = SetupOperationState.AWAITING_USER_ACTION,
+                    awaitingHandoff = handoff,
                 )
+                LtiTheme {
+                    SetupScreenContent(
+                        state = SetupUiState(
+                            selectedTab = SetupTab.ENVIRONMENT,
+                            toolchainSetupState = toolchain,
+                            activeOperation = activeOp,
+                            isHandoffSheetVisible = isSheetVisible,
+                        ),
+                        actions = SetupUiActions(
+                            onPreviewSetup = { isSheetVisible = true },
+                            onDismissHandoff = { isSheetVisible = false },
+                        ),
+                    )
+                }
             }
+
+            onNodeWithText("Set Up Environment").assertIsDisplayed().performClick()
+            onNodeWithText("Packages to Install", substring = true).assertIsDisplayed()
+            onNodeWithText("Copy command").assertIsFocused()
+
+            onRoot().performKeyInput {
+                pressKey(Key.Escape)
+            }
+
+            assertEquals(
+                0,
+                onAllNodesWithText("Copy command").fetchSemanticsNodes().size,
+                "Handoff sheet must be dismissed after Escape",
+            )
+            onNodeWithText("Set Up Environment").assertIsFocused()
         }
 
-        // Click Recovery sidebar item
-        onNodeWithText("Recovery").assertIsDisplayed().performClick()
-        assertEquals(SetupTab.RECOVERY, activeTab)
+    @Test
+    fun testNavigateToRecoveryRendersInterruptedSetupUI() {
+        runDesktopComposeUiTest(width = 1440, height = 900) {
+            var activeTab = SetupTab.ENVIRONMENT
 
-        // Render with RECOVERY selected
-        setContent {
-            LtiTheme {
-                SetupScreenContent(
-                    state = SetupUiState(selectedTab = SetupTab.RECOVERY),
-                    actions = SetupUiActions(),
-                )
+            setContent {
+                LtiTheme {
+                    SetupScreenContent(
+                        state = SetupUiState(selectedTab = activeTab),
+                        actions = SetupUiActions(onSelectTab = { activeTab = it }),
+                    )
+                }
             }
-        }
 
-        // Verify key Recovery screen elements from reference design
-        onNodeWithText("Recover interrupted setup").assertIsDisplayed()
-        onNodeWithText("Setup in progress").assertIsDisplayed()
-        onNodeWithText("Service state").assertIsDisplayed()
-        onNodeWithText("Installation and reset stay blocked").assertIsDisplayed()
-        onNodeWithText("Reconnect and reconcile").assertIsDisplayed()
-        onNodeWithText("View operation evidence").assertIsDisplayed()
-        onNodeWithText("Logs").assertIsDisplayed()
-        onNodeWithText("Evidence").assertIsDisplayed()
-        onNodeWithText("Problems").assertIsDisplayed()
-        onNodeWithText("Auto-scroll").assertIsDisplayed()
+            // Click Recovery sidebar item
+            onNodeWithText("Recovery").assertIsDisplayed().performClick()
+            assertEquals(SetupTab.RECOVERY, activeTab)
+
+            val interruptedState = SetupUiState(
+                selectedTab = SetupTab.RECOVERY,
+                activeOperation = SetupOperation(
+                    operationId = "op-recovery-1",
+                    kind = SetupOperationKind.FULL_SETUP,
+                    executionState = SetupOperationState.INTERRUPTED,
+                    failure = "Interrupted by system shutdown",
+                ),
+                toolchainSetupState = ToolchainSetupState(
+                    steps = listOf(
+                        SetupStepDetail(
+                            stage = SetupStepStage.SERVER_CONNECTIVITY,
+                            title = "Build Service",
+                            description = "Service stopped",
+                            status = StepStatus.FAILED,
+                            error = "Service unreachable",
+                        ),
+                        SetupStepDetail(
+                            stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+                            title = "Toolchain Binaries",
+                            description = "Compilation failed",
+                            status = StepStatus.FAILED,
+                            error = "Build failed",
+                        ),
+                    ),
+                    recoveryBlockReason = "A previous setup operation was interrupted",
+                ),
+                attemptRecord = SetupAttemptRecord(
+                    attemptId = "attempt-rec-1",
+                    environmentKey = "Ubuntu",
+                    planId = "plan-1",
+                    planRevisionHash = "rev-1",
+                    planKind = "FULL_SETUP",
+                    orderedIntents = listOf(
+                        ChildIntentRecord(
+                            childIndex = 0,
+                            stage = "TOOLCHAIN_COMPILATION",
+                            actionId = "build-llvm",
+                            request = PersistedExecutionRequest(toolId = "llvm"),
+                            idempotencyKey = "key-1",
+                            workspaceLock = "lock-1",
+                        ),
+                    ),
+                ),
+            )
+
+            // Render with RECOVERY selected
+            setContent {
+                LtiTheme {
+                    SetupScreenContent(
+                        state = interruptedState,
+                        actions = SetupUiActions(),
+                    )
+                }
+            }
+
+            // Verify key Recovery screen elements from reference design
+            onNodeWithText("Recover interrupted setup").assertIsDisplayed()
+            onNodeWithText("Setup in progress").assertIsDisplayed()
+            onNodeWithText("Service state").assertIsDisplayed()
+            onNodeWithText("Installation and reset stay blocked").assertIsDisplayed()
+            onNodeWithText("Reconnect and reconcile").assertIsDisplayed()
+            onNodeWithText("Evidence").assertIsDisplayed()
+            onNodeWithText("Problems").assertIsDisplayed()
+        }
     }
 }

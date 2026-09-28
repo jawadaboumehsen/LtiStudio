@@ -587,6 +587,33 @@ class EnvironmentSetupState(
     }
 
     /**
+     * Cancels the currently running setup operation (FR-023, T064).
+     */
+    fun cancelOperation() {
+        val service = toolchainService ?: return
+        scope.launch {
+            try {
+                val outcome = service.cancel()
+                applyTerminalOutcome(outcome, "Operation")
+            } catch (e: CancellationException) {
+                _activeOperation.value =
+                    _activeOperation.value?.copy(
+                        executionState = SetupOperationState.CANCELLED,
+                        failure = "Operation cancelled",
+                    )
+                throw e
+            } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
+                _environmentNotice.value = "Failed to cancel operation: ${e.message}"
+            }
+        }
+    }
+
+    /**
+     * Retrieves the persisted attempt log text (T067, T068).
+     */
+    suspend fun getPersistedAttemptLog(attemptId: String? = null): String? = toolchainService?.getAttemptLog(attemptId)
+
+    /**
      * Busy never destroys a pending terminal step: an operation that still has its handoff stays
      * AWAITING_USER_ACTION (the journal attempt is still pending), everything else is rejected.
      */
@@ -892,9 +919,10 @@ class EnvironmentSetupState(
                     awaitingHandoff = outcome.handoff,
                     failure = outcome.reason,
                 )
-                _handoffSheetState.value = outcome.handoff?.let {
-                    TerminalHandoffState.StillMissing(packages = it.packages, command = it.terminalCommand)
-                } ?: TerminalHandoffState.Idle
+                _handoffSheetState.value = TerminalHandoffState.StillMissing(
+                    packages = outcome.handoff.packages,
+                    command = outcome.handoff.terminalCommand,
+                )
                 _environmentNotice.value = "Action still pending: requirements not yet satisfied."
             }
             is SetupOutcome.Cancelled -> {

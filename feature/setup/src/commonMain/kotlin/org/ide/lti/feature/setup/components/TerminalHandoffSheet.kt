@@ -50,6 +50,8 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
@@ -96,6 +98,7 @@ fun TerminalHandoffSheet(
 ) {
     val focusManager = LocalFocusManager.current
     val focusRequester = remember { FocusRequester() }
+    val firstActionFocusRequester = remember { FocusRequester() }
     val clipboardManager = LocalClipboardManager.current
     var copiedToClipboard by remember { mutableStateOf(false) }
     var isConfirmingAbandon by remember { mutableStateOf(false) }
@@ -117,7 +120,7 @@ fun TerminalHandoffSheet(
     }
 
     LaunchedEffect(Unit) {
-        focusRequester.requestFocus()
+        firstActionFocusRequester.requestFocus()
     }
 
     Box(
@@ -206,43 +209,57 @@ fun TerminalHandoffSheet(
                 GlassHorizontalDivider()
 
                 // State Banners
-                when (sheetState) {
-                    is TerminalHandoffState.TerminalLaunchFailed -> {
-                        GlassBanner(
-                            title = "Terminal Launch Failed",
-                            description = "Couldn't open a terminal: ${sheetState.reason}. " +
-                                "Copy the command and run it in ${handoff.distro} yourself.",
-                            severity = GlassBannerSeverity.ERROR,
-                        )
-                    }
-                    is TerminalHandoffState.Verifying -> {
-                        GlassBanner(
-                            title = "Checking installation…",
-                            description = "Re-probing required packages in ${handoff.distro}.",
-                            severity = GlassBannerSeverity.INFO,
-                        )
-                    }
-                    is TerminalHandoffState.StillMissing -> {
-                        GlassBanner(
-                            title = "Packages Still Missing",
-                            description = "Still missing: ${sheetState.packages.joinToString(", ")}",
-                            severity = GlassBannerSeverity.WARNING,
-                        )
-                    }
-                    is TerminalHandoffState.AnotherOperationRunning -> {
-                        GlassBanner(
-                            title = "Operation Busy",
-                            description = "Another setup operation is running. Try again when it finishes.",
-                            severity = GlassBannerSeverity.WARNING,
-                        )
-                    }
-                    TerminalHandoffState.Idle, TerminalHandoffState.Done -> {
-                        if (!errorMessage.isNullOrBlank()) {
+                val bannerLiveRegion = if (
+                    sheetState is TerminalHandoffState.TerminalLaunchFailed ||
+                    !errorMessage.isNullOrBlank()
+                ) {
+                    LiveRegionMode.Assertive
+                } else {
+                    LiveRegionMode.Polite
+                }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .semantics { liveRegion = bannerLiveRegion },
+                ) {
+                    when (sheetState) {
+                        is TerminalHandoffState.TerminalLaunchFailed -> {
                             GlassBanner(
-                                title = "Verification Failed",
-                                description = errorMessage,
+                                title = "Terminal Launch Failed",
+                                description = "Couldn't open a terminal: ${sheetState.reason}. " +
+                                    "Copy the command and run it in ${handoff.distro} yourself.",
                                 severity = GlassBannerSeverity.ERROR,
                             )
+                        }
+                        is TerminalHandoffState.Verifying -> {
+                            GlassBanner(
+                                title = "Checking installation…",
+                                description = "Re-probing required packages in ${handoff.distro}.",
+                                severity = GlassBannerSeverity.INFO,
+                            )
+                        }
+                        is TerminalHandoffState.StillMissing -> {
+                            GlassBanner(
+                                title = "Packages Still Missing",
+                                description = "Still missing: ${sheetState.packages.joinToString(", ")}",
+                                severity = GlassBannerSeverity.WARNING,
+                            )
+                        }
+                        is TerminalHandoffState.AnotherOperationRunning -> {
+                            GlassBanner(
+                                title = "Operation Busy",
+                                description = "Another setup operation is running. Try again when it finishes.",
+                                severity = GlassBannerSeverity.WARNING,
+                            )
+                        }
+                        TerminalHandoffState.Idle, TerminalHandoffState.Done -> {
+                            if (!errorMessage.isNullOrBlank()) {
+                                GlassBanner(
+                                    title = "Verification Failed",
+                                    description = errorMessage,
+                                    severity = GlassBannerSeverity.ERROR,
+                                )
+                            }
                         }
                     }
                 }
@@ -365,6 +382,7 @@ fun TerminalHandoffSheet(
                 ) {
                     // 1. Copy command
                     GlassSecondaryButton(
+                        modifier = Modifier.focusRequester(firstActionFocusRequester),
                         onClick = {
                             clipboardManager.setText(AnnotatedString(effectiveCommand))
                             copiedToClipboard = true

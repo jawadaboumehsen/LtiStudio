@@ -115,6 +115,7 @@ public class ToolchainBuildEngine(
         targetRecipeGroups: Set<String>? = null,
         forceRebuild: Boolean = false,
         onRunStarted: (SetupStepStage, String) -> Unit = { _, _ -> },
+        onProgress: (currentItem: String, index: Int, total: Int) -> Unit = { _, _, _ -> },
         log: (String) -> Unit = {},
     ): Result<Unit> {
         cli.execute(distro, listOf("mkdir", "-p", binDir))
@@ -130,8 +131,19 @@ public class ToolchainBuildEngine(
         val shouldBuildAuxiliary = targetRecipeGroups == null ||
             targetRecipeGroups.any { it in AUXILIARY_RECIPE_GROUPS }
 
+        val groupsToBuild = buildList {
+            if (shouldBuildAndroid) add("android-tools")
+            if (shouldBuildErofs) add("erofs-utils")
+            if (shouldBuildImg2sdat) add("img2sdat")
+            if (shouldBuildAuxiliary) add("auxiliary-tools")
+        }
+        val totalGroups = groupsToBuild.size.coerceAtLeast(1)
+        var currentProgressIndex = 0
+
         // 1. android-tools
         if (shouldBuildAndroid) {
+            currentProgressIndex++
+            onProgress("android-tools", currentProgressIndex, totalGroups)
             val hasAdb = cli.execute(distro, listOf("test", "-x", "$binDir/adb")).exitCode == 0
             val isAdbRecorded = persisted?.tools?.get("adb")?.isCompiled == true
             if (!forceRebuild && isAdbRecorded && hasAdb) {
@@ -202,6 +214,8 @@ public class ToolchainBuildEngine(
 
         // 2. erofs-utils
         if (shouldBuildErofs) {
+            currentProgressIndex++
+            onProgress("erofs-utils", currentProgressIndex, totalGroups)
             val hasErofs = cli.execute(distro, listOf("test", "-x", "$binDir/mkfs.erofs")).exitCode == 0
             val isErofsRecorded = persisted?.tools?.get("mkfs.erofs")?.isCompiled == true
             if (!forceRebuild && isErofsRecorded && hasErofs) {
@@ -255,6 +269,8 @@ public class ToolchainBuildEngine(
 
         // 3. img2sdat
         if (shouldBuildImg2sdat) {
+            currentProgressIndex++
+            onProgress("img2sdat", currentProgressIndex, totalGroups)
             val hasImg2sdat = cli.execute(distro, listOf("test", "-e", "$binDir/img2sdat.py")).exitCode == 0 ||
                 cli.execute(distro, listOf("test", "-e", "$binDir/img2sdat")).exitCode == 0
             if (forceRebuild || !hasImg2sdat) {
@@ -268,6 +284,8 @@ public class ToolchainBuildEngine(
 
         // 4. Auxiliary pre-staged binaries and jar wrappers
         if (shouldBuildAuxiliary) {
+            currentProgressIndex++
+            onProgress("auxiliary-tools", currentProgressIndex, totalGroups)
             log("[Step 5/5] Synchronizing auxiliary tools (apktool, signapk, payload-dumper-go, erofsfuse)...")
             if (cli.execute(distro, listOf("test", "-d", "$extDir/bin")).exitCode == 0) {
                 cli.execute(distro, listOf("cp", "-a", "$extDir/bin/.", "$binDir/"))

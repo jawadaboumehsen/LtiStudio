@@ -60,8 +60,11 @@ import org.ide.lti.core.designsystem.component.actions.GlassIconButton
 import org.ide.lti.core.designsystem.component.actions.GlassSecondaryButton
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.GlassChip
+import org.ide.lti.core.designsystem.component.navigation.GlassFilterChipItem
+import org.ide.lti.core.designsystem.component.navigation.GlassFilterChipRow
 import org.ide.lti.core.designsystem.component.tooltip.GlassTooltipArea
 import org.ide.lti.core.designsystem.icon.AppIcons
+import org.ide.lti.core.designsystem.icon.ideGeneralExport
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
@@ -71,6 +74,7 @@ import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.domain.setup.SetupLogEvent
+import org.ide.lti.feature.setup.LogFilter
 import org.ide.lti.feature.setup.SetupActivityState
 
 /**
@@ -108,6 +112,7 @@ fun SetupActivityPanel(
     defaultExpanded: Boolean = true,
     listState: LazyListState = rememberLazyListState(),
     destination: String? = null,
+    onExport: (() -> Unit)? = null,
 ) {
     @Suppress("DEPRECATION")
     val clipboardManager = LocalClipboardManager.current
@@ -116,6 +121,7 @@ fun SetupActivityPanel(
     val droppedCount by activityState.droppedLineCount.collectAsState()
     val followingLatest by activityState.followingLatest.collectAsState()
     val selectedEventIds by activityState.selectedEventIds.collectAsState()
+    val currentFilter by activityState.filter.collectAsState()
 
     var isExpanded by remember { mutableStateOf(defaultExpanded) }
     var isCopiedAll by remember { mutableStateOf(false) }
@@ -216,6 +222,7 @@ fun SetupActivityPanel(
                     clipboardManager.setText(AnnotatedString(activityState.copyAll()))
                     isCopiedAll = true
                 },
+                onExport = onExport,
             )
 
             AnimatedVisibility(
@@ -223,14 +230,24 @@ fun SetupActivityPanel(
                 enter = fadeIn() + expandVertically(),
                 exit = fadeOut() + shrinkVertically(),
             ) {
-                ActivityPanelViewport(
-                    visibleEvents = visibleEvents,
-                    selectedEventIds = selectedEventIds,
-                    listState = listState,
-                    onSelectEvent = { eventId ->
-                        activityState.selectEvent(eventId, isMultiSelect = true)
-                    },
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
+                    ActivityFilterAndDisclosureBar(
+                        currentFilter = currentFilter,
+                        onSelectFilter = { activityState.setFilter(it) },
+                        droppedCount = droppedCount,
+                        visibleLinesCount = visibleEvents.size,
+                        onExport = onExport,
+                    )
+
+                    ActivityPanelViewport(
+                        visibleEvents = visibleEvents,
+                        selectedEventIds = selectedEventIds,
+                        listState = listState,
+                        onSelectEvent = { eventId ->
+                            activityState.selectEvent(eventId, isMultiSelect = true)
+                        },
+                    )
+                }
             }
         }
     }
@@ -254,6 +271,7 @@ private fun ActivityPanelHeader(
     onClearSelection: () -> Unit,
     isCopiedAll: Boolean,
     onCopyAll: () -> Unit,
+    onExport: (() -> Unit)? = null,
 ) {
     FlowRow(
         modifier = Modifier
@@ -298,6 +316,10 @@ private fun ActivityPanelHeader(
                     isCopiedAll = isCopiedAll,
                     onCopyAll = onCopyAll,
                 )
+            }
+
+            if (onExport != null) {
+                ActivityExportButton(onExport = onExport)
             }
 
             Text(
@@ -585,5 +607,100 @@ private fun ActivityLogItemRow(
             softWrap = false,
             overflow = TextOverflow.Ellipsis,
         )
+    }
+}
+
+@Composable
+private fun ActivityFilterAndDisclosureBar(
+    currentFilter: LogFilter,
+    onSelectFilter: (LogFilter) -> Unit,
+    droppedCount: Int,
+    visibleLinesCount: Int,
+    onExport: (() -> Unit)?,
+) {
+    val filterItems = remember {
+        listOf(
+            GlassFilterChipItem(label = "All", count = -1, value = LogFilter.ALL.name),
+            GlassFilterChipItem(label = "Checks", count = -1, value = LogFilter.CHECKS.name),
+            GlassFilterChipItem(label = "Commands", count = -1, value = LogFilter.COMMANDS.name),
+            GlassFilterChipItem(label = "Errors", count = -1, value = LogFilter.ERRORS.name),
+        )
+    }
+
+    Column(
+        verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            GlassFilterChipRow(
+                items = filterItems,
+                selectedValue = currentFilter.name,
+                onSelect = { name -> onSelectFilter(LogFilter.valueOf(name)) },
+                modifier = Modifier.weight(1f, fill = false),
+            )
+        }
+
+        if (droppedCount > 0) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(GlassShapes.Small)
+                    .background(MaterialTheme.colorScheme.surfaceContainer)
+                    .border(
+                        width = StrokeWidth.Hairline,
+                        color = MaterialTheme.colorScheme.outlineVariant,
+                        shape = GlassShapes.Small,
+                    )
+                    .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.ExtraSmall),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    text = "Showing the last $visibleLinesCount lines — export for the full log",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                if (onExport != null) {
+                    GlassSecondaryButton(onClick = onExport) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                        ) {
+                            Icon(
+                                painter = AppIcons.ideGeneralExport(),
+                                contentDescription = "Export full log",
+                                modifier = Modifier.size(IconSize.Small),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Text(
+                                text = "Export",
+                                style = MaterialTheme.typography.labelSmall,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ActivityExportButton(onExport: () -> Unit) {
+    GlassTooltipArea(tooltipText = "Export full log") {
+        GlassIconButton(
+            onClick = onExport,
+            size = ComponentSize.PanelHeaderAction,
+        ) {
+            Icon(
+                painter = AppIcons.ideGeneralExport(),
+                contentDescription = "Export full log",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(IconSize.Small),
+            )
+        }
     }
 }

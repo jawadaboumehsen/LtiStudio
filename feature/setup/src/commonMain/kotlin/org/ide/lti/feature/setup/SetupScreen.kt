@@ -142,6 +142,8 @@ fun SetupScreen(
 
     val uiState = SetupUiState(
         toolchainSetupState = toolchainSetupState,
+        // Recovery shows the journal's own record: kind, status, issue time and evidence.
+        attemptRecord = toolchainSetupState.pendingAttempt,
         selectedTarget = selectedTarget,
         availableTargets = availableTargets,
         recentProjects = recentProjects,
@@ -232,6 +234,8 @@ fun SetupScreen(
         onOpenTerminal = viewModel::openTerminal,
         onSelectDistro = viewModel::selectDistro,
         onInstallPackages = viewModel::installPackages,
+        onCancelOperation = viewModel::cancelOperation,
+        onExportLogs = viewModel::exportLogs,
     )
 
     SetupPerformanceScenarioHook(
@@ -300,6 +304,12 @@ fun SetupScreenContent(
         // (attached in EnvironmentStepContent); record it as the invoker so Escape/Cancel/Confirm
         // restore focus to the button that actually opened the modal, not just the root.
         if (isPreviewOpen) {
+            lastInvokingFocusRequester = previewInvokerFocusRequester
+        }
+    }
+
+    LaunchedEffect(state.isHandoffSheetVisible) {
+        if (state.isHandoffSheetVisible && lastInvokingFocusRequester == null) {
             lastInvokingFocusRequester = previewInvokerFocusRequester
         }
     }
@@ -543,8 +553,8 @@ fun SetupScreenContent(
                             )
                         } else {
                             GlassBannerAction(
-                                label = "Verify Now",
-                                onClick = actions.onNavigateToEnvironment,
+                                label = "Check again",
+                                onClick = actions.onCheckEnvironment,
                             )
                         },
                         secondaryAction = if (isAwaiting) {
@@ -554,8 +564,8 @@ fun SetupScreenContent(
                             )
                         } else {
                             GlassBannerAction(
-                                label = "Dismiss",
-                                onClick = actions.onDismissEnvironmentNotice,
+                                label = "View environment",
+                                onClick = actions.onNavigateToEnvironment,
                             )
                         },
                         modifier = Modifier
@@ -723,7 +733,7 @@ fun SetupScreenContent(
 private fun SummaryRow(label: String, value: String, severity: IdeStatusSeverity = IdeStatusSeverity.Neutral) {
     val valueColor = when (severity) {
         IdeStatusSeverity.Ready -> GlassTheme.diagnosticColors.success
-        IdeStatusSeverity.Running -> GlassTheme.diagnosticColors.warning
+        IdeStatusSeverity.Running -> GlassTheme.diagnosticColors.info
         IdeStatusSeverity.Warning -> GlassTheme.diagnosticColors.warning
         IdeStatusSeverity.Blocking -> GlassTheme.diagnosticColors.error
         IdeStatusSeverity.Failed -> GlassTheme.diagnosticColors.error

@@ -175,9 +175,11 @@ public class ToolPublicationAdapter(
     private suspend fun queryManifestPaths(): List<String> {
         val listRes = try {
             transport.execute(
+                // The service runs tools without a shell, so `~` would reach `find` literally and match
+                // nothing; `sh -c` expands $HOME and the glob and prints absolute manifest paths.
                 ToolExecutionRequest(
-                    toolId = "find",
-                    arguments = listOf("~/.ltirom/tools.d", "-maxdepth", "1", "-name", "*.json"),
+                    toolId = "sh",
+                    arguments = listOf("-c", "ls -1 \"\$HOME\"/.ltirom/tools.d/*.json 2>/dev/null"),
                     workingDirectory = "/",
                 ),
             )
@@ -216,15 +218,15 @@ public class ToolPublicationAdapter(
     }
 
     private suspend fun removeManifest(path: String, name: String): Boolean = try {
-        transport.execute(
+        val removed = transport.execute(
             ToolExecutionRequest(
                 toolId = "rm",
                 arguments = listOf("-f", path),
                 workingDirectory = "/",
             ),
-        )
-        log("Pruned non-catalog manifest for '$name' at $path")
-        true
+        ).exitCode == 0
+        log(if (removed) "Pruned non-catalog manifest for '$name' at $path" else "Failed to remove manifest $path")
+        removed
     } catch (e: CancellationException) {
         throw e
     } catch (e: Exception) {

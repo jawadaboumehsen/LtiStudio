@@ -3,6 +3,7 @@ package org.ide.lti.core.domain.setup
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import org.ide.lti.core.model.setup.DistroStatus
+import org.ide.lti.core.model.setup.SetupAttemptRecord
 
 /**
  * Stages in the environment check and toolchain provisioning pipeline.
@@ -117,6 +118,7 @@ public data class SetupStepDetail(
     val runId: String? = null,
     val failureCategory: org.ide.lti.core.domain.ports.DaemonFailureCategory? = null,
     val toolchainFailureCategory: org.ide.lti.core.domain.ports.ToolchainFailureCategory? = null,
+    val startedAt: Long? = null,
 )
 
 /**
@@ -162,6 +164,8 @@ public data class ToolchainSetupState(
      * every mutation is refused with a typed Interrupted outcome. Reconnect reuses this attemptId.
      */
     val pendingAttemptId: String? = null,
+    /** The journal record behind [pendingAttemptId] (kind, status, evidence) for the Recovery view. */
+    val pendingAttempt: SetupAttemptRecord? = null,
     /** Durable recovery block reason: the journal is ambiguous and needs user-directed recovery. */
     val recoveryBlockReason: String? = null,
     val userHome: String? = null,
@@ -715,4 +719,10 @@ public interface ToolchainProvisioningService {
      */
     public suspend fun selectDistro(distro: String): ToolchainSetupState =
         throw UnsupportedOperationException("Distro selection is not supported by this implementation")
+
+    /** Sets progress for a long-running step (T063, contracts/ui-states.md § 2-3). */
+    public fun setStepProgress(stage: SetupStepStage, currentItem: String, index: Int, total: Int) {}
+
+    /** Retrieves the persisted attempt log text (T067, T068). Returns null if not found. */
+    public suspend fun getAttemptLog(attemptId: String? = null): String? = null
 }

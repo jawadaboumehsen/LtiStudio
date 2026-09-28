@@ -52,13 +52,15 @@ public class SubmoduleSyncEngine(
         submodules: List<PinnedSubmodule> = DEFAULT_SUBMODULES,
         journal: SetupJournalContext? = null,
         onRunStarted: (SetupStepStage, String) -> Unit = { _, _ -> },
+        onProgress: (currentItem: String, index: Int, total: Int) -> Unit = { _, _, _ -> },
         log: (String) -> Unit = {},
     ): Result<Unit> {
         cli.execute(distro, listOf("mkdir", "-p", extDir))
 
         val persisted = repository?.currentState
 
-        for (sub in submodules) {
+        for ((index, sub) in submodules.withIndex()) {
+            onProgress(sub.name, index + 1, submodules.size)
             val subDir = "$extDir/${sub.name}"
             val dirExists = cli.execute(distro, listOf("test", "-d", subDir)).exitCode == 0
             val isRecordedSynced = persisted?.submodules?.get(sub.name)?.isSynced == true

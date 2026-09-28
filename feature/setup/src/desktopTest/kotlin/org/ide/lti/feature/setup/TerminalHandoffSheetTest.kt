@@ -12,6 +12,7 @@ package org.ide.lti.feature.setup
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -58,7 +59,7 @@ class TerminalHandoffSheetTest {
                 "1 Copy the command → 2 Open the terminal → 3 Paste it and press Enter, then type your password → " +
                     "4 Come back and select \"I've run it — check again\".",
             ).assertIsDisplayed()
-            onNodeWithText("Copy command").assertIsDisplayed()
+            onNodeWithText("Copy command").assertIsDisplayed().assertIsFocused()
             onNodeWithText("Open the terminal").assertIsDisplayed()
             onNodeWithText("I've run it — check again").assertIsDisplayed()
             onNodeWithText("Close for now").assertIsDisplayed()

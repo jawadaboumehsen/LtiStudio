@@ -56,7 +56,11 @@ public class CompositeSystemDoctorEngine(
             ?.output?.trim()?.takeIf { it.startsWith("/") }
         ?: detector.resolveWslUserHome(distro)
 
-    override suspend fun runDiagnostics(distro: String, binariesPresent: Boolean): List<DiagnosticCheckItem> {
+    override suspend fun runDiagnostics(
+        distro: String,
+        binariesPresent: Boolean,
+        onProgress: ((title: String, index: Int, total: Int) -> Unit)?,
+    ): List<DiagnosticCheckItem> {
         val home = resolveHome(distro)
         val binDir = "$home/LtiRomTools/bin"
         val sysRes = cli.execute(
@@ -104,12 +108,17 @@ public class CompositeSystemDoctorEngine(
             availableCommands = sysCommands,
         )
 
+        val total = inspectors.size
+        val counter = java.util.concurrent.atomic.AtomicInteger(0)
         val semaphore = Semaphore(4)
         return coroutineScope {
             inspectors.map { inspector ->
                 async(dispatcher) {
                     semaphore.withPermit {
-                        inspector.inspect(context)
+                        val item = inspector.inspect(context)
+                        val idx = counter.incrementAndGet()
+                        onProgress?.invoke(item.title, idx, total)
+                        item
                     }
                 }
             }.awaitAll()

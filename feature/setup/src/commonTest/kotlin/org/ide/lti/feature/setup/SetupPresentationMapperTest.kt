@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.setup
 
+import org.ide.lti.core.designsystem.component.display.IdeStatusSeverity
 import org.ide.lti.core.domain.setup.SetupStepDetail
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepProvenance
@@ -16,9 +17,14 @@ import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolCategory
 import org.ide.lti.core.domain.setup.ToolComponentItem
 import org.ide.lti.core.domain.setup.ToolchainSetupState
+import org.ide.lti.core.model.setup.AttemptStatus
+import org.ide.lti.core.model.setup.ChildIntentRecord
+import org.ide.lti.core.model.setup.PersistedExecutionRequest
+import org.ide.lti.core.model.setup.SetupAttemptRecord
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -522,5 +528,131 @@ class SetupPresentationMapperTest {
         assertEquals("This machine needs setup", needsSetupPres.statusText)
         assertEquals("Set up this machine", needsSetupPres.actionLabel)
         assertTrue(needsSetupPres.isNeedsSetup)
+    }
+
+    @Test
+    fun testRecoveryMapping_idleState_returnsEmpty() {
+        val idleState = ToolchainSetupState()
+        val pres = SetupPresentationMapper.mapRecovery(
+            toolchainSetupState = idleState,
+            activeOperation = null,
+            attemptRecord = null,
+            hasLogs = false,
+        )
+
+        assertTrue(pres.isEmpty, "Idle state must map to isEmpty=true")
+        assertNull(pres.operation)
+        assertNull(pres.service)
+        assertNull(pres.blockedReason)
+        assertFalse(pres.hasProblems)
+        assertFalse(pres.hasEvidence)
+    }
+
+    @Test
+    fun testRecoveryMapping_interruptedAttempt_showsOperationDetails() {
+        val state = ToolchainSetupState(pendingAttemptId = "attempt-99")
+        val record = SetupAttemptRecord(
+            attemptId = "attempt-99",
+            environmentKey = "Ubuntu",
+            planId = "plan-1",
+            planRevisionHash = "rev-1",
+            planKind = "FULL_SETUP",
+            status = AttemptStatus.INTERRUPTED,
+            terminalReason = "WSL connection dropped",
+            createdAtEpochMs = 1700000000000L,
+        )
+
+        val pres = SetupPresentationMapper.mapRecovery(
+            toolchainSetupState = state,
+            attemptRecord = record,
+        )
+
+        assertFalse(pres.isEmpty)
+        val op = pres.operation
+        assertNotNull(op)
+        assertEquals("Full setup", op.kind)
+        assertEquals("attempt-99", op.attemptId)
+        assertEquals("Interrupted", op.state)
+        assertEquals("WSL connection dropped", op.failure)
+        assertNotNull(op.issuedAt)
+    }
+
+    @Test
+    fun testRecoveryMapping_serviceStopped_showsBuildServiceRowState() {
+        val serverStep = step(
+            stage = SetupStepStage.SERVER_CONNECTIVITY,
+            status = StepStatus.FAILED,
+            description = "Build service didn't start: port collision",
+            error = "port collision",
+        )
+        val state = ToolchainSetupState(
+            steps = listOf(serverStep),
+        )
+
+        val pres = SetupPresentationMapper.mapRecovery(
+            toolchainSetupState = state,
+        )
+
+        assertFalse(pres.isEmpty)
+        val srv = pres.service
+        assertNotNull(srv)
+        assertEquals("Won't start", srv.chipText)
+        assertEquals("Build service didn't start: port collision", srv.detailText)
+        assertEquals(IdeStatusSeverity.Failed, srv.severity)
+    }
+
+    @Test
+    fun testRecoveryMapping_recoveryBlockReason_showsBlockedReason() {
+        val state = ToolchainSetupState(
+            recoveryBlockReason = "ambiguous receipt on attempt-12",
+        )
+
+        val pres = SetupPresentationMapper.mapRecovery(
+            toolchainSetupState = state,
+        )
+
+        assertFalse(pres.isEmpty)
+        assertEquals("ambiguous receipt on attempt-12", pres.blockedReason)
+    }
+
+    @Test
+    fun testRecoveryMapping_evidenceAndProblemsTabs() {
+        val failedStep = step(
+            stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+            status = StepStatus.FAILED,
+            description = "llvm build failed",
+            error = "clang error 1",
+        )
+        val state = ToolchainSetupState(
+            steps = listOf(failedStep),
+        )
+        val childIntent = ChildIntentRecord(
+            childIndex = 0,
+            stage = "TOOLCHAIN_COMPILATION",
+            actionId = "build-llvm",
+            request = PersistedExecutionRequest(toolId = "llvm"),
+            idempotencyKey = "idem-llvm",
+            workspaceLock = "lock-1",
+        )
+        val record = SetupAttemptRecord(
+            attemptId = "attempt-1",
+            environmentKey = "Ubuntu",
+            planId = "plan-1",
+            planRevisionHash = "rev-1",
+            planKind = "FULL_SETUP",
+            orderedIntents = listOf(childIntent),
+        )
+
+        val pres = SetupPresentationMapper.mapRecovery(
+            toolchainSetupState = state,
+            attemptRecord = record,
+        )
+
+        assertTrue(pres.hasEvidence)
+        assertEquals(1, pres.evidence.intents.size)
+        assertTrue(pres.hasProblems)
+        assertEquals(1, pres.problems.size)
+        assertEquals("Toolchain Binaries", pres.problems.first().title)
+        assertEquals("clang error 1", pres.problems.first().detail)
     }
 }

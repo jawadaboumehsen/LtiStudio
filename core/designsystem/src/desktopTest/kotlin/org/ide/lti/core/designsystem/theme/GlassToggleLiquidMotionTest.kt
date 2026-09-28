@@ -1200,6 +1200,7 @@ class GlassToggleLiquidMotionTest {
         }
         waitForIdle()
 
+        mainClock.autoAdvance = false
         // Click toggle: should invoke callback and render optimistic target immediately
         onNodeWithTag("GlassToggle").performClick()
         assertEquals(1, callbackCount, "Click must invoke onCheckedChange")
@@ -1210,6 +1211,7 @@ class GlassToggleLiquidMotionTest {
 
         // Now simulate delayed parent applying the change
         isChecked = true
+        mainClock.autoAdvance = true
         waitForIdle()
         assertTrue(isChecked)
     }
