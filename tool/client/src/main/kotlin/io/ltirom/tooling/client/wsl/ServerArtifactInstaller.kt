@@ -54,7 +54,16 @@ public class ServerArtifactInstaller(
         return artifact(bundled, active, state)
     }
 
-    public fun ensureInstalled(environment: SetupEnvironment): ServerArtifact {
+    /**
+     * Installs the bundled version if it is missing or damaged. Old versions are pruned afterwards, except
+     * the new one, the one it replaced and [keepVersions] (the version a still-running service uses); with
+     * [prune] false nothing is removed (used when the running version cannot be determined).
+     */
+    public fun ensureInstalled(
+        environment: SetupEnvironment,
+        keepVersions: Set<String> = emptySet(),
+        prune: Boolean = true,
+    ): ServerArtifact {
         val bundle = bundleDirProvider()
         val bundled = getBundledVersion()
         val activeBefore = getActiveVersion(environment)
@@ -107,12 +116,15 @@ public class ServerArtifactInstaller(
         }
         cli.execute(environment.distro, listOf("rm", "-rf", "$finalDir.old"))
 
-        // Keep the new version and the one it replaced; older versions are removed (best effort).
-        val keep = listOfNotNull(bundled, activeBefore).joinToString(" ") { "! -name '$it'" }
-        cli.execute(
-            environment.distro,
-            listOf("sh", "-c", "find '$versionsDir' -mindepth 1 -maxdepth 1 $keep -exec rm -rf {} +"),
-        )
+        if (prune) {
+            // Keep the new version, the one it replaced and any version a service still runs from.
+            val keep = (listOfNotNull(bundled, activeBefore) + keepVersions).distinct()
+                .joinToString(" ") { "! -name '$it'" }
+            cli.execute(
+                environment.distro,
+                listOf("sh", "-c", "find '$versionsDir' -mindepth 1 -maxdepth 1 $keep -exec rm -rf {} +"),
+            )
+        }
         return artifact(bundled, bundled, InstallState.Current)
     }
 

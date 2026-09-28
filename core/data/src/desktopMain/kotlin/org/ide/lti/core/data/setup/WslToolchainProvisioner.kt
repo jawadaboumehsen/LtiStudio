@@ -511,21 +511,36 @@ public class WslToolchainProvisioner(
         selectedEnv: SetupEnvironment,
         javaHome: String,
     ): Boolean {
-        val installFailure = serverArtifactPort.ensureInstalled(selectedEnv).installState as? InstallState.Failed
-        val failure = installFailure?.let { "Failed to install server: ${it.step}" to it }
-            ?: (serverArtifactPort.ensureRunningCurrent(selectedEnv, javaHome).installState as? InstallState.Failed)
-                ?.let { "Failed to start server: ${it.step}" to it }
-        if (failure != null) {
-            setStepStatus(
-                SetupStepStage.SERVER_CONNECTIVITY,
-                StepStatus.FAILED,
-                desc = failure.first,
-                error = failure.second.stderr,
-                failureCategory = DaemonFailureCategory.UNREACHABLE,
-            )
-            shortCircuitRemaining(SetupStepStage.SERVER_CONNECTIVITY, "Pending server startup.")
+        val installed = serverArtifactPort.ensureInstalled(selectedEnv)
+        val running = (installed.installState as? InstallState.Failed)?.let { installed }
+            ?: serverArtifactPort.ensureRunningCurrent(selectedEnv, javaHome)
+        val state = running.installState
+        when {
+            state is InstallState.Failed -> {
+                val verb = if (running === installed) "install" else "start"
+                setStepStatus(
+                    SetupStepStage.SERVER_CONNECTIVITY,
+                    StepStatus.FAILED,
+                    desc = "Failed to $verb server: ${state.step}",
+                    error = state.stderr,
+                    failureCategory = DaemonFailureCategory.UNREACHABLE,
+                )
+                shortCircuitRemaining(SetupStepStage.SERVER_CONNECTIVITY, "Pending server startup.")
+            }
+            // The old service still runs work; setup must not continue against it (it would be "ready"
+            // on the wrong version). The next check applies the update once its runs finish.
+            state == InstallState.Outdated -> {
+                val waitingFor = running.runningActiveRuns
+                setStepStatus(
+                    SetupStepStage.SERVER_CONNECTIVITY,
+                    StepStatus.WARNING,
+                    desc = "Update waiting: build service ${running.runningVersion ?: "(old)"} is finishing " +
+                        "$waitingFor active run(s); ${running.activeVersion ?: "the new version"} starts after.",
+                )
+                shortCircuitRemaining(SetupStepStage.SERVER_CONNECTIVITY, "Pending build service update.")
+            }
         }
-        return failure == null
+        return state == InstallState.Current
     }
 
     /** Without a [ServerArtifactPort] (tests, legacy wiring) the supervisor starts the service itself. */

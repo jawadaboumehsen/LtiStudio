@@ -155,15 +155,12 @@ public class WslDaemonManager(
                     lastStartAdopted = true
                     isUpdateWaiting = false
                     return@withLock existing
-                } else {
-                    if (sInfo.activeRuns == 0) {
-                        stopDaemonInternal(existing, force = true)
-                    } else {
-                        connectionInfo = existing
-                        lastStartAdopted = true
-                        isUpdateWaiting = true
-                        return@withLock existing
-                    }
+                } else if (sInfo.activeRuns > 0 || !retireForUpdate(existing)) {
+                    // Busy, or it would not stop cleanly: keep using it rather than kill work or run two.
+                    connectionInfo = existing
+                    lastStartAdopted = true
+                    isUpdateWaiting = true
+                    return@withLock existing
                 }
             } else {
                 connectionInfo = existing
@@ -288,14 +285,22 @@ public class WslDaemonManager(
         stopDaemonInternal(info, force)
     }
 
+    /**
+     * Replaces an outdated service only when it agrees to stop: a non-forced shutdown, which the service
+     * refuses (and never kills) if a run started after we looked, followed by confirmation that it is gone.
+     * Returns false when the old service is still there, so the caller must not launch a second one.
+     */
+    private suspend fun retireForUpdate(info: ServerConnectionDescriptor): Boolean {
+        if (!stopDaemonInternal(info, force = false)) return false
+        repeat(RETIRE_POLLS) {
+            if (!isHealthy(info)) return true
+            delay(RETIRE_POLL_MS)
+        }
+        return false
+    }
+
     private suspend fun stopDaemonInternal(info: ServerConnectionDescriptor, force: Boolean): Boolean {
-        var stoppedCleanly = false
-        try {
-            val response = httpClient.post("${info.httpBaseUrl}/api/v1/system/shutdown?force=$force") {
-                header(HttpHeaders.Authorization, "Bearer ${info.token}")
-            }
-            stoppedCleanly = response.status.isSuccess()
-        } catch (_: Exception) {}
+        val stoppedCleanly = prober.requestShutdown(info, force)
 
         if (stoppedCleanly || force) {
             process?.let { p ->
@@ -318,5 +323,11 @@ public class WslDaemonManager(
      */
     override fun close() {
         runCatching { httpClient.close() }
+    }
+
+    private companion object {
+        /** How long a retired service gets to exit before the update is treated as refused (10 s). */
+        const val RETIRE_POLLS = 20
+        const val RETIRE_POLL_MS = 500L
     }
 }

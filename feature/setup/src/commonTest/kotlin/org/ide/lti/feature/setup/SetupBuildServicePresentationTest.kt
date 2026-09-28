@@ -299,4 +299,18 @@ class SetupBuildServicePresentationTest {
         assertEquals(IdeStatusSeverity.Running, pres.severity)
         assertNotEquals(IdeStatusSeverity.Warning, pres.severity)
     }
+
+    @Test
+    fun `the provisioner's deferred-update step shows the Update waiting chip`() {
+        // Exactly what WslToolchainProvisioner writes when the old service is still running jobs.
+        val st = step(
+            stage = SetupStepStage.SERVER_CONNECTIVITY,
+            status = StepStatus.WARNING,
+            description = "Update waiting: build service 1.0.0 is finishing 2 active run(s); 2.0.0 starts after.",
+        )
+        val presentation = SetupPresentationMapper.mapBuildService(step = st)
+
+        assertEquals("Update waiting", presentation.chipText)
+        assertEquals(IdeStatusSeverity.Warning, presentation.severity)
+    }
 }

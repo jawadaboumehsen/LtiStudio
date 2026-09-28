@@ -40,6 +40,23 @@ public open class DaemonHealthProber(
         }
     }
 
+    /**
+     * Asks the service to shut down. Without [force] the service refuses (409) while any run is active
+     * and, once it accepts, admits no new runs. True only when the service accepted.
+     */
+    public open suspend fun requestShutdown(info: ServerConnectionDescriptor, force: Boolean): Boolean {
+        val client = httpClient ?: return false
+        return try {
+            client.post("${info.httpBaseUrl}/api/v1/system/shutdown?force=$force") {
+                header(HttpHeaders.Authorization, "Bearer ${info.token}")
+            }.status.isSuccess()
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            false
+        }
+    }
+
     public open suspend fun getAvailableTools(info: ServerConnectionDescriptor): List<ToolStatusInfo> {
         val client = httpClient ?: return emptyList()
         return try {

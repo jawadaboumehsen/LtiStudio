@@ -21,10 +21,21 @@ class WslDaemonUpdateTest {
 
     private class FakeProber(
         var healthy: Boolean = true,
-        var serverInfo: WslServerInfo? = null
+        var serverInfo: WslServerInfo? = null,
+        /** The service accepts a non-forced shutdown (it refuses when a run is active). */
+        var acceptShutdown: Boolean = true,
+        /** After accepting, the service actually exits (stops answering health checks). */
+        var exitsAfterShutdown: Boolean = true,
     ) : DaemonHealthProber(null) {
+        val shutdownRequests = mutableListOf<Boolean>()
+
         override suspend fun isHealthy(info: ServerConnectionDescriptor, timeoutMs: Long): Boolean = healthy
         override suspend fun getServerInfo(info: ServerConnectionDescriptor): WslServerInfo? = serverInfo
+        override suspend fun requestShutdown(info: ServerConnectionDescriptor, force: Boolean): Boolean {
+            shutdownRequests += force
+            if (acceptShutdown && exitsAfterShutdown) healthy = false
+            return acceptShutdown
+        }
     }
 
     private class FakeProcessLauncher : WslProcessLauncher(5000L) {
@@ -208,5 +219,52 @@ class WslDaemonUpdateTest {
         manager.ensureStarted()
         assertEquals(1, launcher.launchCount, "The deferred update must be applied when runs finish")
         assertFalse(manager.isUpdateWaiting)
+    }
+
+    private fun oldIdleService(runs: Int = 0) = WslServerInfo(
+        status = "UP",
+        distro = "Ubuntu-24.04",
+        kernelRelease = "6.6.0",
+        architecture = "x86_64",
+        javaVersion = "21",
+        serverUptimeMs = 1000L,
+        serverVersion = "1.0.0",
+        activeRuns = runs,
+    )
+
+    private fun managerWith(prober: FakeProber, launcher: FakeProcessLauncher) = WslDaemonManager(
+        config = WslDaemonConfig(
+            distroName = "Ubuntu-24.04",
+            serverBinaryWslPath = "/home/testuser/.ltirom/server/current/bin/ltirom-server",
+        ),
+        stateStore = FakeStateStore(ServerConnectionDescriptor("127.0.0.1", 8080, "oldtoken", 100L, "Ubuntu-24.04")),
+        launcher = launcher,
+        customProber = prober,
+    )
+
+    @Test
+    fun `a run that starts during the update makes the service refuse shutdown and nothing is killed`() = runTest {
+        // Idle when we looked, but a run is admitted before the shutdown request lands: the service refuses.
+        val prober = FakeProber(serverInfo = oldIdleService(), acceptShutdown = false)
+        val launcher = FakeProcessLauncher()
+        val manager = managerWith(prober, launcher)
+
+        manager.ensureRunningVersion(distro = "Ubuntu-24.04", activeVersion = "2.0.0")
+
+        assertEquals(listOf(false), prober.shutdownRequests, "Updates never force a shutdown")
+        assertEquals(0, launcher.launchCount, "No replacement while the old service keeps its work")
+        assertTrue(manager.isUpdateWaiting)
+    }
+
+    @Test
+    fun `an old service that does not exit is never joined by a second one`() = runTest {
+        val prober = FakeProber(serverInfo = oldIdleService(), acceptShutdown = true, exitsAfterShutdown = false)
+        val launcher = FakeProcessLauncher()
+        val manager = managerWith(prober, launcher)
+
+        manager.ensureRunningVersion(distro = "Ubuntu-24.04", activeVersion = "2.0.0")
+
+        assertEquals(0, launcher.launchCount, "Termination must be confirmed before a replacement starts")
+        assertTrue(manager.isUpdateWaiting)
     }
 }

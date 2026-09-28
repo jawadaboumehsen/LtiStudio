@@ -283,4 +283,34 @@ class ServerArtifactInstallerTest {
             tempDir.deleteRecursively()
         }
     }
+
+    @Test
+    fun `installing v3 keeps v1 while a deferred update leaves the v1 service running`() {
+        // v1 still runs (update deferred for its active work), `current` already points at v2.
+        val tempDir = bundle("3.0.0")
+        try {
+            val cli = RecordingFakeCli(activeVersionSymlinkTarget = "/home/testuser/.ltirom/server/versions/2.0.0")
+            ServerArtifactInstaller(cli = cli, bundleDirProvider = { tempDir })
+                .ensureInstalled(testEnv, keepVersions = setOf("1.0.0"))
+
+            val prune = cli.executedCommands.map { it.joinToString(" ") }.single { it.contains("find ") }
+            assertTrue("! -name '1.0.0'" in prune, "The running v1 must survive pruning: $prune")
+            assertTrue("! -name '2.0.0'" in prune && "! -name '3.0.0'" in prune, prune)
+        } finally {
+            tempDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `nothing is pruned when the running version is unknown`() {
+        val tempDir = bundle("3.1.0")
+        try {
+            val cli = RecordingFakeCli(activeVersionSymlinkTarget = "/home/testuser/.ltirom/server/versions/2.0.0")
+            ServerArtifactInstaller(cli = cli, bundleDirProvider = { tempDir }).ensureInstalled(testEnv, prune = false)
+
+            assertTrue(cli.executedCommands.none { it.joinToString(" ").contains("find ") })
+        } finally {
+            tempDir.deleteRecursively()
+        }
+    }
 }

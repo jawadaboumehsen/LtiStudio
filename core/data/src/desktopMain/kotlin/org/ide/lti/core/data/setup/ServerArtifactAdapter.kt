@@ -23,14 +23,29 @@ public class ServerArtifactAdapter(
     }
 
     override suspend fun ensureInstalled(environment: SetupEnvironment): ServerArtifact =
-        installer.ensureInstalled(environment)
+        installProtectingRunningService(environment)
+
+    /**
+     * A service that is still running (for example while an update waits for its runs) loads classes and
+     * resources from its own version folder, so that folder must survive pruning. When a service is
+     * recorded but its version cannot be read, nothing is pruned at all.
+     */
+    private suspend fun installProtectingRunningService(environment: SetupEnvironment): ServerArtifact {
+        val runningVersion = daemonManager.getServerInfo(environment)?.serverVersion
+        val unknownService = runningVersion == null && daemonManager.checkExistingDaemon(environment.distro) != null
+        return installer.ensureInstalled(
+            environment,
+            keepVersions = setOfNotNull(runningVersion),
+            prune = !unknownService,
+        )
+    }
 
     override suspend fun ensureRunningCurrent(environment: SetupEnvironment, javaHome: String): ServerArtifact {
         val installed = installer.status(environment)
         val needsInstall = installed.installState is InstallState.Failed ||
             installed.installState is InstallState.NotInstalled
         val installFailure = if (needsInstall) {
-            installer.ensureInstalled(environment).takeIf { it.installState is InstallState.Failed }
+            installProtectingRunningService(environment).takeIf { it.installState is InstallState.Failed }
         } else {
             null
         }

@@ -1,12 +1,15 @@
 package io.ltirom.tooling.client.wsl
 
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.withContext
-import java.io.BufferedReader
-import java.io.InputStreamReader
+import kotlinx.coroutines.withTimeout
+import java.io.IOException
 import java.util.UUID
+import kotlin.concurrent.thread
 
 public data class WslProcessLaunchResult(
     val process: Process,
@@ -33,7 +36,7 @@ public open class WslProcessLauncher(
         distro: String,
         binaryPath: String,
         javaHome: String?
-    ): WslProcessLaunchResult = withContext(Dispatchers.IO) {
+    ): WslProcessLaunchResult {
         val token = UUID.randomUUID().toString().replace("-", "")
 
         val cmd = mutableListOf("wsl.exe", "-d", distro, "-e")
@@ -51,65 +54,66 @@ public open class WslProcessLauncher(
             )
         )
 
-        val pb = ProcessBuilder(cmd)
-        pb.redirectErrorStream(true)
-        val p = pb.start()
-
-        val reader = BufferedReader(InputStreamReader(p.inputStream))
-        var actualPort = -1
-        var pid = -1L
-        val capturedLines = mutableListOf<String>()
-
-        val readyRegex = Regex("""LTI_WSL_SERVER_READY\s+port=(\d+)\s+token=(\S+)\s+pid=(\d+)""")
-
-        val deadline = System.currentTimeMillis() + startupTimeoutMs
-        while (System.currentTimeMillis() < deadline && p.isAlive) {
-            if (reader.ready()) {
-                val line = reader.readLine() ?: break
-                capturedLines.add(line)
-                val match = readyRegex.find(line)
-                if (match != null) {
-                    actualPort = match.groupValues[1].toInt()
-                    pid = match.groupValues[3].toLong()
-                    break
-                }
-            } else {
-                Thread.sleep(50)
-            }
+        val process = withContext(Dispatchers.IO) {
+            ProcessBuilder(cmd).redirectErrorStream(true).start()
         }
+        val (port, pid) = awaitHandshake(process, distro)
+        return WslProcessLaunchResult(process = process, port = port, token = token, pid = pid)
+    }
 
-        while (reader.ready()) {
-            val remaining = reader.readLine() ?: break
-            capturedLines.add(remaining)
-        }
-
-        if (actualPort == -1) {
-            p.destroyForcibly()
-            val tail = capturedLines.takeLast(10).joinToString("\n").trim()
-            lastLogTail = tail.ifEmpty { null }
-            val msg = if (tail.isNotEmpty()) {
-                "Timed out waiting for LtiRomServer daemon to start in WSL distro '$distro':\n$tail"
-            } else {
-                "Timed out waiting for LtiRomServer daemon to start in WSL distro '$distro'"
-            }
-            throw IllegalStateException(msg)
-        }
-
-        // Read background logs asynchronously to prevent stdout buffer blocking
-        CoroutineScope(Dispatchers.IO).launch {
+    /**
+     * Waits for `LTI_WSL_SERVER_READY port=… token=… pid=…` and returns (port, pid).
+     *
+     * One daemon thread owns the process output for the process's whole life and never blocks anyone else;
+     * the wait itself is a coroutine with a hard [startupTimeoutMs] deadline, so a partial line without a
+     * newline, a hung process or the caller's cancellation cannot hold it. On timeout, cancellation or an
+     * early exit the process is destroyed.
+     */
+    internal suspend fun awaitHandshake(process: Process, distro: String): Pair<Int, Long> {
+        // Bounded: after the handshake the service keeps logging for hours; only recent lines are kept.
+        val lines = Channel<String>(capacity = OUTPUT_BUFFER_LINES, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+        thread(isDaemon = true, name = "ltirom-server-output") {
             try {
-                var line: String?
-                while (reader.readLine().also { line = it } != null) {
-                    // stdout drainage
-                }
-            } catch (_: Exception) {}
+                process.inputStream.bufferedReader().forEachLine { lines.trySend(it) }
+            } catch (_: IOException) {
+                // Stream closed: the process ended or was destroyed.
+            } finally {
+                lines.close()
+            }
         }
 
-        WslProcessLaunchResult(
-            process = p,
-            port = actualPort,
-            token = token,
-            pid = pid
-        )
+        val captured = ArrayDeque<String>()
+        val match = try {
+            withTimeout(startupTimeoutMs) {
+                var found: MatchResult? = null
+                for (line in lines) {
+                    captured.addLast(line)
+                    if (captured.size > TAIL_LINES) captured.removeFirst()
+                    found = READY_REGEX.find(line)
+                    if (found != null) break
+                }
+                found
+            }
+        } catch (_: TimeoutCancellationException) {
+            null
+        } catch (e: CancellationException) {
+            process.destroyForcibly()
+            throw e
+        }
+
+        if (match == null) {
+            process.destroyForcibly()
+            val tail = captured.joinToString("\n").trim()
+            lastLogTail = tail.ifEmpty { null }
+            val header = "Timed out waiting for LtiRomServer daemon to start in WSL distro '$distro'"
+            throw IllegalStateException(if (tail.isNotEmpty()) "$header:\n$tail" else header)
+        }
+        return match.groupValues[1].toInt() to match.groupValues[3].toLong()
+    }
+
+    private companion object {
+        val READY_REGEX = Regex("""LTI_WSL_SERVER_READY\s+port=(\d+)\s+token=(\S+)\s+pid=(\d+)""")
+        const val OUTPUT_BUFFER_LINES = 256
+        const val TAIL_LINES = 10
     }
 }
