@@ -1,6 +1,7 @@
 package org.ide.lti.core.data.setup.doctor
 
 import io.ltirom.tooling.client.wsl.WslCliExecutor
+import org.ide.lti.core.data.setup.AptCommandBuilder
 import org.ide.lti.core.domain.setup.DiagnosticCategory
 import org.ide.lti.core.domain.setup.DiagnosticCheckItem
 import org.ide.lti.core.domain.setup.StepStatus
@@ -38,7 +39,7 @@ public class ArchiveToolsInspector(
             if (!hasBrotli) add("brotli")
         }
         val archiveOk = missing.isEmpty()
-        val archiveCmd = if (archiveOk) null else "sudo apt-get install -y ${missing.joinToString(" ")}"
+        val archiveCmd = if (archiveOk) null else AptCommandBuilder.install(missing)
 
         return DiagnosticCheckItem(
             id = "archive_tools",

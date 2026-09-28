@@ -31,8 +31,9 @@ public object SetupPlanFactory {
         autoDoctorEnabled: Boolean = true,
         snapshot: ToolchainSetupState,
         environmentKey: String,
+        bootstrapPackages: List<String> = emptyList(),
     ): SetupPlan {
-        val actions = deriveActions(kind, targetId, autoDoctorEnabled, snapshot)
+        val actions = deriveActions(kind, targetId, autoDoctorEnabled, snapshot, bootstrapPackages)
         val revisionHash = computeRevisionHash(snapshot, autoDoctorEnabled)
         return SetupPlan(
             planId = "plan-${kind.name.lowercase()}-${System.currentTimeMillis()}",
@@ -67,9 +68,10 @@ public object SetupPlanFactory {
         targetId: String?,
         autoDoctorEnabled: Boolean,
         snapshot: ToolchainSetupState,
+        bootstrapPackages: List<String> = emptyList(),
     ): List<SetupPlanAction> = when (kind) {
         SetupPlanKind.FULL_SETUP -> deriveFullSetupActions(snapshot, autoDoctorEnabled)
-        SetupPlanKind.STAGE_RETRY -> deriveStageRetryActions(targetId, snapshot, autoDoctorEnabled)
+        SetupPlanKind.STAGE_RETRY -> deriveStageRetryActions(targetId, snapshot, autoDoctorEnabled, bootstrapPackages)
         SetupPlanKind.REPAIR_TOOL -> {
             val group = targetId?.let { ToolCapabilities.recipeGroupFor(it) }
             if (group != null && ToolCapabilities.isRecipeSupported(targetId)) {
@@ -84,7 +86,19 @@ public object SetupPlanFactory {
         }
         // A cache reset clears persisted evidence; it installs, syncs, builds and publishes nothing.
         SetupPlanKind.CACHE_RESET -> emptyList()
-        SetupPlanKind.BOOTSTRAP_PACKAGES -> emptyList()
+        SetupPlanKind.BOOTSTRAP_PACKAGES -> {
+            if (bootstrapPackages.isNotEmpty()) {
+                listOf(
+                    SetupPlanAction.InstallPackages(
+                        packages = bootstrapPackages,
+                        pipPackages = emptyList(),
+                        configureLoopMountElevation = false,
+                    )
+                )
+            } else {
+                emptyList()
+            }
+        }
     }
 
     private fun ToolchainSetupState.stageNeedsWork(stage: SetupStepStage): Boolean =
@@ -141,6 +155,7 @@ public object SetupPlanFactory {
         targetId: String?,
         snapshot: ToolchainSetupState,
         autoDoctorEnabled: Boolean,
+        bootstrapPackages: List<String> = emptyList(),
     ): List<SetupPlanAction> {
         val stage = SetupStepStage.entries.firstOrNull { it.name == targetId } ?: return emptyList()
         return when (stage) {
@@ -154,9 +169,21 @@ public object SetupPlanFactory {
                 val unpublished = snapshot.toolsMatrix.map { it.id }.filter { it !in snapshot.publishedToolIds }
                 if (unpublished.isNotEmpty()) add(SetupPlanAction.PublishTools(unpublished))
             }
-            SetupStepStage.WSL_DETECTION,
-            SetupStepStage.SYSTEM_PACKAGES,
-            SetupStepStage.SERVER_CONNECTIVITY -> emptyList()
+            SetupStepStage.SERVER_CONNECTIVITY -> listOf(
+                SetupPlanAction.PublishTools(emptyList())
+            )
+            SetupStepStage.SYSTEM_PACKAGES -> {
+                if (bootstrapPackages.isNotEmpty()) {
+                    listOf(
+                        SetupPlanAction.InstallPackages(
+                            packages = bootstrapPackages,
+                            pipPackages = emptyList(),
+                            configureLoopMountElevation = false,
+                        )
+                    )
+                } else emptyList()
+            }
+            SetupStepStage.WSL_DETECTION -> emptyList()
         }
     }
 }

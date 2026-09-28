@@ -10,6 +10,7 @@ import io.ltirom.tooling.client.wsl.WslCliExecutor
 import io.ltirom.tooling.client.wsl.WslEnvironmentDetector
 import io.ltirom.tooling.core.ports.DaemonSupervisorPort
 import io.ltirom.tooling.core.ports.RemoteTransportPort
+import io.ltirom.tooling.core.ports.ServerConnectionDescriptor
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -32,10 +33,12 @@ import io.ltirom.tooling.core.remote.ToolExecutionRequest
 import io.ltirom.tooling.core.remote.ToolListResult
 import org.ide.lti.core.domain.ports.DaemonFailureCategory
 import org.ide.lti.core.domain.ports.HostPrerequisitePort
+import org.ide.lti.core.domain.ports.ServerArtifactPort
 import org.ide.lti.core.domain.ports.ToolchainFailureCategory
 import org.ide.lti.core.domain.ports.ToolPublicationPort
 import org.ide.lti.core.domain.repository.setup.ToolchainSetupRepository
 import org.ide.lti.core.model.setup.DistroStatus
+import org.ide.lti.core.model.setup.InstallState
 import org.ide.lti.core.model.setup.PersistedEnvironment
 import org.ide.lti.core.model.setup.SetupEnvironment
 import org.ide.lti.core.domain.setup.DiagnosticCategory
@@ -90,10 +93,12 @@ public class WslToolchainProvisioner(
     private val toolPublicationPort: ToolPublicationPort? = null,
     private val coordinator: SetupOperationCoordinator = SetupOperationCoordinator(repository),
     private val scope: CoroutineScope = CoroutineScope(dispatcher + SupervisorJob()),
-    private val hostPrerequisitePort: HostPrerequisitePort = WslHostPrerequisiteProbe(detector),
+    private val hostPrerequisitePort: HostPrerequisitePort = WslHostPrerequisiteProbe(detector, cli),
+    private val serverArtifactPort: ServerArtifactPort? = null,
 ) : ToolchainProvisioningService {
 
     private var currentEnvironment: SetupEnvironment? = null
+    private var lastPrerequisiteReport: org.ide.lti.core.model.setup.PrerequisiteReport? = null
     private var activeVerificationDeferred: Deferred<ToolchainSetupState>? = null
     private val verificationMutex = Mutex()
 
@@ -324,24 +329,84 @@ public class WslToolchainProvisioner(
                 desc = "WSL 2 active with distribution '$distro'."
             )
 
-            // 2. SERVER_CONNECTIVITY
-            setStepRunning(SetupStepStage.SERVER_CONNECTIVITY)
-            val desc = runCatching { supervisor.ensureStarted(distro) }
-                .onFailure { if (it is CancellationException) throw it }
-            if (desc.isFailure) {
-                val err = desc.exceptionOrNull()
-                val logTail = (supervisor as? WslDaemonManager)?.lastLaunchErrorLogTail
-                    ?: supervisor.lastLaunchErrorLogTail
-                val errMsg = logTail ?: err?.message ?: "Failed to connect to daemon"
+            // 2. SYSTEM_PACKAGES
+            setStepRunning(SetupStepStage.SYSTEM_PACKAGES)
+            val prerequisiteReport = hostPrerequisitePort.probe(selectedEnv)
+            lastPrerequisiteReport = prerequisiteReport
+            val missingPkgs = prerequisiteReport.missingPackages
+            val javaHome = prerequisiteReport.javaHome
+
+            if (missingPkgs.isNotEmpty() || javaHome == null) {
+                val missingDesc = if (missingPkgs.isNotEmpty()) {
+                    "${missingPkgs.size} package(s) missing: ${missingPkgs.take(3).joinToString(", ")}${if (missingPkgs.size > 3) "..." else ""}"
+                } else {
+                    "Java runtime (JDK 21) not found"
+                }
                 setStepStatus(
-                    SetupStepStage.SERVER_CONNECTIVITY,
+                    SetupStepStage.SYSTEM_PACKAGES,
                     StepStatus.FAILED,
-                    desc = "Daemon bridge failed: ${err?.message ?: "unreachable"}",
-                    error = errMsg,
-                    failureCategory = DaemonFailureCategory.UNREACHABLE,
+                    desc = missingDesc,
+                    error = prerequisiteReport.installCommand ?: "Missing packages: ${missingPkgs.joinToString(", ")}"
                 )
-                shortCircuitRemaining(SetupStepStage.SERVER_CONNECTIVITY, "Pending daemon.")
+                shortCircuitRemaining(SetupStepStage.SYSTEM_PACKAGES, "Pending system packages.")
                 return _state.value
+            }
+
+            setStepStatus(
+                SetupStepStage.SYSTEM_PACKAGES,
+                StepStatus.SUCCESS,
+                desc = "All prerequisite packages installed · Java: $javaHome"
+            )
+
+            // 3. SERVER_CONNECTIVITY
+            setStepRunning(SetupStepStage.SERVER_CONNECTIVITY)
+            var fallbackDesc: ServerConnectionDescriptor? = null
+            if (serverArtifactPort != null) {
+                val installResult = serverArtifactPort.ensureInstalled(selectedEnv)
+                if (installResult.installState is InstallState.Failed) {
+                    val failed = installResult.installState as InstallState.Failed
+                    setStepStatus(
+                        SetupStepStage.SERVER_CONNECTIVITY,
+                        StepStatus.FAILED,
+                        desc = "Failed to install server: ${failed.step}",
+                        error = failed.stderr,
+                        failureCategory = DaemonFailureCategory.UNREACHABLE,
+                    )
+                    shortCircuitRemaining(SetupStepStage.SERVER_CONNECTIVITY, "Pending server installation.")
+                    return _state.value
+                }
+                val runResult = serverArtifactPort.ensureRunningCurrent(selectedEnv, javaHome)
+                if (runResult.installState is InstallState.Failed) {
+                    val failed = runResult.installState as InstallState.Failed
+                    setStepStatus(
+                        SetupStepStage.SERVER_CONNECTIVITY,
+                        StepStatus.FAILED,
+                        desc = "Failed to start server: ${failed.step}",
+                        error = failed.stderr,
+                        failureCategory = DaemonFailureCategory.UNREACHABLE,
+                    )
+                    shortCircuitRemaining(SetupStepStage.SERVER_CONNECTIVITY, "Pending server startup.")
+                    return _state.value
+                }
+            } else {
+                val desc = runCatching { supervisor.ensureStarted(distro) }
+                    .onFailure { if (it is CancellationException) throw it }
+                if (desc.isFailure) {
+                    val err = desc.exceptionOrNull()
+                    val logTail = (supervisor as? WslDaemonManager)?.lastLaunchErrorLogTail
+                        ?: supervisor.lastLaunchErrorLogTail
+                    val errMsg = logTail ?: err?.message ?: "Failed to connect to daemon"
+                    setStepStatus(
+                        SetupStepStage.SERVER_CONNECTIVITY,
+                        StepStatus.FAILED,
+                        desc = "Daemon bridge failed: ${err?.message ?: "unreachable"}",
+                        error = errMsg,
+                        failureCategory = DaemonFailureCategory.UNREACHABLE,
+                    )
+                    shortCircuitRemaining(SetupStepStage.SERVER_CONNECTIVITY, "Pending daemon.")
+                    return _state.value
+                }
+                fallbackDesc = desc.getOrNull()
             }
 
             val startMs = System.currentTimeMillis()
@@ -361,11 +426,12 @@ public class WslToolchainProvisioner(
                 return _state.value
             }
             val pingMs = (System.currentTimeMillis() - startMs).coerceAtLeast(1L)
-            val connDesc = desc.getOrThrow()
+            val connPid = supervisor.getConnectionInfo()?.pid ?: fallbackDesc?.pid
+            val pidSuffix = if (connPid != null) " · pid $connPid" else ""
             setStepStatus(
                 SetupStepStage.SERVER_CONNECTIVITY,
                 StepStatus.SUCCESS,
-                desc = "Connected · ${pingMs}ms · pid ${connDesc.pid}"
+                desc = "Connected · ${pingMs}ms$pidSuffix"
             )
             _state.update { it.copy(daemonPingMs = pingMs) }
 
@@ -853,12 +919,19 @@ public class WslToolchainProvisioner(
     ): SetupPlan = withContext(dispatcher) {
         val snapshot = _state.value
         val distro = resolveEnvironmentKey()
+        val bootstrapPkgs = if (kind == SetupPlanKind.BOOTSTRAP_PACKAGES || targetId == SetupStepStage.SYSTEM_PACKAGES.name) {
+            val report = lastPrerequisiteReport ?: (currentEnvironment?.let { hostPrerequisitePort.probe(it) })
+            report?.missingPackages ?: emptyList()
+        } else {
+            emptyList()
+        }
         val plan = SetupPlanFactory.createPlan(
             kind = kind,
             targetId = targetId,
             autoDoctorEnabled = autoDoctorEnabled,
             snapshot = snapshot,
             environmentKey = distro,
+            bootstrapPackages = bootstrapPkgs,
         )
         activePlan = plan
         plan
@@ -923,6 +996,15 @@ public class WslToolchainProvisioner(
                     SetupPlanKind.FULL_SETUP,
                     SetupPlanKind.STAGE_RETRY,
                     SetupPlanKind.REPAIR_TOOL -> {
+                        if (currentPlan.targetStageOrToolId == SetupStepStage.SERVER_CONNECTIVITY.name) {
+                            if (serverArtifactPort != null && currentEnvironment != null) {
+                                serverArtifactPort.ensureInstalled(currentEnvironment!!)
+                                val jHome = lastPrerequisiteReport?.javaHome ?: "/usr/lib/jvm/java-21-openjdk-amd64"
+                                serverArtifactPort.ensureRunningCurrent(currentEnvironment!!, jHome)
+                            } else {
+                                supervisor.ensureStarted(distro)
+                            }
+                        }
                         // Failed health is a terminal prerequisite failure: nothing else runs.
                         val health = transport.checkHealth()
                         if (health == null) {
@@ -971,10 +1053,11 @@ public class WslToolchainProvisioner(
     }
 
     private suspend fun resolveHome(distro: String): String =
-        runCatching {
-            val res = transport.execute(ToolExecutionRequest(toolId = "printenv", arguments = listOf("HOME"), workingDirectory = "/"))
-            if (res.exitCode == 0 && res.stdout.trim().startsWith("/")) res.stdout.trim() else null
-        }.onFailure { if (it is CancellationException) throw it }.getOrNull()
+        currentEnvironment?.takeIf { it.distro == distro }?.home
+            ?: runCatching {
+                val res = transport.execute(ToolExecutionRequest(toolId = "printenv", arguments = listOf("HOME"), workingDirectory = "/"))
+                if (res.exitCode == 0 && res.stdout.trim().startsWith("/")) res.stdout.trim() else null
+            }.onFailure { if (it is CancellationException) throw it }.getOrNull()
             ?: runInterruptible(dispatcher) { detector.resolveWslUserHome(distro) }
 
     @Suppress("CyclomaticComplexMethod")
@@ -1011,6 +1094,61 @@ public class WslToolchainProvisioner(
                 stage = null,
                 reason = "Attempt '${active.attemptId}' has no handoff details.",
             )
+
+            val isBootstrap = active.planKind == SetupPlanKind.BOOTSTRAP_PACKAGES.name ||
+                active.persistedPlan?.kind == SetupPlanKind.BOOTSTRAP_PACKAGES.name ||
+                active.bootstrapRequirementIds.isNotEmpty() ||
+                (handoff.actionId.contains("install_packages", ignoreCase = true) && active.planKind == SetupPlanKind.BOOTSTRAP_PACKAGES.name)
+
+            if (isBootstrap) {
+                val env = currentEnvironment ?: SetupEnvironment(
+                    distro = distro,
+                    wslVersion = 2,
+                    osId = "ubuntu",
+                    osVersionId = "24.04",
+                    user = resolveHome(distro).substringAfterLast("/"),
+                    home = resolveHome(distro)
+                )
+                val probeReport = hostPrerequisitePort.probe(env)
+                lastPrerequisiteReport = probeReport
+
+                val stillMissing = probeReport.missingPackages.filter { it in handoff.packages }
+                if (stillMissing.isNotEmpty()) {
+                    val newCommand = AptCommandBuilder.install(stillMissing)
+                    val updatedHandoff = handoff.copy(
+                        packages = stillMissing,
+                        command = newCommand
+                    )
+                    val persistedPlan = active.persistedPlan ?: PersistedSetupPlan(
+                        planId = active.planId,
+                        revisionHash = active.planRevisionHash,
+                        environmentKey = active.environmentKey,
+                        kind = active.planKind,
+                    )
+                    repo.recordAttemptAwaitingUserAction(active.attemptId, updatedHandoff, persistedPlan)
+                    return@withAdmission SetupOutcome.AwaitingUserAction(
+                        pendingPlanId = planId,
+                        stage = SetupStepStage.SYSTEM_PACKAGES,
+                        reason = "Required packages are still not installed in WSL: ${stillMissing.joinToString()}",
+                        handoff = UserRepairHandoff(
+                            actionId = handoff.actionId,
+                            description = "Required packages are still missing",
+                            terminalCommand = newCommand,
+                            packages = stillMissing,
+                            distro = distro,
+                        )
+                    )
+                }
+
+                // Succeeded! (FR-013b)
+                setStepStatus(
+                    SetupStepStage.SYSTEM_PACKAGES,
+                    StepStatus.SUCCESS,
+                    desc = "Prerequisite packages installed"
+                )
+                archiveAttempt(active.attemptId, SetupOutcome.Succeeded())
+                return@withAdmission SetupOutcome.Succeeded()
+            }
 
             val home = resolveHome(distro)
             val serviceCli = TransportCliExecutor(transport, defaultWorkingDirectory = home)
@@ -1177,7 +1315,11 @@ public class WslToolchainProvisioner(
         }
         val status = when (outcome) {
             is SetupOutcome.Succeeded -> AttemptStatus.SUCCEEDED
-            is SetupOutcome.Cancelled -> AttemptStatus.CANCELLED
+            is SetupOutcome.Cancelled -> if (active.status == AttemptStatus.AWAITING_USER_ACTION && active.planKind == SetupPlanKind.BOOTSTRAP_PACKAGES.name) {
+                AttemptStatus.ABANDONED
+            } else {
+                AttemptStatus.CANCELLED
+            }
             is SetupOutcome.Failed -> AttemptStatus.FAILED
             is SetupOutcome.Interrupted -> AttemptStatus.INTERRUPTED
             is SetupOutcome.Busy -> AttemptStatus.INTERRUPTED
@@ -1317,12 +1459,11 @@ public class WslToolchainProvisioner(
                 is SetupPlanAction.InstallPackages -> {
                     // "Auto Doctor policy is immutable for the confirmed attempt": the plan carried the
                     // policy at preview time; a plan built with the policy off never contains this action.
-                    currentPlan.validateAttemptPolicy(true)
                     if (action.packages.isNotEmpty() || action.configureLoopMountElevation) {
-                        val handoffPackages = action.packages.filter { PackageCatalog.isPackageApproved(it) }
+                        val handoffPackages = action.packages.filter { RequirementCatalog.isPackageApproved(it) }
                         val pkgString = handoffPackages.joinToString(" ")
-                        val terminalCommand = if (pkgString.isNotEmpty()) {
-                            "sudo apt-get update && sudo apt-get install -y $pkgString"
+                        val terminalCommand = if (handoffPackages.isNotEmpty()) {
+                            AptCommandBuilder.install(handoffPackages)
                         } else {
                             "echo 'No elevated package installation required.'"
                         }
@@ -1357,16 +1498,17 @@ public class WslToolchainProvisioner(
                             }
                         )
                         val repo = repository
+                        val targetStage = if (currentPlan.kind == SetupPlanKind.BOOTSTRAP_PACKAGES) SetupStepStage.SYSTEM_PACKAGES else SetupStepStage.SYSTEM_DIAGNOSTICS
                         if (repo == null || journal == null) {
-                            appendLog("[Step 3/5] ERROR: Cannot pause for user authorization without a configured repository.")
+                            appendLog("[Plan] ERROR: Cannot pause for user authorization without a configured repository.")
                             setStepStatus(
-                                SetupStepStage.SYSTEM_DIAGNOSTICS,
+                                targetStage,
                                 StepStatus.FAILED,
                                 desc = "No repository configured to persist handoff",
                                 error = "No repository configured to persist handoff",
                             )
                             return SetupOutcome.Failed(
-                                stage = SetupStepStage.SYSTEM_DIAGNOSTICS.name,
+                                stage = targetStage.name,
                                 reason = "User authorization handoff requires a configured repository to survive and resume.",
                             )
                         }
@@ -1377,18 +1519,18 @@ public class WslToolchainProvisioner(
                         )
                         if (recordResult.isFailure) {
                             val err = recordResult.exceptionOrNull()?.message ?: "Unknown journal error"
-                            appendLog("[Step 3/5] Journal write failed while recording pending handoff: $err")
+                            appendLog("[Plan] Journal write failed while recording pending handoff: $err")
                             return SetupOutcome.Interrupted("Journal write failed while recording pending handoff: $err")
                         }
                         setStepStatus(
-                            SetupStepStage.SYSTEM_DIAGNOSTICS,
+                            targetStage,
                             StepStatus.WARNING,
                             "Awaiting external authorization in WSL terminal: $terminalCommand"
                         )
-                        appendLog("[Step 3/5] Paused for user terminal authorization: $terminalCommand")
+                        appendLog("[Plan] Paused for user terminal authorization: $terminalCommand")
                         return SetupOutcome.AwaitingUserAction(
                             pendingPlanId = currentPlan.planId,
-                            stage = SetupStepStage.SYSTEM_DIAGNOSTICS,
+                            stage = targetStage,
                             reason = "Privileged packages require installation in WSL terminal: $pkgString",
                             handoff = handoff,
                         )

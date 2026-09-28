@@ -1,6 +1,7 @@
 package org.ide.lti.core.data.setup.doctor
 
 import io.ltirom.tooling.client.wsl.WslCliExecutor
+import org.ide.lti.core.data.setup.AptCommandBuilder
 import org.ide.lti.core.domain.setup.DiagnosticCategory
 import org.ide.lti.core.domain.setup.DiagnosticCheckItem
 import org.ide.lti.core.domain.setup.StepStatus
@@ -28,7 +29,7 @@ public class SelinuxAttrInspector(
             cli.execute(distro, listOf("which", "getfattr")).exitCode == 0
         }
         val attrOk = hasAttr && hasGetfattr
-        val attrCmd = if (attrOk) null else "sudo apt-get install -y attr"
+        val attrCmd = if (attrOk) null else AptCommandBuilder.install(listOf("attr"))
 
         return DiagnosticCheckItem(
             id = "selinux_attr",

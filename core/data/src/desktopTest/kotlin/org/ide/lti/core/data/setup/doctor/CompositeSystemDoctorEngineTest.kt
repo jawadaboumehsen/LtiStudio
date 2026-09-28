@@ -189,7 +189,7 @@ class CompositeSystemDoctorEngineTest {
         val pythonCheck = results.find { it.id == "python_crypto" }
 
         assertNotNull(pythonCheck)
-        assertEquals(StepStatus.WARNING, pythonCheck.status)
+        assertEquals(StepStatus.FAILED, pythonCheck.status)
         assertTrue(pythonCheck.detail.contains("cryptography/pyasn1 packages are missing"))
         assertNotNull(pythonCheck.copyableCommand)
     }
@@ -338,7 +338,7 @@ class CompositeSystemDoctorEngineTest {
         val result = inspector.inspect(DiagnosticContext("Ubuntu", "/home/lti", "/home/lti/LtiRomTools/bin", true))
         assertEquals(StepStatus.FAILED, result.status)
         assertTrue(result.detail.contains("Missing: brotli"))
-        assertEquals("sudo apt-get install -y brotli", result.copyableCommand)
+        assertEquals("sudo apt-get update && sudo apt-get install -y brotli", result.copyableCommand)
     }
 
     @Test
@@ -364,7 +364,7 @@ class CompositeSystemDoctorEngineTest {
         assertEquals(StepStatus.FAILED, result.status)
         assertTrue(result.detail.contains("xxd"))
         assertTrue(result.detail.contains("truncate"))
-        assertTrue(result.copyableCommand?.contains("xxd truncate") == true)
+        assertTrue(result.copyableCommand?.contains("xxd") == true)
     }
 
     @Test

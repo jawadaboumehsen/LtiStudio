@@ -1,7 +1,7 @@
 package org.ide.lti.core.data.setup.doctor
 
 import io.ltirom.tooling.client.wsl.WslCliExecutor
-import org.ide.lti.core.data.setup.PackageCatalog
+import org.ide.lti.core.data.setup.RequirementCatalog
 import org.ide.lti.core.domain.setup.DiagnosticCheckItem
 import org.ide.lti.core.domain.setup.StepStatus
 
@@ -44,7 +44,7 @@ public class WslPackageRemediator(
     public companion object {
         /**
          * Resolves the remediation for every FAILED/WARNING diagnostic. Pure: no IO, no side effects.
-         * Package names are strictly sourced from [PackageCatalog.APPROVED_APT_PACKAGES].
+         * Package names are strictly sourced from [RequirementCatalog.APPROVED_APT_PACKAGES].
          */
         public fun resolve(diagnosticItems: List<DiagnosticCheckItem>): RemediationPlan {
             val failedOrWarning = diagnosticItems.filter {
@@ -54,7 +54,7 @@ public class WslPackageRemediator(
             var needsToolchainSync = false
 
             for (item in failedOrWarning) {
-                val approved = PackageCatalog.APPROVED_APT_PACKAGES[item.id]
+                val approved = RequirementCatalog.APPROVED_APT_PACKAGES[item.id]
                 if (approved != null) {
                     aptPackages.addAll(approved)
                 }

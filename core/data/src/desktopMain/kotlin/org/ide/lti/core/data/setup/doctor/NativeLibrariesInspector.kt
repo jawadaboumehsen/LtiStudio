@@ -5,6 +5,8 @@ import org.ide.lti.core.domain.setup.DiagnosticCategory
 import org.ide.lti.core.domain.setup.DiagnosticCheckItem
 import org.ide.lti.core.domain.setup.StepStatus
 
+import org.ide.lti.core.data.setup.AptCommandBuilder
+
 /**
  * Inspector verifying the 10 required C/C++ native development packages via dpkg-query.
  *
@@ -44,7 +46,7 @@ public class NativeLibrariesInspector(
             .toSet()
         val missingLibs = requiredPackages.filter { it !in installedPkgs }
         val libsOk = missingLibs.isEmpty()
-        val libsCmd = if (libsOk) null else "sudo apt-get install -y ${missingLibs.joinToString(" ")}"
+        val libsCmd = if (libsOk) null else AptCommandBuilder.install(missingLibs)
 
         return DiagnosticCheckItem(
             id = "host_libraries",

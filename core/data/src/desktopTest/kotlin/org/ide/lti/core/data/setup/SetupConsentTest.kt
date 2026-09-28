@@ -234,6 +234,11 @@ class SetupConsentTest {
                 }
                 cmdStr.contains("wsl.exe --status") || cmdStr.contains("--status") -> CliExecutionResult(0, "Default Distribution: Ubuntu", "")
                 cmdStr.contains("echo -n \$HOME") -> CliExecutionResult(0, "/home/lti", "")
+                cmdStr.contains("JAVA_HOMES_BEGIN") -> {
+                    val javaSection = "JAVA_HOMES_BEGIN\n/usr/lib/jvm/java-21-openjdk-amd64\nJAVA_HOMES_END\n"
+                    val reqSection = RequirementCatalog.REQUIREMENTS.joinToString("\n") { "${it.id}=present" }
+                    CliExecutionResult(0, "$javaSection$reqSection\nPACKAGES_FRESH=1\n", "")
+                }
                 command.firstOrNull() == "df" -> CliExecutionResult(dfExitCode, if (dfExitCode == 0) dfOutput else "", if (dfExitCode != 0) "df failed" else "")
                 else -> CliExecutionResult(0, "ok", "")
             }
@@ -272,7 +277,7 @@ class SetupConsentTest {
 
         // No compiler invocations during probe
         val hasBuild = transport.executedRequests.any { it.toolId == "make" || it.toolId == "cmake" } ||
-            cli.executedCommands.any { it.contains("cmake") || it.contains("make") }
+            cli.executedCommands.any { !it.contains("JAVA_HOMES_BEGIN") && (it.contains("cmake") || it.contains("make")) }
         assertFalse(hasBuild, "Initial probe must NEVER run cmake or make compilation")
 
         // No package installation commands during probe
@@ -651,7 +656,7 @@ class SetupConsentTest {
         // (A read-only `test -f <key>` existence probe during the post-setup live check is inspection,
         // not generation, and is explicitly allowed.)
         val signingCommands = (cli.executedCommands + transport.commandLines()).filter { line ->
-            val isReadOnlyProbe = line.startsWith("test ")
+            val isReadOnlyProbe = line.startsWith("test ") || line.contains("JAVA_HOMES_BEGIN")
             !isReadOnlyProbe && (
                 line.contains("openssl") ||
                     line.contains("genpkey") ||

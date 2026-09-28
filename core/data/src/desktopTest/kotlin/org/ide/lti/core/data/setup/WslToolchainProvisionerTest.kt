@@ -248,6 +248,13 @@ class WslToolchainProvisionerTest {
             if (cmdStr.contains("echo -n \$HOME") || cmdStr.contains("printenv HOME") || cmdStr.contains("printenv")) {
                 return CliExecutionResult(0, userHome, "")
             }
+            if (cmdStr.contains("JAVA_HOMES_BEGIN")) {
+                val javaSection = "JAVA_HOMES_BEGIN\n/usr/lib/jvm/java-21-openjdk-amd64\nJAVA_HOMES_END\n"
+                val reqSection = RequirementCatalog.REQUIREMENTS.joinToString("\n") {
+                    "${it.id}=present"
+                }
+                return CliExecutionResult(0, "$javaSection$reqSection\nPACKAGES_FRESH=1\n", "")
+            }
             if (cmdStr.contains("dpkg-query")) {
                 if (missingDevPackages) {
                     return CliExecutionResult(0, "", "no packages installed")
@@ -493,7 +500,7 @@ class WslToolchainProvisionerTest {
         val finalState = provisioner.state.value
         assertTrue(finalState.isAllReady)
         assertFalse(finalState.isRunning)
-        assertEquals(5, finalState.steps.filter { it.status == StepStatus.SUCCESS }.size)
+        assertEquals(6, finalState.steps.filter { it.status == StepStatus.SUCCESS }.size)
         assertTrue(finalState.logs.any { it.contains("completed") })
         assertEquals(finalState.checkedAt, finalState.lastReadyAt, "Readiness after setup comes from the live check")
     }

@@ -1,6 +1,8 @@
 package org.ide.lti.core.data.setup.doctor
 
 import io.ltirom.tooling.client.wsl.WslCliExecutor
+import org.ide.lti.core.data.setup.AptCommandBuilder
+import org.ide.lti.core.data.setup.RequirementCatalog
 import org.ide.lti.core.domain.setup.DiagnosticCategory
 import org.ide.lti.core.domain.setup.DiagnosticCheckItem
 import org.ide.lti.core.domain.setup.StepStatus
@@ -41,7 +43,8 @@ public class TransferToolsInspector(
             if (!hasTruncate) add("truncate")
         }
         val transferOk = missingTransfer.isEmpty()
-        val transferCmd = if (transferOk) null else "sudo apt-get install -y ${missingTransfer.joinToString(" ")}"
+        val missingApt = missingTransfer.filter { RequirementCatalog.isPackageApproved(it) }
+        val transferCmd = if (transferOk || missingApt.isEmpty()) null else AptCommandBuilder.install(missingApt)
 
         return DiagnosticCheckItem(
             id = "transfer_tools",

@@ -5,6 +5,8 @@ import org.ide.lti.core.domain.setup.DiagnosticCategory
 import org.ide.lti.core.domain.setup.DiagnosticCheckItem
 import org.ide.lti.core.domain.setup.StepStatus
 
+import org.ide.lti.core.data.setup.AptCommandBuilder
+
 /**
  * Inspector verifying Dual OpenJDK runtimes (17 and 21) and the javac compiler.
  *
@@ -31,19 +33,16 @@ public class DualJdkInspector(
             cli.execute(distro, listOf("java", "-version")).let { it.output + "\n" + it.error }.trim()
         } else ""
         val detectedJavaVer = Regex("version\\s+\"([^\"]+)").find(javaVerOutput)?.groupValues?.get(1) ?: if (hasJava) "Active" else "None"
-        val hasJvm17 = if (context.availableCommands.isNotEmpty()) {
-            "java-17-openjdk-amd64" in context.availableCommands || "java-17-openjdk" in context.availableCommands
-        } else {
+        val hasJvm17 = "java-17-openjdk-amd64" in context.availableCommands ||
+            "java-17-openjdk" in context.availableCommands ||
             cli.execute(distro, listOf("test", "-d", "/usr/lib/jvm/java-17-openjdk-amd64")).exitCode == 0 ||
-                cli.execute(distro, listOf("test", "-d", "/usr/lib/jvm/java-17-openjdk")).exitCode == 0
-        }
-        val hasJvm21 = if (context.availableCommands.isNotEmpty()) {
-            "java-21-openjdk-amd64" in context.availableCommands || "java-21-openjdk" in context.availableCommands
-        } else {
+            cli.execute(distro, listOf("test", "-d", "/usr/lib/jvm/java-17-openjdk")).exitCode == 0
+
+        val hasJvm21 = "java-21-openjdk-amd64" in context.availableCommands ||
+            "java-21-openjdk" in context.availableCommands ||
             cli.execute(distro, listOf("test", "-d", "/usr/lib/jvm/java-21-openjdk-amd64")).exitCode == 0 ||
-                cli.execute(distro, listOf("test", "-d", "/usr/lib/jvm/java-21-openjdk")).exitCode == 0
-        }
-        val jdkCmd = "sudo apt-get install -y openjdk-17-jdk openjdk-21-jdk"
+            cli.execute(distro, listOf("test", "-d", "/usr/lib/jvm/java-21-openjdk")).exitCode == 0
+        val jdkCmd = AptCommandBuilder.install(listOf("openjdk-17-jdk", "openjdk-21-jdk"))
 
         val jdkStatus: StepStatus
         val jdkDetail: String

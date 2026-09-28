@@ -1,6 +1,7 @@
 package org.ide.lti.core.data.setup.doctor
 
 import io.ltirom.tooling.client.wsl.WslCliExecutor
+import org.ide.lti.core.data.setup.AptCommandBuilder
 import org.ide.lti.core.domain.setup.DiagnosticCategory
 import org.ide.lti.core.domain.setup.DiagnosticCheckItem
 import org.ide.lti.core.domain.setup.StepStatus
@@ -22,7 +23,7 @@ public class BuildCacheInspector(
         } else {
             cli.execute(distro, listOf("which", "ccache")).exitCode == 0
         }
-        val ccacheCmd = if (hasCcache) null else "sudo apt-get install -y ccache"
+        val ccacheCmd = if (hasCcache) null else AptCommandBuilder.install(listOf("ccache"))
 
         return DiagnosticCheckItem(
             id = "build_cache",

@@ -1,15 +1,17 @@
 package org.ide.lti.core.data.setup.doctor
 
 import io.ltirom.tooling.client.wsl.WslCliExecutor
+import org.ide.lti.core.data.setup.AptCommandBuilder
 import org.ide.lti.core.domain.setup.DiagnosticCategory
 import org.ide.lti.core.domain.setup.DiagnosticCheckItem
 import org.ide.lti.core.domain.setup.StepStatus
 
 /**
- * Inspector verifying Python 3 runtime, pip package manager, and cryptography/pyasn1 libraries.
+ * Inspector verifying Python 3 runtime and cryptography/pyasn1 libraries.
  *
  * Adheres to:
  * - Single Responsibility Principle (SRP): Dedicated exclusively to Python cryptographic tooling.
+ * - Security: Uses strictly native apt packages (python3-cryptography, python3-pyasn1); never pip3.
  */
 public class PythonRuntimeInspector(
     private val cli: WslCliExecutor = WslCliExecutor()
@@ -26,12 +28,7 @@ public class PythonRuntimeInspector(
             val vOut = cli.execute(distro, listOf("python3", "--version")).output.trim()
             if (vOut.isNotBlank()) vOut else "Python 3"
         } else ""
-        val hasPip = if (context.availableCommands.isNotEmpty()) {
-            "pip3" in context.availableCommands || "pip" in context.availableCommands
-        } else {
-            cli.execute(distro, listOf("which", "pip3")).exitCode == 0 ||
-                cli.execute(distro, listOf("python3", "-m", "pip", "--version")).exitCode == 0
-        }
+
         val pyCryptoOk = hasPython3 && cli.execute(distro, listOf("python3", "-c", "import cryptography, pyasn1")).exitCode == 0
 
         val pyStatus: StepStatus
@@ -43,20 +40,16 @@ public class PythonRuntimeInspector(
             !hasPython3 -> {
                 pyStatus = StepStatus.FAILED
                 pyDetail = "Python 3 interpreter not found in WSL (required for avbtool, mkbootimg, and img2sdat)."
-                pyRemediation = "Run 'sudo apt-get install -y python3 python3-pip && pip3 install cryptography pyasn1' in WSL."
-                pyCopyCmd = "sudo apt-get install -y python3 python3-pip && pip3 install cryptography pyasn1"
-            }
-            !hasPip -> {
-                pyStatus = StepStatus.WARNING
-                pyDetail = "$pyVersion detected, but pip3 package manager is missing."
-                pyRemediation = "Run 'sudo apt-get install -y python3-pip && pip3 install cryptography pyasn1' in WSL."
-                pyCopyCmd = "sudo apt-get install -y python3-pip && pip3 install cryptography pyasn1"
+                val cmd = AptCommandBuilder.install(listOf("python3", "python3-cryptography", "python3-pyasn1"))
+                pyRemediation = "Run '$cmd' in WSL."
+                pyCopyCmd = cmd
             }
             !pyCryptoOk -> {
-                pyStatus = StepStatus.WARNING
+                pyStatus = StepStatus.FAILED
                 pyDetail = "$pyVersion verified, but cryptography/pyasn1 packages are missing."
-                pyRemediation = "Run 'pip3 install --break-system-packages cryptography pyasn1' in WSL."
-                pyCopyCmd = "pip3 install --break-system-packages cryptography pyasn1"
+                val cmd = AptCommandBuilder.install(listOf("python3-cryptography", "python3-pyasn1"))
+                pyRemediation = "Run '$cmd' in WSL."
+                pyCopyCmd = cmd
             }
             else -> {
                 pyStatus = StepStatus.SUCCESS

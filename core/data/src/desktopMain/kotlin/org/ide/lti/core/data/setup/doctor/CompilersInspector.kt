@@ -1,6 +1,7 @@
 package org.ide.lti.core.data.setup.doctor
 
 import io.ltirom.tooling.client.wsl.WslCliExecutor
+import org.ide.lti.core.data.setup.AptCommandBuilder
 import org.ide.lti.core.domain.setup.DiagnosticCategory
 import org.ide.lti.core.domain.setup.DiagnosticCheckItem
 import org.ide.lti.core.domain.setup.StepStatus
@@ -37,7 +38,13 @@ public class CompilersInspector(
             if (!hasClangPlus && !hasGplus) add("clang++")
         }
         val compilersOk = missingCompilers.isEmpty()
-        val compilerCmd = if (compilersOk) null else "sudo apt-get install -y build-essential ${missingCompilers.joinToString(" ")}"
+        val missingPackages = buildList {
+            add("build-essential")
+            if (!hasCmake) add("cmake")
+            if (!hasMake) add("make")
+            if (!hasClang && !hasGcc) add("clang")
+        }.distinct()
+        val compilerCmd = if (compilersOk) null else AptCommandBuilder.install(missingPackages)
 
         return DiagnosticCheckItem(
             id = "host_compilers",

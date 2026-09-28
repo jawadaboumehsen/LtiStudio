@@ -1,6 +1,7 @@
 package org.ide.lti.core.data.setup.doctor
 
 import io.ltirom.tooling.client.wsl.WslCliExecutor
+import org.ide.lti.core.data.setup.AptCommandBuilder
 import org.ide.lti.core.domain.setup.DiagnosticCategory
 import org.ide.lti.core.domain.setup.DiagnosticCheckItem
 import org.ide.lti.core.domain.setup.StepStatus
@@ -22,7 +23,7 @@ public class SecurityToolingInspector(
         } else {
             cli.execute(distro, listOf("which", "openssl")).exitCode == 0
         }
-        val opensslCmd = if (hasOpenssl) null else "sudo apt-get install -y openssl"
+        val opensslCmd = if (hasOpenssl) null else AptCommandBuilder.install(listOf("openssl"))
 
         return DiagnosticCheckItem(
             id = "openssl_tools",

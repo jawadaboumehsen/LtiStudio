@@ -210,6 +210,11 @@ class EnvironmentVerificationTest {
                 }
                 cmdStr.contains("echo -n \$HOME") -> CliExecutionResult(0, "/home/lti", "")
                 cmdStr.contains("mkfs.erofs") -> CliExecutionResult(0, "mkfs.erofs 1.7.1 --fs-config-file", "")
+                cmdStr.contains("JAVA_HOMES_BEGIN") -> {
+                    val javaSection = "JAVA_HOMES_BEGIN\n/usr/lib/jvm/java-21-openjdk-amd64\nJAVA_HOMES_END\n"
+                    val reqSection = RequirementCatalog.REQUIREMENTS.joinToString("\n") { "${it.id}=present" }
+                    CliExecutionResult(0, "$javaSection$reqSection\nPACKAGES_FRESH=1\n", "")
+                }
                 else -> CliExecutionResult(0, "ok", "")
             }
         }
@@ -385,6 +390,7 @@ class EnvironmentVerificationTest {
         job.cancel()
 
         assertTrue(runningStagesObserved.contains(SetupStepStage.WSL_DETECTION))
+        assertTrue(runningStagesObserved.contains(SetupStepStage.SYSTEM_PACKAGES))
         assertTrue(runningStagesObserved.contains(SetupStepStage.SERVER_CONNECTIVITY))
         assertTrue(resultState.steps.all { it.provenance == StepProvenance.LIVE })
     }
@@ -442,7 +448,9 @@ class EnvironmentVerificationTest {
             bridgeStep.error?.contains("Failed to bind") == true)
 
         val laterSteps = state.steps.filter {
-            it.stage != SetupStepStage.WSL_DETECTION && it.stage != SetupStepStage.SERVER_CONNECTIVITY
+            it.stage != SetupStepStage.WSL_DETECTION &&
+                it.stage != SetupStepStage.SYSTEM_PACKAGES &&
+                it.stage != SetupStepStage.SERVER_CONNECTIVITY
         }
         for (step in laterSteps) {
             assertEquals(StepStatus.PENDING, step.status)
@@ -516,6 +524,8 @@ class EnvironmentVerificationTest {
                 it.contains("-l -q") ||
                 it.contains("-l -v") ||
                 it.contains("/etc/os-release") ||
+                it.contains("JAVA_HOMES_BEGIN") ||
+                it.contains("/var/lib/apt/lists") ||
                 it.contains("id -un")
         }
         assertEquals(

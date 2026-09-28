@@ -69,6 +69,11 @@ class SetupExecutionPathTest {
                     CliExecutionResult(0, "Default Distribution: Ubuntu", "")
                 }
                 command.contains("echo -n \$HOME") -> CliExecutionResult(0, "/home/lti", "")
+                cmdStr.contains("JAVA_HOMES_BEGIN") -> {
+                    val javaSection = "JAVA_HOMES_BEGIN\n/usr/lib/jvm/java-21-openjdk-amd64\nJAVA_HOMES_END\n"
+                    val reqSection = RequirementCatalog.REQUIREMENTS.joinToString("\n") { "${it.id}=present" }
+                    CliExecutionResult(0, "$javaSection$reqSection\nPACKAGES_FRESH=1\n", "")
+                }
                 else -> CliExecutionResult(0, "ok", "")
             }
         }
@@ -262,15 +267,19 @@ class SetupExecutionPathTest {
         val finalState = provisioner.state.value
         val stageStatuses = finalState.steps.associate { it.stage to it.status }
         assertEquals(StepStatus.SUCCESS, stageStatuses[SetupStepStage.WSL_DETECTION])
+        assertEquals(StepStatus.SUCCESS, stageStatuses[SetupStepStage.SYSTEM_PACKAGES])
         assertEquals(StepStatus.SUCCESS, stageStatuses[SetupStepStage.SERVER_CONNECTIVITY])
         assertEquals(StepStatus.SUCCESS, stageStatuses[SetupStepStage.SYSTEM_DIAGNOSTICS])
         assertEquals(StepStatus.SUCCESS, stageStatuses[SetupStepStage.REPO_SYNCHRONIZATION])
         assertEquals(StepStatus.SUCCESS, stageStatuses[SetupStepStage.TOOLCHAIN_COMPILATION])
 
-        // CRITICAL ASSERTION: Zero calls made to WslCliExecutor after SERVER_CONNECTIVITY
+        // CRITICAL ASSERTION: Zero calls made to WslCliExecutor after SERVER_CONNECTIVITY (excluding pre-server host prerequisite probe)
+        val nonProbePostBridge = spyCli.postBridgeCommands.filterNot {
+            it.any { arg -> arg.contains("JAVA_HOMES_BEGIN") || arg.contains("/var/lib/apt/lists") }
+        }
         assertTrue(
-            spyCli.postBridgeCommands.isEmpty(),
-            "Expected ZERO calls to direct WslCliExecutor after SERVER_CONNECTIVITY succeeded, but found ${spyCli.postBridgeCommands.size} call(s): ${spyCli.postBridgeCommands}"
+            nonProbePostBridge.isEmpty(),
+            "Expected ZERO calls to direct WslCliExecutor after SERVER_CONNECTIVITY succeeded, but found ${nonProbePostBridge.size} call(s): $nonProbePostBridge"
         )
 
         // Assert transport handled commands

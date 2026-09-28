@@ -1,6 +1,6 @@
 package org.ide.lti.core.data.setup.doctor
 
-import org.ide.lti.core.data.setup.PackageCatalog
+import org.ide.lti.core.data.setup.RequirementCatalog
 import org.ide.lti.core.domain.setup.DiagnosticCheckItem
 import org.ide.lti.core.domain.setup.StepStatus
 import java.io.File
@@ -77,10 +77,10 @@ class SecuritySudoersGuardTest {
         assertFalse(plan.configureLoopMountElevation, "Plan must NEVER configure loop mount sudoers elevation")
         assertTrue(plan.pipPackages.isEmpty(), "Plan must NOT use pip packages; native apt packages must be used")
 
-        // All resolved packages must strictly belong to PackageCatalog.ALL_APPROVED_PACKAGES
+        // All resolved packages must strictly belong to RequirementCatalog.ALL_APT_PACKAGES
         for (pkg in plan.aptPackages) {
             assertTrue(
-                PackageCatalog.isPackageApproved(pkg),
+                RequirementCatalog.isPackageApproved(pkg),
                 "Package '$pkg' is not in the approved package catalog!"
             )
             assertFalse(

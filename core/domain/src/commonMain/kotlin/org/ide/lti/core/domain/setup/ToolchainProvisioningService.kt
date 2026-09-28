@@ -211,6 +211,11 @@ public data class ToolchainSetupState(
                 description = "Detect Windows Subsystem for Linux installation and active distribution."
             ),
             SetupStepDetail(
+                stage = SetupStepStage.SYSTEM_PACKAGES,
+                title = "System Packages",
+                description = "Prerequisite system packages and Java runtime."
+            ),
+            SetupStepDetail(
                 stage = SetupStepStage.SERVER_CONNECTIVITY,
                 title = "Server Bridge",
                 description = "Connect to local LtiRomServer daemon and verify API health."
