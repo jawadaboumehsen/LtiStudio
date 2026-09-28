@@ -16,7 +16,13 @@ class WslDaemonUpdateTest {
     private class FakeStateStore(
         var existingDescriptor: ServerConnectionDescriptor? = null
     ) : WslStateStore(WslCliExecutor()) {
-        override fun readState(distro: String, wslIp: String): ServerConnectionDescriptor? = existingDescriptor
+        /** What `/proc/<pid>` says about the old service; null = can't be told. */
+        var alive: () -> Boolean? = { null }
+
+        override fun readState(distro: String, wslIp: String): ServerConnectionDescriptor? =
+            existingDescriptor?.takeIf { it.distro == distro }
+
+        override fun isProcessAlive(distro: String, pid: Long): Boolean? = alive()
     }
 
     private class FakeProber(
@@ -24,21 +30,46 @@ class WslDaemonUpdateTest {
         var serverInfo: WslServerInfo? = null,
         /** The service accepts a non-forced shutdown (it refuses when a run is active). */
         var acceptShutdown: Boolean = true,
-        /** After accepting, the service actually exits (stops answering health checks). */
+        /** After accepting, the service process actually exits. */
         var exitsAfterShutdown: Boolean = true,
     ) : DaemonHealthProber(null) {
         val shutdownRequests = mutableListOf<Boolean>()
+
+        /** The old service's process, as the state store would see it. */
+        var processAlive: Boolean? = true
 
         override suspend fun isHealthy(info: ServerConnectionDescriptor, timeoutMs: Long): Boolean = healthy
         override suspend fun getServerInfo(info: ServerConnectionDescriptor): WslServerInfo? = serverInfo
         override suspend fun requestShutdown(info: ServerConnectionDescriptor, force: Boolean): Boolean {
             shutdownRequests += force
-            if (acceptShutdown && exitsAfterShutdown) healthy = false
+            if (acceptShutdown) {
+                // An accepted shutdown stops health answers at once; the process may still be alive.
+                healthy = false
+                if (exitsAfterShutdown) processAlive = false
+            }
             return acceptShutdown
         }
     }
 
+    /** A launched service process; records whether anything destroyed it. */
+    private class FakeProcess : Process() {
+        @Volatile
+        var destroyed = false
+
+        override fun getInputStream(): java.io.InputStream = java.io.InputStream.nullInputStream()
+        override fun getOutputStream(): java.io.OutputStream = java.io.OutputStream.nullOutputStream()
+        override fun getErrorStream(): java.io.InputStream = java.io.InputStream.nullInputStream()
+        override fun waitFor(): Int = 0
+        override fun exitValue(): Int = 0
+        override fun isAlive(): Boolean = !destroyed
+        override fun destroy() {
+            destroyed = true
+        }
+        override fun destroyForcibly(): Process = apply { destroy() }
+    }
+
     private class FakeProcessLauncher : WslProcessLauncher(5000L) {
+        val launched = mutableListOf<FakeProcess>()
         var launchCount = 0
         var lastLaunchedBinary: String? = null
         var lastLaunchedJavaHome: String? = null
@@ -51,10 +82,8 @@ class WslDaemonUpdateTest {
             launchCount++
             lastLaunchedBinary = binaryPath
             lastLaunchedJavaHome = javaHome
-            // Mock a process for launch
-            val pb = ProcessBuilder("cmd.exe", "/c", "echo LTI_WSL_SERVER_READY port=9999 token=mocktoken pid=1234")
-            val p = pb.start()
-            return WslProcessLaunchResult(p, 9999, "mocktoken", 1234L)
+            val p = FakeProcess().also { launched += it }
+            return WslProcessLaunchResult(p, 9999, "mocktoken", 1000L + launchCount)
         }
     }
 
@@ -75,6 +104,7 @@ class WslDaemonUpdateTest {
                 activeRuns = 0
             )
         )
+        stateStore.alive = { prober.processAlive }
         val launcher = FakeProcessLauncher()
         val manager = WslDaemonManager(
             config = WslDaemonConfig(
@@ -196,7 +226,7 @@ class WslDaemonUpdateTest {
                 distroName = "Ubuntu-24.04",
                 serverBinaryWslPath = "/home/testuser/.ltirom/server/current/bin/ltirom-server",
             ),
-            stateStore = FakeStateStore(existing),
+            stateStore = FakeStateStore(existing).also { it.alive = { prober.processAlive } },
             launcher = launcher,
             customProber = prober,
         )
@@ -237,7 +267,8 @@ class WslDaemonUpdateTest {
             distroName = "Ubuntu-24.04",
             serverBinaryWslPath = "/home/testuser/.ltirom/server/current/bin/ltirom-server",
         ),
-        stateStore = FakeStateStore(ServerConnectionDescriptor("127.0.0.1", 8080, "oldtoken", 100L, "Ubuntu-24.04")),
+        stateStore = FakeStateStore(ServerConnectionDescriptor("127.0.0.1", 8080, "oldtoken", 100L, "Ubuntu-24.04"))
+            .also { it.alive = { prober.processAlive } },
         launcher = launcher,
         customProber = prober,
     )
@@ -257,7 +288,7 @@ class WslDaemonUpdateTest {
     }
 
     @Test
-    fun `an old service that does not exit is never joined by a second one`() = runTest {
+    fun `a failed health check after shutdown is not proof of exit`() = runTest {
         val prober = FakeProber(serverInfo = oldIdleService(), acceptShutdown = true, exitsAfterShutdown = false)
         val launcher = FakeProcessLauncher()
         val manager = managerWith(prober, launcher)
@@ -266,5 +297,42 @@ class WslDaemonUpdateTest {
 
         assertEquals(0, launcher.launchCount, "Termination must be confirmed before a replacement starts")
         assertTrue(manager.isUpdateWaiting)
+    }
+
+    @Test
+    fun `an old service whose exit cannot be established keeps the update waiting`() = runTest {
+        val prober = FakeProber(serverInfo = oldIdleService())
+        val launcher = FakeProcessLauncher()
+        val manager = managerWith(prober, launcher)
+        prober.processAlive = null
+        prober.exitsAfterShutdown = false
+
+        manager.ensureRunningVersion(distro = "Ubuntu-24.04", activeVersion = "2.0.0")
+
+        assertEquals(0, launcher.launchCount)
+        assertTrue(manager.isUpdateWaiting)
+    }
+
+    @Test
+    fun `retiring a service in one distro never kills the process launched in another`() = runTest {
+        val prober = FakeProber(serverInfo = oldIdleService())
+        val launcher = FakeProcessLauncher()
+        // Distro A has no service yet; distro B runs an old one this manager did not launch.
+        val manager = WslDaemonManager(
+            config = WslDaemonConfig(serverBinaryWslPath = "/home/testuser/.ltirom/server/current/bin/ltirom-server"),
+            stateStore = FakeStateStore(ServerConnectionDescriptor("127.0.0.1", 8080, "oldtoken", 100L, "Distro-B"))
+                .also { it.alive = { prober.processAlive } },
+            launcher = launcher,
+            customProber = prober,
+        )
+
+        manager.ensureRunningVersion(distro = "Distro-A", activeVersion = "2.0.0")
+        val launchedInA = launcher.launched.single()
+
+        manager.ensureRunningVersion(distro = "Distro-B", activeVersion = "2.0.0")
+
+        assertEquals(listOf(false), prober.shutdownRequests, "B's old service was asked to stop")
+        assertFalse(launchedInA.destroyed, "A's service process must survive B's retirement")
+        assertEquals(2, launcher.launchCount, "B gets its replacement")
     }
 }

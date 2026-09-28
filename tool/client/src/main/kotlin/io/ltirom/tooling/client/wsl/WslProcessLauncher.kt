@@ -1,10 +1,9 @@
 package io.ltirom.tooling.client.wsl
 
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.channels.BufferOverflow
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import java.io.IOException
@@ -64,56 +63,56 @@ public open class WslProcessLauncher(
     /**
      * Waits for `LTI_WSL_SERVER_READY port=… token=… pid=…` and returns (port, pid).
      *
-     * One daemon thread owns the process output for the process's whole life and never blocks anyone else;
-     * the wait itself is a coroutine with a hard [startupTimeoutMs] deadline, so a partial line without a
-     * newline, a hung process or the caller's cancellation cannot hold it. On timeout, cancellation or an
-     * early exit the process is destroyed.
+     * One daemon thread owns the process output for the process's whole life: it recognises the handshake
+     * itself (so no amount of output after it can push it out of a buffer), keeps a short tail for errors,
+     * then keeps draining so the service never blocks on a full pipe. The wait is a coroutine with a hard
+     * [startupTimeoutMs] deadline, so a partial line, a hung process or the caller's cancellation cannot
+     * hold it; output ending before the handshake fails at once. On any failure the process is destroyed.
      */
     internal suspend fun awaitHandshake(process: Process, distro: String): Pair<Int, Long> {
-        // Bounded: after the handshake the service keeps logging for hours; only recent lines are kept.
-        val lines = Channel<String>(capacity = OUTPUT_BUFFER_LINES, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+        val ready = CompletableDeferred<MatchResult>()
+        val tail = ArrayDeque<String>()
         thread(isDaemon = true, name = "ltirom-server-output") {
             try {
-                process.inputStream.bufferedReader().forEachLine { lines.trySend(it) }
+                process.inputStream.bufferedReader().forEachLine { line ->
+                    if (!ready.isCompleted) {
+                        synchronized(tail) {
+                            tail.addLast(line)
+                            if (tail.size > TAIL_LINES) tail.removeFirst()
+                        }
+                        READY_REGEX.find(line)?.let { ready.complete(it) }
+                    }
+                }
             } catch (_: IOException) {
                 // Stream closed: the process ended or was destroyed.
             } finally {
-                lines.close()
+                ready.completeExceptionally(IOException("The build service output ended before it was ready"))
             }
         }
 
-        val captured = ArrayDeque<String>()
         val match = try {
-            withTimeout(startupTimeoutMs) {
-                var found: MatchResult? = null
-                for (line in lines) {
-                    captured.addLast(line)
-                    if (captured.size > TAIL_LINES) captured.removeFirst()
-                    found = READY_REGEX.find(line)
-                    if (found != null) break
-                }
-                found
-            }
+            withTimeout(startupTimeoutMs) { ready.await() }
         } catch (_: TimeoutCancellationException) {
             null
         } catch (e: CancellationException) {
             process.destroyForcibly()
             throw e
+        } catch (_: IOException) {
+            null
         }
 
         if (match == null) {
             process.destroyForcibly()
-            val tail = captured.joinToString("\n").trim()
-            lastLogTail = tail.ifEmpty { null }
+            val text = synchronized(tail) { tail.joinToString("\n") }.trim()
+            lastLogTail = text.ifEmpty { null }
             val header = "Timed out waiting for LtiRomServer daemon to start in WSL distro '$distro'"
-            throw IllegalStateException(if (tail.isNotEmpty()) "$header:\n$tail" else header)
+            throw IllegalStateException(if (text.isNotEmpty()) "$header:\n$text" else header)
         }
         return match.groupValues[1].toInt() to match.groupValues[3].toLong()
     }
 
     private companion object {
         val READY_REGEX = Regex("""LTI_WSL_SERVER_READY\s+port=(\d+)\s+token=(\S+)\s+pid=(\d+)""")
-        const val OUTPUT_BUFFER_LINES = 256
         const val TAIL_LINES = 10
     }
 }

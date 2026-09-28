@@ -50,7 +50,15 @@ public class WslDaemonManager(
 ) : DaemonSupervisorPort {
 
     private val mutex = Mutex()
-    private var process: Process? = null
+    /**
+     * The process this manager launched, bound to the service it started (distro + pid). Only a stop of
+     * that same service may destroy it; retiring a service in another distro never touches it.
+     */
+    private class OwnedProcess(val distro: String, val pid: Long, val process: Process) {
+        fun belongsTo(info: ServerConnectionDescriptor?) = info != null && info.distro == distro && info.pid == pid
+    }
+
+    private var owned: OwnedProcess? = null
     private var connectionInfo: ServerConnectionDescriptor? = null
 
     /**
@@ -97,7 +105,7 @@ public class WslDaemonManager(
         }
     }
 
-    public fun isRunning(): Boolean = connectionInfo != null && process?.isAlive == true
+    public fun isRunning(): Boolean = owned?.takeIf { it.belongsTo(connectionInfo) }?.process?.isAlive == true
 
     public suspend fun ensureStarted(environment: SetupEnvironment): ServerConnectionDescriptor = ensureRunningVersion(
         distro = environment.distro,
@@ -214,7 +222,7 @@ public class WslDaemonManager(
         } else {
             launcher.launch(distro, binary)
         }
-        process = launchResult.process
+        owned = OwnedProcess(distro, launchResult.pid, launchResult.process)
 
         // Determine working host IP: test WSL IP then fallback to 127.0.0.1
         val candidateHosts = listOf(wslIp, "127.0.0.1")
@@ -287,14 +295,18 @@ public class WslDaemonManager(
 
     /**
      * Replaces an outdated service only when it agrees to stop: a non-forced shutdown, which the service
-     * refuses (and never kills) if a run started after we looked, followed by confirmation that it is gone.
-     * Returns false when the old service is still there, so the caller must not launch a second one.
+     * refuses (and never kills) if a run started after we looked, followed by confirmation from its process
+     * identity that it is gone (a failed health check proves nothing). Returns false when the old service
+     * is still there or its exit can't be established, so the caller must not launch a second one.
      */
     private suspend fun retireForUpdate(info: ServerConnectionDescriptor): Boolean {
         if (!stopDaemonInternal(info, force = false)) return false
         repeat(RETIRE_POLLS) {
-            if (!isHealthy(info)) return true
-            delay(RETIRE_POLL_MS)
+            when (withContext(Dispatchers.IO) { stateStore.isProcessAlive(info.distro, info.pid) }) {
+                false -> return true
+                null -> return false
+                true -> delay(RETIRE_POLL_MS)
+            }
         }
         return false
     }
@@ -303,14 +315,14 @@ public class WslDaemonManager(
         val stoppedCleanly = prober.requestShutdown(info, force)
 
         if (stoppedCleanly || force) {
-            process?.let { p ->
-                if (p.isAlive) {
-                    p.waitFor(2, TimeUnit.SECONDS)
-                    if (p.isAlive) p.destroyForcibly()
+            owned?.takeIf { it.belongsTo(info) }?.let { o ->
+                if (o.process.isAlive) {
+                    o.process.waitFor(2, TimeUnit.SECONDS)
+                    if (o.process.isAlive) o.process.destroyForcibly()
                 }
+                owned = null
             }
-            process = null
-            connectionInfo = null
+            if (connectionInfo?.distro == info.distro && connectionInfo?.pid == info.pid) connectionInfo = null
         }
         return stoppedCleanly
     }
