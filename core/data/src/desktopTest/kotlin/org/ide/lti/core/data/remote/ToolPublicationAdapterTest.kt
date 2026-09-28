@@ -30,6 +30,9 @@ class ToolPublicationAdapterTest {
         var existingTestPaths = mutableSetOf<String>()
         var toolsDManifestFiles = mutableMapOf<String, String>()
 
+        /** Order of registry refreshes and removals. */
+        val calls = mutableListOf<String>()
+
         override suspend fun execute(request: ToolExecutionRequest): ToolExecutionResponse {
             executedRequests.add(request)
             return when (request.toolId) {
@@ -45,14 +48,18 @@ class ToolPublicationAdapterTest {
                     )
                 }
                 "rm" -> {
-                    val path = request.arguments.lastOrNull() ?: ""
-                    deletedFiles.add(path)
-                    toolsDManifestFiles.remove(path)
+                    calls += "rm"
+                    val paths = request.arguments.filter { it != "-f" }
+                    deletedFiles.addAll(paths)
+                    paths.forEach { toolsDManifestFiles.remove(it) }
                     ToolExecutionResponse(exitCode = 0, stdout = "", stderr = "", durationMs = 1L)
                 }
                 "sh" -> {
-                    val paths = toolsDManifestFiles.keys.joinToString("\n")
-                    ToolExecutionResponse(exitCode = 0, stdout = paths, stderr = "", durationMs = 1L)
+                    // The manifest listing: `path<TAB>one-line json` per manifest.
+                    val listing = toolsDManifestFiles.entries.joinToString("\n") { (path, text) ->
+                        "$path\t${text.replace("\n", "")}"
+                    }
+                    ToolExecutionResponse(exitCode = 0, stdout = listing, stderr = "", durationMs = 1L)
                 }
                 else -> ToolExecutionResponse(exitCode = 0, stdout = "", stderr = "", durationMs = 1L)
             }
@@ -66,6 +73,7 @@ class ToolPublicationAdapterTest {
 
         override suspend fun refreshTools(): ToolListResult {
             refreshToolsCallCount++
+            calls += "refresh"
             return ToolListResult.Tools(availableToolsList)
         }
 
@@ -238,6 +246,9 @@ class ToolPublicationAdapterTest {
             fakeTransport.deletedFiles.none { it.contains("other_dir.json") },
             "other_dir.json must NOT be deleted",
         )
+        // New manifests go live before the cleanup, so an interrupted prune can't leave them unloaded;
+        // all stale manifests go in one removal.
+        assertEquals(listOf("refresh", "rm"), fakeTransport.calls)
     }
 
     @Test
@@ -252,6 +263,7 @@ class ToolPublicationAdapterTest {
         val resolved = adapter.resolvedTools()
 
         assertIs<ToolRegistryResult.Tools>(resolved)
+        assertEquals(1, fakeTransport.refreshToolsCallCount, "A check rescans the manifests, never a cached list")
         assertEquals(2, resolved.list.size)
         val lpmake = resolved.list.first { it.tool == "lpmake" }
         assertEquals(true, lpmake.installed)

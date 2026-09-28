@@ -245,9 +245,11 @@ public class SetupRunRecovery(
                 status = AttemptStatus.FAILED
             }
             worstStatus == NOT_SUBMITTED_STATUS || remaining.isNotEmpty() -> {
+                // Completion is journaled after an action ends, so "not completed" also covers an action that
+                // started and was cut off (e.g. the app closed mid-way); it must not claim it "never ran".
                 outcome = SetupOutcome.Interrupted(
-                    "Attempt ${attempt.attemptId} was reconciled but ${remaining.size} planned action(s) " +
-                        "(${remaining.joinToString()}) never ran; preview again to start a new attempt.",
+                    "Attempt ${attempt.attemptId} was interrupted: ${remaining.size} planned action(s) " +
+                        "(${remaining.joinToString()}) did not finish; preview again to start a new attempt.",
                 )
                 status = AttemptStatus.INTERRUPTED
             }

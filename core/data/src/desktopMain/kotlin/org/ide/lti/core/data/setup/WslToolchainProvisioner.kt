@@ -772,8 +772,9 @@ public class WslToolchainProvisioner(
     /** TOOLCHAIN_COMPILATION: binaries, published tools and mkfs.erofs; returns the published tool IDs. */
     private suspend fun verifyToolchainStage(missingBins: List<String>, executables: Set<String>): Set<String> {
         setStepRunning(SetupStepStage.TOOLCHAIN_COMPILATION)
+        // A rescan, not the service's cached list: manifests written by an interrupted publish count.
         val registryResult = toolPublicationPort?.resolvedTools()
-            ?: ToolStatusMapper.toDomain(transport.listTools())
+            ?: ToolStatusMapper.toDomain(transport.refreshTools())
         val isServiceError = registryResult is ToolRegistryResult.ServiceError
         val publishedTools = when (registryResult) {
             is ToolRegistryResult.Tools -> registryResult.list.filter { it.installed }.map { it.tool }.toSet()
@@ -2101,7 +2102,15 @@ public class WslToolchainProvisioner(
                     )
                 }
                 is SetupPlanAction.PublishTools -> {
+                    setStepRunning(SetupStepStage.TOOLCHAIN_COMPILATION)
+                    appendLog(
+                        "[Step 5/5] Registering ${action.toolIds.size} tool(s) with the build service and " +
+                            "removing stale registrations...",
+                    )
                     val pubRes = toolPublicationPort?.publish(binDir, action.toolIds.toSet())
+                    pubRes?.pruned?.takeIf { it.isNotEmpty() }?.let {
+                        appendLog("[Step 5/5] Removed ${it.size} stale registration(s): ${it.sorted().joinToString()}")
+                    }
                     val publishedIds = pubRes?.registered ?: emptySet()
                     val unpublishedIds = pubRes?.failed?.keys ?: emptySet()
                     _state.update {

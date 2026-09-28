@@ -826,7 +826,7 @@ class EnvironmentSetupStateTest {
             )
         spyService.recoverOutcome =
             SetupOutcome.Interrupted(
-                "Attempt attempt-partial-3 was reconciled but 1 planned action(s) (build-recipes) never ran; " +
+                "Attempt attempt-partial-3 was interrupted: 1 planned action(s) (build-recipes) did not finish; " +
                     "preview again to start a new attempt.",
             )
         val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)

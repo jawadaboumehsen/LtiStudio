@@ -55,8 +55,10 @@ public class ToolPublicationAdapter(
             }
         }
 
-        val pruned = pruneOldManifests(normalizedBin)
+        // Make the new manifests live before the (slower) cleanup: an interruption while pruning then
+        // leaves the tools registered, not written-but-unloaded.
         val registered = verifyDynamicRegistrations(uploadedTools, failed)
+        val pruned = pruneOldManifests(normalizedBin)
 
         return PublicationReport(
             requested = toolIds,
@@ -158,56 +160,58 @@ public class ToolPublicationAdapter(
         return registered
     }
 
+    /**
+     * Removes this app's stale manifests (non-catalog tools it once published under [binDir]) in two round
+     * trips: one listing that returns every manifest, one `rm` for all stale paths. Reading and removing
+     * each manifest separately cost two calls per file, minutes for a directory full of old junk.
+     */
     private suspend fun pruneOldManifests(binDir: String): Set<String> {
-        val manifestPaths = queryManifestPaths()
-        if (manifestPaths.isEmpty()) return emptySet()
+        val stale = readAllManifests().filter { (_, manifest) -> shouldPrune(manifest, binDir) }
+        if (stale.isEmpty()) return emptySet()
 
-        val prunedNames = mutableSetOf<String>()
-        for (path in manifestPaths) {
-            val manifest = readManifest(path) ?: continue
-            if (shouldPrune(manifest, binDir) && removeManifest(path, manifest.name)) {
-                prunedNames.add(manifest.name)
-            }
-        }
-        return prunedNames
-    }
-
-    private suspend fun queryManifestPaths(): List<String> {
-        val listRes = try {
-            transport.execute(
-                // The service runs tools without a shell, so `~` would reach `find` literally and match
-                // nothing; `sh -c` expands $HOME and the glob and prints absolute manifest paths.
+        val failure = try {
+            val exitCode = transport.execute(
                 ToolExecutionRequest(
-                    toolId = "sh",
-                    arguments = listOf("-c", "ls -1 \"\$HOME\"/.ltirom/tools.d/*.json 2>/dev/null"),
+                    toolId = "rm",
+                    arguments = listOf("-f") + stale.map { it.first },
                     workingDirectory = "/",
                 ),
+            ).exitCode
+            if (exitCode == 0) null else "rm exited with $exitCode"
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            e.message ?: "rm failed"
+        }
+        return if (failure == null) {
+            stale.forEach { (path, manifest) -> log("Pruned non-catalog manifest for '${manifest.name}' at $path") }
+            stale.map { it.second.name }.toSet()
+        } else {
+            log("Failed to remove ${stale.size} stale manifest(s): $failure")
+            emptySet()
+        }
+    }
+
+    private suspend fun readAllManifests(): List<Pair<String, ToolManifestDto>> {
+        val listing = try {
+            // The service runs tools without a shell, so `~` would reach a command literally; `sh -c`
+            // expands $HOME and the glob and prints absolute manifest paths.
+            transport.execute(
+                ToolExecutionRequest(toolId = "sh", arguments = listOf("-c", MANIFEST_LISTING), workingDirectory = "/"),
             )
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {
             null
         }
+        if (listing == null || listing.exitCode != 0) return emptyList()
 
-        return if (listRes != null && listRes.exitCode == 0 && listRes.stdout.isNotBlank()) {
-            listRes.stdout.lines().map { it.trim() }.filter { it.isNotBlank() }
-        } else {
-            emptyList()
+        return listing.stdout.lines().mapNotNull { line ->
+            val tab = line.indexOf('\t')
+            if (tab <= 0) return@mapNotNull null
+            val manifest = runCatching { json.decodeFromString<ToolManifestDto>(line.substring(tab + 1)) }.getOrNull()
+            manifest?.let { line.substring(0, tab) to it }
         }
-    }
-
-    private suspend fun readManifest(path: String): ToolManifestDto? {
-        val bytes = try {
-            transport.downloadFile(path)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (_: Exception) {
-            null
-        } ?: return null
-
-        return runCatching {
-            json.decodeFromString<ToolManifestDto>(bytes.decodeToString())
-        }.getOrNull()
     }
 
     private fun shouldPrune(manifest: ToolManifestDto, binDir: String): Boolean {
@@ -217,22 +221,15 @@ public class ToolPublicationAdapter(
         return isAppPublished && isUnderBin && !isCatalog
     }
 
-    private suspend fun removeManifest(path: String, name: String): Boolean = try {
-        val removed = transport.execute(
-            ToolExecutionRequest(
-                toolId = "rm",
-                arguments = listOf("-f", path),
-                workingDirectory = "/",
-            ),
-        ).exitCode == 0
-        log(if (removed) "Pruned non-catalog manifest for '$name' at $path" else "Failed to remove manifest $path")
-        removed
-    } catch (e: CancellationException) {
-        throw e
-    } catch (e: Exception) {
-        log("Failed to remove pruned manifest $path: ${e.message}")
-        false
-    }
+    /**
+     * What the service resolves right now. A refresh rescans the manifests on disk, so a publish that was
+     * interrupted after writing them (before its own refresh) is still seen by the next check.
+     */
+    override suspend fun resolvedTools(): ToolRegistryResult = ToolStatusMapper.toDomain(transport.refreshTools())
 
-    override suspend fun resolvedTools(): ToolRegistryResult = ToolStatusMapper.toDomain(transport.listTools())
+    private companion object {
+        /** Every manifest in one round trip, one `path<TAB>json` line each (manifests are one-line JSON). */
+        val MANIFEST_LISTING = """for f in "${'$'}HOME"/.ltirom/tools.d/*.json; do [ -f "${'$'}f" ] || continue; """ +
+            """printf '%s\t' "${'$'}f"; tr -d '\n' < "${'$'}f"; echo; done"""
+    }
 }
