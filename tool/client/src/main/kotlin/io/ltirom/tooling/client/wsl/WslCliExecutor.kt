@@ -3,6 +3,7 @@ package io.ltirom.tooling.client.wsl
 import java.io.InputStream
 import java.io.InputStreamReader
 import java.nio.charset.Charset
+import java.util.Base64
 import java.util.concurrent.TimeUnit
 
 public data class CliExecutionResult(
@@ -68,8 +69,17 @@ public open class WslCliExecutor {
         timeoutSeconds: Long = 10,
         charset: Charset = Charsets.UTF_8,
         user: String? = null
-    ): CliExecutionResult {
-        val fullCmd = buildList {
+    ): CliExecutionResult =
+        runProcess(ProcessBuilder(wslCommandLine(distro, command, user)), timeoutSeconds, charset)
+
+    /**
+     * The `wsl.exe` argv for [command]. Windows passes argv as one command line that `wsl.exe` splits
+     * again, and an embedded `"` is not escaped on the way (`sh -c 'echo "$(x -v)"'` arrives cut at the
+     * space). So a command containing `"` is sent as base64 and rebuilt inside the distro, with every
+     * argument single-quoted for `sh`; commands without `"` are passed unchanged.
+     */
+    internal fun wslCommandLine(distro: String, command: List<String>, user: String? = null): List<String> =
+        buildList {
             add("wsl.exe")
             add("-d")
             add(distro)
@@ -78,10 +88,14 @@ public open class WslCliExecutor {
                 add(user)
             }
             add("-e")
-            addAll(command)
+            if (command.none { '"' in it }) {
+                addAll(command)
+            } else {
+                val shellLine = command.joinToString(" ") { "'" + it.replace("'", "'\\''") + "'" }
+                val encoded = Base64.getEncoder().encodeToString(shellLine.toByteArray(Charsets.UTF_8))
+                addAll(listOf("sh", "-c", "echo $encoded | base64 -d | sh"))
+            }
         }
-        return runProcess(ProcessBuilder(fullCmd), timeoutSeconds, charset)
-    }
 
     public open fun executeHost(
         command: List<String>,

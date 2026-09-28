@@ -82,5 +82,29 @@ class WslCliExecutorTest {
         kotlin.test.assertFalse(cleanup.isClean, "Cleanup must report incomplete when a process survives")
         assertEquals(listOf(88888L), cleanup.survivingPids)
     }
+
+    @Test
+    fun commandsWithoutDoubleQuotesArePassedUnchanged() {
+        assertEquals(
+            listOf("wsl.exe", "-d", "Ubuntu", "-u", "root", "-e", "sh", "-c", "chmod +x '/a b'/bin/*"),
+            executor.wslCommandLine("Ubuntu", listOf("sh", "-c", "chmod +x '/a b'/bin/*"), user = "root"),
+        )
+    }
+
+    @Test
+    fun doubleQuotesNeverReachTheWindowsCommandLine() {
+        // The package probe's Java line: Windows used to cut it at the space before -version.
+        val script = "for d in /usr/lib/jvm/*; do echo \"\$d|\$(\"\$d/bin/java\" -version 2>&1)\"; done; echo 'it''s'"
+
+        val argv = executor.wslCommandLine("Ubuntu", listOf("sh", "-c", script))
+
+        assertTrue(argv.none { '"' in it }, "$argv")
+        assertEquals(listOf("wsl.exe", "-d", "Ubuntu", "-e", "sh", "-c"), argv.take(6))
+        val encoded = argv.last().removePrefix("echo ").removeSuffix(" | base64 -d | sh")
+        val decoded = String(java.util.Base64.getDecoder().decode(encoded), Charsets.UTF_8)
+        // Each argument single-quoted for sh, embedded single quotes closed and escaped.
+        val quoted = "'" + script.replace("'", "'\\''") + "'"
+        assertEquals("'sh' '-c' $quoted", decoded)
+    }
 }
 
