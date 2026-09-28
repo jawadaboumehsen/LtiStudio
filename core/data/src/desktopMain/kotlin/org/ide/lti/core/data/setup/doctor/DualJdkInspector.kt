@@ -1,11 +1,10 @@
 package org.ide.lti.core.data.setup.doctor
 
 import io.ltirom.tooling.client.wsl.WslCliExecutor
+import org.ide.lti.core.data.setup.AptCommandBuilder
 import org.ide.lti.core.domain.setup.DiagnosticCategory
 import org.ide.lti.core.domain.setup.DiagnosticCheckItem
 import org.ide.lti.core.domain.setup.StepStatus
-
-import org.ide.lti.core.data.setup.AptCommandBuilder
 
 /**
  * Inspector verifying Dual OpenJDK runtimes (17 and 21) and the javac compiler.
@@ -13,9 +12,7 @@ import org.ide.lti.core.data.setup.AptCommandBuilder
  * Adheres to:
  * - Single Responsibility Principle (SRP): Dedicated exclusively to Java development environments.
  */
-public class DualJdkInspector(
-    private val cli: WslCliExecutor = WslCliExecutor()
-) : SystemDiagnosticInspector {
+public class DualJdkInspector(private val cli: WslCliExecutor = WslCliExecutor()) : SystemDiagnosticInspector {
 
     override suspend fun inspect(context: DiagnosticContext): DiagnosticCheckItem {
         val distro = context.distro
@@ -31,8 +28,11 @@ public class DualJdkInspector(
         }
         val javaVerOutput = if (hasJava) {
             cli.execute(distro, listOf("java", "-version")).let { it.output + "\n" + it.error }.trim()
-        } else ""
-        val detectedJavaVer = Regex("version\\s+\"([^\"]+)").find(javaVerOutput)?.groupValues?.get(1) ?: if (hasJava) "Active" else "None"
+        } else {
+            ""
+        }
+        val detectedJavaVer =
+            Regex("version\\s+\"([^\"]+)").find(javaVerOutput)?.groupValues?.get(1) ?: if (hasJava) "Active" else "None"
         val hasJvm17 = "java-17-openjdk-amd64" in context.availableCommands ||
             "java-17-openjdk" in context.availableCommands ||
             cli.execute(distro, listOf("test", "-d", "/usr/lib/jvm/java-17-openjdk-amd64")).exitCode == 0 ||
@@ -64,7 +64,8 @@ public class DualJdkInspector(
             }
             !hasJvm17 || !hasJvm21 -> {
                 jdkStatus = StepStatus.WARNING
-                jdkDetail = "Java ($detectedJavaVer) with javac verified. OpenJDK 17 (apktool) & OpenJDK 21 (toolchain build) recommended."
+                jdkDetail =
+                    "Java ($detectedJavaVer) with javac verified. OpenJDK 17 (apktool) & OpenJDK 21 (toolchain build) recommended."
                 jdkRemediation = "Run '$jdkCmd' in WSL."
                 jdkCopyCmd = jdkCmd
             }
@@ -84,7 +85,7 @@ public class DualJdkInspector(
             detail = jdkDetail,
             remediation = jdkRemediation,
             copyableCommand = jdkCopyCmd,
-            isOptionalForRuntime = context.binariesPresent && hasJava
+            isOptionalForRuntime = context.binariesPresent && hasJava,
         )
     }
 }

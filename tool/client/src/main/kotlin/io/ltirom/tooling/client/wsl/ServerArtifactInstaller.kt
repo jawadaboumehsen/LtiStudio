@@ -1,25 +1,41 @@
 package io.ltirom.tooling.client.wsl
 
+import io.ltirom.tooling.client.WslPathTranslator
 import org.ide.lti.core.model.setup.InstallState
 import org.ide.lti.core.model.setup.ServerArtifact
 import org.ide.lti.core.model.setup.SetupEnvironment
 import java.io.File
 
+/**
+ * Installs the build service bundled with the app into `~/.ltirom/server` of the selected distro.
+ *
+ * Layout (data-model `ServerArtifact`):
+ * ```
+ * versions/<v>.partial/   staged copy, never activated
+ * versions/<v>/           verified copy
+ * current -> versions/<v> activated by one atomic link swap
+ * ```
+ * The previous version stays active until the swap succeeds, and the version the `current` link
+ * points to is never deleted. The bundle is `<resources>/ltirom-server/` containing
+ * `server-version.txt` and `checksums.txt` (written by `lti-desktop:stageBundledServer`).
+ */
 public class ServerArtifactInstaller(
     private val cli: WslCliExecutor = WslCliExecutor(),
     private val bundleDirProvider: () -> File? = {
-        val resDir = System.getProperty("compose.application.resources.dir")
-        if (resDir != null) File(resDir, "server") else null
-    }
+        System.getProperty("compose.application.resources.dir")
+            ?.let { File(it, BUNDLE_DIR_NAME) }
+            ?.takeIf { it.isDirectory }
+    },
+    private val pathTranslator: WslPathTranslator = WslPathTranslator(),
 ) {
     public fun getBundledVersion(): String? {
         val bundle = bundleDirProvider() ?: return null
-        val verFile = File(bundle, "server-version.txt")
-        return if (verFile.exists()) verFile.readText().trim().ifBlank { null } else null
+        val verFile = File(bundle, VERSION_FILE)
+        return if (verFile.isFile) verFile.readText().trim().ifBlank { null } else null
     }
 
     public fun getActiveVersion(environment: SetupEnvironment): String? {
-        val linkResult = cli.execute(environment.distro, listOf("readlink", "-f", "${environment.home}/.ltirom/server/current"))
+        val linkResult = cli.execute(environment.distro, listOf("readlink", "-f", currentLink(environment)))
         return if (linkResult.exitCode == 0 && linkResult.output.isNotBlank()) {
             linkResult.output.trim().substringAfterLast("/").ifBlank { null }
         } else {
@@ -32,148 +48,86 @@ public class ServerArtifactInstaller(
         val active = getActiveVersion(environment)
         val state = when {
             active == null -> InstallState.NotInstalled
-            active == bundled -> InstallState.Current
-            bundled != null -> InstallState.Outdated
-            else -> InstallState.Current
+            bundled == null || active == bundled -> InstallState.Current
+            else -> InstallState.Outdated
         }
-        return ServerArtifact(
-            bundledVersion = bundled,
-            activeVersion = active,
-            runningVersion = null,
-            runningActiveRuns = 0,
-            installState = state,
-            javaHome = null
-        )
+        return artifact(bundled, active, state)
     }
 
     public fun ensureInstalled(environment: SetupEnvironment): ServerArtifact {
         val bundle = bundleDirProvider()
         val bundled = getBundledVersion()
-        fun activeBefore(): String? = getActiveVersion(environment)
+        val activeBefore = getActiveVersion(environment)
 
         if (bundle == null || bundled == null) {
-            return ServerArtifact(
-                bundledVersion = null,
-                activeVersion = activeBefore(),
-                runningVersion = null,
-                runningActiveRuns = 0,
-                installState = InstallState.Failed("bundle", "Server bundle directory or server-version.txt not found"),
-                javaHome = null
+            return artifact(
+                null,
+                activeBefore,
+                InstallState.Failed("bundle", "The build service is missing from this app installation."),
             )
         }
 
         val serverBase = "${environment.home}/.ltirom/server"
+        val currentBinary = "${currentLink(environment)}/bin/ltirom-server"
+        if (activeBefore == bundled && ok(environment, listOf("test", "-x", currentBinary))) {
+            return artifact(bundled, bundled, InstallState.Current)
+        }
+
         val versionsDir = "$serverBase/versions"
         val partialDir = "$versionsDir/$bundled.partial"
         val finalDir = "$versionsDir/$bundled"
-        val currentLink = "$serverBase/current"
-        val currentTmpLink = "$serverBase/current.tmp"
+        val tmpLink = "$serverBase/current.tmp"
+        val source = pathTranslator.toWslPath(bundle.absolutePath)
 
-        // 1. Cleanup existing partial
-        val cleanPartial = cli.execute(environment.distro, listOf("rm", "-rf", partialDir))
-        if (cleanPartial.exitCode != 0) {
-            return ServerArtifact(
-                bundledVersion = bundled,
-                activeVersion = activeBefore(),
-                runningVersion = null,
-                runningActiveRuns = 0,
-                installState = InstallState.Failed("cleanup", cleanPartial.error.ifBlank { cleanPartial.output }),
-                javaHome = null
-            )
-        }
-
-        // 2. Stage into partial
-        val mkdirPartial = cli.execute(environment.distro, listOf("mkdir", "-p", partialDir))
-        if (mkdirPartial.exitCode != 0) {
-            return ServerArtifact(
-                bundledVersion = bundled,
-                activeVersion = activeBefore(),
-                runningVersion = null,
-                runningActiveRuns = 0,
-                installState = InstallState.Failed("mkdir", mkdirPartial.error.ifBlank { mkdirPartial.output }),
-                javaHome = null
-            )
-        }
-
-        val wslSource = toWslPath(bundle.absolutePath)
-        val copyResult = cli.execute(environment.distro, listOf("cp", "-r", "$wslSource/.", partialDir))
-        if (copyResult.exitCode != 0) {
-            return ServerArtifact(
-                bundledVersion = bundled,
-                activeVersion = activeBefore(),
-                runningVersion = null,
-                runningActiveRuns = 0,
-                installState = InstallState.Failed("cp", copyResult.error.ifBlank { copyResult.output }),
-                javaHome = null
-            )
-        }
-
-        // Verify executable
-        cli.execute(environment.distro, listOf("chmod", "+x", "$partialDir/bin/ltirom-server"))
-        val verifyExecutable = cli.execute(environment.distro, listOf("test", "-x", "$partialDir/bin/ltirom-server"))
-        if (verifyExecutable.exitCode != 0) {
-            return ServerArtifact(
-                bundledVersion = bundled,
-                activeVersion = activeBefore(),
-                runningVersion = null,
-                runningActiveRuns = 0,
-                installState = InstallState.Failed("verify", "Server binary $partialDir/bin/ltirom-server is not executable"),
-                javaHome = null
-            )
-        }
-
-        // 3. Rename partial to final
-        cli.execute(environment.distro, listOf("rm", "-rf", finalDir))
-        val renameResult = cli.execute(environment.distro, listOf("mv", partialDir, finalDir))
-        if (renameResult.exitCode != 0) {
-            return ServerArtifact(
-                bundledVersion = bundled,
-                activeVersion = activeBefore(),
-                runningVersion = null,
-                runningActiveRuns = 0,
-                installState = InstallState.Failed("mv", renameResult.error.ifBlank { renameResult.output }),
-                javaHome = null
-            )
-        }
-
-        // 4. Atomic symlink swap
-        val linkTmp = cli.execute(environment.distro, listOf("ln", "-sfn", finalDir, currentTmpLink))
-        if (linkTmp.exitCode != 0) {
-            return ServerArtifact(
-                bundledVersion = bundled,
-                activeVersion = activeBefore(),
-                runningVersion = null,
-                runningActiveRuns = 0,
-                installState = InstallState.Failed("ln", linkTmp.error.ifBlank { linkTmp.output }),
-                javaHome = null
-            )
-        }
-
-        val swapResult = cli.execute(environment.distro, listOf("mv", "-T", currentTmpLink, currentLink))
-        if (swapResult.exitCode != 0) {
-            // Fallback direct symlink
-            cli.execute(environment.distro, listOf("ln", "-sfn", finalDir, currentLink))
-        }
-
-        return ServerArtifact(
-            bundledVersion = bundled,
-            activeVersion = bundled,
-            runningVersion = null,
-            runningActiveRuns = 0,
-            installState = InstallState.Current,
-            javaHome = null
+        val steps = listOf(
+            "cleanup" to listOf("rm", "-rf", partialDir, tmpLink),
+            "mkdir" to listOf("mkdir", "-p", versionsDir),
+            "copy" to listOf("cp", "-r", source, partialDir),
+            "chmod" to listOf("sh", "-c", "chmod +x '$partialDir'/bin/*"),
+            "verify" to listOf("sh", "-c", "cd '$partialDir' && sha256sum --quiet -c $CHECKSUMS_FILE"),
+            "verify" to listOf("test", "-x", "$partialDir/bin/ltirom-server"),
+            // finalDir can only be the active target when that target is broken (checked above).
+            "stage" to listOf("rm", "-rf", finalDir),
+            "stage" to listOf("mv", partialDir, finalDir),
+            "activate" to listOf("ln", "-sfn", finalDir, tmpLink),
+            "activate" to listOf("mv", "-T", tmpLink, currentLink(environment)),
         )
+        for ((step, command) in steps) {
+            // Copying and hashing the bundle across the 9P mount takes far longer than the 10 s default.
+            val result = cli.execute(environment.distro, command, timeoutSeconds = STEP_TIMEOUT_SECONDS)
+            if (result.exitCode != 0) {
+                val detail = result.error.ifBlank { result.output }.ifBlank { "exit code ${result.exitCode}" }
+                return artifact(bundled, activeBefore, InstallState.Failed(step, detail))
+            }
+        }
+
+        // Keep the new version and the one it replaced; older versions are removed (best effort).
+        val keep = listOfNotNull(bundled, activeBefore).joinToString(" ") { "! -name '$it'" }
+        cli.execute(
+            environment.distro,
+            listOf("sh", "-c", "find '$versionsDir' -mindepth 1 -maxdepth 1 $keep -exec rm -rf {} +"),
+        )
+        return artifact(bundled, bundled, InstallState.Current)
     }
 
-    private fun toWslPath(windowsPath: String): String {
-        val normalized = windowsPath.replace('\\', '/')
-        val drive = Regex("""^([a-zA-Z]):/(.*)""").find(normalized)
-        return if (drive != null) {
-            val letter = drive.groupValues[1].lowercase()
-            val rest = drive.groupValues[2]
-            "/mnt/$letter/$rest"
-        } else {
-            normalized
-        }
+    private fun ok(environment: SetupEnvironment, command: List<String>): Boolean =
+        cli.execute(environment.distro, command).exitCode == 0
+
+    private fun currentLink(environment: SetupEnvironment): String = "${environment.home}/.ltirom/server/current"
+
+    private fun artifact(bundled: String?, active: String?, state: InstallState): ServerArtifact = ServerArtifact(
+        bundledVersion = bundled,
+        activeVersion = active,
+        runningVersion = null,
+        runningActiveRuns = 0,
+        installState = state,
+        javaHome = null,
+    )
+
+    public companion object {
+        public const val BUNDLE_DIR_NAME: String = "ltirom-server"
+        public const val VERSION_FILE: String = "server-version.txt"
+        public const val CHECKSUMS_FILE: String = "checksums.txt"
+        private const val STEP_TIMEOUT_SECONDS: Long = 180
     }
 }

@@ -3,14 +3,15 @@ package org.ide.lti.core.data.setup
 import io.ltirom.tooling.client.wsl.CliExecutionResult
 import io.ltirom.tooling.client.wsl.WslCliExecutor
 import kotlinx.coroutines.test.runTest
-import org.ide.lti.core.model.setup.PrerequisiteReport
+import org.ide.lti.core.model.setup.Need
+import org.ide.lti.core.model.setup.RequirementCheck
 import org.ide.lti.core.model.setup.RequirementStatus
 import org.ide.lti.core.model.setup.SetupEnvironment
+import org.ide.lti.core.model.setup.SystemRequirement
 import java.nio.charset.Charset
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -29,20 +30,9 @@ class WslHostPrerequisiteProbeTest {
             command: List<String>,
             timeoutSeconds: Long,
             charset: Charset,
-            user: String?
+            user: String?,
         ): CliExecutionResult {
             lastExecutedCommand = command
-            val cmdStr = command.joinToString(" ")
-            
-            // Check for test -e /var/lib/apt/lists/*_Packages or similar fresh check
-            if (cmdStr.contains("/var/lib/apt/lists") && (cmdStr.contains("test") || cmdStr.contains("find") || cmdStr.contains("ls"))) {
-                return if (packageListsFresh) {
-                    CliExecutionResult(0, "/var/lib/apt/lists/archive.ubuntu.com_ubuntu_dists_noble_main_binary-amd64_Packages", "")
-                } else {
-                    CliExecutionResult(1, "", "")
-                }
-            }
-
             // Single probe script execution
             val combinedOutput = buildString {
                 if (packageListsFresh) {
@@ -56,6 +46,11 @@ class WslHostPrerequisiteProbeTest {
                 for (line in lines) {
                     appendLine(line)
                 }
+                // A real run prints a line for every non-Java requirement; unspecified ones are present.
+                val reported = lines.map { it.substringBefore("=") }.toSet()
+                RequirementCatalog.REQUIREMENTS.filter {
+                    it.id !in reported && it.check !is RequirementCheck.JavaMajor
+                }.forEach { appendLine("${it.id}=present") }
                 for ((pkg, policy) in aptCachePolicyLines) {
                     appendLine("APT_POLICY:$pkg:$policy")
                 }
@@ -71,7 +66,7 @@ class WslHostPrerequisiteProbeTest {
         osId = "ubuntu",
         osVersionId = "24.04",
         user = "testuser",
-        home = "/home/testuser"
+        home = "/home/testuser",
     )
 
     @Test
@@ -81,8 +76,8 @@ class WslHostPrerequisiteProbeTest {
             lines = listOf(
                 "git=missing",
                 "cmake=missing",
-                "build-essential=present"
-            )
+                "build-essential=present",
+            ),
         )
         val probe = WslHostPrerequisiteProbe(cli = fakeCli)
         val report = probe.probe(testEnv)
@@ -90,7 +85,7 @@ class WslHostPrerequisiteProbeTest {
         assertEquals(RequirementStatus.Missing, report.results["git"])
         assertEquals(RequirementStatus.Missing, report.results["cmake"])
         assertEquals(RequirementStatus.Present, report.results["build-essential"])
-        
+
         // missingPackages sorted and de-duplicated
         assertEquals(listOf("cmake", "git"), report.missingPackages)
         assertEquals("sudo apt-get update && sudo apt-get install -y cmake git", report.installCommand)
@@ -101,8 +96,8 @@ class WslHostPrerequisiteProbeTest {
         val fakeCli = FakeProbeCli(
             packageListsFresh = true,
             lines = listOf(
-                "python-crypto=missing"
-            )
+                "python-crypto=missing",
+            ),
         )
         val probe = WslHostPrerequisiteProbe(cli = fakeCli)
         val report = probe.probe(testEnv)
@@ -110,7 +105,10 @@ class WslHostPrerequisiteProbeTest {
         assertEquals(RequirementStatus.Missing, report.results["python-crypto"])
         assertTrue(report.missingPackages.contains("python3-cryptography"))
         assertTrue(report.missingPackages.contains("python3-pyasn1"))
-        assertEquals("sudo apt-get update && sudo apt-get install -y python3-cryptography python3-pyasn1", report.installCommand)
+        assertEquals(
+            "sudo apt-get update && sudo apt-get install -y python3-cryptography python3-pyasn1",
+            report.installCommand,
+        )
     }
 
     @Test
@@ -119,8 +117,8 @@ class WslHostPrerequisiteProbeTest {
             packageListsFresh = true,
             javaListingOutput = "/usr/lib/jvm/java-17-openjdk-amd64\n/usr/lib/jvm/java-21-openjdk-amd64",
             lines = listOf(
-                "java-server=present"
-            )
+                "java-server=present",
+            ),
         )
         val probe = WslHostPrerequisiteProbe(cli = fakeCli)
         val report = probe.probe(testEnv)
@@ -135,8 +133,8 @@ class WslHostPrerequisiteProbeTest {
             packageListsFresh = true,
             javaListingOutput = "/usr/lib/jvm/java-17-openjdk-amd64",
             lines = listOf(
-                "java-server=missing"
-            )
+                "java-server=missing",
+            ),
         )
         val probe = WslHostPrerequisiteProbe(cli = fakeCli)
         val report = probe.probe(testEnv)
@@ -147,36 +145,47 @@ class WslHostPrerequisiteProbeTest {
     }
 
     @Test
-    fun `fresh package lists with candidate none marks package Unavailable and excludes from missingPackages`() = runTest {
-        val fakeCli = FakeProbeCli(
-            packageListsFresh = true,
-            lines = listOf(
-                "legacy-pkg=missing",
-                "git=missing"
-            ),
-            aptCachePolicyLines = mapOf(
-                "legacy-pkg" to "none",
-                "git" to "1:2.43.0-1ubuntu7.1"
+    fun `fresh package lists with candidate none marks package Unavailable and excludes from missingPackages`() =
+        runTest {
+            val fakeCli = FakeProbeCli(
+                packageListsFresh = true,
+                lines = listOf(
+                    "legacy-pkg=missing",
+                    "git=missing",
+                ),
+                aptCachePolicyLines = mapOf(
+                    "legacy-pkg" to "none",
+                    "git" to "1:2.43.0-1ubuntu7.1",
+                ),
             )
-        )
-        val probe = WslHostPrerequisiteProbe(cli = fakeCli)
-        val report = probe.probe(testEnv)
+            val legacy =
+                SystemRequirement(
+                    "legacy-pkg",
+                    RequirementCheck.Package("legacy-pkg"),
+                    listOf("legacy-pkg"),
+                    Need.BUILD,
+                )
+            val probe = WslHostPrerequisiteProbe(cli = fakeCli, requirements = RequirementCatalog.REQUIREMENTS + legacy)
+            val report = probe.probe(testEnv)
 
-        val legacyStatus = report.results["legacy-pkg"]
-        assertTrue(legacyStatus is RequirementStatus.Unavailable, "legacy-pkg should be Unavailable, was $legacyStatus")
-        assertEquals("24.04", (legacyStatus as RequirementStatus.Unavailable).release)
-        assertEquals(listOf("git"), report.missingPackages)
-        assertEquals("sudo apt-get update && sudo apt-get install -y git", report.installCommand)
-    }
+            val legacyStatus = report.results["legacy-pkg"]
+            assertTrue(
+                legacyStatus is RequirementStatus.Unavailable,
+                "legacy-pkg should be Unavailable, was $legacyStatus",
+            )
+            assertEquals("24.04", (legacyStatus as RequirementStatus.Unavailable).release)
+            assertEquals(listOf("git"), report.missingPackages)
+            assertEquals("sudo apt-get update && sudo apt-get install -y git", report.installCommand)
+        }
 
     @Test
     fun `empty package lists does not mark package Unavailable and still offers install command`() = runTest {
         val fakeCli = FakeProbeCli(
             packageListsFresh = false,
             lines = listOf(
-                "git=missing"
+                "git=missing",
             ),
-            aptCachePolicyLines = emptyMap()
+            aptCachePolicyLines = emptyMap(),
         )
         val probe = WslHostPrerequisiteProbe(cli = fakeCli)
         val report = probe.probe(testEnv)
@@ -185,5 +194,43 @@ class WslHostPrerequisiteProbeTest {
         assertEquals(RequirementStatus.Missing, report.results["git"])
         assertEquals(listOf("git"), report.missingPackages)
         assertEquals("sudo apt-get update && sudo apt-get install -y git", report.installCommand)
+    }
+
+    @Test
+    fun `a failed probe reports CheckFailed and never assumes requirements are present`() = runTest {
+        val failingCli = object : WslCliExecutor() {
+            override fun execute(
+                distro: String,
+                command: List<String>,
+                timeoutSeconds: Long,
+                charset: Charset,
+                user: String?,
+            ): CliExecutionResult = CliExecutionResult(1, "", "wsl: distro stopped")
+        }
+        val report = WslHostPrerequisiteProbe(cli = failingCli).probe(testEnv)
+
+        assertTrue(report.results.values.all { it is RequirementStatus.CheckFailed }, "${report.results}")
+        assertTrue(report.missingPackages.isEmpty())
+        assertNull(report.installCommand)
+    }
+
+    @Test
+    fun `missing java 21 adds its package even though the script prints no java line`() = runTest {
+        val fakeCli = FakeProbeCli(javaListingOutput = "/usr/lib/jvm/java-17-openjdk-amd64")
+        val report = WslHostPrerequisiteProbe(cli = fakeCli).probe(testEnv)
+
+        assertEquals(RequirementStatus.Missing, report.results["java-server"])
+        assertTrue("openjdk-21-jdk" in report.missingPackages)
+    }
+
+    @Test
+    fun `probe script checks apt list freshness in the shell and asks apt for candidates`() = runTest {
+        val fakeCli = FakeProbeCli()
+        WslHostPrerequisiteProbe(cli = fakeCli).probe(testEnv)
+
+        val script = fakeCli.lastExecutedCommand!!.last()
+        assertTrue("ls /var/lib/apt/lists/*_Packages" in script)
+        assertTrue("apt-cache policy" in script)
+        assertTrue("'git=missing'" in script)
     }
 }

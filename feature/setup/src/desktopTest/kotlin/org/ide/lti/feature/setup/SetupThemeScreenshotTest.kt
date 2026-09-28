@@ -217,11 +217,41 @@ class SetupThemeScreenshotTest {
     @Test
     fun testThreeThemesReadyStateScreenshot() = runDesktopComposeUiTest(width = 1120, height = 700) {
         val readySteps = listOf(
-            SetupStepDetail(stage = SetupStepStage.WSL_DETECTION, title = "WSL Detection", description = "Ubuntu 22.04 LTS", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-            SetupStepDetail(stage = SetupStepStage.SERVER_CONNECTIVITY, title = "Server Daemon Bridge", description = "HTTP/SSE connected", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-            SetupStepDetail(stage = SetupStepStage.SYSTEM_DIAGNOSTICS, title = "System Diagnostics", description = "All checks passed", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-            SetupStepDetail(stage = SetupStepStage.REPO_SYNCHRONIZATION, title = "Repository Synchronization", description = "Git submodules up to date", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-            SetupStepDetail(stage = SetupStepStage.TOOLCHAIN_COMPILATION, title = "Toolchain Compilation", description = "Native tools verified", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
+            SetupStepDetail(
+                stage = SetupStepStage.WSL_DETECTION,
+                title = "WSL Detection",
+                description = "Ubuntu 22.04 LTS",
+                status = StepStatus.SUCCESS,
+                provenance = StepProvenance.LIVE,
+            ),
+            SetupStepDetail(
+                stage = SetupStepStage.SERVER_CONNECTIVITY,
+                title = "Server Daemon Bridge",
+                description = "HTTP/SSE connected",
+                status = StepStatus.SUCCESS,
+                provenance = StepProvenance.LIVE,
+            ),
+            SetupStepDetail(
+                stage = SetupStepStage.SYSTEM_DIAGNOSTICS,
+                title = "System Diagnostics",
+                description = "All checks passed",
+                status = StepStatus.SUCCESS,
+                provenance = StepProvenance.LIVE,
+            ),
+            SetupStepDetail(
+                stage = SetupStepStage.REPO_SYNCHRONIZATION,
+                title = "Repository Synchronization",
+                description = "Git submodules up to date",
+                status = StepStatus.SUCCESS,
+                provenance = StepProvenance.LIVE,
+            ),
+            SetupStepDetail(
+                stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+                title = "Toolchain Compilation",
+                description = "Native tools verified",
+                status = StepStatus.SUCCESS,
+                provenance = StepProvenance.LIVE,
+            ),
         )
         val state = ToolchainSetupState(steps = readySteps, lastVerifiedTimestamp = 1700000000000L)
         val themes = listOf(AppTheme.Dark, AppTheme.Light, AppTheme.Blue)
@@ -330,11 +360,41 @@ class SetupThemeScreenshotTest {
     @Test
     fun testThreeThemesReadyStateEffectsOffScreenshot() = runDesktopComposeUiTest(width = 1120, height = 700) {
         val readySteps = listOf(
-            SetupStepDetail(stage = SetupStepStage.WSL_DETECTION, title = "WSL Detection", description = "Ubuntu 22.04 LTS", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-            SetupStepDetail(stage = SetupStepStage.SERVER_CONNECTIVITY, title = "Server Daemon Bridge", description = "HTTP/SSE connected", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-            SetupStepDetail(stage = SetupStepStage.SYSTEM_DIAGNOSTICS, title = "System Diagnostics", description = "All checks passed", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-            SetupStepDetail(stage = SetupStepStage.REPO_SYNCHRONIZATION, title = "Repository Synchronization", description = "Git submodules up to date", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-            SetupStepDetail(stage = SetupStepStage.TOOLCHAIN_COMPILATION, title = "Toolchain Compilation", description = "Native tools verified", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
+            SetupStepDetail(
+                stage = SetupStepStage.WSL_DETECTION,
+                title = "WSL Detection",
+                description = "Ubuntu 22.04 LTS",
+                status = StepStatus.SUCCESS,
+                provenance = StepProvenance.LIVE,
+            ),
+            SetupStepDetail(
+                stage = SetupStepStage.SERVER_CONNECTIVITY,
+                title = "Server Daemon Bridge",
+                description = "HTTP/SSE connected",
+                status = StepStatus.SUCCESS,
+                provenance = StepProvenance.LIVE,
+            ),
+            SetupStepDetail(
+                stage = SetupStepStage.SYSTEM_DIAGNOSTICS,
+                title = "System Diagnostics",
+                description = "All checks passed",
+                status = StepStatus.SUCCESS,
+                provenance = StepProvenance.LIVE,
+            ),
+            SetupStepDetail(
+                stage = SetupStepStage.REPO_SYNCHRONIZATION,
+                title = "Repository Synchronization",
+                description = "Git submodules up to date",
+                status = StepStatus.SUCCESS,
+                provenance = StepProvenance.LIVE,
+            ),
+            SetupStepDetail(
+                stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+                title = "Toolchain Compilation",
+                description = "Native tools verified",
+                status = StepStatus.SUCCESS,
+                provenance = StepProvenance.LIVE,
+            ),
         )
         val state = ToolchainSetupState(steps = readySteps, lastVerifiedTimestamp = 1700000000000L)
         val themes = listOf(AppTheme.Dark, AppTheme.Light, AppTheme.Blue)
@@ -365,8 +425,18 @@ class SetupThemeScreenshotTest {
     @Test
     fun testThreeThemesCheckingStateScreenshot() = runDesktopComposeUiTest(width = 1120, height = 700) {
         val checkingSteps = listOf(
-            SetupStepDetail(stage = SetupStepStage.WSL_DETECTION, title = "WSL Detection", description = "Checking distribution", status = StepStatus.RUNNING),
-            SetupStepDetail(stage = SetupStepStage.SERVER_CONNECTIVITY, title = "Server Daemon Bridge", description = "Pending check", status = StepStatus.PENDING),
+            SetupStepDetail(
+                stage = SetupStepStage.WSL_DETECTION,
+                title = "WSL Detection",
+                description = "Checking distribution",
+                status = StepStatus.RUNNING,
+            ),
+            SetupStepDetail(
+                stage = SetupStepStage.SERVER_CONNECTIVITY,
+                title = "Server Daemon Bridge",
+                description = "Pending check",
+                status = StepStatus.PENDING,
+            ),
         )
         val state = ToolchainSetupState(steps = checkingSteps, isChecking = true)
         val themes = listOf(AppTheme.Dark, AppTheme.Light, AppTheme.Blue)
@@ -397,8 +467,18 @@ class SetupThemeScreenshotTest {
     @Test
     fun testThreeThemesRunningStateScreenshot() = runDesktopComposeUiTest(width = 1120, height = 700) {
         val runningSteps = listOf(
-            SetupStepDetail(stage = SetupStepStage.WSL_DETECTION, title = "WSL Detection", description = "Configured", status = StepStatus.SUCCESS),
-            SetupStepDetail(stage = SetupStepStage.SERVER_CONNECTIVITY, title = "Server Daemon Bridge", description = "Starting bridge", status = StepStatus.RUNNING),
+            SetupStepDetail(
+                stage = SetupStepStage.WSL_DETECTION,
+                title = "WSL Detection",
+                description = "Configured",
+                status = StepStatus.SUCCESS,
+            ),
+            SetupStepDetail(
+                stage = SetupStepStage.SERVER_CONNECTIVITY,
+                title = "Server Daemon Bridge",
+                description = "Starting bridge",
+                status = StepStatus.RUNNING,
+            ),
         )
         val activeOp = SetupOperation(
             kind = SetupOperationKind.FULL_SETUP,
@@ -573,8 +653,18 @@ class SetupThemeScreenshotTest {
     @Test
     fun testThreeThemesCheckingStateEffectsOffScreenshot() = runDesktopComposeUiTest(width = 1120, height = 700) {
         val checkingSteps = listOf(
-            SetupStepDetail(stage = SetupStepStage.WSL_DETECTION, title = "WSL Detection", description = "Checking distribution", status = StepStatus.RUNNING),
-            SetupStepDetail(stage = SetupStepStage.SERVER_CONNECTIVITY, title = "Server Daemon Bridge", description = "Pending check", status = StepStatus.PENDING),
+            SetupStepDetail(
+                stage = SetupStepStage.WSL_DETECTION,
+                title = "WSL Detection",
+                description = "Checking distribution",
+                status = StepStatus.RUNNING,
+            ),
+            SetupStepDetail(
+                stage = SetupStepStage.SERVER_CONNECTIVITY,
+                title = "Server Daemon Bridge",
+                description = "Pending check",
+                status = StepStatus.PENDING,
+            ),
         )
         val state = ToolchainSetupState(steps = checkingSteps, isChecking = true)
         val themes = listOf(AppTheme.Dark, AppTheme.Light, AppTheme.Blue)
@@ -605,8 +695,18 @@ class SetupThemeScreenshotTest {
     @Test
     fun testThreeThemesRunningStateEffectsOffScreenshot() = runDesktopComposeUiTest(width = 1120, height = 700) {
         val runningSteps = listOf(
-            SetupStepDetail(stage = SetupStepStage.WSL_DETECTION, title = "WSL Detection", description = "Configured", status = StepStatus.SUCCESS),
-            SetupStepDetail(stage = SetupStepStage.SERVER_CONNECTIVITY, title = "Server Daemon Bridge", description = "Starting bridge", status = StepStatus.RUNNING),
+            SetupStepDetail(
+                stage = SetupStepStage.WSL_DETECTION,
+                title = "WSL Detection",
+                description = "Configured",
+                status = StepStatus.SUCCESS,
+            ),
+            SetupStepDetail(
+                stage = SetupStepStage.SERVER_CONNECTIVITY,
+                title = "Server Daemon Bridge",
+                description = "Starting bridge",
+                status = StepStatus.RUNNING,
+            ),
         )
         val activeOp = SetupOperation(
             kind = SetupOperationKind.FULL_SETUP,
@@ -781,11 +881,41 @@ class SetupThemeScreenshotTest {
     @Test
     fun testSetupScreenBlueEffectsOnMatchesBaseline() = runDesktopComposeUiTest(width = 1120, height = 700) {
         val readySteps = listOf(
-            SetupStepDetail(stage = SetupStepStage.WSL_DETECTION, title = "WSL Detection", description = "Ubuntu 22.04 LTS", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-            SetupStepDetail(stage = SetupStepStage.SERVER_CONNECTIVITY, title = "Server Daemon Bridge", description = "HTTP/SSE connected", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-            SetupStepDetail(stage = SetupStepStage.SYSTEM_DIAGNOSTICS, title = "System Diagnostics", description = "All checks passed", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-            SetupStepDetail(stage = SetupStepStage.REPO_SYNCHRONIZATION, title = "Repository Synchronization", description = "Git submodules up to date", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-            SetupStepDetail(stage = SetupStepStage.TOOLCHAIN_COMPILATION, title = "Toolchain Compilation", description = "Native tools verified", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
+            SetupStepDetail(
+                stage = SetupStepStage.WSL_DETECTION,
+                title = "WSL Detection",
+                description = "Ubuntu 22.04 LTS",
+                status = StepStatus.SUCCESS,
+                provenance = StepProvenance.LIVE,
+            ),
+            SetupStepDetail(
+                stage = SetupStepStage.SERVER_CONNECTIVITY,
+                title = "Server Daemon Bridge",
+                description = "HTTP/SSE connected",
+                status = StepStatus.SUCCESS,
+                provenance = StepProvenance.LIVE,
+            ),
+            SetupStepDetail(
+                stage = SetupStepStage.SYSTEM_DIAGNOSTICS,
+                title = "System Diagnostics",
+                description = "All checks passed",
+                status = StepStatus.SUCCESS,
+                provenance = StepProvenance.LIVE,
+            ),
+            SetupStepDetail(
+                stage = SetupStepStage.REPO_SYNCHRONIZATION,
+                title = "Repository Synchronization",
+                description = "Git submodules up to date",
+                status = StepStatus.SUCCESS,
+                provenance = StepProvenance.LIVE,
+            ),
+            SetupStepDetail(
+                stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+                title = "Toolchain Compilation",
+                description = "Native tools verified",
+                status = StepStatus.SUCCESS,
+                provenance = StepProvenance.LIVE,
+            ),
         )
         val state = ToolchainSetupState(steps = readySteps, lastVerifiedTimestamp = 1700000000000L)
 

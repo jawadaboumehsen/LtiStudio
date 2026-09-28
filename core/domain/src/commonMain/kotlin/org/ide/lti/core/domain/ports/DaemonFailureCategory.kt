@@ -8,5 +8,5 @@ public enum class DaemonFailureCategory {
     UNHEALTHY_STATUS,
     UNRECOGNIZED_STATUS,
     UNSUPPORTED_JAVA,
-    COMPATIBILITY_MODE
+    COMPATIBILITY_MODE,
 }

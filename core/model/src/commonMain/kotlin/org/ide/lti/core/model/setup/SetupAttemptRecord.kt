@@ -134,11 +134,7 @@ public data class PersistedUserHandoff(
  * Persisted plan action representation for durable storage across restarts.
  */
 @Serializable
-public data class PersistedPlanAction(
-    val actionId: String,
-    val type: String,
-    val payload: List<String> = emptyList(),
-)
+public data class PersistedPlanAction(val actionId: String, val type: String, val payload: List<String> = emptyList())
 
 /**
  * Persisted setup plan enabling durable recovery and continuation across sessions.
@@ -155,8 +151,8 @@ public data class PersistedSetupPlan(
 )
 
 /**
-  * Persisted snapshot of the target WSL environment.
-  */
+ * Persisted snapshot of the target WSL environment.
+ */
 @Serializable
 public data class PersistedEnvironment(
     val distro: String,
@@ -184,4 +180,3 @@ public fun PersistedEnvironment.toDomain(): SetupEnvironment = SetupEnvironment(
     user = user,
     home = home,
 )
-

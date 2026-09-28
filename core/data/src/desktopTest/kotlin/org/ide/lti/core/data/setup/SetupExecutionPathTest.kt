@@ -50,7 +50,7 @@ class SetupExecutionPathTest {
             command: List<String>,
             timeoutSeconds: Long,
             charset: Charset,
-            user: String?
+            user: String?,
         ): CliExecutionResult {
             if (bridgeConnected) {
                 postBridgeCommands.add(command)
@@ -60,7 +60,12 @@ class SetupExecutionPathTest {
             val cmdStr = command.joinToString(" ")
             return when {
                 cmdStr.contains("/etc/os-release") -> {
-                    CliExecutionResult(0, "NAME=\"Ubuntu\"\nVERSION=\"24.04 LTS (Noble Numbat)\"\nID=ubuntu\nVERSION_ID=\"24.04\"\nVERSION_CODENAME=noble\n", "")
+                    CliExecutionResult(
+                        0,
+                        "NAME=\"Ubuntu\"\nVERSION=\"24.04 LTS (Noble " +
+                            "Numbat)\"\nID=ubuntu\nVERSION_ID=\"24.04\"\nVERSION_CODENAME=noble\n",
+                        "",
+                    )
                 }
                 cmdStr.contains("id -un; printf '%s' \"\$HOME\"") || cmdStr.contains("id -un") -> {
                     CliExecutionResult(0, "lti\n/home/lti", "")
@@ -78,18 +83,14 @@ class SetupExecutionPathTest {
             }
         }
 
-        override fun executeHost(
-            command: List<String>,
-            timeoutSeconds: Long,
-            charset: Charset
-        ): CliExecutionResult {
+        override fun executeHost(command: List<String>, timeoutSeconds: Long, charset: Charset): CliExecutionResult {
             if (bridgeConnected) {
                 postBridgeCommands.add(command)
             } else {
                 bootstrapCommands.add(command)
             }
             if (command.contains("-l") && command.contains("-v")) {
-                return CliExecutionResult(0, "  NAME  STATE  VERSION\n  Ubuntu  Running  2\n", "")
+                return CliExecutionResult(0, "  NAME  STATE  VERSION\n* Ubuntu  Running  2\n", "")
             }
             return if (command.contains("-l")) {
                 CliExecutionResult(0, "Ubuntu\n", "")
@@ -99,9 +100,7 @@ class SetupExecutionPathTest {
         }
     }
 
-    private class RecordingSupervisor(
-        private val onBridgeConnected: () -> Unit
-    ) : DaemonSupervisorPort {
+    private class RecordingSupervisor(private val onBridgeConnected: () -> Unit) : DaemonSupervisorPort {
         override val lastLaunchErrorLogTail: String? = null
         override var lastStartAdopted: Boolean = false
         private var descriptor: ServerConnectionDescriptor? = null
@@ -113,7 +112,7 @@ class SetupExecutionPathTest {
                 port = 9090,
                 token = "secret",
                 pid = 4321L,
-                distro = "Ubuntu"
+                distro = "Ubuntu",
             )
             descriptor = desc
             return desc
@@ -139,7 +138,7 @@ class SetupExecutionPathTest {
             architecture = "x86_64",
             javaVersion = "21.0.11",
             serverUptimeMs = 60_000L,
-            availableTools = listOf("adb", "fastboot", "mkfs.erofs")
+            availableTools = listOf("adb", "fastboot", "mkfs.erofs"),
         )
 
         @Suppress("CyclomaticComplexMethod")
@@ -161,7 +160,7 @@ class SetupExecutionPathTest {
                         "java-17-openjdk-amd64", "java-21-openjdk-amd64", "attr", "getfattr", "setfattr",
                         "zip", "unzip", "brotli", "curl", "git", "rsync", "tar", "file", "xxd", "truncate",
                         "fuse", "fusermount3", "openssl", "sudo", "loop-control", "ccache",
-                        "apktool.jar", "signapk.jar", "zipalign", "lpunpack", "lpmake", "lpdump", "payload-dumper-go"
+                        "apktool.jar", "signapk.jar", "zipalign", "lpunpack", "lpmake", "lpdump", "payload-dumper-go",
                     )
                     ToolExecutionResponse(0, sample.joinToString("\n"), "", 5L)
                 }
@@ -169,7 +168,7 @@ class SetupExecutionPathTest {
                     val pkgs = listOf(
                         "pkg-config", "protobuf-compiler", "libprotobuf-dev", "libbrotli-dev",
                         "liblz4-dev", "libpcre2-dev", "libzstd-dev", "libusb-1.0-0-dev",
-                        "uuid-dev", "libfuse3-dev"
+                        "uuid-dev", "libfuse3-dev",
                     )
                     ToolExecutionResponse(0, pkgs.joinToString("\n") { "$it install ok installed" }, "", 2L)
                 }
@@ -177,13 +176,24 @@ class SetupExecutionPathTest {
                     ToolExecutionResponse(0, "openjdk version \"21.0.11\" 2024-04-16\n", "", 2L)
                 }
                 request.toolId == "df" -> {
-                    ToolExecutionResponse(0, "Filesystem 1K-blocks Used Available Use% Mounted on\n/dev/sdb 100G 50G 50G 50% /home/lti\n", "", 2L)
+                    ToolExecutionResponse(
+                        0,
+                        "Filesystem 1K-blocks Used Available Use% Mounted on\n/dev/sdb 100G 50G 50G 50% /home/lti\n",
+                        "",
+                        2L,
+                    )
                 }
-                request.toolId == "test" && !sourcesSynced &&
+                request.toolId == "test" &&
+                    !sourcesSynced &&
                     request.arguments.any { it.endsWith("/external/signapk") } ->
                     ToolExecutionResponse(1, "", "", 1L)
                 request.toolId == "test" -> ToolExecutionResponse(0, "", "", 1L)
-                request.toolId == "which" -> ToolExecutionResponse(0, "/usr/bin/${request.arguments.firstOrNull()}", "", 1L)
+                request.toolId == "which" -> ToolExecutionResponse(
+                    0,
+                    "/usr/bin/${request.arguments.firstOrNull()}",
+                    "",
+                    1L,
+                )
                 request.toolId == "sudo" && request.arguments.contains("true") -> ToolExecutionResponse(0, "", "", 1L)
                 request.toolId == "mkfs.erofs" -> ToolExecutionResponse(0, "mkfs.erofs 1.7.1 --fs-config-file", "", 1L)
                 else -> ToolExecutionResponse(0, "success", "", 5L)
@@ -193,12 +203,16 @@ class SetupExecutionPathTest {
         override suspend fun startRun(request: StartRunRequest): RunHandle {
             startedRuns.add(request)
             sourcesSynced = true
-            return RunHandle(runId = "run-${startedRuns.size}", status = RunStatusValue.RUNNING, startedAtEpochMs = 1000L)
+            return RunHandle(
+                runId = "run-${startedRuns.size}",
+                status = RunStatusValue.RUNNING,
+                startedAtEpochMs = 1000L,
+            )
         }
 
         override fun attachRun(runId: String, fromSeq: Long): Flow<SequencedStreamEvent> = listOf(
             SequencedStreamEvent(1L, StreamEvent.OutputChunk("running...")),
-            SequencedStreamEvent(2L, StreamEvent.ExecutionFinished(0, 100L))
+            SequencedStreamEvent(2L, StreamEvent.ExecutionFinished(0, 100L)),
         ).asFlow()
 
         override suspend fun getRun(runId: String): RunStatus = RunStatus(
@@ -206,7 +220,7 @@ class SetupExecutionPathTest {
             status = RunStatusValue.COMPLETED,
             exitCode = 0,
             startedAtEpochMs = 1000L,
-            endedAtEpochMs = 1100L
+            endedAtEpochMs = 1100L,
         )
 
         var tools: List<ToolStatusInfo> = ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS.map {
@@ -221,69 +235,71 @@ class SetupExecutionPathTest {
     }
 
     private class FakePublicationPort : ToolPublicationPort {
-        override suspend fun publish(binDir: String, toolIds: Set<String>): PublicationReport =
-            PublicationReport(
-                requested = toolIds,
-                registered = ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS,
-                failed = (toolIds - ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS).associateWith { "Not published" },
-                pruned = emptySet()
-            )
+        override suspend fun publish(binDir: String, toolIds: Set<String>): PublicationReport = PublicationReport(
+            requested = toolIds,
+            registered = ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS,
+            failed = (toolIds - ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS).associateWith { "Not published" },
+            pruned = emptySet(),
+        )
 
         override suspend fun resolvedTools(): ToolRegistryResult = ToolRegistryResult.Tools(
             ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS.map {
                 ToolStatus(tool = it, installed = true, path = "/bin/$it", source = ToolSource.DYNAMIC, reason = null)
-            }
+            },
         )
     }
 
     @Test
-    fun `after SERVER_CONNECTIVITY succeeds setup uses strictly transport executor and records zero wsl calls`() = runTest {
-        val spyCli = SpyWslCliExecutor()
-        val supervisor = RecordingSupervisor {
-            spyCli.bridgeConnected = true
+    fun `after SERVER_CONNECTIVITY succeeds setup uses strictly transport executor and records zero wsl calls`() =
+        runTest {
+            val spyCli = SpyWslCliExecutor()
+            val supervisor = RecordingSupervisor {
+                spyCli.bridgeConnected = true
+            }
+            val transport = RecordingTransport()
+            val detector = WslEnvironmentDetector(spyCli)
+            val publicationPort = FakePublicationPort()
+
+            val provisioner = WslToolchainProvisioner(
+                supervisor = supervisor,
+                transport = transport,
+                repository = inMemoryToolchainRepository(),
+                detector = detector,
+                cli = spyCli,
+                toolPublicationPort = publicationPort,
+                dispatcher = UnconfinedTestDispatcher(testScheduler),
+            )
+
+            // Product flow: a live Check establishes WSL/bridge evidence (the only host wsl.exe calls),
+            // then the plan is previewed and confirmed against that evidence.
+            provisioner.verifyEnvironment()
+            val plan = provisioner.prepare(SetupPlanKind.FULL_SETUP)
+            val outcome = provisioner.confirm(plan.planId, plan.revisionHash)
+            assertTrue(outcome is SetupOutcome.Succeeded, "Confirmed plan must succeed: $outcome")
+
+            // Assert setup finished successfully
+            val finalState = provisioner.state.value
+            val stageStatuses = finalState.steps.associate { it.stage to it.status }
+            assertEquals(StepStatus.SUCCESS, stageStatuses[SetupStepStage.WSL_DETECTION])
+            assertEquals(StepStatus.SUCCESS, stageStatuses[SetupStepStage.SYSTEM_PACKAGES])
+            assertEquals(StepStatus.SUCCESS, stageStatuses[SetupStepStage.SERVER_CONNECTIVITY])
+            assertEquals(StepStatus.SUCCESS, stageStatuses[SetupStepStage.SYSTEM_DIAGNOSTICS])
+            assertEquals(StepStatus.SUCCESS, stageStatuses[SetupStepStage.REPO_SYNCHRONIZATION])
+            assertEquals(StepStatus.SUCCESS, stageStatuses[SetupStepStage.TOOLCHAIN_COMPILATION])
+
+            // CRITICAL ASSERTION: Zero calls made to WslCliExecutor after SERVER_CONNECTIVITY (excluding pre-server
+            // host prerequisite probe)
+            val nonProbePostBridge = spyCli.postBridgeCommands.filterNot {
+                it.any { arg -> arg.contains("JAVA_HOMES_BEGIN") || arg.contains("/var/lib/apt/lists") }
+            }
+            assertTrue(
+                nonProbePostBridge.isEmpty(),
+                "Expected ZERO calls to direct WslCliExecutor after SERVER_CONNECTIVITY succeeded, but found " +
+                    "${nonProbePostBridge.size} call(s): $nonProbePostBridge",
+            )
+
+            // Assert transport handled commands
+            assertTrue(transport.executedRequests.isNotEmpty(), "Transport executor must handle post-bridge commands")
+            assertTrue(transport.startedRuns.isNotEmpty(), "Durable runs must be initiated via transport")
         }
-        val transport = RecordingTransport()
-        val detector = WslEnvironmentDetector(spyCli)
-        val publicationPort = FakePublicationPort()
-
-        val provisioner = WslToolchainProvisioner(
-            supervisor = supervisor,
-            transport = transport,
-            repository = inMemoryToolchainRepository(),
-            detector = detector,
-            cli = spyCli,
-            toolPublicationPort = publicationPort,
-            dispatcher = UnconfinedTestDispatcher(testScheduler)
-        )
-
-        // Product flow: a live Check establishes WSL/bridge evidence (the only host wsl.exe calls),
-        // then the plan is previewed and confirmed against that evidence.
-        provisioner.verifyEnvironment()
-        val plan = provisioner.prepare(SetupPlanKind.FULL_SETUP)
-        val outcome = provisioner.confirm(plan.planId, plan.revisionHash)
-        assertTrue(outcome is SetupOutcome.Succeeded, "Confirmed plan must succeed: $outcome")
-
-        // Assert setup finished successfully
-        val finalState = provisioner.state.value
-        val stageStatuses = finalState.steps.associate { it.stage to it.status }
-        assertEquals(StepStatus.SUCCESS, stageStatuses[SetupStepStage.WSL_DETECTION])
-        assertEquals(StepStatus.SUCCESS, stageStatuses[SetupStepStage.SYSTEM_PACKAGES])
-        assertEquals(StepStatus.SUCCESS, stageStatuses[SetupStepStage.SERVER_CONNECTIVITY])
-        assertEquals(StepStatus.SUCCESS, stageStatuses[SetupStepStage.SYSTEM_DIAGNOSTICS])
-        assertEquals(StepStatus.SUCCESS, stageStatuses[SetupStepStage.REPO_SYNCHRONIZATION])
-        assertEquals(StepStatus.SUCCESS, stageStatuses[SetupStepStage.TOOLCHAIN_COMPILATION])
-
-        // CRITICAL ASSERTION: Zero calls made to WslCliExecutor after SERVER_CONNECTIVITY (excluding pre-server host prerequisite probe)
-        val nonProbePostBridge = spyCli.postBridgeCommands.filterNot {
-            it.any { arg -> arg.contains("JAVA_HOMES_BEGIN") || arg.contains("/var/lib/apt/lists") }
-        }
-        assertTrue(
-            nonProbePostBridge.isEmpty(),
-            "Expected ZERO calls to direct WslCliExecutor after SERVER_CONNECTIVITY succeeded, but found ${nonProbePostBridge.size} call(s): $nonProbePostBridge"
-        )
-
-        // Assert transport handled commands
-        assertTrue(transport.executedRequests.isNotEmpty(), "Transport executor must handle post-bridge commands")
-        assertTrue(transport.startedRuns.isNotEmpty(), "Durable runs must be initiated via transport")
-    }
 }

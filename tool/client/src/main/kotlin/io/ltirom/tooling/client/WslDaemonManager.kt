@@ -12,7 +12,6 @@ import io.ktor.serialization.kotlinx.json.*
 import io.ltirom.tooling.client.wsl.DaemonHealthProber
 import io.ltirom.tooling.client.wsl.WslCliExecutor
 import io.ltirom.tooling.client.wsl.WslEnvironmentDetector
-import io.ltirom.tooling.client.wsl.WslExt4Deployer
 import io.ltirom.tooling.client.wsl.WslProcessLauncher
 import io.ltirom.tooling.client.wsl.WslStateStore
 import io.ltirom.tooling.core.ports.DaemonSupervisorPort
@@ -24,9 +23,6 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 import org.ide.lti.core.model.setup.SetupEnvironment
-import java.io.BufferedReader
-import java.io.InputStreamReader
-import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 public typealias ServerConnectionInfo = ServerConnectionDescriptor
@@ -35,28 +31,36 @@ public data class WslDaemonConfig(
     val distroName: String? = null,
     val serverBinaryWslPath: String? = null,
     val autoStart: Boolean = true,
-    val startupTimeoutMs: Long = 20_000L
+    val startupTimeoutMs: Long = 20_000L,
 )
 
 /**
  * Supervisor orchestrating the lifecycle of the LtiRomServer daemon in WSL.
  * Adheres to Clean Architecture: delegates OS detection to [WslEnvironmentDetector],
- * ext4 deployment to [WslExt4Deployer], lockfile reading to [WslStateStore],
+ * lockfile reading to [WslStateStore] (installation belongs to `ServerArtifactInstaller`),
  * and implements [DaemonSupervisorPort].
  */
 public class WslDaemonManager(
     private val config: WslDaemonConfig = WslDaemonConfig(),
     private val cli: WslCliExecutor = WslCliExecutor(),
     private val detector: WslEnvironmentDetector = WslEnvironmentDetector(cli),
-    private val deployer: WslExt4Deployer = WslExt4Deployer(cli),
     private val stateStore: WslStateStore = WslStateStore(cli),
     private val launcher: WslProcessLauncher = WslProcessLauncher(config.startupTimeoutMs),
-    customProber: DaemonHealthProber? = null
+    customProber: DaemonHealthProber? = null,
 ) : DaemonSupervisorPort {
 
     private val mutex = Mutex()
     private var process: Process? = null
     private var connectionInfo: ServerConnectionDescriptor? = null
+
+    /**
+     * Target of the last admitted start (distro, home, Java). Callers without an operation context
+     * (the transport's per-request `ensureStarted()`) reconnect or relaunch against this same target;
+     * it is never a UI selection and is only replaced by the next admitted start.
+     */
+    private var boundDistro: String? = null
+    private var boundHome: String? = null
+    private var boundJavaHome: String? = null
     private val prober: DaemonHealthProber by lazy { customProber ?: DaemonHealthProber(httpClient) }
 
     override var lastStartAdopted: Boolean = false
@@ -88,8 +92,12 @@ public class WslDaemonManager(
 
     public fun isRunning(): Boolean = connectionInfo != null && process?.isAlive == true
 
-    public suspend fun ensureStarted(environment: SetupEnvironment): ServerConnectionDescriptor =
-        ensureRunningVersion(distro = environment.distro, activeVersion = null, home = environment.home, javaHome = null)
+    public suspend fun ensureStarted(environment: SetupEnvironment): ServerConnectionDescriptor = ensureRunningVersion(
+        distro = environment.distro,
+        activeVersion = null,
+        home = environment.home,
+        javaHome = null,
+    )
 
     override suspend fun ensureStarted(distro: String): ServerConnectionDescriptor =
         ensureRunningVersion(distro = distro, activeVersion = null, home = null, javaHome = null)
@@ -98,26 +106,26 @@ public class WslDaemonManager(
         ensureRunningVersion(distro = distro, activeVersion = null, home = home, javaHome = null)
 
     override suspend fun ensureStarted(): ServerConnectionDescriptor {
-        val distro = config.distroName ?: error("No WSL distro specified. Call ensureStarted(environment) with an admitted SetupEnvironment.")
+        val distro = connectionInfo?.distro
+            ?: boundDistro
+            ?: config.distroName
+            ?: error("Build service has not been started yet: run the environment check first.")
         return ensureRunningVersion(distro = distro, activeVersion = null, home = null, javaHome = null)
     }
-
-    public suspend fun ensureRunningCurrent(
-        environment: SetupEnvironment,
-        javaHome: String?
-    ): ServerConnectionDescriptor = ensureRunningVersion(
-        distro = environment.distro,
-        activeVersion = null,
-        home = environment.home,
-        javaHome = javaHome
-    )
 
     public suspend fun ensureRunningVersion(
         distro: String,
         activeVersion: String? = null,
         home: String? = null,
-        javaHome: String? = null
+        javaHome: String? = null,
     ): ServerConnectionDescriptor = mutex.withLock {
+        if (distro != boundDistro) {
+            boundHome = null
+            boundJavaHome = null
+        }
+        boundDistro = distro
+        home?.let { boundHome = it }
+        javaHome?.let { boundJavaHome = it }
         val current = connectionInfo
         if (current != null && current.distro == distro && isHealthy(current)) {
             val sInfo = prober.getServerInfo(current)
@@ -157,7 +165,7 @@ public class WslDaemonManager(
 
         lastStartAdopted = false
         isUpdateWaiting = false
-        val info = launchDaemon(distro, home, javaHome)
+        val info = launchDaemon(distro, boundHome, boundJavaHome)
         connectionInfo = info
         info
     }
@@ -180,11 +188,17 @@ public class WslDaemonManager(
         val userHome = home ?: detector.resolveWslUserHome(distro)
         val ext4Current = "$userHome/.ltirom/server/current/bin/ltirom-server"
         val exists = cli.execute(distro, listOf("test", "-x", ext4Current), timeoutSeconds = 3).exitCode == 0
-        if (exists) return ext4Current
-        return deployer.ensureInstalled(distro, userHome, config.serverBinaryWslPath)
+        check(exists) {
+            "Build service is not installed in $distro ($ext4Current missing). Run the environment check to install it."
+        }
+        return ext4Current
     }
 
-    private suspend fun launchDaemon(distro: String, home: String? = null, javaHome: String? = null): ServerConnectionDescriptor = withContext(Dispatchers.IO) {
+    private suspend fun launchDaemon(
+        distro: String,
+        home: String? = null,
+        javaHome: String? = null,
+    ): ServerConnectionDescriptor = withContext(Dispatchers.IO) {
         val binary = findServerBinary(distro, home)
         val wslIp = detector.resolveWslIp(distro)
 
@@ -205,7 +219,7 @@ public class WslDaemonManager(
                 port = launchResult.port,
                 token = launchResult.token,
                 pid = launchResult.pid,
-                distro = distro
+                distro = distro,
             )
             if (isHealthy(testInfo)) {
                 workingHost = host
@@ -220,13 +234,11 @@ public class WslDaemonManager(
             port = launchResult.port,
             token = launchResult.token,
             pid = launchResult.pid,
-            distro = distro
+            distro = distro,
         )
     }
 
-    override suspend fun isHealthy(info: ServerConnectionDescriptor): Boolean {
-        return prober.isHealthy(info)
-    }
+    override suspend fun isHealthy(info: ServerConnectionDescriptor): Boolean = prober.isHealthy(info)
 
     public suspend fun isHealthy(): Boolean {
         val info = getConnectionInfo() ?: return false

@@ -11,9 +11,7 @@ import org.ide.lti.core.domain.setup.StepStatus
  * Adheres to:
  * - Single Responsibility Principle (SRP): Dedicated exclusively to validating loop mount permissions.
  */
-public class LoopMountInspector(
-    private val cli: WslCliExecutor = WslCliExecutor()
-) : SystemDiagnosticInspector {
+public class LoopMountInspector(private val cli: WslCliExecutor = WslCliExecutor()) : SystemDiagnosticInspector {
 
     override suspend fun inspect(context: DiagnosticContext): DiagnosticCheckItem {
         val distro = context.distro
@@ -33,9 +31,14 @@ public class LoopMountInspector(
             } else {
                 "/dev/loop-control not found; kernel loop device support may be restricted in this WSL instance."
             },
-            remediation = if (hasLoopControl) null else "Kernel loop device support is optional. Verify WSL kernel configuration if raw partition mounting is needed.",
+            remediation = if (hasLoopControl) {
+                null
+            } else {
+                "Kernel loop device support is optional. Verify WSL kernel configuration if raw partition mounting " +
+                    "is needed."
+            },
             copyableCommand = null,
-            isOptionalForRuntime = true
+            isOptionalForRuntime = true,
         )
     }
 }

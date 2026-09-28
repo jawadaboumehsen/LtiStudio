@@ -3,7 +3,7 @@ package org.ide.lti.core.domain.ports
 public enum class ToolSource {
     DYNAMIC,
     PINNED,
-    SYSTEM_PATH
+    SYSTEM_PATH,
 }
 
 public data class ToolStatus(
@@ -11,5 +11,5 @@ public data class ToolStatus(
     val installed: Boolean,
     val path: String,
     val source: ToolSource?,
-    val reason: String?
+    val reason: String?,
 )

@@ -1,5 +1,6 @@
 package org.ide.lti.core.data.setup
 
+import com.russhwolf.settings.MapSettings
 import io.ltirom.tooling.client.wsl.CliExecutionResult
 import io.ltirom.tooling.client.wsl.WslCliExecutor
 import io.ltirom.tooling.client.wsl.WslEnvironmentDetector
@@ -14,6 +15,7 @@ import io.ltirom.tooling.core.remote.StartRunRequest
 import io.ltirom.tooling.core.remote.StreamEvent
 import io.ltirom.tooling.core.remote.ToolExecutionRequest
 import io.ltirom.tooling.core.remote.ToolExecutionResponse
+import io.ltirom.tooling.core.remote.ToolListResult
 import io.ltirom.tooling.core.remote.ToolStatusInfo
 import io.ltirom.tooling.core.remote.WslServerInfo
 import kotlinx.coroutines.Dispatchers
@@ -25,8 +27,6 @@ import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
-import com.russhwolf.settings.MapSettings
-import io.ltirom.tooling.core.remote.ToolListResult
 import org.ide.lti.core.domain.ports.PublicationReport
 import org.ide.lti.core.domain.ports.ToolPublicationPort
 import org.ide.lti.core.domain.ports.ToolRegistryResult
@@ -51,10 +51,11 @@ import kotlin.test.assertTrue
 class WslToolchainProvisionerTest {
 
     private class FakeDaemonSupervisor(
-        var descriptor: ServerConnectionDescriptor? = ServerConnectionDescriptor("127.0.0.1", 9090, "token", 1234L, "Ubuntu"),
+        var descriptor: ServerConnectionDescriptor? =
+            ServerConnectionDescriptor("127.0.0.1", 9090, "token", 1234L, "Ubuntu"),
         var isHealthyResult: Boolean = true,
         var shouldFailEnsureStarted: Boolean = false,
-        var onEnsureStarted: (suspend () -> Unit)? = null
+        var onEnsureStarted: (suspend () -> Unit)? = null,
     ) : DaemonSupervisorPort {
         var getConnectionInfoCount = 0
         var isHealthyCount = 0
@@ -92,7 +93,7 @@ class WslToolchainProvisionerTest {
             architecture = "x86_64",
             javaVersion = "21.0.11",
             serverUptimeMs = 100_000L,
-            availableTools = listOf("adb", "fastboot")
+            availableTools = listOf("adb", "fastboot"),
         ),
         var publishedTools: MutableList<ToolStatusInfo> = mutableListOf(
             ToolStatusInfo(tool = "payload-dumper-go", installed = true),
@@ -104,8 +105,8 @@ class WslToolchainProvisionerTest {
             ToolStatusInfo(tool = "avbtool", installed = true),
             ToolStatusInfo(tool = "unpack_bootimg", installed = true),
             ToolStatusInfo(tool = "img2sdat", installed = true),
-            ToolStatusInfo(tool = "signapk", installed = true)
-        )
+            ToolStatusInfo(tool = "signapk", installed = true),
+        ),
     ) : RemoteTransportPort {
         var checkHealthCount = 0
 
@@ -129,12 +130,18 @@ class WslToolchainProvisionerTest {
                     val output = listOf(
                         "payload-dumper-go", "lpunpack", "lpmake", "simg2img",
                         "erofsfuse", "mkfs.erofs", "avbtool", "unpack_bootimg",
-                        "img2sdat", "signapk", "adb", "fastboot"
+                        "img2sdat", "signapk", "adb", "fastboot",
                     ).joinToString("\n")
                     ToolExecutionResponse(0, output, "", 10L)
                 }
                 request.toolId == "find" && request.arguments.any { it.contains("external") } -> {
-                    val output = listOf("android-tools", "apktool", "erofs-utils", "img2sdat", "signapk").joinToString("\n")
+                    val output = listOf(
+                        "android-tools",
+                        "apktool",
+                        "erofs-utils",
+                        "img2sdat",
+                        "signapk",
+                    ).joinToString("\n")
                     ToolExecutionResponse(0, output, "", 10L)
                 }
                 request.toolId == "test" -> ToolExecutionResponse(0, "", "", 10L)
@@ -156,12 +163,16 @@ class WslToolchainProvisionerTest {
                     }
                 }
             }
-            return RunHandle(runId = "fake-run-${request.idempotencyKey}", status = RunStatusValue.RUNNING, startedAtEpochMs = 1000L)
+            return RunHandle(
+                runId = "fake-run-${request.idempotencyKey}",
+                status = RunStatusValue.RUNNING,
+                startedAtEpochMs = 1000L,
+            )
         }
 
         override fun attachRun(runId: String, fromSeq: Long): Flow<SequencedStreamEvent> = listOf(
             SequencedStreamEvent(1L, StreamEvent.OutputChunk("running...")),
-            SequencedStreamEvent(2L, StreamEvent.ExecutionFinished(0, 100L))
+            SequencedStreamEvent(2L, StreamEvent.ExecutionFinished(0, 100L)),
         ).asFlow()
 
         override suspend fun getRun(runId: String): RunStatus = RunStatus(
@@ -169,7 +180,7 @@ class WslToolchainProvisionerTest {
             status = RunStatusValue.COMPLETED,
             exitCode = 0,
             startedAtEpochMs = 1000L,
-            endedAtEpochMs = 1100L
+            endedAtEpochMs = 1100L,
         )
 
         override suspend fun listTools(): ToolListResult = ToolListResult.Tools(publishedTools)
@@ -184,8 +195,8 @@ class WslToolchainProvisionerTest {
             requested = ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS,
             registered = ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS,
             failed = emptyMap(),
-            pruned = emptySet()
-        )
+            pruned = emptySet(),
+        ),
     ) : ToolPublicationPort {
         var publishCallCount = 0
         var lastBinDir: String? = null
@@ -199,7 +210,7 @@ class WslToolchainProvisionerTest {
         override suspend fun resolvedTools(): ToolRegistryResult = ToolRegistryResult.Tools(
             publishedResult.registered.map {
                 ToolStatus(tool = it, installed = true, path = "/bin/$it", source = ToolSource.DYNAMIC, reason = null)
-            }
+            },
         )
     }
 
@@ -222,7 +233,9 @@ class WslToolchainProvisionerTest {
                 return CliExecutionResult(0, hostDistros.joinToString("\n"), "")
             }
             if (command.contains("-l") && command.contains("-v")) {
-                val lines = listOf("  NAME      STATE           VERSION") + hostDistros.map { "  $it   Running         2" }
+                val lines =
+                    listOf("  NAME      STATE           VERSION") +
+                        hostDistros.mapIndexed { i, d -> (if (i == 0) "* " else "  ") + "$d   Running         2" }
                 return CliExecutionResult(0, lines.joinToString("\n"), "")
             }
             if (command.contains("--status")) {
@@ -235,11 +248,22 @@ class WslToolchainProvisionerTest {
             return CliExecutionResult(0, "", "")
         }
 
-        override fun execute(distro: String, command: List<String>, timeoutSeconds: Long, charset: Charset, user: String?): CliExecutionResult {
+        override fun execute(
+            distro: String,
+            command: List<String>,
+            timeoutSeconds: Long,
+            charset: Charset,
+            user: String?,
+        ): CliExecutionResult {
             val cmdStr = command.joinToString(" ")
             commandLog.add("WSL: $cmdStr")
             if (cmdStr.contains("/etc/os-release")) {
-                return CliExecutionResult(0, "NAME=\"Ubuntu\"\nVERSION=\"24.04 LTS (Noble Numbat)\"\nID=ubuntu\nVERSION_ID=\"24.04\"\nVERSION_CODENAME=noble\n", "")
+                return CliExecutionResult(
+                    0,
+                    "NAME=\"Ubuntu\"\nVERSION=\"24.04 LTS (Noble " +
+                        "Numbat)\"\nID=ubuntu\nVERSION_ID=\"24.04\"\nVERSION_CODENAME=noble\n",
+                    "",
+                )
             }
             if (cmdStr.contains("id -un; printf '%s' \"\$HOME\"") || cmdStr.contains("id -un")) {
                 val u = userHome.substringAfterLast('/').ifBlank { "lti" }
@@ -259,7 +283,9 @@ class WslToolchainProvisionerTest {
                 if (missingDevPackages) {
                     return CliExecutionResult(0, "", "no packages installed")
                 }
-                val pkgLines = WslToolchainProvisioner.REQUIRED_DEV_PACKAGES.joinToString("\n") { "$it install ok installed" }
+                val pkgLines = WslToolchainProvisioner.REQUIRED_DEV_PACKAGES.joinToString("\n") {
+                    "$it install ok installed"
+                }
                 return CliExecutionResult(0, pkgLines, "")
             }
             if (pythonMissing && (cmdStr.contains("python") || cmdStr.contains("pip"))) {
@@ -272,7 +298,11 @@ class WslToolchainProvisionerTest {
                 return CliExecutionResult(0, "openjdk version \"21.0.11\" 2024-04-16", "")
             }
             if (cmdStr.contains("df -BG")) {
-                return CliExecutionResult(0, "Filesystem 1G-blocks Used Available Use% Mounted on\n/dev/sdc 250G 50G 190G 21% /home/lti\n", "")
+                return CliExecutionResult(
+                    0,
+                    "Filesystem 1G-blocks Used Available Use% Mounted on\n/dev/sdc 250G 50G 190G 21% /home/lti\n",
+                    "",
+                )
             }
             if (cmdStr.contains("git clone")) {
                 val subDir = command.lastOrNull() ?: ""
@@ -309,12 +339,19 @@ class WslToolchainProvisionerTest {
                 }
             }
             if (command.firstOrNull() == "find" && command.contains("-printf")) {
-                val dir = (if (command.getOrNull(1) == "-L") command.getOrNull(2) else command.getOrNull(1))?.trimEnd('/') ?: ""
+                val dir =
+                    (if (command.getOrNull(1) == "-L") command.getOrNull(2) else command.getOrNull(1))?.trimEnd('/')
+                        ?: ""
                 val names = existingPaths.filter { it.startsWith("$dir/") && !it.removePrefix("$dir/").contains('/') }
                     .map { it.removePrefix("$dir/") }
                 return CliExecutionResult(0, names.joinToString("\n"), "")
             }
-            if (cmdStr.contains("test -e") || cmdStr.contains("test -d") || cmdStr.contains("test -x") || cmdStr.contains("test -r") || cmdStr.contains("test -f")) {
+            if (cmdStr.contains("test -e") ||
+                cmdStr.contains("test -d") ||
+                cmdStr.contains("test -x") ||
+                cmdStr.contains("test -r") ||
+                cmdStr.contains("test -f")
+            ) {
                 if (cmdStr.contains("java-17-openjdk") || cmdStr.contains("java-21-openjdk")) {
                     return CliExecutionResult(0, "", "")
                 }
@@ -349,7 +386,7 @@ class WslToolchainProvisionerTest {
             repository = inMemoryToolchainRepository(),
             detector = detector,
             cli = fakeCli,
-            dispatcher = testDispatcher
+            dispatcher = testDispatcher,
         )
 
         val state = provisioner.checkStatus()
@@ -378,7 +415,7 @@ class WslToolchainProvisionerTest {
             repository = inMemoryToolchainRepository(),
             detector = detector,
             cli = fakeCli,
-            dispatcher = testDispatcher
+            dispatcher = testDispatcher,
         )
 
         val state = provisioner.checkStatus()
@@ -395,7 +432,9 @@ class WslToolchainProvisionerTest {
         val fakeCli = FakeWslCliExecutor().apply {
             existingPaths.add("/home/lti/LtiRomWorkDir")
             existingPaths.add("/home/lti/LtiRomTools/external")
-            WslToolchainProvisioner.SUBMODULES.forEach { existingPaths.add("/home/lti/LtiRomTools/external/${it.name}") }
+            WslToolchainProvisioner.SUBMODULES.forEach {
+                existingPaths.add("/home/lti/LtiRomTools/external/${it.name}")
+            }
             WslToolchainProvisioner.CORE_BINARIES.forEach { existingPaths.add("/home/lti/LtiRomTools/bin/$it") }
             WslToolchainProvisioner.ALL_CORE_TOOLS.forEach { existingPaths.add("/home/lti/LtiRomTools/bin/$it") }
         }
@@ -405,7 +444,7 @@ class WslToolchainProvisionerTest {
             repository = inMemoryToolchainRepository(),
             detector = WslEnvironmentDetector(cli = fakeCli),
             cli = fakeCli,
-            dispatcher = testDispatcher
+            dispatcher = testDispatcher,
         )
 
         val state = provisioner.checkStatus()
@@ -428,7 +467,7 @@ class WslToolchainProvisionerTest {
             repository = inMemoryToolchainRepository(),
             detector = detector,
             cli = fakeCli,
-            dispatcher = testDispatcher
+            dispatcher = testDispatcher,
         )
 
         val state = provisioner.checkStatus()
@@ -467,7 +506,7 @@ class WslToolchainProvisionerTest {
             repository = inMemoryToolchainRepository(),
             detector = detector,
             cli = fakeCli,
-            dispatcher = testDispatcher
+            dispatcher = testDispatcher,
         )
 
         val state = provisioner.checkStatus()
@@ -490,7 +529,7 @@ class WslToolchainProvisionerTest {
             repository = inMemoryToolchainRepository(),
             detector = detector,
             cli = fakeCli,
-            dispatcher = testDispatcher
+            dispatcher = testDispatcher,
         )
 
         val plan = provisioner.prepare(SetupPlanKind.FULL_SETUP)
@@ -551,7 +590,7 @@ class WslToolchainProvisionerTest {
             repository = inMemoryToolchainRepository(),
             detector = detector,
             cli = fakeCli,
-            dispatcher = testDispatcher
+            dispatcher = testDispatcher,
         )
 
         assertFalse(fakeCli.existingPaths.contains("/home/lti/LtiRomWorkDir"))
@@ -562,7 +601,7 @@ class WslToolchainProvisionerTest {
         assertTrue(
             provisioner.state.value.logs.any {
                 it.contains("Ensuring workspace root directory exists at /home/lti/LtiRomWorkDir")
-            }
+            },
         )
     }
 
@@ -587,7 +626,7 @@ class WslToolchainProvisionerTest {
             detector = detector,
             cli = fakeCli,
             dispatcher = testDispatcher,
-            toolPublicationPort = fakePublication
+            toolPublicationPort = fakePublication,
         )
 
         val plan = provisioner.prepare(SetupPlanKind.FULL_SETUP)
@@ -600,23 +639,22 @@ class WslToolchainProvisionerTest {
         assertEquals("/home/lti/LtiRomTools/bin", fakePublication.lastBinDir)
         assertEquals(
             ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS,
-            finalState.publishedToolIds
+            finalState.publishedToolIds,
         )
         assertTrue(finalState.unpublishedToolIds.isEmpty())
     }
 
-    private class FailingJournalRepository(
-        private val delegate: ToolchainSetupRepository
-    ) : ToolchainSetupRepository by delegate {
+    private class FailingJournalRepository(private val delegate: ToolchainSetupRepository) :
+        ToolchainSetupRepository by delegate {
         override suspend fun recordAttemptAwaitingUserAction(
             attemptId: String,
             handoff: PersistedUserHandoff,
-            plan: PersistedSetupPlan
+            plan: PersistedSetupPlan,
         ): Result<Unit> = Result.failure(IllegalStateException("Simulated journal write failure"))
     }
 
     @Test
-    fun `confirmed plan requiring packages pauses with AwaitingUserAction, survives restart and recovery, and resumes successfully`() = runTest {
+    fun `packages plan pauses for the user, survives restart and recovery, then resumes`() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val fakeCli = FakeWslCliExecutor()
         val detector = WslEnvironmentDetector(cli = fakeCli)
@@ -633,7 +671,7 @@ class WslToolchainProvisionerTest {
             repository = repo1,
             detector = detector,
             cli = fakeCli,
-            dispatcher = testDispatcher
+            dispatcher = testDispatcher,
         )
 
         provisioner1.verifyEnvironment()
@@ -657,7 +695,7 @@ class WslToolchainProvisionerTest {
             repository = repo2,
             detector = detector,
             cli = fakeCli,
-            dispatcher = testDispatcher
+            dispatcher = testDispatcher,
         )
 
         // Initial restored state detects pending attempt in AWAITING_USER_ACTION
@@ -665,7 +703,10 @@ class WslToolchainProvisionerTest {
 
         // 5. Recovery restores the pending attempt and returns AwaitingUserAction
         val recoveryOutcome = provisioner2.recover()
-        assertTrue(recoveryOutcome is SetupOutcome.AwaitingUserAction, "Recovery must yield AwaitingUserAction: $recoveryOutcome")
+        assertTrue(
+            recoveryOutcome is SetupOutcome.AwaitingUserAction,
+            "Recovery must yield AwaitingUserAction: $recoveryOutcome",
+        )
         assertEquals(plan.planId, recoveryOutcome.pendingPlanId)
 
         // 6. User installs packages in WSL: now dpkg-query succeeds
@@ -698,14 +739,17 @@ class WslToolchainProvisionerTest {
             repository = failingRepo,
             detector = detector,
             cli = fakeCli,
-            dispatcher = testDispatcher
+            dispatcher = testDispatcher,
         )
 
         provisioner.verifyEnvironment()
         val plan = provisioner.prepare(SetupPlanKind.FULL_SETUP)
         val outcome = provisioner.confirm(plan.planId, plan.revisionHash)
 
-        assertTrue(outcome is SetupOutcome.Interrupted, "Must fail closed with Interrupted on journal failure: $outcome")
+        assertTrue(
+            outcome is SetupOutcome.Interrupted,
+            "Must fail closed with Interrupted on journal failure: $outcome",
+        )
         assertTrue(outcome.reason.contains("Journal write failed"))
     }
 
@@ -726,7 +770,7 @@ class WslToolchainProvisionerTest {
             repository = repo,
             detector = detector,
             cli = fakeCli,
-            dispatcher = testDispatcher
+            dispatcher = testDispatcher,
         )
 
         provisioner.verifyEnvironment()
@@ -743,7 +787,7 @@ class WslToolchainProvisionerTest {
         val resumeOutcome = provisioner.resume(pauseOutcome.pendingPlanId)
         assertTrue(
             resumeOutcome is SetupOutcome.Failed,
-            "Resume must fail closed when another prerequisite fails: $resumeOutcome"
+            "Resume must fail closed when another prerequisite fails: $resumeOutcome",
         )
         assertEquals(SetupStepStage.SYSTEM_DIAGNOSTICS.name, resumeOutcome.stage)
         assertTrue(resumeOutcome.reason.contains("Environment check failed before resumption"))
@@ -756,7 +800,10 @@ class WslToolchainProvisionerTest {
         // 4. Fixing Python allows resumption to pass and complete
         fakeCli.pythonMissing = false
         val fixedResumeOutcome = provisioner.resume(pauseOutcome.pendingPlanId)
-        assertTrue(fixedResumeOutcome is SetupOutcome.Succeeded, "Resume must succeed once all prerequisites pass: $fixedResumeOutcome")
+        assertTrue(
+            fixedResumeOutcome is SetupOutcome.Succeeded,
+            "Resume must succeed once all prerequisites pass: $fixedResumeOutcome",
+        )
         assertTrue(provisioner.state.value.isAllReady)
     }
 
@@ -775,7 +822,7 @@ class WslToolchainProvisionerTest {
             repository = null, // Constructed without repository
             detector = detector,
             cli = fakeCli,
-            dispatcher = testDispatcher
+            dispatcher = testDispatcher,
         )
 
         provisioner.verifyEnvironment()
@@ -784,7 +831,7 @@ class WslToolchainProvisionerTest {
 
         assertTrue(
             outcome is SetupOutcome.Failed,
-            "Must fail closed with Failed when no repository is present to persist handoff: $outcome"
+            "Must fail closed with Failed when no repository is present to persist handoff: $outcome",
         )
         assertEquals(SetupStepStage.SYSTEM_DIAGNOSTICS.name, outcome.stage)
         assertTrue(outcome.reason.contains("requires a configured repository"))
@@ -822,7 +869,7 @@ class WslToolchainProvisionerTest {
             repository = repo,
             detector = detector,
             cli = fakeCli,
-            dispatcher = testDispatcher
+            dispatcher = testDispatcher,
         )
 
         val deferred1 = async(testDispatcher) { provisioner.verifyEnvironment() }
@@ -873,7 +920,7 @@ class WslToolchainProvisionerTest {
             repository = repo,
             detector = detector,
             cli = fakeCli,
-            dispatcher = testDispatcher
+            dispatcher = testDispatcher,
         )
 
         val caller1Job = launch(testDispatcher) {
@@ -915,43 +962,44 @@ class WslToolchainProvisionerTest {
     }
 
     @Test
-    fun `cancel awaiting user action returns Interrupted when journal write fails and leaves attempt active`() = runTest {
-        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-        val fakeCli = FakeWslCliExecutor().apply { missingDevPackages = true }
-        val detector = WslEnvironmentDetector(cli = fakeCli)
-        val supervisor = FakeDaemonSupervisor()
-        val transport = FakeRemoteTransport(fakeCli = fakeCli)
-        val baseRepo = inMemoryToolchainRepository()
-        val failingRepo = FailingTerminalArchiveRepository(baseRepo)
+    fun `cancel awaiting user action returns Interrupted when journal write fails and leaves attempt active`() =
+        runTest {
+            val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+            val fakeCli = FakeWslCliExecutor().apply { missingDevPackages = true }
+            val detector = WslEnvironmentDetector(cli = fakeCli)
+            val supervisor = FakeDaemonSupervisor()
+            val transport = FakeRemoteTransport(fakeCli = fakeCli)
+            val baseRepo = inMemoryToolchainRepository()
+            val failingRepo = FailingTerminalArchiveRepository(baseRepo)
 
-        val provisioner = WslToolchainProvisioner(
-            supervisor = supervisor,
-            transport = transport,
-            repository = failingRepo,
-            detector = detector,
-            cli = fakeCli,
-            dispatcher = testDispatcher,
-        )
+            val provisioner = WslToolchainProvisioner(
+                supervisor = supervisor,
+                transport = transport,
+                repository = failingRepo,
+                detector = detector,
+                cli = fakeCli,
+                dispatcher = testDispatcher,
+            )
 
-        provisioner.verifyEnvironment()
-        val plan = provisioner.prepare(SetupPlanKind.FULL_SETUP)
-        val pauseOutcome = provisioner.confirm(plan.planId, plan.revisionHash)
-        assertTrue(pauseOutcome is SetupOutcome.AwaitingUserAction)
-        assertEquals(AttemptStatus.AWAITING_USER_ACTION, baseRepo.currentState.activeAttempt?.status)
+            provisioner.verifyEnvironment()
+            val plan = provisioner.prepare(SetupPlanKind.FULL_SETUP)
+            val pauseOutcome = provisioner.confirm(plan.planId, plan.revisionHash)
+            assertTrue(pauseOutcome is SetupOutcome.AwaitingUserAction)
+            assertEquals(AttemptStatus.AWAITING_USER_ACTION, baseRepo.currentState.activeAttempt?.status)
 
-        // Cancel while terminal archive fails
-        val cancelOutcome = provisioner.cancel()
+            // Cancel while terminal archive fails
+            val cancelOutcome = provisioner.cancel()
 
-        // Must report Interrupted, NOT falsely claim Cancelled!
-        assertTrue(cancelOutcome is SetupOutcome.Interrupted, "Expected Interrupted but got $cancelOutcome")
-        assertTrue(cancelOutcome.reason.contains("could not be archived"))
-        assertEquals(AttemptStatus.AWAITING_USER_ACTION, baseRepo.currentState.activeAttempt?.status)
+            // Must report Interrupted, NOT falsely claim Cancelled!
+            assertTrue(cancelOutcome is SetupOutcome.Interrupted, "Expected Interrupted but got $cancelOutcome")
+            assertTrue(cancelOutcome.reason.contains("could not be archived"))
+            assertEquals(AttemptStatus.AWAITING_USER_ACTION, baseRepo.currentState.activeAttempt?.status)
 
-        // Now fix the journal write failure and cancel again
-        failingRepo.shouldFailRecordAttemptTerminal = false
-        val secondCancelOutcome = provisioner.cancel()
-        assertTrue(secondCancelOutcome is SetupOutcome.Cancelled, "Expected Cancelled once journal write succeeds")
-        assertNull(baseRepo.currentState.activeAttempt)
-        assertEquals(AttemptStatus.CANCELLED, baseRepo.currentState.attemptHistory.lastOrNull()?.status)
-    }
+            // Now fix the journal write failure and cancel again
+            failingRepo.shouldFailRecordAttemptTerminal = false
+            val secondCancelOutcome = provisioner.cancel()
+            assertTrue(secondCancelOutcome is SetupOutcome.Cancelled, "Expected Cancelled once journal write succeeds")
+            assertNull(baseRepo.currentState.activeAttempt)
+            assertEquals(AttemptStatus.CANCELLED, baseRepo.currentState.attemptHistory.lastOrNull()?.status)
+        }
 }

@@ -16,7 +16,6 @@ import org.ide.lti.core.data.setup.doctor.SelinuxAttrInspector
 import org.ide.lti.core.data.setup.doctor.SystemDiagnosticInspector
 import org.ide.lti.core.data.setup.doctor.TransferToolsInspector
 import org.ide.lti.core.domain.setup.StepStatus
-import org.ide.lti.core.model.setup.Need
 import java.nio.charset.Charset
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -31,7 +30,7 @@ class RequirementCatalogCoverageTest {
             command: List<String>,
             timeoutSeconds: Long,
             charset: Charset,
-            user: String?
+            user: String?,
         ): CliExecutionResult = CliExecutionResult(1, "", "not installed")
     }
 
@@ -71,7 +70,8 @@ class RequirementCatalogCoverageTest {
                 for (pkg in packages) {
                     assertTrue(
                         pkg in catalogPackages,
-                        "Package '$pkg' suggested by ${inspector::class.simpleName} is missing from RequirementCatalog!"
+                        "Package '$pkg' suggested by ${inspector::class.simpleName} is missing from " +
+                            "RequirementCatalog!",
                     )
                 }
             }
@@ -86,7 +86,8 @@ class RequirementCatalogCoverageTest {
         for (tool in buildTools) {
             val found = RequirementCatalog.REQUIREMENTS.any { req ->
                 val check = req.check
-                req.id == tool || req.aptPackages.contains(tool) ||
+                req.id == tool ||
+                    req.aptPackages.contains(tool) ||
                     (check is org.ide.lti.core.model.setup.RequirementCheck.Command && check.name == tool)
             }
             assertTrue(found, "Build tool '$tool' is not represented in RequirementCatalog!")
@@ -116,11 +117,14 @@ class RequirementCatalogCoverageTest {
                 command: List<String>,
                 timeoutSeconds: Long,
                 charset: Charset,
-                user: String?
+                user: String?,
             ): CliExecutionResult {
                 val cmdStr = command.joinToString(" ")
                 return when {
-                    cmdStr.contains("which") || cmdStr.contains("test -x") || cmdStr.contains("test -f") || cmdStr.contains("test -d") ->
+                    cmdStr.contains("which") ||
+                        cmdStr.contains("test -x") ||
+                        cmdStr.contains("test -f") ||
+                        cmdStr.contains("test -d") ->
                         CliExecutionResult(0, "/usr/bin/tool", "")
                     cmdStr.contains("dpkg-query") -> {
                         val pkgs = command.filter { !it.startsWith("-") && it != "dpkg-query" }
@@ -146,7 +150,7 @@ class RequirementCatalogCoverageTest {
             systemCommands = setOf(
                 "cmake", "make", "clang", "gcc", "g++", "pkg-config", "protoc", "git",
                 "curl", "rsync", "tar", "file", "xxd", "zip", "unzip", "brotli",
-                "attr", "getfattr", "ccache", "openssl", "python3", "java", "javac", "fusermount3", "truncate"
+                "attr", "getfattr", "ccache", "openssl", "python3", "java", "javac", "fusermount3", "truncate",
             ),
         )
 
@@ -168,7 +172,8 @@ class RequirementCatalogCoverageTest {
             assertEquals(
                 StepStatus.SUCCESS,
                 item.status,
-                "Inspector ${inspector::class.simpleName} reported ${item.status} instead of SUCCESS after full install: ${item.detail}"
+                "Inspector ${inspector::class.simpleName} reported ${item.status} instead of SUCCESS after full " +
+                    "install: ${item.detail}",
             )
         }
     }

@@ -364,12 +364,12 @@ class SetupViewModel(
         if (launcher != null) {
             launcher.launchTerminal(distro).onFailure {
                 environmentSetupState.setTerminalLaunchFailure(
-                    it.message ?: "Unknown error"
+                    it.message ?: "Unknown error",
                 )
             }
         } else {
             environmentSetupState.setTerminalLaunchFailure(
-                "No terminal launcher available on this platform"
+                "No terminal launcher available on this platform",
             )
         }
     }
@@ -413,6 +413,10 @@ class SetupViewModel(
      */
     fun checkEnvironmentStatus() {
         environmentSetupState.checkEnvironmentStatus()
+    }
+
+    fun selectDistro(distro: String) {
+        environmentSetupState.selectDistro(distro)
     }
 
     /**

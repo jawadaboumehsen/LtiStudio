@@ -77,7 +77,6 @@ import org.ide.lti.core.designsystem.theme.SetupTokens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
-import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.feature.setup.PendingWorkspaceRequest
 import org.ide.lti.feature.setup.ProjectsHeaderStatusPresentation

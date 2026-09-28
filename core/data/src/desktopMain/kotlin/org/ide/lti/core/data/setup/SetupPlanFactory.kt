@@ -51,10 +51,7 @@ public object SetupPlanFactory {
      * Hash of the evidence a plan was derived from: stage statuses, tool statuses, diagnostic
      * statuses and the Auto Doctor policy. Any change means the previewed plan is stale.
      */
-    public fun computeRevisionHash(
-        snapshot: ToolchainSetupState,
-        autoDoctorEnabled: Boolean,
-    ): String {
+    public fun computeRevisionHash(snapshot: ToolchainSetupState, autoDoctorEnabled: Boolean): String {
         val basis = snapshot.steps.joinToString("|") { "${it.stage}=${it.status}" }
             .plus("|tools=" + snapshot.toolsMatrix.joinToString(",") { "${it.id}:${it.status}" })
             .plus("|diag=" + snapshot.diagnostics.joinToString(",") { "${it.id}:${it.status}" })
@@ -93,7 +90,7 @@ public object SetupPlanFactory {
                         packages = bootstrapPackages,
                         pipPackages = emptyList(),
                         configureLoopMountElevation = false,
-                    )
+                    ),
                 )
             } else {
                 emptyList()
@@ -170,7 +167,7 @@ public object SetupPlanFactory {
                 if (unpublished.isNotEmpty()) add(SetupPlanAction.PublishTools(unpublished))
             }
             SetupStepStage.SERVER_CONNECTIVITY -> listOf(
-                SetupPlanAction.PublishTools(emptyList())
+                SetupPlanAction.PublishTools(emptyList()),
             )
             SetupStepStage.SYSTEM_PACKAGES -> {
                 if (bootstrapPackages.isNotEmpty()) {
@@ -179,9 +176,11 @@ public object SetupPlanFactory {
                             packages = bootstrapPackages,
                             pipPackages = emptyList(),
                             configureLoopMountElevation = false,
-                        )
+                        ),
                     )
-                } else emptyList()
+                } else {
+                    emptyList()
+                }
             }
             SetupStepStage.WSL_DETECTION -> emptyList()
         }

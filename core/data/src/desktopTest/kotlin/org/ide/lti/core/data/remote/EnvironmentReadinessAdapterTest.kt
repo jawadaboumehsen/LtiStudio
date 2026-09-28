@@ -5,7 +5,6 @@ import io.ltirom.tooling.core.remote.StreamEvent
 import io.ltirom.tooling.core.remote.ToolExecutionRequest
 import io.ltirom.tooling.core.remote.ToolExecutionResponse
 import io.ltirom.tooling.core.remote.ToolListResult
-import io.ltirom.tooling.core.remote.ToolStatusInfo
 import io.ltirom.tooling.core.remote.WslServerInfo
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -40,17 +39,47 @@ class EnvironmentReadinessAdapterTest {
     private class FakeToolchainProvisioningService(
         var stateResult: ToolchainSetupState = ToolchainSetupState(
             steps = listOf(
-                SetupStepDetail(stage = SetupStepStage.WSL_DETECTION, title = "WSL", description = "OK", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-                SetupStepDetail(stage = SetupStepStage.SERVER_CONNECTIVITY, title = "Server", description = "Connected · 1ms · pid 1234", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-                SetupStepDetail(stage = SetupStepStage.TOOLCHAIN_COMPILATION, title = "Tools", description = "10/10 tools · 10 published", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-                SetupStepDetail(stage = SetupStepStage.REPO_SYNCHRONIZATION, title = "Repos", description = "OK", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-                SetupStepDetail(stage = SetupStepStage.SYSTEM_DIAGNOSTICS, title = "Doctor", description = "OK", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
+                SetupStepDetail(
+                    stage = SetupStepStage.WSL_DETECTION,
+                    title = "WSL",
+                    description = "OK",
+                    status = StepStatus.SUCCESS,
+                    provenance = StepProvenance.LIVE,
+                ),
+                SetupStepDetail(
+                    stage = SetupStepStage.SERVER_CONNECTIVITY,
+                    title = "Server",
+                    description = "Connected · 1ms · pid 1234",
+                    status = StepStatus.SUCCESS,
+                    provenance = StepProvenance.LIVE,
+                ),
+                SetupStepDetail(
+                    stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+                    title = "Tools",
+                    description = "10/10 tools · 10 published",
+                    status = StepStatus.SUCCESS,
+                    provenance = StepProvenance.LIVE,
+                ),
+                SetupStepDetail(
+                    stage = SetupStepStage.REPO_SYNCHRONIZATION,
+                    title = "Repos",
+                    description = "OK",
+                    status = StepStatus.SUCCESS,
+                    provenance = StepProvenance.LIVE,
+                ),
+                SetupStepDetail(
+                    stage = SetupStepStage.SYSTEM_DIAGNOSTICS,
+                    title = "Doctor",
+                    description = "OK",
+                    status = StepStatus.SUCCESS,
+                    provenance = StepProvenance.LIVE,
+                ),
             ),
             activeDistro = "Ubuntu",
             userHome = "/home/Ubuntu",
             workDirLinuxPath = "/home/Ubuntu/LtiRomWorkDir",
             publishedToolIds = ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS,
-        )
+        ),
     ) : ToolchainProvisioningService {
         private val _state = MutableStateFlow(stateResult)
         override val state: StateFlow<ToolchainSetupState> = _state.asStateFlow()
@@ -59,7 +88,8 @@ class EnvironmentReadinessAdapterTest {
             return stateResult
         }
         override suspend fun verifyEnvironment(): ToolchainSetupState = checkStatus()
-        override suspend fun prepare(kind: SetupPlanKind, targetId: String?, autoDoctorEnabled: Boolean): SetupPlan = error("Not implemented")
+        override suspend fun prepare(kind: SetupPlanKind, targetId: String?, autoDoctorEnabled: Boolean): SetupPlan =
+            error("Not implemented")
         override suspend fun confirm(planId: String, revisionHash: String): SetupOutcome = error("Not implemented")
         override suspend fun resume(planId: String): SetupOutcome = error("Not implemented")
         override fun observe(): Flow<SetupOutcome?> = emptyFlow()
@@ -73,14 +103,13 @@ class EnvironmentReadinessAdapterTest {
     private class FakeRemoteTransport : RemoteTransportPort {
         var customExecuteHandler: ((ToolExecutionRequest) -> ToolExecutionResponse)? = null
 
-        override suspend fun execute(request: ToolExecutionRequest): ToolExecutionResponse {
-            return customExecuteHandler?.invoke(request) ?: ToolExecutionResponse(
+        override suspend fun execute(request: ToolExecutionRequest): ToolExecutionResponse =
+            customExecuteHandler?.invoke(request) ?: ToolExecutionResponse(
                 exitCode = 0,
                 stdout = "ok",
                 stderr = "",
-                durationMs = 5L
+                durationMs = 5L,
             )
-        }
 
         override fun stream(request: ToolExecutionRequest): Flow<StreamEvent> = emptyFlow()
         override suspend fun checkHealth(): WslServerInfo? = null
@@ -101,10 +130,10 @@ class EnvironmentReadinessAdapterTest {
                         title = "WSL",
                         description = "WSL 2 not detected or no distribution found.",
                         status = StepStatus.FAILED,
-                        error = "WSL 2 is not installed."
-                    )
-                )
-            )
+                        error = "WSL 2 is not installed.",
+                    ),
+                ),
+            ),
         )
         val transport = FakeRemoteTransport()
         val adapter = EnvironmentReadinessAdapter(toolchain, transport)
@@ -121,16 +150,22 @@ class EnvironmentReadinessAdapterTest {
         val toolchain = FakeToolchainProvisioningService(
             stateResult = ToolchainSetupState(
                 steps = listOf(
-                    SetupStepDetail(stage = SetupStepStage.WSL_DETECTION, title = "WSL", description = "OK", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
+                    SetupStepDetail(
+                        stage = SetupStepStage.WSL_DETECTION,
+                        title = "WSL",
+                        description = "OK",
+                        status = StepStatus.SUCCESS,
+                        provenance = StepProvenance.LIVE,
+                    ),
                     SetupStepDetail(
                         stage = SetupStepStage.SERVER_CONNECTIVITY,
                         title = "Server",
                         description = "Daemon bridge failed: connection refused",
                         status = StepStatus.FAILED,
-                        error = "connection refused"
-                    )
-                )
-            )
+                        error = "connection refused",
+                    ),
+                ),
+            ),
         )
         val transport = FakeRemoteTransport()
         val adapter = EnvironmentReadinessAdapter(toolchain, transport)
@@ -146,17 +181,23 @@ class EnvironmentReadinessAdapterTest {
         val toolchain = FakeToolchainProvisioningService(
             stateResult = ToolchainSetupState(
                 steps = listOf(
-                    SetupStepDetail(stage = SetupStepStage.WSL_DETECTION, title = "WSL", description = "OK", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
+                    SetupStepDetail(
+                        stage = SetupStepStage.WSL_DETECTION,
+                        title = "WSL",
+                        description = "OK",
+                        status = StepStatus.SUCCESS,
+                        provenance = StepProvenance.LIVE,
+                    ),
                     SetupStepDetail(
                         stage = SetupStepStage.SERVER_CONNECTIVITY,
                         title = "Server",
                         description = "Daemon bridge failed: Daemon reported unhealthy status: DOWN",
                         status = StepStatus.FAILED,
                         error = "Daemon reported unhealthy status: DOWN",
-                        failureCategory = DaemonFailureCategory.UNHEALTHY_STATUS
-                    )
-                )
-            )
+                        failureCategory = DaemonFailureCategory.UNHEALTHY_STATUS,
+                    ),
+                ),
+            ),
         )
         val transport = FakeRemoteTransport()
         val adapter = EnvironmentReadinessAdapter(toolchain, transport)
@@ -171,17 +212,23 @@ class EnvironmentReadinessAdapterTest {
         val toolchain = FakeToolchainProvisioningService(
             stateResult = ToolchainSetupState(
                 steps = listOf(
-                    SetupStepDetail(stage = SetupStepStage.WSL_DETECTION, title = "WSL", description = "OK", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
+                    SetupStepDetail(
+                        stage = SetupStepStage.WSL_DETECTION,
+                        title = "WSL",
+                        description = "OK",
+                        status = StepStatus.SUCCESS,
+                        provenance = StepProvenance.LIVE,
+                    ),
                     SetupStepDetail(
                         stage = SetupStepStage.SERVER_CONNECTIVITY,
                         title = "Server",
                         description = "Daemon bridge failed: Unsupported daemon Java runtime version: 11",
                         status = StepStatus.FAILED,
                         error = "Unsupported daemon Java runtime version: 11",
-                        failureCategory = DaemonFailureCategory.UNSUPPORTED_JAVA
-                    )
-                )
-            )
+                        failureCategory = DaemonFailureCategory.UNSUPPORTED_JAVA,
+                    ),
+                ),
+            ),
         )
         val transport = FakeRemoteTransport()
         val adapter = EnvironmentReadinessAdapter(toolchain, transport)
@@ -196,18 +243,30 @@ class EnvironmentReadinessAdapterTest {
         val toolchain = FakeToolchainProvisioningService(
             stateResult = ToolchainSetupState(
                 steps = listOf(
-                    SetupStepDetail(stage = SetupStepStage.WSL_DETECTION, title = "WSL", description = "OK", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-                    SetupStepDetail(stage = SetupStepStage.SERVER_CONNECTIVITY, title = "Server", description = "Connected", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
+                    SetupStepDetail(
+                        stage = SetupStepStage.WSL_DETECTION,
+                        title = "WSL",
+                        description = "OK",
+                        status = StepStatus.SUCCESS,
+                        provenance = StepProvenance.LIVE,
+                    ),
+                    SetupStepDetail(
+                        stage = SetupStepStage.SERVER_CONNECTIVITY,
+                        title = "Server",
+                        description = "Connected",
+                        status = StepStatus.SUCCESS,
+                        provenance = StepProvenance.LIVE,
+                    ),
                     SetupStepDetail(
                         stage = SetupStepStage.TOOLCHAIN_COMPILATION,
                         title = "Tools",
                         description = "Missing published tools: lpunpack",
                         status = StepStatus.FAILED,
-                        error = "Required tools not published on daemon: lpunpack"
-                    )
+                        error = "Required tools not published on daemon: lpunpack",
+                    ),
                 ),
-                publishedToolIds = ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS - "lpunpack"
-            )
+                publishedToolIds = ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS - "lpunpack",
+            ),
         )
         val transport = FakeRemoteTransport()
         val adapter = EnvironmentReadinessAdapter(toolchain, transport)
@@ -222,8 +281,20 @@ class EnvironmentReadinessAdapterTest {
         val toolchain = FakeToolchainProvisioningService(
             stateResult = ToolchainSetupState(
                 steps = listOf(
-                    SetupStepDetail(stage = SetupStepStage.WSL_DETECTION, title = "WSL", description = "OK", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-                    SetupStepDetail(stage = SetupStepStage.SERVER_CONNECTIVITY, title = "Server", description = "Connected", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
+                    SetupStepDetail(
+                        stage = SetupStepStage.WSL_DETECTION,
+                        title = "WSL",
+                        description = "OK",
+                        status = StepStatus.SUCCESS,
+                        provenance = StepProvenance.LIVE,
+                    ),
+                    SetupStepDetail(
+                        stage = SetupStepStage.SERVER_CONNECTIVITY,
+                        title = "Server",
+                        description = "Connected",
+                        status = StepStatus.SUCCESS,
+                        provenance = StepProvenance.LIVE,
+                    ),
                     SetupStepDetail(
                         stage = SetupStepStage.TOOLCHAIN_COMPILATION,
                         title = "Tools",
@@ -231,9 +302,9 @@ class EnvironmentReadinessAdapterTest {
                         status = StepStatus.FAILED,
                         error = "mkfs.erofs does not support --fs-config-file",
                         toolchainFailureCategory = ToolchainFailureCategory.EROFS_INCOMPATIBLE,
-                    )
-                )
-            )
+                    ),
+                ),
+            ),
         )
         val transport = FakeRemoteTransport()
         val adapter = EnvironmentReadinessAdapter(toolchain, transport)
@@ -271,7 +342,7 @@ class EnvironmentReadinessAdapterTest {
             id = "test-ws",
             name = "Test Workspace",
             path = "C:\\test",
-            linuxPath = "/home/lti/LtiRomWorkDir/workspaces/test-ws"
+            linuxPath = "/home/lti/LtiRomWorkDir/workspaces/test-ws",
         )
         val readiness = adapter.forWorkspace(ws)
 
@@ -354,7 +425,7 @@ class EnvironmentReadinessAdapterTest {
         val adapter = EnvironmentReadinessAdapter(
             toolchainService = toolchain,
             transport = transport,
-            requiredProductTools = emptySet()
+            requiredProductTools = emptySet(),
         )
         val readiness = adapter.refresh()
 

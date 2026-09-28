@@ -10,7 +10,6 @@ import org.ide.lti.core.model.setup.PersistedSubmoduleState
 import org.ide.lti.core.model.setup.PersistedToolState
 import org.ide.lti.core.model.setup.PersistedUserHandoff
 import org.ide.lti.core.model.setup.SetupAttemptRecord
-import org.ide.lti.core.model.setup.SetupEnvironment
 import org.ide.lti.core.model.setup.ToolchainPersistenceState
 
 /**
@@ -31,10 +30,7 @@ public interface ToolchainSetupRepository {
 
     public suspend fun saveToolchainState(state: ToolchainPersistenceState): Result<Unit>
 
-    public suspend fun updateTool(
-        toolId: String,
-        transform: (PersistedToolState) -> PersistedToolState,
-    ): Result<Unit>
+    public suspend fun updateTool(toolId: String, transform: (PersistedToolState) -> PersistedToolState): Result<Unit>
 
     public suspend fun updateSubmodule(
         name: String,
@@ -71,11 +67,7 @@ public interface ToolchainSetupRepository {
     public suspend fun appendChildIntent(attemptId: String, intent: ChildIntentRecord): Result<Int>
 
     /** Enforces "persist runId before acknowledging attachment". */
-    public suspend fun recordChildRunId(
-        attemptId: String,
-        childIndex: Int,
-        runId: String,
-    ): Result<Unit>
+    public suspend fun recordChildRunId(attemptId: String, childIndex: Int, runId: String): Result<Unit>
 
     /** Atomically commits replay evidence together with the cursor it proves. */
     public suspend fun commitChildCursorAndEvidence(
@@ -108,17 +100,6 @@ public interface ToolchainSetupRepository {
         handoff: PersistedUserHandoff,
         plan: PersistedSetupPlan,
     ): Result<Unit>
-
-    /** Records that the attempt is awaiting user terminal action for bootstrap system packages. */
-    public suspend fun recordBootstrapAwaiting(
-        attemptId: String,
-        environment: SetupEnvironment,
-        requirementIds: List<String>,
-        command: String,
-    ): Result<Unit>
-
-    /** Archives the active attempt as abandoned, lifting any recovery block. */
-    public suspend fun recordAttemptAbandoned(attemptId: String): Result<Unit>
 
     public suspend fun setRecoveryBlocked(blocked: Boolean, reason: String?): Result<Unit>
 }

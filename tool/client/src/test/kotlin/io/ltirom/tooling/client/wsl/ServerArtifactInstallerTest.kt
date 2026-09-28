@@ -6,7 +6,6 @@ import java.io.File
 import java.nio.charset.Charset
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -15,7 +14,7 @@ class ServerArtifactInstallerTest {
     private class RecordingFakeCli(
         var failOnCommandSubstring: String? = null,
         var stderrToEmit: String = "simulated error",
-        var activeVersionSymlinkTarget: String? = null
+        var activeVersionSymlinkTarget: String? = null,
     ) : WslCliExecutor() {
         val executedCommands = mutableListOf<List<String>>()
 
@@ -24,7 +23,7 @@ class ServerArtifactInstallerTest {
             command: List<String>,
             timeoutSeconds: Long,
             charset: Charset,
-            user: String?
+            user: String?,
         ): CliExecutionResult {
             executedCommands.add(command)
             val cmdStr = command.joinToString(" ")
@@ -59,12 +58,15 @@ class ServerArtifactInstallerTest {
         osId = "ubuntu",
         osVersionId = "24.04",
         user = "testuser",
-        home = "/home/testuser"
+        home = "/home/testuser",
     )
 
     @Test
     fun `fresh install performs staged install through partial, verify, rename, and atomic swap`() {
-        val tempDir = File.createTempFile("server_bundle_", "").apply { delete(); mkdirs() }
+        val tempDir = File.createTempFile("server_bundle_", "").apply {
+            delete()
+            mkdirs()
+        }
         try {
             File(tempDir, "server-version.txt").writeText("1.2.0\n")
             val binDir = File(tempDir, "bin").apply { mkdirs() }
@@ -85,10 +87,30 @@ class ServerArtifactInstallerTest {
             // 3. rename to versions/1.2.0
             // 4. atomic symlink swap to current
             val allCommands = cli.executedCommands.map { it.joinToString(" ") }
-            assertTrue(allCommands.any { it.contains("rm -rf") && it.contains("1.2.0.partial") }, "Should clean up partial directory")
-            assertTrue(allCommands.any { it.contains("1.2.0.partial") && (it.contains("cp") || it.contains("mkdir")) }, "Should stage into partial directory")
-            assertTrue(allCommands.any { it.contains("mv") && it.contains("1.2.0.partial") && it.contains("1.2.0") }, "Should rename partial to final")
-            assertTrue(allCommands.any { it.contains("current") && (it.contains("ln") || it.contains("mv")) }, "Should atomically update current symlink")
+            assertTrue(
+                allCommands.any {
+                    it.contains("rm -rf") && it.contains("1.2.0.partial")
+                },
+                "Should clean up partial directory",
+            )
+            assertTrue(
+                allCommands.any {
+                    it.contains("1.2.0.partial") && (it.contains("cp") || it.contains("mkdir"))
+                },
+                "Should stage into partial directory",
+            )
+            assertTrue(
+                allCommands.any {
+                    it.contains("mv") && it.contains("1.2.0.partial") && it.contains("1.2.0")
+                },
+                "Should rename partial to final",
+            )
+            assertTrue(
+                allCommands.any {
+                    it.contains("current") && (it.contains("ln") || it.contains("mv"))
+                },
+                "Should atomically update current symlink",
+            )
         } finally {
             tempDir.deleteRecursively()
         }
@@ -96,20 +118,26 @@ class ServerArtifactInstallerTest {
 
     @Test
     fun `failure at staging leaves previous current untouched and returns Failed state`() {
-        val tempDir = File.createTempFile("server_bundle_", "").apply { delete(); mkdirs() }
+        val tempDir = File.createTempFile("server_bundle_", "").apply {
+            delete()
+            mkdirs()
+        }
         try {
             File(tempDir, "server-version.txt").writeText("2.0.0\n")
 
             val cli = RecordingFakeCli(
                 failOnCommandSubstring = "mv",
                 stderrToEmit = "Permission denied",
-                activeVersionSymlinkTarget = "/home/testuser/.ltirom/server/versions/1.0.0"
+                activeVersionSymlinkTarget = "/home/testuser/.ltirom/server/versions/1.0.0",
             )
             val installer = ServerArtifactInstaller(cli = cli, bundleDirProvider = { tempDir })
 
             val result = installer.ensureInstalled(testEnv)
 
-            assertTrue(result.installState is InstallState.Failed, "Expected Failed installState, was ${result.installState}")
+            assertTrue(
+                result.installState is InstallState.Failed,
+                "Expected Failed installState, was ${result.installState}",
+            )
             val failed = result.installState as InstallState.Failed
             assertTrue(failed.stderr.contains("Permission denied"))
             assertEquals("1.0.0", result.activeVersion, "Previous active version must be retained")
@@ -119,21 +147,78 @@ class ServerArtifactInstallerTest {
     }
 
     @Test
-    fun `subsequent attempt deletes existing partial directory`() {
-        val tempDir = File.createTempFile("server_bundle_", "").apply { delete(); mkdirs() }
+    fun `subsequent attempt deletes existing partial directory before staging`() {
+        val tempDir = bundle("1.3.0")
         try {
-            File(tempDir, "server-version.txt").writeText("1.3.0\n")
-
             val cli = RecordingFakeCli()
-            val installer = ServerArtifactInstaller(cli = cli, bundleDirProvider = { tempDir })
+            ServerArtifactInstaller(cli = cli, bundleDirProvider = { tempDir }).ensureInstalled(testEnv)
 
-            installer.ensureInstalled(testEnv)
-
-            val firstCommand = cli.executedCommands.firstOrNull()?.joinToString(" ") ?: ""
-            assertTrue(firstCommand.contains("rm") && firstCommand.contains(".partial"), "First command should clean up stale .partial")
+            val commands = cli.executedCommands.map { it.joinToString(" ") }
+            val cleanup = commands.indexOfFirst { it.startsWith("rm -rf") && it.contains("1.3.0.partial") }
+            val copy = commands.indexOfFirst { it.startsWith("cp -r") }
+            assertTrue(cleanup in 0 until copy, "Stale .partial must be removed before copying: $commands")
         } finally {
             tempDir.deleteRecursively()
         }
+    }
+
+    @Test
+    fun `already current version is not reinstalled`() {
+        val tempDir = bundle("1.4.0")
+        try {
+            val cli = RecordingFakeCli(activeVersionSymlinkTarget = "/home/testuser/.ltirom/server/versions/1.4.0")
+            val result = ServerArtifactInstaller(cli = cli, bundleDirProvider = { tempDir }).ensureInstalled(testEnv)
+
+            assertEquals(InstallState.Current, result.installState)
+            val commands = cli.executedCommands.map { it.joinToString(" ") }
+            assertTrue(commands.none { it.startsWith("cp") || it.startsWith("mv") || it.startsWith("rm") }, "$commands")
+        } finally {
+            tempDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `checksum mismatch fails at verify and never activates`() {
+        val tempDir = bundle("1.5.0")
+        try {
+            val cli = RecordingFakeCli(
+                failOnCommandSubstring = "sha256sum",
+                stderrToEmit = "lib/app.jar: FAILED",
+                activeVersionSymlinkTarget = "/home/testuser/.ltirom/server/versions/1.0.0",
+            )
+            val result = ServerArtifactInstaller(cli = cli, bundleDirProvider = { tempDir }).ensureInstalled(testEnv)
+
+            val failed = result.installState as InstallState.Failed
+            assertEquals("verify", failed.step)
+            assertEquals("1.0.0", result.activeVersion)
+            val commands = cli.executedCommands.map { it.joinToString(" ") }
+            assertTrue(commands.none { it.startsWith("ln") || it.contains("mv -T") }, "$commands")
+        } finally {
+            tempDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `failed link swap keeps the previous version active`() {
+        val tempDir = bundle("1.6.0")
+        try {
+            val cli = RecordingFakeCli(
+                failOnCommandSubstring = "mv -T",
+                activeVersionSymlinkTarget = "/home/testuser/.ltirom/server/versions/1.0.0",
+            )
+            val result = ServerArtifactInstaller(cli = cli, bundleDirProvider = { tempDir }).ensureInstalled(testEnv)
+
+            assertEquals("activate", (result.installState as InstallState.Failed).step)
+            assertEquals("1.0.0", result.activeVersion)
+        } finally {
+            tempDir.deleteRecursively()
+        }
+    }
+
+    private fun bundle(version: String): File = File.createTempFile("server_bundle_", "").apply {
+        delete()
+        mkdirs()
+        File(this, "server-version.txt").writeText(version)
     }
 
     @Test

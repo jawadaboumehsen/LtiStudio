@@ -26,7 +26,7 @@ class EnvironmentTargetingTest {
             command: List<String>,
             timeoutSeconds: Long,
             charset: Charset,
-            user: String?
+            user: String?,
         ): CliExecutionResult {
             executedDistros.add(distro)
             executedCommands.add(command)
@@ -53,7 +53,7 @@ class EnvironmentTargetingTest {
                 process = dummyProcess,
                 port = 49152,
                 token = "fake-token",
-                pid = 12345L
+                pid = 12345L,
             )
         }
     }
@@ -64,7 +64,7 @@ class EnvironmentTargetingTest {
         osId = "ubuntu",
         osVersionId = "22.04",
         user = "userA",
-        home = "/home/userA"
+        home = "/home/userA",
     )
 
     private val envB = SetupEnvironment(
@@ -73,7 +73,7 @@ class EnvironmentTargetingTest {
         osId = "ubuntu",
         osVersionId = "24.04",
         user = "userB",
-        home = "/home/userB"
+        home = "/home/userB",
     )
 
     @Test
@@ -81,15 +81,13 @@ class EnvironmentTargetingTest {
         val cli = RecordingWslCliExecutor()
         val launcher = RecordingWslProcessLauncher()
         val detector = WslEnvironmentDetector(cli)
-        val deployer = WslExt4Deployer(cli)
         val virtualizer = WorkspaceVirtualizer(cli = cli, detector = detector)
         val translator = WslPathTranslator()
         val daemonManager = WslDaemonManager(
             config = WslDaemonConfig(autoStart = false),
             cli = cli,
             detector = detector,
-            deployer = deployer,
-            launcher = launcher
+            launcher = launcher,
         )
 
         // 1. Path translation with envB
@@ -102,16 +100,20 @@ class EnvironmentTargetingTest {
         assertEquals("/home/userB/.ltirom/workspaces/ws-test", ws.linuxExt4Path)
         assertTrue(ws.windowsUncPath.contains("""\\wsl.localhost\Ubuntu-24.04\"""))
 
-        // 3. Deployer with envB
-        val serverBinary = deployer.ensureInstalled(envB)
-        assertTrue(serverBinary.contains("/home/userB/.ltirom/server/bin/ltirom-server"))
+        // 3. Installer status with envB
+        ServerArtifactInstaller(cli, bundleDirProvider = { null }).status(envB)
 
         // 4. Daemon manager with envB
         daemonManager.ensureStarted(envB)
 
         // Verify all CLI and launcher executions targeted Ubuntu-24.04 (B), none targeted Ubuntu-22.04 (A)
         assertTrue(cli.executedDistros.isNotEmpty(), "Expected CLI commands to have executed")
-        assertTrue(cli.executedDistros.all { it == "Ubuntu-24.04" }, "All CLI executions must target Ubuntu-24.04: ${cli.executedDistros}")
+        assertTrue(
+            cli.executedDistros.all {
+                it == "Ubuntu-24.04"
+            },
+            "All CLI executions must target Ubuntu-24.04: ${cli.executedDistros}",
+        )
         assertEquals(listOf("Ubuntu-24.04"), launcher.launchedDistros, "Process launcher must only target Ubuntu-24.04")
     }
 
@@ -120,15 +122,13 @@ class EnvironmentTargetingTest {
         val cli = RecordingWslCliExecutor()
         val launcher = RecordingWslProcessLauncher()
         val detector = WslEnvironmentDetector(cli)
-        val deployer = WslExt4Deployer(cli)
         val virtualizer = WorkspaceVirtualizer(cli = cli, detector = detector)
         val translator = WslPathTranslator()
         val daemonManager = WslDaemonManager(
             config = WslDaemonConfig(autoStart = false),
             cli = cli,
             detector = detector,
-            deployer = deployer,
-            launcher = launcher
+            launcher = launcher,
         )
 
         var currentSelection = envB
@@ -140,72 +140,81 @@ class EnvironmentTargetingTest {
 
         // Active attempt performs operations using its captured snapshot
         virtualizer.allocateWorkspace("ws-active", activeAttemptEnv)
-        deployer.ensureInstalled(activeAttemptEnv)
+        ServerArtifactInstaller(cli, bundleDirProvider = { null }).status(activeAttemptEnv)
         daemonManager.ensureStarted(activeAttemptEnv)
         val unc = translator.toWindowsPath(activeAttemptEnv, "/home/userB/active.img")
 
         assertTrue(unc.contains("Ubuntu-24.04"))
         assertFalse(unc.contains("Ubuntu-22.04"))
-        assertTrue(cli.executedDistros.all { it == "Ubuntu-24.04" }, "Active attempt commands must target B even when currentSelection changed to A: ${cli.executedDistros}")
+        assertTrue(
+            cli.executedDistros.all {
+                it == "Ubuntu-24.04"
+            },
+            "Active attempt commands must target B even when currentSelection changed to A: ${cli.executedDistros}",
+        )
         assertEquals(listOf("Ubuntu-24.04"), launcher.launchedDistros)
     }
 
     @Test
-    fun `pending handoff restored after restart uses journaled environment even if current selection is A`() = runBlocking {
-        val cli = RecordingWslCliExecutor()
-        val launcher = RecordingWslProcessLauncher()
-        val detector = WslEnvironmentDetector(cli)
-        val deployer = WslExt4Deployer(cli)
-        val virtualizer = WorkspaceVirtualizer(cli = cli, detector = detector)
-        val daemonManager = WslDaemonManager(
-            config = WslDaemonConfig(autoStart = false),
-            cli = cli,
-            detector = detector,
-            deployer = deployer,
-            launcher = launcher
-        )
-
-        // Journal from previous session with B
-        val journaledRecord = SetupAttemptRecord(
-            attemptId = "attempt-prev",
-            environmentKey = envB.distro,
-            planId = "plan-1",
-            planRevisionHash = "hash-1",
-            planKind = "BOOTSTRAP_PACKAGES",
-            status = AttemptStatus.AWAITING_USER_ACTION,
-            createdAtEpochMs = 1000L,
-            environment = PersistedEnvironment(
-                distro = envB.distro,
-                wslVersion = envB.wslVersion,
-                osId = envB.osId,
-                osVersionId = envB.osVersionId,
-                user = envB.user,
-                home = envB.home
+    fun `pending handoff restored after restart uses journaled environment even if current selection is A`() =
+        runBlocking {
+            val cli = RecordingWslCliExecutor()
+            val launcher = RecordingWslProcessLauncher()
+            val detector = WslEnvironmentDetector(cli)
+            val virtualizer = WorkspaceVirtualizer(cli = cli, detector = detector)
+            val daemonManager = WslDaemonManager(
+                config = WslDaemonConfig(autoStart = false),
+                cli = cli,
+                detector = detector,
+                launcher = launcher,
             )
-        )
 
-        // Current UI selection in new session defaults to A
-        val currentSelection = envA
-
-        // Resumed operation restores environment from journal
-        val restoredEnv = journaledRecord.environment?.let {
-            SetupEnvironment(
-                distro = it.distro,
-                wslVersion = it.wslVersion,
-                osId = it.osId,
-                osVersionId = it.osVersionId,
-                user = it.user,
-                home = it.home
+            // Journal from previous session with B
+            val journaledRecord = SetupAttemptRecord(
+                attemptId = "attempt-prev",
+                environmentKey = envB.distro,
+                planId = "plan-1",
+                planRevisionHash = "hash-1",
+                planKind = "BOOTSTRAP_PACKAGES",
+                status = AttemptStatus.AWAITING_USER_ACTION,
+                createdAtEpochMs = 1000L,
+                environment = PersistedEnvironment(
+                    distro = envB.distro,
+                    wslVersion = envB.wslVersion,
+                    osId = envB.osId,
+                    osVersionId = envB.osVersionId,
+                    user = envB.user,
+                    home = envB.home,
+                ),
             )
-        } ?: currentSelection
 
-        assertEquals("Ubuntu-24.04", restoredEnv.distro)
+            // Current UI selection in new session defaults to A
+            val currentSelection = envA
 
-        // Restored operation continues using restoredEnv
-        virtualizer.allocateWorkspace("restored-ws", restoredEnv)
-        daemonManager.ensureStarted(restoredEnv)
+            // Resumed operation restores environment from journal
+            val restoredEnv = journaledRecord.environment?.let {
+                SetupEnvironment(
+                    distro = it.distro,
+                    wslVersion = it.wslVersion,
+                    osId = it.osId,
+                    osVersionId = it.osVersionId,
+                    user = it.user,
+                    home = it.home,
+                )
+            } ?: currentSelection
 
-        assertTrue(cli.executedDistros.all { it == "Ubuntu-24.04" }, "Restored handoff commands must target B from journal, not A: ${cli.executedDistros}")
-        assertEquals(listOf("Ubuntu-24.04"), launcher.launchedDistros)
-    }
+            assertEquals("Ubuntu-24.04", restoredEnv.distro)
+
+            // Restored operation continues using restoredEnv
+            virtualizer.allocateWorkspace("restored-ws", restoredEnv)
+            daemonManager.ensureStarted(restoredEnv)
+
+            assertTrue(
+                cli.executedDistros.all {
+                    it == "Ubuntu-24.04"
+                },
+                "Restored handoff commands must target B from journal, not A: ${cli.executedDistros}",
+            )
+            assertEquals(listOf("Ubuntu-24.04"), launcher.launchedDistros)
+        }
 }

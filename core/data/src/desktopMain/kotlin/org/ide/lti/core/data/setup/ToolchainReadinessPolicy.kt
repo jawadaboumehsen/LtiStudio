@@ -59,7 +59,7 @@ public object ToolchainReadinessPolicy {
      */
     public val REQUIRED_HOST_PACKAGES: Set<String> = setOf(
         "curl", "unzip", "zip", "sha256sum", "sha1sum", "rsync", "getfattr", "fusermount3", "brotli", "file",
-        "xxd", "truncate", "find", "stat", "cat", "test", "cp", "mv", "rm", "mkdir", "java"
+        "xxd", "truncate", "find", "stat", "cat", "test", "cp", "mv", "rm", "mkdir", "java",
     )
 
     /**
@@ -90,61 +90,48 @@ public object ToolchainReadinessPolicy {
      * Evaluates daemon status BEFORE Java runtime so a DOWN daemon is not mislabeled as Java incompatible.
      * Keeps user-facing message concise and clean; logs/tails live in technicalDetails.
      */
-    public fun evaluateDaemonHealth(
-        health: WslServerInfo?,
-        launchErrorTail: String? = null,
-    ): DaemonHealthEvaluation {
-        if (health == null) {
-            return DaemonHealthEvaluation(
+    public fun evaluateDaemonHealth(health: WslServerInfo?, launchErrorTail: String? = null): DaemonHealthEvaluation {
+        val details = launchErrorTail?.takeIf { it.isNotBlank() }
+        val statusUpper = health?.status?.trim()?.uppercase()
+        return when {
+            health == null -> DaemonHealthEvaluation(
                 isHealthy = false,
                 category = DaemonFailureCategory.UNREACHABLE,
                 message = "Daemon health check failed: response was null (daemon unreachable)",
                 remediation = "Start the LtiRomServer daemon or verify WSL connectivity",
-                technicalDetails = launchErrorTail?.takeIf { it.isNotBlank() },
+                technicalDetails = details,
             )
-        }
-
-        val statusUpper = health.status.trim().uppercase()
-
-        // 1. Check for explicit unhealthy status first (e.g. DOWN, DEGRADED)
-        if (statusUpper in UNHEALTHY_STATUSES) {
-            return DaemonHealthEvaluation(
+            // An explicit unhealthy status (DOWN, DEGRADED) wins over everything else.
+            statusUpper in UNHEALTHY_STATUSES -> DaemonHealthEvaluation(
                 isHealthy = false,
                 category = DaemonFailureCategory.UNHEALTHY_STATUS,
                 message = "Daemon reported unhealthy status: ${health.status}",
                 remediation = "Check daemon logs and restart the daemon",
-                technicalDetails = launchErrorTail?.takeIf { it.isNotBlank() },
+                technicalDetails = details,
             )
-        }
-
-        // 2. Check for unrecognized status
-        if (statusUpper !in HEALTHY_STATUSES) {
-            return DaemonHealthEvaluation(
+            statusUpper !in HEALTHY_STATUSES -> DaemonHealthEvaluation(
                 isHealthy = false,
                 category = DaemonFailureCategory.UNRECOGNIZED_STATUS,
                 message = "Daemon reported unrecognized status: ${health.status}",
                 remediation = "Verify daemon version and check daemon logs",
-                technicalDetails = launchErrorTail?.takeIf { it.isNotBlank() },
+                technicalDetails = details,
             )
-        }
-
-        // 3. Status is canonical UP (or compatibility HEALTHY) -> now evaluate Java version
-        if (!isJavaVersionSupported(health.javaVersion)) {
-            return DaemonHealthEvaluation(
+            // Only a canonical UP (or compatibility HEALTHY) daemon gets its Java version judged.
+            !isJavaVersionSupported(health.javaVersion) -> DaemonHealthEvaluation(
                 isHealthy = false,
                 category = DaemonFailureCategory.UNSUPPORTED_JAVA,
-                message = "Unsupported daemon Java runtime version: ${health.javaVersion}. Requires Java >= $MIN_JAVA_VERSION",
+                message = "Unsupported daemon Java runtime version: ${health.javaVersion}. " +
+                    "Requires Java >= $MIN_JAVA_VERSION",
                 remediation = "Install Java $MIN_JAVA_VERSION+ in WSL distribution",
                 technicalDetails = "Reported runtime: ${health.javaVersion}",
             )
+            else -> DaemonHealthEvaluation(
+                isHealthy = true,
+                category = null,
+                message = "Daemon running and healthy (${health.status})",
+                remediation = null,
+                technicalDetails = null,
+            )
         }
-
-        return DaemonHealthEvaluation(
-            isHealthy = true,
-            category = null,
-            message = "Daemon running and healthy (${health.status})",
-            remediation = null,
-            technicalDetails = null,
-        )
     }
 }

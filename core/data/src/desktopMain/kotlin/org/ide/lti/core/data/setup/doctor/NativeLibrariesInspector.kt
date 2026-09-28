@@ -1,11 +1,10 @@
 package org.ide.lti.core.data.setup.doctor
 
 import io.ltirom.tooling.client.wsl.WslCliExecutor
+import org.ide.lti.core.data.setup.AptCommandBuilder
 import org.ide.lti.core.domain.setup.DiagnosticCategory
 import org.ide.lti.core.domain.setup.DiagnosticCheckItem
 import org.ide.lti.core.domain.setup.StepStatus
-
-import org.ide.lti.core.data.setup.AptCommandBuilder
 
 /**
  * Inspector verifying the 10 required C/C++ native development packages via dpkg-query.
@@ -15,7 +14,7 @@ import org.ide.lti.core.data.setup.AptCommandBuilder
  */
 public class NativeLibrariesInspector(
     private val cli: WslCliExecutor = WslCliExecutor(),
-    private val requiredPackages: List<String> = DEFAULT_REQUIRED_DEV_PACKAGES
+    private val requiredPackages: List<String> = DEFAULT_REQUIRED_DEV_PACKAGES,
 ) : SystemDiagnosticInspector {
 
     public companion object {
@@ -29,7 +28,7 @@ public class NativeLibrariesInspector(
             "libzstd-dev",
             "libusb-1.0-0-dev",
             "uuid-dev",
-            "libfuse3-dev"
+            "libfuse3-dev",
         )
     }
 
@@ -37,7 +36,7 @@ public class NativeLibrariesInspector(
         val distro = context.distro
         val dpkgRes = cli.execute(
             distro,
-            listOf("dpkg-query", "-W", "-f=\${Package} \${Status}\\n") + requiredPackages
+            listOf("dpkg-query", "-W", "-f=\${Package} \${Status}\\n") + requiredPackages,
         )
         val installedOutput = dpkgRes.output + "\n" + dpkgRes.error
         val installedPkgs = installedOutput.lines()
@@ -62,7 +61,9 @@ public class NativeLibrariesInspector(
             } else {
                 "Missing development packages: ${missingLibs.joinToString(", ")}."
             },
-            remediation = if (libsOk) null else {
+            remediation = if (libsOk) {
+                null
+            } else {
                 if (context.binariesPresent) {
                     "Pre-built binaries active in ${context.binDir}. Install libraries if compiling from source: $libsCmd"
                 } else {
@@ -70,7 +71,7 @@ public class NativeLibrariesInspector(
                 }
             },
             copyableCommand = libsCmd,
-            isOptionalForRuntime = context.binariesPresent
+            isOptionalForRuntime = context.binariesPresent,
         )
     }
 }

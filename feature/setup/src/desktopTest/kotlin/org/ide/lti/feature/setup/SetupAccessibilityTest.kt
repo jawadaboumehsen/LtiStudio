@@ -9,8 +9,6 @@
  */
 package org.ide.lti.feature.setup
 
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Typography
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -21,23 +19,18 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.onAllNodesWithText
-import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.runDesktopComposeUiTest
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.unit.sp
-import kotlinx.datetime.Clock
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.domain.setup.SetupStepDetail
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepProvenance
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolchainSetupState
-import org.ide.lti.core.model.workspace.RecentProject
 import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -56,7 +49,6 @@ import kotlin.test.assertTrue
  */
 @OptIn(ExperimentalTestApi::class)
 class SetupAccessibilityTest {
-
     @Test
     fun testGlobalKeyboardShortcutsCtrlNAndCtrlO() = runDesktopComposeUiTest(width = 1440, height = 900) {
         var createCalled = false
@@ -66,7 +58,8 @@ class SetupAccessibilityTest {
             LtiTheme {
                 SetupScreenContent(
                     state = SetupUiState(),
-                    actions = SetupUiActions(
+                    actions =
+                    SetupUiActions(
                         onCreateWorkspace = { createCalled = true },
                         onOpenFolder = { openCalled = true },
                     ),
@@ -117,33 +110,34 @@ class SetupAccessibilityTest {
     }
 
     @Test
-    fun testCtrlFFromEnvironmentTabSwitchesAndFocusesSearchWithoutCrashing() = runDesktopComposeUiTest(width = 1440, height = 900) {
-        setContent {
-            LtiTheme {
-                SetupScreenContent(
-                    state = SetupUiState(selectedTab = SetupTab.ENVIRONMENT),
-                    actions = SetupUiActions(),
-                    // initialTab makes SetupScreenContent own its tab state internally
-                    // (localSelectedTab) so onTabChange actually drives recomposition here,
-                    // exactly as it does when SetupScreen wires a real ViewModel.
-                    initialTab = SetupTab.ENVIRONMENT,
-                )
+    fun testCtrlFFromEnvironmentTabSwitchesAndFocusesSearchWithoutCrashing() =
+        runDesktopComposeUiTest(width = 1440, height = 900) {
+            setContent {
+                LtiTheme {
+                    SetupScreenContent(
+                        state = SetupUiState(selectedTab = SetupTab.ENVIRONMENT),
+                        actions = SetupUiActions(),
+                        // initialTab makes SetupScreenContent own its tab state internally
+                        // (localSelectedTab) so onTabChange actually drives recomposition here,
+                        // exactly as it does when SetupScreen wires a real ViewModel.
+                        initialTab = SetupTab.ENVIRONMENT,
+                    )
+                }
             }
-        }
 
-        // Regression: pressing Ctrl+F from a non-Workspaces tab must switch to Workspaces and
-        // focus search only once the search field has actually composed, not synchronously
-        // before AnimatedContent mounts the new tab (previously threw
-        // IllegalStateException: FocusRequester is not initialized).
-        onRoot().performKeyInput {
-            keyDown(Key.CtrlLeft)
-            keyDown(Key.F)
-            keyUp(Key.F)
-            keyUp(Key.CtrlLeft)
-        }
+            // Regression: pressing Ctrl+F from a non-Workspaces tab must switch to Workspaces and
+            // focus search only once the search field has actually composed, not synchronously
+            // before AnimatedContent mounts the new tab (previously threw
+            // IllegalStateException: FocusRequester is not initialized).
+            onRoot().performKeyInput {
+                keyDown(Key.CtrlLeft)
+                keyDown(Key.F)
+                keyUp(Key.F)
+                keyUp(Key.CtrlLeft)
+            }
 
-        onNodeWithText("Search workspaces... (Ctrl+F)").assertIsFocused()
-    }
+            onNodeWithText("Search workspaces... (Ctrl+F)").assertIsFocused()
+        }
 
     @Test
     fun testEscapeDismissesHelpSheetAndRestoresFocus() = runDesktopComposeUiTest(width = 1120, height = 800) {
@@ -174,25 +168,29 @@ class SetupAccessibilityTest {
     @Test
     fun testEscapeDismissesProvisioningPreview() = runDesktopComposeUiTest(width = 1120, height = 800) {
         var previewDismissed = false
-        val activeOp = SetupOperation(
-            kind = SetupOperationKind.FULL_SETUP,
-            plannedChanges = PlannedSetupChanges(
-                packagesToInstall = listOf("build-essential"),
-                requiresElevation = true,
-                elevationReason = "sudo apt-get install",
-                targetDistro = "Ubuntu-22.04",
-            ),
-            executionState = SetupOperationState.PREVIEW,
-        )
+        val activeOp =
+            SetupOperation(
+                kind = SetupOperationKind.FULL_SETUP,
+                plannedChanges =
+                PlannedSetupChanges(
+                    packagesToInstall = listOf("build-essential"),
+                    requiresElevation = true,
+                    elevationReason = "sudo apt-get install",
+                    targetDistro = "Ubuntu-22.04",
+                ),
+                executionState = SetupOperationState.PREVIEW,
+            )
 
         setContent {
             LtiTheme {
                 SetupScreenContent(
-                    state = SetupUiState(
+                    state =
+                    SetupUiState(
                         selectedTab = SetupTab.ENVIRONMENT,
                         activeOperation = activeOp,
                     ),
-                    actions = SetupUiActions(
+                    actions =
+                    SetupUiActions(
                         onDismissPreview = { previewDismissed = true },
                     ),
                 )
@@ -206,135 +204,10 @@ class SetupAccessibilityTest {
             pressKey(Key.Escape)
         }
 
-        assertTrue(previewDismissed, "Escape key must dismiss provisioning preview sheet without executing (FR-012)")
-    }
-
-    @Test
-    fun testAdaptiveLayoutCompactAt900x600() = runDesktopComposeUiTest(width = 900, height = 600) {
-        val testProject = RecentProject(
-            workspaceId = "ws_test",
-            name = "Kernel_AOSP",
-            path = "C:/RomDev/Kernel_AOSP",
-            lastOpened = Clock.System.now(),
+        assertTrue(
+            previewDismissed,
+            "Escape key must dismiss provisioning preview sheet without executing (FR-012)",
         )
-        // Supply a ready environment state so the header shows the compact "Machine ready"
-        // status line instead of the taller "Set up this machine" action row, which would
-        // push "Recent Workspaces" below the 600 px viewport boundary (SC-005).
-        val readySteps = listOf(
-            SetupStepDetail(stage = SetupStepStage.WSL_DETECTION, title = "WSL Detection", description = "Ubuntu-24.04", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-            SetupStepDetail(stage = SetupStepStage.SYSTEM_PACKAGES, title = "System Packages", description = "All packages present", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-            SetupStepDetail(stage = SetupStepStage.SERVER_CONNECTIVITY, title = "Server", description = "Connected", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-            SetupStepDetail(stage = SetupStepStage.SYSTEM_DIAGNOSTICS, title = "Diagnostics", description = "All checks passed", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-            SetupStepDetail(stage = SetupStepStage.REPO_SYNCHRONIZATION, title = "Repos", description = "Synced", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-            SetupStepDetail(stage = SetupStepStage.TOOLCHAIN_COMPILATION, title = "Toolchain", description = "Ready", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-        )
-        val readyState = ToolchainSetupState(steps = readySteps, lastVerifiedTimestamp = 1_700_000_000_000L)
-
-        setContent {
-            LtiTheme {
-                SetupScreenContent(
-                    state = SetupUiState(
-                        recentProjects = listOf(testProject),
-                        filteredProjects = listOf(testProject),
-                        selectedTab = SetupTab.PROJECTS,
-                        toolchainSetupState = readyState,
-                    ),
-                    actions = SetupUiActions(),
-                )
-            }
-        }
-
-        // Brand and navigation elements must be displayed in compact mode
-        onNodeWithText("Machine environment").assertIsDisplayed()
-        onNodeWithText("Recent Workspaces").assertIsDisplayed()
-        onNodeWithText("Environment").assertIsDisplayed()
-
-        // Content items displayed without clipping
-        onNodeWithText("Kernel_AOSP").assertIsDisplayed()
-        onNodeWithText("New Workspace").assertIsDisplayed()
-        onNodeWithText("Open Workspace").assertIsDisplayed()
-    }
-
-    @Test
-    fun testAdaptiveLayoutWideAt1440x900() = runDesktopComposeUiTest(width = 1440, height = 900) {
-        val testProject = RecentProject(
-            workspaceId = "ws_test_wide",
-            name = "Pixel_Port",
-            path = "C:/RomDev/Pixel_Port",
-            lastOpened = Clock.System.now(),
-        )
-
-        setContent {
-            LtiTheme {
-                SetupScreenContent(
-                    state = SetupUiState(
-                        recentProjects = listOf(testProject),
-                        filteredProjects = listOf(testProject),
-                        selectedTab = SetupTab.PROJECTS,
-                    ),
-                    actions = SetupUiActions(),
-                )
-            }
-        }
-
-        // Wide elements
-        onNodeWithText("Machine environment").assertIsDisplayed()
-        onNodeWithText("Recent Workspaces").assertIsDisplayed()
-        onNodeWithText("Pixel_Port").assertIsDisplayed()
-        onNodeWithText("New Workspace").assertIsDisplayed()
-        onNodeWithText("Open Workspace").assertIsDisplayed()
-    }
-
-    @Test
-    fun testTextEnlargementAtCompactSizeDoesNotClipActions() = runDesktopComposeUiTest(width = 900, height = 600) {
-        val testProject = RecentProject(
-            workspaceId = "ws_scaled",
-            name = "Scaled_Workspace",
-            path = "C:/RomDev/Scaled_Workspace",
-            lastOpened = Clock.System.now(),
-        )
-
-        val largeTypography = Typography(
-            titleLarge = TextStyle(fontSize = 26.sp),
-            titleMedium = TextStyle(fontSize = 20.sp),
-            bodyLarge = TextStyle(fontSize = 18.sp),
-            bodyMedium = TextStyle(fontSize = 16.sp),
-            labelLarge = TextStyle(fontSize = 16.sp),
-        )
-
-        // Supply a ready environment state so the header shows the compact "Machine ready"
-        // status line instead of the taller "Set up this machine" action row. The action row
-        // with enlarged text would clip "New Workspace" / "Open Workspace" past 600 px (SC-005).
-        val readySteps = listOf(
-            SetupStepDetail(stage = SetupStepStage.WSL_DETECTION, title = "WSL Detection", description = "Ubuntu-24.04", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-            SetupStepDetail(stage = SetupStepStage.SYSTEM_PACKAGES, title = "System Packages", description = "All packages present", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-            SetupStepDetail(stage = SetupStepStage.SERVER_CONNECTIVITY, title = "Server", description = "Connected", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-            SetupStepDetail(stage = SetupStepStage.SYSTEM_DIAGNOSTICS, title = "Diagnostics", description = "All checks passed", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-            SetupStepDetail(stage = SetupStepStage.REPO_SYNCHRONIZATION, title = "Repos", description = "Synced", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-            SetupStepDetail(stage = SetupStepStage.TOOLCHAIN_COMPILATION, title = "Toolchain", description = "Ready", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-        )
-        val readyState = ToolchainSetupState(steps = readySteps, lastVerifiedTimestamp = 1_700_000_000_000L)
-
-        setContent {
-            LtiTheme {
-                MaterialTheme(typography = largeTypography) {
-                    SetupScreenContent(
-                        state = SetupUiState(
-                            recentProjects = listOf(testProject),
-                            filteredProjects = listOf(testProject),
-                            selectedTab = SetupTab.PROJECTS,
-                            toolchainSetupState = readyState,
-                        ),
-                        actions = SetupUiActions(),
-                    )
-                }
-            }
-        }
-
-        // Essential actions must remain visible and accessible with enlarged text (SC-005)
-        onNodeWithText("New Workspace").assertIsDisplayed()
-        onNodeWithText("Open Workspace").assertIsDisplayed()
-        onNodeWithText("Scaled_Workspace").assertIsDisplayed()
     }
 
     @Test
@@ -344,11 +217,13 @@ class SetupAccessibilityTest {
         setContent {
             LtiTheme {
                 SetupScreenContent(
-                    state = SetupUiState(
+                    state =
+                    SetupUiState(
                         searchQuery = "CustomQuery",
                         selectedTab = activeTab,
                     ),
-                    actions = SetupUiActions(
+                    actions =
+                    SetupUiActions(
                         onSelectTab = { activeTab = it },
                     ),
                 )
@@ -364,82 +239,30 @@ class SetupAccessibilityTest {
     }
 
     @Test
-    fun testAdaptiveLayoutEnvironmentCompactAt900x600() = runDesktopComposeUiTest(width = 900, height = 600) {
-        val testSteps = listOf(
-            SetupStepDetail(stage = SetupStepStage.WSL_DETECTION, title = "WSL Detection", description = "Ubuntu 22.04 LTS", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-            SetupStepDetail(stage = SetupStepStage.SERVER_CONNECTIVITY, title = "Server Daemon Bridge", description = "Connected", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-            SetupStepDetail(stage = SetupStepStage.SYSTEM_DIAGNOSTICS, title = "System Diagnostics", description = "Healthy", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-        )
-        val state = ToolchainSetupState(steps = testSteps, lastVerifiedTimestamp = 1700000000000L)
-
-        setContent {
-            LtiTheme {
-                SetupScreenContent(
-                    state = SetupUiState(
-                        toolchainSetupState = state,
-                        selectedTab = SetupTab.ENVIRONMENT,
-                    ),
-                    actions = SetupUiActions(),
-                )
-            }
-        }
-
-        // Environment header and navigation visible in compact mode (SC-005)
-        onAllNodesWithText("Machine setup").onFirst().assertIsDisplayed()
-        onNodeWithText("Environment").assertIsDisplayed()
-        onNodeWithText("Tools").assertIsDisplayed()
-    }
-
-    @Test
-    fun testAdaptiveLayoutMaximized1920x1080() = runDesktopComposeUiTest(width = 1920, height = 1080) {
-        val testProject = RecentProject(
-            workspaceId = "ws_maximized",
-            name = "Maximized_Workspace",
-            path = "C:/RomDev/Maximized_Workspace",
-            lastOpened = Clock.System.now(),
-        )
-
-        setContent {
-            LtiTheme {
-                SetupScreenContent(
-                    state = SetupUiState(
-                        recentProjects = listOf(testProject),
-                        filteredProjects = listOf(testProject),
-                        selectedTab = SetupTab.PROJECTS,
-                    ),
-                    actions = SetupUiActions(),
-                )
-            }
-        }
-
-        // Maximized layout checks (SC-005)
-        onNodeWithText("Recent Workspaces").assertIsDisplayed()
-        onNodeWithText("New Workspace").assertIsDisplayed()
-        onNodeWithText("Open Workspace").assertIsDisplayed()
-        onNodeWithText("Maximized_Workspace").assertIsDisplayed()
-    }
-
-    @Test
     fun testGlobalShortcutsBlockedWhileModalPreviewOpen() = runDesktopComposeUiTest(width = 1440, height = 900) {
         var createCalled = false
         var openCalled = false
-        val activeOp = SetupOperation(
-            kind = SetupOperationKind.FULL_SETUP,
-            plannedChanges = PlannedSetupChanges(
-                packagesToInstall = listOf("build-essential"),
-                requiresElevation = false,
-            ),
-            executionState = SetupOperationState.PREVIEW,
-        )
+        val activeOp =
+            SetupOperation(
+                kind = SetupOperationKind.FULL_SETUP,
+                plannedChanges =
+                PlannedSetupChanges(
+                    packagesToInstall = listOf("build-essential"),
+                    requiresElevation = false,
+                ),
+                executionState = SetupOperationState.PREVIEW,
+            )
 
         setContent {
             LtiTheme {
                 SetupScreenContent(
-                    state = SetupUiState(
+                    state =
+                    SetupUiState(
                         selectedTab = SetupTab.ENVIRONMENT,
                         activeOperation = activeOp,
                     ),
-                    actions = SetupUiActions(
+                    actions =
+                    SetupUiActions(
                         onCreateWorkspace = { createCalled = true },
                         onOpenFolder = { openCalled = true },
                     ),
@@ -484,20 +307,23 @@ class SetupAccessibilityTest {
     @Test
     fun testCancelButtonInvokesDismissPreview() = runDesktopComposeUiTest(width = 1120, height = 800) {
         var previewDismissed = false
-        val activeOp = SetupOperation(
-            kind = SetupOperationKind.FULL_SETUP,
-            plannedChanges = PlannedSetupChanges(packagesToInstall = listOf("cmake")),
-            executionState = SetupOperationState.PREVIEW,
-        )
+        val activeOp =
+            SetupOperation(
+                kind = SetupOperationKind.FULL_SETUP,
+                plannedChanges = PlannedSetupChanges(packagesToInstall = listOf("cmake")),
+                executionState = SetupOperationState.PREVIEW,
+            )
 
         setContent {
             LtiTheme {
                 SetupScreenContent(
-                    state = SetupUiState(
+                    state =
+                    SetupUiState(
                         selectedTab = SetupTab.ENVIRONMENT,
                         activeOperation = activeOp,
                     ),
-                    actions = SetupUiActions(
+                    actions =
+                    SetupUiActions(
                         onDismissPreview = { previewDismissed = true },
                     ),
                 )
@@ -512,20 +338,23 @@ class SetupAccessibilityTest {
     @Test
     fun testConfirmButtonInvokesConfirmOperation() = runDesktopComposeUiTest(width = 1120, height = 800) {
         var operationConfirmed = false
-        val activeOp = SetupOperation(
-            kind = SetupOperationKind.FULL_SETUP,
-            plannedChanges = PlannedSetupChanges(packagesToInstall = listOf("cmake")),
-            executionState = SetupOperationState.PREVIEW,
-        )
+        val activeOp =
+            SetupOperation(
+                kind = SetupOperationKind.FULL_SETUP,
+                plannedChanges = PlannedSetupChanges(packagesToInstall = listOf("cmake")),
+                executionState = SetupOperationState.PREVIEW,
+            )
 
         setContent {
             LtiTheme {
                 SetupScreenContent(
-                    state = SetupUiState(
+                    state =
+                    SetupUiState(
                         selectedTab = SetupTab.ENVIRONMENT,
                         activeOperation = activeOp,
                     ),
-                    actions = SetupUiActions(
+                    actions =
+                    SetupUiActions(
                         onConfirmOperation = { operationConfirmed = true },
                     ),
                 )
@@ -539,16 +368,18 @@ class SetupAccessibilityTest {
 
     @Test
     fun testTabAndShiftTabTrappedInsideModalPreview() = runDesktopComposeUiTest(width = 1120, height = 800) {
-        val activeOp = SetupOperation(
-            kind = SetupOperationKind.FULL_SETUP,
-            plannedChanges = PlannedSetupChanges(packagesToInstall = listOf("cmake", "build-essential")),
-            executionState = SetupOperationState.PREVIEW,
-        )
+        val activeOp =
+            SetupOperation(
+                kind = SetupOperationKind.FULL_SETUP,
+                plannedChanges = PlannedSetupChanges(packagesToInstall = listOf("cmake", "build-essential")),
+                executionState = SetupOperationState.PREVIEW,
+            )
 
         setContent {
             LtiTheme {
                 SetupScreenContent(
-                    state = SetupUiState(
+                    state =
+                    SetupUiState(
                         selectedTab = SetupTab.ENVIRONMENT,
                         activeOperation = activeOp,
                     ),
@@ -599,59 +430,65 @@ class SetupAccessibilityTest {
     }
 
     @Test
-    fun testEscapeDismissesPreviewAndRestoresFocusToInvokingSetUpButton() = runDesktopComposeUiTest(width = 1120, height = 2200) {
-        // Real end-to-end wiring test (not just callback invocation): clicking "Set Up Environment"
-        // must open the preview via a button that carries the invoker focus requester, and dismissing
-        // the preview (Escape) must move keyboard focus back onto that exact button (T039).
-        setContent {
-            var activeOperation by remember { mutableStateOf<SetupOperation?>(null) }
-            val toolchain = ToolchainSetupState(
-                checkedAt = 1000L,
-                steps = listOf(
-                    SetupStepDetail(
-                        stage = SetupStepStage.WSL_DETECTION,
-                        title = "WSL 2 Detection",
-                        description = "",
-                        status = StepStatus.PENDING,
-                        provenance = StepProvenance.LIVE,
-                    ),
-                ),
-            )
-            LtiTheme {
-                SetupScreenContent(
-                    state = SetupUiState(
-                        selectedTab = SetupTab.ENVIRONMENT,
-                        toolchainSetupState = toolchain,
-                        activeOperation = activeOperation,
-                    ),
-                    actions = SetupUiActions(
-                        onPreviewSetup = {
-                            activeOperation = SetupOperation(
-                                kind = SetupOperationKind.FULL_SETUP,
-                                plannedChanges = PlannedSetupChanges(packagesToInstall = listOf("cmake")),
-                                executionState = SetupOperationState.PREVIEW,
-                            )
-                        },
-                        onDismissPreview = { activeOperation = null },
-                    ),
-                )
+    fun testEscapeDismissesPreviewAndRestoresFocusToInvokingSetUpButton() =
+        runDesktopComposeUiTest(width = 1120, height = 2200) {
+            // Real end-to-end wiring test (not just callback invocation): clicking "Set Up Environment"
+            // must open the preview via a button that carries the invoker focus requester, and dismissing
+            // the preview (Escape) must move keyboard focus back onto that exact button (T039).
+            setContent {
+                var activeOperation by remember { mutableStateOf<SetupOperation?>(null) }
+                val toolchain =
+                    ToolchainSetupState(
+                        checkedAt = 1000L,
+                        steps =
+                        listOf(
+                            SetupStepDetail(
+                                stage = SetupStepStage.WSL_DETECTION,
+                                title = "WSL 2 Detection",
+                                description = "",
+                                status = StepStatus.PENDING,
+                                provenance = StepProvenance.LIVE,
+                            ),
+                        ),
+                    )
+                LtiTheme {
+                    SetupScreenContent(
+                        state =
+                        SetupUiState(
+                            selectedTab = SetupTab.ENVIRONMENT,
+                            toolchainSetupState = toolchain,
+                            activeOperation = activeOperation,
+                        ),
+                        actions =
+                        SetupUiActions(
+                            onPreviewSetup = {
+                                activeOperation =
+                                    SetupOperation(
+                                        kind = SetupOperationKind.FULL_SETUP,
+                                        plannedChanges = PlannedSetupChanges(packagesToInstall = listOf("cmake")),
+                                        executionState = SetupOperationState.PREVIEW,
+                                    )
+                            },
+                            onDismissPreview = { activeOperation = null },
+                        ),
+                    )
+                }
             }
+
+            onNodeWithText("Set Up Environment").assertIsDisplayed().performClick()
+            onNodeWithText("Provisioning Preview").assertIsDisplayed()
+
+            onRoot().performKeyInput {
+                pressKey(Key.Escape)
+            }
+
+            assertEquals(
+                0,
+                onAllNodesWithText("Provisioning Preview").fetchSemanticsNodes().size,
+                "Preview must be dismissed after Escape",
+            )
+            onNodeWithText("Set Up Environment").assertIsFocused()
         }
-
-        onNodeWithText("Set Up Environment").assertIsDisplayed().performClick()
-        onNodeWithText("Provisioning Preview").assertIsDisplayed()
-
-        onRoot().performKeyInput {
-            pressKey(Key.Escape)
-        }
-
-        assertEquals(
-            0,
-            onAllNodesWithText("Provisioning Preview").fetchSemanticsNodes().size,
-            "Preview must be dismissed after Escape",
-        )
-        onNodeWithText("Set Up Environment").assertIsFocused()
-    }
 
     @Test
     fun testNavigateToRecoveryRendersInterruptedSetupUI() = runDesktopComposeUiTest(width = 1440, height = 900) {

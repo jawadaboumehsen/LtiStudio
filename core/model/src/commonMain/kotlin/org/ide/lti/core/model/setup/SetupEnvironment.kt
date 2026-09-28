@@ -6,5 +6,5 @@ public data class SetupEnvironment(
     val osId: String,
     val osVersionId: String,
     val user: String,
-    val home: String
+    val home: String,
 )

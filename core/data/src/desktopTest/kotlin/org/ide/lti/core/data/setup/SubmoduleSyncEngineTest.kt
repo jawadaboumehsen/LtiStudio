@@ -1,5 +1,6 @@
 package org.ide.lti.core.data.setup
 
+import com.russhwolf.settings.MapSettings
 import io.ltirom.tooling.client.wsl.CliExecutionResult
 import io.ltirom.tooling.client.wsl.WslCliExecutor
 import io.ltirom.tooling.core.ports.RemoteTransportPort
@@ -12,9 +13,7 @@ import io.ltirom.tooling.core.remote.StreamEvent
 import io.ltirom.tooling.core.remote.ToolExecutionRequest
 import io.ltirom.tooling.core.remote.ToolExecutionResponse
 import io.ltirom.tooling.core.remote.ToolListResult
-import io.ltirom.tooling.core.remote.ToolStatusInfo
 import io.ltirom.tooling.core.remote.WslServerInfo
-import com.russhwolf.settings.MapSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
@@ -42,7 +41,7 @@ class SubmoduleSyncEngineTest {
             command: List<String>,
             timeoutSeconds: Long,
             charset: Charset,
-            user: String?
+            user: String?,
         ): CliExecutionResult {
             executedCommands.add(command)
             return when {
@@ -60,7 +59,7 @@ class SubmoduleSyncEngineTest {
             status = RunStatusValue.COMPLETED,
             exitCode = 0,
             startedAtEpochMs = 1000L,
-            endedAtEpochMs = 2000L
+            endedAtEpochMs = 2000L,
         )
 
         override suspend fun startRun(request: StartRunRequest): RunHandle {
@@ -72,13 +71,14 @@ class SubmoduleSyncEngineTest {
             attachedRunIds.add(runId)
             return listOf(
                 SequencedStreamEvent(1L, StreamEvent.OutputChunk("Cloning into android-tools...")),
-                SequencedStreamEvent(2L, StreamEvent.ExecutionFinished(0, 500L))
+                SequencedStreamEvent(2L, StreamEvent.ExecutionFinished(0, 500L)),
             ).asFlow()
         }
 
         override suspend fun getRun(runId: String): RunStatus? = runStatus
 
-        override suspend fun execute(request: ToolExecutionRequest): ToolExecutionResponse = ToolExecutionResponse(0, "", "", 1L)
+        override suspend fun execute(request: ToolExecutionRequest): ToolExecutionResponse =
+            ToolExecutionResponse(0, "", "", 1L)
         override fun stream(request: ToolExecutionRequest): Flow<StreamEvent> = emptyFlow()
         override suspend fun checkHealth(): WslServerInfo? = null
         override suspend fun listTools(): ToolListResult = ToolListResult.Tools(emptyList())
@@ -111,7 +111,11 @@ class SubmoduleSyncEngineTest {
         val repo = journaledRepository()
         val engine = SubmoduleSyncEngine(cli = cli, repository = repo, transport = transport)
 
-        val testSub = SubmoduleSyncEngine.PinnedSubmodule("test-sub", "https://example.com/test.git", "abcdef1234567890")
+        val testSub = SubmoduleSyncEngine.PinnedSubmodule(
+            "test-sub",
+            "https://example.com/test.git",
+            "abcdef1234567890",
+        )
         val result = engine.syncAll(
             "Ubuntu",
             "/home/lti/LtiRomTools/external",
@@ -126,7 +130,10 @@ class SubmoduleSyncEngineTest {
         val req = transport.startedRuns.first()
         assertEquals("Ubuntu:att-xyz:submodule:test-sub", req.idempotencyKey)
         assertEquals("git", req.request.toolId)
-        assertEquals(listOf("clone", "--recursive", "https://example.com/test.git", "/home/lti/LtiRomTools/external/test-sub"), req.request.arguments)
+        assertEquals(
+            listOf("clone", "--recursive", "https://example.com/test.git", "/home/lti/LtiRomTools/external/test-sub"),
+            req.request.arguments,
+        )
 
         // Assert attachRun was invoked
         assertTrue(transport.attachedRunIds.contains("run-sub-1"))
@@ -146,7 +153,10 @@ class SubmoduleSyncEngineTest {
         // Verify git checkout executed explicitly
         val checkoutCmd = cli.executedCommands.find { it.contains("checkout") }
         assertTrue(checkoutCmd != null, "Must execute git checkout")
-        assertEquals(listOf("git", "-C", "/home/lti/LtiRomTools/external/test-sub", "checkout", "-f", "abcdef1234567890"), checkoutCmd)
+        assertEquals(
+            listOf("git", "-C", "/home/lti/LtiRomTools/external/test-sub", "checkout", "-f", "abcdef1234567890"),
+            checkoutCmd,
+        )
     }
 
     @Test
@@ -156,12 +166,16 @@ class SubmoduleSyncEngineTest {
         transport.runStatus = RunStatus(
             runId = "existing-run-99",
             status = RunStatusValue.RUNNING,
-            startedAtEpochMs = 500L
+            startedAtEpochMs = 500L,
         )
 
         val repo = journaledRepository()
         val engine = SubmoduleSyncEngine(cli = cli, repository = repo, transport = transport)
-        val testSub = SubmoduleSyncEngine.PinnedSubmodule("test-sub", "https://example.com/test.git", "abcdef1234567890")
+        val testSub = SubmoduleSyncEngine.PinnedSubmodule(
+            "test-sub",
+            "https://example.com/test.git",
+            "abcdef1234567890",
+        )
 
         val logs = mutableListOf<String>()
         val result = engine.syncAll(
@@ -202,7 +216,11 @@ class SubmoduleSyncEngineTest {
                 RunStatus(runId = runId, status = RunStatusValue.COMPLETED, exitCode = 0, startedAtEpochMs = 1L)
         }
         val engine = SubmoduleSyncEngine(cli = cli, repository = repo, transport = transport)
-        val testSub = SubmoduleSyncEngine.PinnedSubmodule("test-sub", "https://example.com/test.git", "abcdef1234567890")
+        val testSub = SubmoduleSyncEngine.PinnedSubmodule(
+            "test-sub",
+            "https://example.com/test.git",
+            "abcdef1234567890",
+        )
 
         val result = engine.syncAll(
             "Ubuntu",
@@ -240,7 +258,11 @@ class SubmoduleSyncEngineTest {
         val cli = RecordingCli()
         val transport = RecordingTransport()
         val engine = SubmoduleSyncEngine(cli = cli, transport = transport)
-        val testSub = SubmoduleSyncEngine.PinnedSubmodule("test-sub", "https://example.com/test.git", "abcdef1234567890")
+        val testSub = SubmoduleSyncEngine.PinnedSubmodule(
+            "test-sub",
+            "https://example.com/test.git",
+            "abcdef1234567890",
+        )
 
         val result = engine.syncAll("Ubuntu", "/home/lti/LtiRomTools/external", listOf(testSub))
 
@@ -261,7 +283,11 @@ class SubmoduleSyncEngineTest {
                 Result.failure(IllegalStateException("disk full"))
         }
         val engine = SubmoduleSyncEngine(cli = cli, repository = refusing, transport = transport)
-        val testSub = SubmoduleSyncEngine.PinnedSubmodule("test-sub", "https://example.com/test.git", "abcdef1234567890")
+        val testSub = SubmoduleSyncEngine.PinnedSubmodule(
+            "test-sub",
+            "https://example.com/test.git",
+            "abcdef1234567890",
+        )
 
         val result = engine.syncAll(
             "Ubuntu",

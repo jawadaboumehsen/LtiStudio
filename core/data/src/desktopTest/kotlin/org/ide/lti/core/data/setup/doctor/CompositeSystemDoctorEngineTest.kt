@@ -32,7 +32,7 @@ class CompositeSystemDoctorEngineTest {
             command: List<String>,
             timeoutSeconds: Long,
             charset: Charset,
-            user: String?
+            user: String?,
         ): CliExecutionResult {
             val cmdStr = command.joinToString(" ")
             executedCommands.add(cmdStr)
@@ -53,7 +53,7 @@ class CompositeSystemDoctorEngineTest {
                     "zip", "unzip", "brotli", "curl", "git", "rsync", "tar", "file",
                     "xxd", "truncate", "attr", "getfattr", "openssl", "python3", "pip3",
                     "java", "javac", "fusermount3", "fuse", "loop-control",
-                    "java-17-openjdk-amd64", "java-21-openjdk-amd64"
+                    "java-17-openjdk-amd64", "java-21-openjdk-amd64",
                 )
                 if (!simulateMissingToolchainBinaries) {
                     tools.addAll(ToolchainIntegrityInspector.DEFAULT_CORE_TOOLS)
@@ -70,7 +70,7 @@ class CompositeSystemDoctorEngineTest {
                     "zip", "unzip", "brotli", "curl", "git", "rsync", "tar", "file",
                     "xxd", "truncate", "attr", "getfattr", "openssl", "python3", "pip3",
                     "java", "javac", "fusermount3", "fuse", "loop-control",
-                    "java-17-openjdk-amd64", "java-21-openjdk-amd64"
+                    "java-17-openjdk-amd64", "java-21-openjdk-amd64",
                 )
                 if (!simulateMissingToolchainBinaries) {
                     tools.addAll(ToolchainIntegrityInspector.DEFAULT_CORE_TOOLS)
@@ -109,14 +109,25 @@ class CompositeSystemDoctorEngineTest {
 
             if (cmdStr.contains("df -BG")) {
                 return if (simulateLowDisk) {
-                    CliExecutionResult(0, "Filesystem 1G-blocks Used Available Use% Mounted on\n/dev/sdc 250G 235G 15G 94% /home/lti\n", "")
+                    CliExecutionResult(
+                        0,
+                        "Filesystem 1G-blocks Used Available Use% Mounted on\n/dev/sdc 250G 235G 15G 94% /home/lti\n",
+                        "",
+                    )
                 } else {
-                    CliExecutionResult(0, "Filesystem 1G-blocks Used Available Use% Mounted on\n/dev/sdc 250G 50G 190G 21% /home/lti\n", "")
+                    CliExecutionResult(
+                        0,
+                        "Filesystem 1G-blocks Used Available Use% Mounted on\n/dev/sdc 250G 50G 190G 21% /home/lti\n",
+                        "",
+                    )
                 }
             }
 
-            if (cmdStr.contains("which cmake") || cmdStr.contains("which make") ||
-                cmdStr.contains("which clang") || cmdStr.contains("which clang++")) {
+            if (cmdStr.contains("which cmake") ||
+                cmdStr.contains("which make") ||
+                cmdStr.contains("which clang") ||
+                cmdStr.contains("which clang++")
+            ) {
                 return if (simulateMissingCompilers && cmdStr.contains("cmake")) {
                     CliExecutionResult(1, "", "not found")
                 } else {
@@ -136,8 +147,11 @@ class CompositeSystemDoctorEngineTest {
                 }
             }
 
-            if (cmdStr.contains("test -e") || cmdStr.contains("test -d") ||
-                cmdStr.contains("test -x") || cmdStr.contains("test -r")) {
+            if (cmdStr.contains("test -e") ||
+                cmdStr.contains("test -d") ||
+                cmdStr.contains("test -x") ||
+                cmdStr.contains("test -r")
+            ) {
                 return CliExecutionResult(0, "", "")
             }
 
@@ -146,32 +160,33 @@ class CompositeSystemDoctorEngineTest {
     }
 
     @Test
-    fun `runDiagnostics evaluates all 14 inspectors concurrently and returns success when environment is healthy`() = runTest {
-        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-        val mockCli = MockWslCliExecutor()
-        val detector = WslEnvironmentDetector(cli = mockCli)
+    fun `runDiagnostics evaluates all 14 inspectors concurrently and returns success when environment is healthy`() =
+        runTest {
+            val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+            val mockCli = MockWslCliExecutor()
+            val detector = WslEnvironmentDetector(cli = mockCli)
 
-        val engine = CompositeSystemDoctorEngine(
-            cli = mockCli,
-            detector = detector,
-            dispatcher = testDispatcher
-        )
+            val engine = CompositeSystemDoctorEngine(
+                cli = mockCli,
+                detector = detector,
+                dispatcher = testDispatcher,
+            )
 
-        val results = engine.runDiagnostics("Ubuntu", binariesPresent = true)
+            val results = engine.runDiagnostics("Ubuntu", binariesPresent = true)
 
-        assertEquals(13, results.size, "Expected 13 diagnostic check items")
-        val ids = results.map { it.id }.toSet()
-        val expectedIds = setOf(
-            "host_compilers", "host_libraries", "python_crypto", "jdk_dual",
-            "selinux_attr", "archive_tools", "transfer_tools",
-            "dev_fuse", "loop_mount", "disk_headroom", "openssl_tools", "toolchain_binaries",
-            "build_cache"
-        )
-        assertEquals(expectedIds, ids)
+            assertEquals(13, results.size, "Expected 13 diagnostic check items")
+            val ids = results.map { it.id }.toSet()
+            val expectedIds = setOf(
+                "host_compilers", "host_libraries", "python_crypto", "jdk_dual",
+                "selinux_attr", "archive_tools", "transfer_tools",
+                "dev_fuse", "loop_mount", "disk_headroom", "openssl_tools", "toolchain_binaries",
+                "build_cache",
+            )
+            assertEquals(expectedIds, ids)
 
-        // All checks should be SUCCESS or WARNING (for optional tools)
-        assertTrue(results.all { it.status == StepStatus.SUCCESS || it.status == StepStatus.WARNING })
-    }
+            // All checks should be SUCCESS or WARNING (for optional tools)
+            assertTrue(results.all { it.status == StepStatus.SUCCESS || it.status == StepStatus.WARNING })
+        }
 
     @Test
     fun `PythonRuntimeInspector flags WARNING or FAILED when cryptography module is missing`() = runTest {
@@ -182,7 +197,7 @@ class CompositeSystemDoctorEngineTest {
         val engine = CompositeSystemDoctorEngine(
             cli = mockCli,
             detector = detector,
-            dispatcher = testDispatcher
+            dispatcher = testDispatcher,
         )
 
         val results = engine.runDiagnostics("Ubuntu", binariesPresent = false)
@@ -203,7 +218,7 @@ class CompositeSystemDoctorEngineTest {
         val engine = CompositeSystemDoctorEngine(
             cli = mockCli,
             detector = detector,
-            dispatcher = testDispatcher
+            dispatcher = testDispatcher,
         )
 
         val results = engine.runDiagnostics("Ubuntu", binariesPresent = false)
@@ -223,7 +238,7 @@ class CompositeSystemDoctorEngineTest {
         val engine = CompositeSystemDoctorEngine(
             cli = mockCli,
             detector = detector,
-            dispatcher = testDispatcher
+            dispatcher = testDispatcher,
         )
 
         val results = engine.runDiagnostics("Ubuntu", binariesPresent = false)
@@ -242,7 +257,7 @@ class CompositeSystemDoctorEngineTest {
         val engine = CompositeSystemDoctorEngine(
             cli = mockCli,
             detector = detector,
-            dispatcher = testDispatcher
+            dispatcher = testDispatcher,
         )
         val useCase = RunSystemDiagnosticsUseCase(engine)
 
@@ -261,14 +276,19 @@ class CompositeSystemDoctorEngineTest {
         val engine = CompositeSystemDoctorEngine(
             cli = mockCli,
             detector = detector,
-            dispatcher = testDispatcher
+            dispatcher = testDispatcher,
         )
 
         val progressLogs = mutableListOf<String>()
         val success = engine.autoRemediate("Ubuntu") { progressLogs.add(it) }
 
         assertFalse(success)
-        assertTrue(progressLogs.any { it.contains("authorization in your WSL terminal") || it.contains("Remediation finished with remaining issues") })
+        assertTrue(
+            progressLogs.any {
+                it.contains("authorization in your WSL terminal") ||
+                    it.contains("Remediation finished with remaining issues")
+            },
+        )
         assertTrue(mockCli.executedCommands.none { it.contains("sudo") })
     }
 
@@ -280,7 +300,7 @@ class CompositeSystemDoctorEngineTest {
                 command: List<String>,
                 timeoutSeconds: Long,
                 charset: Charset,
-                user: String?
+                user: String?,
             ): CliExecutionResult {
                 val cmd = command.joinToString(" ")
                 return when {
@@ -305,7 +325,7 @@ class CompositeSystemDoctorEngineTest {
         val engine = CompositeSystemDoctorEngine(
             cli = mockCli,
             detector = detector,
-            dispatcher = testDispatcher
+            dispatcher = testDispatcher,
         )
 
         val progressLogs = mutableListOf<String>()
@@ -324,7 +344,7 @@ class CompositeSystemDoctorEngineTest {
                 command: List<String>,
                 timeoutSeconds: Long,
                 charset: Charset,
-                user: String?
+                user: String?,
             ): CliExecutionResult {
                 val cmd = command.joinToString(" ")
                 return if (cmd.contains("which brotli")) {
@@ -349,7 +369,7 @@ class CompositeSystemDoctorEngineTest {
                 command: List<String>,
                 timeoutSeconds: Long,
                 charset: Charset,
-                user: String?
+                user: String?,
             ): CliExecutionResult {
                 val cmd = command.joinToString(" ")
                 return if (cmd.contains("which xxd") || cmd.contains("which truncate")) {
@@ -376,7 +396,7 @@ class CompositeSystemDoctorEngineTest {
                 command: List<String>,
                 timeoutSeconds: Long,
                 charset: Charset,
-                user: String?
+                user: String?,
             ): CliExecutionResult {
                 val cmd = command.joinToString(" ")
                 if (cmd.contains("apt-get install")) {
@@ -389,18 +409,18 @@ class CompositeSystemDoctorEngineTest {
             org.ide.lti.core.domain.setup.DiagnosticCheckItem(
                 id = "archive_tools",
                 title = "Archive Tools",
-                status = StepStatus.FAILED
+                status = StepStatus.FAILED,
             ),
             org.ide.lti.core.domain.setup.DiagnosticCheckItem(
                 id = "transfer_tools",
                 title = "Transfer Tools",
-                status = StepStatus.FAILED
+                status = StepStatus.FAILED,
             ),
             org.ide.lti.core.domain.setup.DiagnosticCheckItem(
                 id = "selinux_attr",
                 title = "SELinux Attr",
-                status = StepStatus.FAILED
-            )
+                status = StepStatus.FAILED,
+            ),
         )
         val plan = WslPackageRemediator.resolve(failedItems)
         assertTrue(plan.requiresElevation)
@@ -419,14 +439,14 @@ class CompositeSystemDoctorEngineTest {
         val engine = CompositeSystemDoctorEngine(
             cli = mockCli,
             detector = detector,
-            dispatcher = testDispatcher
+            dispatcher = testDispatcher,
         )
 
         val results = engine.runDiagnostics("Ubuntu", binariesPresent = true)
         assertEquals(13, results.size)
         assertTrue(
             mockCli.executedCommands.size <= 10,
-            "Expected <= 10 commands, but was ${mockCli.executedCommands.size}: ${mockCli.executedCommands}"
+            "Expected <= 10 commands, but was ${mockCli.executedCommands.size}: ${mockCli.executedCommands}",
         )
     }
 }

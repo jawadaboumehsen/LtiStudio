@@ -1,5 +1,6 @@
 package org.ide.lti.core.data.setup
 
+import com.russhwolf.settings.MapSettings
 import io.ltirom.tooling.client.wsl.CliExecutionResult
 import io.ltirom.tooling.client.wsl.WslCliExecutor
 import io.ltirom.tooling.core.ports.RemoteTransportPort
@@ -12,9 +13,7 @@ import io.ltirom.tooling.core.remote.StreamEvent
 import io.ltirom.tooling.core.remote.ToolExecutionRequest
 import io.ltirom.tooling.core.remote.ToolExecutionResponse
 import io.ltirom.tooling.core.remote.ToolListResult
-import io.ltirom.tooling.core.remote.ToolStatusInfo
 import io.ltirom.tooling.core.remote.WslServerInfo
-import com.russhwolf.settings.MapSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
@@ -39,11 +38,14 @@ class ToolchainBuildEngineTest {
             command: List<String>,
             timeoutSeconds: Long,
             charset: Charset,
-            user: String?
+            user: String?,
         ): CliExecutionResult {
             executedCommands.add(command)
             return when {
-                command.contains("test") && (command.contains("-x") || command.contains("-f") || command.contains("-d")) -> {
+                command.contains(
+                    "test",
+                ) &&
+                    (command.contains("-x") || command.contains("-f") || command.contains("-d")) -> {
                     // simulate binaries present after build
                     CliExecutionResult(0, "", "")
                 }
@@ -66,7 +68,7 @@ class ToolchainBuildEngineTest {
             attachedRunIds.add(runId)
             return listOf(
                 SequencedStreamEvent(1L, StreamEvent.OutputChunk("Compiling target...")),
-                SequencedStreamEvent(2L, StreamEvent.ExecutionFinished(0, 1000L))
+                SequencedStreamEvent(2L, StreamEvent.ExecutionFinished(0, 1000L)),
             ).asFlow()
         }
 
@@ -75,10 +77,11 @@ class ToolchainBuildEngineTest {
             status = RunStatusValue.COMPLETED,
             exitCode = 0,
             startedAtEpochMs = 1000L,
-            endedAtEpochMs = 2000L
+            endedAtEpochMs = 2000L,
         )
 
-        override suspend fun execute(request: ToolExecutionRequest): ToolExecutionResponse = ToolExecutionResponse(0, "", "", 1L)
+        override suspend fun execute(request: ToolExecutionRequest): ToolExecutionResponse =
+            ToolExecutionResponse(0, "", "", 1L)
         override fun stream(request: ToolExecutionRequest): Flow<StreamEvent> = emptyFlow()
         override suspend fun checkHealth(): WslServerInfo? = null
         override suspend fun listTools(): ToolListResult = ToolListResult.Tools(emptyList())

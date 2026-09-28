@@ -41,86 +41,117 @@ import kotlin.test.assertTrue
 class EnvironmentScreenTest {
 
     @Test
-    fun testStageFailureDisplaysErrorBoxWithTargetedRetryButton() = runDesktopComposeUiTest(width = 1120, height = 1800) {
-        val errorMessage = "Git submodule sync failed: connection timed out"
-        val failedStage = SetupStepDetail(
-            stage = SetupStepStage.REPO_SYNCHRONIZATION,
-            title = "Repository Synchronization",
-            description = "Synchronizing Git submodules",
-            status = StepStatus.FAILED,
-            error = errorMessage,
-        )
-        val state = ToolchainSetupState(
-            steps = listOf(
-                SetupStepDetail(stage = SetupStepStage.WSL_DETECTION, title = "WSL Detection", description = "", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-                SetupStepDetail(stage = SetupStepStage.SERVER_CONNECTIVITY, title = "Server Daemon Bridge", description = "", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-                SetupStepDetail(stage = SetupStepStage.SYSTEM_DIAGNOSTICS, title = "System Diagnostics", description = "", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-                failedStage,
-                SetupStepDetail(stage = SetupStepStage.TOOLCHAIN_COMPILATION, title = "Toolchain Compilation", description = "", status = StepStatus.PENDING),
-            ),
-            lastVerifiedTimestamp = 1700000000000L,
-        )
-
-        var retriedStage: SetupStepStage? = null
-
-        setContent {
-            LtiTheme {
-                EnvironmentStepContent(
-                    state = SetupUiState(toolchainSetupState = state),
-                    actions = SetupUiActions(
-                        onRetryStage = { retriedStage = it },
+    fun testStageFailureDisplaysErrorBoxWithTargetedRetryButton() =
+        runDesktopComposeUiTest(width = 1120, height = 1800) {
+            val errorMessage = "Git submodule sync failed: connection timed out"
+            val failedStage = SetupStepDetail(
+                stage = SetupStepStage.REPO_SYNCHRONIZATION,
+                title = "Repository Synchronization",
+                description = "Synchronizing Git submodules",
+                status = StepStatus.FAILED,
+                error = errorMessage,
+            )
+            val state = ToolchainSetupState(
+                steps = listOf(
+                    SetupStepDetail(
+                        stage = SetupStepStage.WSL_DETECTION,
+                        title = "WSL Detection",
+                        description = "",
+                        status = StepStatus.SUCCESS,
+                        provenance = StepProvenance.LIVE,
                     ),
-                )
+                    SetupStepDetail(
+                        stage = SetupStepStage.SERVER_CONNECTIVITY,
+                        title = "Server Daemon Bridge",
+                        description = "",
+                        status = StepStatus.SUCCESS,
+                        provenance = StepProvenance.LIVE,
+                    ),
+                    SetupStepDetail(
+                        stage = SetupStepStage.SYSTEM_DIAGNOSTICS,
+                        title = "System Diagnostics",
+                        description = "",
+                        status = StepStatus.SUCCESS,
+                        provenance = StepProvenance.LIVE,
+                    ),
+                    failedStage,
+                    SetupStepDetail(
+                        stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+                        title = "Toolchain Compilation",
+                        description = "",
+                        status = StepStatus.PENDING,
+                    ),
+                ),
+                lastVerifiedTimestamp = 1700000000000L,
+            )
+
+            var retriedStage: SetupStepStage? = null
+
+            setContent {
+                LtiTheme {
+                    EnvironmentStepContent(
+                        state = SetupUiState(toolchainSetupState = state),
+                        actions = SetupUiActions(
+                            onRetryStage = { retriedStage = it },
+                        ),
+                    )
+                }
             }
+
+            // Error message must be displayed in the expanded error box
+            onNodeWithText(errorMessage).assertIsDisplayed()
+
+            // Targeted "Retry Stage" button must be displayed and functional
+            onNodeWithText("Retry Stage").assertIsDisplayed().performClick()
+            assertEquals(SetupStepStage.REPO_SYNCHRONIZATION, retriedStage)
         }
-
-        // Error message must be displayed in the expanded error box
-        onNodeWithText(errorMessage).assertIsDisplayed()
-
-        // Targeted "Retry Stage" button must be displayed and functional
-        onNodeWithText("Retry Stage").assertIsDisplayed().performClick()
-        assertEquals(SetupStepStage.REPO_SYNCHRONIZATION, retriedStage)
-    }
 
     @Test
-    fun testOfflineStateShowsRetryConnectionAndCachedWorkspacesUsable() = runDesktopComposeUiTest(width = 1120, height = 1800) {
-        val offlineStep = SetupStepDetail(
-            stage = SetupStepStage.SERVER_CONNECTIVITY,
-            title = "Server Daemon Bridge",
-            description = "Daemon unreachable on port 50051",
-            status = StepStatus.FAILED,
-        )
-        val state = ToolchainSetupState(
-            steps = listOf(
-                SetupStepDetail(stage = SetupStepStage.WSL_DETECTION, title = "WSL Detection", description = "", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-                offlineStep,
-            ),
-            lastVerifiedTimestamp = 1700000000000L,
-        )
-
-        var retriedStage: SetupStepStage? = null
-        var navigatedToProjects = false
-
-        setContent {
-            LtiTheme {
-                EnvironmentStepContent(
-                    state = SetupUiState(toolchainSetupState = state),
-                    actions = SetupUiActions(
-                        onRetryStage = { retriedStage = it },
+    fun testOfflineStateShowsRetryConnectionAndCachedWorkspacesUsable() =
+        runDesktopComposeUiTest(width = 1120, height = 1800) {
+            val offlineStep = SetupStepDetail(
+                stage = SetupStepStage.SERVER_CONNECTIVITY,
+                title = "Server Daemon Bridge",
+                description = "Daemon unreachable on port 50051",
+                status = StepStatus.FAILED,
+            )
+            val state = ToolchainSetupState(
+                steps = listOf(
+                    SetupStepDetail(
+                        stage = SetupStepStage.WSL_DETECTION,
+                        title = "WSL Detection",
+                        description = "",
+                        status = StepStatus.SUCCESS,
+                        provenance = StepProvenance.LIVE,
                     ),
-                    onNavigateToProjects = { navigatedToProjects = true },
-                )
+                    offlineStep,
+                ),
+                lastVerifiedTimestamp = 1700000000000L,
+            )
+
+            var retriedStage: SetupStepStage? = null
+            var navigatedToProjects = false
+
+            setContent {
+                LtiTheme {
+                    EnvironmentStepContent(
+                        state = SetupUiState(toolchainSetupState = state),
+                        actions = SetupUiActions(
+                            onRetryStage = { retriedStage = it },
+                        ),
+                        onNavigateToProjects = { navigatedToProjects = true },
+                    )
+                }
             }
+
+            // Primary action must be "Retry Connection"
+            onNodeWithText("Retry Connection").assertIsDisplayed().performClick()
+            assertEquals(SetupStepStage.SERVER_CONNECTIVITY, retriedStage)
+
+            // Cached Workspaces must be accessible via "Back to Projects"
+            onNodeWithText("Back to Projects").assertIsDisplayed().performClick()
+            assertTrue(navigatedToProjects, "User must be able to return to projects while offline")
         }
-
-        // Primary action must be "Retry Connection"
-        onNodeWithText("Retry Connection").assertIsDisplayed().performClick()
-        assertEquals(SetupStepStage.SERVER_CONNECTIVITY, retriedStage)
-
-        // Cached Workspaces must be accessible via "Back to Projects"
-        onNodeWithText("Back to Projects").assertIsDisplayed().performClick()
-        assertTrue(navigatedToProjects, "User must be able to return to projects while offline")
-    }
 
     @Test
     fun testRestoredProvenanceShowsHistoricalLabel() = runDesktopComposeUiTest(width = 1120, height = 1800) {
@@ -150,71 +181,102 @@ class EnvironmentScreenTest {
     }
 
     @Test
-    fun testProvisioningPreviewSheetDisplaysPlannedChangesAndElevation() = runDesktopComposeUiTest(width = 1120, height = 1800) {
-        val planned = PlannedSetupChanges(
-            packagesToInstall = listOf("build-essential", "cmake", "libssl-dev"),
-            submodulesToSync = listOf("core/external/boringssl"),
-            toolsToCompile = listOf("avbtool", "fastboot"),
-            requiresElevation = true,
-            elevationReason = "sudo apt-get install build-essential cmake libssl-dev",
-            targetDistro = "Ubuntu-22.04",
-        )
-        val activeOp = SetupOperation(
-            kind = SetupOperationKind.FULL_SETUP,
-            plannedChanges = planned,
-            executionState = SetupOperationState.PREVIEW,
-            autoDoctorEnabled = true,
-        )
+    fun testProvisioningPreviewSheetDisplaysPlannedChangesAndElevation() =
+        runDesktopComposeUiTest(width = 1120, height = 1800) {
+            val planned = PlannedSetupChanges(
+                packagesToInstall = listOf("build-essential", "cmake", "libssl-dev"),
+                submodulesToSync = listOf("core/external/boringssl"),
+                toolsToCompile = listOf("avbtool", "fastboot"),
+                requiresElevation = true,
+                elevationReason = "sudo apt-get install build-essential cmake libssl-dev",
+                targetDistro = "Ubuntu-22.04",
+            )
+            val activeOp = SetupOperation(
+                kind = SetupOperationKind.FULL_SETUP,
+                plannedChanges = planned,
+                executionState = SetupOperationState.PREVIEW,
+                autoDoctorEnabled = true,
+            )
 
-        var confirmed = false
-        var dismissed = false
-        var autoDoctorToggled = false
+            var confirmed = false
+            var dismissed = false
+            var autoDoctorToggled = false
 
-        setContent {
-            LtiTheme {
-                SetupScreenContent(
-                    state = SetupUiState(
-                        toolchainSetupState = ToolchainSetupState(lastVerifiedTimestamp = 1700000000000L),
-                        activeOperation = activeOp,
-                        isAutoDoctorEnabled = true,
-                        selectedTab = SetupTab.ENVIRONMENT,
-                    ),
-                    actions = SetupUiActions(
-                        onConfirmOperation = { confirmed = true },
-                        onDismissPreview = { dismissed = true },
-                        onSetAutoDoctorEnabled = { autoDoctorToggled = it },
-                    ),
-                )
+            setContent {
+                LtiTheme {
+                    SetupScreenContent(
+                        state = SetupUiState(
+                            toolchainSetupState = ToolchainSetupState(lastVerifiedTimestamp = 1700000000000L),
+                            activeOperation = activeOp,
+                            isAutoDoctorEnabled = true,
+                            selectedTab = SetupTab.ENVIRONMENT,
+                        ),
+                        actions = SetupUiActions(
+                            onConfirmOperation = { confirmed = true },
+                            onDismissPreview = { dismissed = true },
+                            onSetAutoDoctorEnabled = { autoDoctorToggled = it },
+                        ),
+                    )
+                }
             }
+
+            // Sheet title
+            onNodeWithText("Provisioning Preview").assertIsDisplayed()
+
+            // Elevation banner
+            onNodeWithText("Root / Sudo Elevation Required").assertIsDisplayed()
+
+            // Planned packages, submodules, and tools
+            onNodeWithText("build-essential").assertIsDisplayed()
+            onNodeWithText("core/external/boringssl").assertIsDisplayed()
+            onNodeWithText("avbtool").assertIsDisplayed()
+
+            // Auto Doctor toggle option
+            onNodeWithText("Automated Doctor Remediation").assertIsDisplayed()
+
+            // Confirm & Set Up button
+            onNodeWithText("Confirm & Set Up").assertIsDisplayed().performClick()
+            assertTrue(confirmed, "Clicking Confirm & Set Up must invoke onConfirmOperation")
         }
-
-        // Sheet title
-        onNodeWithText("Provisioning Preview").assertIsDisplayed()
-
-        // Elevation banner
-        onNodeWithText("Root / Sudo Elevation Required").assertIsDisplayed()
-
-        // Planned packages, submodules, and tools
-        onNodeWithText("build-essential").assertIsDisplayed()
-        onNodeWithText("core/external/boringssl").assertIsDisplayed()
-        onNodeWithText("avbtool").assertIsDisplayed()
-
-        // Auto Doctor toggle option
-        onNodeWithText("Automated Doctor Remediation").assertIsDisplayed()
-
-        // Confirm & Set Up button
-        onNodeWithText("Confirm & Set Up").assertIsDisplayed().performClick()
-        assertTrue(confirmed, "Clicking Confirm & Set Up must invoke onConfirmOperation")
-    }
 
     @Test
     fun testReadyStateShowsOpenWorkspacesPrimaryAction() = runDesktopComposeUiTest(width = 1120, height = 1800) {
         val readySteps = listOf(
-            SetupStepDetail(stage = SetupStepStage.WSL_DETECTION, title = "WSL", description = "", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-            SetupStepDetail(stage = SetupStepStage.SERVER_CONNECTIVITY, title = "Server", description = "", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-            SetupStepDetail(stage = SetupStepStage.SYSTEM_DIAGNOSTICS, title = "Doctor", description = "", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-            SetupStepDetail(stage = SetupStepStage.REPO_SYNCHRONIZATION, title = "Repos", description = "", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
-            SetupStepDetail(stage = SetupStepStage.TOOLCHAIN_COMPILATION, title = "Build", description = "", status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE),
+            SetupStepDetail(
+                stage = SetupStepStage.WSL_DETECTION,
+                title = "WSL",
+                description = "",
+                status = StepStatus.SUCCESS,
+                provenance = StepProvenance.LIVE,
+            ),
+            SetupStepDetail(
+                stage = SetupStepStage.SERVER_CONNECTIVITY,
+                title = "Server",
+                description = "",
+                status = StepStatus.SUCCESS,
+                provenance = StepProvenance.LIVE,
+            ),
+            SetupStepDetail(
+                stage = SetupStepStage.SYSTEM_DIAGNOSTICS,
+                title = "Doctor",
+                description = "",
+                status = StepStatus.SUCCESS,
+                provenance = StepProvenance.LIVE,
+            ),
+            SetupStepDetail(
+                stage = SetupStepStage.REPO_SYNCHRONIZATION,
+                title = "Repos",
+                description = "",
+                status = StepStatus.SUCCESS,
+                provenance = StepProvenance.LIVE,
+            ),
+            SetupStepDetail(
+                stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+                title = "Build",
+                description = "",
+                status = StepStatus.SUCCESS,
+                provenance = StepProvenance.LIVE,
+            ),
         )
         val readyTools = listOf(
             ToolComponentItem(

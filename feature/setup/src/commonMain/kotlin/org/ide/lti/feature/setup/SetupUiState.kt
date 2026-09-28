@@ -114,5 +114,6 @@ data class SetupUiActions(
     val onAbandonAwaitingOperation: () -> Unit = {},
     val onShowHandoffSheet: () -> Unit = {},
     val onOpenTerminal: (String) -> Unit = {},
+    val onSelectDistro: (String) -> Unit = {},
     val onInstallPackages: () -> Unit = {},
 )

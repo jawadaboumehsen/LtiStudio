@@ -9,7 +9,6 @@
  */
 package org.ide.lti.feature.setup.steps
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -81,7 +80,9 @@ fun EnvironmentStepContent(
     onProceedToLaunchpad: () -> Unit = {},
     onNavigateToProjects: (() -> Unit)? = null,
     activityState: SetupActivityState? = null,
-    activityListState: androidx.compose.foundation.lazy.LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
+    activityListState: androidx.compose.foundation.lazy.LazyListState =
+        androidx.compose.foundation.lazy
+            .rememberLazyListState(),
     previewInvokerFocusRequester: FocusRequester? = null,
 ) {
     EnvironmentStepContent(
@@ -106,6 +107,8 @@ fun EnvironmentStepContent(
         handoffSheetState = state.handoffSheetState,
         onInstallPackages = actions.onInstallPackages,
         onShowHandoffSheet = actions.onShowHandoffSheet,
+        onOpenDistro = actions.onOpenTerminal,
+        onSelectDistro = actions.onSelectDistro,
         onOpenProject = actions.onOpenFolder,
         onCreateProject = actions.onCreateWorkspace,
     )
@@ -151,27 +154,34 @@ fun EnvironmentStepContent(
     onSelectCockpitTab: (String) -> Unit = {},
     readiness: EnvironmentReadiness? = null,
     activityState: SetupActivityState? = null,
-    activityListState: androidx.compose.foundation.lazy.LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
+    activityListState: androidx.compose.foundation.lazy.LazyListState =
+        androidx.compose.foundation.lazy
+            .rememberLazyListState(),
     previewInvokerFocusRequester: FocusRequester? = null,
     handoffSheetState: TerminalHandoffState = TerminalHandoffState.Idle,
     onInstallPackages: () -> Unit = {},
     onShowHandoffSheet: () -> Unit = {},
+    onOpenDistro: (String) -> Unit = {},
+    onSelectDistro: (String) -> Unit = {},
     onOpenProject: () -> Unit = {},
     onCreateProject: () -> Unit = {},
 ) {
-    val presentation = environmentPresentation ?: SetupPresentationMapper.mapEnvironment(
-        state = toolchainSetupState,
-        activeOperation = activeOperation,
-    )
+    val presentation =
+        environmentPresentation ?: SetupPresentationMapper.mapEnvironment(
+            state = toolchainSetupState,
+            activeOperation = activeOperation,
+        )
 
     Box(
-        modifier = modifier
+        modifier =
+        modifier
             .widthIn(max = ComponentSize.SetupCockpitMaxWidth)
             .fillMaxWidth()
             .fillMaxHeight(),
     ) {
         Column(
-            modifier = Modifier
+            modifier =
+            Modifier
                 .fillMaxWidth()
                 .fillMaxHeight()
                 .verticalScroll(rememberScrollState())
@@ -202,15 +212,16 @@ fun EnvironmentStepContent(
                         softWrap = false,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    val subtitle = when {
-                        toolchainSetupState.isChecking -> "Checking WSL and build tools…"
-                        toolchainSetupState.steps.any { it.status == StepStatus.FAILED } -> {
-                            val count = toolchainSetupState.steps.count { it.status == StepStatus.FAILED }
-                            if (count == 1) "1 item needs attention" else "$count items need attention"
+                    val subtitle =
+                        when {
+                            toolchainSetupState.isChecking -> "Checking WSL and build tools…"
+                            toolchainSetupState.steps.any { it.status == StepStatus.FAILED } -> {
+                                val count = toolchainSetupState.steps.count { it.status == StepStatus.FAILED }
+                                if (count == 1) "1 item needs attention" else "$count items need attention"
+                            }
+                            toolchainSetupState.isAllReady -> "Ready to build"
+                            else -> "Verification pending"
                         }
-                        toolchainSetupState.isAllReady -> "Ready to build"
-                        else -> "Verification pending"
-                    }
                     Text(
                         text = subtitle,
                         style = MaterialTheme.typography.bodyMedium,
@@ -222,23 +233,25 @@ fun EnvironmentStepContent(
                     // "Verified" only ever means a fully passing check; a live check that found problems
                     // reports when it ran ("Checked"), never a success it did not have.
                     val isRestored = toolchainSetupState.steps.any { it.provenance == StepProvenance.RESTORED }
-                    val lastVerified = toolchainSetupState.lastVerifiedTimestamp?.takeIf { it > 0 }?.let { millis ->
-                        val relative = formatRelativeTime(Instant.fromEpochMilliseconds(millis))
-                        if (isRestored) "Last verified $relative (historical)" else "Last verified $relative"
-                    }
-                    val checkedAt = toolchainSetupState.checkedAt?.takeIf { !toolchainSetupState.isAllReady }
-                    val lastVerifiedLabel = when {
-                        checkedAt != null -> {
-                            val checked = "Checked ${formatRelativeTime(Instant.fromEpochMilliseconds(checkedAt))}"
-                            if (lastVerified != null) {
-                                "$checked · ${lastVerified.replaceFirstChar { it.lowercase() }}"
-                            } else {
-                                checked
-                            }
+                    val lastVerified =
+                        toolchainSetupState.lastVerifiedTimestamp?.takeIf { it > 0 }?.let { millis ->
+                            val relative = formatRelativeTime(Instant.fromEpochMilliseconds(millis))
+                            if (isRestored) "Last verified $relative (historical)" else "Last verified $relative"
                         }
-                        lastVerified != null -> lastVerified
-                        else -> "Not checked yet"
-                    }
+                    val checkedAt = toolchainSetupState.checkedAt?.takeIf { !toolchainSetupState.isAllReady }
+                    val lastVerifiedLabel =
+                        when {
+                            checkedAt != null -> {
+                                val checked = "Checked ${formatRelativeTime(Instant.fromEpochMilliseconds(checkedAt))}"
+                                if (lastVerified != null) {
+                                    "$checked · ${lastVerified.replaceFirstChar { it.lowercase() }}"
+                                } else {
+                                    checked
+                                }
+                            }
+                            lastVerified != null -> lastVerified
+                            else -> "Not checked yet"
+                        }
                     Text(
                         text = lastVerifiedLabel,
                         style = MaterialTheme.typography.labelSmall,
@@ -256,25 +269,28 @@ fun EnvironmentStepContent(
                 ) {
                     val wslStep = toolchainSetupState.steps.firstOrNull { it.stage == SetupStepStage.WSL_DETECTION }
                     val isWslOk = wslStep?.status == StepStatus.SUCCESS
-                    val bridgeStep = toolchainSetupState.steps
-                        .firstOrNull { it.stage == SetupStepStage.SERVER_CONNECTIVITY }
+                    val bridgeStep =
+                        toolchainSetupState.steps
+                            .firstOrNull { it.stage == SetupStepStage.SERVER_CONNECTIVITY }
                     val isBridgeOk = bridgeStep?.status == StepStatus.SUCCESS
 
-                    val wslStatus = when (wslStep?.status) {
-                        StepStatus.SUCCESS -> "Active"
-                        StepStatus.RUNNING -> "Checking"
-                        StepStatus.FAILED -> "Offline"
-                        else -> "Pending"
-                    }
-                    val bridgeStatus = when (bridgeStep?.status) {
-                        StepStatus.SUCCESS -> {
-                            val ping = toolchainSetupState.daemonPingMs
-                            if (ping != null && ping > 0) "${ping}ms" else "Connected"
+                    val wslStatus =
+                        when (wslStep?.status) {
+                            StepStatus.SUCCESS -> "Active"
+                            StepStatus.RUNNING -> "Checking"
+                            StepStatus.FAILED -> "Offline"
+                            else -> "Pending"
                         }
-                        StepStatus.RUNNING -> "Checking"
-                        StepStatus.FAILED -> "Disconnected"
-                        else -> "Pending"
-                    }
+                    val bridgeStatus =
+                        when (bridgeStep?.status) {
+                            StepStatus.SUCCESS -> {
+                                val ping = toolchainSetupState.daemonPingMs
+                                if (ping != null && ping > 0) "${ping}ms" else "Connected"
+                            }
+                            StepStatus.RUNNING -> "Checking"
+                            StepStatus.FAILED -> "Disconnected"
+                            else -> "Pending"
+                        }
 
                     GlassChip(
                         label = "WSL: $wslStatus",
@@ -313,10 +329,20 @@ fun EnvironmentStepContent(
                 handoffSheetState = handoffSheetState,
                 onInstallPackages = onInstallPackages,
                 onShowHandoffSheet = onShowHandoffSheet,
+                distroStatuses = toolchainSetupState.distroStatuses,
+                activeDistro = toolchainSetupState.activeDistro,
+                onVerify = onCheckEnvironment,
+                onOpenDistro = onOpenDistro,
+                onSelectDistro = onSelectDistro,
+                onShowDiagnostics = { onSelectCockpitTab("console") },
             )
 
-            val isMachineReady = presentation.environmentState is EnvironmentState.Ready ||
-                (toolchainSetupState.canLaunchWorkspace && (toolchainSetupState.lastReadyAt != null || toolchainSetupState.isAllReady))
+            val isMachineReady =
+                presentation.environmentState is EnvironmentState.Ready ||
+                    (
+                        toolchainSetupState.canLaunchWorkspace &&
+                            (toolchainSetupState.lastReadyAt != null || toolchainSetupState.isAllReady)
+                        )
 
             if (isMachineReady) {
                 GlassCard(
@@ -400,16 +426,17 @@ fun EnvironmentStepContent(
                 }
             }
 
-            val cockpitTabs = listOf(
-                org.ide.lti.core.designsystem.component.navigation.GlassTab(
-                    id = "doctor",
-                    title = "Doctor Diagnostics",
-                ),
-                org.ide.lti.core.designsystem.component.navigation.GlassTab(
-                    id = "console",
-                    title = "Pipeline Console",
-                ),
-            )
+            val cockpitTabs =
+                listOf(
+                    org.ide.lti.core.designsystem.component.navigation.GlassTab(
+                        id = "doctor",
+                        title = "Doctor Diagnostics",
+                    ),
+                    org.ide.lti.core.designsystem.component.navigation.GlassTab(
+                        id = "console",
+                        title = "Pipeline Console",
+                    ),
+                )
 
             org.ide.lti.core.designsystem.component.navigation.GlassTabBar(
                 tabs = cockpitTabs,
@@ -522,10 +549,7 @@ private fun EnvironmentStepActionBar(
 }
 
 @Composable
-private fun BackToProjectsButton(
-    onNavigateToProjects: () -> Unit,
-    enabled: Boolean,
-) {
+private fun BackToProjectsButton(onNavigateToProjects: () -> Unit, enabled: Boolean) {
     GlassSecondaryButton(
         onClick = onNavigateToProjects,
         enabled = enabled,
@@ -565,36 +589,42 @@ private fun EnvironmentPrimaryActionButton(
     when (presentation.primaryAction) {
         PrimaryAction.CHECKING -> CheckingActionButton()
         PrimaryAction.STAGE_PROGRESS -> StageProgressActionButton()
-        PrimaryAction.OPEN_WORKSPACES -> OpenWorkspacesActionButton(
-            enabled = !isBusy,
-            onNavigateToProjects = onNavigateToProjects,
-            onProceedToLaunchpad = onProceedToLaunchpad,
-        )
-        PrimaryAction.RETRY_CONNECTION -> RetryConnectionActionButton(
-            enabled = !isBusy,
-            presentation = presentation,
-            onRetryStage = onRetryStage,
-        )
-        PrimaryAction.RECONNECT -> ReconnectActionButton(
-            enabled = !isBusy,
-            onReconnect = onReconnect,
-        )
-        PrimaryAction.RETRY_STAGE -> RetryStageActionButton(
-            enabled = !isBusy,
-            presentation = presentation,
-            toolchainSetupState = toolchainSetupState,
-            onPreviewSetup = onPreviewSetup,
-            focusRequester = previewInvokerFocusRequester,
-        )
-        PrimaryAction.CHECK -> CheckActionButton(
-            enabled = !isBusy,
-            onCheckEnvironment = onCheckEnvironment,
-        )
-        PrimaryAction.SET_UP -> SetUpActionButton(
-            enabled = !isBusy,
-            onPreviewSetup = onPreviewSetup,
-            focusRequester = previewInvokerFocusRequester,
-        )
+        PrimaryAction.OPEN_WORKSPACES ->
+            OpenWorkspacesActionButton(
+                enabled = !isBusy,
+                onNavigateToProjects = onNavigateToProjects,
+                onProceedToLaunchpad = onProceedToLaunchpad,
+            )
+        PrimaryAction.RETRY_CONNECTION ->
+            RetryConnectionActionButton(
+                enabled = !isBusy,
+                presentation = presentation,
+                onRetryStage = onRetryStage,
+            )
+        PrimaryAction.RECONNECT ->
+            ReconnectActionButton(
+                enabled = !isBusy,
+                onReconnect = onReconnect,
+            )
+        PrimaryAction.RETRY_STAGE ->
+            RetryStageActionButton(
+                enabled = !isBusy,
+                presentation = presentation,
+                toolchainSetupState = toolchainSetupState,
+                onPreviewSetup = onPreviewSetup,
+                focusRequester = previewInvokerFocusRequester,
+            )
+        PrimaryAction.CHECK ->
+            CheckActionButton(
+                enabled = !isBusy,
+                onCheckEnvironment = onCheckEnvironment,
+            )
+        PrimaryAction.SET_UP ->
+            SetUpActionButton(
+                enabled = !isBusy,
+                onPreviewSetup = onPreviewSetup,
+                focusRequester = previewInvokerFocusRequester,
+            )
     }
 }
 
@@ -673,10 +703,7 @@ private fun OpenWorkspacesActionButton(
 }
 
 @Composable
-private fun ReconnectActionButton(
-    enabled: Boolean,
-    onReconnect: () -> Unit,
-) {
+private fun ReconnectActionButton(enabled: Boolean, onReconnect: () -> Unit) {
     GlassPrimaryButton(
         onClick = onReconnect,
         enabled = enabled,
@@ -701,10 +728,11 @@ private fun RetryConnectionActionButton(
     presentation: EnvironmentPresentation,
     onRetryStage: (SetupStepStage) -> Unit,
 ) {
-    val offlineStage = when (val env = presentation.environmentState) {
-        is EnvironmentState.Failed -> env.stage ?: SetupStepStage.SERVER_CONNECTIVITY
-        else -> SetupStepStage.SERVER_CONNECTIVITY
-    }
+    val offlineStage =
+        when (val env = presentation.environmentState) {
+            is EnvironmentState.Failed -> env.stage ?: SetupStepStage.SERVER_CONNECTIVITY
+            else -> SetupStepStage.SERVER_CONNECTIVITY
+        }
     GlassPrimaryButton(
         onClick = { onRetryStage(offlineStage) },
         enabled = enabled,
@@ -731,10 +759,11 @@ private fun RetryStageActionButton(
     onPreviewSetup: (SetupStepStage?) -> Unit,
     focusRequester: FocusRequester? = null,
 ) {
-    val failedStage = when (val env = presentation.environmentState) {
-        is EnvironmentState.Failed -> env.stage
-        else -> toolchainSetupState.steps.firstOrNull { it.status == StepStatus.FAILED }?.stage
-    }
+    val failedStage =
+        when (val env = presentation.environmentState) {
+            is EnvironmentState.Failed -> env.stage
+            else -> toolchainSetupState.steps.firstOrNull { it.status == StepStatus.FAILED }?.stage
+        }
     GlassPrimaryButton(
         onClick = { onPreviewSetup(failedStage) },
         enabled = enabled,
@@ -760,10 +789,7 @@ private fun RetryStageActionButton(
 }
 
 @Composable
-private fun CheckActionButton(
-    enabled: Boolean,
-    onCheckEnvironment: () -> Unit,
-) {
+private fun CheckActionButton(enabled: Boolean, onCheckEnvironment: () -> Unit) {
     GlassPrimaryButton(
         onClick = onCheckEnvironment,
         enabled = enabled,

@@ -12,9 +12,7 @@ import org.ide.lti.core.domain.setup.StepStatus
  * Adheres to:
  * - Single Responsibility Principle (SRP): Dedicated exclusively to validating build toolchains.
  */
-public class CompilersInspector(
-    private val cli: WslCliExecutor = WslCliExecutor()
-) : SystemDiagnosticInspector {
+public class CompilersInspector(private val cli: WslCliExecutor = WslCliExecutor()) : SystemDiagnosticInspector {
 
     override suspend fun inspect(context: DiagnosticContext): DiagnosticCheckItem {
         val distro = context.distro
@@ -24,26 +22,13 @@ public class CompilersInspector(
             cli.execute(distro, listOf("which", cmd)).exitCode == 0
         }
 
-        val hasCmake = hasCommand("cmake")
-        val hasMake = hasCommand("make")
-        val hasClang = hasCommand("clang")
-        val hasGcc = hasCommand("gcc")
-        val hasClangPlus = hasCommand("clang++")
-        val hasGplus = hasCommand("g++")
-
-        val missingCompilers = buildList {
-            if (!hasCmake) add("cmake")
-            if (!hasMake) add("make")
-            if (!hasClang && !hasGcc) add("clang")
-            if (!hasClangPlus && !hasGplus) add("clang++")
-        }
+        // Each entry is satisfied by any of its alternatives; the first one names what is missing.
+        val missingCompilers = listOf(listOf("cmake"), listOf("make"), listOf("clang", "gcc"), listOf("clang++", "g++"))
+            .filter { alternatives -> alternatives.none(::hasCommand) }
+            .map { it.first() }
         val compilersOk = missingCompilers.isEmpty()
-        val missingPackages = buildList {
-            add("build-essential")
-            if (!hasCmake) add("cmake")
-            if (!hasMake) add("make")
-            if (!hasClang && !hasGcc) add("clang")
-        }.distinct()
+        // clang++ ships with the clang / build-essential packages, so it is never an apt package of its own.
+        val missingPackages = (listOf("build-essential") + missingCompilers - "clang++").distinct()
         val compilerCmd = if (compilersOk) null else AptCommandBuilder.install(missingPackages)
 
         return DiagnosticCheckItem(
@@ -62,7 +47,7 @@ public class CompilersInspector(
             },
             remediation = if (compilersOk) null else "Run '$compilerCmd' in WSL.",
             copyableCommand = compilerCmd,
-            isOptionalForRuntime = context.binariesPresent
+            isOptionalForRuntime = context.binariesPresent,
         )
     }
 }

@@ -111,64 +111,43 @@ compose.desktop {
     }
 }
 
+/**
+ * Stages the build service into the app resources as `ltirom-server/` with `server-version.txt`
+ * and `checksums.txt` (relative to that folder, `sha256sum -c` format). The installer in WSL
+ * verifies the copy against these checksums before activating it.
+ */
 val stageBundledServer by tasks.registering {
     dependsOn(gradle.includedBuild("ltirom-server").task(":installDist"))
 
+    val serverProjectDir = rootDir.parentFile.resolve("LtiRomServer")
+    val serverInstallDir = serverProjectDir.resolve("build/install/ltirom-server")
+    // Written by LtiRomServer's generateServerVersion; it is exactly what the running service reports.
+    val serverVersionFile = serverProjectDir.resolve("build/generated/resources/version/server-version.txt")
+
     val bundledServerDir = layout.buildDirectory.dir("bundledServer")
+    inputs.dir(serverInstallDir).withPropertyName("serverInstall")
+    inputs.file(serverVersionFile).withPropertyName("serverVersion")
     outputs.dir(bundledServerDir)
 
     doLast {
-        val serverInstallDir = File(project.rootDir.parentFile, "LtiRomServer/build/install/ltirom-server")
+        check(serverVersionFile.isFile) { "Missing $serverVersionFile: run :installDist in LtiRomServer first." }
         val targetDir = bundledServerDir.get().asFile
         val targetServerDir = File(targetDir, "ltirom-server")
-
-        if (targetDir.exists()) {
-            targetDir.deleteRecursively()
-        }
+        targetDir.deleteRecursively()
         targetServerDir.mkdirs()
-
         serverInstallDir.copyRecursively(targetServerDir, overwrite = true)
+        File(targetServerDir, "server-version.txt").writeText(serverVersionFile.readText().trim())
 
-        val binDir = File(targetServerDir, "bin")
-        binDir.listFiles()?.forEach { file ->
-            if (!file.name.endsWith(".bat")) {
-                file.setExecutable(true, false)
+        val checksumsFile = File(targetServerDir, "checksums.txt")
+        val lines = targetServerDir.walkTopDown()
+            .filter { it.isFile && it != checksumsFile }
+            .sortedBy { it.relativeTo(targetServerDir).invariantSeparatorsPath }
+            .map { file ->
+                val digest = MessageDigest.getInstance("SHA-256").digest(file.readBytes())
+                val hex = digest.joinToString("") { b -> "%02x".format(b) }
+                "$hex  ${file.relativeTo(targetServerDir).invariantSeparatorsPath}"
             }
-        }
-
-        val gitCommit = runCatching {
-            val proc = ProcessBuilder("git", "rev-parse", "--short", "HEAD")
-                .directory(project.rootDir)
-                .start()
-            val text = proc.inputStream.bufferedReader().readText().trim()
-            proc.waitFor()
-            text.ifEmpty { "dev" }
-        }.getOrDefault("dev")
-
-        val copiedVersionFile = File(targetServerDir, "server-version.txt")
-        val versionText = if (copiedVersionFile.exists()) {
-            copiedVersionFile.readText().trim()
-        } else {
-            "1.0.0-$gitCommit"
-        }
-
-        val rootVersionFile = File(targetDir, "server-version.txt")
-        rootVersionFile.writeText(versionText)
-        if (!copiedVersionFile.exists()) {
-            copiedVersionFile.writeText(versionText)
-        }
-
-        val checksumsFile = File(targetDir, "checksums.txt")
-        val md = MessageDigest.getInstance("SHA-256")
-        val lines = mutableListOf<String>()
-
-        targetDir.walkTopDown().filter { it.isFile && it != checksumsFile }.sortedBy { it.relativeTo(targetDir).path }.forEach { file ->
-            val relPath = file.relativeTo(targetDir).path.replace('\\', '/')
-            val digest = md.digest(file.readBytes())
-            val hex = digest.joinToString("") { b -> b.toUByte().toString(16).padStart(2, '0') }
-            lines.add("$hex  $relPath")
-        }
-        checksumsFile.writeText(lines.joinToString("\n") + "\n")
+        checksumsFile.writeText(lines.joinToString("\n", postfix = "\n"))
     }
 }
 

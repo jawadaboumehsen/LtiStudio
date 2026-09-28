@@ -14,6 +14,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -31,8 +32,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import dev.chrisbanes.haze.glass.GlassReducedMotionPolicy
 import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
+import org.ide.lti.core.designsystem.component.actions.GlassSecondaryButton
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.GlassChip
+import org.ide.lti.core.designsystem.component.display.IdeStatusSeverity
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.icon.ideStatusError
 import org.ide.lti.core.designsystem.icon.ideStatusSuccess
@@ -44,14 +47,16 @@ import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
-import org.ide.lti.core.designsystem.component.display.IdeStatusSeverity
 import org.ide.lti.core.domain.setup.SetupStepDetail
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepProvenance
 import org.ide.lti.core.domain.setup.StepStatus
+import org.ide.lti.core.model.setup.DistroStatus
+import org.ide.lti.feature.setup.MachineRowMapper
 import org.ide.lti.feature.setup.SetupOperation
-import org.ide.lti.feature.setup.SetupPresentationMapper
+import org.ide.lti.feature.setup.SetupRowAction
 import org.ide.lti.feature.setup.TerminalHandoffState
+import org.ide.lti.feature.setup.WslRowPresentation
 
 /**
  * 5-stage vertical Toolchain Provisioning Pipeline Tracker (US2).
@@ -75,30 +80,38 @@ fun ToolchainPipelineTracker(
     handoffSheetState: TerminalHandoffState = TerminalHandoffState.Idle,
     onInstallPackages: () -> Unit = {},
     onShowHandoffSheet: () -> Unit = {},
+    distroStatuses: List<DistroStatus> = emptyList(),
+    activeDistro: String? = null,
+    onVerify: () -> Unit = {},
+    onOpenDistro: (String) -> Unit = {},
+    onSelectDistro: (String) -> Unit = {},
+    onShowDiagnostics: () -> Unit = {},
 ) {
     val stepMap = steps.associateBy { it.stage }
-    val orderedStages = if (stepMap.containsKey(SetupStepStage.SYSTEM_PACKAGES)) {
-        listOf(
-            SetupStepStage.WSL_DETECTION,
-            SetupStepStage.SYSTEM_PACKAGES,
-            SetupStepStage.SERVER_CONNECTIVITY,
-            SetupStepStage.SYSTEM_DIAGNOSTICS,
-            SetupStepStage.REPO_SYNCHRONIZATION,
-            SetupStepStage.TOOLCHAIN_COMPILATION,
-        )
-    } else {
-        listOf(
-            SetupStepStage.WSL_DETECTION,
-            SetupStepStage.SERVER_CONNECTIVITY,
-            SetupStepStage.SYSTEM_DIAGNOSTICS,
-            SetupStepStage.REPO_SYNCHRONIZATION,
-            SetupStepStage.TOOLCHAIN_COMPILATION,
-        )
-    }
+    val orderedStages =
+        if (stepMap.containsKey(SetupStepStage.SYSTEM_PACKAGES)) {
+            listOf(
+                SetupStepStage.WSL_DETECTION,
+                SetupStepStage.SYSTEM_PACKAGES,
+                SetupStepStage.SERVER_CONNECTIVITY,
+                SetupStepStage.SYSTEM_DIAGNOSTICS,
+                SetupStepStage.REPO_SYNCHRONIZATION,
+                SetupStepStage.TOOLCHAIN_COMPILATION,
+            )
+        } else {
+            listOf(
+                SetupStepStage.WSL_DETECTION,
+                SetupStepStage.SERVER_CONNECTIVITY,
+                SetupStepStage.SYSTEM_DIAGNOSTICS,
+                SetupStepStage.REPO_SYNCHRONIZATION,
+                SetupStepStage.TOOLCHAIN_COMPILATION,
+            )
+        }
 
-    val completedCount = orderedStages.count { stage ->
-        stepMap[stage]?.status == StepStatus.SUCCESS
-    }
+    val completedCount =
+        orderedStages.count { stage ->
+            stepMap[stage]?.status == StepStatus.SUCCESS
+        }
 
     GlassCard(
         modifier = modifier.fillMaxWidth(),
@@ -139,21 +152,43 @@ fun ToolchainPipelineTracker(
                 verticalArrangement = Arrangement.spacedBy(Spacing.Small),
             ) {
                 orderedStages.forEach { stage ->
-                    val step = stepMap[stage] ?: SetupStepDetail(
-                        stage = stage,
-                        title = stage.displayName,
-                        status = StepStatus.PENDING,
-                        description = "Pending verification.",
-                    )
+                    val step =
+                        stepMap[stage] ?: SetupStepDetail(
+                            stage = stage,
+                            title = stage.displayName,
+                            status = StepStatus.PENDING,
+                            description = "Pending verification.",
+                        )
                     VerticalStageRow(
                         step = step,
                         stage = stage,
                         isBusy = isBusy,
-                        onRetryStage = onRetryStage,
                         activeOperation = activeOperation,
                         handoffSheetState = handoffSheetState,
-                        onInstallPackages = onInstallPackages,
-                        onShowHandoffSheet = onShowHandoffSheet,
+                        wslPres =
+                        if (stage == SetupStepStage.WSL_DETECTION) {
+                            MachineRowMapper.mapWslRow(step, distroStatuses, activeDistro)
+                        } else {
+                            null
+                        },
+                        onAction = { action, distro ->
+                            when (action) {
+                                // Re-detecting and re-probing is a check, not a mutation: no preview.
+                                SetupRowAction.RETRY ->
+                                    if (stage == SetupStepStage.WSL_DETECTION ||
+                                        stage == SetupStepStage.SYSTEM_PACKAGES
+                                    ) {
+                                        onVerify()
+                                    } else {
+                                        onRetryStage(stage)
+                                    }
+                                SetupRowAction.INSTALL_PACKAGES -> onInstallPackages()
+                                SetupRowAction.CONTINUE_SETUP -> onShowHandoffSheet()
+                                SetupRowAction.OPEN_DISTRO -> distro?.let(onOpenDistro)
+                                SetupRowAction.SHOW_DIAGNOSTICS -> onShowDiagnostics()
+                            }
+                        },
+                        onSelectDistro = onSelectDistro,
                     )
                 }
             }
@@ -166,43 +201,57 @@ private fun VerticalStageRow(
     step: SetupStepDetail,
     stage: SetupStepStage,
     isBusy: Boolean,
-    onRetryStage: (SetupStepStage) -> Unit,
+    onAction: (SetupRowAction, String?) -> Unit,
     activeOperation: SetupOperation? = null,
     handoffSheetState: TerminalHandoffState = TerminalHandoffState.Idle,
-    onInstallPackages: () -> Unit = {},
-    onShowHandoffSheet: () -> Unit = {},
+    wslPres: WslRowPresentation? = null,
+    onSelectDistro: (String) -> Unit = {},
 ) {
     val diagnostics = GlassTheme.diagnosticColors
 
     val stageDisplayName = stage.displayName
 
-    val systemPackagesPres = if (stage == SetupStepStage.SYSTEM_PACKAGES) {
-        SetupPresentationMapper.mapSystemPackages(
-            step = step,
-            isChecking = isBusy || step.status == StepStatus.RUNNING,
-            activeOperation = activeOperation,
-            handoffSheetState = handoffSheetState,
-        )
-    } else null
+    val systemPackagesPres =
+        if (stage == SetupStepStage.SYSTEM_PACKAGES) {
+            MachineRowMapper.mapSystemPackages(
+                step = step,
+                isChecking = isBusy || step.status == StepStatus.RUNNING,
+                activeOperation = activeOperation,
+                handoffSheetState = handoffSheetState,
+            )
+        } else {
+            null
+        }
 
+    val rowSeverity = systemPackagesPres?.severity ?: wslPres?.severity
     val isRunning = step.status == StepStatus.RUNNING || systemPackagesPres?.isChecking == true
     val isSuccess = (step.status == StepStatus.SUCCESS || systemPackagesPres?.isReady == true) && !isRunning
     val isRestored = step.provenance == StepProvenance.RESTORED
-    val isActionRequired = (step.status == StepStatus.FAILED || step.status == StepStatus.WARNING ||
-        systemPackagesPres?.primaryActionLabel != null) && !isSuccess
+    val isActionRequired =
+        (
+            step.status == StepStatus.FAILED ||
+                step.status == StepStatus.WARNING ||
+                systemPackagesPres?.primaryAction != null
+            ) &&
+            !isSuccess
 
-    val isFailed = step.status == StepStatus.FAILED ||
-        (systemPackagesPres != null && systemPackagesPres.severity == IdeStatusSeverity.Failed)
-    val isWarning = !isFailed && (step.status == StepStatus.WARNING ||
-        (systemPackagesPres != null && systemPackagesPres.severity == IdeStatusSeverity.Warning))
+    val isFailed = step.status == StepStatus.FAILED || rowSeverity == IdeStatusSeverity.Failed
+    val isWarning = !isFailed && (step.status == StepStatus.WARNING || rowSeverity == IdeStatusSeverity.Warning)
 
-    val displayDescription = systemPackagesPres?.detailText ?: step.description
-    val actionLabel = systemPackagesPres?.primaryActionLabel ?: "Retry Stage"
+    val displayDescription = systemPackagesPres?.detailText ?: wslPres?.detailText ?: step.description
+    // A plain step row always offers a stage retry; a mapped row offers exactly what its state allows.
+    val hasMappedRow = systemPackagesPres != null || wslPres != null
+    val primaryAction =
+        systemPackagesPres?.primaryAction ?: wslPres?.primaryAction
+            ?: SetupRowAction.RETRY.takeIf { !hasMappedRow }
+    val primaryLabel = systemPackagesPres?.primaryActionLabel ?: wslPres?.primaryActionLabel ?: "Retry Stage"
+    val secondaryAction = wslPres?.secondaryAction
 
     if (isActionRequired) {
         // Expanded Failed / Warning Stage Row
         Box(
-            modifier = Modifier
+            modifier =
+            Modifier
                 .fillMaxWidth()
                 .clip(GlassShapes.Small)
                 .background(
@@ -211,17 +260,16 @@ private fun VerticalStageRow(
                     } else {
                         diagnostics.warning.copy(alpha = AlphaTokens.UltraFaint)
                     },
-                )
-                .border(
+                ).border(
                     width = StrokeWidth.Hairline,
-                    color = if (isFailed) {
+                    color =
+                    if (isFailed) {
                         diagnostics.error.copy(alpha = AlphaTokens.Border)
                     } else {
                         diagnostics.warning.copy(alpha = AlphaTokens.Border)
                     },
                     shape = GlassShapes.Small,
-                )
-                .padding(Spacing.MediumSmall),
+                ).padding(Spacing.MediumSmall),
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -266,9 +314,10 @@ private fun VerticalStageRow(
                     color = if (isFailed) diagnostics.error else diagnostics.warning,
                 )
 
-                if (!step.error.isNullOrBlank() && systemPackagesPres == null) {
+                if (!step.error.isNullOrBlank() && !hasMappedRow) {
                     Box(
-                        modifier = Modifier
+                        modifier =
+                        Modifier
                             .fillMaxWidth()
                             .clip(GlassShapes.ExtraSmall)
                             .background(MaterialTheme.colorScheme.surfaceContainer)
@@ -276,12 +325,12 @@ private fun VerticalStageRow(
                                 width = StrokeWidth.Hairline,
                                 color = MaterialTheme.colorScheme.outline,
                                 shape = GlassShapes.ExtraSmall,
-                            )
-                            .padding(Spacing.Small),
+                            ).padding(Spacing.Small),
                     ) {
                         Text(
                             text = step.error.orEmpty(),
-                            style = MaterialTheme.typography.bodySmall.copy(
+                            style =
+                            MaterialTheme.typography.bodySmall.copy(
                                 fontFamily = codeFontFamily(),
                             ),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -289,33 +338,65 @@ private fun VerticalStageRow(
                     }
                 }
 
-                if (systemPackagesPres?.primaryActionLabel != null || systemPackagesPres == null) {
+                wslPres?.instruction?.let { instruction ->
+                    Text(
+                        text = instruction,
+                        style = MaterialTheme.typography.bodySmall.copy(fontFamily = codeFontFamily()),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+
+                if (wslPres != null && wslPres.choices.isNotEmpty()) {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+                    ) {
+                        wslPres.choices.forEach { distro ->
+                            GlassChip(
+                                label = distro,
+                                selected = false,
+                                onClick = { if (!isBusy) onSelectDistro(distro) },
+                            )
+                        }
+                    }
+                }
+
+                if (primaryAction != null || secondaryAction != null) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small, Alignment.End),
                     ) {
-                        GlassPrimaryButton(
-                            onClick = {
-                                when (actionLabel) {
-                                    "Install packages" -> onInstallPackages()
-                                    "Continue setup" -> onShowHandoffSheet()
-                                    else -> onRetryStage(stage)
-                                }
-                            },
-                            enabled = !isBusy,
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                        if (secondaryAction != null) {
+                            GlassSecondaryButton(
+                                onClick = { onAction(secondaryAction, wslPres?.distro) },
+                                enabled = !isBusy,
                             ) {
-                                if (actionLabel == "Retry" || actionLabel == "Retry Stage") {
-                                    Icon(
-                                        painter = AppIcons.RefreshPainterResource(),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(IconSize.Small),
-                                    )
+                                Text(
+                                    wslPres?.secondaryActionLabel.orEmpty(),
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                        }
+                        if (primaryAction != null) {
+                            GlassPrimaryButton(
+                                onClick = { onAction(primaryAction, wslPres?.distro) },
+                                enabled = !isBusy,
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                                ) {
+                                    if (primaryAction == SetupRowAction.RETRY) {
+                                        Icon(
+                                            painter = AppIcons.RefreshPainterResource(),
+                                            contentDescription = null,
+                                            modifier = Modifier.size(IconSize.Small),
+                                        )
+                                    }
+                                    Text(primaryLabel, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
                                 }
-                                Text(actionLabel, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
                             }
                         }
                     }
@@ -325,7 +406,8 @@ private fun VerticalStageRow(
     } else {
         // Compact Healthy / Running / Pending Stage Row
         Box(
-            modifier = Modifier
+            modifier =
+            Modifier
                 .fillMaxWidth()
                 .clip(GlassShapes.Small)
                 .background(MaterialTheme.colorScheme.surfaceContainer)
@@ -333,8 +415,7 @@ private fun VerticalStageRow(
                     width = StrokeWidth.Hairline,
                     color = MaterialTheme.colorScheme.outline,
                     shape = GlassShapes.Small,
-                )
-                .padding(horizontal = Spacing.MediumSmall, vertical = Spacing.Small),
+                ).padding(horizontal = Spacing.MediumSmall, vertical = Spacing.Small),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -374,12 +455,14 @@ private fun VerticalStageRow(
                         else -> {
                             // Pending is neutral, not a warning: a muted dot.
                             Box(
-                                modifier = Modifier
+                                modifier =
+                                Modifier
                                     .size(IconSize.Small),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Box(
-                                    modifier = Modifier
+                                    modifier =
+                                    Modifier
                                         .size(IconSize.Indicator)
                                         .clip(GlassShapes.Capsule)
                                         .background(MaterialTheme.colorScheme.outline),
@@ -411,7 +494,8 @@ private fun VerticalStageRow(
                 }
 
                 GlassChip(
-                    label = when {
+                    label =
+                    when {
                         isRestored -> "Historical"
                         isSuccess -> "Ready"
                         isRunning -> "Checking…"

@@ -7,8 +7,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.ide.lti.core.data.setup.ToolchainReadinessPolicy
 import org.ide.lti.core.domain.ports.DaemonFailureCategory
-import org.ide.lti.core.domain.ports.ToolchainFailureCategory
 import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
+import org.ide.lti.core.domain.ports.ToolchainFailureCategory
+import org.ide.lti.core.domain.setup.SetupStepDetail
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolchainProvisioningService
@@ -33,16 +34,16 @@ public class EnvironmentReadinessAdapter(
         public val DEFAULT_REQUIRED_HOST_PACKAGES: Set<String> = ToolchainReadinessPolicy.REQUIRED_HOST_PACKAGES
     }
 
-    private val _readiness = MutableStateFlow(
-        EnvironmentReadiness(state = EnvironmentReadinessState.ENV_ABSENT)
+    private val readinessState = MutableStateFlow(
+        EnvironmentReadiness(state = EnvironmentReadinessState.ENV_ABSENT),
     )
 
-    override fun observe(): Flow<EnvironmentReadiness> = _readiness.asStateFlow()
+    override fun observe(): Flow<EnvironmentReadiness> = readinessState.asStateFlow()
 
     override suspend fun refresh(): EnvironmentReadiness {
         val toolchainState = toolchainService.checkStatus()
         val result = mapToolchainStateToReadiness(toolchainState)
-        _readiness.value = result
+        readinessState.value = result
         return result
     }
 
@@ -55,90 +56,88 @@ public class EnvironmentReadinessAdapter(
         return validateWorkspace(workspace)
     }
 
-    private fun mapToolchainStateToReadiness(state: ToolchainSetupState): EnvironmentReadiness {
-        if (requiredProductTools.isEmpty()) {
-            return EnvironmentReadiness(
-                state = EnvironmentReadinessState.TOOLS_MISSING,
-                failingCheck = "Required product tools inventory is empty",
-                remediation = "Configure required product tools inventory"
-            )
-        }
+    /** The first failing stage, in pipeline order, decides readiness; otherwise the live check does. */
+    private fun mapToolchainStateToReadiness(state: ToolchainSetupState): EnvironmentReadiness = emptyInventory()
+        ?: failedStep(state, SetupStepStage.WSL_DETECTION)?.let(::wslFailure)
+        ?: failedStep(state, SetupStepStage.SYSTEM_PACKAGES)?.let(::packagesFailure)
+        ?: failedStep(state, SetupStepStage.SERVER_CONNECTIVITY)?.let(::serverFailure)
+        ?: failedStep(state, SetupStepStage.TOOLCHAIN_COMPILATION)?.let { toolchainFailure(it, state) }
+        ?: failedStep(state, SetupStepStage.SYSTEM_DIAGNOSTICS)?.let(::doctorFailure)
+        ?: liveReadiness(state)
 
-        val wslStep = state.steps.firstOrNull { it.stage == SetupStepStage.WSL_DETECTION }
-        if (wslStep?.status == StepStatus.FAILED) {
-            return EnvironmentReadiness(
-                state = EnvironmentReadinessState.ENV_ABSENT,
-                failingCheck = wslStep.description,
-                remediation = wslStep.error ?: "Install WSL 2 and register an Ubuntu distribution",
-            )
-        }
+    private fun failedStep(state: ToolchainSetupState, stage: SetupStepStage): SetupStepDetail? =
+        state.steps.firstOrNull { it.stage == stage && it.status == StepStatus.FAILED }
 
-        val serverStep = state.steps.firstOrNull { it.stage == SetupStepStage.SERVER_CONNECTIVITY }
-        if (serverStep?.status == StepStatus.FAILED) {
-            val failureCategory = serverStep.failureCategory ?: DaemonFailureCategory.UNREACHABLE
-            return when (failureCategory) {
-                DaemonFailureCategory.UNSUPPORTED_JAVA -> EnvironmentReadiness(
-                    state = EnvironmentReadinessState.TOOLS_INCOMPATIBLE,
-                    failingCheck = serverStep.description,
-                    remediation = "Install Java ${ToolchainReadinessPolicy.MIN_JAVA_VERSION}+ in WSL distribution",
-                )
-                DaemonFailureCategory.UNHEALTHY_STATUS, DaemonFailureCategory.UNRECOGNIZED_STATUS -> EnvironmentReadiness(
-                    state = EnvironmentReadinessState.SERVICE_UNHEALTHY,
-                    failingCheck = serverStep.description,
-                    remediation = "Check daemon logs and restart the daemon",
-                )
-                DaemonFailureCategory.UNREACHABLE -> EnvironmentReadiness(
-                    state = EnvironmentReadinessState.SERVICE_UNREACHABLE,
-                    failingCheck = serverStep.description,
-                    remediation = "Start the LtiRomServer daemon or verify WSL connectivity",
-                )
-                DaemonFailureCategory.COMPATIBILITY_MODE -> EnvironmentReadiness(
-                    state = EnvironmentReadinessState.SERVICE_UNHEALTHY,
-                    failingCheck = serverStep.description,
-                    remediation = "Verify daemon version and check daemon logs",
-                )
-            }
-        }
+    private fun emptyInventory(): EnvironmentReadiness? = if (requiredProductTools.isEmpty()) {
+        EnvironmentReadiness(
+            state = EnvironmentReadinessState.TOOLS_MISSING,
+            failingCheck = "Required product tools inventory is empty",
+            remediation = "Configure required product tools inventory",
+        )
+    } else {
+        null
+    }
 
-        val toolchainStep = state.steps.firstOrNull { it.stage == SetupStepStage.TOOLCHAIN_COMPILATION }
-        if (toolchainStep?.status == StepStatus.FAILED) {
-            val isErofs = toolchainStep.toolchainFailureCategory == ToolchainFailureCategory.EROFS_INCOMPATIBLE
-            val missing = (requiredProductTools - state.publishedToolIds)
-            return if (isErofs) {
-                EnvironmentReadiness(
-                    state = EnvironmentReadinessState.TOOLS_INCOMPATIBLE,
-                    failingCheck = toolchainStep.description,
-                    remediation = "Rebuild toolchain with vendored erofs-utils",
-                )
-            } else {
-                EnvironmentReadiness(
-                    state = EnvironmentReadinessState.TOOLS_MISSING,
-                    failingCheck = toolchainStep.description,
-                    remediation = "Run toolchain setup to compile and install missing tools",
-                    missingToolIds = missing,
-                )
-            }
-        }
+    private fun wslFailure(step: SetupStepDetail) = EnvironmentReadiness(
+        state = EnvironmentReadinessState.ENV_ABSENT,
+        failingCheck = step.description,
+        remediation = step.error ?: "Install WSL 2 and register an Ubuntu distribution",
+    )
 
-        val doctorStep = state.steps.firstOrNull { it.stage == SetupStepStage.SYSTEM_DIAGNOSTICS }
-        if (doctorStep?.status == StepStatus.FAILED) {
-            return EnvironmentReadiness(
+    /** Missing Ubuntu packages: the step error carries the exact `sudo apt-get` command to run. */
+    private fun packagesFailure(step: SetupStepDetail) = EnvironmentReadiness(
+        state = EnvironmentReadinessState.ENV_ABSENT,
+        failingCheck = step.description,
+        remediation = step.error?.takeIf { it.isNotBlank() } ?: "Install the missing Ubuntu packages from Setup",
+    )
+
+    private fun serverFailure(step: SetupStepDetail): EnvironmentReadiness {
+        val (state, remediation) = when (step.failureCategory ?: DaemonFailureCategory.UNREACHABLE) {
+            DaemonFailureCategory.UNSUPPORTED_JAVA ->
+                EnvironmentReadinessState.TOOLS_INCOMPATIBLE to
+                    "Install Java ${ToolchainReadinessPolicy.MIN_JAVA_VERSION}+ in WSL distribution"
+            DaemonFailureCategory.UNHEALTHY_STATUS,
+            DaemonFailureCategory.UNRECOGNIZED_STATUS,
+            -> EnvironmentReadinessState.SERVICE_UNHEALTHY to "Check daemon logs and restart the daemon"
+            DaemonFailureCategory.UNREACHABLE ->
+                EnvironmentReadinessState.SERVICE_UNREACHABLE to
+                    "Start the LtiRomServer daemon or verify WSL connectivity"
+            DaemonFailureCategory.COMPATIBILITY_MODE ->
+                EnvironmentReadinessState.SERVICE_UNHEALTHY to
+                    "Verify daemon version and check daemon logs"
+        }
+        return EnvironmentReadiness(state = state, failingCheck = step.description, remediation = remediation)
+    }
+
+    private fun toolchainFailure(step: SetupStepDetail, state: ToolchainSetupState) =
+        if (step.toolchainFailureCategory == ToolchainFailureCategory.EROFS_INCOMPATIBLE) {
+            EnvironmentReadiness(
                 state = EnvironmentReadinessState.TOOLS_INCOMPATIBLE,
-                failingCheck = doctorStep.description,
-                remediation = "Run pre-flight doctor checks and apply repairs",
+                failingCheck = step.description,
+                remediation = "Rebuild toolchain with vendored erofs-utils",
+            )
+        } else {
+            EnvironmentReadiness(
+                state = EnvironmentReadinessState.TOOLS_MISSING,
+                failingCheck = step.description,
+                remediation = "Run toolchain setup to compile and install missing tools",
+                missingToolIds = requiredProductTools - state.publishedToolIds,
             )
         }
 
-        if (state.canLaunchWorkspace) {
-            val workDir = state.workDirLinuxPath
-                ?: state.userHome?.let { "$it/$WORK_DIR_NAME" }
-            return EnvironmentReadiness(
-                state = EnvironmentReadinessState.READY,
-                workDirLinuxPath = workDir,
-            )
-        }
+    private fun doctorFailure(step: SetupStepDetail) = EnvironmentReadiness(
+        state = EnvironmentReadinessState.TOOLS_INCOMPATIBLE,
+        failingCheck = step.description,
+        remediation = "Run pre-flight doctor checks and apply repairs",
+    )
 
-        return EnvironmentReadiness(
+    private fun liveReadiness(state: ToolchainSetupState) = if (state.canLaunchWorkspace) {
+        EnvironmentReadiness(
+            state = EnvironmentReadinessState.READY,
+            workDirLinuxPath = state.workDirLinuxPath ?: state.userHome?.let { "$it/$WORK_DIR_NAME" },
+        )
+    } else {
+        EnvironmentReadiness(
             state = EnvironmentReadinessState.TOOLS_MISSING,
             failingCheck = "Environment verification incomplete",
             remediation = "Run environment check to verify readiness",
@@ -151,7 +150,7 @@ public class EnvironmentReadinessAdapter(
             return EnvironmentReadiness(
                 state = EnvironmentReadinessState.WORKSPACE_INVALID,
                 failingCheck = "Workspace Linux path is missing",
-                remediation = "Specify a valid Linux path for the workspace"
+                remediation = "Specify a valid Linux path for the workspace",
             )
         }
 
@@ -159,7 +158,7 @@ public class EnvironmentReadinessAdapter(
             return EnvironmentReadiness(
                 state = EnvironmentReadinessState.WORKSPACE_INVALID,
                 failingCheck = "Workspace layout version drift: expected 1, found ${workspace.layoutVersion}",
-                remediation = "Upgrade or re-provision the workspace"
+                remediation = "Upgrade or re-provision the workspace",
             )
         }
 
@@ -167,7 +166,7 @@ public class EnvironmentReadinessAdapter(
             return EnvironmentReadiness(
                 state = EnvironmentReadinessState.WORKSPACE_INVALID,
                 failingCheck = "Missing workspace manifest at $linuxPath/workspace.json",
-                remediation = "Re-provision workspace for target"
+                remediation = "Re-provision workspace for target",
             )
         }
 
@@ -178,7 +177,7 @@ public class EnvironmentReadinessAdapter(
                 return EnvironmentReadiness(
                     state = EnvironmentReadinessState.WORKSPACE_INVALID,
                     failingCheck = "Workspace manifest layoutVersion drift: expected 1, found ${match.groupValues[1]}",
-                    remediation = "Upgrade or re-provision the workspace"
+                    remediation = "Upgrade or re-provision the workspace",
                 )
             }
         }
@@ -187,7 +186,7 @@ public class EnvironmentReadinessAdapter(
             return EnvironmentReadiness(
                 state = EnvironmentReadinessState.WORKSPACE_INVALID,
                 failingCheck = "Missing configuration snapshot at $linuxPath/config.json",
-                remediation = "Save a valid configuration snapshot"
+                remediation = "Save a valid configuration snapshot",
             )
         }
 
@@ -195,7 +194,7 @@ public class EnvironmentReadinessAdapter(
             return EnvironmentReadiness(
                 state = EnvironmentReadinessState.WORKSPACE_INVALID,
                 failingCheck = "Missing cryptographic signing keys at $linuxPath/keys",
-                remediation = "Provision signing keys for workspace"
+                remediation = "Provision signing keys for workspace",
             )
         }
 
@@ -207,8 +206,8 @@ public class EnvironmentReadinessAdapter(
             ToolExecutionRequest(
                 toolId = "cat",
                 arguments = listOf("$linuxPath/$fileName"),
-                workingDirectory = "/"
-            )
+                workingDirectory = "/",
+            ),
         )
         return if (res.exitCode == 0) res.stdout else null
     }
@@ -218,8 +217,8 @@ public class EnvironmentReadinessAdapter(
             ToolExecutionRequest(
                 toolId = "test",
                 arguments = listOf("-f", "$linuxPath/$fileName"),
-                workingDirectory = "/"
-            )
+                workingDirectory = "/",
+            ),
         )
         return check.exitCode == 0
     }

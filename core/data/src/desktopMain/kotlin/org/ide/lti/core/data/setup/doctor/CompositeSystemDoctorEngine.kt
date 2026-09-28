@@ -7,13 +7,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import org.ide.lti.core.domain.setup.DiagnosticCheckItem
-import org.ide.lti.core.domain.setup.doctor.SystemDoctorPort
-
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
+import org.ide.lti.core.domain.setup.DiagnosticCheckItem
 import org.ide.lti.core.domain.setup.StepStatus
+import org.ide.lti.core.domain.setup.doctor.SystemDoctorPort
 
 /**
  * Composite orchestrator engine implementing [SystemDoctorPort].
@@ -47,22 +46,17 @@ public class CompositeSystemDoctorEngine(
             StorageHeadroomInspector(cli),
             SecurityToolingInspector(cli),
             ToolchainIntegrityInspector(cli),
-            BuildCacheInspector(cli)
+            BuildCacheInspector(cli),
         )
     }
 
-    private fun resolveHome(distro: String): String {
-        if (!userHome.isNullOrBlank() && userHome.startsWith("/")) return userHome
-        val res = cli.execute(distro, listOf("printenv", "HOME"))
-        val path = res.output.trim()
-        if (res.exitCode == 0 && path.startsWith("/")) return path
-        return detector.resolveWslUserHome(distro)
-    }
+    private fun resolveHome(distro: String): String = userHome?.takeIf { it.startsWith("/") }
+        ?: cli.execute(distro, listOf("printenv", "HOME"))
+            .takeIf { it.exitCode == 0 }
+            ?.output?.trim()?.takeIf { it.startsWith("/") }
+        ?: detector.resolveWslUserHome(distro)
 
-    override suspend fun runDiagnostics(
-        distro: String,
-        binariesPresent: Boolean
-    ): List<DiagnosticCheckItem> {
+    override suspend fun runDiagnostics(distro: String, binariesPresent: Boolean): List<DiagnosticCheckItem> {
         val home = resolveHome(distro)
         val binDir = "$home/LtiRomTools/bin"
         val sysRes = cli.execute(
@@ -71,8 +65,8 @@ public class CompositeSystemDoctorEngine(
                 "find", "-L",
                 "/usr/bin", "/usr/local/bin", "/bin", "/usr/lib/jvm",
                 "-maxdepth", "1",
-                "-printf", "%f\n"
-            )
+                "-printf", "%f\n",
+            ),
         )
         val sysCommands = sysRes.output.lineSequence()
             .map { it.trim() }
@@ -81,7 +75,7 @@ public class CompositeSystemDoctorEngine(
 
         val binRes = cli.execute(
             distro,
-            listOf("find", "-L", binDir, "-maxdepth", "1", "-printf", "%f\n")
+            listOf("find", "-L", binDir, "-maxdepth", "1", "-printf", "%f\n"),
         )
         val projectBinaries = if (binRes.exitCode == 0) {
             binRes.output.lineSequence().map { it.trim() }.filter { it.isNotEmpty() }.toSet()
@@ -91,7 +85,7 @@ public class CompositeSystemDoctorEngine(
 
         val devRes = cli.execute(
             distro,
-            listOf("find", "-L", "/dev", "-maxdepth", "1", "-printf", "%f\n")
+            listOf("find", "-L", "/dev", "-maxdepth", "1", "-printf", "%f\n"),
         )
         val devNodes = if (devRes.exitCode == 0) {
             devRes.output.lineSequence().map { it.trim() }.filter { it.isNotEmpty() }.toSet()
@@ -122,39 +116,37 @@ public class CompositeSystemDoctorEngine(
         }
     }
 
-    override suspend fun autoRemediate(
-        distro: String,
-        onProgress: (String) -> Unit
-    ): Boolean = withContext(dispatcher) {
-        val home = resolveHome(distro)
-        val binDir = "$home/LtiRomTools/bin"
-        val context = DiagnosticContext(
-            distro = distro,
-            home = home,
-            binDir = binDir,
-            binariesPresent = false
-        )
+    override suspend fun autoRemediate(distro: String, onProgress: (String) -> Unit): Boolean =
+        withContext(dispatcher) {
+            val home = resolveHome(distro)
+            val binDir = "$home/LtiRomTools/bin"
+            val context = DiagnosticContext(
+                distro = distro,
+                home = home,
+                binDir = binDir,
+                binariesPresent = false,
+            )
 
-        onProgress("Scanning environment for missing system dependencies...")
-        val currentResults = runDiagnostics(distro, binariesPresent = false)
-        val hasIssues = currentResults.any { it.status == StepStatus.FAILED || it.status == StepStatus.WARNING }
+            onProgress("Scanning environment for missing system dependencies...")
+            val currentResults = runDiagnostics(distro, binariesPresent = false)
+            val hasIssues = currentResults.any { it.status == StepStatus.FAILED || it.status == StepStatus.WARNING }
 
-        if (!hasIssues) {
-            onProgress("All system diagnostic checks are already satisfied. No packages to install.")
-            return@withContext true
+            if (!hasIssues) {
+                onProgress("All system diagnostic checks are already satisfied. No packages to install.")
+                return@withContext true
+            }
+
+            remediator.remediate(context, currentResults, onProgress)
+
+            onProgress("Re-evaluating system health post-remediation...")
+            val postResults = runDiagnostics(distro, binariesPresent = false)
+            val stillFailing = postResults.filter { it.status == StepStatus.FAILED }
+            if (stillFailing.isEmpty()) {
+                onProgress("Automated remediation completed! All critical system prerequisites verified.")
+                true
+            } else {
+                onProgress("Remediation finished with remaining issues: ${stillFailing.joinToString { it.title }}")
+                false
+            }
         }
-
-        remediator.remediate(context, currentResults, onProgress)
-
-        onProgress("Re-evaluating system health post-remediation...")
-        val postResults = runDiagnostics(distro, binariesPresent = false)
-        val stillFailing = postResults.filter { it.status == StepStatus.FAILED }
-        if (stillFailing.isEmpty()) {
-            onProgress("Automated remediation completed! All critical system prerequisites verified.")
-            true
-        } else {
-            onProgress("Remediation finished with remaining issues: ${stillFailing.joinToString { it.title }}")
-            false
-        }
-    }
 }

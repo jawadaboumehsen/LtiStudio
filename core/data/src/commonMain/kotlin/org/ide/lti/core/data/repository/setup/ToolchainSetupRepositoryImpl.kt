@@ -12,16 +12,13 @@ import org.ide.lti.core.model.setup.PersistedSubmoduleState
 import org.ide.lti.core.model.setup.PersistedToolState
 import org.ide.lti.core.model.setup.PersistedUserHandoff
 import org.ide.lti.core.model.setup.SetupAttemptRecord
-import org.ide.lti.core.model.setup.SetupEnvironment
 import org.ide.lti.core.model.setup.ToolchainPersistenceState
-import org.ide.lti.core.model.setup.toPersisted
 
 /**
  * Thin [ToolchainSetupRepository] wrapper over [ToolchainPreferencesDataSource].
  */
-public class ToolchainSetupRepositoryImpl(
-    private val preferencesDataSource: ToolchainPreferencesDataSource,
-) : ToolchainSetupRepository {
+public class ToolchainSetupRepositoryImpl(private val preferencesDataSource: ToolchainPreferencesDataSource) :
+    ToolchainSetupRepository {
     override val toolchainState: Flow<ToolchainPersistenceState> = preferencesDataSource.toolchainState
 
     override val currentState: ToolchainPersistenceState get() = preferencesDataSource.currentToolchainState
@@ -63,11 +60,8 @@ public class ToolchainSetupRepositoryImpl(
     override suspend fun appendChildIntent(attemptId: String, intent: ChildIntentRecord): Result<Int> =
         preferencesDataSource.appendChildIntent(attemptId, intent)
 
-    override suspend fun recordChildRunId(
-        attemptId: String,
-        childIndex: Int,
-        runId: String,
-    ): Result<Unit> = preferencesDataSource.recordChildRunId(attemptId, childIndex, runId)
+    override suspend fun recordChildRunId(attemptId: String, childIndex: Int, runId: String): Result<Unit> =
+        preferencesDataSource.recordChildRunId(attemptId, childIndex, runId)
 
     override suspend fun commitChildCursorAndEvidence(
         attemptId: String,
@@ -83,8 +77,7 @@ public class ToolchainSetupRepositoryImpl(
         attemptId: String,
         childIndex: Int,
         terminalStatus: String,
-    ): Result<Unit> =
-        preferencesDataSource.recordChildNotSubmitted(attemptId, childIndex, terminalStatus)
+    ): Result<Unit> = preferencesDataSource.recordChildNotSubmitted(attemptId, childIndex, terminalStatus)
 
     override suspend fun recordPlanActionCompleted(attemptId: String, actionId: String): Result<Unit> =
         preferencesDataSource.recordPlanActionCompleted(attemptId, actionId)
@@ -102,7 +95,7 @@ public class ToolchainSetupRepositoryImpl(
             is SetupOutcome.Interrupted -> outcome.reason
             is SetupOutcome.Busy -> outcome.ownerId
             else -> null
-        }
+        },
     )
 
     override suspend fun recordAttemptAwaitingUserAction(
@@ -110,21 +103,6 @@ public class ToolchainSetupRepositoryImpl(
         handoff: PersistedUserHandoff,
         plan: PersistedSetupPlan,
     ): Result<Unit> = preferencesDataSource.recordAttemptAwaitingUserAction(attemptId, handoff, plan)
-
-    override suspend fun recordBootstrapAwaiting(
-        attemptId: String,
-        environment: SetupEnvironment,
-        requirementIds: List<String>,
-        command: String,
-    ): Result<Unit> = preferencesDataSource.recordBootstrapAwaiting(
-        attemptId = attemptId,
-        environment = environment.toPersisted(),
-        requirementIds = requirementIds,
-        command = command,
-    )
-
-    override suspend fun recordAttemptAbandoned(attemptId: String): Result<Unit> =
-        preferencesDataSource.recordAttemptAbandoned(attemptId)
 
     override suspend fun setRecoveryBlocked(blocked: Boolean, reason: String?): Result<Unit> =
         preferencesDataSource.setRecoveryBlocked(blocked, reason)

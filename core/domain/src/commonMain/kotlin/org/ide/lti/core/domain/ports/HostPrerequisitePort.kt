@@ -8,6 +8,10 @@ public interface HostPrerequisitePort {
     /** Lists and classifies distros. Never blocks on interactive input; every call has a timeout. */
     public suspend fun detect(): List<DistroStatus>
 
+    /** Picks the environment to use from [detect] results, or null when the user must choose. */
+    public suspend fun selectEnvironment(statuses: List<DistroStatus>): SetupEnvironment? =
+        statuses.filterIsInstance<DistroStatus.Usable>().singleOrNull()?.environment
+
     /** Checks every catalog requirement in one round trip, without the build service. */
     public suspend fun probe(environment: SetupEnvironment): PrerequisiteReport
 }

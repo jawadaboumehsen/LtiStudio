@@ -39,9 +39,7 @@ import org.ide.lti.core.data.setup.doctor.ToolchainIntegrityInspector
 import org.ide.lti.core.domain.ports.PublicationReport
 import org.ide.lti.core.domain.ports.ToolPublicationPort
 import org.ide.lti.core.domain.ports.ToolRegistryResult
-import org.ide.lti.core.domain.setup.DiagnosticCheckItem
 import org.ide.lti.core.domain.setup.SetupOutcome
-import org.ide.lti.core.domain.setup.SetupPlan
 import org.ide.lti.core.domain.setup.SetupPlanAction
 import org.ide.lti.core.domain.setup.SetupPlanKind
 import org.ide.lti.core.domain.setup.SetupStepStage
@@ -49,8 +47,8 @@ import org.ide.lti.core.domain.setup.StepStatus
 import java.nio.charset.Charset
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -59,7 +57,8 @@ import kotlin.test.assertTrue
 class SetupConsentTest {
 
     private class SpyDaemonSupervisor(
-        var descriptor: ServerConnectionDescriptor? = ServerConnectionDescriptor("127.0.0.1", 9090, "token", 1234L, "Ubuntu"),
+        var descriptor: ServerConnectionDescriptor? =
+            ServerConnectionDescriptor("127.0.0.1", 9090, "token", 1234L, "Ubuntu"),
         var shouldThrow: Boolean = false,
     ) : DaemonSupervisorPort {
         var ensureStartedCount = 0
@@ -79,7 +78,7 @@ class SetupConsentTest {
         var dfBytes: Long = 100_000_000_000L,
         var dfFails: Boolean = false,
         var missingPackages: Boolean = false,
-        var runIdGenerator: (String) -> String = { "durable-run-$it" }
+        var runIdGenerator: (String) -> String = { "durable-run-$it" },
     ) : RemoteTransportPort {
         val executedRequests = mutableListOf<ToolExecutionRequest>()
         val startedRuns = mutableListOf<StartRunRequest>()
@@ -92,7 +91,7 @@ class SetupConsentTest {
             architecture = "x86_64",
             javaVersion = "21.0.11",
             serverUptimeMs = 100_000L,
-            availableTools = listOf("adb", "fastboot")
+            availableTools = listOf("adb", "fastboot"),
         )
 
         @Suppress("CyclomaticComplexMethod")
@@ -108,16 +107,18 @@ class SetupConsentTest {
             return when {
                 request.toolId == "df" && dfFails -> ToolExecutionResponse(1, "", "df: failed to query mount", 2L)
                 request.toolId == "df" -> {
-                    val out = "Filesystem 1K-blocks Used Available Use% Mounted on\n/dev/root 200000000 50000000 60G 25% /home/lti\n"
+                    val out = "Filesystem 1K-blocks Used Available Use% Mounted on\n/dev/root 200000000 50000000 " +
+                        "60G 25% /home/lti\n"
                     ToolExecutionResponse(0, out, "", 2L)
                 }
-                request.toolId == "find" && (request.arguments.contains("/usr/bin") || request.arguments.contains("/bin")) -> {
+                request.toolId == "find" &&
+                    (request.arguments.contains("/usr/bin") || request.arguments.contains("/bin")) -> {
                     val systemTools = listOf(
                         "cmake", "make", "clang", "gcc", "clang++", "g++", "ccache",
                         "zip", "unzip", "gzip", "bzip2", "xz", "brotli", "curl", "wget", "git", "rsync", "tar", "file",
                         "xxd", "truncate", "attr", "getfattr", "openssl", "keytool", "python3", "pip3", "pip",
                         "java", "javac", "fusermount3", "fusermount", "fuse", "loop-control",
-                        "java-17-openjdk-amd64", "java-21-openjdk-amd64", "java-17-openjdk", "java-21-openjdk"
+                        "java-17-openjdk-amd64", "java-21-openjdk-amd64", "java-17-openjdk", "java-21-openjdk",
                     ) + ToolchainIntegrityInspector.DEFAULT_CORE_TOOLS
                     ToolExecutionResponse(0, systemTools.joinToString("\n"), "", 2L)
                 }
@@ -125,9 +126,22 @@ class SetupConsentTest {
                     ToolExecutionResponse(0, "fuse\nloop-control\nnull\nzero", "", 2L)
                 }
                 request.toolId == "find" && request.arguments.contains("-L") -> {
-                    ToolExecutionResponse(0, "payload-dumper-go\nlpunpack\nlpmake\nsimg2img\nerofsfuse\nmkfs.erofs\navbtool\nunpack_bootimg\nimg2sdat\nsignapk\nadb\nfastboot", "", 2L)
+                    ToolExecutionResponse(
+                        0,
+                        listOf(
+                            "payload-dumper-go", "lpunpack", "lpmake", "simg2img", "erofsfuse", "mkfs.erofs",
+                            "avbtool", "unpack_bootimg", "img2sdat", "signapk", "adb", "fastboot",
+                        ).joinToString("\n"),
+                        "",
+                        2L,
+                    )
                 }
-                request.toolId == "find" -> ToolExecutionResponse(0, "android-tools\napktool\nerofs-utils\nimg2sdat\nsignapk", "", 2L)
+                request.toolId == "find" -> ToolExecutionResponse(
+                    0,
+                    "android-tools\napktool\nerofs-utils\nimg2sdat\nsignapk",
+                    "",
+                    2L,
+                )
                 request.toolId == "dpkg-query" && missingPackages -> {
                     ToolExecutionResponse(1, "", "dpkg-query: no packages found", 2L)
                 }
@@ -162,7 +176,7 @@ class SetupConsentTest {
         override fun attachRun(runId: String, fromSequence: Long): Flow<SequencedStreamEvent> {
             val events = listOf(
                 SequencedStreamEvent(1L, StreamEvent.OutputChunk("running...")),
-                SequencedStreamEvent(2L, StreamEvent.ExecutionFinished(0, 100L))
+                SequencedStreamEvent(2L, StreamEvent.ExecutionFinished(0, 100L)),
             )
             return events.asFlow()
         }
@@ -172,7 +186,7 @@ class SetupConsentTest {
             status = RunStatusValue.COMPLETED,
             exitCode = 0,
             startedAtEpochMs = 1000L,
-            endedAtEpochMs = 1100L
+            endedAtEpochMs = 1100L,
         )
     }
 
@@ -188,7 +202,7 @@ class SetupConsentTest {
                 requested = toolIds,
                 registered = registered,
                 failed = (toolIds - registered).associateWith { "Not published" },
-                pruned = emptySet()
+                pruned = emptySet(),
             )
         }
 
@@ -197,20 +211,22 @@ class SetupConsentTest {
 
     private class SpyCliExecutor(
         var dfExitCode: Int = 0,
-        var dfOutput: String = "Filesystem 1K-blocks Used Available Use% Mounted on\n/dev/root 100G 50G 50G 50% /home/lti\n"
+        var dfOutput: String = "Filesystem 1K-blocks Used Available Use% Mounted on\n/dev/root 100G 50G 50G 50% " +
+            "/home/lti\n",
     ) : WslCliExecutor() {
         val executedCommands = mutableListOf<String>()
 
-        override fun executeHost(
-            command: List<String>,
-            timeoutSeconds: Long,
-            charset: Charset
-        ): CliExecutionResult {
+        override fun executeHost(command: List<String>, timeoutSeconds: Long, charset: Charset): CliExecutionResult {
             val cmdStr = command.joinToString(" ")
             executedCommands.add("HOST: $cmdStr")
             return when {
                 command.contains("-l") && command.contains("-q") -> CliExecutionResult(0, "Ubuntu\n", "")
-                command.contains("-l") && command.contains("-v") -> CliExecutionResult(0, "  NAME  STATE  VERSION\n  Ubuntu  Running  2\n", "")
+                command.contains(
+                    "-l",
+                ) &&
+                    command.contains(
+                        "-v",
+                    ) -> CliExecutionResult(0, "  NAME  STATE  VERSION\n* Ubuntu  Running  2\n", "")
                 command.contains("--status") -> CliExecutionResult(0, "Default Version: 2", "")
                 else -> CliExecutionResult(0, "", "")
             }
@@ -221,25 +237,43 @@ class SetupConsentTest {
             command: List<String>,
             timeoutSeconds: Long,
             charset: Charset,
-            user: String?
+            user: String?,
         ): CliExecutionResult {
             val cmdStr = command.joinToString(" ")
             executedCommands.add(cmdStr)
             return when {
                 cmdStr.contains("/etc/os-release") -> {
-                    CliExecutionResult(0, "NAME=\"Ubuntu\"\nVERSION=\"24.04 LTS (Noble Numbat)\"\nID=ubuntu\nVERSION_ID=\"24.04\"\nVERSION_CODENAME=noble\n", "")
+                    CliExecutionResult(
+                        0,
+                        "NAME=\"Ubuntu\"\nVERSION=\"24.04 LTS (Noble " +
+                            "Numbat)\"\nID=ubuntu\nVERSION_ID=\"24.04\"\nVERSION_CODENAME=noble\n",
+                        "",
+                    )
                 }
                 cmdStr.contains("id -un; printf '%s' \"\$HOME\"") || cmdStr.contains("id -un") -> {
                     CliExecutionResult(0, "lti\n/home/lti", "")
                 }
-                cmdStr.contains("wsl.exe --status") || cmdStr.contains("--status") -> CliExecutionResult(0, "Default Distribution: Ubuntu", "")
+                cmdStr.contains(
+                    "wsl.exe --status",
+                ) ||
+                    cmdStr.contains("--status") -> CliExecutionResult(0, "Default Distribution: Ubuntu", "")
                 cmdStr.contains("echo -n \$HOME") -> CliExecutionResult(0, "/home/lti", "")
                 cmdStr.contains("JAVA_HOMES_BEGIN") -> {
                     val javaSection = "JAVA_HOMES_BEGIN\n/usr/lib/jvm/java-21-openjdk-amd64\nJAVA_HOMES_END\n"
                     val reqSection = RequirementCatalog.REQUIREMENTS.joinToString("\n") { "${it.id}=present" }
                     CliExecutionResult(0, "$javaSection$reqSection\nPACKAGES_FRESH=1\n", "")
                 }
-                command.firstOrNull() == "df" -> CliExecutionResult(dfExitCode, if (dfExitCode == 0) dfOutput else "", if (dfExitCode != 0) "df failed" else "")
+                command.firstOrNull() == "df" -> CliExecutionResult(
+                    dfExitCode,
+                    if (dfExitCode ==
+                        0
+                    ) {
+                        dfOutput
+                    } else {
+                        ""
+                    },
+                    if (dfExitCode != 0) "df failed" else "",
+                )
                 else -> CliExecutionResult(0, "ok", "")
             }
         }
@@ -260,7 +294,7 @@ class SetupConsentTest {
             detector = detector,
             cli = cli,
             toolPublicationPort = publicationPort,
-            dispatcher = UnconfinedTestDispatcher(testScheduler)
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
         )
 
         val probeResult = provisioner.verifyEnvironment()
@@ -277,7 +311,9 @@ class SetupConsentTest {
 
         // No compiler invocations during probe
         val hasBuild = transport.executedRequests.any { it.toolId == "make" || it.toolId == "cmake" } ||
-            cli.executedCommands.any { !it.contains("JAVA_HOMES_BEGIN") && (it.contains("cmake") || it.contains("make")) }
+            cli.executedCommands.any {
+                !it.contains("JAVA_HOMES_BEGIN") && (it.contains("cmake") || it.contains("make"))
+            }
         assertFalse(hasBuild, "Initial probe must NEVER run cmake or make compilation")
 
         // No package installation commands during probe
@@ -290,10 +326,16 @@ class SetupConsentTest {
     fun testRealStorageHeadroomReadingsWithoutHardcodedFallback() = runTest {
         val cliSuccess = SpyCliExecutor(
             dfExitCode = 0,
-            dfOutput = "Filesystem 1G-blocks Used Available Use% Mounted on\n/dev/root 100G 40G 60G 40% /home/lti\n"
+            dfOutput = "Filesystem 1G-blocks Used Available Use% Mounted on\n/dev/root 100G 40G 60G 40% /home/lti\n",
         )
         val inspector = StorageHeadroomInspector(cliSuccess)
-        val context = DiagnosticContext(distro = "Ubuntu", home = "/home/lti", binDir = "/home/lti/LtiRomTools/bin", binariesPresent = false)
+        val context =
+            DiagnosticContext(
+                distro = "Ubuntu",
+                home = "/home/lti",
+                binDir = "/home/lti/LtiRomTools/bin",
+                binariesPresent = false,
+            )
 
         val resultSuccess = inspector.inspect(context)
         assertEquals(StepStatus.SUCCESS, resultSuccess.status)
@@ -305,7 +347,10 @@ class SetupConsentTest {
         val resultFail = inspectorFail.inspect(context)
 
         assertEquals(StepStatus.FAILED, resultFail.status, "Failed df measurement must result in FAILED status")
-        assertTrue(resultFail.detail.contains("Unable to measure available disk space"), "Detail must report failure instead of fabricated 50L: ${resultFail.detail}")
+        assertTrue(
+            resultFail.detail.contains("Unable to measure available disk space"),
+            "Detail must report failure instead of fabricated 50L: ${resultFail.detail}",
+        )
     }
 
     /** Commands executed through the daemon service transport, rendered as "tool arg arg...". */
@@ -327,14 +372,14 @@ class SetupConsentTest {
             detector = detector,
             cli = cli,
             toolPublicationPort = publicationPort,
-            dispatcher = UnconfinedTestDispatcher(testScheduler)
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
         )
 
         // Retry compilation stage only: the retry is previewed as a STAGE_RETRY plan and confirmed.
         val plan = provisioner.prepare(SetupPlanKind.STAGE_RETRY, SetupStepStage.TOOLCHAIN_COMPILATION.name)
         assertTrue(
             plan.orderedActions.none { it is SetupPlanAction.SyncSources || it is SetupPlanAction.InstallPackages },
-            "A compilation retry plan must not expand into sync or remediation: ${plan.orderedActions}"
+            "A compilation retry plan must not expand into sync or remediation: ${plan.orderedActions}",
         )
         val outcome = provisioner.confirm(plan.planId, plan.revisionHash)
         assertTrue(outcome is SetupOutcome.Succeeded, "$outcome")
@@ -361,7 +406,7 @@ class SetupConsentTest {
             repository = repository,
             detector = detector,
             cli = cli,
-            dispatcher = UnconfinedTestDispatcher(testScheduler)
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
         )
 
         // A non-cancellation exception inside a confirmed run is never a hang, a leaked owner or a
@@ -411,7 +456,7 @@ class SetupConsentTest {
             detector = detector,
             cli = cli,
             toolPublicationPort = publicationPort,
-            dispatcher = UnconfinedTestDispatcher(testScheduler)
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
         )
 
         // Execute a confirmed full setup, which triggers durable runs with idempotency keys
@@ -421,7 +466,10 @@ class SetupConsentTest {
 
         val state = provisioner.state.value
         // Verify durable run IDs were recorded in stepRunIds and steps
-        assertNotNull(state.stepRunIds[SetupStepStage.TOOLCHAIN_COMPILATION], "Durable run ID must be recorded for toolchain compilation")
+        assertNotNull(
+            state.stepRunIds[SetupStepStage.TOOLCHAIN_COMPILATION],
+            "Durable run ID must be recorded for toolchain compilation",
+        )
         assertTrue(state.stepRunIds[SetupStepStage.TOOLCHAIN_COMPILATION]?.contains("durable-") == true)
         val compilationStep = state.steps.first { it.stage == SetupStepStage.TOOLCHAIN_COMPILATION }
         assertEquals(state.stepRunIds[SetupStepStage.TOOLCHAIN_COMPILATION], compilationStep.runId)
@@ -442,7 +490,7 @@ class SetupConsentTest {
             detector = detector,
             cli = cli,
             toolPublicationPort = publicationPort,
-            dispatcher = UnconfinedTestDispatcher(testScheduler)
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
         )
 
         val plan = provisioner.prepare(SetupPlanKind.FULL_SETUP)
@@ -452,7 +500,7 @@ class SetupConsentTest {
         assertTrue(outcome is SetupOutcome.Failed, "Stale confirmation must yield SetupOutcome.Failed")
         assertEquals(
             "Confirmation requires the displayed plan ID and unchanged revision hash.",
-            outcome.reason
+            outcome.reason,
         )
         assertEquals(0, publicationPort.publishCount, "No tool publication must occur on stale confirmation")
     }
@@ -470,7 +518,7 @@ class SetupConsentTest {
             repository = inMemoryToolchainRepository(),
             detector = detector,
             cli = cli,
-            dispatcher = UnconfinedTestDispatcher(testScheduler)
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
         )
 
         val outcome = provisioner.confirm("unprepared-plan-1", "unprepared-hash-1")
@@ -479,7 +527,7 @@ class SetupConsentTest {
         assertTrue(outcome is SetupOutcome.Failed, "Confirm without prepare must yield SetupOutcome.Failed")
         assertEquals(
             "Confirmation requires the displayed plan ID and unchanged revision hash.",
-            outcome.reason
+            outcome.reason,
         )
     }
 
@@ -496,7 +544,7 @@ class SetupConsentTest {
             repository = inMemoryToolchainRepository(),
             detector = detector,
             cli = cli,
-            dispatcher = UnconfinedTestDispatcher(testScheduler)
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
         )
 
         // Preview with Auto Doctor OFF, then flip the policy and preview again: the first plan is
@@ -511,11 +559,11 @@ class SetupConsentTest {
         assertTrue(outcome is SetupOutcome.Failed, "Superseded plan must be rejected: $outcome")
         assertEquals(
             "Confirmation requires the displayed plan ID and unchanged revision hash.",
-            outcome.reason
+            outcome.reason,
         )
         assertTrue(
             (transport.commandLines() + cli.executedCommands).none { it.contains("apt-get") },
-            "No remediation may run from a superseded plan"
+            "No remediation may run from a superseded plan",
         )
     }
 
@@ -534,7 +582,7 @@ class SetupConsentTest {
             detector = detector,
             cli = cli,
             toolPublicationPort = publicationPort,
-            dispatcher = UnconfinedTestDispatcher(testScheduler)
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
         )
 
         // Plan previewed against the initial (unchecked) evidence.
@@ -569,7 +617,7 @@ class SetupConsentTest {
             detector = detector,
             cli = cli,
             toolPublicationPort = publicationPort,
-            dispatcher = UnconfinedTestDispatcher(testScheduler)
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
         )
 
         val plan = provisioner.prepare(SetupPlanKind.FULL_SETUP, autoDoctorEnabled = true)
@@ -596,7 +644,7 @@ class SetupConsentTest {
             detector = detector,
             cli = cli,
             toolPublicationPort = publicationPort,
-            dispatcher = UnconfinedTestDispatcher(testScheduler)
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
         )
 
         // Seed doctor state with a failed package requirement
@@ -610,22 +658,27 @@ class SetupConsentTest {
         val previewedPackages = installAction.packages
         assertTrue(
             previewedPackages.isNotEmpty(),
-            "Plan package preview must list concrete packages to install"
+            "Plan package preview must list concrete packages to install",
         )
 
         // Confirm and execute the plan: pauses in AwaitingUserAction for terminal authorization
         val outcome = provisioner.confirm(plan.planId, plan.revisionHash)
-        assertTrue(outcome is SetupOutcome.AwaitingUserAction, "Confirmed plan requiring packages must pause with AwaitingUserAction: $outcome")
+        assertTrue(
+            outcome is SetupOutcome.AwaitingUserAction,
+            "Confirmed plan requiring packages must pause with AwaitingUserAction: $outcome",
+        )
 
         // Execution parity: the terminal handoff contains exactly the previewed apt packages
         val terminalCommand = outcome.handoff.terminalCommand
         assertTrue(
             previewedPackages.all { terminalCommand.contains(it) },
-            "Terminal handoff command must contain all previewed packages: preview=$previewedPackages, cmd=$terminalCommand"
+            "Terminal handoff command must contain all previewed packages: preview=$previewedPackages, " +
+                "cmd=$terminalCommand",
         )
         assertTrue(
             cli.executedCommands.none { it.contains("apt-get") },
-            "Remediation must not bypass terminal authorization or execute apt-get in background: ${cli.executedCommands}"
+            "Remediation must not bypass terminal authorization or execute apt-get in background: " +
+                "${cli.executedCommands}",
         )
     }
 
@@ -644,7 +697,7 @@ class SetupConsentTest {
             detector = detector,
             cli = cli,
             toolPublicationPort = publicationPort,
-            dispatcher = UnconfinedTestDispatcher(testScheduler)
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
         )
 
         val plan = provisioner.prepare(SetupPlanKind.FULL_SETUP, autoDoctorEnabled = true)
@@ -657,20 +710,21 @@ class SetupConsentTest {
         // not generation, and is explicitly allowed.)
         val signingCommands = (cli.executedCommands + transport.commandLines()).filter { line ->
             val isReadOnlyProbe = line.startsWith("test ") || line.contains("JAVA_HOMES_BEGIN")
-            !isReadOnlyProbe && (
-                line.contains("openssl") ||
-                    line.contains("genpkey") ||
-                    line.contains("rsa_keygen") ||
-                    line.contains("lti_rsa4096.pem")
-                )
+            !isReadOnlyProbe &&
+                (
+                    line.contains("openssl") ||
+                        line.contains("genpkey") ||
+                        line.contains("rsa_keygen") ||
+                        line.contains("lti_rsa4096.pem")
+                    )
         }
         assertTrue(
             signingCommands.isEmpty(),
-            "Setup must NEVER generate global signing keys (FR-003, FR-004): found $signingCommands"
+            "Setup must NEVER generate global signing keys (FR-003, FR-004): found $signingCommands",
         )
         assertFalse(
             provisioner.state.value.isAvbKeyProvisioned,
-            "Setup must not provision AVB key implicitly"
+            "Setup must not provision AVB key implicitly",
         )
     }
 
@@ -689,7 +743,7 @@ class SetupConsentTest {
             detector = detector,
             cli = cli,
             toolPublicationPort = publicationPort,
-            dispatcher = UnconfinedTestDispatcher(testScheduler)
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
         )
 
         // Prepare with Auto Doctor OFF
@@ -708,8 +762,7 @@ class SetupConsentTest {
         val aptCalls = (cli.executedCommands + transport.commandLines()).filter { it.contains("apt-get") }
         assertTrue(
             aptCalls.isEmpty(),
-            "When Auto Doctor is disabled, zero apt-get calls must be made: found $aptCalls"
+            "When Auto Doctor is disabled, zero apt-get calls must be made: found $aptCalls",
         )
     }
 }
-

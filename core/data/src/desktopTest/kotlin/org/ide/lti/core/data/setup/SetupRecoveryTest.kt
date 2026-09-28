@@ -12,7 +12,6 @@ import io.ltirom.tooling.core.remote.StreamEvent
 import io.ltirom.tooling.core.remote.ToolExecutionRequest
 import io.ltirom.tooling.core.remote.ToolExecutionResponse
 import io.ltirom.tooling.core.remote.ToolListResult
-import io.ltirom.tooling.core.remote.ToolStatusInfo
 import io.ltirom.tooling.core.remote.WslServerInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -85,12 +84,11 @@ class SetupRecoveryTest {
 
         override suspend fun getRun(runId: String): RunStatus? = runs[runId]
 
-        override suspend fun listRuns(workspaceLock: String?): List<RunStatus> =
-            if (workspaceLock == null) {
-                runs.values.toList()
-            } else {
-                runs.values.filter { runLocks[it.runId] == workspaceLock }
-            }
+        override suspend fun listRuns(workspaceLock: String?): List<RunStatus> = if (workspaceLock == null) {
+            runs.values.toList()
+        } else {
+            runs.values.filter { runLocks[it.runId] == workspaceLock }
+        }
 
         override fun attachRun(runId: String, fromSeq: Long): Flow<SequencedStreamEvent> = flow {
             attachCalls.add(runId to fromSeq)
@@ -118,10 +116,9 @@ class SetupRecoveryTest {
     }
 
     /** A fresh repository over the same durable settings = the journal as seen after a restart. */
-    private fun reopen(settings: MapSettings) =
-        ToolchainSetupRepositoryImpl(
-            ToolchainPreferencesDataSource(settings = settings, ioDispatcher = Dispatchers.Unconfined),
-        )
+    private fun reopen(settings: MapSettings) = ToolchainSetupRepositoryImpl(
+        ToolchainPreferencesDataSource(settings = settings, ioDispatcher = Dispatchers.Unconfined),
+    )
 
     private suspend fun authorize(
         repo: ToolchainSetupRepositoryImpl,
@@ -143,19 +140,18 @@ class SetupRecoveryTest {
     private suspend fun journalIntent(
         repo: ToolchainSetupRepositoryImpl,
         submittedAt: Long = System.currentTimeMillis(),
-    ): Int =
-        repo.appendChildIntent(
-            ATTEMPT,
-            ChildIntentRecord(
-                childIndex = -1,
-                stage = "REPO_SYNCHRONIZATION",
-                actionId = ACTION,
-                request = PersistedExecutionRequest(toolId = "git", arguments = listOf("clone")),
-                idempotencyKey = JournaledRunLauncher.idempotencyKey(CTX, ACTION),
-                workspaceLock = LOCK,
-                submissionTimestampEpochMs = submittedAt,
-            ),
-        ).getOrThrow()
+    ): Int = repo.appendChildIntent(
+        ATTEMPT,
+        ChildIntentRecord(
+            childIndex = -1,
+            stage = "REPO_SYNCHRONIZATION",
+            actionId = ACTION,
+            request = PersistedExecutionRequest(toolId = "git", arguments = listOf("clone")),
+            idempotencyKey = JournaledRunLauncher.idempotencyKey(CTX, ACTION),
+            workspaceLock = LOCK,
+            submissionTimestampEpochMs = submittedAt,
+        ),
+    ).getOrThrow()
 
     @Test
     fun preSubmitCrashClosesChildWithoutResubmissionAndAllowsFreshAttempt() = runTest {

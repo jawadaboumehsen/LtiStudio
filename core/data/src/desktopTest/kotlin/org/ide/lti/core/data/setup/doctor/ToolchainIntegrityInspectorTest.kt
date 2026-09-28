@@ -12,9 +12,7 @@ import kotlin.test.assertTrue
 
 class ToolchainIntegrityInspectorTest {
 
-    private class FakeCli(
-        val existingFilesInBin: Set<String> = emptySet(),
-    ) : WslCliExecutor() {
+    private class FakeCli(val existingFilesInBin: Set<String> = emptySet()) : WslCliExecutor() {
         val executedCommands = mutableListOf<String>()
 
         override fun execute(
@@ -22,7 +20,7 @@ class ToolchainIntegrityInspectorTest {
             command: List<String>,
             timeoutSeconds: Long,
             charset: Charset,
-            user: String?
+            user: String?,
         ): CliExecutionResult {
             val cmdStr = command.joinToString(" ")
             executedCommands.add(cmdStr)
@@ -72,7 +70,10 @@ class ToolchainIntegrityInspectorTest {
 
         val result = inspector.inspect(context)
         // Must NOT be SUCCESS! System commands must not mask missing project binaries.
-        assertFalse(result.status == StepStatus.SUCCESS, "System PATH commands must never satisfy project toolchain requirements!")
+        assertFalse(
+            result.status == StepStatus.SUCCESS,
+            "System PATH commands must never satisfy project toolchain requirements!",
+        )
         assertTrue(result.detail.contains("Missing: adb"))
     }
 

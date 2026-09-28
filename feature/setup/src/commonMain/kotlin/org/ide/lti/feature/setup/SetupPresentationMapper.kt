@@ -16,18 +16,6 @@ import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepProvenance
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolchainSetupState
-import org.ide.lti.core.model.setup.DistroStatus
-
-@Immutable
-data class WslRowPresentation(
-    val title: String = "WSL 2 Runtime",
-    val detailText: String,
-    val severity: IdeStatusSeverity,
-    val primaryActionLabel: String? = null,
-    val secondaryActionLabel: String? = null,
-    val isReady: Boolean = false,
-    val instruction: String? = null,
-)
 
 @Immutable
 data class EnvironmentSummaryItem(
@@ -59,16 +47,6 @@ data class ProjectsHeaderStatusPresentation(
     val statusText: String?,
     val actionLabel: String? = null,
     val isNeedsSetup: Boolean = false,
-)
-
-@Immutable
-data class SystemPackagesRowPresentation(
-    val title: String = "System packages",
-    val detailText: String,
-    val severity: IdeStatusSeverity,
-    val primaryActionLabel: String? = null,
-    val isReady: Boolean = false,
-    val isChecking: Boolean = false,
 )
 
 enum class StagePresentationState {
@@ -117,37 +95,25 @@ enum class PrimaryAction {
  */
 sealed interface EnvironmentState {
     data object Unknown : EnvironmentState
+
     data object Checking : EnvironmentState
-    data class CheckedNeedsSetup(
-        val missingPrerequisites: List<String> = emptyList(),
-        val checkedAt: Long? = null,
-    ) : EnvironmentState
-    data class Ready(
-        val lastReadyAt: Long,
-        val checkedAt: Long,
-    ) : EnvironmentState
-    data class Failed(
-        val stage: SetupStepStage?,
-        val error: String,
-        val checkedAt: Long? = null,
-    ) : EnvironmentState
-    data class Unavailable(
-        val reason: String,
-    ) : EnvironmentState
-    data class Restored(
-        val lastReadyAt: Long? = null,
-        val checkedAt: Long? = null,
-    ) : EnvironmentState
-    data class MutationRunning(
-        val operationId: String,
-        val stage: SetupStepStage? = null,
-    ) : EnvironmentState
-    data class Reconnecting(
-        val operationId: String,
-    ) : EnvironmentState
-    data class Interrupted(
-        val reason: String,
-    ) : EnvironmentState
+
+    data class CheckedNeedsSetup(val missingPrerequisites: List<String> = emptyList(), val checkedAt: Long? = null) :
+        EnvironmentState
+
+    data class Ready(val lastReadyAt: Long, val checkedAt: Long) : EnvironmentState
+
+    data class Failed(val stage: SetupStepStage?, val error: String, val checkedAt: Long? = null) : EnvironmentState
+
+    data class Unavailable(val reason: String) : EnvironmentState
+
+    data class Restored(val lastReadyAt: Long? = null, val checkedAt: Long? = null) : EnvironmentState
+
+    data class MutationRunning(val operationId: String, val stage: SetupStepStage? = null) : EnvironmentState
+
+    data class Reconnecting(val operationId: String) : EnvironmentState
+
+    data class Interrupted(val reason: String) : EnvironmentState
 }
 
 data class EnvironmentPresentation(
@@ -244,10 +210,11 @@ object SetupPresentationMapper {
     }
 
     private fun checkFailures(state: ToolchainSetupState): EnvironmentState? {
-        val connectionFailed = state.steps.firstOrNull {
-            val isConn = it.stage == SetupStepStage.WSL_DETECTION || it.stage == SetupStepStage.SERVER_CONNECTIVITY
-            isConn && it.status == StepStatus.FAILED
-        }
+        val connectionFailed =
+            state.steps.firstOrNull {
+                val isConn = it.stage == SetupStepStage.WSL_DETECTION || it.stage == SetupStepStage.SERVER_CONNECTIVITY
+                isConn && it.status == StepStatus.FAILED
+            }
         if (connectionFailed != null) {
             return EnvironmentState.Unavailable(
                 reason = connectionFailed.error ?: connectionFailed.description,
@@ -271,9 +238,11 @@ object SetupPresentationMapper {
             return false
         }
         val coreTools = state.toolsMatrix.filter { it.isCore }
-        val allVerified = coreTools.isNotEmpty() && coreTools.all {
-            it.status == StepStatus.SUCCESS && it.lastTested != null
-        }
+        val allVerified =
+            coreTools.isNotEmpty() &&
+                coreTools.all {
+                    it.status == StepStatus.SUCCESS && it.lastTested != null
+                }
         val allPublished = state.publishedToolIds.containsAll(coreTools.map { it.id })
         return allVerified && allPublished
     }
@@ -306,13 +275,16 @@ object SetupPresentationMapper {
     }
 
     private fun checkNeedsSetup(state: ToolchainSetupState): EnvironmentState? {
-        val anyProbedLive = state.checkedAt != null || state.steps.any {
-            it.provenance == StepProvenance.LIVE && it.status != StepStatus.PENDING
-        }
+        val anyProbedLive =
+            state.checkedAt != null ||
+                state.steps.any {
+                    it.provenance == StepProvenance.LIVE && it.status != StepStatus.PENDING
+                }
         return if (anyProbedLive) {
-            val missing = state.steps
-                .filter { it.status != StepStatus.SUCCESS && it.status != StepStatus.WARNING }
-                .map { it.title }
+            val missing =
+                state.steps
+                    .filter { it.status != StepStatus.SUCCESS && it.status != StepStatus.WARNING }
+                    .map { it.title }
             EnvironmentState.CheckedNeedsSetup(
                 missingPrerequisites = missing,
                 checkedAt = state.checkedAt,
@@ -329,29 +301,28 @@ object SetupPresentationMapper {
         state: ToolchainSetupState,
         isToolchainBound: Boolean = true,
         activeOperation: SetupOperation? = null,
-    ): EnvironmentState {
-        return checkActiveTransitions(state, isToolchainBound, activeOperation)
-            ?: checkFailures(state)
-            ?: checkRestored(state)
-            ?: checkReady(state)
-            ?: checkNeedsSetup(state)
-            ?: EnvironmentState.Unknown
-    }
+    ): EnvironmentState = checkActiveTransitions(state, isToolchainBound, activeOperation)
+        ?: checkFailures(state)
+        ?: checkRestored(state)
+        ?: checkReady(state)
+        ?: checkNeedsSetup(state)
+        ?: EnvironmentState.Unknown
 
     fun mapEnvironment(
         state: ToolchainSetupState,
         isToolchainBound: Boolean = true,
         activeOperation: SetupOperation? = null,
     ): EnvironmentPresentation {
-        val mappedStages = state.steps.map { detail ->
-            StagePresentation(
-                id = detail.stage.name,
-                title = detail.title,
-                state = mapStageState(detail, state.isChecking),
-                description = detail.description,
-                error = detail.error,
-            )
-        }
+        val mappedStages =
+            state.steps.map { detail ->
+                StagePresentation(
+                    id = detail.stage.name,
+                    title = detail.title,
+                    state = mapStageState(detail, state.isChecking),
+                    description = detail.description,
+                    error = detail.error,
+                )
+            }
         val envState = mapEnvironmentState(state, isToolchainBound, activeOperation)
         val action = mapAction(envState)
 
@@ -377,11 +348,12 @@ object SetupPresentationMapper {
             StepStatus.RUNNING -> EnvironmentSummaryItem("Runtime", "Detecting…", IdeStatusSeverity.Running)
             StepStatus.FAILED -> EnvironmentSummaryItem("Runtime", "Unavailable", IdeStatusSeverity.Failed)
             StepStatus.WARNING -> EnvironmentSummaryItem("Runtime", "Warning", IdeStatusSeverity.Warning)
-            StepStatus.PENDING, null -> if (toolchain.isChecking) {
-                EnvironmentSummaryItem("Runtime", "Detecting…", IdeStatusSeverity.Running)
-            } else {
-                EnvironmentSummaryItem("Runtime", "Not detected", IdeStatusSeverity.Neutral)
-            }
+            StepStatus.PENDING, null ->
+                if (toolchain.isChecking) {
+                    EnvironmentSummaryItem("Runtime", "Detecting…", IdeStatusSeverity.Running)
+                } else {
+                    EnvironmentSummaryItem("Runtime", "Not detected", IdeStatusSeverity.Neutral)
+                }
         }
     }
 
@@ -392,11 +364,12 @@ object SetupPresentationMapper {
             StepStatus.RUNNING -> EnvironmentSummaryItem("Build service", "Checking…", IdeStatusSeverity.Running)
             StepStatus.FAILED -> EnvironmentSummaryItem("Build service", "Needs attention", IdeStatusSeverity.Failed)
             StepStatus.WARNING -> EnvironmentSummaryItem("Build service", "Degraded", IdeStatusSeverity.Warning)
-            StepStatus.PENDING, null -> if (toolchain.isChecking) {
-                EnvironmentSummaryItem("Build service", "Checking…", IdeStatusSeverity.Running)
-            } else {
-                EnvironmentSummaryItem("Build service", "Not checked", IdeStatusSeverity.Neutral)
-            }
+            StepStatus.PENDING, null ->
+                if (toolchain.isChecking) {
+                    EnvironmentSummaryItem("Build service", "Checking…", IdeStatusSeverity.Running)
+                } else {
+                    EnvironmentSummaryItem("Build service", "Not checked", IdeStatusSeverity.Neutral)
+                }
         }
     }
 
@@ -421,9 +394,10 @@ object SetupPresentationMapper {
     }
 
     private fun mapStorageHeadroomItem(toolchain: ToolchainSetupState): EnvironmentSummaryItem {
-        val storageHeadroom = toolchain.storageAvailableBytes?.let { bytes ->
-            "${bytes / (1024L * 1024L * 1024L)} GB"
-        } ?: if (toolchain.isChecking) "Checking…" else "—"
+        val storageHeadroom =
+            toolchain.storageAvailableBytes?.let { bytes ->
+                "${bytes / (1024L * 1024L * 1024L)} GB"
+            } ?: if (toolchain.isChecking) "Checking…" else "—"
         return EnvironmentSummaryItem("Storage headroom", storageHeadroom, IdeStatusSeverity.Neutral)
     }
 
@@ -443,21 +417,23 @@ object SetupPresentationMapper {
         val pendingAttempt = toolchainSetupState.pendingAttemptId
         val isChecking = toolchainSetupState.isChecking
 
-        val leadingText = when {
-            activeOperation != null -> when (activeOperation.executionState) {
-                SetupOperationState.PREVIEW -> "Previewing environment setup…"
-                SetupOperationState.RUNNING -> "Running environment setup…"
-                SetupOperationState.RECONNECTING -> "Reconnecting to background setup…"
-                SetupOperationState.SUCCEEDED -> "Environment setup completed"
-                SetupOperationState.FAILED -> "Environment setup failed"
-                SetupOperationState.CANCELLED -> "Environment setup cancelled"
-                SetupOperationState.INTERRUPTED -> "Environment setup was interrupted"
-                SetupOperationState.AWAITING_USER_ACTION -> "Terminal authorization required"
+        val leadingText =
+            when {
+                activeOperation != null ->
+                    when (activeOperation.executionState) {
+                        SetupOperationState.PREVIEW -> "Previewing environment setup…"
+                        SetupOperationState.RUNNING -> "Running environment setup…"
+                        SetupOperationState.RECONNECTING -> "Reconnecting to background setup…"
+                        SetupOperationState.SUCCEEDED -> "Environment setup completed"
+                        SetupOperationState.FAILED -> "Environment setup failed"
+                        SetupOperationState.CANCELLED -> "Environment setup cancelled"
+                        SetupOperationState.INTERRUPTED -> "Environment setup was interrupted"
+                        SetupOperationState.AWAITING_USER_ACTION -> "Terminal authorization required"
+                    }
+                isChecking -> "Verifying machine environment…"
+                pendingAttempt != null -> "A previous setup didn't finish • Review in Recovery"
+                else -> null
             }
-            isChecking -> "Verifying machine environment…"
-            pendingAttempt != null -> "A previous setup didn't finish • Review in Recovery"
-            else -> null
-        }
 
         return SetupStatusBarPresentation(
             leadingStatusText = leadingText,
@@ -465,154 +441,20 @@ object SetupPresentationMapper {
         )
     }
 
-    fun mapDistroStatus(status: DistroStatus): WslRowPresentation = when (status) {
-        is DistroStatus.WslUnavailable -> WslRowPresentation(
-            detailText = "WSL isn't installed. Run 'wsl --install' in PowerShell.",
-            severity = IdeStatusSeverity.Failed,
-            instruction = "Run 'wsl --install' in PowerShell."
-        )
-        is DistroStatus.NoDistro -> WslRowPresentation(
-            detailText = "No Linux distribution. Run 'wsl --install -d Ubuntu-24.04' in PowerShell.",
-            severity = IdeStatusSeverity.Failed,
-            instruction = "Run 'wsl --install -d Ubuntu-24.04' in PowerShell."
-        )
-        is DistroStatus.StartupFailed -> WslRowPresentation(
-            detailText = "${status.distro} didn't start: ${status.detail}",
-            severity = IdeStatusSeverity.Failed,
-            primaryActionLabel = "Retry",
-            secondaryActionLabel = "Show diagnostics"
-        )
-        is DistroStatus.Unsupported -> WslRowPresentation(
-            detailText = "${status.distro} isn't a supported Ubuntu LTS (found ${status.reason})",
-            severity = IdeStatusSeverity.Failed
-        )
-        is DistroStatus.NoUsableUser -> WslRowPresentation(
-            detailText = "${status.distro} needs a user",
-            severity = IdeStatusSeverity.Failed,
-            primaryActionLabel = "Open ${status.distro}"
-        )
-        is DistroStatus.Usable -> WslRowPresentation(
-            detailText = "${status.environment.distro} · ${status.environment.user}",
-            severity = IdeStatusSeverity.Ready,
-            isReady = true
-        )
-    }
-
-    fun mapProjectsHeaderStatus(toolchain: ToolchainSetupState): ProjectsHeaderStatusPresentation {
-        return when {
-            toolchain.isChecking -> ProjectsHeaderStatusPresentation(
+    fun mapProjectsHeaderStatus(toolchain: ToolchainSetupState): ProjectsHeaderStatusPresentation = when {
+        toolchain.isChecking ->
+            ProjectsHeaderStatusPresentation(
                 statusText = "Checking this machine…",
             )
-            toolchain.canLaunchWorkspace && (toolchain.lastReadyAt != null || toolchain.isAllReady) -> ProjectsHeaderStatusPresentation(
+        toolchain.canLaunchWorkspace && (toolchain.lastReadyAt != null || toolchain.isAllReady) ->
+            ProjectsHeaderStatusPresentation(
                 statusText = "Machine ready",
             )
-            else -> ProjectsHeaderStatusPresentation(
+        else ->
+            ProjectsHeaderStatusPresentation(
                 statusText = "This machine needs setup",
                 actionLabel = "Set up this machine",
                 isNeedsSetup = true,
             )
-        }
-    }
-
-    fun mapSystemPackages(
-        step: SetupStepDetail?,
-        isChecking: Boolean = false,
-        activeOperation: SetupOperation? = null,
-        handoffSheetState: TerminalHandoffState = TerminalHandoffState.Idle,
-    ): SystemPackagesRowPresentation {
-        if (handoffSheetState is TerminalHandoffState.Verifying) {
-            return SystemPackagesRowPresentation(
-                detailText = "Checking installation…",
-                severity = IdeStatusSeverity.Running,
-                isChecking = true,
-            )
-        }
-
-        if (handoffSheetState is TerminalHandoffState.StillMissing) {
-            val pkgList = handoffSheetState.packages.joinToString(", ")
-            return SystemPackagesRowPresentation(
-                detailText = "Still missing: $pkgList",
-                severity = IdeStatusSeverity.Failed,
-                primaryActionLabel = "Install packages",
-            )
-        }
-
-        val isAwaiting = activeOperation?.executionState == SetupOperationState.AWAITING_USER_ACTION ||
-            activeOperation?.awaitingHandoff != null
-        if (isAwaiting) {
-            return SystemPackagesRowPresentation(
-                detailText = "Waiting for you in the terminal",
-                severity = IdeStatusSeverity.Warning,
-                primaryActionLabel = "Continue setup",
-            )
-        }
-
-        if (isChecking && (step == null || step.status == StepStatus.RUNNING)) {
-            return SystemPackagesRowPresentation(
-                detailText = "Checking…",
-                severity = IdeStatusSeverity.Running,
-                isChecking = true,
-            )
-        }
-
-        if (step == null) {
-            return SystemPackagesRowPresentation(
-                detailText = "Pending verification.",
-                severity = IdeStatusSeverity.Neutral,
-            )
-        }
-
-        return when (step.status) {
-            StepStatus.SUCCESS -> SystemPackagesRowPresentation(
-                detailText = "All present",
-                severity = IdeStatusSeverity.Ready,
-                isReady = true,
-            )
-            StepStatus.RUNNING -> SystemPackagesRowPresentation(
-                detailText = "Checking…",
-                severity = IdeStatusSeverity.Running,
-                isChecking = true,
-            )
-            StepStatus.WARNING -> SystemPackagesRowPresentation(
-                detailText = step.description.ifBlank { "All present" },
-                severity = IdeStatusSeverity.Warning,
-                isReady = true,
-            )
-            StepStatus.FAILED -> {
-                val desc = step.description
-                val err = step.error.orEmpty()
-                val isUnavailable = desc.contains("isn't available on Ubuntu") || err.contains("isn't available on Ubuntu")
-                val isProbeFailed = desc.startsWith("Couldn't check packages:") || err.startsWith("Couldn't check packages:")
-                val isPartial = desc.startsWith("Still missing:")
-
-                when {
-                    isUnavailable -> SystemPackagesRowPresentation(
-                        detailText = desc,
-                        severity = IdeStatusSeverity.Failed,
-                        primaryActionLabel = null,
-                    )
-                    isProbeFailed -> SystemPackagesRowPresentation(
-                        detailText = if (desc.startsWith("Couldn't check packages:")) desc else "Couldn't check packages: $err",
-                        severity = IdeStatusSeverity.Failed,
-                        primaryActionLabel = "Retry",
-                    )
-                    isPartial -> SystemPackagesRowPresentation(
-                        detailText = desc,
-                        severity = IdeStatusSeverity.Failed,
-                        primaryActionLabel = "Install packages",
-                    )
-                    else -> SystemPackagesRowPresentation(
-                        detailText = desc.ifBlank { "Packages missing" },
-                        severity = IdeStatusSeverity.Failed,
-                        primaryActionLabel = "Install packages",
-                    )
-                }
-            }
-            StepStatus.PENDING -> SystemPackagesRowPresentation(
-                detailText = if (isChecking) "Checking…" else step.description.ifBlank { "Pending verification." },
-                severity = if (isChecking) IdeStatusSeverity.Running else IdeStatusSeverity.Neutral,
-                isChecking = isChecking,
-            )
-        }
     }
 }

@@ -13,16 +13,15 @@ import org.ide.lti.core.domain.setup.StepStatus
  * - Security & Non-Interactive Automation: Guarantees that automated package remediation
  *   or kernel operations will not block waiting for password input on a missing TTY.
  */
-public class SudoNoninteractiveInspector(
-    private val cli: WslCliExecutor = WslCliExecutor()
-) : SystemDiagnosticInspector {
+public class SudoNoninteractiveInspector(private val cli: WslCliExecutor = WslCliExecutor()) :
+    SystemDiagnosticInspector {
 
     override suspend fun inspect(context: DiagnosticContext): DiagnosticCheckItem {
         val distro = context.distro
         val res = cli.execute(
             distro = distro,
             command = listOf("sudo", "-n", "true"),
-            timeoutSeconds = 5
+            timeoutSeconds = 5,
         )
 
         val isSudoNoninteractiveOk = res.exitCode == 0
@@ -39,7 +38,7 @@ public class SudoNoninteractiveInspector(
             },
             remediation = null,
             copyableCommand = null,
-            isOptionalForRuntime = true
+            isOptionalForRuntime = true,
         )
     }
 }

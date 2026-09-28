@@ -38,11 +38,11 @@ import org.ide.lti.core.domain.setup.SetupPlanKind
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepProvenance
 import org.ide.lti.core.domain.setup.StepStatus
-import org.ide.lti.core.model.setup.PersistedSubmoduleState
-import org.ide.lti.core.model.setup.PersistedToolState
 import org.ide.lti.core.model.setup.AttemptStatus
 import org.ide.lti.core.model.setup.ChildIntentRecord
 import org.ide.lti.core.model.setup.ChildTerminalProof
+import org.ide.lti.core.model.setup.PersistedSubmoduleState
+import org.ide.lti.core.model.setup.PersistedToolState
 import org.ide.lti.core.model.setup.SetupAttemptRecord
 import org.ide.lti.core.model.setup.ToolchainPersistenceState
 import java.nio.charset.Charset
@@ -62,7 +62,7 @@ class EnvironmentVerificationTest {
             port = 9090,
             token = "token",
             pid = 4321L,
-            distro = "Ubuntu"
+            distro = "Ubuntu",
         ),
         override var lastStartAdopted: Boolean = false,
         var shouldFail: Boolean = false,
@@ -92,22 +92,25 @@ class EnvironmentVerificationTest {
             architecture = "x86_64",
             javaVersion = "21.0.11",
             serverUptimeMs = 50_000L,
-            availableTools = listOf("adb", "fastboot")
-        )
+            availableTools = listOf("adb", "fastboot"),
+        ),
     ) : RemoteTransportPort {
         val executedRequests = mutableListOf<ToolExecutionRequest>()
         var toolsList: MutableList<ToolStatusInfo> = mutableListOf()
 
+        // One branch per faked command.
+        @Suppress("CyclomaticComplexMethod")
         override suspend fun execute(request: ToolExecutionRequest): ToolExecutionResponse {
             executedRequests.add(request)
             return when {
-                request.toolId == "find" && (request.arguments.contains("/usr/bin") || request.arguments.contains("/bin")) -> {
+                request.toolId == "find" &&
+                    (request.arguments.contains("/usr/bin") || request.arguments.contains("/bin")) -> {
                     val systemTools = listOf(
                         "cmake", "make", "clang", "gcc", "clang++", "g++", "ccache",
                         "zip", "unzip", "gzip", "bzip2", "xz", "brotli", "curl", "wget", "git", "rsync", "tar", "file",
                         "xxd", "truncate", "attr", "getfattr", "openssl", "keytool", "python3", "pip3", "pip",
                         "java", "javac", "fusermount3", "fusermount", "fuse", "loop-control",
-                        "java-17-openjdk-amd64", "java-21-openjdk-amd64", "java-17-openjdk", "java-21-openjdk"
+                        "java-17-openjdk-amd64", "java-21-openjdk-amd64", "java-17-openjdk", "java-21-openjdk",
                     ) + ToolchainIntegrityInspector.DEFAULT_CORE_TOOLS
                     ToolExecutionResponse(0, systemTools.joinToString("\n"), "", 5L)
                 }
@@ -120,7 +123,7 @@ class EnvironmentVerificationTest {
                     val tools = listOf(
                         "payload-dumper-go", "lpunpack", "lpmake", "simg2img",
                         "erofsfuse", "mkfs.erofs", "avbtool", "unpack_bootimg",
-                        "img2sdat", "signapk", "adb", "fastboot", "mke2fs", "dump.erofs"
+                        "img2sdat", "signapk", "adb", "fastboot", "mke2fs", "dump.erofs",
                     )
                     ToolExecutionResponse(0, tools.joinToString("\n"), "", 5L)
                 }
@@ -135,7 +138,12 @@ class EnvironmentVerificationTest {
                         .joinToString("\n") { "$it install ok installed" }
                     ToolExecutionResponse(0, pkgs, "", 2L)
                 }
-                request.toolId == "df" -> ToolExecutionResponse(0, "Filesystem 1K-blocks Used Available Use% Mounted on\n/dev/sdb 100G 50G 50G 50% /home/lti\n", "", 2L)
+                request.toolId == "df" -> ToolExecutionResponse(
+                    0,
+                    "Filesystem 1K-blocks Used Available Use% Mounted on\n/dev/sdb 100G 50G 50G 50% /home/lti\n",
+                    "",
+                    2L,
+                )
                 request.toolId == "printenv" -> ToolExecutionResponse(0, "/home/lti\n", "", 1L)
                 request.toolId == "mkfs.erofs" -> ToolExecutionResponse(0, "mkfs.erofs 1.7.1 --fs-config-file", "", 2L)
                 else -> ToolExecutionResponse(0, "tool output", "", 5L)
@@ -150,14 +158,13 @@ class EnvironmentVerificationTest {
         override suspend fun downloadFile(remotePath: String): ByteArray? = null
         override suspend fun shutdown(): Boolean = true
 
-        override suspend fun startRun(request: StartRunRequest): RunHandle {
-            return RunHandle(runId = "rec-run-123", status = RunStatusValue.RUNNING, startedAtEpochMs = 1000L)
-        }
+        override suspend fun startRun(request: StartRunRequest): RunHandle =
+            RunHandle(runId = "rec-run-123", status = RunStatusValue.RUNNING, startedAtEpochMs = 1000L)
 
         override fun attachRun(runId: String, fromSequence: Long): Flow<SequencedStreamEvent> {
             val events = listOf(
                 SequencedStreamEvent(1L, StreamEvent.OutputChunk("running...")),
-                SequencedStreamEvent(2L, StreamEvent.ExecutionFinished(0, 100L))
+                SequencedStreamEvent(2L, StreamEvent.ExecutionFinished(0, 100L)),
             )
             return events.asFlow()
         }
@@ -167,23 +174,24 @@ class EnvironmentVerificationTest {
             status = RunStatusValue.COMPLETED,
             exitCode = 0,
             startedAtEpochMs = 1000L,
-            endedAtEpochMs = 1100L
+            endedAtEpochMs = 1100L,
         )
     }
 
     private class RecordingCliExecutor : WslCliExecutor() {
         val executedCommands = mutableListOf<String>()
 
-        override fun executeHost(
-            command: List<String>,
-            timeoutSeconds: Long,
-            charset: Charset
-        ): CliExecutionResult {
+        override fun executeHost(command: List<String>, timeoutSeconds: Long, charset: Charset): CliExecutionResult {
             val cmdStr = command.joinToString(" ")
             executedCommands.add("HOST: $cmdStr")
             return when {
                 command.contains("-l") && command.contains("-q") -> CliExecutionResult(0, "Ubuntu\n", "")
-                command.contains("-l") && command.contains("-v") -> CliExecutionResult(0, "  NAME  STATE  VERSION\n  Ubuntu  Running  2\n", "")
+                command.contains(
+                    "-l",
+                ) &&
+                    command.contains(
+                        "-v",
+                    ) -> CliExecutionResult(0, "  NAME  STATE  VERSION\n* Ubuntu  Running  2\n", "")
                 command.contains("--status") -> CliExecutionResult(0, "Default Version: 2", "")
                 else -> CliExecutionResult(0, "", "")
             }
@@ -194,13 +202,18 @@ class EnvironmentVerificationTest {
             command: List<String>,
             timeoutSeconds: Long,
             charset: Charset,
-            user: String?
+            user: String?,
         ): CliExecutionResult {
             val cmdStr = command.joinToString(" ")
             executedCommands.add(cmdStr)
             return when {
                 cmdStr.contains("/etc/os-release") -> {
-                    CliExecutionResult(0, "NAME=\"Ubuntu\"\nVERSION=\"24.04 LTS (Noble Numbat)\"\nID=ubuntu\nVERSION_ID=\"24.04\"\nVERSION_CODENAME=noble\n", "")
+                    CliExecutionResult(
+                        0,
+                        "NAME=\"Ubuntu\"\nVERSION=\"24.04 LTS (Noble " +
+                            "Numbat)\"\nID=ubuntu\nVERSION_ID=\"24.04\"\nVERSION_CODENAME=noble\n",
+                        "",
+                    )
                 }
                 cmdStr.contains("id -un; printf '%s' \"\$HOME\"") || cmdStr.contains("id -un") -> {
                     CliExecutionResult(0, "lti\n/home/lti", "")
@@ -231,18 +244,19 @@ class EnvironmentVerificationTest {
                 requested = toolIds,
                 registered = publishedIds,
                 failed = (toolIds - publishedIds).associateWith { "Not published" },
-                pruned = emptySet()
+                pruned = emptySet(),
             )
         }
 
         override suspend fun resolvedTools(): ToolRegistryResult = ToolRegistryResult.Tools(
-            publishedIds.map { ToolStatus(tool = it, installed = true, path = "/bin/$it", source = ToolSource.DYNAMIC, reason = null) }
+            publishedIds.map {
+                ToolStatus(tool = it, installed = true, path = "/bin/$it", source = ToolSource.DYNAMIC, reason = null)
+            },
         )
     }
 
-    private class FakeToolchainRepo(
-        initialState: ToolchainPersistenceState = ToolchainPersistenceState()
-    ) : ToolchainSetupRepository {
+    private class FakeToolchainRepo(initialState: ToolchainPersistenceState = ToolchainPersistenceState()) :
+        ToolchainSetupRepository {
         var state = initialState
 
         override val toolchainState: Flow<ToolchainPersistenceState> get() = flowOf(state)
@@ -298,13 +312,6 @@ class EnvironmentVerificationTest {
             handoff: org.ide.lti.core.model.setup.PersistedUserHandoff,
             plan: org.ide.lti.core.model.setup.PersistedSetupPlan,
         ): Result<Unit> = ok()
-        override suspend fun recordBootstrapAwaiting(
-            attemptId: String,
-            environment: org.ide.lti.core.model.setup.SetupEnvironment,
-            requirementIds: List<String>,
-            command: String,
-        ): Result<Unit> = ok()
-        override suspend fun recordAttemptAbandoned(attemptId: String): Result<Unit> = ok()
         override suspend fun setRecoveryBlocked(blocked: Boolean, reason: String?): Result<Unit> {
             state = state.copy(recoveryBlocked = blocked, recoveryBlockReason = reason)
             return ok()
@@ -325,8 +332,8 @@ class EnvironmentVerificationTest {
                     SetupStepStage.REPO_SYNCHRONIZATION.name,
                     SetupStepStage.TOOLCHAIN_COMPILATION.name,
                 ),
-                lastVerifiedTimestamp = 1700000000000L
-            )
+                lastVerifiedTimestamp = 1700000000000L,
+            ),
         )
 
         val supervisor = RecordingDaemonSupervisor()
@@ -340,7 +347,7 @@ class EnvironmentVerificationTest {
             detector = detector,
             cli = cli,
             repository = repo,
-            dispatcher = UnconfinedTestDispatcher(testScheduler)
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
         )
 
         val state = provisioner.state.value
@@ -351,11 +358,11 @@ class EnvironmentVerificationTest {
             assertEquals(1700000000000L, step.verifiedAtEpochMs)
             assertFalse(
                 step.description.contains("verified and restored"),
-                "Forbidden text 'verified and restored' found in description: ${step.description}"
+                "Forbidden text 'verified and restored' found in description: ${step.description}",
             )
             assertTrue(
                 step.description.contains("re-checking"),
-                "Description must indicate re-checking: ${step.description}"
+                "Description must indicate re-checking: ${step.description}",
             )
         }
     }
@@ -372,7 +379,7 @@ class EnvironmentVerificationTest {
             transport = transport,
             detector = detector,
             cli = cli,
-            dispatcher = UnconfinedTestDispatcher(testScheduler)
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
         )
 
         val runningStagesObserved = mutableListOf<SetupStepStage>()
@@ -399,7 +406,7 @@ class EnvironmentVerificationTest {
     fun `bridge adopts lockfile daemon without launching when healthy and reports measured ping`() = runTest {
         val supervisor = RecordingDaemonSupervisor(
             descriptor = ServerConnectionDescriptor("127.0.0.1", 9090, "token", 9999L, "Ubuntu"),
-            lastStartAdopted = true
+            lastStartAdopted = true,
         )
         val transport = RecordingRemoteTransport()
         val cli = RecordingCliExecutor()
@@ -410,7 +417,7 @@ class EnvironmentVerificationTest {
             transport = transport,
             detector = detector,
             cli = cli,
-            dispatcher = UnconfinedTestDispatcher(testScheduler)
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
         )
 
         val state = provisioner.verifyEnvironment()
@@ -426,7 +433,7 @@ class EnvironmentVerificationTest {
     fun `bridge failure transitions to FAILED with log tail and marks remaining steps PENDING`() = runTest {
         val supervisor = RecordingDaemonSupervisor(
             shouldFail = true,
-            lastLaunchErrorLogTail = "Error: address already in use 0.0.0.0:9090"
+            lastLaunchErrorLogTail = "Error: address already in use 0.0.0.0:9090",
         )
         val transport = RecordingRemoteTransport()
         val cli = RecordingCliExecutor()
@@ -437,15 +444,17 @@ class EnvironmentVerificationTest {
             transport = transport,
             detector = detector,
             cli = cli,
-            dispatcher = UnconfinedTestDispatcher(testScheduler)
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
         )
 
         val state = provisioner.verifyEnvironment()
         val bridgeStep = state.steps.first { it.stage == SetupStepStage.SERVER_CONNECTIVITY }
         assertEquals(StepStatus.FAILED, bridgeStep.status)
-        assertTrue(bridgeStep.error?.contains("address already in use") == true ||
-            bridgeStep.description.contains("address already in use") ||
-            bridgeStep.error?.contains("Failed to bind") == true)
+        assertTrue(
+            bridgeStep.error?.contains("address already in use") == true ||
+                bridgeStep.description.contains("address already in use") ||
+                bridgeStep.error?.contains("Failed to bind") == true,
+        )
 
         val laterSteps = state.steps.filter {
             it.stage != SetupStepStage.WSL_DETECTION &&
@@ -477,7 +486,7 @@ class EnvironmentVerificationTest {
             detector = detector,
             cli = cli,
             toolPublicationPort = publicationPort,
-            dispatcher = UnconfinedTestDispatcher(testScheduler)
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
         )
 
         provisioner.verifyEnvironment()
@@ -506,7 +515,7 @@ class EnvironmentVerificationTest {
             transport = transport,
             detector = detector,
             cli = cli,
-            dispatcher = UnconfinedTestDispatcher(testScheduler)
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
         )
 
         cli.executedCommands.clear()
@@ -531,7 +540,7 @@ class EnvironmentVerificationTest {
         assertEquals(
             emptyList(),
             nonBootstrapCalls,
-            "Found unexpected direct WSL CLI calls after SERVER_CONNECTIVITY: $nonBootstrapCalls"
+            "Found unexpected direct WSL CLI calls after SERVER_CONNECTIVITY: $nonBootstrapCalls",
         )
     }
 
@@ -549,7 +558,7 @@ class EnvironmentVerificationTest {
             ToolStatusInfo(tool = "avbtool", installed = true),
             ToolStatusInfo(tool = "unpack_bootimg", installed = true),
             ToolStatusInfo(tool = "img2sdat", installed = true),
-            ToolStatusInfo(tool = "signapk", installed = true)
+            ToolStatusInfo(tool = "signapk", installed = true),
         )
         val cli = RecordingCliExecutor()
         val detector = WslEnvironmentDetector(cli)
@@ -559,7 +568,7 @@ class EnvironmentVerificationTest {
             transport = transport,
             detector = detector,
             cli = cli,
-            dispatcher = UnconfinedTestDispatcher(testScheduler)
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
         )
 
         val state = provisioner.verifyEnvironment()
@@ -567,7 +576,7 @@ class EnvironmentVerificationTest {
             "verified and restored",
             "All host utilities and dependencies verified",
             "All submodules and workspace ready",
-            "All core tools compiled and verified in"
+            "All core tools compiled and verified in",
         )
 
         for (step in state.steps) {
@@ -575,7 +584,7 @@ class EnvironmentVerificationTest {
                 for (forbidden in forbiddenStrings) {
                     assertFalse(
                         step.description.contains(forbidden),
-                        "Step ${step.stage} contains forbidden static string: '$forbidden'"
+                        "Step ${step.stage} contains forbidden static string: '$forbidden'",
                     )
                 }
             }
@@ -594,7 +603,7 @@ class EnvironmentVerificationTest {
             transport = transport,
             detector = detector,
             cli = cli,
-            dispatcher = UnconfinedTestDispatcher(testScheduler)
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
         )
 
         val state = provisioner.verifyEnvironment()
@@ -616,7 +625,7 @@ class EnvironmentVerificationTest {
             transport = transport,
             detector = detector,
             cli = cli,
-            dispatcher = UnconfinedTestDispatcher(testScheduler)
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
         )
 
         val state = provisioner.verifyEnvironment()
@@ -638,7 +647,7 @@ class EnvironmentVerificationTest {
             repository = FakeToolchainRepo(),
             detector = detector,
             cli = cli,
-            dispatcher = UnconfinedTestDispatcher(testScheduler)
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
         )
 
         // Before live check
@@ -661,7 +670,7 @@ class EnvironmentVerificationTest {
             ToolStatusInfo(tool = "avbtool", installed = true),
             ToolStatusInfo(tool = "unpack_bootimg", installed = true),
             ToolStatusInfo(tool = "img2sdat", installed = true),
-            ToolStatusInfo(tool = "signapk", installed = true)
+            ToolStatusInfo(tool = "signapk", installed = true),
         )
 
         val readyState = provisioner.verifyEnvironment()

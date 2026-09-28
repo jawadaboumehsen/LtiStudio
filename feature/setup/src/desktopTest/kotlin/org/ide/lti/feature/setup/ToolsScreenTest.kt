@@ -77,67 +77,69 @@ class ToolsScreenTest {
     }
 
     @Test
-    fun testSupportedRecipeShowsEnabledRebuildAndTriggersAction() = runDesktopComposeUiTest(width = 1120, height = 900) {
-        val supportedTool = ToolComponentItem(
-            id = "lpmake",
-            name = "Logical Partition Maker",
-            binaryName = "lpmake",
-            category = ToolCategory.DYNAMIC_PARTITIONS,
-            isCore = true,
-            status = StepStatus.FAILED,
-        )
+    fun testSupportedRecipeShowsEnabledRebuildAndTriggersAction() =
+        runDesktopComposeUiTest(width = 1120, height = 900) {
+            val supportedTool = ToolComponentItem(
+                id = "lpmake",
+                name = "Logical Partition Maker",
+                binaryName = "lpmake",
+                category = ToolCategory.DYNAMIC_PARTITIONS,
+                isCore = true,
+                status = StepStatus.FAILED,
+            )
 
-        var recompileTarget: String? = null
+            var recompileTarget: String? = null
 
-        setContent {
-            LtiTheme {
-                ToolsStepContent(
-                    state = SetupUiState(
-                        filteredToolsMatrix = listOf(supportedTool),
-                    ),
-                    actions = SetupUiActions(
-                        onRecompileTool = { recompileTarget = it },
-                    ),
-                )
+            setContent {
+                LtiTheme {
+                    ToolsStepContent(
+                        state = SetupUiState(
+                            filteredToolsMatrix = listOf(supportedTool),
+                        ),
+                        actions = SetupUiActions(
+                            onRecompileTool = { recompileTarget = it },
+                        ),
+                    )
+                }
             }
-        }
 
-        // Rebuild button is enabled and triggers callback
-        onNodeWithText("Rebuild").assertIsDisplayed().performClick()
-        assertEquals("lpmake", recompileTarget)
-    }
+            // Rebuild button is enabled and triggers callback
+            onNodeWithText("Rebuild").assertIsDisplayed().performClick()
+            assertEquals("lpmake", recompileTarget)
+        }
 
     @Test
-    fun testMissingOrFailedToolDisplaysStatusAndTestRunsVerification() = runDesktopComposeUiTest(width = 1120, height = 900) {
-        val failedTool = ToolComponentItem(
-            id = "mke2fs",
-            name = "Ext4 Filesystem Formatter",
-            binaryName = "mke2fs",
-            category = ToolCategory.FILESYSTEM_AND_IMAGES,
-            isCore = true,
-            status = StepStatus.FAILED,
-            lastTested = "Failed with exit code 127",
-        )
+    fun testMissingOrFailedToolDisplaysStatusAndTestRunsVerification() =
+        runDesktopComposeUiTest(width = 1120, height = 900) {
+            val failedTool = ToolComponentItem(
+                id = "mke2fs",
+                name = "Ext4 Filesystem Formatter",
+                binaryName = "mke2fs",
+                category = ToolCategory.FILESYSTEM_AND_IMAGES,
+                isCore = true,
+                status = StepStatus.FAILED,
+                lastTested = "Failed with exit code 127",
+            )
 
-        var testTarget: String? = null
+            var testTarget: String? = null
 
-        setContent {
-            LtiTheme {
-                ToolsStepContent(
-                    state = SetupUiState(
-                        filteredToolsMatrix = listOf(failedTool),
-                    ),
-                    actions = SetupUiActions(
-                        onTestTool = { testTarget = it },
-                    ),
-                )
+            setContent {
+                LtiTheme {
+                    ToolsStepContent(
+                        state = SetupUiState(
+                            filteredToolsMatrix = listOf(failedTool),
+                        ),
+                        actions = SetupUiActions(
+                            onTestTool = { testTarget = it },
+                        ),
+                    )
+                }
             }
-        }
 
-        onNodeWithText("· Failed with exit code 127").assertIsDisplayed()
-        onNodeWithText("Test").assertIsDisplayed().performClick()
-        assertEquals("mke2fs", testTarget)
-    }
+            onNodeWithText("· Failed with exit code 127").assertIsDisplayed()
+            onNodeWithText("Test").assertIsDisplayed().performClick()
+            assertEquals("mke2fs", testTarget)
+        }
 
     @Test
     fun testBusyStateDisablesInteractiveActions() = runDesktopComposeUiTest(width = 1120, height = 900) {
@@ -167,37 +169,38 @@ class ToolsScreenTest {
     }
 
     @Test
-    fun testLogBufferExceeding10000LinesDisplaysDroppedBadgeAndBoundedCount() = runDesktopComposeUiTest(width = 1120, height = 900) {
-        val testScope = CoroutineScope(Dispatchers.Unconfined)
-        val activityState = SetupActivityState(scope = testScope)
+    fun testLogBufferExceeding10000LinesDisplaysDroppedBadgeAndBoundedCount() =
+        runDesktopComposeUiTest(width = 1120, height = 900) {
+            val testScope = CoroutineScope(Dispatchers.Unconfined)
+            val activityState = SetupActivityState(scope = testScope)
 
-        // Append 10,500 lines to exceed the 10,000 line memory buffer cap
-        val lines = (1..10_500).map { "Log entry line $it" }
-        activityState.appendLines(lines)
+            // Append 10,500 lines to exceed the 10,000 line memory buffer cap
+            val lines = (1..10_500).map { "Log entry line $it" }
+            activityState.appendLines(lines)
 
-        assertEquals(
-            10_000,
-            activityState.visibleEvents.value.size,
-            "Visible lines buffer must be capped at 10,000 lines",
-        )
-        assertEquals(500, activityState.droppedLineCount.value, "Dropped lines must be exactly 500")
+            assertEquals(
+                10_000,
+                activityState.visibleEvents.value.size,
+                "Visible lines buffer must be capped at 10,000 lines",
+            )
+            assertEquals(500, activityState.droppedLineCount.value, "Dropped lines must be exactly 500")
 
-        setContent {
-            LtiTheme {
-                ToolsStepContent(
-                    state = SetupUiState(
-                        filteredToolsMatrix = emptyList(),
-                    ),
-                    actions = SetupUiActions(),
-                    activityState = activityState,
-                )
+            setContent {
+                LtiTheme {
+                    ToolsStepContent(
+                        state = SetupUiState(
+                            filteredToolsMatrix = emptyList(),
+                        ),
+                        actions = SetupUiActions(),
+                        activityState = activityState,
+                    )
+                }
             }
-        }
 
-        // Exact line count and visible dropped line badge must be shown
-        onNodeWithText("10000 lines").assertIsDisplayed()
-        onNodeWithText("500 dropped").assertIsDisplayed()
-    }
+            // Exact line count and visible dropped line badge must be shown
+            onNodeWithText("10000 lines").assertIsDisplayed()
+            onNodeWithText("500 dropped").assertIsDisplayed()
+        }
 
     @Test
     fun testActivityPanelPauseFollowAndJumpToLatest() = runDesktopComposeUiTest(width = 1120, height = 900) {

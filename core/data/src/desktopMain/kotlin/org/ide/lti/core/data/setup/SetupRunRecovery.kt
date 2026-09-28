@@ -28,8 +28,8 @@ import org.ide.lti.core.model.setup.SetupAttemptRecord
  * resubmits and never expands scope.
  *
  * Enforces: "Reconnect reuses attemptId; explicit retry allocates a new attemptId." and
-  * "Journal write failure prevents submission; an ambiguous receipt is reconciled or blocked,
-  * never blindly resubmitted."
+ * "Journal write failure prevents submission; an ambiguous receipt is reconciled or blocked,
+ * never blindly resubmitted."
  * (FR-007, FR-008, SC-003)
  */
 public class SetupRunRecovery(
@@ -79,7 +79,12 @@ public class SetupRunRecovery(
         }
 
         val handoff = active.awaitingHandoff
-        if (handoff != null && (active.status == AttemptStatus.AWAITING_USER_ACTION || (active.status == AttemptStatus.RUNNING && active.orderedIntents.isEmpty()))) {
+        if (handoff != null &&
+            (
+                active.status == AttemptStatus.AWAITING_USER_ACTION ||
+                    (active.status == AttemptStatus.RUNNING && active.orderedIntents.isEmpty())
+                )
+        ) {
             if (active.status != AttemptStatus.AWAITING_USER_ACTION) {
                 repository.updateAttemptStatus(active.attemptId, AttemptStatus.AWAITING_USER_ACTION)
             }
@@ -90,7 +95,9 @@ public class SetupRunRecovery(
                 packages = handoff.packages,
                 distro = handoff.distro,
             )
-            val recoveryStage = if (active.planKind == "BOOTSTRAP_PACKAGES" || active.bootstrapRequirementIds.isNotEmpty()) {
+            val recoveryStage = if (active.planKind == "BOOTSTRAP_PACKAGES" ||
+                active.bootstrapRequirementIds.isNotEmpty()
+            ) {
                 org.ide.lti.core.domain.setup.SetupStepStage.SYSTEM_PACKAGES
             } else {
                 org.ide.lti.core.domain.setup.SetupStepStage.SYSTEM_DIAGNOSTICS

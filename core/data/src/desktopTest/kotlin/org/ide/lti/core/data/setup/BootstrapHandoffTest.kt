@@ -1,9 +1,6 @@
 package org.ide.lti.core.data.setup
 
 import com.russhwolf.settings.MapSettings
-import io.ltirom.tooling.client.wsl.CliExecutionResult
-import io.ltirom.tooling.client.wsl.WslCliExecutor
-import io.ltirom.tooling.client.wsl.WslEnvironmentDetector
 import io.ltirom.tooling.core.ports.DaemonSupervisorPort
 import io.ltirom.tooling.core.ports.RemoteTransportPort
 import io.ltirom.tooling.core.ports.ServerConnectionDescriptor
@@ -21,11 +18,7 @@ import org.ide.lti.core.domain.ports.HostPrerequisitePort
 import org.ide.lti.core.domain.ports.ServerArtifactPort
 import org.ide.lti.core.domain.repository.setup.ToolchainSetupRepository
 import org.ide.lti.core.domain.setup.SetupOutcome
-import org.ide.lti.core.domain.setup.SetupPlan
-import org.ide.lti.core.domain.setup.SetupPlanAction
 import org.ide.lti.core.domain.setup.SetupPlanKind
-import org.ide.lti.core.domain.setup.SetupStepStage
-import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.model.setup.AttemptStatus
 import org.ide.lti.core.model.setup.DistroStatus
 import org.ide.lti.core.model.setup.InstallState
@@ -33,7 +26,6 @@ import org.ide.lti.core.model.setup.PrerequisiteReport
 import org.ide.lti.core.model.setup.RequirementStatus
 import org.ide.lti.core.model.setup.ServerArtifact
 import org.ide.lti.core.model.setup.SetupEnvironment
-import java.nio.charset.Charset
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -57,7 +49,8 @@ class BootstrapHandoffTest {
                 ToolExecutionResponse(0, "ok", "", 10L)
             }
 
-        override fun stream(request: ToolExecutionRequest): Flow<io.ltirom.tooling.core.remote.StreamEvent> = emptyFlow()
+        override fun stream(request: ToolExecutionRequest): Flow<io.ltirom.tooling.core.remote.StreamEvent> =
+            emptyFlow()
 
         override suspend fun listTools(): io.ltirom.tooling.core.remote.ToolListResult =
             io.ltirom.tooling.core.remote.ToolListResult.Tools(emptyList())
@@ -86,13 +79,11 @@ class BootstrapHandoffTest {
         return ToolchainSetupRepositoryImpl(dataSource)
     }
 
-    private class FakeHostPrerequisiteProbe(
-        var probeReport: PrerequisiteReport
-    ) : HostPrerequisitePort {
+    private class FakeHostPrerequisiteProbe(var probeReport: PrerequisiteReport) : HostPrerequisitePort {
         var probeCount = 0
 
         override suspend fun detect(): List<DistroStatus> = listOf(
-            DistroStatus.Usable(probeReport.environment)
+            DistroStatus.Usable(probeReport.environment),
         )
 
         override suspend fun probe(environment: SetupEnvironment): PrerequisiteReport {
@@ -102,25 +93,23 @@ class BootstrapHandoffTest {
     }
 
     private class FakeServerArtifactAdapter : ServerArtifactPort {
-        override suspend fun status(environment: SetupEnvironment): ServerArtifact =
-            ServerArtifact(
-                bundledVersion = "1.0.0",
-                activeVersion = null,
-                runningVersion = null,
-                runningActiveRuns = 0,
-                installState = InstallState.NotInstalled,
-                javaHome = null
-            )
+        override suspend fun status(environment: SetupEnvironment): ServerArtifact = ServerArtifact(
+            bundledVersion = "1.0.0",
+            activeVersion = null,
+            runningVersion = null,
+            runningActiveRuns = 0,
+            installState = InstallState.NotInstalled,
+            javaHome = null,
+        )
 
-        override suspend fun ensureInstalled(environment: SetupEnvironment): ServerArtifact =
-            ServerArtifact(
-                bundledVersion = "1.0.0",
-                activeVersion = "1.0.0",
-                runningVersion = null,
-                runningActiveRuns = 0,
-                installState = InstallState.Current,
-                javaHome = null
-            )
+        override suspend fun ensureInstalled(environment: SetupEnvironment): ServerArtifact = ServerArtifact(
+            bundledVersion = "1.0.0",
+            activeVersion = "1.0.0",
+            runningVersion = null,
+            runningActiveRuns = 0,
+            installState = InstallState.Current,
+            javaHome = null,
+        )
 
         override suspend fun ensureRunningCurrent(environment: SetupEnvironment, javaHome: String): ServerArtifact =
             ServerArtifact(
@@ -129,7 +118,7 @@ class BootstrapHandoffTest {
                 runningVersion = "1.0.0",
                 runningActiveRuns = 0,
                 installState = InstallState.Current,
-                javaHome = javaHome
+                javaHome = javaHome,
             )
     }
 
@@ -139,7 +128,7 @@ class BootstrapHandoffTest {
         osId = "ubuntu",
         osVersionId = "24.04",
         user = "testuser",
-        home = "/home/testuser"
+        home = "/home/testuser",
     )
 
     private val missingReport = PrerequisiteReport(
@@ -147,55 +136,60 @@ class BootstrapHandoffTest {
         results = mapOf(
             "git" to RequirementStatus.Missing,
             "cmake" to RequirementStatus.Missing,
-            "java-server" to RequirementStatus.Missing
+            "java-server" to RequirementStatus.Missing,
         ),
         missingPackages = listOf("cmake", "git", "openjdk-21-jdk"),
         installCommand = "sudo apt-get update && sudo apt-get install -y cmake git openjdk-21-jdk",
         javaHome = null,
         packageListsFresh = true,
-        checkedAt = 1000L
+        checkedAt = 1000L,
     )
 
     @Test
-    fun `confirming BOOTSTRAP_PACKAGES never calls transport checkHealth and journals AWAITING_USER_ACTION`() = runTest {
-        val transport = CountingTransport()
-        val dispatcher = UnconfinedTestDispatcher(testScheduler)
-        val repository = createRepository(dispatcher)
-        val probe = FakeHostPrerequisiteProbe(missingReport)
+    fun `confirming BOOTSTRAP_PACKAGES never calls transport checkHealth and journals AWAITING_USER_ACTION`() =
+        runTest {
+            val transport = CountingTransport()
+            val dispatcher = UnconfinedTestDispatcher(testScheduler)
+            val repository = createRepository(dispatcher)
+            val probe = FakeHostPrerequisiteProbe(missingReport)
 
-        val provisioner = WslToolchainProvisioner(
-            repository = repository,
-            transport = transport,
-            supervisor = FakeDaemonSupervisor(),
-            dispatcher = dispatcher,
-            hostPrerequisitePort = probe,
-            serverArtifactPort = FakeServerArtifactAdapter(),
-        )
+            val provisioner = WslToolchainProvisioner(
+                repository = repository,
+                transport = transport,
+                supervisor = FakeDaemonSupervisor(),
+                dispatcher = dispatcher,
+                hostPrerequisitePort = probe,
+                serverArtifactPort = FakeServerArtifactAdapter(),
+            )
 
-        // Run check to establish live evidence
-        provisioner.verifyEnvironment()
+            // Run check to establish live evidence
+            provisioner.verifyEnvironment()
 
-        val plan = provisioner.prepare(SetupPlanKind.BOOTSTRAP_PACKAGES)
-        assertNotNull(plan, "Bootstrap plan should be prepared")
-        assertEquals(SetupPlanKind.BOOTSTRAP_PACKAGES, plan.kind)
+            val plan = provisioner.prepare(SetupPlanKind.BOOTSTRAP_PACKAGES)
+            assertNotNull(plan, "Bootstrap plan should be prepared")
+            assertEquals(SetupPlanKind.BOOTSTRAP_PACKAGES, plan.kind)
 
-        val outcome = provisioner.confirm(plan.planId, plan.revisionHash)
+            val outcome = provisioner.confirm(plan.planId, plan.revisionHash)
 
-        // Transport checkHealth must NEVER be called during bootstrap handoff confirmation
-        assertEquals(0, transport.checkHealthCount, "transport.checkHealth() must NOT be called for BOOTSTRAP_PACKAGES")
+            // Transport checkHealth must NEVER be called during bootstrap handoff confirmation
+            assertEquals(
+                0,
+                transport.checkHealthCount,
+                "transport.checkHealth() must NOT be called for BOOTSTRAP_PACKAGES",
+            )
 
-        assertTrue(outcome is SetupOutcome.AwaitingUserAction, "Outcome must be AwaitingUserAction, was $outcome")
-        val handoff = (outcome as SetupOutcome.AwaitingUserAction).handoff
-        assertEquals("Ubuntu-24.04", handoff.distro)
-        assertTrue(handoff.packages.contains("git"))
+            assertTrue(outcome is SetupOutcome.AwaitingUserAction, "Outcome must be AwaitingUserAction, was $outcome")
+            val handoff = (outcome as SetupOutcome.AwaitingUserAction).handoff
+            assertEquals("Ubuntu-24.04", handoff.distro)
+            assertTrue(handoff.packages.contains("git"))
 
-        val activeAttempt = repository.currentState.activeAttempt
-        assertNotNull(activeAttempt)
-        assertEquals(AttemptStatus.AWAITING_USER_ACTION, activeAttempt.status)
-        assertEquals(plan.planId, activeAttempt.planId)
-        assertEquals("Ubuntu-24.04", activeAttempt.environmentKey)
-        assertNotNull(activeAttempt.awaitingHandoff)
-    }
+            val activeAttempt = repository.currentState.activeAttempt
+            assertNotNull(activeAttempt)
+            assertEquals(AttemptStatus.AWAITING_USER_ACTION, activeAttempt.status)
+            assertEquals(plan.planId, activeAttempt.planId)
+            assertEquals("Ubuntu-24.04", activeAttempt.environmentKey)
+            assertNotNull(activeAttempt.awaitingHandoff)
+        }
 
     @Test
     fun `on resume with packages present, reprobes via hostPrerequisitePort and succeeds without Doctor`() = runTest {
@@ -222,11 +216,11 @@ class BootstrapHandoffTest {
             results = mapOf(
                 "git" to RequirementStatus.Present,
                 "cmake" to RequirementStatus.Present,
-                "java-server" to RequirementStatus.Present
+                "java-server" to RequirementStatus.Present,
             ),
             missingPackages = emptyList(),
             installCommand = null,
-            javaHome = "/usr/lib/jvm/java-21-openjdk-amd64"
+            javaHome = "/usr/lib/jvm/java-21-openjdk-amd64",
         )
 
         val resumeOutcome = provisioner.resume(plan.planId)
@@ -238,7 +232,7 @@ class BootstrapHandoffTest {
 
         assertTrue(
             resumeOutcome is SetupOutcome.Succeeded,
-            "Resume with packages present should succeed, was $resumeOutcome"
+            "Resume with packages present should succeed, was $resumeOutcome",
         )
     }
 
@@ -267,10 +261,10 @@ class BootstrapHandoffTest {
             results = mapOf(
                 "git" to RequirementStatus.Present,
                 "cmake" to RequirementStatus.Missing,
-                "java-server" to RequirementStatus.Missing
+                "java-server" to RequirementStatus.Missing,
             ),
             missingPackages = listOf("cmake", "openjdk-21-jdk"),
-            installCommand = "sudo apt-get update && sudo apt-get install -y cmake openjdk-21-jdk"
+            installCommand = "sudo apt-get update && sudo apt-get install -y cmake openjdk-21-jdk",
         )
 
         val resumeOutcome = provisioner.resume(plan.planId)
@@ -309,7 +303,7 @@ class BootstrapHandoffTest {
         val archived = repository.currentState.attemptHistory.firstOrNull { it.planId == plan.planId }
         assertTrue(
             archived?.status == AttemptStatus.ABANDONED || active?.status == AttemptStatus.ABANDONED,
-            "Attempt must be marked ABANDONED in repository"
+            "Attempt must be marked ABANDONED in repository",
         )
     }
 }

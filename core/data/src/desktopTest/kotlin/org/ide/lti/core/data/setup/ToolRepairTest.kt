@@ -23,7 +23,6 @@ import io.ltirom.tooling.core.remote.StreamEvent
 import io.ltirom.tooling.core.remote.ToolExecutionRequest
 import io.ltirom.tooling.core.remote.ToolExecutionResponse
 import io.ltirom.tooling.core.remote.ToolListResult
-import io.ltirom.tooling.core.remote.ToolStatusInfo
 import io.ltirom.tooling.core.remote.WslServerInfo
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -34,7 +33,6 @@ import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.domain.setup.SetupPlanKind
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolCapabilities
-import org.ide.lti.core.domain.setup.ToolchainSetupState
 import java.nio.charset.Charset
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -45,11 +43,13 @@ import kotlin.test.assertTrue
 class ToolRepairTest {
 
     private class SpyDaemonSupervisor(
-        var descriptor: ServerConnectionDescriptor? = ServerConnectionDescriptor("127.0.0.1", 9090, "token", 1234L, "Ubuntu"),
+        var descriptor: ServerConnectionDescriptor? =
+            ServerConnectionDescriptor("127.0.0.1", 9090, "token", 1234L, "Ubuntu"),
     ) : DaemonSupervisorPort {
         override suspend fun getConnectionInfo(): ServerConnectionDescriptor? = descriptor
         override suspend fun isHealthy(info: ServerConnectionDescriptor): Boolean = true
-        override suspend fun ensureStarted(): ServerConnectionDescriptor = descriptor ?: throw IllegalStateException("No descriptor")
+        override suspend fun ensureStarted(): ServerConnectionDescriptor =
+            descriptor ?: throw IllegalStateException("No descriptor")
         override suspend fun shutdownDaemon(): Boolean = true
         override fun close() {}
     }
@@ -74,7 +74,7 @@ class ToolRepairTest {
             architecture = "x86_64",
             javaVersion = "21.0.11",
             serverUptimeMs = 100_000L,
-            availableTools = listOf("adb", "fastboot")
+            availableTools = listOf("adb", "fastboot"),
         )
 
         override suspend fun execute(request: ToolExecutionRequest): ToolExecutionResponse {
@@ -93,11 +93,24 @@ class ToolRepairTest {
                     ToolExecutionResponse(testXExitCode, "", "", 1L)
                 }
                 request.toolId == "test" -> ToolExecutionResponse(0, "", "", 1L)
-                request.arguments.contains("--help") || request.toolId.endsWith("lpmake") || request.arguments.contains("-h") -> {
+                request.arguments.contains("--help") ||
+                    request.toolId.endsWith("lpmake") ||
+                    request.arguments.contains("-h") -> {
                     ToolExecutionResponse(helpExitCode, helpOutput, if (helpExitCode != 0) "Error: failed" else "", 1L)
                 }
                 request.toolId in listOf("cmake", "make") -> {
-                    ToolExecutionResponse(buildExitCode, if (buildExitCode == 0) "Build completed" else "Build error", "", 1L)
+                    ToolExecutionResponse(
+                        buildExitCode,
+                        if (buildExitCode ==
+                            0
+                        ) {
+                            "Build completed"
+                        } else {
+                            "Build error"
+                        },
+                        "",
+                        1L,
+                    )
                 }
                 // A healthy binary answers its inventory probe with an accepted exit code.
                 basename in ToolCapabilities.SUPPORTED_TOOL_IDS -> {
@@ -138,7 +151,7 @@ class ToolRepairTest {
             command: List<String>,
             timeoutSeconds: Long,
             charset: Charset,
-            user: String?
+            user: String?,
         ): CliExecutionResult {
             val cmd = command.joinToString(" ")
             executedCommands.add(cmd)
@@ -151,7 +164,7 @@ class ToolRepairTest {
         val transport = SpyRemoteTransport(
             testXExitCode = 0,
             helpExitCode = 1, // Non-zero exit code, but non-empty stdout!
-            helpOutput = "Syntax error or usage text on failure"
+            helpOutput = "Syntax error or usage text on failure",
         )
         val provisioner = WslToolchainProvisioner(
             supervisor = SpyDaemonSupervisor(),
@@ -479,5 +492,3 @@ class ToolRepairTest {
         assertFalse(provisioner.state.value.isRunning)
     }
 }
-
-

@@ -1,3 +1,12 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.feature.setup.components
 
 import androidx.compose.foundation.background
@@ -73,7 +82,7 @@ import org.ide.lti.feature.setup.TerminalHandoffState
  * - Zero stored passwords, zero password fields, zero sudoers/NOPASSWD references.
  */
 @OptIn(ExperimentalLayoutApi::class)
-@Suppress("LongMethod")
+@Suppress("LongMethod", "CyclomaticComplexMethod")
 @Composable
 fun TerminalHandoffSheet(
     handoff: UserRepairHandoff,
@@ -91,14 +100,16 @@ fun TerminalHandoffSheet(
     var copiedToClipboard by remember { mutableStateOf(false) }
     var isConfirmingAbandon by remember { mutableStateOf(false) }
 
-    val effectivePackages = when (sheetState) {
-        is TerminalHandoffState.StillMissing -> sheetState.packages
-        else -> handoff.packages
-    }
-    val effectiveCommand = when (sheetState) {
-        is TerminalHandoffState.StillMissing -> sheetState.command
-        else -> handoff.terminalCommand
-    }
+    val effectivePackages =
+        when (sheetState) {
+            is TerminalHandoffState.StillMissing -> sheetState.packages
+            else -> handoff.packages
+        }
+    val effectiveCommand =
+        when (sheetState) {
+            is TerminalHandoffState.StillMissing -> sheetState.command
+            else -> handoff.terminalCommand
+        }
 
     LaunchedEffect(effectiveCommand) {
         // Reset copy feedback when the command changes
@@ -110,7 +121,8 @@ fun TerminalHandoffSheet(
     }
 
     Box(
-        modifier = modifier
+        modifier =
+        modifier
             .fillMaxSize()
             .testTag("terminal_handoff_scrim")
             .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = AlphaTokens.Scrim))
@@ -135,7 +147,8 @@ fun TerminalHandoffSheet(
         contentAlignment = Alignment.Center,
     ) {
         GlassCard(
-            modifier = Modifier
+            modifier =
+            Modifier
                 .widthIn(max = ComponentSize.MaxPanelWidth)
                 .fillMaxWidth()
                 .padding(Spacing.Medium)
@@ -145,7 +158,8 @@ fun TerminalHandoffSheet(
         ) {
             val scrollState = rememberScrollState()
             Column(
-                modifier = Modifier
+                modifier =
+                Modifier
                     .fillMaxWidth()
                     .heightIn(max = ComponentSize.MaxPanelHeight)
                     .verticalScroll(scrollState)
@@ -159,11 +173,12 @@ fun TerminalHandoffSheet(
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
-                        val titleText = if (effectivePackages.isNotEmpty()) {
-                            "Install ${effectivePackages.size} packages"
-                        } else {
-                            "Install packages"
-                        }
+                        val titleText =
+                            if (effectivePackages.isNotEmpty()) {
+                                "Install ${effectivePackages.size} packages"
+                            } else {
+                                "Install packages"
+                            }
                         Text(
                             text = titleText,
                             style = MaterialTheme.typography.titleMedium,
@@ -195,7 +210,8 @@ fun TerminalHandoffSheet(
                     is TerminalHandoffState.TerminalLaunchFailed -> {
                         GlassBanner(
                             title = "Terminal Launch Failed",
-                            description = "Couldn't open a terminal: ${sheetState.reason}. Copy the command and run it in ${handoff.distro} yourself.",
+                            description = "Couldn't open a terminal: ${sheetState.reason}. " +
+                                "Copy the command and run it in ${handoff.distro} yourself.",
                             severity = GlassBannerSeverity.ERROR,
                         )
                     }
@@ -233,7 +249,8 @@ fun TerminalHandoffSheet(
 
                 // Numbered sequence: 1 Copy -> 2 Open -> 3 Paste & Run -> 4 Check again
                 Box(
-                    modifier = Modifier
+                    modifier =
+                    Modifier
                         .fillMaxWidth()
                         .clip(GlassShapes.Card)
                         .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = AlphaTokens.Half))
@@ -241,11 +258,13 @@ fun TerminalHandoffSheet(
                             width = StrokeWidth.Standard,
                             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = AlphaTokens.Muted),
                             shape = GlassShapes.Card,
-                        )
-                        .padding(Spacing.Medium),
+                        ).padding(Spacing.Medium),
                 ) {
                     Text(
-                        text = "1 Copy the command → 2 Open the terminal → 3 Paste it and press Enter, then type your password → 4 Come back and select \"I've run it — check again\".",
+                        text =
+                        "1 Copy the command → 2 Open the terminal → " +
+                            "3 Paste it and press Enter, then type your password → " +
+                            "4 Come back and select \"I've run it — check again\".",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurface,
@@ -267,26 +286,27 @@ fun TerminalHandoffSheet(
                         ) {
                             for (pkg in effectivePackages) {
                                 Box(
-                                    modifier = Modifier
+                                    modifier =
+                                    Modifier
                                         .clip(GlassShapes.Pill)
                                         .background(
                                             MaterialTheme.colorScheme.surfaceVariant
                                                 .copy(alpha = AlphaTokens.Half),
-                                        )
-                                        .border(
+                                        ).border(
                                             width = StrokeWidth.Standard,
-                                            color = MaterialTheme.colorScheme.outlineVariant
+                                            color =
+                                            MaterialTheme.colorScheme.outlineVariant
                                                 .copy(alpha = AlphaTokens.Muted),
                                             shape = GlassShapes.Pill,
-                                        )
-                                        .padding(
+                                        ).padding(
                                             horizontal = Spacing.Small,
                                             vertical = Spacing.ExtraExtraSmall,
                                         ),
                                 ) {
                                     Text(
                                         text = pkg,
-                                        style = MaterialTheme.typography.bodySmall
+                                        style =
+                                        MaterialTheme.typography.bodySmall
                                             .copy(fontFamily = codeFontFamily()),
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
@@ -305,19 +325,18 @@ fun TerminalHandoffSheet(
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                     Box(
-                        modifier = Modifier
+                        modifier =
+                        Modifier
                             .fillMaxWidth()
                             .clip(GlassShapes.Card)
                             .background(
                                 MaterialTheme.colorScheme.surfaceContainerHighest
                                     .copy(alpha = AlphaTokens.Prominent),
-                            )
-                            .border(
+                            ).border(
                                 width = StrokeWidth.Standard,
                                 color = MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Hover),
                                 shape = GlassShapes.Card,
-                            )
-                            .padding(Spacing.Medium),
+                            ).padding(Spacing.Medium),
                     ) {
                         Text(
                             text = effectiveCommand,
@@ -338,7 +357,7 @@ fun TerminalHandoffSheet(
 
                 GlassHorizontalDivider()
 
-                // Actions: FlowRow with order: Copy -> Open terminal -> I've run it — check again -> Close for now -> Abandon
+                // Actions, in order: Copy, Open terminal, I've run it — check again, Close for now, Abandon
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(Spacing.Small, Alignment.End),
@@ -377,11 +396,12 @@ fun TerminalHandoffSheet(
                                 contentDescription = null,
                                 modifier = Modifier.size(IconSize.Small),
                             )
-                            val terminalLabel = if (sheetState is TerminalHandoffState.TerminalLaunchFailed) {
-                                "Try again"
-                            } else {
-                                "Open the terminal"
-                            }
+                            val terminalLabel =
+                                if (sheetState is TerminalHandoffState.TerminalLaunchFailed) {
+                                    "Try again"
+                                } else {
+                                    "Open the terminal"
+                                }
                             Text(terminalLabel)
                         }
                     }
@@ -401,10 +421,11 @@ fun TerminalHandoffSheet(
                                 contentDescription = null,
                                 modifier = Modifier.size(IconSize.Small),
                             )
-                            val resumeLabel = when (sheetState) {
-                                is TerminalHandoffState.AnotherOperationRunning -> "Try again"
-                                else -> "I've run it — check again"
-                            }
+                            val resumeLabel =
+                                when (sheetState) {
+                                    is TerminalHandoffState.AnotherOperationRunning -> "Try again"
+                                    else -> "I've run it — check again"
+                                }
                             Text(resumeLabel)
                         }
                     }

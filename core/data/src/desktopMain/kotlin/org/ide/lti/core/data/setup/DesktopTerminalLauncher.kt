@@ -1,7 +1,6 @@
 package org.ide.lti.core.data.setup
 
 import org.ide.lti.core.domain.ports.TerminalLauncherPort
-import java.io.IOException
 
 /**
  * Desktop implementation of [TerminalLauncherPort] for Windows environments.
@@ -11,13 +10,11 @@ import java.io.IOException
  * Uses discrete argument lists exclusively to eliminate shell escaping injection risks.
  */
 public class DesktopTerminalLauncher(
-    private val processStarter: (List<String>) -> Unit = { cmd -> ProcessBuilder(cmd).start() }
+    private val processStarter: (List<String>) -> Unit = { cmd -> ProcessBuilder(cmd).start() },
 ) : TerminalLauncherPort {
 
-    override fun launchTerminal(distro: String): Result<Unit> {
-        return tryLaunchWindowsTerminal(distro)
-            .recoverCatching { tryLaunchConhost(distro).getOrThrow() }
-    }
+    override fun launchTerminal(distro: String): Result<Unit> = tryLaunchWindowsTerminal(distro)
+        .recoverCatching { tryLaunchConhost(distro).getOrThrow() }
 
     private fun tryLaunchWindowsTerminal(distro: String): Result<Unit> = runCatching {
         val command = listOf("wt.exe", "wsl.exe", "-d", distro)

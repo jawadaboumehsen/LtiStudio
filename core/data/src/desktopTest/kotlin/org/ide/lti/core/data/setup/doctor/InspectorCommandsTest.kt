@@ -19,7 +19,7 @@ class InspectorCommandsTest {
             command: List<String>,
             timeoutSeconds: Long,
             charset: Charset,
-            user: String?
+            user: String?,
         ): CliExecutionResult {
             // Everything is missing / failing
             return CliExecutionResult(1, "", "not found")
@@ -56,11 +56,11 @@ class InspectorCommandsTest {
             if (cmd != null) {
                 assertTrue(
                     cmd.contains("apt-get update"),
-                    "Inspector ${inspector::class.simpleName} generated command without 'apt-get update': $cmd"
+                    "Inspector ${inspector::class.simpleName} generated command without 'apt-get update': $cmd",
                 )
                 assertTrue(
                     cmd.startsWith("sudo apt-get update && sudo apt-get install -y "),
-                    "Inspector ${inspector::class.simpleName} generated non-standard apt command: $cmd"
+                    "Inspector ${inspector::class.simpleName} generated non-standard apt command: $cmd",
                 )
             }
         }
@@ -73,11 +73,11 @@ class InspectorCommandsTest {
             val fullText = "${item.detail} ${item.remediation ?: ""} ${item.copyableCommand ?: ""}"
             assertFalse(
                 fullText.contains("pip3", ignoreCase = true),
-                "Inspector ${inspector::class.simpleName} references pip3: $fullText"
+                "Inspector ${inspector::class.simpleName} references pip3: $fullText",
             )
             assertFalse(
                 fullText.contains("--break-system-packages", ignoreCase = true),
-                "Inspector ${inspector::class.simpleName} references --break-system-packages: $fullText"
+                "Inspector ${inspector::class.simpleName} references --break-system-packages: $fullText",
             )
         }
     }
@@ -91,13 +91,15 @@ class InspectorCommandsTest {
                 command: List<String>,
                 timeoutSeconds: Long,
                 charset: Charset,
-                user: String?
+                user: String?,
             ): CliExecutionResult {
                 val cmdStr = command.joinToString(" ")
                 return when {
                     cmdStr.contains("which python3") -> CliExecutionResult(0, "/usr/bin/python3", "")
                     cmdStr.contains("python3 --version") -> CliExecutionResult(0, "Python 3.12.3", "")
-                    cmdStr.contains("import cryptography") -> CliExecutionResult(1, "", "No module named 'cryptography'")
+                    cmdStr.contains(
+                        "import cryptography",
+                    ) -> CliExecutionResult(1, "", "No module named 'cryptography'")
                     else -> CliExecutionResult(1, "", "")
                 }
             }
@@ -108,7 +110,7 @@ class InspectorCommandsTest {
         assertEquals(
             StepStatus.FAILED,
             item.status,
-            "Missing crypto packages must result in FAILED status, was ${item.status}"
+            "Missing crypto packages must result in FAILED status, was ${item.status}",
         )
         assertNotNull(item.copyableCommand)
         assertTrue(item.copyableCommand!!.contains("python3-cryptography"))
@@ -125,7 +127,7 @@ class InspectorCommandsTest {
             "sudo -S",
             "echo",
             "-p ''",
-            "| sudo"
+            "| sudo",
         )
         for (inspector in allInspectors) {
             val item = inspector.inspect(missingContext)
@@ -133,7 +135,7 @@ class InspectorCommandsTest {
             for (prohibited in prohibitedPatterns) {
                 assertFalse(
                     cmd.contains(prohibited),
-                    "Inspector ${inspector::class.simpleName} command contains prohibited pattern '$prohibited': $cmd"
+                    "Inspector ${inspector::class.simpleName} command contains prohibited pattern '$prohibited': $cmd",
                 )
             }
         }

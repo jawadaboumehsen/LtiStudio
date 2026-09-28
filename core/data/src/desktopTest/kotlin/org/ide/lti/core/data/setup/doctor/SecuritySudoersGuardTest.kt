@@ -25,7 +25,7 @@ class SecuritySudoersGuardTest {
             "src/main/kotlin",
             "src/desktopMain/kotlin",
             "src/commonMain/kotlin",
-            "src/jvmMain/kotlin"
+            "src/jvmMain/kotlin",
         )
 
         val violations = mutableListOf<String>()
@@ -58,8 +58,9 @@ class SecuritySudoersGuardTest {
 
         assertTrue(
             violations.isEmpty(),
-            "Security invariant violated! Found prohibited privilege escalation or sudoers writes in production code:\n" +
-                violations.joinToString("\n")
+            "Security invariant violated! Found prohibited privilege escalation or sudoers writes in production " +
+                "code:\n" +
+                violations.joinToString("\n"),
         )
     }
 
@@ -69,7 +70,7 @@ class SecuritySudoersGuardTest {
             DiagnosticCheckItem(id = "host_compilers", title = "Compilers", status = StepStatus.FAILED),
             DiagnosticCheckItem(id = "python_crypto", title = "Python Crypto", status = StepStatus.FAILED),
             DiagnosticCheckItem(id = "dev_fuse", title = "Kernel Fuse", status = StepStatus.FAILED),
-            DiagnosticCheckItem(id = "loop_mount", title = "Loop Mount", status = StepStatus.WARNING)
+            DiagnosticCheckItem(id = "loop_mount", title = "Loop Mount", status = StepStatus.WARNING),
         )
 
         val plan = WslPackageRemediator.resolve(failingDiagnostics)
@@ -81,11 +82,11 @@ class SecuritySudoersGuardTest {
         for (pkg in plan.aptPackages) {
             assertTrue(
                 RequirementCatalog.isPackageApproved(pkg),
-                "Package '$pkg' is not in the approved package catalog!"
+                "Package '$pkg' is not in the approved package catalog!",
             )
             assertFalse(
                 pkg.contains(";") || pkg.contains("&") || pkg.contains(" ") || pkg.contains("|"),
-                "Package '$pkg' contains invalid shell metacharacters!"
+                "Package '$pkg' contains invalid shell metacharacters!",
             )
         }
     }

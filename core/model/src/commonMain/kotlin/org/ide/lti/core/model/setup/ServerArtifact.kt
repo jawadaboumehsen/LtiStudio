@@ -14,5 +14,5 @@ public data class ServerArtifact(
     val runningVersion: String?,
     val runningActiveRuns: Int,
     val installState: InstallState,
-    val javaHome: String?
+    val javaHome: String?,
 )

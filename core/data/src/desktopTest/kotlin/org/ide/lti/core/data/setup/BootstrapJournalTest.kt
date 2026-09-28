@@ -20,15 +20,18 @@ import org.ide.lti.core.datastore.SettingsToolchainJournalStorage
 import org.ide.lti.core.datastore.ToolchainJournalStorage
 import org.ide.lti.core.datastore.ToolchainPreferencesDataSource
 import org.ide.lti.core.domain.setup.SetupOutcome
+import org.ide.lti.core.domain.setup.SetupPlanKind
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.model.setup.AttemptStatus
+import org.ide.lti.core.model.setup.PersistedSetupPlan
+import org.ide.lti.core.model.setup.PersistedUserHandoff
 import org.ide.lti.core.model.setup.SetupAttemptRecord
 import org.ide.lti.core.model.setup.SetupEnvironment
 import org.ide.lti.core.model.setup.ToolchainPersistenceState
 import org.ide.lti.core.model.setup.toDomain
+import org.ide.lti.core.model.setup.toPersisted
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -41,7 +44,8 @@ class BootstrapJournalTest {
         override suspend fun refreshTools(): ToolListResult = ToolListResult.Tools(emptyList())
         override suspend fun execute(request: ToolExecutionRequest): ToolExecutionResponse =
             ToolExecutionResponse(0, "", "", 0L)
-        override fun stream(request: ToolExecutionRequest): Flow<io.ltirom.tooling.core.remote.StreamEvent> = emptyFlow()
+        override fun stream(request: ToolExecutionRequest): Flow<io.ltirom.tooling.core.remote.StreamEvent> =
+            emptyFlow()
         override suspend fun uploadFile(remotePath: String, content: ByteArray): Boolean = false
         override suspend fun downloadFile(remotePath: String): ByteArray? = null
         override suspend fun shutdown(): Boolean = true
@@ -54,9 +58,37 @@ class BootstrapJournalTest {
 
     private class FailingStorage : ToolchainJournalStorage {
         override fun read(): String? = null
-        override fun write(json: String) {
-            throw java.io.IOException("Disk full / permission denied")
-        }
+        override fun write(json: String): Unit = throw java.io.IOException("Disk full / permission denied")
+    }
+
+    /** Journals a package handoff exactly as the provisioner does: authorize, then pause for the user. */
+    private suspend fun journalBootstrap(
+        repo: ToolchainSetupRepositoryImpl,
+        attemptId: String,
+        environment: SetupEnvironment,
+        packages: List<String>,
+        command: String,
+    ): Result<Unit> = repo.recordAttemptAuthorized(
+        SetupAttemptRecord(
+            attemptId = attemptId,
+            environmentKey = environment.distro,
+            planId = attemptId,
+            planRevisionHash = "rev",
+            planKind = SetupPlanKind.BOOTSTRAP_PACKAGES.name,
+            status = AttemptStatus.AUTHORIZED,
+            environment = environment.toPersisted(),
+        ),
+    ).mapCatching {
+        repo.recordAttemptAwaitingUserAction(
+            attemptId,
+            PersistedUserHandoff(
+                actionId = "install_packages",
+                distro = environment.distro,
+                command = command,
+                packages = packages,
+            ),
+            PersistedSetupPlan(attemptId, "rev", environment.distro, SetupPlanKind.BOOTSTRAP_PACKAGES.name),
+        ).getOrThrow()
     }
 
     @Test
@@ -83,7 +115,10 @@ class BootstrapJournalTest {
         assertEquals("old-att-1", attempt.attemptId)
         assertEquals(AttemptStatus.AWAITING_USER_ACTION, attempt.status)
         assertNull(attempt.environment, "Legacy attempt must deserialize with null environment")
-        assertTrue(attempt.bootstrapRequirementIds.isEmpty(), "Legacy attempt must deserialize with empty bootstrap requirement IDs")
+        assertTrue(
+            attempt.bootstrapRequirementIds.isEmpty(),
+            "Legacy attempt must deserialize with empty bootstrap requirement IDs",
+        )
     }
 
     @Test
@@ -106,16 +141,17 @@ class BootstrapJournalTest {
             home = "/home/developer",
         )
 
-        val writeResult = repo.recordBootstrapAwaiting(
+        val writeResult = journalBootstrap(
+            repo = repo,
             attemptId = "abandon-att-1",
             environment = env,
-            requirementIds = listOf("git", "cmake"),
+            packages = listOf("git", "cmake"),
             command = "sudo apt-get update && sudo apt-get install -y git cmake",
         )
         assertTrue(writeResult.isSuccess)
         assertEquals(AttemptStatus.AWAITING_USER_ACTION, repo.currentState.activeAttempt?.status)
 
-        val abandonResult = repo.recordAttemptAbandoned("abandon-att-1")
+        val abandonResult = repo.recordAttemptTerminal("abandon-att-1", AttemptStatus.ABANDONED, SetupOutcome.Cancelled)
         assertTrue(abandonResult.isSuccess)
         assertNull(repo.currentState.activeAttempt, "Abandoned attempt is no longer active")
         val archived = repo.currentState.attemptHistory.singleOrNull { it.attemptId == "abandon-att-1" }
@@ -128,13 +164,16 @@ class BootstrapJournalTest {
             storage = storage,
             ioDispatcher = Dispatchers.Unconfined,
         )
-        val reloadedArchived = reloadedDataSource.currentToolchainState.attemptHistory.singleOrNull { it.attemptId == "abandon-att-1" }
+        val reloadedArchived = reloadedDataSource.currentToolchainState.attemptHistory.singleOrNull {
+            it.attemptId ==
+                "abandon-att-1"
+        }
         assertNotNull(reloadedArchived)
         assertEquals(AttemptStatus.ABANDONED, reloadedArchived.status)
     }
 
     @Test
-    fun bootstrapAttemptRestoresFullEnvironmentAndRequirementIdsAfterRestart() = runTest {
+    fun bootstrapAttemptRestoresFullEnvironmentAndPackagesAfterRestart() = runTest {
         val settings = MapSettings()
         val storage = SettingsToolchainJournalStorage(settings)
         val dataSource = ToolchainPreferencesDataSource(
@@ -155,10 +194,11 @@ class BootstrapJournalTest {
         val reqIds = listOf("git", "cmake", "python3-cryptography")
         val command = "sudo apt-get update && sudo apt-get install -y git cmake python3-cryptography"
 
-        val result = repo.recordBootstrapAwaiting(
+        val result = journalBootstrap(
+            repo = repo,
             attemptId = "bootstrap-att-1",
             environment = env,
-            requirementIds = reqIds,
+            packages = reqIds,
             command = command,
         )
         assertTrue(result.isSuccess)
@@ -174,7 +214,7 @@ class BootstrapJournalTest {
         assertEquals("bootstrap-att-1", active.attemptId)
         assertEquals(AttemptStatus.AWAITING_USER_ACTION, active.status)
         assertEquals(env, active.environment?.toDomain())
-        assertEquals(reqIds, active.bootstrapRequirementIds)
+        assertEquals(reqIds, active.awaitingHandoff?.packages)
         assertEquals(command, active.awaitingHandoff?.command)
         assertEquals("Ubuntu-24.04", active.environmentKey)
     }
@@ -199,10 +239,11 @@ class BootstrapJournalTest {
             home = "/home/developer",
         )
 
-        val result = repo.recordBootstrapAwaiting(
+        val result = journalBootstrap(
+            repo = repo,
             attemptId = "fail-att-1",
             environment = env,
-            requirementIds = listOf("git"),
+            packages = listOf("git"),
             command = "sudo apt-get install -y git",
         )
         assertTrue(result.isFailure, "Journal write failure must return failure")
@@ -235,7 +276,7 @@ class BootstrapJournalTest {
         val reqIds = listOf("git", "cmake")
         val command = "sudo apt-get update && sudo apt-get install -y git cmake"
 
-        repo.recordBootstrapAwaiting("verify-att-1", env, reqIds, command)
+        journalBootstrap(repo, "verify-att-1", env, reqIds, command)
 
         // Verification begins: status transitions to RUNNING
         repo.updateAttemptStatus("verify-att-1", AttemptStatus.RUNNING)

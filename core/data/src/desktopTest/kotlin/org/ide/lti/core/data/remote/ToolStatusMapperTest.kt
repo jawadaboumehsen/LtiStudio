@@ -65,9 +65,21 @@ class ToolStatusMapperTest {
     fun `maps tool list result tools to domain tool registry result tools`() {
         val result = ToolListResult.Tools(
             listOf(
-                ToolStatusInfo(tool = "signapk", installed = true, path = "/tools/signapk.jar", source = "DYNAMIC", reason = null),
-                ToolStatusInfo(tool = "lpmake", installed = true, path = "/bin/lpmake", source = "PINNED", reason = null),
-            )
+                ToolStatusInfo(
+                    tool = "signapk",
+                    installed = true,
+                    path = "/tools/signapk.jar",
+                    source = "DYNAMIC",
+                    reason = null,
+                ),
+                ToolStatusInfo(
+                    tool = "lpmake",
+                    installed = true,
+                    path = "/bin/lpmake",
+                    source = "PINNED",
+                    reason = null,
+                ),
+            ),
         )
 
         val domainResult = ToolStatusMapper.toDomain(result)

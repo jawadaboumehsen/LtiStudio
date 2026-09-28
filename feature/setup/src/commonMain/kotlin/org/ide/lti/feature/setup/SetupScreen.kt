@@ -230,6 +230,7 @@ fun SetupScreen(
         onAbandonAwaitingOperation = viewModel::abandonAwaitingOperation,
         onShowHandoffSheet = viewModel::showHandoffSheet,
         onOpenTerminal = viewModel::openTerminal,
+        onSelectDistro = viewModel::selectDistro,
         onInstallPackages = viewModel::installPackages,
     )
 

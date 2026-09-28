@@ -23,7 +23,6 @@ import kotlinx.serialization.json.Json
 import org.ide.lti.core.model.setup.AttemptStatus
 import org.ide.lti.core.model.setup.ChildIntentRecord
 import org.ide.lti.core.model.setup.ChildTerminalProof
-import org.ide.lti.core.model.setup.PersistedEnvironment
 import org.ide.lti.core.model.setup.PersistedSetupPlan
 import org.ide.lti.core.model.setup.PersistedSubmoduleState
 import org.ide.lti.core.model.setup.PersistedToolState
@@ -127,40 +126,42 @@ public class ToolchainPreferencesDataSource(
     /**
      * Records a setup stage as completed or pending.
      */
-    public suspend fun markStageCompleted(stageName: String, completed: Boolean): Result<Unit> = withContext(ioDispatcher) {
-        mutex.withLock {
-            val current = _toolchainState.value
-            val updatedStages = if (completed) {
-                current.completedStages + stageName
-            } else {
-                current.completedStages - stageName
+    public suspend fun markStageCompleted(stageName: String, completed: Boolean): Result<Unit> =
+        withContext(ioDispatcher) {
+            mutex.withLock {
+                val current = _toolchainState.value
+                val updatedStages = if (completed) {
+                    current.completedStages + stageName
+                } else {
+                    current.completedStages - stageName
+                }
+                val updated = current.copy(completedStages = updatedStages)
+                val persistResult = persistStateInternal(updated)
+                if (persistResult.isSuccess) {
+                    _toolchainState.value = updated
+                }
+                persistResult
             }
-            val updated = current.copy(completedStages = updatedStages)
-            val persistResult = persistStateInternal(updated)
-            if (persistResult.isSuccess) {
-                _toolchainState.value = updated
-            }
-            persistResult
         }
-    }
 
     /**
      * Records overall toolchain setup completion status with timestamp.
      */
-    public suspend fun markSetupCompleted(completed: Boolean, timestamp: Long? = null): Result<Unit> = withContext(ioDispatcher) {
-        mutex.withLock {
-            val current = _toolchainState.value
-            val updated = current.copy(
-                isSetupCompleted = completed,
-                lastCompletedTimestamp = if (completed) (timestamp ?: current.lastCompletedTimestamp) else null,
-            )
-            val persistResult = persistStateInternal(updated)
-            if (persistResult.isSuccess) {
-                _toolchainState.value = updated
+    public suspend fun markSetupCompleted(completed: Boolean, timestamp: Long? = null): Result<Unit> =
+        withContext(ioDispatcher) {
+            mutex.withLock {
+                val current = _toolchainState.value
+                val updated = current.copy(
+                    isSetupCompleted = completed,
+                    lastCompletedTimestamp = if (completed) (timestamp ?: current.lastCompletedTimestamp) else null,
+                )
+                val persistResult = persistStateInternal(updated)
+                if (persistResult.isSuccess) {
+                    _toolchainState.value = updated
+                }
+                persistResult
             }
-            persistResult
         }
-    }
 
     /**
      * Records passing doctor diagnostic item IDs.
@@ -180,20 +181,21 @@ public class ToolchainPreferencesDataSource(
     /**
      * Records AVB 2.0 key provisioning status and path.
      */
-    public suspend fun updateAvbKeyState(provisioned: Boolean, keyPath: String?): Result<Unit> = withContext(ioDispatcher) {
-        mutex.withLock {
-            val current = _toolchainState.value
-            val updated = current.copy(
-                isAvbKeyProvisioned = provisioned,
-                avbKeyPath = keyPath,
-            )
-            val persistResult = persistStateInternal(updated)
-            if (persistResult.isSuccess) {
-                _toolchainState.value = updated
+    public suspend fun updateAvbKeyState(provisioned: Boolean, keyPath: String?): Result<Unit> =
+        withContext(ioDispatcher) {
+            mutex.withLock {
+                val current = _toolchainState.value
+                val updated = current.copy(
+                    isAvbKeyProvisioned = provisioned,
+                    avbKeyPath = keyPath,
+                )
+                val persistResult = persistStateInternal(updated)
+                if (persistResult.isSuccess) {
+                    _toolchainState.value = updated
+                }
+                persistResult
             }
-            persistResult
         }
-    }
 
     /**
      * Atomically clears persisted toolchain state and resets to the empty default.
@@ -206,16 +208,17 @@ public class ToolchainPreferencesDataSource(
             return@mutate Result.failure(
                 IllegalStateException(
                     "Cannot reset toolchain state while attempt '${active.attemptId}' is active. " +
-                        "Explicit authorization required."
-                )
+                        "Explicit authorization required.",
+                ),
             )
         }
         if (!force && current.recoveryBlocked) {
             return@mutate Result.failure(
                 IllegalStateException(
                     "Cannot reset toolchain state while recovery is blocked: " +
-                        "${current.recoveryBlockReason ?: "unresolved prior attempt"}. Explicit authorization required."
-                )
+                        "${current.recoveryBlockReason ?: "unresolved prior attempt"}. Explicit authorization " +
+                        "required.",
+                ),
             )
         }
         Result.success(ToolchainPersistenceState())
@@ -229,13 +232,13 @@ public class ToolchainPreferencesDataSource(
     public suspend fun recordAttemptAuthorized(attempt: SetupAttemptRecord): Result<Unit> = mutate { current ->
         if (current.recoveryBlocked) {
             return@mutate Result.failure(
-                IllegalStateException("Recovery blocked: ${current.recoveryBlockReason ?: "unresolved prior attempt"}")
+                IllegalStateException("Recovery blocked: ${current.recoveryBlockReason ?: "unresolved prior attempt"}"),
             )
         }
         val active = current.activeAttempt
         if (active != null && active.isActive) {
             return@mutate Result.failure(
-                IllegalStateException("Another attempt '${active.attemptId}' is already active.")
+                IllegalStateException("Another attempt '${active.attemptId}' is already active."),
             )
         }
         val now = System.currentTimeMillis()
@@ -248,7 +251,7 @@ public class ToolchainPreferencesDataSource(
                     updatedAtEpochMs = now,
                 ),
                 attemptHistory = history,
-            )
+            ),
         )
     }
 
@@ -276,7 +279,7 @@ public class ToolchainPreferencesDataSource(
                     orderedIntents = active.orderedIntents + journaled,
                     activeChildIndex = assignedIndex,
                     status = AttemptStatus.RUNNING,
-                )
+                ),
             )
         }
         return result.map { assignedIndex }
@@ -285,11 +288,8 @@ public class ToolchainPreferencesDataSource(
     /**
      * Enforces "Persist runId before acknowledging attachment".
      */
-    public suspend fun recordChildRunId(
-        attemptId: String,
-        childIndex: Int,
-        runId: String,
-    ): Result<Unit> = mutateChild(attemptId, childIndex) { intent -> intent.copy(runId = runId) }
+    public suspend fun recordChildRunId(attemptId: String, childIndex: Int, runId: String): Result<Unit> =
+        mutateChild(attemptId, childIndex) { intent -> intent.copy(runId = runId) }
 
     /**
      * Enforces "Persisted lastSeq never advances beyond durably stored replay evidence": the cursor and
@@ -345,7 +345,7 @@ public class ToolchainPreferencesDataSource(
                 activeAttempt = updatedActive,
                 recoveryBlocked = if (unblock) false else current.recoveryBlocked,
                 recoveryBlockReason = if (unblock) null else current.recoveryBlockReason,
-            )
+            ),
         )
     }
 
@@ -353,8 +353,11 @@ public class ToolchainPreferencesDataSource(
      * Closes a child the server never accepted. No runId exists, so no proof can be recorded; the explicit
      * terminal status is the authoritative record that nothing was submitted.
      */
-    public suspend fun recordChildNotSubmitted(attemptId: String, childIndex: Int, terminalStatus: String): Result<Unit> =
-        mutateChild(attemptId, childIndex) { intent -> intent.copy(terminalStatus = terminalStatus) }
+    public suspend fun recordChildNotSubmitted(
+        attemptId: String,
+        childIndex: Int,
+        terminalStatus: String,
+    ): Result<Unit> = mutateChild(attemptId, childIndex) { intent -> intent.copy(terminalStatus = terminalStatus) }
 
     public suspend fun recordPlanActionCompleted(attemptId: String, actionId: String): Result<Unit> =
         mutateActiveAttempt(attemptId) { active ->
@@ -372,109 +375,8 @@ public class ToolchainPreferencesDataSource(
                 awaitingHandoff = handoff,
                 persistedPlan = plan,
                 updatedAtEpochMs = System.currentTimeMillis(),
-            )
+            ),
         )
-    }
-
-    public suspend fun recordBootstrapAwaiting(
-        attemptId: String,
-        environment: PersistedEnvironment,
-        requirementIds: List<String>,
-        command: String,
-    ): Result<Unit> = mutate { current ->
-        if (current.recoveryBlocked) {
-            return@mutate Result.failure(
-                IllegalStateException("Recovery blocked: ${current.recoveryBlockReason ?: "unresolved prior attempt"}")
-            )
-        }
-        val active = current.activeAttempt
-        val now = System.currentTimeMillis()
-        val handoff = PersistedUserHandoff(
-            actionId = "bootstrap-packages",
-            distro = environment.distro,
-            command = command,
-            packages = requirementIds,
-            timestampEpochMs = now,
-        )
-        val updatedAttempt = if (active != null && active.attemptId == attemptId) {
-            active.copy(
-                status = AttemptStatus.AWAITING_USER_ACTION,
-                environment = environment,
-                environmentKey = environment.distro,
-                bootstrapRequirementIds = requirementIds,
-                awaitingHandoff = handoff,
-                updatedAtEpochMs = now,
-            )
-        } else if (active == null || !active.isActive) {
-            SetupAttemptRecord(
-                attemptId = attemptId,
-                environmentKey = environment.distro,
-                planId = attemptId,
-                planRevisionHash = "",
-                planKind = "BOOTSTRAP_PACKAGES",
-                status = AttemptStatus.AWAITING_USER_ACTION,
-                environment = environment,
-                bootstrapRequirementIds = requirementIds,
-                awaitingHandoff = handoff,
-                createdAtEpochMs = now,
-                updatedAtEpochMs = now,
-            )
-        } else {
-            return@mutate Result.failure(
-                IllegalStateException("Another attempt '${active.attemptId}' is already active.")
-            )
-        }
-        val history = if (active != null && active.attemptId != attemptId) current.attemptHistory + active else current.attemptHistory
-        Result.success(
-            current.copy(
-                activeAttempt = updatedAttempt,
-                attemptHistory = history,
-            )
-        )
-    }
-
-    public suspend fun recordAttemptAbandoned(attemptId: String): Result<Unit> = mutate { current ->
-        val active = current.activeAttempt
-        if (active != null && active.attemptId == attemptId) {
-            val terminal = active.copy(
-                status = AttemptStatus.ABANDONED,
-                terminalOutcome = "Abandoned",
-                terminalReason = "User abandoned setup attempt",
-                activeChildIndex = null,
-                updatedAtEpochMs = System.currentTimeMillis(),
-            )
-            Result.success(
-                current.copy(
-                    activeAttempt = null,
-                    attemptHistory = current.attemptHistory + terminal,
-                    recoveryBlocked = false,
-                    recoveryBlockReason = null,
-                )
-            )
-        } else {
-            val inHistory = current.attemptHistory.find { it.attemptId == attemptId }
-            if (inHistory != null) {
-                val updatedHistory = current.attemptHistory.map {
-                    if (it.attemptId == attemptId) {
-                        it.copy(
-                            status = AttemptStatus.ABANDONED,
-                            terminalOutcome = "Abandoned",
-                            terminalReason = "User abandoned setup attempt",
-                            updatedAtEpochMs = System.currentTimeMillis(),
-                        )
-                    } else it
-                }
-                Result.success(
-                    current.copy(
-                        attemptHistory = updatedHistory,
-                        recoveryBlocked = false,
-                        recoveryBlockReason = null,
-                    )
-                )
-            } else {
-                Result.failure(IllegalStateException("No attempt matching $attemptId"))
-            }
-        }
     }
 
     /**
@@ -504,7 +406,7 @@ public class ToolchainPreferencesDataSource(
                 attemptHistory = current.attemptHistory + terminal,
                 recoveryBlocked = false,
                 recoveryBlockReason = null,
-            )
+            ),
         )
     }
 
@@ -523,7 +425,7 @@ public class ToolchainPreferencesDataSource(
                         updatedAtEpochMs = System.currentTimeMillis(),
                     )
                 },
-            )
+            ),
         )
     }
 
@@ -565,7 +467,7 @@ public class ToolchainPreferencesDataSource(
     ): Result<Unit> = mutateActiveAttempt(attemptId) { active ->
         val intent = active.orderedIntents.getOrNull(childIndex)
             ?: return@mutateActiveAttempt Result.failure(
-                IllegalStateException("Child index $childIndex not found in attempt")
+                IllegalStateException("Child index $childIndex not found in attempt"),
             )
         val updatedIntents = active.orderedIntents.toMutableList()
         updatedIntents[childIndex] = transform(intent)
@@ -584,16 +486,14 @@ public class ToolchainPreferencesDataSource(
             // Corrupt journal fails closed with recoveryBlocked = true
             ToolchainPersistenceState(
                 recoveryBlocked = true,
-                recoveryBlockReason = "Corrupt toolchain persistence journal: ${e.message}"
+                recoveryBlockReason = "Corrupt toolchain persistence journal: ${e.message}",
             )
         }
     }
 
-    private fun persistStateInternal(state: ToolchainPersistenceState): Result<Unit> {
-        return runCatching {
-            val encoded = json.encodeToString(state)
-            storage.write(encoded)
-        }
+    private fun persistStateInternal(state: ToolchainPersistenceState): Result<Unit> = runCatching {
+        val encoded = json.encodeToString(state)
+        storage.write(encoded)
     }
 
     public companion object {
