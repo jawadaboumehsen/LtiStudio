@@ -475,7 +475,9 @@ object SetupPresentationMapper {
             )
         }
 
-        if (step.status == StepStatus.RUNNING || isChecking) {
+        // Only this step's own state: isChecking is true for the whole environment check, so using it here kept a
+        // finished Server Bridge row spinning until the last step (toolchain) was done.
+        if (step.status == StepStatus.RUNNING) {
             return BuildServicePresentation(
                 detailText = if (desc.isNotBlank() && desc != "Pending verification.") desc else "Checking…",
                 chipText = if (desc.contains("install", ignoreCase = true)) "Installing" else "Checking",

@@ -313,4 +313,20 @@ class SetupBuildServicePresentationTest {
         assertEquals("Update waiting", presentation.chipText)
         assertEquals(IdeStatusSeverity.Warning, presentation.severity)
     }
+
+    @Test
+    fun `a connected build service stays ready while later steps of the check are still running`() {
+        // isChecking is true for the whole check; the Server Bridge row finished third and must not spin until
+        // the toolchain step (the last one) is done.
+        val connected = step(
+            SetupStepStage.SERVER_CONNECTIVITY,
+            status = StepStatus.SUCCESS,
+            description = "Connected · 30ms · pid 1383",
+        )
+
+        val presentation = SetupPresentationMapper.mapBuildService(step = connected, isChecking = true)
+
+        assertFalse(presentation.isRunning, "$presentation")
+        assertEquals(IdeStatusSeverity.Ready, presentation.severity)
+    }
 }
