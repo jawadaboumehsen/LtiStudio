@@ -1,77 +1,77 @@
 # Graph Report - LtiRomGui  (2026-09-29)
 
 ## Corpus Check
-- 2310 files · ~2,174,006 words
+- 2314 files · ~2,179,033 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 18922 nodes · 42916 edges · 1467 communities (1018 shown, 286 thin omitted)
-- Extraction: 95% EXTRACTED · 5% INFERRED · 0% AMBIGUOUS · INFERRED: 2040 edges (avg confidence: 0.85)
+- 19008 nodes · 43146 edges · 1480 communities (1027 shown, 290 thin omitted)
+- Extraction: 95% EXTRACTED · 5% INFERRED · 0% AMBIGUOUS · INFERRED: 2048 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `30f67f80`
+- Built from commit: `9bc26b73`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
 - ExecutionContext
 - ModuleApplicationStage
-- WslHostPrerequisiteProbe
+- DistroStatus
 - GlassRuntimeEffect
-- SetupOperationCoordinator
+- CreateWorkspaceViewModel
 - SetupActivityState
 - Commands
 - ToolchainPreferencesDataSource
-- HazeEffectFactory.kt
+- .executePlan
 - PersistentFakeServer
 - ideFontFamily
-- WslDaemonManager
-- GlassChip
+- ServerConnectionDescriptor
+- WorkspacePreferencesDataSource
 - RuntimeShaderGlassDelegate
-- WorkspaceOverviewMapper
+- PluginPlanValidator.kt
 - RecoveryDraftStore
-- BuildRunReattachTest
-- Color.kt
-- ValidationReport
+- BootstrapHandoffTest
+- GlassTheme
+- PayloadCompilerAdapter
 - SetupViewModel
 - SpyToolchainProvisioningService
-- SimpleMockServer
-- .emit
-- ArtifactKind
+- ToolCatalogConsistencyTest
+- ScriptedProcess
+- ReadinessChecklistSection.kt
 - ArtifactRequirement
-- GlassStepper.kt
+- Spacing
 - BlurVisualEffect
-- InMemorySnapshotRepository
-- ConfigurationMigrationRegistry
-- PartitionPath
-- WorkspaceVirtualizer
-- GlassTopBar.kt
-- SemanticBlurKernel
-- RuntimeKeys
+- InMemoryRunRepository
+- ConfigurationSnapshot
+- Condition
+- ToolStatusInfo
+- column
+- BuildRunReattachTest
+- SetupOperationCoordinator
 - ToolchainSetupState
-- BootstrapHandoffTest
+- BuildRunReattachTest.kt
 - AuthorProject
 - BuildRun
 - CheckpointRepository.kt
 - ToolExecutionRequest
-- ServerConnectionDescriptor
+- KtorRemoteTransportAdapter
 - HazeBlurStyle.kt
 - SetupJournalContext
 - SetupLogBuffer
-- GlassRenderBudget.kt
-- PluginManagerViewModelTest.kt
+- StageDescriptor
+- InstalledRecord
 - WorkspaceWriteLease
-- ServerArtifactInstaller
+- RecordingRemoteTransport
 - config.mjs
-- IdePipelineRail.kt
+- .captureOverStripes
 - HazeProgressive
 - FakeToolRepository
+- StudioPresentation
 - StudioViewModel
-- StepStatus
 - ValidationError
 - EnvironmentReadinessState
-- FakeWorkspaceRepo
+- PluginImportTab.kt
 - GlassTextField
 - CliktCommand
 - FakeWorkspaceRepository
@@ -79,16 +79,16 @@
 - DomainModule.kt
 - DependencyRef
 - GlassCard
-- Condition
-- ResolutionInput
-- InstalledRecord
+- ValidationReport
+- Operation
+- PluginManagerViewModel
 - FakeToolchainRepo
-- GlassFileTree.kt
+- DecodedComponent
 - EnvironmentReadiness
-- Haze.kt
+- ConnectionState
 - WslToolchainProvisioner
 - InstallCommand
-- PluginImportTab.kt
+- AssetRef
 - CLAUDE.md
 - Writing the brief
 - Dispatch and poll
@@ -102,37 +102,37 @@
 - claude-delegate/scripts/relay.mjs
 - Dispatch and poll
 - BytecodeMatcher
-- EnvironmentReadinessAdapter.kt
-- PackageWriterTest
+- GlassRenderBudget.kt
+- PluginPackageReader.kt
 - StudioScreen.kt
-- ReadinessChecklistSection.kt
+- IconSize
 - GLASS_MIGRATION_GUIDE.md
 - HazeBlurStyle
 - PipelineOrchestrator
 - ToolCommand
-- PipelineDefinitionRegistry
-- StageId
+- TransportCliExecutor
+- KoinModules.kt
 - zcode-delegate/scripts/relay.mjs
 - PluginIndexAdapter
-- SetupPresentationMapper.kt
-- StageSettingConsumerMatrixTest
+- EnvironmentStepContent.kt
+- BuildPipelineReviewTest
 - PatchModCli.kt
-- DistroStatus
-- PipelineStep
+- TerminalHandoffState
+- DefaultStageEditorRegistry
 - commandcode-delegate/scripts/relay.mjs
-- PipelineOrchestratorTest
+- SetupJourneySidebar.kt
 - JetBrains IntelliJ Platform Icon Manifest
-- WorkspaceType
-- LtiPreferencesDataSource
-- NotificationLevel
+- .PrototypeGlassToggle
+- UserDataRepository
+- SimpleMockServer
 - WorkspaceJailInterceptor
 - grok-delegate/scripts/relay.mjs
 - ToolDomainEvent
-- PublishViewModel
-- ServerArtifactAdapterTest.kt
+- GlassFileTree.kt
+- GlassOpticalVerifierTest
 - HazeSourceNode
 - navigation/StudioRoutes.kt
-- CliktGenerator
+- .baseStyle
 - StageContext
 - ToolOutputParser.kt
 - Commands
@@ -145,26 +145,26 @@
 - HazeEffectNode
 - StudioAction
 - compiled-hook/manifest.json
-- TestCommand
-- WslPresencePort
+- .proceed
+- ToolingModule.kt
 - GlassLayoutState
 - SimulatedExecutionPort
 - desktopMain/kotlin/org/ide/lti/feature/setup/SetupPerformanceScenario.kt
-- BuildFlashableZipStage.kt
-- AppSettingsState
+- PlatformRepositoryModule.desktop.kt
+- PayloadCompilationResult
 - Commands
 - Commands
 - Flow
-- Bitmask
-- WorkspacePreferencesDataSource
+- .step
+- RunRecordDataSource
 - GlassInteractionController
-- StandaloneDistributionTest
-- Spacing
+- HazeBackdropBackendState
+- GlassShapes
 - AuditRecord
 - properties
 - aider-delegate/scripts/relay.mjs
 - codex-delegate/scripts/relay.mjs
-- TerminalOutputEvent
+- .emit
 - AppTheme
 - GlassRenderParams.kt
 - cursor-delegate/scripts/relay.mjs
@@ -174,7 +174,7 @@
 - HazeInvalidationTracking.kt
 - definitions
 - Slot
-- ToolSpecification
+- RuntimeKeys
 - agy-delegate/scripts/relay.mjs
 - copilot-delegate/scripts/relay.mjs
 - omp-delegate/scripts/relay.mjs
@@ -182,7 +182,7 @@
 - Advanced Patterns
 - TerminalCommandDispatcherImpl
 - AppIcon
-- IndexEntry
+- PluginAuthorToolsTab.kt
 - CredentialRef
 - MutableStateFlow
 - ToolBinary
@@ -196,8 +196,8 @@
 - qoder-delegate/scripts/relay.mjs
 - KMP Liquid Glass — Building Glass Components
 - ToolingException
-- SetupTab
-- FirmwareExtractionStage
+- ToolBrowserState
+- FileSystemRepository
 - properties
 - Commands
 - FakeSurvivingProcess
@@ -208,17 +208,17 @@
 - RootNavGraph.kt
 - .renderAndSaveSettings
 - DefaultStudioActionDispatcher
-- ShellOutputEvent
+- ShellExecutor
 - SyntaxLanguage
-- GlassBottomSheet.kt
+- AppIcons
 - MessageRole
-- ForegroundContentInvalidationNode
+- HazeSampling
 - GlassInteraction.kt
 - Built-In Types
 - tokenizeCommandLine
 - .transfer
 - GlassPerformanceMonitor.kt
-- GlassOpticalVerifierTest
+- InnerShadowNode
 - KotlinSyntaxTokenizer
 - KotlinSyntaxTokenizerTest
 - Overview
@@ -226,19 +226,19 @@
 - Jetpack Compose Performance Rules
 - WslPathTranslator
 - DesktopFileSystemRepository
-- ConnectedDeviceRepository.kt
+- DiagnosticCheckItem
 - ArchiveTransferAdapterTest
 - Advanced techniques
 - ModifierExt.kt
-- StageDefinitionsTest
-- SetupViewModelTest.kt
+- CompositeSystemDoctorEngine
+- SetupTab
 - properties
 - GlassRuntimeState
 - DebloatInventoryAdapterTest
-- SetupActivityStateTest
-- PackageIdentity
+- PartitionPath
+- BuildFlashableZipStageTest
 - Component recipes
-- .runProcess
+- RunFileStorage
 - CircuitBreaker
 - GlassShaders
 - DumpStringsCommand
@@ -246,7 +246,7 @@
 - Documenting Scripts
 - Upgrading to Newer Releases
 - TransferState
-- RemoteWslToolRepository
+- PayloadCompilationRequest
 - renderAndCapture
 - CornerRadii.kt
 - .verifySettingsAppearance
@@ -254,7 +254,7 @@
 - PanelEvent
 - ConnectedDeviceRepositoryImpl
 - PlatformRenderEffect
-- DesktopTerminalLauncher
+- HazeBlurStyleProperty
 - main.kt
 - ExitCodeSpec
 - Unpack_bootimgCliCommand.kt
@@ -263,21 +263,21 @@
 - Clikt 5 — Kotlin Multiplatform Command Line Interfaces
 - DrawBackdropInputScaleScreenshotTest
 - FakePluginInstallPort
-- SafetyCheckInterceptor
+- RemoteWslToolRepository
 - GoldenImageAssertTest
-- InstallFrameworkCommand
-- LogFilter
-- SetupOutcome
-- GlassStageInvalidation.kt
+- GlassStyle.kt
+- PipelineOrchestratorTest
+- FakeDistro
+- HazeEffectFactory.kt
 - GetSerialnoCommand
 - OS
 - ArchiveTransferAdapter
 - Effects reference
 - AnchorHealthPreflight.kt
 - GlassContrastTest
-- .updateEffect
+- CliResult
 - ConnectedDeviceRepository
-- BlurInputScalePolicy
+- .delete
 - tool-specification.schema.json
 - Glass Material System (`GlassStyle` / `GlassStyles` / `Modifier.glass`)
 - BACKDROP_ENHANCEMENT_TRACKER.md
@@ -287,12 +287,12 @@
 - Aider Delegate
 - Commands
 - ExecuteCommand
-- EventPublishingInterceptor
-- FileSystemRepository
-- TransportCliExecutor
+- nonLetterColorVisualTransformation
+- FakeClipboard
+- CliExecutionResult
 - registerTrimMemoryCallback
-- atomicWrite
-- WriteChannelContent
+- PluginManagerViewModelTest.kt
+- StepExecutionAdapter
 - Dispatch and poll
 - Dispatch and poll
 - Review and land
@@ -308,11 +308,11 @@
 - Writing the brief
 - Dispatch and poll
 - GlassOpticalVerifier
-- ShellExecutor
-- .assertThemeContrastMeetsWcag
+- DragGestureInspector.kt
+- BugreportCommand
 - SyntaxTokenKind
 - NoWeightInScrollableContainer
-- GlassStyle.kt
+- EmuCommand
 - AgentTaskListCommand
 - RedactionSpec
 - RunProtocolTest
@@ -331,14 +331,14 @@
 - Writing the brief
 - Dispatch and poll
 - .handleHttpResponse
-- DampedDragAnimation
+- .launch
 - SystemNotification
 - GoldenImageAssert
 - IdeShellTokensTest
 - AppTheme
 - NavGraphBuilderExtensions.kt
 - WorkspaceRepository
-- LineEnding
+- ToolSpecification
 - 📂 Complete File Manifest
 - Review and land
 - Review and land
@@ -356,12 +356,12 @@
 - Multi-task queues
 - Writing the brief
 - Warp Delegate
-- StudioEntryReason
-- .step
+- LtiPreferencesDataSource
+- DaemonCommand
 - file-property/manifest.json
 - ToolId
 - Compiler
-- MetadataViewModel
+- PluginLifecycleUseCase
 - AliasImportCommand
 - ToolFamily
 - Phase3SpecificationTest
@@ -377,21 +377,21 @@
 - Review and land
 - Quick Start
 - GlassScrollableTabRow.kt
-- HazeInput.kt
-- StdinMode
+- .`status and cancel go to the service that started the run`
+- ToolRisk
 - ArchiveTransferAdapterTest.kt
 - TargetPreferencesDataSource
 - DumpXmlstringsCommand
 - SyntaxHighlightingTransformation.kt
 - 3. Quantitative Prototype Test Results
-- .stream
-- HazeEffectNode.kt
-- PluginPlanValidator.kt
+- FakeTargetRepository
+- CliktGenerator
+- ConfigurationViewModelTest
 - CodespaceJupyterCommand
 - BrowseCommand
 - risk
 - CompletionCommand
-- HazeBackdropBackendState
+- HazeBlurStyleWrite
 - ToolResultTest
 - Dump.erofs Tool Reference
 - Erofsfuse Tool Reference
@@ -438,17 +438,17 @@
 - Testing Clikt Commands
 - Helpers — required by the interactive recipes
 - ConfigGetCommand
-- ConnectionState
+- PipelineResumeTest.kt
 - SpecValidator.kt
-- .testDelegatingSystemNotifier_forwardsToAttachedDelegate
+- FileToolchainJournalStorage
 - ShareUtils
 - ShareUtils
 - LtiDesignSystemRuleSetProvider.kt
-- WorkTreeAssemblyStage
+- WorkTreeAssemblyStageTest
 - WorkspaceKeyProvisioner
 - DebloatResolver.kt
-- DesktopKeyShortcut
-- ActivityUiState
+- WindowKeyShortcutHandler.kt
+- StudioPresentationState.kt
 - commonMain/kotlin/org/ide/lti/feature/setup/SetupPerformanceScenario.kt
 - CopilotCommand
 - ColorContrast
@@ -497,18 +497,18 @@
 - ConnectCommand
 - CodespaceRebuildCommand
 - DisconnectCommand
-- ArtifactDirection
+- ArtifactKind
 - EnableVerityCommand
 - ForwardCommand
-- SetupActionsTest
-- StreamingToolRepository
+- AuthLoginCommand
+- AuthRefreshCommand
 - MdnsCommand
 - InstallMultiPackageCommand
 - JdwpCommand
 - KeygenCommand
 - KillServerCommand
 - LogcatCommand
-- SetupTokens
+- DebloatViewModel
 - PairCommand
 - PullCommand
 - PushCommand
@@ -551,7 +551,7 @@
 - EraseCommand
 - FetchCommand
 - FlashallCommand
-- CoverageVerifier
+- StudioActionDispatcher
 - FlashRawCommand
 - ExecuteCommand
 - GetvarCommand
@@ -588,15 +588,15 @@
 - ExtensionRemoveCommand
 - UpdateCommand
 - DumpCommand
-- AvbSizeCalculator
+- GlassInteractionPatch.kt
 - CodespaceLogsCommand
-- SetupStepStage
+- ToolCapabilities
 - haze/Utils.kt
 - GistCloneCommand
 - TerminalManager
 - DisableVerityCommand
-- DaemonCommand
-- RemoteFileUploaderPort
+- CodespaceCodeCommand
+- CodespaceDeleteCommand
 - CodespacePortsVisibilityCommand
 - ApktoolCliCommand.kt
 - BCliCommand.kt
@@ -615,9 +615,9 @@
 - apktool/cli/VersionCliCommand.kt
 - SearchReposCommand
 - IfCommandCommand
-- CollisionPolicy
+- ToolCommand
 - LfCommand
-- BugreportCommand
+- HazeInput.kt
 - DumpBadgingCommand
 - Append2simgCliCommand.kt
 - DumperofsCliCommand.kt
@@ -625,7 +625,7 @@
 - E2fsdroidCliCommand.kt
 - RebootCommand
 - ErofsfuseCliCommand.kt
-- LabelDeleteCommand
+- cupertinoMaterialStyle
 - Ext2simgCliCommand.kt
 - FecCliCommand.kt
 - SkillCommand
@@ -635,9 +635,9 @@
 - LpaddCliCommand.kt
 - SyncCommand
 - LpdumpCliCommand.kt
-- .launch
+- PackageWriterTest
 - LpflashCliCommand.kt
-- ToolRisk
+- ArtifactDirection
 - LpmakeCliCommand.kt
 - LpunpackCliCommand.kt
 - Make_f2fsCliCommand.kt
@@ -665,23 +665,23 @@
 - Simg2imgCliCommand.kt
 - Sload_f2fsCliCommand.kt
 - SetupEnvironment
-- GetDevpathCommand
+- StdinMode
 - AgentTaskViewCommand
 - BootCommand
-- GlassInteractionState
+- .append
 - HazeEffectRuntimeDrawScope
 - AliasDeleteCommand
 - ApiCommand
 - ProjectEditCommand
 - AttestationDownloadCommand
 - AuthLogoutCommand
-- ToolDiWiringTest.kt
+- koinConfiguration
 - AuthCommand
 - ExecuteCommand
 - ExecuteCommand
 - DumpPermissionsCommand
-- nonLetterColorVisualTransformation
-- ProjectItemCreateCommand
+- SetupDestination
+- .hazeMaterial
 - ExtensionCommand
 - PreviewPrompterCommand
 - ProjectItemDeleteCommand
@@ -839,106 +839,109 @@
 - AuthTokenCommand
 - DelegatingSystemNotifier
 - CacheListCommand
-- ToolScope
-- CodespaceDeleteCommand
+- DatastoreModule.kt
+- GistCreateCommand
 - GistListCommand
 - ProjectListCommand
-- DragGestureInspector.kt
+- AttachCommand
 - StudioIconKey
 - PairWirelessDeviceUseCase.kt
-- OrgCommand
+- NoRawColorLiteral
 - CodespacePortsForwardCommand
 - ReleaseCommand
 - ExecuteCommand
-- ProjectFieldCreateCommand
+- LabelCreateCommand
 - Platform support & API levels
 - RulesetListCommand
 - ConfigCommand
-- RulesetCommand
+- OrgCommand
 - RebootConnectedDeviceUseCase.kt
 - ConfigSetCommand
 - SecretSetCommand
 - CfgCreateCommand
 - SkillSearchCommand
-- RunCancelCommand
+- GlassValidation.kt
 - ExecuteCommand
-- SearchPrsCommand
+- SurfaceProfile
 - ExtensionUpgradeCommand
 - AttestationCommand
 - GlassDefaults
 - Design System Architecture & Centralized Tokens
-- VariableDeleteCommand
+- ProjectCreateCommand
 - AliasListCommand
 - AuthSetupGitCommand
 - GpgKeyDeleteCommand
-- CodespaceStopCommand
+- ConfigurationNavigation.kt
 - CodespaceViewCommand
 - LabelCloneCommand
 - LabelCommand
 - VariableSetCommand
+- ProjectFieldCreateCommand
+- ProjectItemCreateCommand
 - LicensesCommand
 - ProjectCommand
-- AttachCommand
+- DirtyTargetSelectionDecision
 - ConfigClearCacheCommand
-- EmuCommand
-- ApkinfoCommand
-- BuildFlashableZipStageTest
-- PublicizeResourcesCommand
+- ProjectUnlinkCommand
+- RepoCommand
+- RulesetCommand
+- ExtractViewModel
 - WorkflowEnableCommand
-- ExecuteCommand
+- RunCommand
 - ProjectFieldListCommand
-- UninstallCommand
+- PublishViewModel
 - CodespacePortsCommand
-- FlashingCommand
+- HelpCommand
 - SearchCommand
-- ExecuteCommand
+- InstallMultipleCommand
 - Input & Navigation Components (`core:designsystem/component`)
 - ProjectLinkCommand
 - SshKeyCommand
-- AppendVbmetaImageCommand
-- ConfigurationSnapshot
+- SshKeyDeleteCommand
+- Workspace
 - CodespaceCpCommand
-- GetStagedCommand
+- SshKeyListCommand
 - VariableListCommand
 - WorkflowListCommand
-- WorkflowRunCommand
+- StageId
 - CalculateVbmetaDigestCommand
 - ExtractPublicKeyDigestCommand
-- DumpPackagenameCommand
-- BCommand
-- ExecuteCommand
-- AuthRefreshCommand
-- MakeCertUnlockCredentialCommand
+- WorkflowRunCommand
+- WorkflowViewCommand
+- UsbCommand
+- ResizeLogicalPartitionCommand
+- CompileCommand
 - MakeVbmetaImageCommand
-- CodespaceCodeCommand
+- DiffCommand
 - ZeroHashtreeCommand
-- LabelCreateCommand
-- CfCommand
+- CoverageVerifier
+- AddHashtreeFooterCommand
 - SecretDeleteCommand
-- HelpCommand
+- ToolingDiResolutionTest
 - MakeCertMetadataCommand
-- SessionStatus
-- PrCommand
-- BuildInfoWriter
+- DumpConfigurationsCommand
+- DumpStyleparentsCommand
+- OptimizeCommand
+- CleanFrameworksCommand
 - Core Glass Components (`core:designsystem/component`)
-- CodespaceEditCommand
-- ConfigListCommand
+- ListFrameworksCommand
+- BuildInfoWriter
 - Setup Flow & Clean Machine Architecture
 - GpgKeyCommand
-- GpgKeyAddCommand
+- DumpCommand
 - ChipMode
-- FirmwareExtractionStage.kt
-- AuthSwitchCommand
+- SidecarNormalizer
+- ExecuteCommand
 - LabelListCommand
-- CodespaceCommand
-- .generate
-- ProjectCreateCommand
-- ProjectDeleteCommand
-- ProjectItemArchiveCommand
+- ExecuteCommand
+- AliasCommand
+- GetDevpathCommand
+- CacheDeleteCommand
+- DiscussionCommand
 - ProjectItemEditCommand
 - ProjectViewCommand
-- RepoCommand
-- GistCreateCommand
+- ExtensionExecCommand
+- GistCommand
 - IssueCommand
 - RunDeleteCommand
 - AddHashFooterCliCommand.kt
@@ -973,17 +976,17 @@
 - ZeroHashtreeCliCommand.kt
 - RulesetCheckCommand
 - pre-push
-- RunCommand
-- ProjectUnlinkCommand
+- GistEditCommand
+- GpgKeyListCommand
 - ProjectItemListCommand
 - AttestationVerifyCommand
-- RunDownloadCommand
+- EmptyStateAction
 - SearchIssuesCommand
 - SearchCommitsCommand
 - RunRerunCommand
 - SecretListCommand
 - RunWatchCommand
-- SkillInstallCommand
+- LabelEditCommand
 - SshKeyAddCommand
 - SignapkCliCommand.kt
 - ZipalignCliCommand.kt
@@ -1005,17 +1008,17 @@
 - 🎯 Key Achievements
 - build.gradle.kts
 - CMPFeatureConventionPlugin
-- SshKeyDeleteCommand
+- SetupOutcome
 - KMPKoinConventionPlugin
 - Multi-task queues
 - Multi Value Options
 - AppDispatchers
-- SkillPreviewCommand
-- SkillPublishCommand
+- PrCommand
+- PreviewCommand
 - VariableGetCommand
 - CalculateKernelCmdlineCommand
 - SyntaxTokenizer
-- SshKeyListCommand
+- RunListCommand
 - gradlew
 - ExtractVbmetaImageCommand
 - 📋 PHASE 4: Debugging & Presets ✅ COMPLETED
@@ -1026,12 +1029,12 @@
 - Arguments
 - Exception Handling
 - Why Clikt?
-- MakeAtxCertificateCommand
-- ResignImageCommand
-- VariableCommand
+- RunViewCommand
+- RefractionProfile
+- SearchCodeCommand
 - WorkspaceRoutes.kt
 - PULL_REQUEST_TEMPLATE.md
-- WorkflowCommand
+- SkillListCommand
 - Example Compiled Hook Mod
 - .execute
 - .execute
@@ -1042,7 +1045,7 @@
 - .execute
 - ToolFingerprint
 - RemoteProtocolTest
-- .optics
+- StatusCommand
 - Gh Tool Reference
 - ci-prepush.sh
 - MakeCertPermanentAttributesCommand
@@ -1104,31 +1107,41 @@
 - lti-sload_f2fs script
 - lti-unpack_bootimg script
 - lti-zipalign script
-- WorkflowDisableCommand
-- WorkflowViewCommand
+- EraseFooterCommand
+- GenerateTestImageCommand
 - MakeCertificateCommand
+- ExecuteCommand
 - ExtensionCreateCommand
-- .execute
-- AgentTaskCreateCommand
-- ExtractPublicKeyCommand
+- ExecuteCommand
+- MakeAtxMetadataCommand
+- VerifyImageCommand
 - PlatformDialogPolicy.kt
 - PlatformDialogPolicy.desktop.kt
 - ResizeImageCommand
-- UpdatePartitionDescriptorCommand
-- CodespaceListCommand
+- AgentTaskCreateCommand
 - AliasSetCommand
-- AuthLoginCommand
+- VersionCommand
+- .run
 - ConnectWirelessDeviceUseCase.kt
 - GetConnectedDevicesUseCase.kt
 - GetSelectedConnectedDeviceUseCase.kt
+- combineHazeBlurStyles
+- HazeTintExt.kt
 - CodespaceCreateCommand
+- ToolSafetyPolicy
 - KeyShortcut.kt
+- CollisionPolicy
 - GlassShapesTest
-- GistViewCommand
+- SetupNavigation.kt
 - ProjectCopyCommand
 - ProjectItemAddCommand
+- ProjectItemArchiveCommand
+- BlurMaterial3.kt
+- .execute
+- VariableDeleteCommand
 - Adb Tool Reference
 - Avbtool Tool Reference
+- WorkflowDisableCommand
 - `install`
 - `logcat`
 - `pull`
@@ -1312,8 +1325,8 @@
 - `gistList`
 - `gistRename`
 - `gistView`
-- AddHashFooterCommand
-- AddHashtreeFooterCommand
+- UpdatePartitionDescriptorCommand
+- .generate
 - PrintPartitionDigestsCommand
 - Interactive Components (`core:designsystem/component`)
 - Haze Glass System
@@ -1330,7 +1343,7 @@
 7. `ArtifactRequirement` - 326 edges
 8. `ArtifactKind` - 313 edges
 9. `ArtifactDirection` - 313 edges
-10. `ToolchainSetupState` - 232 edges
+10. `ToolchainSetupState` - 233 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `BannerIcon()` --calls--> `painter()`  [INFERRED]
@@ -1339,35 +1352,39 @@
   haze-glass/src/commonMain/kotlin/dev/chrisbanes/haze/glass/CornerRadii.kt → core/designsystem/src/commonMain/kotlin/org/ide/lti/core/designsystem/theme/Dimens.kt
 - `parseStageId()` --references--> `StageId`  [EXTRACTED]
   feature/workspace-api/src/commonMain/kotlin/org/ide/lti/feature/workspace/api/StudioRoutes.kt → core/model/src/commonMain/kotlin/org/ide/lti/core/model/run/StageId.kt
-- `calculateGlassInteractionPatchSize()` --calls--> `ceil()`  [INFERRED]
-  haze-glass/src/commonMain/kotlin/dev/chrisbanes/haze/glass/GlassInteractionPatch.kt → haze-blur/src/commonMain/kotlin/dev/chrisbanes/haze/blur/Utils.kt
-- `resolveInteractionBounds()` --calls--> `ceil()`  [INFERRED]
-  haze-glass/src/commonMain/kotlin/dev/chrisbanes/haze/glass/GlassInteractionPatch.kt → haze-blur/src/commonMain/kotlin/dev/chrisbanes/haze/blur/Utils.kt
+- `withNavigatorWidth()` --references--> `StudioPresentation`  [EXTRACTED]
+  feature/rom-studio/shell/src/commonMain/kotlin/org/ide/lti/feature/workspace/studio/StudioPresentationState.kt → core/model/src/commonMain/kotlin/org/ide/lti/core/model/studio/StudioPresentation.kt
+- `withOverview()` --references--> `StudioPresentation`  [EXTRACTED]
+  feature/rom-studio/shell/src/commonMain/kotlin/org/ide/lti/feature/workspace/studio/StudioPresentationState.kt → core/model/src/commonMain/kotlin/org/ide/lti/core/model/studio/StudioPresentation.kt
 
 ## Import Cycles
 - None detected.
 
-## Communities (1467 total, 286 thin omitted)
+## Communities (1480 total, 290 thin omitted)
 
 ### Community 0 - "ExecutionContext"
 Cohesion: 0.00
-Nodes (302): AttachUseCase, BugreportUseCase, ConnectUseCase, DetachUseCase, DisableVerityUseCase, DisconnectUseCase, EmuUseCase, EnableVerityUseCase (+294 more)
+Nodes (294): AttachUseCase, BugreportUseCase, ConnectUseCase, DetachUseCase, DisableVerityUseCase, DisconnectUseCase, EmuUseCase, EnableVerityUseCase (+286 more)
 
 ### Community 1 - "ModuleApplicationStage"
-Cohesion: 0.08
-Nodes (17): AppliedModulePlan, AppliedModuleSummary, AppliedOperationSummary, Failure, ModuleApplicationStage, PackageOutcome, ResolutionOutcome, Success (+9 more)
+Cohesion: 0.12
+Nodes (15): AppliedModulePlan, AppliedModuleSummary, AppliedOperationSummary, Failure, ModuleApplicationStage, PackageOutcome, ResolutionOutcome, Success (+7 more)
 
-### Community 2 - "WslHostPrerequisiteProbe"
-Cohesion: 0.08
-Nodes (22): ProbeOutput, WslHostPrerequisiteProbe, FakeProbeCli, Charset, WslCliExecutor, WslHostPrerequisiteProbeTest, WslCliExecutor, CheckFailed (+14 more)
+### Community 2 - "DistroStatus"
+Cohesion: 0.05
+Nodes (33): RequirementCatalog, ProbeOutput, WslHostPrerequisiteProbe, FakeProbeCli, Charset, WslCliExecutor, WslHostPrerequisiteProbeTest, WslCliExecutor (+25 more)
 
 ### Community 3 - "GlassRuntimeEffect"
-Cohesion: 0.05
-Nodes (30): GlassInteractionRenderState, Delegate, GlassAdaptiveUpdateKey, GlassPreparedDrawCacheKey, GlassPreparedRenderCacheKey, GlassRenderBudgetCacheKey, GlassRenderPreparation, GlassRuntimeEffect (+22 more)
+Cohesion: 0.03
+Nodes (46): hazeBlur(), Modifier, shouldReleaseRetainedGlass(), Delegate, GlassAdaptiveUpdateKey, GlassPreparedDrawCacheKey, GlassPreparedRenderCacheKey, GlassRenderBudgetCacheKey (+38 more)
 
-### Community 4 - "SetupOperationCoordinator"
-Cohesion: 0.08
-Nodes (13): Flow, OperationOwner, SetupOperationCoordinator, SetupOperationsTest, ByteArray, Charset, RemoteTransportPort, RunHandle (+5 more)
+### Community 4 - "CreateWorkspaceViewModel"
+Cohesion: 0.04
+Nodes (32): CreateWorkspaceParams, CreateWorkspaceUseCase, CreateWorkspaceUseCaseTest, FakeProvisioningPort, FakeReadinessPort, FakeWorkspaceRepo, EnvironmentReadinessPort, Flow (+24 more)
+
+### Community 5 - "SetupActivityState"
+Cohesion: 0.05
+Nodes (21): SetupLogConstants, SetupLogKind, CHECK, ERROR, RUN, SetupLogBounds, Modifier, SetupActivityPanel() (+13 more)
 
 ### Community 6 - "Commands"
 Cohesion: 0.05
@@ -1375,207 +1392,203 @@ Nodes (37): `aliasDelete`, `attestationDownload`, `attestationVerify`, `cache`, 
 
 ### Community 7 - "ToolchainPreferencesDataSource"
 Cohesion: 0.03
-Nodes (49): Flow, Result, ToolchainSetupRepository, ToolchainSetupRepositoryImpl, FailingSettings, Settings, ToolchainSetupRepositoryTest, StateFlow (+41 more)
+Nodes (46): Flow, Result, ToolchainSetupRepository, ToolchainSetupRepositoryImpl, FailingSettings, Settings, ToolchainSetupRepositoryTest, Flow (+38 more)
 
-### Community 8 - "HazeEffectFactory.kt"
-Cohesion: 0.10
-Nodes (15): CompositionLocal, HazeEffectDrawScope, HazeEffectDrawScopeImpl, HazeEffectLayoutScope, HazeEffectLayoutScopeImpl, HazeEffectLifecycleScopeImpl, CoroutineScope, Density (+7 more)
+### Community 8 - ".executePlan"
+Cohesion: 0.09
+Nodes (3): StepStatus, T, WslCliExecutor
 
 ### Community 9 - "PersistentFakeServer"
 Cohesion: 0.12
-Nodes (17): Finished, Interrupted, JournalCommitException, JournaledRunLauncher, JournaledRunResult, JournalRejected, RuntimeException, Blocked (+9 more)
+Nodes (19): TimeMark, StartupTiming, Finished, Interrupted, JournalCommitException, JournaledRunLauncher, JournaledRunResult, JournalRejected (+11 more)
 
 ### Community 10 - "ideFontFamily"
+Cohesion: 0.03
+Nodes (156): ideCardSurface(), Dp, HazeShape, Modifier, IdeTable(), IdeTableHeader(), IdeTableHeaderCell(), IdeTableRadioIndicator() (+148 more)
+
+### Community 11 - "ServerConnectionDescriptor"
 Cohesion: 0.04
-Nodes (145): ideCardSurface(), Dp, HazeShape, Modifier, IdeTable(), IdeTableHeader(), IdeTableHeaderCell(), IdeTableRadioIndicator() (+137 more)
+Nodes (29): FakeCli, FakeProber, Charset, WslCliExecutor, RecordingLauncher, ServerArtifactAdapterTest, RecordingSupervisor, FakeDaemonSupervisor (+21 more)
 
-### Community 11 - "WslDaemonManager"
-Cohesion: 0.11
-Nodes (11): WslServerInfo, HttpClient, Json, OwnedProcess, WslDaemonConfig, WslDaemonManager, FakeProber, FakeProcessLauncher (+3 more)
-
-### Community 12 - "GlassChip"
+### Community 12 - "WorkspacePreferencesDataSource"
 Cohesion: 0.05
-Nodes (78): chipBackgroundColor(), chipBorderColor(), chipTextColor(), GlassChip(), Color, ColorScheme, Composable, HazeShape (+70 more)
+Nodes (23): WorkDirDiscoveryService, WorkDirDiscoveryServiceTest, CapturingSystemNotifier, SystemNotifier, WorkspaceRepositoryTest, Flow, Json, Workspace (+15 more)
 
 ### Community 13 - "RuntimeShaderGlassDelegate"
 Cohesion: 0.06
-Nodes (58): drawScaledContent(), Offset, translate(), calculateGlassInteractionOutputFeatherWidth(), GlassInteractionPatch, GlassInteractionLightingKey, GlassInteractionUniforms, GlassOpticalEffectKey (+50 more)
+Nodes (59): calculateGlassInteractionOutputFeatherWidth(), GlassInteractionPatch, GlassBlurEffectKey, GlassInteractionLightingKey, GlassInteractionUniforms, GlassOpticalEffectKey, GlassPreparedRender, GlassRefractionDetailEffectKey (+51 more)
 
-### Community 14 - "WorkspaceOverviewMapper"
-Cohesion: 0.20
-Nodes (7): Available, DisplayValue, Unavailable, TargetDevice, Workspace, WorkspaceOverviewMapper, ReadinessItemUi
+### Community 14 - "PluginPlanValidator.kt"
+Cohesion: 0.10
+Nodes (25): condition(), depth(), error(), operation(), report(), setting(), validate(), valueRef() (+17 more)
 
 ### Community 15 - "RecoveryDraftStore"
 Cohesion: 0.07
 Nodes (18): Json, Result, LoadedRecords, RecoveryDraftMap, RecoveryDraftStore, Settings, RecoveryDraftStoreTest, ThrowingSettings (+10 more)
 
-### Community 16 - "BuildRunReattachTest"
-Cohesion: 0.05
-Nodes (21): BuildRunUiState, BuildRunViewModel, StateFlow, ViewModel, BuildRunReattachTest, FakePipelineExecutionPort, FakeReadinessPort, FakeRunRepository (+13 more)
+### Community 16 - "BootstrapHandoffTest"
+Cohesion: 0.15
+Nodes (11): BootstrapHandoffTest, CountingTransport, FailingWritesRepository, FakeDaemonSupervisor, FakeHostPrerequisiteProbe, FakeServerArtifactAdapter, ByteArray, Flow (+3 more)
 
-### Community 17 - "Color.kt"
+### Community 17 - "GlassTheme"
 Cohesion: 0.03
-Nodes (92): Canvas, GlassIcon(), Color, Modifier, ConfirmDismiss, Custom, DialogActions, GlassDialog() (+84 more)
+Nodes (97): AnimationSpec, Canvas, GlassIcon(), Color, Modifier, ConfirmDismiss, Custom, DialogActions (+89 more)
 
-### Community 18 - "ValidationReport"
-Cohesion: 0.05
-Nodes (30): TargetDevice, StageSettingsValidator, ArtifactFreshness, FRESH, MISSING, STALE, UNVERIFIED, DeferredArtifactCheck (+22 more)
+### Community 18 - "PayloadCompilerAdapter"
+Cohesion: 0.17
+Nodes (4): ByteArray, PayloadCompilerPort, PayloadCompilerAdapter, ProcessResult
 
 ### Community 19 - "SetupViewModel"
-Cohesion: 0.03
-Nodes (25): Flow, Result, StateFlow, Workspace, WorkspaceManager, LayoutState, PanelStates, WorkspaceSession (+17 more)
+Cohesion: 0.04
+Nodes (19): Flow, Result, StateFlow, Workspace, WorkspaceManager, Job, StateFlow, TargetDevice (+11 more)
 
 ### Community 20 - "SpyToolchainProvisioningService"
 Cohesion: 0.12
-Nodes (6): UserRepairHandoff, EnvironmentSetupStateTest, Flow, StateFlow, ToolchainProvisioningService, SpyToolchainProvisioningService
+Nodes (5): UserRepairHandoff, EnvironmentSetupStateTest, StateFlow, ToolchainProvisioningService, SpyToolchainProvisioningService
 
-### Community 21 - "SimpleMockServer"
-Cohesion: 0.22
-Nodes (6): AutoCloseable, HttpClient, Socket, RunAttachClientTest, SimpleMockServer, TestSupervisor
+### Community 22 - "ScriptedProcess"
+Cohesion: 0.18
+Nodes (4): WslProcessLauncher, Process, ScriptedProcess, WslProcessLauncherHandshakeTest
 
-### Community 22 - ".emit"
-Cohesion: 0.15
-Nodes (5): WslProcessLauncher, WslProcessLaunchResult, Process, ScriptedProcess, WslProcessLauncherHandshakeTest
-
-### Community 23 - "ArtifactKind"
+### Community 23 - "ReadinessChecklistSection.kt"
 Cohesion: 0.05
-Nodes (27): DumpStyleparentsCommand, io, ToolCommand, CacheDeleteCommand, io, ToolCommand, CodespaceSshCommand, io (+19 more)
+Nodes (61): IdeReadinessRow(), ImageVector, Modifier, resolveStageIcon(), IdeStatusBadge(), IdeStatusSeverity, Blocking, Failed (+53 more)
 
 ### Community 24 - "ArtifactRequirement"
 Cohesion: 0.03
-Nodes (48): FlashCommand, io, ToolCommand, CleanFrameworksCommand, io, ToolCommand, DCommand, io (+40 more)
+Nodes (48): io, ToolCommand, WipeSuperCommand, DumpOverlayableCommand, io, ToolCommand, CfCommand, io (+40 more)
 
-### Community 25 - "GlassStepper.kt"
-Cohesion: 0.08
-Nodes (45): GlassDiagnosticList(), Modifier, GlassDiagnosticDefaults, GlassDiagnosticItem, GlassDiagnosticTile(), Color, ColorScheme, Modifier (+37 more)
+### Community 25 - "Spacing"
+Cohesion: 0.04
+Nodes (99): chipBackgroundColor(), chipBorderColor(), chipTextColor(), GlassChip(), Color, ColorScheme, Composable, HazeShape (+91 more)
 
 ### Community 26 - "BlurVisualEffect"
-Cohesion: 0.03
-Nodes (44): BlurAdaptiveUpdateKey, BlurRetainedOutputState, BlurVisualEffect, Delegate, isBounded(), Color, Delegate, Dp (+36 more)
-
-### Community 27 - "InMemorySnapshotRepository"
-Cohesion: 0.10
-Nodes (15): SnapshotMaterializationIntent, SnapshotMaterializerPort, Result, SaveConfigurationSnapshotUseCase, InMemorySnapshotRepository, Flow, FakeProvisioningPort, FakeSnapshotMaterializerPort (+7 more)
-
-### Community 28 - "ConfigurationMigrationRegistry"
-Cohesion: 0.16
-Nodes (9): ConfigurationMigration, ConfigurationMigration, ConfigurationMigrationFailedException, ConfigurationMigrationRegistry, IllegalArgumentException, RuntimeException, UnsupportedConfigurationVersionException, ConfigurationMigrationTest (+1 more)
-
-### Community 29 - "PartitionPath"
 Cohesion: 0.05
-Nodes (15): ApkJarMutationAdapterTest, BytecodeMatcherTest, FileMutationAdapterTest, ByteArray, MessageDigest, ConcreteMutationPlan, AnchorHealthPreflightTest, PartitionPath (+7 more)
+Nodes (22): BlurDirtyFields, BlurAdaptiveUpdateKey, BlurRetainedOutputState, BlurVisualEffect, Delegate, isBounded(), Color, Delegate (+14 more)
 
-### Community 30 - "WorkspaceVirtualizer"
-Cohesion: 0.16
-Nodes (10): VirtualWorkspaceDescriptor, WorkspaceVirtualizer, FakeCliExecutor, Charset, WslCliExecutor, WorkspaceVirtualizerTest, EnvironmentTargetingTest, WslCliExecutor (+2 more)
+### Community 27 - "InMemoryRunRepository"
+Cohesion: 0.09
+Nodes (15): Result, SaveConfigurationSnapshotUseCase, InMemoryRunRepository, InMemoryRunRepositoryTest, InMemorySnapshotRepository, Flow, FakeProvisioningPort, FakeSnapshotMaterializerPort (+7 more)
 
-### Community 31 - "GlassTopBar.kt"
-Cohesion: 0.04
-Nodes (80): Custom, GlassPanel(), GlassPanelContainer(), GlassPanelHeader(), GlassPanelHeaderAction(), IconAction, Color, Composable (+72 more)
+### Community 28 - "ConfigurationSnapshot"
+Cohesion: 0.05
+Nodes (24): ConfigurationMigration, Flow, SnapshotRepositoryImpl, Flow, Json, SnapshotList, SnapshotPreferencesDataSource, SnapshotPreferencesDataSourceTest (+16 more)
 
-### Community 32 - "SemanticBlurKernel"
-Cohesion: 0.38
-Nodes (3): SemanticBlurKernel, SemanticBlurPlan, Tap
-
-### Community 33 - "RuntimeKeys"
+### Community 29 - "Condition"
 Cohesion: 0.10
-Nodes (4): digestToken(), RuntimeKeys, BuildPropStamper, OtaManifestWriter
+Nodes (25): Always, And, Condition, Equals, In, Literal, Not, Or (+17 more)
+
+### Community 30 - "ToolStatusInfo"
+Cohesion: 0.05
+Nodes (29): Failed, ToolPublicationPort, Success, ToolManifestDto, ToolPublicationAdapter, UploadResult, ToolStatusMapper, ProbePlan (+21 more)
+
+### Community 31 - "column"
+Cohesion: 0.04
+Nodes (92): column, WindowControlActions, Custom, GlassPanel(), GlassPanelContainer(), GlassPanelHeader(), GlassPanelHeaderAction(), IconAction (+84 more)
+
+### Community 32 - "BuildRunReattachTest"
+Cohesion: 0.05
+Nodes (22): BuildRunUiState, BuildRunViewModel, StateFlow, ViewModel, BuildRunReattachTest, ReattachRunUseCase, FakePipelineExecutionPort, FakeReadinessPort (+14 more)
+
+### Community 33 - "SetupOperationCoordinator"
+Cohesion: 0.10
+Nodes (11): OperationOwner, SetupOperationCoordinator, SetupOperationsTest, ByteArray, RemoteTransportPort, RunHandle, WslCliExecutor, SpyDaemonSupervisor (+3 more)
 
 ### Community 34 - "ToolchainSetupState"
-Cohesion: 0.03
-Nodes (71): IdeStatusSeverity, Blocking, Failed, Neutral, Ready, Running, Warning, drawBlueBackdrop() (+63 more)
+Cohesion: 0.04
+Nodes (42): SetupPlanFactoryTest, drawBlueBackdrop(), drawDarkBackdrop(), drawLightBackdrop(), GlassBackdrop(), Modifier, SetupStepDetail, ToolchainSetupState (+34 more)
 
-### Community 35 - "BootstrapHandoffTest"
-Cohesion: 0.17
-Nodes (11): BootstrapHandoffTest, CountingTransport, FailingWritesRepository, FakeDaemonSupervisor, FakeHostPrerequisiteProbe, FakeServerArtifactAdapter, ByteArray, Flow (+3 more)
+### Community 35 - "BuildRunReattachTest.kt"
+Cohesion: 0.07
+Nodes (27): ResourceVendoredFileAdapter, Flow, ToolResult, FileStat, Finished, Heartbeat, ByteArray, Flow (+19 more)
 
 ### Community 36 - "AuthorProject"
 Cohesion: 0.06
-Nodes (19): AuthorTaskProcessAdapter, AuthorTaskProcessAdapterTest, Approved, AuthorDiagnostic, AuthorProject, AuthorProjectTrustPort, AuthorProjectTrustUseCase, AuthorTaskRefusal (+11 more)
+Nodes (18): AuthorTaskProcessAdapter, AuthorTaskProcessAdapterTest, Approved, AuthorDiagnostic, AuthorProject, AuthorProjectTrustPort, AuthorProjectTrustUseCase, AuthorTaskRefusal (+10 more)
 
 ### Community 37 - "BuildRun"
-Cohesion: 0.03
-Nodes (74): InMemoryRunRepository, Flow, ResourceVendoredFileAdapter, Flow, Flow, RunRepositoryImpl, ToolResult, FileStat (+66 more)
+Cohesion: 0.04
+Nodes (46): InMemoryRunRepository, Flow, Flow, RunRepositoryImpl, Flow, RunRepository, InMemoryRunRepository, PipelineResumeTest (+38 more)
 
 ### Community 38 - "CheckpointRepository.kt"
 Cohesion: 0.06
 Nodes (34): CheckpointRepository, copyStreamed(), copyTreeRecursively(), deleteRecursively(), SimpleFileVisitor, findFirstDifference(), BasicFileAttributes, FileVisitResult (+26 more)
 
 ### Community 39 - "ToolExecutionRequest"
-Cohesion: 0.01
-Nodes (110): ByteArray, RunHandle, StepStatus, ToolResult, Workspace, StepExecutionAdapter, Failed, ToolPublicationPort (+102 more)
+Cohesion: 0.02
+Nodes (64): FakeRemoteTransport, ByteArray, Flow, RemoteTransportPort, RunHandle, StepExecutionAdapterTest, Flow, ByteArray (+56 more)
 
-### Community 40 - "ServerConnectionDescriptor"
-Cohesion: 0.06
-Nodes (12): RecordingSupervisor, FakeDaemonSupervisor, ServerConnectionDescriptor, DaemonHealthProber, WslStateStore, AutoCloseable, HttpClient, Socket (+4 more)
+### Community 40 - "KtorRemoteTransportAdapter"
+Cohesion: 0.09
+Nodes (13): SessionSummary, CollectorFailure, ByteArray, RemoteTransportPort, RunHandle, RuntimeException, KtorRemoteTransportAdapter, AutoCloseable (+5 more)
 
 ### Community 41 - "HazeBlurStyle.kt"
-Cohesion: 0.05
-Nodes (34): HazeBlurDefaults, Dp, platformIsBlurEnabledByDefault(), ColorFilterHazeColorEffect, HazeBlurStyleAccumulator, HazeBlurStyleProperty, Alpha, BackgroundColor (+26 more)
+Cohesion: 0.11
+Nodes (13): ColorFilterHazeColorEffect, HazeBlurStyleAccumulator, HazeBlurStyleScope, HazeColorEffect, androidx, BlendMode, Color, Dp (+5 more)
 
 ### Community 42 - "SetupJournalContext"
-Cohesion: 0.05
-Nodes (32): SetupJournalContext, PinnedRelease, PinnedReleases, Result, PinnedSubmodule, SubmoduleSyncEngine, Result, ToolchainBuildEngine (+24 more)
+Cohesion: 0.06
+Nodes (37): SetupJournalContext, Result, PinnedSubmodule, SubmoduleSyncEngine, buildAndDistributeAll(), buildAndroidTools(), buildErofsUtils(), configureAndMake() (+29 more)
 
 ### Community 43 - "SetupLogBuffer"
-Cohesion: 0.08
-Nodes (8): resolveAppDataDir(), Flow, java, SetupActivitySink, SetupLogBuffer, SetupAttemptLogTest, SetupLogBufferTest, InstallPackages
+Cohesion: 0.12
+Nodes (6): resolveAppDataDir(), Flow, java, SetupActivitySink, SetupLogBuffer, SetupLogBufferTest
 
-### Community 44 - "GlassRenderBudget.kt"
-Cohesion: 0.19
-Nodes (19): blurTopology(), BlurTopologyTransition, Fallback, fallbackDecision(), findBlurTopologyTransition(), fitsGlassLayerBudget(), GlassBlurTopology, Full (+11 more)
-
-### Community 45 - "PluginManagerViewModelTest.kt"
+### Community 44 - "StageDescriptor"
 Cohesion: 0.09
-Nodes (17): Cached, Failed, Fetched, IndexFailure, IndexFetchResult, InsecureSource, Malformed, MarketplaceIndexDocument (+9 more)
+Nodes (13): CanonicalStageDescriptors, StageDescriptor, StudioSubobject, allDescriptors(), descriptorFor(), StageEditor, owningStage(), StudioSubobjectId (+5 more)
+
+### Community 45 - "InstalledRecord"
+Cohesion: 0.09
+Nodes (22): atomicWrite(), InstalledPluginRepository, InstalledRecord, PackageIdentity, PackageInspection, InspectorRow(), InstalledInspectorActions(), InstalledInspectorHeader() (+14 more)
 
 ### Community 46 - "WorkspaceWriteLease"
 Cohesion: 0.05
 Nodes (34): EnvironmentLeaseRepository, WorkspaceAdmissionRepository, AdmissionContractTest, acquireBuildAdmission(), Admitted, BuildAdmissionResult, Busy, EnvironmentBusy (+26 more)
 
-### Community 47 - "ServerArtifactInstaller"
-Cohesion: 0.23
-Nodes (6): ServerArtifactInstaller, Charset, WslCliExecutor, RecordingFakeCli, ServerArtifactInstallerTest, WslCliExecutor
+### Community 47 - "RecordingRemoteTransport"
+Cohesion: 0.12
+Nodes (12): EnvironmentVerificationTest, ByteArray, Charset, RemoteTransportPort, RunHandle, ToolPublicationPort, WslCliExecutor, RecordingCliExecutor (+4 more)
 
 ### Community 48 - "config.mjs"
 Cohesion: 0.06
 Nodes (63): assertSafeProjectConfigPath(), configDigest(), effectiveLanes(), fail(), findGitRoot(), globalConfigPath(), isMain, loadEffective() (+55 more)
 
-### Community 49 - "IdePipelineRail.kt"
-Cohesion: 0.06
-Nodes (31): IdeReadinessRow(), Modifier, IdeStatusBadge(), Modifier, StatusBadgeStyle, IdeSummaryGrid(), IdeSummaryItem, Modifier (+23 more)
+### Community 49 - ".captureOverStripes"
+Cohesion: 0.12
+Nodes (9): IdeTopAppBar(), Composable, Modifier, IdeShellGlassChromeScreenshotTest, AppTheme, ImageBitmap, GlassPolicyGuardrailTest, Color (+1 more)
 
 ### Community 50 - "HazeProgressive"
-Cohesion: 0.05
-Nodes (50): Easing, calculateBlurTileMode(), getOrCreateRenderEffect(), Color, Density, Dp, Offset, Size (+42 more)
+Cohesion: 0.07
+Nodes (34): Easing, calculateBlurTileMode(), getOrCreateRenderEffect(), Color, Density, Dp, Offset, Size (+26 more)
 
 ### Community 51 - "FakeToolRepository"
 Cohesion: 0.04
 Nodes (28): DevicesCommand, io, ToolCommand, DevicesCommand, io, ToolCommand, AndroidDeviceAdapterTest, io (+20 more)
 
-### Community 52 - "StudioViewModel"
-Cohesion: 0.04
-Nodes (31): Flow, Json, StudioPresentationMap, StudioPresentationStore, StudioPresentationStoreTest, InMemoryStudioPresentationStore, Flow, StudioPresentationStorePort (+23 more)
+### Community 52 - "StudioPresentation"
+Cohesion: 0.08
+Nodes (12): Flow, Json, StudioPresentationMap, StudioPresentationStore, StudioPresentationStoreTest, InMemoryStudioPresentationStore, Flow, StudioPresentationStorePort (+4 more)
 
-### Community 53 - "StepStatus"
-Cohesion: 0.03
-Nodes (82): AptCommandBuilder, ArchiveToolsInspector, BuildCacheInspector, CompilersInspector, CompositeSystemDoctorEngine, total, WslCliExecutor, DiagnosticContext (+74 more)
+### Community 53 - "StudioViewModel"
+Cohesion: 0.10
+Nodes (8): StateFlow, ViewModel, StudioDockTab, ACTIVITY, ARTIFACTS, PROBLEMS, StudioRailItem, StudioViewModel
 
 ### Community 54 - "ValidationError"
-Cohesion: 0.04
-Nodes (52): ApkJarMutationAdapter, Applied, ComponentProcessResult, computeAotArtifacts(), ParsedHunk, Refused, CheckedPlan, FileMutationAdapter (+44 more)
+Cohesion: 0.08
+Nodes (34): CheckedPlan, FileMutationAdapter, PlannedOperation, Ready, Refused, Invalid, PartitionPath, PartitionPathResolver (+26 more)
 
 ### Community 55 - "EnvironmentReadinessState"
-Cohesion: 0.03
-Nodes (69): Flow, RuntimeException, Workspace, RemoteWorkspaceProvisioner, StepFailure, FakeReadinessPort, ByteArray, EnvironmentReadinessPort (+61 more)
+Cohesion: 0.05
+Nodes (39): Flow, RuntimeException, Workspace, RemoteWorkspaceProvisioner, StepFailure, FakeReadinessPort, ByteArray, EnvironmentReadinessPort (+31 more)
 
-### Community 56 - "FakeWorkspaceRepo"
-Cohesion: 0.12
-Nodes (7): FakeTargetRepo, FakeWorkspaceRepo, Flow, Result, TargetDevice, TargetRepository, Workspace
+### Community 56 - "PluginImportTab.kt"
+Cohesion: 0.14
+Nodes (28): ImportStep, INSPECT, INSTALL, REVIEW, Composable, Modifier, PluginFooterBar(), Modifier (+20 more)
 
 ### Community 57 - "GlassTextField"
-Cohesion: 0.12
-Nodes (41): Clear, Custom, Default, Error, GlassOtpTextField(), GlassPasswordField(), GlassSearchField(), GlassTextField() (+33 more)
+Cohesion: 0.10
+Nodes (45): Clear, Custom, Default, Error, GlassOtpTextField(), GlassPasswordField(), GlassSearchField(), GlassTextField() (+37 more)
 
 ### Community 58 - "CliktCommand"
 Cohesion: 0.06
@@ -1594,52 +1607,52 @@ Cohesion: 0.07
 Nodes (28): Flow, IllegalStateException, TargetDevice, OptimisticRevisionConflictException, PipelineDraftSession, PipelineDraftSessionRepository, DiscardPipelineDraftChangesUseCase, Flow (+20 more)
 
 ### Community 62 - "DependencyRef"
-Cohesion: 0.10
-Nodes (22): Comparable, toInstalledPackage(), Exact, Failure, InstalledPackage, Interval, Locked, LockResult (+14 more)
+Cohesion: 0.11
+Nodes (21): Comparable, Exact, Failure, InstalledPackage, Interval, Locked, LockResult, malformedRange() (+13 more)
 
 ### Community 63 - "GlassCard"
+Cohesion: 0.08
+Nodes (37): GlassCard(), Color, Dp, HazeShape, Modifier, GlassRole, FloatingControl, Shell (+29 more)
+
+### Community 64 - "ValidationReport"
+Cohesion: 0.05
+Nodes (33): TargetDevice, StageSettingsValidator, ArtifactFreshness, FRESH, MISSING, STALE, UNVERIFIED, DeferredArtifactCheck (+25 more)
+
+### Community 65 - "Operation"
+Cohesion: 0.10
+Nodes (17): NotApplicable, PluginPlanResolver, Rejected, ResolutionInput, ResolutionResult, Resolved, Run, PluginPlanResolverTest (+9 more)
+
+### Community 66 - "PluginManagerViewModel"
 Cohesion: 0.06
-Nodes (40): GlassCard(), Color, Dp, HazeShape, Modifier, GlassToggle(), GlassRole, FloatingControl (+32 more)
-
-### Community 64 - "Condition"
-Cohesion: 0.09
-Nodes (28): Always, And, Condition, Equals, HookPlacement, AFTER, BEFORE, In (+20 more)
-
-### Community 65 - "ResolutionInput"
-Cohesion: 0.15
-Nodes (8): NotApplicable, PluginPlanResolver, Rejected, ResolutionInput, ResolutionResult, Resolved, Run, PluginPlanResolverTest
-
-### Community 66 - "InstalledRecord"
-Cohesion: 0.06
-Nodes (25): InstalledRecord, TrustDecision, TRUSTED_SIGNATURE, TRUSTED_UNVERIFIED, UNTRUSTED, InspectorRow(), InstalledInspectorActions(), InstalledInspectorHeader() (+17 more)
+Nodes (12): TrustDecision, TRUSTED_SIGNATURE, TRUSTED_UNVERIFIED, UNTRUSTED, StateFlow, ViewModel, PluginDestination, AUTHOR_TOOLS (+4 more)
 
 ### Community 67 - "FakeToolchainRepo"
 Cohesion: 0.21
 Nodes (4): FakeToolchainRepo, org, Result, ToolchainSetupRepository
 
-### Community 68 - "GlassFileTree.kt"
-Cohesion: 0.17
-Nodes (17): FileNode, FileType, DIRECTORY, FILE, SYMLINK, DirectoryExpansionIndicator(), FlattenedFileNode, flattenFileTree() (+9 more)
+### Community 68 - "DecodedComponent"
+Cohesion: 0.10
+Nodes (14): ApkJarMutationAdapter, Applied, ComponentProcessResult, computeAotArtifacts(), ParsedHunk, Refused, FakeComponentPatchPort, ApkJarOutcome (+6 more)
 
 ### Community 69 - "EnvironmentReadiness"
-Cohesion: 0.06
-Nodes (18): EnvironmentReadinessAdapter, EnvironmentReadinessPort, Flow, Workspace, EnvironmentReadinessAdapterTest, FakeRemoteTransport, FakeToolchainProvisioningService, ByteArray (+10 more)
+Cohesion: 0.08
+Nodes (13): EnvironmentReadinessAdapter, EnvironmentReadinessPort, Flow, Workspace, EnvironmentReadinessAdapterTest, FakeRemoteTransport, FakeToolchainProvisioningService, ByteArray (+5 more)
 
-### Community 70 - "Haze.kt"
-Cohesion: 0.10
-Nodes (16): HazeCoordinates, HazeSourceElement, GraphicsLayer, Modifier, ModifierNodeElement, Offset, Rect, Size (+8 more)
+### Community 70 - "ConnectionState"
+Cohesion: 0.09
+Nodes (14): Connected, Connecting, ConnectionState, ConnectionStateHolder, Disconnected, Disposed, Failed, StateFlow (+6 more)
 
 ### Community 71 - "WslToolchainProvisioner"
-Cohesion: 0.03
-Nodes (42): org, Result, StepStatus, T, ToolchainProvisioningService, ToolchainSetupRepository, WslCliExecutor, PinnedSubmodule (+34 more)
+Cohesion: 0.06
+Nodes (32): org, StateFlow, ToolchainProvisioningService, PinnedSubmodule, WslToolchainProvisioner, inMemoryToolchainRepository(), MapSettings, ByteArray (+24 more)
 
 ### Community 72 - "InstallCommand"
 Cohesion: 0.40
 Nodes (3): InstallCommand, io, ToolCommand
 
-### Community 73 - "PluginImportTab.kt"
-Cohesion: 0.17
-Nodes (26): PackageInspection, ImportStep, INSPECT, INSTALL, REVIEW, Modifier, PluginStepper(), StepperConnector() (+18 more)
+### Community 73 - "AssetRef"
+Cohesion: 0.24
+Nodes (5): FileMutationAdapterTest, ByteArray, MessageDigest, ConcreteMutationPlan, AssetRef
 
 ### Community 74 - "CLAUDE.md"
 Cohesion: 0.20
@@ -1658,20 +1671,20 @@ Cohesion: 0.12
 Nodes (15): ArgumentSpec, OptionSpec, SpecDraftGenerator, ArgumentSpec, ArtifactDirection, IN_PLACE, INPUT, OUTPUT (+7 more)
 
 ### Community 78 - ".createFixture"
-Cohesion: 0.05
-Nodes (18): BuildRunViewModelTest, FakePipelineExecutionPort, FakeReadinessPort, FakeRunRepository, FakeSnapshotRepository, FakeTargetRepository, FakeWorkspaceRepository, Fixture (+10 more)
+Cohesion: 0.06
+Nodes (16): BuildRunViewModelTest, FakePipelineExecutionPort, FakeReadinessPort, FakeRunRepository, FakeTargetRepository, Fixture, ByteArray, EnvironmentReadinessPort (+8 more)
 
 ### Community 79 - "ZCode Delegate"
 Cohesion: 0.04
 Nodes (43): Backgrounding, Dispatch and poll, How the relay finds ZCode, Options, Reading the output, The `result.json` contract, When a run misbehaves, Why `build` and `edit` are rejected (+35 more)
 
 ### Community 80 - "GlassTabBar.kt"
-Cohesion: 0.24
-Nodes (15): Closable, GlassTab(), GlassTabBar(), GlassTabItem(), Color, Composable, HazeShape, Modifier (+7 more)
+Cohesion: 0.17
+Nodes (21): Closable, GlassTab(), GlassTabBar(), GlassTabItem(), Color, Composable, HazeShape, Modifier (+13 more)
 
 ### Community 81 - "PluginPlanTemplate"
 Cohesion: 0.05
-Nodes (28): InstalledPluginRepositoryTest, ByteArray, PluginPackageCodec, PluginPackagePolicy, PluginPackageCodecTest, ApkJarPatch, BooleanSetting, CompiledClassMerge (+20 more)
+Nodes (25): InstalledPluginRepositoryTest, ByteArray, Severity, ERROR, INFO, WARNING, EmptyPluginCatalog, PluginCatalogPort (+17 more)
 
 ### Community 82 - "README_GLASS_THEME.md"
 Cohesion: 0.04
@@ -1690,44 +1703,48 @@ Cohesion: 0.05
 Nodes (42): Before the first run: check the binary, Dispatch and poll, Dispatching, Recovering lost work, The commit boundary, The result, Waiting for completion, What the helper is doing (and the alternatives) (+34 more)
 
 ### Community 86 - "BytecodeMatcher"
-Cohesion: 0.15
+Cohesion: 0.14
 Nodes (12): Ambiguous, BytecodeMatcher, ClassMismatch, Instruction, Matched, MatchOutcome, MethodNotFound, NearMiss (+4 more)
 
-### Community 87 - "EnvironmentReadinessAdapter.kt"
-Cohesion: 0.12
-Nodes (12): DaemonHealthEvaluation, ToolchainReadinessPolicy, DaemonFailureCategory, COMPATIBILITY_MODE, UNHEALTHY_STATUS, UNREACHABLE, UNRECOGNIZED_STATUS, UNSUPPORTED_JAVA (+4 more)
+### Community 87 - "GlassRenderBudget.kt"
+Cohesion: 0.19
+Nodes (19): blurTopology(), BlurTopologyTransition, Fallback, fallbackDecision(), findBlurTopologyTransition(), fitsGlassLayerBudget(), GlassBlurTopology, Full (+11 more)
 
-### Community 88 - "PackageWriterTest"
-Cohesion: 0.09
-Nodes (14): BoundedStream, ByteArray, RuntimeException, T, Ok, PackageReadResult, PluginPackageReader, Reader (+6 more)
+### Community 88 - "PluginPackageReader.kt"
+Cohesion: 0.12
+Nodes (13): BoundedStream, ByteArray, RuntimeException, T, Ok, PackageReadResult, PluginPackageReader, Reader (+5 more)
 
 ### Community 89 - "StudioScreen.kt"
-Cohesion: 0.07
-Nodes (34): ContentHeader(), Composable, Modifier, RowScope, androidx, Composable, Modifier, StudioTopAppBar() (+26 more)
+Cohesion: 0.06
+Nodes (46): ContentHeader(), Composable, Modifier, RowScope, IdeNavigatorItem, IdeNavigatorPanel(), Composable, ImageVector (+38 more)
 
-### Community 90 - "ReadinessChecklistSection.kt"
+### Community 90 - "IconSize"
 Cohesion: 0.05
-Nodes (64): Modifier, OverviewBreadcrumbHeader(), OverviewHeaderTargetAndActions(), Modifier, OverviewCallToAction(), ActionButtonStyle, ImageVector, Modifier (+56 more)
+Nodes (73): Color, Modifier, LtiRomStudioMark(), BrandIdentity(), BrandColors, WallpaperColors, Elevation, GlassDimens (+65 more)
 
 ### Community 91 - "GLASS_MIGRATION_GUIDE.md"
 Cohesion: 0.04
 Nodes (46): 1. Type Changes, 1. Update Imports, 1. Using Pre-configured Presets, 1. Visual Testing, 2. Animated Preset Transitions, 2. Property Changes, 2. Unit Testing, 2. Update Preset References (+38 more)
 
 ### Community 92 - "HazeBlurStyle"
-Cohesion: 0.11
-Nodes (14): Color, Material3(), combineHazeBlurStyles(), HazeBlurStyle, RecordedHazeBlurStyle, CupertinoMaterials, cupertinoMaterialStyle(), cupertinoMaterialValues() (+6 more)
+Cohesion: 0.29
+Nodes (4): HazeBlurStyle, FluentMaterials, Color, Dp
 
 ### Community 93 - "PipelineOrchestrator"
 Cohesion: 0.15
 Nodes (21): Driver, ByteArray, Flow, RuntimeException, Workspace, PipelineEvent, PipelineOrchestrator, RunFinished (+13 more)
 
 ### Community 94 - "ToolCommand"
-Cohesion: 0.08
-Nodes (20): ExecOutCommand, ByteArray, DumpConfigurationsCommand, io, ToolCommand, BinaryToolCommand, CommandExecutionResult, GhExtensionCommand (+12 more)
+Cohesion: 0.07
+Nodes (22): ExecOutCommand, ByteArray, CodespaceStopCommand, io, ToolCommand, io, ToolCommand, VariableCommand (+14 more)
 
-### Community 96 - "StageId"
-Cohesion: 0.03
-Nodes (78): PipelineStageSequence, StageId, BUILD_FLASHABLE_ZIP, DEBLOAT, FIRMWARE_ACQUISITION, FIRMWARE_EXTRACTION, GENERATE_OTA_MANIFEST, MODULE_APPLICATION (+70 more)
+### Community 95 - "TransportCliExecutor"
+Cohesion: 0.17
+Nodes (8): Charset, io, WslCliExecutor, TransportCliExecutor, ByteArray, RemoteTransportPort, RecordingRemoteTransport, TransportCliExecutorTest
+
+### Community 96 - "KoinModules.kt"
+Cohesion: 0.06
+Nodes (22): Modifier, StageEditor, StageEditorContext, AcquireStageEditor, Modifier, StageEditor, AssembleStageEditor, Modifier (+14 more)
 
 ### Community 97 - "zcode-delegate/scripts/relay.mjs"
 Cohesion: 0.11
@@ -1737,45 +1754,49 @@ Nodes (43): applyFleetLane(), asciiFold(), asTarget(), buildArgv(), BUNDLE_RELAT
 Cohesion: 0.09
 Nodes (15): CachedIndexRecord, Done, Failure, HttpURLConnection, StepResult, URI, PluginIndexAdapter, Redirect (+7 more)
 
-### Community 99 - "SetupPresentationMapper.kt"
-Cohesion: 0.05
-Nodes (70): RecoveryEvidencePresentation, RecoveryOperationPresentation, RecoveryPresentation, RecoveryProblemItem, BuildServicePresentation, checkActiveTransitions(), CheckedNeedsSetup, checkFailures() (+62 more)
+### Community 99 - "EnvironmentStepContent.kt"
+Cohesion: 0.04
+Nodes (94): SetupOperationState, AWAITING_USER_ACTION, CANCELLED, FAILED, INTERRUPTED, PREVIEW, RECONNECTING, RUNNING (+86 more)
 
-### Community 100 - "StageSettingConsumerMatrixTest"
-Cohesion: 0.13
-Nodes (6): DefaultPipelineStages, GenerateOtaManifestStage, GenerateOtaManifestStageTest, ConsumedFieldCase, StageSettingConsumerMatrixTest, UnconsumedField
+### Community 100 - "BuildPipelineReviewTest"
+Cohesion: 0.15
+Nodes (6): BuildPipelineReviewTest, Distro, Distro, Distro, Charset, WslCliExecutor
 
 ### Community 101 - "PatchModCli.kt"
-Cohesion: 0.11
-Nodes (19): CliResult, CompileModPayloadCommand, DiagnosticEntry, Failure, GenerateModPlanCommand, handleResult(), InspectModCommand, CliktCommand (+11 more)
+Cohesion: 0.13
+Nodes (13): CompileModPayloadCommand, GenerateModPlanCommand, handleResult(), InspectModCommand, CliktCommand, Context, main(), ModScenario (+5 more)
 
-### Community 102 - "DistroStatus"
-Cohesion: 0.07
-Nodes (24): HostPrerequisitePort, closestToUsable(), DistroStatus, NoDistro, NoUsableUser, StartupFailed, Unsupported, Usable (+16 more)
+### Community 102 - "TerminalHandoffState"
+Cohesion: 0.09
+Nodes (23): extractToolName(), handleTrackerAction(), AnotherOperationRunning, Done, Idle, setTerminalLaunchFailure(), StillMissing, TerminalHandoffState (+15 more)
 
-### Community 103 - "PipelineStep"
-Cohesion: 0.14
-Nodes (9): AvbSizeSearch, Check, EditFile, PipelineStep, Tool, WriteFile, WriteVendoredFile, AcquisitionPolicy (+1 more)
+### Community 103 - "DefaultStageEditorRegistry"
+Cohesion: 0.15
+Nodes (11): DefaultStageEditorRegistry, DuplicateStageEditorException, IllegalArgumentException, IllegalStateException, StageEditor, MissingStageEditorException, UnknownSubobjectException, DefaultStageEditorRegistryTest (+3 more)
 
 ### Community 104 - "commandcode-delegate/scripts/relay.mjs"
 Cohesion: 0.13
 Nodes (40): applyFleetLane(), asciiFold(), buildArgv(), canonicalFilePath(), changedDirtyPaths(), commandCodeEnv(), commandCodeVersion(), dirtyPaths() (+32 more)
 
+### Community 105 - "SetupJourneySidebar.kt"
+Cohesion: 0.36
+Nodes (9): computeSidebarBadge(), computeSidebarSubtitle(), findLastVerifiedTime(), formatRelativeAgo(), hasAnyFailedSteps(), hasAnyRestoredSteps(), hasAnyStepRunning(), Modifier (+1 more)
+
 ### Community 106 - "JetBrains IntelliJ Platform Icon Manifest"
 Cohesion: 0.05
 Nodes (40): Actions (85), Bookmarks (4), Breakpoints (41), Build (7), CodeInsight (11), CodeWithMe (28), Curated App Icons (AppIcons.kt) (26), Debugger (35) (+32 more)
 
-### Community 107 - "WorkspaceType"
-Cohesion: 0.10
-Nodes (13): WorkDirDiscoveryService, WorkDirDiscoveryServiceTest, CapturingSystemNotifier, SystemNotifier, WorkspaceRepositoryTest, EnvironmentId, WorkspaceType, LOCAL (+5 more)
+### Community 107 - ".PrototypeGlassToggle"
+Cohesion: 0.16
+Nodes (12): GlassTogglePrototypeTest, AppTheme, Color, ImageBitmap, Modifier, MutableInteractionSource, RoundedCornerShape, ThemeTintConfig (+4 more)
 
-### Community 108 - "LtiPreferencesDataSource"
-Cohesion: 0.10
-Nodes (10): Flow, UserDataRepositoryImpl, Flow, LtiPreferencesDataSource, LtiPreferencesDataSourceTest, Flow, UserDataRepository, EditorSettings (+2 more)
+### Community 108 - "UserDataRepository"
+Cohesion: 0.13
+Nodes (8): Flow, UserDataRepositoryImpl, Flow, Flow, UserDataRepository, EditorSettings, NotificationSettings, UserData
 
-### Community 109 - "NotificationLevel"
-Cohesion: 0.18
-Nodes (8): NotificationLevel, Error, Info, None, Warning, DesktopTrayNotifier, SystemNotifier, DesktopTrayNotifierTest
+### Community 109 - "SimpleMockServer"
+Cohesion: 0.20
+Nodes (6): AutoCloseable, HttpClient, Socket, KtorRemoteTransportAdapterTest, SimpleMockServer, TestSupervisor
 
 ### Community 110 - "WorkspaceJailInterceptor"
 Cohesion: 0.08
@@ -1786,32 +1807,28 @@ Cohesion: 0.12
 Nodes (38): applyFleetLane(), asciiFold(), AUTONOMY_MODES, autonomyFlags(), buildArgv(), canonicalFilePath(), changedDirtyPaths(), dirtyPaths() (+30 more)
 
 ### Community 112 - "ToolDomainEvent"
-Cohesion: 0.24
-Nodes (8): DefaultToolEventBus, ExecutionCompleted, ExecutionFailed, ExecutionStarted, SharedFlow, ToolDomainEvent, ToolEventBus, EventPublishingInterceptorTest
+Cohesion: 0.13
+Nodes (16): DefaultToolEventBus, ExecutionCompleted, ExecutionFailed, ExecutionStarted, SharedFlow, ToolDomainEvent, ToolEventBus, EventPublishingInterceptor (+8 more)
 
-### Community 113 - "PublishViewModel"
-Cohesion: 0.18
-Nodes (9): PublishProvider, GITHUB_RELEASE, LOCAL_EXPORT, NONE, StateFlow, TargetDevice, ViewModel, PublishViewModel (+1 more)
-
-### Community 114 - "ServerArtifactAdapterTest.kt"
-Cohesion: 0.26
-Nodes (6): FakeCli, FakeProber, Charset, WslCliExecutor, RecordingLauncher, ServerArtifactAdapterTest
+### Community 113 - "GlassFileTree.kt"
+Cohesion: 0.17
+Nodes (17): FileNode, FileType, DIRECTORY, FILE, SYMLINK, DirectoryExpansionIndicator(), FlattenedFileNode, flattenFileTree() (+9 more)
 
 ### Community 115 - "HazeSourceNode"
-Cohesion: 0.11
-Nodes (19): Constraints, clearHazeAreaLayerOnStop(), HazeSourceNode, HazeTraversableNodeKeys, Effect, Source, CompositionLocalConsumerModifierNode, DrawModifierNode (+11 more)
+Cohesion: 0.10
+Nodes (21): Constraints, HazeSourceElement, ModifierNodeElement, clearHazeAreaLayerOnStop(), HazeSourceNode, HazeTraversableNodeKeys, Effect, Source (+13 more)
 
 ### Community 116 - "navigation/StudioRoutes.kt"
 Cohesion: 0.12
 Nodes (25): buildPluginsRoute(), buildRunRoute(), buildStudioRoute(), NavOptions, navigateToPlugins(), navigateToRun(), navigateToStudio(), parsePluginsRoute() (+17 more)
 
-### Community 117 - "CliktGenerator"
-Cohesion: 0.35
-Nodes (5): capitalize(), CliktGenerator, ArgumentSpec, CommandSpec, OptionSpec
+### Community 117 - ".baseStyle"
+Cohesion: 0.51
+Nodes (3): GlassMaterialStyles, AppTheme, Color
 
 ### Community 118 - "StageContext"
-Cohesion: 0.15
-Nodes (3): StageContext, BuildFlashableZipStage, stepCommand()
+Cohesion: 0.04
+Nodes (21): DefaultPipelineStages, AvbSizeSearch, Check, EditFile, PipelineStep, Tool, WriteFile, WriteVendoredFile (+13 more)
 
 ### Community 119 - "ToolOutputParser.kt"
 Cohesion: 0.10
@@ -1823,15 +1840,15 @@ Nodes (10): Command Options, Command Options, Command Options, Command Options, 
 
 ### Community 121 - "GlassButton"
 Cohesion: 0.03
-Nodes (114): backgroundColor(), contentColor(), Custom, GlassButton(), GlassButtonDefaults, GlassButtonStyle, GlassButtonVariant, Primary (+106 more)
+Nodes (125): backgroundColor(), contentColor(), Custom, GlassButton(), GlassButtonDefaults, GlassButtonStyle, GlassButtonVariant, Primary (+117 more)
 
 ### Community 122 - "Contributor Covenant Code of Conduct"
 Cohesion: 0.06
 Nodes (31): 1. Correction, 2. Warning, 3. Temporary Ban, 4. Permanent Ban, Attribution, Contributor Covenant Code of Conduct, Enforcement, Enforcement Guidelines (+23 more)
 
 ### Community 123 - "FakeProcess"
-Cohesion: 0.24
-Nodes (3): FakeProcess, java, Process
+Cohesion: 0.16
+Nodes (4): WslProcessLaunchResult, FakeProcess, java, Process
 
 ### Community 124 - "HazeBackdropRenderer"
 Cohesion: 0.10
@@ -1842,12 +1859,12 @@ Cohesion: 0.06
 Nodes (31): Basic Options, Boolean Flag Options, Choice and Switch Options With Groups, Choice Options, Co-Occurring Option Groups, Configuration Files and Environment Variables, Counted Flag Options, Custom Eager Options (+23 more)
 
 ### Community 126 - "ConfigurationViewModel"
-Cohesion: 0.06
-Nodes (24): ConfigurationNavMode, CLONE, CREATE, EDIT, ConfigurationTab, GENERAL, HARDWARE, OS_STREAMS (+16 more)
+Cohesion: 0.12
+Nodes (13): ConfigurationNavMode, CLONE, CREATE, EDIT, ConfigurationTab, GENERAL, HARDWARE, OS_STREAMS (+5 more)
 
 ### Community 127 - "HazeEffectNode"
-Cohesion: 0.11
-Nodes (4): drawContentSafely(), HazeEffectNode, Lifecycle, Style
+Cohesion: 0.03
+Nodes (53): DelegatingNode, drawContentSafely(), HazeArea, HazeCoordinates, FloatArray, GraphicsLayer, LayoutCoordinates, Modifier (+45 more)
 
 ### Community 128 - "StudioAction"
 Cohesion: 0.06
@@ -1857,29 +1874,33 @@ Nodes (26): StudioAction, ABOUT, BRING_ALL_TO_FRONT, CHECK_UPDATES, CLONE_GIT, C
 Cohesion: 0.12
 Nodes (15): compatibleTargets, conflicts, dependencies, displayName, id, PQ84P01, license, payloads (+7 more)
 
-### Community 130 - "TestCommand"
-Cohesion: 0.18
-Nodes (10): ExecutionChain, R, ToolCommand, ToolExecutionInterceptor, ToolResult, TestCommand, ToolExecutionPipelineTest, ToolExecutionInterceptor (+2 more)
+### Community 130 - ".proceed"
+Cohesion: 0.12
+Nodes (18): ExecutionChain, ExecutionChain, R, ToolCommand, ToolResult, RealExecutionChain, ToolExecutionInterceptor, ToolExecutionPipeline (+10 more)
+
+### Community 131 - "ToolingModule.kt"
+Cohesion: 0.03
+Nodes (32): DesktopTerminalLauncher, Result, DesktopTerminalLauncherTest, ByteArray, RemoteFileUploaderPort, Result, TerminalLauncherPort, WslPresencePort (+24 more)
 
 ### Community 132 - "GlassLayoutState"
 Cohesion: 0.14
 Nodes (5): Active, AllCollapsed, GlassLayoutState, PanelDragAxisState, PanelVisibilityState
 
 ### Community 133 - "SimulatedExecutionPort"
-Cohesion: 0.12
+Cohesion: 0.11
 Nodes (7): ByteArray, RunHandle, StepStatus, ToolResult, Workspace, SimulatedExecutionPort, BoundedTransferPortTest
 
 ### Community 134 - "desktopMain/kotlin/org/ide/lti/feature/setup/SetupPerformanceScenario.kt"
-Cohesion: 0.17
-Nodes (11): BenchmarkMarkersPayload, BenchmarkSegmentMarker, createBenchmarkLogs(), createBenchmarkPreviewOperation(), createBenchmarkRecents(), createBenchmarkTools(), Modifier, saveMarkersToFile() (+3 more)
+Cohesion: 0.14
+Nodes (14): ToolScope, HOST, WSL2, BenchmarkMarkersPayload, BenchmarkSegmentMarker, createBenchmarkLogs(), createBenchmarkPreviewOperation(), createBenchmarkRecents() (+6 more)
 
-### Community 135 - "BuildFlashableZipStage.kt"
-Cohesion: 0.15
-Nodes (9): TargetDevice, PackagingPolicy, DynamicPartitionsOpListWriter, PartitionImageInfo, OtaMetadataParams, OtaMetadataWriter, PackagePolicy, TargetDevice (+1 more)
-
-### Community 136 - "AppSettingsState"
+### Community 135 - "PlatformRepositoryModule.desktop.kt"
 Cohesion: 0.11
-Nodes (12): TimeMark, StartupTiming, AppSettingsState, KoinAppDeclaration, initKoin(), Modifier, LtiSharedApp(), SharedApp() (+4 more)
+Nodes (6): readIfPresent(), IntentData, SnapshotMaterializer, SnapshotMaterializerTest, SnapshotMaterializationIntent, SnapshotMaterializerPort
+
+### Community 136 - "PayloadCompilationResult"
+Cohesion: 0.20
+Nodes (10): Compiled, Failed, PayloadCompilationReceipt, PayloadCompilationResult, PayloadCompilerCodes, PayloadCompilerPort, ToolIdentity, CompilePayloadCommandTest (+2 more)
 
 ### Community 137 - "Commands"
 Cohesion: 0.04
@@ -1893,25 +1914,21 @@ Nodes (46): `boot`, Commands, `createLogicalPartition`, `deleteLogicalPartition`
 Cohesion: 0.08
 Nodes (23): Document, Fleet schema (`delegate-fleet.v1`), Helpers, Implementer keys and dials, Paths, Auth and models, Grounding the lane map, How to ask them (+15 more)
 
-### Community 140 - "Bitmask"
-Cohesion: 0.18
-Nodes (3): BlurDirtyFields, GlassDirtyFields, Bitmask
-
-### Community 141 - "WorkspacePreferencesDataSource"
-Cohesion: 0.07
-Nodes (16): Flow, Json, RunRecordDataSource, Flow, Json, Workspace, RecentProjectList, WorkspaceList (+8 more)
+### Community 141 - "RunRecordDataSource"
+Cohesion: 0.15
+Nodes (8): Flow, Json, RunRecordDataSource, InMemoryRunFileStorage, RunRecordDataSourceTest, BuildRunSummary, RunIndex, toSummary()
 
 ### Community 142 - "GlassInteractionController"
-Cohesion: 0.15
-Nodes (19): AnimatedFloatChannel, FullMotionDurationScale, GlassInteractionController, GlassInteractionControllerConfiguration, GlassInteractionSignals, GlassInteractionSlots, GlassInteractionTargets, FiniteAnimationSpec (+11 more)
+Cohesion: 0.07
+Nodes (30): BlurInputScalePolicy, Size, GlassInputScalePolicy, saturatedTimes(), AnimatedFloatChannel, FullMotionDurationScale, GlassInteractionController, GlassInteractionControllerConfiguration (+22 more)
 
-### Community 143 - "StandaloneDistributionTest"
-Cohesion: 0.21
-Nodes (3): SdkBoundaryTest, PomDependency, StandaloneDistributionTest
+### Community 143 - "HazeBackdropBackendState"
+Cohesion: 0.11
+Nodes (9): HazeBackdropBackendSelection, FallbackFailed, FallbackUnavailable, Native, Undecided, HazeBackdropBackendState, SdkBoundaryTest, PomDependency (+1 more)
 
-### Community 144 - "Spacing"
-Cohesion: 0.06
-Nodes (73): column, Continuity, ContinuousRoundedRectangle, ImageVector, resolveStageIcon(), LtiLayoutAnimations, LtiLayoutDefaults, IdeAppFrame() (+65 more)
+### Community 144 - "GlassShapes"
+Cohesion: 0.14
+Nodes (14): Continuity, ContinuousRoundedRectangle, GlassStatusBar(), Modifier, RowScope, GlassShapes, Dp, HazeShape (+6 more)
 
 ### Community 145 - "AuditRecord"
 Cohesion: 0.10
@@ -1929,17 +1946,17 @@ Nodes (23): aiderVersion(), applyFleetLane(), buildArgv(), detectModelFailure(),
 Cohesion: 0.19
 Nodes (23): applyFleetLane(), buildArgv(), codexEnv(), codexVersion(), dispatchToCodex(), extractThreadId(), fail(), gitTouchedFiles() (+15 more)
 
-### Community 149 - "TerminalOutputEvent"
-Cohesion: 0.12
-Nodes (11): CliktError, LtiCliApp, Flow, StateFlow, LtiCommandContext, Clear, Command, Error (+3 more)
+### Community 149 - ".emit"
+Cohesion: 0.18
+Nodes (9): CliktError, Flow, StateFlow, Clear, Command, Error, Output, TerminalLine (+1 more)
 
 ### Community 150 - "AppTheme"
 Cohesion: 0.04
-Nodes (75): AppTheme, Color, Modifier, MiniIdeEditor(), MiniIdePreview(), MiniIdeSidebar(), MiniIdeStatusBar(), MiniIdeTitleBar() (+67 more)
+Nodes (68): AppTheme, Color, Modifier, MiniIdeEditor(), MiniIdePreview(), MiniIdeSidebar(), MiniIdeStatusBar(), MiniIdeTitleBar() (+60 more)
 
 ### Community 151 - "GlassRenderParams.kt"
-Cohesion: 0.07
-Nodes (64): calculateGlassInteractionPatchSize(), calculateInteractionSamplingPadding(), GlassInteractionTopology, IntRect, IntSize, Offset, Size, resolveFixedSizeInteractionBounds() (+56 more)
+Cohesion: 0.06
+Nodes (65): drawFallbackEdge(), drawInteractionLighting(), fallbackEdgeAlpha(), FallbackGlassDelegate, FallbackGlassPreparedDraw, Delegate, GraphicsContext, Size (+57 more)
 
 ### Community 152 - "cursor-delegate/scripts/relay.mjs"
 Cohesion: 0.21
@@ -1958,8 +1975,8 @@ Cohesion: 0.33
 Nodes (7): PlatformDependentDataModule, Flow, NetworkMonitor, Flow, TimeZoneMonitor, JvmPlatformDependentDataModule, TimeZone
 
 ### Community 156 - "HazeInvalidationTracking.kt"
-Cohesion: 0.09
-Nodes (22): DirtyFields, currentHazeInvalidationTag(), HazeInvalidationEvent, hazeInvalidationEvents(), HazeInvalidationNodeType, Effect, Source, HazeInvalidationReason (+14 more)
+Cohesion: 0.11
+Nodes (21): currentHazeInvalidationTag(), HazeInvalidationEvent, hazeInvalidationEvents(), HazeInvalidationNodeType, Effect, Source, HazeInvalidationReason, Content (+13 more)
 
 ### Community 157 - "definitions"
 Cohesion: 0.13
@@ -1969,9 +1986,9 @@ Nodes (20): description, direction, name, spelling, subcommandPath, type, additi
 Cohesion: 0.10
 Nodes (17): AdbSerial, DeviceState, DEVICE, FASTBOOT, FASTBOOTD, RECOVERY, SIDELOAD, FastbootSerial (+9 more)
 
-### Community 159 - "ToolSpecification"
-Cohesion: 0.24
-Nodes (10): capitalize(), KotlinModelGenerator, CommandSpec, OptionType, BOOLEAN, CHOICE, INT, PATH (+2 more)
+### Community 159 - "RuntimeKeys"
+Cohesion: 0.07
+Nodes (11): digestToken(), RuntimeKeys, BuildPropStamper, DynamicPartitionsOpListWriter, PartitionImageInfo, OtaManifestWriter, OtaMetadataParams, OtaMetadataWriter (+3 more)
 
 ### Community 160 - "agy-delegate/scripts/relay.mjs"
 Cohesion: 0.20
@@ -1998,12 +2015,12 @@ Cohesion: 0.22
 Nodes (4): TerminalCommandDispatcherImpl, FakeShellExecutor, Flow, TerminalCommandDispatcherTest
 
 ### Community 166 - "AppIcon"
-Cohesion: 0.03
-Nodes (106): actionCardBorderColor(), ActionCardIcon(), actionCardSurfaceColor(), GlassActionCard(), GlassItemCard(), itemCardBorderColor(), ItemCardIcon(), Color (+98 more)
+Cohesion: 0.05
+Nodes (84): actionCardBorderColor(), ActionCardIcon(), actionCardSurfaceColor(), GlassActionCard(), GlassItemCard(), itemCardBorderColor(), ItemCardIcon(), Color (+76 more)
 
-### Community 167 - "IndexEntry"
-Cohesion: 0.13
-Nodes (20): IndexEntry, getMarketplaceRowIcon(), InstallState, Modifier, Painter, MarketplaceHeader(), MarketplaceInspectorHeader(), MarketplaceInspectorPanel() (+12 more)
+### Community 167 - "PluginAuthorToolsTab.kt"
+Cohesion: 0.14
+Nodes (30): AppIconsRomStages, Color, PluginThemeColors, AuthorTaskResult, Failed, Success, TimedOut, DiagnosticEmptyState() (+22 more)
 
 ### Community 168 - "CredentialRef"
 Cohesion: 0.16
@@ -2011,14 +2028,14 @@ Nodes (5): SecretRedactor, SecretStorePort, InMemorySecretStore, SecretStorePort
 
 ### Community 169 - "MutableStateFlow"
 Cohesion: 0.04
-Nodes (49): DialogUtils, io, DiscoverWorkdirWorkspacesUseCase, GetRecentWorkspacesUseCase, Flow, Result, Workspace, OpenWorkspaceByPathUseCase (+41 more)
+Nodes (45): DialogUtils, io, EnvironmentReadinessPort, Flow, Workspace, DiscoverWorkdirWorkspacesUseCase, GetRecentWorkspacesUseCase, Flow (+37 more)
 
 ### Community 170 - "ToolBinary"
-Cohesion: 0.12
-Nodes (10): BinaryType, BASH_SCRIPT, ELF_BINARY, JAR_WRAPPER, PYTHON_SCRIPT, UNKNOWN, ToolBinary, HelpCapturer (+2 more)
+Cohesion: 0.16
+Nodes (9): BinaryType, BASH_SCRIPT, ELF_BINARY, JAR_WRAPPER, PYTHON_SCRIPT, UNKNOWN, ToolBinary, HelpCapturer (+1 more)
 
 ### Community 171 - "ToolResult"
-Cohesion: 0.18
+Cohesion: 0.17
 Nodes (20): ConnectionTimeout, DaemonUnreachable, executeResult(), ExecutionError, Failure, flatMap(), getOrElse(), getOrThrow() (+12 more)
 
 ### Community 172 - "properties"
@@ -2054,12 +2071,16 @@ Cohesion: 0.10
 Nodes (20): A frosted dialog (heavy glass), A glass card, A glass pill button, Animating a glass element, Bottom tab bar / navigation pill, Choosing the right entry point, Common component recipes, Common pitfalls — read this before debugging (+12 more)
 
 ### Community 180 - "ToolingException"
-Cohesion: 0.19
+Cohesion: 0.18
 Nodes (15): Exception, ToolCancellationException, ToolExitException, ToolFingerprintException, ToolingException, ToolParseException, ToolResolutionException, ToolSafetyException (+7 more)
 
-### Community 181 - "SetupTab"
-Cohesion: 0.10
-Nodes (13): NavOptions, navigateToSetup(), SetupDestination, ENVIRONMENT, RECOVERY, TOOLS, WORKSPACES, SetupTab (+5 more)
+### Community 181 - "ToolBrowserState"
+Cohesion: 0.06
+Nodes (21): ToolCategory, BOOT_AND_KERNEL, BRIDGE_AND_FLASHING, DYNAMIC_PARTITIONS, FILESYSTEM_AND_IMAGES, PACKAGING_AND_TOOLS, SIGNING_AND_SECURITY, StateFlow (+13 more)
+
+### Community 182 - "FileSystemRepository"
+Cohesion: 0.26
+Nodes (3): FileSystemRepository, Flow, Result
 
 ### Community 183 - "properties"
 Cohesion: 0.08
@@ -2078,8 +2099,8 @@ Cohesion: 0.17
 Nodes (12): ArchiveTransferCodes, Flow, BoundedTransferPort, Cancelled, ExistingFileProbe, Failed, Finalized, Flow (+4 more)
 
 ### Community 187 - "GlassStyle"
-Cohesion: 0.13
-Nodes (12): GlassMaterialStyles, AppTheme, Color, GlassOpticalParityTest, Color, material3(), GlassStyle, GlassStyleScope (+4 more)
+Cohesion: 0.12
+Nodes (10): GlassOpticalParityTest, Color, material3(), GlassStyle, GlassStyleScope, Color, Dp, ClosedFloatingPointRange (+2 more)
 
 ### Community 188 - "ConnectionManager"
 Cohesion: 0.13
@@ -2090,36 +2111,36 @@ Cohesion: 0.25
 Nodes (19): capitalize_first(), cleanup_backup_files(), escape_dots(), kebab_to_camel(), main(), print_final_summary(), print_section(), process_module_content() (+11 more)
 
 ### Community 190 - "RootNavGraph.kt"
-Cohesion: 0.11
-Nodes (25): configurationRoute(), configurationScreen(), NavOptions, navigateToConfiguration(), navigateToCreateConfiguration(), navigateToEditConfiguration(), pluginsScreen(), studioScreen() (+17 more)
+Cohesion: 0.15
+Nodes (18): configurationScreen(), pluginsScreen(), studioScreen(), NavOptions, navigateToNotification(), navigateToSettings(), notificationScreen(), settingsScreen() (+10 more)
 
 ### Community 191 - ".renderAndSaveSettings"
 Cohesion: 0.21
 Nodes (3): ToggleDimensions, AppTheme, SettingsAppearancePairComparisonScreenshotTest
 
 ### Community 192 - "DefaultStudioActionDispatcher"
-Cohesion: 0.19
+Cohesion: 0.18
 Nodes (4): DefaultStudioActionDispatcher, KeyEvent, WindowKeyShortcutHandlerTest, StudioMenuBarTest
 
-### Community 193 - "ShellOutputEvent"
-Cohesion: 0.16
-Nodes (8): DesktopShellExecutor, Flow, Job, DesktopShellExecutorTest, Finished, Flow, Line, ShellOutputEvent
+### Community 193 - "ShellExecutor"
+Cohesion: 0.09
+Nodes (17): DefaultTerminalCommandDispatcherFactory, createDefaultShellExecutor(), DesktopShellExecutor, Flow, Job, createDefaultShellExecutor(), DesktopShellExecutorTest, Finished (+9 more)
 
 ### Community 194 - "SyntaxLanguage"
 Cohesion: 0.11
 Nodes (16): SyntaxLanguage, CSS, GO, GRADLE, HTML, JAVA, JAVASCRIPT, JSON (+8 more)
 
-### Community 195 - "GlassBottomSheet.kt"
-Cohesion: 0.06
-Nodes (49): AnimationSpec, ColumnScope, Collapsed, Custom, Default, Expanded, GlassBottomSheet(), GlassBottomSheetExample() (+41 more)
+### Community 195 - "AppIcons"
+Cohesion: 0.09
+Nodes (31): ColumnScope, Collapsed, Custom, Default, Expanded, GlassBottomSheet(), GlassBottomSheetExample(), GlassBottomSheetScaffold() (+23 more)
 
 ### Community 196 - "MessageRole"
 Cohesion: 0.16
 Nodes (9): AIService, Flow, AIServiceImpl, Flow, Message, MessageRole, ASSISTANT, SYSTEM (+1 more)
 
-### Community 197 - "ForegroundContentInvalidationNode"
-Cohesion: 0.15
-Nodes (7): ForegroundContentInvalidationElement, ForegroundContentInvalidationNode, DrawModifierNode, Modifier, ModifierNodeElement, Node, TypedHazeEffectNodeElement
+### Community 197 - "HazeSampling"
+Cohesion: 0.11
+Nodes (13): Adaptive, Fixed, ForegroundContentInvalidationElement, ForegroundContentInvalidationNode, FullResolution, hazeEffect(), HazeSampling, DrawModifierNode (+5 more)
 
 ### Community 198 - "GlassInteraction.kt"
 Cohesion: 0.16
@@ -2141,9 +2162,9 @@ Nodes (8): Cancelled, IoFailure, ByteArray, MessageDigest, Workspace, StreamResu
 Cohesion: 0.22
 Nodes (14): GlassPerformanceCollector, GlassPerformanceMetrics, GlassPerformanceMonitor(), GlassPerformanceMonitorExample(), Color, Modifier, MetricRow(), MonitorPosition (+6 more)
 
-### Community 203 - "GlassOpticalVerifierTest"
-Cohesion: 0.07
-Nodes (18): InnerShadow, InnerShadowElement, InnerShadowNode, DrawModifierNode, GraphicsLayer, ImageFilter, Modifier, ModifierNodeElement (+10 more)
+### Community 203 - "InnerShadowNode"
+Cohesion: 0.15
+Nodes (11): InnerShadow, InnerShadowElement, InnerShadowNode, DrawModifierNode, GraphicsLayer, ImageFilter, Modifier, ModifierNodeElement (+3 more)
 
 ### Community 206 - "Overview"
 Cohesion: 0.11
@@ -2158,16 +2179,16 @@ Cohesion: 0.11
 Nodes (17): 10. Don't pass a large state-holder object when a composable only needs a few fields, 11. Use `remember` correctly — cache expensive/identity-sensitive values, not everything, 12. Be deliberate about image loading, 13. Avoid nesting scrollable/lazy layouts; use `contentType` when items vary, 14. Don't allocate new `Modifier` instances (or lambdas that capture per-recomposition state) in hot paths, 15. Shared/long-lived objects with mutable content require tracked snapshot reads for consumer invalidation — and writes MUST happen in `SideEffect`, never in `draw`, 1. Composables must be cheap to call, 2. Mark data classes `@Immutable` / `@Stable` where true, and verify it (+9 more)
 
 ### Community 209 - "WslPathTranslator"
-Cohesion: 0.10
-Nodes (8): PathTranslatorPort, PathTranslationDirection, WINDOWS_TO_WSL, WSL_TO_WINDOWS, PathTranslationRequest, PathTranslationResponse, WslPathTranslator, WslPathTranslatorTest
+Cohesion: 0.06
+Nodes (20): ByteWriteChannel, ContentType, PathTranslatorPort, BinaryTransferResponse, PathTranslationDirection, WINDOWS_TO_WSL, WSL_TO_WINDOWS, PathTranslationRequest (+12 more)
 
 ### Community 210 - "DesktopFileSystemRepository"
 Cohesion: 0.16
 Nodes (10): DesktopFileSystemRepository, Flow, Result, FileCreated, FileDeleted, FileModified, FileSystemEvent, WatchEvent (+2 more)
 
-### Community 211 - "ConnectedDeviceRepository.kt"
-Cohesion: 0.26
-Nodes (6): ConnectedTargetDevice, DeviceOperationResult, DeviceRebootMode, Result, StateFlow, WirelessPairingRequest
+### Community 211 - "DiagnosticCheckItem"
+Cohesion: 0.04
+Nodes (55): AptCommandBuilder, ArchiveToolsInspector, BuildCacheInspector, CompilersInspector, WslCliExecutor, DiagnosticContext, DualJdkInspector, KernelFuseInspector (+47 more)
 
 ### Community 212 - "ArchiveTransferAdapterTest"
 Cohesion: 0.24
@@ -2181,33 +2202,37 @@ Nodes (16): Adaptive Luminance Glass, Advanced techniques, Authoring an SDF text
 Cohesion: 0.18
 Nodes (9): CompositionLocalConsumerModifierNode, KeyEvent, Modifier, ModifierNodeElement, Node, tabNavigation(), TabNavigationElement, TabNavigationNode (+1 more)
 
-### Community 216 - "SetupViewModelTest.kt"
-Cohesion: 0.33
-Nodes (9): computeSidebarBadge(), computeSidebarSubtitle(), findLastVerifiedTime(), formatRelativeAgo(), hasAnyFailedSteps(), hasAnyRestoredSteps(), hasAnyStepRunning(), Modifier (+1 more)
+### Community 215 - "CompositeSystemDoctorEngine"
+Cohesion: 0.11
+Nodes (11): CompositeSystemDoctorEngine, total, CompositeSystemDoctorEngineTest, WslCliExecutor, WslCliExecutor, WslCliExecutor, WslCliExecutor, Charset (+3 more)
+
+### Community 216 - "SetupTab"
+Cohesion: 0.17
+Nodes (6): SetupTab, ENVIRONMENT, PROJECTS, RECOVERY, TOOLS, SetupNavigationTest
 
 ### Community 217 - "properties"
 Cohesion: 0.13
 Nodes (15): IN_PLACE, INPUT, OUTPUT, additionalProperties, properties, type, ArtifactSpec, enum (+7 more)
 
 ### Community 218 - "GlassRuntimeState"
-Cohesion: 0.19
-Nodes (10): GlassInteractionSlot, GlassTransformPivot, Center, Pointer, GlassRuntimeState, Alignment, Color, Dp (+2 more)
+Cohesion: 0.16
+Nodes (12): GlassInteractionSlot, GlassTransformPivot, Center, Pointer, GlassRuntimeState, Alignment, Color, Dp (+4 more)
 
 ### Community 219 - "DebloatInventoryAdapterTest"
 Cohesion: 0.22
 Nodes (5): DebloatInventoryAdapterTest, SimpleFileVisitor, BasicFileAttributes, FileVisitResult, SimpleFileVisitor
 
-### Community 221 - "PackageIdentity"
-Cohesion: 0.14
-Nodes (8): InstalledPluginRepository, PackageIdentity, Applied, LifecycleOutcome, PluginLifecycleUseCase, Refused, ValidationFailure, FakePluginInstallPort
+### Community 220 - "PartitionPath"
+Cohesion: 0.06
+Nodes (11): ApkJarMutationAdapterTest, BytecodeMatcherTest, PluginPlanContractTest, AnchorPattern, BytecodeMatchSpec, HookPlacement, AFTER, BEFORE (+3 more)
 
 ### Community 222 - "Component recipes"
 Cohesion: 0.12
 Nodes (15): Backdrop demo scaffold (catalog pattern), Common z-order traps (remember these), Component recipes, Frosted dialog (heavy glass), Glass card, Glass search field, Layout choices: when to use which `Backdrop`, Lazy scroll container (full-screen catalog grid) (+7 more)
 
-### Community 223 - ".runProcess"
-Cohesion: 0.30
-Nodes (5): Runnable, BoundedStreamDrainer, Charset, ProcessTreeCleanupResult, WslCliExecutor
+### Community 223 - "RunFileStorage"
+Cohesion: 0.14
+Nodes (4): defaultRunFileStorage(), RunFileStorage, defaultRunFileStorage(), DesktopRunFileStorage
 
 ### Community 224 - "CircuitBreaker"
 Cohesion: 0.16
@@ -2233,9 +2258,9 @@ Nodes (15): `CliktCommand` constructor no longer takes most parameters, `Context
 Cohesion: 0.25
 Nodes (8): TransferState, CANCELLED, FAILED, FINALIZED, SELECTED, TRANSFERRING, VALIDATING, VERIFYING
 
-### Community 231 - "RemoteWslToolRepository"
-Cohesion: 0.11
-Nodes (17): Flow, R, ToolCommand, ToolResult, RemoteWslToolRepository, R, ToolCommand, RecordingRepository (+9 more)
+### Community 231 - "PayloadCompilationRequest"
+Cohesion: 0.35
+Nodes (3): PayloadCompilationRequest, ByteArray, PayloadCompilerAdapterTest
 
 ### Community 232 - "renderAndCapture"
 Cohesion: 0.12
@@ -2250,7 +2275,7 @@ Cohesion: 0.40
 Nodes (3): io, ToolCommand, LinkCommand
 
 ### Community 236 - "PanelEvent"
-Cohesion: 0.16
+Cohesion: 0.18
 Nodes (10): FileOpened, LayoutChanged, PanelEvent, PanelFocusChanged, PanelVisibilityChanged, TabAdded, TabChanged, TabClosed (+2 more)
 
 ### Community 237 - "ConnectedDeviceRepositoryImpl"
@@ -2259,15 +2284,15 @@ Nodes (9): ConnectedDeviceRepositoryImpl, ConnectedTargetDevice, DeviceOperation
 
 ### Community 238 - "PlatformRenderEffect"
 Cohesion: 0.04
-Nodes (90): applyMaskAndBlend(), combinedNoiseTintColor(), createCombinedNoiseTintRenderEffectOrNull(), createNoiseEffect(), createRenderEffect(), hasVisibleNoise(), BlendMode, Color (+82 more)
+Nodes (91): applyMaskAndBlend(), combinedNoiseTintColor(), createCombinedNoiseTintRenderEffectOrNull(), createNoiseEffect(), createRenderEffect(), hasVisibleNoise(), BlendMode, Color (+83 more)
 
-### Community 239 - "DesktopTerminalLauncher"
-Cohesion: 0.29
-Nodes (3): DesktopTerminalLauncher, Result, DesktopTerminalLauncherTest
+### Community 239 - "HazeBlurStyleProperty"
+Cohesion: 0.14
+Nodes (14): HazeBlurDefaults, Dp, platformIsBlurEnabledByDefault(), HazeBlurStyleProperty, Alpha, BackgroundColor, BlurEnabled, BlurRadius (+6 more)
 
 ### Community 240 - "main.kt"
-Cohesion: 0.16
-Nodes (21): Menu, buildWindowControlActions(), NucleusWindow, WindowState, main(), Key, KeyEvent, WindowKeyShortcutHandler (+13 more)
+Cohesion: 0.14
+Nodes (12): KoinAppDeclaration, buildWindowControlActions(), NucleusWindow, WindowState, main(), AppTray(), Painter, NucleusWindow (+4 more)
 
 ### Community 241 - "ExitCodeSpec"
 Cohesion: 0.14
@@ -2290,32 +2315,28 @@ Cohesion: 0.15
 Nodes (13): 1. Mental Model: Core Architecture, 2. Basic Command Setup, 3. Options & Arguments Recipes, 4. Subcommands & Hierarchies, 5. Coroutines with SuspendingCliktCommand, 6. Embedding Clikt in Graphical Terminals (IDE In-App Terminal), 7. Testing Clikt Commands, 8. Reference Documentation Index (+5 more)
 
 ### Community 246 - "DrawBackdropInputScaleScreenshotTest"
-Cohesion: 0.28
-Nodes (5): DrawBackdropInputScaleScreenshotTest, DrawScope, FloatArray, ImageBitmap, Modifier
+Cohesion: 0.32
+Nodes (4): DrawBackdropInputScaleScreenshotTest, DrawScope, FloatArray, ImageBitmap
 
 ### Community 247 - "FakePluginInstallPort"
-Cohesion: 0.12
-Nodes (14): Cancelled, Downloading, Failed, Installed, InstallPluginUseCase, InstallRequest, InstallState, Flow (+6 more)
+Cohesion: 0.11
+Nodes (15): Cancelled, Downloading, Failed, Installed, InstallPluginUseCase, InstallRequest, InstallState, Flow (+7 more)
 
-### Community 248 - "SafetyCheckInterceptor"
+### Community 248 - "RemoteWslToolRepository"
+Cohesion: 0.19
+Nodes (10): Flow, R, ToolCommand, ToolResult, RemoteWslToolRepository, ExecutionChain, R, ToolExecutionInterceptor (+2 more)
+
+### Community 250 - "GlassStyle.kt"
 Cohesion: 0.18
-Nodes (7): ExecutionChain, R, ToolExecutionInterceptor, ToolResult, SafetyCheckInterceptor, ToolCommand, ToolSafetyPolicy
+Nodes (10): combineGlassStyles(), GlassStyleDsl, GlassStyleValues, FiniteAnimationSpec, Offset, RoundedCornerShape, RecordedGlassStyle, recordGlassStyleWrites() (+2 more)
 
-### Community 250 - "InstallFrameworkCommand"
-Cohesion: 0.40
-Nodes (3): InstallFrameworkCommand, io, ToolCommand
+### Community 252 - "FakeDistro"
+Cohesion: 0.27
+Nodes (6): PinnedRelease, PinnedReleases, FakeDistro, Charset, WslCliExecutor, PinnedReleaseInstallTest
 
-### Community 251 - "LogFilter"
-Cohesion: 0.20
-Nodes (7): ActivityDestinationState, StateFlow, LogFilter, ALL, CHECKS, COMMANDS, ERRORS
-
-### Community 252 - "SetupOutcome"
-Cohesion: 0.02
-Nodes (60): Flow, Result, TerminalLauncherPort, AwaitingUserAction, Busy, Cancelled, Failed, Interrupted (+52 more)
-
-### Community 253 - "GlassStageInvalidation.kt"
-Cohesion: 0.26
-Nodes (11): calculateRequiredStageInvalidation(), calculateStageInvalidation(), GlassRuntimeSourceSnapshot, GlassRuntimeSourceState, GlassStageInputs, GlassStageInvalidation, Color, Offset (+3 more)
+### Community 253 - "HazeEffectFactory.kt"
+Cohesion: 0.07
+Nodes (26): CompositionLocal, calculateRequiredStageInvalidation(), calculateStageInvalidation(), GlassRuntimeSourceSnapshot, GlassRuntimeSourceState, GlassStageInputs, GlassStageInvalidation, Color (+18 more)
 
 ### Community 254 - "GetSerialnoCommand"
 Cohesion: 0.40
@@ -2334,20 +2355,16 @@ Cohesion: 0.17
 Nodes (11): blur, colorControls, Composition cheatsheet, Effects reference, exposureAdjustment / gammaAdjustment, lens, opacity, progressiveBlur (+3 more)
 
 ### Community 259 - "AnchorHealthPreflight.kt"
-Cohesion: 0.14
-Nodes (14): AnchorHealthPort, Ambiguous, AnchorCheck, AnchorFinding, AnchorHealthEntry, AnchorHealthPort, AnchorHealthPreflight, ComponentUnavailable (+6 more)
+Cohesion: 0.13
+Nodes (16): AnchorHealthPort, Ambiguous, AnchorCheck, AnchorFinding, AnchorHealthEntry, AnchorHealthPort, AnchorHealthPreflight, ComponentUnavailable (+8 more)
 
-### Community 261 - ".updateEffect"
-Cohesion: 0.09
-Nodes (14): HazeArea, FloatArray, LayoutCoordinates, hasSameAttachedRoot(), hasSameValues(), HazeEffectInputSnapshotEntry, HazeEffectInputSnapshotImpl, androidx (+6 more)
+### Community 261 - "CliResult"
+Cohesion: 0.38
+Nodes (6): CliResult, DiagnosticEntry, Failure, PayloadCompilerPort, PatchModTool, Success
 
 ### Community 262 - "ConnectedDeviceRepository"
-Cohesion: 0.15
-Nodes (4): ConnectedDeviceRepository, DisconnectDeviceUseCase, RefreshConnectedDevicesUseCase, SelectConnectedDeviceUseCase
-
-### Community 263 - "BlurInputScalePolicy"
-Cohesion: 0.14
-Nodes (7): BlurInputScalePolicy, Size, GlassInputScalePolicy, saturatedTimes(), HazeInputUpdateCadence, TimeMark, UnsetUpdateKey
+Cohesion: 0.12
+Nodes (10): ConnectedDeviceRepository, ConnectedTargetDevice, DeviceOperationResult, DeviceRebootMode, Result, StateFlow, WirelessPairingRequest, DisconnectDeviceUseCase (+2 more)
 
 ### Community 264 - "tool-specification.schema.json"
 Cohesion: 0.18
@@ -2385,29 +2402,29 @@ Nodes (11): Chaining and Repeating Subcommands, Command pipelines, Commands, Cus
 Cohesion: 0.40
 Nodes (3): ExecuteCommand, io, ToolCommand
 
-### Community 273 - "EventPublishingInterceptor"
-Cohesion: 0.12
-Nodes (13): EventPublishingInterceptor, ExecutionChain, R, ToolExecutionInterceptor, ToolResult, ExecutionChain, ToolCommand, ExecutionChain (+5 more)
+### Community 273 - "nonLetterColorVisualTransformation"
+Cohesion: 0.52
+Nodes (4): AnnotatedString, TransformedText, VisualTransformation, nonLetterColorVisualTransformation()
 
-### Community 274 - "FileSystemRepository"
-Cohesion: 0.26
-Nodes (3): FileSystemRepository, Flow, Result
+### Community 274 - "FakeClipboard"
+Cohesion: 0.43
+Nodes (4): ClipboardManager, CopyableErrorTextTest, FakeClipboard, AnnotatedString
 
-### Community 275 - "TransportCliExecutor"
-Cohesion: 0.21
-Nodes (6): WslCliExecutor, TransportCliExecutor, ByteArray, RemoteTransportPort, RecordingRemoteTransport, TransportCliExecutorTest
+### Community 275 - "CliExecutionResult"
+Cohesion: 0.08
+Nodes (19): Charset, FakePublicationPort, Charset, ToolPublicationPort, WslCliExecutor, SetupExecutionPathTest, SpyWslCliExecutor, Charset (+11 more)
 
 ### Community 276 - "registerTrimMemoryCallback"
 Cohesion: 0.29
 Nodes (9): DisposableHandle, Lifecycle, PlatformContext, registerLifecycleTrimMemoryCallback(), registerTrimMemoryCallback(), DisposableHandle, Lifecycle, PlatformContext (+1 more)
 
-### Community 277 - "atomicWrite"
-Cohesion: 0.14
-Nodes (5): atomicWrite(), readIfPresent(), IntentData, SnapshotMaterializer, SnapshotMaterializerTest
+### Community 277 - "PluginManagerViewModelTest.kt"
+Cohesion: 0.07
+Nodes (33): Cached, Failed, Fetched, IndexEntry, IndexFailure, IndexFetchResult, InsecureSource, Malformed (+25 more)
 
-### Community 278 - "WriteChannelContent"
-Cohesion: 0.31
-Nodes (6): ByteWriteChannel, ContentType, BinaryTransferResponse, BinaryTransportClient, WriteChannelContent, TransferProgress
+### Community 278 - "StepExecutionAdapter"
+Cohesion: 0.22
+Nodes (6): ByteArray, RunHandle, StepStatus, ToolResult, Workspace, StepExecutionAdapter
 
 ### Community 279 - "Dispatch and poll"
 Cohesion: 0.20
@@ -2469,9 +2486,13 @@ Nodes (10): Artifacts, Dispatch and poll, Exit codes, Failure recovery, Flags, P
 Cohesion: 0.20
 Nodes (9): EdgeSpreadResult, EdgeTransitionExpansionResult, GlassOpticalVerifier, Color, ImageBitmap, Rect, RefractionFeatureDisplacementResult, RowSpread (+1 more)
 
-### Community 294 - "ShellExecutor"
-Cohesion: 0.19
-Nodes (8): DefaultTerminalCommandDispatcherFactory, createDefaultShellExecutor(), createDefaultShellExecutor(), ShellExecutor, Flow, StateFlow, TerminalCommandDispatcher, TerminalCommandDispatcherFactory
+### Community 294 - "DragGestureInspector.kt"
+Cohesion: 0.73
+Nodes (5): awaitDragOrUp(), drag(), inspectDragGestures(), PointerId, PointerInputChange
+
+### Community 295 - "BugreportCommand"
+Cohesion: 0.40
+Nodes (3): BugreportCommand, io, ToolCommand
 
 ### Community 296 - "SyntaxTokenKind"
 Cohesion: 0.20
@@ -2481,9 +2502,9 @@ Nodes (9): SyntaxTokenKind, ANNOTATION, COMMENT, FUNCTION, KEYWORD, NUMBER, PLAI
 Cohesion: 0.40
 Nodes (5): KtCallExpression, Rule, RuleName, NoWeightInScrollableContainer, PsiElement
 
-### Community 298 - "GlassStyle.kt"
-Cohesion: 0.12
-Nodes (16): combineGlassStyles(), GlassStyleDsl, GlassStyleValues, Alignment, Dp, FiniteAnimationSpec, Offset, RoundedCornerShape (+8 more)
+### Community 298 - "EmuCommand"
+Cohesion: 0.40
+Nodes (3): EmuCommand, io, ToolCommand
 
 ### Community 299 - "AgentTaskListCommand"
 Cohesion: 0.40
@@ -2553,13 +2574,13 @@ Nodes (9): Artifacts and result fields, Before the first run, Dispatch and poll,
 Cohesion: 0.44
 Nodes (6): Done, HttpURLConnection, StepResult, URI, Redirect, StepResult
 
-### Community 317 - "DampedDragAnimation"
-Cohesion: 0.14
-Nodes (10): awaitDragOrUp(), DampedDragAnimation, drag(), inspectDragGestures(), CoroutineScope, Job, Modifier, PointerId (+2 more)
+### Community 317 - ".launch"
+Cohesion: 0.10
+Nodes (13): awaitDragOrUp(), DampedDragAnimation, drag(), inspectDragGestures(), CoroutineScope, Job, Modifier, PointerId (+5 more)
 
 ### Community 318 - "SystemNotification"
-Cohesion: 0.23
-Nodes (4): SystemNotification, DesktopNativeNotifier, SystemNotifier, DesktopNativeNotifierTest
+Cohesion: 0.09
+Nodes (15): NotificationLevel, Error, Info, None, Warning, SystemNotification, SystemNotifier, SystemNotifierTest (+7 more)
 
 ### Community 319 - "GoldenImageAssert"
 Cohesion: 0.21
@@ -2574,12 +2595,12 @@ Cohesion: 0.21
 Nodes (14): composableWithPushTransitions(), composableWithRootPushTransitions(), composableWithSlideTransitions(), composableWithStayTransitions(), Enter, Exit, RootTransitionProviders, TransitionProviders (+6 more)
 
 ### Community 323 - "WorkspaceRepository"
-Cohesion: 0.05
-Nodes (14): NoOpSystemNotifier, Flow, Workspace, WorkspaceRepositoryImpl, Flow, Workspace, WorkspaceRepository, WorkspaceReadiness (+6 more)
+Cohesion: 0.04
+Nodes (18): Flow, Workspace, WorkspaceRepositoryImpl, Flow, Workspace, WorkspaceRepository, FakeWorkspaceRepo, Workspace (+10 more)
 
-### Community 324 - "LineEnding"
-Cohesion: 0.29
-Nodes (6): LineEnding, CR, CRLF, LF, Modifier, WorkspaceStatusBar()
+### Community 324 - "ToolSpecification"
+Cohesion: 0.24
+Nodes (10): capitalize(), KotlinModelGenerator, CommandSpec, OptionType, BOOLEAN, CHOICE, INT, PATH (+2 more)
 
 ### Community 325 - "📂 Complete File Manifest"
 Cohesion: 0.25
@@ -2649,9 +2670,9 @@ Nodes (8): Delta briefs, How the brief reaches Warp, One task per brief, Reposit
 Cohesion: 0.25
 Nodes (8): Authorization model, Autonomy and permissions, Choose the model (optional), Prerequisites (check once), References, The binary is `oz`, not `warp`, Warp Delegate, When NOT to use this
 
-### Community 342 - "StudioEntryReason"
-Cohesion: 0.33
-Nodes (6): StudioEntryReason, DEEP_LINK, NEW_WORKSPACE, OBJECT_NOT_FOUND, RESTORED, STAGE_NOT_FOUND
+### Community 343 - "DaemonCommand"
+Cohesion: 0.40
+Nodes (3): DaemonCommand, io, ToolCommand
 
 ### Community 344 - "file-property/manifest.json"
 Cohesion: 0.12
@@ -2659,15 +2680,15 @@ Nodes (15): compatibleTargets, conflicts, dependencies, displayName, id, PQ84P01
 
 ### Community 345 - "ToolId"
 Cohesion: 0.02
-Nodes (72): io, ToolCommand, RemountCommand, io, ToolCommand, UsbCommand, ConvertCommand, io (+64 more)
+Nodes (72): FlashingCommand, io, ToolCommand, FormatCommand, io, ToolCommand, DumpApcCommand, io (+64 more)
 
 ### Community 346 - "Compiler"
-Cohesion: 0.36
-Nodes (3): main(), printUsage(), Compiler
+Cohesion: 0.20
+Nodes (4): main(), printUsage(), Compiler, ProcessEnvironment
 
-### Community 347 - "MetadataViewModel"
-Cohesion: 0.53
-Nodes (4): StateFlow, TargetDevice, ViewModel, MetadataViewModel
+### Community 347 - "PluginLifecycleUseCase"
+Cohesion: 0.36
+Nodes (5): Applied, LifecycleOutcome, PluginLifecycleUseCase, Refused, ValidationFailure
 
 ### Community 348 - "AliasImportCommand"
 Cohesion: 0.40
@@ -2725,21 +2746,17 @@ Nodes (7): Adding Parameters, Basic Concepts, Coroutine commands with suspend fu
 Cohesion: 0.52
 Nodes (6): GlassScrollableTabRow(), Color, Dp, Modifier, TabContent, PagerState
 
-### Community 363 - "HazeInput.kt"
-Cohesion: 0.19
-Nodes (10): All, baseSelection(), Behind, ClearWhenUnavailable, FilteredHazeSourceSelection, HazeSourceMetadata, HazeSourceRetention, HazeSourceSelection (+2 more)
-
-### Community 364 - "StdinMode"
+### Community 364 - "ToolRisk"
 Cohesion: 0.03
-Nodes (52): DetachCommand, io, ToolCommand, InstallMultipleCommand, io, ToolCommand, io, ToolCommand (+44 more)
+Nodes (53): DetachCommand, io, ToolCommand, io, ToolCommand, SideloadCommand, io, ToolCommand (+45 more)
 
 ### Community 365 - "ArchiveTransferAdapterTest.kt"
 Cohesion: 0.24
 Nodes (8): SimpleFileVisitor, BasicFileAttributes, FileVisitResult, SimpleFileVisitor, ExistingWorkspaceFile, LocalFile, RemoteUrl, TransferSource
 
 ### Community 366 - "TargetPreferencesDataSource"
-Cohesion: 0.05
-Nodes (17): defaultRunFileStorage(), RunFileStorage, Flow, Json, TargetDevice, TargetList, TargetPreferencesDataSource, defaultToolchainJournalStorage() (+9 more)
+Cohesion: 0.14
+Nodes (7): Flow, Json, TargetDevice, TargetList, TargetPreferencesDataSource, TargetDevice, TargetPreferencesDataSourceTest
 
 ### Community 367 - "DumpXmlstringsCommand"
 Cohesion: 0.40
@@ -2753,17 +2770,13 @@ Nodes (5): SyntaxColorScheme, AnnotatedString, TransformedText, VisualTransforma
 Cohesion: 0.13
 Nodes (14): 1. Executive Summary & Clarification of Benefits, 2. Real Settings Screen Comparison (Pair A vs. Pair B Across All Themes), 3. Quantitative Prototype Test Results, 4. Coherent Production Integration Steps, A. Blue Glass Theme, A. Exposed Track Tint Interpolation (Frame-by-Frame Motion), B. Dark Theme, B. Reduced Motion $0\,\text{ms}$ Snap (+6 more)
 
-### Community 370 - ".stream"
-Cohesion: 0.43
-Nodes (4): Flow, R, ToolCommand, SmartToolRepository
+### Community 370 - "FakeTargetRepository"
+Cohesion: 0.31
+Nodes (5): FakeTargetRepository, Flow, Result, TargetDevice, TargetRepository
 
-### Community 371 - "HazeEffectNode.kt"
-Cohesion: 0.10
-Nodes (20): DelegatingNode, HazeEffectPointerInputNode, invalidateOnHazeAreaPreDraw(), CompositionLocalConsumerModifierNode, DisposableHandle, DrawModifierNode, GlobalPositionAwareModifierNode, IntSize (+12 more)
-
-### Community 372 - "PluginPlanValidator.kt"
-Cohesion: 0.08
-Nodes (29): condition(), depth(), error(), operation(), report(), setting(), validate(), valueRef() (+21 more)
+### Community 371 - "CliktGenerator"
+Cohesion: 0.35
+Nodes (5): capitalize(), CliktGenerator, ArgumentSpec, CommandSpec, OptionSpec
 
 ### Community 373 - "CodespaceJupyterCommand"
 Cohesion: 0.40
@@ -2781,9 +2794,9 @@ Nodes (7): DEVICE_WRITE, HOST_WRITE, IRREVERSIBLE, READ_ONLY, risk, enum, type
 Cohesion: 0.40
 Nodes (3): CompletionCommand, io, ToolCommand
 
-### Community 377 - "HazeBackdropBackendState"
-Cohesion: 0.22
-Nodes (6): HazeBackdropBackendSelection, FallbackFailed, FallbackUnavailable, Native, Undecided, HazeBackdropBackendState
+### Community 377 - "HazeBlurStyleWrite"
+Cohesion: 0.28
+Nodes (3): HazeBlurStyleWrite, RecordingHazeBlurStyleScope, recordWrites()
 
 ### Community 379 - "Dump.erofs Tool Reference"
 Cohesion: 0.29
@@ -2965,17 +2978,17 @@ Nodes (5): DampedDragAnimation, Helpers — required by the interactive recipes,
 Cohesion: 0.40
 Nodes (3): ConfigGetCommand, io, ToolCommand
 
-### Community 424 - "ConnectionState"
-Cohesion: 0.09
-Nodes (14): Connected, Connecting, ConnectionState, ConnectionStateHolder, Disconnected, Disposed, Failed, StateFlow (+6 more)
+### Community 424 - "PipelineResumeTest.kt"
+Cohesion: 0.32
+Nodes (5): FakeTargetRepo, Flow, Result, TargetDevice, TargetRepository
 
 ### Community 425 - "SpecValidator.kt"
 Cohesion: 0.31
 Nodes (5): ArgumentSpec, Exception, OptionSpec, SpecValidationException, SpecValidator
 
-### Community 426 - ".testDelegatingSystemNotifier_forwardsToAttachedDelegate"
-Cohesion: 0.32
-Nodes (3): SystemNotifier, SystemNotifierTest, SystemNotifier
+### Community 426 - "FileToolchainJournalStorage"
+Cohesion: 0.31
+Nodes (3): defaultToolchainJournalStorage(), FileToolchainJournalStorage, FileToolchainJournalStorageTest
 
 ### Community 427 - "ShareUtils"
 Cohesion: 0.40
@@ -2993,13 +3006,13 @@ Nodes (4): LtiDesignSystemRuleSetProvider, RuleSet, RuleSetId, RuleSetProvider
 Cohesion: 0.09
 Nodes (27): DebloatInventoryAdapter, buildDecision(), candidateMatches(), collectProtectedErrors(), collectSelectorErrors(), DebloatCandidate, DebloatDecision, DebloatResolution (+19 more)
 
-### Community 433 - "DesktopKeyShortcut"
-Cohesion: 0.29
-Nodes (5): Flow, KeyShortcut, DesktopKeyShortcut, Key, ShortcutModifiers
+### Community 433 - "WindowKeyShortcutHandler.kt"
+Cohesion: 0.20
+Nodes (8): Flow, KeyShortcut, Key, KeyEvent, WindowKeyShortcutHandler, DesktopKeyShortcut, Key, ShortcutModifiers
 
-### Community 434 - "ActivityUiState"
-Cohesion: 0.25
-Nodes (7): Active, ActivityUiState, Failed, Idle, OperationUiState, Running, Succeeded
+### Community 434 - "StudioPresentationState.kt"
+Cohesion: 0.06
+Nodes (37): Active, ActivityUiState, Connected, Connecting, ConnectionUiState, Disconnected, Editor, Failed (+29 more)
 
 ### Community 435 - "commonMain/kotlin/org/ide/lti/feature/setup/SetupPerformanceScenario.kt"
 Cohesion: 0.47
@@ -3189,9 +3202,9 @@ Nodes (3): CodespaceRebuildCommand, io, ToolCommand
 Cohesion: 0.40
 Nodes (3): DisconnectCommand, io, ToolCommand
 
-### Community 483 - "ArtifactDirection"
+### Community 483 - "ArtifactKind"
 Cohesion: 0.04
-Nodes (28): HelpCommand, io, ToolCommand, io, ToolCommand, ReconnectCommand, io, ToolCommand (+20 more)
+Nodes (27): io, ToolCommand, RemountCommand, GetStagedCommand, io, ToolCommand, CacheCommand, io (+19 more)
 
 ### Community 484 - "EnableVerityCommand"
 Cohesion: 0.40
@@ -3201,9 +3214,13 @@ Nodes (3): EnableVerityCommand, io, ToolCommand
 Cohesion: 0.40
 Nodes (3): ForwardCommand, io, ToolCommand
 
-### Community 487 - "StreamingToolRepository"
+### Community 486 - "AuthLoginCommand"
 Cohesion: 0.40
-Nodes (4): Flow, R, ToolCommand, StreamingToolRepository
+Nodes (3): AuthLoginCommand, io, ToolCommand
+
+### Community 487 - "AuthRefreshCommand"
+Cohesion: 0.40
+Nodes (3): AuthRefreshCommand, io, ToolCommand
 
 ### Community 488 - "MdnsCommand"
 Cohesion: 0.40
@@ -3229,9 +3246,9 @@ Nodes (3): KillServerCommand, io, ToolCommand
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, LogcatCommand
 
-### Community 494 - "SetupTokens"
-Cohesion: 0.60
-Nodes (3): AppTheme, Color, SetupTokens
+### Community 494 - "DebloatViewModel"
+Cohesion: 0.53
+Nodes (4): DebloatViewModel, StateFlow, TargetDevice, ViewModel
 
 ### Community 495 - "PairCommand"
 Cohesion: 0.40
@@ -3397,6 +3414,10 @@ Nodes (3): FetchCommand, io, ToolCommand
 Cohesion: 0.40
 Nodes (3): FlashallCommand, io, ToolCommand
 
+### Community 537 - "StudioActionDispatcher"
+Cohesion: 0.56
+Nodes (9): Menu, StudioActionDispatcher, StudioMenuState, EditMenu(), FileMenu(), HelpMenu(), StudioMenuBar(), ViewMenu() (+1 more)
+
 ### Community 538 - "FlashRawCommand"
 Cohesion: 0.40
 Nodes (3): FlashRawCommand, io, ToolCommand
@@ -3541,13 +3562,17 @@ Nodes (3): io, ToolCommand, UpdateCommand
 Cohesion: 0.40
 Nodes (3): DumpCommand, io, ToolCommand
 
+### Community 574 - "GlassInteractionPatch.kt"
+Cohesion: 0.12
+Nodes (21): AvbSizeCalculator, calculateLength(), ceil(), expand(), Offset, Size, round(), calculateGlassInteractionPatchSize() (+13 more)
+
 ### Community 575 - "CodespaceLogsCommand"
 Cohesion: 0.40
 Nodes (3): CodespaceLogsCommand, io, ToolCommand
 
-### Community 576 - "SetupStepStage"
-Cohesion: 0.02
-Nodes (70): SetupPlanFactory, ToolCatalog, ToolCatalogEntry, SetupPlanFactoryTest, ToolCatalogConsistencyTest, BuildRecipes, CheckSnapshot, EnvironmentConnectionStatus (+62 more)
+### Community 576 - "ToolCapabilities"
+Cohesion: 0.07
+Nodes (12): CheckSnapshot, EnvironmentConnectionStatus, CONNECTED, DISCONNECTED, UNAVAILABLE, invalidateForRepair(), RecipeCapability, ToolEvidence (+4 more)
 
 ### Community 577 - "haze/Utils.kt"
 Cohesion: 0.38
@@ -3565,9 +3590,13 @@ Nodes (4): Flow, StateFlow, TerminalManager, TerminalSession
 Cohesion: 0.40
 Nodes (3): DisableVerityCommand, io, ToolCommand
 
-### Community 581 - "DaemonCommand"
+### Community 581 - "CodespaceCodeCommand"
 Cohesion: 0.40
-Nodes (3): DaemonCommand, io, ToolCommand
+Nodes (3): CodespaceCodeCommand, io, ToolCommand
+
+### Community 582 - "CodespaceDeleteCommand"
+Cohesion: 0.40
+Nodes (3): CodespaceDeleteCommand, io, ToolCommand
 
 ### Community 583 - "CodespacePortsVisibilityCommand"
 Cohesion: 0.40
@@ -3641,17 +3670,17 @@ Nodes (3): io, ToolCommand, SearchReposCommand
 Cohesion: 0.40
 Nodes (3): IfCommandCommand, io, ToolCommand
 
-### Community 601 - "CollisionPolicy"
-Cohesion: 0.50
-Nodes (4): CollisionPolicy, FAIL, OVERWRITE, SKIP
+### Community 601 - "ToolCommand"
+Cohesion: 0.22
+Nodes (5): ToolCommand, ToolCommand, io, ToolCommand, ToolResult
 
 ### Community 602 - "LfCommand"
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, LfCommand
 
-### Community 603 - "BugreportCommand"
-Cohesion: 0.40
-Nodes (3): BugreportCommand, io, ToolCommand
+### Community 603 - "HazeInput.kt"
+Cohesion: 0.19
+Nodes (10): All, baseSelection(), Behind, ClearWhenUnavailable, FilteredHazeSourceSelection, HazeSourceMetadata, HazeSourceRetention, HazeSourceSelection (+2 more)
 
 ### Community 604 - "DumpBadgingCommand"
 Cohesion: 0.40
@@ -3681,9 +3710,9 @@ Nodes (3): io, ToolCommand, RebootCommand
 Cohesion: 0.47
 Nodes (3): ErofsfuseCliCommand, CliktCommand, Context
 
-### Community 611 - "LabelDeleteCommand"
-Cohesion: 0.40
-Nodes (3): io, ToolCommand, LabelDeleteCommand
+### Community 611 - "cupertinoMaterialStyle"
+Cohesion: 0.44
+Nodes (4): CupertinoMaterials, cupertinoMaterialStyle(), cupertinoMaterialValues(), Color
 
 ### Community 612 - "Ext2simgCliCommand.kt"
 Cohesion: 0.47
@@ -3725,9 +3754,9 @@ Nodes (3): CliktCommand, Context, LpdumpCliCommand
 Cohesion: 0.47
 Nodes (3): CliktCommand, Context, LpflashCliCommand
 
-### Community 623 - "ToolRisk"
-Cohesion: 0.03
-Nodes (53): GetStateCommand, io, ToolCommand, io, ToolCommand, SideloadCommand, io, ToolCommand (+45 more)
+### Community 623 - "ArtifactDirection"
+Cohesion: 0.04
+Nodes (31): FlashCommand, io, ToolCommand, DumpChunksCommand, io, ToolCommand, ExecuteCommand, io (+23 more)
 
 ### Community 624 - "LpmakeCliCommand.kt"
 Cohesion: 0.47
@@ -3834,12 +3863,12 @@ Cohesion: 0.47
 Nodes (3): CliktCommand, Context, Sload_f2fsCliCommand
 
 ### Community 650 - "SetupEnvironment"
-Cohesion: 0.09
-Nodes (19): ensureInstalled(), ensureRunningCurrent(), installProtectingRunningService(), startFailure(), status(), InstallState, OldServiceStillBusy, ServerUpdateWaitingTest (+11 more)
+Cohesion: 0.05
+Nodes (36): ensureInstalled(), ensureRunningCurrent(), installProtectingRunningService(), startFailure(), status(), InstallState, OldServiceStillBusy, ServerUpdateWaitingTest (+28 more)
 
-### Community 651 - "GetDevpathCommand"
-Cohesion: 0.40
-Nodes (3): GetDevpathCommand, io, ToolCommand
+### Community 651 - "StdinMode"
+Cohesion: 0.03
+Nodes (52): GetStateCommand, io, ToolCommand, io, ToolCommand, ReconnectCommand, io, ToolCommand (+44 more)
 
 ### Community 652 - "AgentTaskViewCommand"
 Cohesion: 0.40
@@ -3849,13 +3878,9 @@ Nodes (3): AgentTaskViewCommand, io, ToolCommand
 Cohesion: 0.40
 Nodes (3): BootCommand, io, ToolCommand
 
-### Community 654 - "GlassInteractionState"
-Cohesion: 0.50
-Nodes (4): GlassInteractionState, Focused, Hovered, Pressed
-
 ### Community 655 - "HazeEffectRuntimeDrawScope"
 Cohesion: 0.05
-Nodes (54): createScaledContentLayer(), drawScaledContent(), drawScrim(), Color, GraphicsLayer, Offset, Size, drawProgressiveEffect() (+46 more)
+Nodes (56): LiquidLensShaderPrototypeTest, createScaledContentLayer(), drawScaledContent(), drawScrim(), Color, GraphicsLayer, Offset, Size (+48 more)
 
 ### Community 656 - "AliasDeleteCommand"
 Cohesion: 0.40
@@ -3877,10 +3902,6 @@ Nodes (3): AttestationDownloadCommand, io, ToolCommand
 Cohesion: 0.40
 Nodes (3): AuthLogoutCommand, io, ToolCommand
 
-### Community 661 - "ToolDiWiringTest.kt"
-Cohesion: 0.18
-Nodes (5): koinConfiguration(), ToolDiWiringTest, DevicesUseCase, ExtractPublicKeyUseCase, ToolMetadataRegistry
-
 ### Community 662 - "AuthCommand"
 Cohesion: 0.40
 Nodes (3): AuthCommand, io, ToolCommand
@@ -3897,13 +3918,9 @@ Nodes (3): ExecuteCommand, io, ToolCommand
 Cohesion: 0.40
 Nodes (3): DumpPermissionsCommand, io, ToolCommand
 
-### Community 666 - "nonLetterColorVisualTransformation"
-Cohesion: 0.52
-Nodes (4): AnnotatedString, TransformedText, VisualTransformation, nonLetterColorVisualTransformation()
-
-### Community 667 - "ProjectItemCreateCommand"
-Cohesion: 0.40
-Nodes (3): io, ToolCommand, ProjectItemCreateCommand
+### Community 666 - "SetupDestination"
+Cohesion: 0.25
+Nodes (7): NavOptions, navigateToSetup(), SetupDestination, ENVIRONMENT, RECOVERY, TOOLS, WORKSPACES
 
 ### Community 668 - "ExtensionCommand"
 Cohesion: 0.40
@@ -4525,17 +4542,21 @@ Nodes (3): CliktCommand, Context, WorkflowViewCliCommand
 Cohesion: 0.40
 Nodes (3): AuthTokenCommand, io, ToolCommand
 
+### Community 823 - "DelegatingSystemNotifier"
+Cohesion: 0.29
+Nodes (3): DelegatingSystemNotifier, NoOpSystemNotifier, SystemNotifier
+
 ### Community 824 - "CacheListCommand"
 Cohesion: 0.40
 Nodes (3): CacheListCommand, io, ToolCommand
 
-### Community 825 - "ToolScope"
-Cohesion: 0.67
-Nodes (3): ToolScope, HOST, WSL2
+### Community 825 - "DatastoreModule.kt"
+Cohesion: 0.38
+Nodes (3): defaultToolchainJournalStorage(), ToolchainJournalStorage, Settings
 
-### Community 826 - "CodespaceDeleteCommand"
+### Community 826 - "GistCreateCommand"
 Cohesion: 0.40
-Nodes (3): CodespaceDeleteCommand, io, ToolCommand
+Nodes (3): GistCreateCommand, io, ToolCommand
 
 ### Community 827 - "GistListCommand"
 Cohesion: 0.40
@@ -4545,9 +4566,9 @@ Nodes (3): GistListCommand, io, ToolCommand
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, ProjectListCommand
 
-### Community 829 - "DragGestureInspector.kt"
-Cohesion: 0.73
-Nodes (5): awaitDragOrUp(), drag(), inspectDragGestures(), PointerId, PointerInputChange
+### Community 829 - "AttachCommand"
+Cohesion: 0.40
+Nodes (3): AttachCommand, io, ToolCommand
 
 ### Community 830 - "StudioIconKey"
 Cohesion: 0.20
@@ -4557,9 +4578,9 @@ Nodes (9): StudioIconKey, ACQUIRE, ASSEMBLE, BUILD, DEBLOAT, EXTRACT, METADATA, 
 Cohesion: 0.47
 Nodes (4): DeviceOperationResult, Result, WirelessPairingRequest, PairWirelessDeviceUseCase
 
-### Community 832 - "OrgCommand"
-Cohesion: 0.40
-Nodes (3): io, ToolCommand, OrgCommand
+### Community 832 - "NoRawColorLiteral"
+Cohesion: 0.48
+Nodes (4): KtFile, Rule, RuleName, NoRawColorLiteral
 
 ### Community 833 - "CodespacePortsForwardCommand"
 Cohesion: 0.40
@@ -4573,9 +4594,9 @@ Nodes (3): io, ToolCommand, ReleaseCommand
 Cohesion: 0.40
 Nodes (3): ExecuteCommand, io, ToolCommand
 
-### Community 836 - "ProjectFieldCreateCommand"
+### Community 836 - "LabelCreateCommand"
 Cohesion: 0.40
-Nodes (3): io, ToolCommand, ProjectFieldCreateCommand
+Nodes (3): io, ToolCommand, LabelCreateCommand
 
 ### Community 837 - "Platform support & API levels"
 Cohesion: 0.33
@@ -4589,9 +4610,9 @@ Nodes (3): io, ToolCommand, RulesetListCommand
 Cohesion: 0.40
 Nodes (3): ConfigCommand, io, ToolCommand
 
-### Community 840 - "RulesetCommand"
+### Community 840 - "OrgCommand"
 Cohesion: 0.40
-Nodes (3): io, ToolCommand, RulesetCommand
+Nodes (3): io, ToolCommand, OrgCommand
 
 ### Community 841 - "RebootConnectedDeviceUseCase.kt"
 Cohesion: 0.47
@@ -4613,17 +4634,17 @@ Nodes (3): CfgCreateCommand, io, ToolCommand
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, SkillSearchCommand
 
-### Community 846 - "RunCancelCommand"
-Cohesion: 0.40
-Nodes (3): io, ToolCommand, RunCancelCommand
+### Community 846 - "GlassValidation.kt"
+Cohesion: 0.33
+Nodes (5): Alignment, validateLightPositionBiases(), Dp, requireFinite(), requireSpecifiedFiniteNonNegative()
 
 ### Community 847 - "ExecuteCommand"
 Cohesion: 0.40
 Nodes (3): ExecuteCommand, io, ToolCommand
 
-### Community 848 - "SearchPrsCommand"
-Cohesion: 0.40
-Nodes (3): io, ToolCommand, SearchPrsCommand
+### Community 848 - "SurfaceProfile"
+Cohesion: 0.29
+Nodes (6): SurfaceProfile, Circle, Concave, Lip, Squircle, SuperquadricLiquid
 
 ### Community 849 - "ExtensionUpgradeCommand"
 Cohesion: 0.40
@@ -4635,15 +4656,15 @@ Nodes (3): AttestationCommand, io, ToolCommand
 
 ### Community 851 - "GlassDefaults"
 Cohesion: 0.13
-Nodes (15): ChromaticAberrationMode, Full, Simple, GlassDefaults, Color, Dp, FiniteAnimationSpec, Offset (+7 more)
+Nodes (17): ChromaticAberrationMode, Full, Simple, GlassDefaults, Color, Dp, FiniteAnimationSpec, Offset (+9 more)
 
 ### Community 852 - "Design System Architecture & Centralized Tokens"
 Cohesion: 0.25
 Nodes (8): 1. Color System (`Color.kt`), 2. Alpha & Opacity Tokens (`Alpha.kt`), 3. Dimension Tokens (`Dimens.kt`), 4. Motion & Animation Tokens (`Motion.kt`), 5. Typography (`Type.kt`), 6. Theme Setup (`Theme.kt`), 7. Design System Guardrails & Detekt Enforcement, Design System Architecture & Centralized Tokens
 
-### Community 853 - "VariableDeleteCommand"
+### Community 853 - "ProjectCreateCommand"
 Cohesion: 0.40
-Nodes (3): io, ToolCommand, VariableDeleteCommand
+Nodes (3): io, ToolCommand, ProjectCreateCommand
 
 ### Community 854 - "AliasListCommand"
 Cohesion: 0.40
@@ -4657,9 +4678,9 @@ Nodes (3): AuthSetupGitCommand, io, ToolCommand
 Cohesion: 0.40
 Nodes (3): GpgKeyDeleteCommand, io, ToolCommand
 
-### Community 857 - "CodespaceStopCommand"
-Cohesion: 0.40
-Nodes (3): CodespaceStopCommand, io, ToolCommand
+### Community 857 - "ConfigurationNavigation.kt"
+Cohesion: 0.73
+Nodes (5): configurationRoute(), NavOptions, navigateToConfiguration(), navigateToCreateConfiguration(), navigateToEditConfiguration()
 
 ### Community 858 - "CodespaceViewCommand"
 Cohesion: 0.40
@@ -4677,6 +4698,14 @@ Nodes (3): io, ToolCommand, LabelCommand
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, VariableSetCommand
 
+### Community 862 - "ProjectFieldCreateCommand"
+Cohesion: 0.40
+Nodes (3): io, ToolCommand, ProjectFieldCreateCommand
+
+### Community 863 - "ProjectItemCreateCommand"
+Cohesion: 0.40
+Nodes (3): io, ToolCommand, ProjectItemCreateCommand
+
 ### Community 864 - "LicensesCommand"
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, LicensesCommand
@@ -4685,57 +4714,61 @@ Nodes (3): io, ToolCommand, LicensesCommand
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, ProjectCommand
 
-### Community 866 - "AttachCommand"
-Cohesion: 0.40
-Nodes (3): AttachCommand, io, ToolCommand
+### Community 866 - "DirtyTargetSelectionDecision"
+Cohesion: 0.33
+Nodes (5): ConfigurationUiState, DirtyTargetSelectionDecision, DISCARD, SAVE, STAY
 
 ### Community 867 - "ConfigClearCacheCommand"
 Cohesion: 0.40
 Nodes (3): ConfigClearCacheCommand, io, ToolCommand
 
-### Community 868 - "EmuCommand"
+### Community 868 - "ProjectUnlinkCommand"
 Cohesion: 0.40
-Nodes (3): EmuCommand, io, ToolCommand
+Nodes (3): io, ToolCommand, ProjectUnlinkCommand
 
-### Community 869 - "ApkinfoCommand"
+### Community 869 - "RepoCommand"
 Cohesion: 0.40
-Nodes (3): ApkinfoCommand, io, ToolCommand
+Nodes (3): io, ToolCommand, RepoCommand
 
-### Community 871 - "PublicizeResourcesCommand"
+### Community 870 - "RulesetCommand"
 Cohesion: 0.40
-Nodes (3): io, ToolCommand, PublicizeResourcesCommand
+Nodes (3): io, ToolCommand, RulesetCommand
+
+### Community 871 - "ExtractViewModel"
+Cohesion: 0.53
+Nodes (4): ExtractViewModel, StateFlow, TargetDevice, ViewModel
 
 ### Community 872 - "WorkflowEnableCommand"
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, WorkflowEnableCommand
 
-### Community 873 - "ExecuteCommand"
+### Community 873 - "RunCommand"
 Cohesion: 0.40
-Nodes (3): ExecuteCommand, io, ToolCommand
+Nodes (3): io, ToolCommand, RunCommand
 
 ### Community 874 - "ProjectFieldListCommand"
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, ProjectFieldListCommand
 
-### Community 875 - "UninstallCommand"
-Cohesion: 0.40
-Nodes (3): io, ToolCommand, UninstallCommand
+### Community 875 - "PublishViewModel"
+Cohesion: 0.53
+Nodes (4): StateFlow, TargetDevice, ViewModel, PublishViewModel
 
 ### Community 876 - "CodespacePortsCommand"
 Cohesion: 0.40
 Nodes (3): CodespacePortsCommand, io, ToolCommand
 
-### Community 877 - "FlashingCommand"
+### Community 877 - "HelpCommand"
 Cohesion: 0.40
-Nodes (3): FlashingCommand, io, ToolCommand
+Nodes (3): HelpCommand, io, ToolCommand
 
 ### Community 878 - "SearchCommand"
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, SearchCommand
 
-### Community 879 - "ExecuteCommand"
+### Community 879 - "InstallMultipleCommand"
 Cohesion: 0.40
-Nodes (3): ExecuteCommand, io, ToolCommand
+Nodes (3): InstallMultipleCommand, io, ToolCommand
 
 ### Community 880 - "Input & Navigation Components (`core:designsystem/component`)"
 Cohesion: 0.29
@@ -4749,21 +4782,21 @@ Nodes (3): io, ToolCommand, ProjectLinkCommand
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, SshKeyCommand
 
-### Community 883 - "AppendVbmetaImageCommand"
+### Community 883 - "SshKeyDeleteCommand"
 Cohesion: 0.40
-Nodes (3): AppendVbmetaImageCommand, io, ToolCommand
+Nodes (3): io, ToolCommand, SshKeyDeleteCommand
 
-### Community 884 - "ConfigurationSnapshot"
-Cohesion: 0.03
-Nodes (55): Flow, SnapshotRepositoryImpl, RemoteWorkspaceProvisionerTest, Flow, Json, SnapshotList, SnapshotPreferencesDataSource, SnapshotPreferencesDataSourceTest (+47 more)
+### Community 884 - "Workspace"
+Cohesion: 0.04
+Nodes (46): PackagePolicy, Workspace, DebloatResolverTest, StageSettingsValidatorTest, FirmwareAcquisitionStageTest, PipelineFixture, org, AcquisitionMode (+38 more)
 
 ### Community 885 - "CodespaceCpCommand"
 Cohesion: 0.40
 Nodes (3): CodespaceCpCommand, io, ToolCommand
 
-### Community 886 - "GetStagedCommand"
+### Community 886 - "SshKeyListCommand"
 Cohesion: 0.40
-Nodes (3): GetStagedCommand, io, ToolCommand
+Nodes (3): io, ToolCommand, SshKeyListCommand
 
 ### Community 887 - "VariableListCommand"
 Cohesion: 0.40
@@ -4773,9 +4806,9 @@ Nodes (3): io, ToolCommand, VariableListCommand
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, WorkflowListCommand
 
-### Community 889 - "WorkflowRunCommand"
-Cohesion: 0.40
-Nodes (3): io, ToolCommand, WorkflowRunCommand
+### Community 889 - "StageId"
+Cohesion: 0.05
+Nodes (18): PipelineDefinitionRegistry, PipelineStageSequence, PipelineDefinitionRegistryTest, StageId, BUILD_FLASHABLE_ZIP, DEBLOAT, FIRMWARE_ACQUISITION, FIRMWARE_EXTRACTION (+10 more)
 
 ### Community 890 - "CalculateVbmetaDigestCommand"
 Cohesion: 0.40
@@ -4785,77 +4818,73 @@ Nodes (3): CalculateVbmetaDigestCommand, io, ToolCommand
 Cohesion: 0.40
 Nodes (3): ExtractPublicKeyDigestCommand, io, ToolCommand
 
-### Community 892 - "DumpPackagenameCommand"
+### Community 892 - "WorkflowRunCommand"
 Cohesion: 0.40
-Nodes (3): DumpPackagenameCommand, io, ToolCommand
+Nodes (3): io, ToolCommand, WorkflowRunCommand
 
-### Community 893 - "BCommand"
+### Community 893 - "WorkflowViewCommand"
 Cohesion: 0.40
-Nodes (3): BCommand, io, ToolCommand
+Nodes (3): io, ToolCommand, WorkflowViewCommand
 
-### Community 894 - "ExecuteCommand"
+### Community 894 - "UsbCommand"
 Cohesion: 0.40
-Nodes (3): ExecuteCommand, io, ToolCommand
+Nodes (3): io, ToolCommand, UsbCommand
 
-### Community 895 - "AuthRefreshCommand"
+### Community 895 - "ResizeLogicalPartitionCommand"
 Cohesion: 0.40
-Nodes (3): AuthRefreshCommand, io, ToolCommand
+Nodes (3): io, ToolCommand, ResizeLogicalPartitionCommand
 
-### Community 896 - "MakeCertUnlockCredentialCommand"
+### Community 896 - "CompileCommand"
 Cohesion: 0.40
-Nodes (3): io, ToolCommand, MakeCertUnlockCredentialCommand
+Nodes (3): CompileCommand, io, ToolCommand
 
 ### Community 897 - "MakeVbmetaImageCommand"
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, MakeVbmetaImageCommand
 
-### Community 898 - "CodespaceCodeCommand"
+### Community 898 - "DiffCommand"
 Cohesion: 0.40
-Nodes (3): CodespaceCodeCommand, io, ToolCommand
+Nodes (3): DiffCommand, io, ToolCommand
 
 ### Community 899 - "ZeroHashtreeCommand"
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, ZeroHashtreeCommand
 
-### Community 900 - "LabelCreateCommand"
+### Community 901 - "AddHashtreeFooterCommand"
 Cohesion: 0.40
-Nodes (3): io, ToolCommand, LabelCreateCommand
-
-### Community 901 - "CfCommand"
-Cohesion: 0.40
-Nodes (3): CfCommand, io, ToolCommand
+Nodes (3): AddHashtreeFooterCommand, io, ToolCommand
 
 ### Community 902 - "SecretDeleteCommand"
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, SecretDeleteCommand
 
-### Community 903 - "HelpCommand"
-Cohesion: 0.40
-Nodes (3): HelpCommand, io, ToolCommand
-
 ### Community 904 - "MakeCertMetadataCommand"
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, MakeCertMetadataCommand
 
-### Community 905 - "SessionStatus"
+### Community 905 - "DumpConfigurationsCommand"
 Cohesion: 0.40
-Nodes (5): SessionStatus, CANCELLED, COMPLETED, FAILED, RUNNING
+Nodes (3): DumpConfigurationsCommand, io, ToolCommand
 
-### Community 906 - "PrCommand"
+### Community 906 - "DumpStyleparentsCommand"
 Cohesion: 0.40
-Nodes (3): io, ToolCommand, PrCommand
+Nodes (3): DumpStyleparentsCommand, io, ToolCommand
+
+### Community 907 - "OptimizeCommand"
+Cohesion: 0.40
+Nodes (3): io, ToolCommand, OptimizeCommand
+
+### Community 908 - "CleanFrameworksCommand"
+Cohesion: 0.40
+Nodes (3): CleanFrameworksCommand, io, ToolCommand
 
 ### Community 909 - "Core Glass Components (`core:designsystem/component`)"
 Cohesion: 0.33
 Nodes (6): 1. `GlassSurface.kt`, 2. `GlassCard.kt`, 3. `GlassPanel.kt`, 4. `GlassLayout.kt` & `GlassSidePanelRail`, 5. `GlassTopBar.kt` & `GlassStatusBar.kt`, Core Glass Components (`core:designsystem/component`)
 
-### Community 910 - "CodespaceEditCommand"
+### Community 910 - "ListFrameworksCommand"
 Cohesion: 0.40
-Nodes (3): CodespaceEditCommand, io, ToolCommand
-
-### Community 911 - "ConfigListCommand"
-Cohesion: 0.40
-Nodes (3): ConfigListCommand, io, ToolCommand
+Nodes (3): io, ToolCommand, ListFrameworksCommand
 
 ### Community 912 - "Setup Flow & Clean Machine Architecture"
 Cohesion: 0.33
@@ -4865,37 +4894,41 @@ Nodes (6): 1. Stages (in order), 2. Package handoff (no stored passwords), 3. Bu
 Cohesion: 0.40
 Nodes (3): GpgKeyCommand, io, ToolCommand
 
-### Community 914 - "GpgKeyAddCommand"
+### Community 914 - "DumpCommand"
 Cohesion: 0.40
-Nodes (3): GpgKeyAddCommand, io, ToolCommand
+Nodes (3): DumpCommand, io, ToolCommand
 
 ### Community 915 - "ChipMode"
 Cohesion: 0.40
 Nodes (4): Action, ChipMode, ReadOnly, Toggle
 
-### Community 917 - "AuthSwitchCommand"
+### Community 917 - "ExecuteCommand"
 Cohesion: 0.40
-Nodes (3): AuthSwitchCommand, io, ToolCommand
+Nodes (3): ExecuteCommand, io, ToolCommand
 
 ### Community 918 - "LabelListCommand"
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, LabelListCommand
 
-### Community 919 - "CodespaceCommand"
+### Community 919 - "ExecuteCommand"
 Cohesion: 0.40
-Nodes (3): CodespaceCommand, io, ToolCommand
+Nodes (3): ExecuteCommand, io, ToolCommand
 
-### Community 921 - "ProjectCreateCommand"
+### Community 920 - "AliasCommand"
 Cohesion: 0.40
-Nodes (3): io, ToolCommand, ProjectCreateCommand
+Nodes (3): AliasCommand, io, ToolCommand
 
-### Community 922 - "ProjectDeleteCommand"
+### Community 921 - "GetDevpathCommand"
 Cohesion: 0.40
-Nodes (3): io, ToolCommand, ProjectDeleteCommand
+Nodes (3): GetDevpathCommand, io, ToolCommand
 
-### Community 923 - "ProjectItemArchiveCommand"
+### Community 922 - "CacheDeleteCommand"
 Cohesion: 0.40
-Nodes (3): io, ToolCommand, ProjectItemArchiveCommand
+Nodes (3): CacheDeleteCommand, io, ToolCommand
+
+### Community 923 - "DiscussionCommand"
+Cohesion: 0.40
+Nodes (3): DiscussionCommand, io, ToolCommand
 
 ### Community 924 - "ProjectItemEditCommand"
 Cohesion: 0.40
@@ -4905,13 +4938,13 @@ Nodes (3): io, ToolCommand, ProjectItemEditCommand
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, ProjectViewCommand
 
-### Community 926 - "RepoCommand"
+### Community 926 - "ExtensionExecCommand"
 Cohesion: 0.40
-Nodes (3): io, ToolCommand, RepoCommand
+Nodes (3): ExtensionExecCommand, io, ToolCommand
 
-### Community 927 - "GistCreateCommand"
+### Community 927 - "GistCommand"
 Cohesion: 0.40
-Nodes (3): GistCreateCommand, io, ToolCommand
+Nodes (3): GistCommand, io, ToolCommand
 
 ### Community 928 - "IssueCommand"
 Cohesion: 0.40
@@ -5045,13 +5078,13 @@ Nodes (3): CliktCommand, Context, ZeroHashtreeCliCommand
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, RulesetCheckCommand
 
-### Community 962 - "RunCommand"
+### Community 962 - "GistEditCommand"
 Cohesion: 0.40
-Nodes (3): io, ToolCommand, RunCommand
+Nodes (3): GistEditCommand, io, ToolCommand
 
-### Community 963 - "ProjectUnlinkCommand"
+### Community 963 - "GpgKeyListCommand"
 Cohesion: 0.40
-Nodes (3): io, ToolCommand, ProjectUnlinkCommand
+Nodes (3): GpgKeyListCommand, io, ToolCommand
 
 ### Community 964 - "ProjectItemListCommand"
 Cohesion: 0.40
@@ -5061,9 +5094,9 @@ Nodes (3): io, ToolCommand, ProjectItemListCommand
 Cohesion: 0.40
 Nodes (3): AttestationVerifyCommand, io, ToolCommand
 
-### Community 966 - "RunDownloadCommand"
+### Community 966 - "EmptyStateAction"
 Cohesion: 0.40
-Nodes (3): io, ToolCommand, RunDownloadCommand
+Nodes (5): Custom, Dual, EmptyStateAction, None, Single
 
 ### Community 967 - "SearchIssuesCommand"
 Cohesion: 0.40
@@ -5085,9 +5118,9 @@ Nodes (3): io, ToolCommand, SecretListCommand
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, RunWatchCommand
 
-### Community 972 - "SkillInstallCommand"
+### Community 972 - "LabelEditCommand"
 Cohesion: 0.40
-Nodes (3): io, ToolCommand, SkillInstallCommand
+Nodes (3): io, ToolCommand, LabelEditCommand
 
 ### Community 973 - "SshKeyAddCommand"
 Cohesion: 0.40
@@ -5169,9 +5202,9 @@ Nodes (5): Developer Experience, 🎯 Key Achievements, Performance Engineering,
 Cohesion: 0.70
 Nodes (3): CMPFeatureConventionPlugin, Plugin, Project
 
-### Community 994 - "SshKeyDeleteCommand"
-Cohesion: 0.40
-Nodes (3): io, ToolCommand, SshKeyDeleteCommand
+### Community 994 - "SetupOutcome"
+Cohesion: 0.02
+Nodes (86): SetupPlanFactory, DaemonHealthEvaluation, ToolchainReadinessPolicy, Flow, DaemonFailureCategory, COMPATIBILITY_MODE, UNHEALTHY_STATUS, UNREACHABLE (+78 more)
 
 ### Community 995 - "KMPKoinConventionPlugin"
 Cohesion: 0.70
@@ -5189,13 +5222,13 @@ Nodes (5): Multi Value Options, Options With a Variable Number of Values, Option
 Cohesion: 0.40
 Nodes (4): AppDispatchers, Default, IO, Unconfined
 
-### Community 1011 - "SkillPreviewCommand"
+### Community 1011 - "PrCommand"
 Cohesion: 0.40
-Nodes (3): io, ToolCommand, SkillPreviewCommand
+Nodes (3): io, ToolCommand, PrCommand
 
-### Community 1012 - "SkillPublishCommand"
+### Community 1012 - "PreviewCommand"
 Cohesion: 0.40
-Nodes (3): io, ToolCommand, SkillPublishCommand
+Nodes (3): io, ToolCommand, PreviewCommand
 
 ### Community 1013 - "VariableGetCommand"
 Cohesion: 0.40
@@ -5205,9 +5238,9 @@ Nodes (3): io, ToolCommand, VariableGetCommand
 Cohesion: 0.40
 Nodes (3): CalculateKernelCmdlineCommand, io, ToolCommand
 
-### Community 1016 - "SshKeyListCommand"
+### Community 1016 - "RunListCommand"
 Cohesion: 0.40
-Nodes (3): io, ToolCommand, SshKeyListCommand
+Nodes (3): io, ToolCommand, RunListCommand
 
 ### Community 1017 - "gradlew"
 Cohesion: 0.60
@@ -5249,17 +5282,17 @@ Nodes (4): Exception Handling, Handling Exceptions Manually, Where are Exception
 Cohesion: 0.50
 Nodes (3): Why Clikt?, Why not a Java library like JCommander or Picocli?, Why not a Kotlin library like kotlin-argparser or kotlinx.cli?
 
-### Community 1027 - "MakeAtxCertificateCommand"
+### Community 1027 - "RunViewCommand"
 Cohesion: 0.40
-Nodes (3): io, ToolCommand, MakeAtxCertificateCommand
+Nodes (3): io, ToolCommand, RunViewCommand
 
-### Community 1028 - "ResignImageCommand"
-Cohesion: 0.40
-Nodes (3): io, ToolCommand, ResignImageCommand
+### Community 1028 - "RefractionProfile"
+Cohesion: 0.50
+Nodes (3): Edge, RefractionProfile, Surface
 
-### Community 1029 - "VariableCommand"
+### Community 1029 - "SearchCodeCommand"
 Cohesion: 0.40
-Nodes (3): io, ToolCommand, VariableCommand
+Nodes (3): io, ToolCommand, SearchCodeCommand
 
 ### Community 1031 - "WorkspaceRoutes.kt"
 Cohesion: 0.83
@@ -5269,17 +5302,17 @@ Nodes (3): NavOptions, navigateToCreateWorkspace(), navigateToWorkspace()
 Cohesion: 0.50
 Nodes (3): Description, Issue Fix, Screenshots
 
-### Community 1033 - "WorkflowCommand"
+### Community 1033 - "SkillListCommand"
 Cohesion: 0.40
-Nodes (3): io, ToolCommand, WorkflowCommand
+Nodes (3): io, ToolCommand, SkillListCommand
 
 ### Community 1034 - "Example Compiled Hook Mod"
 Cohesion: 0.50
 Nodes (3): Compiling the Payload, Example Compiled Hook Mod, Payload Configuration
 
-### Community 1044 - ".optics"
-Cohesion: 0.14
-Nodes (11): GlassOptics, T, requireSizeValue(), Fixed, T, OpticalSizePoint, OpticalSizeValue, Responsive (+3 more)
+### Community 1044 - "StatusCommand"
+Cohesion: 0.40
+Nodes (3): io, ToolCommand, StatusCommand
 
 ### Community 1045 - "Gh Tool Reference"
 Cohesion: 0.50
@@ -5289,49 +5322,53 @@ Nodes (3): Gh Tool Reference, Global Options, Metadata
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, MakeCertPermanentAttributesCommand
 
-### Community 1124 - "WorkflowDisableCommand"
+### Community 1124 - "EraseFooterCommand"
 Cohesion: 0.40
-Nodes (3): io, ToolCommand, WorkflowDisableCommand
+Nodes (3): EraseFooterCommand, io, ToolCommand
 
-### Community 1129 - "WorkflowViewCommand"
+### Community 1129 - "GenerateTestImageCommand"
 Cohesion: 0.40
-Nodes (3): io, ToolCommand, WorkflowViewCommand
+Nodes (3): GenerateTestImageCommand, io, ToolCommand
 
 ### Community 1257 - "MakeCertificateCommand"
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, MakeCertificateCommand
 
+### Community 1258 - "ExecuteCommand"
+Cohesion: 0.40
+Nodes (3): ExecuteCommand, io, ToolCommand
+
 ### Community 1259 - "ExtensionCreateCommand"
 Cohesion: 0.40
 Nodes (3): ExtensionCreateCommand, io, ToolCommand
 
-### Community 1261 - "AgentTaskCreateCommand"
+### Community 1260 - "ExecuteCommand"
 Cohesion: 0.40
-Nodes (3): AgentTaskCreateCommand, io, ToolCommand
+Nodes (3): ExecuteCommand, io, ToolCommand
 
-### Community 1262 - "ExtractPublicKeyCommand"
+### Community 1261 - "MakeAtxMetadataCommand"
 Cohesion: 0.40
-Nodes (3): ExtractPublicKeyCommand, io, ToolCommand
+Nodes (3): io, ToolCommand, MakeAtxMetadataCommand
+
+### Community 1262 - "VerifyImageCommand"
+Cohesion: 0.40
+Nodes (3): io, ToolCommand, VerifyImageCommand
 
 ### Community 1265 - "ResizeImageCommand"
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, ResizeImageCommand
 
-### Community 1266 - "UpdatePartitionDescriptorCommand"
+### Community 1266 - "AgentTaskCreateCommand"
 Cohesion: 0.40
-Nodes (3): io, ToolCommand, UpdatePartitionDescriptorCommand
+Nodes (3): AgentTaskCreateCommand, io, ToolCommand
 
-### Community 1267 - "CodespaceListCommand"
-Cohesion: 0.40
-Nodes (3): CodespaceListCommand, io, ToolCommand
-
-### Community 1268 - "AliasSetCommand"
+### Community 1267 - "AliasSetCommand"
 Cohesion: 0.40
 Nodes (3): AliasSetCommand, io, ToolCommand
 
-### Community 1269 - "AuthLoginCommand"
+### Community 1268 - "VersionCommand"
 Cohesion: 0.40
-Nodes (3): AuthLoginCommand, io, ToolCommand
+Nodes (3): io, ToolCommand, VersionCommand
 
 ### Community 1270 - "ConnectWirelessDeviceUseCase.kt"
 Cohesion: 0.50
@@ -5345,6 +5382,10 @@ Nodes (3): GetConnectedDevicesUseCase, ConnectedTargetDevice, StateFlow
 Cohesion: 0.60
 Nodes (3): GetSelectedConnectedDeviceUseCase, ConnectedTargetDevice, StateFlow
 
+### Community 1274 - "HazeTintExt.kt"
+Cohesion: 0.80
+Nodes (4): boostAlphaForBlurRadius(), boostForFallback(), Color, Dp
+
 ### Community 1275 - "CodespaceCreateCommand"
 Cohesion: 0.40
 Nodes (3): CodespaceCreateCommand, io, ToolCommand
@@ -5353,17 +5394,25 @@ Nodes (3): CodespaceCreateCommand, io, ToolCommand
 Cohesion: 0.83
 Nodes (3): Key, Modifier, onKeyShortcut()
 
-### Community 1283 - "GistViewCommand"
-Cohesion: 0.40
-Nodes (3): GistViewCommand, io, ToolCommand
+### Community 1278 - "CollisionPolicy"
+Cohesion: 0.50
+Nodes (4): CollisionPolicy, FAIL, OVERWRITE, SKIP
 
-### Community 1287 - "ProjectCopyCommand"
+### Community 1281 - "ProjectCopyCommand"
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, ProjectCopyCommand
 
-### Community 1289 - "ProjectItemAddCommand"
+### Community 1282 - "ProjectItemAddCommand"
 Cohesion: 0.40
 Nodes (3): io, ToolCommand, ProjectItemAddCommand
+
+### Community 1283 - "ProjectItemArchiveCommand"
+Cohesion: 0.40
+Nodes (3): io, ToolCommand, ProjectItemArchiveCommand
+
+### Community 1289 - "VariableDeleteCommand"
+Cohesion: 0.40
+Nodes (3): io, ToolCommand, VariableDeleteCommand
 
 ### Community 1290 - "Adb Tool Reference"
 Cohesion: 0.50
@@ -5372,6 +5421,10 @@ Nodes (3): Adb Tool Reference, Global Options, Metadata
 ### Community 1291 - "Avbtool Tool Reference"
 Cohesion: 0.50
 Nodes (3): Avbtool Tool Reference, Global Options, Metadata
+
+### Community 1292 - "WorkflowDisableCommand"
+Cohesion: 0.40
+Nodes (3): io, ToolCommand, WorkflowDisableCommand
 
 ### Community 1294 - "`install`"
 Cohesion: 0.67
@@ -5393,13 +5446,9 @@ Nodes (3): Command Options, Positional Arguments, `push`
 Cohesion: 0.67
 Nodes (3): Command Options, Positional Arguments, `shell`
 
-### Community 1482 - "AddHashFooterCommand"
+### Community 1477 - "UpdatePartitionDescriptorCommand"
 Cohesion: 0.40
-Nodes (3): AddHashFooterCommand, io, ToolCommand
-
-### Community 1483 - "AddHashtreeFooterCommand"
-Cohesion: 0.40
-Nodes (3): AddHashtreeFooterCommand, io, ToolCommand
+Nodes (3): io, ToolCommand, UpdatePartitionDescriptorCommand
 
 ### Community 1484 - "PrintPartitionDigestsCommand"
 Cohesion: 0.40
@@ -5423,23 +5472,23 @@ Nodes (3): Accessibility & Reduced Motion, Reduced Motion Support (`GlassTheme.r
 
 ## Knowledge Gaps
 - **2618 isolated node(s):** `MODEL_FAILURE_PATTERNS`, `EFFORT_LEVELS`, `SANDBOX_MODES`, `EXIT_HINTS`, `EFFORT_LEVELS` (+2613 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 4991 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **286 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 5001 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **290 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `ExecutionContext` connect `ExecutionContext` to `FakeToolRepository`, `ToolCommand`, `WorkspaceJailInterceptor`, `ToolDomainEvent`, `TestCommand`, `ToolResult`, `ToolingException`, `RemoteWslToolRepository`, `Unpack_bootimgCliCommand.kt`, `SafetyCheckInterceptor`, `EventPublishingInterceptor`, `.stream`, `AdbCliCommand.kt`, `AttachCliCommand.kt`, `BugreportCliCommand.kt`, `ConnectCliCommand.kt`, `DetachCliCommand.kt`, `adb/cli/DevicesCliCommand.kt`, `DisableVerityCliCommand.kt`, `DisconnectCliCommand.kt`, `EmuCliCommand.kt`, `EnableVerityCliCommand.kt`, `ExecOutCliCommand.kt`, `ForwardCliCommand.kt`, `GetDevpathCliCommand.kt`, `GetSerialnoCliCommand.kt`, `GetStateCliCommand.kt`, `adb/cli/HelpCliCommand.kt`, `InstallCliCommand.kt`, `InstallMultiPackageCliCommand.kt`, `InstallMultipleCliCommand.kt`, `JdwpCliCommand.kt`, `KeygenCliCommand.kt`, `KillServerCliCommand.kt`, `LogcatCliCommand.kt`, `MdnsCliCommand.kt`, `PairCliCommand.kt`, `PullCliCommand.kt`, `PushCliCommand.kt`, `adb/cli/RebootCliCommand.kt`, `ReconnectCliCommand.kt`, `RemountCliCommand.kt`, `ReverseCliCommand.kt`, `RootCliCommand.kt`, `ShellCliCommand.kt`, `SideloadCliCommand.kt`, `StartServerCliCommand.kt`, `SyncCliCommand.kt`, `TcpipCliCommand.kt`, `UninstallCliCommand.kt`, `UnrootCliCommand.kt`, `UsbCliCommand.kt`, `adb/cli/VersionCliCommand.kt`, `WaitForCliCommand.kt`, `StreamingToolRepository`, `BootCliCommand.kt`, `CreateLogicalPartitionCliCommand.kt`, `DeleteLogicalPartitionCliCommand.kt`, `fastboot/cli/DevicesCliCommand.kt`, `EraseCliCommand.kt`, `FastbootCliCommand.kt`, `FetchCliCommand.kt`, `FlashallCliCommand.kt`, `FlashCliCommand.kt`, `FlashingCliCommand.kt`, `FlashRawCliCommand.kt`, `FormatCliCommand.kt`, `GetStagedCliCommand.kt`, `GetvarCliCommand.kt`, `GsiCliCommand.kt`, `OemCliCommand.kt`, `fastboot/cli/RebootCliCommand.kt`, `ResizeLogicalPartitionCliCommand.kt`, `SetActiveCliCommand.kt`, `SnapshotUpdateCliCommand.kt`, `StageCliCommand.kt`, `UpdateCliCommand.kt`, `WipeSuperCliCommand.kt`, `Aapt2CliCommand.kt`, `ApkinfoCliCommand.kt`, `CompileCliCommand.kt`, `ConvertCliCommand.kt`, `DaemonCliCommand.kt`, `DiffCliCommand.kt`, `DumpApcCliCommand.kt`, `DumpBadgingCliCommand.kt`, `DumpChunksCliCommand.kt`, `aapt2/cli/DumpCliCommand.kt`, `DumpConfigurationsCliCommand.kt`, `DumpOverlayableCliCommand.kt`, `DumpPackagenameCliCommand.kt`, `DumpPermissionsCliCommand.kt`, `DumpResourcesCliCommand.kt`, `DumpStringsCliCommand.kt`, `DumpStyleparentsCliCommand.kt`, `DumpXmlstringsCliCommand.kt`, `DumpXmltreeCliCommand.kt`, `LinkCliCommand.kt`, `OptimizeCliCommand.kt`, `aapt2/cli/VersionCliCommand.kt`, `ApktoolCliCommand.kt`, `BCliCommand.kt`, `BuildCliCommand.kt`, `CfCliCommand.kt`, `CleanFrameworksCliCommand.kt`, `DCliCommand.kt`, `DecodeCliCommand.kt`, `apktool/cli/HelpCliCommand.kt`, `IfCommandCliCommand.kt`, `InstallFrameworkCliCommand.kt`, `LfCliCommand.kt`, `ListFrameworksCliCommand.kt`, `apktool/cli/PrCliCommand.kt`, `PublicizeResourcesCliCommand.kt`, `apktool/cli/VersionCliCommand.kt`, `Append2simgCliCommand.kt`, `DumperofsCliCommand.kt`, `E2fsdroidCliCommand.kt`, `ErofsfuseCliCommand.kt`, `Ext2simgCliCommand.kt`, `FecCliCommand.kt`, `FsckerofsCliCommand.kt`, `Img2sdatCliCommand.kt`, `Img2simgCliCommand.kt`, `LpaddCliCommand.kt`, `LpdumpCliCommand.kt`, `LpflashCliCommand.kt`, `LpmakeCliCommand.kt`, `LpunpackCliCommand.kt`, `Make_f2fsCliCommand.kt`, `MkbootfsCliCommand.kt`, `MkbootimgCliCommand.kt`, `CfgCreateCliCommand.kt`, `CreateCliCommand.kt`, `mkdtboimg/cli/DumpCliCommand.kt`, `mkdtboimg/cli/HelpCliCommand.kt`, `MkdtboimgCliCommand.kt`, `Mke2fsCliCommand.kt`, `Mkf2fsuserimgCliCommand.kt`, `MkfserofsCliCommand.kt`, `Mkuserimg_mke2fsCliCommand.kt`, `PayloaddumpergoCliCommand.kt`, `Repack_bootimgCliCommand.kt`, `Simg2imgCliCommand.kt`, `Sload_f2fsCliCommand.kt`, `ToolDiWiringTest.kt`, `AgentTaskCliCommand.kt`, `AgentTaskCreateCliCommand.kt`, `AgentTaskListCliCommand.kt`, `AgentTaskViewCliCommand.kt`, `AliasCliCommand.kt`, `AliasDeleteCliCommand.kt`, `AliasImportCliCommand.kt`, `AliasListCliCommand.kt`, `AliasSetCliCommand.kt`, `ApiCliCommand.kt`, `AttestationCliCommand.kt`, `AttestationDownloadCliCommand.kt`, `AttestationTrustedRootCliCommand.kt`, `AttestationVerifyCliCommand.kt`, `AuthCliCommand.kt`, `AuthLoginCliCommand.kt`, `AuthLogoutCliCommand.kt`, `AuthRefreshCliCommand.kt`, `AuthSetupGitCliCommand.kt`, `AuthStatusCliCommand.kt`, `AuthSwitchCliCommand.kt`, `AuthTokenCliCommand.kt`, `BrowseCliCommand.kt`, `CacheCliCommand.kt`, `CacheDeleteCliCommand.kt`, `CacheListCliCommand.kt`, `CodespaceCliCommand.kt`, `CodespaceCodeCliCommand.kt`, `CodespaceCpCliCommand.kt`, `CodespaceCreateCliCommand.kt`, `CodespaceDeleteCliCommand.kt`, `CodespaceEditCliCommand.kt`, `CodespaceJupyterCliCommand.kt`, `CodespaceListCliCommand.kt`, `CodespaceLogsCliCommand.kt`, `CodespacePortsCliCommand.kt`, `CodespacePortsForwardCliCommand.kt`, `CodespacePortsVisibilityCliCommand.kt`, `CodespaceRebuildCliCommand.kt`, `CodespaceSshCliCommand.kt`, `CodespaceStopCliCommand.kt`, `CodespaceViewCliCommand.kt`, `CompletionCliCommand.kt`, `ConfigClearCacheCliCommand.kt`, `ConfigCliCommand.kt`, `ConfigGetCliCommand.kt`, `ConfigListCliCommand.kt`, `ConfigSetCliCommand.kt`, `CopilotCliCommand.kt`, `DiscussionCliCommand.kt`, `ExtensionBrowseCliCommand.kt`, `ExtensionCliCommand.kt`, `ExtensionCreateCliCommand.kt`, `ExtensionExecCliCommand.kt`, `ExtensionInstallCliCommand.kt`, `ExtensionListCliCommand.kt`, `ExtensionRemoveCliCommand.kt`, `ExtensionSearchCliCommand.kt`, `ExtensionUpgradeCliCommand.kt`, `GhCliCommand.kt`, `GistCliCommand.kt`, `GistCloneCliCommand.kt`, `GistCreateCliCommand.kt`, `GistDeleteCliCommand.kt`, `GistEditCliCommand.kt`, `GistListCliCommand.kt`, `GistRenameCliCommand.kt`, `GistViewCliCommand.kt`, `GpgKeyAddCliCommand.kt`, `GpgKeyCliCommand.kt`, `GpgKeyDeleteCliCommand.kt`, `GpgKeyListCliCommand.kt`, `IssueCliCommand.kt`, `LabelCliCommand.kt`, `LabelCloneCliCommand.kt`, `LabelCreateCliCommand.kt`, `LabelDeleteCliCommand.kt`, `LabelEditCliCommand.kt`, `LabelListCliCommand.kt`, `LicensesCliCommand.kt`, `OrgCliCommand.kt`, `gh/cli/PrCliCommand.kt`, `PreviewCliCommand.kt`, `PreviewPrompterCliCommand.kt`, `ProjectCliCommand.kt`, `ProjectCloseCliCommand.kt`, `ProjectCopyCliCommand.kt`, `ProjectCreateCliCommand.kt`, `ProjectDeleteCliCommand.kt`, `ProjectEditCliCommand.kt`, `ProjectFieldCreateCliCommand.kt`, `ProjectFieldDeleteCliCommand.kt`, `ProjectFieldListCliCommand.kt`, `ProjectItemAddCliCommand.kt`, `ProjectItemArchiveCliCommand.kt`, `ProjectItemCreateCliCommand.kt`, `ProjectItemDeleteCliCommand.kt`, `ProjectItemEditCliCommand.kt`, `ProjectItemListCliCommand.kt`, `ProjectLinkCliCommand.kt`, `ProjectListCliCommand.kt`, `ProjectMarkTemplateCliCommand.kt`, `ProjectUnlinkCliCommand.kt`, `ProjectViewCliCommand.kt`, `ReleaseCliCommand.kt`, `RepoCliCommand.kt`, `RulesetCheckCliCommand.kt`, `RulesetCliCommand.kt`, `RulesetListCliCommand.kt`, `RulesetViewCliCommand.kt`, `RunCancelCliCommand.kt`, `RunCliCommand.kt`, `RunDeleteCliCommand.kt`, `RunDownloadCliCommand.kt`, `RunListCliCommand.kt`, `RunRerunCliCommand.kt`, `RunViewCliCommand.kt`, `RunWatchCliCommand.kt`, `SearchCliCommand.kt`, `SearchCodeCliCommand.kt`, `SearchCommitsCliCommand.kt`, `SearchIssuesCliCommand.kt`, `SearchPrsCliCommand.kt`, `SearchReposCliCommand.kt`, `SecretCliCommand.kt`, `SecretDeleteCliCommand.kt`, `SecretListCliCommand.kt`, `SecretSetCliCommand.kt`, `SkillCliCommand.kt`, `SkillInstallCliCommand.kt`, `SkillListCliCommand.kt`, `SkillPreviewCliCommand.kt`, `SkillPublishCliCommand.kt`, `SkillSearchCliCommand.kt`, `SkillUpdateCliCommand.kt`, `SshKeyAddCliCommand.kt`, `SshKeyCliCommand.kt`, `SshKeyDeleteCliCommand.kt`, `SshKeyListCliCommand.kt`, `StatusCliCommand.kt`, `VariableCliCommand.kt`, `VariableDeleteCliCommand.kt`, `VariableGetCliCommand.kt`, `VariableListCliCommand.kt`, `VariableSetCliCommand.kt`, `WorkflowCliCommand.kt`, `WorkflowDisableCliCommand.kt`, `WorkflowEnableCliCommand.kt`, `WorkflowListCliCommand.kt`, `WorkflowRunCliCommand.kt`, `WorkflowViewCliCommand.kt`, `AddHashFooterCliCommand.kt`, `AddHashtreeFooterCliCommand.kt`, `AppendVbmetaImageCliCommand.kt`, `AvbtoolCliCommand.kt`, `CalculateKernelCmdlineCliCommand.kt`, `CalculateVbmetaDigestCliCommand.kt`, `EraseFooterCliCommand.kt`, `ExtractPublicKeyCliCommand.kt`, `ExtractPublicKeyDigestCliCommand.kt`, `ExtractVbmetaImageCliCommand.kt`, `GenerateTestImageCliCommand.kt`, `InfoImageCliCommand.kt`, `MakeAtxCertificateCliCommand.kt`, `MakeAtxMetadataCliCommand.kt`, `MakeAtxPermanentAttributesCliCommand.kt`, `MakeAtxUnlockCredentialCliCommand.kt`, `MakeCertificateCliCommand.kt`, `MakeCertMetadataCliCommand.kt`, `MakeCertPermanentAttributesCliCommand.kt`, `MakeCertUnlockCredentialCliCommand.kt`, `MakeVbmetaImageCliCommand.kt`, `PrintPartitionDigestsCliCommand.kt`, `ResignImageCliCommand.kt`, `ResizeImageCliCommand.kt`, `SetAbMetadataCliCommand.kt`, `TestingCliCommand.kt`, `UpdatePartitionDescriptorCliCommand.kt`, `VerifyImageCliCommand.kt`, `avbtool/cli/VersionCliCommand.kt`, `ZeroHashtreeCliCommand.kt`, `SignapkCliCommand.kt`, `ZipalignCliCommand.kt`, `.execute`, `.execute`, `.execute`, `.execute`, `.execute`, `.execute`, `.execute`, `.execute`?**
-  _High betweenness centrality (0.124) - this node is a cross-community bridge._
-- **Why does `ToolRepository` connect `ExecutionContext` to `ToolExecutionRequest`, `ToolingException`, `RemoteWslToolRepository`, `Unpack_bootimgCliCommand.kt`, `AdbCliCommand.kt`, `AttachCliCommand.kt`, `BugreportCliCommand.kt`, `ConnectCliCommand.kt`, `DetachCliCommand.kt`, `adb/cli/DevicesCliCommand.kt`, `DisableVerityCliCommand.kt`, `DisconnectCliCommand.kt`, `EmuCliCommand.kt`, `EnableVerityCliCommand.kt`, `ExecOutCliCommand.kt`, `ForwardCliCommand.kt`, `GetDevpathCliCommand.kt`, `GetSerialnoCliCommand.kt`, `GetStateCliCommand.kt`, `adb/cli/HelpCliCommand.kt`, `InstallCliCommand.kt`, `InstallMultiPackageCliCommand.kt`, `InstallMultipleCliCommand.kt`, `JdwpCliCommand.kt`, `KeygenCliCommand.kt`, `KillServerCliCommand.kt`, `LogcatCliCommand.kt`, `MdnsCliCommand.kt`, `PairCliCommand.kt`, `PullCliCommand.kt`, `PushCliCommand.kt`, `adb/cli/RebootCliCommand.kt`, `ReconnectCliCommand.kt`, `RemountCliCommand.kt`, `ReverseCliCommand.kt`, `RootCliCommand.kt`, `ShellCliCommand.kt`, `SideloadCliCommand.kt`, `StartServerCliCommand.kt`, `SyncCliCommand.kt`, `TcpipCliCommand.kt`, `UninstallCliCommand.kt`, `UnrootCliCommand.kt`, `UsbCliCommand.kt`, `adb/cli/VersionCliCommand.kt`, `WaitForCliCommand.kt`, `StreamingToolRepository`, `BootCliCommand.kt`, `CreateLogicalPartitionCliCommand.kt`, `DeleteLogicalPartitionCliCommand.kt`, `fastboot/cli/DevicesCliCommand.kt`, `EraseCliCommand.kt`, `FastbootCliCommand.kt`, `FetchCliCommand.kt`, `FlashallCliCommand.kt`, `FlashCliCommand.kt`, `FlashingCliCommand.kt`, `FlashRawCliCommand.kt`, `FormatCliCommand.kt`, `GetStagedCliCommand.kt`, `GetvarCliCommand.kt`, `GsiCliCommand.kt`, `OemCliCommand.kt`, `fastboot/cli/RebootCliCommand.kt`, `ResizeLogicalPartitionCliCommand.kt`, `SetActiveCliCommand.kt`, `SnapshotUpdateCliCommand.kt`, `StageCliCommand.kt`, `UpdateCliCommand.kt`, `WipeSuperCliCommand.kt`, `Aapt2CliCommand.kt`, `ApkinfoCliCommand.kt`, `CompileCliCommand.kt`, `ConvertCliCommand.kt`, `DaemonCliCommand.kt`, `DiffCliCommand.kt`, `DumpApcCliCommand.kt`, `DumpBadgingCliCommand.kt`, `DumpChunksCliCommand.kt`, `aapt2/cli/DumpCliCommand.kt`, `DumpConfigurationsCliCommand.kt`, `DumpOverlayableCliCommand.kt`, `DumpPackagenameCliCommand.kt`, `DumpPermissionsCliCommand.kt`, `DumpResourcesCliCommand.kt`, `DumpStringsCliCommand.kt`, `DumpStyleparentsCliCommand.kt`, `DumpXmlstringsCliCommand.kt`, `DumpXmltreeCliCommand.kt`, `LinkCliCommand.kt`, `OptimizeCliCommand.kt`, `aapt2/cli/VersionCliCommand.kt`, `ApktoolCliCommand.kt`, `BCliCommand.kt`, `BuildCliCommand.kt`, `CfCliCommand.kt`, `CleanFrameworksCliCommand.kt`, `DCliCommand.kt`, `DecodeCliCommand.kt`, `apktool/cli/HelpCliCommand.kt`, `IfCommandCliCommand.kt`, `InstallFrameworkCliCommand.kt`, `LfCliCommand.kt`, `ListFrameworksCliCommand.kt`, `apktool/cli/PrCliCommand.kt`, `PublicizeResourcesCliCommand.kt`, `apktool/cli/VersionCliCommand.kt`, `Append2simgCliCommand.kt`, `DumperofsCliCommand.kt`, `E2fsdroidCliCommand.kt`, `ErofsfuseCliCommand.kt`, `Ext2simgCliCommand.kt`, `FecCliCommand.kt`, `FsckerofsCliCommand.kt`, `Img2sdatCliCommand.kt`, `Img2simgCliCommand.kt`, `LpaddCliCommand.kt`, `LpdumpCliCommand.kt`, `LpflashCliCommand.kt`, `LpmakeCliCommand.kt`, `LpunpackCliCommand.kt`, `Make_f2fsCliCommand.kt`, `MkbootfsCliCommand.kt`, `MkbootimgCliCommand.kt`, `CfgCreateCliCommand.kt`, `CreateCliCommand.kt`, `mkdtboimg/cli/DumpCliCommand.kt`, `mkdtboimg/cli/HelpCliCommand.kt`, `MkdtboimgCliCommand.kt`, `Mke2fsCliCommand.kt`, `Mkf2fsuserimgCliCommand.kt`, `MkfserofsCliCommand.kt`, `Mkuserimg_mke2fsCliCommand.kt`, `PayloaddumpergoCliCommand.kt`, `Repack_bootimgCliCommand.kt`, `Simg2imgCliCommand.kt`, `Sload_f2fsCliCommand.kt`, `ToolDiWiringTest.kt`, `AgentTaskCliCommand.kt`, `AgentTaskCreateCliCommand.kt`, `AgentTaskListCliCommand.kt`, `AgentTaskViewCliCommand.kt`, `AliasCliCommand.kt`, `AliasDeleteCliCommand.kt`, `AliasImportCliCommand.kt`, `AliasListCliCommand.kt`, `AliasSetCliCommand.kt`, `ApiCliCommand.kt`, `AttestationCliCommand.kt`, `AttestationDownloadCliCommand.kt`, `AttestationTrustedRootCliCommand.kt`, `AttestationVerifyCliCommand.kt`, `AuthCliCommand.kt`, `AuthLoginCliCommand.kt`, `AuthLogoutCliCommand.kt`, `AuthRefreshCliCommand.kt`, `AuthSetupGitCliCommand.kt`, `AuthStatusCliCommand.kt`, `AuthSwitchCliCommand.kt`, `AuthTokenCliCommand.kt`, `BrowseCliCommand.kt`, `CacheCliCommand.kt`, `CacheDeleteCliCommand.kt`, `CacheListCliCommand.kt`, `CodespaceCliCommand.kt`, `CodespaceCodeCliCommand.kt`, `CodespaceCpCliCommand.kt`, `CodespaceCreateCliCommand.kt`, `CodespaceDeleteCliCommand.kt`, `CodespaceEditCliCommand.kt`, `CodespaceJupyterCliCommand.kt`, `CodespaceListCliCommand.kt`, `CodespaceLogsCliCommand.kt`, `CodespacePortsCliCommand.kt`, `CodespacePortsForwardCliCommand.kt`, `CodespacePortsVisibilityCliCommand.kt`, `CodespaceRebuildCliCommand.kt`, `CodespaceSshCliCommand.kt`, `CodespaceStopCliCommand.kt`, `CodespaceViewCliCommand.kt`, `CompletionCliCommand.kt`, `ConfigClearCacheCliCommand.kt`, `ConfigCliCommand.kt`, `ConfigGetCliCommand.kt`, `ConfigListCliCommand.kt`, `ConfigSetCliCommand.kt`, `CopilotCliCommand.kt`, `DiscussionCliCommand.kt`, `ExtensionBrowseCliCommand.kt`, `ExtensionCliCommand.kt`, `ExtensionCreateCliCommand.kt`, `ExtensionExecCliCommand.kt`, `ExtensionInstallCliCommand.kt`, `ExtensionListCliCommand.kt`, `ExtensionRemoveCliCommand.kt`, `ExtensionSearchCliCommand.kt`, `ExtensionUpgradeCliCommand.kt`, `GhCliCommand.kt`, `GistCliCommand.kt`, `GistCloneCliCommand.kt`, `GistCreateCliCommand.kt`, `GistDeleteCliCommand.kt`, `GistEditCliCommand.kt`, `GistListCliCommand.kt`, `GistRenameCliCommand.kt`, `GistViewCliCommand.kt`, `GpgKeyAddCliCommand.kt`, `GpgKeyCliCommand.kt`, `GpgKeyDeleteCliCommand.kt`, `GpgKeyListCliCommand.kt`, `IssueCliCommand.kt`, `LabelCliCommand.kt`, `LabelCloneCliCommand.kt`, `LabelCreateCliCommand.kt`, `LabelDeleteCliCommand.kt`, `LabelEditCliCommand.kt`, `LabelListCliCommand.kt`, `LicensesCliCommand.kt`, `OrgCliCommand.kt`, `gh/cli/PrCliCommand.kt`, `PreviewCliCommand.kt`, `PreviewPrompterCliCommand.kt`, `ProjectCliCommand.kt`, `ProjectCloseCliCommand.kt`, `ProjectCopyCliCommand.kt`, `ProjectCreateCliCommand.kt`, `ProjectDeleteCliCommand.kt`, `ProjectEditCliCommand.kt`, `ProjectFieldCreateCliCommand.kt`, `ProjectFieldDeleteCliCommand.kt`, `ProjectFieldListCliCommand.kt`, `ProjectItemAddCliCommand.kt`, `ProjectItemArchiveCliCommand.kt`, `ProjectItemCreateCliCommand.kt`, `ProjectItemDeleteCliCommand.kt`, `ProjectItemEditCliCommand.kt`, `ProjectItemListCliCommand.kt`, `ProjectLinkCliCommand.kt`, `ProjectListCliCommand.kt`, `ProjectMarkTemplateCliCommand.kt`, `ProjectUnlinkCliCommand.kt`, `ProjectViewCliCommand.kt`, `ReleaseCliCommand.kt`, `RepoCliCommand.kt`, `RulesetCheckCliCommand.kt`, `RulesetCliCommand.kt`, `RulesetListCliCommand.kt`, `RulesetViewCliCommand.kt`, `RunCancelCliCommand.kt`, `RunCliCommand.kt`, `RunDeleteCliCommand.kt`, `RunDownloadCliCommand.kt`, `RunListCliCommand.kt`, `RunRerunCliCommand.kt`, `RunViewCliCommand.kt`, `RunWatchCliCommand.kt`, `SearchCliCommand.kt`, `SearchCodeCliCommand.kt`, `SearchCommitsCliCommand.kt`, `SearchIssuesCliCommand.kt`, `SearchPrsCliCommand.kt`, `SearchReposCliCommand.kt`, `SecretCliCommand.kt`, `SecretDeleteCliCommand.kt`, `SecretListCliCommand.kt`, `SecretSetCliCommand.kt`, `SkillCliCommand.kt`, `SkillInstallCliCommand.kt`, `SkillListCliCommand.kt`, `SkillPreviewCliCommand.kt`, `SkillPublishCliCommand.kt`, `SkillSearchCliCommand.kt`, `SkillUpdateCliCommand.kt`, `SshKeyAddCliCommand.kt`, `SshKeyCliCommand.kt`, `SshKeyDeleteCliCommand.kt`, `SshKeyListCliCommand.kt`, `StatusCliCommand.kt`, `VariableCliCommand.kt`, `VariableDeleteCliCommand.kt`, `VariableGetCliCommand.kt`, `VariableListCliCommand.kt`, `VariableSetCliCommand.kt`, `WorkflowCliCommand.kt`, `WorkflowDisableCliCommand.kt`, `WorkflowEnableCliCommand.kt`, `WorkflowListCliCommand.kt`, `WorkflowRunCliCommand.kt`, `WorkflowViewCliCommand.kt`, `AddHashFooterCliCommand.kt`, `AddHashtreeFooterCliCommand.kt`, `AppendVbmetaImageCliCommand.kt`, `AvbtoolCliCommand.kt`, `CalculateKernelCmdlineCliCommand.kt`, `CalculateVbmetaDigestCliCommand.kt`, `EraseFooterCliCommand.kt`, `ExtractPublicKeyCliCommand.kt`, `ExtractPublicKeyDigestCliCommand.kt`, `ExtractVbmetaImageCliCommand.kt`, `GenerateTestImageCliCommand.kt`, `InfoImageCliCommand.kt`, `MakeAtxCertificateCliCommand.kt`, `MakeAtxMetadataCliCommand.kt`, `MakeAtxPermanentAttributesCliCommand.kt`, `MakeAtxUnlockCredentialCliCommand.kt`, `MakeCertificateCliCommand.kt`, `MakeCertMetadataCliCommand.kt`, `MakeCertPermanentAttributesCliCommand.kt`, `MakeCertUnlockCredentialCliCommand.kt`, `MakeVbmetaImageCliCommand.kt`, `PrintPartitionDigestsCliCommand.kt`, `ResignImageCliCommand.kt`, `ResizeImageCliCommand.kt`, `SetAbMetadataCliCommand.kt`, `TestingCliCommand.kt`, `UpdatePartitionDescriptorCliCommand.kt`, `VerifyImageCliCommand.kt`, `avbtool/cli/VersionCliCommand.kt`, `ZeroHashtreeCliCommand.kt`, `SignapkCliCommand.kt`, `ZipalignCliCommand.kt`, `.execute`, `.execute`, `.execute`, `.execute`, `.execute`, `.execute`, `.execute`, `.execute`?**
-  _High betweenness centrality (0.122) - this node is a cross-community bridge._
-- **Why does `ToolId` connect `ToolId` to `ExecutionContext`, `ExtractVbmetaImageCommand`, `MakeAtxCertificateCommand`, `ResignImageCommand`, `VariableCommand`, `WorkflowCommand`, `CreateLogicalPartitionCommand`, `DeleteLogicalPartitionCommand`, `EraseCommand`, `FetchCommand`, `FlashallCommand`, `ArtifactRequirement`, `FlashRawCommand`, `ArtifactKind`, `GetvarCommand`, `GsiCommand`, `OemCommand`, `ExecuteCommand`, `SetActiveCommand`, `ExecuteCommand`, `StageCommand`, `SnapshotUpdateCommand`, `ExtensionListCommand`, `FakeToolRepository`, `ExtensionRemoveCommand`, `UpdateCommand`, `DumpCommand`, `CodespaceLogsCommand`, `GistCloneCommand`, `DisableVerityCommand`, `DaemonCommand`, `CodespacePortsVisibilityCommand`, `InstallCommand`, `.generateDraft`, `SearchReposCommand`, `IfCommandCommand`, `LfCommand`, `BugreportCommand`, `DumpBadgingCommand`, `ToolCommand`, `GistRenameCommand`, `RebootCommand`, `LabelDeleteCommand`, `WorkflowDisableCommand`, `SkillCommand`, `WorkflowViewCommand`, `SyncCommand`, `WorkspaceJailInterceptor`, `ToolRisk`, `ToolDomainEvent`, `AttestationTrustedRootCommand`, `DumpResourcesCommand`, `UnrootCommand`, `BuildCommand`, `CreateCommand`, `HelpCommand`, `RulesetViewCommand`, `DumpXmltreeCommand`, `GetDevpathCommand`, `AgentTaskViewCommand`, `BootCommand`, `CoverageVerifier`, `AliasDeleteCommand`, `ApiCommand`, `ProjectEditCommand`, `AttestationDownloadCommand`, `AuthLogoutCommand`, `MakeCertPermanentAttributesCommand`, `AuthCommand`, `ExecuteCommand`, `ExecuteCommand`, `DumpPermissionsCommand`, `ProjectItemCreateCommand`, `ExtensionCommand`, `PreviewPrompterCommand`, `ProjectItemDeleteCommand`, `ToolBinary`, `DumpStringsCommand`, `MakeCertificateCommand`, `LinkCommand`, `ExtensionCreateCommand`, `AgentTaskCreateCommand`, `ExtractPublicKeyCommand`, `ResizeImageCommand`, `UpdatePartitionDescriptorCommand`, `CodespaceListCommand`, `AliasSetCommand`, `AuthLoginCommand`, `signapk/ExecuteCommand.kt`, `InstallFrameworkCommand`, `CodespaceCreateCommand`, `GetSerialnoCommand`, `GistViewCommand`, `ProjectCopyCommand`, `ProjectItemAddCommand`, `ExecuteCommand`, `AgentTaskListCommand`, `ExecuteCommand`, `AuthTokenCommand`, `CacheListCommand`, `CodespaceDeleteCommand`, `GistListCommand`, `ProjectListCommand`, `OrgCommand`, `CodespacePortsForwardCommand`, `ReleaseCommand`, `ExecuteCommand`, `ProjectFieldCreateCommand`, `RulesetListCommand`, `ConfigCommand`, `RulesetCommand`, `ConfigSetCommand`, `SecretSetCommand`, `CfgCreateCommand`, `SkillSearchCommand`, `RunCancelCommand`, `ExecuteCommand`, `SearchPrsCommand`, `ExtensionUpgradeCommand`, `AttestationCommand`, `VariableDeleteCommand`, `AliasListCommand`, `AuthSetupGitCommand`, `GpgKeyDeleteCommand`, `CodespaceStopCommand`, `CodespaceViewCommand`, `LabelCloneCommand`, `AliasImportCommand`, `LabelCommand`, `VariableSetCommand`, `Compiler`, `LicensesCommand`, `ProjectCommand`, `AttachCommand`, `ConfigClearCacheCommand`, `EmuCommand`, `ApkinfoCommand`, `Phase3SpecificationTest`, `PublicizeResourcesCommand`, `WorkflowEnableCommand`, `ExecuteCommand`, `ProjectFieldListCommand`, `UninstallCommand`, `StdinMode`, `FlashingCommand`, `CodespacePortsCommand`, `DumpXmlstringsCommand`, `ExecuteCommand`, `ProjectLinkCommand`, `SearchCommand`, `SshKeyCommand`, `AppendVbmetaImageCommand`, `CodespaceCpCommand`, `GetStagedCommand`, `BrowseCommand`, `CodespaceJupyterCommand`, `CompletionCommand`, `VariableListCommand`, `WorkflowListCommand`, `DumpPackagenameCommand`, `BCommand`, `ExecuteCommand`, `AuthRefreshCommand`, `WorkflowRunCommand`, `CalculateVbmetaDigestCommand`, `CodespaceCodeCommand`, `ExtractPublicKeyDigestCommand`, `LabelCreateCommand`, `CfCommand`, `SecretDeleteCommand`, `HelpCommand`, `MakeCertMetadataCommand`, `MakeCertUnlockCredentialCommand`, `PrCommand`, `ZeroHashtreeCommand`, `CodespaceEditCommand`, `ConfigListCommand`, `GpgKeyCommand`, `GpgKeyAddCommand`, `AuthSwitchCommand`, `LabelListCommand`, `CodespaceCommand`, `ProjectCreateCommand`, `ProjectDeleteCommand`, `ProjectItemArchiveCommand`, `ProjectItemEditCommand`, `ProjectViewCommand`, `RepoCommand`, `GistCreateCommand`, `IssueCommand`, `RunDeleteCommand`, `MakeVbmetaImageCommand`, `ConfigGetCommand`, `SpecValidator.kt`, `CopilotCommand`, `RulesetCheckCommand`, `RunCommand`, `ProjectUnlinkCommand`, `ProjectItemListCommand`, `AttestationVerifyCommand`, `RunDownloadCommand`, `SearchIssuesCommand`, `SearchCommitsCommand`, `RunRerunCommand`, `SecretListCommand`, `RunWatchCommand`, `SkillInstallCommand`, `SshKeyAddCommand`, `AddHashFooterCommand`, `AddHashtreeFooterCommand`, `PrintPartitionDigestsCommand`, `SshKeyListCommand`, `ConnectCommand`, `CodespaceRebuildCommand`, `DisconnectCommand`, `ArtifactDirection`, `EnableVerityCommand`, `ForwardCommand`, `SshKeyDeleteCommand`, `MdnsCommand`, `InstallMultiPackageCommand`, `JdwpCommand`, `KeygenCommand`, `KillServerCommand`, `LogcatCommand`, `PairCommand`, `PullCommand`, `PushCommand`, `RebootCommand`, `ReverseCommand`, `RootCommand`, `ShellCommand`, `ProjectFieldDeleteCommand`, `TcpipCommand`, `ExtensionInstallCommand`, `SkillPreviewCommand`, `VersionCommand`, `WaitForCommand`, `ExecuteCommand`, `SkillPublishCommand`, `VariableGetCommand`, `CalculateKernelCmdlineCommand`?**
-  _High betweenness centrality (0.089) - this node is a cross-community bridge._
+- **Why does `ExecutionContext` connect `ExecutionContext` to `FakeToolRepository`, `ToolCommand`, `WorkspaceJailInterceptor`, `ToolDomainEvent`, `.proceed`, `ToolingModule.kt`, `ToolResult`, `ToolingException`, `Unpack_bootimgCliCommand.kt`, `RemoteWslToolRepository`, `AdbCliCommand.kt`, `AttachCliCommand.kt`, `BugreportCliCommand.kt`, `ConnectCliCommand.kt`, `DetachCliCommand.kt`, `adb/cli/DevicesCliCommand.kt`, `DisableVerityCliCommand.kt`, `DisconnectCliCommand.kt`, `EmuCliCommand.kt`, `EnableVerityCliCommand.kt`, `ExecOutCliCommand.kt`, `ForwardCliCommand.kt`, `GetDevpathCliCommand.kt`, `GetSerialnoCliCommand.kt`, `GetStateCliCommand.kt`, `adb/cli/HelpCliCommand.kt`, `InstallCliCommand.kt`, `InstallMultiPackageCliCommand.kt`, `InstallMultipleCliCommand.kt`, `JdwpCliCommand.kt`, `KeygenCliCommand.kt`, `KillServerCliCommand.kt`, `LogcatCliCommand.kt`, `MdnsCliCommand.kt`, `PairCliCommand.kt`, `PullCliCommand.kt`, `PushCliCommand.kt`, `adb/cli/RebootCliCommand.kt`, `ReconnectCliCommand.kt`, `RemountCliCommand.kt`, `ReverseCliCommand.kt`, `RootCliCommand.kt`, `ShellCliCommand.kt`, `SideloadCliCommand.kt`, `StartServerCliCommand.kt`, `SyncCliCommand.kt`, `TcpipCliCommand.kt`, `UninstallCliCommand.kt`, `UnrootCliCommand.kt`, `UsbCliCommand.kt`, `adb/cli/VersionCliCommand.kt`, `WaitForCliCommand.kt`, `BootCliCommand.kt`, `CreateLogicalPartitionCliCommand.kt`, `DeleteLogicalPartitionCliCommand.kt`, `fastboot/cli/DevicesCliCommand.kt`, `EraseCliCommand.kt`, `FastbootCliCommand.kt`, `FetchCliCommand.kt`, `FlashallCliCommand.kt`, `FlashCliCommand.kt`, `FlashingCliCommand.kt`, `FlashRawCliCommand.kt`, `FormatCliCommand.kt`, `GetStagedCliCommand.kt`, `GetvarCliCommand.kt`, `GsiCliCommand.kt`, `OemCliCommand.kt`, `fastboot/cli/RebootCliCommand.kt`, `ResizeLogicalPartitionCliCommand.kt`, `SetActiveCliCommand.kt`, `SnapshotUpdateCliCommand.kt`, `StageCliCommand.kt`, `UpdateCliCommand.kt`, `WipeSuperCliCommand.kt`, `Aapt2CliCommand.kt`, `ApkinfoCliCommand.kt`, `CompileCliCommand.kt`, `ConvertCliCommand.kt`, `DaemonCliCommand.kt`, `DiffCliCommand.kt`, `DumpApcCliCommand.kt`, `DumpBadgingCliCommand.kt`, `DumpChunksCliCommand.kt`, `aapt2/cli/DumpCliCommand.kt`, `DumpConfigurationsCliCommand.kt`, `DumpOverlayableCliCommand.kt`, `DumpPackagenameCliCommand.kt`, `DumpPermissionsCliCommand.kt`, `DumpResourcesCliCommand.kt`, `DumpStringsCliCommand.kt`, `DumpStyleparentsCliCommand.kt`, `DumpXmlstringsCliCommand.kt`, `DumpXmltreeCliCommand.kt`, `LinkCliCommand.kt`, `OptimizeCliCommand.kt`, `aapt2/cli/VersionCliCommand.kt`, `ApktoolCliCommand.kt`, `BCliCommand.kt`, `BuildCliCommand.kt`, `CfCliCommand.kt`, `CleanFrameworksCliCommand.kt`, `DCliCommand.kt`, `DecodeCliCommand.kt`, `apktool/cli/HelpCliCommand.kt`, `IfCommandCliCommand.kt`, `InstallFrameworkCliCommand.kt`, `LfCliCommand.kt`, `ListFrameworksCliCommand.kt`, `apktool/cli/PrCliCommand.kt`, `PublicizeResourcesCliCommand.kt`, `apktool/cli/VersionCliCommand.kt`, `ToolCommand`, `Append2simgCliCommand.kt`, `DumperofsCliCommand.kt`, `E2fsdroidCliCommand.kt`, `ErofsfuseCliCommand.kt`, `Ext2simgCliCommand.kt`, `FecCliCommand.kt`, `FsckerofsCliCommand.kt`, `Img2sdatCliCommand.kt`, `Img2simgCliCommand.kt`, `LpaddCliCommand.kt`, `LpdumpCliCommand.kt`, `LpflashCliCommand.kt`, `LpmakeCliCommand.kt`, `LpunpackCliCommand.kt`, `Make_f2fsCliCommand.kt`, `MkbootfsCliCommand.kt`, `MkbootimgCliCommand.kt`, `CfgCreateCliCommand.kt`, `CreateCliCommand.kt`, `mkdtboimg/cli/DumpCliCommand.kt`, `mkdtboimg/cli/HelpCliCommand.kt`, `MkdtboimgCliCommand.kt`, `Mke2fsCliCommand.kt`, `Mkf2fsuserimgCliCommand.kt`, `MkfserofsCliCommand.kt`, `Mkuserimg_mke2fsCliCommand.kt`, `PayloaddumpergoCliCommand.kt`, `Repack_bootimgCliCommand.kt`, `Simg2imgCliCommand.kt`, `Sload_f2fsCliCommand.kt`, `AgentTaskCliCommand.kt`, `AgentTaskCreateCliCommand.kt`, `AgentTaskListCliCommand.kt`, `AgentTaskViewCliCommand.kt`, `AliasCliCommand.kt`, `AliasDeleteCliCommand.kt`, `AliasImportCliCommand.kt`, `AliasListCliCommand.kt`, `AliasSetCliCommand.kt`, `ApiCliCommand.kt`, `AttestationCliCommand.kt`, `AttestationDownloadCliCommand.kt`, `AttestationTrustedRootCliCommand.kt`, `AttestationVerifyCliCommand.kt`, `AuthCliCommand.kt`, `AuthLoginCliCommand.kt`, `AuthLogoutCliCommand.kt`, `AuthRefreshCliCommand.kt`, `AuthSetupGitCliCommand.kt`, `AuthStatusCliCommand.kt`, `AuthSwitchCliCommand.kt`, `AuthTokenCliCommand.kt`, `BrowseCliCommand.kt`, `CacheCliCommand.kt`, `CacheDeleteCliCommand.kt`, `CacheListCliCommand.kt`, `CodespaceCliCommand.kt`, `CodespaceCodeCliCommand.kt`, `CodespaceCpCliCommand.kt`, `CodespaceCreateCliCommand.kt`, `CodespaceDeleteCliCommand.kt`, `CodespaceEditCliCommand.kt`, `CodespaceJupyterCliCommand.kt`, `CodespaceListCliCommand.kt`, `CodespaceLogsCliCommand.kt`, `CodespacePortsCliCommand.kt`, `CodespacePortsForwardCliCommand.kt`, `CodespacePortsVisibilityCliCommand.kt`, `CodespaceRebuildCliCommand.kt`, `CodespaceSshCliCommand.kt`, `CodespaceStopCliCommand.kt`, `CodespaceViewCliCommand.kt`, `CompletionCliCommand.kt`, `ConfigClearCacheCliCommand.kt`, `ConfigCliCommand.kt`, `ConfigGetCliCommand.kt`, `ConfigListCliCommand.kt`, `ConfigSetCliCommand.kt`, `CopilotCliCommand.kt`, `DiscussionCliCommand.kt`, `ExtensionBrowseCliCommand.kt`, `ExtensionCliCommand.kt`, `ExtensionCreateCliCommand.kt`, `ExtensionExecCliCommand.kt`, `ExtensionInstallCliCommand.kt`, `ExtensionListCliCommand.kt`, `ExtensionRemoveCliCommand.kt`, `ExtensionSearchCliCommand.kt`, `ExtensionUpgradeCliCommand.kt`, `GhCliCommand.kt`, `GistCliCommand.kt`, `GistCloneCliCommand.kt`, `GistCreateCliCommand.kt`, `GistDeleteCliCommand.kt`, `GistEditCliCommand.kt`, `GistListCliCommand.kt`, `GistRenameCliCommand.kt`, `GistViewCliCommand.kt`, `GpgKeyAddCliCommand.kt`, `GpgKeyCliCommand.kt`, `GpgKeyDeleteCliCommand.kt`, `GpgKeyListCliCommand.kt`, `IssueCliCommand.kt`, `LabelCliCommand.kt`, `LabelCloneCliCommand.kt`, `LabelCreateCliCommand.kt`, `LabelDeleteCliCommand.kt`, `LabelEditCliCommand.kt`, `LabelListCliCommand.kt`, `LicensesCliCommand.kt`, `OrgCliCommand.kt`, `gh/cli/PrCliCommand.kt`, `PreviewCliCommand.kt`, `PreviewPrompterCliCommand.kt`, `ProjectCliCommand.kt`, `ProjectCloseCliCommand.kt`, `ProjectCopyCliCommand.kt`, `ProjectCreateCliCommand.kt`, `ProjectDeleteCliCommand.kt`, `ProjectEditCliCommand.kt`, `ProjectFieldCreateCliCommand.kt`, `ProjectFieldDeleteCliCommand.kt`, `ProjectFieldListCliCommand.kt`, `ProjectItemAddCliCommand.kt`, `ProjectItemArchiveCliCommand.kt`, `ProjectItemCreateCliCommand.kt`, `ProjectItemDeleteCliCommand.kt`, `ProjectItemEditCliCommand.kt`, `ProjectItemListCliCommand.kt`, `ProjectLinkCliCommand.kt`, `ProjectListCliCommand.kt`, `ProjectMarkTemplateCliCommand.kt`, `ProjectUnlinkCliCommand.kt`, `ProjectViewCliCommand.kt`, `ReleaseCliCommand.kt`, `RepoCliCommand.kt`, `RulesetCheckCliCommand.kt`, `RulesetCliCommand.kt`, `RulesetListCliCommand.kt`, `RulesetViewCliCommand.kt`, `RunCancelCliCommand.kt`, `RunCliCommand.kt`, `RunDeleteCliCommand.kt`, `RunDownloadCliCommand.kt`, `RunListCliCommand.kt`, `RunRerunCliCommand.kt`, `RunViewCliCommand.kt`, `RunWatchCliCommand.kt`, `SearchCliCommand.kt`, `SearchCodeCliCommand.kt`, `SearchCommitsCliCommand.kt`, `SearchIssuesCliCommand.kt`, `SearchPrsCliCommand.kt`, `SearchReposCliCommand.kt`, `SecretCliCommand.kt`, `SecretDeleteCliCommand.kt`, `SecretListCliCommand.kt`, `SecretSetCliCommand.kt`, `SkillCliCommand.kt`, `SkillInstallCliCommand.kt`, `SkillListCliCommand.kt`, `SkillPreviewCliCommand.kt`, `SkillPublishCliCommand.kt`, `SkillSearchCliCommand.kt`, `SkillUpdateCliCommand.kt`, `SshKeyAddCliCommand.kt`, `SshKeyCliCommand.kt`, `SshKeyDeleteCliCommand.kt`, `SshKeyListCliCommand.kt`, `StatusCliCommand.kt`, `VariableCliCommand.kt`, `VariableDeleteCliCommand.kt`, `VariableGetCliCommand.kt`, `VariableListCliCommand.kt`, `VariableSetCliCommand.kt`, `WorkflowCliCommand.kt`, `WorkflowDisableCliCommand.kt`, `WorkflowEnableCliCommand.kt`, `WorkflowListCliCommand.kt`, `WorkflowRunCliCommand.kt`, `WorkflowViewCliCommand.kt`, `AddHashFooterCliCommand.kt`, `AddHashtreeFooterCliCommand.kt`, `AppendVbmetaImageCliCommand.kt`, `AvbtoolCliCommand.kt`, `CalculateKernelCmdlineCliCommand.kt`, `CalculateVbmetaDigestCliCommand.kt`, `EraseFooterCliCommand.kt`, `ExtractPublicKeyCliCommand.kt`, `ExtractPublicKeyDigestCliCommand.kt`, `ExtractVbmetaImageCliCommand.kt`, `GenerateTestImageCliCommand.kt`, `InfoImageCliCommand.kt`, `MakeAtxCertificateCliCommand.kt`, `MakeAtxMetadataCliCommand.kt`, `MakeAtxPermanentAttributesCliCommand.kt`, `MakeAtxUnlockCredentialCliCommand.kt`, `MakeCertificateCliCommand.kt`, `MakeCertMetadataCliCommand.kt`, `MakeCertPermanentAttributesCliCommand.kt`, `MakeCertUnlockCredentialCliCommand.kt`, `MakeVbmetaImageCliCommand.kt`, `PrintPartitionDigestsCliCommand.kt`, `ResignImageCliCommand.kt`, `ResizeImageCliCommand.kt`, `SetAbMetadataCliCommand.kt`, `TestingCliCommand.kt`, `UpdatePartitionDescriptorCliCommand.kt`, `VerifyImageCliCommand.kt`, `avbtool/cli/VersionCliCommand.kt`, `ZeroHashtreeCliCommand.kt`, `SignapkCliCommand.kt`, `ZipalignCliCommand.kt`, `.execute`, `.execute`, `.execute`, `.execute`, `.execute`, `.execute`, `.execute`, `ToolSafetyPolicy`, `.execute`?**
+  _High betweenness centrality (0.135) - this node is a cross-community bridge._
+- **Why does `ToolRepository` connect `ExecutionContext` to `ToolingModule.kt`, `ToolingException`, `Unpack_bootimgCliCommand.kt`, `AdbCliCommand.kt`, `AttachCliCommand.kt`, `BugreportCliCommand.kt`, `ConnectCliCommand.kt`, `DetachCliCommand.kt`, `adb/cli/DevicesCliCommand.kt`, `DisableVerityCliCommand.kt`, `DisconnectCliCommand.kt`, `EmuCliCommand.kt`, `EnableVerityCliCommand.kt`, `ExecOutCliCommand.kt`, `ForwardCliCommand.kt`, `GetDevpathCliCommand.kt`, `GetSerialnoCliCommand.kt`, `GetStateCliCommand.kt`, `adb/cli/HelpCliCommand.kt`, `InstallCliCommand.kt`, `InstallMultiPackageCliCommand.kt`, `InstallMultipleCliCommand.kt`, `JdwpCliCommand.kt`, `KeygenCliCommand.kt`, `KillServerCliCommand.kt`, `LogcatCliCommand.kt`, `MdnsCliCommand.kt`, `PairCliCommand.kt`, `PullCliCommand.kt`, `PushCliCommand.kt`, `adb/cli/RebootCliCommand.kt`, `ReconnectCliCommand.kt`, `RemountCliCommand.kt`, `ReverseCliCommand.kt`, `RootCliCommand.kt`, `ShellCliCommand.kt`, `SideloadCliCommand.kt`, `StartServerCliCommand.kt`, `SyncCliCommand.kt`, `TcpipCliCommand.kt`, `UninstallCliCommand.kt`, `UnrootCliCommand.kt`, `UsbCliCommand.kt`, `adb/cli/VersionCliCommand.kt`, `WaitForCliCommand.kt`, `BootCliCommand.kt`, `CreateLogicalPartitionCliCommand.kt`, `DeleteLogicalPartitionCliCommand.kt`, `fastboot/cli/DevicesCliCommand.kt`, `EraseCliCommand.kt`, `FastbootCliCommand.kt`, `FetchCliCommand.kt`, `FlashallCliCommand.kt`, `FlashCliCommand.kt`, `FlashingCliCommand.kt`, `FlashRawCliCommand.kt`, `FormatCliCommand.kt`, `GetStagedCliCommand.kt`, `GetvarCliCommand.kt`, `GsiCliCommand.kt`, `OemCliCommand.kt`, `fastboot/cli/RebootCliCommand.kt`, `ResizeLogicalPartitionCliCommand.kt`, `SetActiveCliCommand.kt`, `SnapshotUpdateCliCommand.kt`, `StageCliCommand.kt`, `UpdateCliCommand.kt`, `WipeSuperCliCommand.kt`, `Aapt2CliCommand.kt`, `ApkinfoCliCommand.kt`, `CompileCliCommand.kt`, `ConvertCliCommand.kt`, `DaemonCliCommand.kt`, `DiffCliCommand.kt`, `DumpApcCliCommand.kt`, `DumpBadgingCliCommand.kt`, `DumpChunksCliCommand.kt`, `aapt2/cli/DumpCliCommand.kt`, `DumpConfigurationsCliCommand.kt`, `DumpOverlayableCliCommand.kt`, `DumpPackagenameCliCommand.kt`, `DumpPermissionsCliCommand.kt`, `DumpResourcesCliCommand.kt`, `DumpStringsCliCommand.kt`, `DumpStyleparentsCliCommand.kt`, `DumpXmlstringsCliCommand.kt`, `DumpXmltreeCliCommand.kt`, `LinkCliCommand.kt`, `OptimizeCliCommand.kt`, `aapt2/cli/VersionCliCommand.kt`, `ApktoolCliCommand.kt`, `BCliCommand.kt`, `BuildCliCommand.kt`, `CfCliCommand.kt`, `CleanFrameworksCliCommand.kt`, `DCliCommand.kt`, `DecodeCliCommand.kt`, `apktool/cli/HelpCliCommand.kt`, `IfCommandCliCommand.kt`, `InstallFrameworkCliCommand.kt`, `LfCliCommand.kt`, `ListFrameworksCliCommand.kt`, `apktool/cli/PrCliCommand.kt`, `PublicizeResourcesCliCommand.kt`, `apktool/cli/VersionCliCommand.kt`, `Append2simgCliCommand.kt`, `DumperofsCliCommand.kt`, `E2fsdroidCliCommand.kt`, `ErofsfuseCliCommand.kt`, `Ext2simgCliCommand.kt`, `FecCliCommand.kt`, `FsckerofsCliCommand.kt`, `Img2sdatCliCommand.kt`, `Img2simgCliCommand.kt`, `LpaddCliCommand.kt`, `LpdumpCliCommand.kt`, `LpflashCliCommand.kt`, `LpmakeCliCommand.kt`, `LpunpackCliCommand.kt`, `Make_f2fsCliCommand.kt`, `MkbootfsCliCommand.kt`, `MkbootimgCliCommand.kt`, `CfgCreateCliCommand.kt`, `CreateCliCommand.kt`, `mkdtboimg/cli/DumpCliCommand.kt`, `mkdtboimg/cli/HelpCliCommand.kt`, `MkdtboimgCliCommand.kt`, `Mke2fsCliCommand.kt`, `Mkf2fsuserimgCliCommand.kt`, `MkfserofsCliCommand.kt`, `Mkuserimg_mke2fsCliCommand.kt`, `PayloaddumpergoCliCommand.kt`, `Repack_bootimgCliCommand.kt`, `Simg2imgCliCommand.kt`, `Sload_f2fsCliCommand.kt`, `AgentTaskCliCommand.kt`, `AgentTaskCreateCliCommand.kt`, `AgentTaskListCliCommand.kt`, `AgentTaskViewCliCommand.kt`, `AliasCliCommand.kt`, `AliasDeleteCliCommand.kt`, `AliasImportCliCommand.kt`, `AliasListCliCommand.kt`, `AliasSetCliCommand.kt`, `ApiCliCommand.kt`, `AttestationCliCommand.kt`, `AttestationDownloadCliCommand.kt`, `AttestationTrustedRootCliCommand.kt`, `AttestationVerifyCliCommand.kt`, `AuthCliCommand.kt`, `AuthLoginCliCommand.kt`, `AuthLogoutCliCommand.kt`, `AuthRefreshCliCommand.kt`, `AuthSetupGitCliCommand.kt`, `AuthStatusCliCommand.kt`, `AuthSwitchCliCommand.kt`, `AuthTokenCliCommand.kt`, `BrowseCliCommand.kt`, `CacheCliCommand.kt`, `CacheDeleteCliCommand.kt`, `CacheListCliCommand.kt`, `CodespaceCliCommand.kt`, `CodespaceCodeCliCommand.kt`, `CodespaceCpCliCommand.kt`, `CodespaceCreateCliCommand.kt`, `CodespaceDeleteCliCommand.kt`, `CodespaceEditCliCommand.kt`, `CodespaceJupyterCliCommand.kt`, `CodespaceListCliCommand.kt`, `CodespaceLogsCliCommand.kt`, `CodespacePortsCliCommand.kt`, `CodespacePortsForwardCliCommand.kt`, `CodespacePortsVisibilityCliCommand.kt`, `CodespaceRebuildCliCommand.kt`, `CodespaceSshCliCommand.kt`, `CodespaceStopCliCommand.kt`, `CodespaceViewCliCommand.kt`, `CompletionCliCommand.kt`, `ConfigClearCacheCliCommand.kt`, `ConfigCliCommand.kt`, `ConfigGetCliCommand.kt`, `ConfigListCliCommand.kt`, `ConfigSetCliCommand.kt`, `CopilotCliCommand.kt`, `DiscussionCliCommand.kt`, `ExtensionBrowseCliCommand.kt`, `ExtensionCliCommand.kt`, `ExtensionCreateCliCommand.kt`, `ExtensionExecCliCommand.kt`, `ExtensionInstallCliCommand.kt`, `ExtensionListCliCommand.kt`, `ExtensionRemoveCliCommand.kt`, `ExtensionSearchCliCommand.kt`, `ExtensionUpgradeCliCommand.kt`, `GhCliCommand.kt`, `GistCliCommand.kt`, `GistCloneCliCommand.kt`, `GistCreateCliCommand.kt`, `GistDeleteCliCommand.kt`, `GistEditCliCommand.kt`, `GistListCliCommand.kt`, `GistRenameCliCommand.kt`, `GistViewCliCommand.kt`, `GpgKeyAddCliCommand.kt`, `GpgKeyCliCommand.kt`, `GpgKeyDeleteCliCommand.kt`, `GpgKeyListCliCommand.kt`, `IssueCliCommand.kt`, `LabelCliCommand.kt`, `LabelCloneCliCommand.kt`, `LabelCreateCliCommand.kt`, `LabelDeleteCliCommand.kt`, `LabelEditCliCommand.kt`, `LabelListCliCommand.kt`, `LicensesCliCommand.kt`, `OrgCliCommand.kt`, `gh/cli/PrCliCommand.kt`, `PreviewCliCommand.kt`, `PreviewPrompterCliCommand.kt`, `ProjectCliCommand.kt`, `ProjectCloseCliCommand.kt`, `ProjectCopyCliCommand.kt`, `ProjectCreateCliCommand.kt`, `ProjectDeleteCliCommand.kt`, `ProjectEditCliCommand.kt`, `ProjectFieldCreateCliCommand.kt`, `ProjectFieldDeleteCliCommand.kt`, `ProjectFieldListCliCommand.kt`, `ProjectItemAddCliCommand.kt`, `ProjectItemArchiveCliCommand.kt`, `ProjectItemCreateCliCommand.kt`, `ProjectItemDeleteCliCommand.kt`, `ProjectItemEditCliCommand.kt`, `ProjectItemListCliCommand.kt`, `ProjectLinkCliCommand.kt`, `ProjectListCliCommand.kt`, `ProjectMarkTemplateCliCommand.kt`, `ProjectUnlinkCliCommand.kt`, `ProjectViewCliCommand.kt`, `ReleaseCliCommand.kt`, `RepoCliCommand.kt`, `RulesetCheckCliCommand.kt`, `RulesetCliCommand.kt`, `RulesetListCliCommand.kt`, `RulesetViewCliCommand.kt`, `RunCancelCliCommand.kt`, `RunCliCommand.kt`, `RunDeleteCliCommand.kt`, `RunDownloadCliCommand.kt`, `RunListCliCommand.kt`, `RunRerunCliCommand.kt`, `RunViewCliCommand.kt`, `RunWatchCliCommand.kt`, `SearchCliCommand.kt`, `SearchCodeCliCommand.kt`, `SearchCommitsCliCommand.kt`, `SearchIssuesCliCommand.kt`, `SearchPrsCliCommand.kt`, `SearchReposCliCommand.kt`, `SecretCliCommand.kt`, `SecretDeleteCliCommand.kt`, `SecretListCliCommand.kt`, `SecretSetCliCommand.kt`, `SkillCliCommand.kt`, `SkillInstallCliCommand.kt`, `SkillListCliCommand.kt`, `SkillPreviewCliCommand.kt`, `SkillPublishCliCommand.kt`, `SkillSearchCliCommand.kt`, `SkillUpdateCliCommand.kt`, `SshKeyAddCliCommand.kt`, `SshKeyCliCommand.kt`, `SshKeyDeleteCliCommand.kt`, `SshKeyListCliCommand.kt`, `StatusCliCommand.kt`, `VariableCliCommand.kt`, `VariableDeleteCliCommand.kt`, `VariableGetCliCommand.kt`, `VariableListCliCommand.kt`, `VariableSetCliCommand.kt`, `WorkflowCliCommand.kt`, `WorkflowDisableCliCommand.kt`, `WorkflowEnableCliCommand.kt`, `WorkflowListCliCommand.kt`, `WorkflowRunCliCommand.kt`, `WorkflowViewCliCommand.kt`, `AddHashFooterCliCommand.kt`, `AddHashtreeFooterCliCommand.kt`, `AppendVbmetaImageCliCommand.kt`, `AvbtoolCliCommand.kt`, `CalculateKernelCmdlineCliCommand.kt`, `CalculateVbmetaDigestCliCommand.kt`, `EraseFooterCliCommand.kt`, `ExtractPublicKeyCliCommand.kt`, `ExtractPublicKeyDigestCliCommand.kt`, `ExtractVbmetaImageCliCommand.kt`, `GenerateTestImageCliCommand.kt`, `InfoImageCliCommand.kt`, `MakeAtxCertificateCliCommand.kt`, `MakeAtxMetadataCliCommand.kt`, `MakeAtxPermanentAttributesCliCommand.kt`, `MakeAtxUnlockCredentialCliCommand.kt`, `MakeCertificateCliCommand.kt`, `MakeCertMetadataCliCommand.kt`, `MakeCertPermanentAttributesCliCommand.kt`, `MakeCertUnlockCredentialCliCommand.kt`, `MakeVbmetaImageCliCommand.kt`, `PrintPartitionDigestsCliCommand.kt`, `ResignImageCliCommand.kt`, `ResizeImageCliCommand.kt`, `SetAbMetadataCliCommand.kt`, `TestingCliCommand.kt`, `UpdatePartitionDescriptorCliCommand.kt`, `VerifyImageCliCommand.kt`, `avbtool/cli/VersionCliCommand.kt`, `ZeroHashtreeCliCommand.kt`, `SignapkCliCommand.kt`, `ZipalignCliCommand.kt`, `.execute`, `.execute`, `.execute`, `.execute`, `.execute`, `.execute`, `.execute`, `.execute`?**
+  _High betweenness centrality (0.110) - this node is a cross-community bridge._
+- **Why does `ToolId` connect `ToolId` to `ExecutionContext`, `ExtractVbmetaImageCommand`, `RunViewCommand`, `SearchCodeCommand`, `SkillListCommand`, `CreateLogicalPartitionCommand`, `DeleteLogicalPartitionCommand`, `EraseCommand`, `FetchCommand`, `FlashallCommand`, `ArtifactRequirement`, `FlashRawCommand`, `ExecuteCommand`, `GetvarCommand`, `GsiCommand`, `OemCommand`, `ExtensionListCommand`, `SetActiveCommand`, `ExecuteCommand`, `StageCommand`, `SnapshotUpdateCommand`, `FakeToolRepository`, `ExtensionRemoveCommand`, `UpdateCommand`, `DumpCommand`, `CodespaceLogsCommand`, `GistCloneCommand`, `DisableVerityCommand`, `CodespaceCodeCommand`, `CodespaceDeleteCommand`, `CodespacePortsVisibilityCommand`, `InstallCommand`, `.generateDraft`, `SearchReposCommand`, `IfCommandCommand`, `LfCommand`, `DumpBadgingCommand`, `ToolCommand`, `GistRenameCommand`, `RebootCommand`, `EraseFooterCommand`, `SkillCommand`, `GenerateTestImageCommand`, `SyncCommand`, `WorkspaceJailInterceptor`, `ArtifactDirection`, `ToolDomainEvent`, `AttestationTrustedRootCommand`, `DumpResourcesCommand`, `UnrootCommand`, `BuildCommand`, `CreateCommand`, `HelpCommand`, `RulesetViewCommand`, `DumpXmltreeCommand`, `StatusCommand`, `StdinMode`, `AgentTaskViewCommand`, `BootCommand`, `AliasDeleteCommand`, `ApiCommand`, `ProjectEditCommand`, `AttestationDownloadCommand`, `AuthLogoutCommand`, `MakeCertPermanentAttributesCommand`, `AuthCommand`, `ExecuteCommand`, `ExecuteCommand`, `DumpPermissionsCommand`, `ExtensionCommand`, `PreviewPrompterCommand`, `ProjectItemDeleteCommand`, `ToolBinary`, `Compiler`, `DumpStringsCommand`, `MakeCertificateCommand`, `ExecuteCommand`, `LinkCommand`, `ExecuteCommand`, `ExtensionCreateCommand`, `MakeAtxMetadataCommand`, `VerifyImageCommand`, `ResizeImageCommand`, `AgentTaskCreateCommand`, `AliasSetCommand`, `VersionCommand`, `signapk/ExecuteCommand.kt`, `CodespaceCreateCommand`, `GetSerialnoCommand`, `ProjectCopyCommand`, `ProjectItemAddCommand`, `ProjectItemArchiveCommand`, `VariableDeleteCommand`, `WorkflowDisableCommand`, `ExecuteCommand`, `BugreportCommand`, `EmuCommand`, `AgentTaskListCommand`, `ExecuteCommand`, `AuthTokenCommand`, `CacheListCommand`, `GistCreateCommand`, `GistListCommand`, `ProjectListCommand`, `AttachCommand`, `CodespacePortsForwardCommand`, `ReleaseCommand`, `ExecuteCommand`, `LabelCreateCommand`, `RulesetListCommand`, `ConfigCommand`, `OrgCommand`, `ConfigSetCommand`, `SecretSetCommand`, `CfgCreateCommand`, `SkillSearchCommand`, `ExecuteCommand`, `ExtensionUpgradeCommand`, `AttestationCommand`, `ProjectCreateCommand`, `AliasListCommand`, `DaemonCommand`, `AuthSetupGitCommand`, `GpgKeyDeleteCommand`, `CodespaceViewCommand`, `LabelCloneCommand`, `AliasImportCommand`, `LabelCommand`, `ProjectFieldCreateCommand`, `ProjectItemCreateCommand`, `LicensesCommand`, `ProjectCommand`, `VariableSetCommand`, `ConfigClearCacheCommand`, `ProjectUnlinkCommand`, `RepoCommand`, `RulesetCommand`, `Phase3SpecificationTest`, `WorkflowEnableCommand`, `RunCommand`, `ProjectFieldListCommand`, `ToolRisk`, `HelpCommand`, `CodespacePortsCommand`, `DumpXmlstringsCommand`, `InstallMultipleCommand`, `ProjectLinkCommand`, `SearchCommand`, `SshKeyCommand`, `SshKeyDeleteCommand`, `CodespaceCpCommand`, `BrowseCommand`, `CodespaceJupyterCommand`, `CompletionCommand`, `SshKeyListCommand`, `VariableListCommand`, `WorkflowListCommand`, `WorkflowRunCommand`, `WorkflowViewCommand`, `UsbCommand`, `ResizeLogicalPartitionCommand`, `CompileCommand`, `CalculateVbmetaDigestCommand`, `DiffCommand`, `ExtractPublicKeyDigestCommand`, `MakeVbmetaImageCommand`, `AddHashtreeFooterCommand`, `SecretDeleteCommand`, `ZeroHashtreeCommand`, `MakeCertMetadataCommand`, `DumpConfigurationsCommand`, `DumpStyleparentsCommand`, `OptimizeCommand`, `CleanFrameworksCommand`, `CoverageVerifier`, `ListFrameworksCommand`, `GpgKeyCommand`, `DumpCommand`, `ExecuteCommand`, `LabelListCommand`, `ExecuteCommand`, `AliasCommand`, `GetDevpathCommand`, `CacheDeleteCommand`, `DiscussionCommand`, `ProjectItemEditCommand`, `ProjectViewCommand`, `ExtensionExecCommand`, `GistCommand`, `IssueCommand`, `RunDeleteCommand`, `ConfigGetCommand`, `SpecValidator.kt`, `CopilotCommand`, `RulesetCheckCommand`, `GistEditCommand`, `GpgKeyListCommand`, `ProjectItemListCommand`, `AttestationVerifyCommand`, `UpdatePartitionDescriptorCommand`, `SearchIssuesCommand`, `SearchCommitsCommand`, `RunRerunCommand`, `SecretListCommand`, `RunWatchCommand`, `LabelEditCommand`, `SshKeyAddCommand`, `PrintPartitionDigestsCommand`, `RunListCommand`, `ConnectCommand`, `CodespaceRebuildCommand`, `DisconnectCommand`, `ArtifactKind`, `EnableVerityCommand`, `ForwardCommand`, `AuthLoginCommand`, `AuthRefreshCommand`, `MdnsCommand`, `InstallMultiPackageCommand`, `JdwpCommand`, `KeygenCommand`, `KillServerCommand`, `LogcatCommand`, `PairCommand`, `PullCommand`, `PushCommand`, `RebootCommand`, `ReverseCommand`, `RootCommand`, `ShellCommand`, `PrCommand`, `TcpipCommand`, `ExtensionInstallCommand`, `PreviewCommand`, `VersionCommand`, `WaitForCommand`, `ExecuteCommand`, `ProjectFieldDeleteCommand`, `VariableGetCommand`, `CalculateKernelCmdlineCommand`?**
+  _High betweenness centrality (0.090) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `ExecutionContext` (e.g. with `.`interceptor can short-circuit pipeline without executing terminal`()` and `.`pipeline executes interceptors in declared order`()`) actually correct?**
   _`ExecutionContext` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `MODEL_FAILURE_PATTERNS`, `EFFORT_LEVELS`, `SANDBOX_MODES` to the rest of the system?**
   _2618 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `ExecutionContext` be split into smaller, more focused modules?**
-  _Cohesion score 0.0036742776120862464 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.0037741203178206584 - nodes in this community are weakly interconnected._
 - **Should `ModuleApplicationStage` be split into smaller, more focused modules?**
-  _Cohesion score 0.08078231292517007 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.12312312312312312 - nodes in this community are weakly interconnected._
