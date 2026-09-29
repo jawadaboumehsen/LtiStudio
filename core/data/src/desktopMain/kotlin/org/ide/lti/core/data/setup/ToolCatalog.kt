@@ -1,5 +1,7 @@
 package org.ide.lti.core.data.setup
 
+import org.ide.lti.core.domain.ports.ToolSource
+import org.ide.lti.core.domain.ports.ToolStatus
 import org.ide.lti.core.domain.setup.ToolCapabilities
 
 /**
@@ -68,6 +70,12 @@ public object ToolCatalog {
         ToolCatalogEntry("avbtool", ToolKind.NATIVE, ToolCapabilities.GROUP_ANDROID_TOOLS, requiredForProduct = true),
         ToolCatalogEntry("fec", ToolKind.NATIVE, ToolCapabilities.GROUP_ANDROID_TOOLS),
         ToolCatalogEntry("mkuserimg_mke2fs", ToolKind.NATIVE, ToolCapabilities.GROUP_ANDROID_TOOLS),
+        // f2fs-tools and SDK build tools from the same android-tools build.
+        ToolCatalogEntry("make_f2fs", ToolKind.NATIVE, ToolCapabilities.GROUP_ANDROID_TOOLS),
+        ToolCatalogEntry("sload_f2fs", ToolKind.NATIVE, ToolCapabilities.GROUP_ANDROID_TOOLS),
+        ToolCatalogEntry("mkf2fsuserimg", ToolKind.NATIVE, ToolCapabilities.GROUP_ANDROID_TOOLS),
+        ToolCatalogEntry("aapt2", ToolKind.NATIVE, ToolCapabilities.GROUP_ANDROID_TOOLS),
+        ToolCatalogEntry("zipalign", ToolKind.NATIVE, ToolCapabilities.GROUP_ANDROID_TOOLS),
 
         // erofs-utils recipe group
         ToolCatalogEntry("mkfs.erofs", ToolKind.NATIVE, ToolCapabilities.GROUP_EROFS_UTILS, requiredForProduct = true),
@@ -117,4 +125,53 @@ public object ToolCatalog {
     public fun isCatalogTool(toolId: String): Boolean = toolId in byId
 
     public fun entryFor(toolId: String): ToolCatalogEntry? = byId[toolId]
+
+    /** How [ToolCatalog.probePlan] proves a tool runs: the existence check, then the probe command. */
+    public data class ProbePlan(
+        val path: String,
+        val existsCheck: List<String>,
+        val argv: List<String>,
+        val timeoutSeconds: Long,
+    )
+
+    /**
+     * Packaging-aware probe, the same for Test and repair verification: a JAR is checked readable (not
+     * executable, as publication accepts it) and run through `java -jar`; a native tool is checked
+     * executable and run directly. [fallbackBinaryName] covers a tool the catalog doesn't list.
+     */
+    public fun probePlan(toolId: String, binDir: String, fallbackBinaryName: String): ProbePlan {
+        val path = expectedPath(binDir, toolId) ?: "${binDir.trimEnd('/')}/$fallbackBinaryName"
+        return if (entryFor(toolId)?.kind == ToolKind.JAR) {
+            ProbePlan(
+                path = path,
+                existsCheck = listOf("test", "-r", path),
+                argv = listOf("java", "-jar", path) + ToolCapabilities.probeArgumentsFor(toolId),
+                timeoutSeconds = JAR_PROBE_TIMEOUT_SECONDS,
+            )
+        } else {
+            ProbePlan(
+                path = path,
+                existsCheck = listOf("test", "-x", path),
+                argv = ToolCapabilities.probeArgumentsFor(toolId, path),
+                timeoutSeconds = NATIVE_PROBE_TIMEOUT_SECONDS,
+            )
+        }
+    }
+
+    private const val NATIVE_PROBE_TIMEOUT_SECONDS = 5L
+
+    /** JVM start plus class loading (apktool) needs more than a native binary's 5 s. */
+    private const val JAR_PROBE_TIMEOUT_SECONDS = 20L
+
+    /** Where a catalog tool is installed and published from. */
+    public fun expectedPath(binDir: String, toolId: String): String? =
+        entryFor(toolId)?.let { "${binDir.trimEnd('/')}/${it.binaryName}" }
+
+    /**
+     * The one publication rule, shared by publishing and the readiness check: the service resolves the tool
+     * from this app's manifest ([ToolSource.DYNAMIC]) at its expected path in [binDir]. A system or fallback
+     * copy of the same name doesn't count: it would mask a missing project artifact.
+     */
+    public fun isProjectPublished(status: ToolStatus, binDir: String): Boolean =
+        status.installed && status.source == ToolSource.DYNAMIC && status.path == expectedPath(binDir, status.tool)
 }

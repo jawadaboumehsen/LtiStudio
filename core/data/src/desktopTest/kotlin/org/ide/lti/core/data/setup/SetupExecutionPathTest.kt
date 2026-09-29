@@ -189,6 +189,9 @@ class SetupExecutionPathTest {
                     request.arguments.any { it.endsWith("/external/signapk") } ->
                     ToolExecutionResponse(1, "", "", 1L)
                 request.toolId == "test" -> ToolExecutionResponse(0, "", "", 1L)
+                request.toolId == "sha256sum" -> fakeSha256(request.arguments.firstOrNull().orEmpty()).let {
+                    ToolExecutionResponse(it.exitCode, it.output, it.error, 1L)
+                }
                 request.toolId == "which" -> ToolExecutionResponse(
                     0,
                     "/usr/bin/${request.arguments.firstOrNull()}",
@@ -245,7 +248,13 @@ class SetupExecutionPathTest {
 
         override suspend fun resolvedTools(): ToolRegistryResult = ToolRegistryResult.Tools(
             ToolCatalog.ALL_TOOL_IDS.map {
-                ToolStatus(tool = it, installed = true, path = "/bin/$it", source = ToolSource.DYNAMIC, reason = null)
+                ToolStatus(
+                    tool = it,
+                    installed = true,
+                    path = ToolCatalog.expectedPath(FAKE_BIN_DIR, it) ?: "",
+                    source = ToolSource.DYNAMIC,
+                    reason = null,
+                )
             },
         )
     }

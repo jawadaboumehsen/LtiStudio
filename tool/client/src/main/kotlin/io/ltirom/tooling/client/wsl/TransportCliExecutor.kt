@@ -2,6 +2,7 @@ package io.ltirom.tooling.client.wsl
 
 import io.ltirom.tooling.core.ports.RemoteTransportPort
 import io.ltirom.tooling.core.remote.ToolExecutionRequest
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
 import java.nio.charset.Charset
 
@@ -25,39 +26,65 @@ public class TransportCliExecutor(
         charset: Charset,
         user: String?,
     ): CliExecutionResult {
+        val request = toRequest(command, timeoutSeconds, user)
+        return try {
+            toResult(runBlocking { transport.execute(request) })
+        } catch (e: CancellationException) {
+            throw e
+        } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
+            failure(e)
+        }
+    }
+
+    /**
+     * Runs the request in the caller's coroutine instead of a detached `runBlocking` scope, so cancelling the
+     * caller cancels the remote call and nothing after it starts.
+     */
+    override suspend fun run(
+        distro: String,
+        command: List<String>,
+        timeoutSeconds: Long,
+        user: String?,
+    ): CliExecutionResult {
+        val request = toRequest(command, timeoutSeconds, user)
+        return try {
+            toResult(transport.execute(request))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
+            failure(e)
+        }
+    }
+
+    private fun toRequest(command: List<String>, timeoutSeconds: Long, user: String?): ToolExecutionRequest {
         require(command.isNotEmpty()) { "Command cannot be empty" }
         val first = command.first()
         require(!((first == "bash" || first == "sh") && command.contains("-c"))) {
             "bash/sh -c commands are forbidden in TransportCliExecutor: $command"
         }
-
         val effectiveCommand = when {
             user == "root" && first != "sudo" -> listOf("sudo", "-n") + command
             user == "root" && first == "sudo" && command.getOrNull(1) != "-n" ->
                 listOf("sudo", "-n") + command.drop(1)
             else -> command
         }
-
-        val request = ToolExecutionRequest(
+        return ToolExecutionRequest(
             toolId = effectiveCommand.first(),
             arguments = effectiveCommand.drop(1),
             workingDirectory = defaultWorkingDirectory,
             timeoutMs = timeoutSeconds * 1000L,
         )
-
-        return try {
-            val response = runBlocking { transport.execute(request) }
-            CliExecutionResult(
-                exitCode = response.exitCode,
-                output = response.stdout,
-                error = response.stderr,
-            )
-        } catch (e: Exception) {
-            CliExecutionResult(
-                exitCode = -1,
-                output = "",
-                error = e.message ?: "Failed to execute remote command",
-            )
-        }
     }
+
+    private fun toResult(response: io.ltirom.tooling.core.remote.ToolExecutionResponse) = CliExecutionResult(
+        exitCode = response.exitCode,
+        output = response.stdout,
+        error = response.stderr,
+    )
+
+    private fun failure(e: Exception) = CliExecutionResult(
+        exitCode = -1,
+        output = "",
+        error = e.message ?: "Failed to execute remote command",
+    )
 }

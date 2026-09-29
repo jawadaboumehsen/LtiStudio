@@ -630,7 +630,7 @@ public class WslToolchainProvisioner(
             verifyRepoStage(extDir, workDir)
         }
         val publishedTools = runCheckStage(SetupStepStage.TOOLCHAIN_COMPILATION) {
-            verifyToolchainStage(missingBins, executables)
+            verifyToolchainStage(missingBins, executables, binDir)
         }
 
         // AVB Key Check
@@ -770,14 +770,23 @@ public class WslToolchainProvisioner(
     }
 
     /** TOOLCHAIN_COMPILATION: binaries, published tools and mkfs.erofs; returns the published tool IDs. */
-    private suspend fun verifyToolchainStage(missingBins: List<String>, executables: Set<String>): Set<String> {
+    private suspend fun verifyToolchainStage(
+        missingBins: List<String>,
+        executables: Set<String>,
+        binDir: String,
+    ): Set<String> {
         setStepRunning(SetupStepStage.TOOLCHAIN_COMPILATION)
         // A rescan, not the service's cached list: manifests written by an interrupted publish count.
         val registryResult = toolPublicationPort?.resolvedTools()
             ?: ToolStatusMapper.toDomain(transport.refreshTools())
         val isServiceError = registryResult is ToolRegistryResult.ServiceError
         val publishedTools = when (registryResult) {
-            is ToolRegistryResult.Tools -> registryResult.list.filter { it.installed }.map { it.tool }.toSet()
+            // Same rule as publication: resolved from this app's manifest at its bin path, not a fallback.
+            is ToolRegistryResult.Tools ->
+                registryResult.list
+                    .filter { ToolCatalog.isProjectPublished(it, binDir) }
+                    .map { it.tool }
+                    .toSet()
             is ToolRegistryResult.ServiceError -> {
                 setStepStatus(
                     SetupStepStage.SERVER_CONNECTIVITY,
@@ -1062,8 +1071,8 @@ public class WslToolchainProvisioner(
         ) {
             val userHome = resolveHome(distro)
             val binDir = "$userHome/LtiRomTools/bin"
-            val binaryName = toolItem.binaryName
-            val binaryPath = "$binDir/$binaryName"
+            val probe = ToolCatalog.probePlan(toolId, binDir, toolItem.binaryName)
+            val binaryPath = probe.path
 
             _state.update { s ->
                 s.copy(
@@ -1075,13 +1084,12 @@ public class WslToolchainProvisioner(
 
             try {
                 val effectiveCli = TransportCliExecutor(transport, defaultWorkingDirectory = userHome)
-                val exists = effectiveCli.execute(distro, listOf("test", "-x", binaryPath)).exitCode == 0
-                val probeArgv = ToolCapabilities.probeArgumentsFor(toolId, binaryPath)
+                val exists = effectiveCli.execute(distro, probe.existsCheck).exitCode == 0
                 val acceptedExitCodes = ToolCapabilities.acceptedExitCodesFor(toolId)
                 var exitCode = -1
                 // Real process exit code: do NOT infer success from stdout text alone (FR-009)
                 val testStatus = if (exists) {
-                    val execRes = effectiveCli.execute(distro, probeArgv, timeoutSeconds = 5)
+                    val execRes = effectiveCli.execute(distro, probe.argv, timeoutSeconds = probe.timeoutSeconds)
                     exitCode = execRes.exitCode
                     if (exitCode in acceptedExitCodes) StepStatus.SUCCESS else StepStatus.FAILED
                 } else {
@@ -1119,7 +1127,7 @@ public class WslToolchainProvisioner(
                             toolId to ToolEvidence(
                                 toolId = toolId,
                                 recipeGroup = ToolCapabilities.recipeGroupFor(toolId),
-                                probeArgv = probeArgv,
+                                probeArgv = probe.argv,
                                 acceptedExitCodes = acceptedExitCodes,
                                 isInstalled = exists,
                                 isVerified = true,
@@ -2045,12 +2053,12 @@ public class WslToolchainProvisioner(
                             val requiredTools = ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS
                             for (siblingId in siblingTools) {
                                 val item = _state.value.toolsMatrix.firstOrNull { it.id == siblingId } ?: continue
-                                val binaryPath = "$binDir/${item.binaryName}"
-                                val exists = serviceCli.execute(distro, listOf("test", "-x", binaryPath)).exitCode == 0
-                                val probeArgv = ToolCapabilities.probeArgumentsFor(siblingId, binaryPath)
+                                val probe = ToolCatalog.probePlan(siblingId, binDir, item.binaryName)
+                                val binaryPath = probe.path
+                                val exists = serviceCli.execute(distro, probe.existsCheck).exitCode == 0
                                 val acceptedExitCodes = ToolCapabilities.acceptedExitCodesFor(siblingId)
                                 val execRes = if (exists) {
-                                    serviceCli.execute(distro, probeArgv, timeoutSeconds = 5)
+                                    serviceCli.execute(distro, probe.argv, timeoutSeconds = probe.timeoutSeconds)
                                 } else {
                                     null
                                 }
@@ -2259,6 +2267,9 @@ public class WslToolchainProvisioner(
     override fun observeActivity(): Flow<SetupLogEvent> = logBuffer.observe()
 
     override suspend fun recover(attemptId: String?): SetupOutcome = withContext(dispatcher) {
+        // Reconciliation reads run state from the build service. At app start nothing has connected to it
+        // yet, so connect the way the check does (install/start/health) rather than fail with "not started".
+        if (supervisor.getConnectionInfo() == null) verifyEnvironment()
         val distro = resolveEnvironmentKey()
         val engine = recovery
             ?: return@withContext SetupOutcome.Failed(

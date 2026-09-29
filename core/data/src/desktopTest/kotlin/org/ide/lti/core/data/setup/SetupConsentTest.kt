@@ -156,6 +156,9 @@ class SetupConsentTest {
                 request.toolId == "test" && request.arguments.any { it.endsWith("lti_rsa4096.pem") } ->
                     ToolExecutionResponse(1, "", "", 1L)
                 request.toolId == "test" -> ToolExecutionResponse(0, "", "", 1L)
+                request.toolId == "sha256sum" -> fakeSha256(request.arguments.firstOrNull().orEmpty()).let {
+                    ToolExecutionResponse(it.exitCode, it.output, it.error, 1L)
+                }
                 request.toolId == "printenv" -> ToolExecutionResponse(0, "/home/lti\n", "", 1L)
                 request.toolId == "mkfs.erofs" -> ToolExecutionResponse(0, "mkfs.erofs 1.7.1 --fs-config-file", "", 1L)
                 else -> ToolExecutionResponse(0, "ok", "", 1L)
@@ -213,7 +216,7 @@ class SetupConsentTest {
                 org.ide.lti.core.domain.ports.ToolStatus(
                     tool = it,
                     installed = true,
-                    path = "/home/lti/LtiRomTools/bin/$it",
+                    path = ToolCatalog.expectedPath(FAKE_BIN_DIR, it) ?: "",
                     source = org.ide.lti.core.domain.ports.ToolSource.DYNAMIC,
                     reason = null,
                 )

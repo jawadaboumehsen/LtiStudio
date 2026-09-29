@@ -57,19 +57,22 @@ class ToolCapabilitiesTest {
     @Test
     fun testProbeArgumentsAndAcceptedExitCodes() {
         // Default contract: `--help` must exit 0.
-        val args = ToolCapabilities.probeArgumentsFor("lpunpack", "/bin/lpunpack")
-        assertEquals(listOf("/bin/lpunpack", "--help"), args)
-        assertEquals(setOf(0), ToolCapabilities.acceptedExitCodesFor("lpunpack"))
-        assertTrue(ToolCapabilities.isAcceptedExitCode("lpunpack", 0))
-        assertFalse(ToolCapabilities.isAcceptedExitCode("lpunpack", 1))
+        val args = ToolCapabilities.probeArgumentsFor("lpdump", "/bin/lpdump")
+        assertEquals(listOf("/bin/lpdump", "--help"), args)
+        assertEquals(setOf(0), ToolCapabilities.acceptedExitCodesFor("lpdump"))
+        assertTrue(ToolCapabilities.isAcceptedExitCode("lpdump", 0))
+        assertFalse(ToolCapabilities.isAcceptedExitCode("lpdump", 1))
 
         // Per-tool overrides: the inventory, not the caller, decides how a binary proves it runs.
         assertEquals(listOf("/bin/mke2fs", "-V"), ToolCapabilities.probeArgumentsFor("mke2fs", "/bin/mke2fs"))
         assertEquals(listOf("version"), ToolCapabilities.probeArgumentsFor("adb"))
         assertEquals(listOf("/bin/simg2img"), ToolCapabilities.probeArgumentsFor("simg2img", "/bin/simg2img"))
-        assertEquals(setOf(255), ToolCapabilities.acceptedExitCodesFor("simg2img"))
+        assertEquals(setOf(1, 255), ToolCapabilities.acceptedExitCodesFor("simg2img"))
         assertTrue(ToolCapabilities.isAcceptedExitCode("simg2img", 255))
         assertFalse(ToolCapabilities.isAcceptedExitCode("simg2img", 0))
+        // Measured: liblp tools exit 64 (EX_USAGE) on --help; erofsfuse (FUSE help) exits 1.
+        assertEquals(setOf(0, 64), ToolCapabilities.acceptedExitCodesFor("lpmake"))
+        assertEquals(setOf(0, 1), ToolCapabilities.acceptedExitCodesFor("erofsfuse"))
 
         // Unknown tools fall back to the conservative default rather than being optimistically accepted.
         assertEquals(listOf("--help"), ToolCapabilities.probeArgumentsFor("unknown-tool"))

@@ -81,16 +81,16 @@ internal class FakeRemoteTransport(
         availableTools = listOf("adb", "fastboot"),
     ),
     var publishedTools: MutableList<ToolStatusInfo> = mutableListOf(
-        ToolStatusInfo(tool = "payload-dumper-go", installed = true),
-        ToolStatusInfo(tool = "lpunpack", installed = true),
-        ToolStatusInfo(tool = "lpmake", installed = true),
-        ToolStatusInfo(tool = "simg2img", installed = true),
-        ToolStatusInfo(tool = "erofsfuse", installed = true),
-        ToolStatusInfo(tool = "mkfs.erofs", installed = true),
-        ToolStatusInfo(tool = "avbtool", installed = true),
-        ToolStatusInfo(tool = "unpack_bootimg", installed = true),
-        ToolStatusInfo(tool = "img2sdat", installed = true),
-        ToolStatusInfo(tool = "signapk", installed = true),
+        projectTool("payload-dumper-go"),
+        projectTool("lpunpack"),
+        projectTool("lpmake"),
+        projectTool("simg2img"),
+        projectTool("erofsfuse"),
+        projectTool("mkfs.erofs"),
+        projectTool("avbtool"),
+        projectTool("unpack_bootimg"),
+        projectTool("img2sdat"),
+        projectTool("signapk"),
     ),
 ) : RemoteTransportPort {
     var checkHealthCount = 0
@@ -130,6 +130,9 @@ internal class FakeRemoteTransport(
                 ToolExecutionResponse(0, output, "", 10L)
             }
             request.toolId == "test" -> ToolExecutionResponse(0, "", "", 10L)
+            request.toolId == "sha256sum" -> fakeSha256(request.arguments.firstOrNull().orEmpty()).let {
+                ToolExecutionResponse(it.exitCode, it.output, it.error, 2L)
+            }
             request.toolId == "dpkg-query" -> ToolExecutionResponse(0, "all ok installed", "", 2L)
             request.toolId == "df" -> ToolExecutionResponse(0, "Filesystem 100G 50G 50G 50% /home/lti\n", "", 2L)
             request.toolId == "mkfs.erofs" -> ToolExecutionResponse(0, "mkfs.erofs 1.7.1 --fs-config-file", "", 10L)
@@ -194,7 +197,13 @@ internal class FakeToolPublicationPort(
 
     override suspend fun resolvedTools(): ToolRegistryResult = ToolRegistryResult.Tools(
         publishedResult.registered.map {
-            ToolStatus(tool = it, installed = true, path = "/bin/$it", source = ToolSource.DYNAMIC, reason = null)
+            ToolStatus(
+                tool = it,
+                installed = true,
+                path = ToolCatalog.expectedPath(FAKE_BIN_DIR, it) ?: "$FAKE_BIN_DIR/$it",
+                source = ToolSource.DYNAMIC,
+                reason = null,
+            )
         },
     )
 }
@@ -346,15 +355,43 @@ internal class FakeWslCliExecutor : WslCliExecutor() {
                 return CliExecutionResult(0, "", "")
             }
             val targetPath = command.lastOrNull() ?: ""
-            return if (existingPaths.contains(targetPath)) {
+            // A synced submodule has its sources and build outputs.
+            val insideSyncedSource = targetPath.contains("/LtiRomTools/external/") &&
+                existingPaths.any { it.contains("/LtiRomTools/external/") && targetPath.startsWith("$it/") }
+            return if (existingPaths.contains(targetPath) || insideSyncedSource) {
                 CliExecutionResult(0, "", "")
             } else {
                 CliExecutionResult(1, "", "Path does not exist: $targetPath")
             }
         }
+        if (command.firstOrNull() == "sha256sum") return fakeSha256(command.getOrNull(1).orEmpty())
         if (cmdStr.contains("mkfs.erofs")) {
             return CliExecutionResult(0, "mkfs.erofs 1.7.1\noptions: --fs-config-file -C -T", "")
         }
         return CliExecutionResult(0, "ok", "")
+    }
+}
+
+/** The fake distro's project tool directory. */
+internal const val FAKE_BIN_DIR: String = "/home/lti/LtiRomTools/bin"
+
+/** A tool the service resolves from this app's manifest at its project path (what publication produces). */
+internal fun projectTool(id: String): ToolStatusInfo = ToolStatusInfo(
+    tool = id,
+    installed = true,
+    path = ToolCatalog.expectedPath(FAKE_BIN_DIR, id) ?: "$FAKE_BIN_DIR/$id",
+    source = "DYNAMIC",
+)
+
+/** `sha256sum` on a fake machine: pinned release binaries (installed or downloaded) are the genuine ones. */
+internal fun fakeSha256(path: String): CliExecutionResult {
+    val release = PinnedReleases.ALL.firstOrNull {
+        path.endsWith("/${it.toolId}") ||
+            path.endsWith("/${it.archiveMember}")
+    }
+    return if (release != null) {
+        CliExecutionResult(0, "${release.sha256}  $path", "")
+    } else {
+        CliExecutionResult(1, "", "sha256sum: $path: No such file or directory")
     }
 }

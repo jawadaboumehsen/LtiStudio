@@ -5,10 +5,10 @@ import io.ltirom.tooling.core.remote.StreamEvent
 import io.ltirom.tooling.core.remote.ToolExecutionRequest
 import io.ltirom.tooling.core.remote.ToolExecutionResponse
 import io.ltirom.tooling.core.remote.ToolListResult
-import io.ltirom.tooling.core.remote.ToolStatusInfo
 import io.ltirom.tooling.core.remote.WslServerInfo
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.launch
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -21,14 +21,20 @@ class TransportCliExecutorTest {
             exitCode = 0,
             stdout = "success",
             stderr = "",
-            durationMs = 100L
+            durationMs = 100L,
         ),
-        var shouldThrow: Boolean = false
+        var shouldThrow: Boolean = false,
+        /** Stand-in for a long download: the call only ends by cancellation. */
+        var blocks: kotlinx.coroutines.CompletableDeferred<Unit>? = null,
     ) : RemoteTransportPort {
         val capturedRequests = mutableListOf<ToolExecutionRequest>()
 
         override suspend fun execute(request: ToolExecutionRequest): ToolExecutionResponse {
             capturedRequests.add(request)
+            blocks?.let {
+                it.complete(Unit)
+                kotlinx.coroutines.awaitCancellation()
+            }
             if (shouldThrow) {
                 error("Transport connection dropped")
             }
@@ -52,7 +58,7 @@ class TransportCliExecutorTest {
         val result = executor.execute(
             distro = "Ubuntu",
             command = listOf("find", "/bin", "-type", "f"),
-            timeoutSeconds = 15
+            timeoutSeconds = 15,
         )
 
         assertEquals(1, transport.capturedRequests.size)
@@ -74,7 +80,7 @@ class TransportCliExecutorTest {
         executor.execute(
             distro = "Ubuntu",
             command = listOf("apt-get", "install", "-y", "brotli"),
-            user = "root"
+            user = "root",
         )
 
         assertEquals(1, transport.capturedRequests.size)
@@ -91,7 +97,7 @@ class TransportCliExecutorTest {
         executor.execute(
             distro = "Ubuntu",
             command = listOf("sudo", "apt-get", "update"),
-            user = "root"
+            user = "root",
         )
 
         assertEquals(1, transport.capturedRequests.size)
@@ -107,14 +113,14 @@ class TransportCliExecutorTest {
                 exitCode = 127,
                 stdout = "",
                 stderr = "command not found",
-                durationMs = 20L
-            )
+                durationMs = 20L,
+            ),
         )
         val executor = TransportCliExecutor(transport = transport)
 
         val result = executor.execute(
             distro = "Ubuntu",
-            command = listOf("missing-tool")
+            command = listOf("missing-tool"),
         )
 
         assertEquals(127, result.exitCode)
@@ -130,14 +136,14 @@ class TransportCliExecutorTest {
         assertFailsWith<IllegalArgumentException> {
             executor.execute(
                 distro = "Ubuntu",
-                command = listOf("bash", "-c", "echo hello")
+                command = listOf("bash", "-c", "echo hello"),
             )
         }
 
         assertFailsWith<IllegalArgumentException> {
             executor.execute(
                 distro = "Ubuntu",
-                command = listOf("sh", "-c", "echo hello")
+                command = listOf("sh", "-c", "echo hello"),
             )
         }
     }
@@ -149,10 +155,25 @@ class TransportCliExecutorTest {
 
         val result = executor.execute(
             distro = "Ubuntu",
-            command = listOf("some-cmd")
+            command = listOf("some-cmd"),
         )
 
         assertEquals(-1, result.exitCode)
         assertTrue(result.error.contains("Transport connection dropped"))
+    }
+
+    @Test
+    fun `run is cancelled with its caller instead of returning a result`() = kotlinx.coroutines.runBlocking {
+        val started = kotlinx.coroutines.CompletableDeferred<Unit>()
+        val executor = TransportCliExecutor(RecordingRemoteTransport(blocks = started))
+        var returned: CliExecutionResult? = null
+
+        val job = launch { returned = executor.run("Ubuntu", listOf("curl", "-o", "x", "https://example")) }
+        started.await()
+        job.cancel()
+        job.join()
+
+        assertTrue(job.isCancelled)
+        assertEquals(null, returned, "a cancelled command must not look like a finished one (exit -1)")
     }
 }

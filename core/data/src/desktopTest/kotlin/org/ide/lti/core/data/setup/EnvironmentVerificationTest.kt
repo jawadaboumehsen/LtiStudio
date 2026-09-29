@@ -133,6 +133,9 @@ class EnvironmentVerificationTest {
                     ToolExecutionResponse(0, subs.joinToString("\n"), "", 5L)
                 }
                 request.toolId == "test" -> ToolExecutionResponse(0, "", "", 2L)
+                request.toolId == "sha256sum" -> fakeSha256(request.arguments.firstOrNull().orEmpty()).let {
+                    ToolExecutionResponse(it.exitCode, it.output, it.error, 1L)
+                }
                 request.toolId == "dpkg-query" -> {
                     val pkgs = NativeLibrariesInspector.DEFAULT_REQUIRED_DEV_PACKAGES
                         .joinToString("\n") { "$it install ok installed" }
@@ -251,7 +254,13 @@ class EnvironmentVerificationTest {
 
         override suspend fun resolvedTools(): ToolRegistryResult = ToolRegistryResult.Tools(
             publishedIds.map {
-                ToolStatus(tool = it, installed = true, path = "/bin/$it", source = ToolSource.DYNAMIC, reason = null)
+                ToolStatus(
+                    tool = it,
+                    installed = true,
+                    path = ToolCatalog.expectedPath(FAKE_BIN_DIR, it) ?: "",
+                    source = ToolSource.DYNAMIC,
+                    reason = null,
+                )
             },
         )
     }
@@ -550,16 +559,16 @@ class EnvironmentVerificationTest {
         val supervisor = RecordingDaemonSupervisor()
         val transport = RecordingRemoteTransport()
         transport.toolsList = mutableListOf(
-            ToolStatusInfo(tool = "payload-dumper-go", installed = true),
-            ToolStatusInfo(tool = "lpunpack", installed = true),
-            ToolStatusInfo(tool = "lpmake", installed = true),
-            ToolStatusInfo(tool = "simg2img", installed = true),
-            ToolStatusInfo(tool = "erofsfuse", installed = true),
-            ToolStatusInfo(tool = "mkfs.erofs", installed = true),
-            ToolStatusInfo(tool = "avbtool", installed = true),
-            ToolStatusInfo(tool = "unpack_bootimg", installed = true),
-            ToolStatusInfo(tool = "img2sdat", installed = true),
-            ToolStatusInfo(tool = "signapk", installed = true),
+            projectTool("payload-dumper-go"),
+            projectTool("lpunpack"),
+            projectTool("lpmake"),
+            projectTool("simg2img"),
+            projectTool("erofsfuse"),
+            projectTool("mkfs.erofs"),
+            projectTool("avbtool"),
+            projectTool("unpack_bootimg"),
+            projectTool("img2sdat"),
+            projectTool("signapk"),
         )
         val cli = RecordingCliExecutor()
         val detector = WslEnvironmentDetector(cli)
@@ -662,16 +671,16 @@ class EnvironmentVerificationTest {
 
         // Now populate all tools and publish
         transport.toolsList = mutableListOf(
-            ToolStatusInfo(tool = "payload-dumper-go", installed = true),
-            ToolStatusInfo(tool = "lpunpack", installed = true),
-            ToolStatusInfo(tool = "lpmake", installed = true),
-            ToolStatusInfo(tool = "simg2img", installed = true),
-            ToolStatusInfo(tool = "erofsfuse", installed = true),
-            ToolStatusInfo(tool = "mkfs.erofs", installed = true),
-            ToolStatusInfo(tool = "avbtool", installed = true),
-            ToolStatusInfo(tool = "unpack_bootimg", installed = true),
-            ToolStatusInfo(tool = "img2sdat", installed = true),
-            ToolStatusInfo(tool = "signapk", installed = true),
+            projectTool("payload-dumper-go"),
+            projectTool("lpunpack"),
+            projectTool("lpmake"),
+            projectTool("simg2img"),
+            projectTool("erofsfuse"),
+            projectTool("mkfs.erofs"),
+            projectTool("avbtool"),
+            projectTool("unpack_bootimg"),
+            projectTool("img2sdat"),
+            projectTool("signapk"),
         )
 
         val readyState = provisioner.verifyEnvironment()

@@ -6,11 +6,7 @@ import java.nio.charset.Charset
 import java.util.Base64
 import java.util.concurrent.TimeUnit
 
-public data class CliExecutionResult(
-    val exitCode: Int,
-    val output: String,
-    val error: String
-)
+public data class CliExecutionResult(val exitCode: Int, val output: String, val error: String)
 
 /**
  * Single Responsibility: Raw execution of host and WSL commands with timeouts,
@@ -30,7 +26,9 @@ public open class WslCliExecutor {
         private val maxChars: Int = MAX_CAPTURE_BYTES,
     ) : Runnable {
         private val buffer = StringBuilder()
+
         @Volatile private var isTruncated = false
+
         @Volatile private var capturedChars = 0
 
         override fun run() {
@@ -63,14 +61,26 @@ public open class WslCliExecutor {
         }
     }
 
+    /**
+     * [execute] for coroutine callers: cancelling the caller interrupts the command (the process tree is
+     * killed), so work after a cancelled step never starts.
+     */
+    public open suspend fun run(
+        distro: String,
+        command: List<String>,
+        timeoutSeconds: Long = 10,
+        user: String? = null,
+    ): CliExecutionResult = kotlinx.coroutines.runInterruptible(kotlinx.coroutines.Dispatchers.IO) {
+        execute(distro, command, timeoutSeconds, Charsets.UTF_8, user)
+    }
+
     public open fun execute(
         distro: String,
         command: List<String>,
         timeoutSeconds: Long = 10,
         charset: Charset = Charsets.UTF_8,
-        user: String? = null
-    ): CliExecutionResult =
-        runProcess(ProcessBuilder(wslCommandLine(distro, command, user)), timeoutSeconds, charset)
+        user: String? = null,
+    ): CliExecutionResult = runProcess(ProcessBuilder(wslCommandLine(distro, command, user)), timeoutSeconds, charset)
 
     /**
      * The `wsl.exe` argv for [command]. Windows passes argv as one command line that `wsl.exe` splits
@@ -78,40 +88,34 @@ public open class WslCliExecutor {
      * space). So a command containing `"` is sent as base64 and rebuilt inside the distro, with every
      * argument single-quoted for `sh`; commands without `"` are passed unchanged.
      */
-    internal fun wslCommandLine(distro: String, command: List<String>, user: String? = null): List<String> =
-        buildList {
-            add("wsl.exe")
-            add("-d")
-            add(distro)
-            if (user != null) {
-                add("-u")
-                add(user)
-            }
-            add("-e")
-            if (command.none { '"' in it }) {
-                addAll(command)
-            } else {
-                val shellLine = command.joinToString(" ") { "'" + it.replace("'", "'\\''") + "'" }
-                val encoded = Base64.getEncoder().encodeToString(shellLine.toByteArray(Charsets.UTF_8))
-                addAll(listOf("sh", "-c", "echo $encoded | base64 -d | sh"))
-            }
+    internal fun wslCommandLine(distro: String, command: List<String>, user: String? = null): List<String> = buildList {
+        add("wsl.exe")
+        add("-d")
+        add(distro)
+        if (user != null) {
+            add("-u")
+            add(user)
         }
+        add("-e")
+        if (command.none { '"' in it }) {
+            addAll(command)
+        } else {
+            val shellLine = command.joinToString(" ") { "'" + it.replace("'", "'\\''") + "'" }
+            val encoded = Base64.getEncoder().encodeToString(shellLine.toByteArray(Charsets.UTF_8))
+            addAll(listOf("sh", "-c", "echo $encoded | base64 -d | sh"))
+        }
+    }
 
     public open fun executeHost(
         command: List<String>,
         timeoutSeconds: Long = 10,
-        charset: Charset = Charsets.UTF_8
-    ): CliExecutionResult {
-        return runProcess(ProcessBuilder(command), timeoutSeconds, charset)
-    }
+        charset: Charset = Charsets.UTF_8,
+    ): CliExecutionResult = runProcess(ProcessBuilder(command), timeoutSeconds, charset)
 
     /** Hook for tests to observe the spawned process hierarchy before completion or timeout. */
     internal var onProcessStarted: ((Process) -> Unit)? = null
 
-    data class ProcessTreeCleanupResult(
-        val isClean: Boolean,
-        val survivingPids: List<Long> = emptyList(),
-    )
+    data class ProcessTreeCleanupResult(val isClean: Boolean, val survivingPids: List<Long> = emptyList())
 
     /**
      * Forcibly terminates the process tree (parent and all its descendants).
@@ -169,11 +173,7 @@ public open class WslCliExecutor {
         )
     }
 
-    private fun runProcess(
-        pb: ProcessBuilder,
-        timeoutSeconds: Long,
-        charset: Charset
-    ): CliExecutionResult {
+    private fun runProcess(pb: ProcessBuilder, timeoutSeconds: Long, charset: Charset): CliExecutionResult {
         var process: Process? = null
         var outDrainer: BoundedStreamDrainer? = null
         var outThread: Thread? = null
@@ -185,8 +185,14 @@ public open class WslCliExecutor {
             val od = BoundedStreamDrainer(p.inputStream, charset)
             val ed = BoundedStreamDrainer(p.errorStream, charset)
             outDrainer = od
-            val ot = Thread(od, "WslCli-StdoutDrainer").apply { isDaemon = true; start() }
-            val et = Thread(ed, "WslCli-StderrDrainer").apply { isDaemon = true; start() }
+            val ot = Thread(od, "WslCli-StdoutDrainer").apply {
+                isDaemon = true
+                start()
+            }
+            val et = Thread(ed, "WslCli-StderrDrainer").apply {
+                isDaemon = true
+                start()
+            }
             outThread = ot
             errThread = et
 
@@ -200,7 +206,11 @@ public open class WslCliExecutor {
                 } else {
                     " (incomplete process tree cleanup: PID(s) ${cleanup.survivingPids} still terminating)"
                 }
-                CliExecutionResult(-1, od.getCapturedText(), "Command timed out after $timeoutSeconds seconds$cleanupNote")
+                CliExecutionResult(
+                    -1,
+                    od.getCapturedText(),
+                    "Command timed out after $timeoutSeconds seconds$cleanupNote",
+                )
             } else {
                 ot.join(STREAM_JOIN_TIMEOUT_MS)
                 et.join(STREAM_JOIN_TIMEOUT_MS)
@@ -211,14 +221,34 @@ public open class WslCliExecutor {
             outThread?.join(STREAM_JOIN_TIMEOUT_MS)
             errThread?.join(STREAM_JOIN_TIMEOUT_MS)
             Thread.currentThread().interrupt()
-            val cleanupNote = if (cleanup == null || cleanup.isClean) "" else " (incomplete process tree cleanup: PID(s) ${cleanup.survivingPids})"
-            CliExecutionResult(-1, outDrainer?.getCapturedText() ?: "", "Command execution interrupted: ${ie.message}$cleanupNote")
+            val cleanupNote = if (cleanup == null ||
+                cleanup.isClean
+            ) {
+                ""
+            } else {
+                " (incomplete process tree cleanup: PID(s) ${cleanup.survivingPids})"
+            }
+            CliExecutionResult(
+                -1,
+                outDrainer?.getCapturedText() ?: "",
+                "Command execution interrupted: ${ie.message}$cleanupNote",
+            )
         } catch (e: Exception) {
             val cleanup = process?.let { killProcessTree(it) }
             outThread?.join(STREAM_JOIN_TIMEOUT_MS)
             errThread?.join(STREAM_JOIN_TIMEOUT_MS)
-            val cleanupNote = if (cleanup == null || cleanup.isClean) "" else " (incomplete process tree cleanup: PID(s) ${cleanup.survivingPids})"
-            CliExecutionResult(-1, outDrainer?.getCapturedText() ?: "", (e.message ?: "Failed to execute command") + cleanupNote)
+            val cleanupNote = if (cleanup == null ||
+                cleanup.isClean
+            ) {
+                ""
+            } else {
+                " (incomplete process tree cleanup: PID(s) ${cleanup.survivingPids})"
+            }
+            CliExecutionResult(
+                -1,
+                outDrainer?.getCapturedText() ?: "",
+                (e.message ?: "Failed to execute command") + cleanupNote,
+            )
         }
     }
 }

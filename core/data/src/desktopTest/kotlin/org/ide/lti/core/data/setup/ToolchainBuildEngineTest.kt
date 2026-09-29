@@ -42,6 +42,7 @@ class ToolchainBuildEngineTest {
         ): CliExecutionResult {
             executedCommands.add(command)
             return when {
+                command.first() == "sha256sum" -> fakeSha256(command.getOrNull(1).orEmpty())
                 command.contains(
                     "test",
                 ) &&
@@ -265,5 +266,25 @@ class ToolchainBuildEngineTest {
             idempotencyKeys.any { it.contains("android-tools:cmake") },
             "forceRebuild must force android-tools compilation despite existing adb sentinel (FR-009)",
         )
+    }
+
+    @Test
+    fun rebuildDiscardsTheOldCmakeConfigurationAndConfiguresErofsWithClang() = runTest {
+        // The cached configuration pinned /usr/bin/llvm-ar, which no longer existed: every rebuild failed.
+        val cli = RecordingCli()
+        ToolchainBuildEngine(cli = cli).buildAndDistributeAll(
+            distro = "Ubuntu",
+            extDir = "/ext",
+            binDir = "/bin-dir",
+            targetRecipeGroups = setOf(org.ide.lti.core.domain.setup.ToolCapabilities.GROUP_EROFS_UTILS),
+            forceRebuild = true,
+        )
+
+        val discard = cli.executedCommands.indexOfFirst { it.contains("/ext/erofs-utils/out/CMakeCache.txt") }
+        val configure = cli.executedCommands.indexOfFirst { it.firstOrNull() == "cmake" }
+        assertTrue(discard in 0 until configure, "the old cache goes before configuring: ${cli.executedCommands}")
+        val cmake = cli.executedCommands[configure]
+        assertTrue("-DCMAKE_C_COMPILER=clang" in cmake && "-DCMAKE_CXX_COMPILER=clang++" in cmake, "$cmake")
+        assertTrue("-DCMAKE_BUILD_TYPE=Release" in cmake, "$cmake")
     }
 }

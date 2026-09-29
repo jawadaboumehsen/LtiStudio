@@ -65,6 +65,9 @@ public object ToolCapabilities {
     /** Exit status a C program produces from `exit(-1)` on Linux. */
     private const val EXIT_MINUS_ONE: Int = 255
 
+    /** sysexits.h EX_USAGE: what the liblp tools exit with after printing usage. */
+    private const val EXIT_USAGE: Int = 64
+
     private fun group(recipeGroup: String, vararg tools: ToolCapability): List<ToolCapability> =
         tools.map { it.copy(recipeGroup = recipeGroup) }
 
@@ -89,24 +92,28 @@ public object ToolCapabilities {
             tool("fastboot", probeArguments = listOf("--version")),
             // e2fsprogs: `--help` is an unknown option (usage, exit 1); `-V` prints the version.
             tool("mke2fs", probeArguments = listOf("-V")),
-            tool("e2fsdroid"),
-            tool("lpmake"),
-            tool("lpunpack"),
+            // Exit codes below were measured on the built binaries: printing usage is how these tools
+            // answer `--help` or no arguments, and it proves the binary runs.
+            tool("e2fsdroid", acceptedExitCodes = setOf(0, 1)),
+            // liblp tools exit 64 (EX_USAGE) after usage; lpdump answers --help with 0.
+            tool("lpmake", acceptedExitCodes = setOf(0, EXIT_USAGE)),
+            tool("lpunpack", acceptedExitCodes = setOf(0, EXIT_USAGE)),
             tool("lpdump"),
-            tool("lpadd"),
-            tool("lpflash"),
-            // libsparse tools have no help flag: without arguments they print usage and exit(-1).
-            tool("simg2img", probeArguments = emptyList(), acceptedExitCodes = setOf(EXIT_MINUS_ONE)),
-            tool("img2simg", probeArguments = emptyList(), acceptedExitCodes = setOf(EXIT_MINUS_ONE)),
-            tool("ext2simg"),
-            tool("append2simg"),
+            tool("lpadd", acceptedExitCodes = setOf(0, EXIT_USAGE)),
+            tool("lpflash", acceptedExitCodes = setOf(0, EXIT_USAGE)),
+            // libsparse tools have no help flag: without arguments they print usage and exit 1 (older
+            // builds exit(-1), i.e. 255).
+            tool("simg2img", probeArguments = emptyList(), acceptedExitCodes = setOf(1, EXIT_MINUS_ONE)),
+            tool("img2simg", probeArguments = emptyList(), acceptedExitCodes = setOf(1, EXIT_MINUS_ONE)),
+            tool("ext2simg", acceptedExitCodes = setOf(0, 1)),
+            tool("append2simg", acceptedExitCodes = setOf(0, 1)),
             tool("mkbootimg"),
             tool("unpack_bootimg"),
             tool("repack_bootimg"),
             tool("mkbootfs"),
             tool("mkdtboimg"),
             tool("avbtool"),
-            tool("fec"),
+            tool("fec", acceptedExitCodes = setOf(0, 1)),
             tool("mkuserimg_mke2fs"),
             // f2fs-tools and the SDK build tools come out of the same android-tools build (vendor/).
             // f2fs-tools: `--help` is an unknown option (exit 1); `-V` prints the version.
@@ -122,7 +129,8 @@ public object ToolCapabilities {
             tool("mkfs.erofs"),
             tool("dump.erofs"),
             tool("fsck.erofs"),
-            tool("erofsfuse"),
+            // FUSE prints its option help and exits 1.
+            tool("erofsfuse", acceptedExitCodes = setOf(0, 1)),
         ) + group(
             GROUP_IMG2SDAT,
             tool("img2sdat"),
@@ -131,7 +139,8 @@ public object ToolCapabilities {
             tool("apktool", probeArguments = listOf("--version")),
         ) + group(
             GROUP_SIGNAPK,
-            tool("signapk"),
+            // signapk-all.jar prints usage for --help and exits 2.
+            tool("signapk", acceptedExitCodes = setOf(0, 2)),
         ) + group(
             GROUP_PAYLOAD_DUMPER_GO,
             tool("payload-dumper-go"),
