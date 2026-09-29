@@ -20,7 +20,7 @@ class RemoteProtocolTest {
             {
                 "seq": 42,
                 "event": {
-                    "type": "io.ltirom.tooling.core.remote.StreamEvent.OutputChunk",
+                    "type": "io.ltirom.server.model.StreamEvent.OutputChunk",
                     "text": "build succeeded\n",
                     "isError": false
                 }

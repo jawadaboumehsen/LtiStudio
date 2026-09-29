@@ -472,21 +472,23 @@ public class KtorRemoteTransportAdapter(
 
                         if (frame is Frame.Text) {
                             val text = frame.readText()
+                            // An event this client cannot read is a protocol mismatch; dropping it would lose
+                            // the run's output (and its errors) without a trace.
                             val seqEvent = runCatching {
                                 json.decodeFromString<SequencedStreamEvent>(text)
-                            }.getOrNull()
+                            }.getOrElse {
+                                throw ToolingException("Unreadable event from run '$runId': ${it.message}")
+                            }
 
-                            if (seqEvent != null) {
-                                if (seqEvent.seq == 0L || seqEvent.event is StreamEvent.Heartbeat) {
-                                    deliver(seqEvent)
-                                } else if (seqEvent.seq > lastSeq) {
-                                    deliver(seqEvent)
-                                    lastSeq = seqEvent.seq
-                                    failuresWithoutProgress = 0
-                                    if (seqEvent.event is StreamEvent.ExecutionFinished) {
-                                        finished = true
-                                        break
-                                    }
+                            if (seqEvent.seq == 0L || seqEvent.event is StreamEvent.Heartbeat) {
+                                deliver(seqEvent)
+                            } else if (seqEvent.seq > lastSeq) {
+                                deliver(seqEvent)
+                                lastSeq = seqEvent.seq
+                                failuresWithoutProgress = 0
+                                if (seqEvent.event is StreamEvent.ExecutionFinished) {
+                                    finished = true
+                                    break
                                 }
                             }
                         }

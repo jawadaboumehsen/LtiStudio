@@ -1,5 +1,6 @@
 package io.ltirom.tooling.core.remote
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -22,15 +23,22 @@ public data class ToolExecutionResponse(
     val durationMs: Long
 )
 
+/**
+ * Events of a run's stream. The `@SerialName`s are the wire contract: they are the type names the build service
+ * writes (and has persisted in its run journals), so they must not follow this package.
+ */
 @Serializable
 public sealed class StreamEvent {
     @Serializable
+    @SerialName("io.ltirom.server.model.StreamEvent.OutputChunk")
     public data class OutputChunk(val text: String, val isError: Boolean = false) : StreamEvent()
 
     @Serializable
+    @SerialName("io.ltirom.server.model.StreamEvent.ProgressUpdate")
     public data class ProgressUpdate(val fraction: Float, val message: String? = null) : StreamEvent()
 
     @Serializable
+    @SerialName("io.ltirom.server.model.StreamEvent.ExecutionFinished")
     public data class ExecutionFinished(
         val exitCode: Int,
         val durationMs: Long,
@@ -38,6 +46,7 @@ public sealed class StreamEvent {
     ) : StreamEvent()
 
     @Serializable
+    @SerialName("io.ltirom.server.model.StreamEvent.Heartbeat")
     public data class Heartbeat(val timestampEpochMs: Long) : StreamEvent()
 }
 
