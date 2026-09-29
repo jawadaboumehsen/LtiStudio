@@ -143,19 +143,20 @@ class ToolchainBuildEngineTest {
             "erofs-utils make runs under attempt identity",
         )
         assertTrue(idempotencyKeys.none { it.startsWith("setup:") }, "No static idempotency keys remain")
+        // android-tools and erofs-utils cmake + make, plus the apktool and signapk Gradle builds.
         assertEquals(
-            4,
+            6,
             repo.currentState.activeAttempt?.orderedIntents?.size,
             "Every server command is a journaled child",
         )
         assertEquals(
-            4,
+            6,
             repo.currentState.activeAttempt?.terminalProofs?.size,
             "Every child has authoritative terminal proof",
         )
 
         // Assert attachRun was invoked for each long step
-        assertEquals(4, transport.attachedRunIds.size)
+        assertEquals(6, transport.attachedRunIds.size, "cmake + make for two groups, plus two Gradle builds")
 
         // Assert NO command on cli or transport contains bash, -c, or &&
         for (cmd in cli.executedCommands) {

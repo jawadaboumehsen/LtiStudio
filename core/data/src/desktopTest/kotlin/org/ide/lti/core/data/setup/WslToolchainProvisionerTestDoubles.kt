@@ -100,6 +100,7 @@ internal class FakeRemoteTransport(
         return healthInfo
     }
 
+    @Suppress("CyclomaticComplexMethod") // one branch per faked command
     override suspend fun execute(request: ToolExecutionRequest): ToolExecutionResponse {
         if (fakeCli != null) {
             val fullCmd = listOf(request.toolId) + request.arguments
@@ -130,6 +131,10 @@ internal class FakeRemoteTransport(
                 ToolExecutionResponse(0, output, "", 10L)
             }
             request.toolId == "test" -> ToolExecutionResponse(0, "", "", 10L)
+            request.toolId == "git" && fakeGitRevParse(listOf("git") + request.arguments) != null ->
+                fakeGitRevParse(listOf("git") + request.arguments)!!.let {
+                    ToolExecutionResponse(it.exitCode, it.output, it.error, 2L)
+                }
             request.toolId == "sha256sum" -> fakeSha256(request.arguments.firstOrNull().orEmpty()).let {
                 ToolExecutionResponse(it.exitCode, it.output, it.error, 2L)
             }
@@ -365,6 +370,7 @@ internal class FakeWslCliExecutor : WslCliExecutor() {
             }
         }
         if (command.firstOrNull() == "sha256sum") return fakeSha256(command.getOrNull(1).orEmpty())
+        fakeGitRevParse(command)?.let { return it }
         if (cmdStr.contains("mkfs.erofs")) {
             return CliExecutionResult(0, "mkfs.erofs 1.7.1\noptions: --fs-config-file -C -T", "")
         }
@@ -394,4 +400,21 @@ internal fun fakeSha256(path: String): CliExecutionResult {
     } else {
         CliExecutionResult(1, "", "sha256sum: $path: No such file or directory")
     }
+}
+
+/**
+ * `git -C <dir> rev-parse ...` on a correctly synced fake machine: every source repository is its own clone
+ * at its pinned commit. Null for any other git command.
+ */
+@Suppress("ReturnCount") // not git rev-parse / no -C dir / not a source repo / answer
+internal fun fakeGitRevParse(command: List<String>): CliExecutionResult? {
+    if (command.firstOrNull() != "git" || "rev-parse" !in command) return null
+    val dir = command.getOrNull(command.indexOf("-C") + 1)?.trimEnd('/') ?: return null
+    val pin = WslToolchainProvisioner.SUBMODULES.firstOrNull { dir.endsWith("/${it.name}") }?.commit
+        ?: return CliExecutionResult(128, "", "fatal: not a git repository")
+    val out = buildList {
+        if ("--show-toplevel" in command) add(dir)
+        if ("HEAD" in command) add(pin)
+    }
+    return CliExecutionResult(0, out.joinToString("\n"), "")
 }

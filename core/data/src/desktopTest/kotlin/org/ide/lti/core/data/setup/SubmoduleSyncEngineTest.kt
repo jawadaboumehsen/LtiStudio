@@ -126,7 +126,9 @@ class SubmoduleSyncEngineTest {
         assertTrue(result.isSuccess)
 
         // Assert startRun called with attempt-scoped idempotency key (never a static one)
-        assertEquals(1, transport.startedRuns.size)
+        // The clone, then the nested-submodule update: both durable runs under the attempt's identity.
+        assertEquals(2, transport.startedRuns.size)
+        assertEquals("Ubuntu:att-xyz:submodule:test-sub:submodules", transport.startedRuns[1].idempotencyKey)
         val req = transport.startedRuns.first()
         assertEquals("Ubuntu:att-xyz:submodule:test-sub", req.idempotencyKey)
         assertEquals("git", req.request.toolId)
@@ -231,7 +233,7 @@ class SubmoduleSyncEngineTest {
         assertTrue(result.isSuccess)
 
         // "Persist child intent before startRun": the exact request was journaled, without a runId, before submission.
-        val atStart = observedAtStart.single()
+        val atStart = observedAtStart.first() // the clone
         assertEquals("submodule:test-sub", atStart?.actionId)
         assertEquals("git", atStart?.request?.toolId)
         assertEquals(
@@ -240,9 +242,9 @@ class SubmoduleSyncEngineTest {
         )
         assertNull(atStart?.runId)
         // "Persist runId before acknowledging attachment"
-        assertEquals("run-order-1", observedAtAttach.single()?.runId)
+        assertEquals("run-order-1", observedAtAttach.first()?.runId)
 
-        val intent = repo.currentState.activeAttempt?.orderedIntents?.single()
+        val intent = repo.currentState.activeAttempt?.orderedIntents?.first()
         assertEquals(3L, intent?.lastSeq, "Cursor advanced to the last committed sequence")
         assertEquals(
             listOf("line one"),
@@ -250,7 +252,7 @@ class SubmoduleSyncEngineTest {
             "Only output lines are replay evidence; heartbeats add none",
         )
         assertEquals("COMPLETED", intent?.terminalStatus)
-        assertEquals("run-order-1", repo.currentState.activeAttempt?.terminalProofs?.single()?.runId)
+        assertEquals("run-order-1", repo.currentState.activeAttempt?.terminalProofs?.first()?.runId)
     }
 
     @Test

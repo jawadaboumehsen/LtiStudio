@@ -133,6 +133,10 @@ class EnvironmentVerificationTest {
                     ToolExecutionResponse(0, subs.joinToString("\n"), "", 5L)
                 }
                 request.toolId == "test" -> ToolExecutionResponse(0, "", "", 2L)
+                request.toolId == "git" && fakeGitRevParse(listOf("git") + request.arguments) != null ->
+                    fakeGitRevParse(listOf("git") + request.arguments)!!.let {
+                        ToolExecutionResponse(it.exitCode, it.output, it.error, 1L)
+                    }
                 request.toolId == "sha256sum" -> fakeSha256(request.arguments.firstOrNull().orEmpty()).let {
                     ToolExecutionResponse(it.exitCode, it.output, it.error, 1L)
                 }

@@ -35,7 +35,7 @@ class SetupLogBufferTest {
                     childRunId = "run-1",
                     sequence = i.toLong(),
                     text = "Log entry $i",
-                )
+                ),
             )
         }
 
@@ -68,7 +68,7 @@ class SetupLogBufferTest {
                     childRunId = "run-1",
                     sequence = i.toLong(),
                     text = "Line $i: $line15k",
-                )
+                ),
             )
         }
 
@@ -191,7 +191,7 @@ class SetupLogBufferTest {
                     childRunId = "run-1",
                     sequence = i.toLong(),
                     text = "Event line $i",
-                )
+                ),
             )
         }
 

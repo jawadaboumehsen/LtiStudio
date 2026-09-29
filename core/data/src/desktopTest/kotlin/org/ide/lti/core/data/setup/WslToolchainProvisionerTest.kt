@@ -253,11 +253,8 @@ class WslToolchainProvisionerTest {
         val outcome = provisioner.confirm(plan.planId, plan.revisionHash)
         assertTrue(outcome is SetupOutcome.Succeeded, "$outcome")
         assertTrue(fakeCli.existingPaths.contains("/home/lti/LtiRomWorkDir"))
-        assertTrue(
-            provisioner.state.value.logs.any {
-                it.contains("Ensuring workspace root directory exists at /home/lti/LtiRomWorkDir")
-            },
-        )
+        // The command itself, not the narration: the short in-state log tail rolls over on a full setup.
+        assertTrue(fakeCli.commandLog.any { it.endsWith("mkdir -p /home/lti/LtiRomWorkDir") }, "${fakeCli.commandLog}")
     }
 
     @Test

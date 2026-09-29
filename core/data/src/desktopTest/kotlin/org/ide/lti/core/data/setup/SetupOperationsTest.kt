@@ -1,15 +1,5 @@
 package org.ide.lti.core.data.setup
 
-import java.util.Collections
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.CyclicBarrier
-import java.util.concurrent.Executors
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
-import kotlin.test.assertFalse
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.delay
@@ -21,6 +11,16 @@ import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepProvenance
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolchainSetupState
+import java.util.Collections
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.CyclicBarrier
+import java.util.concurrent.Executors
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class SetupOperationsTest {
 
@@ -33,9 +33,9 @@ class SetupOperationsTest {
                     title = "WSL",
                     description = "WSL",
                     status = StepStatus.SUCCESS,
-                    provenance = StepProvenance.RESTORED
-                )
-            )
+                    provenance = StepProvenance.RESTORED,
+                ),
+            ),
         )
         assertFalse(state.isAllReady, "Restored results should not establish live readiness")
 
@@ -46,9 +46,9 @@ class SetupOperationsTest {
                     title = "WSL",
                     description = "WSL",
                     status = StepStatus.SUCCESS,
-                    provenance = StepProvenance.LIVE
-                )
-            )
+                    provenance = StepProvenance.LIVE,
+                ),
+            ),
         )
         assertTrue(liveState.isAllReady, "Live success should establish readiness")
     }
@@ -233,4 +233,3 @@ class SetupOperationsTest {
         }
     }
 }
-

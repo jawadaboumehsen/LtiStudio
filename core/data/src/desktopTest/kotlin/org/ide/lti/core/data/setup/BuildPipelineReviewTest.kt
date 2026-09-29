@@ -233,7 +233,10 @@ class BuildPipelineReviewTest {
     @Test
     fun `an existing jar is kept, a rebuild always runs Gradle`() = runTest {
         val cli = Distro()
-        val engine = ToolchainBuildEngine(cli = cli)
+        // Built earlier from the current sources (a sync would clear this record).
+        val repository = inMemoryToolchainRepository()
+        repository.updateTool("apktool") { it.copy(isCompiled = true) }
+        val engine = ToolchainBuildEngine(cli = cli, repository = repository)
         val apktool = setOf(ToolCapabilities.GROUP_APKTOOL)
 
         engine.buildAndDistributeAll("Ubuntu", ext, bin, targetRecipeGroups = apktool)

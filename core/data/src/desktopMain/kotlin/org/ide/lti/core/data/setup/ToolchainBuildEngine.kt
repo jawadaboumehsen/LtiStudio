@@ -494,7 +494,9 @@ public class ToolchainBuildEngine(
         binDir: String,
         forceRebuild: Boolean,
     ): String? {
-        if (!forceRebuild && groupComplete(distro, binDir, ToolCapabilities.GROUP_IMG2SDAT)) return null
+        if (!forceRebuild && isRecorded("img2sdat") && groupComplete(distro, binDir, ToolCapabilities.GROUP_IMG2SDAT)) {
+            return null
+        }
         val src = "$extDir/img2sdat"
         if (!commands.exists(distro, "$src/img2sdat", "-f")) return "img2sdat sources are missing in $src"
         val failure = commands.firstFailure(
@@ -546,7 +548,8 @@ public class ToolchainBuildEngine(
     private suspend fun buildAndInstallJar(req: AuxiliaryRequest, jar: GradleJar): String? {
         val projectDir = "${req.extDir}/${jar.project}"
         val output = "$projectDir/${jar.output}"
-        if (req.forceRebuild || !commands.exists(req.distro, output, "-f")) {
+        // Built when missing, on a rebuild, or when its sources changed since (sync clears the record).
+        if (req.forceRebuild || !isRecorded(jar.tool) || !commands.exists(req.distro, output, "-f")) {
             if (!commands.exists(req.distro, "$projectDir/gradlew", "-f")) {
                 return "${jar.tool} sources are missing ($projectDir/gradlew); sync the source repositories first"
             }

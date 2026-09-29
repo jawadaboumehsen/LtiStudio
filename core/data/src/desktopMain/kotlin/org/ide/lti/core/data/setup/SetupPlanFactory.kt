@@ -154,8 +154,12 @@ public object SetupPlanFactory {
         val stage = SetupStepStage.entries.firstOrNull { it.name == targetId } ?: return emptyList()
         return when (stage) {
             SetupStepStage.SYSTEM_DIAGNOSTICS -> listOfNotNull(remediationAction(snapshot, autoDoctorEnabled))
+            // Synced sources are only useful built and registered: tools compiled from other sources are
+            // stale, so a source retry rebuilds (changed groups only; the rest are skipped) and publishes.
             SetupStepStage.REPO_SYNCHRONIZATION -> listOf(
                 SetupPlanAction.SyncSources(WslToolchainProvisioner.SUBMODULES.map { it.name }),
+                SetupPlanAction.BuildRecipes(WslToolchainProvisioner.SUBMODULES.map { it.name }),
+                SetupPlanAction.PublishTools(ToolCatalog.ALL_TOOL_IDS.toList()),
             )
             SetupStepStage.TOOLCHAIN_COMPILATION -> buildList {
                 val unbuilt = snapshot.toolsMatrix.filter { it.status != StepStatus.SUCCESS }.map { it.id }

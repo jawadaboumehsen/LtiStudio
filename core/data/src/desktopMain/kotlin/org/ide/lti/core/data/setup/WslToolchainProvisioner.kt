@@ -221,7 +221,7 @@ public class WslToolchainProvisioner(
             PinnedSubmodule(
                 "android-tools",
                 "https://github.com/UN1CA/external_android-tools.git",
-                "2c5e1b7c192f30ec3d50ec5f983618bb87b9895c",
+                "f9bef94306f93be88b0cf98f9eeb0e24fc7b6aa8",
             ),
             PinnedSubmodule(
                 "apktool",
@@ -230,8 +230,8 @@ public class WslToolchainProvisioner(
             ),
             PinnedSubmodule(
                 "erofs-utils",
-                "https://github.com/sekaiacg/erofs-utils.git",
-                "24ebe947b889fabcd72f802e4f184b0f807a0e0e",
+                "https://github.com/sekaiacg/erofs-tools.git",
+                "7274417816e3adfe0cd6d4a8ff194ec5f41268f4",
             ),
             PinnedSubmodule(
                 "img2sdat",
@@ -758,13 +758,53 @@ public class WslToolchainProvisioner(
         )
         val workDirExists = testWorkDir.exitCode == 0
         val missingSubs = SUBMODULES.filter { it.name !in subdirs }
-        val repoStatus = if (missingSubs.isEmpty() && workDirExists) StepStatus.SUCCESS else StepStatus.PENDING
-        val repoDesc = if (missingSubs.isEmpty() && workDirExists) {
-            "${SUBMODULES.size} submodules · ~/LtiRomWorkDir"
-        } else if (!workDirExists) {
-            "Workspace directory $workDir not created yet."
-        } else {
-            "${missingSubs.size} submodule(s) missing in $extDir."
+        // Present is not enough: each must be its own clone at its pinned commit (an imported folder inside a
+        // larger repository, or another commit, builds something nobody pinned).
+        val notAtPin = SUBMODULES.filter { it.name in subdirs }.filterNot { sub ->
+            val dir = "$extDir/${sub.name}"
+            val res = transport.execute(
+                ToolExecutionRequest(
+                    toolId = "git",
+                    arguments = listOf("-C", dir, "rev-parse", "--show-toplevel", "HEAD"),
+                    workingDirectory = "/",
+                ),
+            )
+            val lines = res.stdout.lines().map { it.trim() }
+            res.exitCode == 0 &&
+                lines.getOrNull(0)?.trimEnd('/') == dir.trimEnd('/') &&
+                lines.getOrNull(1) == sub.commit
+        }
+        val repoStatus = when {
+            notAtPin.isNotEmpty() -> StepStatus.FAILED
+            missingSubs.isEmpty() && workDirExists -> StepStatus.SUCCESS
+            else -> StepStatus.PENDING
+        }
+        val repoDesc = when {
+            notAtPin.isNotEmpty() -> {
+                val subject = if (notAtPin.size ==
+                    1
+                ) {
+                    "1 source repository is"
+                } else {
+                    "${notAtPin.size} source repositories are"
+                }
+                "$subject not at the pinned commit: ${notAtPin.joinToString { it.name }}"
+            }
+            missingSubs.isEmpty() && workDirExists -> "${SUBMODULES.size} submodules · ~/LtiRomWorkDir"
+            !workDirExists -> "Workspace directory $workDir not created yet."
+            else -> "${missingSubs.size} submodule(s) missing in $extDir."
+        }
+        if (notAtPin.isNotEmpty()) {
+            setStepStatus(
+                SetupStepStage.REPO_SYNCHRONIZATION,
+                repoStatus,
+                desc = repoDesc,
+                error =
+                notAtPin.joinToString("\n") { "${it.name}: expected its own clone of ${it.url} at ${it.commit}" } +
+                    "\nRetry syncs them: a folder that is not its own clone is moved aside (not deleted) " +
+                    "and cloned fresh.",
+            )
+            return
         }
         setStepStatus(SetupStepStage.REPO_SYNCHRONIZATION, repoStatus, desc = repoDesc)
     }
