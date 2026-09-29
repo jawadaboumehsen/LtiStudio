@@ -2,6 +2,9 @@ package io.ltirom.tooling.client.transport
 
 import io.ktor.client.*
 import io.ktor.client.call.*
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.pluginOrNull
+import io.ktor.client.plugins.timeout
 import io.ktor.client.plugins.websocket.*
 import io.ktor.client.request.*
 import io.ktor.http.*
@@ -29,14 +32,20 @@ import kotlinx.serialization.json.Json
 public class KtorRemoteTransportAdapter(
     private val supervisor: DaemonSupervisorPort,
     private val httpClient: HttpClient,
-    private val json: Json = Json { ignoreUnknownKeys = true; encodeDefaults = true },
-    public val circuitBreaker: CircuitBreaker = CircuitBreaker()
+    private val json: Json = Json {
+        ignoreUnknownKeys = true
+        encodeDefaults = true
+    },
+    public val circuitBreaker: CircuitBreaker = CircuitBreaker(),
 ) : RemoteTransportPort {
 
     public companion object {
         public const val PROTOCOL_VERSION: String = "1.2.0"
         public const val HEADER_PROTOCOL_VERSION: String = "X-LtiRom-Protocol-Version"
         public const val DEFAULT_HEARTBEAT_TIMEOUT_MS: Long = 45_000L
+
+        /** Time on top of a command's own timeout for the service to finish and answer. */
+        private const val EXECUTE_RESPONSE_MARGIN_MS: Long = 30_000L
         private const val MAX_RECONNECTS_WITHOUT_PROGRESS = 10
 
         /** Close reason the service sends when a run's stream has ended. */
@@ -54,27 +63,29 @@ public class KtorRemoteTransportAdapter(
     private suspend fun connectionFor(runId: String): ServerConnectionDescriptor =
         runOwners[runId] ?: supervisor.ensureStarted()
 
-    override suspend fun execute(request: ToolExecutionRequest): ToolExecutionResponse {
-        return circuitBreaker.execute {
-            val conn = supervisor.ensureStarted()
-            val trace = TraceContext.create()
-            try {
-                httpClient.post("${conn.httpBaseUrl}/api/v1/tools/execute") {
-                    header(HttpHeaders.Authorization, "Bearer ${conn.token}")
-                    header(TraceContext.HEADER_TRACE_ID, trace.traceId)
-                    header(TraceContext.HEADER_SPAN_ID, trace.spanId)
-                    header(HEADER_PROTOCOL_VERSION, PROTOCOL_VERSION)
-                    contentType(ContentType.Application.Json)
-                    setBody(request)
-                }.body()
-            } catch (ce: CancellationException) {
-                throw ce
-            } catch (e: Exception) {
-                throw ToolingException(
-                    "Failed to execute command on remote daemon at ${conn.httpBaseUrl} [trace=${trace.traceId}]: ${e.message}",
-                    e
-                )
-            }
+    override suspend fun execute(request: ToolExecutionRequest): ToolExecutionResponse = circuitBreaker.execute {
+        val conn = supervisor.ensureStarted()
+        val trace = TraceContext.create()
+        try {
+            httpClient.post("${conn.httpBaseUrl}/api/v1/tools/execute") {
+                // The command may run for its whole timeoutMs; the request must outlive it.
+                if (httpClient.pluginOrNull(HttpTimeout) != null) {
+                    timeout { requestTimeoutMillis = request.timeoutMs + EXECUTE_RESPONSE_MARGIN_MS }
+                }
+                header(HttpHeaders.Authorization, "Bearer ${conn.token}")
+                header(TraceContext.HEADER_TRACE_ID, trace.traceId)
+                header(TraceContext.HEADER_SPAN_ID, trace.spanId)
+                header(HEADER_PROTOCOL_VERSION, PROTOCOL_VERSION)
+                contentType(ContentType.Application.Json)
+                setBody(request)
+            }.body()
+        } catch (ce: CancellationException) {
+            throw ce
+        } catch (e: Exception) {
+            throw ToolingException(
+                "Failed to execute command on remote daemon at ${conn.httpBaseUrl} [trace=${trace.traceId}]: ${e.message}",
+                e,
+            )
         }
     }
 
@@ -86,7 +97,7 @@ public class KtorRemoteTransportAdapter(
 
         try {
             httpClient.webSocket(
-                urlString = "${conn.wsBaseUrl}/api/v1/tools/stream?token=${conn.token}&traceId=${trace.traceId}"
+                urlString = "${conn.wsBaseUrl}/api/v1/tools/stream?token=${conn.token}&traceId=${trace.traceId}",
             ) {
                 send(Frame.Text(requestJson))
                 for (frame in incoming) {
@@ -121,7 +132,7 @@ public class KtorRemoteTransportAdapter(
 
         try {
             httpClient.webSocket(
-                urlString = "${conn.wsBaseUrl}/api/v1/tools/stream?token=${conn.token}&traceId=${trace.traceId}&sequenced=true"
+                urlString = "${conn.wsBaseUrl}/api/v1/tools/stream?token=${conn.token}&traceId=${trace.traceId}&sequenced=true",
             ) {
                 send(Frame.Text(requestJson))
                 for (frame in incoming) {
@@ -157,7 +168,9 @@ public class KtorRemoteTransportAdapter(
             }
             if (response.status.isSuccess()) {
                 response.body<WslServerInfo>()
-            } else null
+            } else {
+                null
+            }
         } catch (ce: CancellationException) {
             throw ce
         } catch (_: Exception) {
@@ -244,14 +257,14 @@ public class KtorRemoteTransportAdapter(
         }
     }
 
-    override suspend fun shutdown(): Boolean {
-        return supervisor.shutdownDaemon()
-    }
+    override suspend fun shutdown(): Boolean = supervisor.shutdownDaemon()
 
     override suspend fun cancel(executionId: String, signal: String): Boolean {
         val conn = supervisor.getConnectionInfo() ?: return false
         return try {
-            val response = httpClient.post("${conn.httpBaseUrl}/api/v1/tools/execute/$executionId/cancel?signal=$signal") {
+            val response = httpClient.post(
+                "${conn.httpBaseUrl}/api/v1/tools/execute/$executionId/cancel?signal=$signal",
+            ) {
                 header(HttpHeaders.Authorization, "Bearer ${conn.token}")
             }
             response.status.isSuccess()
@@ -272,7 +285,9 @@ public class KtorRemoteTransportAdapter(
             }
             if (response.status.isSuccess()) {
                 response.body<List<SessionSummary>>()
-            } else emptyList()
+            } else {
+                emptyList()
+            }
         } catch (ce: CancellationException) {
             throw ce
         } catch (_: Exception) {
@@ -290,7 +305,9 @@ public class KtorRemoteTransportAdapter(
             }
             if (response.status.isSuccess()) {
                 response.body<SessionSummary>()
-            } else null
+            } else {
+                null
+            }
         } catch (ce: CancellationException) {
             throw ce
         } catch (_: Exception) {
@@ -308,7 +325,9 @@ public class KtorRemoteTransportAdapter(
             }
             if (response.status.isSuccess()) {
                 response.body<List<SequencedStreamEvent>>()
-            } else emptyList()
+            } else {
+                emptyList()
+            }
         } catch (ce: CancellationException) {
             throw ce
         } catch (_: Exception) {
@@ -316,86 +335,81 @@ public class KtorRemoteTransportAdapter(
         }
     }
 
-    override suspend fun startRun(request: StartRunRequest): RunHandle {
-        return circuitBreaker.execute {
-            val conn = supervisor.ensureStarted()
-            val trace = TraceContext.create()
-            val response = httpClient.post("${conn.httpBaseUrl}/api/v1/runs") {
-                header(HttpHeaders.Authorization, "Bearer ${conn.token}")
-                header(TraceContext.HEADER_TRACE_ID, trace.traceId)
-                header(TraceContext.HEADER_SPAN_ID, trace.spanId)
-                header(HEADER_PROTOCOL_VERSION, PROTOCOL_VERSION)
-                contentType(ContentType.Application.Json)
-                setBody(request)
+    override suspend fun startRun(request: StartRunRequest): RunHandle = circuitBreaker.execute {
+        val conn = supervisor.ensureStarted()
+        val trace = TraceContext.create()
+        val response = httpClient.post("${conn.httpBaseUrl}/api/v1/runs") {
+            header(HttpHeaders.Authorization, "Bearer ${conn.token}")
+            header(TraceContext.HEADER_TRACE_ID, trace.traceId)
+            header(TraceContext.HEADER_SPAN_ID, trace.spanId)
+            header(HEADER_PROTOCOL_VERSION, PROTOCOL_VERSION)
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }
+        when (response.status) {
+            HttpStatusCode.Created, HttpStatusCode.OK -> response.body<RunHandle>().also {
+                runOwners[it.runId] =
+                    conn
             }
-            when (response.status) {
-                HttpStatusCode.Created, HttpStatusCode.OK -> response.body<RunHandle>().also { runOwners[it.runId] = conn }
-                HttpStatusCode.Conflict -> {
-                    val conflict = runCatching { response.body<RunConflict>() }.getOrNull()
-                    throw ToolingException("Run conflict: workspace locked by active run ${conflict?.existingRunId}")
-                }
-                HttpStatusCode.UnprocessableEntity -> {
-                    val err = runCatching { response.body<InvalidWorkingDirectory>() }.getOrNull()
-                    throw ToolingException("Invalid working directory: ${err?.path} (${err?.reason})")
-                }
-                else -> throw ToolingException("Failed to start run: status=${response.status}")
+            HttpStatusCode.Conflict -> {
+                val conflict = runCatching { response.body<RunConflict>() }.getOrNull()
+                throw ToolingException("Run conflict: workspace locked by active run ${conflict?.existingRunId}")
             }
+            HttpStatusCode.UnprocessableEntity -> {
+                val err = runCatching { response.body<InvalidWorkingDirectory>() }.getOrNull()
+                throw ToolingException("Invalid working directory: ${err?.path} (${err?.reason})")
+            }
+            else -> throw ToolingException("Failed to start run: status=${response.status}")
         }
     }
 
-    override suspend fun getRun(runId: String): RunStatus? {
-        return circuitBreaker.execute {
-            val conn = connectionFor(runId)
-            val trace = TraceContext.create()
-            val response = httpClient.get("${conn.httpBaseUrl}/api/v1/runs/$runId") {
-                header(HttpHeaders.Authorization, "Bearer ${conn.token}")
-                header(TraceContext.HEADER_TRACE_ID, trace.traceId)
-                header(TraceContext.HEADER_SPAN_ID, trace.spanId)
-                header(HEADER_PROTOCOL_VERSION, PROTOCOL_VERSION)
-            }
-            if (response.status == HttpStatusCode.NotFound) {
-                null
-            } else {
-                response.body<RunStatus>()
-            }
+    override suspend fun getRun(runId: String): RunStatus? = circuitBreaker.execute {
+        val conn = connectionFor(runId)
+        val trace = TraceContext.create()
+        val response = httpClient.get("${conn.httpBaseUrl}/api/v1/runs/$runId") {
+            header(HttpHeaders.Authorization, "Bearer ${conn.token}")
+            header(TraceContext.HEADER_TRACE_ID, trace.traceId)
+            header(TraceContext.HEADER_SPAN_ID, trace.spanId)
+            header(HEADER_PROTOCOL_VERSION, PROTOCOL_VERSION)
+        }
+        if (response.status == HttpStatusCode.NotFound) {
+            null
+        } else {
+            response.body<RunStatus>()
         }
     }
 
-    override suspend fun listRuns(workspaceLock: String?): List<RunStatus> {
-        return circuitBreaker.execute {
-            val conn = supervisor.ensureStarted()
-            val trace = TraceContext.create()
-            val url = buildString {
-                append("${conn.httpBaseUrl}/api/v1/runs")
-                if (workspaceLock != null) {
-                    append("?workspaceLock=")
-                    append(workspaceLock.encodeURLParameter())
-                }
+    override suspend fun listRuns(workspaceLock: String?): List<RunStatus> = circuitBreaker.execute {
+        val conn = supervisor.ensureStarted()
+        val trace = TraceContext.create()
+        val url = buildString {
+            append("${conn.httpBaseUrl}/api/v1/runs")
+            if (workspaceLock != null) {
+                append("?workspaceLock=")
+                append(workspaceLock.encodeURLParameter())
             }
-            httpClient.get(url) {
-                header(HttpHeaders.Authorization, "Bearer ${conn.token}")
-                header(TraceContext.HEADER_TRACE_ID, trace.traceId)
-                header(TraceContext.HEADER_SPAN_ID, trace.spanId)
-                header(HEADER_PROTOCOL_VERSION, PROTOCOL_VERSION)
-            }.body()
         }
+        httpClient.get(url) {
+            header(HttpHeaders.Authorization, "Bearer ${conn.token}")
+            header(TraceContext.HEADER_TRACE_ID, trace.traceId)
+            header(TraceContext.HEADER_SPAN_ID, trace.spanId)
+            header(HEADER_PROTOCOL_VERSION, PROTOCOL_VERSION)
+        }.body()
     }
 
-    override suspend fun cancelRun(runId: String, signal: String): RunCancelResponse? {
-        return circuitBreaker.execute {
-            val conn = connectionFor(runId)
-            val trace = TraceContext.create()
-            val response = httpClient.post("${conn.httpBaseUrl}/api/v1/runs/$runId/cancel?signal=$signal") {
-                header(HttpHeaders.Authorization, "Bearer ${conn.token}")
-                header(TraceContext.HEADER_TRACE_ID, trace.traceId)
-                header(TraceContext.HEADER_SPAN_ID, trace.spanId)
-                header(HEADER_PROTOCOL_VERSION, PROTOCOL_VERSION)
-            }
-            if (response.status == HttpStatusCode.NotFound) {
-                null
-            } else {
-                response.body<RunCancelResponse>()
-            }
+    override suspend fun cancelRun(runId: String, signal: String): RunCancelResponse? = circuitBreaker.execute {
+        val conn = connectionFor(runId)
+        val trace = TraceContext.create()
+        val response = httpClient.post("${conn.httpBaseUrl}/api/v1/runs/$runId/cancel?signal=$signal") {
+            header(HttpHeaders.Authorization, "Bearer ${conn.token}")
+            header(TraceContext.HEADER_TRACE_ID, trace.traceId)
+            header(TraceContext.HEADER_SPAN_ID, trace.spanId)
+            header(HEADER_PROTOCOL_VERSION, PROTOCOL_VERSION)
+        }
+        if (response.status == HttpStatusCode.NotFound) {
+            null
+        } else {
+            response.body<RunCancelResponse>()
         }
     }
 
@@ -411,7 +425,7 @@ public class KtorRemoteTransportAdapter(
     public fun attachRun(
         runId: String,
         fromSeq: Long = 1L,
-        heartbeatTimeoutMs: Long = DEFAULT_HEARTBEAT_TIMEOUT_MS
+        heartbeatTimeoutMs: Long = DEFAULT_HEARTBEAT_TIMEOUT_MS,
     ): Flow<SequencedStreamEvent> = flow {
         var lastSeq = fromSeq - 1
         var finished = false
@@ -512,8 +526,5 @@ public class KtorRemoteTransportAdapter(
     /** Wraps a failure thrown by the flow's collector so the reconnect logic never mistakes it for the network. */
     private class CollectorFailure(cause: Throwable) : RuntimeException(cause)
 
-    override suspend fun shutdownDaemon(force: Boolean): Boolean {
-        return supervisor.shutdownDaemon(force)
-    }
+    override suspend fun shutdownDaemon(force: Boolean): Boolean = supervisor.shutdownDaemon(force)
 }
-

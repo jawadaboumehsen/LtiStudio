@@ -3,6 +3,7 @@ package io.ltirom.tooling.client
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.logging.*
 import io.ktor.client.plugins.websocket.*
@@ -50,6 +51,7 @@ public class WslDaemonManager(
 ) : DaemonSupervisorPort {
 
     private val mutex = Mutex()
+
     /**
      * The process this manager launched, bound to the service it started (distro + pid). Only a stop of
      * that same service may destroy it; retiring a service in another distro never touches it.
@@ -94,6 +96,10 @@ public class WslDaemonManager(
 
     public val httpClient: HttpClient by lazy {
         HttpClient(CIO) {
+            // CIO's own default cuts every request at 15 s; each request sets its own limit instead (a command
+            // runs as long as its timeoutMs allows).
+            engine { requestTimeout = 0 }
+            install(HttpTimeout)
             install(ContentNegotiation) {
                 json(this@WslDaemonManager.json)
             }
