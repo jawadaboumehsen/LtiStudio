@@ -29,13 +29,13 @@ class ToolCapabilitiesTest {
         assertTrue(ToolCapabilities.isRecipeSupported("signapk"))
         assertTrue(ToolCapabilities.isRecipeSupported("payload-dumper-go"))
 
-        assertFalse(ToolCapabilities.isRecipeSupported("gh"))
+        assertTrue(ToolCapabilities.isRecipeSupported("gh"))
         assertFalse(ToolCapabilities.isRecipeSupported("unknown-tool"))
 
         assertNull(ToolCapabilities.unavailableReasonFor("lpunpack"))
         assertEquals(
             ToolCapabilities.REPAIR_UNAVAILABLE_REASON,
-            ToolCapabilities.unavailableReasonFor("gh"),
+            ToolCapabilities.unavailableReasonFor("unknown-tool"),
         )
     }
 
@@ -50,7 +50,8 @@ class ToolCapabilitiesTest {
         assertEquals(ToolCapabilities.GROUP_APKTOOL, ToolCapabilities.recipeGroupFor("apktool"))
         assertEquals(ToolCapabilities.GROUP_SIGNAPK, ToolCapabilities.recipeGroupFor("signapk"))
         assertEquals(ToolCapabilities.GROUP_PAYLOAD_DUMPER_GO, ToolCapabilities.recipeGroupFor("payload-dumper-go"))
-        assertNull(ToolCapabilities.recipeGroupFor("gh"))
+        assertEquals(ToolCapabilities.GROUP_GH, ToolCapabilities.recipeGroupFor("gh"))
+        assertNull(ToolCapabilities.recipeGroupFor("unknown-tool"))
     }
 
     @Test
@@ -71,9 +72,9 @@ class ToolCapabilitiesTest {
         assertFalse(ToolCapabilities.isAcceptedExitCode("simg2img", 0))
 
         // Unknown tools fall back to the conservative default rather than being optimistically accepted.
-        assertEquals(listOf("--help"), ToolCapabilities.probeArgumentsFor("gh"))
-        assertEquals(setOf(0), ToolCapabilities.acceptedExitCodesFor("gh"))
-        assertNull(ToolCapabilities.capabilityFor("gh"))
+        assertEquals(listOf("--help"), ToolCapabilities.probeArgumentsFor("unknown-tool"))
+        assertEquals(setOf(0), ToolCapabilities.acceptedExitCodesFor("unknown-tool"))
+        assertNull(ToolCapabilities.capabilityFor("unknown-tool"))
 
         val capability = ToolCapabilities.capabilityFor("mkfs.erofs")
         assertNotNull(capability)
@@ -108,5 +109,25 @@ class ToolCapabilitiesTest {
         assertFalse(invalidated["adb"]?.isVerified == true)
         assertFalse(invalidated["lpunpack"]?.isVerified == true)
         assertTrue(invalidated["mkfs.erofs"]?.isVerified == true, "mkfs.erofs must remain verified")
+    }
+
+    @Test
+    fun everyToolTheToolsPageListsHasARecipe() {
+        // The Tools page shows the matrix; a tool missing from the inventory reads "can't be rebuilt".
+        val withoutRecipe = ToolchainSetupState.defaultToolsMatrix().map { it.id }
+            .filterNot { ToolCapabilities.isRecipeSupported(it) }
+        assertEquals(emptyList(), withoutRecipe, "Every listed tool must be buildable or downloadable by setup")
+        assertEquals(listOf("version"), ToolCapabilities.probeArgumentsFor("gh"))
+    }
+
+    @Test
+    fun f2fsAndSdkBuildToolsBelongToAndroidToolsWithTheirRealProbes() {
+        for (id in listOf("make_f2fs", "sload_f2fs", "mkf2fsuserimg", "aapt2", "zipalign")) {
+            assertEquals(ToolCapabilities.GROUP_ANDROID_TOOLS, ToolCapabilities.recipeGroupFor(id), id)
+        }
+        // Exit codes measured on the built binaries: `--help` is not a valid option for these.
+        assertEquals(listOf("-V"), ToolCapabilities.probeArgumentsFor("make_f2fs"))
+        assertEquals(listOf("version"), ToolCapabilities.probeArgumentsFor("aapt2"))
+        assertEquals(setOf(2), ToolCapabilities.acceptedExitCodesFor("zipalign"))
     }
 }

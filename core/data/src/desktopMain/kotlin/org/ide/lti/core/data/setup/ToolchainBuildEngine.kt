@@ -33,7 +33,77 @@ public class ToolchainBuildEngine(
             ToolCapabilities.GROUP_APKTOOL,
             ToolCapabilities.GROUP_SIGNAPK,
             ToolCapabilities.GROUP_PAYLOAD_DUMPER_GO,
+            ToolCapabilities.GROUP_GH,
         )
+
+        private const val RELEASE_DOWNLOAD_TIMEOUT_SECONDS: Long = 300
+        private const val SHA256_HEX_LENGTH = 64
+    }
+
+    /**
+     * Installs each pinned release whose group is targeted: kept when `bin` already holds the pinned
+     * binary, otherwise downloaded, digest-checked and installed. A failure is logged and leaves the tool
+     * missing, which the toolchain check then reports; a digest mismatch is never installed.
+     */
+    private fun installPinnedReleases(
+        distro: String,
+        extDir: String,
+        binDir: String,
+        targetRecipeGroups: Set<String>?,
+        log: (String) -> Unit,
+    ) {
+        val targeted = PinnedReleases.ALL.filter {
+            targetRecipeGroups == null || ToolCapabilities.recipeGroupFor(it.toolId) in targetRecipeGroups
+        }
+        for (release in targeted) {
+            val dest = "$binDir/${release.toolId}"
+            val label = "${release.toolId} ${release.version}"
+            val message = if (sha256Of(distro, dest) == release.sha256) {
+                "$label already installed (checksum verified)."
+            } else {
+                downloadVerified(distro, release, "$extDir/tmp/${release.toolId}", dest)
+                    ?.let { "ERROR: Could not install $label from ${release.url}: $it" }
+                    ?: "Installed $label (checksum verified)."
+            }
+            log("[Step 5/5] $message")
+        }
+    }
+
+    /**
+     * Downloads [release] into [scratch], extracts only its binary, and installs it as [dest] only when its
+     * digest matches the pin. Discrete commands, no shell (see class doc). Returns null on success.
+     */
+    private fun downloadVerified(distro: String, release: PinnedRelease, scratch: String, dest: String): String? {
+        val archive = "$scratch/release.tar.gz"
+        val extracted = "$scratch/extract/${release.archiveMember}"
+        cli.execute(distro, listOf("rm", "-rf", "$scratch/extract"))
+        cli.execute(distro, listOf("mkdir", "-p", "$scratch/extract"))
+        val steps = listOf(
+            "download" to listOf("curl", "-fsSL", "--retry", "3", "-o", archive, release.url),
+            "extract" to listOf("tar", "-xzf", archive, "-C", "$scratch/extract", release.archiveMember),
+        )
+        for ((step, command) in steps) {
+            val res = cli.execute(distro, command, timeoutSeconds = RELEASE_DOWNLOAD_TIMEOUT_SECONDS)
+            if (res.exitCode != 0) {
+                return "$step failed: " + res.error.ifBlank { res.output }.ifBlank { "exit ${res.exitCode}" }
+            }
+        }
+        val actual = sha256Of(distro, extracted)
+        val failure = if (actual != release.sha256) {
+            "checksum mismatch (expected ${release.sha256}, got ${actual ?: "none"}); not installed"
+        } else {
+            val installed = cli.execute(distro, listOf("install", "-m", "755", extracted, "$dest.new")).exitCode == 0 &&
+                cli.execute(distro, listOf("mv", "-f", "$dest.new", dest)).exitCode == 0
+            if (installed) null else "could not write $dest"
+        }
+        cli.execute(distro, listOf("rm", "-rf", "$scratch/extract", archive))
+        return failure
+    }
+
+    /** The sha256 of [path] in the distro, or null when it doesn't exist or can't be read. */
+    private fun sha256Of(distro: String, path: String): String? {
+        val res = cli.execute(distro, listOf("sha256sum", path))
+        return res.output.trim().substringBefore(' ').takeIf { res.exitCode == 0 && it.length == SHA256_HEX_LENGTH }
     }
 
     /**
@@ -286,7 +356,7 @@ public class ToolchainBuildEngine(
         if (shouldBuildAuxiliary) {
             currentProgressIndex++
             onProgress("auxiliary-tools", currentProgressIndex, totalGroups)
-            log("[Step 5/5] Synchronizing auxiliary tools (apktool, signapk, payload-dumper-go, erofsfuse)...")
+            log("[Step 5/5] Synchronizing auxiliary tools (apktool, signapk, payload-dumper-go, gh, erofsfuse)...")
             if (cli.execute(distro, listOf("test", "-d", "$extDir/bin")).exitCode == 0) {
                 cli.execute(distro, listOf("cp", "-a", "$extDir/bin/.", "$binDir/"))
             }
@@ -306,6 +376,8 @@ public class ToolchainBuildEngine(
                 cli.execute(distro, listOf("ln", "-sf", "mke2fs.android", "$binDir/mke2fs"))
             }
             cli.execute(distro, listOf("chmod", "+x", "$binDir/signapk.jar", "$binDir/erofsfuse", "$binDir/payload-dumper-go"))
+            // After the copies above: a stale or partial pre-staged copy is replaced by the verified release.
+            installPinnedReleases(distro, extDir, binDir, targetRecipeGroups, log)
             for (group in AUXILIARY_RECIPE_GROUPS) {
                 if (targetRecipeGroups == null || group in targetRecipeGroups) {
                     recordInstalledBinaries(distro, binDir, group)

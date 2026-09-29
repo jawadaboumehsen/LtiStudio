@@ -190,7 +190,18 @@ class ToolBrowserStateTest {
 
     @Test
     fun testRepairRequiresSupportedRecipeOtherwiseUnavailableWithReason() = runToolBrowserTest { scope ->
-        val service = SpyToolchainService()
+        // Every catalog tool has a recipe; a tool the user added by hand does not.
+        val customTool = ToolComponentItem(
+            id = "custom-vendor-tool",
+            name = "Custom Vendor Tool",
+            binaryName = "custom-vendor-tool",
+            category = ToolCategory.PACKAGING_AND_TOOLS,
+            isCore = false,
+            status = StepStatus.PENDING,
+        )
+        val service = SpyToolchainService(
+            initialState = ToolchainSetupState(toolsMatrix = ToolchainSetupState.defaultToolsMatrix() + customTool),
+        )
         val browserState = ToolBrowserState(
             scope = scope,
             toolchainService = service,
@@ -200,17 +211,17 @@ class ToolBrowserStateTest {
         assertTrue(supportedToolPresentation.isRepairSupported, "lpmake has a supported rebuild recipe")
         assertNull(supportedToolPresentation.repairUnavailableReason, "Supported tool must not have an unavailable reason")
 
-        // Unsupported recipe tool: "gh" (or external binary without recipe)
-        val unsupportedToolPresentation = browserState.filteredTools.value.first { it.tool.id == "gh" }
-        assertFalse(unsupportedToolPresentation.isRepairSupported, "gh has no supported recipe")
+        val unsupportedToolPresentation =
+            browserState.filteredTools.value.first { it.tool.id == "custom-vendor-tool" }
+        assertFalse(unsupportedToolPresentation.isRepairSupported, "custom-vendor-tool has no recipe")
         assertEquals(
-            "Repair requires a supported recipe; otherwise the action is unavailable with a reason.",
+            "Not built by setup, so it can't be rebuilt here. Install or update it yourself; Test still works.",
             unsupportedToolPresentation.repairUnavailableReason,
             "Enforces exact specification phrase for unavailable repair",
         )
 
         // Invoking repair on unsupported tool must not execute service repair
-        val repairAttempt = browserState.repairTool("gh")
+        val repairAttempt = browserState.repairTool("custom-vendor-tool")
         assertTrue(repairAttempt is SetupOutcome.Failed, "Repair on unsupported recipe must be rejected")
         assertEquals(0, service.repairToolCallCount, "Service repair must not be called for unsupported tool")
 

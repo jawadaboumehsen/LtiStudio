@@ -91,6 +91,9 @@ public object ToolCatalog {
             recipeGroup = ToolCapabilities.GROUP_PAYLOAD_DUMPER_GO,
             requiredForProduct = true,
         ),
+
+        // gh recipe group (pinned release; the publishing adapter runs it through the service)
+        ToolCatalogEntry("gh", ToolKind.NATIVE, ToolCapabilities.GROUP_GH),
     )
 
     public val byId: Map<String, ToolCatalogEntry> = entries.associateBy { it.id }

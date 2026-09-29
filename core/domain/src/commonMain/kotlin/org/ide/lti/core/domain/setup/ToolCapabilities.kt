@@ -52,8 +52,12 @@ public object ToolCapabilities {
     public const val GROUP_SIGNAPK: String = "signapk"
     public const val GROUP_PAYLOAD_DUMPER_GO: String = "payload-dumper-go"
 
+    /** GitHub CLI, installed from a pinned, checksum-verified release (used by the publishing adapter). */
+    public const val GROUP_GH: String = "gh"
+
+    /** Shown on a tool that no setup recipe builds (e.g. `gh`): it can be tested but not rebuilt here. */
     public const val REPAIR_UNAVAILABLE_REASON: String =
-        "Repair requires a supported recipe; otherwise the action is unavailable with a reason."
+        "Not built by setup, so it can't be rebuilt here. Install or update it yourself; Test still works."
 
     public val DEFAULT_PROBE_ARGUMENTS: List<String> = listOf("--help")
     public val DEFAULT_ACCEPTED_EXIT_CODES: Set<Int> = setOf(0)
@@ -104,6 +108,15 @@ public object ToolCapabilities {
             tool("avbtool"),
             tool("fec"),
             tool("mkuserimg_mke2fs"),
+            // f2fs-tools and the SDK build tools come out of the same android-tools build (vendor/).
+            // f2fs-tools: `--help` is an unknown option (exit 1); `-V` prints the version.
+            tool("make_f2fs", probeArguments = listOf("-V")),
+            tool("sload_f2fs", probeArguments = listOf("-V")),
+            // A shell script with no help flag: `--help` prints its usage and exits 1.
+            tool("mkf2fsuserimg", acceptedExitCodes = setOf(1)),
+            tool("aapt2", probeArguments = listOf("version")),
+            // No help flag: any argument it doesn't know prints usage and exits 2.
+            tool("zipalign", acceptedExitCodes = setOf(2)),
         ) + group(
             GROUP_EROFS_UTILS,
             tool("mkfs.erofs"),
@@ -122,6 +135,9 @@ public object ToolCapabilities {
         ) + group(
             GROUP_PAYLOAD_DUMPER_GO,
             tool("payload-dumper-go"),
+        ) + group(
+            GROUP_GH,
+            tool("gh", probeArguments = listOf("version")),
         )
 
     private val BY_TOOL_ID: Map<String, ToolCapability> = INVENTORY.associateBy { it.toolId }

@@ -219,8 +219,8 @@ class ToolRepairTest {
             dispatcher = UnconfinedTestDispatcher(testScheduler),
         )
 
-        // "gh" has no supported compilation/acquisition recipe in the toolchain engine
-        val unsupportedResult = provisioner.repairTool("gh")
+        // A tool no recipe builds or downloads
+        val unsupportedResult = provisioner.repairTool("custom-vendor-tool")
         assertTrue(
             unsupportedResult is SetupOutcome.Failed,
             "Repair requires a supported recipe; otherwise the action is unavailable with a reason (FR-009)",

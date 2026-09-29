@@ -34,7 +34,7 @@ import kotlin.test.assertTrue
  * Desktop Compose UI tests for the Tools Destination and Activity Viewport (US3 — Tools and activity).
  *
  * Fully DI-free fixtures validating:
- * - Unsupported repair: displays "Repair requires a supported recipe; otherwise the action is unavailable with a reason."
+ * - Unsupported repair: displays "Not built by setup, so it can't be rebuilt here. Install or update it yourself; Test still works."
  *   and disables rebuild button (FR-009, SC-002).
  * - Supported repair: rebuild action enabled and invokes repair callback (FR-009).
  * - Missing/Failed state: displays failure status and Test action triggers verification (FR-009).
@@ -48,9 +48,9 @@ class ToolsScreenTest {
     @Test
     fun testUnsupportedRepairDisplaysReasonAndDisablesRebuild() = runDesktopComposeUiTest(width = 1120, height = 900) {
         val unsupportedTool = ToolComponentItem(
-            id = "gh",
-            name = "GitHub CLI",
-            binaryName = "gh",
+            id = "custom-vendor-tool",
+            name = "Custom Vendor Tool",
+            binaryName = "custom-vendor-tool",
             category = ToolCategory.PACKAGING_AND_TOOLS,
             isCore = false,
             status = StepStatus.PENDING,
@@ -69,7 +69,7 @@ class ToolsScreenTest {
 
         // Exact specification phrase must be displayed
         onNodeWithText(
-            "Repair requires a supported recipe; otherwise the action is unavailable with a reason.",
+            "Not built by setup, so it can't be rebuilt here. Install or update it yourself; Test still works.",
         ).assertIsDisplayed()
 
         // Rebuild button must be disabled for unsupported recipes

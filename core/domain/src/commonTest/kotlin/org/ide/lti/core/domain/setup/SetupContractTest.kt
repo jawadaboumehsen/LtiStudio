@@ -199,6 +199,7 @@ class SetupContractTest {
                 SetupOutcome.Cancelled -> "cancelled"
                 is SetupOutcome.Busy -> "busy"
                 is SetupOutcome.Interrupted -> "interrupted"
+                is SetupOutcome.AwaitingUserAction -> "awaiting user action"
             }
             assertTrue(label.isNotEmpty())
         }
