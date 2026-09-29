@@ -1,3 +1,12 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.core.data.setup
 
 import io.ltirom.tooling.client.WslDaemonManager
@@ -2129,14 +2138,18 @@ public class WslToolchainProvisioner(
                                         )
                                     }
                                 } else if (siblingId in requiredTools || siblingId == targetTool) {
-                                    setStepStatus(
-                                        SetupStepStage.TOOLCHAIN_COMPILATION,
-                                        StepStatus.FAILED,
-                                        "Tool $siblingId verification probe failed",
-                                    )
+                                    // Says what the probe saw: a failure with no console line looks like a hang.
+                                    val reason = "Tool $siblingId verification probe failed: " + when {
+                                        !exists -> "$binaryPath is missing or not executable"
+                                        else -> "`${probe.argv.joinToString(" ")}` exited ${execRes?.exitCode} " +
+                                            "(accepted: ${acceptedExitCodes.sorted().joinToString()}) " +
+                                            execRes?.error.orEmpty().ifBlank { execRes?.output.orEmpty() }.take(300)
+                                    }
+                                    appendLog("[Step 5/5] ERROR: $reason")
+                                    setStepStatus(SetupStepStage.TOOLCHAIN_COMPILATION, StepStatus.FAILED, reason)
                                     return SetupOutcome.Failed(
                                         stage = SetupStepStage.TOOLCHAIN_COMPILATION.name,
-                                        reason = "Tool $siblingId verification probe failed",
+                                        reason = reason,
                                     )
                                 }
                             }

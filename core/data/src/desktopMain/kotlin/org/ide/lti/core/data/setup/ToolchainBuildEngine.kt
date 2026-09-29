@@ -1,3 +1,12 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.core.data.setup
 
 import io.ltirom.tooling.client.wsl.WslCliExecutor
@@ -64,6 +73,20 @@ public class ToolchainBuildEngine(
 
         /** First build downloads Gradle and every dependency. */
         private const val GRADLE_TIMEOUT_SECONDS: Long = 1_200
+
+        /**
+         * `git am` records a committer; a fresh machine has no git identity, and the user's own is never
+         * touched. Given to the configure step only.
+         */
+        private val GIT_AM_IDENTITY: Map<String, String> = mapOf(
+            "GIT_AUTHOR_NAME" to "LtiRom Studio",
+            "GIT_AUTHOR_EMAIL" to "ltirom@localhost",
+            "GIT_COMMITTER_NAME" to "LtiRom Studio",
+            "GIT_COMMITTER_EMAIL" to "ltirom@localhost",
+        )
+
+        /** How much of a failed local command's stderr goes into its error message. */
+        private const val ERROR_DETAIL_CHARS = 600
 
         /** Modules the img2sdat script imports from its own directory. */
         private val IMG2SDAT_MODULES =
@@ -172,6 +195,7 @@ public class ToolchainBuildEngine(
         }
     }
 
+    /** Runs one build step; the result is null on success, otherwise why it failed (the tool's own stderr). */
     @Suppress("ReturnCount") // local CLI path, unjournaled refusal and journaled verdict are three distinct exits
     private suspend fun executeBuildCommand(
         distro: String,
@@ -183,11 +207,16 @@ public class ToolchainBuildEngine(
         journal: SetupJournalContext? = null,
         log: (String) -> Unit,
         onRunStarted: (SetupStepStage, String) -> Unit = { _, _ -> },
-    ): Result<Boolean> {
+        environment: Map<String, String> = emptyMap(),
+    ): Result<String?> {
         if (transport == null) {
-            val res = commands.run(distro, listOf(toolId) + arguments, timeoutSeconds = timeoutSeconds)
+            val env = environment.map { "${it.key}=${it.value}" }
+            val command = (if (env.isEmpty()) emptyList() else listOf("env") + env) + toolId + arguments
+            val res = commands.run(distro, command, timeoutSeconds = timeoutSeconds)
             log("[$toolId] ${res.output.takeLast(300)}")
-            return Result.success(res.exitCode == 0)
+            return Result.success(
+                if (res.exitCode == 0) null else res.error.ifBlank { res.output }.takeLast(ERROR_DETAIL_CHARS),
+            )
         }
         val repo = repository
         val ctx = journal
@@ -206,6 +235,7 @@ public class ToolchainBuildEngine(
                 toolId = toolId,
                 arguments = arguments,
                 workingDirectory = workingDir,
+                environment = environment,
                 timeoutMs = timeoutSeconds * 1000L,
             ),
             onRunStarted = { stage, runId ->
@@ -215,7 +245,9 @@ public class ToolchainBuildEngine(
             log = log,
         )
         return when (runResult) {
-            is JournaledRunResult.Finished -> Result.success(runResult.exitCode == 0)
+            is JournaledRunResult.Finished -> Result.success(
+                runResult.takeIf { it.exitCode != 0 }?.let { it.errorTail.ifBlank { "exit code ${it.exitCode}" } },
+            )
             is JournaledRunResult.JournalRejected -> Result.failure(IllegalStateException(runResult.reason))
             is JournaledRunResult.Interrupted -> Result.failure(IllegalStateException(runResult.reason))
         }
@@ -327,11 +359,14 @@ public class ToolchainBuildEngine(
                 "-DCMAKE_CXX_COMPILER=clang++",
                 "-DANDROID_TOOLS_USE_BUNDLED_FMT=ON",
                 "-DANDROID_TOOLS_USE_BUNDLED_LIBUSB=ON",
-                "-DANDROID_TOOLS_PATCH_VENDOR=OFF",
+                // Upstream's own fixes for its vendored AOSP sources (configure resets them to their pins and
+                // applies patches/ with `git am`); without them adb does not compile.
+                "-DANDROID_TOOLS_PATCH_VENDOR=ON",
             ),
+            configureEnvironment = GIT_AM_IDENTITY,
             configureTimeoutSeconds = 120,
             buildDir = buildDir,
-            makeTimeoutSeconds = 600,
+            makeTimeoutSeconds = 3_600,
             journal = journal,
             onRunStarted = onRunStarted,
             log = log,
@@ -457,6 +492,7 @@ public class ToolchainBuildEngine(
         name: String,
         configureDir: String,
         configureArgs: List<String>,
+        configureEnvironment: Map<String, String> = emptyMap(),
         configureTimeoutSeconds: Long,
         buildDir: String,
         makeTimeoutSeconds: Long,
@@ -465,12 +501,13 @@ public class ToolchainBuildEngine(
         log: (String) -> Unit,
     ): String? {
         val steps = listOf(
-            Triple("cmake", configureDir, configureArgs) to configureTimeoutSeconds,
-            Triple("make", buildDir, listOf("-C", buildDir, "-j4")) to makeTimeoutSeconds,
+            Triple("cmake", configureDir, configureArgs) to (configureTimeoutSeconds to configureEnvironment),
+            Triple("make", buildDir, listOf("-C", buildDir, "-j4")) to (makeTimeoutSeconds to emptyMap()),
         )
-        for ((step, timeout) in steps) {
+        for ((step, limits) in steps) {
             val (tool, dir, args) = step
-            val ok = executeBuildCommand(
+            val (timeout, environment) = limits
+            val failure = executeBuildCommand(
                 distro = distro,
                 workingDir = dir,
                 toolId = tool,
@@ -480,8 +517,12 @@ public class ToolchainBuildEngine(
                 journal = journal,
                 log = log,
                 onRunStarted = onRunStarted,
+                environment = environment,
             ).getOrElse { return it.message ?: "$name $tool failed" }
-            if (!ok) return if (tool == "cmake") "$name cmake configuration failed" else "$name make build failed"
+            if (failure != null) {
+                val what = if (tool == "cmake") "cmake configuration failed" else "make build failed"
+                return "$name $what:\n$failure"
+            }
         }
         return null
     }
@@ -554,7 +595,7 @@ public class ToolchainBuildEngine(
                 return "${jar.tool} sources are missing ($projectDir/gradlew); sync the source repositories first"
             }
             req.log("[Step 5/5] Building ${jar.tool} with Gradle (${jar.task})...")
-            val built = executeBuildCommand(
+            val failure = executeBuildCommand(
                 distro = req.distro,
                 workingDir = projectDir,
                 toolId = "sh",
@@ -565,7 +606,7 @@ public class ToolchainBuildEngine(
                 log = req.log,
                 onRunStarted = req.onRunStarted,
             ).getOrElse { return it.message ?: "${jar.tool} Gradle build failed" }
-            if (!built) return "${jar.tool} Gradle build failed (${jar.task})"
+            if (failure != null) return "${jar.tool} Gradle build failed (${jar.task}):\n$failure"
             if (!commands.exists(req.distro, output, "-f")) return "${jar.tool} build finished without $output"
         }
         return commands.copy(req.distro, output, "${req.binDir}/${jar.tool}.jar")

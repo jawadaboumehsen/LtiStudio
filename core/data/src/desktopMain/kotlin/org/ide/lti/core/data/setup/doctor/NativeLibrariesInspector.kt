@@ -1,7 +1,17 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.core.data.setup.doctor
 
 import io.ltirom.tooling.client.wsl.WslCliExecutor
 import org.ide.lti.core.data.setup.AptCommandBuilder
+import org.ide.lti.core.data.setup.RequirementCatalog
 import org.ide.lti.core.domain.setup.DiagnosticCategory
 import org.ide.lti.core.domain.setup.DiagnosticCheckItem
 import org.ide.lti.core.domain.setup.StepStatus
@@ -18,18 +28,8 @@ public class NativeLibrariesInspector(
 ) : SystemDiagnosticInspector {
 
     public companion object {
-        public val DEFAULT_REQUIRED_DEV_PACKAGES: List<String> = listOf(
-            "pkg-config",
-            "protobuf-compiler",
-            "libprotobuf-dev",
-            "libbrotli-dev",
-            "liblz4-dev",
-            "libpcre2-dev",
-            "libzstd-dev",
-            "libusb-1.0-0-dev",
-            "uuid-dev",
-            "libfuse3-dev",
-        )
+        public val DEFAULT_REQUIRED_DEV_PACKAGES: List<String> =
+            RequirementCatalog.HOST_LIBRARY_PACKAGES + "libfuse3-dev"
     }
 
     override suspend fun inspect(context: DiagnosticContext): DiagnosticCheckItem {

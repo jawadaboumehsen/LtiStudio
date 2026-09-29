@@ -1,3 +1,12 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.core.data.setup
 
 import io.ltirom.tooling.core.ports.RemoteTransportPort
@@ -30,8 +39,16 @@ public data class SetupJournalContext(
  * Typed result of one journaled server command.
  */
 public sealed interface JournaledRunResult {
-    /** The run reached an authoritative terminal state; [exitCode] is the server-reported code. */
-    public data class Finished(val runId: String, val status: RunStatusValue, val exitCode: Int) : JournaledRunResult
+    /**
+     * The run reached an authoritative terminal state; [exitCode] is the server-reported code and [errorTail]
+     * the last lines it wrote to stderr (why it failed, e.g. CMake's "Could NOT find BZip2").
+     */
+    public data class Finished(
+        val runId: String,
+        val status: RunStatusValue,
+        val exitCode: Int,
+        val errorTail: String = "",
+    ) : JournaledRunResult
 
     /** The journal could not be written before submission: nothing was submitted. */
     public data class JournalRejected(val reason: String) : JournaledRunResult
@@ -68,6 +85,8 @@ public class JournaledRunLauncher(
             RunStatusValue.CANCELLED,
             RunStatusValue.INTERRUPTED,
         )
+
+        private const val ERROR_TAIL_LINES = 8
 
         public fun idempotencyKey(context: SetupJournalContext, actionId: String): String =
             "${context.environmentKey}:${context.attemptId}:$actionId"
@@ -142,10 +161,12 @@ public class JournaledRunLauncher(
         log: (String) -> Unit,
     ): JournaledRunResult {
         var streamedExitCode: Int? = null
+        val errorTail = ArrayDeque<String>()
         try {
             transport.attachRun(runId, fromSeq).collect { sequenced ->
                 val event = sequenced.event
                 if (event is StreamEvent.ExecutionFinished) streamedExitCode = event.exitCode
+                keepErrorTail(errorTail, event)
                 commitEvent(childIndex, runId, actionId, sequenced.seq, event, log)
             }
         } catch (e: CancellationException) {
@@ -183,7 +204,12 @@ public class JournaledRunLauncher(
             repository.setRecoveryBlocked(true, reason)
             return JournaledRunResult.Interrupted(reason)
         }
-        return JournaledRunResult.Finished(runId = runId, status = terminalStatus, exitCode = exitCode)
+        return JournaledRunResult.Finished(
+            runId = runId,
+            status = terminalStatus,
+            exitCode = exitCode,
+            errorTail = errorTail.joinToString("\n"),
+        )
     }
 
     /**
@@ -207,13 +233,21 @@ public class JournaledRunLauncher(
                 repository.commitChildCursorAndEvidence(context.attemptId, childIndex, seq, text)
             }
             is StreamEvent.ExecutionFinished,
-            is StreamEvent.ProgressUpdate ->
+            is StreamEvent.ProgressUpdate,
+            ->
                 repository.commitChildCursorAndEvidence(context.attemptId, childIndex, seq, null)
             is StreamEvent.Heartbeat -> return
         }
         commit.onFailure { failure ->
             throw JournalCommitException("Durable commit failed at seq $seq: ${failure.message}")
         }
+    }
+
+    /** Keeps the last [ERROR_TAIL_LINES] non-blank stderr lines: why the run failed. */
+    private fun keepErrorTail(tail: ArrayDeque<String>, event: StreamEvent) {
+        if (event !is StreamEvent.OutputChunk || !event.isError || event.text.isBlank()) return
+        tail.addLast(event.text.trimEnd())
+        if (tail.size > ERROR_TAIL_LINES) tail.removeFirst()
     }
 
     private class JournalCommitException(message: String) : RuntimeException(message)

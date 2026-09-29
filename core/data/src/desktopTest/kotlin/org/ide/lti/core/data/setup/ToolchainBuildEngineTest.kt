@@ -1,3 +1,12 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.core.data.setup
 
 import com.russhwolf.settings.MapSettings
@@ -55,9 +64,15 @@ class ToolchainBuildEngineTest {
         }
     }
 
+    /** [failingTool]'s runs write [failingStderr] and exit 1; every other run succeeds. */
     private class RecordingTransport : RemoteTransportPort {
+        var failingTool: String? = null
+        var failingStderr: List<String> = emptyList()
         val startedRuns = mutableListOf<StartRunRequest>()
         val attachedRunIds = mutableListOf<String>()
+
+        private fun fails(runId: String): Boolean =
+            startedRuns[runId.removePrefix("run-").toInt() - 1].request.toolId == failingTool
 
         override suspend fun startRun(request: StartRunRequest): RunHandle {
             startedRuns.add(request)
@@ -67,6 +82,13 @@ class ToolchainBuildEngineTest {
 
         override fun attachRun(runId: String, fromSeq: Long): Flow<SequencedStreamEvent> {
             attachedRunIds.add(runId)
+            if (fails(runId)) {
+                val errors = failingStderr.mapIndexed { i, line ->
+                    SequencedStreamEvent(i + 1L, StreamEvent.OutputChunk(line, isError = true))
+                }
+                return (errors + SequencedStreamEvent(errors.size + 1L, StreamEvent.ExecutionFinished(1, 1000L)))
+                    .asFlow()
+            }
             return listOf(
                 SequencedStreamEvent(1L, StreamEvent.OutputChunk("Compiling target...")),
                 SequencedStreamEvent(2L, StreamEvent.ExecutionFinished(0, 1000L)),
@@ -75,8 +97,8 @@ class ToolchainBuildEngineTest {
 
         override suspend fun getRun(runId: String): RunStatus = RunStatus(
             runId = runId,
-            status = RunStatusValue.COMPLETED,
-            exitCode = 0,
+            status = if (fails(runId)) RunStatusValue.FAILED else RunStatusValue.COMPLETED,
+            exitCode = if (fails(runId)) 1 else 0,
             startedAtEpochMs = 1000L,
             endedAtEpochMs = 2000L,
         )
@@ -267,6 +289,62 @@ class ToolchainBuildEngineTest {
             idempotencyKeys.any { it.contains("android-tools:cmake") },
             "forceRebuild must force android-tools compilation despite existing adb sentinel (FR-009)",
         )
+    }
+
+    @Test
+    fun aFailedCmakeConfigurationSaysWhyItFailed() = runTest {
+        val transport = RecordingTransport().apply {
+            failingTool = "cmake"
+            failingStderr = listOf(
+                "CMake Error at FindPackageHandleStandardArgs.cmake:230 (message):",
+                "  Could NOT find BZip2 (missing: BZIP2_LIBRARIES BZIP2_INCLUDE_DIR)",
+            )
+        }
+        val engine = ToolchainBuildEngine(
+            cli = RecordingCli(),
+            repository = journaledRepository("att-build-6"),
+            transport = transport,
+        )
+
+        val result = engine.buildAndDistributeAll(
+            distro = "Ubuntu",
+            extDir = "/home/lti/LtiRomTools/external",
+            binDir = "/home/lti/LtiRomTools/bin",
+            journal = SetupJournalContext("Ubuntu", "att-build-6"),
+            targetRecipeGroups = setOf("android-tools"),
+            forceRebuild = true,
+        )
+
+        val message = result.exceptionOrNull()?.message.orEmpty()
+        assertTrue("android-tools cmake configuration failed" in message, message)
+        assertTrue("Could NOT find BZip2" in message, "cmake's own reason is in the error: $message")
+    }
+
+    @Test
+    fun androidToolsAppliesItsOwnVendorPatchesWithAGitIdentity() = runTest {
+        val transport = RecordingTransport()
+        val engine = ToolchainBuildEngine(
+            cli = RecordingCli(),
+            repository = journaledRepository("att-build-7"),
+            transport = transport,
+        )
+
+        engine.buildAndDistributeAll(
+            distro = "Ubuntu",
+            extDir = "/ext",
+            binDir = "/bin",
+            journal = SetupJournalContext("Ubuntu", "att-build-7"),
+            targetRecipeGroups = setOf("android-tools"),
+            forceRebuild = true,
+        )
+
+        val cmake = transport.startedRuns.first { it.idempotencyKey.endsWith("android-tools:cmake") }.request
+        assertTrue("-DANDROID_TOOLS_PATCH_VENDOR=ON" in cmake.arguments, "${cmake.arguments}")
+        // `git am` fails on a machine without a git identity; the user's git config is never written.
+        assertEquals("LtiRom Studio", cmake.environment["GIT_COMMITTER_NAME"])
+        assertTrue(cmake.environment["GIT_COMMITTER_EMAIL"].orEmpty().isNotBlank())
+        val make = transport.startedRuns.first { it.idempotencyKey.endsWith("android-tools:make") }.request
+        assertTrue(make.environment.isEmpty(), "only configure applies patches: ${make.environment}")
     }
 
     @Test

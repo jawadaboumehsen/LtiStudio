@@ -1,3 +1,12 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.core.data.setup
 
 import org.ide.lti.core.model.setup.Need
@@ -9,6 +18,20 @@ import org.ide.lti.core.model.setup.SystemRequirement
  * Replaces legacy PackageCatalog.
  */
 public object RequirementCatalog {
+
+    /**
+     * Libraries the pinned sources compile and link against (android-tools: its README's dependency list plus
+     * what vendor/CMakeLists.txt links: bzip2, zlib; erofs-tools bundles all of its own). Its build system does
+     * not check these, so a missing one only shows up as a compile error mid-build. The one list the package
+     * probe, the Doctor and the approved packages all read.
+     */
+    public val NATIVE_DEV_PACKAGES: List<String> = listOf(
+        "libprotobuf-dev", "libbrotli-dev", "libbz2-dev", "libgtest-dev", "liblz4-dev",
+        "libpcre2-dev", "libzstd-dev", "zlib1g-dev", "libusb-1.0-0-dev", "uuid-dev",
+    )
+
+    /** Build tools plus [NATIVE_DEV_PACKAGES]: what the Doctor's library check verifies. */
+    public val HOST_LIBRARY_PACKAGES: List<String> = listOf("pkg-config", "protobuf-compiler") + NATIVE_DEV_PACKAGES
 
     public val REQUIREMENTS: List<SystemRequirement> = listOf(
         // SERVICE: Needed for build service runtime
@@ -170,58 +193,20 @@ public object RequirementCatalog {
             aptPackages = listOf("protobuf-compiler"),
             neededBy = Need.BUILD,
         ),
+    ) + NATIVE_DEV_PACKAGES.map { pkg ->
         SystemRequirement(
-            id = "libprotobuf-dev",
-            check = RequirementCheck.Package("libprotobuf-dev"),
-            aptPackages = listOf("libprotobuf-dev"),
+            id = pkg,
+            check = RequirementCheck.Package(pkg),
+            aptPackages = listOf(pkg),
             neededBy = Need.BUILD,
-        ),
-        SystemRequirement(
-            id = "libbrotli-dev",
-            check = RequirementCheck.Package("libbrotli-dev"),
-            aptPackages = listOf("libbrotli-dev"),
-            neededBy = Need.BUILD,
-        ),
-        SystemRequirement(
-            id = "liblz4-dev",
-            check = RequirementCheck.Package("liblz4-dev"),
-            aptPackages = listOf("liblz4-dev"),
-            neededBy = Need.BUILD,
-        ),
-        SystemRequirement(
-            id = "libpcre2-dev",
-            check = RequirementCheck.Package("libpcre2-dev"),
-            aptPackages = listOf("libpcre2-dev"),
-            neededBy = Need.BUILD,
-        ),
-        SystemRequirement(
-            id = "libzstd-dev",
-            check = RequirementCheck.Package("libzstd-dev"),
-            aptPackages = listOf("libzstd-dev"),
-            neededBy = Need.BUILD,
-        ),
-        SystemRequirement(
-            id = "libusb-1.0-0-dev",
-            check = RequirementCheck.Package("libusb-1.0-0-dev"),
-            aptPackages = listOf("libusb-1.0-0-dev"),
-            neededBy = Need.BUILD,
-        ),
-        SystemRequirement(
-            id = "uuid-dev",
-            check = RequirementCheck.Package("uuid-dev"),
-            aptPackages = listOf("uuid-dev"),
-            neededBy = Need.BUILD,
-        ),
-    )
+        )
+    }
 
     public val ALL_APT_PACKAGES: Set<String> = REQUIREMENTS.flatMap { it.aptPackages }.toSet()
 
     public val APPROVED_APT_PACKAGES: Map<String, List<String>> = mapOf(
         "host_compilers" to listOf("build-essential", "cmake", "make", "clang"),
-        "host_libraries" to listOf(
-            "pkg-config", "protobuf-compiler", "libprotobuf-dev", "libbrotli-dev",
-            "liblz4-dev", "libpcre2-dev", "libzstd-dev", "libusb-1.0-0-dev", "uuid-dev",
-        ),
+        "host_libraries" to HOST_LIBRARY_PACKAGES,
         "python_crypto" to listOf("python3", "python3-cryptography", "python3-pyasn1"),
         "jdk_dual" to listOf("openjdk-17-jdk", "openjdk-21-jdk"),
         "selinux_attr" to listOf("attr"),

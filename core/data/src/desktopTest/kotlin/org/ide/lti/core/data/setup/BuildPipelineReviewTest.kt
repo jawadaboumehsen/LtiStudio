@@ -1,3 +1,12 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.core.data.setup
 
 import io.ltirom.tooling.client.wsl.CliExecutionResult
@@ -86,7 +95,11 @@ class BuildPipelineReviewTest {
             targetRecipeGroups = setOf(ToolCapabilities.GROUP_ANDROID_TOOLS),
         )
 
-        assertTrue(cli.ran("cmake").isNotEmpty(), "lpunpack is missing, so android-tools must be compiled")
+        // Configure runs as `env GIT_...=... cmake ...` (the git identity for its vendor patches).
+        assertTrue(
+            cli.ran("env").any { "cmake" in it },
+            "lpunpack is missing, so android-tools must be compiled",
+        )
     }
 
     // 3. Repairing one auxiliary tool touches nothing else.

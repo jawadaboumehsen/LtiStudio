@@ -1,3 +1,12 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.core.data.setup
 
 import io.ltirom.tooling.client.wsl.CliExecutionResult
@@ -23,6 +32,7 @@ import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import org.ide.lti.core.data.setup.doctor.NativeLibrariesInspector
 import org.ide.lti.core.domain.ports.PublicationReport
 import org.ide.lti.core.domain.ports.ToolPublicationPort
 import org.ide.lti.core.domain.ports.ToolRegistryResult
@@ -166,11 +176,7 @@ class SetupExecutionPathTest {
                     ToolExecutionResponse(0, sample.joinToString("\n"), "", 5L)
                 }
                 request.toolId == "dpkg-query" -> {
-                    val pkgs = listOf(
-                        "pkg-config", "protobuf-compiler", "libprotobuf-dev", "libbrotli-dev",
-                        "liblz4-dev", "libpcre2-dev", "libzstd-dev", "libusb-1.0-0-dev",
-                        "uuid-dev", "libfuse3-dev",
-                    )
+                    val pkgs = NativeLibrariesInspector.DEFAULT_REQUIRED_DEV_PACKAGES
                     ToolExecutionResponse(0, pkgs.joinToString("\n") { "$it install ok installed" }, "", 2L)
                 }
                 request.toolId == "java" -> {

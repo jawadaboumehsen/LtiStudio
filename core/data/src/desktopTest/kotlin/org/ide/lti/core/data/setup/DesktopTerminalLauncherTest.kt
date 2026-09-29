@@ -1,3 +1,12 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.core.data.setup
 
 import java.io.IOException
@@ -18,7 +27,13 @@ class DesktopTerminalLauncherTest {
 
         assertTrue(result.isSuccess)
         assertEquals(1, launched.size)
-        assertEquals(listOf("wt.exe", "wsl.exe", "-d", "Ubuntu-24.04"), launched.first())
+        assertEquals(
+            listOf(
+                "wt.exe", "--title", "Ubuntu-24.04 (WSL)", "--suppressApplicationTitle",
+                "wsl.exe", "-d", "Ubuntu-24.04", "--cd", "~",
+            ),
+            launched.first(),
+        )
     }
 
     @Test
@@ -35,7 +50,7 @@ class DesktopTerminalLauncherTest {
 
         assertTrue(result.isSuccess)
         assertEquals(1, launched.size)
-        assertEquals(listOf("conhost.exe", "wsl.exe", "-d", "Ubuntu-24.04"), launched.first())
+        assertEquals(listOf("conhost.exe", "wsl.exe", "-d", "Ubuntu-24.04", "--cd", "~"), launched.first())
     }
 
     @Test
